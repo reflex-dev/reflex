@@ -42,6 +42,10 @@ const SAME_DOMAIN_HOSTNAMES = ["localhost", "0.0.0.0", "::", "0:0:0:0:0:0:0:0"];
 // Global variable to hold the token.
 let token;
 
+// A token generated for the transport warmed up before the app mounted. It is
+// saved to the session storage by getToken, once the mounted app connects.
+let unsavedToken;
+
 // Key for the token in the session storage.
 const TOKEN_KEY = "token";
 
@@ -57,6 +61,23 @@ export const refs = {};
 let backend_state_mismatch = false;
 // Array holding pending events to be processed.
 const event_queue = [];
+
+// The event that sends browser storage values to the backend.
+const UPDATE_VARS_INTERNAL =
+  "reflex___state____update_vars_internal_state.update_vars_internal";
+// A frontend event naming one synced localStorage var, turned into an
+// UPDATE_VARS_INTERNAL event when it is sent: see syncLocalStorageEvent.
+const SYNC_LOCAL_STORAGE = "_sync_local_storage";
+
+// Synced localStorage values sent to the backend and not yet echoed back, by
+// state key, oldest first, with this tab's localStorage write count at the send.
+const sentStorageValues = {};
+// Bounds a key whose echoes a get_delta override changes, so they never match.
+const MAX_SENT_STORAGE_VALUES = 256;
+// This tab's localStorage write count, and its last write by storage name
+// (vars of different state keys may share one).
+let localStorageWrites = 0;
+const lastLocalStorageWrites = {};
 
 // Mirrors the data router's location so applyEvent can populate router_data
 // with the in-widget URL. In embed mode the host page's window.location is
@@ -100,12 +121,24 @@ export const getToken = () => {
   }
   if (typeof window !== "undefined") {
     if (!window.sessionStorage.getItem(TOKEN_KEY)) {
-      window.sessionStorage.setItem(TOKEN_KEY, generateUUID());
+      window.sessionStorage.setItem(TOKEN_KEY, unsavedToken ?? generateUUID());
     }
     token = window.sessionStorage.getItem(TOKEN_KEY);
   }
   return token;
 };
+
+/**
+ * Get the token for the current session without saving a new one.
+ *
+ * A new token only reaches the session storage when the mounted app
+ * connects, so anything waiting for it there sees the rendered page.
+ * @returns The saved token, or a new one that getToken saves later.
+ */
+const peekToken = () =>
+  token ||
+  window.sessionStorage.getItem(TOKEN_KEY) ||
+  (unsavedToken ??= generateUUID());
 
 /**
  * Get the URL for the backend server
@@ -150,6 +183,72 @@ export const isBackendDisabled = () => {
 };
 
 /**
+ * Create a plain WebSocket transport without dialing it.
+ * @param endpoint The backend URL.
+ * @param token The session token the backend links the connection to.
+ * @returns The idle transport.
+ */
+const createSocket = (endpoint, token) =>
+  new ReflexWebSocket(endpoint.href, {
+    query: { token },
+    protocols: [reflexEnvironment.version],
+  });
+
+let warmSocket = null;
+let cancelWarmup = () => {};
+let socketStarted = false;
+
+/** Close an unclaimed transport and remove its cleanup handlers. */
+const discardWarmSocket = () => {
+  const socket = warmSocket;
+  warmSocket = null;
+  cancelWarmup();
+  socket?.disconnect();
+  // Also releases the transport's offline listener.
+  socket?.off();
+};
+
+// Dial the plain WebSocket transport while React is still preparing to mount.
+// The session stays closed until connect() installs all its handlers. The
+// socket.io transports load their client on connect, so they are not warmed.
+// Defer past module evaluation because context.js imports this module too.
+if (typeof window !== "undefined") {
+  queueMicrotask(() => {
+    if (
+      socketStarted ||
+      env.TRANSPORT !== "websocket" ||
+      Object.keys(app.initialState ?? {}).length <= 1 ||
+      isBackendDisabled() ||
+      document.visibilityState === "hidden"
+    ) {
+      return;
+    }
+    try {
+      warmSocket = createSocket(getBackendURL(EVENTURL), peekToken());
+    } catch {
+      // Speculative setup may fail (for example, blocked session storage).
+      // The normal connection path will report failures when the app mounts.
+      return;
+    }
+    const timeout = setTimeout(discardWarmSocket, 10000);
+    window.addEventListener("pagehide", discardWarmSocket);
+    cancelWarmup = () => {
+      clearTimeout(timeout);
+      window.removeEventListener("pagehide", discardWarmSocket);
+    };
+    // A dial that fails leaves nothing to clean up: connect() dials again.
+    warmSocket.open();
+  });
+}
+
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    socketStarted = true;
+    discardWarmSocket();
+  });
+}
+
+/**
  * Determine if any event in the event queue is stateful.
  *
  * @returns True if there's any event that requires state and False if none of them do.
@@ -161,7 +260,8 @@ export const isStateful = () => {
   return event_queue.some(
     (event) =>
       typeof event?.name === "string" &&
-      event.name.startsWith("reflex___state"),
+      (event.name.startsWith("reflex___state") ||
+        event.name === SYNC_LOCAL_STORAGE),
   );
 };
 
@@ -247,6 +347,19 @@ function urlFrom(string) {
   }
   return undefined;
 }
+
+/**
+ * Build the update_vars_internal event for a synced localStorage var.
+ *
+ * The value is read when the event is sent, so it and the write count recorded
+ * with it come from the same moment.
+ * @param payload The storage name and state key of the var.
+ * @returns The update_vars_internal event.
+ */
+const syncLocalStorageEvent = ({ key, state_key }) =>
+  ReflexEvent(`${app.state_name}.${UPDATE_VARS_INTERNAL}`, {
+    vars: { [state_key]: localStorage.getItem(key) },
+  });
 
 /**
  * Handle frontend event or send the event to the backend via Websocket.
@@ -431,7 +544,28 @@ export const applyEvent = async (event, socket, navigate, params) => {
     return;
   }
 
-  // Update token and router data (if missing).
+  // Send the event to the server.
+  if (socket) {
+    const routed_event = withRouterData(
+      event.name == SYNC_LOCAL_STORAGE
+        ? syncLocalStorageEvent(event.payload)
+        : event,
+      params,
+    );
+    recordSentStorageValues(routed_event);
+    // Instrumentation hook (installed by reflex-otel): may add a traceparent.
+    window.__reflex_otel?.onEventSend?.(routed_event);
+    socket.emit("event", routed_event);
+  }
+};
+
+/**
+ * Fill in the event's router data from the current location, if missing.
+ * @param event The event to send.
+ * @param params The params object from useParams
+ * @returns The same event, with router_data populated.
+ */
+const withRouterData = (event, params) => {
   if (
     event.router_data === undefined ||
     Object.keys(event.router_data).length === 0
@@ -459,13 +593,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
       event.router_data.query = query;
     }
   }
-
-  // Send the event to the server.
-  if (socket) {
-    // Instrumentation hook (installed by reflex-otel): may add a traceparent.
-    window.__reflex_otel?.onEventSend?.(event);
-    socket.emit("event", event);
-  }
+  return event;
 };
 
 /**
@@ -615,15 +743,37 @@ export const connect = async (
   const endpoint = getBackendURL(EVENTURL);
   const on_hydrated_queue = [];
 
-  // Create the socket.
+  // The hydrate event rides in the connect request (the plain WebSocket's
+  // connect frame, or the socket.io CONNECT packet), so the backend starts
+  // loading state as soon as the session opens instead of after an extra
+  // round trip for its acknowledgement. The key is read by the backend as
+  // CompileVars.CONNECT_AUTH_EVENT.
+  const bootAuth = (first) => {
+    const boot_event = withRouterData(app.initialEvents(first)[0], params);
+    recordSentStorageValues(boot_event);
+    // Instrumentation hook (installed by reflex-otel): may add a traceparent.
+    window.__reflex_otel?.onEventSend?.(boot_event);
+    return { event: boot_event };
+  };
+
+  // Create the socket. A new session's token is saved here, once the app has
+  // mounted, even when a transport warmed up with it earlier.
+  socketStarted = true;
   const transport = transports[0];
   try {
+    const session_token = getToken();
+    if (
+      warmSocket &&
+      (transport !== "websocket" ||
+        warmSocket.io.opts.query.token !== session_token)
+    ) {
+      discardWarmSocket();
+    }
     if (transport === "websocket") {
       // Default transport: plain WebSocket speaking the Reflex event protocol.
-      socket.current = new ReflexWebSocket(endpoint.href, {
-        query: { token: getToken() },
-        protocols: [reflexEnvironment.version],
-      });
+      socket.current = warmSocket ?? createSocket(endpoint, session_token);
+      warmSocket = null;
+      cancelWarmup();
     } else {
       // Socket.IO transport ("socketio" over websocket, or "polling"); the
       // client library is only loaded when this transport is configured.
@@ -633,11 +783,12 @@ export const connect = async (
         return;
       }
       socket.current = io(endpoint.href, {
-        path: endpoint["pathname"],
+        path: endpoint.pathname,
         transports: [transport === "socketio" ? "websocket" : transport],
         protocols: [reflexEnvironment.version],
         autoUnref: false,
-        query: { token: getToken() },
+        autoConnect: false,
+        query: { token: session_token },
         reconnection: false, // Reconnection will be handled manually.
       });
       // Ensure undefined fields in events are sent as null instead of removed
@@ -653,6 +804,7 @@ export const connect = async (
   } finally {
     socket.connecting = false;
   }
+  socket.current.auth = bootAuth(true);
   socket.current.wait_connect = !socket.current.connected;
   // Set up a reconnect helper function
   socket.current.reconnect = () => {
@@ -662,8 +814,9 @@ export const connect = async (
       !socket.current.wait_connect
     ) {
       socket.current.wait_connect = true;
-      socket.current.rehydrate = true;
       socket.current.io.opts.query = { token: getToken() }; // Update token for reconnect.
+      // A reconnect rehydrates in full: the reducers no longer hold the defaults.
+      socket.current.auth = bootAuth(false);
       socket.current.connect();
     }
   };
@@ -715,10 +868,6 @@ export const connect = async (
     window.__reflex_otel?.onSocketConnect?.();
     window.addEventListener("pagehide", pagehideHandler);
     window.addEventListener("beforeunload", disconnectTrigger);
-    if (socket.current.rehydrate) {
-      socket.current.rehydrate = false;
-      queueEvents(app.initialEvents(), socket, true, navigate, params);
-    }
     // Drain any initial events from the queue.
     while (event_queue.length > 0) {
       await processEvent(socket.current, navigate, params);
@@ -834,6 +983,7 @@ export const connect = async (
   // surviving listener would resurrect a transport for the unmounted hook.
   socket.visibilityHandler = checkVisibility;
   document.addEventListener("visibilitychange", checkVisibility);
+  socket.current.connect();
 };
 
 /**
@@ -961,6 +1111,48 @@ export const hydrateClientStorage = (client_storage) => {
 };
 
 /**
+ * Remember the synced localStorage values an event sends, to recognise their echoes.
+ *
+ * Only synced vars: the tab sends another tab's newer value only for those.
+ * @param event The event about to be sent.
+ */
+const recordSentStorageValues = (event) => {
+  // ReflexEvent leaves out an empty payload.
+  const vars = event.payload?.vars;
+  if (
+    vars === undefined ||
+    (event.name !== `${app.state_name}.hydrate_and_load` &&
+      event.name !== `${app.state_name}.${UPDATE_VARS_INTERNAL}`)
+  ) {
+    return;
+  }
+  const local_storage = app.clientStorage.local_storage;
+  for (const [state_key, value] of Object.entries(vars)) {
+    if (!local_storage?.[state_key]?.sync) {
+      continue;
+    }
+    const sent = (sentStorageValues[state_key] ??= []);
+    sent.push({ value, writes: localStorageWrites });
+    if (sent.length > MAX_SENT_STORAGE_VALUES) {
+      sent.shift();
+    }
+  }
+};
+
+/**
+ * Take the sent value that a backend value echoes, and the older ones with it.
+ * @param state_key The state key of the browser storage var.
+ * @param value The value the backend sent for it.
+ * @returns The sent value's entry, or undefined if the value is no echo.
+ */
+const takeEcho = (state_key, value) => {
+  const sent = sentStorageValues[state_key];
+  const index = sent?.findIndex((entry) => entry.value === value) ?? -1;
+  // Older values were echoed already, or changed by an override on the way.
+  return index === -1 ? undefined : sent.splice(0, index + 1)[index];
+};
+
+/**
  * Update client storage values based on backend state delta.
  * @param client_storage The client storage object from context.js
  * @param delta The state update from the backend
@@ -985,28 +1177,41 @@ const applyClientStorageDelta = (client_storage, delta) => {
   for (const substate in delta) {
     for (const key in delta[substate]) {
       const state_key = `${substate}.${key}`;
+      const value = delta[substate][key];
       if (client_storage.cookies && state_key in client_storage.cookies) {
         const cookie_options = { ...client_storage.cookies[state_key] };
         const cookie_name = cookie_options.name || state_key;
         delete cookie_options.name; // name is not a valid cookie option
-        cookies.set(cookie_name, delta[substate][key], cookie_options);
+        cookies.set(cookie_name, value, cookie_options);
       } else if (
         client_storage.local_storage &&
         state_key in client_storage.local_storage &&
         typeof window !== "undefined"
       ) {
-        const options = client_storage.local_storage[state_key];
-        localStorage.setItem(options.name || state_key, delta[substate][key]);
+        const name = client_storage.local_storage[state_key].name || state_key;
+        const echo = takeEcho(state_key, value);
+        const last = lastLocalStorageWrites[name];
+        // Write an echo only over this tab's own later write, which the backend
+        // applied before the echoed event. Otherwise storage holds the sent
+        // value or another tab's newer one.
+        if (
+          !echo ||
+          (last?.writes > echo.writes &&
+            localStorage.getItem(name) === last.value)
+        ) {
+          localStorage.setItem(name, value);
+          lastLocalStorageWrites[name] = {
+            value,
+            writes: ++localStorageWrites,
+          };
+        }
       } else if (
         client_storage.session_storage &&
         state_key in client_storage.session_storage &&
         typeof window !== "undefined"
       ) {
         const session_options = client_storage.session_storage[state_key];
-        sessionStorage.setItem(
-          session_options.name || state_key,
-          delta[substate][key],
-        );
+        sessionStorage.setItem(session_options.name || state_key, value);
       }
     }
   }
@@ -1106,14 +1311,6 @@ export const useEventLoop = (
     );
   }, []);
 
-  const sentHydrate = useRef(false); // Avoid double-hydrate due to React strict-mode
-  useEffect(() => {
-    if (!sentHydrate.current) {
-      queueEvents(initial_events(), socket, true, navigate, params);
-      sentHydrate.current = true;
-    }
-  }, []);
-
   // Handle frontend errors and send them to the backend via websocket.
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -1205,14 +1402,14 @@ export const useEventLoop = (
 
     // e is StorageEvent
     const handleStorage = (e) => {
-      if (storage_to_state_map[e.key]) {
-        const vars = {};
-        vars[storage_to_state_map[e.key]] = e.newValue;
-        const event = ReflexEvent(
-          `${app.state_name}.reflex___state____update_vars_internal_state.update_vars_internal`,
-          { vars: vars },
+      const state_key = storage_to_state_map[e.key];
+      // Session storage changes in same-origin frames raise storage events too.
+      if (state_key && e.storageArea === localStorage) {
+        // The value is read when the event is sent: see syncLocalStorageEvent.
+        addEvents(
+          [ReflexEvent(SYNC_LOCAL_STORAGE, { key: e.key, state_key })],
+          e,
         );
-        addEvents([event], e);
       }
     };
 
@@ -1542,7 +1739,7 @@ export const mergeSlotProps = (injectedProps, ownProps, refProp) => {
  */
 export const getRefValue = (ref) => {
   if (!ref || !ref.current) {
-    return;
+    return null;
   }
   if (ref.current.type == "checkbox") {
     return ref.current.checked; // chakra
@@ -1557,10 +1754,10 @@ export const getRefValue = (ref) => {
   } else {
     //querySelector(":checked") is needed to get value from radio_group
     return (
-      ref.current.value ||
+      ref.current.value ??
       (ref.current.querySelector &&
-        ref.current.querySelector(":checked") &&
-        ref.current.querySelector(":checked")?.value)
+        ref.current.querySelector(":checked")?.value) ??
+      null
     );
   }
 };

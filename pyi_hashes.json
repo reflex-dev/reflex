@@ -27,7 +27,7 @@
   "packages/reflex-components-core/src/reflex_components_core/el/element.pyi": "930b020d7c933ab0e29ba7971ba1abd2",
   "packages/reflex-components-core/src/reflex_components_core/el/elements/__init__.pyi": "ded6fc0acc37c9260da5cfd5f4309079",
   "packages/reflex-components-core/src/reflex_components_core/el/elements/base.pyi": "d075a1420b5a08cccd45aa58599ab3dc",
-  "packages/reflex-components-core/src/reflex_components_core/el/elements/forms.pyi": "42b0e8e04b79d7aa78d16b4f9ad39cef",
+  "packages/reflex-components-core/src/reflex_components_core/el/elements/forms.pyi": "c0ccd355f1e31a799069a1fb2207dac2",
   "packages/reflex-components-core/src/reflex_components_core/el/elements/inline.pyi": "c4085b9ee43847b6765cbf775341bc0b",
   "packages/reflex-components-core/src/reflex_components_core/el/elements/media.pyi": "c2515454828415b78799f0ee0fb7a6af",
   "packages/reflex-components-core/src/reflex_components_core/el/elements/metadata.pyi": "2d8d722c68f5a3082c0d3fa4883bb5c0",
@@ -113,12 +113,12 @@
   "packages/reflex-components-react-player/src/reflex_components_react_player/video.pyi": "2682dc6e825d25307d8390d01e2bd653",
   "packages/reflex-components-recharts/src/reflex_components_recharts/__init__.pyi": "3d12b679c0e1d709e7ca4f6937f4b015",
   "packages/reflex-components-recharts/src/reflex_components_recharts/cartesian.pyi": "c2d64b76a8c6bdbb9258f3dad477b95f",
-  "packages/reflex-components-recharts/src/reflex_components_recharts/charts.pyi": "23a5a3670cb1070f733a2d0c65623733",
+  "packages/reflex-components-recharts/src/reflex_components_recharts/charts.pyi": "943c9aa84c7fb9b85c62457b6d7b249d",
   "packages/reflex-components-recharts/src/reflex_components_recharts/general.pyi": "fe22b3cf69e9ae3d425cc88c3511525b",
   "packages/reflex-components-recharts/src/reflex_components_recharts/polar.pyi": "99ebcfc07868061bdc3c2010d85a153f",
   "packages/reflex-components-recharts/src/reflex_components_recharts/recharts.pyi": "f2a9cf6db58d169289fbc76de6813300",
   "packages/reflex-components-sonner/src/reflex_components_sonner/toast.pyi": "f170ac685b6ba5892370166c80684db3",
-  "reflex/__init__.pyi": "844f5dc53b5330896bff479f94a0da74",
+  "reflex/__init__.pyi": "decf975d65b0735dc8395eb0595a56d1",
   "reflex/components/__init__.pyi": "9facd05a776d0641432696bbf8e34388",
-  "reflex/experimental/memo.pyi": "b7e1894c191f9c65de79bbc23ad64314"
+  "reflex/experimental/memo.pyi": "87e485038dc79f66b2ab15144845ef1e"
 }

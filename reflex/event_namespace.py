@@ -35,6 +35,7 @@ logger = logging.getLogger(__name__)
 # Protocol-level message names for the plain WebSocket transport. These are
 # reserved (underscore-prefixed) and never dispatched as application events.
 # They must match the names in .templates/web/utils/helpers/websocket.js.
+CONNECT_MESSAGE = "_connect"
 HANDSHAKE_MESSAGE = "_handshake"
 PING_MESSAGE = "_ping"
 PONG_MESSAGE = "_pong"
@@ -102,6 +103,42 @@ def build_static_router_data(sid: str, asgi_scope: Mapping[str, Any]) -> dict[st
         constants.RouteVar.HEADERS: headers,
         constants.RouteVar.CLIENT_IP: client_ip,
     }
+
+
+def connect_boot_event(auth: Any) -> Any:
+    """Get the boot event a session's connect carries.
+
+    The frontend sends its hydrate event with the connect, so the backend
+    processes it without waiting for the connect acknowledgement round trip.
+
+    Args:
+        auth: The connect payload.
+
+    Returns:
+        The boot event, or None if the connect carries none.
+    """
+    return (
+        auth.get(constants.CompileVars.CONNECT_AUTH_EVENT)
+        if isinstance(auth, dict)
+        else None
+    )
+
+
+def _parse_frame(text: str) -> Any:
+    """Parse a text frame.
+
+    Args:
+        text: The raw frame text.
+
+    Returns:
+        The decoded JSON, or None if the text is not JSON.
+    """
+    try:
+        return json.loads(text)
+    except (json.JSONDecodeError, RecursionError):
+        # Deeply nested JSON exhausts the decoder's stack rather than failing
+        # to parse; both are just a malformed frame here.
+        return None
 
 
 def utf8_size(data: str | bytes) -> int:
@@ -379,7 +416,12 @@ class BaseEventNamespace(ABC):
         """
 
     async def handle_connect(
-        self, sid: str, query_string: str, subprotocol: str | None
+        self,
+        sid: str,
+        query_string: str,
+        subprotocol: str | None,
+        *,
+        update_state: bool = True,
     ) -> None:
         """Handle a new client session connecting.
 
@@ -387,6 +429,8 @@ class BaseEventNamespace(ABC):
             sid: The session id.
             query_string: The raw query string of the connection request.
             subprotocol: The websocket subprotocol offered by the client.
+            update_state: Whether to record the new sid and token on the state;
+                see link_token_to_sid.
         """
         if otel.enabled:
             otel.record_connection(1)
@@ -400,7 +444,7 @@ class BaseEventNamespace(ABC):
             # session, so a warning per hostile connect would only flood logs.
             logger.debug(f"No token provided in connection for session {sid}.")
             return
-        await self.link_token_to_sid(sid, token_list[0])
+        await self.link_token_to_sid(sid, token_list[0], update_state=update_state)
         # Only report the version for linked sessions; the value is
         # client-controlled, so sanitize it before it reaches the logs.
         if subprotocol and subprotocol != constants.Reflex.VERSION:
@@ -636,12 +680,18 @@ class BaseEventNamespace(ABC):
         # handlers (e.g. error trackers) receive client errors too.
         self.app.frontend_exception_handler(Exception(report))
 
-    async def link_token_to_sid(self, sid: str, token: str):
+    async def link_token_to_sid(
+        self, sid: str, token: str, *, update_state: bool = True
+    ):
         """Link a token to a session id.
 
         Args:
             sid: The session id.
             token: The client token.
+            update_state: Whether to record the new sid and token on the state
+                now. A connect that carries the boot event skips it: processed
+                as the session's first event, that records them without an
+                extra load and save of the whole state tree.
         """
         # Use TokenManager for duplicate detection and Redis support
         new_token = await self._token_manager.link_token_to_sid(token, sid)
@@ -651,7 +701,7 @@ class BaseEventNamespace(ABC):
             await self.emit("new_token", new_token, to=sid)
 
         # Update client state to apply new sid/token for running background tasks.
-        if self.app._state is not None:
+        if update_state and self.app._state is not None:
             async with self.app.state_manager.modify_state(
                 BaseStateToken(ident=new_token or token, cls=self.app._state)
             ) as state:
@@ -1036,12 +1086,7 @@ class WebsocketEventNamespace(BaseEventNamespace):
         """
         if (close_code := self._accept_inbound(sid, text, max_size)) is not None:
             return close_code
-        try:
-            message = json.loads(text)
-        except (json.JSONDecodeError, RecursionError):
-            # Deeply nested JSON exhausts the decoder's stack rather than
-            # failing to parse; both are just a malformed frame here.
-            message = None
+        message = _parse_frame(text)
         if (
             not isinstance(message, list)
             or not message
@@ -1089,6 +1134,65 @@ class WebsocketEventNamespace(BaseEventNamespace):
             )
         return None
 
+    async def _receive_connect(
+        self, sid: str, websocket: WebSocket, timeout: float, max_size: int
+    ) -> list[Any] | None:
+        """Read the frame that opens a session, closing the socket on anything else.
+
+        Args:
+            sid: The session id.
+            websocket: The client websocket connection.
+            timeout: Seconds to wait for the frame.
+            max_size: The message size limit in bytes.
+
+        Returns:
+            The connect frame, or None once the socket is closed.
+        """
+        try:
+            received = await asyncio.wait_for(websocket.receive(), timeout)
+        except TimeoutError:
+            logger.debug(f"Closing session {sid}: no connect frame.")
+            await self._close_quietly(websocket, 1008)
+            return None
+        if received["type"] == "websocket.disconnect":
+            return None
+        if (text := received.get("text")) is not None:
+            if (close_code := self._accept_inbound(sid, text, max_size)) is not None:
+                await self._close_quietly(websocket, close_code)
+                return None
+            message = _parse_frame(text)
+            if isinstance(message, list) and message and message[0] == CONNECT_MESSAGE:
+                return message
+        # A Reflex client opens every session with a connect frame.
+        logger.debug(f"Closing session {sid}: expected a connect frame.")
+        await self._close_quietly(websocket, 1002)
+        return None
+
+    async def _handle_boot_event(
+        self, sid: str, boot_event: Any, scope: MutableMapping[str, Any]
+    ) -> int | None:
+        """Dispatch the boot event of a connect frame as the session's first event.
+
+        Args:
+            sid: The session id.
+            boot_event: The boot event.
+            scope: The ASGI scope of the client connection.
+
+        Returns:
+            The websocket close code the session must end with, or None to
+            keep serving it.
+        """
+        try:
+            await self.handle_event(sid, boot_event, scope)
+        except exceptions.EventDeserializationError:
+            logger.debug(f"Closing session {sid}: undeserializable boot event.")
+            return 1002
+        except Exception as exc:
+            self._log_handler_failure(
+                sid, f"Error handling the boot event for session {sid}.", exc
+            )
+        return None
+
     async def handle_websocket(self, websocket: WebSocket) -> None:
         """Serve one client websocket connection for its full lifetime.
 
@@ -1108,6 +1212,17 @@ class WebsocketEventNamespace(BaseEventNamespace):
         ping_interval = environment.REFLEX_SOCKET_INTERVAL.get().total_seconds()
         ping_timeout = environment.REFLEX_SOCKET_TIMEOUT.get().total_seconds()
         max_message_size = environment.REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE.get()
+        # The client sends its connect frame on open, without waiting for the
+        # handshake, so the boot event it carries saves that round trip. A
+        # socket that never sends one ends within the heartbeat window.
+        connect_frame = await self._receive_connect(
+            sid, websocket, ping_interval + ping_timeout, max_message_size
+        )
+        if connect_frame is None:
+            return
+        boot_event = connect_boot_event(
+            connect_frame[1] if len(connect_frame) > 1 else None
+        )
         self._sockets[sid] = websocket
         last_received = time.monotonic()
 
@@ -1127,8 +1242,18 @@ class WebsocketEventNamespace(BaseEventNamespace):
             heartbeat(), name=f"reflex_heartbeat|{sid}"
         )
         try:
-            # The handshake confirms application-level liveness and carries the
-            # heartbeat settings for the client's connection watchdog.
+            await self.handle_connect(
+                sid,
+                websocket.scope.get("query_string", b"").decode(),
+                subprotocols[0] if subprotocols else None,
+                update_state=boot_event is None,
+            )
+            if sid not in self._token_manager.sid_to_token:
+                # No token was linked; not a Reflex client.
+                await self._close_quietly(websocket, 1008)
+                return
+            # The handshake acknowledges the connect and carries the heartbeat
+            # settings for the client's connection watchdog.
             await websocket.send_text(
                 format.json_dumps([
                     HANDSHAKE_MESSAGE,
@@ -1142,14 +1267,16 @@ class WebsocketEventNamespace(BaseEventNamespace):
                     },
                 ])
             )
-            await self.handle_connect(
-                sid,
-                websocket.scope.get("query_string", b"").decode(),
-                subprotocols[0] if subprotocols else None,
-            )
-            if sid not in self._token_manager.sid_to_token:
-                # No token was linked; not a Reflex client.
-                await self._close_quietly(websocket, 1008)
+            if (
+                boot_event is not None
+                and (
+                    close_code := await self._handle_boot_event(
+                        sid, boot_event, websocket.scope
+                    )
+                )
+                is not None
+            ):
+                await self._close_quietly(websocket, close_code)
                 return
             while True:
                 received = await websocket.receive()

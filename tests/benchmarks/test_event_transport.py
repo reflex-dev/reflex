@@ -18,7 +18,7 @@ import pytest
 import pytest_asyncio
 from pytest_codspeed import BenchmarkFixture
 
-from reflex.event_namespace import WebsocketEventNamespace
+from reflex.event_namespace import CONNECT_MESSAGE, WebsocketEventNamespace
 from reflex.state import StateUpdate
 
 NUM_MESSAGES = 100
@@ -121,7 +121,10 @@ async def websocket_inbound():  # noqa: RUF029 - async so it runs on the benchma
     with mock.patch("reflex.utils.prerequisites.check_redis_used", return_value=False):
         app = _make_app()
         namespace = WebsocketEventNamespace(NAMESPACE, app)  # pyright: ignore[reportArgumentType]
-        frames = [json.dumps(["event", _EVENT_FIELDS])] * NUM_MESSAGES
+        frames = [
+            json.dumps([CONNECT_MESSAGE]),
+            *[json.dumps(["event", _EVENT_FIELDS])] * NUM_MESSAGES,
+        ]
 
         async def run() -> None:
             websocket = FakeWebSocket(frames)

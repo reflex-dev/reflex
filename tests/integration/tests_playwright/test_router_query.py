@@ -21,10 +21,13 @@ from __future__ import annotations
 
 import json
 import re
-from collections.abc import Generator
+from collections.abc import Generator, Iterator
+from typing import Any
+from urllib.parse import urlsplit
 
 import pytest
 from playwright.sync_api import Page, expect
+from reflex_base.config import get_config
 from reflex_base.constants.state import FIELD_MARKER
 
 from reflex.testing import AppHarness
@@ -46,6 +49,7 @@ def RouterQueryApp():
         # Incremented by an explicit, non-navigation event used to flush the
         # next round-trip to the backend.
         ping_count: int = 0
+        credentials_seen: bool = False
 
         @rx.var
         def query_str(self) -> str:
@@ -88,6 +92,25 @@ def RouterQueryApp():
         def ping(self):
             """Send an explicit, non-navigation event to the backend."""
             self.ping_count += 1
+            self.credentials_seen = (
+                "privacy-test=" in self.router.headers.cookie
+                and self.router.headers.raw_headers.get("cookie")
+                == self.router.headers.cookie
+                and self.router.headers.raw_headers.get("authorization")
+                == "Basic AUTHSECRET"
+                and self.router.headers.raw_headers.get("cf-access-jwt-assertion")
+                == "CFJWTSECRET"
+                and self.router.headers.raw_headers.get("x-auth-request-access-token")
+                == "OAUTHSECRET"
+                and self.router.headers.raw_headers.get("x-forwarded-access-token")
+                == "FORWARDEDSECRET"
+                and self.router.headers.raw_headers.get("x-amzn-oidc-accesstoken")
+                == "ALBACCESSSECRET"
+                and self.router.headers.raw_headers.get("x-amzn-oidc-data")
+                == "ALBDATASECRET"
+                and self.router.headers.raw_headers.get("x-goog-iap-jwt-assertion")
+                == "IAPSECRET"
+            )
 
         @rx.event
         def do_redirect(self, target: str):
@@ -160,10 +183,36 @@ def RouterQueryApp():
                 read_only=True,
                 id="ping-count",
             ),
+            rx.input(
+                value=f"{RouterQueryState.credentials_seen}",
+                read_only=True,
+                id="credentials-seen",
+            ),
+            rx.input(
+                value=RouterQueryState.router.headers.cookie,
+                read_only=True,
+                id="cookie-attribute",
+            ),
+            rx.input(
+                value=RouterQueryState.router
+                .headers["cookie"]
+                .to(str)
+                .contains("privacy-test")
+                .to_string(),
+                read_only=True,
+                id="cookie-item",
+            ),
         )
 
     app = rx.App()
-    app.add_page(index, route="/", on_load=RouterQueryState.on_load)
+    app.add_page(
+        index,
+        route="/",
+        on_load=[
+            RouterQueryState.on_load,
+            rx.call_script("window.__privacy_on_load = true"),
+        ],
+    )
 
 
 @pytest.fixture(scope="module")
@@ -207,7 +256,32 @@ def _load(harness: AppHarness, page: Page) -> str:
     expect(page.locator("#token")).not_to_have_value("")
     # The initial page load fires on_load exactly once.
     expect(page.locator("#load-count")).to_have_value("1")
+    page.wait_for_function("window.__privacy_on_load === true")
     return base
+
+
+def _state_updates(frames: list[str | bytes]) -> Iterator[dict[str, Any]]:
+    """Yield the state updates among frames received on the default transport.
+
+    Its frames are JSON arrays, [event_name, payload].
+
+    Args:
+        frames: The received websocket frames.
+
+    Yields:
+        The payload of each state update.
+    """
+    for frame in frames:
+        if not isinstance(frame, str):
+            continue
+        message = json.loads(frame)
+        if (
+            isinstance(message, list)
+            and len(message) == 2
+            and message[0] == "event"
+            and isinstance(message[1], dict)
+        ):
+            yield message[1]
 
 
 def test_initial_connection_dispatches_both_substates(
@@ -228,16 +302,7 @@ def test_initial_connection_dispatches_both_substates(
     _load(router_query_app, page)
     expect(page.locator("#connected-count")).to_have_value("1")
 
-    # Frames on the default transport are JSON arrays, [event_name, payload].
-    for frame in frames:
-        if not isinstance(frame, str):
-            continue
-        message = json.loads(frame)
-        if not isinstance(message, list) or len(message) != 2:
-            continue
-        event, update = message
-        if event != "event" or not isinstance(update, dict):
-            continue
+    for update in _state_updates(frames):
         updated_substates = sum(
             fields.get("load_count" + FIELD_MARKER) == 1
             or fields.get("connected_count" + FIELD_MARKER) == 1
@@ -247,6 +312,72 @@ def test_initial_connection_dispatches_both_substates(
             break
     else:
         pytest.fail("The initial on-load update did not contain both substates")
+
+
+def test_request_credentials_stay_server_side(router_query_app: AppHarness, page: Page):
+    """Hydration and events omit credentials while server handlers can read them.
+
+    Args:
+        router_query_app: Running application in dev or production mode.
+        page: Browser page receiving state updates.
+    """
+    assert router_query_app.frontend_url is not None
+    secret = "opaque-cookie-privacy-secret"
+    api = urlsplit(get_config().api_url)
+    frontend = urlsplit(router_query_app.frontend_url)
+    # Use the backend hostname so the browser sends its SameSite cookie.
+    url = frontend._replace(netloc=f"{api.hostname}:{frontend.port}").geturl()
+    page.context.add_cookies([
+        {
+            "name": "privacy-test",
+            "value": secret,
+            "url": api.geturl(),
+            "httpOnly": True,
+            "sameSite": "Lax",
+        }
+    ])
+    credential_headers = {
+        "Authorization": "Basic AUTHSECRET",
+        "Cf-Access-Jwt-Assertion": "CFJWTSECRET",
+        "X-Auth-Request-Access-Token": "OAUTHSECRET",
+        "X-Forwarded-Access-Token": "FORWARDEDSECRET",
+        "X-Amzn-Oidc-Accesstoken": "ALBACCESSSECRET",
+        "X-Amzn-Oidc-Data": "ALBDATASECRET",
+        "X-Goog-IAP-JWT-Assertion": "IAPSECRET",
+    }
+    page.context.set_extra_http_headers(credential_headers)
+    frames: list[str | bytes] = []
+    page.on(
+        "websocket",
+        lambda socket: socket.on("framereceived", lambda frame: frames.append(frame)),
+    )
+
+    page.goto(url)
+    expect(page.locator("#load-count")).to_have_value("1")
+    expect(page.locator("#cookie-attribute")).to_have_value("")
+    expect(page.locator("#cookie-item")).to_have_value("false")
+    page.click("#ping")
+    expect(page.locator("#credentials-seen")).to_have_value("true")
+    assert "privacy-test" not in page.evaluate("document.cookie")
+
+    for frame in frames:
+        decoded = frame.decode() if isinstance(frame, bytes) else frame
+        assert secret not in decoded
+        for credential in credential_headers.values():
+            assert credential not in decoded
+    received_headers = [
+        fields["rx_router_headers" + FIELD_MARKER]
+        for update in _state_updates(frames)
+        for fields in update.get("delta", {}).values()
+        if "rx_router_headers" + FIELD_MARKER in fields
+    ]
+    assert received_headers, "Hydration did not include the request headers"
+    for headers in received_headers:
+        assert "cookie" not in headers
+        assert "cookie" not in headers["raw_headers"]
+        assert not {header.lower() for header in credential_headers}.intersection(
+            headers["raw_headers"]
+        )
 
 
 def test_replace_state_is_not_reactive_but_next_event_syncs(

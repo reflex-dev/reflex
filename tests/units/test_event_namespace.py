@@ -29,6 +29,7 @@ from reflex.channels import (
 from reflex.event_namespace import (
     CHANNEL_ERROR_MESSAGE,
     CLOSE_MESSAGE,
+    CONNECT_MESSAGE,
     HANDSHAKE_MESSAGE,
     OPEN_MESSAGE,
     OPENED_MESSAGE,
@@ -45,6 +46,9 @@ from reflex.utils import format
 from .conftest import active_tracer, metric_points
 
 _DISCONNECT = object()
+
+# A connect frame without a boot event.
+CONNECT_FRAME = [CONNECT_MESSAGE]
 
 WEB_TEMPLATE_ROOT = (
     Path(__file__).parents[2] / "packages/reflex-base/src/reflex_base/.templates/web"
@@ -115,9 +119,12 @@ class FakeWebSocket:
             return {"type": "websocket.receive", "bytes": item}
         return {"type": "websocket.receive", "text": item}
 
-    def feed(self, *frames: Any):
-        """Queue incoming frames (lists are JSON-encoded) and a disconnect."""
-        for frame in frames:
+    def feed(self, *frames: Any, connect: bool = True):
+        """Queue incoming frames (lists are JSON-encoded) and a disconnect.
+
+        The session's connect frame goes first unless ``connect`` is False.
+        """
+        for frame in (CONNECT_FRAME, *frames) if connect else frames:
             self._incoming.put_nowait(
                 frame if isinstance(frame, (str, bytes)) else json.dumps(frame)
             )
@@ -160,7 +167,7 @@ async def _drain_tasks():
 
 @pytest.mark.asyncio
 async def test_handshake_and_token_link(namespace: WebsocketEventNamespace):
-    """The server sends the handshake first and links the token from the query."""
+    """The server links the token from the query, then acknowledges with the handshake."""
     websocket = FakeWebSocket(subprotocols=["0.0.1"])
     websocket.feed()
     await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
@@ -178,6 +185,141 @@ async def test_handshake_and_token_link(namespace: WebsocketEventNamespace):
     await _drain_tasks()
     # The session was linked and unlinked again on disconnect.
     assert "tok1" not in namespace.token_to_sid
+
+
+@pytest.mark.asyncio
+async def test_boot_event_is_the_sessions_first_event(
+    namespace: WebsocketEventNamespace, mock_app: Mock
+):
+    """The boot event in the connect frame is processed right after the handshake.
+
+    As the session's first event it records the new sid and token on the
+    state, so the connect does not load and save the state tree for that; a
+    connect without a boot event still does.
+    """
+    mock_app._state = Mock()
+    modify_state = mock_app.state_manager.modify_state = Mock(
+        return_value=AsyncMock(__aenter__=AsyncMock(return_value=Mock(router_data={})))
+    )
+    boot_event = {"name": "state.hydrate_and_load", "payload": {}, "router_data": {}}
+    click = {"name": "state.on_click", "payload": {}, "router_data": {}}
+    websocket = FakeWebSocket()
+    websocket.feed(
+        [CONNECT_MESSAGE, {"event": boot_event}], ["event", click], connect=False
+    )
+    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
+    await _drain_tasks()
+
+    assert websocket.sent[0][0] == HANDSHAKE_MESSAGE
+    assert [
+        call.args[1].name for call in mock_app.event_processor.enqueue.await_args_list
+    ] == ["state.hydrate_and_load", "state.on_click"]
+    modify_state.assert_not_called()
+
+    websocket = FakeWebSocket()
+    websocket.feed()
+    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
+    await _drain_tasks()
+
+    modify_state.assert_called_once()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("frames", "close_code"),
+    [
+        ([["ping"]], 1002),
+        (["not json"], 1002),
+        ([[42]], 1002),
+        ([b"\x00"], 1002),
+        # The client went away before opening a session.
+        ([], None),
+    ],
+)
+async def test_session_opens_only_with_a_connect_frame(
+    namespace: WebsocketEventNamespace,
+    frames: list[Any],
+    close_code: int | None,
+):
+    """A socket whose first frame is no connect frame never links a token."""
+    websocket = FakeWebSocket()
+    websocket.feed(*frames, connect=False)
+    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
+    await _drain_tasks()
+
+    assert websocket.close_code == close_code
+    assert websocket.sent == []
+    assert namespace.token_to_sid == {}
+    assert namespace._sockets == {}
+
+
+@pytest.mark.asyncio
+async def test_socket_without_a_connect_frame_times_out(
+    namespace: WebsocketEventNamespace, monkeypatch: pytest.MonkeyPatch
+):
+    """A socket that never opens its session ends within the heartbeat window."""
+    monkeypatch.setenv("REFLEX_SOCKET_INTERVAL", "10ms")
+    monkeypatch.setenv("REFLEX_SOCKET_TIMEOUT", "10ms")
+    websocket = FakeWebSocket()
+    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
+
+    assert websocket.close_code == 1008
+    assert websocket.sent == []
+
+
+@pytest.mark.asyncio
+async def test_oversize_connect_frame_closes_connection(
+    namespace: WebsocketEventNamespace, monkeypatch: pytest.MonkeyPatch
+):
+    """The size limit applies to the connect frame too."""
+    monkeypatch.setenv("REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE", "10")
+    websocket = FakeWebSocket()
+    websocket.feed()
+    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
+
+    assert websocket.close_code == 1009
+    assert websocket.sent == []
+
+
+@pytest.mark.asyncio
+async def test_undeserializable_boot_event_closes_connection(
+    namespace: WebsocketEventNamespace, mock_app: Mock
+):
+    """A boot event that fails deserialization ends the session it opened."""
+    websocket = FakeWebSocket()
+    websocket.feed(
+        [CONNECT_MESSAGE, {"event": "not an event"}], ["ping"], connect=False
+    )
+    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
+    await _drain_tasks()
+
+    assert websocket.close_code == 1002
+    assert [frame[0] for frame in websocket.sent] == [HANDSHAKE_MESSAGE]
+    mock_app.event_processor.enqueue.assert_not_awaited()
+    assert "tok1" not in namespace.token_to_sid
+
+
+@pytest.mark.asyncio
+async def test_boot_event_handler_error_keeps_connection(
+    namespace: WebsocketEventNamespace,
+    mock_app: Mock,
+    caplog: pytest.LogCaptureFixture,
+):
+    """A server-side failure on the boot event is logged and the session survives."""
+    mock_app.event_processor.enqueue.side_effect = RuntimeError("server bug")
+    boot_event = {"name": "state.hydrate_and_load", "payload": {}, "router_data": {}}
+    websocket = FakeWebSocket()
+    websocket.feed([CONNECT_MESSAGE, {"event": boot_event}], ["ping"], connect=False)
+    with caplog.at_level(logging.ERROR, logger="reflex.event_namespace"):
+        await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
+    await _drain_tasks()
+
+    assert websocket.close_code is None
+    assert ["ping", "pong"] in websocket.sent
+    assert any(
+        "Error handling the boot event" in record.getMessage()
+        for record in caplog.records
+    )
 
 
 @pytest.mark.asyncio
@@ -319,7 +461,8 @@ async def test_tokenless_connection_rejected(
     await _drain_tasks()
 
     assert websocket.close_code == 1008
-    assert ["ping", "pong"] not in websocket.sent
+    # A refused session is never acknowledged.
+    assert websocket.sent == []
     assert all(record.levelno <= logging.DEBUG for record in caplog.records)
 
 
@@ -346,7 +489,7 @@ async def test_oversize_message_closes_connection(
     namespace: WebsocketEventNamespace, monkeypatch: pytest.MonkeyPatch
 ):
     """A frame over the size limit closes the connection with 1009."""
-    monkeypatch.setenv("REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE", "10")
+    monkeypatch.setenv("REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE", "20")
     websocket = FakeWebSocket()
     websocket.feed(["event", {"payload": "x" * 100}])
     await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
@@ -481,7 +624,7 @@ async def test_websocket_records_connections_and_message_sizes(
         for p in metric_points(otel_metrics, otel.METRIC_WEBSOCKET_MESSAGE_SIZE)
     }
     assert sizes == {
-        "receive": len(json.dumps(["ping"])),
+        "receive": len(json.dumps(CONNECT_FRAME)) + len(json.dumps(["ping"])),
         "transmit": len(format.json_dumps(["ping", "pong"])),
     }
 
@@ -596,6 +739,7 @@ def test_protocol_message_names_match_the_client():
     )
 
     assert declarations == {
+        "CONNECT_MESSAGE": CONNECT_MESSAGE,
         "HANDSHAKE_MESSAGE": HANDSHAKE_MESSAGE,
         "PING_MESSAGE": PING_MESSAGE,
         "PONG_MESSAGE": PONG_MESSAGE,
@@ -1526,9 +1670,10 @@ async def test_frames_from_a_session_whose_token_went_away_close_it(
     class LosesItsToken(FakeWebSocket):
         """Drops the token mapping once the channel is open and serving.
 
-        Not on the first frame: that one opens the channel, and losing the
-        token before it is dispatched would close the connection over the
-        open itself, leaving nothing for the frame under test to prove.
+        Not on the frame after the connect frame: that one opens the channel,
+        and losing the token before it is dispatched would close the
+        connection over the open itself, leaving nothing for the frame under
+        test to prove.
         """
 
         delivered = 0
@@ -1536,7 +1681,7 @@ async def test_frames_from_a_session_whose_token_went_away_close_it(
         async def receive(self) -> dict[str, Any]:
             message = await super().receive()
             self.delivered += 1
-            if self.delivered == 2:
+            if self.delivered == 3:
                 namespace.sid_to_token.clear()
             return message
 

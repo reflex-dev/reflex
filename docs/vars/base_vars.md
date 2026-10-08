@@ -73,6 +73,76 @@ def ticker_example():
     )
 ```
 
+## Changing Defaults
+
+A state var is a descriptor on its state class, so assigning to it through the
+class raises `TypeError` instead of replacing the var. To change a var's default,
+call `set_default` on the var's field with either a `default` value or a
+`default_factory` function:
+
+```python
+import time
+
+
+class WatchlistState(rx.State):
+    ticker: str = "AAPL"
+    symbols: list[str] = []
+    opened_at: float = 0.0
+
+
+WatchlistState.__fields__["ticker"].set_default("MSFT")
+WatchlistState.__fields__["symbols"].set_default(["AAPL", "MSFT"])
+WatchlistState.__fields__["opened_at"].set_default(default_factory=time.time)
+```
+
+The default applies to values not yet stored on an instance, which includes
+every new session and `reset()`. Values already stored on an instance stay the
+same. Pass exactly one of `default` and `default_factory`; a `default_factory`
+is called for each new instance. `set_default` copies a mutable `default`, such
+as a list, when you set it and gives each instance its own copy, so sessions
+never share it and later changes to the value you passed do not reach the
+default. It does not check the value against the var's annotation. A browser
+storage var keeps its storage name and options only with a storage value as its
+default, such as `rx.LocalStorage("dark", name="theme")`. Given a plain string,
+a var annotated `str` becomes an ordinary var, and one annotated with a storage
+type, such as `rx.LocalStorage`, stays in browser storage under the default key
+and options.
+
+An inherited var belongs to the state that declared it, so changing its field
+also changes the default for every state that inherits it. Each generated
+`ComponentState` class owns copies of its fields, allowing
+[`get_component` to configure defaults](/docs/state-structure/component-state/#passing-props)
+independently for each component.
+
+In tests, patch the field rather than the class attribute, which raises the same
+`TypeError`:
+
+```python
+from unittest import mock
+
+with mock.patch.object(WatchlistState.__fields__["ticker"], "default", "MSFT"):
+    ...
+```
+
+Declare class-level configuration, such as a client or a lock, as a `ClassVar`.
+It stays an ordinary class attribute, so assigning it through the class is
+allowed, and it is never copied for each instance. Each backend worker process
+holds its own value, though, so a lock only serializes the sessions on its own
+worker. A value set at import time, such as at module level, starts the same in
+every worker, but a change made after the workers start, such as in an event
+handler, never reaches the other workers. Keep a value that sessions must share
+at runtime in an [`rx.SharedState`](/docs/state-structure/shared-state/) or an
+external store.
+
+```md alert warning
+# Change defaults before the app starts running.
+
+Changing a default on a mixin only affects states created afterwards. Do not
+change defaults in event handlers, lifespan tasks, or at any other time after the
+app has started running: such a change only affects the worker process that made
+it.
+```
+
 ## Backend-only Vars
 
 Any Var in a state class that starts with an underscore (`_`) is considered backend
@@ -100,6 +170,34 @@ client.
 
 For example, a backend-only var is used to store a large data structure which is
 then paged to the frontend using cached vars.
+
+Read and write a backend var through a state instance, such as `self._token`.
+Reading `MyState._token` through the class returns its field descriptor, whose
+`default_value()` method returns the default (a fresh copy if it is mutable). Use
+it to build the UI from a constant, such as
+`rx.foreach(MyState._options.default_value(), rx.text)` for a backend var
+`_options`. Assigning to `MyState._token` raises `TypeError`: change its default
+through its field as described above.
+
+For class-level configuration, declare a `ClassVar` instead:
+
+```python
+from typing import ClassVar
+
+
+class MyState(rx.State):
+    _endpoint: ClassVar[str] = "https://example.com/api"
+    _token: str = ""
+
+
+MyState._endpoint = "https://example.com/v2"
+```
+
+`ClassVar` values are ordinary class attributes and are not part of session state.
+Reading one on the class returns the plain value, and an object that cannot be
+copied, such as a client or lock, is shared rather than copied for each instance.
+Each backend worker holds its own value, as described under
+[Changing Defaults](#changing-defaults).
 
 ```python demo exec
 import numpy as np

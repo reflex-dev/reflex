@@ -1,10 +1,11 @@
 // Plain WebSocket transport speaking the Reflex JSON event protocol: each
 // frame is a JSON array `[event_name, payload]`. Mirrors the socket.io-client
 // surface that state.js and upload.js rely on: connected, connect(),
-// disconnect(), emit(), on(), io.opts.query, and _callbacks.
+// disconnect(), emit(), on(), auth, io.opts.query, and _callbacks.
 import { parseJson } from "$/utils/helpers/json";
 
 // Protocol-level message names (must match reflex/event_namespace.py).
+const CONNECT_MESSAGE = "_connect";
 const HANDSHAKE_MESSAGE = "_handshake";
 const PING_MESSAGE = "_ping";
 const PONG_MESSAGE = "_pong";
@@ -485,7 +486,7 @@ const detachChannels = (transport, reason) => {
 
 export class ReflexWebSocket extends LocalEmitter {
   /**
-   * Create the transport and start connecting.
+   * Create the transport; it dials on open() or connect().
    * @param url The http(s) endpoint URL of the backend event route.
    * @param opts Options: `query` (object) and `protocols` (subprotocol list).
    */
@@ -495,16 +496,20 @@ export class ReflexWebSocket extends LocalEmitter {
     // Exposed as io.opts for socket.io API compatibility: state.js refreshes
     // io.opts.query before reconnecting.
     this.io = { opts };
+    // Sent in the connect frame, like the auth of a socket.io CONNECT packet.
+    this.auth = {};
     this.connected = false;
     this._ws = null;
+    // Set by connect(): from then on, a socket opens its session once open.
+    this._sessionRequested = false;
     // Frames emitted while disconnected, flushed on (re)connect.
     this._sendQueue = [];
     this._watchdogTimer = null;
     // Heartbeat window: 145 seconds (25s ping interval + 120s ping timeout)
     // in ms; refined by the server handshake.
     this._watchdogMs = (25 + 120) * 1000;
-    // Give up after 20 seconds on a dial that neither opens nor errors, so
-    // a connect_error always fires and retries proceed.
+    // Give up on a session not acknowledged within 20 seconds, so a
+    // connect_error always fires and retries proceed.
     this._connectTimeoutMs = 20 * 1000;
     this._connectTimer = null;
     this._closeReason = null;
@@ -521,7 +526,6 @@ export class ReflexWebSocket extends LocalEmitter {
       this._offlineListener = () => this._onOffline();
       addEventListener("offline", this._offlineListener, false);
     }
-    this.connect();
   }
 
   /**
@@ -539,9 +543,39 @@ export class ReflexWebSocket extends LocalEmitter {
   }
 
   /**
-   * Open the websocket connection if not already open or connecting.
+   * Open a session, dialing first if needed.
+   *
+   * The connect frame goes out as soon as the socket is open, without waiting
+   * for the handshake that acknowledges it, and carries `auth`.
    */
   connect() {
+    if (
+      this._sessionRequested &&
+      this._ws &&
+      this._ws.readyState <= WebSocket.OPEN
+    ) {
+      // The session is already opening or open on this socket.
+      return;
+    }
+    this._sessionRequested = true;
+    this.open();
+    const ws = this._ws;
+    if (ws.readyState === WebSocket.OPEN) {
+      // Dialed ahead by open().
+      this._sendConnect();
+    }
+    this._clearConnectTimer();
+    this._connectTimer = setTimeout(() => {
+      if (this._ws === ws && !this.connected) {
+        ws.close();
+      }
+    }, this._connectTimeoutMs);
+  }
+
+  /**
+   * Dial the backend without opening a session, so connect() skips the dial.
+   */
+  open() {
     if (this._ws && this._ws.readyState <= WebSocket.OPEN) {
       // CONNECTING (0) or OPEN (1): already dialing or connected.
       return;
@@ -557,11 +591,11 @@ export class ReflexWebSocket extends LocalEmitter {
     // so handlers can view them as typed arrays without a copy.
     ws.binaryType = "arraybuffer";
     this._ws = ws;
-    this._connectTimer = setTimeout(() => {
-      if (this._ws === ws && !this.connected) {
-        ws.close();
+    ws.onopen = () => {
+      if (this._ws === ws && this._sessionRequested) {
+        this._sendConnect();
       }
-    }, this._connectTimeoutMs);
+    };
     ws.onmessage = (msg) => {
       if (this._ws === ws) {
         // Ignore stragglers from a superseded connection.
@@ -591,6 +625,13 @@ export class ReflexWebSocket extends LocalEmitter {
         });
       }
     };
+  }
+
+  /**
+   * Send the connect frame that opens the session on the open socket.
+   */
+  _sendConnect() {
+    this._ws.send(stringifyFrame([CONNECT_MESSAGE, this.auth]));
   }
 
   /**

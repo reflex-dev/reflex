@@ -13,7 +13,7 @@ from reflex_base.utils.types import ASGIApp, Message, Receive, Scope, Send
 from socketio import ASGIApp as EngineIOApp
 from socketio import AsyncNamespace, AsyncServer
 
-from reflex.event_namespace import BaseEventNamespace, utf8_size
+from reflex.event_namespace import BaseEventNamespace, connect_boot_event, utf8_size
 from reflex.utils import format
 
 if TYPE_CHECKING:
@@ -81,29 +81,48 @@ class EventNamespace(AsyncNamespace, BaseEventNamespace):
         # state it caches without going through the Socket.IO server.
         self._scopes: dict[str, MutableMapping[str, Any]] = {}
 
-    async def on_connect(self, sid: str, environ: dict) -> bool | None:
+    async def on_connect(
+        self, sid: str, environ: dict, auth: Any = None
+    ) -> bool | None:
         """Event for when the websocket is connected.
 
         Args:
             sid: The Socket.IO session id.
             environ: The request information, including HTTP headers.
+            auth: The payload of the CONNECT packet, carrying the boot event.
 
         Returns:
-            False to refuse a session that linked no token, else None.
+            False to refuse a session that linked no token or whose boot event
+            failed, else None.
         """
         if (scope := environ.get("asgi.scope")) is not None:
             self._scopes[sid] = scope
+        boot_event = connect_boot_event(auth)
         await self.handle_connect(
             sid,
             environ.get("QUERY_STRING", ""),
             environ.get("HTTP_SEC_WEBSOCKET_PROTOCOL"),
+            update_state=boot_event is None,
         )
-        if sid in self.sid_to_token:
-            return None
-        # Not a Reflex client: nothing it sends can be served. Socket.IO runs
-        # no disconnect handler for a refused connect, so undo this one here.
-        self.on_disconnect(sid)
-        return False
+        if sid not in self.sid_to_token:
+            # Not a Reflex client: nothing it sends can be served. Socket.IO
+            # runs no disconnect handler for a refused connect, so undo this
+            # one here.
+            self.on_disconnect(sid)
+            return False
+        if boot_event is not None:
+            try:
+                await self.on_event(sid, boot_event)
+            except Exception as exc:
+                # Refused rather than raised: Socket.IO would keep a raising
+                # connect registered yet unanswered, and the client would wait
+                # for a hydrate that never comes instead of retrying.
+                self._log_handler_failure(
+                    sid, f"Error handling the boot event for session {sid}.", exc
+                )
+                self.on_disconnect(sid)
+                return False
+        return None
 
     def on_disconnect(self, sid: str) -> asyncio.Task | None:
         """Event for when the websocket disconnects.
