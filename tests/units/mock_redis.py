@@ -11,6 +11,7 @@ from unittest.mock import AsyncMock, Mock
 from redis.asyncio import Redis
 from redis.typing import EncodableT, KeyT
 
+from reflex.istate.manager.redis import _RELEASE_LOCK_SCRIPT
 from reflex.utils import prerequisites
 
 WRONGTYPE_MESSAGE = "WRONGTYPE Operation against a key holding the wrong kind of value"
@@ -132,6 +133,16 @@ def mock_redis() -> Redis:
         await redis_mock.delete(key)
         return value
 
+    async def mock_eval(script: str, numkeys: int, *keys_and_args: Any) -> Any:
+        # Only the lock release script runs on redis.
+        assert script == _RELEASE_LOCK_SCRIPT
+        assert numkeys == 1
+        key, lock_id = keys_and_args
+        owner = await redis_mock.get(key)
+        if owner == lock_id:
+            await redis_mock.delete(key)
+        return owner
+
     async def mock_pexpire(key: KeyT, px: int, xx: bool = False) -> bool:  # noqa: RUF029
         _expire_keys()
         key = _key_bytes(key)
@@ -250,6 +261,7 @@ def mock_redis() -> Redis:
     redis_mock.set = mock_set
     redis_mock.delete = mock_delete
     redis_mock.getdel = mock_getdel
+    redis_mock.eval = mock_eval
     redis_mock.sadd = mock_sadd
     redis_mock.srem = mock_srem
     redis_mock.scard = mock_scard

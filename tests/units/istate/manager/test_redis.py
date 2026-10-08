@@ -12,7 +12,7 @@ from typing import Any
 
 import pytest
 import pytest_asyncio
-from reflex_base.utils.exceptions import EnvironmentVarValueError
+from reflex_base.utils.exceptions import EnvironmentVarValueError, LockExpiredError
 
 from reflex.istate.manager.redis import (
     StateManagerRedis,
@@ -697,7 +697,10 @@ async def test_oplock_immediate_cancel(
     root_state: type[RedisTestState],
     event_log: list[dict[str, Any]],
 ):
-    """Test that immediate cancellation of modify releases oplock.
+    """Test that immediate cancellation of the lease releases oplock.
+
+    The lease may be cancelled before its task ever ran, which still has to
+    flush the state and release the lock.
 
     Args:
         state_manager_redis: The StateManagerRedis to test.
@@ -705,6 +708,7 @@ async def test_oplock_immediate_cancel(
         event_log: The redis event log.
     """
     token = str(uuid.uuid4())
+    state_token = BaseStateToken(ident=token, cls=root_state)
 
     state_manager_redis._debug_enabled = True
     state_manager_redis._oplock_enabled = True
@@ -712,21 +716,30 @@ async def test_oplock_immediate_cancel(
     # subscription a lease requires is unavailable.
     await _subscribed(state_manager_redis)
 
-    async def canceller():
+    async def canceller() -> asyncio.Task:
         while (lease_task := state_manager_redis._local_leases.get(token)) is None:  # noqa: ASYNC110
             await asyncio.sleep(0)
         lease_task.cancel()
+        return lease_task
 
     task = asyncio.create_task(canceller())
 
-    async with state_manager_redis.modify_state(
-        BaseStateToken(ident=token, cls=root_state),
-    ) as new_state:
-        assert await state_manager_redis._get_local_lease(token) is None
+    async with state_manager_redis.modify_state(state_token) as new_state:
         assert isinstance(new_state, root_state)
         new_state.count += 1
 
-    await task
+    lease_task = await task
+    await asyncio.wait({lease_task})
+    await asyncio.gather(*state_manager_redis._lease_cleanups)
+
+    assert await state_manager_redis._get_local_lease(token) is None
+    assert (
+        await state_manager_redis.redis.get(state_manager_redis._lock_key(state_token))
+        is None
+    )
+    final_state = await state_manager_redis.get_state(state_token)
+    assert isinstance(final_state, root_state)
+    assert final_state.count == 1
 
 
 @pytest.mark.asyncio
@@ -882,6 +895,379 @@ async def test_oplock_hold_oplock_after_cancel(
     )
     assert isinstance(final_state, root_state)
     assert final_state.count == 2
+
+
+@pytest.mark.asyncio
+async def test_oplock_cancel_after_lock_acquired_releases_lock(
+    state_manager_redis: StateManagerRedis,
+    root_state: type[RedisTestState],
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Cancelling a modify between taking the lock and leasing it releases the lock.
+
+    A superseded event is cancelled at whatever await it is in, and a lock left
+    behind keeps every other event of the token waiting until it expires.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        root_state: The root state class.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=root_state)
+    state_manager_redis._oplock_enabled = True
+    await _subscribed(state_manager_redis)
+
+    lock_acquired = asyncio.Event()
+
+    async def block_after_acquiring(lock_key: bytes) -> int:
+        lock_acquired.set()
+        await asyncio.Event().wait()
+        return 0
+
+    monkeypatch.setattr(
+        state_manager_redis, "_n_lock_contenders", block_after_acquiring
+    )
+
+    async def modify():
+        async with state_manager_redis.modify_state(token):
+            pass
+
+    task = asyncio.create_task(modify())
+    await lock_acquired.wait()
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+
+    assert (
+        await state_manager_redis.redis.get(state_manager_redis._lock_key(token))
+        is None
+    )
+
+
+@pytest.mark.asyncio
+async def test_cancel_while_acquiring_lock_releases_it(
+    state_manager_redis: StateManagerRedis,
+    root_state: type[RedisTestState],
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A lock set in redis whose reply never reached the cancelled caller is released.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        root_state: The root state class.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=root_state)
+    lock_set = asyncio.Event()
+    redis_set = state_manager_redis.redis.set
+
+    async def set_then_hang(*args: Any, **kwargs: Any) -> Any:
+        result = await redis_set(*args, **kwargs)
+        if kwargs.get("nx"):
+            lock_set.set()
+            await asyncio.Event().wait()
+        return result
+
+    monkeypatch.setattr(state_manager_redis.redis, "set", set_then_hang)
+
+    async def modify():
+        async with state_manager_redis.modify_state(token):
+            pass
+
+    task = asyncio.create_task(modify())
+    await lock_set.wait()
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+
+    assert (
+        await state_manager_redis.redis.get(state_manager_redis._lock_key(token))
+        is None
+    )
+
+
+@pytest.mark.asyncio
+async def test_lock_release_after_expiration_keeps_the_next_owner(
+    state_manager_redis: StateManagerRedis,
+    root_state: type[RedisTestState],
+):
+    """Releasing a lock that already expired must not delete its next owner's lock.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        root_state: The root state class.
+    """
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=root_state)
+    lock_key = state_manager_redis._lock_key(token)
+
+    async with state_manager_redis._lock(token):
+        # The lock expires and another holder takes it.
+        await state_manager_redis.redis.delete(lock_key)
+        await state_manager_redis.redis.set(
+            lock_key, b"next-owner", px=state_manager_redis.lock_expiration
+        )
+
+    assert await state_manager_redis.redis.get(lock_key) == b"next-owner"
+
+
+@pytest.mark.asyncio
+async def test_oplock_lease_break_extends_the_lock_for_a_cached_holder(
+    state_manager_redis: StateManagerRedis,
+    root_state: type[RedisTestState],
+    short_lock_expiration: int,
+):
+    """A lease that breaks while the cached state is in use extends its lock.
+
+    Otherwise the flush that follows the holder finds the lock expired and the
+    changes made under the lease are lost.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        root_state: The root state class.
+        short_lock_expiration: The lock expiration time in milliseconds.
+    """
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=root_state)
+    state_manager_redis._oplock_enabled = True
+    state_manager_redis.oplock_hold_time_ms = short_lock_expiration // 2
+    await _subscribed(state_manager_redis)
+
+    async with state_manager_redis.modify_state(token) as state:
+        assert isinstance(state, root_state)
+        state.count += 1
+        lease_task = await state_manager_redis._get_local_lease(token.lock_key)
+        assert lease_task is not None
+        # Still in use past the lock's original expiration, within the
+        # expiration it gets from the lease break.
+        await asyncio.sleep(short_lock_expiration * 1.25 / 1000)
+
+    await lease_task
+
+    final_state = await state_manager_redis.get_state(token)
+    assert isinstance(final_state, root_state)
+    assert final_state.count == 1
+
+
+@pytest.mark.asyncio
+async def test_oplock_waiter_woken_when_the_cached_holder_raises(
+    state_manager_redis: StateManagerRedis,
+    root_state: type[RedisTestState],
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A local waiter joins the lease when the event ahead of it raises.
+
+    The waiter queued on the redis lock before the lease existed, so only the
+    holder can tell it about the lease; otherwise it sits out the whole lease.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        root_state: The root state class.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=root_state)
+    state_manager_redis._oplock_enabled = True
+    state_manager_redis.oplock_hold_time_ms = 2000
+    await _subscribed(state_manager_redis)
+
+    holder_locked = asyncio.Event()
+    waiter_queued = asyncio.Event()
+
+    async def lease_despite_the_waiter(lock_key: bytes) -> int:
+        # Another local waiter's SREM can empty the shared waiters set, so the
+        # holder leases although this one is still queued.
+        if not holder_locked.is_set():
+            holder_locked.set()
+            await waiter_queued.wait()
+        return 0
+
+    monkeypatch.setattr(
+        state_manager_redis, "_n_lock_contenders", lease_despite_the_waiter
+    )
+
+    class HandlerError(Exception):
+        """Raised by the event holding the cached state."""
+
+    async def failing_holder():
+        async with state_manager_redis.modify_state(token):
+            raise HandlerError
+
+    async def waiter() -> float:
+        started = time.monotonic()
+        async with state_manager_redis.modify_state(token):
+            return time.monotonic() - started
+
+    holder = asyncio.create_task(failing_holder())
+    await holder_locked.wait()
+    waiting = asyncio.create_task(waiter())
+    lock_key = state_manager_redis._lock_key(token)
+    while not state_manager_redis._n_lock_waiters(lock_key):  # noqa: ASYNC110
+        await asyncio.sleep(0)
+    # Its contention notice arrives before the lease exists, so it breaks nothing.
+    await asyncio.sleep(0.1)
+    waiter_queued.set()
+
+    with pytest.raises(HandlerError):
+        await holder
+    # Woken well before its next re-check of the lock.
+    assert await waiting < state_manager_redis.lock_expiration / 10_000 / 2
+
+
+@pytest.mark.asyncio
+async def test_cancelled_waiter_passes_its_wakeup_on(
+    state_manager_redis: StateManagerRedis,
+    root_state: type[RedisTestState],
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A waiter cancelled after its wakeup hands the wakeup to the next waiter.
+
+    Otherwise the next waiter, queued after the release was announced, waits
+    until its wait times out.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        root_state: The root state class.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=root_state)
+    lock_key = state_manager_redis._lock_key(token)
+    state_manager_redis._oplock_enabled = False
+    await _subscribed(state_manager_redis)
+
+    first_retry = asyncio.Event()
+    try_get_lock = state_manager_redis._try_get_lock
+
+    async def first_waiter_stalls_on_retry(key: bytes, lock_id: bytes) -> bool | None:
+        if lock_id.startswith(b"first:") and state_manager_redis._n_lock_waiters(key):
+            first_retry.set()
+            await asyncio.Event().wait()
+        return await try_get_lock(key, lock_id)
+
+    monkeypatch.setattr(
+        state_manager_redis, "_try_get_lock", first_waiter_stalls_on_retry
+    )
+
+    async def take_lock(event_name: str) -> float:
+        started = time.monotonic()
+        async with state_manager_redis._lock(token, event_name=event_name):
+            return time.monotonic() - started
+
+    release_holder = asyncio.Event()
+
+    async def holder():
+        async with state_manager_redis._lock(token, event_name="holder"):
+            await release_holder.wait()
+
+    holding = asyncio.create_task(holder())
+    while await state_manager_redis.redis.get(lock_key) is None:  # noqa: ASYNC110
+        await asyncio.sleep(0)
+    first = asyncio.create_task(take_lock("first"))
+    while not state_manager_redis._n_lock_waiters(lock_key):  # noqa: ASYNC110
+        await asyncio.sleep(0)
+
+    release_holder.set()
+    await holding
+    await first_retry.wait()
+    # The release is announced before the second waiter queues.
+    await asyncio.sleep(0.1)
+    second = asyncio.create_task(take_lock("second"))
+    while state_manager_redis._n_lock_waiters(lock_key) < 2:  # noqa: ASYNC110
+        await asyncio.sleep(0)
+
+    first.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await first
+    # Woken well before its next re-check of the lock.
+    assert await second < state_manager_redis.lock_expiration / 10_000 / 2
+
+
+@pytest.mark.asyncio
+async def test_waiter_rechecks_a_lock_released_without_notice(
+    state_manager_redis: StateManagerRedis,
+    root_state: type[RedisTestState],
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A waiter whose release notification got lost still takes the free lock.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        root_state: The root state class.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=root_state)
+    lock_key = state_manager_redis._lock_key(token)
+    state_manager_redis.lock_expiration = 2000
+    await _subscribed(state_manager_redis)
+    # Neither the release's own notice nor its keyspace event reach the waiter.
+    monkeypatch.setattr(state_manager_redis, "_notify_next_waiter", lambda key: None)
+
+    release_holder = asyncio.Event()
+
+    async def holder():
+        async with state_manager_redis._lock(token):
+            await release_holder.wait()
+
+    async def waiter() -> float:
+        started = time.monotonic()
+        async with state_manager_redis._lock(token):
+            return time.monotonic() - started
+
+    holding = asyncio.create_task(holder())
+    while await state_manager_redis.redis.get(lock_key) is None:  # noqa: ASYNC110
+        await asyncio.sleep(0)
+    waiting = asyncio.create_task(waiter())
+    while not state_manager_redis._n_lock_waiters(lock_key):  # noqa: ASYNC110
+        await asyncio.sleep(0)
+    release_holder.set()
+    await holding
+
+    assert await waiting < state_manager_redis.lock_expiration / 1000 / 2
+
+
+@pytest.mark.asyncio
+async def test_waiter_woken_when_the_holder_lock_expired(
+    state_manager_redis: StateManagerRedis,
+    root_state: type[RedisTestState],
+):
+    """A holder whose lock expired under it still wakes the next waiter.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        root_state: The root state class.
+    """
+    internals = getattr(state_manager_redis.redis, "_internals", {})
+    if "keys" not in internals:
+        pytest.skip("Expiring a lock without its keyspace event needs the mock redis.")
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=root_state)
+    lock_key = state_manager_redis._lock_key(token)
+    await _subscribed(state_manager_redis)
+
+    waiter_queued = asyncio.Event()
+
+    async def holder():
+        async with state_manager_redis._lock(token):
+            await waiter_queued.wait()
+            # The lock expires, and its expired event was already handled.
+            internals["keys"].pop(lock_key)
+            internals["expire_times"].pop(lock_key, None)
+            msg = "the lock expired"
+            raise LockExpiredError(msg)
+
+    async def waiter() -> float:
+        started = time.monotonic()
+        async with state_manager_redis._lock(token):
+            return time.monotonic() - started
+
+    holding = asyncio.create_task(holder())
+    while await state_manager_redis.redis.get(lock_key) is None:  # noqa: ASYNC110
+        await asyncio.sleep(0)
+    waiting = asyncio.create_task(waiter())
+    while not state_manager_redis._n_lock_waiters(lock_key):  # noqa: ASYNC110
+        await asyncio.sleep(0)
+    waiter_queued.set()
+    with pytest.raises(LockExpiredError):
+        await holding
+
+    # Woken well before its next re-check of the lock.
+    assert await waiting < state_manager_redis.lock_expiration / 10_000 / 2
 
 
 def test_oplock_hold_time_below_one_millisecond(
