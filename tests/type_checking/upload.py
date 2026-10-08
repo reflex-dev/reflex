@@ -1,7 +1,8 @@
 """Calling an upload handler with the upload spec reflex fills with the uploaded files."""
 
+from typing import assert_type
+
 from reflex_base.event import EventCallback, event
-from typing_extensions import assert_type
 
 import reflex as rx
 from reflex.state import State
