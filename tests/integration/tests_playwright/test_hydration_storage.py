@@ -137,6 +137,19 @@ def HydrationStorageApp():
                 subdelta["value" + FIELD_MARKER] = "replaced"
             return delta
 
+    class SharedNameState(rx.State):
+        synced: str = rx.LocalStorage("", name="hydrate-shared", sync=True)
+        plain: str = rx.LocalStorage("", name="hydrate-shared")
+
+        @rx.event
+        def set_plain(self, value: str):
+            """Store a value through the var that shares the synced var's name.
+
+            Args:
+                value: The value to store.
+            """
+            self.plain = value
+
     def synced():
         """Display a browser storage var synced across tabs.
 
@@ -149,6 +162,12 @@ def HydrationStorageApp():
             rx.button("New", on_click=SyncState.set_value("new"), id="set-new"),
             rx.text(ReplaceState.value, id="replace-value"),
             rx.button("Keep", on_click=ReplaceState.keep_sent, id="keep-sent"),
+            rx.text(SharedNameState.synced, id="shared-value"),
+            rx.button(
+                "Plain old",
+                on_click=SharedNameState.set_plain("old"),
+                id="set-plain-old",
+            ),
             rx.text(rx.cond(rx.State.is_hydrated, "true", "false"), id="hydrated"),
         )
 
@@ -330,11 +349,11 @@ Storage.prototype.setItem = function (key, value) {
 
 # Stores a synced value as another tab would, optionally without its storage event.
 OTHER_TAB_STORES = """
-window.otherTabStores = (value, notify = true) => {
-    localStorage.setItem('hydrate-sync', value);
+window.otherTabStores = (value, notify = true, key = 'hydrate-sync') => {
+    localStorage.setItem(key, value);
     if (notify) {
         window.dispatchEvent(new StorageEvent('storage', {
-            key: 'hydrate-sync', newValue: value, storageArea: localStorage,
+            key, newValue: value, storageArea: localStorage,
         }));
     }
 };
@@ -525,17 +544,29 @@ def test_synced_storage_echo_crossed_by_another_tab_is_not_written(
     assert page.evaluate("localStorage.getItem('hydrate-sync')") == "newer"
 
 
+@pytest.mark.parametrize(
+    ("button", "key", "display"),
+    [
+        ("set-old", "hydrate-sync", "sync-value"),
+        ("set-plain-old", "hydrate-shared", "shared-value"),
+    ],
+    ids=["same_var", "shared_name"],
+)
 def test_synced_storage_echo_after_own_write_is_written(
-    hydration_storage_app: AppHarness, page: Page
+    hydration_storage_app: AppHarness, page: Page, button: str, key: str, display: str
 ):
     """An echo is written over a value the tab itself stored after sending it.
 
     The backend applies a tab's events in order, so the echo of a value sent
-    after a handler's event is newer than the value of the handler's reply.
+    after a handler's event is newer than the value of the handler's reply,
+    whether the handler stored the synced var or another var of the same name.
 
     Args:
         hydration_storage_app: The running app.
         page: A fresh browser page.
+        button: The button whose handler stores "old".
+        key: The storage name the handler writes.
+        display: The id of the element showing the synced var.
     """
     assert hydration_storage_app.frontend_url is not None
     page.add_init_script(OTHER_TAB_STORES)
@@ -544,15 +575,15 @@ def test_synced_storage_echo_after_own_write_is_written(
     expect(page.locator("#hydrated")).to_have_text("true")
 
     socket.hold()
-    page.locator("#set-old").click()
-    socket.wait_sent("set_value", '"old"')
-    page.evaluate("window.otherTabStores('sent')")
+    page.locator(f"#{button}").click()
+    socket.wait_sent('"old"')
+    page.evaluate(f"window.otherTabStores('sent', true, '{key}')")
     socket.wait_sent("update_vars_internal", '"sent"')
 
     socket.release()
-    expect(page.locator("#sync-value")).to_have_text("sent")
+    expect(page.locator(f"#{display}")).to_have_text("sent")
     page.wait_for_timeout(500)
-    assert page.evaluate("localStorage.getItem('hydrate-sync')") == "sent"
+    assert page.evaluate(f"localStorage.getItem('{key}')") == "sent"
 
 
 def test_replaced_storage_echo_does_not_hide_later_change(

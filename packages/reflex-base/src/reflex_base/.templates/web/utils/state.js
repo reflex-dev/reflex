@@ -58,9 +58,13 @@ const UPDATE_VARS_INTERNAL =
   "reflex___state____update_vars_internal_state.update_vars_internal";
 
 // Browser storage values this tab sent to the backend, oldest first, by state
-// key, each with the localStorage value this tab wrote after sending it. The
-// backend echoes them back, so that get_delta overrides see them.
+// key, each with the count of localStorage writes by this tab when it was
+// sent. The backend echoes them back, so that get_delta overrides see them.
 const sentStorageValues = {};
+// The localStorage writes by this tab: their count, and the last value and
+// count by storage name, which vars of different state keys may share.
+let localStorageWrites = 0;
+const lastLocalStorageWrites = {};
 // Bounds the values kept for a key whose replies never match, as when a
 // get_delta override changes them. It exceeds the values of one key in flight
 // at once: a synced var written at 60 Hz over a one second round trip.
@@ -1066,7 +1070,7 @@ const recordSentStorageValues = (event) => {
   // ReflexEvent leaves out an empty payload.
   for (const [state_key, value] of Object.entries(event.payload?.vars ?? {})) {
     const sent = (sentStorageValues[state_key] ??= []);
-    sent.push({ value });
+    sent.push({ value, writes: localStorageWrites });
     if (sent.length > MAX_SENT_STORAGE_VALUES) {
       sent.shift();
     }
@@ -1130,11 +1134,17 @@ const applyClientStorageDelta = (client_storage, delta) => {
         // tab's newer one: writing the echo back would overwrite the newer one
         // and, for a synced var, make the other tabs answer with theirs, over
         // and over.
-        if (!echo || localStorage.getItem(name) === echo.written) {
+        const last = lastLocalStorageWrites[name];
+        if (
+          !echo ||
+          (last?.writes > echo.writes &&
+            localStorage.getItem(name) === last.value)
+        ) {
           localStorage.setItem(name, value);
-          for (const entry of sentStorageValues[state_key] ?? []) {
-            entry.written = value;
-          }
+          lastLocalStorageWrites[name] = {
+            value,
+            writes: ++localStorageWrites,
+          };
         }
       } else if (
         client_storage.session_storage &&
