@@ -171,10 +171,20 @@ A browser storage var declared with a `name`, such as
 `rx.LocalStorage("light", name="theme")`, stores every component's value under
 that one key, so the components overwrite each other's stored value. To persist a
 value per component, give each component its own storage value in
-`get_component`, such as
-`cls.__fields__["theme"].default = rx.LocalStorage(initial, name=f"theme_{key}")`
-with a `key` prop that identifies the component, or leave `name` unset so each
-component state gets its own key.
+`get_component`, here named by a `key` prop that identifies the component, or
+leave `name` unset so each component state gets its own key:
+
+```python
+class ThemeToggle(rx.ComponentState):
+    theme: str = rx.LocalStorage("light", name="theme")
+
+    @classmethod
+    def get_component(cls, key: str, initial: str = "light", **props):
+        cls.__fields__["theme"].default = rx.LocalStorage(
+            initial, name=f"theme_{key}"
+        )
+        return rx.text(cls.theme, **props)
+```
 
 ```python eval
 rx.divider()

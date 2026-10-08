@@ -76,12 +76,18 @@ def ticker_example():
 ## Changing Defaults
 
 A state var is a descriptor on its state class, so assigning to it through the
-class, such as `TickerState.ticker = "MSFT"`, raises `TypeError` instead of
-replacing the var. To change a var's default, set it on the var's field:
+class raises `TypeError` instead of replacing the var. To change a var's default,
+set it on the var's field:
 
 ```python
-TickerState.__fields__["ticker"].default = "MSFT"
-TickerState.__fields__["history"].default_factory = lambda: ["AAPL", "MSFT"]
+class WatchlistState(rx.State):
+    ticker: str = "AAPL"
+    symbols: list[str] = []
+
+
+WatchlistState.ticker = "MSFT"  # TypeError
+WatchlistState.__fields__["ticker"].default = "MSFT"
+WatchlistState.__fields__["symbols"].default_factory = lambda: ["AAPL", "MSFT"]
 ```
 
 The default applies to values not yet stored on an instance, which includes
@@ -105,7 +111,7 @@ In tests, patch the field rather than the class attribute, which raises the same
 ```python
 from unittest import mock
 
-with mock.patch.object(TickerState.__fields__["ticker"], "default", "MSFT"):
+with mock.patch.object(WatchlistState.__fields__["ticker"], "default", "MSFT"):
     ...
 ```
 
