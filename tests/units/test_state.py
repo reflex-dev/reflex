@@ -6926,11 +6926,15 @@ async def test_get_state_mixin_ambiguous(clean_registration_context):
         await root.get_state(AmbiguousMixin)
 
 
-async def test_state_manager_mixin_token(clean_registration_context):
+async def test_state_manager_mixin_token(
+    clean_registration_context, state_manager: StateManager, token: str
+):
     """A token carrying a mixin resolves to the state implementing it.
 
     Args:
         clean_registration_context: A fresh, empty registration context.
+        state_manager: A state manager instance.
+        token: A token.
     """
 
     class TokenRootState(BaseState):
@@ -6942,28 +6946,26 @@ async def test_state_manager_mixin_token(clean_registration_context):
     class NoteState(NoteMixin, TokenRootState):
         pass
 
-    state_manager = StateManagerMemory()
-    mixin_token = BaseStateToken(ident="mixin-token", cls=NoteMixin)
-
-    root = await state_manager.get_state(mixin_token)
-    assert isinstance(root, TokenRootState)
-    (await root.get_state(NoteMixin)).note = "written"
-    await state_manager.set_state(mixin_token, root)
-
-    async with state_manager.modify_state(mixin_token) as modified:
-        assert isinstance(modified, TokenRootState)
-        assert (await modified.get_state(NoteMixin)).note == "written"
+    async with state_manager.modify_state(
+        BaseStateToken(ident=token, cls=NoteMixin)
+    ) as root:
+        assert isinstance(root, TokenRootState)
+        (await root.get_state(NoteMixin)).note = "written"
 
     # The concrete token addresses the very same state.
-    concrete_token = BaseStateToken(ident="mixin-token", cls=NoteState)
-    assert await state_manager.get_state(concrete_token) is root
+    root = await state_manager.get_state(BaseStateToken(ident=token, cls=NoteState))
+    assert (await root.get_state(NoteState)).note == "written"
 
 
-async def test_state_manager_mixin_token_ambiguous(clean_registration_context):
+async def test_state_manager_mixin_token_ambiguous(
+    clean_registration_context, state_manager: StateManager, token: str
+):
     """A token carrying an ambiguous mixin raises instead of guessing.
 
     Args:
         clean_registration_context: A fresh, empty registration context.
+        state_manager: A state manager instance.
+        token: A token.
     """
 
     class AmbiguousTokenRootState(BaseState):
@@ -6978,11 +6980,8 @@ async def test_state_manager_mixin_token_ambiguous(clean_registration_context):
     class SecondUserState(TwiceUsedMixin, AmbiguousTokenRootState):
         pass
 
-    state_manager = StateManagerMemory()
     with pytest.raises(StateValueError, match="implemented by more than one state"):
-        await state_manager.get_state(
-            BaseStateToken(ident="ambiguous-token", cls=TwiceUsedMixin)
-        )
+        await state_manager.get_state(BaseStateToken(ident=token, cls=TwiceUsedMixin))
 
 
 def test_previous_release_pickle_keys_are_reserved():
