@@ -53,6 +53,23 @@ let backend_state_mismatch = false;
 // Array holding pending events to be processed.
 const event_queue = [];
 
+// The event that sends browser storage values to the backend.
+const UPDATE_VARS_INTERNAL =
+  "reflex___state____update_vars_internal_state.update_vars_internal";
+// A frontend event naming one synced localStorage var, turned into an
+// UPDATE_VARS_INTERNAL event when it is sent: see syncLocalStorageEvent.
+const SYNC_LOCAL_STORAGE = "_sync_local_storage";
+
+// Synced localStorage values sent to the backend and not yet echoed back, by
+// state key, oldest first, with this tab's localStorage write count at the send.
+const sentStorageValues = {};
+// Bounds a key whose echoes a get_delta override changes, so they never match.
+const MAX_SENT_STORAGE_VALUES = 256;
+// This tab's localStorage write count, and its last write by storage name
+// (vars of different state keys may share one).
+let localStorageWrites = 0;
+const lastLocalStorageWrites = {};
+
 // Mirrors the data router's location so applyEvent can populate router_data
 // with the in-widget URL. In embed mode the host page's window.location is
 // unrelated to the Reflex route, so the backend's on_load and dynamic-route
@@ -241,7 +258,8 @@ export const isStateful = () => {
   return event_queue.some(
     (event) =>
       typeof event?.name === "string" &&
-      event.name.startsWith("reflex___state"),
+      (event.name.startsWith("reflex___state") ||
+        event.name === SYNC_LOCAL_STORAGE),
   );
 };
 
@@ -327,6 +345,19 @@ function urlFrom(string) {
   }
   return undefined;
 }
+
+/**
+ * Build the update_vars_internal event for a synced localStorage var.
+ *
+ * The value is read when the event is sent, so it and the write count recorded
+ * with it come from the same moment.
+ * @param payload The storage name and state key of the var.
+ * @returns The update_vars_internal event.
+ */
+const syncLocalStorageEvent = ({ key, state_key }) =>
+  ReflexEvent(`${app.state_name}.${UPDATE_VARS_INTERNAL}`, {
+    vars: { [state_key]: localStorage.getItem(key) },
+  });
 
 /**
  * Handle frontend event or send the event to the backend via Websocket.
@@ -513,7 +544,13 @@ export const applyEvent = async (event, socket, navigate, params) => {
 
   // Send the event to the server.
   if (socket) {
-    const routed_event = withRouterData(event, params);
+    const routed_event = withRouterData(
+      event.name == SYNC_LOCAL_STORAGE
+        ? syncLocalStorageEvent(event.payload)
+        : event,
+      params,
+    );
+    recordSentStorageValues(routed_event);
     // Instrumentation hook (installed by reflex-otel): may add a traceparent.
     window.__reflex_otel?.onEventSend?.(routed_event);
     socket.emit("event", routed_event);
@@ -702,6 +739,7 @@ export const connect = async (
   // the backend as CompileVars.CONNECT_AUTH_EVENT.
   const bootAuth = (first) => {
     const boot_event = withRouterData(app.initialEvents(first)[0], params);
+    recordSentStorageValues(boot_event);
     // Instrumentation hook (installed by reflex-otel): may add a traceparent.
     window.__reflex_otel?.onEventSend?.(boot_event);
     return { event: boot_event };
@@ -1038,6 +1076,48 @@ export const hydrateClientStorage = (client_storage) => {
 };
 
 /**
+ * Remember the synced localStorage values an event sends, to recognise their echoes.
+ *
+ * Only synced vars: the tab sends another tab's newer value only for those.
+ * @param event The event about to be sent.
+ */
+const recordSentStorageValues = (event) => {
+  // ReflexEvent leaves out an empty payload.
+  const vars = event.payload?.vars;
+  if (
+    vars === undefined ||
+    (event.name !== `${app.state_name}.hydrate_and_load` &&
+      event.name !== `${app.state_name}.${UPDATE_VARS_INTERNAL}`)
+  ) {
+    return;
+  }
+  const local_storage = app.clientStorage.local_storage;
+  for (const [state_key, value] of Object.entries(vars)) {
+    if (!local_storage?.[state_key]?.sync) {
+      continue;
+    }
+    const sent = (sentStorageValues[state_key] ??= []);
+    sent.push({ value, writes: localStorageWrites });
+    if (sent.length > MAX_SENT_STORAGE_VALUES) {
+      sent.shift();
+    }
+  }
+};
+
+/**
+ * Take the sent value that a backend value echoes, and the older ones with it.
+ * @param state_key The state key of the browser storage var.
+ * @param value The value the backend sent for it.
+ * @returns The sent value's entry, or undefined if the value is no echo.
+ */
+const takeEcho = (state_key, value) => {
+  const sent = sentStorageValues[state_key];
+  const index = sent?.findIndex((entry) => entry.value === value) ?? -1;
+  // Older values were echoed already, or changed by an override on the way.
+  return index === -1 ? undefined : sent.splice(0, index + 1)[index];
+};
+
+/**
  * Update client storage values based on backend state delta.
  * @param client_storage The client storage object from context.js
  * @param delta The state update from the backend
@@ -1062,28 +1142,41 @@ const applyClientStorageDelta = (client_storage, delta) => {
   for (const substate in delta) {
     for (const key in delta[substate]) {
       const state_key = `${substate}.${key}`;
+      const value = delta[substate][key];
       if (client_storage.cookies && state_key in client_storage.cookies) {
         const cookie_options = { ...client_storage.cookies[state_key] };
         const cookie_name = cookie_options.name || state_key;
         delete cookie_options.name; // name is not a valid cookie option
-        cookies.set(cookie_name, delta[substate][key], cookie_options);
+        cookies.set(cookie_name, value, cookie_options);
       } else if (
         client_storage.local_storage &&
         state_key in client_storage.local_storage &&
         typeof window !== "undefined"
       ) {
-        const options = client_storage.local_storage[state_key];
-        localStorage.setItem(options.name || state_key, delta[substate][key]);
+        const name = client_storage.local_storage[state_key].name || state_key;
+        const echo = takeEcho(state_key, value);
+        const last = lastLocalStorageWrites[name];
+        // Write an echo only over this tab's own later write, which the backend
+        // applied before the echoed event. Otherwise storage holds the sent
+        // value or another tab's newer one.
+        if (
+          !echo ||
+          (last?.writes > echo.writes &&
+            localStorage.getItem(name) === last.value)
+        ) {
+          localStorage.setItem(name, value);
+          lastLocalStorageWrites[name] = {
+            value,
+            writes: ++localStorageWrites,
+          };
+        }
       } else if (
         client_storage.session_storage &&
         state_key in client_storage.session_storage &&
         typeof window !== "undefined"
       ) {
         const session_options = client_storage.session_storage[state_key];
-        sessionStorage.setItem(
-          session_options.name || state_key,
-          delta[substate][key],
-        );
+        sessionStorage.setItem(session_options.name || state_key, value);
       }
     }
   }
@@ -1265,14 +1358,14 @@ export const useEventLoop = (
 
     // e is StorageEvent
     const handleStorage = (e) => {
-      if (storage_to_state_map[e.key]) {
-        const vars = {};
-        vars[storage_to_state_map[e.key]] = e.newValue;
-        const event = ReflexEvent(
-          `${app.state_name}.reflex___state____update_vars_internal_state.update_vars_internal`,
-          { vars: vars },
+      const state_key = storage_to_state_map[e.key];
+      // Session storage changes in same-origin frames raise storage events too.
+      if (state_key && e.storageArea === localStorage) {
+        // The value is read when the event is sent: see syncLocalStorageEvent.
+        addEvents(
+          [ReflexEvent(SYNC_LOCAL_STORAGE, { key: e.key, state_key })],
+          e,
         );
-        addEvents([event], e);
       }
     };
 
@@ -1602,7 +1695,7 @@ export const mergeSlotProps = (injectedProps, ownProps, refProp) => {
  */
 export const getRefValue = (ref) => {
   if (!ref || !ref.current) {
-    return;
+    return null;
   }
   if (ref.current.type == "checkbox") {
     return ref.current.checked; // chakra
@@ -1617,10 +1710,10 @@ export const getRefValue = (ref) => {
   } else {
     //querySelector(":checked") is needed to get value from radio_group
     return (
-      ref.current.value ||
+      ref.current.value ??
       (ref.current.querySelector &&
-        ref.current.querySelector(":checked") &&
-        ref.current.querySelector(":checked")?.value)
+        ref.current.querySelector(":checked")?.value) ??
+      null
     );
   }
 };
