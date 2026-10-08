@@ -1,10 +1,11 @@
 """Inferred types for `reflex.model` that are part of the public contract."""
 
+from typing import assert_type
+
 import sqlmodel
 from sqlalchemy import Engine, MetaData
 from sqlalchemy.orm import Session
 from sqlmodel.ext.asyncio.session import AsyncSession
-from typing_extensions import assert_type
 
 import reflex as rx
 from reflex.model import ModelRegistry, get_engine, migrate, sqla_session
