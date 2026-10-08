@@ -95,9 +95,11 @@ every new session and `reset()`. Values already stored on an instance stay the
 same. A field uses its `default` when one is set, and otherwise calls its
 `default_factory`. A `default` is shared by every instance, so give a mutable
 default a `default_factory` that builds a new value each time. The field does not check the
-value against the var's annotation. A browser storage var stays in browser
-storage only with a storage value as its default, such as
-`rx.LocalStorage("dark", name="theme")`; a plain string makes it an ordinary var.
+value against the var's annotation. A browser storage var keeps its storage name
+and options only with a storage value as its default, such as
+`rx.LocalStorage("dark", name="theme")`. Given a plain string, a var annotated
+`str` becomes an ordinary var, and one annotated with a storage type, such as
+`rx.LocalStorage`, stays in browser storage under the default key and options.
 
 An inherited var belongs to the state that declared it, so changing its field
 also changes the default for every state that inherits it. Each generated

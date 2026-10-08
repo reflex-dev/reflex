@@ -1500,6 +1500,29 @@ def test_var_default_patches_round_trip():
     assert Svc()._limit == 5
 
 
+def test_inherited_var_patch_raises_type_error():
+    """Patching or deleting a var through a state that inherits it names the var."""
+
+    class Parent(BaseState):
+        value: int = 0
+
+    class Child(Parent):
+        pass
+
+    declared = Parent.get_fields()["value"]
+    # The patch's cleanup deletes the attribute it failed to set on Child.
+    with (
+        pytest.raises(TypeError, match="'value' is a state var of Child"),
+        mock.patch.object(Child, "value", 99),
+    ):
+        pass
+    with pytest.raises(TypeError, match="deleting it on the class"):
+        del Child.value
+    assert Parent.__dict__["value"] is declared
+    assert "value" not in Child.__dict__
+    assert Child().value == 0
+
+
 def test_computed_var_type_mismatch_is_logged_once_per_value(
     caplog: pytest.LogCaptureFixture,
 ):

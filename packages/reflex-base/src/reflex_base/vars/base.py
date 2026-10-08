@@ -4671,6 +4671,25 @@ def _default_arguments(value: Any) -> dict[str, Any]:
     }
 
 
+def _state_var_assignment_error(cls: type, name: str, action: str) -> TypeError:
+    """Build the error for replacing a state var through its class.
+
+    Args:
+        cls: The state class the attribute is set or deleted through.
+        name: The name of the state var.
+        action: What was done to the class attribute, like "assigning".
+
+    Returns:
+        The error, naming the var and how to change its default instead.
+    """
+    return TypeError(
+        f"{name!r} is a state var of {cls.__name__}; {action} it on the class "
+        f"would replace the var. Set its default with "
+        f"{cls.__name__}.__fields__[{name!r}].default = ..., or declare "
+        "class-level config as ClassVar."
+    )
+
+
 def _is_descriptor(value: Any) -> bool:
     """Whether a class attribute is a descriptor defining its own access, rather than a field.
 
@@ -4754,14 +4773,29 @@ class BaseStateMeta(ABCMeta):
                 # Assigning the var's own field back, as a patch undoing a
                 # failed assignment does, changes nothing.
                 return
-            msg = (
-                f"{name!r} is a state var of {cls.__name__}; assigning it on the "
-                f"class would replace the var. Set its default with "
-                f"{cls.__name__}.__fields__[{name!r}].default = ..., or declare "
-                "class-level config as ClassVar."
-            )
-            raise TypeError(msg)
+            raise _state_var_assignment_error(cls, name, "assigning")
         super().__setattr__(name, value)
+
+    def __delattr__(cls, name: str) -> None:
+        """Delete a class attribute, refusing to delete a state var it inherits.
+
+        The class does not hold an inherited var, so deleting it would fail, as
+        the cleanup of a refused patch through a substate does; this names the
+        var instead.
+
+        Args:
+            name: The class attribute being deleted.
+
+        Raises:
+            TypeError: If the attribute is a state var inherited from a base.
+        """
+        if (
+            name not in cls.__dict__
+            and name in cls.__fields__
+            and isinstance(_inherited_value(cls.__mro__, name), Field)
+        ):
+            raise _state_var_assignment_error(cls, name, "deleting")
+        super().__delattr__(name)
 
     def __new__(
         cls,
