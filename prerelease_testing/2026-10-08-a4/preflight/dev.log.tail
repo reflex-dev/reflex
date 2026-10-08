@@ -1,0 +1,5 @@
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://localhost:3100/
+Backend running at: http://0.0.0.0:8100
+[ERROR] Unexpected exit from worker-1
+Info: Reflex app stopped.
