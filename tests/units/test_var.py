@@ -561,15 +561,15 @@ def test_var_indexing_lists(var):
     """
     # Test basic indexing.
     if var._var_type is str:
-        assert str(var[0]) == f'Array.from(({var._js_expr}) ?? "").at(0)'
-        assert str(var[1]) == f'Array.from(({var._js_expr}) ?? "").at(1)'
+        assert str(var[0]) == f'Array.from(({var._js_expr}) ?? "").at?.(0)'
+        assert str(var[1]) == f'Array.from(({var._js_expr}) ?? "").at?.(1)'
     else:
         assert str(var[0]) == f"{var._js_expr}?.at?.(0)"
         assert str(var[1]) == f"{var._js_expr}?.at?.(1)"
 
     # Test negative indexing.
     if var._var_type is str:
-        assert str(var[-1]) == f'Array.from(({var._js_expr}) ?? "").at(-1)'
+        assert str(var[-1]) == f'Array.from(({var._js_expr}) ?? "").at?.(-1)'
     else:
         assert str(var[-1]) == f"{var._js_expr}?.at?.(-1)"
 
@@ -606,11 +606,11 @@ def test_var_indexing_str():
     assert str_var[0]._var_type is str
 
     # Test basic indexing.
-    assert str(str_var[0]) == 'Array.from((str) ?? "").at(0)'
-    assert str(str_var[1]) == 'Array.from((str) ?? "").at(1)'
+    assert str(str_var[0]) == 'Array.from((str) ?? "").at?.(0)'
+    assert str(str_var[1]) == 'Array.from((str) ?? "").at?.(1)'
 
     # Test negative indexing.
-    assert str(str_var[-1]) == 'Array.from((str) ?? "").at(-1)'
+    assert str(str_var[-1]) == 'Array.from((str) ?? "").at?.(-1)'
 
 
 @pytest.mark.parametrize(
@@ -753,7 +753,7 @@ def test_str_var_slicing():
         str(str_var[::-1])
         == 'Array.from((str)).slice(undefined, undefined).reverse().join("")'
     )
-    assert str(str_var[1]) == 'Array.from((str) ?? "").at(1)'
+    assert str(str_var[1]) == 'Array.from((str) ?? "").at?.(1)'
 
 
 def test_dict_indexing():

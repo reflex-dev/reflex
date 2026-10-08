@@ -1311,7 +1311,7 @@ def string_item_operation(string: StringVar[Any], index: NumberVar | int):
         The item from the string.
     """
     return var_operation_return(
-        js_expression=f'Array.from(({string!s}) ?? "").at({index!s})',
+        js_expression=f'Array.from(({string!s}) ?? "").at?.({index!s})',
         var_type=str,
     )
 
