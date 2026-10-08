@@ -1907,6 +1907,7 @@ async def test_hydrate_delivers_computed_var_mutations(
 
 @pytest.mark.parametrize("with_load", [True, False])
 @pytest.mark.parametrize("with_hashes", [True, False])
+@pytest.mark.parametrize("client_value", ["stale", "fresh"])
 @pytest.mark.parametrize(
     "processor_state_manager", ["in_process", "redis"], indirect=True
 )
@@ -1917,8 +1918,9 @@ async def test_hydrate_passes_client_storage_through_get_delta(
     token: str,
     with_load: bool,
     with_hashes: bool,
+    client_value: str,
 ):
-    """A get_delta override sees the browser's client storage at boot, once.
+    """A get_delta override reconciles browser storage without redundant recomputation.
 
     Overrides reconcile client storage there (reflex-enterprise checks its
     OIDC token hash), so the boot values must reach them as
@@ -1932,9 +1934,11 @@ async def test_hydrate_passes_client_storage_through_get_delta(
         token: The client token.
         with_load: Whether the page has an on-load handler.
         with_hashes: Whether this is the first boot or a reconnect.
+        client_value: The browser-provided value to reconcile.
     """
     key = "token_hash" + FIELD_MARKER
     seen: list[str] = []
+    computed_values: list[str] = []
 
     class ReconcileState(State):
         token_hash: str = rx.LocalStorage("")
@@ -1959,16 +1963,35 @@ async def test_hydrate_passes_client_storage_through_get_delta(
         def load(self):
             """Provide an on-load event."""
 
+    class DependentState(State):
+        """A sibling state with a cached var depending on client storage."""
+
+        @rx.var(cache=True, auto_deps=False)
+        async def token_hash_copy(self) -> str:
+            storage_state = await self.get_state(ReconcileState)
+            computed_values.append(storage_state.token_hash)
+            return storage_state.token_hash
+
+    DependentState.computed_vars["token_hash_copy"].add_dependency(
+        DependentState,
+        ReconcileState.token_hash,  # pyright: ignore[reportArgumentType]
+    )
+
     wired_app.add_page(
-        lambda: rx.text(ReconcileState.token_hash, ReconcileState.unset),
+        lambda: rx.text(
+            ReconcileState.token_hash,
+            ReconcileState.unset,
+            DependentState.token_hash_copy,
+        ),
         route="/",
         on_load=ReconcileState.load if with_load else None,
     )
     wired_app._compile_page("index")
     name = ReconcileState.get_full_name()
-    payload: dict[str, Any] = {"vars": {f"{name}.{key}": "stale"}}
+    payload: dict[str, Any] = {"vars": {f"{name}.{key}": client_value}}
     if with_hashes:
         payload["hashes"] = state_snapshot_hashes(compile_state(State))
+    computed_values.clear()
     boot_name = Event.from_event_type(State.hydrate_and_load())[0].name  # pyright: ignore[reportCallIssue]
 
     async with real_base_state_processor as processor:
@@ -1976,7 +1999,7 @@ async def test_hydrate_passes_client_storage_through_get_delta(
             await processor.enqueue(token, _boot_event(boot_name, payload))
         ).wait_all()
 
-    assert seen == ["stale"]
+    assert seen == (["stale", "fresh"] if client_value == "stale" else ["fresh"])
     hydrated_key = CompileVars.IS_HYDRATED + FIELD_MARKER
     assert emitted_deltas[0][1][State.get_full_name()][hydrated_key] is False
     persisted = [
@@ -1987,6 +2010,77 @@ async def test_hydrate_passes_client_storage_through_get_delta(
     ]
     assert any(subdelta.get(key) == "fresh" for subdelta in persisted)
     assert not any("unset" + FIELD_MARKER in subdelta for subdelta in persisted)
+    dependent_key = "token_hash_copy" + FIELD_MARKER
+    assert any(
+        delta.get(DependentState.get_full_name(), {}).get(dependent_key) == "fresh"
+        for _, delta in emitted_deltas
+    )
+    assert computed_values == (
+        ["stale", "fresh"] if client_value == "stale" else ["fresh"]
+    )
+
+
+@pytest.mark.parametrize(
+    "processor_state_manager", ["in_process", "redis"], indirect=True
+)
+async def test_hydrate_reconciles_json_distinct_storage_values(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+):
+    """Hydration treats JSON-distinct values as changes even when Python equates them.
+
+    Args:
+        wired_app: The app wired to the state manager.
+        real_base_state_processor: The event processor.
+        emitted_deltas: Captured deltas.
+        token: The client token.
+    """
+
+    class StorageState(State):
+        value: int | bool = rx.LocalStorage(1)  # pyright: ignore[reportAssignmentType]
+
+        @_override_base_method
+        def get_delta(self) -> Delta:
+            delta = super().get_delta()
+            subdelta = delta.get(self.get_full_name(), {})
+            key = "value" + FIELD_MARKER
+            if subdelta.get(key) == 1:
+                subdelta[key] = True
+            return delta
+
+    class DependentState(State):
+        @rx.var(cache=True, auto_deps=False)
+        async def value_type(self) -> str:
+            storage_state = await self.get_state(StorageState)
+            return type(storage_state.value).__name__
+
+    DependentState.computed_vars["value_type"].add_dependency(
+        DependentState,
+        StorageState.value,  # pyright: ignore[reportArgumentType]
+    )
+    wired_app.add_page(
+        lambda: rx.text(StorageState.value, DependentState.value_type), route="/"
+    )
+    wired_app._compile_page("index")
+    name = StorageState.get_full_name()
+    payload: dict[str, Any] = {"vars": {f"{name}.value{FIELD_MARKER}": 1}}
+    boot_name = Event.from_event_type(State.hydrate_and_load())[0].name  # pyright: ignore[reportCallIssue]
+
+    async with real_base_state_processor as processor:
+        await (
+            await processor.enqueue(token, _boot_event(boot_name, payload))
+        ).wait_all()
+
+    value_type_key = "value_type" + FIELD_MARKER
+    assert any(
+        delta.get(DependentState.get_full_name(), {}).get(value_type_key) == "bool"
+        for _, delta in emitted_deltas
+    )
+    async with _read_back(real_base_state_processor, token) as root:
+        storage_state = await root.get_state(StorageState)
+        assert storage_state.value is True
 
 
 @pytest.mark.parametrize(

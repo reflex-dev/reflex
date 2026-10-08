@@ -40,6 +40,13 @@ _record_delta_values: ContextVar[bool] = ContextVar(
     "_record_delta_values", default=True
 )
 
+# During the client-storage reconciliation probe, dirty storage vars must reach
+# get_delta overrides without invalidating their computed dependents. Expired
+# and always-dirty computed vars are still processed by build_delta.
+_suppress_delta_dependency_invalidation: ContextVar[bool] = ContextVar(
+    "_suppress_delta_dependency_invalidation", default=False
+)
+
 
 class _DeltaRecord(NamedTuple):
     """An uncached var value that counts as sent once the delta delivers it."""
@@ -80,6 +87,20 @@ def _suppress_delta_recording() -> Iterator[None]:
     finally:
         _pending_delta_records.reset(records_token)
         _record_delta_values.reset(token)
+
+
+@contextlib.contextmanager
+def _suppress_computed_var_dependency_invalidation() -> Iterator[None]:
+    """Suppress computed-var invalidation caused by dirty source vars.
+
+    Yields:
+        None, with computed-var dependency invalidation suppressed.
+    """
+    token = _suppress_delta_dependency_invalidation.set(True)
+    try:
+        yield
+    finally:
+        _suppress_delta_dependency_invalidation.reset(token)
 
 
 def _commit_delta_records(pending: list[_DeltaRecord], delta: Delta) -> None:
@@ -222,7 +243,10 @@ def build_delta(state: BaseState) -> Delta:
     """
     delta = {}
 
-    state._mark_dirty_computed_vars()
+    if _suppress_delta_dependency_invalidation.get():
+        state._mark_dirty_computed_vars(())
+    else:
+        state._mark_dirty_computed_vars()
     delta_vars = state.dirty_vars & state._frontend_var_names
 
     always_dirty_computed_vars = state._always_dirty_computed_vars

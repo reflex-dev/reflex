@@ -88,6 +88,8 @@ from reflex.istate.delta import (
     Delta,
     DeltaMapping,
     _resolve_delta,
+    _suppress_computed_var_dependency_invalidation,
+    _suppress_delta_dependency_invalidation,
     build_delta,
     clean_state,
     resolve_delta,
@@ -1943,7 +1945,10 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             var_names: The vars of this state that changed; all its dirty vars if omitted.
         """
         self._mark_ancestors_dirty()
-        self._mark_dirty_computed_vars(var_names)
+        if _suppress_delta_dependency_invalidation.get():
+            self._mark_dirty_computed_vars(())
+        else:
+            self._mark_dirty_computed_vars(var_names)
 
     def _mark_ancestors_dirty(self) -> None:
         """Record this state as a dirty substate of each of its ancestors."""
@@ -2398,7 +2403,8 @@ class State(BaseState):
         from reflex_base.event.context import EventContext
 
         self._reset_client_storage()
-        applied = await _apply_client_storage_vars(self, vars) if vars else []
+        with _suppress_computed_var_dependency_invalidation():
+            applied = await _apply_client_storage_vars(self, vars) if vars else []
         self._clean()
         # The snapshot must carry is_hydrated=False: the frontend skips
         # writing client storage for a delta that is not yet hydrated, and
@@ -2415,26 +2421,36 @@ class State(BaseState):
             await ctx.emit_delta(delta=delta)
             # Follow-up corrections must be allowed to write browser storage.
             self.dirty_vars.discard(constants.CompileVars.IS_HYDRATED)
-        # Let get_delta overrides inspect browser values without invalidating
-        # their computed dependents. Re-resolve only when an override changes
-        # a value, so dependent computed vars reflect that correction.
+        # Probe overrides with browser values, but don't invalidate computed
+        # dependents unless an override actually changes a storage value.
         for var_state, var_name in applied:
             var_state.dirty_vars.add(var_name)
             var_state._mark_ancestors_dirty()
         if applied:
-            correction_delta = await self._get_resolved_delta()
-            dependent_deltas = []
+            with _suppress_computed_var_dependency_invalidation():
+                correction_delta = await self._get_resolved_delta()
+            changed_vars = []
             for var_state, var_name in applied:
                 key = var_name + FIELD_MARKER
                 subdelta = correction_delta.get(var_state.get_full_name(), {})
-                if key in subdelta and subdelta[key] != var_state.get_value(var_name):
+                browser_value = var_state.get_value(var_name)
+                overridden = key in subdelta and _serialize_var(
+                    subdelta[key]
+                ) != _serialize_var(browser_value)
+                if overridden:
                     setattr(var_state, var_name, subdelta[key])
+                    changed_vars.append((var_state, var_name))
+            if changed_vars:
+                # Discard the probe's dirtiness before producing a full-tree
+                # delta. This makes dependencies on sibling states visible and
+                # prevents expired/always-dirty computed vars from being
+                # evaluated a second time in the correction pass.
+                self._clean()
+                for var_state, var_name in changed_vars:
+                    var_state.dirty_vars.add(var_name)
                     var_state._mark_dirty((var_name,))
-                    dependent_deltas.append(
-                        await _resolve_delta(BaseState.get_delta(var_state))
-                    )
-            for dependent_delta in dependent_deltas:
-                for state_name, changes in dependent_delta.items():
+                corrected_delta = await self._get_resolved_delta()
+                for state_name, changes in corrected_delta.items():
                     correction_delta.setdefault(state_name, {}).update(changes)
             if ctx.emit_delta_impl is not None and correction_delta:
                 await ctx.emit_delta(delta=correction_delta)
