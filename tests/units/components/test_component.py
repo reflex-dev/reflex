@@ -2146,9 +2146,7 @@ def test_add_style_embedded_vars(test_state: type[TestState]):
     )
     assert any(
         import_var.tag == "useStateContext"
-        for import_var in dict(VarData.from_state(test_state).imports)[
-            "$/utils/context-registry"
-        ]
+        for import_var in page._get_all_imports()["$/utils/context-registry"]
     )
     assert "useText" in page._get_all_hooks_internal()
     assert "useParent" in page._get_all_hooks_internal()

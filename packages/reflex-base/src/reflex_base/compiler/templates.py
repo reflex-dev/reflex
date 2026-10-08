@@ -542,8 +542,15 @@ function createStateStore() {{
     Object.keys(state).map((substateName) => [
       substateName,
       (delta) => {{
-        const nextState = applyDelta(state[substateName], delta);
-        if (Object.is(nextState, state[substateName])) return;
+        const currentState = state[substateName];
+        if (
+          Object.keys(delta).every((key) =>
+            Object.is(currentState[key], delta[key]),
+          )
+        ) {{
+          return;
+        }}
+        const nextState = applyDelta(currentState, delta);
         state[substateName] = nextState;
         listeners.get(substateName)?.forEach((listener) => listener());
       }},

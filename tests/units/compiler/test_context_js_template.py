@@ -281,12 +281,19 @@ let firstNotifications = 0;
 let secondNotifications = 0;
 react.subscriptions[0](() => firstNotifications++);
 react.subscriptions[1](() => secondNotifications++);
+store.dispatchers["reflex___state____state__sub"]({ value: 2 });
+store.dispatchers["reflex___state____state__sub"]({});
+const noOpIdentityPreserved =
+  store.getSnapshot("reflex___state____state__sub") === second;
+const notificationsAfterNoOps = secondNotifications;
 store.dispatchers["reflex___state____state__sub"]({ value: 3 });
 const updated = registry.useStateContext("reflex___state____state__sub");
 process.stdout.write(JSON.stringify({
   first,
   second,
   updated,
+  noOpIdentityPreserved,
+  notificationsAfterNoOps,
   firstIdentityPreserved: store.getSnapshot("reflex___state____state") === first,
   firstNotifications,
   secondNotifications,
@@ -304,6 +311,8 @@ process.stdout.write(JSON.stringify({
         "first": {"value": 1},
         "second": {"value": 2},
         "updated": {"value": 3},
+        "noOpIdentityPreserved": True,
+        "notificationsAfterNoOps": 0,
         "firstIdentityPreserved": True,
         "firstNotifications": 0,
         "secondNotifications": 1,

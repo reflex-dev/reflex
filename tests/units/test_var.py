@@ -55,7 +55,7 @@ from reflex_base.vars.sequence import (
 
 import reflex as rx
 from reflex.environment import PerformanceMode
-from reflex.state import BaseState
+from reflex.state import BaseState, code_uses_state_contexts
 
 pytest.importorskip("pydantic")
 
@@ -1559,6 +1559,18 @@ def test_retrieval():
         == tuple(result_immutable_var_data.hooks)
         == tuple(original_var_data.hooks)
     )
+
+
+@pytest.mark.parametrize(
+    ("javascript_code", "expected"),
+    [
+        ("const state = useStateContext('state')", True),
+        ("const state = useContext(StateContexts.state)", True),
+        ("const state = useContext(ThemeContext)", False),
+    ],
+)
+def test_code_uses_state_contexts(javascript_code: str, expected: bool):
+    assert code_uses_state_contexts(javascript_code) is expected
 
 
 def test_fstring_concat():
