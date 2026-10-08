@@ -1,0 +1,1 @@
+A running background event handler no longer keeps the state tree it was dispatched with alive once it has entered `async with self`. With the Redis state manager, every long-running background task used to hold an extra copy of the session's state.

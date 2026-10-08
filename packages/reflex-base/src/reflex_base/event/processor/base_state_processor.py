@@ -523,6 +523,10 @@ class BaseStateEventProcessor(EventProcessor):
         # background task's own state changes are emitted (and cleaned) by its
         # `async with self` context exits, which re-acquire the lock.
         proxy = StateProxy(substate)
+        # Leave the tree loaded under the lock to the proxy, which replaces it on
+        # `async with self`. A manager like redis loads a fresh tree for every
+        # lock, so these locals would pin an extra copy for the whole task.
+        del state, substate, root_state
         handler_error: BaseException | None = None
         try:
             await process_event(
