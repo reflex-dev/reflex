@@ -1486,6 +1486,32 @@ def test_class_assignment_error_names_the_declaring_state():
     assert "every state that inherits it" not in message
 
 
+def test_class_assignment_error_names_the_state_mixing_in_a_var():
+    """A state mixing in a var owns its copy, so the error names that state."""
+
+    class Mixin(State, mixin=True):
+        count: int = 0
+
+    class Mixed(Mixin, State):
+        pass
+
+    class Child(Mixed):
+        pass
+
+    mixin, mixed, child = Mixin.__name__, Mixed.__name__, Child.__name__
+    for cls, owner, declared in (
+        (Mixin, mixin, mixin),
+        (Mixed, mixed, mixed),
+        (Child, mixed, f"{mixed}, inherited by {child}"),
+    ):
+        with pytest.raises(TypeError) as exc_info:
+            cls.count = 9
+        message = str(exc_info.value)
+        assert message.startswith(f"'count' is a state var of {declared}; "), cls
+        assert f"{owner}.__fields__['count'].default = ..." in message
+    assert Mixed.get_fields()["count"] is not Mixin.get_fields()["count"]
+
+
 def test_class_assignment_error_suggests_factory_for_mutable_value():
     """A mutable value is suggested as a default_factory, not a shared default."""
 
