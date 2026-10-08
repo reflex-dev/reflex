@@ -73,6 +73,28 @@ On 0.9, assigning `State.__fields__["items"].default = []` was safe, because eac
 
 [Changing Defaults](/docs/vars/base-vars/#changing-defaults) has the details, including browser storage vars.
 
+## Mutable defaults filled in after the class is defined
+
+In 0.10 a mutable default given in the class body, or passed to `set_default`, is deep-copied when it is assigned ([#7519](https://github.com/reflex-dev/reflex/pull/7519)). Changes made to the original object afterwards no longer reach new sessions. On 0.9, a module-level list filled in after the `class` statement still showed up in every new session; on 0.10 sessions start with the list as it was when the class was defined:
+
+```python
+OPTIONS: list[str] = []
+
+
+class State(rx.State):
+    options: list[str] = OPTIONS
+
+
+OPTIONS.append("late")  # 0.9: new sessions see ["late"]; 0.10: they see []
+```
+
+Fill the value before the class is defined, or declare a factory that reads it when each session starts, which works on both versions:
+
+```python
+class State(rx.State):
+    options: list[str] = rx.field(default_factory=lambda: list(OPTIONS))
+```
+
 ## Calling inherited handlers from background tasks
 
 In a background task, `self` is a proxy that only allows changes inside `async with self`. A handler declared on the same state was already called through that proxy, but a handler inherited from a parent state was not: on 0.9, `self.inherited_handler()` ran on the parent state without the lock, so it could write outside `async with self`. In 0.10 it goes through the proxy like any other handler ([#7312](https://github.com/reflex-dev/reflex/pull/7312)):

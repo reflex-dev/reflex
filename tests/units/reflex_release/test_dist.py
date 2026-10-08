@@ -139,6 +139,24 @@ def test_pin_exact_ignores_similar_names(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize(
+    "requirement",
+    ["widget-core >= 1.2.4.dev1", "widget-core < 1.2.3", "widget-core != 1.2.3"],
+)
+def test_pin_exact_preserves_constraints_when_reusing_a_published_version(
+    tmp_path: Path, requirement: str
+) -> None:
+    """An exact release pin cannot silently override the required sibling version."""
+    pyproject = tmp_path / "pyproject.toml"
+    original = f'[project]\ndependencies = ["{requirement}"]\n'
+    pyproject.write_text(original)
+
+    with pytest.raises(ReleaseError, match="does not satisfy"):
+        pin_exact(pyproject, "widget-core", Version("1.2.3"))
+
+    assert pyproject.read_text() == original
+
+
+@pytest.mark.parametrize(
     "dependencies",
     ['["requests >= 2"]', '["widget-core >= 1", "widget-core >= 2"]'],
 )
