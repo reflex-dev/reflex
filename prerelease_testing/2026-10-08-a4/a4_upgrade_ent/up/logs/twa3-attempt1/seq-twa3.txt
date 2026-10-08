@@ -1,0 +1,106 @@
+### twa3 base 15:56:16
+migrate rc=0
+started reflex pid=9676 (15:56:19) log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a4_upgrade_ent/up/logs/twa3-base-prod.server.log
+UP after 6s (frontend 200, backend /ping 200)
+granian workers spawned (a3): 9
+[PASS   ] bob still logged in after reload (token kept): bo
+[PASS   ] same token kept across logout/login (reset() keeps session): 9c5981c4-f530-4622-f8c8-07bc61cb08c5 -> 9c5981c4-f530-4622-f8c8-07bc61cb08c5
+[ANOMALY] console: no unexpected errors/warnings + no page errors: [{"page": "alice", "t": 1.227, "type": "error", "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"}, {"page": "alice", "t": 1.36, "type": "error", "text": 
+[ANOMALY] network: no unexpected failed/4xx/5xx requests: [{"page": "alice", "t": 1.227, "url": "http://localhost:3614/bg.svg", "status": 404}, {"page": "alice", "t": 1.36, "url": "http://localhost:3614/signup/bg.svg", "status": 404}, {"page": "bob", "t": 4.34
+== twa3-base-prod: {'pass': 19, 'fail': 0, 'anomaly': 2, 'skipped': 0}  console_total=27 unexpected_console=8 page_errors=0 bad_requests=8 (unexpected 8) ws_frames=160
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  BAD REQUEST: {'page': 'alice', 't': 1.227, 'url': 'http://localhost:3614/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'alice', 't': 1.36, 'url': 'http://localhost:3614/signup/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'bob', 't': 4.346, 'url': 'http://localhost:3614/signup/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'alice', 't': 11.013, 'url': 'http://localhost:3614/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'alice', 't': 11.353, 'url': 'http://localhost:3614/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'alice', 't': 12.566, 'url': 'http://localhost:3614/login/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'carol0', 't': 15.053, 'url': 'http://localhost:3614/signup/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'carol0', 't': 16.398, 'url': 'http://localhost:3614/signup/bg.svg', 'status': 404}
+stale tab ready: yes
+17
+9c5981c4-f530-4622-f8c8-07bc61cb08c5_reflex___state____state
+bcfab2df-0707-4724-c2a3-4bfcf9fa44f5_reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state
+f607e44b-cd05-4b89-aa90-ef7354a9ef8a_reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state
+SHUTDOWN: main pid 9676 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### twa3 upgrade 15:57:02
+freeze diff twa3: < reflex==0.10.0a3 < reflex-base==0.10.0a3 > reflex==0.10.0a4 > reflex-base==0.10.0a4 
+Checked 51 packages in 1ms
+All installed packages are compatible
+### twa3 up 15:57:03
+started reflex pid=10942 (15:57:03) log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a4_upgrade_ent/up/logs/twa3-up-prod.server.log
+UP after 6s (frontend 200, backend /ping 200)
+granian workers spawned (a4): 9
+package.json diff a3->a4: 
+reflex.lock/package.json == .web/package.json
+[FAIL   ] A: dave tweets + follows alice: [['davet', 'dave pre-upgrade twa3-stale-prod'], ['bobs', 'bob tweet twa3-base-prod']]
+[ANOMALY] C: did the old tab reload itself after the new server came up?: marker=old-tab-1791475017910
+[FAIL   ] F: dave Following lists alice after fresh login: []
+[ANOMALY] console: no unexpected errors/warnings + no page errors: [{"page": "dave", "t": 0.956, "type": "error", "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"}, {"page": "dave", "t": 14.993, "type": "error", "text": 
+[ANOMALY] network: no unexpected failed/4xx/5xx requests: [{"page": "dave", "t": 0.956, "url": "http://localhost:3614/signup/bg.svg", "status": 404}, {"page": "dave", "t": 33.524, "url": "http://localhost:3614/bg.svg", "status": 404}]
+== twa3-stale-prod: {'pass': 6, 'fail': 2, 'anomaly': 3, 'skipped': 0}  console_total=16 unexpected_console=12 page_errors=0 bad_requests=2 (unexpected 2) ws_frames=84
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3614/_event/?token=f607e44b-cd05-4b89-aa90-ef7354a9ef8a&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3614/_event/?token=f607e44b-cd05-4b89-aa90-ef7354a9ef8a&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3614/_event/?token=f607e44b-cd05-4b89-aa90-ef7354a9ef8a&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3614/_event/?token=f607e44b-cd05-4b89-aa90-ef7354a9ef8a&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3614/_event/?token=f607e44b-cd05-4b89-aa90-ef7354a9ef8a&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3614/_event/?token=f607e44b-cd05-4b89-aa90-ef7354a9ef8a&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3614/_event/?token=f607e44b-cd05-4b89-aa90-ef7354a9ef8a&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3614/_event/?token=f607e44b-cd05-4b89-aa90-ef7354a9ef8a&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3614/_event/?token=f607e44b-cd05-4b89-aa90-ef7354a9ef8a&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3614/_event/?token=f607e44b-cd05-4b89-aa90-ef7354a9ef8a&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  BAD REQUEST: {'page': 'dave', 't': 0.956, 'url': 'http://localhost:3614/signup/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'dave', 't': 33.524, 'url': 'http://localhost:3614/bg.svg', 'status': 404}
+[ANOMALY] console: no unexpected errors/warnings + no page errors: [{"page": "bob-pw", "t": 5.031, "type": "error", "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"}, {"page": "carol", "t": 7.431, "type": "error", "text"
+[ANOMALY] network: no unexpected failed/4xx/5xx requests: [{"page": "bob-pw", "t": 5.03, "url": "http://localhost:3614/login/bg.svg", "status": 404}, {"page": "carol", "t": 7.431, "url": "http://localhost:3614/signup/bg.svg", "status": 404}, {"page": "alice-to
+== twa3-up-prod: {'pass': 12, 'fail': 0, 'anomaly': 2, 'skipped': 0}  console_total=14 unexpected_console=4 page_errors=0 bad_requests=4 (unexpected 4) ws_frames=92
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  BAD REQUEST: {'page': 'bob-pw', 't': 5.03, 'url': 'http://localhost:3614/login/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'carol', 't': 7.431, 'url': 'http://localhost:3614/signup/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'alice-tok', 't': 10.833, 'url': 'http://localhost:3614/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'alice-tok', 't': 11.086, 'url': 'http://localhost:3614/login/bg.svg', 'status': 404}
+[PASS   ] bob still logged in after reload (token kept): bo
+[PASS   ] same token kept across logout/login (reset() keeps session): 78102560-1789-4cad-9860-048d7ccad215 -> 78102560-1789-4cad-9860-048d7ccad215
+[ANOMALY] console: no unexpected errors/warnings + no page errors: [{"page": "alice", "t": 2.148, "type": "error", "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"}, {"page": "alice", "t": 2.284, "type": "error", "text":
+[ANOMALY] network: no unexpected failed/4xx/5xx requests: [{"page": "alice", "t": 2.148, "url": "http://localhost:3614/bg.svg", "status": 404}, {"page": "alice", "t": 2.284, "url": "http://localhost:3614/signup/bg.svg", "status": 404}, {"page": "bob", "t": 6.4
+== twa3-up-prod-base: {'pass': 19, 'fail': 0, 'anomaly': 2, 'skipped': 0}  console_total=27 unexpected_console=8 page_errors=0 bad_requests=8 (unexpected 8) ws_frames=160
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  BAD REQUEST: {'page': 'alice', 't': 2.148, 'url': 'http://localhost:3614/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'alice', 't': 2.284, 'url': 'http://localhost:3614/signup/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'bob', 't': 6.485, 'url': 'http://localhost:3614/signup/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'alice', 't': 15.261, 'url': 'http://localhost:3614/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'alice', 't': 15.85, 'url': 'http://localhost:3614/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'alice', 't': 17.238, 'url': 'http://localhost:3614/login/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'carol0', 't': 20.054, 'url': 'http://localhost:3614/signup/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'carol0', 't': 21.706, 'url': 'http://localhost:3614/signup/bg.svg', 'status': 404}
+SHUTDOWN: main pid 10942 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+SHUTDOWN: no live main pid ()
+SHUTDOWN: all ports free after SIGTERM of main pid
+--- twa3-base-prod server-log warnings:
+      1 [WARNING] Configured number of workers appears to be higher than the amount of CPU cores available. Mind that such value might actually decrease the overall throughput of the server. Consider using 4 
+--- twa3-up-prod server-log warnings:
+      1 [WARNING] Configured number of workers appears to be higher than the amount of CPU cores available. Mind that such value might actually decrease the overall throughput of the server. Consider using 4 
+      1 Warning: Frontend version 0.10.0a3 for session mAUe-lG_YD0ATveaAAAB does not 
+### twa3 done 15:58:06
+CHAIN_DONE

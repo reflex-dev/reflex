@@ -1,0 +1,568 @@
+{
+ "tag": "gh-base",
+ "results": [
+  {
+   "name": "fresh: no users initially",
+   "status": "pass",
+   "detail": "[]",
+   "t": 5.071
+  },
+  {
+   "name": "add alice: chip + stats fetched (bg task) + textarea JSON",
+   "status": "pass",
+   "detail": "chips=['alice'] logins=['alice']",
+   "t": 5.414
+  },
+  {
+   "name": "add bob: 2 users with data",
+   "status": "pass",
+   "detail": "chips=['alice', 'bob'] logins=['alice', 'bob']",
+   "t": 5.737
+  },
+  {
+   "name": "recharts bar_chart renders bars (4 series x 2 users)",
+   "status": "pass",
+   "detail": "bars=8",
+   "t": 5.753
+  },
+  {
+   "name": "unknown user ghost1: chip shown, no data row",
+   "status": "pass",
+   "detail": "chips=['alice', 'bob', 'ghost1'] logins=['alice', 'bob']",
+   "t": 7.913
+  },
+  {
+   "name": "remove bob: chip + data removed",
+   "status": "pass",
+   "detail": "chips=['alice', 'ghost1'] logins=['alice']",
+   "t": 8.2
+  },
+  {
+   "name": "LocalStorage holds selected_users_json + user_stats_json",
+   "status": "pass",
+   "detail": "{'reflex___state____state.github_stats___github_stats____state.selected_users_json_rx_state_': '[\"alice\", \"ghost1\"]', 'reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_': '[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitCon'}",
+   "t": 9.209
+  },
+  {
+   "name": "reload: users + stats restored from LocalStorage",
+   "status": "pass",
+   "detail": "chips=['alice', 'ghost1'] logins=['alice'] expected=['alice', 'ghost1']/['alice']",
+   "t": 10.602
+  },
+  {
+   "name": "reload: no refetch for users already in user_stats_json",
+   "status": "pass",
+   "detail": "refetched={'ghost1': 38} (ghost* refetch is expected app behaviour)",
+   "t": 10.602
+  },
+  {
+   "name": "widget: dynamic route renders heading (param lower-cased)",
+   "status": "pass",
+   "detail": "",
+   "t": 11.272
+  },
+  {
+   "name": "widget: chart bars + legend",
+   "status": "pass",
+   "detail": "bars=4",
+   "t": 11.304
+  },
+  {
+   "name": "widget: ?appearance=dark applied via nested rx.theme (pre-existing: not applied on 0.9.12)",
+   "status": "anomaly",
+   "detail": "['radix-themes css-0 light root=true', 'radix-themes css-0 root=false']",
+   "t": 11.311
+  },
+  {
+   "name": "widget: last_fetch LocalStorage written",
+   "status": "pass",
+   "detail": "",
+   "t": 11.313
+  },
+  {
+   "name": "widget: reload within 60s served from LocalStorage cache (no refetch)",
+   "status": "pass",
+   "detail": "first load fetched 1, reload fetched 0, bars=4",
+   "t": 13.378
+  },
+  {
+   "name": "console: no unexpected errors/warnings + no page errors",
+   "status": "anomaly",
+   "detail": "[{\"page\": \"main\", \"t\": 2.016, \"type\": \"error\", \"text\": \"You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`.\"}, {\"page\": \"main\", \"t\": 9.717, \"type\": \"error\", \"text\": \"You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`.\"}]",
+   "t": 13.48
+  },
+  {
+   "name": "network: no unexpected failed/4xx/5xx requests",
+   "status": "pass",
+   "detail": "[]",
+   "t": 13.48
+  }
+ ],
+ "console": [
+  {
+   "page": "main",
+   "t": 1.415,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 1.655,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 1.682,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 1.78,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 2.016,
+   "type": "error",
+   "text": "You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`."
+  },
+  {
+   "page": "main",
+   "t": 9.284,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 9.364,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 9.431,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 9.49,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 9.493,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 9.717,
+   "type": "error",
+   "text": "You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`."
+  },
+  {
+   "page": "main",
+   "t": 10.677,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 10.762,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 10.911,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 10.921,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 10.924,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 11.387,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 11.468,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 11.551,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 11.554,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 11.555,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  }
+ ],
+ "page_errors": [],
+ "bad_requests": [],
+ "ws_frames": [
+  {
+   "page": "main",
+   "t": 1.839,
+   "dir": "open",
+   "payload": "ws://localhost:8604/_event/?token=de4428f7-2087-4472-eeb1-d631c7428371&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 1.849,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"Jg21ig78c_LRMd97AAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 1.849,
+   "dir": "out",
+   "len": 10,
+   "payload": "40/_event,"
+  },
+  {
+   "page": "main",
+   "t": 1.854,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"8Ek4Lrf4TXkVaCr8AAAB\"}"
+  },
+  {
+   "page": "main",
+   "t": 1.854,
+   "dir": "out",
+   "len": 106,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 1.854,
+   "dir": "out",
+   "len": 156,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 1.863,
+   "dir": "in",
+   "len": 2626,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8604\",\"origin\":\"http://localhost:3604\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"eu+jymp2FzNQbtruh3OuKg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"acce...(trimmed)"
+  },
+  {
+   "page": "main",
+   "t": 1.866,
+   "dir": "in",
+   "len": 89,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "page": "main",
+   "t": 1.871,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 1.873,
+   "dir": "in",
+   "len": 122,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"fetching_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 1.874,
+   "dir": "in",
+   "len": 156,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"fetching_rx_state_\":false,\"user_stats_json_rx_state_\":\"[]\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.139,
+   "dir": "out",
+   "len": 179,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.github_stats___github_stats____state.set_username\",\"payload\":{\"username\":\"alice\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.139,
+   "dir": "out",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.github_stats___github_stats____state.add_user\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.147,
+   "dir": "in",
+   "len": 125,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"username_rx_state_\":\"alice\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.147,
+   "dir": "in",
+   "len": 203,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"selected_users_rx_state_\":[\"alice\"],\"username_rx_state_\":\"\",\"selected_users_json_rx_state_\":\"[\\\"alice\\\"]\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.4,
+   "dir": "in",
+   "len": 122,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"fetching_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.4,
+   "dir": "in",
+   "len": 926,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"user_stats_rx_state_\":[{\"name\":\"Alice\",\"login\":\"alice\",\"contributionsCollection\":{\"totalCommitContributions\":491,\"totalPullRequestReviewContributions\":54},\"repositoriesContributedTo\":26,\"pullRequests\":252,\"mergedPullRequests\":191,\"openIssues\":38,\"closedIssues\":25,\"followers\":185,\"repositoryDiscussions\":7,\"repositoryDiscussionComments\":19}],\"data_pretty_rx_state_\":\"[\\n  {\\n    \\\"name\\\": \\\"Alice\\\",\\n    \\\"login\\\": \\\"alice\\\",\\n    \\\"contributionsCollection\\\": {\\n      \\\"totalCommitContributions\\\": 491,\\n...(trimmed)"
+  },
+  {
+   "page": "main",
+   "t": 5.4,
+   "dir": "in",
+   "len": 527,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"fetching_rx_state_\":false,\"user_stats_json_rx_state_\":\"[{\\\"name\\\": \\\"Alice\\\", \\\"login\\\": \\\"alice\\\", \\\"contributionsCollection\\\": {\\\"totalCommitContributions\\\": 491, \\\"totalPullRequestReviewContributions\\\": 54}, \\\"repositoriesContributedTo\\\": 26, \\\"pullRequests\\\": 252, \\\"mergedPullRequests\\\": 191, \\\"openIssues\\\": 38, \\\"closedIssues\\\": 25, \\\"followers\\\": 185, \\\"repositoryDiscussions\\\": 7, \\\"repositoryDiscussionComments\\\": 19}]\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.47,
+   "dir": "out",
+   "len": 177,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.github_stats___github_stats____state.set_username\",\"payload\":{\"username\":\"bob\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.471,
+   "dir": "out",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.github_stats___github_stats____state.add_user\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.726,
+   "dir": "in",
+   "len": 123,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"username_rx_state_\":\"bob\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.727,
+   "dir": "in",
+   "len": 218,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"selected_users_rx_state_\":[\"alice\",\"bob\"],\"username_rx_state_\":\"\",\"selected_users_json_rx_state_\":\"[\\\"alice\\\", \\\"bob\\\"]\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.727,
+   "dir": "in",
+   "len": 122,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"fetching_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.727,
+   "dir": "in",
+   "len": 1691,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"user_stats_rx_state_\":[{\"name\":\"Alice\",\"login\":\"alice\",\"contributionsCollection\":{\"totalCommitContributions\":491,\"totalPullRequestReviewContributions\":54},\"repositoriesContributedTo\":26,\"pullRequests\":252,\"mergedPullRequests\":191,\"openIssues\":38,\"closedIssues\":25,\"followers\":185,\"repositoryDiscussions\":7,\"repositoryDiscussionComments\":19},{\"name\":\"Bob\",\"login\":\"bob\",\"contributionsCollection\":{\"totalCommitContributions\":454,\"totalPullRequestReviewContributions\":6},\"repositoriesContributedTo\":42,\"pullRe...(trimmed)"
+  },
+  {
+   "page": "main",
+   "t": 5.727,
+   "dir": "in",
+   "len": 895,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"fetching_rx_state_\":false,\"user_stats_json_rx_state_\":\"[{\\\"name\\\": \\\"Alice\\\", \\\"login\\\": \\\"alice\\\", \\\"contributionsCollection\\\": {\\\"totalCommitContributions\\\": 491, \\\"totalPullRequestReviewContributions\\\": 54}, \\\"repositoriesContributedTo\\\": 26, \\\"pullRequests\\\": 252, \\\"mergedPullRequests\\\": 191, \\\"openIssues\\\": 38, \\\"closedIssues\\\": 25, \\\"followers\\\": 185, \\\"repositoryDiscussions\\\": 7, \\\"repositoryDiscussionComments\\\": 19}, {\\\"name\\\": \\\"Bob\\\", \\\"login\\\": \\\"bob\\\", \\\"contributionsCollection\\\": {\\\"total...(trimmed)"
+  },
+  {
+   "page": "main",
+   "t": 5.871,
+   "dir": "out",
+   "len": 180,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.github_stats___github_stats____state.set_username\",\"payload\":{\"username\":\"ghost1\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.871,
+   "dir": "out",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.github_stats___github_stats____state.add_user\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.878,
+   "dir": "in",
+   "len": 126,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"username_rx_state_\":\"ghost1\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.882,
+   "dir": "in",
+   "len": 239,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"selected_users_rx_state_\":[\"alice\",\"bob\",\"ghost1\"],\"username_rx_state_\":\"\",\"selected_users_json_rx_state_\":\"[\\\"alice\\\", \\\"bob\\\", \\\"ghost1\\\"]\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.383,
+   "dir": "in",
+   "len": 122,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"fetching_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.383,
+   "dir": "in",
+   "len": 895,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"fetching_rx_state_\":false,\"user_stats_json_rx_state_\":\"[{\\\"name\\\": \\\"Alice\\\", \\\"login\\\": \\\"alice\\\", \\\"contributionsCollection\\\": {\\\"totalCommitContributions\\\": 491, \\\"totalPullRequestReviewContributions\\\": 54}, \\\"repositoriesContributedTo\\\": 26, \\\"pullRequests\\\": 252, \\\"mergedPullRequests\\\": 191, \\\"openIssues\\\": 38, \\\"closedIssues\\\": 25, \\\"followers\\\": 185, \\\"repositoryDiscussions\\\": 7, \\\"repositoryDiscussionComments\\\": 19}, {\\\"name\\\": \\\"Bob\\\", \\\"login\\\": \\\"bob\\\", \\\"contributionsCollection\\\": {\\\"total...(trimmed)"
+  },
+  {
+   "page": "main",
+   "t": 6.383,
+   "dir": "in",
+   "len": 122,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"fetching_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.383,
+   "dir": "in",
+   "len": 895,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"fetching_rx_state_\":false,\"user_stats_json_rx_state_\":\"[{\\\"name\\\": \\\"Alice\\\", \\\"login\\\": \\\"alice\\\", \\\"contributionsCollection\\\": {\\\"totalCommitContributions\\\": 491, \\\"totalPullRequestReviewContributions\\\": 54}, \\\"repositoriesContributedTo\\\": 26, \\\"pullRequests\\\": 252, \\\"mergedPullRequests\\\": 191, \\\"openIssues\\\": 38, \\\"closedIssues\\\": 25, \\\"followers\\\": 185, \\\"repositoryDiscussions\\\": 7, \\\"repositoryDiscussionComments\\\": 19}, {\\\"name\\\": \\\"Bob\\\", \\\"login\\\": \\\"bob\\\", \\\"contributionsCollection\\\": {\\\"total...(trimmed)"
+  },
+  {
+   "page": "main",
+   "t": 6.383,
+   "dir": "in",
+   "len": 122,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"fetching_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.384,
+   "dir": "in",
+   "len": 895,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"fetching_rx_state_\":false,\"user_stats_json_rx_state_\":\"[{\\\"name\\\": \\\"Alice\\\", \\\"login\\\": \\\"alice\\\", \\\"contributionsCollection\\\": {\\\"totalCommitContributions\\\": 491, \\\"totalPullRequestReviewContributions\\\": 54}, \\\"repositoriesContributedTo\\\": 26, \\\"pullRequests\\\": 252, \\\"mergedPullRequests\\\": 191, \\\"openIssues\\\": 38, \\\"closedIssues\\\": 25, \\\"followers\\\": 185, \\\"repositoryDiscussions\\\": 7, \\\"repositoryDiscussionComments\\\": 19}, {\\\"name\\\": \\\"Bob\\\", \\\"login\\\": \\\"bob\\\", \\\"contributionsCollection\\\": {\\\"total...(trimmed)"
+  },
+  {
+   "page": "main",
+   "t": 6.384,
+   "dir": "in",
+   "len": 122,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"fetching_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.384,
+   "dir": "in",
+   "len": 895,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"fetching_rx_state_\":false,\"user_stats_json_rx_state_\":\"[{\\\"name\\\": \\\"Alice\\\", \\\"login\\\": \\\"alice\\\", \\\"contributionsCollection\\\": {\\\"totalCommitContributions\\\": 491, \\\"totalPullRequestReviewContributions\\\": 54}, \\\"repositoriesContributedTo\\\": 26, \\\"pullRequests\\\": 252, \\\"mergedPullRequests\\\": 191, \\\"openIssues\\\": 38, \\\"closedIssues\\\": 25, \\\"followers\\\": 185, \\\"repositoryDiscussions\\\": 7, \\\"repositoryDiscussionComments\\\": 19}, {\\\"name\\\": \\\"Bob\\\", \\\"login\\\": \\\"bob\\\", \\\"contributionsCollection\\\": {\\\"total...(trimmed)"
+  },
+  {
+   "page": "main",
+   "t": 6.384,
+   "dir": "in",
+   "len": 122,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"fetching_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.384,
+   "dir": "in",
+   "len": 895,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"fetching_rx_state_\":false,\"user_stats_json_rx_state_\":\"[{\\\"name\\\": \\\"Alice\\\", \\\"login\\\": \\\"alice\\\", \\\"contributionsCollection\\\": {\\\"totalCommitContributions\\\": 491, \\\"totalPullRequestReviewContributions\\\": 54}, \\\"repositoriesContributedTo\\\": 26, \\\"pullRequests\\\": 252, \\\"mergedPullRequests\\\": 191, \\\"openIssues\\\": 38, \\\"closedIssues\\\": 25, \\\"followers\\\": 185, \\\"repositoryDiscussions\\\": 7, \\\"repositoryDiscussionComments\\\": 19}, {\\\"name\\\": \\\"Bob\\\", \\\"login\\\": \\\"bob\\\", \\\"contributionsCollection\\\": {\\\"total...(trimmed)"
+  },
+  {
+   "page": "main",
+   "t": 6.384,
+   "dir": "in",
+   "len": 122,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"fetching_rx_state_\":true}}}]"
+  },
+  "... 481 more trimmed"
+ ],
+ "notes": {
+  "stub_counts_start": {},
+  "localstorage_before_load": null,
+  "localstorage_on_load": {
+   "theme": "system",
+   "last_compiled_theme": "system",
+   "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_": "[]"
+  },
+  "localstorage_after_edits": {
+   "theme": "system",
+   "reflex___state____state.github_stats___github_stats____state.selected_users_json_rx_state_": "[\"alice\", \"ghost1\"]",
+   "last_compiled_theme": "system",
+   "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]"
+  },
+  "reload_refetched": {
+   "ghost1": 38
+  },
+  "widget_theme_classes": [
+   "radix-themes css-0 light root=true",
+   "radix-themes css-0 root=false"
+  ],
+  "widget_localstorage": {
+   "reflex___state____state.github_stats___widget____widget_state.user_stats_json_rx_state_": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestRevie",
+   "theme": "system",
+   "reflex___state____state.github_stats___github_stats____state.selected_users_json_rx_state_": "[\"alice\", \"ghost1\"]",
+   "reflex___state____state.github_stats___widget____widget_state.last_fetch_rx_state_": "[\"alice\", 1791474695.928458]",
+   "last_compiled_theme": "system",
+   "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestRevie"
+  },
+  "widget_counts": {
+   "before": {
+    "alice": 1,
+    "bob": 1,
+    "ghost1": 161
+   },
+   "after_first": {
+    "alice": 2,
+    "bob": 1,
+    "ghost1": 178
+   },
+   "after_reload": {
+    "alice": 2,
+    "bob": 1,
+    "ghost1": 242
+   }
+  },
+  "final_localstorage": {
+   "reflex___state____state.github_stats___widget____widget_state.user_stats_json_rx_state_": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mer",
+   "theme": "system",
+   "reflex___state____state.github_stats___github_stats____state.selected_users_json_rx_state_": "[\"alice\", \"ghost1\"]",
+   "reflex___state____state.github_stats___widget____widget_state.last_fetch_rx_state_": "[\"alice\", 1791474695.928458]",
+   "last_compiled_theme": "system",
+   "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mer"
+  }
+ }
+}

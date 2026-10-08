@@ -1,0 +1,40 @@
+PASS C1_fresh_no_writes {"root": {"ls": {}, "ss": {}, "ck": {}, "writes": [[177, "S", "token", "cb6989e2-a9c6-4eab-969b-944eb645c6d8"], [178, "L", "theme", "system"]]}, "other_nav": {"ls": {}, "ss": {}, "ck": {}}, "other_new_tab": {"ls": {}, "ck": {}, "writes": [[177, "S", "token", "e00e9994-2210-48a0-f108-4bd4c18ab642"]]}}
+PASS C1_fresh_stamp_onload_only {"ls": {"h4_last": "stamp@/stamp", "h4_visits": "1"}, "ck": {}}
+PASS C2_nos_persist_reload {"ls_wait": [true, 0.0, "A"], "shown": "A"}
+PASS C2_nos_not_followed {"ls_wait": [true, 0.0, "B"], "tab1_shows": "A"}
+PASS C2_nos_write_equal_to_boot_value_after_other_tab {"ls_wait": [true, 0.0, "A"], "tab1_writes": [[1532, "L", "h4_nos", "A"]], "reload_shows": "A"}
+PASS C2_same_value_handler_rewrites_nos {"ls_wait": [true, 0.11, "A"], "ls": {"h4_sanns": "sanns-defaul", "h4_syn": "syn-default", "h4_nos": "A", "h4_san": "san-default"}, "tab1_writes": [[2203, "L", "h4_san", "san-default"], [2203, "L", "h4_nos", "A"], [2204, "L", "h4_sanns", "sanns-defaul"], [2204, "L", "h4_syn", "syn-default"], [2204, "S", "h4_ses", "ses-default"]]}
+PASS C3_syn_follows {"wait": [true, 0.02, ["B", "B"]], "ls": "B"}
+PASS C3_syn_write_equal_to_boot_value {"wait": [true, 0.01, ["A", "A"]], "ls": "A", "quiet_frames": 0, "t1_writes": [[571, "L", "h4_syn", "A"]]}
+PASS C3_alternate_gap0 {"converged": [true, ["c8", "c8", "c8"]], "quiet_frames": 0, "last_writer_wins": false}
+PASS C3_alternate_gap40 {"converged": [true, ["c9", "c9", "c9"]], "quiet_frames": 4, "last_writer_wins": true}
+PASS C3_alternate_gap120 {"converged": [true, ["c9", "c9", "c9"]], "quiet_frames": 0, "last_writer_wins": true}
+PASS C3_back_to_back_clicks {"converged": [true, ["c9", "c9", "c9"]], "quiet_frames": 0}
+PASS C3_three_tabs_follow {"converged": [true, 0.13, ["three", "three", "three", "three"]], "quiet_frames": 0}
+PASS C4_boot_sanitised_written {"wait": [true, 0.0, {"h4_san": "hello world ", "h4_sanns": "nosync value"}], "shown": ["hello world ", "nosync value"]}
+PASS C4_handler_sanitised_written {"wait": [true, 0.0, {"h4_san": "abc upper", "h4_sanns": "def upper"}]}
+PASS C4_synced_raw_value_sanitised_written {"wait": [true, 0.01, {"h4_san": "raw upper"}], "shown": "raw upper", "writes": [[330, "L", "h4_san", "raw upper"]]}
+PASS C4_two_tabs_raw_sanitised {"wait": [true, 0.06, ["xyz two", "xyz two", "xyz two"]], "quiet_frames": 0}
+PASS C4_resent_replaced_value_sanitised {"wait": [true, 0.18, ["raw upper", "raw upper", "raw upper"]], "quiet_frames": 0}
+PASS C4_set_previously_sanitised_value {"wait": [true, 0.12, ["mixed", "mixed", "mixed"]]}
+PASS C6_session_per_tab {"t1_ss": {"h4_ses": "SS1"}, "t2_ss_before": {}, "t2_shows": "ses-default", "t1_reload": "SS1", "t1_after_t2": "SS1", "new_tab": "ses-default"}
+PASS C7_cookie_max_age_renewed_at_boot {"before": {"value": "CK1", "expires": 1791480271}, "after": {"value": "CK1", "expires": 1791480275}, "delta": 4, "shown": "CK1"}
+PASS C10_onload_write_stored_and_synced {"wait": [true, 0.01, ["stamp@/stamp", "stamp@/stamp"]], "ls": {"h4_last": "stamp@/stamp", "h4_visits": "1"}}
+PASS C10_reload_and_clientnav_onload {"ls_visits": "3", "shown": "3", "quiet_frames": 0}
+PASS C11_background_task_write {"wait": [true, 0.33, ["bg-1", "bg-1", "bg-1"]], "nos": "bg-nos-1"}
+PASS C11_yield_chain {"wait": [true, 0.12, ["chain-3", "chain-3", "chain-3"]], "nos": "chain-3-nos"}
+PASS C11_empty_and_back {"wait": [true, 0.11, ["chain-3-back", "chain-3-back", "chain-3-back"]], "nos": "chain-3-nos-back"}
+PASS C11_to_empty_persists {"wait": [true, 0.11, ["", "", ""]], "ls": {"h4_syn": "", "h4_nos": ""}, "reload_shows": ["", ""]}
+PASS C11_special_uni {"wait": [true, 0.11], "nos_ok": true, "reload_ok": [true, true], "quiet_frames": 0}
+PASS C11_special_json {"wait": [true, 0.12], "nos_ok": true, "reload_ok": [true, true], "quiet_frames": 0}
+PASS C11_special_long {"wait": [true, 0.12], "nos_ok": true, "reload_ok": [true, true], "quiet_frames": 0}
+PASS C15_componentstate_sync_follows_nosync_not {"wait": [true, 0.01, ["BOXA1", "BOXA1"]], "t2": ["bnos-default", "bsyn-default"], "keys": {"reflex___state____state.reflex___istate___dynamic____box_n1.bsyn_rx_state_": "BOXA1", "reflex___state____state.reflex___istate___dynamic____box_n1.bnos_rx_state_": "BOXA1"}}
+PASS C15_componentstate_reload {"t2": ["BOXA1", "BOXA1", "bnos-default"]}
+PASS C15_substate_sync_and_cookie {"wait": [true, 0.01, ["SUB1", "SUB1"]], "subck": {"value": "SUB1", "expires": 1791483891}}
+PASS C15_clientnav_keeps_values {"writes": [[1868, "L", "reflex___state____state.reflex___istate___dynamic____box_n1.bnos_rx_state_", "BOXA1"], [4131, "L", "reflex___state____state.reflex___istate___dynamic____box_n1.bnos_rx_state_", "BOXA1"]], "diff": {}}
+PASS C15_close_reopen {"ls_same": true, "shown": ["SUB1", "BOXA1", "syn-default"]}
+PASS C20_returning_boot_writes {"writes": [[171, "S", "token", "649e0f80-1199-43df-b9f4-a89de421666d"], [173, "L", "theme", "system"], [186, "L", "h4_nos", "ret-nos"], [186, "L", "h4_sanns", "ret-sanns"]], "frames": {"in": 4, "out": 1}}
+PASS C21_remove_synced_key {"quiet_frames": 0, "ls": null, "t1": "syn-default", "t2": "keep-me", "t2_writes": [], "t2_se": [[276, "h4_syn", "", "keep-me"], [329, "h4_syn", "keep-me", ""]], "t2_reload": "syn-default", "ls_after_reload": null}
+PASS C21_clear_local_storage {"quiet_frames": 0, "ls": {}, "t1": "syn-default", "t2": "again"}
+PASS C23_shared_name_sync_and_nosync {"ls_waits": [[true, 0.0], [true, 0.0], [true, 0.0]], "after_ns_write": {"t1": ["via-ns", "shared-default"], "t2": ["shared-default", "via-ns"]}, "after_s_write": {"t1": ["via-ns", "via-s"], "t2": ["shared-default", "via-s"]}, "t1_reload": ["via-ns", "via-ns"], "quiet_frames": 0}
+SUMMARY 39/39 pass; fail=[]

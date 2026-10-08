@@ -1,0 +1,211 @@
+{
+ "base": "http://localhost:3146",
+ "checks": {
+  "C3_syn_follows": {
+   "ok": true,
+   "wait": [
+    true,
+    0.12,
+    [
+     "B",
+     "B"
+    ]
+   ],
+   "ls": "B"
+  },
+  "C3_syn_write_equal_to_boot_value": {
+   "ok": true,
+   "wait": [
+    true,
+    0.11,
+    [
+     "A",
+     "A"
+    ]
+   ],
+   "ls": "A",
+   "quiet_frames": 0,
+   "t1_writes": [
+    [
+     1324,
+     "L",
+     "h4_syn",
+     "A"
+    ]
+   ]
+  },
+  "C3_alternate_gap0": {
+   "ok": true,
+   "converged": [
+    true,
+    [
+     "c9",
+     "c9",
+     "c9"
+    ]
+   ],
+   "quiet_frames": 0,
+   "last_writer_wins": true
+  },
+  "C3_alternate_gap40": {
+   "ok": true,
+   "converged": [
+    true,
+    [
+     "c9",
+     "c9",
+     "c9"
+    ]
+   ],
+   "quiet_frames": 4,
+   "last_writer_wins": true
+  },
+  "C3_alternate_gap120": {
+   "ok": true,
+   "converged": [
+    true,
+    [
+     "c9",
+     "c9",
+     "c9"
+    ]
+   ],
+   "quiet_frames": 0,
+   "last_writer_wins": true
+  },
+  "C3_back_to_back_clicks": {
+   "ok": true,
+   "converged": [
+    true,
+    [
+     "c9",
+     "c9",
+     "c9"
+    ]
+   ],
+   "quiet_frames": 0
+  },
+  "C3_three_tabs_follow": {
+   "ok": true,
+   "converged": [
+    true,
+    0.12,
+    [
+     "three",
+     "three",
+     "three",
+     "three"
+    ]
+   ],
+   "quiet_frames": 0
+  },
+  "C11_background_task_write": {
+   "ok": true,
+   "wait": [
+    true,
+    0.33,
+    [
+     "bg-1",
+     "bg-1",
+     "bg-1"
+    ]
+   ],
+   "nos": "bg-nos-1"
+  },
+  "C11_yield_chain": {
+   "ok": true,
+   "wait": [
+    true,
+    0.22,
+    [
+     "chain-3",
+     "chain-3",
+     "chain-3"
+    ]
+   ],
+   "nos": "chain-3-nos"
+  },
+  "C11_empty_and_back": {
+   "ok": true,
+   "wait": [
+    true,
+    0.11,
+    [
+     "chain-3-back",
+     "chain-3-back",
+     "chain-3-back"
+    ]
+   ],
+   "nos": "chain-3-nos-back"
+  },
+  "C11_to_empty_persists": {
+   "ok": true,
+   "wait": [
+    true,
+    0.11,
+    [
+     "",
+     "",
+     ""
+    ]
+   ],
+   "ls": {
+    "h4_syn": "",
+    "h4_nos": ""
+   },
+   "reload_shows": [
+    "",
+    ""
+   ]
+  },
+  "C11_special_uni": {
+   "ok": true,
+   "wait": [
+    true,
+    0.12
+   ],
+   "nos_ok": true,
+   "reload_ok": [
+    true,
+    true
+   ],
+   "quiet_frames": 0
+  },
+  "C11_special_json": {
+   "ok": true,
+   "wait": [
+    true,
+    0.11
+   ],
+   "nos_ok": true,
+   "reload_ok": [
+    true,
+    true
+   ],
+   "quiet_frames": 0
+  },
+  "C11_special_long": {
+   "ok": true,
+   "wait": [
+    true,
+    0.12
+   ],
+   "nos_ok": true,
+   "reload_ok": [
+    true,
+    true
+   ],
+   "quiet_frames": 0
+  }
+ },
+ "noise": {
+  "C3": {
+   "console": [],
+   "failed": []
+  },
+  "C11": {
+   "console": [],
+   "failed": []
+  }
+ }
+}

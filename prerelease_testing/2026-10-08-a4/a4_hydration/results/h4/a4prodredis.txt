@@ -1,0 +1,23 @@
+PASS C1_fresh_no_writes {"root": {"ls": {}, "ss": {}, "ck": {}, "writes": [[218, "S", "token", "48064148-9ffc-42e8-ccb8-5a8ed7552d8f"], [220, "L", "theme", "system"]]}, "other_nav": {"ls": {}, "ss": {}, "ck": {}}, "other_new_tab": {"ls": {}, "ck": {}, "writes": [[313, "S", "token", "4243453b-4d10-466b-e125-42b64594acd2"]]}}
+PASS C1_fresh_stamp_onload_only {"ls": {"h4_visits": "1", "h4_last": "stamp@/stamp"}, "ck": {}}
+PASS C2_nos_persist_reload {"ls_wait": [true, 0.01, "A"], "shown": "A"}
+PASS C2_nos_not_followed {"ls_wait": [true, 0.0, "B"], "tab1_shows": "A"}
+PASS C2_nos_write_equal_to_boot_value_after_other_tab {"ls_wait": [true, 0.1, "A"], "tab1_writes": [[1583, "L", "h4_nos", "A"]], "reload_shows": "A"}
+PASS C2_same_value_handler_rewrites_nos {"ls_wait": [true, 0.1, "A"], "ls": {"h4_sanns": "sanns-defaul", "h4_syn": "syn-default", "h4_nos": "A", "h4_san": "san-default"}, "tab1_writes": [[2197, "L", "h4_nos", "A"], [2198, "S", "h4_ses", "ses-default"], [2198, "L", "h4_san", "san-default"], [2198, "L", "h4_sanns", "sanns-defaul"], [2198, "L", "h4_syn", "syn-default"]]}
+PASS C3_syn_follows {"wait": [true, 0.11, ["B", "B"]], "ls": "B"}
+PASS C3_syn_write_equal_to_boot_value {"wait": [true, 0.11, ["A", "A"]], "ls": "A", "quiet_frames": 0, "t1_writes": [[686, "L", "h4_syn", "A"]]}
+PASS C3_alternate_gap0 {"converged": [true, ["c8", "c8", "c8"]], "quiet_frames": 0, "last_writer_wins": false}
+PASS C3_alternate_gap40 {"converged": [true, ["c9", "c9", "c9"]], "quiet_frames": 4, "last_writer_wins": true}
+PASS C3_alternate_gap120 {"converged": [true, ["c9", "c9", "c9"]], "quiet_frames": 0, "last_writer_wins": true}
+PASS C3_back_to_back_clicks {"converged": [true, ["c9", "c9", "c9"]], "quiet_frames": 0}
+PASS C3_three_tabs_follow {"converged": [true, 0.12, ["three", "three", "three", "three"]], "quiet_frames": 0}
+PASS C4_boot_sanitised_written {"wait": [true, 0.0, {"h4_san": "hello world ", "h4_sanns": "nosync value"}], "shown": ["hello world ", "nosync value"]}
+PASS C4_handler_sanitised_written {"wait": [true, 0.0, {"h4_san": "abc upper", "h4_sanns": "def upper"}]}
+PASS C4_synced_raw_value_sanitised_written {"wait": [true, 0.0, {"h4_san": "raw upper"}], "shown": "raw upper", "writes": [[338, "L", "h4_san", "raw upper"]]}
+PASS C4_two_tabs_raw_sanitised {"wait": [true, 0.01, ["xyz two", "xyz two", "xyz two"]], "quiet_frames": 0}
+PASS C4_resent_replaced_value_sanitised {"wait": [true, 0.01, ["raw upper", "raw upper", "raw upper"]], "quiet_frames": 0}
+PASS C4_set_previously_sanitised_value {"wait": [true, 0.11, ["mixed", "mixed", "mixed"]]}
+PASS C7_cookie_max_age_renewed_at_boot {"before": {"value": "CK1", "expires": 1791480407}, "after": {"value": "CK1", "expires": 1791480411}, "delta": 4, "shown": "CK1"}
+PASS C10_onload_write_stored_and_synced {"wait": [true, 0.01, ["stamp@/stamp", "stamp@/stamp"]], "ls": {"h4_last": "stamp@/stamp", "h4_visits": "1"}}
+PASS C10_reload_and_clientnav_onload {"ls_visits": "3", "shown": "3", "quiet_frames": 0}
+SUMMARY 22/22 pass; fail=[]

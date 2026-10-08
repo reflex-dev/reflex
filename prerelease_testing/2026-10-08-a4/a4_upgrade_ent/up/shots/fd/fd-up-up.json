@@ -1,0 +1,1279 @@
+{
+ "tag": "fd-up-up",
+ "results": [
+  {
+   "name": "home: renders link + README markdown",
+   "status": "pass",
+   "detail": "version shown=0.10.0a4",
+   "t": 3.057
+  },
+  {
+   "name": "home: importlib version text matches installed reflex",
+   "status": "pass",
+   "detail": "0.10.0a4 vs 0.10.0a4",
+   "t": 3.057
+  },
+  {
+   "name": "auth survives (LocalStorage token): /edit/form/ renders WITHOUT login",
+   "status": "pass",
+   "detail": "",
+   "t": 3.404
+  },
+  {
+   "name": "existing form listed in 'Existing Forms' select (on_mount load)",
+   "status": "pass",
+   "detail": "",
+   "t": 3.508
+  },
+  {
+   "name": "persisted form name",
+   "status": "pass",
+   "detail": "Upgrade Survey",
+   "t": 3.691
+  },
+  {
+   "name": "persisted fields listed",
+   "status": "pass",
+   "detail": "['What is your favorite food? (favorite_food)', 'How old are you? (age)', 'Favorite color (color)', 'Shirt size (size)']",
+   "t": 5.201
+  },
+  {
+   "name": "add another field (email) after upgrade",
+   "status": "pass",
+   "detail": "",
+   "t": 6.592
+  },
+  {
+   "name": "entry page /form/<id>: renders (pre-existing FormMessage crash unless FD_FIX)",
+   "status": "pass",
+   "detail": "rendered",
+   "t": 9.927
+  },
+  {
+   "name": "logout: protected page bounces to /login",
+   "status": "pass",
+   "detail": "http://localhost:3600/login",
+   "t": 13.178
+  },
+  {
+   "name": "re-login: auto-redirects away from /login (pre-existing FAIL on 0.9.x)",
+   "status": "anomaly",
+   "detail": "http://localhost:3600/login",
+   "t": 16.581
+  },
+  {
+   "name": "re-login works (left logged in for next run)",
+   "status": "pass",
+   "detail": "",
+   "t": 16.799
+  },
+  {
+   "name": "console: no unexpected errors/warnings + no page errors",
+   "status": "pass",
+   "detail": "[]",
+   "t": 16.947
+  },
+  {
+   "name": "network: no unexpected failed/4xx/5xx requests",
+   "status": "pass",
+   "detail": "[]",
+   "t": 16.948
+  }
+ ],
+ "console": [
+  {
+   "page": "main",
+   "t": 1.031,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 1.255,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 1.406,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 1.449,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 3.134,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 3.181,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 3.274,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 3.29,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 3.295,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 6.635,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 6.702,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 6.8,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 9.816,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 9.816,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 9.931,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 9.974,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 10.017,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 10.032,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 10.033,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 12.932,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 12.978,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 13.057,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 13.072,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 13.072,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 13.184,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 13.219,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 13.28,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 13.323,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 13.324,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 13.477,
+   "type": "verbose",
+   "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"current-password\"): (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "main",
+   "t": 16.587,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 16.624,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 16.658,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 16.682,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 16.683,
+   "type": "debug",
+   "text": "[vite] connected."
+  }
+ ],
+ "page_errors": [],
+ "bad_requests": [],
+ "ws_frames": [
+  {
+   "page": "main",
+   "t": 1.379,
+   "dir": "open",
+   "payload": "ws://localhost:8600/_event/?token=1cd5b4e8-c5a5-475c-c2cb-8ab316a8016b&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 1.406,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"j4_PKCNC2decfvGiAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 1.509,
+   "dir": "out",
+   "len": 569,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.auth_token_rx_state_\":\"5f97c8b2-eedd-4700-c794-940a4c8c85a7\"},\"hashes\":[\"7f02077446d480d6\",\"0b97b0aeacae1d37\",\"72c4c6e4d5ca6372\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"ce9ce44eccafc12e\",\"b0b4835a001a4843\",\"dc444275bfc30eb3\",\"c68bb4ed71ecc55b\",\"b971016ed11f5146\",\"f13ccfd1edf5d20e\",\"cb3bd1e58984a23f\",\"475ba198521ff3f6\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+  },
+  {
+   "page": "main",
+   "t": 1.518,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"nm2eXLFx4qLvPWbxAAAD\"}"
+  },
+  {
+   "page": "main",
+   "t": 1.522,
+   "dir": "in",
+   "len": 2176,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8600\",\"origin\":\"http://localhost:3600\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"3peiLdL05nR696XJEFSQgA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8600\",\"origin\":\"http://localhost:3600\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"3peiLdL05nR696XJEFSQgA==\",\"sec-websocket-protocol\":\"0.10.0a4\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3600\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3600/index\",\"full_raw_path\":\"http://localhost:3600/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"1cd5b4e8-c5a5-475c-c2cb-8ab316a8016b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"nm2eXLFx4qLvPWbxAAAD\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3600\",\"origin\":\"http://localhost:3600\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3600/\"},\"is_hydrated_rx_state_\":false},\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state\":{\"auth_token_rx_state_\":\"5f97c8b2-eedd-4700-c794-940a4c8c85a7\",\"authenticated_user_rx_state_\":{\"enabled\":true,\"username\":\"qa_admin\",\"id\":1},\"is_authenticated_rx_state_\":true},\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state\":{\"is_admin_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 1.522,
+   "dir": "in",
+   "len": 480,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true},\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state\":{\"authenticated_user_rx_state_\":{\"enabled\":true,\"username\":\"qa_admin\",\"id\":1},\"is_authenticated_rx_state_\":true,\"auth_token_rx_state_\":\"5f97c8b2-eedd-4700-c794-940a4c8c85a7\"},\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state\":{\"is_admin_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.139,
+   "dir": "out",
+   "len": 10,
+   "payload": "41/_event,"
+  },
+  {
+   "page": "main",
+   "t": 3.139,
+   "dir": "close",
+   "payload": ""
+  },
+  {
+   "page": "main",
+   "t": 3.29,
+   "dir": "open",
+   "payload": "ws://localhost:8600/_event/?token=1cd5b4e8-c5a5-475c-c2cb-8ab316a8016b&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 3.298,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"jT7K87sGuc4togAGAAAE\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 3.313,
+   "dir": "out",
+   "len": 589,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.auth_token_rx_state_\":\"5f97c8b2-eedd-4700-c794-940a4c8c85a7\"},\"hashes\":[\"7f02077446d480d6\",\"0b97b0aeacae1d37\",\"72c4c6e4d5ca6372\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"ce9ce44eccafc12e\",\"b0b4835a001a4843\",\"dc444275bfc30eb3\",\"c68bb4ed71ecc55b\",\"b971016ed11f5146\",\"f13ccfd1edf5d20e\",\"cb3bd1e58984a23f\",\"475ba198521ff3f6\"]},\"router_data\":{\"pathname\":\"/edit/form/\",\"asPath\":\"/edit/form/\"}}}"
+  },
+  {
+   "page": "main",
+   "t": 3.319,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"5Wr4zfLggAxwwMVgAAAF\"}"
+  },
+  {
+   "page": "main",
+   "t": 3.32,
+   "dir": "in",
+   "len": 2228,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8600\",\"origin\":\"http://localhost:3600\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"RqwJixPbjLuQLX65Cm+idQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8600\",\"origin\":\"http://localhost:3600\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"RqwJixPbjLuQLX65Cm+idQ==\",\"sec-websocket-protocol\":\"0.10.0a4\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3600\",\"path\":\"/edit/form\",\"raw_path\":\"/edit/form/\",\"full_path\":\"http://localhost:3600/edit/form\",\"full_raw_path\":\"http://localhost:3600/edit/form/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/edit/form\",\"rx_router_session_rx_state_\":{\"client_token\":\"1cd5b4e8-c5a5-475c-c2cb-8ab316a8016b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"5Wr4zfLggAxwwMVgAAAF\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3600\",\"origin\":\"http://localhost:3600\",\"path\":\"/edit/form/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3600/edit/form/\"},\"is_hydrated_rx_state_\":false},\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state\":{\"auth_token_rx_state_\":\"5f97c8b2-eedd-4700-c794-940a4c8c85a7\",\"authenticated_user_rx_state_\":{\"enabled\":true,\"username\":\"qa_admin\",\"id\":1},\"is_authenticated_rx_state_\":true},\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state\":{\"is_admin_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.32,
+   "dir": "in",
+   "len": 423,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state\":{\"authenticated_user_rx_state_\":{\"enabled\":true,\"username\":\"qa_admin\",\"id\":1},\"is_authenticated_rx_state_\":true,\"auth_token_rx_state_\":\"5f97c8b2-eedd-4700-c794-940a4c8c85a7\"},\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state\":{\"is_admin_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.321,
+   "dir": "in",
+   "len": 89,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.321,
+   "dir": "in",
+   "len": 298,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_editor____form_editor_state\":{\"form_rx_state_\":{\"owner_id\":1,\"id\":null,\"name\":\"\",\"fields\":[],\"responses\":[],\"user\":null}}}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.321,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.376,
+   "dir": "out",
+   "len": 277,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state.load_forms\",\"router_data\":{\"pathname\":\"/edit/form/\",\"asPath\":\"/edit/form/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.376,
+   "dir": "out",
+   "len": 277,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state.load_forms\",\"router_data\":{\"pathname\":\"/edit/form/\",\"asPath\":\"/edit/form/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.38,
+   "dir": "in",
+   "len": 1048,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state\":{\"forms_rx_state_\":[{\"owner_id\":1,\"id\":1,\"name\":\"Upgrade Survey\",\"fields\":[{\"id\":1,\"required\":false,\"form_id\":1,\"type_\":\"text\",\"name\":\"favorite_food\",\"prompt\":\"What is your favorite food?\",\"options\":[],\"field_values\":[]},{\"id\":2,\"required\":true,\"form_id\":1,\"type_\":\"number\",\"name\":\"age\",\"prompt\":\"How old are you?\",\"options\":[],\"field_values\":[]},{\"id\":3,\"required\":false,\"form_id\":1,\"type_\":\"radio\",\"name\":\"color\",\"prompt\":\"Favorite color\",\"options\":[{\"label\":\"Red\",\"value\":\"\",\"field_id\":3,\"id\":1},{\"label\":\"Blue\",\"value\":\"\",\"field_id\":3,\"id\":2}],\"field_values\":[]},{\"id\":4,\"required\":false,\"form_id\":1,\"type_\":\"select\",\"name\":\"size\",\"prompt\":\"Shirt size\",\"options\":[{\"label\":\"Small\",\"value\":\"\",\"field_id\":4,\"id\":3},{\"label\":\"Large\",\"value\":\"\",\"field_id\":4,\"id\":4}],\"field_values\":[]}],\"user\":{\"enabled\":true,\"username\":\"qa_admin\",\"id\":1}}]}}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.38,
+   "dir": "in",
+   "len": 1048,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state\":{\"forms_rx_state_\":[{\"owner_id\":1,\"id\":1,\"name\":\"Upgrade Survey\",\"fields\":[{\"id\":1,\"required\":false,\"form_id\":1,\"type_\":\"text\",\"name\":\"favorite_food\",\"prompt\":\"What is your favorite food?\",\"options\":[],\"field_values\":[]},{\"id\":2,\"required\":true,\"form_id\":1,\"type_\":\"number\",\"name\":\"age\",\"prompt\":\"How old are you?\",\"options\":[],\"field_values\":[]},{\"id\":3,\"required\":false,\"form_id\":1,\"type_\":\"radio\",\"name\":\"color\",\"prompt\":\"Favorite color\",\"options\":[{\"label\":\"Red\",\"value\":\"\",\"field_id\":3,\"id\":1},{\"label\":\"Blue\",\"value\":\"\",\"field_id\":3,\"id\":2}],\"field_values\":[]},{\"id\":4,\"required\":false,\"form_id\":1,\"type_\":\"select\",\"name\":\"size\",\"prompt\":\"Shirt size\",\"options\":[{\"label\":\"Small\",\"value\":\"\",\"field_id\":4,\"id\":3},{\"label\":\"Large\",\"value\":\"\",\"field_id\":4,\"id\":4}],\"field_values\":[]}],\"user\":{\"enabled\":true,\"username\":\"qa_admin\",\"id\":1}}]}}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.547,
+   "dir": "out",
+   "len": 307,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state.on_select_change\",\"payload\":{\"value\":\"1\"},\"router_data\":{\"pathname\":\"/edit/form/\",\"asPath\":\"/edit/form/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.552,
+   "dir": "in",
+   "len": 151,
+   "payload": "42/_event,[\"event\",{\"events\":[{\"name\":\"_redirect\",\"router_data\":{},\"payload\":{\"path\":\"/edit/form/1\",\"external\":false,\"popup\":false,\"replace\":false}}]}]"
+  },
+  {
+   "page": "main",
+   "t": 3.62,
+   "dir": "out",
+   "len": 277,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state.load_forms\",\"router_data\":{\"pathname\":\"/edit/form/\",\"asPath\":\"/edit/form/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.621,
+   "dir": "out",
+   "len": 368,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.auth_token_rx_state_\":\"5f97c8b2-eedd-4700-c794-940a4c8c85a7\"}},\"router_data\":{\"pathname\":\"/edit/form/1\",\"asPath\":\"/edit/form/1\",\"query\":{\"form_id\":\"1\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.621,
+   "dir": "out",
+   "len": 202,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/edit/form/1\",\"asPath\":\"/edit/form/1\",\"query\":{\"form_id\":\"1\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.621,
+   "dir": "out",
+   "len": 303,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state.load_forms\",\"router_data\":{\"pathname\":\"/edit/form/1\",\"asPath\":\"/edit/form/1\",\"query\":{\"form_id\":\"1\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.625,
+   "dir": "in",
+   "len": 1048,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state\":{\"forms_rx_state_\":[{\"owner_id\":1,\"id\":1,\"name\":\"Upgrade Survey\",\"fields\":[{\"id\":1,\"required\":false,\"form_id\":1,\"type_\":\"text\",\"name\":\"favorite_food\",\"prompt\":\"What is your favorite food?\",\"options\":[],\"field_values\":[]},{\"id\":2,\"required\":true,\"form_id\":1,\"type_\":\"number\",\"name\":\"age\",\"prompt\":\"How old are you?\",\"options\":[],\"field_values\":[]},{\"id\":3,\"required\":false,\"form_id\":1,\"type_\":\"radio\",\"name\":\"color\",\"prompt\":\"Favorite color\",\"options\":[{\"label\":\"Red\",\"value\":\"\",\"field_id\":3,\"id\":1},{\"label\":\"Blue\",\"value\":\"\",\"field_id\":3,\"id\":2}],\"field_values\":[]},{\"id\":4,\"required\":false,\"form_id\":1,\"type_\":\"select\",\"name\":\"size\",\"prompt\":\"Shirt size\",\"options\":[{\"label\":\"Small\",\"value\":\"\",\"field_id\":4,\"id\":3},{\"label\":\"Large\",\"value\":\"\",\"field_id\":4,\"id\":4}],\"field_values\":[]}],\"user\":{\"enabled\":true,\"username\":\"qa_admin\",\"id\":1}}]}}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.625,
+   "dir": "in",
+   "len": 1017,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3600\",\"origin\":\"http://localhost:3600\",\"path\":\"/edit/form/1\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3600/edit/form/1\"},\"field_id_rx_state_\":\"\",\"form_id_rx_state_\":\"1\",\"rx_router_route_id_rx_state_\":\"/edit/form/[form_id]\",\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3600\",\"path\":\"/edit/form/[form_id]\",\"raw_path\":\"/edit/form/1\",\"full_path\":\"http://localhost:3600/edit/form/[form_id]\",\"full_raw_path\":\"http://localhost:3600/edit/form/1\",\"params\":{\"form_id\":\"1\"}}},\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state\":{\"authenticated_user_rx_state_\":{\"enabled\":true,\"username\":\"qa_admin\",\"id\":1},\"is_authenticated_rx_state_\":true,\"auth_token_rx_state_\":\"5f97c8b2-eedd-4700-c794-940a4c8c85a7\"},\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state\":{\"is_admin_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.63,
+   "dir": "in",
+   "len": 89,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.633,
+   "dir": "in",
+   "len": 992,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_editor____form_editor_state\":{\"form_rx_state_\":{\"owner_id\":1,\"id\":1,\"name\":\"Upgrade Survey\",\"fields\":[{\"id\":1,\"required\":false,\"form_id\":1,\"type_\":\"text\",\"name\":\"favorite_food\",\"prompt\":\"What is your favorite food?\",\"options\":[],\"field_values\":[]},{\"id\":2,\"required\":true,\"form_id\":1,\"type_\":\"number\",\"name\":\"age\",\"prompt\":\"How old are you?\",\"options\":[],\"field_values\":[]},{\"id\":3,\"required\":false,\"form_id\":1,\"type_\":\"radio\",\"name\":\"color\",\"prompt\":\"Favorite color\",\"options\":[{\"label\":\"Red\",\"value\":\"\",\"field_id\":3,\"id\":1},{\"label\":\"Blue\",\"value\":\"\",\"field_id\":3,\"id\":2}],\"field_values\":[]},{\"id\":4,\"required\":false,\"form_id\":1,\"type_\":\"select\",\"name\":\"size\",\"prompt\":\"Shirt size\",\"options\":[{\"label\":\"Small\",\"value\":\"\",\"field_id\":4,\"id\":3},{\"label\":\"Large\",\"value\":\"\",\"field_id\":4,\"id\":4}],\"field_values\":[]}]}}}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.633,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.678,
+   "dir": "in",
+   "len": 1048,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state\":{\"forms_rx_state_\":[{\"owner_id\":1,\"id\":1,\"name\":\"Upgrade Survey\",\"fields\":[{\"id\":1,\"required\":false,\"form_id\":1,\"type_\":\"text\",\"name\":\"favorite_food\",\"prompt\":\"What is your favorite food?\",\"options\":[],\"field_values\":[]},{\"id\":2,\"required\":true,\"form_id\":1,\"type_\":\"number\",\"name\":\"age\",\"prompt\":\"How old are you?\",\"options\":[],\"field_values\":[]},{\"id\":3,\"required\":false,\"form_id\":1,\"type_\":\"radio\",\"name\":\"color\",\"prompt\":\"Favorite color\",\"options\":[{\"label\":\"Red\",\"value\":\"\",\"field_id\":3,\"id\":1},{\"label\":\"Blue\",\"value\":\"\",\"field_id\":3,\"id\":2}],\"field_values\":[]},{\"id\":4,\"required\":false,\"form_id\":1,\"type_\":\"select\",\"name\":\"size\",\"prompt\":\"Shirt size\",\"options\":[{\"label\":\"Small\",\"value\":\"\",\"field_id\":4,\"id\":3},{\"label\":\"Large\",\"value\":\"\",\"field_id\":4,\"id\":4}],\"field_values\":[]}],\"user\":{\"enabled\":true,\"username\":\"qa_admin\",\"id\":1}}]}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.422,
+   "dir": "out",
+   "len": 303,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state.load_forms\",\"router_data\":{\"pathname\":\"/edit/form/1\",\"asPath\":\"/edit/form/1\",\"query\":{\"form_id\":\"1\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.422,
+   "dir": "out",
+   "len": 405,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.auth_token_rx_state_\":\"5f97c8b2-eedd-4700-c794-940a4c8c85a7\"}},\"router_data\":{\"pathname\":\"/edit/form/1/field/new\",\"asPath\":\"/edit/form/1/field/new\",\"query\":{\"form_id\":\"1\",\"field_id\":\"new\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.422,
+   "dir": "out",
+   "len": 239,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/edit/form/1/field/new\",\"asPath\":\"/edit/form/1/field/new\",\"query\":{\"form_id\":\"1\",\"field_id\":\"new\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.422,
+   "dir": "out",
+   "len": 340,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state.load_forms\",\"router_data\":{\"pathname\":\"/edit/form/1/field/new\",\"asPath\":\"/edit/form/1/field/new\",\"query\":{\"form_id\":\"1\",\"field_id\":\"new\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.431,
+   "dir": "in",
+   "len": 1048,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state\":{\"forms_rx_state_\":[{\"owner_id\":1,\"id\":1,\"name\":\"Upgrade Survey\",\"fields\":[{\"id\":1,\"required\":false,\"form_id\":1,\"type_\":\"text\",\"name\":\"favorite_food\",\"prompt\":\"What is your favorite food?\",\"options\":[],\"field_values\":[]},{\"id\":2,\"required\":true,\"form_id\":1,\"type_\":\"number\",\"name\":\"age\",\"prompt\":\"How old are you?\",\"options\":[],\"field_values\":[]},{\"id\":3,\"required\":false,\"form_id\":1,\"type_\":\"radio\",\"name\":\"color\",\"prompt\":\"Favorite color\",\"options\":[{\"label\":\"Red\",\"value\":\"\",\"field_id\":3,\"id\":1},{\"label\":\"Blue\",\"value\":\"\",\"field_id\":3,\"id\":2}],\"field_values\":[]},{\"id\":4,\"required\":false,\"form_id\":1,\"type_\":\"select\",\"name\":\"size\",\"prompt\":\"Shirt size\",\"options\":[{\"label\":\"Small\",\"value\":\"\",\"field_id\":4,\"id\":3},{\"label\":\"Large\",\"value\":\"\",\"field_id\":4,\"id\":4}],\"field_values\":[]}],\"user\":{\"enabled\":true,\"username\":\"qa_admin\",\"id\":1}}]}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.431,
+   "dir": "in",
+   "len": 1128,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3600\",\"origin\":\"http://localhost:3600\",\"path\":\"/edit/form/1/field/new\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3600/edit/form/1/field/new\"},\"field_id_rx_state_\":\"new\",\"form_id_rx_state_\":\"1\",\"rx_router_route_id_rx_state_\":\"/edit/form/[form_id]/field/[field_id]\",\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3600\",\"path\":\"/edit/form/[form_id]/field/[field_id]\",\"raw_path\":\"/edit/form/1/field/new\",\"full_path\":\"http://localhost:3600/edit/form/[form_id]/field/[field_id]\",\"full_raw_path\":\"http://localhost:3600/edit/form/1/field/new\",\"params\":{\"form_id\":\"1\",\"field_id\":\"new\"}}},\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state\":{\"authenticated_user_rx_state_\":{\"enabled\":true,\"username\":\"qa_admin\",\"id\":1},\"is_authenticated_rx_state_\":true,\"auth_token_rx_state_\":\"5f97c8b2-eedd-4700-c794-940a4c8c85a7\"},\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state\":{\"is_admin_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.431,
+   "dir": "in",
+   "len": 89,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.431,
+   "dir": "in",
+   "len": 992,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_editor____form_editor_state\":{\"form_rx_state_\":{\"owner_id\":1,\"id\":1,\"name\":\"Upgrade Survey\",\"fields\":[{\"id\":1,\"required\":false,\"form_id\":1,\"type_\":\"text\",\"name\":\"favorite_food\",\"prompt\":\"What is your favorite food?\",\"options\":[],\"field_values\":[]},{\"id\":2,\"required\":true,\"form_id\":1,\"type_\":\"number\",\"name\":\"age\",\"prompt\":\"How old are you?\",\"options\":[],\"field_values\":[]},{\"id\":3,\"required\":false,\"form_id\":1,\"type_\":\"radio\",\"name\":\"color\",\"prompt\":\"Favorite color\",\"options\":[{\"label\":\"Red\",\"value\":\"\",\"field_id\":3,\"id\":1},{\"label\":\"Blue\",\"value\":\"\",\"field_id\":3,\"id\":2}],\"field_values\":[]},{\"id\":4,\"required\":false,\"form_id\":1,\"type_\":\"select\",\"name\":\"size\",\"prompt\":\"Shirt size\",\"options\":[{\"label\":\"Small\",\"value\":\"\",\"field_id\":4,\"id\":3},{\"label\":\"Large\",\"value\":\"\",\"field_id\":4,\"id\":4}],\"field_values\":[]}]}}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.443,
+   "dir": "in",
+   "len": 401,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___field_editor____field_editor_state\":{\"form_owner_id_rx_state_\":1,\"field_rx_state_\":{\"form_id\":\"1\",\"id\":null,\"name\":\"\",\"type_\":\"text\",\"required\":false,\"prompt\":\"\",\"options\":[],\"field_values\":[]},\"field_editor_open_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.489,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.489,
+   "dir": "in",
+   "len": 1048,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state\":{\"forms_rx_state_\":[{\"owner_id\":1,\"id\":1,\"name\":\"Upgrade Survey\",\"fields\":[{\"id\":1,\"required\":false,\"form_id\":1,\"type_\":\"text\",\"name\":\"favorite_food\",\"prompt\":\"What is your favorite food?\",\"options\":[],\"field_values\":[]},{\"id\":2,\"required\":true,\"form_id\":1,\"type_\":\"number\",\"name\":\"age\",\"prompt\":\"How old are you?\",\"options\":[],\"field_values\":[]},{\"id\":3,\"required\":false,\"form_id\":1,\"type_\":\"radio\",\"name\":\"color\",\"prompt\":\"Favorite color\",\"options\":[{\"label\":\"Red\",\"value\":\"\",\"field_id\":3,\"id\":1},{\"label\":\"Blue\",\"value\":\"\",\"field_id\":3,\"id\":2}],\"field_values\":[]},{\"id\":4,\"required\":false,\"form_id\":1,\"type_\":\"select\",\"name\":\"size\",\"prompt\":\"Shirt size\",\"options\":[{\"label\":\"Small\",\"value\":\"\",\"field_id\":4,\"id\":3},{\"label\":\"Large\",\"value\":\"\",\"field_id\":4,\"id\":4}],\"field_values\":[]}],\"user\":{\"enabled\":true,\"username\":\"qa_admin\",\"id\":1}}]}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.589,
+   "dir": "out",
+   "len": 391,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___field_editor____field_editor_state.set_field\",\"payload\":{\"key\":\"name\",\"value\":\"email_fd-up-up\"},\"router_data\":{\"pathname\":\"/edit/form/1/field/new\",\"asPath\":\"/edit/form/1/field/new\",\"query\":{\"form_id\":\"1\",\"field_id\":\"new\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.59,
+   "dir": "in",
+   "len": 352,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___field_editor____field_editor_state\":{\"field_rx_state_\":{\"form_id\":\"1\",\"id\":null,\"name\":\"email_fd-up-up\",\"type_\":\"text\",\"required\":false,\"prompt\":\"\",\"options\":[],\"field_values\":[]}}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.759,
+   "dir": "out",
+   "len": 400,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___field_editor____field_editor_state.set_field\",\"payload\":{\"key\":\"prompt\",\"value\":\"Your email (fd-up-up)\"},\"router_data\":{\"pathname\":\"/edit/form/1/field/new\",\"asPath\":\"/edit/form/1/field/new\",\"query\":{\"form_id\":\"1\",\"field_id\":\"new\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.763,
+   "dir": "in",
+   "len": 373,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___field_editor____field_editor_state\":{\"field_rx_state_\":{\"form_id\":\"1\",\"id\":null,\"name\":\"email_fd-up-up\",\"type_\":\"text\",\"required\":false,\"prompt\":\"Your email (fd-up-up)\",\"options\":[],\"field_values\":[]}}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.833,
+   "dir": "out",
+   "len": 368,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___field_editor____field_editor_state.set_type\",\"payload\":{\"type_\":\"email\"},\"router_data\":{\"pathname\":\"/edit/form/1/field/new\",\"asPath\":\"/edit/form/1/field/new\",\"query\":{\"form_id\":\"1\",\"field_id\":\"new\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.834,
+   "dir": "in",
+   "len": 374,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___field_editor____field_editor_state\":{\"field_rx_state_\":{\"form_id\":\"1\",\"id\":null,\"name\":\"email_fd-up-up\",\"type_\":\"email\",\"required\":false,\"prompt\":\"Your email (fd-up-up)\",\"options\":[],\"field_values\":[]}}}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.505,
+   "dir": "out",
+   "len": 456,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___field_editor____field_editor_state.handle_submit\",\"payload\":{\"form_data\":{\"field_name\":\"email_fd-up-up\",\"field_prompt\":\"Your email (fd-up-up)\",\"type_\":\"email\"}},\"router_data\":{\"pathname\":\"/edit/form/1/field/new\",\"asPath\":\"/edit/form/1/field/new\",\"query\":{\"form_id\":\"1\",\"field_id\":\"new\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.511,
+   "dir": "in",
+   "len": 410,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___field_editor____field_editor_state\":{\"field_rx_state_\":{\"form_id\":\"1\",\"id\":null,\"name\":\"email_fd-up-up\",\"type_\":\"email\",\"required\":false,\"prompt\":\"Your email (fd-up-up)\",\"options\":[],\"field_values\":[]},\"field_editor_open_rx_state_\":false}}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.535,
+   "dir": "in",
+   "len": 151,
+   "payload": "42/_event,[\"event\",{\"events\":[{\"name\":\"_redirect\",\"router_data\":{},\"payload\":{\"path\":\"/edit/form/1\",\"external\":false,\"popup\":false,\"replace\":false}}]}]"
+  },
+  {
+   "page": "main",
+   "t": 6.538,
+   "dir": "in",
+   "len": 1121,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_editor____form_editor_state\":{\"form_rx_state_\":{\"owner_id\":1,\"name\":\"Upgrade Survey\",\"id\":1,\"fields\":[{\"id\":1,\"required\":false,\"form_id\":1,\"type_\":\"text\",\"name\":\"favorite_food\",\"prompt\":\"What is your favorite food?\",\"options\":[],\"field_values\":[]},{\"id\":2,\"required\":true,\"form_id\":1,\"type_\":\"number\",\"name\":\"age\",\"prompt\":\"How old are you?\",\"options\":[],\"field_values\":[]},{\"id\":3,\"required\":false,\"form_id\":1,\"type_\":\"radio\",\"name\":\"color\",\"prompt\":\"Favorite color\",\"options\":[{\"label\":\"Red\",\"value\":\"\",\"field_id\":3,\"id\":1},{\"label\":\"Blue\",\"value\":\"\",\"field_id\":3,\"id\":2}],\"field_values\":[]},{\"id\":4,\"required\":false,\"form_id\":1,\"type_\":\"select\",\"name\":\"size\",\"prompt\":\"Shirt size\",\"options\":[{\"label\":\"Small\",\"value\":\"\",\"field_id\":4,\"id\":3},{\"label\":\"Large\",\"value\":\"\",\"field_id\":4,\"id\":4}],\"field_values\":[]},{\"id\":5,\"required\":false,\"form_id\":1,\"type_\":\"email\",\"name\":\"email_fd-up-up\",\"prompt\":\"Your email (fd-up-up)\",\"field_values\":[]}]}}}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.543,
+   "dir": "in",
+   "len": 1134,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_editor____form_editor_state\":{\"form_rx_state_\":{\"owner_id\":1,\"id\":1,\"name\":\"Upgrade Survey\",\"fields\":[{\"id\":1,\"required\":false,\"form_id\":1,\"type_\":\"text\",\"name\":\"favorite_food\",\"prompt\":\"What is your favorite food?\",\"options\":[],\"field_values\":[]},{\"id\":2,\"required\":true,\"form_id\":1,\"type_\":\"number\",\"name\":\"age\",\"prompt\":\"How old are you?\",\"options\":[],\"field_values\":[]},{\"id\":3,\"required\":false,\"form_id\":1,\"type_\":\"radio\",\"name\":\"color\",\"prompt\":\"Favorite color\",\"options\":[{\"label\":\"Red\",\"value\":\"\",\"field_id\":3,\"id\":1},{\"label\":\"Blue\",\"value\":\"\",\"field_id\":3,\"id\":2}],\"field_values\":[]},{\"id\":4,\"required\":false,\"form_id\":1,\"type_\":\"select\",\"name\":\"size\",\"prompt\":\"Shirt size\",\"options\":[{\"label\":\"Small\",\"value\":\"\",\"field_id\":4,\"id\":3},{\"label\":\"Large\",\"value\":\"\",\"field_id\":4,\"id\":4}],\"field_values\":[]},{\"id\":5,\"required\":false,\"form_id\":1,\"type_\":\"email\",\"name\":\"email_fd-up-up\",\"prompt\":\"Your email (fd-up-up)\",\"options\":[],\"field_values\":[]}]}}}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.629,
+   "dir": "out",
+   "len": 340,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state.load_forms\",\"router_data\":{\"pathname\":\"/edit/form/1/field/new\",\"asPath\":\"/edit/form/1/field/new\",\"query\":{\"form_id\":\"1\",\"field_id\":\"new\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.634,
+   "dir": "out",
+   "len": 368,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.auth_token_rx_state_\":\"5f97c8b2-eedd-4700-c794-940a4c8c85a7\"}},\"router_data\":{\"pathname\":\"/edit/form/1\",\"asPath\":\"/edit/form/1\",\"query\":{\"form_id\":\"1\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.635,
+   "dir": "out",
+   "len": 202,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/edit/form/1\",\"asPath\":\"/edit/form/1\",\"query\":{\"form_id\":\"1\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.635,
+   "dir": "out",
+   "len": 303,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state.load_forms\",\"router_data\":{\"pathname\":\"/edit/form/1\",\"asPath\":\"/edit/form/1\",\"query\":{\"form_id\":\"1\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.636,
+   "dir": "out",
+   "len": 10,
+   "payload": "41/_event,"
+  },
+  {
+   "page": "main",
+   "t": 6.643,
+   "dir": "in",
+   "len": 1190,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state\":{\"forms_rx_state_\":[{\"owner_id\":1,\"id\":1,\"name\":\"Upgrade Survey\",\"fields\":[{\"id\":1,\"required\":false,\"form_id\":1,\"type_\":\"text\",\"name\":\"favorite_food\",\"prompt\":\"What is your favorite food?\",\"options\":[],\"field_values\":[]},{\"id\":2,\"required\":true,\"form_id\":1,\"type_\":\"number\",\"name\":\"age\",\"prompt\":\"How old are you?\",\"options\":[],\"field_values\":[]},{\"id\":3,\"required\":false,\"form_id\":1,\"type_\":\"radio\",\"name\":\"color\",\"prompt\":\"Favorite color\",\"options\":[{\"label\":\"Red\",\"value\":\"\",\"field_id\":3,\"id\":1},{\"label\":\"Blue\",\"value\":\"\",\"field_id\":3,\"id\":2}],\"field_values\":[]},{\"id\":4,\"required\":false,\"form_id\":1,\"type_\":\"select\",\"name\":\"size\",\"prompt\":\"Shirt size\",\"options\":[{\"label\":\"Small\",\"value\":\"\",\"field_id\":4,\"id\":3},{\"label\":\"Large\",\"value\":\"\",\"field_id\":4,\"id\":4}],\"field_values\":[]},{\"id\":5,\"required\":false,\"form_id\":1,\"type_\":\"email\",\"name\":\"email_fd-up-up\",\"prompt\":\"Your email (fd-up-up)\",\"options\":[],\"field_values\":[]}],\"user\":{\"enabled\":true,\"username\":\"qa_admin\",\"id\":1}}]}}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.643,
+   "dir": "close",
+   "payload": ""
+  },
+  {
+   "page": "main",
+   "t": 9.815,
+   "dir": "open",
+   "payload": "ws://localhost:8600/_event/?token=1cd5b4e8-c5a5-475c-c2cb-8ab316a8016b&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 9.816,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"h1Ungzfiy03yIHV5AAAG\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 9.816,
+   "dir": "out",
+   "len": 605,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.auth_token_rx_state_\":\"5f97c8b2-eedd-4700-c794-940a4c8c85a7\"},\"hashes\":[\"7f02077446d480d6\",\"0b97b0aeacae1d37\",\"72c4c6e4d5ca6372\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"ce9ce44eccafc12e\",\"b0b4835a001a4843\",\"dc444275bfc30eb3\",\"c68bb4ed71ecc55b\",\"b971016ed11f5146\",\"f13ccfd1edf5d20e\",\"cb3bd1e58984a23f\",\"475ba198521ff3f6\"]},\"router_data\":{\"pathname\":\"/form/1\",\"asPath\":\"/form/1\",\"query\":{\"form_id\":\"1\"}}}}"
+  },
+  {
+   "page": "main",
+   "t": 9.816,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"Z4FHSeeU5hyJwsomAAAH\"}"
+  },
+  {
+   "page": "main",
+   "t": 9.817,
+   "dir": "in",
+   "len": 4897,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"form_id_rx_state_\":\"1\",\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8600\",\"origin\":\"http://localhost:3600\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"NVnjsqZge9Asgl9iS6FFEw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8600\",\"origin\":\"http://localhost:3600\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"NVnjsqZge9Asgl9iS6FFEw==\",\"sec-websocket-protocol\":\"0.10.0a4\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3600\",\"path\":\"/form/[form_id]\",\"raw_path\":\"/form/1\",\"full_path\":\"http://localhost:3600/form/[form_id]\",\"full_raw_path\":\"http://localhost:3600/form/1\",\"params\":{\"form_id\":\"1\"}},\"rx_router_route_id_rx_state_\":\"/form/[form_id]\",\"rx_router_session_rx_state_\":{\"client_token\":\"1cd5b4e8-c5a5-475c-c2cb-8ab316a8016b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"Z4FHSeeU5hyJwsomAAAH\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3600\",\"origin\":\"http://localhost:3600\",\"path\":\"/form/1\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3600/form/1\"},\"is_hydrated_rx_state_\":false},\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state\":{\"auth_token_rx_state_\":\"5f97c8b2-eedd-4700-c794-940a4c8c85a7\",\"authenticated_user_rx_state_\":{\"enabled\":true,\"username\":\"qa_admin\",\"id\":1},\"is_authenticated_rx_state_\":true},\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state\":{\"is_admin_rx_state_\":true},\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_editor____form_editor_state\":{\"form_rx_state_\":{\"owner_id\":1,\"id\":1,\"name\":\"Upgrade Survey\",\"fields\":[{\"id\":1,\"required\":false,\"form_id\":1,\"type_\":\"text\",\"name\":\"favorite_food\",\"prompt\":\"What is your favorite food?\",\"options\":[],\"field_values\":[]},{\"id\":2,\"required\":true,\"form_id\":1,\"type_\":\"number\",\"name\":\"age\",\"prompt\":\"How old are you?\",\"options\":[],\"field_values\":[]},{\"id\":3,\"required\":false,\"form_id\":1,\"type_\":\"radio\",\"name\":\"color\",\"prompt\":\"Favorite color\",\"options\":[{\"label\":\"Red\",\"value\":\"\",\"field_id\":3,\"id\":1},{\"label\":\"Blue\",\"value\":\"\",\"field_id\":3,\"id\":2}],\"field_values\":[]}"
+  },
+  {
+   "page": "main",
+   "t": 9.817,
+   "dir": "in",
+   "len": 423,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state\":{\"authenticated_user_rx_state_\":{\"enabled\":true,\"username\":\"qa_admin\",\"id\":1},\"is_authenticated_rx_state_\":true,\"auth_token_rx_state_\":\"5f97c8b2-eedd-4700-c794-940a4c8c85a7\"},\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state\":{\"is_admin_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 9.817,
+   "dir": "in",
+   "len": 89,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "page": "main",
+   "t": 9.817,
+   "dir": "in",
+   "len": 1071,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.form_designer___pages___form_entry____form_entry_state\":{\"form_rx_state_\":{\"owner_id\":1,\"id\":1,\"name\":\"Upgrade Survey\",\"fields\":[{\"id\":1,\"required\":false,\"form_id\":1,\"type_\":\"text\",\"name\":\"favorite_food\",\"prompt\":\"What is your favorite food?\",\"options\":[],\"field_values\":[]},{\"id\":2,\"required\":true,\"form_id\":1,\"type_\":\"number\",\"name\":\"age\",\"prompt\":\"How old are you?\",\"options\":[],\"field_values\":[]},{\"id\":3,\"required\":false,\"form_id\":1,\"type_\":\"radio\",\"name\":\"color\",\"prompt\":\"Favorite color\",\"options\":[{\"label\":\"Red\",\"value\":\"\",\"field_id\":3,\"id\":1},{\"label\":\"Blue\",\"value\":\"\",\"field_id\":3,\"id\":2}],\"field_values\":[]},{\"id\":4,\"required\":false,\"form_id\":1,\"type_\":\"select\",\"name\":\"size\",\"prompt\":\"Shirt size\",\"options\":[{\"label\":\"Small\",\"value\":\"\",\"field_id\":4,\"id\":3},{\"label\":\"Large\",\"value\":\"\",\"field_id\":4,\"id\":4}],\"field_values\":[]},{\"id\":5,\"required\":false,\"form_id\":1,\"type_\":\"email\",\"name\":\"email_fd-up-up\",\"prompt\":\"Your email (fd-up-up)\",\"options\":[],\"field_values\":[]}]},\"missing_fields_rx_state_\":{}}}}]"
+  },
+  {
+   "page": "main",
+   "t": 9.818,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 9.932,
+   "dir": "out",
+   "len": 10,
+   "payload": "41/_event,"
+  },
+  {
+   "page": "main",
+   "t": 9.933,
+   "dir": "close",
+   "payload": ""
+  },
+  {
+   "page": "main",
+   "t": 10.031,
+   "dir": "open",
+   "payload": "ws://localhost:8600/_event/?token=1cd5b4e8-c5a5-475c-c2cb-8ab316a8016b&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 10.032,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"xEVnr_Gh3LaJpEMWAAAI\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 10.057,
+   "dir": "out",
+   "len": 569,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.auth_token_rx_state_\":\"5f97c8b2-eedd-4700-c794-940a4c8c85a7\"},\"hashes\":[\"7f02077446d480d6\",\"0b97b0aeacae1d37\",\"72c4c6e4d5ca6372\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"ce9ce44eccafc12e\",\"b0b4835a001a4843\",\"dc444275bfc30eb3\",\"c68bb4ed71ecc55b\",\"b971016ed11f5146\",\"f13ccfd1edf5d20e\",\"cb3bd1e58984a23f\",\"475ba198521ff3f6\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+  },
+  {
+   "page": "main",
+   "t": 10.071,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"y3Xv3PP6iLeS20mdAAAJ\"}"
+  },
+  {
+   "page": "main",
+   "t": 10.071,
+   "dir": "in",
+   "len": 5819,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8600\",\"origin\":\"http://localhost:3600\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"vF4/uUakQ6bNm8D5oiWvBw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8600\",\"origin\":\"http://localhost:3600\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"vF4/uUakQ6bNm8D5oiWvBw==\",\"sec-websocket-protocol\":\"0.10.0a4\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3600\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3600/index\",\"full_raw_path\":\"http://localhost:3600/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"1cd5b4e8-c5a5-475c-c2cb-8ab316a8016b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"y3Xv3PP6iLeS20mdAAAJ\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3600\",\"origin\":\"http://localhost:3600\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3600/\"},\"is_hydrated_rx_state_\":false},\"reflex___state____state.form_designer___pages___form_entry____form_entry_state\":{\"form_rx_state_\":{\"owner_id\":1,\"id\":1,\"name\":\"Upgrade Survey\",\"fields\":[{\"id\":1,\"required\":false,\"form_id\":1,\"type_\":\"text\",\"name\":\"favorite_food\",\"prompt\":\"What is your favorite food?\",\"options\":[],\"field_values\":[]},{\"id\":2,\"required\":true,\"form_id\":1,\"type_\":\"number\",\"name\":\"age\",\"prompt\":\"How old are you?\",\"options\":[],\"field_values\":[]},{\"id\":3,\"required\":false,\"form_id\":1,\"type_\":\"radio\",\"name\":\"color\",\"prompt\":\"Favorite color\",\"options\":[{\"label\":\"Red\",\"value\":\"\",\"field_id\":3,\"id\":1},{\"label\":\"Blue\",\"value\":\"\",\"field_id\":3,\"id\":2}],\"field_values\":[]},{\"id\":4,\"required\":false,\"form_id\":1,\"type_\":\"select\",\"name\":\"size\",\"prompt\":\"Shirt size\",\"options\":[{\"label\":\"Small\",\"value\":\"\",\"field_id\":4,\"id\":3},{\"label\":\"Large\",\"value\":\"\",\"field_id\":4,\"id\":4}],\"field_values\":[]},{\"id\":5,\"required\":false,\"form_id\":1,\"type_\":\"email\",\"name\":\"email_fd-up-up\",\"prompt\":\"Your email (fd-up-up)\",\"options\":[],\"field_values\":[]}]}},\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state\":{\"auth_token_rx_state_\":\"5f97c8b2-eedd-4700-c794-940a4c8c85a7\",\"authenticated_user_rx_state_\":{\"enabled\":true,\"username\":\"qa_admin\""
+  },
+  {
+   "page": "main",
+   "t": 10.071,
+   "dir": "in",
+   "len": 480,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true},\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state\":{\"authenticated_user_rx_state_\":{\"enabled\":true,\"username\":\"qa_admin\",\"id\":1},\"is_authenticated_rx_state_\":true,\"auth_token_rx_state_\":\"5f97c8b2-eedd-4700-c794-940a4c8c85a7\"},\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state\":{\"is_admin_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 11.388,
+   "dir": "out",
+   "len": 159,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.do_logout\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 11.392,
+   "dir": "in",
+   "len": 405,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state\":{\"authenticated_user_rx_state_\":{\"id\":-1,\"enabled\":false},\"is_authenticated_rx_state_\":false,\"auth_token_rx_state_\":\"5f97c8b2-eedd-4700-c794-940a4c8c85a7\"},\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state\":{\"is_admin_rx_state_\":false}}}]"
+  },
+  {
+   "page": "main",
+   "t": 12.928,
+   "dir": "out",
+   "len": 322,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.auth_token_rx_state_\":\"5f97c8b2-eedd-4700-c794-940a4c8c85a7\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 12.928,
+   "dir": "out",
+   "len": 156,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 12.928,
+   "dir": "in",
+   "len": 405,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state\":{\"authenticated_user_rx_state_\":{\"id\":-1,\"enabled\":false},\"is_authenticated_rx_state_\":false,\"auth_token_rx_state_\":\"5f97c8b2-eedd-4700-c794-940a4c8c85a7\"},\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state\":{\"is_admin_rx_state_\":false}}}]"
+  },
+  {
+   "page": "main",
+   "t": 12.929,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 12.935,
+   "dir": "out",
+   "len": 10,
+   "payload": "41/_event,"
+  },
+  {
+   "page": "main",
+   "t": 12.936,
+   "dir": "close",
+   "payload": ""
+  },
+  {
+   "page": "main",
+   "t": 13.071,
+   "dir": "open",
+   "payload": "ws://localhost:8600/_event/?token=1cd5b4e8-c5a5-475c-c2cb-8ab316a8016b&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 13.072,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"5ctrT1w69q6WpiOhAAAK\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 13.091,
+   "dir": "out",
+   "len": 589,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.auth_token_rx_state_\":\"5f97c8b2-eedd-4700-c794-940a4c8c85a7\"},\"hashes\":[\"7f02077446d480d6\",\"0b97b0aeacae1d37\",\"72c4c6e4d5ca6372\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"ce9ce44eccafc12e\",\"b0b4835a001a4843\",\"dc444275bfc30eb3\",\"c68bb4ed71ecc55b\",\"b971016ed11f5146\",\"f13ccfd1edf5d20e\",\"cb3bd1e58984a23f\",\"475ba198521ff3f6\"]},\"router_data\":{\"pathname\":\"/edit/form/\",\"asPath\":\"/edit/form/\"}}}"
+  },
+  {
+   "page": "main",
+   "t": 13.102,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"Hn9zqkhPhdmMASWJAAAL\"}"
+  },
+  {
+   "page": "main",
+   "t": 13.106,
+   "dir": "in",
+   "len": 5620,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8600\",\"origin\":\"http://localhost:3600\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"gA8XwF4HjdQzlCH2XeWCeA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8600\",\"origin\":\"http://localhost:3600\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"gA8XwF4HjdQzlCH2XeWCeA==\",\"sec-websocket-protocol\":\"0.10.0a4\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3600\",\"path\":\"/edit/form\",\"raw_path\":\"/edit/form/\",\"full_path\":\"http://localhost:3600/edit/form\",\"full_raw_path\":\"http://localhost:3600/edit/form/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/edit/form\",\"rx_router_session_rx_state_\":{\"client_token\":\"1cd5b4e8-c5a5-475c-c2cb-8ab316a8016b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"Hn9zqkhPhdmMASWJAAAL\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3600\",\"origin\":\"http://localhost:3600\",\"path\":\"/edit/form/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3600/edit/form/\"},\"is_hydrated_rx_state_\":false},\"reflex___state____state.form_designer___pages___form_entry____form_entry_state\":{\"form_rx_state_\":{\"owner_id\":1,\"id\":1,\"name\":\"Upgrade Survey\",\"fields\":[{\"id\":1,\"required\":false,\"form_id\":1,\"type_\":\"text\",\"name\":\"favorite_food\",\"prompt\":\"What is your favorite food?\",\"options\":[],\"field_values\":[]},{\"id\":2,\"required\":true,\"form_id\":1,\"type_\":\"number\",\"name\":\"age\",\"prompt\":\"How old are you?\",\"options\":[],\"field_values\":[]},{\"id\":3,\"required\":false,\"form_id\":1,\"type_\":\"radio\",\"name\":\"color\",\"prompt\":\"Favorite color\",\"options\":[{\"label\":\"Red\",\"value\":\"\",\"field_id\":3,\"id\":1},{\"label\":\"Blue\",\"value\":\"\",\"field_id\":3,\"id\":2}],\"field_values\":[]},{\"id\":4,\"required\":false,\"form_id\":1,\"type_\":\"select\",\"name\":\"size\",\"prompt\":\"Shirt size\",\"options\":[{\"label\":\"Small\",\"value\":\"\",\"field_id\":4,\"id\":3},{\"label\":\"Large\",\"value\":\"\",\"field_id\":4,\"id\":4}],\"field_values\":[]},{\"id\":5,\"required\":false,\"form_id\":1,\"type_\":\"email\",\"name\":\"email_fd-up-up\",\"prompt\":\"Your email (fd-up-up)\",\"options\":[],\"field_values\":[]}]}},\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state\":{\"auth_token_rx_state_\":\"5f97c8b2-eedd-4700-c794-940a4c8c85a7\"},\"reflex___state"
+  },
+  {
+   "page": "main",
+   "t": 13.107,
+   "dir": "in",
+   "len": 405,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state\":{\"authenticated_user_rx_state_\":{\"id\":-1,\"enabled\":false},\"is_authenticated_rx_state_\":false,\"auth_token_rx_state_\":\"5f97c8b2-eedd-4700-c794-940a4c8c85a7\"},\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state\":{\"is_admin_rx_state_\":false}}}]"
+  },
+  {
+   "page": "main",
+   "t": 13.107,
+   "dir": "in",
+   "len": 89,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "page": "main",
+   "t": 13.107,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 13.128,
+   "dir": "out",
+   "len": 216,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.reflex_local_auth___login____login_state.redir\",\"router_data\":{\"pathname\":\"/edit/form/\",\"asPath\":\"/edit/form/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 13.128,
+   "dir": "out",
+   "len": 216,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.reflex_local_auth___login____login_state.redir\",\"router_data\":{\"pathname\":\"/edit/form/\",\"asPath\":\"/edit/form/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 13.13,
+   "dir": "in",
+   "len": 189,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.reflex_local_auth___login____login_state\":{\"redirect_to_rx_state_\":\"/edit/form/\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 13.132,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"events\":[{\"name\":\"_redirect\",\"router_data\":{},\"payload\":{\"path\":\"/login\",\"external\":false,\"popup\":false,\"replace\":false}}]}]"
+  },
+  {
+   "page": "main",
+   "t": 13.132,
+   "dir": "in",
+   "len": 189,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.reflex_local_auth___login____login_state\":{\"redirect_to_rx_state_\":\"/edit/form/\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 13.134,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"events\":[{\"name\":\"_redirect\",\"router_data\":{},\"payload\":{\"path\":\"/login\",\"external\":false,\"popup\":false,\"replace\":false}}]}]"
+  },
+  {
+   "page": "main",
+   "t": 13.186,
+   "dir": "out",
+   "len": 10,
+   "payload": "41/_event,"
+  },
+  {
+   "page": "main",
+   "t": 13.198,
+   "dir": "close",
+   "payload": ""
+  },
+  {
+   "page": "main",
+   "t": 13.201,
+   "dir": "open",
+   "payload": "ws://localhost:8600/_event/?token=1cd5b4e8-c5a5-475c-c2cb-8ab316a8016b&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 13.204,
+   "dir": "close",
+   "payload": ""
+  },
+  {
+   "page": "main",
+   "t": 13.323,
+   "dir": "open",
+   "payload": "ws://localhost:8600/_event/?token=1cd5b4e8-c5a5-475c-c2cb-8ab316a8016b&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 13.324,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"RZXfktIqBIlyRZ0OAAAN\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 13.387,
+   "dir": "out",
+   "len": 579,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.auth_token_rx_state_\":\"5f97c8b2-eedd-4700-c794-940a4c8c85a7\"},\"hashes\":[\"7f02077446d480d6\",\"0b97b0aeacae1d37\",\"72c4c6e4d5ca6372\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"ce9ce44eccafc12e\",\"b0b4835a001a4843\",\"dc444275bfc30eb3\",\"c68bb4ed71ecc55b\",\"b971016ed11f5146\",\"f13ccfd1edf5d20e\",\"cb3bd1e58984a23f\",\"475ba198521ff3f6\"]},\"router_data\":{\"pathname\":\"/login\",\"asPath\":\"/login\"}}}"
+  },
+  {
+   "page": "main",
+   "t": 13.389,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"5jWzdqBjW7_edvkRAAAO\"}"
+  },
+  {
+   "page": "main",
+   "t": 13.39,
+   "dir": "in",
+   "len": 5746,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8600\",\"origin\":\"http://localhost:3600\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"gL1FjuZsZsIh99MzxLqv+w==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8600\",\"origin\":\"http://localhost:3600\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"gL1FjuZsZsIh99MzxLqv+w==\",\"sec-websocket-protocol\":\"0.10.0a4\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3600\",\"path\":\"/login\",\"raw_path\":\"/login\",\"full_path\":\"http://localhost:3600/login\",\"full_raw_path\":\"http://localhost:3600/login\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/login\",\"rx_router_session_rx_state_\":{\"client_token\":\"1cd5b4e8-c5a5-475c-c2cb-8ab316a8016b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"5jWzdqBjW7_edvkRAAAO\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3600\",\"origin\":\"http://localhost:3600\",\"path\":\"/login\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3600/login\"},\"is_hydrated_rx_state_\":false},\"reflex___state____state.form_designer___pages___form_entry____form_entry_state\":{\"form_rx_state_\":{\"owner_id\":1,\"id\":1,\"name\":\"Upgrade Survey\",\"fields\":[{\"id\":1,\"required\":false,\"form_id\":1,\"type_\":\"text\",\"name\":\"favorite_food\",\"prompt\":\"What is your favorite food?\",\"options\":[],\"field_values\":[]},{\"id\":2,\"required\":true,\"form_id\":1,\"type_\":\"number\",\"name\":\"age\",\"prompt\":\"How old are you?\",\"options\":[],\"field_values\":[]},{\"id\":3,\"required\":false,\"form_id\":1,\"type_\":\"radio\",\"name\":\"color\",\"prompt\":\"Favorite color\",\"options\":[{\"label\":\"Red\",\"value\":\"\",\"field_id\":3,\"id\":1},{\"label\":\"Blue\",\"value\":\"\",\"field_id\":3,\"id\":2}],\"field_values\":[]},{\"id\":4,\"required\":false,\"form_id\":1,\"type_\":\"select\",\"name\":\"size\",\"prompt\":\"Shirt size\",\"options\":[{\"label\":\"Small\",\"value\":\"\",\"field_id\":4,\"id\":3},{\"label\":\"Large\",\"value\":\"\",\"field_id\":4,\"id\":4}],\"field_values\":[]},{\"id\":5,\"required\":false,\"form_id\":1,\"type_\":\"email\",\"name\":\"email_fd-up-up\",\"prompt\":\"Your email (fd-up-up)\",\"options\":[],\"field_values\":[]}]}},\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state\":{\"auth_token_rx_state_\":\"5f97c8b2-eedd-4700-c794-940a4c8c85a7\"},\"reflex___state____state.reflex_local_auth___lo"
+  },
+  {
+   "page": "main",
+   "t": 13.39,
+   "dir": "in",
+   "len": 462,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true},\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state\":{\"authenticated_user_rx_state_\":{\"id\":-1,\"enabled\":false},\"is_authenticated_rx_state_\":false,\"auth_token_rx_state_\":\"5f97c8b2-eedd-4700-c794-940a4c8c85a7\"},\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state\":{\"is_admin_rx_state_\":false}}}]"
+  },
+  {
+   "page": "main",
+   "t": 13.58,
+   "dir": "out",
+   "len": 285,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.reflex_local_auth___login____login_state.on_submit\",\"payload\":{\"form_data\":{\"username\":\"qa_admin\",\"password\":\"S3cretPass!42\"}},\"router_data\":{\"pathname\":\"/login\",\"asPath\":\"/login\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 16.582,
+   "dir": "in",
+   "len": 572,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state\":{\"authenticated_user_rx_state_\":{\"enabled\":true,\"username\":\"qa_admin\",\"id\":1},\"is_authenticated_rx_state_\":true,\"auth_token_rx_state_\":\"5f97c8b2-eedd-4700-c794-940a4c8c85a7\"},\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state\":{\"is_admin_rx_state_\":true},\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.reflex_local_auth___login____login_state\":{\"error_message_rx_state_\":\"\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 16.582,
+   "dir": "in",
+   "len": 150,
+   "payload": "42/_event,[\"event\",{\"events\":[{\"name\":\"_redirect\",\"router_data\":{},\"payload\":{\"path\":\"/edit/form/\",\"external\":false,\"popup\":false,\"replace\":false}}]}]"
+  },
+  {
+   "page": "main",
+   "t": 16.586,
+   "dir": "out",
+   "len": 267,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state.load_forms\",\"router_data\":{\"pathname\":\"/login\",\"asPath\":\"/login\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 16.586,
+   "dir": "out",
+   "len": 342,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.auth_token_rx_state_\":\"5f97c8b2-eedd-4700-c794-940a4c8c85a7\"}},\"router_data\":{\"pathname\":\"/edit/form/\",\"asPath\":\"/edit/form/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 16.586,
+   "dir": "out",
+   "len": 176,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/edit/form/\",\"asPath\":\"/edit/form/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 16.586,
+   "dir": "out",
+   "len": 277,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state.load_forms\",\"router_data\":{\"pathname\":\"/edit/form/\",\"asPath\":\"/edit/form/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 16.586,
+   "dir": "in",
+   "len": 1190,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state\":{\"forms_rx_state_\":[{\"owner_id\":1,\"id\":1,\"name\":\"Upgrade Survey\",\"fields\":[{\"id\":1,\"required\":false,\"form_id\":1,\"type_\":\"text\",\"name\":\"favorite_food\",\"prompt\":\"What is your favorite food?\",\"options\":[],\"field_values\":[]},{\"id\":2,\"required\":true,\"form_id\":1,\"type_\":\"number\",\"name\":\"age\",\"prompt\":\"How old are you?\",\"options\":[],\"field_values\":[]},{\"id\":3,\"required\":false,\"form_id\":1,\"type_\":\"radio\",\"name\":\"color\",\"prompt\":\"Favorite color\",\"options\":[{\"label\":\"Red\",\"value\":\"\",\"field_id\":3,\"id\":1},{\"label\":\"Blue\",\"value\":\"\",\"field_id\":3,\"id\":2}],\"field_values\":[]},{\"id\":4,\"required\":false,\"form_id\":1,\"type_\":\"select\",\"name\":\"size\",\"prompt\":\"Shirt size\",\"options\":[{\"label\":\"Small\",\"value\":\"\",\"field_id\":4,\"id\":3},{\"label\":\"Large\",\"value\":\"\",\"field_id\":4,\"id\":4}],\"field_values\":[]},{\"id\":5,\"required\":false,\"form_id\":1,\"type_\":\"email\",\"name\":\"email_fd-up-up\",\"prompt\":\"Your email (fd-up-up)\",\"options\":[],\"field_values\":[]}],\"user\":{\"enabled\":true,\"username\":\"qa_admin\",\"id\":1}}]}}}]"
+  },
+  {
+   "page": "main",
+   "t": 16.587,
+   "dir": "in",
+   "len": 969,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3600\",\"origin\":\"http://localhost:3600\",\"path\":\"/edit/form/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3600/edit/form/\"},\"field_id_rx_state_\":\"\",\"form_id_rx_state_\":\"\",\"rx_router_route_id_rx_state_\":\"/edit/form\",\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3600\",\"path\":\"/edit/form\",\"raw_path\":\"/edit/form/\",\"full_path\":\"http://localhost:3600/edit/form\",\"full_raw_path\":\"http://localhost:3600/edit/form/\",\"params\":{}}},\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state\":{\"authenticated_user_rx_state_\":{\"enabled\":true,\"username\":\"qa_admin\",\"id\":1},\"is_authenticated_rx_state_\":true,\"auth_token_rx_state_\":\"5f97c8b2-eedd-4700-c794-940a4c8c85a7\"},\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state\":{\"is_admin_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 16.587,
+   "dir": "in",
+   "len": 89,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "page": "main",
+   "t": 16.587,
+   "dir": "in",
+   "len": 298,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_editor____form_editor_state\":{\"form_rx_state_\":{\"owner_id\":1,\"id\":null,\"name\":\"\",\"fields\":[],\"responses\":[],\"user\":null}}}}]"
+  },
+  {
+   "page": "main",
+   "t": 16.587,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 16.587,
+   "dir": "in",
+   "len": 1190,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state\":{\"forms_rx_state_\":[{\"owner_id\":1,\"id\":1,\"name\":\"Upgrade Survey\",\"fields\":[{\"id\":1,\"required\":false,\"form_id\":1,\"type_\":\"text\",\"name\":\"favorite_food\",\"prompt\":\"What is your favorite food?\",\"options\":[],\"field_values\":[]},{\"id\":2,\"required\":true,\"form_id\":1,\"type_\":\"number\",\"name\":\"age\",\"prompt\":\"How old are you?\",\"options\":[],\"field_values\":[]},{\"id\":3,\"required\":false,\"form_id\":1,\"type_\":\"radio\",\"name\":\"color\",\"prompt\":\"Favorite color\",\"options\":[{\"label\":\"Red\",\"value\":\"\",\"field_id\":3,\"id\":1},{\"label\":\"Blue\",\"value\":\"\",\"field_id\":3,\"id\":2}],\"field_values\":[]},{\"id\":4,\"required\":false,\"form_id\":1,\"type_\":\"select\",\"name\":\"size\",\"prompt\":\"Shirt size\",\"options\":[{\"label\":\"Small\",\"value\":\"\",\"field_id\":4,\"id\":3},{\"label\":\"Large\",\"value\":\"\",\"field_id\":4,\"id\":4}],\"field_values\":[]},{\"id\":5,\"required\":false,\"form_id\":1,\"type_\":\"email\",\"name\":\"email_fd-up-up\",\"prompt\":\"Your email (fd-up-up)\",\"options\":[],\"field_values\":[]}],\"user\":{\"enabled\":true,\"username\":\"qa_admin\",\"id\":1}}]}}}]"
+  },
+  {
+   "page": "main",
+   "t": 16.587,
+   "dir": "out",
+   "len": 10,
+   "payload": "41/_event,"
+  },
+  {
+   "page": "main",
+   "t": 16.587,
+   "dir": "close",
+   "payload": ""
+  },
+  {
+   "page": "main",
+   "t": 16.677,
+   "dir": "open",
+   "payload": "ws://localhost:8600/_event/?token=1cd5b4e8-c5a5-475c-c2cb-8ab316a8016b&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 16.684,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"pA_I10PalSaTgQLcAAAP\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 16.709,
+   "dir": "out",
+   "len": 589,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.auth_token_rx_state_\":\"5f97c8b2-eedd-4700-c794-940a4c8c85a7\"},\"hashes\":[\"7f02077446d480d6\",\"0b97b0aeacae1d37\",\"72c4c6e4d5ca6372\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"ce9ce44eccafc12e\",\"b0b4835a001a4843\",\"dc444275bfc30eb3\",\"c68bb4ed71ecc55b\",\"b971016ed11f5146\",\"f13ccfd1edf5d20e\",\"cb3bd1e58984a23f\",\"475ba198521ff3f6\"]},\"router_data\":{\"pathname\":\"/edit/form/\",\"asPath\":\"/edit/form/\"}}}"
+  },
+  {
+   "page": "main",
+   "t": 16.717,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"6NoFsVwcmbarPMa8AAAQ\"}"
+  },
+  {
+   "page": "main",
+   "t": 16.718,
+   "dir": "in",
+   "len": 5193,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8600\",\"origin\":\"http://localhost:3600\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"eNh7h3v7dRpAWLcDzeYcJA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8600\",\"origin\":\"http://localhost:3600\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"eNh7h3v7dRpAWLcDzeYcJA==\",\"sec-websocket-protocol\":\"0.10.0a4\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3600\",\"path\":\"/edit/form\",\"raw_path\":\"/edit/form/\",\"full_path\":\"http://localhost:3600/edit/form\",\"full_raw_path\":\"http://localhost:3600/edit/form/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/edit/form\",\"rx_router_session_rx_state_\":{\"client_token\":\"1cd5b4e8-c5a5-475c-c2cb-8ab316a8016b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"6NoFsVwcmbarPMa8AAAQ\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3600\",\"origin\":\"http://localhost:3600\",\"path\":\"/edit/form/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3600/edit/form/\"},\"is_hydrated_rx_state_\":false},\"reflex___state____state.form_designer___pages___form_entry____form_entry_state\":{\"form_rx_state_\":{\"owner_id\":1,\"id\":1,\"name\":\"Upgrade Survey\",\"fields\":[{\"id\":1,\"required\":false,\"form_id\":1,\"type_\":\"text\",\"name\":\"favorite_food\",\"prompt\":\"What is your favorite food?\",\"options\":[],\"field_values\":[]},{\"id\":2,\"required\":true,\"form_id\":1,\"type_\":\"number\",\"name\":\"age\",\"prompt\":\"How old are you?\",\"options\":[],\"field_values\":[]},{\"id\":3,\"required\":false,\"form_id\":1,\"type_\":\"radio\",\"name\":\"color\",\"prompt\":\"Favorite color\",\"options\":[{\"label\":\"Red\",\"value\":\"\",\"field_id\":3,\"id\":1},{\"label\":\"Blue\",\"value\":\"\",\"field_id\":3,\"id\":2}],\"field_values\":[]},{\"id\":4,\"required\":false,\"form_id\":1,\"type_\":\"select\",\"name\":\"size\",\"prompt\":\"Shirt size\",\"options\":[{\"label\":\"Small\",\"value\":\"\",\"field_id\":4,\"id\":3},{\"label\":\"Large\",\"value\":\"\",\"field_id\":4,\"id\":4}],\"field_values\":[]},{\"id\":5,\"required\":false,\"form_id\":1,\"type_\":\"email\",\"name\":\"email_fd-up-up\",\"prompt\":\"Your email (fd-up-up)\",\"options\":[],\"field_values\":[]}]}},\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state\":{\"auth_token_rx_state_\":\"5f97c8b2-eedd-4700-c794-940a4c8c85a7\",\"authenticated_u"
+  },
+  {
+   "page": "main",
+   "t": 16.718,
+   "dir": "in",
+   "len": 423,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state\":{\"authenticated_user_rx_state_\":{\"enabled\":true,\"username\":\"qa_admin\",\"id\":1},\"is_authenticated_rx_state_\":true,\"auth_token_rx_state_\":\"5f97c8b2-eedd-4700-c794-940a4c8c85a7\"},\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state\":{\"is_admin_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 16.718,
+   "dir": "in",
+   "len": 89,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "page": "main",
+   "t": 16.718,
+   "dir": "in",
+   "len": 298,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_editor____form_editor_state\":{\"form_rx_state_\":{\"owner_id\":1,\"id\":null,\"name\":\"\",\"fields\":[],\"responses\":[],\"user\":null}}}}]"
+  },
+  {
+   "page": "main",
+   "t": 16.718,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 16.767,
+   "dir": "out",
+   "len": 277,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state.load_forms\",\"router_data\":{\"pathname\":\"/edit/form/\",\"asPath\":\"/edit/form/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 16.767,
+   "dir": "out",
+   "len": 277,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state.load_forms\",\"router_data\":{\"pathname\":\"/edit/form/\",\"asPath\":\"/edit/form/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 16.767,
+   "dir": "in",
+   "len": 1190,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state\":{\"forms_rx_state_\":[{\"owner_id\":1,\"id\":1,\"name\":\"Upgrade Survey\",\"fields\":[{\"id\":1,\"required\":false,\"form_id\":1,\"type_\":\"text\",\"name\":\"favorite_food\",\"prompt\":\"What is your favorite food?\",\"options\":[],\"field_values\":[]},{\"id\":2,\"required\":true,\"form_id\":1,\"type_\":\"number\",\"name\":\"age\",\"prompt\":\"How old are you?\",\"options\":[],\"field_values\":[]},{\"id\":3,\"required\":false,\"form_id\":1,\"type_\":\"radio\",\"name\":\"color\",\"prompt\":\"Favorite color\",\"options\":[{\"label\":\"Red\",\"value\":\"\",\"field_id\":3,\"id\":1},{\"label\":\"Blue\",\"value\":\"\",\"field_id\":3,\"id\":2}],\"field_values\":[]},{\"id\":4,\"required\":false,\"form_id\":1,\"type_\":\"select\",\"name\":\"size\",\"prompt\":\"Shirt size\",\"options\":[{\"label\":\"Small\",\"value\":\"\",\"field_id\":4,\"id\":3},{\"label\":\"Large\",\"value\":\"\",\"field_id\":4,\"id\":4}],\"field_values\":[]},{\"id\":5,\"required\":false,\"form_id\":1,\"type_\":\"email\",\"name\":\"email_fd-up-up\",\"prompt\":\"Your email (fd-up-up)\",\"options\":[],\"field_values\":[]}],\"user\":{\"enabled\":true,\"username\":\"qa_admin\",\"id\":1}}]}}}]"
+  },
+  {
+   "page": "main",
+   "t": 16.769,
+   "dir": "in",
+   "len": 1190,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state\":{\"forms_rx_state_\":[{\"owner_id\":1,\"id\":1,\"name\":\"Upgrade Survey\",\"fields\":[{\"id\":1,\"required\":false,\"form_id\":1,\"type_\":\"text\",\"name\":\"favorite_food\",\"prompt\":\"What is your favorite food?\",\"options\":[],\"field_values\":[]},{\"id\":2,\"required\":true,\"form_id\":1,\"type_\":\"number\",\"name\":\"age\",\"prompt\":\"How old are you?\",\"options\":[],\"field_values\":[]},{\"id\":3,\"required\":false,\"form_id\":1,\"type_\":\"radio\",\"name\":\"color\",\"prompt\":\"Favorite color\",\"options\":[{\"label\":\"Red\",\"value\":\"\",\"field_id\":3,\"id\":1},{\"label\":\"Blue\",\"value\":\"\",\"field_id\":3,\"id\":2}],\"field_values\":[]},{\"id\":4,\"required\":false,\"form_id\":1,\"type_\":\"select\",\"name\":\"size\",\"prompt\":\"Shirt size\",\"options\":[{\"label\":\"Small\",\"value\":\"\",\"field_id\":4,\"id\":3},{\"label\":\"Large\",\"value\":\"\",\"field_id\":4,\"id\":4}],\"field_values\":[]},{\"id\":5,\"required\":false,\"form_id\":1,\"type_\":\"email\",\"name\":\"email_fd-up-up\",\"prompt\":\"Your email (fd-up-up)\",\"options\":[],\"field_values\":[]}],\"user\":{\"enabled\":true,\"username\":\"qa_admin\",\"id\":1}}]}}}]"
+  }
+ ],
+ "notes": {
+  "mode": "up",
+  "url": "http://localhost:3600/",
+  "md_h1": [
+   "Form Designer",
+   "form-designer"
+  ],
+  "auth_token": "5f97c8b2-eedd-4700-c794-940a4c8c85a7",
+  "fields_listed": [
+   "What is your favorite food? (favorite_food)",
+   "How old are you? (age)",
+   "Favorite color (color)",
+   "Shirt size (size)"
+  ],
+  "form_id": "1",
+  "final_local_storage": {
+   "theme": "system",
+   "last_compiled_theme": "system",
+   "_auth_token": "5f97c8b2-eedd-4700-c794-940a4c8c85a7"
+  },
+  "final_cookies": []
+ }
+}

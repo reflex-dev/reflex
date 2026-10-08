@@ -7,5 +7,6 @@ cd $W && tar --exclude=.web --exclude=node_modules --exclude=.states --exclude='
   -cf - src drivers scripts cv pr7505 | tar -xf - -C $DEST
 cd $W/v && tar --exclude=__pycache__ -cf - src drivers scripts | tar -xf - -C $DEST/verification
 cd $W/results && find . -type f ! -name '*.raw.json' ! -name '*.stdout' -size -400k | tar -cf - -T - | tar -xf - -C $DEST/results
+mkdir -p $DEST/trimmed && cp $W/trimmed/*.log $DEST/trimmed/
 cd $W/v/out && find . -maxdepth 1 -type f \( -name '*.json' -o -name '*.txt' \) -size -300k | tar -cf - -T - | tar -xf - -C $DEST/verification/out
 du -sh $DEST

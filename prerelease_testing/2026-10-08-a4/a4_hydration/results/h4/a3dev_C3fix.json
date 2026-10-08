@@ -1,0 +1,109 @@
+{
+ "base": "http://localhost:3146",
+ "checks": {
+  "C3_syn_follows": {
+   "ok": true,
+   "wait": [
+    true,
+    0.01,
+    [
+     "B",
+     "B"
+    ]
+   ],
+   "ls": "B"
+  },
+  "C3_syn_write_equal_to_boot_value": {
+   "ok": true,
+   "wait": [
+    true,
+    0.01,
+    [
+     "A",
+     "A"
+    ]
+   ],
+   "ls": "A",
+   "quiet_frames": 0,
+   "t1_writes": [
+    [
+     1994,
+     "L",
+     "h4_syn",
+     "A"
+    ]
+   ]
+  },
+  "C3_alternate_gap0": {
+   "ok": true,
+   "converged": [
+    true,
+    [
+     "c9",
+     "c9",
+     "c9"
+    ]
+   ],
+   "quiet_frames": 0,
+   "last_writer_wins": true
+  },
+  "C3_alternate_gap40": {
+   "ok": true,
+   "converged": [
+    true,
+    [
+     "c9",
+     "c9",
+     "c9"
+    ]
+   ],
+   "quiet_frames": 2,
+   "last_writer_wins": true
+  },
+  "C3_alternate_gap120": {
+   "ok": true,
+   "converged": [
+    true,
+    [
+     "c9",
+     "c9",
+     "c9"
+    ]
+   ],
+   "quiet_frames": 0,
+   "last_writer_wins": true
+  },
+  "C3_back_to_back_clicks": {
+   "ok": true,
+   "converged": [
+    true,
+    [
+     "c9",
+     "c9",
+     "c9"
+    ]
+   ],
+   "quiet_frames": 0
+  },
+  "C3_three_tabs_follow": {
+   "ok": true,
+   "converged": [
+    true,
+    0.13,
+    [
+     "three",
+     "three",
+     "three",
+     "three"
+    ]
+   ],
+   "quiet_frames": 0
+  }
+ },
+ "noise": {
+  "C3": {
+   "console": [],
+   "failed": []
+  }
+ }
+}

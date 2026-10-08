@@ -1,0 +1,4 @@
+### <Name>.<attr> = (module/class level, excluding self.)
+### cls.<attr> =
+### type(self).x = / self.__class__.x =
+### setattr(<Class>

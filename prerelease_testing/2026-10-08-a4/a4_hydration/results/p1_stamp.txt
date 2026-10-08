@@ -1,2 +1,29 @@
 Thu Oct  8 15:52:52 UTC 2026
  15:52:52 up 55 min,  0 user,  load average: 3.14, 1.81, 2.52
+state.js md5: caea5520
+a3 dev /stamp n=6 run 1: {"path": "/stamp", "n": 6, "converged": false, "storm": true, "windows_5s": [127463, 121400], "frames_total": 489741, "finals": ["840d99-1", "21c911-1", "21c911-1", "b990d2-1", "14b86b-1", "21c911-1"], "storage_events": [66693, 66810, 66720, 66744, 66719, 67166]}
+a3 dev /stamp n=6 run 2: {"path": "/stamp", "n": 6, "converged": false, "storm": true, "windows_5s": [67499, 63926], "frames_total": 244485, "finals": ["5f3610-1", "e3fe6e-1", "1e341d-1", "1e341d-1", "e3fe6e-1", "986528-1"], "storage_events": [33153, 33139, 33222, 33231, 33148, 33407]}
+a3 dev /stamp n=6 run 3: {"path": "/stamp", "n": 6, "converged": false, "storm": true, "windows_5s": [96689, 100839], "frames_total": 906477, "finals": ["fc76df-1", "ea6ff7-1", "688ed0-1", "ea6ff7-1", "688ed0-1", "ea6ff7-1"], "storage_events": [124325, 124248, 124400, 124288, 124350, 125124]}
+a3 dev /same n=6 run 1: {"path": "/same", "n": 6, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 47, "finals": ["same", "same", "same", "same", "same", "same"], "storage_events": [0, 1, 1, 1, 1, 1]}
+state.js md5: b7915eda
+a4 dev /stamp n=6 run 1: {"path": "/stamp", "n": 6, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 79, "finals": ["19431b-1", "19431b-1", "19431b-1", "19431b-1", "19431b-1", "19431b-1"], "storage_events": [5, 5, 5, 5, 5, 5]}
+a4 dev /stamp n=6 run 2: {"path": "/stamp", "n": 6, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 80, "finals": ["ca51c2-1", "ca51c2-1", "ca51c2-1", "ca51c2-1", "ca51c2-1", "ca51c2-1"], "storage_events": [5, 5, 5, 5, 5, 5]}
+a4 dev /stamp n=6 run 3: {"path": "/stamp", "n": 6, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 95, "finals": ["f66398-1", "f66398-1", "f66398-1", "f66398-1", "f66398-1", "f66398-1"], "storage_events": [7, 7, 7, 7, 6, 6]}
+a4 dev /stamp n=6 run 4: {"path": "/stamp", "n": 6, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 95, "finals": ["d4c631-1", "d4c631-1", "d4c631-1", "d4c631-1", "d4c631-1", "d4c631-1"], "storage_events": [7, 7, 6, 7, 7, 6]}
+a4 dev /same n=6 run 1: {"path": "/same", "n": 6, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 50, "finals": ["same", "same", "same", "same", "same", "same"], "storage_events": [1, 1, 1, 0, 1, 1]}
+Thu Oct  8 15:57:18 UTC 2026
+ 15:57:18 up 59 min,  0 user,  load average: 4.09, 6.29, 4.52
+state.js md5: caea5520
+a3 prod /stamp n=6 run 1: {"path": "/stamp", "n": 6, "converged": false, "storm": true, "windows_5s": [86256, 104830], "frames_total": 331360, "finals": ["a1c72e-1", "a1c72e-1", "f97e99-1", "4d4868-1", "a1c72e-1", "d3fc1e-1"], "storage_events": [44825, 44923, 45141, 45191, 45198, 45588]}
+a3 prod /stamp n=6 run 2: {"path": "/stamp", "n": 6, "converged": false, "storm": true, "windows_5s": [62899, 61381], "frames_total": 149300, "finals": ["eb73f5-1", "95d022-1", "2828cb-1", "3dfafe-1", "1fce7f-1", "1fce7f-1"], "storage_events": [20190, 20238, 20236, 20159, 20192, 20351]}
+state.js md5: b7915eda
+a4 prod /stamp n=6 run 1: {"path": "/stamp", "n": 6, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 85, "finals": ["0560dd-1", "0560dd-1", "0560dd-1", "0560dd-1", "0560dd-1", "0560dd-1"], "storage_events": [6, 5, 6, 6, 6, 6]}
+a4 prod /stamp n=6 run 2: {"path": "/stamp", "n": 6, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 107, "finals": ["cb0d4f-1", "cb0d4f-1", "cb0d4f-1", "cb0d4f-1", "cb0d4f-1", "cb0d4f-1"], "storage_events": [9, 7, 9, 8, 9, 8]}
+a4 prod /stamp n=6 run 3: {"path": "/stamp", "n": 6, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 79, "finals": ["58ebf7-1", "58ebf7-1", "58ebf7-1", "58ebf7-1", "58ebf7-1", "58ebf7-1"], "storage_events": [5, 5, 5, 5, 5, 5]}
+a4 prod /same n=6 run 1: {"path": "/same", "n": 6, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 47, "finals": ["same", "same", "same", "same", "same", "same"], "storage_events": [0, 1, 1, 1, 1, 1]}
+state.js md5: b7915eda
+a4 dev /stamp n=4 run 1: {"path": "/stamp", "n": 4, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 57, "finals": ["267832-1", "267832-1", "267832-1", "267832-1"], "storage_events": [4, 5, 5, 4]}
+a4 dev /stamp n=4 run 2: {"path": "/stamp", "n": 4, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 59, "finals": ["459c48-1", "459c48-1", "459c48-1", "459c48-1"], "storage_events": [4, 4, 4, 3]}
+a4 dev /stamp n=4 run 3: {"path": "/stamp", "n": 4, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 93, "finals": ["5ad5c1-1", "5ad5c1-1", "5ad5c1-1", "5ad5c1-1"], "storage_events": [10, 7, 7, 9]}
+Thu Oct  8 16:00:29 UTC 2026
+ 16:00:29 up  1:02,  0 user,  load average: 2.00, 5.21, 4.51

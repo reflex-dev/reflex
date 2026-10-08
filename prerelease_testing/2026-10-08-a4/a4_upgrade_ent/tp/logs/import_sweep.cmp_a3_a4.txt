@@ -1,0 +1,22 @@
+SAME reflex_ag_grid                   a3=('error', ["ModuleNotFoundError: No module named 'reflex.base'"]) a4=('error', ["ModuleNotFoundError: No module named 'reflex.base'"]) warn a3=0 a4=0
+SAME reflex_audio_capture             a3=('ok', []) a4=('ok', []) warn a3=0 a4=0
+SAME reflex_calendar                  a3=('ok', []) a4=('ok', []) warn a3=0 a4=0
+DIFF reflex_chakra                    a3=('error', ["ImportError: cannot import name '_issubclass' from 'reflex.utils.types' (/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3_events_tp-all/lib/python3.12/site-packages/reflex/utils/types.py)"]) a4=('error', ["ImportError: cannot import name '_issubclass' from 'reflex.utils.types' (/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a4_upgrade_ent-tp/lib/python3.12/site-packages/reflex/utils/types.py)"]) warn a3=0 a4=0
+SAME reflex_chat                      a3=('ok', []) a4=('ok', []) warn a3=0 a4=0
+SAME reflex_clerk                     a3=('ok', []) a4=('ok', []) warn a3=1 a4=1
+SAME reflex_dynoselect                a3=('ok', []) a4=('ok', []) warn a3=0 a4=0
+SAME reflex_global_hotkey             a3=('ok', []) a4=('ok', []) warn a3=0 a4=0
+SAME reflex_google_auth               a3=('ok', []) a4=('ok', []) warn a3=0 a4=0
+SAME reflex_google_recaptcha_v2       a3=('ok', []) a4=('ok', []) warn a3=0 a4=0
+SAME reflex_image_zoom                a3=('ok', []) a4=('ok', []) warn a3=0 a4=0
+SAME reflex_intersection_observer     a3=('ok', []) a4=('ok', []) warn a3=0 a4=0
+SAME reflex_local_auth                a3=('ok', []) a4=('ok', []) warn a3=0 a4=0
+SAME reflex_magic_link_auth           a3=('ok', []) a4=('ok', []) warn a3=0 a4=0
+SAME reflex_monaco                    a3=('ok', []) a4=('ok', []) warn a3=0 a4=0
+SAME reflex_motion                    a3=('ok', []) a4=('ok', []) warn a3=0 a4=0
+SAME reflex_pyplot                    a3=('ok', []) a4=('ok', []) warn a3=0 a4=0
+SAME reflex_qrcode                    a3=('ok', []) a4=('ok', []) warn a3=0 a4=0
+SAME reflex_simpleicons               a3=('ok', []) a4=('ok', []) warn a3=0 a4=0
+SAME reflex_type_animation            a3=('ok', []) a4=('ok', []) warn a3=0 a4=0
+SAME reflex_webcam                    a3=('ok', []) a4=('ok', []) warn a3=0 a4=0
+SAME rx_color_picker                  a3=('ok', []) a4=('ok', []) warn a3=0 a4=0

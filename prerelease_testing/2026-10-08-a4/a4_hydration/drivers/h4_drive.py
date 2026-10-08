@@ -244,16 +244,18 @@ async def c3_sync(b):
                 seq.append(f"c{i}")
                 if gap:
                     await asyncio.sleep(gap / 1000)
-            okc = await wait_until(lambda: _conv([t1, t2]), timeout=6)
+            await asyncio.sleep(2.5)  # settle first: the tabs agree transiently on an older value before the last delta lands
+            okc = await _conv([t1, t2])
             q = await quiet([t1, t2])
-            final = okc[2]
+            final = okc[1]
             record(f"C3_alternate_gap{gap}", okc[0] and q < 10, converged=okc, quiet_frames=q, last_writer_wins=(final and final[0] == "c9"))
         # back-to-back clicks in one tab
         for i in range(10):
             await t1.click(f"#c{i}", delay=0)
-        okd = await wait_until(lambda: _conv([t1, t2]), timeout=6)
+        await asyncio.sleep(2.5)
+        okd = await _conv([t1, t2])
         q = await quiet([t1, t2])
-        record("C3_back_to_back_clicks", okd[0] and okd[2][0] == "c9" and q < 10, converged=okd, quiet_frames=q)
+        record("C3_back_to_back_clicks", okd[0] and okd[1][0] == "c9" and q < 10, converged=okd, quiet_frames=q)
         # three tabs, change in the middle one
         t3 = await c.page("/other", tag="t3")
         await set_in(t3, "syn", "three")

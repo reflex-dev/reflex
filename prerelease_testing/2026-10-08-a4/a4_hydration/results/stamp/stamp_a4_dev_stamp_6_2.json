@@ -1,0 +1,44 @@
+{
+ "path": "/stamp",
+ "n": 6,
+ "hydrated": [
+  true,
+  true,
+  true,
+  true,
+  true,
+  true
+ ],
+ "finals": [
+  "ca51c2-1",
+  "ca51c2-1",
+  "ca51c2-1",
+  "ca51c2-1",
+  "ca51c2-1",
+  "ca51c2-1"
+ ],
+ "ls_final": "ca51c2-1",
+ "converged": true,
+ "storage_events": [
+  5,
+  5,
+  5,
+  5,
+  5,
+  5
+ ],
+ "uvi": [
+  5,
+  5,
+  0,
+  3,
+  3,
+  1
+ ],
+ "frames_total": 80,
+ "windows_5s": [
+  0,
+  0
+ ],
+ "storm": false
+}

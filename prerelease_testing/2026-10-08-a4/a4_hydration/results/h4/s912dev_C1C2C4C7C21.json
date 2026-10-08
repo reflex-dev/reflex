@@ -1,0 +1,401 @@
+{
+ "base": "http://localhost:3146",
+ "checks": {
+  "C1_fresh_no_writes": {
+   "ok": true,
+   "root": {
+    "ls": {},
+    "ss": {},
+    "ck": {},
+    "writes": [
+     [
+      1185,
+      "S",
+      "token",
+      "56b65fe9-080c-4962-d688-0736ec0f26bb"
+     ],
+     [
+      1188,
+      "L",
+      "last_compiled_theme",
+      "system"
+     ],
+     [
+      1188,
+      "L",
+      "theme",
+      "system"
+     ]
+    ]
+   },
+   "other_nav": {
+    "ls": {},
+    "ss": {},
+    "ck": {}
+   },
+   "other_new_tab": {
+    "ls": {},
+    "ck": {},
+    "writes": [
+     [
+      380,
+      "S",
+      "token",
+      "e170a330-4dc5-437d-da51-3a0b03f29bfe"
+     ]
+    ]
+   }
+  },
+  "C1_fresh_stamp_onload_only": {
+   "ok": true,
+   "ls": {
+    "h4_visits": "1",
+    "h4_last": "stamp@/stamp"
+   },
+   "ck": {}
+  },
+  "C2_nos_persist_reload": {
+   "ok": true,
+   "ls_wait": [
+    true,
+    0.01,
+    "A"
+   ],
+   "shown": "A"
+  },
+  "C2_nos_not_followed": {
+   "ok": true,
+   "ls_wait": [
+    true,
+    0.0,
+    "B"
+   ],
+   "tab1_shows": "A"
+  },
+  "C2_nos_write_equal_to_boot_value_after_other_tab": {
+   "ok": true,
+   "ls_wait": [
+    true,
+    0.0,
+    "A"
+   ],
+   "tab1_writes": [
+    [
+     2073,
+     "L",
+     "h4_nos",
+     "A"
+    ]
+   ],
+   "reload_shows": "A"
+  },
+  "C2_same_value_handler_rewrites_nos": {
+   "ok": true,
+   "ls_wait": [
+    true,
+    0.1,
+    "A"
+   ],
+   "ls": {
+    "h4_sanns": "sanns-defaul",
+    "h4_syn": "syn-default",
+    "h4_nos": "A",
+    "h4_san": "san-default"
+   },
+   "tab1_writes": [
+    [
+     2188,
+     "L",
+     "h4_syn",
+     "syn-default"
+    ],
+    [
+     2188,
+     "L",
+     "h4_nos",
+     "A"
+    ],
+    [
+     2188,
+     "S",
+     "h4_ses",
+     "ses-default"
+    ],
+    [
+     2188,
+     "L",
+     "h4_sanns",
+     "sanns-defaul"
+    ],
+    [
+     2188,
+     "L",
+     "h4_san",
+     "san-default"
+    ]
+   ]
+  },
+  "C4_boot_sanitised_written": {
+   "ok": true,
+   "wait": [
+    true,
+    0.0,
+    {
+     "h4_san": "hello world ",
+     "h4_sanns": "nosync value"
+    }
+   ],
+   "shown": [
+    "hello world ",
+    "nosync value"
+   ]
+  },
+  "C4_handler_sanitised_written": {
+   "ok": true,
+   "wait": [
+    true,
+    0.0,
+    {
+     "h4_san": "abc upper",
+     "h4_sanns": "def upper"
+    }
+   ]
+  },
+  "C4_synced_raw_value_sanitised_written": {
+   "ok": true,
+   "wait": [
+    true,
+    0.0,
+    {
+     "h4_san": "raw upper"
+    }
+   ],
+   "shown": "raw upper",
+   "writes": [
+    [
+     649,
+     "L",
+     "h4_san",
+     "raw upper"
+    ]
+   ]
+  },
+  "C4_two_tabs_raw_sanitised": {
+   "ok": true,
+   "wait": [
+    true,
+    0.01,
+    [
+     "xyz two",
+     "xyz two",
+     "xyz two"
+    ]
+   ],
+   "quiet_frames": 0
+  },
+  "C4_resent_replaced_value_sanitised": {
+   "ok": true,
+   "wait": [
+    true,
+    0.01,
+    [
+     "raw upper",
+     "raw upper",
+     "raw upper"
+    ]
+   ],
+   "quiet_frames": 0
+  },
+  "C4_set_previously_sanitised_value": {
+   "ok": true,
+   "wait": [
+    true,
+    0.12,
+    [
+     "mixed",
+     "mixed",
+     "mixed"
+    ]
+   ]
+  },
+  "C7_cookie_max_age_renewed_at_boot": {
+   "ok": true,
+   "before": {
+    "value": "CK1",
+    "expires": 1791480665
+   },
+   "after": {
+    "value": "CK1",
+    "expires": 1791480669
+   },
+   "delta": 4,
+   "shown": "CK1"
+  },
+  "C20_returning_boot_writes": {
+   "ok": true,
+   "writes": [
+    [
+     407,
+     "S",
+     "token",
+     "55fd25e3-ab54-4496-916c-17ed2b04d7ec"
+    ],
+    [
+     411,
+     "L",
+     "last_compiled_theme",
+     "system"
+    ],
+    [
+     411,
+     "L",
+     "theme",
+     "system"
+    ],
+    [
+     430,
+     "L",
+     "h4_last",
+     "ret-last"
+    ],
+    [
+     430,
+     "L",
+     "h4_syn",
+     "ret-syn"
+    ],
+    [
+     430,
+     "L",
+     "h4_nos",
+     "ret-nos"
+    ],
+    [
+     430,
+     "L",
+     "h4_sanns",
+     "ret-sanns"
+    ],
+    [
+     430,
+     "L",
+     "h4_san",
+     "ret-san"
+    ],
+    [
+     430,
+     "L",
+     "h4_sub",
+     "ret-sub"
+    ]
+   ],
+   "frames": {
+    "in": 5,
+    "out": 4
+   }
+  },
+  "C21_remove_synced_key": {
+   "ok": true,
+   "quiet_frames": 0,
+   "ls": null,
+   "t1": "syn-default",
+   "t2": "keep-me",
+   "t2_writes": [],
+   "t2_se": [
+    [
+     555,
+     "h4_syn",
+     "",
+     "keep-me"
+    ],
+    [
+     611,
+     "h4_syn",
+     "keep-me",
+     ""
+    ]
+   ],
+   "t2_reload": "syn-default",
+   "ls_after_reload": null
+  },
+  "C21_clear_local_storage": {
+   "ok": true,
+   "quiet_frames": 0,
+   "ls": {},
+   "t1": "syn-default",
+   "t2": "again"
+  },
+  "C23_shared_name_sync_and_nosync": {
+   "ok": true,
+   "ls_waits": [
+    [
+     true,
+     0.0
+    ],
+    [
+     true,
+     0.1
+    ],
+    [
+     true,
+     0.0
+    ]
+   ],
+   "after_ns_write": {
+    "t1": [
+     "via-ns",
+     "shared-default"
+    ],
+    "t2": [
+     "shared-default",
+     "via-ns"
+    ]
+   },
+   "after_s_write": {
+    "t1": [
+     "via-ns",
+     "via-s"
+    ],
+    "t2": [
+     "shared-default",
+     "via-s"
+    ]
+   },
+   "t1_reload": [
+    "via-ns",
+    "via-ns"
+   ],
+   "quiet_frames": 0
+  }
+ },
+ "noise": {
+  "C1": {
+   "console": [],
+   "failed": []
+  },
+  "C2": {
+   "console": [],
+   "failed": []
+  },
+  "C4": {
+   "console": [],
+   "failed": []
+  },
+  "C7": {
+   "console": [],
+   "failed": []
+  },
+  "C20": {
+   "console": [],
+   "failed": []
+  },
+  "C21": {
+   "console": [],
+   "failed": []
+  },
+  "C23": {
+   "console": [],
+   "failed": []
+  }
+ }
+}

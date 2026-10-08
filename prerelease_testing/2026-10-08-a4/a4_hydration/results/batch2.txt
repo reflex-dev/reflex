@@ -1,0 +1,45 @@
+Thu Oct  8 16:22:55 UTC 2026
+### h4 a4 prod
+started h4-a4prod pid=31821 venv=a4 mode=prod env=[] log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a4_hydration/logs/h4-a4prod-1.log
+state.js md5: b7915eda
+SUMMARY 39/39 pass; fail=[]
+server log: /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a4_hydration/logs/h4-a4prod-1.log; error/traceback lines: 5
+      1 [Reflex Backend Exception]
+      1 TypeError: object of type 'NoneType' has no len()
+      1 Debug: installed react-error-boundary@6.1.6
+      1 Debug: build/client/assets/errorBoundaries-J78TToQa.js             37.33 kB │ 
+      1 'socket.io-client@4.8.4', 'react-error-boundary@6.1.6', 'react-helmet@6.1.0', 
+      1  Traceback (most recent call last):
+Thu Oct  8 16:25:14 UTC 2026
+### h4 a4 prod+redis
+started h4-a4prodredis pid=1188 venv=a4 mode=prod env=[REFLEX_REDIS_URL=redis://localhost:8149] log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a4_hydration/logs/h4-a4prodredis-1.log
+state.js md5: b7915eda
+SUMMARY 22/22 pass; fail=[]
+server log: /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a4_hydration/logs/h4-a4prodredis-1.log; error/traceback lines: 3
+      1 Debug: installed react-error-boundary@6.1.6
+      1 Debug: build/client/assets/errorBoundaries-J78TToQa.js             37.33 kB │ 
+      1 'react-error-boundary@6.1.6', '@radix-ui/themes@3.3.0', 
+Thu Oct  8 16:27:00 UTC 2026
+### local-auth a4 dev
+migrate exit 0
+started la-a4dev pid=2504 venv=a4_hydration-tp-a4 mode=dev env=[] log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a4_hydration/logs/la-a4dev-2.log
+PASS new tab while session valid -> protected content
+PASS new tab after session expiry -> /login :: http://localhost:3153/login
+SUMMARY checks=38 failed=2 console_err/warn=0 pageerrors=0 failedreq=0 badresp=0
+PASS login stores _auth_token in localStorage
+PASS user-info shows user
+PASS reload: still logged in
+PASS reload: token unchanged
+   reload frames: {'in_frames': 2, 'in_bytes': 2606, 'auth_token_in_deltas': 2, 'auth_token_values': ['725d8419-5c50-48f3-b5f7-2b96ce52de96']}
+PASS second tab logged in
+PASS after logout index shows Login
+PASS tab B logged out after reload
+PASS tab A /protected -> /login after logout
+PASS bogus token -> /protected redirects to /login
+PASS no console errors/warnings
+14/14 checks; ls_after_logout={'_auth_token': '725d8419-5c50-48f3-b5f7-2b96ce52de96'} ls_after_bogus={'_auth_token': 'bogus-token-123'}
+Thu Oct  8 16:28:24 UTC 2026
+### google-auth a4 dev seed4
+GAUTH a4dev-s4 {"keys_before": ["last_compiled_theme", "theme"], "after_reload": "", "protected_unlocked": false, "after_reload_index": "", "after_client_nav": "", "after_reload2": ""}
+Thu Oct  8 16:28:57 UTC 2026
+### done

@@ -1,0 +1,44 @@
+built: greenlet==3.5.6 pydantic==2.13.5 reflex==0.10.0a3 reflex-base==0.10.0a3 sqlalchemy==2.1.4 
+### twa3 base 15:58:35
+migrate rc=0
+started reflex pid=13197 (15:58:38) log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a4_upgrade_ent/up/logs/twa3-base-prod.server.log
+UP after 6s (frontend 200, backend /ping 200)
+granian workers spawned (a3): 9
+[PASS   ] bob still logged in after reload (token kept): bo
+[PASS   ] same token kept across logout/login (reset() keeps session): e72b06b6-0f2a-4d08-d13c-a04c66634b6b -> e72b06b6-0f2a-4d08-d13c-a04c66634b6b
+[ANOMALY] console: no unexpected errors/warnings + no page errors: [{"page": "alice", "t": 1.377, "type": "error", "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"}, {"page": "alice", "t": 1.557, "type": "error", "text":
+[ANOMALY] network: no unexpected failed/4xx/5xx requests: [{"page": "alice", "t": 1.377, "url": "http://localhost:3614/bg.svg", "status": 404}, {"page": "alice", "t": 1.557, "url": "http://localhost:3614/signup/bg.svg", "status": 404}, {"page": "bob", "t": 4.5
+== twa3-base-prod: {'pass': 19, 'fail': 0, 'anomaly': 2, 'skipped': 0}  console_total=27 unexpected_console=8 page_errors=0 bad_requests=8 (unexpected 8) ws_frames=160
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  BAD REQUEST: {'page': 'alice', 't': 1.377, 'url': 'http://localhost:3614/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'alice', 't': 1.557, 'url': 'http://localhost:3614/signup/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'bob', 't': 4.516, 'url': 'http://localhost:3614/signup/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'alice', 't': 10.941, 'url': 'http://localhost:3614/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'alice', 't': 11.284, 'url': 'http://localhost:3614/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'alice', 't': 12.488, 'url': 'http://localhost:3614/login/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'carol0', 't': 14.989, 'url': 'http://localhost:3614/signup/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'carol0', 't': 16.421, 'url': 'http://localhost:3614/signup/bg.svg', 'status': 404}
+stale tab ready: yes
+17
+e72b06b6-0f2a-4d08-d13c-a04c66634b6b_reflex___state____state
+e72b06b6-0f2a-4d08-d13c-a04c66634b6b_reflex___state____state.twitter___state___base____state
+7f0cf16b-50d1-4b06-a1ca-3c85cefa5ac5_reflex___state____state.twitter___state___base____state.twitter___state___home____home_state
+SHUTDOWN: main pid 13197 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### twa3 upgrade 15:59:11
+freeze diff twa3: < reflex==0.10.0a3 < reflex-base==0.10.0a3 > reflex==0.10.0a4 > reflex-base==0.10.0a4 
+Checked 51 packages in 1ms
+All installed packages are compatible
+### twa3 up 15:59:12
+started reflex pid=14516 (15:59:12) log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a4_upgrade_ent/up/logs/twa3-up-prod.server.log
+UP after 9s (frontend 200, backend /ping 200)
+granian workers spawned (a4): 9
+package.json diff a3->a4: 
+reflex.lock/package.json == .web/package.json

@@ -1,0 +1,37 @@
+### all setattr( / delattr( in reflex_enterprise 0.9.7a5 (offline wheel)
+reflex_enterprise/components/ag_grid/wrapper.py:377:                setattr(item_orm, field_name, value)
+reflex_enterprise/auth/oidc/state.py:688:            setattr(
+reflex_enterprise/auth/enforcement.py:386:        setattr(app, _AGENT_HIDDEN_ROUTES_ATTR, routes)
+reflex_enterprise/auth/enforcement.py:466:    setattr(reflex.state, _DROP_ATTR, _DROP_FROM_DELTA)
+reflex_enterprise/auth/enforcement.py:1089:        setattr(substate, name, _field_default(fields[name]))
+reflex_enterprise/auth/enforcement.py:1098:        setattr(substate, name, value)
+reflex_enterprise/auth/enforcement.py:1558:        setattr(fn, marker, True)
+reflex_enterprise/auth/decorators.py:209:        setattr(f, AUTH_ATTR, auth)
+reflex_enterprise/auth/decorators.py:422:        setattr(decorated, AUTH_ATTR, auth)
+reflex_enterprise/mcp.py:102:        setattr(
+reflex_enterprise/mcp.py:110:        setattr(target, _NOT_EVENT_HANDLER_MARKER, True)
+reflex_enterprise/plugins/mcp.py:1670:            setattr(_sdk_auth_routes, const, value)
+reflex_enterprise/plugins/mcp.py:1697:                setattr(_sdk_auth_routes, const, value)
+reflex_enterprise/plugins/guards.py:41:``monkeypatch.setattr(guards, "has_plugin", lambda plugin_type: True)`` --
+reflex_enterprise/plugins/backend_delta_sink.py:185:    setattr(namespace, _GUARD_ATTR, sink)
+reflex_enterprise/plugins/rate_limit.py:69:        setattr(obj, RATE_LIMIT_ATTR, value)
+reflex_enterprise/utils.py:69:        setattr(config, option_name, fallback_value)
+reflex_enterprise/utils.py:74:        setattr(config, option_name, fallback_value)
+### __fields__ / get_fields / add_var / _add_var / add_field
+reflex_enterprise/components/ag_grid/datasource.py:135:                for key in self._var_type.__fields__
+reflex_enterprise/components/ag_grid/wrapper.py:340:        field = cls._model_class.__fields__[fname]
+reflex_enterprise/components/ag_grid/wrapper.py:429:            for field_name, field in self._model_class.__fields__.items()
+reflex_enterprise/components/ag_grid/wrapper.py:490:                            for field_name, field in cls._model_class.__fields__.items()
+reflex_enterprise/components/ag_grid/resources/base.py:28:        field_names = self.get_fields()
+reflex_enterprise/components/ag_grid/resources/base.py:58:            for key, value in cls.get_fields().items()
+reflex_enterprise/_compat.py:14:_FRAMEWORK_FIELD_NAMES = frozenset(BaseState.get_fields())
+reflex_enterprise/_compat.py:34:    return state_cls.get_fields()[name].default_value()
+reflex_enterprise/_compat.py:59:        for name, field in state_cls.get_fields().items()
+reflex_enterprise/_compat.py:77:        field = state_cls.get_fields()[name]
+reflex_enterprise/auth/enforcement.py:1083:    fields = state_cls.get_fields()
+reflex_enterprise/auth/enforcement.py:1295:    field = state_cls.get_fields().get(var_name)
+### type(x).attr = / x.__class__.attr =
+### any <Something>State.<attr> = / state_cls.<attr> =
+reflex_enterprise/components/ag_grid/wrapper.py:280:        comp.State._grid_component = comp  # pyright: ignore [reportAttributeAccessIssue, reportOptionalMemberAccess]
+reflex_enterprise/auth/enforcement.py:1588:    state_cls.get_delta = get_delta
+reflex_enterprise/auth/enforcement.py:1628:    state_cls.dict = filtered_dict

@@ -1,0 +1,1244 @@
+{
+ "tag": "gh-up-firstload-home",
+ "url": "http://localhost:3604",
+ "args": {
+  "url": "http://localhost:3604",
+  "outdir": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a4_upgrade_ent/up/shots/gh",
+  "tag": "gh-up-firstload-home",
+  "profile": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a4_upgrade_ent/up/profiles/gh",
+  "wait": 8.0,
+  "expect_text": [
+   "alice"
+  ],
+  "keep": [],
+  "forbid_writes": true,
+  "reload": false,
+  "path": ""
+ },
+ "checks": [
+  {
+   "name": "text visible: 'alice'",
+   "status": "pass",
+   "detail": "Github Stats | aliceX | ghost1X | Get Stats | alice | 0 | 50 | 100 | 150 | 200 | 0"
+  },
+  {
+   "name": "no CHANGING app storage/cookie writes during first load (framework keys token/theme/last_compiled_theme/debug ignored)",
+   "status": "pass",
+   "detail": "[]"
+  }
+ ],
+ "cookies_before": [],
+ "end": {
+  "ls": {
+   "reflex___state____state.github_stats___widget____widget_state.user_stats_json_rx_state_": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "reflex___state____state.github_stats___github_stats____state.selected_users_json_rx_state_": "[\"alice\", \"ghost1\"]",
+   "theme": "system",
+   "reflex___state____state.github_stats___widget____widget_state.last_fetch_rx_state_": "[\"alice\", 1791474695.928458]",
+   "last_compiled_theme": "system",
+   "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]"
+  },
+  "ss": {
+   "token": "e073a324-7129-4dde-b0cb-892f857f905f"
+  },
+  "cookie": ""
+ },
+ "body_text": "Github Stats\naliceX\nghost1X\nGet Stats\nalice\n0\n50\n100\n150\n200\n0",
+ "cookies_after": [],
+ "doc_start": {
+  "type": "snapshot",
+  "when": "doc_start",
+  "ls": {
+   "reflex___state____state.github_stats___widget____widget_state.user_stats_json_rx_state_": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "reflex___state____state.github_stats___github_stats____state.selected_users_json_rx_state_": "[\"alice\", \"ghost1\"]",
+   "theme": "system",
+   "reflex___state____state.github_stats___widget____widget_state.last_fetch_rx_state_": "[\"alice\", 1791474695.928458]",
+   "last_compiled_theme": "system",
+   "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]"
+  },
+  "ss": {},
+  "cookie": "",
+  "t": 28,
+  "path": "/"
+ },
+ "writes_idempotent_counts": {
+  "setItem reflex___state____state.github_stats___github_stats____state.selected_users_json_rx_state_": 1,
+  "setItem reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_": 292,
+  "setItem reflex___state____state.github_stats___widget____widget_state.user_stats_json_rx_state_": 1,
+  "setItem reflex___state____state.github_stats___widget____widget_state.last_fetch_rx_state_": 1
+ },
+ "writes_total": 297,
+ "writes": [
+  {
+   "type": "removeItem",
+   "store": "local",
+   "key": "debug",
+   "prev": null,
+   "t": 1030,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "token",
+   "value": "e073a324-7129-4dde-b0cb-892f857f905f",
+   "prev": null,
+   "same": false,
+   "vlen": 36,
+   "t": 1212,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.selected_users_json_rx_state_",
+   "value": "[\"alice\", \"ghost1\"]",
+   "prev": "[\"alice\", \"ghost1\"]",
+   "same": true,
+   "vlen": 19,
+   "t": 1224,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1225,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___widget____widget_state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1225,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___widget____widget_state.last_fetch_rx_state_",
+   "value": "[\"alice\", 1791474695.928458]",
+   "prev": "[\"alice\", 1791474695.928458]",
+   "same": true,
+   "vlen": 28,
+   "t": 1225,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1259,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1287,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1320,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1349,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1382,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1413,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1530,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1531,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1531,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1531,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1555,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1568,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1592,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1616,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1643,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1666,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1694,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1717,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1748,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1772,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1812,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1840,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1864,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1895,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1921,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1950,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1977,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 2002,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 2037,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 2066,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 2094,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 2120,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 2147,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 2174,
+   "path": "/"
+  },
+  "... 110 more trimmed"
+ ],
+ "writes_changing": [
+  {
+   "type": "removeItem",
+   "store": "local",
+   "key": "debug",
+   "prev": null,
+   "t": 1030,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "token",
+   "value": "e073a324-7129-4dde-b0cb-892f857f905f",
+   "prev": null,
+   "same": false,
+   "vlen": 36,
+   "t": 1212,
+   "path": "/"
+  }
+ ],
+ "writes_changing_app": [],
+ "writes_idempotent": [
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.selected_users_json_rx_state_",
+   "value": "[\"alice\", \"ghost1\"]",
+   "prev": "[\"alice\", \"ghost1\"]",
+   "same": true,
+   "vlen": 19,
+   "t": 1224,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1225,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___widget____widget_state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1225,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___widget____widget_state.last_fetch_rx_state_",
+   "value": "[\"alice\", 1791474695.928458]",
+   "prev": "[\"alice\", 1791474695.928458]",
+   "same": true,
+   "vlen": 28,
+   "t": 1225,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1259,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1287,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1320,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1349,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1382,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1413,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1530,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1531,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1531,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1531,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1555,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1568,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1592,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1616,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1643,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1666,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1694,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1717,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1748,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1772,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1812,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1840,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1864,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1895,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1921,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1950,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 1977,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 2002,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 2037,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 2066,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 2094,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 2120,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 2147,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 2174,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 2201,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "same": true,
+   "vlen": 343,
+   "t": 2230,
+   "path": "/"
+  },
+  "... 255 more trimmed"
+ ],
+ "ws": [
+  {
+   "t": 9.05,
+   "dir": "recv",
+   "data": "0{\"sid\":\"uJ_NBKk7oKnVzpVuAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "t": 9.06,
+   "dir": "sent",
+   "data": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.github_stats___github_stats____state.selected_users_json_rx_state_\":\"[\\\"alice\\\", \\\"ghost1\\\"]\",\"reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_\":\"[{\\\"name\\\": \\\"Alice\\\", \\\"login\\\": \\\"alice\\\", \\\"contributionsCollection\\\": {\\\"totalCommitContributions\\\": 491, \\\"totalPullRequestReviewContributions\\\": 54}, \\\"repositoriesContributedTo\\\": 26, \\\"pullRequests\\\": 252, \\\"mergedPullRequests\\\": 191, \\\"openIssues\\\": 38, \\\"closedIssues\\\": 25, \\\"followers\\\": 18...(trimmed)"
+  },
+  {
+   "t": 9.06,
+   "dir": "recv",
+   "data": "40/_event,{\"sid\":\"iBdw7ep0wS8of9EZAAAB\"}"
+  },
+  {
+   "t": 9.06,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8604\",\"origin\":\"http://localhost:3604\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"weSXJV335GWGIM2Ge6zd9g==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",...(trimmed)"
+  },
+  {
+   "t": 9.06,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"selected_users_json_rx_state_\":\"[\\\"alice\\\", \\\"ghost1\\\"]\",\"user_stats_json_rx_state_\":\"[{\\\"name\\\": \\\"Alice\\\", \\\"login\\\": \\\"alice\\\", \\\"contributionsCollection\\\": {\\\"totalCommitContributions\\\": 491, \\\"totalPullRequestReviewContributions\\\": 54}, \\\"repositoriesContributedTo\\\": 26, \\\"pullRequests\\\": 252, \\\"mergedPullRequests\\\": 191, \\\"openIssues\\\": 38, \\\"closedIssues\\\": 25, \\\"followers\\\": 185, \\\"repositoryDiscussions\\\": 7, \\\"repositoryDiscussionComments\\\": 19}]\"},\"reflex___state____state.github_stats___widg...(trimmed)"
+  },
+  {
+   "t": 9.06,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "t": 9.06,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"data_pretty_rx_state_\":\"[\\n  {\\n    \\\"name\\\": \\\"Alice\\\",\\n    \\\"login\\\": \\\"alice\\\",\\n    \\\"contributionsCollection\\\": {\\n      \\\"totalCommitContributions\\\": 491,\\n      \\\"totalPullRequestReviewContributions\\\": 54\\n    },\\n    \\\"repositoriesContributedTo\\\": 26,\\n    \\\"pullRequests\\\": 252,\\n    \\\"mergedPullRequests\\\": 191,\\n    \\\"openIssues\\\": 38,\\n    \\\"closedIssues\\\": 25,\\n    \\\"followers\\\": 185,\\n    \\\"repositoryDiscussions\\\": 7,\\n    \\\"repositoryDiscussionComments\\\": 19\\n  }\\n]\",\"selected_users_rx_s...(trimmed)"
+  },
+  {
+   "t": 9.06,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "t": 9.06,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"fetching_rx_state_\":true}}}]"
+  },
+  {
+   "t": 9.06,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"user_stats_json_rx_state_\":\"[{\\\"name\\\": \\\"Alice\\\", \\\"login\\\": \\\"alice\\\", \\\"contributionsCollection\\\": {\\\"totalCommitContributions\\\": 491, \\\"totalPullRequestReviewContributions\\\": 54}, \\\"repositoriesContributedTo\\\": 26, \\\"pullRequests\\\": 252, \\\"mergedPullRequests\\\": 191, \\\"openIssues\\\": 38, \\\"closedIssues\\\": 25, \\\"followers\\\": 185, \\\"repositoryDiscussions\\\": 7, \\\"repositoryDiscussionComments\\\": 19}]\",\"fetching_rx_state_\":false}}}]"
+  },
+  {
+   "t": 9.06,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"fetching_rx_state_\":true}}}]"
+  },
+  {
+   "t": 9.06,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"user_stats_json_rx_state_\":\"[{\\\"name\\\": \\\"Alice\\\", \\\"login\\\": \\\"alice\\\", \\\"contributionsCollection\\\": {\\\"totalCommitContributions\\\": 491, \\\"totalPullRequestReviewContributions\\\": 54}, \\\"repositoriesContributedTo\\\": 26, \\\"pullRequests\\\": 252, \\\"mergedPullRequests\\\": 191, \\\"openIssues\\\": 38, \\\"closedIssues\\\": 25, \\\"followers\\\": 185, \\\"repositoryDiscussions\\\": 7, \\\"repositoryDiscussionComments\\\": 19}]\",\"fetching_rx_state_\":false}}}]"
+  },
+  {
+   "t": 9.06,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"fetching_rx_state_\":true}}}]"
+  },
+  {
+   "t": 9.06,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"user_stats_json_rx_state_\":\"[{\\\"name\\\": \\\"Alice\\\", \\\"login\\\": \\\"alice\\\", \\\"contributionsCollection\\\": {\\\"totalCommitContributions\\\": 491, \\\"totalPullRequestReviewContributions\\\": 54}, \\\"repositoriesContributedTo\\\": 26, \\\"pullRequests\\\": 252, \\\"mergedPullRequests\\\": 191, \\\"openIssues\\\": 38, \\\"closedIssues\\\": 25, \\\"followers\\\": 185, \\\"repositoryDiscussions\\\": 7, \\\"repositoryDiscussionComments\\\": 19}]\",\"fetching_rx_state_\":false}}}]"
+  },
+  {
+   "t": 9.06,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"fetching_rx_state_\":true}}}]"
+  },
+  {
+   "t": 9.07,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"user_stats_json_rx_state_\":\"[{\\\"name\\\": \\\"Alice\\\", \\\"login\\\": \\\"alice\\\", \\\"contributionsCollection\\\": {\\\"totalCommitContributions\\\": 491, \\\"totalPullRequestReviewContributions\\\": 54}, \\\"repositoriesContributedTo\\\": 26, \\\"pullRequests\\\": 252, \\\"mergedPullRequests\\\": 191, \\\"openIssues\\\": 38, \\\"closedIssues\\\": 25, \\\"followers\\\": 185, \\\"repositoryDiscussions\\\": 7, \\\"repositoryDiscussionComments\\\": 19}]\",\"fetching_rx_state_\":false}}}]"
+  },
+  {
+   "t": 9.07,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"fetching_rx_state_\":true}}}]"
+  },
+  {
+   "t": 9.07,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"user_stats_json_rx_state_\":\"[{\\\"name\\\": \\\"Alice\\\", \\\"login\\\": \\\"alice\\\", \\\"contributionsCollection\\\": {\\\"totalCommitContributions\\\": 491, \\\"totalPullRequestReviewContributions\\\": 54}, \\\"repositoriesContributedTo\\\": 26, \\\"pullRequests\\\": 252, \\\"mergedPullRequests\\\": 191, \\\"openIssues\\\": 38, \\\"closedIssues\\\": 25, \\\"followers\\\": 185, \\\"repositoryDiscussions\\\": 7, \\\"repositoryDiscussionComments\\\": 19}]\",\"fetching_rx_state_\":false}}}]"
+  },
+  {
+   "t": 9.07,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"fetching_rx_state_\":true}}}]"
+  },
+  {
+   "t": 9.07,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"user_stats_json_rx_state_\":\"[{\\\"name\\\": \\\"Alice\\\", \\\"login\\\": \\\"alice\\\", \\\"contributionsCollection\\\": {\\\"totalCommitContributions\\\": 491, \\\"totalPullRequestReviewContributions\\\": 54}, \\\"repositoriesContributedTo\\\": 26, \\\"pullRequests\\\": 252, \\\"mergedPullRequests\\\": 191, \\\"openIssues\\\": 38, \\\"closedIssues\\\": 25, \\\"followers\\\": 185, \\\"repositoryDiscussions\\\": 7, \\\"repositoryDiscussionComments\\\": 19}]\",\"fetching_rx_state_\":false}}}]"
+  },
+  {
+   "t": 9.07,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"fetching_rx_state_\":true}}}]"
+  },
+  {
+   "t": 9.07,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"user_stats_json_rx_state_\":\"[{\\\"name\\\": \\\"Alice\\\", \\\"login\\\": \\\"alice\\\", \\\"contributionsCollection\\\": {\\\"totalCommitContributions\\\": 491, \\\"totalPullRequestReviewContributions\\\": 54}, \\\"repositoriesContributedTo\\\": 26, \\\"pullRequests\\\": 252, \\\"mergedPullRequests\\\": 191, \\\"openIssues\\\": 38, \\\"closedIssues\\\": 25, \\\"followers\\\": 185, \\\"repositoryDiscussions\\\": 7, \\\"repositoryDiscussionComments\\\": 19}]\",\"fetching_rx_state_\":false}}}]"
+  },
+  {
+   "t": 9.07,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"fetching_rx_state_\":true}}}]"
+  },
+  {
+   "t": 9.07,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"user_stats_json_rx_state_\":\"[{\\\"name\\\": \\\"Alice\\\", \\\"login\\\": \\\"alice\\\", \\\"contributionsCollection\\\": {\\\"totalCommitContributions\\\": 491, \\\"totalPullRequestReviewContributions\\\": 54}, \\\"repositoriesContributedTo\\\": 26, \\\"pullRequests\\\": 252, \\\"mergedPullRequests\\\": 191, \\\"openIssues\\\": 38, \\\"closedIssues\\\": 25, \\\"followers\\\": 185, \\\"repositoryDiscussions\\\": 7, \\\"repositoryDiscussionComments\\\": 19}]\",\"fetching_rx_state_\":false}}}]"
+  },
+  {
+   "t": 9.07,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"fetching_rx_state_\":true}}}]"
+  },
+  {
+   "t": 9.07,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"user_stats_json_rx_state_\":\"[{\\\"name\\\": \\\"Alice\\\", \\\"login\\\": \\\"alice\\\", \\\"contributionsCollection\\\": {\\\"totalCommitContributions\\\": 491, \\\"totalPullRequestReviewContributions\\\": 54}, \\\"repositoriesContributedTo\\\": 26, \\\"pullRequests\\\": 252, \\\"mergedPullRequests\\\": 191, \\\"openIssues\\\": 38, \\\"closedIssues\\\": 25, \\\"followers\\\": 185, \\\"repositoryDiscussions\\\": 7, \\\"repositoryDiscussionComments\\\": 19}]\",\"fetching_rx_state_\":false}}}]"
+  },
+  {
+   "t": 9.07,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"fetching_rx_state_\":true}}}]"
+  },
+  {
+   "t": 9.07,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"user_stats_json_rx_state_\":\"[{\\\"name\\\": \\\"Alice\\\", \\\"login\\\": \\\"alice\\\", \\\"contributionsCollection\\\": {\\\"totalCommitContributions\\\": 491, \\\"totalPullRequestReviewContributions\\\": 54}, \\\"repositoriesContributedTo\\\": 26, \\\"pullRequests\\\": 252, \\\"mergedPullRequests\\\": 191, \\\"openIssues\\\": 38, \\\"closedIssues\\\": 25, \\\"followers\\\": 185, \\\"repositoryDiscussions\\\": 7, \\\"repositoryDiscussionComments\\\": 19}]\",\"fetching_rx_state_\":false}}}]"
+  },
+  {
+   "t": 9.07,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"fetching_rx_state_\":true}}}]"
+  },
+  {
+   "t": 9.07,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"user_stats_json_rx_state_\":\"[{\\\"name\\\": \\\"Alice\\\", \\\"login\\\": \\\"alice\\\", \\\"contributionsCollection\\\": {\\\"totalCommitContributions\\\": 491, \\\"totalPullRequestReviewContributions\\\": 54}, \\\"repositoriesContributedTo\\\": 26, \\\"pullRequests\\\": 252, \\\"mergedPullRequests\\\": 191, \\\"openIssues\\\": 38, \\\"closedIssues\\\": 25, \\\"followers\\\": 185, \\\"repositoryDiscussions\\\": 7, \\\"repositoryDiscussionComments\\\": 19}]\",\"fetching_rx_state_\":false}}}]"
+  },
+  {
+   "t": 9.07,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"fetching_rx_state_\":true}}}]"
+  },
+  {
+   "t": 9.07,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"user_stats_json_rx_state_\":\"[{\\\"name\\\": \\\"Alice\\\", \\\"login\\\": \\\"alice\\\", \\\"contributionsCollection\\\": {\\\"totalCommitContributions\\\": 491, \\\"totalPullRequestReviewContributions\\\": 54}, \\\"repositoriesContributedTo\\\": 26, \\\"pullRequests\\\": 252, \\\"mergedPullRequests\\\": 191, \\\"openIssues\\\": 38, \\\"closedIssues\\\": 25, \\\"followers\\\": 185, \\\"repositoryDiscussions\\\": 7, \\\"repositoryDiscussionComments\\\": 19}]\",\"fetching_rx_state_\":false}}}]"
+  },
+  {
+   "t": 9.07,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"fetching_rx_state_\":true}}}]"
+  },
+  {
+   "t": 9.07,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"user_stats_json_rx_state_\":\"[{\\\"name\\\": \\\"Alice\\\", \\\"login\\\": \\\"alice\\\", \\\"contributionsCollection\\\": {\\\"totalCommitContributions\\\": 491, \\\"totalPullRequestReviewContributions\\\": 54}, \\\"repositoriesContributedTo\\\": 26, \\\"pullRequests\\\": 252, \\\"mergedPullRequests\\\": 191, \\\"openIssues\\\": 38, \\\"closedIssues\\\": 25, \\\"followers\\\": 185, \\\"repositoryDiscussions\\\": 7, \\\"repositoryDiscussionComments\\\": 19}]\",\"fetching_rx_state_\":false}}}]"
+  },
+  {
+   "t": 9.07,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"fetching_rx_state_\":true}}}]"
+  },
+  {
+   "t": 9.07,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"user_stats_json_rx_state_\":\"[{\\\"name\\\": \\\"Alice\\\", \\\"login\\\": \\\"alice\\\", \\\"contributionsCollection\\\": {\\\"totalCommitContributions\\\": 491, \\\"totalPullRequestReviewContributions\\\": 54}, \\\"repositoriesContributedTo\\\": 26, \\\"pullRequests\\\": 252, \\\"mergedPullRequests\\\": 191, \\\"openIssues\\\": 38, \\\"closedIssues\\\": 25, \\\"followers\\\": 185, \\\"repositoryDiscussions\\\": 7, \\\"repositoryDiscussionComments\\\": 19}]\",\"fetching_rx_state_\":false}}}]"
+  },
+  {
+   "t": 9.07,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"fetching_rx_state_\":true}}}]"
+  },
+  {
+   "t": 9.07,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"user_stats_json_rx_state_\":\"[{\\\"name\\\": \\\"Alice\\\", \\\"login\\\": \\\"alice\\\", \\\"contributionsCollection\\\": {\\\"totalCommitContributions\\\": 491, \\\"totalPullRequestReviewContributions\\\": 54}, \\\"repositoriesContributedTo\\\": 26, \\\"pullRequests\\\": 252, \\\"mergedPullRequests\\\": 191, \\\"openIssues\\\": 38, \\\"closedIssues\\\": 25, \\\"followers\\\": 185, \\\"repositoryDiscussions\\\": 7, \\\"repositoryDiscussionComments\\\": 19}]\",\"fetching_rx_state_\":false}}}]"
+  },
+  {
+   "t": 9.07,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"fetching_rx_state_\":true}}}]"
+  },
+  {
+   "t": 9.07,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"user_stats_json_rx_state_\":\"[{\\\"name\\\": \\\"Alice\\\", \\\"login\\\": \\\"alice\\\", \\\"contributionsCollection\\\": {\\\"totalCommitContributions\\\": 491, \\\"totalPullRequestReviewContributions\\\": 54}, \\\"repositoriesContributedTo\\\": 26, \\\"pullRequests\\\": 252, \\\"mergedPullRequests\\\": 191, \\\"openIssues\\\": 38, \\\"closedIssues\\\": 25, \\\"followers\\\": 185, \\\"repositoryDiscussions\\\": 7, \\\"repositoryDiscussionComments\\\": 19}]\",\"fetching_rx_state_\":false}}}]"
+  }
+ ],
+ "console": [
+  {
+   "t": 0.8,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "t": 1.02,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "t": 9.05,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "t": 9.06,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "t": 9.07,
+   "type": "error",
+   "text": "You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`."
+  }
+ ],
+ "pageerrors": [],
+ "bad_requests": [],
+ "summary": {
+  "doc_start_ls_keys": [
+   "last_compiled_theme",
+   "reflex___state____state.github_stats___github_stats____state.selected_users_json_rx_state_",
+   "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "reflex___state____state.github_stats___widget____widget_state.last_fetch_rx_state_",
+   "reflex___state____state.github_stats___widget____widget_state.user_stats_json_rx_state_",
+   "theme"
+  ],
+  "doc_start_cookie_names": [],
+  "end_ls_keys": [
+   "last_compiled_theme",
+   "reflex___state____state.github_stats___github_stats____state.selected_users_json_rx_state_",
+   "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "reflex___state____state.github_stats___widget____widget_state.last_fetch_rx_state_",
+   "reflex___state____state.github_stats___widget____widget_state.user_stats_json_rx_state_",
+   "theme"
+  ],
+  "end_ss_keys": [
+   "token"
+  ],
+  "end_cookie_names": [],
+  "n_writes": 297,
+  "n_changing": 2,
+  "n_changing_app": 0,
+  "n_idempotent": 295,
+  "console_errors": [
+   "You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`"
+  ],
+  "pageerrors": [],
+  "bad_requests": [],
+  "idempotent_counts": {
+   "setItem reflex___state____state.github_stats___github_stats____state.selected_users_json_rx_state_": 1,
+   "setItem reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_": 292,
+   "setItem reflex___state____state.github_stats___widget____widget_state.user_stats_json_rx_state_": 1,
+   "setItem reflex___state____state.github_stats___widget____widget_state.last_fetch_rx_state_": 1
+  }
+ }
+}
