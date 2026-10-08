@@ -60,8 +60,8 @@ const UPDATE_VARS_INTERNAL =
 // an UPDATE_VARS_INTERNAL event when it is sent: see syncLocalStorageEvent.
 const SYNC_LOCAL_STORAGE = "_sync_local_storage";
 
-// Browser storage values sent to the backend, by state key, oldest first, each
-// with the count of this tab's localStorage writes when it was sent. The
+// Synced localStorage values sent to the backend, by state key, oldest first,
+// each with the count of this tab's localStorage writes when it was sent. The
 // backend echoes them back, so that get_delta overrides see them.
 const sentStorageValues = {};
 // Bounds the values kept for a key whose echoes an override changes, so they
@@ -1081,7 +1081,10 @@ export const hydrateClientStorage = (client_storage) => {
 };
 
 /**
- * Remember the browser storage values an event sends to the backend.
+ * Remember the synced localStorage values an event sends to the backend.
+ *
+ * Only a synced var's echo may go unwritten, because only for a synced var
+ * does the tab send the newer value another tab stored to its backend.
  * @param event The event about to be sent.
  */
 const recordSentStorageValues = (event) => {
@@ -1094,7 +1097,11 @@ const recordSentStorageValues = (event) => {
   ) {
     return;
   }
+  const local_storage = app.clientStorage.local_storage;
   for (const [state_key, value] of Object.entries(vars)) {
+    if (!local_storage?.[state_key]?.sync) {
+      continue;
+    }
     const sent = (sentStorageValues[state_key] ??= []);
     sent.push({ value, writes: localStorageWrites });
     if (sent.length > MAX_SENT_STORAGE_VALUES) {
@@ -1142,7 +1149,6 @@ const applyClientStorageDelta = (client_storage, delta) => {
     for (const key in delta[substate]) {
       const state_key = `${substate}.${key}`;
       const value = delta[substate][key];
-      const echo = takeEcho(state_key, value);
       if (client_storage.cookies && state_key in client_storage.cookies) {
         const cookie_options = { ...client_storage.cookies[state_key] };
         const cookie_name = cookie_options.name || state_key;
@@ -1154,11 +1160,12 @@ const applyClientStorageDelta = (client_storage, delta) => {
         typeof window !== "undefined"
       ) {
         const name = client_storage.local_storage[state_key].name || state_key;
+        const echo = takeEcho(state_key, value);
         const last = lastLocalStorageWrites[name];
-        // Write an echo only over this tab's own later write, which the backend
-        // applied first. Any other stored value is the sent one or another
-        // tab's newer one, and writing over that sets synced tabs answering
-        // each other over and over.
+        // Write a synced var's echo only over this tab's own later write, which
+        // the backend applied first. Any other stored value is the sent one or
+        // another tab's newer one, which this tab syncs to its backend; writing
+        // over it sets synced tabs answering each other over and over.
         if (
           !echo ||
           (last?.writes > echo.writes &&

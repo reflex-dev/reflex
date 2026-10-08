@@ -116,25 +116,27 @@ def HydrationStorageApp():
 
     class ReplaceState(rx.State):
         value: str = rx.LocalStorage("", name="hydrate-replace", sync=True)
+        plain: str = rx.LocalStorage("", name="hydrate-replace-plain")
         _keep: bool = False
 
         @rx.event
         def keep_sent(self):
             """Store the value the override replaced at boot, now unreplaced."""
             self._keep = True
-            self.value = "sent"
+            self.value = self.plain = "sent"
 
         @rx.state._override_base_method
         def get_delta(self):
-            """Replace the stored value until a handler stores it on purpose.
+            """Replace the stored values until a handler stores them on purpose.
 
             Returns:
-                The delta, with the value replaced.
+                The delta, with the values replaced.
             """
             delta = super().get_delta()
             subdelta = delta.get(self.get_full_name(), {})
-            if not self._keep and subdelta.get("value" + FIELD_MARKER) == "sent":
-                subdelta["value" + FIELD_MARKER] = "replaced"
+            for var in ("value", "plain"):
+                if not self._keep and subdelta.get(var + FIELD_MARKER) == "sent":
+                    subdelta[var + FIELD_MARKER] = "replaced"
             return delta
 
     class SharedNameState(rx.State):
@@ -161,6 +163,7 @@ def HydrationStorageApp():
             rx.button("Old", on_click=SyncState.set_value("old"), id="set-old"),
             rx.button("New", on_click=SyncState.set_value("new"), id="set-new"),
             rx.text(ReplaceState.value, id="replace-value"),
+            rx.text(ReplaceState.plain, id="replace-plain"),
             rx.button("Keep", on_click=ReplaceState.keep_sent, id="keep-sent"),
             rx.text(SharedNameState.synced, id="shared-value"),
             rx.button(
@@ -584,27 +587,44 @@ def test_synced_storage_echo_after_own_write_is_written(
     assert page.evaluate("key => localStorage.getItem(key)", key) == "sent"
 
 
+@pytest.mark.parametrize("other_tab_stores", [False, True], ids=["alone", "other_tab"])
+@pytest.mark.parametrize("synced", [True, False], ids=["synced", "plain"])
 def test_replaced_storage_echo_does_not_hide_later_change(
-    hydration_storage_app: AppHarness, page: Page
+    hydration_storage_app: AppHarness, page: Page, synced: bool, other_tab_stores: bool
 ):
     """A value sent at boot whose echo was replaced is written when a handler sets it.
+
+    That holds after another tab stored a value meanwhile too, which a synced var
+    sends to the backend and a var that is not synced never does.
 
     Args:
         hydration_storage_app: The running app.
         page: A fresh browser page.
+        synced: Whether the var is synced across tabs.
+        other_tab_stores: Whether another tab stores a value before the handler runs.
     """
+    key, display = (
+        ("hydrate-replace", "#replace-value")
+        if synced
+        else ("hydrate-replace-plain", "#replace-plain")
+    )
     open_synced(hydration_storage_app, page)
-    page.evaluate("localStorage.setItem('hydrate-replace', 'sent')")
+    page.evaluate("key => localStorage.setItem(key, 'sent')", key)
     page.reload()
     expect(page.locator("#hydrated")).to_have_text("true")
-    expect(page.locator("#replace-value")).to_have_text("replaced")
-    page.wait_for_function("localStorage.getItem('hydrate-replace') === 'replaced'")
+    expect(page.locator(display)).to_have_text("replaced")
+    page.wait_for_function(f"localStorage.getItem('{key}') === 'replaced'")
+
+    if other_tab_stores:
+        page.evaluate("key => window.otherTabStores('newer', { key })", key)
+        expect(page.locator(display)).to_have_text("newer" if synced else "replaced")
 
     page.locator("#keep-sent").click()
-    expect(page.locator("#replace-value")).to_have_text("sent")
-    page.wait_for_function("localStorage.getItem('hydrate-replace') === 'sent'")
+    expect(page.locator(display)).to_have_text("sent")
+    page.wait_for_function(f"localStorage.getItem('{key}') === 'sent'")
     page.wait_for_timeout(500)
-    expect(page.locator("#replace-value")).to_have_text("sent")
+    expect(page.locator(display)).to_have_text("sent")
+    assert page.evaluate("key => localStorage.getItem(key)", key) == "sent"
 
 
 def test_synced_storage_event_while_disconnected_sends_current_value(
