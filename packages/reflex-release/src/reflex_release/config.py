@@ -10,17 +10,12 @@ from __future__ import annotations
 
 import dataclasses
 import re
-import sys
+import tomllib
 from pathlib import Path
 
 from packaging.version import Version
 
 from .actions import fail
-
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    import tomli as tomllib  # pyright: ignore[reportMissingImports]
 
 TOOL_TABLE = "reflex-release"
 

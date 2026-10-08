@@ -1,0 +1,1 @@
+Pass the client-storage values a page loads with through `get_delta` overrides again, in a delta that can update browser storage, as before 0.10. This restores reflex-enterprise OIDC's cross-tab token check, so a tab that is reloaded or navigated back to after logging out in another tab is signed out.
