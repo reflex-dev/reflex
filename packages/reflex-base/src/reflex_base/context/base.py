@@ -22,6 +22,7 @@ class BaseContext:
 
     _context_var: ClassVar[ContextVar[Self]]
     _attached_context_token: ClassVar[dict[int, Token[Self]]]
+    _get_usage: ClassVar[str | None] = None
 
     @classmethod
     def __init_subclass__(cls, **kwargs):
@@ -42,9 +43,16 @@ class BaseContext:
             The active context instance.
 
         Raises:
-            LookupError: If no context has been set for this class.
+            LookupError: If no context has been set and no usage message is configured.
+            RuntimeError: If no context has been set and a usage message is configured.
         """
-        return cls._context_var.get()
+        try:
+            return cls._context_var.get()
+        except LookupError as exc:
+            if cls._get_usage is None:
+                raise
+            msg = f"{cls.__name__}.get() must be called {cls._get_usage}."
+            raise RuntimeError(msg) from exc
 
     @classmethod
     def set(cls, context: Self) -> Token[Self]:

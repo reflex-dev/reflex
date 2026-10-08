@@ -6,7 +6,7 @@ import copy
 import dataclasses
 import inspect
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any, Protocol, TypeAlias, TypeVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol, TypeAlias, TypeVar, cast
 
 from reflex_base.components.component import BaseComponent, Component
 from reflex_base.context.base import BaseContext
@@ -582,6 +582,8 @@ class CompilerHooks:
 class PageContext(BaseContext):
     """Mutable compilation state for a single page."""
 
+    _get_usage: ClassVar[str | None] = "during page compilation"
+
     name: str
     route: str
     root_component: BaseComponent
@@ -660,6 +662,8 @@ class PageContext(BaseContext):
 @dataclasses.dataclass(slots=True, kw_only=True, eq=False)
 class CompileContext(BaseContext):
     """Mutable compilation state for an entire compile run."""
+
+    _get_usage: ClassVar[str | None] = "during compilation"
 
     app: App | None = None
     pages: Sequence[PageDefinition]
