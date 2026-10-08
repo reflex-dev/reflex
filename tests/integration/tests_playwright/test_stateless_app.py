@@ -5,8 +5,9 @@ from collections.abc import Generator
 import httpx
 import pytest
 from playwright.sync_api import Page, expect
-from reflex_base.config import get_config
 from reflex_base.constants import Endpoint
+from websockets.exceptions import InvalidStatus
+from websockets.sync.client import connect
 
 from reflex.testing import AppHarness
 
@@ -48,11 +49,13 @@ def test_statelessness(stateless_app: AppHarness, page: Page):
     """
     assert stateless_app.frontend_url is not None
     assert stateless_app.backend is not None
-    assert stateless_app.backend.is_listening()
+    stateless_app.backend.wait_started(timeout=0)
 
-    config = get_config()
-    res = httpx.get(config.api_url + config.prepend_backend_path(str(Endpoint.EVENT)))
-    assert res.status_code == 404
+    # Plain HTTP gets a 404 from a websocket route too: dial the handshake.
+    event_url = Endpoint.EVENT.get_url()
+    for url in (event_url, event_url.rstrip("/") + "/"):
+        with pytest.raises(InvalidStatus), connect(url, open_timeout=10):
+            pass
 
     res2 = httpx.get(Endpoint.PING.get_url())
     assert res2.status_code == 200

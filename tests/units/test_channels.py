@@ -269,13 +269,40 @@ async def test_join_after_close_leaves_no_member_behind():
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("event", sorted(RESERVED_EVENTS))
+@pytest.mark.parametrize(
+    "event",
+    [*sorted(RESERVED_EVENTS), "_open", "_opened", "_close", "_error", "_future"],
+)
 async def test_send_rejects_reserved_message_names(event: str):
-    """A message may not impersonate the client handle's lifecycle events."""
+    """A message may not impersonate the handle's lifecycle or the protocol.
+
+    A relayed ``_error`` or ``_opened`` would reach every other member as a
+    lifecycle event, so the protocol's underscore names are reserved too.
+    """
     channel = CollectingChannel()
     session = channel.session("sid1")
 
     with pytest.raises(ValueError, match="reserved"):
         await session.send(event, {"anything": True})
+
+    assert channel.sent == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("event", "buffers"),
+    [("_error", ()), ("push", [b""] * (MAX_MESSAGE_BUFFERS + 1)), (42, ())],
+)
+async def test_fan_out_validates_even_when_nobody_listens(event: Any, buffers: Any):
+    """A message that could never be sent fails whether or not anyone is in the room.
+
+    Otherwise the mistake only surfaces once a client happens to join.
+    """
+    channel = CollectingChannel()
+
+    with pytest.raises(ValueError, match="Channel message"):
+        await channel.send_to_room("empty", event, None, buffers)
+    with pytest.raises(ValueError, match="Channel message"):
+        await channel.send_to_token("nobody", event, None, buffers)
 
     assert channel.sent == []

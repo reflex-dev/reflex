@@ -1,20 +1,24 @@
 """Unit tests for the included testing tools."""
 
+import asyncio
+import contextlib
 import socket
 import sys
 import threading
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from types import ModuleType, SimpleNamespace
 from unittest import mock
 
-import granian.server.embed
+import httpx
 import pytest
 import reflex_base.config
 from reflex_base.components.memo import MEMOS
 from reflex_base.constants import IS_WINDOWS
 from reflex_base.environment import environment
 from reflex_base.registry import RegistrationContext
+from reflex_base.utils.types import ASGIApp
+from starlette.applications import Starlette
 
 import reflex.constants
 import reflex.reflex as reflex_cli
@@ -199,126 +203,211 @@ def test_app_harness_initialize_reloads_existing_imported_app(
     harness_mocks.get_and_validate_app.assert_called_once_with(reload=True)
 
 
-def _patch_embedded_granian(
-    monkeypatch: pytest.MonkeyPatch, on_serve: Callable[[], None]
-):
-    """Replace granian's embedded server with a fake driven by `on_serve`.
+def _asgi_app(on_startup: Callable[[], object] | None = None) -> ASGIApp:
+    """A minimal ASGI app with lifespan support that answers every request.
 
     Args:
-        monkeypatch: the pytest monkeypatch fixture.
-        on_serve: called once per `serve()`; raise from it to simulate a
-            failed bind.
-    """
-
-    class FakeServer:
-        def __init__(self, *args, **kwargs):
-            self.interrupt_signal = False
-            self.main_loop_interrupt = threading.Event()
-
-        # Async to match granian's Server.serve().
-        async def serve(self):
-            on_serve()
-
-    monkeypatch.setattr(granian.server.embed, "Server", FakeServer)
-
-
-def _bind_error() -> RuntimeError:
-    """A granian bind failure for an already-claimed port.
+        on_startup: called (in a worker thread) during lifespan startup.
 
     Returns:
-        The error granian raises when the port is taken.
+        The ASGI app.
     """
-    return RuntimeError("Address already in use (os error 98)")
-
-
-def test_embedded_server_retries_taken_port():
-    """The embedded server rebinds to a fresh port when its probed port is taken."""
 
     async def app(scope, receive, send):
         if scope["type"] == "lifespan":
-            while True:
-                message = await receive()
-                if message["type"] == "lifespan.startup":
-                    await send({"type": "lifespan.startup.complete"})
-                elif message["type"] == "lifespan.shutdown":
-                    await send({"type": "lifespan.shutdown.complete"})
-                    return
+            while (await receive())["type"] == "lifespan.startup":
+                if on_startup is not None:
+                    await asyncio.to_thread(on_startup)
+                await send({"type": "lifespan.startup.complete"})
+            await send({"type": "lifespan.shutdown.complete"})
+            return
+        await send({"type": "http.response.start", "status": 200, "headers": []})
+        await send({"type": "http.response.body", "body": b"embedded"})
 
-    server = reflex_testing._EmbeddedServer(app)
-    probed_port = server.port
-    # Steal the probed port before the server binds it. On Windows only
-    # SO_EXCLUSIVEADDRUSE makes the port unavailable to other binders.
-    blocker = socket.socket()
-    if exclusive := getattr(socket, "SO_EXCLUSIVEADDRUSE", None):
-        blocker.setsockopt(socket.SOL_SOCKET, exclusive, 1)
-    blocker.bind((server.host, probed_port))
-    blocker.listen(1)
+    return app
+
+
+@contextlib.contextmanager
+def _running(server: reflex_testing._EmbeddedServer) -> Iterator[threading.Thread]:
+    """Run the server in a thread, stopping it on exit.
+
+    Args:
+        server: the embedded server.
+
+    Yields:
+        The thread serving the app.
+    """
     thread = threading.Thread(target=server.run)
     thread.start()
     try:
-        deadline = time.monotonic() + 15
-        # A server that gave up has nothing left to wait for; without that the
-        # only report of a broken retry would be a full-timeout bare assert.
-        while time.monotonic() < deadline and thread.is_alive():
-            if server.port != probed_port and server.is_listening():
-                break
-            time.sleep(0.05)
-        assert server.port != probed_port, (
-            f"the server never left the probed port {probed_port} "
-            f"(serving: {thread.is_alive()}): it either bound a port another "
-            "socket holds, or failed with a bind error the retry does not "
-            "recognize -- the thread's traceback says which"
-        )
-        assert server.is_listening(), (
-            f"the server rebound to port {server.port} without serving on it"
-        )
+        yield thread
     finally:
-        blocker.close()
         server.should_exit = True
         thread.join(timeout=15)
         assert not thread.is_alive()
 
 
-def test_embedded_server_stops_after_unexpected_serve_return(monkeypatch):
-    """A serve() return that was not requested stops the server without rebinding."""
-    _patch_embedded_granian(monkeypatch, lambda: None)
-    server = reflex_testing._EmbeddedServer(app=mock.Mock())
-    port_before = server.port
+def _assert_port_taken(host: str, port: int):
+    """Assert that no socket can bind the port, even one asking to share it.
+
+    Args:
+        host: the address of the port.
+        port: the port number.
+    """
+    with socket.socket() as thief:
+        thief.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        if reuse_port := getattr(socket, "SO_REUSEPORT", None):
+            thief.setsockopt(socket.SOL_SOCKET, reuse_port, 1)
+        with pytest.raises(OSError):
+            thief.bind((host, port))
+            thief.listen()
+
+
+def _assert_port_free(host: str, port: int):
+    """Assert that the port can be bound again.
+
+    Args:
+        host: the address of the port.
+        port: the port number.
+    """
+    with socket.socket() as rebind:
+        rebind.bind((host, port))
+
+
+def _harness_with_backend(
+    tmp_path, server: reflex_testing._EmbeddedServer
+) -> AppHarness:
+    """An AppHarness whose backend is the given server.
+
+    Args:
+        tmp_path: the app root.
+        server: the backend server.
+
+    Returns:
+        The harness.
+    """
+    harness = AppHarness.create(root=tmp_path, app_name="embedded_app")
+    harness.backend = server
+    return harness
+
+
+def test_embedded_server_owns_its_port():
+    """The server holds its port from construction on, so no other socket can share it."""
+    server = reflex_testing._EmbeddedServer(_asgi_app())
+    _assert_port_taken(server.host, server.port)
+    with _running(server):
+        server.wait_started(timeout=15)
+        _assert_port_taken(server.host, server.port)
+        assert httpx.get(f"http://{server.host}:{server.port}/").content == b"embedded"
+
+
+def test_poll_for_servers_waits_for_the_backend_itself(tmp_path):
+    """Readiness follows the app's startup, not a connectable port.
+
+    Args:
+        tmp_path: pytest tmp_path fixture
+    """
+    startup = threading.Event()
+    server = reflex_testing._EmbeddedServer(_asgi_app(on_startup=startup.wait))
+    harness = _harness_with_backend(tmp_path, server)
+    # Another listener on the port must not pass for the backend.
+    foreign = socket.socket()
+    with contextlib.suppress(OSError):
+        foreign.bind((server.host, server.port))
+        foreign.listen()
+    with foreign, _running(server):
+        try:
+            with pytest.raises(TimeoutError):
+                harness._poll_for_servers(timeout=0.5)
+        finally:
+            startup.set()
+        assert harness._poll_for_servers(timeout=15).getsockname() == (
+            server.host,
+            server.port,
+        )
+        assert httpx.get(f"http://{server.host}:{server.port}/").content == b"embedded"
+
+
+def test_embedded_server_refuses_a_taken_requested_port():
+    """A requested port that is in use fails loudly instead of moving."""
+    with socket.socket() as blocker:
+        blocker.bind(("127.0.0.1", 0))
+        blocker.listen()
+        port = blocker.getsockname()[1]
+        with pytest.raises(OSError):
+            reflex_testing._EmbeddedServer(_asgi_app(), port=port)
+    server = reflex_testing._EmbeddedServer(_asgi_app(), port=port)
+    assert server.getsockname() == ("127.0.0.1", port)
+    server.should_exit = True
     server.run()
-    assert server.port == port_before
 
 
-def test_embedded_server_raises_after_retries_exhausted(monkeypatch):
-    """Exhausted bind retries re-raise the error instead of returning silently."""
-    calls = []
+def test_failed_backend_startup_logs_and_fails_fast(tmp_path, capsys):
+    """A failing lifespan startup is logged and fails readiness without the timeout.
 
-    def on_serve() -> None:
-        calls.append(1)
-        raise _bind_error()
+    Args:
+        tmp_path: pytest tmp_path fixture
+        capsys: pytest capsys fixture
+    """
 
-    _patch_embedded_granian(monkeypatch, on_serve)
-    server = reflex_testing._EmbeddedServer(app=mock.Mock())
-    with pytest.raises(RuntimeError, match="in use"):
-        server.run()
-    assert len(calls) == 10
+    @contextlib.asynccontextmanager
+    async def lifespan(app):
+        msg = "lifespan boom"
+        raise RuntimeError(msg)
+        yield
+
+    server = reflex_testing._EmbeddedServer(Starlette(lifespan=lifespan))
+    harness = _harness_with_backend(tmp_path, server)
+    with _running(server):
+        started = time.monotonic()
+        with pytest.raises(RuntimeError, match="stopped without serving"):
+            harness._poll_for_servers(timeout=10)
+        assert time.monotonic() - started < 5
+    out = capsys.readouterr().out
+    assert "ASGI lifespan startup failed" in out
+    assert "RuntimeError: lifespan boom" in out
+    # The socket is released although no worker ever served it.
+    _assert_port_free(server.host, server.port)
 
 
-def test_embedded_server_shutdown_wins_over_exhausted_retries(monkeypatch):
-    """A stop requested during the last failed bind ends the server cleanly."""
-    calls = []
-    holder = {}
+def test_embedded_server_stop_releases_port():
+    """Stopping a serving server runs its shutdown hook and frees the port."""
+    shutdown = mock.AsyncMock()
+    server = reflex_testing._EmbeddedServer(_asgi_app())
+    server.shutdown = shutdown
+    with _running(server):
+        server.wait_started(timeout=15)
+    shutdown.assert_awaited_once()
+    _assert_port_free(server.host, server.port)
 
-    def on_serve() -> None:
-        calls.append(1)
-        if len(calls) == 10:
-            holder["server"].should_exit = True
-        raise _bind_error()
 
-    _patch_embedded_granian(monkeypatch, on_serve)
-    server = reflex_testing._EmbeddedServer(app=mock.Mock())
-    holder["server"] = server
+def test_embedded_server_stopped_before_run_never_serves():
+    """A server stopped before it runs returns at once and releases its port."""
+    shutdown = mock.AsyncMock()
+    server = reflex_testing._EmbeddedServer(_asgi_app())
+    server.shutdown = shutdown
+    server.should_exit = True
     server.run()
-    assert len(calls) == 10
+    shutdown.assert_awaited_once()
+    with pytest.raises(RuntimeError, match="stopped without serving"):
+        server.wait_started(timeout=0)
+    _assert_port_free(server.host, server.port)
+
+
+def test_embedded_server_started_is_deprecated(monkeypatch):
+    """The uvicorn-style `started` flag still works, with a deprecation warning.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture
+    """
+    deprecate = mock.Mock()
+    monkeypatch.setattr(reflex_testing.console, "deprecate", deprecate)
+    server = reflex_testing._EmbeddedServer(_asgi_app())
+    assert server.started is False
+    with _running(server):
+        server.wait_started(timeout=15)
+        assert server.started is True
+    assert deprecate.call_args.kwargs["feature_name"] == "AppHarness.backend.started"
 
 
 def test_app_harness_frontend_env_has_development_condition(

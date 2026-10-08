@@ -18,7 +18,7 @@ import pytest
 import pytest_asyncio
 from pytest_codspeed import BenchmarkFixture
 
-from reflex.event_namespace import CONNECT_MESSAGE, WebsocketEventNamespace
+from reflex.event_namespace import CONNECT_MESSAGE, WebsocketEventNamespace, _Connection
 from reflex.state import StateUpdate
 
 NUM_MESSAGES = 100
@@ -203,7 +203,8 @@ async def websocket_outbound():
         app = _make_app()
         namespace = WebsocketEventNamespace(NAMESPACE, app)  # pyright: ignore[reportArgumentType]
         websocket = FakeWebSocket([])
-        namespace._sockets["sid-1"] = websocket  # pyright: ignore[reportArgumentType]
+        connection = _Connection(websocket)  # pyright: ignore[reportArgumentType]
+        namespace._connections["sid-1"] = connection
         await namespace.link_token_to_sid("sid-1", TOKEN)
 
         async def run() -> None:
@@ -211,6 +212,7 @@ async def websocket_outbound():
                 await namespace.emit_update(_UPDATE, TOKEN)
 
         yield run
+        connection.stop()
 
 
 @pytest_asyncio.fixture

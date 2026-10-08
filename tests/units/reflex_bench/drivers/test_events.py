@@ -1,10 +1,11 @@
 """Tests for reflex_bench.drivers.events.
 
 The generator runs against :class:`~reflex_bench.drivers.echo_server.EchoServer`
-on a thread of the test process; subclasses script delays, dropped and reordered
-answers, a new token, a missing hydration, a disconnect and a stall. Most tests
-drive the sessions on the calling thread, as one generator process does; the
-multi-process ones go through :class:`~reflex_bench.drivers.events.LoadRunner`.
+on a thread of the test process, on the plain protocol unless a test names
+Socket.IO; subclasses script delays, dropped and reordered answers, a new token,
+a missing hydration, a disconnect and a stall. Most tests drive the sessions on
+the calling thread, as one generator process does; the multi-process ones go
+through :class:`~reflex_bench.drivers.events.LoadRunner`.
 """
 
 from __future__ import annotations
@@ -24,7 +25,7 @@ from reflex_bench.drivers import events
 from reflex_bench.drivers.app_process import free_ports
 from reflex_bench.drivers.echo_server import EchoServer
 from reflex_bench.drivers.events import (
-    EVENT_PREFIX,
+    CODECS,
     Endpoint,
     EventShape,
     GeneratorSaturated,
@@ -33,6 +34,7 @@ from reflex_bench.drivers.events import (
     LoadPlan,
     LoadResult,
     LoadRunner,
+    WireProtocol,
     open_sessions,
     run_load,
 )
@@ -48,8 +50,19 @@ SHAPE = EventShape(
     delta_key=STATE,
     seq_var=SEQ_VAR,
 )
+WEBSOCKET = CODECS["websocket"]
+SOCKETIO = CODECS["socketio"]
+PROTOCOLS = pytest.mark.parametrize("protocol", ["websocket", "socketio"])
+# The hydration events of a session, by protocol.
+HYDRATION = {
+    "websocket": [events.HYDRATE_AND_LOAD_EVENT],
+    "socketio": [events.HYDRATE_EVENT, events.ON_LOAD_EVENT],
+}
+# The events whose answer sets is_hydrated.
+HYDRATING = {events.ON_LOAD_EVENT, events.HYDRATE_AND_LOAD_EVENT}
 # Captured from the playground: HEAD leaves empty fields out, 0.8.23 does not.
-HEAD_REPLY = f'42/_event,["event",{{"delta":{{"{STATE}":{{"{SEQ_VAR}":7}}}}}}]'
+HEAD_REPLY = f'["event",{{"delta":{{"{STATE}":{{"{SEQ_VAR}":7}}}}}}]'
+SOCKETIO_REPLY = f'42/_event,["event",{{"delta":{{"{STATE}":{{"{SEQ_VAR}":7}}}}}}]'
 OLD_REPLY = (
     f'42/_event,["event",{{"delta":{{"{STATE}":{{"{SEQ_VAR}":7}}}},'
     '"events":[],"final":true}]'
@@ -136,11 +149,26 @@ def run_inline(
 class Scripted(EchoServer):
     """An echo server that records the seq events and asks a hook about each."""
 
-    def __init__(self) -> None:
-        """Record nothing yet."""
-        super().__init__(delta_key=STATE, seq_var=SEQ_VAR)
+    def __init__(self, protocol: WireProtocol = "websocket") -> None:
+        """Record nothing yet.
+
+        Args:
+            protocol: The protocol to speak.
+        """
+        super().__init__(delta_key=STATE, seq_var=SEQ_VAR, protocol=protocol)
         self.seqs: list[int] = []
         self.tokens: list[str] = []
+
+    async def end(self, ws: ServerConnection) -> None:
+        """End a session as reflex does: Socket.IO leaves the namespace, the plain protocol closes with a code.
+
+        Args:
+            ws: The connection.
+        """
+        if self.codec.protocol == "socketio":
+            await ws.send(events.SIO_DISCONNECT_FRAME)
+        else:
+            await ws.close(1008)
 
     async def on_event(self, ws: ServerConnection, event: dict[str, Any]) -> None:
         """Record a seq event, then answer it unless the hook says otherwise.
@@ -173,39 +201,118 @@ class Scripted(EchoServer):
         return True
 
 
-def test_event_url():
+def test_event_urls():
     assert (
-        events.event_url("http://localhost:8000", "tok")
+        WEBSOCKET.url("http://localhost:8000", "tok")
+        == "ws://localhost:8000/_event?token=tok"
+    )
+    assert (
+        SOCKETIO.url("http://localhost:8000", "tok")
         == "ws://localhost:8000/_event/?EIO=4&transport=websocket&token=tok"
     )
-    assert events.event_url("https://app.example.com/", "tok").startswith(
-        "wss://app.example.com/_event/?"
+    assert (
+        WEBSOCKET.url("https://app.example.com/", "tok")
+        == "wss://app.example.com/_event?token=tok"
+    )
+    assert SOCKETIO.url("https://app.example.com/base/", "tok").startswith(
+        "wss://app.example.com/base/_event/?"
     )
 
 
 def test_event_frames_always_carry_the_token():
-    # 0.8.23 rejects an event without a token and HEAD ignores it, so every
-    # frame carries it.
-    frame = events.event_frame(f"{STATE}.set_seq", {"seq": 7}, token="tok")
+    # 0.8.23 rejects an event without a token and later releases ignore it,
+    # so every frame carries it.
+    frame = WEBSOCKET.event_frame(f"{STATE}.set_seq", {"seq": 7}, token="tok")
     assert frame == (
-        f'42/_event,["event",{{"name":"{STATE}.set_seq","payload":{{"seq":7}},'
+        f'["event",{{"name":"{STATE}.set_seq","payload":{{"seq":7}},'
         '"router_data":{"pathname":"/","asPath":"/","query":{}},"token":"tok"}]'
     )
-    frames = events._Frames(SHAPE, "tok", "/", index=3)
-    assert frames.event(7) == frame
-    name, event = json.loads(frames.event(8)[len(EVENT_PREFIX) :])
-    assert (name, event["payload"]) == ("event", {"seq": 8})
-    # A shape with a client var sends the session's index along.
-    contended = events._Frames(CONTENDED_SHAPE, "tok", "/", index=3)
-    _, event = json.loads(contended.event(8)[len(EVENT_PREFIX) :])
-    assert event["payload"] == {"seq": 8, "client": 3}
+    socketio = SOCKETIO.event_frame(f"{STATE}.set_seq", {"seq": 7}, token="tok")
+    assert socketio == f"42/_event,{frame}"
+    for codec in (WEBSOCKET, SOCKETIO):
+        frames = events._Frames(codec, SHAPE, "tok", "/", index=3)
+        assert frames.event(7) == codec.event_frame(
+            f"{STATE}.set_seq", {"seq": 7}, token="tok"
+        )
+        message = codec.parse(frames.event(8))
+        assert message is not None
+        name, event = message
+        assert (name, event["payload"]) == ("event", {"seq": 8})
+        # A shape with a client var sends the session's index along.
+        contended = events._Frames(codec, CONTENDED_SHAPE, "tok", "/", index=3)
+        message = codec.parse(contended.event(8))
+        assert message is not None
+        assert message[1]["payload"] == {"seq": 8, "client": 3}
 
 
-def test_replies_of_both_versions_carry_the_same_delta():
-    for reply in (HEAD_REPLY, OLD_REPLY):
-        name, update = json.loads(reply[len(EVENT_PREFIX) :])
-        assert name == "event"
-        assert update["delta"] == {STATE: {SEQ_VAR: 7}}
+def test_the_plain_connect_frame_carries_the_hydration_as_its_boot_event():
+    frame = WEBSOCKET.connect_frame(
+        token="tok", pathname="/item/42", query={"item_id": "42"}
+    )
+    assert frame == (
+        '["_connect",{"event":{"name":"reflex___state____state.hydrate_and_load",'
+        '"payload":{},"router_data":{"pathname":"/item/42","asPath":"/item/42",'
+        '"query":{"item_id":"42"}},"token":"tok"}}]'
+    )
+    assert WEBSOCKET.load_events == ()
+    assert not WEBSOCKET.greets
+    # Socket.IO joins the namespace and hydrates once acknowledged, as 0.8.23 needs.
+    assert SOCKETIO.connect_frame(token="tok", pathname="/") == "40/_event,"
+    assert SOCKETIO.load_events == (events.HYDRATE_EVENT, events.ON_LOAD_EVENT)
+    assert SOCKETIO.greets
+
+
+def test_both_codecs_decode_to_the_plain_protocols_messages():
+    assert WEBSOCKET.parse('["_ping"]') == SOCKETIO.parse("2") == [events.PING]
+    assert WEBSOCKET.parse('["_handshake",{"protocol":2}]') == [
+        events.HANDSHAKE,
+        {"protocol": 2},
+    ]
+    assert SOCKETIO.parse('40/_event,{"sid":"a"}') == [events.HANDSHAKE, '{"sid":"a"}']
+    assert SOCKETIO.parse('0{"sid":"a"}') == [events.OPENED, '{"sid":"a"}']
+    assert SOCKETIO.parse('44/_event,{"message":"no"}') == [
+        events.REFUSED,
+        '{"message":"no"}',
+    ]
+    assert SOCKETIO.parse("41/_event,") == SOCKETIO.parse("1") == [events.DISCONNECTED]
+    for codec in (WEBSOCKET, SOCKETIO):
+        assert codec.parse(codec.emit("new_token", "t")) == ["new_token", "t"]
+        assert codec.parse(b'["event",{}]') is None
+    for frame in ("{}", "[1]", "[]", "nope"):
+        assert WEBSOCKET.parse(frame) is None
+    assert SOCKETIO.parse("6") is None
+    assert SOCKETIO.parse("42/_event,nope") is None
+    assert (WEBSOCKET.pong, SOCKETIO.pong) == ('["_pong"]', "3")
+    assert (WEBSOCKET.leave, SOCKETIO.leave) == (None, "41/_event,")
+
+
+@pytest.mark.parametrize(
+    ("reply", "codec"),
+    [(HEAD_REPLY, WEBSOCKET), (SOCKETIO_REPLY, SOCKETIO), (OLD_REPLY, SOCKETIO)],
+)
+def test_replies_of_every_version_carry_the_same_delta(reply: str, codec: Any):
+    message = codec.parse(reply)
+    assert message is not None
+    name, update = message
+    assert name == "event"
+    assert update["delta"] == {STATE: {SEQ_VAR: 7}}
+
+
+@PROTOCOLS
+def test_the_protocol_is_detected(protocol: WireProtocol):
+    # Each server refuses the websocket on the other protocol's path.
+    with serving(Scripted(protocol)) as url:
+        assert asyncio.run(events.detect_protocol(url)) == protocol
+        codec = asyncio.run(events.resolve_codec(Endpoint(url)))
+    assert codec is CODECS[protocol]
+
+
+def test_a_named_protocol_is_not_detected():
+    port = free_ports()[0]
+    endpoint = Endpoint(f"http://127.0.0.1:{port}", protocol="socketio")
+    assert asyncio.run(events.resolve_codec(endpoint)) is SOCKETIO
+    with pytest.raises(OSError):
+        asyncio.run(events.detect_protocol(endpoint.backend_url))
 
 
 def test_a_refused_namespace_fails_the_session():
@@ -216,12 +323,28 @@ def test_a_refused_namespace_fails_the_session():
             """Send a connect_error instead of the ack."""
             await ws.send('44/_event,{"message":"Unable to connect"}')
 
-    with serving(Refusing()) as url:
+    with serving(Refusing("socketio")) as url:
         result = run_inline(plan(url, sessions=1))
     assert result.sent == 0
     (error,) = result.session_errors
     assert "refused /_event" in error
     assert "Unable to connect" in error
+
+
+def test_a_session_closed_in_the_handshake_fails():
+    class Closing(Scripted):
+        """Closes the connect with a policy violation, as reflex does without a token."""
+
+        async def on_connect(self, ws, sid):
+            """Close instead of the handshake."""
+            await ws.close(1008)
+
+    with serving(Closing()) as url:
+        result = run_inline(plan(url, sessions=1))
+    assert result.sent == 0
+    (error,) = result.session_errors
+    assert "could not connect: ConnectionClosedError" in error
+    assert "1008" in error
 
 
 def test_an_unexpected_frame_fails_the_session():
@@ -269,8 +392,9 @@ def test_schedule_spreads_sessions_evenly():
     assert merged == [int(k * second / 30) for k in range(30)]
 
 
-def test_every_event_is_answered():
-    server = Scripted()
+@PROTOCOLS
+def test_every_event_is_answered(protocol: WireProtocol):
+    server = Scripted(protocol)
     with serving(server) as url:
         result = run_inline(plan(url, sessions=3, rate=150.0))
     # 150 ev/s over the 0.5 s window, as planned.
@@ -428,16 +552,17 @@ def test_an_unordered_shape_takes_answers_in_any_order():
     assert result.answered == result.sent
 
 
-def test_a_new_token_is_adopted():
+@PROTOCOLS
+def test_a_new_token_is_adopted(protocol: WireProtocol):
     class Renaming(Scripted):
         """Hands every connection a new token, as reflex does for a duplicate tab."""
 
         async def on_connect(self, ws, sid):
-            """Send the new token before the namespace ack, like python-socketio."""
-            await ws.send(events.emit_frame("new_token", f"fresh-{sid}"))
+            """Send the new token before the handshake, as reflex does."""
+            await ws.send(self.codec.emit("new_token", f"fresh-{sid}"))
             await super().on_connect(ws, sid)
 
-    server = Renaming()
+    server = Renaming(protocol)
     with serving(server) as url:
         result = run_inline(plan(url, sessions=1, rate=20.0))
     assert result.unanswered == 0
@@ -445,30 +570,32 @@ def test_a_new_token_is_adopted():
     assert all(token.startswith("fresh-") for token in server.tokens)
 
 
-def test_a_session_that_never_hydrates_fails(monkeypatch: pytest.MonkeyPatch):
-    class NeverHydrated(Scripted):
-        """Ignores on_load_internal, so is_hydrated never becomes true."""
-
-        async def on_event(self, ws, event):
-            """Answer everything but on_load_internal."""
-            if event["name"] != events.ON_LOAD_EVENT:
-                await super().on_event(ws, event)
-
+@PROTOCOLS
+def test_a_session_that_never_hydrates_fails(
+    monkeypatch: pytest.MonkeyPatch, protocol: WireProtocol
+):
     monkeypatch.setattr(events, "PRIME_TIMEOUT_S", 0.5)
-    with serving(NeverHydrated()) as url:
+    with serving(NeverHydrated(protocol)) as url:
         result = run_inline(plan(url, sessions=1))
     assert result.sent == 0
     assert len(result.session_errors) == 1
     assert "not hydrated within 0.5 s" in result.session_errors[0]
 
 
-def test_a_disconnect_mid_run_fails_the_session():
+@pytest.mark.parametrize(
+    ("protocol", "reason"),
+    [
+        ("websocket", "the websocket closed: received 1008"),
+        ("socketio", "the server disconnected the session"),
+    ],
+)
+def test_a_disconnect_mid_run_fails_the_session(protocol: WireProtocol, reason: str):
     class Disconnecting(Scripted):
-        """Ends the namespace of the first connection instead of answering seq 5."""
+        """Ends the session of the first connection instead of answering seq 5."""
 
         def __init__(self) -> None:
             """Know no connection yet."""
-            super().__init__()
+            super().__init__(protocol)
             self.first: ServerConnection | None = None
 
         async def seq_event(self, ws, event, seq):
@@ -480,14 +607,14 @@ def test_a_disconnect_mid_run_fails_the_session():
             if self.first is None:
                 self.first = ws
             if ws is self.first and seq == 5:
-                await ws.send(events.DISCONNECT_FRAME)
+                await self.end(ws)
                 return False
             return True
 
     with serving(Disconnecting()) as url:
         result = run_inline(plan(url, sessions=2, rate=40.0, warmup_s=0.0))
     assert len(result.session_errors) == 1
-    assert "disconnected" in result.session_errors[0]
+    assert reason in result.session_errors[0]
     # One session stopped after seq 5, which stays unanswered; the other ran on.
     assert result.sent == 15
     assert result.unanswered == 1
@@ -581,9 +708,13 @@ CONTENDED_SHAPE = dataclasses.replace(BOARD_SHAPE, client_var=CLIENT_VAR)
 class Board(EchoServer):
     """Answers like the playground's shared board: a join links a connection to a token, and a seq event reaches every linked connection."""
 
-    def __init__(self) -> None:
-        """Link nothing yet."""
-        super().__init__(delta_key=BOARD, seq_var=SEQ_VAR)
+    def __init__(self, protocol: WireProtocol = "websocket") -> None:
+        """Link nothing yet.
+
+        Args:
+            protocol: The protocol to speak.
+        """
+        super().__init__(delta_key=BOARD, seq_var=SEQ_VAR, protocol=protocol)
         self.linked: dict[str, list[ServerConnection]] = {}
         self.names: dict[ServerConnection, list[str]] = {}
         self.payloads: list[dict[str, Any]] = []
@@ -598,7 +729,7 @@ class Board(EchoServer):
         self.names.setdefault(ws, []).append(event["name"])
         if event["name"] == LINK.name:
             self.linked.setdefault(event["payload"]["token"], []).append(ws)
-            await ws.send(events.emit_frame("event", {"delta": {BOARD: {SEQ_VAR: 0}}}))
+            await ws.send(self.codec.emit("event", {"delta": {BOARD: {SEQ_VAR: 0}}}))
         elif event["name"] == BOARD_SHAPE.name:
             self.payloads.append(event["payload"])
             delta = {
@@ -609,7 +740,7 @@ class Board(EchoServer):
             }
             for index, linked in enumerate(self.linked_to(ws)):
                 await self.deliver(
-                    linked, index, events.emit_frame("event", {"delta": delta})
+                    linked, index, self.codec.emit("event", {"delta": delta})
                 )
         else:
             await super().on_event(ws, event)
@@ -643,16 +774,20 @@ def board_plan(url: str, **overrides: Any) -> LoadPlan:
     return plan(url, **{"shape": BOARD_SHAPE, "link": LINK, **overrides})
 
 
-def test_linked_sessions_join_after_hydrating_and_before_the_load():
-    server = Board()
+@PROTOCOLS
+def test_linked_sessions_join_after_hydrating_and_before_the_load(
+    protocol: WireProtocol,
+):
+    server = Board(protocol)
     with serving(server) as url:
         result = run_inline(board_plan(url, mode="closed", rate=None, sessions=3))
     assert result.session_errors == []
     assert result.answered > 0
     assert len(server.linked["board-1"]) == 3
+    primed = [*HYDRATION[protocol], LINK.name]
     for names in server.names.values():
-        assert names[:3] == [events.HYDRATE_EVENT, events.ON_LOAD_EVENT, LINK.name]
-        assert set(names[3:]) == {BOARD_SHAPE.name}
+        assert names[: len(primed)] == primed
+        assert set(names[len(primed) :]) == {BOARD_SHAPE.name}
 
 
 def test_a_session_whose_join_is_not_acknowledged_fails(
@@ -933,27 +1068,46 @@ def test_a_generator_process_ends_when_its_parent_goes_away():
         assert proc.exitcode is not None
 
 
-class Counting(Scripted):
-    """Counts the hydrations and the disconnects."""
-
-    def __init__(self) -> None:
-        """Count nothing yet."""
-        super().__init__()
-        self.hydrated = 0
-        self.left = 0
+class NeverHydrated(Scripted):
+    """Ignores the events that complete the hydration, so is_hydrated never becomes true."""
 
     async def on_event(self, ws, event):
-        """Count on_load_internal, then answer."""
-        if event["name"] == events.ON_LOAD_EVENT:
+        """Answer everything but those."""
+        if event["name"] not in HYDRATING:
+            await super().on_event(ws, event)
+
+
+class Counting(Scripted):
+    """Counts the hydrations and the sessions that ended; the protocol's probe is no session."""
+
+    def __init__(self, protocol: WireProtocol = "websocket") -> None:
+        """Count nothing yet.
+
+        Args:
+            protocol: The protocol to speak.
+        """
+        super().__init__(protocol)
+        self.hydrated = 0
+        self.left = 0
+        self._sessions: set[ServerConnection] = set()
+
+    async def on_connect(self, ws, sid):
+        """Count a session."""
+        self._sessions.add(ws)
+        await super().on_connect(ws, sid)
+
+    async def on_event(self, ws, event):
+        """Count the event that completes a hydration, then answer."""
+        if event["name"] in HYDRATING:
             self.hydrated += 1
         await super().on_event(ws, event)
 
     async def handle(self, ws):
-        """Count a connection that ends."""
+        """Count a session that ends."""
         try:
             await super().handle(ws)
         finally:
-            self.left += 1
+            self.left += ws in self._sessions
 
 
 def test_open_sessions_primes_and_closes_them():
@@ -978,14 +1132,6 @@ def test_open_sessions_primes_and_closes_them():
 def test_open_sessions_reports_the_sessions_that_fail(
     monkeypatch: pytest.MonkeyPatch,
 ):
-    class NeverHydrated(Scripted):
-        """Ignores on_load_internal, so is_hydrated never becomes true."""
-
-        async def on_event(self, ws, event):
-            """Answer everything but on_load_internal."""
-            if event["name"] != events.ON_LOAD_EVENT:
-                await super().on_event(ws, event)
-
     monkeypatch.setattr(events, "PRIME_TIMEOUT_S", 0.5)
     with serving(NeverHydrated()) as url:
         loop = events.event_loop()
@@ -1003,19 +1149,27 @@ def test_open_sessions_reports_the_sessions_that_fail(
 
 
 class Holding(Counting):
-    """Pings often and records each connection's frames."""
+    """Pings often and records each session's frames and close code."""
 
-    def __init__(self) -> None:
-        """Record nothing yet."""
-        super().__init__()
+    def __init__(self, protocol: WireProtocol = "websocket") -> None:
+        """Record nothing yet.
+
+        Args:
+            protocol: The protocol to speak.
+        """
+        super().__init__(protocol)
         self.ping_interval_s = 0.2
         self.frames: list[list[str | bytes]] = []
+        self.close_codes: list[int | None] = []
 
     async def handle(self, ws):
-        """Serve a connection, recording its frames."""
+        """Serve a connection, recording a session's frames and how it closed."""
         frames: list[str | bytes] = []
-        self.frames.append(frames)
-        await super().handle(cast(ServerConnection, _Recording(ws, frames)))
+        recording = cast(ServerConnection, _Recording(ws, frames))
+        await super().handle(recording)
+        if recording in self._sessions:
+            self.frames.append(frames)
+            self.close_codes.append(ws.close_code)
 
 
 class _Recording:
@@ -1071,8 +1225,10 @@ def wait_for(condition: Callable[[], bool], timeout: float = 10.0) -> bool:
     return True
 
 
-def test_a_hold_keeps_hydrated_sessions_until_closed():
-    server = Holding()
+@PROTOCOLS
+def test_a_hold_keeps_hydrated_sessions_until_closed(protocol: WireProtocol):
+    server = Holding(protocol)
+    codec = CODECS[protocol]
     with serving(server) as url:
         hold = events.hold_sessions(Endpoint(url), 3)
         try:
@@ -1085,9 +1241,13 @@ def test_a_hold_keeps_hydrated_sessions_until_closed():
             hold.kill()
         assert wait_for(lambda: server.left == 3)
     for frames in server.frames:
-        # The sessions answered the pings while held, then left the namespace.
-        assert events.PONG in frames
-        assert frames[-1] == events.DISCONNECT_FRAME
+        # The sessions answered the pings while held, then left.
+        assert codec.pong in frames
+        if codec.leave is not None:
+            assert frames[-1] == codec.leave
+    if codec.leave is None:
+        # The plain protocol leaves with a normal close.
+        assert server.close_codes == [1000] * 3
     assert multiprocessing.active_children() == []
 
 
@@ -1104,16 +1264,14 @@ def test_a_hold_raises_when_sessions_cannot_connect():
 
 def test_close_reports_sessions_lost_while_held():
     class Dropping(Holding):
-        """Ends the namespace of the first hydrated connection half a second later."""
+        """Closes the first hydrated connection half a second later."""
 
         async def on_event(self, ws, event):
-            """Answer, then schedule the disconnect of the first connection."""
+            """Answer, then schedule the end of the first connection."""
             await super().on_event(ws, event)
-            if event["name"] == events.ON_LOAD_EVENT and self.hydrated == 1:
+            if event["name"] in HYDRATING and self.hydrated == 1:
                 loop = asyncio.get_running_loop()
-                loop.call_later(
-                    0.5, lambda: loop.create_task(ws.send(events.DISCONNECT_FRAME))
-                )
+                loop.call_later(0.5, lambda: loop.create_task(self.end(ws)))
 
     with serving(Dropping()) as url:
         hold = events.hold_sessions(Endpoint(url), 2)
@@ -1124,20 +1282,20 @@ def test_close_reports_sessions_lost_while_held():
         finally:
             hold.kill()
     assert len(errors) == 1
-    assert "disconnected" in errors[0]
+    assert "the websocket closed: received 1008" in errors[0]
     assert multiprocessing.active_children() == []
 
 
 def test_kill_ends_a_hold_that_is_still_priming():
-    class NeverHydrated(Holding):
-        """Ignores on_load_internal, so no session finishes priming."""
+    class NeverPrimed(Holding):
+        """Ignores the events that complete the hydration, so no session finishes priming."""
 
         async def on_event(self, ws, event):
-            """Answer everything but on_load_internal."""
-            if event["name"] != events.ON_LOAD_EVENT:
+            """Answer everything but those."""
+            if event["name"] not in HYDRATING:
                 await super().on_event(ws, event)
 
-    with serving(NeverHydrated()) as url:
+    with serving(NeverPrimed()) as url:
         hold = events.hold_sessions(Endpoint(url), 2)
         killer = threading.Timer(1.0, hold.kill)
         killer.start()

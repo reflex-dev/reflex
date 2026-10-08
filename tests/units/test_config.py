@@ -167,6 +167,33 @@ def test_update_from_env_cors(
     ]
 
 
+@pytest.mark.parametrize(
+    ("origins", "expected"),
+    [
+        ("https://myapp.com", ["https://myapp.com"]),
+        ("https://a.com, https://b.dev", ["https://a.com", "https://b.dev"]),
+    ],
+)
+def test_cors_allowed_origins_string_lists_origins(
+    base_config_values: dict[str, Any], origins: str, expected: list[str]
+):
+    """A plain string lists origins as the environment variable does.
+
+    Left a string, membership is a substring test: https://myapp.co would pass
+    an origin check for https://myapp.com.
+
+    Args:
+        base_config_values: Config values.
+        origins: The configured origins.
+        expected: The origins they list.
+    """
+    config = rx.Config(**base_config_values, cors_allowed_origins=origins)
+
+    assert list(config.cors_allowed_origins) == expected
+    assert "https://myapp.co" not in config.cors_allowed_origins
+    assert "https://b.de" not in config.cors_allowed_origins
+
+
 def test_update_from_env_frontend_compression_formats(
     base_config_values: dict[str, Any],
     monkeypatch: pytest.MonkeyPatch,

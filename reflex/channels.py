@@ -27,6 +27,8 @@ from abc import ABC, abstractmethod
 from collections.abc import Awaitable, Callable, Sequence
 from typing import Any, ClassVar
 
+from typing_extensions import Buffer
+
 # Channel names ride in every frame and name a client-side channel handle;
 # keep them short and free of JSON or URL escaping.
 _NAME_PATTERN = re.compile(r"[A-Za-z0-9_./:-]{1,64}")
@@ -37,18 +39,31 @@ MAX_MESSAGE_BUFFERS = 64
 
 # Names a client-side channel handle reports its own lifecycle under. A
 # message may not use them, or a consumer could not tell an application
-# message from the transport event it is named after.
+# message from the transport event it is named after. Names starting with an
+# underscore are reserved too: the channel protocol's own messages use them.
 RESERVED_EVENTS = frozenset({"connect", "disconnect", "error"})
 
 # Sends one channel message to connected sessions: (sids, channel, event,
 # data, buffers). Supplied by the transport when the session opens. It takes
 # every recipient at once so a fan-out serializes the frame only once.
 ChannelSender = Callable[
-    [Sequence[str], str, str, Any, Sequence[bytes]], Awaitable[None]
+    [Sequence[str], str, str, Any, Sequence[Buffer]], Awaitable[None]
 ]
 
 
-def _validate_message(event: str, buffers: Sequence[bytes]) -> None:
+def is_reserved_event(event: str) -> bool:
+    """Whether a message name is reserved for the handle's lifecycle or the protocol.
+
+    Args:
+        event: The message name.
+
+    Returns:
+        Whether an application message may not use it.
+    """
+    return event in RESERVED_EVENTS or event.startswith("_")
+
+
+def _validate_message(event: str, buffers: Sequence[Buffer]) -> None:
     """Check a message against what a frame may carry, before any is sent.
 
     Args:
@@ -56,13 +71,18 @@ def _validate_message(event: str, buffers: Sequence[bytes]) -> None:
         buffers: The binary attachments.
 
     Raises:
-        ValueError: If the message name is reserved, or it carries more
-            attachments than a frame may hold.
+        ValueError: If the message name is not a usable string or is
+            reserved, or the message carries more attachments than a frame
+            may hold.
     """
-    if event in RESERVED_EVENTS:
+    if not isinstance(event, str) or not event:
+        msg = f"Channel message name {event!r} is not a non-empty string."
+        raise ValueError(msg)
+    if is_reserved_event(event):
         msg = (
             f"Channel message name {event!r} is reserved: the client-side "
-            "handle reports its own lifecycle under it."
+            "handle reports its own lifecycle under it, and names starting "
+            "with '_' belong to the channel protocol."
         )
         raise ValueError(msg)
     if len(buffers) > MAX_MESSAGE_BUFFERS:
@@ -116,7 +136,7 @@ class ChannelSession:
     open: bool = True
 
     async def send(
-        self, event: str, data: Any = None, buffers: Sequence[bytes] = ()
+        self, event: str, data: Any = None, buffers: Sequence[Buffer] = ()
     ) -> None:
         """Send one message to this client.
 
@@ -126,8 +146,9 @@ class ChannelSession:
             buffers: Binary attachments delivered alongside the metadata.
 
         Raises:
-            ValueError: If the message name is reserved, or it carries more
-                attachments than a frame may hold.
+            ValueError: If the message name is not a usable string or is
+                reserved, or the message carries more attachments than a
+                frame may hold.
         """
         _validate_message(event, buffers)
         await self._send((self.sid,), self.channel.name, event, data, buffers)
@@ -226,7 +247,7 @@ class Channel(ABC):
         room: str,
         event: str,
         data: Any = None,
-        buffers: Sequence[bytes] = (),
+        buffers: Sequence[Buffer] = (),
     ) -> None:
         """Send one message to every session in a room.
 
@@ -237,15 +258,15 @@ class Channel(ABC):
             buffers: Binary attachments delivered alongside the metadata.
 
         Raises:
-            ValueError: If the message name is reserved, or it carries more
-                attachments than a frame may hold. Raised before anything is
-                sent, so a fan-out fails whole rather than reaching some
-                clients.
+            ValueError: If the message name is not a usable string or is
+                reserved, or the message carries more attachments than a
+                frame may hold. Raised before anything is sent, so a fan-out
+                fails whole rather than reaching some clients.
         """
+        _validate_message(event, buffers)
         members = self._rooms.get(room)
         if not members:
             return
-        _validate_message(event, buffers)
         # Every session of a channel is opened by the app's one transport, so
         # any member can carry the frame for all of them -- serialized once
         # rather than once per recipient. The recipients are collected first:
@@ -259,7 +280,7 @@ class Channel(ABC):
         client_token: str,
         event: str,
         data: Any = None,
-        buffers: Sequence[bytes] = (),
+        buffers: Sequence[Buffer] = (),
     ) -> bool:
         """Send one message to every session of a client token on this worker.
 
@@ -273,15 +294,15 @@ class Channel(ABC):
             Whether a session received the message.
 
         Raises:
-            ValueError: If the message name is reserved, or it carries more
-                attachments than a frame may hold. Raised before anything is
-                sent, so a fan-out fails whole rather than reaching some
-                clients.
+            ValueError: If the message name is not a usable string or is
+                reserved, or the message carries more attachments than a
+                frame may hold. Raised before anything is sent, so a fan-out
+                fails whole rather than reaching some clients.
         """
+        _validate_message(event, buffers)
         sessions = self._sessions.get(client_token)
         if not sessions:
             return False
-        _validate_message(event, buffers)
         await next(iter(sessions))._send(
             [session.sid for session in sessions], self.name, event, data, buffers
         )

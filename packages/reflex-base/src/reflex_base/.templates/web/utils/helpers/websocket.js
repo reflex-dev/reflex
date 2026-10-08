@@ -37,8 +37,26 @@ const MAX_QUEUED_CHANNEL_MESSAGES = 64;
 const MAX_MESSAGE_BUFFERS = 64;
 
 // A channel handle reports its own lifecycle under these names, so a message
-// may not use them (must match reflex.channels.RESERVED_EVENTS).
+// may not use them (must match reflex.channels.RESERVED_EVENTS). Names
+// starting with an underscore are reserved too: the channel protocol uses them.
 const LIFECYCLE_EVENTS = new Set(["connect", "disconnect", "error"]);
+
+// Names a channel can be registered under (must match reflex.channels).
+const CHANNEL_NAME_PATTERN = /^[A-Za-z0-9_./:-]{1,64}$/;
+
+/**
+ * Whether a channel message name is reserved for the handle or the protocol.
+ * @param event The message name.
+ * @returns Whether an application message may not use it.
+ */
+const isReservedEvent = (event) =>
+  LIFECYCLE_EVENTS.has(event) || event.startsWith("_");
+
+/**
+ * Report an error without throwing it into the code that found it.
+ * @param error The error to report.
+ */
+const report = (error) => (globalThis.reportError ?? console.error)(error);
 
 /**
  * JSON.stringify replacer that sends undefined fields as null instead of
@@ -135,14 +153,28 @@ const frameByteLength = (frame) =>
 const stringifyFrame = (frame) => JSON.stringify(frame, undefinedToNull);
 
 /**
+ * Whether a value is binary data an attachment can carry.
+ *
+ * Checked by tag rather than instanceof, so buffers from another realm (an
+ * iframe, a worker) and shared buffers qualify.
+ * @param value The candidate attachment.
+ * @returns Whether it is an ArrayBuffer, SharedArrayBuffer or view of one.
+ */
+const isBinary = (value) =>
+  ArrayBuffer.isView(value) ||
+  ["[object ArrayBuffer]", "[object SharedArrayBuffer]"].includes(
+    Object.prototype.toString.call(value),
+  );
+
+/**
  * View any binary value as bytes without copying it.
- * @param buffer An ArrayBuffer, typed array or DataView.
+ * @param buffer An ArrayBuffer, SharedArrayBuffer, typed array or DataView.
  * @returns A Uint8Array over the same memory.
  */
 const asBytes = (buffer) =>
-  buffer instanceof ArrayBuffer
-    ? new Uint8Array(buffer)
-    : new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+  ArrayBuffer.isView(buffer)
+    ? new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength)
+    : new Uint8Array(buffer);
 
 /**
  * Bytes of padding needed to reach the next attachment boundary.
@@ -266,8 +298,19 @@ class LocalEmitter {
    * @param args The handler arguments.
    */
   _emitLocal(event, ...args) {
-    for (const fn of this._callbacks["$" + event] ?? []) {
-      fn(...args);
+    const handlers = this._callbacks["$" + event];
+    if (handlers === undefined) {
+      return;
+    }
+    // A copy: a handler may remove itself, or add one, while this runs.
+    for (const fn of [...handlers]) {
+      try {
+        fn(...args);
+      } catch (error) {
+        // A failing handler must not skip the others, nor abort the
+        // transport bookkeeping that is reporting the event.
+        report(error);
+      }
     }
   }
 }
@@ -303,13 +346,28 @@ class ReflexChannel extends LocalEmitter {
    * @param buffers Binary attachments (ArrayBuffers or typed arrays).
    */
   emit(event, data, buffers = []) {
-    if (LIFECYCLE_EVENTS.has(event)) {
-      throw new Error(
-        `Channel message name "${event}" is reserved: this handle reports its ` +
-          "own lifecycle under it, and the backend refuses it.",
+    // The backend closes the app's socket over a frame it cannot read, so a
+    // malformed message is refused here, where the mistake is.
+    if (typeof event !== "string" || event === "") {
+      throw new TypeError(
+        `Channel message name must be a non-empty string, not ${String(event)}.`,
       );
     }
-    if (buffers?.length > MAX_MESSAGE_BUFFERS) {
+    if (isReservedEvent(event)) {
+      throw new Error(
+        `Channel message name "${event}" is reserved: this handle reports its ` +
+          'own lifecycle under it, names starting with "_" belong to the ' +
+          "channel protocol, and the backend refuses both.",
+      );
+    }
+    if (!Array.isArray(buffers) || !buffers.every(isBinary)) {
+      throw new TypeError(
+        `Channel message "${event}" attachments must be an array of ` +
+          "ArrayBuffers or typed arrays; read a Blob with " +
+          "`await blob.arrayBuffer()` first.",
+      );
+    }
+    if (buffers.length > MAX_MESSAGE_BUFFERS) {
       throw new Error(
         `Channel message "${event}" carries ${buffers.length} attachments, ` +
           `over the ${MAX_MESSAGE_BUFFERS} a frame may hold.`,
@@ -376,9 +434,10 @@ class ReflexChannel extends LocalEmitter {
    */
   _receive(event, data, buffers) {
     if (event === OPENED_MESSAGE) {
-      if (this._transport === null) {
-        // A straggler from a transport this channel is no longer on; the queue
-        // belongs to whichever transport it attaches to next.
+      if (this._transport === null || this.connected) {
+        // A straggler from a transport this channel is no longer on (the
+        // queue belongs to whichever it attaches to next), or the answer to
+        // an open sent twice.
         return;
       }
       this.connected = true;
@@ -408,7 +467,7 @@ class ReflexChannel extends LocalEmitter {
       this._emitLocal("error", data);
       return;
     }
-    if (LIFECYCLE_EVENTS.has(event)) {
+    if (isReservedEvent(event)) {
       // The backend rejects these names; a frame carrying one is not from a
       // Reflex backend and must not be mistaken for the handle's own events.
       console.error(`Ignoring channel message named "${event}" (reserved)`);
@@ -424,6 +483,12 @@ class ReflexChannel extends LocalEmitter {
  * @returns The channel handle.
  */
 export const getChannel = (name) => {
+  if (typeof name !== "string" || !CHANNEL_NAME_PATTERN.test(name)) {
+    throw new TypeError(
+      `Invalid channel name ${String(name)}: expected 1-64 characters from ` +
+        "[A-Za-z0-9_./:-].",
+    );
+  }
   let channel = channels.get(name);
   if (channel === undefined) {
     channel = new ReflexChannel(name);
@@ -512,7 +577,6 @@ export class ReflexWebSocket extends LocalEmitter {
     // connect_error always fires and retries proceed.
     this._connectTimeoutMs = 20 * 1000;
     this._connectTimer = null;
-    this._closeReason = null;
     // The backend's inbound message limit, learned from the handshake.
     this._maxMessageSize = null;
     // Network emulation and OS offline do not interrupt established
@@ -560,6 +624,10 @@ export class ReflexWebSocket extends LocalEmitter {
     this._sessionRequested = true;
     this.open();
     const ws = this._ws;
+    if (ws === null) {
+      // The dial failed outright; its connect_error is on the way.
+      return;
+    }
     if (ws.readyState === WebSocket.OPEN) {
       // Dialed ahead by open().
       this._sendConnect();
@@ -584,9 +652,20 @@ export class ReflexWebSocket extends LocalEmitter {
     // Secure endpoints (https or already-wss) stay secure.
     url.protocol =
       url.protocol === "https:" || url.protocol === "wss:" ? "wss:" : "ws:";
+    // Proxy rules written for Socket.IO route "/_event/*", which the bare
+    // path misses; the backend serves both.
+    url.pathname = url.pathname.replace(/\/?$/, "/");
     url.search = new URLSearchParams(this.io.opts.query ?? {}).toString();
-    this._closeReason = null;
-    const ws = new WebSocket(url, this.io.opts.protocols);
+    let ws;
+    try {
+      ws = new WebSocket(url, this.io.opts.protocols);
+    } catch (error) {
+      // Mixed content and CSP violations fail the constructor itself. Report
+      // it like a failed dial, after the caller has attached its handlers.
+      this._ws = null;
+      queueMicrotask(() => this._emitLocal("connect_error", error));
+      return;
+    }
     // Channel attachments arrive as binary frames; take them as ArrayBuffers
     // so handlers can view them as typed arrays without a copy.
     ws.binaryType = "arraybuffer";
@@ -611,7 +690,7 @@ export class ReflexWebSocket extends LocalEmitter {
       this._clearWatchdog();
       const wasConnected = this.connected;
       this.connected = false;
-      detachChannels(this, this._closeReason ?? "transport close");
+      detachChannels(this, "transport close");
       if (!wasConnected) {
         // Never handshaked: this was a failed connection attempt.
         this._emitLocal(
@@ -619,7 +698,7 @@ export class ReflexWebSocket extends LocalEmitter {
           new Error("websocket connection failed"),
         );
       } else {
-        this._emitLocal("disconnect", this._closeReason ?? "transport close", {
+        this._emitLocal("disconnect", "transport close", {
           code: event.code,
           reason: event.reason,
         });
@@ -667,15 +746,18 @@ export class ReflexWebSocket extends LocalEmitter {
     }
     // Detach so the onclose handler does not double-report.
     this._ws = null;
-    detachChannels(this, reason);
-    if (this.connected) {
-      this.connected = false;
-      this._emitLocal("disconnect", reason, details);
-    }
+    const wasConnected = this.connected;
+    this.connected = false;
     if (ws.readyState <= WebSocket.OPEN) {
       ws.onclose = null;
       ws.onmessage = null;
       ws.close(1000);
+    }
+    // Report only once the transport's own state is settled: the handlers
+    // run application code.
+    detachChannels(this, reason);
+    if (wasConnected) {
+      this._emitLocal("disconnect", reason, details);
     }
   }
 
@@ -685,7 +767,21 @@ export class ReflexWebSocket extends LocalEmitter {
    * @param data The event payload.
    */
   emit(event, data) {
-    this._send(stringifyFrame([event, data]));
+    const frame = stringifyFrame([event, data]);
+    const limit = this._maxMessageSize;
+    if (limit && exceedsMessageLimit(frame, limit)) {
+      // The backend closes the connection over an oversized frame, losing
+      // every update in flight with it; drop this one message instead.
+      report(
+        new Error(
+          `Message "${data?.name ?? event}" is ${frameByteLength(frame)} bytes, ` +
+            `over the ${limit} the backend accepts ` +
+            "(REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE); it was not sent.",
+        ),
+      );
+      return;
+    }
+    this._send(frame);
   }
 
   /**
@@ -788,9 +884,11 @@ export class ReflexWebSocket extends LocalEmitter {
    * @param reason The disconnect reason to report.
    */
   _dropConnection(reason) {
-    if (this._ws && this.connected) {
-      this._closeReason = reason;
-      this._ws.close();
+    if (this.connected) {
+      // Reported now rather than from onclose: on a dead link the browser
+      // fires that only when its closing handshake times out, up to a minute
+      // later, and the transport would claim to be connected until then.
+      this._teardown(reason, undefined);
     }
   }
 

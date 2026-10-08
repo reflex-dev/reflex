@@ -20,17 +20,22 @@ import textwrap
 import threading
 import time
 import types
-from collections.abc import Callable, Coroutine, Sequence
+from collections.abc import Awaitable, Callable, Coroutine, Sequence
 from importlib.util import find_spec
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, Self, TypeVar
 
 from granian.constants import Interfaces
+from granian.errors import FatalError
+from granian.log import LogLevels
+from granian.net import SocketHolder  # pyright: ignore[reportPrivateImportUsage]
+from granian.server.embed import Server as EmbeddedGranian
 from reflex_base.components.memo import MEMOS
 from reflex_base.config import get_config, reload_config
 from reflex_base.environment import environment
 from reflex_base.registry import RegistrationContext
-from reflex_base.utils.types import ASGIApp
+from reflex_base.utils import console
+from reflex_base.utils.types import ASGIApp, Message, Receive, Scope, Send
 
 import reflex
 import reflex.reflex
@@ -75,46 +80,101 @@ else:
     FRONTEND_POPEN_ARGS["start_new_session"] = True
 
 
+class _PreboundGranian(EmbeddedGranian):
+    """Embedded granian server serving a listening socket bound beforehand."""
+
+    def __init__(self, listener: socket.socket, *args, **kwargs) -> None:
+        """Create the server around a bound socket.
+
+        Args:
+            listener: the listening socket; granian owns it once serving starts.
+            *args: positional arguments for the granian server.
+            **kwargs: keyword arguments for the granian server.
+        """
+        super().__init__(*args, **kwargs)
+        self._listener = listener
+
+    def _init_shared_socket(self):
+        """Hand the listening socket to granian instead of binding a new one."""
+        fd = self._listener.detach()
+        # SocketHolder takes its pickled state, whose shape differs per platform.
+        if sys.platform == "win32":
+            state = (fd,)
+        elif sys.platform.startswith(("linux", "freebsd")):
+            state = (fd, False, self.backlog)
+        else:
+            state = (fd, False)
+        self._shd = SocketHolder(*state)
+        self._sfd = fd
+
+    def release_socket(self, served: bool) -> None:
+        """Close the socket unless the worker serving it already did.
+
+        Args:
+            served: whether a worker took the socket over.
+        """
+        holder, self._shd = self._shd, None
+        # Dropping the holder closes it on Windows, where workers serve a clone.
+        if holder is not None and not served and sys.platform != "win32":
+            os.close(self._sfd)
+
+
 class _EmbeddedServer:
     """In-process granian server with a uvicorn-like control surface.
 
     Serves the given ASGI app object directly, so the harness shares the app
-    and state instances with the running server, and granian's native
-    websocket support means no separate websocket library is required. The
-    port is resolved up front because granian cannot report an OS-assigned
-    port back to Python.
+    and state instances with the running server. The listening socket is
+    bound on construction, without SO_REUSEPORT, so the server owns its port
+    (OS-assigned for port 0) before it serves.
     """
 
     def __init__(self, app: ASGIApp, host: str = "127.0.0.1", port: int = 0) -> None:
-        """Prepare the server without starting it.
+        """Bind the listening socket without serving yet.
 
         Args:
             app: the ASGI app object to serve.
             host: the address to bind to.
-            port: the port to bind to; 0 picks a free port immediately.
+            port: the port to bind to; 0 lets the OS pick a free one.
         """
         self.app = app
         self.host = host
-        self.port = port or self._pick_free_port(host)
+        self._listener = self._listen(host, port)
+        self.port: int = self._listener.getsockname()[1]
         # Monkeypatchable async shutdown hook, mirroring uvicorn.Server.shutdown.
         self.shutdown: Callable[..., Coroutine[Any, Any, None]] = self._noop_shutdown
         self._should_exit = threading.Event()
+        self._serving = False
+        # Set once the server serves or stops.
+        self._settled = threading.Event()
         self._loop: asyncio.AbstractEventLoop | None = None
-        self._server: Any = None
+        self._server: _PreboundGranian | None = None
 
     @staticmethod
-    def _pick_free_port(host: str) -> int:
-        """Ask the OS for a free port and release it again.
+    def _listen(host: str, port: int) -> socket.socket:
+        """Bind a listening socket that no other socket can share.
 
         Args:
-            host: the address the port has to be free on.
+            host: the address to bind to.
+            port: the port to bind to.
 
         Returns:
-            The port number.
+            The listening socket.
         """
-        with socket.socket() as probe:
-            probe.bind((host, 0))
-            return probe.getsockname()[1]
+        sock = socket.socket()
+        try:
+            # On posix SO_REUSEADDR only allows rebinding a port in TIME_WAIT;
+            # on Windows it would let other sockets share the port.
+            sock.setsockopt(
+                socket.SOL_SOCKET,
+                getattr(socket, "SO_EXCLUSIVEADDRUSE", socket.SO_REUSEADDR),
+                1,
+            )
+            sock.bind((host, port))
+            sock.listen()
+        except OSError:
+            sock.close()
+            raise
+        return sock
 
     @staticmethod
     async def _noop_shutdown(*args, **kwargs) -> None:
@@ -133,17 +193,38 @@ class _EmbeddedServer:
         """
         return (self.host, self.port)
 
-    def is_listening(self) -> bool:
-        """Whether the server accepts connections.
+    def wait_started(self, timeout: float | None = None) -> None:
+        """Block until the server serves, after the app's lifespan startup.
+
+        Args:
+            timeout: how long to wait in seconds; None waits indefinitely.
+
+        Raises:
+            TimeoutError: when the server does not serve within the timeout.
+            RuntimeError: when the server stopped without serving.
+        """
+        if not self._settled.wait(timeout):
+            msg = f"Server on port {self.port} did not start within {timeout}s."
+            raise TimeoutError(msg)
+        if not self._serving:
+            msg = f"Server on port {self.port} stopped without serving; see the log above."
+            raise RuntimeError(msg)
+
+    @property
+    def started(self) -> bool:
+        """Whether the server serves, like uvicorn's `Server.started`.
 
         Returns:
-            True if a TCP connection to the bound address succeeds.
+            True once the app's lifespan startup completed.
         """
-        try:
-            socket.create_connection((self.host, self.port), timeout=0.1).close()
-        except OSError:
-            return False
-        return True
+        console.deprecate(
+            feature_name="AppHarness.backend.started",
+            reason="AppHarness.start() returns once the backend serves; "
+            "call `wait_started()` to wait for a server yourself",
+            deprecation_version="0.10.0",
+            removal_version="1.0",
+        )
+        return self._serving
 
     @property
     def should_exit(self) -> bool:
@@ -161,66 +242,85 @@ class _EmbeddedServer:
         self._should_exit.set()
         loop, server = self._loop, self._server
         if loop is not None and server is not None:
-
-            def _interrupt() -> None:
-                server.interrupt_signal = True
-                server.main_loop_interrupt.set()
-
             # A closed loop means the server is already down.
             with contextlib.suppress(RuntimeError):
-                loop.call_soon_threadsafe(_interrupt)
+                loop.call_soon_threadsafe(server.stop)
 
     def run(self) -> None:
         """Serve the app until `should_exit` is set; used as a thread target."""
-        asyncio.run(self._serve())
+        try:
+            asyncio.run(self._serve())
+        finally:
+            # A no-op once granian took the socket over.
+            self._listener.close()
+            self._settled.set()
 
-    async def _serve(self) -> None:
-        from granian.server.embed import Server
+    def _mark_serving(self) -> None:
+        """Record that the server serves."""
+        self._serving = True
+        self._settled.set()
+
+    def _asgi(self, scope: Scope, receive: Receive, send: Send) -> Awaitable[None]:
+        """Call the app, tracking its lifespan startup.
+
+        Args:
+            scope: the ASGI scope.
+            receive: the ASGI receive callable.
+            send: the ASGI send callable.
+
+        Returns:
+            The app's ASGI awaitable.
+        """
+        if scope["type"] == "lifespan":
+            return self._lifespan(scope, receive, send)
+        return self.app(scope, receive, send)
+
+    async def _lifespan(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """Run the app's lifespan, marking the server serving after startup.
+
+        Args:
+            scope: the ASGI lifespan scope.
+            receive: the ASGI receive callable.
+            send: the ASGI send callable.
+        """
+        failed = False
+
+        async def tracking_send(message: Message) -> None:
+            nonlocal failed
+            await send(message)
+            if message["type"] == "lifespan.startup.complete":
+                self._mark_serving()
+            elif message["type"] == "lifespan.startup.failed":
+                failed = True
 
         try:
-            # Another process can claim the probed port before granian binds
-            # it; retry the bind on a fresh port.
-            for attempts_left in reversed(range(10)):
-                server = Server(
-                    self.app,
-                    address=self.host,
-                    port=self.port,
-                    interface=Interfaces.ASGI,
-                    log_enabled=False,
-                )
-                self._server = server
-                self._loop = asyncio.get_running_loop()
-                if self._should_exit.is_set():
-                    # Stopped before startup: let serve() exit right after binding.
-                    server.interrupt_signal = True
-                    server.main_loop_interrupt.set()
-                try:
-                    await server.serve()
-                except (OSError, RuntimeError) as ex:
-                    # Granian surfaces bind failures as RuntimeError; the
-                    # message is platform-specific: os error 98 (posix), or
-                    # 10048/10013 (windows; exclusively-held ports fail with
-                    # WSAEACCES rather than WSAEADDRINUSE).
-                    message = str(ex).lower()
-                    if (
-                        "address already in use" not in message
-                        and "os error 10048" not in message
-                        and "os error 10013" not in message
-                    ):
-                        raise
-                    if self._should_exit.is_set():
-                        break
-                    if not attempts_left:
-                        raise
-                    logger.warning(
-                        f"Port {self.port} unavailable ({ex}); retrying on a fresh port."
-                    )
-                    self.port = self._pick_free_port(self.host)
-                    continue
-                # serve() returned: shutdown, or a server failure after
-                # startup -- never restart on a different port.
-                break
+            await self.app(scope, receive, tracking_send)
         finally:
+            # Like granian, serve without lifespan support unless startup failed.
+            if not failed:
+                self._mark_serving()
+
+    async def _serve(self) -> None:
+        server = _PreboundGranian(
+            self._listener,
+            self._asgi,
+            address=self.host,
+            port=self.port,
+            interface=Interfaces.ASGI,
+            # Keeps lifespan failures and unhandled app errors visible.
+            log_level=LogLevels.error,
+        )
+        self._server = server
+        self._loop = asyncio.get_running_loop()
+        try:
+            # A stop requested before this point found no server to interrupt.
+            # A failed lifespan startup is logged by granian and reported by
+            # wait_started().
+            if not self._should_exit.is_set():
+                with contextlib.suppress(FatalError):
+                    await server.serve()
+        finally:
+            server.release_socket(served=self._serving)
             await self.shutdown()
 
 
@@ -734,26 +834,24 @@ class AppHarness:
         return False
 
     def _poll_for_servers(self, timeout: TimeoutType = None) -> _EmbeddedServer:
-        """Poll the backend server until it is listening.
+        """Wait for the backend server to serve.
 
         Args:
-            timeout: how long to wait for the listening server.
+            timeout: how long to wait for the server.
 
         Returns:
             the backend server, exposing `getsockname()` for its bound address
 
         Raises:
-            RuntimeError: when the backend hasn't started running
+            RuntimeError: when the backend hasn't started running, or stopped
+                without serving
             TimeoutError: when the server is not ready
         """
         if self.backend is None:
             msg = "Backend is not running."
             raise RuntimeError(msg)
-        backend = self.backend
-        if not self._poll_for(target=backend.is_listening, timeout=timeout):
-            msg = "Backend is not listening."
-            raise TimeoutError(msg)
-        return backend
+        self.backend.wait_started(DEFAULT_TIMEOUT if timeout is None else timeout)
+        return self.backend
 
     def frontend(
         self,
@@ -969,12 +1067,6 @@ class AppHarnessProd(AppHarness):
     frontend_thread: threading.Thread | None = None
     frontend_server: _EmbeddedServer | None = None
 
-    def _run_frontend(self):
-        with chdir(self.app_path):
-            frontend_app = reflex.utils.exec._frontend_prod_app()
-        self.frontend_server = _EmbeddedServer(frontend_app)
-        self.frontend_server.run()
-
     def _start_frontend(self):
         # Set up the frontend.
         with chdir(self.app_path):
@@ -999,21 +1091,20 @@ class AppHarnessProd(AppHarness):
                 loglevel=reflex.constants.LogLevel.INFO,
                 env=reflex.constants.Env.PROD,
             )
+            self.frontend_server = _EmbeddedServer(
+                reflex.utils.exec._frontend_prod_app()
+            )
 
         print("Frontend starting...")  # for pytest diagnosis #noqa: T201
 
-        self.frontend_thread = threading.Thread(target=self._run_frontend)
+        self.frontend_thread = threading.Thread(target=self.frontend_server.run)
         self.frontend_thread.start()
 
     def _wait_frontend(self):
-        self._poll_for(
-            lambda: (
-                self.frontend_server is not None and self.frontend_server.is_listening()
-            )
-        )
-        if self.frontend_server is None or not self.frontend_server.is_listening():
+        if self.frontend_server is None:
             msg = "Frontend did not start"
             raise RuntimeError(msg)
+        self.frontend_server.wait_started(DEFAULT_TIMEOUT)
         config = get_config()
         self.frontend_url = "http://{}:{}".format(
             *self.frontend_server.getsockname()

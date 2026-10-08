@@ -15,7 +15,8 @@ origin checks, client token, reconnect handling and reverse-proxy setup.
 
 Channels require state to be enabled (the default) and the `websocket`
 transport. They are not available under `transport="socketio"` or
-`transport="polling"`.
+`transport="polling"`: there, registering a channel logs a warning and skips
+it, and its browser-side handle reports a `channels_unsupported` error.
 
 ## Defining a channel
 
@@ -47,7 +48,9 @@ app.register_channel(Ticks())
 ```
 
 A package can register its channel from a plugin's `post_compile` hook instead,
-which runs at backend startup with the live app.
+which runs at backend startup with the live app. Registration never stops an
+app that cannot serve channels from starting, so a package needs no check of
+its own.
 
 Every field of an inbound message is client-controlled and unvalidated. A
 handler that raises is logged and the connection keeps serving, so a failing
@@ -57,17 +60,31 @@ Handlers run inline on their connection's receive loop, which keeps messages
 in order and lets a slow channel push back on its client. It also means a
 handler that awaits something slow stalls that connection — its state updates
 wait, its heartbeat replies stop, and after `REFLEX_SOCKET_INTERVAL +
-REFLEX_SOCKET_TIMEOUT` the server closes it as unresponsive. Hand long work to
-`asyncio.to_thread` (or a task) and answer when it finishes:
+REFLEX_SOCKET_TIMEOUT` the server closes it as unresponsive. That holds for
+anything the handler awaits, `asyncio.to_thread` included, so run long work in
+a task of its own and answer when it finishes:
 
 ```python
 import asyncio
 
 
-async def on_message(self, session, event, data, buffers):
-    rows = await asyncio.to_thread(expensive_query, data["filter"])
-    if session.open:
-        await session.send("rows", {"count": len(rows)}, [rows.tobytes()])
+class Rows(rx.channels.Channel):
+    name = "rows"
+
+    def __init__(self):
+        super().__init__()
+        # Held, so the event loop does not drop a running task.
+        self._tasks = set()
+
+    async def on_message(self, session, event, data, buffers):
+        task = asyncio.create_task(self._answer(session, data["filter"]))
+        self._tasks.add(task)
+        task.add_done_callback(self._tasks.discard)
+
+    async def _answer(self, session, query_filter):
+        rows = await asyncio.to_thread(expensive_query, query_filter)
+        if session.open:
+            await session.send("rows", {"count": len(rows)}, [rows.tobytes()])
 ```
 
 ## Sending to clients
@@ -81,9 +98,10 @@ await session.send("tick", {"symbol": "RFX", "price": 42.0})
 await self.send_to_room("RFX", "tick", {"price": 42.0})
 ```
 
-A handler that awaits — a rebuild, a thread hop — can come back to a session
-whose client has gone; `session.open` reports that before you commit to
-expensive or long-lived work.
+Work running in a task of its own can outlive its client; `session.open`
+reports whether the client is still connected before you commit to expensive
+or long-lived work. Inside `on_message` itself it stays true: the connection
+cannot close while its receive loop is waiting for the handler.
 
 Rooms and sessions are local to the worker holding the connection. A client
 reconnecting to another worker opens its session there, so anything that must
@@ -117,15 +135,17 @@ Size is capped in one direction only. A frame a client sends must fit
 `REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE` (1 MB by default) or the backend closes
 the connection, so `channel.emit` throws first and a message queued before the
 channel opened is dropped with an `error` when the limit turns out to exclude
-it. Raise the setting if your clients send larger payloads. Messages the
-server sends are not capped by it — mind the section below on sharing the
-connection.
+it. Raise the setting if your clients send larger payloads; Granian, the
+default server, receives frames of at most 16 MiB, so Reflex caps the setting
+there and you need uvicorn for anything larger. Messages the server sends are
+not capped by it — mind the section below on sharing the connection.
 
 `connect`, `disconnect` and `error` are reserved message names: the client
-handle reports its own lifecycle under them, so neither end puts one on the
-wire. `session.send` and `channel.emit` refuse them, and a message that arrives
-under one is answered with a `reserved_event` error instead of reaching
-`on_message`.
+handle reports its own lifecycle under them. So is every name starting with
+`_`, which the channel protocol uses for its own messages. Neither end puts a
+reserved name on the wire: `session.send` and `channel.emit` refuse them, and a
+message that arrives under one is answered with a `reserved_event` error
+instead of reaching `on_message`.
 
 ## Using a channel from the frontend
 
@@ -141,9 +161,14 @@ channel.on("connect", () => channel.emit("subscribe", { symbol: "RFX" }));
 channel.on("tick", (data, buffers) => console.log(data.price));
 channel.on("error", (error) => console.error(error.code, error.message));
 
-// Attachments may be ArrayBuffers or typed arrays.
+// Attachments are an array of ArrayBuffers or typed arrays.
 channel.emit("frame", { seq: 1 }, [new Float64Array([1, 2, 3])]);
 ```
+
+`channel.emit` throws on anything the backend would refuse — a name that is
+not a string or is reserved, attachments that are not an array of binary
+buffers — rather than cost the app its socket. Read a `Blob` with
+`await blob.arrayBuffer()` before attaching it.
 
 Messages emitted before the channel is open are queued and flushed on
 `connect`. `error` reports a channel-level failure: an unknown channel name, a

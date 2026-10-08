@@ -5495,22 +5495,29 @@ def test_register_channel_rejects_a_duplicate_name():
 
 
 @pytest.mark.parametrize("state", [None, State])
-def test_register_channel_requires_the_event_websocket(state: type[State] | None):
+def test_register_channel_skips_without_the_event_websocket(
+    state: type[State] | None, caplog: pytest.LogCaptureFixture
+):
     """Without state there is no transport, whatever `_state` was passed.
 
     A supplied `_state` does not set one up on its own: `enable_state=False`
-    skips the setup that creates the event namespace and its route.
+    skips the setup that creates the event namespace and its route. A package
+    registering its channel from a plugin cannot know that, so the app warns
+    and keeps serving rather than failing to start.
     """
     with RegistrationContext.get().fork():
         app = App(_state=state, enable_state=False)
     assert app.event_namespace is None
 
-    with pytest.raises(RuntimeError, match="needs the event websocket"):
+    with caplog.at_level(logging.WARNING):
         app.register_channel(_ProbeChannel())
 
+    assert app._channels == {}
+    assert "needs the event websocket" in caplog.text
 
-def test_register_channel_requires_the_websocket_transport(
-    monkeypatch: pytest.MonkeyPatch,
+
+def test_register_channel_skips_without_the_websocket_transport(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
 ):
     """Channels are a plain-WebSocket feature; Socket.IO cannot carry them.
 
@@ -5521,5 +5528,8 @@ def test_register_channel_requires_the_websocket_transport(
     app = App(enable_state=True)
     monkeypatch.setattr(get_config(), "transport", "socketio")
 
-    with pytest.raises(RuntimeError, match="requires the plain WebSocket transport"):
+    with caplog.at_level(logging.WARNING):
         app.register_channel(_ProbeChannel())
+
+    assert app._channels == {}
+    assert "requires the plain WebSocket transport" in caplog.text

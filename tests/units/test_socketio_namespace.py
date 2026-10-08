@@ -147,3 +147,28 @@ async def test_connect_whose_boot_event_fails_is_refused(
     assert namespace._scopes == {}
     (connections,) = metric_points(otel_metrics, otel.METRIC_WEBSOCKET_CONNECTIONS)
     assert connections.value == 0
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "data", ['{"name": "state.on_click", "payload": {}, "router_data": {}}', 42]
+)
+async def test_undeserializable_event_disconnects_the_session(
+    namespace: EventNamespace, mock_app: Mock, caplog, data: object
+):
+    """A malformed event ends the session, as on the plain transport.
+
+    Escaping into python-socketio, the error logged a traceback per frame,
+    outside any error budget, and the session stayed open.
+    """
+    await namespace.on_connect(
+        "sid1", {"QUERY_STRING": "token=tok1", "asgi.scope": {"headers": []}}
+    )
+    namespace.disconnect = AsyncMock()
+
+    with caplog.at_level(logging.DEBUG, logger="reflex.event_namespace"):
+        await namespace.on_event("sid1", data)
+
+    namespace.disconnect.assert_awaited_once_with("sid1")
+    mock_app.event_processor.enqueue.assert_not_awaited()
+    assert all(record.levelno <= logging.DEBUG for record in caplog.records)

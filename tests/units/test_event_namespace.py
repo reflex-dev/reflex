@@ -1,9 +1,11 @@
 """Tests for the plain WebSocket event transport in reflex/event_namespace.py."""
 
+import array
 import asyncio
 import base64
 import json
 import logging
+import os
 import re
 import shutil
 import subprocess
@@ -16,6 +18,8 @@ from unittest.mock import AsyncMock, Mock
 import pytest
 from opentelemetry import trace
 from reflex_base import otel
+from reflex_base.config import get_config
+from reflex_base.registry import RegistrationContext
 from starlette.routing import WebSocketRoute
 
 from reflex import event_namespace
@@ -37,11 +41,11 @@ from reflex.event_namespace import (
     PONG_MESSAGE,
     PROTOCOL_VERSION,
     WebsocketEventNamespace,
+    _Connection,
     _decode_asgi_headers,
     decode_channel_frame,
     encode_channel_frame,
 )
-from reflex.utils import format
 
 from .conftest import active_tracer, metric_points
 
@@ -75,6 +79,8 @@ class FakeWebSocket:
         }
         self.headers = {"origin": origin} if origin is not None else {}
         self.sent: list[Any] = []
+        # The text frames as written, before parsing.
+        self.raw_sent: list[str] = []
         self.accepted_subprotocol: str | None = None
         self.accepted = False
         self.close_code: int | None = None
@@ -89,6 +95,7 @@ class FakeWebSocket:
 
     async def send_text(self, text: str):
         """Record an outgoing frame."""
+        self.raw_sent.append(text)
         self.sent.append(json.loads(text))
 
     async def send_bytes(self, data: bytes):
@@ -112,6 +119,8 @@ class FakeWebSocket:
         Returns:
             The ASGI websocket message.
         """
+        # A real receive suspends on the network, which lets the writer run.
+        await asyncio.sleep(0)
         item = await self._incoming.get()
         if item is _DISCONNECT:
             return {"type": "websocket.disconnect", "code": 1000}
@@ -250,7 +259,42 @@ async def test_session_opens_only_with_a_connect_frame(
     assert websocket.close_code == close_code
     assert websocket.sent == []
     assert namespace.token_to_sid == {}
-    assert namespace._sockets == {}
+    assert namespace._connections == {}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("connect", [True, False])
+async def test_oversized_integer_closes_with_protocol_error(
+    namespace: WebsocketEventNamespace, connect: bool
+):
+    """An integer literal past the parser's digit limit is a malformed frame.
+
+    The JSON decoder raises a plain ValueError for it, not a JSONDecodeError;
+    escaping the handler, it would log an ASGI traceback per connection.
+    """
+    frame = "[" + json.dumps(CONNECT_MESSAGE) + ", " + "1" * 4301 + "]"
+    websocket = FakeWebSocket()
+    if connect:
+        websocket.feed(frame, connect=False)
+    else:
+        websocket.feed('["ping", ' + "1" * 4301 + "]")
+    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
+    await _drain_tasks()
+
+    assert websocket.close_code == 1002
+
+
+@pytest.mark.asyncio
+async def test_frames_are_serialized_compactly(namespace: WebsocketEventNamespace):
+    """Frames carry no separator whitespace, like the Socket.IO packets they replace."""
+    websocket = FakeWebSocket()
+    websocket.feed(["ping"], [OPEN_MESSAGE, None, "nope"])
+    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
+    await _drain_tasks()
+
+    assert len(websocket.raw_sent) == 3
+    for text in websocket.raw_sent:
+        assert text == json.dumps(json.loads(text), separators=(",", ":"))
 
 
 @pytest.mark.asyncio
@@ -285,7 +329,11 @@ async def test_oversize_connect_frame_closes_connection(
 async def test_undeserializable_boot_event_closes_connection(
     namespace: WebsocketEventNamespace, mock_app: Mock
 ):
-    """A boot event that fails deserialization ends the session it opened."""
+    """A boot event that fails deserialization ends the session it opened.
+
+    The handshake queued for it is dropped with the session, so the client
+    sees a failed connect and retries with backoff.
+    """
     websocket = FakeWebSocket()
     websocket.feed(
         [CONNECT_MESSAGE, {"event": "not an event"}], ["ping"], connect=False
@@ -294,7 +342,7 @@ async def test_undeserializable_boot_event_closes_connection(
     await _drain_tasks()
 
     assert websocket.close_code == 1002
-    assert [frame[0] for frame in websocket.sent] == [HANDSHAKE_MESSAGE]
+    assert websocket.sent == []
     mock_app.event_processor.enqueue.assert_not_awaited()
     assert "tok1" not in namespace.token_to_sid
 
@@ -320,6 +368,126 @@ async def test_boot_event_handler_error_keeps_connection(
         "Error handling the boot event" in record.getMessage()
         for record in caplog.records
     )
+
+
+class ReceiveBoundWebSocket(FakeWebSocket):
+    """Models granian: a close sent while a receive is pending never completes.
+
+    Only the task that receives can close such a socket, once its receive is
+    no longer pending.
+    """
+
+    def __init__(self, **kwargs: Any):
+        """Initialize the fake websocket."""
+        super().__init__(**kwargs)
+        self.receiving = False
+
+    async def receive(self) -> dict[str, Any]:
+        """Return the next queued frame, marking the receive as pending.
+
+        Returns:
+            The ASGI websocket message.
+        """
+        self.receiving = True
+        try:
+            return await super().receive()
+        finally:
+            self.receiving = False
+
+    async def close(self, code: int = 1000):
+        """Record the close, unless a receive is pending."""
+        if self.receiving:
+            await asyncio.Event().wait()
+        await super().close(code)
+
+
+class StalledWebSocket(FakeWebSocket):
+    """A peer that stopped reading: once its buffers fill, every write blocks."""
+
+    async def send_text(self, text: str):
+        """Block forever, like a write to a full socket buffer."""
+        await asyncio.Event().wait()
+
+
+def _open_session(websocket: FakeWebSocket) -> None:
+    """Queue a connect frame and nothing after it, so the session stays open.
+
+    Args:
+        websocket: The fake websocket.
+    """
+    websocket._incoming.put_nowait(json.dumps(CONNECT_FRAME))
+
+
+@pytest.mark.asyncio
+async def test_a_silent_client_is_closed_by_its_own_session(
+    namespace: WebsocketEventNamespace, monkeypatch: pytest.MonkeyPatch
+):
+    """The liveness timeout ends the session even where only its task can close.
+
+    A close sent from the heartbeat task while the session waits in receive()
+    never completes on granian, so the session and its token would leak.
+    """
+    monkeypatch.setenv("REFLEX_SOCKET_INTERVAL", "20ms")
+    monkeypatch.setenv("REFLEX_SOCKET_TIMEOUT", "20ms")
+    websocket = ReceiveBoundWebSocket()
+    _open_session(websocket)
+
+    await asyncio.wait_for(namespace.handle_websocket(websocket), 2)  # pyright: ignore[reportArgumentType]
+    await _drain_tasks()
+
+    assert websocket.close_code == 1001
+    assert namespace.token_to_sid == {}
+
+
+@pytest.mark.asyncio
+async def test_a_client_that_stops_reading_does_not_block_senders(
+    namespace: WebsocketEventNamespace, monkeypatch: pytest.MonkeyPatch
+):
+    """Emitting to a stalled client returns at once, and its backlog is bounded.
+
+    The emit used to await the socket write, so every coroutine sending to the
+    client -- a shared state's fan-out under its lock, the lost-and-found
+    loop -- froze with it.
+    """
+    monkeypatch.setattr(event_namespace, "_MAX_SEND_BACKLOG", 1000)
+    linked = asyncio.Event()
+    handle_connect = namespace.handle_connect
+
+    async def connect_and_signal(*args: Any, **kwargs: Any) -> None:
+        await handle_connect(*args, **kwargs)
+        linked.set()
+
+    monkeypatch.setattr(namespace, "handle_connect", connect_and_signal)
+    websocket = StalledWebSocket()
+    _open_session(websocket)
+    session = asyncio.create_task(namespace.handle_websocket(websocket))  # pyright: ignore[reportArgumentType]
+    await asyncio.wait_for(linked.wait(), 1)
+    sid = namespace.token_to_sid["tok1"]
+
+    for _ in range(20):
+        await asyncio.wait_for(namespace.emit("event", {"x": "y" * 100}, to=sid), 1)
+
+    # Over the backlog bound, the session is dropped rather than buffering on.
+    await asyncio.wait_for(session, 2)
+    await _drain_tasks()
+    assert websocket.close_code == 1008
+    assert namespace.token_to_sid == {}
+
+
+@pytest.mark.asyncio
+async def test_a_stalled_client_still_times_out(
+    namespace: WebsocketEventNamespace, monkeypatch: pytest.MonkeyPatch
+):
+    """The heartbeat's own ping cannot block the liveness check that closes it."""
+    monkeypatch.setenv("REFLEX_SOCKET_INTERVAL", "20ms")
+    monkeypatch.setenv("REFLEX_SOCKET_TIMEOUT", "20ms")
+    websocket = StalledWebSocket()
+    _open_session(websocket)
+
+    await asyncio.wait_for(namespace.handle_websocket(websocket), 2)  # pyright: ignore[reportArgumentType]
+    await _drain_tasks()
+
+    assert websocket.close_code == 1001
 
 
 @pytest.mark.asyncio
@@ -581,10 +749,13 @@ async def test_duplicate_token_gets_new_token(namespace: WebsocketEventNamespace
     """A second tab connecting with the same token receives a new_token frame."""
     first = FakeWebSocket()
     second = FakeWebSocket()
-    namespace._sockets["sid1"] = first  # pyright: ignore[reportArgumentType]
-    namespace._sockets["sid2"] = second  # pyright: ignore[reportArgumentType]
+    namespace._connections["sid1"] = _Connection(first)  # pyright: ignore[reportArgumentType]
+    namespace._connections["sid2"] = _Connection(second)  # pyright: ignore[reportArgumentType]
     await namespace.link_token_to_sid("sid1", "tok1")
     await namespace.link_token_to_sid("sid2", "tok1")
+    await _drain_tasks()
+    for connection in namespace._connections.values():
+        connection.stop()
 
     new_token_frames = [frame for frame in second.sent if frame[0] == "new_token"]
     assert len(new_token_frames) == 1
@@ -625,7 +796,7 @@ async def test_websocket_records_connections_and_message_sizes(
     }
     assert sizes == {
         "receive": len(json.dumps(CONNECT_FRAME)) + len(json.dumps(["ping"])),
-        "transmit": len(format.json_dumps(["ping", "pong"])),
+        "transmit": len(json.dumps(["ping", "pong"], separators=(",", ":"))),
     }
 
 
@@ -657,7 +828,11 @@ async def test_websocket_event_uses_frontend_traceparent(
 
 
 def test_default_transport_uses_websocket_namespace():
-    """The default transport sets up the plain websocket namespace."""
+    """The default transport sets up the plain websocket namespace.
+
+    The path is served with and without a trailing slash: proxy rules written
+    for Socket.IO route "/_event/*", and the client dials that form.
+    """
     app = App(enable_state=True)
     assert isinstance(app.event_namespace, WebsocketEventNamespace)
     assert app.sio is None
@@ -665,11 +840,29 @@ def test_default_transport_uses_websocket_namespace():
     websocket_routes = [
         route for route in app._api.router.routes if isinstance(route, WebSocketRoute)
     ]
-    assert [route.path for route in websocket_routes] == ["/_event"]
+    assert [route.path for route in websocket_routes] == ["/_event", "/_event/"]
+
+
+@pytest.mark.asyncio
+async def test_a_socketio_client_is_refused_before_accept(
+    namespace: WebsocketEventNamespace,
+):
+    """A tab or bundle from before the plain transport cannot speak it.
+
+    Accepted, it would wait for an engine.io handshake that never comes until
+    the connect timeout; refused, it fails at once.
+    """
+    websocket = FakeWebSocket(query_string=b"EIO=4&transport=websocket&token=tok1")
+    websocket.feed()
+    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
+
+    assert not websocket.accepted
+    assert websocket.close_code == 1008
+    assert namespace.token_to_sid == {}
 
 
 def test_socketio_transport_uses_socketio_namespace(
-    monkeypatch: pytest.MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch, forked_registration_context: RegistrationContext
 ):
     """transport="socketio" sets up the Socket.IO server and namespace."""
     from reflex.socketio_namespace import EventNamespace
@@ -683,7 +876,7 @@ def test_socketio_transport_uses_socketio_namespace(
 
 
 def test_polling_transport_uses_socketio_namespace(
-    monkeypatch: pytest.MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch, forked_registration_context: RegistrationContext
 ):
     """transport="polling" sets up the Socket.IO server with polling only."""
     from reflex.socketio_namespace import EventNamespace
@@ -695,15 +888,60 @@ def test_polling_transport_uses_socketio_namespace(
     assert app.sio.eio.transports == ["polling"]
 
 
-def test_custom_sio_requires_socketio_transport():
-    """A custom sio server with the default transport raises a clear error."""
+def test_transport_chosen_in_a_test_does_not_outlive_it():
+    """Runs after the transport tests above: the shared config is untouched.
+
+    App() reloads the config into the active registration context, so the
+    tests that choose a transport through the environment build their apps
+    in a forked one.
+    """
+    assert get_config().transport == "websocket"
+
+
+def test_custom_sio_falls_back_to_the_socketio_transport(
+    monkeypatch: pytest.MonkeyPatch,
+    forked_registration_context: RegistrationContext,
+    mocker,
+):
+    """A custom sio server under the default transport keeps working, deprecated.
+
+    The default transport used to be Socket.IO over a websocket, so an app
+    passing its own server never had to choose one.
+    """
     from socketio import AsyncServer
 
+    from reflex.socketio_namespace import EventNamespace
+
+    deprecate = mocker.patch("reflex.app.console.deprecate")
+    # Recorded twice, so the variable the fallback persists is removed again.
+    monkeypatch.setenv("REFLEX_TRANSPORT", "websocket")
+    monkeypatch.delenv("REFLEX_TRANSPORT")
+    sio = AsyncServer(async_mode="asgi")
+
+    app = App(sio=sio)
+
+    assert app.sio is sio
+    assert isinstance(app.event_namespace, EventNamespace)
+    # Persisted, so the compiled frontend and the workers use it too.
+    assert get_config().transport == "socketio"
+    assert os.environ["REFLEX_TRANSPORT"] == "socketio"
+    deprecate.assert_called_once()
+
+
+def test_custom_sio_with_an_explicit_websocket_transport_is_refused(
+    monkeypatch: pytest.MonkeyPatch, forked_registration_context: RegistrationContext
+):
+    """Asking for the plain transport by name conflicts with a custom sio server."""
+    from socketio import AsyncServer
+
+    monkeypatch.setenv("REFLEX_TRANSPORT", "websocket")
     with pytest.raises(RuntimeError, match=r"requires the Socket\.IO transport"):
         App(sio=AsyncServer(async_mode="asgi"))
 
 
-def test_custom_sio_with_socketio_transport(monkeypatch: pytest.MonkeyPatch):
+def test_custom_sio_with_socketio_transport(
+    monkeypatch: pytest.MonkeyPatch, forked_registration_context: RegistrationContext
+):
     """A custom sio server works with the Socket.IO transport."""
     from socketio import AsyncServer
 
@@ -713,14 +951,91 @@ def test_custom_sio_with_socketio_transport(monkeypatch: pytest.MonkeyPatch):
     assert app.sio is sio
 
 
-def test_app_event_namespace_reexport():
-    """reflex.app.EventNamespace still resolves to the Socket.IO namespace."""
+def test_app_socketio_reexports():
+    """reflex.app still names the Socket.IO classes it used to import."""
+    import socketio
+
     import reflex.app
     from reflex.socketio_namespace import EventNamespace
 
     assert reflex.app.EventNamespace is EventNamespace
+    assert reflex.app.AsyncServer is socketio.AsyncServer
+    assert reflex.app.AsyncNamespace is socketio.AsyncNamespace
+    assert reflex.app.EngineIOApp is socketio.ASGIApp
     with pytest.raises(AttributeError):
         _ = reflex.app.DoesNotExist
+
+
+def test_app_socketio_reexports_without_the_extra(monkeypatch: pytest.MonkeyPatch):
+    """Without python-socketio the names are absent, not import errors.
+
+    hasattr() and getattr() with a default only swallow AttributeError.
+    """
+    import reflex.app
+
+    monkeypatch.setitem(sys.modules, "socketio", None)
+    monkeypatch.delitem(sys.modules, "reflex.socketio_namespace", raising=False)
+
+    for name in ("EventNamespace", "AsyncServer"):
+        assert not hasattr(reflex.app, name)
+        with pytest.raises(AttributeError, match=r"reflex\[socketio\]"):
+            getattr(reflex.app, name)
+
+
+def test_a_replaced_event_namespace_class_is_used(
+    monkeypatch: pytest.MonkeyPatch, forked_registration_context: RegistrationContext
+):
+    """An app can still substitute its own Socket.IO namespace class."""
+    import reflex.app
+    from reflex.socketio_namespace import EventNamespace
+
+    class AuthorizingNamespace(EventNamespace):
+        """A namespace an app customized."""
+
+    monkeypatch.setattr(
+        reflex.app, "EventNamespace", AuthorizingNamespace, raising=False
+    )
+    monkeypatch.setenv("REFLEX_TRANSPORT", "socketio")
+
+    assert isinstance(App(enable_state=True).event_namespace, AuthorizingNamespace)
+
+
+@pytest.mark.asyncio
+async def test_emit_without_a_recipient_reaches_every_session(
+    namespace: WebsocketEventNamespace,
+):
+    """Like Socket.IO's, an emit addressed to nobody in particular broadcasts."""
+    first, second = FakeWebSocket(), FakeWebSocket()
+    namespace._connections["sid1"] = _Connection(first)  # pyright: ignore[reportArgumentType]
+    namespace._connections["sid2"] = _Connection(second)  # pyright: ignore[reportArgumentType]
+
+    await namespace.emit("custom", {"n": 1})
+    await _drain_tasks()
+    for connection in namespace._connections.values():
+        connection.stop()
+
+    assert first.sent == second.sent == [["custom", {"n": 1}]]
+
+
+@pytest.mark.asyncio
+async def test_a_lone_surrogate_is_sent_as_an_escape(
+    namespace: WebsocketEventNamespace,
+):
+    """A frame stays valid UTF-8 when state holds an unpaired surrogate.
+
+    A non-UTF-8 file name decodes to one; written raw, the frame either fails
+    to send or arrives empty, and the update is silently lost.
+    """
+    websocket = FakeWebSocket()
+    namespace._connections["sid1"] = _Connection(websocket)  # pyright: ignore[reportArgumentType]
+
+    await namespace.emit("event", {"file": "bad\udcffname"}, to="sid1")
+    await _drain_tasks()
+    namespace._connections["sid1"].stop()
+
+    (text,) = websocket.raw_sent
+    text.encode()
+    assert json.loads(text) == ["event", {"file": "bad\udcffname"}]
 
 
 def test_protocol_message_names_match_the_client():
@@ -968,7 +1283,7 @@ async def test_channel_binary_rejected_when_not_accepted(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("binary", [False, True])
-@pytest.mark.parametrize("event", sorted(RESERVED_EVENTS))
+@pytest.mark.parametrize("event", [*sorted(RESERVED_EVENTS), "_opened", "_error"])
 async def test_channel_reserved_inbound_name_is_rejected(
     namespace: WebsocketEventNamespace, mock_app: Mock, event: str, binary: bool
 ):
@@ -1108,6 +1423,18 @@ def _run_client_script(tmp_path: Path, source: str, *args: str) -> Any:
 
     assert result.returncode == 0, result.stderr
     return json.loads(result.stdout)
+
+
+def test_binary_frame_sizes_attachments_in_bytes():
+    """An attachment is measured in bytes, whatever its item size.
+
+    ``len()`` counts items, so an array of doubles would declare an eighth of
+    its size and every later attachment would be read from the wrong offset.
+    """
+    doubles = array.array("d", [1.0, 2.0])
+    frame = encode_channel_frame("rows", None, "probe", [doubles, b"SECOND!!"])
+
+    assert decode_channel_frame(frame)[3] == [doubles.tobytes(), b"SECOND!!"]
 
 
 @pytest.mark.skipif(not NODE, reason="Requires node to run the client codec")
@@ -1331,9 +1658,8 @@ async def test_a_room_broadcast_serializes_one_frame_for_every_member(
         encodes += 1
         return real_encode(*args)
 
-    async def record(to: str | None, payload: Any, label: str) -> None:
-        # Stands in for the write to each client's socket.
-        await asyncio.sleep(0)
+    def record(to: str | None, payload: Any, label: str) -> None:
+        # Stands in for queueing the frame on each client's connection.
         sent.append((to, payload))
 
     monkeypatch.setattr(event_namespace, "encode_channel_frame", counting_encode)

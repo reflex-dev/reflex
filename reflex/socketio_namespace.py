@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from collections.abc import MutableMapping
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
@@ -14,7 +15,7 @@ from socketio import ASGIApp as EngineIOApp
 from socketio import AsyncNamespace, AsyncServer
 
 from reflex.event_namespace import BaseEventNamespace, connect_boot_event, utf8_size
-from reflex.utils import format
+from reflex.utils import exceptions, format
 
 if TYPE_CHECKING:
     import asyncio
@@ -22,6 +23,8 @@ if TYPE_CHECKING:
     from reflex_base.config import Config
 
     from reflex.app import App
+
+logger = logging.getLogger(__name__)
 
 
 def _sio_dumps(obj: Any, **kwargs: Any) -> str:
@@ -158,7 +161,14 @@ class EventNamespace(AsyncNamespace, BaseEventNamespace):
                 msg = "Socket.IO environ is not initialized."
                 raise RuntimeError(msg)
             scope = self._scopes[sid] = environ["asgi.scope"]
-        await self.handle_event(sid, data, scope)
+        try:
+            await self.handle_event(sid, data, scope)
+        except exceptions.EventDeserializationError:
+            # Client-controlled input a Reflex client never sends; end the
+            # session, as the plain transport does, rather than log a
+            # traceback per frame.
+            logger.debug(f"Disconnecting session {sid}: undeserializable event.")
+            await self.disconnect(sid)
 
     async def on_ping(self, sid: str):
         """Event for testing the API endpoint.

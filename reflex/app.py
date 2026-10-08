@@ -39,7 +39,7 @@ from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor, EventProcessor
 from reflex_base.registry import RegistrationContext
 from reflex_base.telemetry_context import CompileTrigger, TelemetryContext
-from reflex_base.utils import memo_paths
+from reflex_base.utils import console, memo_paths
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import ASGIApp, Receive, Scope, Send
 from reflex_base.vars.dep_tracking import is_dependency
@@ -109,11 +109,12 @@ if TYPE_CHECKING:
 
     # Define custom types.
     ComponentCallable = Callable[[], Component | tuple[Component, ...] | str | Var]
+    _SocketIOServer = AsyncServer
 else:
     ComponentCallable = Callable[[], Component | tuple[Component, ...] | str]
-    # Runtime placeholder so annotations resolve without the optional
-    # python-socketio dependency installed.
-    AsyncServer = Any
+    # Lets annotations resolve without the optional python-socketio package;
+    # the public name resolves lazily, through __getattr__.
+    _SocketIOServer = Any
 
 Reducer = Callable[[Event], Coroutine[Any, Any, StateUpdate]]
 
@@ -442,7 +443,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
     head_components: list[Component] = dataclasses.field(default_factory=list)
 
-    sio: AsyncServer | None = None
+    sio: _SocketIOServer | None = None
 
     html_lang: str | None = None
 
@@ -532,27 +533,35 @@ class App(MiddlewareMixin, LifespanMixin):
     def register_channel(self, channel: Channel) -> None:
         """Register a side channel multiplexed onto the event websocket.
 
+        Channels run only over the plain WebSocket transport with state
+        enabled; elsewhere the channel is skipped with a warning.
+
         Args:
             channel: The channel to serve.
 
         Raises:
-            RuntimeError: If the app cannot serve channels, or the name is taken.
+            RuntimeError: If the name is taken.
         """
         name = type(channel).name
+        # Packages register their channels from a plugin, unaware of how the
+        # app is set up; where channels cannot run, the browser-side handle
+        # reports it, so the app keeps serving rather than failing to start.
         if self.event_namespace is None:
             # A supplied `_state` is not enough: without enable_state the app
             # never sets up a transport, so the channel would be unreachable.
-            msg = (
-                f"Channel {name!r} needs the event websocket, which exists only "
-                "when state is enabled (rx.App(enable_state=True), the default)."
+            logger.warning(
+                f"Channel {name!r} is not served: it needs the event websocket, "
+                "which exists only when state is enabled (rx.App(enable_state=True), "
+                "the default)."
             )
-            raise RuntimeError(msg)
+            return
         if get_config().transport != "websocket":
-            msg = (
-                f"Channel {name!r} requires the plain WebSocket transport; "
-                'remove the transport setting in rxconfig.py or set transport="websocket".'
+            logger.warning(
+                f"Channel {name!r} is not served: it requires the plain WebSocket "
+                "transport; remove the transport setting in rxconfig.py or set "
+                'transport="websocket".'
             )
-            raise RuntimeError(msg)
+            return
         if name in self._channels:
             msg = f"A channel named {name!r} is already registered."
             raise RuntimeError(msg)
@@ -642,19 +651,33 @@ class App(MiddlewareMixin, LifespanMixin):
         namespace = config.get_event_namespace()
         event_path = config.prepend_backend_path(str(constants.Endpoint.EVENT))
 
-        if self.sio is not None or config.transport in ("socketio", "polling"):
-            # Legacy Socket.IO transport, kept behind the optional dependency.
-            if self.sio is not None and config.transport == "websocket":
+        if self.sio is not None and config.transport == "websocket":
+            if "transport" in config._non_default_attributes:
                 msg = (
                     "A custom `sio` server requires the Socket.IO transport; "
                     'set transport="socketio" (or "polling") in rxconfig.py.'
                 )
                 raise RuntimeError(msg)
+            # The default transport used to be Socket.IO over a websocket, so
+            # an app passing its own server never had to choose one.
+            console.deprecate(
+                feature_name="A custom `sio` server without a transport setting",
+                reason='set transport="socketio" in rxconfig.py; the default '
+                "transport is now a plain WebSocket",
+                deprecation_version="0.10.0",
+                removal_version="1.0",
+            )
+            # Persisted, so the compiled frontend and the workers use it too.
+            config._set_persistent(transport="socketio")
+
+        if config.transport in ("socketio", "polling"):
+            # Legacy Socket.IO transport, kept behind the optional dependency.
             try:
-                from reflex.socketio_namespace import (
-                    EventNamespace,
-                    create_socketio_app,
-                )
+                from reflex.socketio_namespace import create_socketio_app
+
+                # Through the module, so an app that replaced the class gets
+                # its own.
+                event_namespace_class = sys.modules[__name__].EventNamespace
             except ImportError as ex:
                 msg = (
                     f"transport={config.transport!r} requires the python-socketio "
@@ -665,7 +688,7 @@ class App(MiddlewareMixin, LifespanMixin):
             socket_app = create_socketio_app(self, config)
 
             # Create the event namespace and attach the main app. Not related to any paths.
-            self._event_namespace = EventNamespace(namespace, self)
+            self._event_namespace = event_namespace_class(namespace, self)
 
             # Register the event namespace with the socket.
             self.sio.register_namespace(self._event_namespace)  # pyright: ignore[reportOptionalMemberAccess]
@@ -676,9 +699,12 @@ class App(MiddlewareMixin, LifespanMixin):
             # Default transport: plain WebSocket served by the API itself.
             self._event_namespace = WebsocketEventNamespace(namespace, self)
             if self._api:
-                self._api.router.routes.append(
-                    WebSocketRoute(event_path, self._event_namespace.handle_websocket)
-                )
+                # Also with a trailing slash, the form the client dials: proxy
+                # rules written for Socket.IO route "/_event/*".
+                for path in (event_path, event_path.rstrip("/") + "/"):
+                    self._api.router.routes.append(
+                        WebSocketRoute(path, self._event_namespace.handle_websocket)
+                    )
 
         # Check the exception handlers
         self._validate_exception_handlers()
@@ -2025,8 +2051,18 @@ async def health(_request: Request) -> JSONResponse:
     return JSONResponse(content=health_status, status_code=status_code)
 
 
+# Socket.IO names this module exported before python-socketio became optional:
+# name -> (module, attribute).
+_SOCKETIO_EXPORTS = {
+    "AsyncNamespace": ("socketio", "AsyncNamespace"),
+    "AsyncServer": ("socketio", "AsyncServer"),
+    "EngineIOApp": ("socketio", "ASGIApp"),
+    "EventNamespace": ("reflex.socketio_namespace", "EventNamespace"),
+}
+
+
 def __getattr__(name: str) -> Any:
-    """Resolve the optional Socket.IO EventNamespace export lazily.
+    """Resolve the optional Socket.IO exports lazily.
 
     Args:
         name: The attribute name.
@@ -2035,11 +2071,20 @@ def __getattr__(name: str) -> Any:
         The resolved attribute.
 
     Raises:
-        AttributeError: If the attribute is unknown.
+        AttributeError: If the attribute is unknown, or needs python-socketio
+            and it is not installed.
     """
-    if name == "EventNamespace":
-        from reflex.socketio_namespace import EventNamespace
-
-        return EventNamespace
-    msg = f"module {__name__!r} has no attribute {name!r}"
-    raise AttributeError(msg)
+    if (target := _SOCKETIO_EXPORTS.get(name)) is None:
+        msg = f"module {__name__!r} has no attribute {name!r}"
+        raise AttributeError(msg)
+    module_name, attribute = target
+    try:
+        module = importlib.import_module(module_name)
+    except ImportError as ex:
+        # An AttributeError, so hasattr() and getattr() with a default work.
+        msg = (
+            f"{__name__}.{name} needs the optional python-socketio package; "
+            "install it with: pip install 'reflex[socketio]'"
+        )
+        raise AttributeError(msg) from ex
+    return getattr(module, attribute)

@@ -540,6 +540,57 @@ def test_forcing_uvicorn_warns_about_a_missing_websocket_library(
     assert warned is (use_granian == "0")
 
 
+def test_auto_detection_skips_uvicorn_without_a_websocket_library(
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    fresh_uvicorn_warnings: None,
+):
+    """Uvicorn and gunicorn alone cannot serve the event socket; granian can.
+
+    python-socketio no longer pulls in wsproto, so an install with uvicorn and
+    gunicorn but neither websocket library would start an app that never
+    connects, although the required granian would work.
+    """
+    monkeypatch.delenv("REFLEX_USE_GRANIAN", raising=False)
+    mocker.patch.object(
+        exec_utils.importlib.util,
+        "find_spec",
+        side_effect=lambda name: (
+            None if name in ("websockets", "wsproto") else object()
+        ),
+    )
+
+    assert exec_utils.should_use_granian() is True
+
+
+@pytest.mark.parametrize(
+    ("configured", "effective"),
+    [(None, 1000 * 1000), ("50000000", 16 * 1024 * 1024), ("1000", 1000)],
+)
+def test_granian_caps_the_message_size_at_what_it_can_receive(
+    monkeypatch: pytest.MonkeyPatch,
+    caplog,
+    configured: str | None,
+    effective: int,
+):
+    """Granian drops frames over 16 MiB, so a larger limit is never advertised.
+
+    Clients size what they send by the limit the handshake advertises; above
+    what the server receives, an oversized message is lost with the socket.
+    """
+    name = "REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE"
+    if configured is None:
+        monkeypatch.delenv(name, raising=False)
+    else:
+        monkeypatch.setenv(name, configured)
+
+    with caplog.at_level(logging.WARNING):
+        exec_utils._cap_message_size_for_granian()
+
+    assert environment.REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE.get() == effective
+    assert ("drops websocket frames over" in caplog.text) is (configured == "50000000")
+
+
 def test_get_routes_manifest_router_missing_manifest(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
 ):

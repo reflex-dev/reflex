@@ -801,6 +801,13 @@ export const connect = async (
         `Channels require transport="websocket", not "${transport}".`,
       );
     }
+  } catch (error) {
+    // Reported rather than rejected: the unhandled rejection handler adds an
+    // event, which reconnects, which fails again without end -- as a client
+    // chunk the browser failed to load does on every retry.
+    console.error("Failed to create the event socket:", error);
+    setConnectErrors((connectErrors) => [...connectErrors.slice(-9), error]);
+    return;
   } finally {
     socket.connecting = false;
   }

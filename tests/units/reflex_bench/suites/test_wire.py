@@ -1,8 +1,9 @@
 """Tests for reflex_bench.suites.wire.
 
 Nothing here starts reflex: the sessions run against scripted transports (or
-the echo server on a loopback socket), and the benchmarks run through the
-scheduler with the app and the websocket replaced by fakes.
+the echo server on a loopback socket), on the plain protocol unless a test
+names Socket.IO, and the benchmarks run through the scheduler with the app and
+the websocket replaced by fakes.
 """
 
 from __future__ import annotations
@@ -13,7 +14,7 @@ import collections
 import contextlib
 import dataclasses
 import json
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterator, Callable, Iterator, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -22,23 +23,31 @@ from reflex_bench import fixtures, registry
 from reflex_bench.drivers.app_process import CliResult
 from reflex_bench.drivers.echo_server import EchoServer
 from reflex_bench.drivers.events import (
-    CONNECT_FRAME,
-    DISCONNECT_FRAME,
+    CODECS,
+    CONNECT,
+    DISCONNECTED,
+    HANDSHAKE,
+    HYDRATE_AND_LOAD_EVENT,
     HYDRATE_EVENT,
     HYDRATED_VAR,
     ON_LOAD_EVENT,
-    PING,
     PONG,
     ROOT_STATE,
+    SIO_CONNECT_FRAME,
+    SIO_DISCONNECT_FRAME,
+    SIO_PING,
+    SIO_PONG,
+    Codec,
     Endpoint,
     ProtocolError,
-    emit_frame,
-    event_frame,
+    WireProtocol,
 )
 from reflex_bench.scheduler import Planned, Policy, Scheduler, plan
 from reflex_bench.suites import events as events_suite
 from reflex_bench.suites import wire
 from reflex_bench.suites.events import SEQ_VAR
+from websockets.exceptions import ConnectionClosedError
+from websockets.frames import Close
 
 from tests.units.reflex_bench.drivers.test_events import serving
 from tests.units.reflex_bench.factories import make_subject
@@ -47,8 +56,16 @@ from tests.units.reflex_bench.suites.test_events import STATES
 BENCH_STATE = STATES.bench
 SHAPES = {name: shape_of(STATES) for name, shape_of in events_suite.SHAPES.items()}
 PLAYGROUND_STATE = "reflex___state____state.playground___state____playground_state"
+WEBSOCKET = CODECS["websocket"]
+SOCKETIO = CODECS["socketio"]
+HANDSHAKE_FRAME = (
+    '["_handshake",{"ping_interval":25.0,"ping_timeout":120.0,"protocol":2,'
+    '"max_message_size":10000000}]'
+)
 OPEN = '0{"sid":"abc","upgrades":[],"pingInterval":25000,"pingTimeout":20000}'
 ACK = '40/_event,{"sid":"abc"}'
+# How reflex ends a plain session: it closes the websocket with a code.
+CLOSED = ConnectionClosedError(Close(1008, ""), None)
 CHANGES = (
     "set_scalar",
     "append_item",
@@ -62,28 +79,32 @@ def size(*frames: str) -> int:
     return sum(len(frame.encode()) for frame in frames)
 
 
-def delta_frame(delta: dict[str, Any], **more: Any) -> str:
-    return emit_frame("event", {"delta": delta, **more})
+def delta_frame(delta: dict[str, Any], codec: Codec = WEBSOCKET, **more: Any) -> str:
+    return codec.emit("event", {"delta": delta, **more})
+
+
+# A frame of the scripted server, or the error its websocket raises instead.
+Reply = str | bytes | Exception
 
 
 class FakeTransport:
     """A scripted server: every sent frame queues the replies a script gives."""
 
     def __init__(
-        self, script: Callable[[str], list[str]], greeting: list[str] | None = None
+        self,
+        script: Callable[[str], Sequence[Reply]],
+        greeting: Sequence[Reply] = (),
     ) -> None:
         """Queue the server's greeting.
 
         Args:
             script: Maps a sent frame to the frames it triggers.
-            greeting: The frames waiting before anything is sent; the engine.io
-                open by default.
+            greeting: The frames waiting before anything is sent, e.g. the
+                engine.io open of Socket.IO; none by default.
         """
         self.script = script
         self.sent: list[str] = []
-        self.inbox: collections.deque[str | bytes] = collections.deque(
-            greeting or [OPEN]
-        )
+        self.inbox: collections.deque[Reply] = collections.deque(greeting)
 
     async def send(self, message: str) -> None:
         """Record a frame and queue what the script answers.
@@ -106,58 +127,74 @@ class FakeTransport:
         if not self.inbox:
             msg = "the session waits for a frame the script never sends"
             raise AssertionError(msg)
-        return self.inbox.popleft()
+        reply = self.inbox.popleft()
+        if isinstance(reply, Exception):
+            raise reply
+        return reply
 
 
 def playground_script(
-    *, new_token: str | None = None, replies: dict[str, list[str]] | None = None
-) -> Callable[[str], list[str]]:
+    *,
+    new_token: str | None = None,
+    replies: dict[str, list[Reply]] | None = None,
+    codec: Codec = WEBSOCKET,
+) -> Callable[[str], list[Reply]]:
     """Script the playground's answers: a hydration in two deltas, then echoes.
 
     Args:
-        new_token: A token handed out before the namespace ack.
+        new_token: A token handed out before the handshake.
         replies: The frames answering an event, by handler name; other events
             get one echo of their sequence number, and ``on_load_internal``
             the ``is_hydrated`` delta, with the router's page away from ``/``.
+        codec: The protocol, which decodes the session's frames too.
 
     Returns:
         The script.
     """
 
-    def script(message: str) -> list[str]:
-        if message == CONNECT_FRAME:
-            handed = [emit_frame("new_token", new_token)] if new_token else []
-            return [*handed, ACK]
-        if message in {PONG, DISCONNECT_FRAME}:
-            return []
-        event = json.loads(message.partition(",")[2])[1]
+    def answer(event: dict[str, Any]) -> list[Reply]:
         name = event["name"]
         if replies and name in replies:
             return replies[name]
+        snapshot = delta_frame(
+            {
+                ROOT_STATE: {HYDRATED_VAR: False, "router_rx_state_": {"a": 1}},
+                BENCH_STATE: {SEQ_VAR: 0, "part_a_rx_state_": 0},
+                PLAYGROUND_STATE: {"count_rx_state_": 0, "items_rx_state_": ["alpha"]},
+            },
+            codec,
+        )
         if name == HYDRATE_EVENT:
-            return [
-                delta_frame({
-                    ROOT_STATE: {HYDRATED_VAR: False, "router_rx_state_": {"a": 1}},
-                    BENCH_STATE: {SEQ_VAR: 0, "part_a_rx_state_": 0},
-                    PLAYGROUND_STATE: {
-                        "count_rx_state_": 0,
-                        "items_rx_state_": ["alpha"],
-                    },
-                })
-            ]
+            return [snapshot]
+        if name == HYDRATE_AND_LOAD_EVENT:
+            return [snapshot, navigation_reply(event["router_data"], codec)]
         if name == ON_LOAD_EVENT:
-            return [navigation_reply(event["router_data"])]
+            return [navigation_reply(event["router_data"], codec)]
         state, _, _handler = name.rpartition(".")
-        return [delta_frame({state: {SEQ_VAR: event["payload"]["seq"]}})]
+        return [delta_frame({state: {SEQ_VAR: event["payload"]["seq"]}}, codec)]
+
+    def script(message: str) -> list[Reply]:
+        args = codec.parse(message)
+        if args is None or args[0] in {PONG, DISCONNECTED}:
+            # Socket.IO's pong decodes to nothing.
+            return []
+        handed = [codec.emit("new_token", new_token)] if new_token else []
+        if args[0] == CONNECT:
+            return [*handed, HANDSHAKE_FRAME, *answer(args[1]["event"])]
+        if args[0] == HANDSHAKE:
+            # Socket.IO's namespace join.
+            return [*handed, ACK]
+        return answer(args[1])
 
     return script
 
 
-def navigation_reply(router_data: dict[str, Any]) -> str:
+def navigation_reply(router_data: dict[str, Any], codec: Codec = WEBSOCKET) -> str:
     """Build the delta that completes an ``on_load_internal``.
 
     Args:
         router_data: The event's router data.
+        codec: The protocol.
 
     Returns:
         ``is_hydrated`` set; away from ``/`` the root state's router too.
@@ -167,7 +204,20 @@ def navigation_reply(router_data: dict[str, Any]) -> str:
         root["router_rx_state_"] = {
             "page": {"path": router_data["pathname"], "params": router_data["query"]}
         }
-    return delta_frame({ROOT_STATE: root})
+    return delta_frame({ROOT_STATE: root}, codec)
+
+
+def answers(script: Callable[[str], Sequence[Reply]], message: str) -> list[str]:
+    """Take the text frames a script answers a frame with.
+
+    Args:
+        script: The script.
+        message: The frame sent.
+
+    Returns:
+        Its text frames.
+    """
+    return [frame for frame in script(message) if isinstance(frame, str)]
 
 
 def run(work: Any) -> Any:
@@ -184,16 +234,21 @@ def test_hydration_counts_every_frame_until_hydrated():
     ws = FakeTransport(playground_script(new_token="tok-2"))
     session = wire.WireSession(ws, "tok-1")
     hydration = run(session.hydrate())
-    hydrate = event_frame(HYDRATE_EVENT, {}, token="tok-2", pathname="/")
-    on_load = event_frame(ON_LOAD_EVENT, {}, token="tok-2", pathname="/")
-    # The new token is adopted before the hydration events go out.
-    assert ws.sent == [CONNECT_FRAME, hydrate, on_load]
-    assert hydration.sent_bytes == size(CONNECT_FRAME, hydrate, on_load)
-    assert hydration.sent_frames == 3
-    first, second = playground_script()(hydrate)[0], playground_script()(on_load)[0]
-    token_frame = emit_frame("new_token", "tok-2")
-    assert hydration.received_bytes == size(OPEN, token_frame, ACK, first, second)
-    assert hydration.received_frames == 5
+    # The connect frame carries the hydration as its boot event.
+    connect = WEBSOCKET.connect_frame(token="tok-1", pathname="/")
+    assert ws.sent == [connect]
+    assert '"name":"reflex___state____state.hydrate_and_load"' in connect
+    assert hydration.sent_bytes == size(connect)
+    assert hydration.sent_frames == 1
+    token_frame, handshake, first, second = answers(
+        playground_script(new_token="tok-2"), connect
+    )
+    assert (token_frame, handshake) == (
+        WEBSOCKET.emit("new_token", "tok-2"),
+        HANDSHAKE_FRAME,
+    )
+    assert hydration.received_bytes == size(token_frame, handshake, first, second)
+    assert hydration.received_frames == 4
     assert hydration.largest_frame_bytes == size(first)
     assert hydration.delta_bytes == {
         ROOT_STATE: size(json.dumps({HYDRATED_VAR: False, "router_rx_state_": {"a": 1}}, separators=(",", ":")))
@@ -201,44 +256,88 @@ def test_hydration_counts_every_frame_until_hydrated():
         BENCH_STATE: size('{"last_seq_rx_state_":0,"part_a_rx_state_":0}'),
         PLAYGROUND_STATE: size('{"count_rx_state_":0,"items_rx_state_":["alpha"]}'),
     }  # fmt: skip
+    # Later events carry the new token.
     assert session.token == "tok-2"
 
 
-def test_a_ping_during_hydration_is_answered_and_not_counted():
-    ws = FakeTransport(playground_script(), greeting=[OPEN, PING])
-    hydration = run(wire.WireSession(ws, "tok").hydrate())
-    assert ws.sent[:2] == [CONNECT_FRAME, PONG]
-    # Keepalives are timing, not payload: neither the ping nor the pong counts.
+def test_a_socketio_hydration_joins_then_sends_the_hydration_events():
+    script = playground_script(new_token="tok-2", codec=SOCKETIO)
+    ws = FakeTransport(script, greeting=[OPEN])
+    session = wire.WireSession(ws, "tok-1", codec=SOCKETIO)
+    hydration = run(session.hydrate())
+    hydrate = SOCKETIO.event_frame(HYDRATE_EVENT, {}, token="tok-2", pathname="/")
+    on_load = SOCKETIO.event_frame(ON_LOAD_EVENT, {}, token="tok-2", pathname="/")
+    # The new token is adopted before the hydration events go out.
+    assert ws.sent == [SIO_CONNECT_FRAME, hydrate, on_load]
+    assert hydration.sent_bytes == size(SIO_CONNECT_FRAME, hydrate, on_load)
     assert hydration.sent_frames == 3
-    assert hydration.received_frames == 4
-    assert hydration.sent_bytes == size(CONNECT_FRAME, *ws.sent[2:])
+    (first,), (second,) = answers(script, hydrate), answers(script, on_load)
+    token_frame = SOCKETIO.emit("new_token", "tok-2")
+    assert hydration.received_bytes == size(OPEN, token_frame, ACK, first, second)
+    assert hydration.received_frames == 5
+    assert hydration.largest_frame_bytes == size(first)
+    assert set(hydration.delta_bytes) == {ROOT_STATE, BENCH_STATE, PLAYGROUND_STATE}
+    assert session.token == "tok-2"
 
 
 @pytest.mark.parametrize(
-    ("frames", "match"),
+    ("protocol", "ping", "pong", "sent_frames", "received_frames"),
     [
-        (['44/_event,{"message":"nope"}'], "refused"),
-        ([DISCONNECT_FRAME], "disconnected"),
-        (["1"], "disconnected"),
-        (["6"], "unexpected frame"),
-        ([emit_frame("reload", "/")], "reload"),
+        ("websocket", '["_ping"]', '["_pong"]', 1, 3),
+        ("socketio", SIO_PING, SIO_PONG, 3, 4),
+    ],
+)
+def test_a_ping_during_hydration_is_answered_and_not_counted(
+    protocol: WireProtocol, ping: str, pong: str, sent_frames: int, received_frames: int
+):
+    codec = CODECS[protocol]
+    greeting = [OPEN, ping] if codec.greets else [ping]
+    ws = FakeTransport(playground_script(codec=codec), greeting=greeting)
+    hydration = run(wire.WireSession(ws, "tok", codec=codec).hydrate())
+    assert ws.sent[1] == pong
+    # Keepalives are timing, not payload: neither the ping nor the pong counts.
+    assert hydration.sent_frames == sent_frames
+    assert hydration.received_frames == received_frames
+    assert hydration.sent_bytes == size(ws.sent[0], *ws.sent[2:])
+
+
+@pytest.mark.parametrize(
+    ("protocol", "frames", "match"),
+    [
+        ("websocket", [CLOSED], "received 1008"),
+        ("websocket", ['{"not":"a message"}'], "unexpected frame"),
+        ("websocket", [b"\x00\x01"], "unexpected frame"),
+        ("websocket", [WEBSOCKET.emit("reload", "/")], "reload"),
+        ("socketio", ['44/_event,{"message":"nope"}'], "refused"),
+        ("socketio", [SIO_DISCONNECT_FRAME], "disconnected"),
+        ("socketio", ["1"], "disconnected"),
+        ("socketio", ["6"], "unexpected frame"),
+        ("socketio", [SOCKETIO.emit("reload", "/")], "reload"),
     ],
 )
 def test_a_frame_that_ends_the_session_fails_the_hydration(
-    frames: list[str], match: str
+    protocol: WireProtocol, frames: list[Reply], match: str
 ):
-    ws = FakeTransport(lambda message: frames if message == CONNECT_FRAME else [])
-    with pytest.raises(ProtocolError, match=match):
-        run(wire.WireSession(ws, "tok").hydrate())
+    codec = CODECS[protocol]
+
+    def script(message: str) -> list[Reply]:
+        args = codec.parse(message)
+        return frames if args is not None and args[0] in {CONNECT, HANDSHAKE} else []
+
+    ws = FakeTransport(script, greeting=[OPEN] if codec.greets else ())
+    with pytest.raises((ProtocolError, ConnectionClosedError), match=match):
+        run(wire.WireSession(ws, "tok", codec=codec).hydrate())
 
 
 @pytest.mark.parametrize(
     ("first", "match"), [(ACK, "did not open"), ("3", "unexpected frame")]
 )
-def test_a_server_that_does_not_open_fails_the_hydration(first: str, match: str):
+def test_a_socketio_server_that_does_not_open_fails_the_hydration(
+    first: str, match: str
+):
     ws = FakeTransport(lambda message: [], greeting=[first])
     with pytest.raises(ProtocolError, match=match):
-        run(wire.WireSession(ws, "tok").hydrate())
+        run(wire.WireSession(ws, "tok", codec=SOCKETIO).hydrate())
 
 
 async def hydrated_exchange(
@@ -252,7 +351,9 @@ async def hydrated_exchange(
 def test_an_exchange_counts_the_request_and_its_reply():
     ws = FakeTransport(playground_script())
     exchange = run(hydrated_exchange(ws, "simple", seq=7))
-    request = event_frame(SHAPES["simple"].name, {"seq": 7}, token="tok", pathname="/")
+    request = WEBSOCKET.event_frame(
+        SHAPES["simple"].name, {"seq": 7}, token="tok", pathname="/"
+    )
     reply = delta_frame({BENCH_STATE: {SEQ_VAR: 7}})
     assert ws.sent[-1] == request
     assert exchange.request_bytes == size(request)
@@ -306,7 +407,7 @@ def test_a_navigation_sends_on_load_from_the_new_route_until_hydrated_again():
     session = wire.WireSession(ws, "tok")
     run(session.hydrate())
     exchange = run(session.navigate("/item/42", {"item_id": "42"}))
-    request = event_frame(
+    request = WEBSOCKET.event_frame(
         ON_LOAD_EVENT, {}, token="tok", pathname="/item/42", query={"item_id": "42"}
     )
     reply = navigation_reply({"pathname": "/item/42", "query": {"item_id": "42"}})
@@ -326,7 +427,7 @@ def test_a_navigation_sends_on_load_from_the_new_route_until_hydrated_again():
     )
     # Later events come from the new route.
     run(session.exchange(SHAPES["simple"], 2))
-    assert ws.sent[-1] == event_frame(
+    assert ws.sent[-1] == WEBSOCKET.event_frame(
         SHAPES["simple"].name,
         {"seq": 2},
         token="tok",
@@ -354,16 +455,45 @@ def test_a_navigation_with_on_load_events_is_summed_until_hydrated():
     assert not ws.inbox
 
 
-def test_a_disconnect_while_waiting_for_the_reply_fails():
-    simple = SHAPES["simple"].name
-    ws = FakeTransport(playground_script(replies={simple: [DISCONNECT_FRAME]}))
-    with pytest.raises(ProtocolError, match="disconnected"):
-        run(hydrated_exchange(ws, "simple"))
-
-
-def test_measure_connects_hydrates_and_leaves_the_namespace(
-    monkeypatch: pytest.MonkeyPatch,
+@pytest.mark.parametrize(
+    ("protocol", "end", "error", "match"),
+    [
+        ("websocket", CLOSED, ConnectionClosedError, "received 1008"),
+        ("socketio", SIO_DISCONNECT_FRAME, ProtocolError, "disconnected"),
+    ],
+)
+def test_a_disconnect_while_waiting_for_the_reply_fails(
+    protocol: WireProtocol, end: Reply, error: type[Exception], match: str
 ):
+    codec = CODECS[protocol]
+    simple = SHAPES["simple"].name
+    ws = FakeTransport(
+        playground_script(replies={simple: [end]}, codec=codec),
+        greeting=[OPEN] if codec.greets else (),
+    )
+
+    async def exchange() -> wire.Exchange:
+        session = wire.WireSession(ws, "tok", codec=codec)
+        await session.hydrate()
+        return await session.exchange(SHAPES["simple"], 1)
+
+    with pytest.raises(error, match=match):
+        run(exchange())
+
+
+@contextlib.contextmanager
+def connecting(
+    monkeypatch: pytest.MonkeyPatch, codec: Codec
+) -> Iterator[tuple[list[FakeTransport], list[str], list[dict[str, str]]]]:
+    """Replace the websocket connect with scripted transports of a protocol.
+
+    Args:
+        monkeypatch: Patches the connect.
+        codec: The protocol.
+
+    Yields:
+        The transports, the URLs and the headers of every connect.
+    """
     transports: list[FakeTransport] = []
     urls: list[str] = []
     headers: list[dict[str, str]] = []
@@ -372,30 +502,71 @@ def test_measure_connects_hydrates_and_leaves_the_namespace(
     async def connect(url: str, **kwargs: Any) -> AsyncIterator[FakeTransport]:
         urls.append(url)
         headers.append(kwargs["additional_headers"])
-        transports.append(ws := FakeTransport(playground_script()))
+        greeting = [OPEN] if codec.greets else []
+        transports.append(
+            ws := FakeTransport(playground_script(codec=codec), greeting=greeting)
+        )
         yield ws
 
     monkeypatch.setattr(wire, "connect", connect)
-    hydration = wire.measure(
-        Endpoint("http://localhost:8000", "/page"), wire.WireSession.hydrate
-    )
+    yield transports, urls, headers
+
+
+def test_measure_connects_hydrates_and_closes(monkeypatch: pytest.MonkeyPatch):
+    with connecting(monkeypatch, WEBSOCKET) as (transports, urls, headers):
+        hydration = wire.measure(
+            Endpoint("http://localhost:8000", "/page", protocol="websocket"),
+            wire.WireSession.hydrate,
+        )
+    (ws,) = transports
+    assert urls[0].startswith("ws://localhost:8000/_event?token=")
+    # A browser sends the page's origin; the router's page host comes from it.
+    assert headers == [{"Origin": "http://localhost:8000"}]
+    assert hydration.received_frames == 3
+    # The plain protocol leaves by closing the websocket: the connect is all it sent.
+    (connect,) = ws.sent
+    assert '"pathname":"/page"' in connect
+
+
+def test_measure_joins_and_leaves_the_socketio_namespace(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    with connecting(monkeypatch, SOCKETIO) as (transports, urls, _headers):
+        hydration = wire.measure(
+            Endpoint("http://localhost:8000", "/page", protocol="socketio"),
+            wire.WireSession.hydrate,
+        )
     (ws,) = transports
     assert urls[0].startswith(
         "ws://localhost:8000/_event/?EIO=4&transport=websocket&token="
     )
-    # A browser sends the page's origin; the router's page host comes from it.
-    assert headers == [{"Origin": "http://localhost:8000"}]
     assert hydration.received_frames == 4
-    assert ws.sent[-1] == DISCONNECT_FRAME
+    assert ws.sent[-1] == SIO_DISCONNECT_FRAME
     assert '"pathname":"/page"' in ws.sent[1]
 
 
-def test_measure_against_the_echo_server_counts_real_frames():
-    with serving(EchoServer(delta_key=BENCH_STATE, seq_var=SEQ_VAR)) as url:
+@pytest.mark.parametrize(
+    ("protocol", "hydration_frames", "hydration_deltas"),
+    [
+        ("websocket", 2, ['{"is_hydrated_rx_state_":true}']),
+        (
+            "socketio",
+            4,
+            ['{"is_hydrated_rx_state_":false}', '{"is_hydrated_rx_state_":true}'],
+        ),
+    ],
+)
+def test_measure_against_the_echo_server_detects_its_protocol_and_counts_real_frames(
+    protocol: WireProtocol, hydration_frames: int, hydration_deltas: list[str]
+):
+    codec = CODECS[protocol]
+    echo = EchoServer(delta_key=BENCH_STATE, seq_var=SEQ_VAR, protocol=protocol)
+    with serving(echo) as url:
 
         async def work(
             session: wire.WireSession,
         ) -> tuple[wire.Hydration, wire.Exchange, wire.Exchange]:
+            assert session.codec is codec
             return (
                 await session.hydrate(),
                 await session.exchange(SHAPES["simple"], 3),
@@ -403,24 +574,20 @@ def test_measure_against_the_echo_server_counts_real_frames():
             )
 
         hydration, exchange, navigation = wire.measure(Endpoint(url), work)
-    reply = emit_frame("event", {"delta": {BENCH_STATE: {SEQ_VAR: 3}}, "events": []})
+    reply = codec.emit("event", {"delta": {BENCH_STATE: {SEQ_VAR: 3}}, "events": []})
     assert exchange.response_bytes == size(reply)
     assert exchange.reply == reply
-    hydrated = emit_frame(
+    hydrated = codec.emit(
         "event", {"delta": {ROOT_STATE: {HYDRATED_VAR: True}}, "events": []}
     )
     assert navigation.reply == hydrated
     assert navigation.response_frames == 1
     # The token is a uuid4, so the request has a fixed length.
     assert navigation.request_bytes == size(
-        event_frame(ON_LOAD_EVENT, {}, token="x" * 36, pathname="/counter")
+        codec.event_frame(ON_LOAD_EVENT, {}, token="x" * 36, pathname="/counter")
     )
-    assert hydration.received_frames == 4
-    assert hydration.delta_bytes == {
-        ROOT_STATE: size(
-            '{"is_hydrated_rx_state_":false}', '{"is_hydrated_rx_state_":true}'
-        )
-    }
+    assert hydration.received_frames == hydration_frames
+    assert hydration.delta_bytes == {ROOT_STATE: size(*hydration_deltas)}
 
 
 def test_measure_times_out(monkeypatch: pytest.MonkeyPatch):
@@ -434,7 +601,7 @@ def test_measure_times_out(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(wire, "connect", connect)
     monkeypatch.setattr(wire, "WIRE_TIMEOUT_S", 0.05)
     with pytest.raises(TimeoutError):
-        wire.measure(Endpoint("http://localhost:1"), hang)
+        wire.measure(Endpoint("http://localhost:1", protocol="websocket"), hang)
 
 
 ALLOWED_RX = {
@@ -583,7 +750,7 @@ class Fakes:
     log: list[str] = dataclasses.field(default_factory=list)
     compiled: list[Path] = dataclasses.field(default_factory=list)
     envs: list[dict[str, str]] = dataclasses.field(default_factory=list)
-    replies: dict[str, list[str]] = dataclasses.field(default_factory=dict)
+    replies: dict[str, list[Reply]] = dataclasses.field(default_factory=dict)
 
 
 @pytest.fixture
@@ -628,6 +795,9 @@ def fakes(monkeypatch: pytest.MonkeyPatch) -> Fakes:
     monkeypatch.setattr(wire, "playground_states", lambda ctx: STATES)
     monkeypatch.setattr(wire, "AppProcess", FakeApp)
     monkeypatch.setattr(wire, "connect", connect)
+    monkeypatch.setattr(
+        wire, "resolve_codec", lambda endpoint: asyncio.sleep(0, WEBSOCKET)
+    )
     return state
 
 
@@ -651,21 +821,19 @@ def test_hydrate_starts_a_backend_per_sample_and_stops_it(tmp_path: Path, fakes:
         "connect",
         "app stop",
     ]
-    script = playground_script()
     # The token is a uuid4, so the sent frames only have a fixed length.
-    hydrate = event_frame(HYDRATE_EVENT, {}, token="x" * 36)
-    on_load = event_frame(ON_LOAD_EVENT, {}, token="x" * 36)
-    first, second = script(hydrate)[0], script(on_load)[0]
+    connect = WEBSOCKET.connect_frame(token="x" * 36, pathname="/")
+    handshake, first, second = answers(playground_script(), connect)
     samples = {
         name: metric["samples"]["A"] for name, metric in entry["metrics"].items()
     }
-    assert samples["hydrate_received_bytes"] == [size(OPEN, ACK, first, second)]
-    assert samples["hydrate_frames"] == [4]
-    assert samples["hydrate_sent_bytes"] == [size(CONNECT_FRAME, hydrate, on_load)]
+    assert samples["hydrate_received_bytes"] == [size(handshake, first, second)]
+    assert samples["hydrate_frames"] == [3]
+    assert samples["hydrate_sent_bytes"] == [size(connect)]
     (extra,) = entry["sample_extra"]
     assert extra["largest_frame_bytes"] == size(first)
     assert set(extra["delta_bytes"]) == {ROOT_STATE, BENCH_STATE, PLAYGROUND_STATE}
-    assert extra["sent_frames"] == 3
+    assert extra["sent_frames"] == 1
     (env,) = fakes.envs
     assert env["REFLEX_STATE_MANAGER_MODE"] == "memory"
     assert env["GRANIAN_WORKERS"] == "1"
@@ -688,11 +856,13 @@ def test_event_measures_one_exchange_per_shape(tmp_path: Path, fakes: Fakes):
     }
     assert samples["response_bytes"] == [size(empty, echo)]
     assert samples["response_frames"] == [2]
-    request = event_frame(background, {"seq": 1}, token="x" * 36, pathname="/")
+    request = WEBSOCKET.event_frame(
+        background, {"seq": 1}, token="x" * 36, pathname="/"
+    )
     assert samples["request_bytes"] == [size(request)]
     (extra,) = entry["sample_extra"]
     assert extra["reply"] == echo
-    assert extra["hydration"]["received_frames"] == 4
+    assert extra["hydration"]["received_frames"] == 3
     assert fakes.log == [
         "copy playground",
         "run_cli compile",
@@ -712,7 +882,7 @@ def test_navigate_measures_the_route_change_after_hydration(
     samples = {
         name: metric["samples"]["A"] for name, metric in entry["metrics"].items()
     }
-    request = event_frame(
+    request = WEBSOCKET.event_frame(
         ON_LOAD_EVENT,
         {},
         token="x" * 36,
@@ -726,7 +896,7 @@ def test_navigate_measures_the_route_change_after_hydration(
     (extra,) = entry["sample_extra"]
     assert extra["reply"] == reply
     # Hydrated on "/" first: its on_load reply carries no router.
-    assert extra["hydration"]["received_frames"] == 4
+    assert extra["hydration"]["received_frames"] == 3
     assert extra["hydration"]["delta_bytes"][ROOT_STATE] == size(
         '{"is_hydrated_rx_state_":false,"router_rx_state_":{"a":1}}',
         '{"is_hydrated_rx_state_":true}',
@@ -762,7 +932,9 @@ def test_delta_generates_its_own_app_and_keys_the_series_on_its_hash(
     assert entry["metrics"]["response_bytes"]["samples"]["A"] == [size(reply)]
     (extra,) = entry["sample_extra"]
     assert extra["request_bytes"] == size(
-        event_frame(f"{wire.WIRE_STATE}.append_item", {"seq": 1}, token="x" * 36)
+        WEBSOCKET.event_frame(
+            f"{wire.WIRE_STATE}.append_item", {"seq": 1}, token="x" * 36
+        )
     )
     assert extra["response_frames"] == 1
     assert extra["delta_bytes"] == {
@@ -773,8 +945,8 @@ def test_delta_generates_its_own_app_and_keys_the_series_on_its_hash(
 
 
 def test_a_failed_sample_still_stops_the_backend(tmp_path: Path, fakes: Fakes):
-    fakes.replies[SHAPES["simple"].name] = [DISCONNECT_FRAME]
+    fakes.replies[SHAPES["simple"].name] = [CLOSED]
     entry = run_bench(tmp_path, "wire.event", shape="simple")
     assert entry["status"] == "failed"
-    assert "disconnected" in entry["error"]
+    assert "received 1008" in entry["error"]
     assert fakes.log[-1] == "app stop"

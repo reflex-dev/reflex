@@ -385,6 +385,8 @@ class Config(BaseConfig):
 
         self._normalize_frontend_compression_formats()
 
+        self._normalize_cors_allowed_origins()
+
         # Normalize route prefixes to ensure they start with a slash.
         self._normalize_paths()
 
@@ -577,6 +579,19 @@ class Config(BaseConfig):
                     f"reflex.Config.disable_plugins should contain Plugin subclasses, but got {entry!r}.",
                 )
         self.disable_plugins = normalized
+
+    def _normalize_cors_allowed_origins(self):
+        """Read a plain-string cors_allowed_origins as a comma-separated list.
+
+        Left a string, membership in it is a substring test, so every origin
+        check would accept any origin the configured one contains.
+        """
+        if isinstance(self.cors_allowed_origins, str):
+            self.cors_allowed_origins = [
+                origin.strip()
+                for origin in self.cors_allowed_origins.split(",")
+                if origin.strip()
+            ]
 
     def _normalize_frontend_compression_formats(self):
         """Normalize and validate configured frontend compression formats.

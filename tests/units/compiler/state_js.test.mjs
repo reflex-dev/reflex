@@ -19,6 +19,7 @@ async function setup({
   hidden = false,
   storedToken = "original-token",
   transport = "websocket",
+  importFails = false,
 } = {}) {
   const sockets = [];
   const microtasks = [];
@@ -171,6 +172,10 @@ async function setup({
     },
     // The socket.io client is imported on demand.
     async importModuleDynamically(name) {
+      if (importFails) {
+        // A chunk missing after a redeploy; browsers cache the failure.
+        throw new TypeError("Failed to fetch dynamically imported module");
+      }
       const imported = link(name);
       await imported.link(() => {});
       await imported.evaluate();
@@ -180,7 +185,9 @@ async function setup({
   await module.link(link);
   await module.evaluate();
   const socket = { current: null };
+  let connectErrors = [];
   return {
+    connectErrors: () => connectErrors,
     sockets,
     timers,
     firstHydrates,
@@ -194,7 +201,10 @@ async function setup({
         socket,
         { child: (delta) => updates.push(delta.count) },
         transports,
-        () => {},
+        (update) => {
+          connectErrors =
+            typeof update === "function" ? update(connectErrors) : update;
+        },
         {},
         () => {},
         { current: {} },
@@ -304,7 +314,23 @@ test("blocked session storage does not throw from speculative setup", async () =
   };
   app.flush();
   assert.equal(app.sockets.length, 0);
-  await assert.rejects(app.connect(), /storage blocked/);
+  // Reported, not rejected: the unhandled rejection handler adds an event,
+  // which reconnects, which would fail again without end.
+  await app.connect();
+  assert.equal(app.sockets.length, 0);
+  assert.match(String(app.connectErrors()[0]), /storage blocked/);
+  // A later attempt is not locked out by the failed one.
+  app.window.sessionStorage.getItem = () => "original-token";
+  await app.connect();
+  assert.equal(app.sockets.length, 1);
+});
+
+test("a socket.io client that fails to load is a connection error", async () => {
+  const app = await setup({ transport: "socketio", importFails: true });
+  await app.connect(["socketio"]);
+  assert.equal(app.socket.current, null);
+  assert.equal(app.connectErrors().length, 1);
+  assert.match(String(app.connectErrors()[0]), /dynamically imported module/);
 });
 
 for (const [transport, engineTransport] of [
