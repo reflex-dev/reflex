@@ -170,7 +170,7 @@ class _HeaderDataVar(ObjectVar[HeaderData], python_types=HeaderData):
         console.deprecate(
             feature_name="State.router.headers.cookie",
             reason="Request cookies are no longer sent to the frontend. Use rx.Cookie for client-side cookies instead.",
-            deprecation_version="0.9.13",
+            deprecation_version="0.10.0",
             removal_version="1.0",
         )
         return LiteralStringVar.create("")
