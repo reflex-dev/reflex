@@ -124,8 +124,9 @@ allowed, and it is never copied for each instance. Each backend worker process
 holds its own value, though, so a lock only serializes the sessions on its own
 worker. A value set at import time, such as at module level, starts the same in
 every worker, but a change made after the workers start, such as in an event
-handler, never reaches the other workers. Keep a value that every session must
-see in a state var or an external store.
+handler, never reaches the other workers. Keep a value that sessions must share
+at runtime in an [`rx.SharedState`](/docs/state-structure/shared-state/) or an
+external store.
 
 ```md alert warning
 # Change defaults before the app starts running.
