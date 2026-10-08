@@ -782,7 +782,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
             The string slice operation.
         """
         if isinstance(i, slice):
-            return self.split()[i].join()
+            return string_codepoints_operation(self)[i].join()
         if not isinstance(i, (int, NumberVar)) or (
             isinstance(i, NumberVar) and i._is_strict_float()
         ):
@@ -795,7 +795,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         Returns:
             The string length operation.
         """
-        return self.split().length()
+        return string_codepoints_operation(self).length()
 
     def lower(self) -> StringVar:
         """Convert the string to lowercase.
@@ -1285,6 +1285,21 @@ def string_ends_with_operation(
 
 
 @var_operation
+def string_codepoints_operation(string: StringVar[Any]):
+    """Convert a string to an array of Unicode code points.
+
+    Args:
+        string: The string to convert.
+
+    Returns:
+        The string's Unicode code points as an array.
+    """
+    return var_operation_return(
+        js_expression=f"Array.from(({string!s}))", var_type=list[str]
+    )
+
+
+@var_operation
 def string_item_operation(string: StringVar[Any], index: NumberVar | int):
     """Get an item from a string.
 
@@ -1296,7 +1311,8 @@ def string_item_operation(string: StringVar[Any], index: NumberVar | int):
         The item from the string.
     """
     return var_operation_return(
-        js_expression=f"{string!s}?.at?.({index!s})", var_type=str
+        js_expression=f'Array.from(({string!s}) ?? "").at({index!s})',
+        var_type=str,
     )
 
 

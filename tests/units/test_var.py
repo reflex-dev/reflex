@@ -560,11 +560,18 @@ def test_var_indexing_lists(var):
         var : The str, list or tuple base var.
     """
     # Test basic indexing.
-    assert str(var[0]) == f"{var._js_expr}?.at?.(0)"
-    assert str(var[1]) == f"{var._js_expr}?.at?.(1)"
+    if var._var_type is str:
+        assert str(var[0]) == f'Array.from(({var._js_expr}) ?? "").at(0)'
+        assert str(var[1]) == f'Array.from(({var._js_expr}) ?? "").at(1)'
+    else:
+        assert str(var[0]) == f"{var._js_expr}?.at?.(0)"
+        assert str(var[1]) == f"{var._js_expr}?.at?.(1)"
 
     # Test negative indexing.
-    assert str(var[-1]) == f"{var._js_expr}?.at?.(-1)"
+    if var._var_type is str:
+        assert str(var[-1]) == f'Array.from(({var._js_expr}) ?? "").at(-1)'
+    else:
+        assert str(var[-1]) == f"{var._js_expr}?.at?.(-1)"
 
 
 @pytest.mark.parametrize(
@@ -599,11 +606,11 @@ def test_var_indexing_str():
     assert str_var[0]._var_type is str
 
     # Test basic indexing.
-    assert str(str_var[0]) == "str?.at?.(0)"
-    assert str(str_var[1]) == "str?.at?.(1)"
+    assert str(str_var[0]) == 'Array.from((str) ?? "").at(0)'
+    assert str(str_var[1]) == 'Array.from((str) ?? "").at(1)'
 
     # Test negative indexing.
-    assert str(str_var[-1]) == "str?.at?.(-1)"
+    assert str(str_var[-1]) == 'Array.from((str) ?? "").at(-1)'
 
 
 @pytest.mark.parametrize(
@@ -732,16 +739,21 @@ def test_str_var_slicing():
     assert str_var[:1]._var_type is str
 
     # Test basic slicing.
-    assert str(str_var[:1]) == 'str.split("").slice(undefined, 1).join("")'
-    assert str(str_var[1:]) == 'str.split("").slice(1, undefined).join("")'
-    assert str(str_var[:]) == 'str.split("").slice(undefined, undefined).join("")'
-    assert str(str_var[1:2]) == 'str.split("").slice(1, 2).join("")'
+    assert str(str_var[:1]) == 'Array.from((str)).slice(undefined, 1).join("")'
+    assert str(str_var[1:]) == 'Array.from((str)).slice(1, undefined).join("")'
+    assert str(str_var[:]) == 'Array.from((str)).slice(undefined, undefined).join("")'
+    assert str(str_var[1:2]) == 'Array.from((str)).slice(1, 2).join("")'
 
     # Test negative slicing.
-    assert str(str_var[:-1]) == 'str.split("").slice(undefined, -1).join("")'
-    assert str(str_var[-1:]) == 'str.split("").slice(-1, undefined).join("")'
-    assert str(str_var[:-2]) == 'str.split("").slice(undefined, -2).join("")'
-    assert str(str_var[-2:]) == 'str.split("").slice(-2, undefined).join("")'
+    assert str(str_var[:-1]) == 'Array.from((str)).slice(undefined, -1).join("")'
+    assert str(str_var[-1:]) == 'Array.from((str)).slice(-1, undefined).join("")'
+    assert str(str_var[:-2]) == 'Array.from((str)).slice(undefined, -2).join("")'
+    assert str(str_var[-2:]) == 'Array.from((str)).slice(-2, undefined).join("")'
+    assert (
+        str(str_var[::-1])
+        == 'Array.from((str)).slice(undefined, undefined).reverse().join("")'
+    )
+    assert str(str_var[1]) == 'Array.from((str) ?? "").at(1)'
 
 
 def test_dict_indexing():
@@ -1107,7 +1119,7 @@ def test_deep_equals_accepts_python_values_and_preserves_var_data():
 def test_string_operations():
     basic_string = LiteralStringVar.create("Hello, World!")
 
-    assert str(basic_string.length()) == '"Hello, World!".split("").length'
+    assert str(basic_string.length()) == 'Array.from(("Hello, World!")).length'
     assert str(basic_string.lower()) == '"Hello, World!".toLowerCase()'
     assert str(basic_string.lstrip()) == 'pyLstrip("Hello, World!", null)'
     assert str(basic_string.upper()) == '"Hello, World!".toUpperCase()'
