@@ -20,16 +20,22 @@ import textwrap
 import threading
 import time
 import types
-from collections.abc import Callable, Coroutine, Sequence
+from collections.abc import Awaitable, Callable, Coroutine, Sequence
 from importlib.util import find_spec
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, Self, TypeVar
 
+from granian.constants import Interfaces
+from granian.errors import FatalError
+from granian.log import LogLevels
+from granian.net import SocketHolder  # pyright: ignore[reportPrivateImportUsage]
+from granian.server.embed import Server as EmbeddedGranian
 from reflex_base.components.memo import MEMOS
 from reflex_base.config import get_config, reload_config
 from reflex_base.environment import environment
 from reflex_base.registry import RegistrationContext
-from reflex_base.utils.types import ASGIApp
+from reflex_base.utils import console
+from reflex_base.utils.types import ASGIApp, Message, Receive, Scope, Send
 
 import reflex
 import reflex.reflex
@@ -59,9 +65,6 @@ try:
 except ImportError:
     has_selenium = False
 
-if TYPE_CHECKING:
-    import uvicorn
-
 # The timeout (minutes) to check for the port.
 DEFAULT_TIMEOUT = 15
 POLL_INTERVAL = 0.25
@@ -70,28 +73,255 @@ T = TypeVar("T")
 TimeoutType = int | float | None
 
 
-def _get_uvicorn():
-    """Import uvicorn for an AppHarness server.
-
-    Returns:
-        The imported uvicorn module.
-    """
-    try:
-        import uvicorn
-    except ImportError as exc:
-        msg = (
-            "AppHarness backend support requires `uvicorn`. Install it with "
-            "`pip install 'reflex[testing]'`."
-        )
-        raise ImportError(msg) from exc
-    return uvicorn
-
-
 if platform.system() == "Windows":
     FRONTEND_POPEN_ARGS["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # pyright: ignore [reportAttributeAccessIssue]
     FRONTEND_POPEN_ARGS["shell"] = True
 else:
     FRONTEND_POPEN_ARGS["start_new_session"] = True
+
+
+class _PreboundGranian(EmbeddedGranian):
+    """Embedded granian server serving a listening socket bound beforehand."""
+
+    def __init__(self, listener: socket.socket, *args, **kwargs) -> None:
+        """Create the server around a bound socket.
+
+        Args:
+            listener: the listening socket; granian owns it once serving starts.
+            *args: positional arguments for the granian server.
+            **kwargs: keyword arguments for the granian server.
+        """
+        super().__init__(*args, **kwargs)
+        self._listener = listener
+
+    def _init_shared_socket(self):
+        """Hand the listening socket to granian instead of binding a new one."""
+        fd = self._listener.detach()
+        # SocketHolder takes its pickled state, whose shape differs per platform.
+        if sys.platform == "win32":
+            state = (fd,)
+        elif sys.platform.startswith(("linux", "freebsd")):
+            state = (fd, False, self.backlog)
+        else:
+            state = (fd, False)
+        self._shd = SocketHolder(*state)
+        self._sfd = fd
+
+    def release_socket(self, served: bool) -> None:
+        """Close the socket unless the worker serving it already did.
+
+        Args:
+            served: whether a worker took the socket over.
+        """
+        holder, self._shd = self._shd, None
+        # Dropping the holder closes it on Windows, where workers serve a clone.
+        if holder is not None and not served and sys.platform != "win32":
+            os.close(self._sfd)
+
+
+class _EmbeddedServer:
+    """In-process granian server with a uvicorn-like control surface.
+
+    Serves the given ASGI app object directly, so the harness shares the app
+    and state instances with the running server. The listening socket is
+    bound on construction, without SO_REUSEPORT, so the server owns its port
+    (OS-assigned for port 0) before it serves.
+    """
+
+    def __init__(self, app: ASGIApp, host: str = "127.0.0.1", port: int = 0) -> None:
+        """Bind the listening socket without serving yet.
+
+        Args:
+            app: the ASGI app object to serve.
+            host: the address to bind to.
+            port: the port to bind to; 0 lets the OS pick a free one.
+        """
+        self.app = app
+        self.host = host
+        self._listener = self._listen(host, port)
+        self.port: int = self._listener.getsockname()[1]
+        # Monkeypatchable async shutdown hook, mirroring uvicorn.Server.shutdown.
+        self.shutdown: Callable[..., Coroutine[Any, Any, None]] = self._noop_shutdown
+        self._should_exit = threading.Event()
+        self._serving = False
+        # Set once the server serves or stops.
+        self._settled = threading.Event()
+        self._loop: asyncio.AbstractEventLoop | None = None
+        self._server: _PreboundGranian | None = None
+
+    @staticmethod
+    def _listen(host: str, port: int) -> socket.socket:
+        """Bind a listening socket that no other socket can share.
+
+        Args:
+            host: the address to bind to.
+            port: the port to bind to.
+
+        Returns:
+            The listening socket.
+        """
+        sock = socket.socket()
+        try:
+            # On posix SO_REUSEADDR only allows rebinding a port in TIME_WAIT;
+            # on Windows it would let other sockets share the port.
+            sock.setsockopt(
+                socket.SOL_SOCKET,
+                getattr(socket, "SO_EXCLUSIVEADDRUSE", socket.SO_REUSEADDR),
+                1,
+            )
+            sock.bind((host, port))
+            sock.listen()
+        except OSError:
+            sock.close()
+            raise
+        return sock
+
+    @staticmethod
+    async def _noop_shutdown(*args, **kwargs) -> None:
+        """Default shutdown hook.
+
+        Args:
+            *args: ignored.
+            **kwargs: ignored.
+        """
+
+    def getsockname(self) -> tuple[str, int]:
+        """The address the server is bound to.
+
+        Returns:
+            The (host, port) tuple the server serves on.
+        """
+        return (self.host, self.port)
+
+    def wait_started(self, timeout: float | None = None) -> None:
+        """Block until the server serves, after the app's lifespan startup.
+
+        Args:
+            timeout: how long to wait in seconds; None waits indefinitely.
+
+        Raises:
+            TimeoutError: when the server does not serve within the timeout.
+            RuntimeError: when the server stopped without serving.
+        """
+        if not self._settled.wait(timeout):
+            msg = f"Server on port {self.port} did not start within {timeout}s."
+            raise TimeoutError(msg)
+        if not self._serving:
+            msg = f"Server on port {self.port} stopped without serving; see the log above."
+            raise RuntimeError(msg)
+
+    @property
+    def started(self) -> bool:
+        """Whether the server serves, like uvicorn's `Server.started`.
+
+        Returns:
+            True once the app's lifespan startup completed.
+        """
+        console.deprecate(
+            feature_name="AppHarness.backend.started",
+            reason="AppHarness.start() returns once the backend serves; "
+            "call `wait_started()` to wait for a server yourself",
+            deprecation_version="0.10.0",
+            removal_version="1.0",
+        )
+        return self._serving
+
+    @property
+    def should_exit(self) -> bool:
+        """Whether the server was asked to stop.
+
+        Returns:
+            True after `should_exit` has been set.
+        """
+        return self._should_exit.is_set()
+
+    @should_exit.setter
+    def should_exit(self, value: bool) -> None:
+        if not value:
+            return
+        self._should_exit.set()
+        loop, server = self._loop, self._server
+        if loop is not None and server is not None:
+            # A closed loop means the server is already down.
+            with contextlib.suppress(RuntimeError):
+                loop.call_soon_threadsafe(server.stop)
+
+    def run(self) -> None:
+        """Serve the app until `should_exit` is set; used as a thread target."""
+        try:
+            asyncio.run(self._serve())
+        finally:
+            # A no-op once granian took the socket over.
+            self._listener.close()
+            self._settled.set()
+
+    def _mark_serving(self) -> None:
+        """Record that the server serves."""
+        self._serving = True
+        self._settled.set()
+
+    def _asgi(self, scope: Scope, receive: Receive, send: Send) -> Awaitable[None]:
+        """Call the app, tracking its lifespan startup.
+
+        Args:
+            scope: the ASGI scope.
+            receive: the ASGI receive callable.
+            send: the ASGI send callable.
+
+        Returns:
+            The app's ASGI awaitable.
+        """
+        if scope["type"] == "lifespan":
+            return self._lifespan(scope, receive, send)
+        return self.app(scope, receive, send)
+
+    async def _lifespan(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """Run the app's lifespan, marking the server serving after startup.
+
+        Args:
+            scope: the ASGI lifespan scope.
+            receive: the ASGI receive callable.
+            send: the ASGI send callable.
+        """
+        failed = False
+
+        async def tracking_send(message: Message) -> None:
+            nonlocal failed
+            await send(message)
+            if message["type"] == "lifespan.startup.complete":
+                self._mark_serving()
+            elif message["type"] == "lifespan.startup.failed":
+                failed = True
+
+        try:
+            await self.app(scope, receive, tracking_send)
+        finally:
+            # Like granian, serve without lifespan support unless startup failed.
+            if not failed:
+                self._mark_serving()
+
+    async def _serve(self) -> None:
+        server = _PreboundGranian(
+            self._listener,
+            self._asgi,
+            address=self.host,
+            port=self.port,
+            interface=Interfaces.ASGI,
+            # Keeps lifespan failures and unhandled app errors visible.
+            log_level=LogLevels.error,
+        )
+        self._server = server
+        self._loop = asyncio.get_running_loop()
+        try:
+            # A stop requested before this point found no server to interrupt.
+            # A failed lifespan startup is logged by granian and reported by
+            # wait_started().
+            if not self._should_exit.is_set():
+                with contextlib.suppress(FatalError):
+                    await server.serve()
+        finally:
+            server.release_socket(served=self._serving)
+            await self.shutdown()
 
 
 # borrowed from py3.11
@@ -138,7 +368,7 @@ class AppHarness:
     frontend_url: str | None = None
     frontend_output_thread: threading.Thread | None = None
     backend_thread: threading.Thread | None = None
-    backend: uvicorn.Server | None = None
+    backend: _EmbeddedServer | None = None
     _frontends: list[WebDriver] = dataclasses.field(default_factory=list)
     _registry_token: contextvars.Token[RegistrationContext] | None = None
     _base_registration_context: ClassVar[RegistrationContext] | None = None
@@ -368,14 +598,7 @@ class AppHarness:
         if self.app_asgi is None:
             msg = "App was not initialized."
             raise RuntimeError(msg)
-        uvicorn = _get_uvicorn()
-        self.backend = uvicorn.Server(
-            uvicorn.Config(
-                app=self.app_asgi,
-                host="127.0.0.1",
-                port=port,
-            )
-        )
+        self.backend = _EmbeddedServer(self.app_asgi, port=port)
         self.backend.shutdown = self._get_backend_shutdown_handler()
 
         def _run_backend(context: contextvars.Context) -> None:
@@ -610,38 +833,25 @@ class AppHarness:
             await asyncio.sleep(step)
         return False
 
-    def _poll_for_servers(self, timeout: TimeoutType = None) -> socket.socket:
-        """Poll backend server for listening sockets.
+    def _poll_for_servers(self, timeout: TimeoutType = None) -> _EmbeddedServer:
+        """Wait for the backend server to serve.
 
         Args:
-            timeout: how long to wait for listening socket.
+            timeout: how long to wait for the server.
 
         Returns:
-            first active listening socket on the backend
+            the backend server, exposing `getsockname()` for its bound address
 
         Raises:
-            RuntimeError: when the backend hasn't started running
-            TimeoutError: when server or sockets are not ready
+            RuntimeError: when the backend hasn't started running, or stopped
+                without serving
+            TimeoutError: when the server is not ready
         """
         if self.backend is None:
             msg = "Backend is not running."
             raise RuntimeError(msg)
-        backend = self.backend
-        # check for servers to be initialized
-        if not self._poll_for(
-            target=lambda: getattr(backend, "servers", False),
-            timeout=timeout,
-        ):
-            msg = "Backend servers are not initialized."
-            raise TimeoutError(msg)
-        # check for sockets to be listening
-        if not self._poll_for(
-            target=lambda: getattr(backend.servers[0], "sockets", False),
-            timeout=timeout,
-        ):
-            msg = "Backend is not listening."
-            raise TimeoutError(msg)
-        return backend.servers[0].sockets[0]
+        self.backend.wait_started(DEFAULT_TIMEOUT if timeout is None else timeout)
+        return self.backend
 
     def frontend(
         self,
@@ -851,25 +1061,11 @@ class AppHarnessProd(AppHarness):
     """AppHarnessProd executes a reflex app in-process for testing.
 
     In prod mode, instead of running `react-router dev` the app is exported as static
-    files and served via Starlette StaticFiles in a dedicated Uvicorn server.
-    Additionally, the backend runs in multi-worker mode.
+    files and served via Starlette StaticFiles on a dedicated embedded server.
     """
 
     frontend_thread: threading.Thread | None = None
-    frontend_server: uvicorn.Server | None = None
-
-    def _run_frontend(self):
-        uvicorn = _get_uvicorn()
-        with chdir(self.app_path):
-            frontend_app = reflex.utils.exec._frontend_prod_app()
-        self.frontend_server = uvicorn.Server(
-            uvicorn.Config(
-                app=frontend_app,
-                host="127.0.0.1",
-                port=0,
-            )
-        )
-        self.frontend_server.run()
+    frontend_server: _EmbeddedServer | None = None
 
     def _start_frontend(self):
         # Set up the frontend.
@@ -895,31 +1091,23 @@ class AppHarnessProd(AppHarness):
                 loglevel=reflex.constants.LogLevel.INFO,
                 env=reflex.constants.Env.PROD,
             )
+            self.frontend_server = _EmbeddedServer(
+                reflex.utils.exec._frontend_prod_app()
+            )
 
         print("Frontend starting...")  # for pytest diagnosis #noqa: T201
 
-        self.frontend_thread = threading.Thread(target=self._run_frontend)
+        self.frontend_thread = threading.Thread(target=self.frontend_server.run)
         self.frontend_thread.start()
 
     def _wait_frontend(self):
-        self._poll_for(
-            lambda: (
-                self.frontend_server is not None
-                and getattr(self.frontend_server, "servers", [])
-                and self.frontend_server.servers[0].sockets
-            )
-        )
-        if (
-            self.frontend_server is None
-            or not self.frontend_server.servers[0].sockets
-            or not self.frontend_server.servers[0].sockets[0].fileno()
-        ):
+        if self.frontend_server is None:
             msg = "Frontend did not start"
             raise RuntimeError(msg)
-        frontend_socket = self.frontend_server.servers[0].sockets[0]
+        self.frontend_server.wait_started(DEFAULT_TIMEOUT)
         config = get_config()
         self.frontend_url = "http://{}:{}".format(
-            *frontend_socket.getsockname()
+            *self.frontend_server.getsockname()
         ) + config.prepend_frontend_path("/")
         config.deploy_url = self.frontend_url
 
@@ -928,15 +1116,7 @@ class AppHarnessProd(AppHarness):
             msg = "App was not initialized."
             raise RuntimeError(msg)
         environment.REFLEX_SKIP_COMPILE.set(True)
-        uvicorn = _get_uvicorn()
-        self.backend = uvicorn.Server(
-            uvicorn.Config(
-                app=self.app_asgi,
-                host="127.0.0.1",
-                port=0,
-                workers=reflex.utils.processes.get_num_workers(),
-            ),
-        )
+        self.backend = _EmbeddedServer(self.app_asgi)
         self.backend.shutdown = self._get_backend_shutdown_handler()
 
         def _run_backend(context: contextvars.Context) -> None:
@@ -952,7 +1132,7 @@ class AppHarnessProd(AppHarness):
         self.backend_thread.start()
         print("Backend started.")  # for pytest diagnosis #noqa: T201
 
-    def _poll_for_servers(self, timeout: TimeoutType = None) -> socket.socket:
+    def _poll_for_servers(self, timeout: TimeoutType = None) -> _EmbeddedServer:
         try:
             return super()._poll_for_servers(timeout)
         finally:

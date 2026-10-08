@@ -1,20 +1,50 @@
-"""Hold idle Socket.IO sessions from a separate process.
+"""Hold idle event websocket sessions from a separate process.
 
 Memory-per-session benchmarks run the backend inside the test process, so
 client-side allocations would pollute resident-memory measurements. This
 module connects a number of sessions, primes each with one event so the
 backend materializes its state, reports readiness on stdout, and holds the
-connections until stdin closes.
+connections, answering the server's pings, until stdin closes.
 """
 
 from __future__ import annotations
 
+import contextlib
 import json
 import sys
+import threading
 
-import socketio
+from reflex_base.environment import environment
+from websockets.exceptions import ConnectionClosed
 
-from tests.benchmarks.support.socket_client import _connect
+from tests.benchmarks.support.socket_client import EventClient, _connect
+
+
+def _keepalive_interval() -> float:
+    """Seconds between checks for pings while the sessions are held.
+
+    A pong goes out at the first check after its ping, so checking faster than
+    the server's ping timeout keeps every session inside its deadline.
+
+    Returns:
+        The interval.
+    """
+    return min(1.0, environment.REFLEX_SOCKET_TIMEOUT.get().total_seconds() / 2)
+
+
+def _keep_alive(clients: list[EventClient], stop: threading.Event) -> None:
+    """Answer the server's pings until stopped.
+
+    Args:
+        clients: The held sessions.
+        stop: Set when the sessions are released.
+    """
+    interval = _keepalive_interval()
+    while not stop.wait(interval):
+        for client in clients:
+            # A session the server ended stays ended; keep the others alive.
+            with contextlib.suppress(ConnectionClosed, ConnectionError):
+                client.poll()
 
 
 def main() -> int:
@@ -25,22 +55,25 @@ def main() -> int:
     """
     url, token_prefix, count, payload_json = sys.argv[1:5]
     payload = json.loads(payload_json)
-    clients: list[socketio.SimpleClient] = []
+    clients: list[EventClient] = []
     try:
         for index in range(int(count)):
-            client = socketio.SimpleClient(logger=False)
-            _connect(client, url, f"{token_prefix}-{index}", "/_event", timeout=10)
-            client.emit("event", payload)
-            response = client.receive(timeout=10)
-            while response and response[0] != "event":
-                response = client.receive(timeout=10)
+            client = _connect(url, f"{token_prefix}-{index}", timeout=10)
             clients.append(client)
+            client.emit("event", payload)
+            client.receive(10, "event")
         print("ready", flush=True)
-        sys.stdin.read()
+        stop = threading.Event()
+        keeper = threading.Thread(target=_keep_alive, args=(clients, stop))
+        keeper.start()
+        try:
+            sys.stdin.read()
+        finally:
+            stop.set()
+            keeper.join()
     finally:
         for client in clients:
-            if client.connected:
-                client.disconnect()
+            client.close()
     return 0
 
 

@@ -1,5 +1,4 @@
 // State management for Reflex web apps.
-import io from "socket.io-client";
 import { mergician } from "mergician";
 import env from "$/env.json";
 import reflexEnvironment from "$/reflex.json";
@@ -13,9 +12,19 @@ import {
 } from "react-router";
 import { app, eventLoop } from "$/utils/context-registry";
 import debounce from "$/utils/helpers/debounce";
-import { parseJson } from "$/utils/helpers/json";
 import throttle from "$/utils/helpers/throttle";
 import { uploadFiles } from "$/utils/helpers/upload";
+import {
+  ReflexWebSocket,
+  disableChannels,
+  getChannel,
+  parseJsonLenient,
+  undefinedToNull,
+} from "$/utils/helpers/websocket";
+
+// Re-exported so components can reach a side channel through the module they
+// already import for getBackendURL/getToken.
+export { getChannel };
 
 // Endpoint URLs.
 const EVENTURL = env.EVENT;
@@ -174,21 +183,15 @@ export const isBackendDisabled = () => {
 };
 
 /**
- * Create a socket without starting its namespace or hydration events.
+ * Create a plain WebSocket transport without dialing it.
  * @param endpoint The backend URL.
- * @param transports The configured transports.
  * @param token The session token the backend links the connection to.
- * @returns The disconnected socket.
+ * @returns The idle transport.
  */
-const createSocket = (endpoint, transports, token) =>
-  io(endpoint.href, {
-    path: endpoint.pathname,
-    transports,
-    protocols: [reflexEnvironment.version],
-    autoUnref: false,
-    autoConnect: false,
+const createSocket = (endpoint, token) =>
+  new ReflexWebSocket(endpoint.href, {
     query: { token },
-    reconnection: false,
+    protocols: [reflexEnvironment.version],
   });
 
 let warmSocket = null;
@@ -201,15 +204,19 @@ const discardWarmSocket = () => {
   warmSocket = null;
   cancelWarmup();
   socket?.disconnect();
+  // Also releases the transport's offline listener.
+  socket?.off();
 };
 
-// Start only the transport while React is still preparing to mount. The
-// namespace stays disconnected until connect() installs all its handlers.
+// Dial the plain WebSocket transport while React is still preparing to mount.
+// The session stays closed until connect() installs all its handlers. The
+// socket.io transports load their client on connect, so they are not warmed.
 // Defer past module evaluation because context.js imports this module too.
 if (typeof window !== "undefined") {
   queueMicrotask(() => {
     if (
       socketStarted ||
+      env.SOCKETIO ||
       Object.keys(app.initialState ?? {}).length <= 1 ||
       isBackendDisabled() ||
       document.visibilityState === "hidden"
@@ -217,11 +224,7 @@ if (typeof window !== "undefined") {
       return;
     }
     try {
-      warmSocket = createSocket(
-        getBackendURL(EVENTURL),
-        [env.TRANSPORT],
-        peekToken(),
-      );
+      warmSocket = createSocket(getBackendURL(EVENTURL), peekToken());
     } catch {
       // Speculative setup may fail (for example, blocked session storage).
       // The normal connection path will report failures when the app mounts.
@@ -233,9 +236,8 @@ if (typeof window !== "undefined") {
       clearTimeout(timeout);
       window.removeEventListener("pagehide", discardWarmSocket);
     };
-    warmSocket.io.open((error) => {
-      if (error) discardWarmSocket();
-    });
+    // A dial that fails leaves nothing to clean up: connect() dials again.
+    warmSocket.open();
   });
 }
 
@@ -721,6 +723,8 @@ export const connect = async (
   navigate,
   params,
 ) => {
+  // Connecting (again) revokes a pending unmount cancellation.
+  socket.cancelConnect = false;
   // Socket already allocated, just reconnect it if needed.
   if (socket.current) {
     if (!socket.current.connected) {
@@ -728,15 +732,22 @@ export const connect = async (
     }
     return;
   }
+  // Another connect() call may be awaiting the socket.io-client import;
+  // don't create a second transport.
+  if (socket.connecting) {
+    return;
+  }
+  socket.connecting = true;
 
   // Get backend URL object from the endpoint.
   const endpoint = getBackendURL(EVENTURL);
   const on_hydrated_queue = [];
 
-  // The hydrate event rides in the socket.io CONNECT packet, so the backend
-  // starts loading state as soon as the namespace connects instead of after
-  // an extra round trip for the connect acknowledgement. The key is read by
-  // the backend as CompileVars.CONNECT_AUTH_EVENT.
+  // The hydrate event rides in the connect request (the plain WebSocket's
+  // connect frame, or the socket.io CONNECT packet), so the backend starts
+  // loading state as soon as the session opens instead of after an extra
+  // round trip for its acknowledgement. The key is read by the backend as
+  // CompileVars.CONNECT_AUTH_EVENT.
   const bootAuth = (first) => {
     const boot_event = withRouterData(app.initialEvents(first)[0], params);
     recordSentStorageValues(boot_event);
@@ -748,32 +759,58 @@ export const connect = async (
   // Create the socket. A new session's token is saved here, once the app has
   // mounted, even when a transport warmed up with it earlier.
   socketStarted = true;
-  const session_token = getToken();
-  if (
-    warmSocket &&
-    (warmSocket.io.opts.query.token !== session_token ||
-      warmSocket.io.opts.transports.length !== transports.length ||
-      transports.some(
-        (transport, i) => transport !== warmSocket.io.opts.transports[i],
-      ))
-  ) {
-    discardWarmSocket();
+  try {
+    const session_token = getToken();
+    if (
+      warmSocket &&
+      (env.SOCKETIO || warmSocket.io.opts.query.token !== session_token)
+    ) {
+      discardWarmSocket();
+    }
+    if (!env.SOCKETIO) {
+      // Default transport: plain WebSocket speaking the Reflex event protocol.
+      socket.current = warmSocket ?? createSocket(endpoint, session_token);
+      warmSocket = null;
+      cancelWarmup();
+    } else {
+      // Socket.IO, over the engine.io transports given; the client library
+      // is only loaded when this transport is configured.
+      const { default: io } = await import("socket.io-client");
+      if (socket.cancelConnect) {
+        // The event loop unmounted while the import was pending.
+        return;
+      }
+      socket.current = io(endpoint.href, {
+        path: endpoint.pathname,
+        transports,
+        protocols: [reflexEnvironment.version],
+        autoUnref: false,
+        autoConnect: false,
+        query: { token: session_token },
+        reconnection: false, // Reconnection will be handled manually.
+      });
+      // Ensure undefined fields in events are sent as null instead of removed
+      socket.current.io.encoder.replacer = undefinedToNull;
+      // The decoder API expects false (not undefined) for unparsable input.
+      socket.current.io.decoder.tryParse = (str) =>
+        parseJsonLenient(str, false);
+      // Channels are a plain-WebSocket protocol feature.
+      disableChannels(
+        'Channels require transport="websocket" in rxconfig.py, not Socket.IO.',
+      );
+    }
+  } catch (error) {
+    // Reported rather than rejected: the unhandled rejection handler adds an
+    // event, which reconnects, which fails again without end -- as a client
+    // chunk the browser failed to load does on every retry.
+    console.error("Failed to create the event socket:", error);
+    setConnectErrors((connectErrors) => [...connectErrors.slice(-9), error]);
+    return;
+  } finally {
+    socket.connecting = false;
   }
-  socket.current =
-    warmSocket ?? createSocket(endpoint, transports, session_token);
-  warmSocket = null;
-  cancelWarmup();
   socket.current.auth = bootAuth(true);
   socket.current.wait_connect = !socket.current.connected;
-  // Ensure undefined fields in events are sent as null instead of removed
-  socket.current.io.encoder.replacer = (k, v) => (v === undefined ? null : v);
-  socket.current.io.decoder.tryParse = (str) => {
-    try {
-      return parseJson(str);
-    } catch {
-      return false;
-    }
-  };
   // Set up a reconnect helper function
   socket.current.reconnect = () => {
     if (
@@ -947,6 +984,9 @@ export const connect = async (
     window.sessionStorage.setItem(TOKEN_KEY, new_token);
   });
 
+  // Track the handler on the ref so unmount cleanup can remove it; a
+  // surviving listener would resurrect a transport for the unmounted hook.
+  socket.visibilityHandler = checkVisibility;
   document.addEventListener("visibilitychange", checkVisibility);
   socket.current.connect();
 };
@@ -1319,6 +1359,15 @@ export const useEventLoop = (
     // Cleanup function.
     return () => {
       mounted.current = false;
+      // Abort a connect() that is still awaiting the socket.io-client import.
+      socket.cancelConnect = true;
+      if (socket.visibilityHandler) {
+        document.removeEventListener(
+          "visibilitychange",
+          socket.visibilityHandler,
+        );
+        socket.visibilityHandler = null;
+      }
       if (socket.current) {
         socket.current.disconnect();
         socket.current.off();

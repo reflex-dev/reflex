@@ -1,10 +1,12 @@
-"""A socket.io server that answers the event generator like the playground does, without reflex.
+"""A server that answers the event generator like the playground does, without reflex.
 
-It speaks the frames of reflex's event websocket (see
-:mod:`reflex_bench.drivers.events`): the engine.io handshake, the namespace ack,
-pings, and one delta per event. The hydration events set ``is_hydrated``; every
-other event gets a delta that echoes its ``payload["seq"]``. The generator's
-calibration (``selftest.events.calibrate``) runs against it in a separate
+It speaks either protocol of reflex's event websocket (see
+:mod:`reflex_bench.drivers.events`) and, like reflex, refuses the websocket on
+the other one's path, so the generator detects which: the plain protocol's
+connect frame and handshake or Socket.IO's engine.io open and namespace ack,
+pings, and one delta per event. The hydration events set ``is_hydrated``;
+every other event gets a delta that echoes its ``payload["seq"]``. The
+generator's calibration (``selftest.events.calibrate``) runs it in a separate
 process, and the generator's tests subclass it to script delays and faults.
 """
 
@@ -15,29 +17,42 @@ import contextlib
 import json
 import multiprocessing
 import os
+import urllib.parse
 import uuid
 from collections.abc import AsyncIterator, Sequence
+from http import HTTPStatus
 from multiprocessing.connection import Connection
 from multiprocessing.process import BaseProcess
 from typing import Any
 
 from websockets.asyncio.server import ServerConnection, serve
 from websockets.exceptions import ConnectionClosed
+from websockets.http11 import Request, Response
 
 from reflex_bench.drivers.events import (
-    CONNECT_FRAME,
-    DISCONNECT_FRAME,
-    EVENT_PREFIX,
+    BOOT_KEY,
+    CODECS,
+    CONNECT,
+    DISCONNECTED,
+    EVENT,
+    HANDSHAKE,
+    HYDRATE_AND_LOAD_EVENT,
     HYDRATE_EVENT,
     HYDRATED_VAR,
     KILL_GRACE_S,
-    NAMESPACE,
+    MAX_FRAME_BYTES,
     ON_LOAD_EVENT,
     PING,
     ROOT_STATE,
-    emit_frame,
+    SIO_CONNECT_FRAME,
+    SIO_OPEN_PREFIX,
+    SIO_PING,
+    WireProtocol,
     event_loop,
 )
+
+# The plain protocol's version, announced in its handshake.
+PROTOCOL_VERSION = 2
 
 
 class EchoServer:
@@ -48,6 +63,7 @@ class EchoServer:
         *,
         delta_key: str,
         seq_var: str,
+        protocol: WireProtocol = "websocket",
         ping_interval_s: float = 25.0,
         ping_timeout_s: float = 120.0,
     ) -> None:
@@ -56,13 +72,16 @@ class EchoServer:
         Args:
             delta_key: The state whose delta echoes the sequence number.
             seq_var: The var that echoes it.
-            ping_interval_s: Seconds between engine.io pings.
+            protocol: The protocol to speak.
+            ping_interval_s: Seconds between pings.
             ping_timeout_s: The ping timeout announced in the handshake.
         """
         self.delta_key = delta_key
         self.seq_var = seq_var
+        self.codec = CODECS[protocol]
         self.ping_interval_s = ping_interval_s
         self.ping_timeout_s = ping_timeout_s
+        self._path = urllib.parse.urlsplit(self.codec.url("http://echo", "")).path
 
     @contextlib.asynccontextmanager
     async def serve(self, host: str, port: int) -> AsyncIterator[int]:
@@ -83,36 +102,63 @@ class EchoServer:
             compression=None,
             max_size=None,
             ping_interval=None,
+            process_request=self._route,
         ) as server:
             yield next(iter(server.sockets)).getsockname()[1]
 
+    def _route(self, connection: ServerConnection, request: Request) -> Response | None:
+        """Refuse the websocket on any path but the protocol's, as reflex does.
+
+        Args:
+            connection: The connection.
+            request: Its upgrade request.
+
+        Returns:
+            ``None`` to accept, or a 404.
+        """
+        if urllib.parse.urlsplit(request.path).path == self._path:
+            return None
+        return connection.respond(HTTPStatus.NOT_FOUND, "Not Found\n")
+
     async def handle(self, ws: ServerConnection) -> None:
-        """Serve one connection until it closes or leaves the namespace.
+        """Serve one connection until it closes or leaves the session.
+
+        The codec decodes the client's frames too: Socket.IO's packets are the
+        same both ways, so its namespace join decodes as ``HANDSHAKE``.
 
         Args:
             ws: The connection.
         """
         sid = uuid.uuid4().hex
-        await ws.send(
-            "0"
-            + json.dumps({
-                "sid": sid,
-                "upgrades": [],
-                "pingInterval": int(self.ping_interval_s * 1000),
-                "pingTimeout": int(self.ping_timeout_s * 1000),
-                "maxPayload": 1_000_000,
-            })
-        )
+        codec = self.codec
+        if codec.greets:
+            await ws.send(
+                SIO_OPEN_PREFIX
+                + json.dumps({
+                    "sid": sid,
+                    "upgrades": [],
+                    "pingInterval": int(self.ping_interval_s * 1000),
+                    "pingTimeout": int(self.ping_timeout_s * 1000),
+                    "maxPayload": 1_000_000,
+                })
+            )
         pinger = asyncio.create_task(self._ping(ws))
         try:
             async for message in ws:
-                if isinstance(message, str) and message.startswith(EVENT_PREFIX):
-                    name, *args = json.loads(message[len(EVENT_PREFIX) :])
-                    if name == "event":
-                        await self.on_event(ws, args[0])
-                elif message == CONNECT_FRAME:
+                args = codec.parse(message)
+                if args is None:
+                    # Socket.IO's pong.
+                    continue
+                name = args[0]
+                if name == EVENT:
+                    await self.on_event(ws, args[1])
+                elif name in {CONNECT, HANDSHAKE}:
                     await self.on_connect(ws, sid)
-                elif message == DISCONNECT_FRAME:
+                    # The plain protocol's connect carries the boot event.
+                    auth = args[1] if len(args) > 1 else None
+                    if isinstance(auth, dict) and BOOT_KEY in auth:
+                        await self.on_event(ws, auth[BOOT_KEY])
+                elif name == DISCONNECTED:
                     return
         except ConnectionClosed:
             pass
@@ -120,24 +166,38 @@ class EchoServer:
             pinger.cancel()
 
     async def _ping(self, ws: ServerConnection) -> None:
-        """Send engine.io pings; the generator answers them.
+        """Send pings; the generator answers them.
 
         Args:
             ws: The connection.
         """
+        ping = SIO_PING if self.codec.protocol == "socketio" else self.codec.emit(PING)
         with contextlib.suppress(ConnectionClosed):
             while True:
                 await asyncio.sleep(self.ping_interval_s)
-                await ws.send(PING)
+                await ws.send(ping)
 
     async def on_connect(self, ws: ServerConnection, sid: str) -> None:
-        """Acknowledge the namespace connect.
+        """Acknowledge the connect.
 
         Args:
             ws: The connection.
             sid: The session id.
         """
-        await ws.send(f"40{NAMESPACE}," + json.dumps({"sid": sid}))
+        if self.codec.protocol == "socketio":
+            await ws.send(SIO_CONNECT_FRAME + json.dumps({"sid": sid}))
+            return
+        await ws.send(
+            self.codec.emit(
+                HANDSHAKE,
+                {
+                    "ping_interval": self.ping_interval_s,
+                    "ping_timeout": self.ping_timeout_s,
+                    "protocol": PROTOCOL_VERSION,
+                    "max_message_size": MAX_FRAME_BYTES,
+                },
+            )
+        )
 
     async def on_event(self, ws: ServerConnection, event: dict[str, Any]) -> None:
         """Answer one event.
@@ -155,16 +215,17 @@ class EchoServer:
             event: The event.
 
         Returns:
-            ``hydrate`` and ``on_load_internal`` get the root state's
-            ``is_hydrated`` (false, then true); any other event gets its
-            sequence number echoed.
+            The hydration events get the root state's ``is_hydrated``: false
+            for ``hydrate``, true for ``on_load_internal`` and
+            ``hydrate_and_load``; any other event gets its sequence number
+            echoed.
         """
         name = event["name"]
-        if name in {HYDRATE_EVENT, ON_LOAD_EVENT}:
-            delta = {ROOT_STATE: {HYDRATED_VAR: name == ON_LOAD_EVENT}}
+        if name in {HYDRATE_EVENT, ON_LOAD_EVENT, HYDRATE_AND_LOAD_EVENT}:
+            delta = {ROOT_STATE: {HYDRATED_VAR: name != HYDRATE_EVENT}}
         else:
             delta = {self.delta_key: {self.seq_var: event["payload"]["seq"]}}
-        return emit_frame("event", {"delta": delta, "events": []})
+        return self.codec.emit(EVENT, {"delta": delta, "events": []})
 
 
 def _serve_process(

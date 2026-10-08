@@ -19,15 +19,16 @@ Covers dev and prod modes via ``app_harness_env`` parametrisation.
 
 from __future__ import annotations
 
+import json
 import re
-from collections.abc import Generator
+from collections.abc import Generator, Iterator
+from typing import Any
 from urllib.parse import urlsplit
 
 import pytest
 from playwright.sync_api import Page, expect
 from reflex_base.config import get_config
 from reflex_base.constants.state import FIELD_MARKER
-from socketio.packet import Packet
 
 from reflex.testing import AppHarness
 
@@ -259,6 +260,30 @@ def _load(harness: AppHarness, page: Page) -> str:
     return base
 
 
+def _state_updates(frames: list[str | bytes]) -> Iterator[dict[str, Any]]:
+    """Yield the state updates among frames received on the default transport.
+
+    Its frames are JSON arrays, [event_name, payload].
+
+    Args:
+        frames: The received websocket frames.
+
+    Yields:
+        The payload of each state update.
+    """
+    for frame in frames:
+        if not isinstance(frame, str):
+            continue
+        message = json.loads(frame)
+        if (
+            isinstance(message, list)
+            and len(message) == 2
+            and message[0] == "event"
+            and isinstance(message[1], dict)
+        ):
+            yield message[1]
+
+
 def test_initial_connection_dispatches_both_substates(
     router_query_app: AppHarness, page: Page
 ):
@@ -277,15 +302,7 @@ def test_initial_connection_dispatches_both_substates(
     _load(router_query_app, page)
     expect(page.locator("#connected-count")).to_have_value("1")
 
-    # Socket.IO event packets use the Engine.IO message and event prefixes, 42.
-    for frame in frames:
-        if not isinstance(frame, str) or not frame.startswith("42"):
-            continue
-        packet = Packet(encoded_packet=frame[1:])
-        assert packet.data is not None
-        event, update = packet.data
-        if event != "event":
-            continue
+    for update in _state_updates(frames):
         updated_substates = sum(
             fields.get("load_count" + FIELD_MARKER) == 1
             or fields.get("connected_count" + FIELD_MARKER) == 1
@@ -343,23 +360,17 @@ def test_request_credentials_stay_server_side(router_query_app: AppHarness, page
     expect(page.locator("#credentials-seen")).to_have_value("true")
     assert "privacy-test" not in page.evaluate("document.cookie")
 
-    received_headers = []
     for frame in frames:
         decoded = frame.decode() if isinstance(frame, bytes) else frame
         assert secret not in decoded
         for credential in credential_headers.values():
             assert credential not in decoded
-        if not isinstance(frame, str) or not frame.startswith("42"):
-            continue
-        packet = Packet(encoded_packet=frame[1:])
-        assert packet.data is not None
-        event, update = packet.data
-        if event == "event":
-            received_headers.extend(
-                fields["rx_router_headers" + FIELD_MARKER]
-                for fields in update.get("delta", {}).values()
-                if "rx_router_headers" + FIELD_MARKER in fields
-            )
+    received_headers = [
+        fields["rx_router_headers" + FIELD_MARKER]
+        for update in _state_updates(frames)
+        for fields in update.get("delta", {}).values()
+        if "rx_router_headers" + FIELD_MARKER in fields
+    ]
     assert received_headers, "Hydration did not include the request headers"
     for headers in received_headers:
         assert "cookie" not in headers

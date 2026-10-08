@@ -49,6 +49,7 @@ section_order = (
     "cli",
     "browser-storage",
     "browser-javascript",
+    "channels",
     "plugins",
     "utils",
     "telemetry",

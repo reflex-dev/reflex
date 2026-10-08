@@ -6,7 +6,10 @@ frames. One session connects to a production backend (``reflex run --env prod
 payload bytes of every websocket frame it sends and receives:
 
 - ``wire.hydrate``: from the connect until the delta that sets ``is_hydrated``,
-  the page load of the playground's index route.
+  the page load of the playground's index route. On the plain protocol the
+  connect frame carries ``hydrate_and_load`` with an empty payload, as the
+  frontend's does on a reconnect: the full state, not the difference from the
+  compiled defaults that a browser's first load asks for.
 - ``wire.event[shape=...]``: after that, one event of a playground shape
   (:data:`~reflex_bench.suites.events.SHAPES`): the request frame, and the
   reply until the delta that echoes its sequence number, every frame in
@@ -25,7 +28,10 @@ payload bytes of every websocket frame it sends and receives:
   as the control that changes no collection. Every handler also sets
   ``last_seq``, so the deltas differ only by the collection they carry.
 
-A byte count is a text frame's UTF-8 length; the HTTP handshake that opens the
+The session speaks whichever protocol the backend does
+(:func:`~reflex_bench.drivers.events.detect_protocol`), so a comparison across
+reflex's switch from Socket.IO to the plain protocol includes the framing. A
+byte count is a text frame's UTF-8 length; the HTTP handshake that opens the
 websocket is not a frame. Sizes are deterministic for a given app and reflex
 version, so every metric is exact and a sample is one run. The playground is
 the fixture of ``hydrate`` and ``event``; the generated app's source hash keys
@@ -52,25 +58,23 @@ from websockets.exceptions import ConnectionClosed
 from reflex_bench.context import Context
 from reflex_bench.drivers.app_process import AppProcess, run_cli
 from reflex_bench.drivers.events import (
-    CLOSE,
-    CONNECT_ERROR_PREFIX,
-    CONNECT_FRAME,
-    DISCONNECT_FRAME,
-    EVENT_PREFIX,
-    HYDRATE_EVENT,
+    CODECS,
+    DISCONNECTED,
+    EVENT,
+    HANDSHAKE,
     HYDRATED_VAR,
     MAX_FRAME_BYTES,
     ON_LOAD_EVENT,
-    OPEN_PREFIX,
+    OPENED,
     PING,
-    PONG,
+    REFUSED,
     ROOT_STATE,
+    Codec,
     Endpoint,
     EventShape,
     ProtocolError,
-    event_frame,
     event_loop,
-    event_url,
+    resolve_codec,
     seq_payload,
 )
 from reflex_bench.fixtures import describe_fixture
@@ -143,10 +147,12 @@ class Hydration:
     """What a page load moved, from the connect until ``is_hydrated``.
 
     Attributes:
-        sent_bytes: Frame bytes sent: the namespace join and the hydration
-            events.
-        received_bytes: Frame bytes received: the engine.io open, the namespace
-            ack, a ``new_token`` if any, and the deltas.
+        sent_bytes: Frame bytes sent: the connect frame, which carries the
+            hydration as its boot event, or on Socket.IO the namespace join
+            and the hydration events.
+        received_bytes: Frame bytes received: the handshake (on Socket.IO the
+            engine.io open and the namespace ack), a ``new_token`` if any, and
+            the deltas.
         sent_frames: The frames sent.
         received_frames: The frames received.
         largest_frame_bytes: The largest frame received.
@@ -189,15 +195,23 @@ class Exchange:
 class WireSession:
     """One browser tab on a metered websocket: it hydrates, then sends events one at a time."""
 
-    def __init__(self, ws: Transport, token: str, pathname: str = "/") -> None:
+    def __init__(
+        self,
+        ws: Transport,
+        token: str,
+        pathname: str = "/",
+        codec: Codec = CODECS["websocket"],
+    ) -> None:
         """Wrap a connected websocket; nothing is sent yet.
 
         Args:
             ws: The websocket, connected with ``token`` in its URL.
             token: The session's token.
             pathname: The page route the session loads.
+            codec: The protocol the websocket speaks.
         """
         self._ws = ws
+        self.codec = codec
         self.token = token
         self.pathname = pathname
         self.query: dict[str, str] = {}
@@ -221,61 +235,59 @@ class WireSession:
         await self._ws.send(frame)
         return size
 
-    async def _receive(self) -> tuple[str | bytes, int, list[Any] | None]:
+    async def _receive(self) -> tuple[str | bytes, int, list[Any]]:
         """Receive a frame and count it; pings are answered, disconnects raise.
 
         A keepalive ping and its pong are timing, not payload: neither counts.
 
         Returns:
-            The frame, its bytes and, for a socket.io event, its arguments.
+            The frame, its bytes and the message it decodes to.
 
         Raises:
             ProtocolError: When the server disconnects the session, refuses
-                the namespace, asks the page to reload or sends a frame the
-                session does not speak.
+                it, asks the page to reload or sends a frame the session does
+                not speak.
         """
+        codec = self.codec
         while True:
             message = await self._ws.recv()
-            if message == PING:
-                await self._ws.send(PONG)
+            args = codec.parse(message)
+            if args is not None and args[0] == PING:
+                await self._ws.send(codec.pong)
                 continue
             size = frame_bytes(message)
             self.received_bytes += size
             self.received_frames += 1
-            if isinstance(message, str):
-                if message.startswith(EVENT_PREFIX):
-                    args = json.loads(message[len(EVENT_PREFIX) :])
-                    if args[0] == "new_token":
-                        # The token was in use; reflex hands out a new one.
-                        self.token = args[1]
-                    elif args[0] == "reload":
-                        msg = "the server asked the page to reload"
-                        raise ProtocolError(msg)
-                    return message, size, args
-                if message in {DISCONNECT_FRAME, CLOSE}:
-                    msg = f"the server disconnected the session ({message!r})"
-                    raise ProtocolError(msg)
-                if message.startswith(CONNECT_ERROR_PREFIX):
-                    reason = message[len(CONNECT_ERROR_PREFIX) :]
-                    msg = f"the server refused the namespace: {reason}"
-                    raise ProtocolError(msg)
-                if message.startswith((OPEN_PREFIX, CONNECT_FRAME)):
-                    return message, size, None
-            msg = f"unexpected frame: {message[:40]!r}"
-            raise ProtocolError(msg)
+            if args is None:
+                msg = f"unexpected frame: {message[:40]!r}"
+                raise ProtocolError(msg)
+            name = args[0]
+            if name == "new_token":
+                # The token was in use; reflex hands out a new one.
+                self.token = args[1]
+            elif name == "reload":
+                msg = "the server asked the page to reload"
+                raise ProtocolError(msg)
+            elif name == DISCONNECTED:
+                msg = f"the server disconnected the session ({message!r})"
+                raise ProtocolError(msg)
+            elif name == REFUSED:
+                msg = f"the server refused the namespace: {args[1]}"
+                raise ProtocolError(msg)
+            return message, size, args
 
     @staticmethod
-    def _delta(args: list[Any] | None, sizes: dict[str, int]) -> dict[str, Any]:
-        """Take the delta of an event frame, adding its substates' bytes.
+    def _delta(args: list[Any], sizes: dict[str, int]) -> dict[str, Any]:
+        """Take the delta of an event message, adding its substates' bytes.
 
         Args:
-            args: The frame's arguments, or ``None`` for a control frame.
+            args: The message.
             sizes: Bytes per substate, added to.
 
         Returns:
-            The delta, empty when the frame carries none.
+            The delta, empty when the message carries none.
         """
-        if args is None or args[0] != "event":
+        if args[0] != EVENT:
             return {}
         delta = args[1].get("delta") or {}
         for substate, values in delta.items():
@@ -285,28 +297,36 @@ class WireSession:
         return delta
 
     async def hydrate(self) -> Hydration:
-        """Join the namespace and hydrate like a page load.
+        """Open the session and hydrate it like a page load.
 
         Returns:
             What the page load moved.
 
         Raises:
-            ProtocolError: When the server does not open an engine.io session.
+            ProtocolError: When a Socket.IO server does not open an engine.io
+                session.
         """
         sent0, sent_frames0 = self.sent_bytes, self.sent_frames
         received0, received_frames0 = self.received_bytes, self.received_frames
-        opened, largest, _ = await self._receive()
-        if not (isinstance(opened, str) and opened.startswith(OPEN_PREFIX)):
-            msg = f"the server did not open an engine.io session: {opened[:40]!r}"
-            raise ProtocolError(msg)
-        await self._send(CONNECT_FRAME)
+        codec = self.codec
+        largest = 0
+        if codec.greets:
+            greeting, largest, args = await self._receive()
+            if args[0] != OPENED:
+                msg = f"the server did not open an engine.io session: {greeting[:40]!r}"
+                raise ProtocolError(msg)
+        await self._send(
+            codec.connect_frame(
+                token=self.token, pathname=self.pathname, query=self.query
+            )
+        )
         sizes: dict[str, int] = {}
         while True:
-            message, size, args = await self._receive()
+            _, size, args = await self._receive()
             largest = max(largest, size)
-            if isinstance(message, str) and message.startswith(CONNECT_FRAME):
-                # Joined; a new_token, when the server sends one, came before.
-                for name in (HYDRATE_EVENT, ON_LOAD_EVENT):
+            if args[0] == HANDSHAKE:
+                # Opened; a new_token, when the server sends one, came before.
+                for name in codec.load_events:
                     await self._send(self._event(name, {}))
                 continue
             delta = self._delta(args, sizes)
@@ -331,7 +351,7 @@ class WireSession:
         Returns:
             The frame.
         """
-        return event_frame(
+        return self.codec.event_frame(
             name, payload, token=self.token, pathname=self.pathname, query=self.query
         )
 
@@ -409,7 +429,7 @@ class WireSession:
 
 
 def measure(endpoint: Endpoint, work: Callable[[WireSession], Awaitable[_T]]) -> _T:
-    """Connect one session, run work on it, and leave the namespace.
+    """Connect one session, run work on it, and leave the session.
 
     Args:
         endpoint: The backend and the page route.
@@ -424,8 +444,9 @@ def measure(endpoint: Endpoint, work: Callable[[WireSession], Awaitable[_T]]) ->
 
     async def run() -> _T:
         token = str(uuid.uuid4())
+        codec = await resolve_codec(endpoint)
         async with connect(
-            event_url(endpoint.backend_url, token),
+            codec.url(endpoint.backend_url, token),
             # A browser sends the page's origin; the router's page host and
             # full paths in the deltas come from it.
             additional_headers={"Origin": endpoint.backend_url},
@@ -435,15 +456,16 @@ def measure(endpoint: Endpoint, work: Callable[[WireSession], Awaitable[_T]]) ->
             ping_interval=None,
             close_timeout=1,
         ) as ws:
-            session = WireSession(ws, token, endpoint.pathname)
+            session = WireSession(ws, token, endpoint.pathname, codec)
             try:
                 return await asyncio.wait_for(work(session), WIRE_TIMEOUT_S)
             except TimeoutError:
                 msg = f"the session did not finish within {WIRE_TIMEOUT_S:g} s"
                 raise TimeoutError(msg) from None
             finally:
-                with contextlib.suppress(ConnectionClosed):
-                    await ws.send(DISCONNECT_FRAME)
+                if codec.leave is not None:
+                    with contextlib.suppress(ConnectionClosed):
+                        await ws.send(codec.leave)
 
     loop = event_loop()
     try:

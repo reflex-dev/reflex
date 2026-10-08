@@ -21,7 +21,11 @@ def set_env_json():
     config = get_config()
     env: dict[str, object] = {
         **{endpoint.name: endpoint.get_url() for endpoint in constants.Endpoint},
-        "TRANSPORT": config.transport,
+        # An engine.io transport name, as third-party code sharing the app's
+        # Socket.IO connection hands it to socket.io-client; SOCKETIO picks
+        # the protocol.
+        "TRANSPORT": "polling" if config.transport == "polling" else "websocket",
+        "SOCKETIO": config.transport != "websocket",
         "TEST_MODE": is_in_app_harness(),
     }
     for plugin in config.plugins:

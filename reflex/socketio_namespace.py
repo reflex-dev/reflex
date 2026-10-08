@@ -1,0 +1,292 @@
+"""Socket.IO event transport (requires the optional python-socketio dependency)."""
+
+from __future__ import annotations
+
+import json
+import logging
+from collections.abc import MutableMapping
+from types import SimpleNamespace
+from typing import TYPE_CHECKING, Any
+
+from reflex_base import otel
+from reflex_base.environment import environment
+from reflex_base.utils.types import ASGIApp, Message, Receive, Scope, Send
+from socketio import ASGIApp as EngineIOApp
+from socketio import AsyncNamespace, AsyncServer
+
+from reflex.event_namespace import BaseEventNamespace, connect_boot_event, utf8_size
+from reflex.utils import exceptions, format
+
+if TYPE_CHECKING:
+    import asyncio
+
+    from reflex_base.config import Config
+
+    from reflex.app import App
+
+logger = logging.getLogger(__name__)
+
+
+def _sio_dumps(obj: Any, **kwargs: Any) -> str:
+    """Serialize an outgoing Socket.IO packet, recording its size when telemetry is on.
+
+    Uses Reflex's dumps, which emits the non-finite float tokens the frontend
+    revives.
+
+    Args:
+        obj: The packet payload.
+        **kwargs: Options forwarded to the JSON encoder.
+
+    Returns:
+        The JSON string.
+    """
+    data = format.json_dumps(obj, **kwargs)
+    if otel.enabled:
+        otel.record_message_size(utf8_size(data), "transmit")
+    return data
+
+
+def _sio_loads(data: str | bytes, **kwargs: Any) -> Any:
+    """Deserialize an incoming Socket.IO packet, recording its size when telemetry is on.
+
+    Args:
+        data: The JSON string.
+        **kwargs: Options forwarded to the JSON decoder.
+
+    Returns:
+        The decoded payload.
+    """
+    if otel.enabled:
+        otel.record_message_size(utf8_size(data), "receive")
+    return json.loads(data, **kwargs)
+
+
+# The JSON codec socket.io serializes packets with.
+_SOCKET_JSON_CODEC = SimpleNamespace(
+    dumps=staticmethod(_sio_dumps),
+    loads=staticmethod(_sio_loads),
+)
+
+
+class EventNamespace(AsyncNamespace, BaseEventNamespace):
+    """The Socket.IO event namespace."""
+
+    def __init__(self, namespace: str, app: App):
+        """Initialize the event namespace.
+
+        Args:
+            namespace: The namespace.
+            app: The application object.
+        """
+        AsyncNamespace.__init__(self, namespace)
+        BaseEventNamespace.__init__(self, namespace, app)
+        # ASGI scope per session, so the per-event path reaches the connection
+        # state it caches without going through the Socket.IO server.
+        self._scopes: dict[str, MutableMapping[str, Any]] = {}
+
+    async def on_connect(
+        self, sid: str, environ: dict, auth: Any = None
+    ) -> bool | None:
+        """Event for when the websocket is connected.
+
+        Args:
+            sid: The Socket.IO session id.
+            environ: The request information, including HTTP headers.
+            auth: The payload of the CONNECT packet, carrying the boot event.
+
+        Returns:
+            False to refuse a session that linked no token or whose boot event
+            failed, else None.
+        """
+        if (scope := environ.get("asgi.scope")) is not None:
+            self._scopes[sid] = scope
+        boot_event = connect_boot_event(auth)
+        await self.handle_connect(
+            sid,
+            environ.get("QUERY_STRING", ""),
+            environ.get("HTTP_SEC_WEBSOCKET_PROTOCOL"),
+            update_state=boot_event is None,
+        )
+        if sid not in self.sid_to_token:
+            # Not a Reflex client: nothing it sends can be served. Socket.IO
+            # runs no disconnect handler for a refused connect, so undo this
+            # one here.
+            self.on_disconnect(sid)
+            return False
+        if boot_event is not None:
+            try:
+                # Not through on_event: a failure here refuses the connect
+                # rather than disconnecting a session not yet acknowledged.
+                await self._dispatch_event(sid, boot_event)
+            except Exception as exc:
+                # Refused rather than raised: Socket.IO would keep a raising
+                # connect registered yet unanswered, and the client would wait
+                # for a hydrate that never comes instead of retrying.
+                self._log_handler_failure(
+                    sid, f"Error handling the boot event for session {sid}.", exc
+                )
+                self.on_disconnect(sid)
+                return False
+        return None
+
+    def on_disconnect(self, sid: str) -> asyncio.Task | None:
+        """Event for when the websocket disconnects.
+
+        Args:
+            sid: The Socket.IO session id.
+
+        Returns:
+            An asyncio Task for cleaning up the token, or None.
+        """
+        self._scopes.pop(sid, None)
+        return self.handle_disconnect(sid)
+
+    async def on_event(self, sid: str, data: Any):
+        """Event for receiving front-end websocket events.
+
+        Args:
+            sid: The Socket.IO session id.
+            data: The event data.
+        """
+        try:
+            await self._dispatch_event(sid, data)
+        except exceptions.EventDeserializationError:
+            # Client-controlled input a Reflex client never sends; end the
+            # session, as the plain transport does, rather than log a
+            # traceback per frame.
+            logger.debug(f"Disconnecting session {sid}: undeserializable event.")
+            await self.disconnect(sid)
+
+    async def _dispatch_event(self, sid: str, data: Any) -> None:
+        """Hand one front-end event to the event processor.
+
+        Args:
+            sid: The Socket.IO session id.
+            data: The event data.
+
+        Raises:
+            RuntimeError: If the Socket.IO is badly initialized.
+        """
+        scope = self._scopes.get(sid)
+        if scope is None:
+            # The connection was not seen by on_connect (e.g. the namespace
+            # was registered after the socket connected); ask the server.
+            if self.app.sio is None:
+                msg = "Socket.IO is not initialized."
+                raise RuntimeError(msg)
+            environ = self.app.sio.get_environ(sid, self.namespace)
+            if environ is None:
+                msg = "Socket.IO environ is not initialized."
+                raise RuntimeError(msg)
+            scope = self._scopes[sid] = environ["asgi.scope"]
+        await self.handle_event(sid, data, scope)
+
+    async def on_ping(self, sid: str):
+        """Event for testing the API endpoint.
+
+        Args:
+            sid: The Socket.IO session id.
+        """
+        await self.handle_ping(sid)
+
+    async def on_client_error(self, sid: str, data: Any = None):
+        """Handle errors reported by the frontend.
+
+        Args:
+            sid: The Socket.IO session id.
+            data: The error data from the client. Defaults to None because
+                python-socketio dispatches a payload-less emit as
+                ``on_client_error(sid)``; the malformed-payload guard then
+                drops it without raising.
+        """
+        await self.handle_client_error(sid, data)
+
+
+class _HeaderMiddleware:
+    """Echo the websocket subprotocol on accept, which engineio does not."""
+
+    def __init__(self, app: ASGIApp):
+        """Initialize the middleware.
+
+        Args:
+            app: The ASGI app to wrap.
+        """
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send):
+        """Handle an ASGI connection.
+
+        Args:
+            scope: The ASGI scope.
+            receive: The ASGI receive callable.
+            send: The ASGI send callable.
+
+        Returns:
+            The result of the wrapped app.
+        """
+        original_send = send
+
+        async def modified_send(message: Message):
+            if message["type"] == "websocket.accept":
+                if scope.get("subprotocols"):
+                    # The following *does* say "subprotocol" instead of "subprotocols", intentionally.
+                    message["subprotocol"] = scope["subprotocols"][0]
+
+                headers = dict(message.get("headers", []))
+                header_key = b"sec-websocket-protocol"
+                if subprotocol := headers.get(header_key):
+                    message["headers"] = [
+                        *message.get("headers", []),
+                        (header_key, subprotocol),
+                    ]
+
+            return await original_send(message)
+
+        return await self.app(scope, receive, modified_send)
+
+
+def create_socketio_app(app: App, config: Config) -> ASGIApp:
+    """Create the Socket.IO server for an app and return its ASGI app.
+
+    Creates ``app.sio`` if the user did not supply their own server.
+
+    Args:
+        app: The Reflex app.
+        config: The app configuration.
+
+    Returns:
+        The ASGI app serving the Socket.IO server.
+
+    Raises:
+        RuntimeError: If a custom ``sio`` server does not use asgi mode.
+    """
+    if not app.sio:
+        app.sio = AsyncServer(
+            async_mode="asgi",
+            cors_allowed_origins=(
+                (
+                    "*"
+                    if config.cors_allowed_origins == ("*",)
+                    else list(config.cors_allowed_origins)
+                )
+                if config.transport != "polling"
+                else []
+            ),
+            cors_credentials=config.transport != "polling",
+            max_http_buffer_size=environment.REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE.get(),
+            ping_interval=environment.REFLEX_SOCKET_INTERVAL.get().total_seconds(),
+            ping_timeout=environment.REFLEX_SOCKET_TIMEOUT.get().total_seconds(),
+            json=_SOCKET_JSON_CODEC,
+            allow_upgrades=False,
+            transports=["polling" if config.transport == "polling" else "websocket"],
+            # Handlers here only parse and enqueue (or emit a pong), so run
+            # them inline on the socket's receive loop instead of paying a
+            # task creation and a loop hop per incoming message.
+            async_handlers=False,
+        )
+    elif getattr(app.sio, "async_mode", "") != "asgi":
+        msg = f"Custom `sio` must use `async_mode='asgi'`, not '{app.sio.async_mode}'."
+        raise RuntimeError(msg)
+
+    # Create the socket app. Note event endpoint constant replaces the default 'socket.io' path.
+    return _HeaderMiddleware(EngineIOApp(app.sio, socketio_path=""))

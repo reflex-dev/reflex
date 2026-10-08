@@ -58,8 +58,9 @@ BENCH_JS = Path(__file__).with_name("bench_page.js").read_text(encoding="utf-8")
 HYDRATED = "#bench-hydrated"
 NAV_TIMEOUT_S = 120.0
 _ANCHOR_READS = 3
-# A socket.io event frame: "42", an optional namespace, then ["name", ...].
-_SOCKETIO_EVENT = re.compile(r'42(?:/[^,]*,)?\["([^"]+)"')
+# A message of the event websocket: ["name", ...], on Socket.IO after "42" and
+# an optional namespace.
+_MESSAGE = re.compile(r'(?:42(?:/[^,]*,)?)?\["([^"]+)"')
 
 # {"perf": ms since navigation start, "epoch": Date.now(), "alive": the
 # document's tag (see Tab.set_alive) or None}.
@@ -133,7 +134,8 @@ class Tab:
         page: The Playwright page.
         cdp: A DevTools session of the page, e.g. for ``Network.setCacheDisabled``.
         ws_bytes: Payload bytes of the page's websocket frames, both directions.
-        ws_events: How often each socket.io event arrived, by name.
+        ws_events: How often each message of the event websocket arrived, by
+            name.
         transfer_bytes: Bytes received over the wire for the page's HTTP
             responses, headers included, as the encoded data length of the
             DevTools ``Network.loadingFinished`` events.
@@ -201,14 +203,14 @@ class Tab:
         self.ws_bytes += _payload_size(payload)
 
     def _on_frame_received(self, payload: str | bytes) -> None:
-        """Count a received frame and the socket.io event it carries.
+        """Count a received frame and the message it carries.
 
         Args:
             payload: The frame's payload.
         """
         self.ws_bytes += _payload_size(payload)
-        if isinstance(payload, str) and (event := _SOCKETIO_EVENT.match(payload)):
-            self.ws_events[event[1]] += 1
+        if isinstance(payload, str) and (message := _MESSAGE.match(payload)):
+            self.ws_events[message[1]] += 1
 
     def mark(self, id: str) -> Mark | None:
         """Read a mark.

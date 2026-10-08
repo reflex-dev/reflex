@@ -16,6 +16,9 @@ config = rx.Config(
         "@fontsource-variable/jetbrains-mono@5.3.0",
     ],
     telemetry_enabled=False,
+    # xy 0.0.7 serves its charts' data plane as a namespace on the app's
+    # Socket.IO server; back to the default once xy rides a channel instead.
+    transport="socketio",
     plugins=[
         reflex_xy.XYPlugin(),
         rx.plugins.TailwindV4Plugin(),

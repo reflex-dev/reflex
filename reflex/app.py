@@ -17,19 +17,16 @@ import sys
 import tempfile
 import time
 import traceback
-import urllib.parse
 from collections.abc import (
     AsyncIterator,
     Callable,
     Collection,
     Coroutine,
-    Iterable,
     Mapping,
     Sequence,
 )
 from contextvars import Token
 from pathlib import Path
-from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, overload
 
 from reflex_base import constants, otel
@@ -37,21 +34,14 @@ from reflex_base.components.component import Component, ComponentStyle
 from reflex_base.config import get_config, reload_config
 from reflex_base.context.base import BaseContext
 from reflex_base.environment import auto_reload_cooldown, environment
-from reflex_base.event import (
-    _EVENT_FIELDS,
-    Event,
-    EventSpec,
-    EventType,
-    IndividualEventType,
-    noop,
-)
+from reflex_base.event import Event, EventSpec, EventType, IndividualEventType, noop
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor, EventProcessor
 from reflex_base.registry import RegistrationContext
 from reflex_base.telemetry_context import CompileTrigger, TelemetryContext
-from reflex_base.utils import memo_paths
+from reflex_base.utils import console, memo_paths
 from reflex_base.utils.imports import ImportVar
-from reflex_base.utils.types import ASGIApp, Message, Receive, Scope, Send
+from reflex_base.utils.types import ASGIApp, Receive, Scope, Send
 from reflex_base.vars.dep_tracking import is_dependency
 from reflex_components_core.base.error_boundary import ErrorBoundary
 from reflex_components_core.base.fragment import Fragment
@@ -63,12 +53,11 @@ from reflex_components_core.core.banner import (
 from reflex_components_core.core.breakpoints import set_breakpoints
 from reflex_components_core.core.sticky import sticky
 from reflex_components_sonner.toast import toast
-from socketio import ASGIApp as EngineIOApp
-from socketio import AsyncNamespace, AsyncServer
 from starlette.applications import Starlette
 from starlette.middleware import cors
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
+from starlette.routing import WebSocketRoute
 from starlette.staticfiles import StaticFiles
 from typing_extensions import Unpack
 
@@ -76,9 +65,10 @@ from reflex._upload import UploadedFilesHeadersMiddleware, upload
 from reflex._upload import UploadFile as UploadFile
 from reflex.admin import AdminDash
 from reflex.app_mixins import AppMixin, LifespanMixin, MiddlewareMixin
+from reflex.channels import Channel
 from reflex.compiler import compiler
 from reflex.compiler.compiler import readable_name_from_component
-from reflex.istate.data import SessionData
+from reflex.event_namespace import BaseEventNamespace, WebsocketEventNamespace
 from reflex.istate.manager import StateManager, StateModificationContext
 from reflex.istate.manager.token import BaseStateToken
 from reflex.route import (
@@ -103,7 +93,6 @@ from reflex.utils.exec import (
     should_prerender_routes,
 )
 from reflex.utils.misc import is_page_meta_set, run_in_thread
-from reflex.utils.token_manager import RedisTokenManager, TokenManager
 
 logger = logging.getLogger(__name__)
 
@@ -116,11 +105,16 @@ if TYPE_CHECKING:
     from reflex_base.plugins import Plugin
     from reflex_base.plugins.base import AddPageProtocol
     from reflex_base.vars import Var
+    from socketio import AsyncServer
 
     # Define custom types.
     ComponentCallable = Callable[[], Component | tuple[Component, ...] | str | Var]
+    _SocketIOServer = AsyncServer
 else:
     ComponentCallable = Callable[[], Component | tuple[Component, ...] | str]
+    # Lets annotations resolve without the optional python-socketio package;
+    # the public name resolves lazily, through __getattr__.
+    _SocketIOServer = Any
 
 Reducer = Callable[[Event], Coroutine[Any, Any, StateUpdate]]
 
@@ -449,7 +443,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
     head_components: list[Component] = dataclasses.field(default_factory=list)
 
-    sio: AsyncServer | None = None
+    sio: _SocketIOServer | None = None
 
     html_lang: str | None = None
 
@@ -495,7 +489,10 @@ class App(MiddlewareMixin, LifespanMixin):
     admin_dash: AdminDash | None = None
 
     # The async server name space.
-    _event_namespace: EventNamespace | None = None
+    _event_namespace: BaseEventNamespace | None = None
+
+    # Side channels multiplexed onto the event websocket, by channel name.
+    _channels: dict[str, Channel] = dataclasses.field(default_factory=dict)
 
     # The processor queue for handling events.
     _event_processor: EventProcessor | None = None
@@ -525,13 +522,50 @@ class App(MiddlewareMixin, LifespanMixin):
     ) = None
 
     @property
-    def event_namespace(self) -> EventNamespace | None:
+    def event_namespace(self) -> BaseEventNamespace | None:
         """The event namespace.
 
         Returns:
             The event namespace.
         """
         return self._event_namespace
+
+    def register_channel(self, channel: Channel) -> None:
+        """Register a side channel multiplexed onto the event websocket.
+
+        Channels run only over the plain WebSocket transport with state
+        enabled; elsewhere the channel is skipped with a warning.
+
+        Args:
+            channel: The channel to serve.
+
+        Raises:
+            RuntimeError: If the name is taken.
+        """
+        name = type(channel).name
+        # Packages register their channels from a plugin, unaware of how the
+        # app is set up; where channels cannot run, the browser-side handle
+        # reports it, so the app keeps serving rather than failing to start.
+        if self.event_namespace is None:
+            # A supplied `_state` is not enough: without enable_state the app
+            # never sets up a transport, so the channel would be unreachable.
+            logger.warning(
+                f"Channel {name!r} is not served: it needs the event websocket, "
+                "which exists only when state is enabled (rx.App(enable_state=True), "
+                "the default)."
+            )
+            return
+        if get_config().transport != "websocket":
+            logger.warning(
+                f"Channel {name!r} is not served: it requires the plain WebSocket "
+                "transport; remove the transport setting in rxconfig.py or set "
+                'transport="websocket".'
+            )
+            return
+        if name in self._channels:
+            msg = f"A channel named {name!r} is already registered."
+            raise RuntimeError(msg)
+        self._channels[name] = channel
 
     @property
     def event_processor(self) -> EventProcessor:
@@ -599,7 +633,8 @@ class App(MiddlewareMixin, LifespanMixin):
         """Set up the state for the app.
 
         Raises:
-            RuntimeError: If the socket server is invalid.
+            RuntimeError: If the socket server is invalid, or the Socket.IO
+                transport is requested without python-socketio installed.
         """
         if not self._state:
             return
@@ -613,80 +648,63 @@ class App(MiddlewareMixin, LifespanMixin):
         # rather than on the first frontend error that consults it.
         auto_reload_cooldown()
 
-        # Set up the Socket.IO AsyncServer.
-        if not self.sio:
-            self.sio = AsyncServer(
-                async_mode="asgi",
-                cors_allowed_origins=(
-                    (
-                        "*"
-                        if config.cors_allowed_origins == ("*",)
-                        else list(config.cors_allowed_origins)
-                    )
-                    if config.transport == "websocket"
-                    else []
-                ),
-                cors_credentials=config.transport == "websocket",
-                max_http_buffer_size=environment.REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE.get(),
-                ping_interval=environment.REFLEX_SOCKET_INTERVAL.get().total_seconds(),
-                ping_timeout=environment.REFLEX_SOCKET_TIMEOUT.get().total_seconds(),
-                json=SimpleNamespace(
-                    dumps=staticmethod(_sio_dumps),
-                    loads=staticmethod(_sio_loads),
-                ),
-                allow_upgrades=False,
-                transports=[config.transport],
-                # Handlers here only parse and enqueue (or emit a pong), so run
-                # them inline on the socket's receive loop instead of paying a
-                # task creation and a loop hop per incoming message.
-                async_handlers=False,
-            )
-        elif getattr(self.sio, "async_mode", "") != "asgi":
-            msg = f"Custom `sio` must use `async_mode='asgi'`, not '{self.sio.async_mode}'."
-            raise RuntimeError(msg)
-
-        # Create the socket app. Note event endpoint constant replaces the default 'socket.io' path.
-        socket_app = EngineIOApp(self.sio, socketio_path="")
         namespace = config.get_event_namespace()
+        event_path = config.prepend_backend_path(str(constants.Endpoint.EVENT))
 
-        # Create the event namespace and attach the main app. Not related to any paths.
-        self._event_namespace = EventNamespace(namespace, self)
-
-        # Register the event namespace with the socket.
-        self.sio.register_namespace(self.event_namespace)
-        # Mount the socket app with the API.
-        if self._api:
-
-            class HeaderMiddleware:
-                def __init__(self, app: ASGIApp):
-                    self.app = app
-
-                async def __call__(self, scope: Scope, receive: Receive, send: Send):
-                    original_send = send
-
-                    async def modified_send(message: Message):
-                        if message["type"] == "websocket.accept":
-                            if scope.get("subprotocols"):
-                                # The following *does* say "subprotocol" instead of "subprotocols", intentionally.
-                                message["subprotocol"] = scope["subprotocols"][0]
-
-                            headers = dict(message.get("headers", []))
-                            header_key = b"sec-websocket-protocol"
-                            if subprotocol := headers.get(header_key):
-                                message["headers"] = [
-                                    *message.get("headers", []),
-                                    (header_key, subprotocol),
-                                ]
-
-                        return await original_send(message)
-
-                    return await self.app(scope, receive, modified_send)
-
-            socket_app_with_headers = HeaderMiddleware(socket_app)
-            self._api.mount(
-                config.prepend_backend_path(str(constants.Endpoint.EVENT)),
-                socket_app_with_headers,
+        if self.sio is not None and config.transport == "websocket":
+            if "transport" in config._non_default_attributes:
+                msg = (
+                    "A custom `sio` server requires the Socket.IO transport; "
+                    'set transport="socketio" (or "polling") in rxconfig.py.'
+                )
+                raise RuntimeError(msg)
+            # The default transport used to be Socket.IO over a websocket, so
+            # an app passing its own server never had to choose one.
+            console.deprecate(
+                feature_name="A custom `sio` server without a transport setting",
+                reason='set transport="socketio" in rxconfig.py; the default '
+                "transport is now a plain WebSocket",
+                deprecation_version="0.10.0",
+                removal_version="1.0",
             )
+            # Persisted, so the compiled frontend and the workers use it too.
+            config._set_persistent(transport="socketio")
+
+        if config.transport in ("socketio", "polling"):
+            # Legacy Socket.IO transport, kept behind the optional dependency.
+            try:
+                from reflex.socketio_namespace import create_socketio_app
+
+                # Through the module, so an app that replaced the class gets
+                # its own.
+                event_namespace_class = sys.modules[__name__].EventNamespace
+            except ImportError as ex:
+                msg = (
+                    f"transport={config.transport!r} requires the python-socketio "
+                    "package. Install it with: pip install 'reflex[socketio]'"
+                )
+                raise RuntimeError(msg) from ex
+
+            socket_app = create_socketio_app(self, config)
+
+            # Create the event namespace and attach the main app. Not related to any paths.
+            self._event_namespace = event_namespace_class(namespace, self)
+
+            # Register the event namespace with the socket.
+            self.sio.register_namespace(self._event_namespace)  # pyright: ignore[reportOptionalMemberAccess]
+            # Mount the socket app with the API.
+            if self._api:
+                self._api.mount(event_path, socket_app)
+        else:
+            # Default transport: plain WebSocket served by the API itself.
+            self._event_namespace = WebsocketEventNamespace(namespace, self)
+            if self._api:
+                # Also with a trailing slash, the form the client dials: proxy
+                # rules written for Socket.IO route "/_event/*".
+                for path in (event_path, event_path.rstrip("/") + "/"):
+                    self._api.router.routes.append(
+                        WebSocketRoute(path, self._event_namespace.handle_websocket)
+                    )
 
         # Check the exception handlers
         self._validate_exception_handlers()
@@ -2033,482 +2051,40 @@ async def health(_request: Request) -> JSONResponse:
     return JSONResponse(content=health_status, status_code=status_code)
 
 
-def _utf8_size(data: str) -> int:
-    """Size of a serialized message in UTF-8 bytes.
-
-    ASCII payloads (the common case) are sized without encoding a copy.
-
-    Args:
-        data: The serialized message.
-
-    Returns:
-        The number of bytes the message occupies on the wire.
-    """
-    return len(data) if data.isascii() else len(data.encode())
+# Socket.IO names this module exported before python-socketio became optional:
+# name -> (module, attribute).
+_SOCKETIO_EXPORTS = {
+    "AsyncNamespace": ("socketio", "AsyncNamespace"),
+    "AsyncServer": ("socketio", "AsyncServer"),
+    "EngineIOApp": ("socketio", "ASGIApp"),
+    "EventNamespace": ("reflex.socketio_namespace", "EventNamespace"),
+}
 
 
-def _sio_dumps(obj: Any, **kwargs: Any) -> str:
-    """Serialize an outgoing Socket.IO packet, recording its size when telemetry is on.
+def __getattr__(name: str) -> Any:
+    """Resolve the optional Socket.IO exports lazily.
 
     Args:
-        obj: The packet payload.
-        **kwargs: Options forwarded to the JSON encoder.
+        name: The attribute name.
 
     Returns:
-        The JSON string.
+        The resolved attribute.
+
+    Raises:
+        AttributeError: If the attribute is unknown, or needs python-socketio
+            and it is not installed.
     """
-    data = format.json_dumps(obj, **kwargs)
-    if otel.enabled:
-        otel.record_message_size(_utf8_size(data), "transmit")
-    return data
-
-
-def _sio_loads(data: str | bytes, **kwargs: Any) -> Any:
-    """Deserialize an incoming Socket.IO packet, recording its size when telemetry is on.
-
-    Args:
-        data: The JSON string.
-        **kwargs: Options forwarded to the JSON decoder.
-
-    Returns:
-        The decoded payload.
-    """
-    if otel.enabled:
-        otel.record_message_size(
-            _utf8_size(data) if isinstance(data, str) else len(data), "receive"
+    if (target := _SOCKETIO_EXPORTS.get(name)) is None:
+        msg = f"module {__name__!r} has no attribute {name!r}"
+        raise AttributeError(msg)
+    module_name, attribute = target
+    try:
+        module = importlib.import_module(module_name)
+    except ImportError as ex:
+        # An AttributeError, so hasattr() and getattr() with a default work.
+        msg = (
+            f"{__name__}.{name} needs the optional python-socketio package; "
+            "install it with: pip install 'reflex[socketio]'"
         )
-    return json.loads(data, **kwargs)
-
-
-def _decode_asgi_headers(headers: Iterable[tuple[bytes, bytes]]) -> dict[str, str]:
-    """Decode raw ASGI scope header pairs into a str-keyed dict.
-
-    Args:
-        headers: Raw (name, value) byte pairs from the ASGI scope.
-
-    Returns:
-        A dict mapping decoded header names to decoded values.
-    """
-    return {k.decode("utf-8"): v.decode("utf-8") for (k, v) in headers}
-
-
-class EventNamespace(AsyncNamespace):
-    """The event namespace."""
-
-    # The application object.
-    app: App
-
-    # Maximum error-level log entries a single session may produce via the
-    # client_error event before further reports from it are dropped.
-    _MAX_CLIENT_ERRORS_PER_SID = 5
-
-    # Process-wide bound on error-level client_error log entries per time
-    # window; per-SID budgets alone reset on reconnect, so scripted
-    # reconnects could otherwise flood the logs.
-    _CLIENT_ERROR_WINDOW_SECONDS = 60.0
-    _MAX_CLIENT_ERRORS_PER_WINDOW = 20
-
-    def __init__(self, namespace: str, app: App):
-        """Initialize the event namespace.
-
-        Args:
-            namespace: The namespace.
-            app: The application object.
-        """
-        super().__init__(namespace)
-        self.app = app
-
-        # Use TokenManager for distributed duplicate tab prevention
-        self._token_manager = TokenManager.create()
-
-        # Number of client_error reports logged per SID, for rate limiting.
-        self._client_error_counts: dict[str, int] = {}
-
-        # Connection-scoped router_data entries per SID, computed once at
-        # connect time instead of for every event on the connection.
-        self._static_router_data: dict[str, dict[str, Any]] = {}
-
-        # Start time and count of the current process-wide client_error window.
-        self._client_error_window_start = 0.0
-        self._client_error_window_count = 0
-
-    @property
-    def token_to_sid(self) -> Mapping[str, str]:
-        """Token to SID mapping for backward compatibility.
-
-        Note: this mapping is read-only.
-
-        Returns:
-            The token to SID mapping.
-        """
-        # For backward compatibility, expose the underlying dict
-        return self._token_manager.token_to_sid
-
-    @property
-    def sid_to_token(self) -> dict[str, str]:
-        """SID to token mapping for backward compatibility.
-
-        Returns:
-            The SID to token mapping dict.
-        """
-        # For backward compatibility, expose the underlying dict
-        return self._token_manager.sid_to_token
-
-    async def on_connect(self, sid: str, environ: dict, auth: Any = None):
-        """Event for when the websocket is connected.
-
-        Args:
-            sid: The Socket.IO session id.
-            environ: The request information, including HTTP headers.
-            auth: The payload of the socket.io CONNECT packet. The frontend
-                puts its hydrate event here so it is processed without waiting
-                for the connect acknowledgement round trip.
-        """
-        if isinstance(self._token_manager, RedisTokenManager):
-            # Make sure this instance is watching for updates from other instances.
-            self._token_manager.ensure_lost_and_found_task(self.emit_update)
-        boot_event = (
-            auth.get(constants.CompileVars.CONNECT_AUTH_EVENT)
-            if isinstance(auth, dict)
-            else None
-        )
-        query_params = urllib.parse.parse_qs(environ.get("QUERY_STRING", ""))
-        token_list = query_params.get("token", [])
-        if token_list:
-            # The boot event is the connection's first event: processing it
-            # records the new sid and token on the state under the state lock.
-            await self.link_token_to_sid(
-                sid, token_list[0], update_state=boot_event is None
-            )
-        else:
-            logger.warning(f"No token provided in connection for session {sid}")
-
-        subprotocol = environ.get("HTTP_SEC_WEBSOCKET_PROTOCOL")
-        if subprotocol and subprotocol != constants.Reflex.VERSION:
-            logger.warning(
-                f"Frontend version {subprotocol} for session {sid} does not match the backend version {constants.Reflex.VERSION}."
-            )
-        if otel.enabled:
-            otel.record_connection(1)
-
-        # Headers, client IP, and session id cannot change for the lifetime of
-        # the connection; compute them once instead of on every event.
-        self._static_router_data[sid] = self._build_static_router_data(sid, environ)
-
-        if boot_event is not None:
-            try:
-                await self.on_event(sid, boot_event)
-            except Exception:
-                # A refused connect never reaches on_disconnect, so drop the
-                # token link and connection data made above before the error
-                # refuses the connect.
-                self._static_router_data.pop(sid, None)
-                if (linked_token := self.sid_to_token.get(sid)) is not None:
-                    await self._token_manager.disconnect_token(linked_token, sid)
-                raise
-
-    def _build_static_router_data(self, sid: str, environ: dict) -> dict[str, Any]:
-        """Build the connection-scoped router_data entries for a socket.
-
-        Args:
-            sid: The Socket.IO session id.
-            environ: The request information, including HTTP headers.
-
-        Returns:
-            The router_data entries that are constant for the connection.
-        """
-        asgi_scope = environ.get("asgi.scope", {})
-
-        # Get the client headers.
-        headers = _decode_asgi_headers(asgi_scope.get("headers", []))
-
-        # Get the client IP
-        try:
-            client_ip: str = asgi_scope["client"][0]
-            headers["asgi-scope-client"] = client_ip
-        except (KeyError, IndexError):
-            client_ip = environ.get("REMOTE_ADDR", "0.0.0.0")
-
-        # Unroll reverse proxy forwarded headers.
-        client_ip = (
-            headers
-            .get(
-                "x-forwarded-for",
-                client_ip,
-            )
-            .partition(",")[0]
-            .strip()
-        )
-        return {
-            constants.RouteVar.SESSION_ID: sid,
-            constants.RouteVar.HEADERS: headers,
-            constants.RouteVar.CLIENT_IP: client_ip,
-        }
-
-    def on_disconnect(self, sid: str) -> asyncio.Task | None:
-        """Event for when the websocket disconnects.
-
-        Args:
-            sid: The Socket.IO session id.
-
-        Returns:
-            An asyncio Task for cleaning up the token, or None.
-        """
-        if otel.enabled:
-            otel.record_connection(-1)
-        self._client_error_counts.pop(sid, None)
-        self._static_router_data.pop(sid, None)
-        # Get token before cleaning up
-        disconnect_token = self.sid_to_token.get(sid)
-        if disconnect_token:
-            # Use async cleanup through token manager
-            task = asyncio.create_task(
-                self._token_manager.disconnect_token(disconnect_token, sid),
-                name=f"reflex_disconnect_token|{disconnect_token}|{time.time()}",
-            )
-            # Don't await to avoid blocking disconnect, but handle potential errors
-            task.add_done_callback(
-                lambda t: (
-                    t.exception()
-                    and logger.error(f"Token cleanup error: {t.exception()}")
-                )
-            )
-            return task
-        return None
-
-    async def emit_update(self, update: StateUpdate, token: str) -> None:
-        """Emit an update to the client.
-
-        Args:
-            update: The state update to send.
-            token: The client token (tab) associated with the event.
-        """
-        socket_record = self._token_manager.token_to_socket.get(token)
-        if (
-            socket_record is None
-            or socket_record.instance_id != self._token_manager.instance_id
-        ):
-            if isinstance(self._token_manager, RedisTokenManager):
-                # The socket belongs to another instance of the app, send it to the lost and found.
-                await self._token_manager.emit_lost_and_found(token, update)
-            else:
-                # If the socket record is None, we are not connected to a client. Prevent sending
-                # updates to all clients.
-                logger.warning(
-                    f"Attempting to send delta to disconnected client {token!r}"
-                )
-            return
-        # Await the emit directly: wrapping it in a task does not unblock the
-        # caller (awaiting the task blocks just the same) and only adds task
-        # creation/scheduling overhead on every update.
-        await self.emit(str(constants.SocketEvent.EVENT), update, to=socket_record.sid)
-        # The emit may complete without suspending (the packet is queued, not
-        # sent). Yield one loop tick so the websocket writer can flush the
-        # packet before the caller potentially blocks the event loop (e.g. a
-        # sync event handler resuming after a yield).
-        await asyncio.sleep(0)
-
-    async def on_event(self, sid: str, data: Any):
-        """Event for receiving front-end websocket events.
-
-        Args:
-            sid: The Socket.IO session id.
-            data: The event data.
-
-        Raises:
-            RuntimeError: If the Socket.IO is badly initialized.
-            EventDeserializationError: If the event data is not a dictionary.
-        """
-        # Determine the token for this SID
-        if (token := self.sid_to_token.get(sid)) is None:
-            logger.warning(
-                f"Received event from session {sid} with no associated token. This may indicate a bug. Event data: {data}"
-            )
-            return
-
-        fields = data
-
-        if isinstance(fields, str):
-            logger.warning(
-                "Received event data as a string. This generally should not happen and may indicate a bug."
-                f" Event data: {fields}"
-            )
-            try:
-                fields = json.loads(fields)
-            except json.JSONDecodeError as ex:
-                msg = f"Failed to deserialize event data: {fields}."
-                raise exceptions.EventDeserializationError(msg) from ex
-
-        if not isinstance(fields, dict):
-            msg = f"Event data must be a dictionary, but received {fields} of type {type(fields)}."
-            raise exceptions.EventDeserializationError(msg)
-
-        try:
-            # Get the event.
-            event = Event(**{k: v for k, v in fields.items() if k in _EVENT_FIELDS})
-        except (TypeError, ValueError) as ex:
-            msg = f"Failed to deserialize event data: {fields}."
-            raise exceptions.EventDeserializationError(msg) from ex
-
-        static_router_data = self._static_router_data.get(sid)
-        if static_router_data is None:
-            # The connection was not seen by on_connect (e.g. namespace created
-            # after the socket connected); fall back to the connection environ.
-            if self.app.sio is None:
-                msg = "Socket.IO is not initialized."
-                raise RuntimeError(msg)
-            environ = self.app.sio.get_environ(sid, self.namespace)
-            if environ is None:
-                msg = "Socket.IO environ is not initialized."
-                raise RuntimeError(msg)
-            static_router_data = self._static_router_data[sid] = (
-                self._build_static_router_data(sid, environ)
-            )
-        router_data = event.router_data
-        router_data.update(static_router_data)
-        # The cached headers reach the event, and from there `state.router_data`,
-        # which is a plain mutable dict: sharing the mapping would let a handler
-        # mutating `self.router_data["headers"]` corrupt the connection cache for
-        # every later event on this socket. The shallow copy is ~17x cheaper than
-        # the per-event header decode it replaced, so the cache still pays off.
-        router_data[constants.RouteVar.HEADERS] = static_router_data[
-            constants.RouteVar.HEADERS
-        ].copy()
-        router_data.update({
-            constants.RouteVar.QUERY: format.format_query_params(event.router_data),
-            constants.RouteVar.CLIENT_TOKEN: token,
-        })
-        router_data[constants.RouteVar.PATH] = "/" + (
-            self.app.router(path) or "404"
-            if (path := router_data.get(constants.RouteVar.PATH))
-            else "404"
-        ).removeprefix("/")
-        if not otel.enabled:
-            await self.app.event_processor.enqueue(token, event)
-            return
-        with otel.remote_context(fields):
-            await self.app.event_processor.enqueue(token, event)
-
-    async def on_ping(self, sid: str):
-        """Event for testing the API endpoint.
-
-        Args:
-            sid: The Socket.IO session id.
-        """
-        # Emit the test event.
-        await self.emit(str(constants.SocketEvent.PING), "pong", to=sid)
-
-    async def on_client_error(self, sid: str, data: Any = None):
-        """Handle errors reported by the frontend.
-
-        This is a dedicated socket event rather than a state event
-        (``FrontendEventExceptionState.handle_frontend_exception``) because a
-        state event is addressed by a handler name the frontend derives from
-        its own state definitions. When those definitions are what disagree
-        with the backend -- the case this handler exists to report -- the name
-        may not resolve and the report is lost. A fixed socket event name
-        cannot drift, and it still gets through after the frontend has stopped
-        sending events on detecting the mismatch.
-
-        Reports are routed through the app's ``frontend_exception_handler``,
-        so frontend errors (especially state update processing errors) are
-        visible in backend logs and reach custom exception handlers.
-
-        Args:
-            sid: The Socket.IO session id.
-            data: The error data from the client. Defaults to None because
-                python-socketio dispatches a payload-less emit as
-                ``on_client_error(sid)``; the malformed-payload guard below
-                then drops it without raising.
-        """
-        if not isinstance(data, dict):
-            logger.debug(f"Ignoring malformed client_error payload from SID {sid}.")
-            return
-
-        # Check the sender and the rate limits before sanitizing: sanitizing is
-        # linear in the size of the client-supplied values, and reports that are
-        # dropped here must not cost more than the check itself.
-        if sid not in self.sid_to_token:
-            # Sockets without a linked token are not known clients; don't let
-            # them write error-level entries into the backend logs.
-            logger.debug(f"Ignoring client_error report from unknown SID {sid}.")
-            return
-
-        # Rate limit per session so a client cannot flood the backend logs.
-        error_count = self._client_error_counts.get(sid, 0)
-        if error_count >= self._MAX_CLIENT_ERRORS_PER_SID:
-            return
-
-        # Also bound total entries per time window: per-SID budgets reset on
-        # reconnect, so they alone do not stop scripted reconnect loops.
-        now = time.monotonic()
-        if now - self._client_error_window_start > self._CLIENT_ERROR_WINDOW_SECONDS:
-            self._client_error_window_start = now
-            self._client_error_window_count = 0
-        if self._client_error_window_count >= self._MAX_CLIENT_ERRORS_PER_WINDOW:
-            if self._client_error_window_count == self._MAX_CLIENT_ERRORS_PER_WINDOW:
-                # Warn once per window so suppression is visible in the logs
-                # and a flooding client cannot silently starve reports from
-                # other sessions.
-                self._client_error_window_count += 1
-                logger.warning(
-                    f"Received more than {self._MAX_CLIENT_ERRORS_PER_WINDOW} "
-                    f"client_error reports in {self._CLIENT_ERROR_WINDOW_SECONDS:.0f}s; "
-                    "suppressing further reports for this window."
-                )
-            return
-        self._client_error_window_count += 1
-        self._client_error_counts[sid] = error_count + 1
-
-        error_type = format.sanitize_client_log_value(data.get("error_type", "unknown"))
-        if error_type == constants.ClientErrorType.DISPATCH_MISSING:
-            substate = format.sanitize_client_log_value(data.get("substate", ""))
-            report = (
-                f"[SID: {sid}] State update failed: "
-                f"no dispatch function for substate(s) '{substate}'. "
-                "This indicates a frontend/backend state mismatch. "
-                "Rebuild the frontend or check that api_url points to the matching backend."
-            )
-        else:
-            message = format.sanitize_client_log_value(
-                data.get("message", "No error message provided")
-            )
-            report = f"[SID: {sid}] {error_type}: {message}"
-        # Route through the app's frontend exception handler so custom
-        # handlers (e.g. error trackers) receive client errors too.
-        self.app.frontend_exception_handler(Exception(report))
-
-    async def link_token_to_sid(
-        self, sid: str, token: str, *, update_state: bool = True
-    ):
-        """Link a token to a session id.
-
-        Args:
-            sid: The Socket.IO session id.
-            token: The client token.
-            update_state: Whether to record the new sid and token on the state
-                now. The connect skips it when the CONNECT packet carries the
-                boot event, which records them as the connection's first event
-                without an extra load and save of the whole state tree.
-        """
-        # Use TokenManager for duplicate detection and Redis support
-        new_token = await self._token_manager.link_token_to_sid(token, sid)
-
-        if new_token:
-            # Duplicate detected, emit new token to client
-            await self.emit("new_token", new_token, to=sid)
-
-        # Update client state to apply new sid/token for running background tasks.
-        if update_state and self.app._state is not None:
-            async with self.app.state_manager.modify_state(
-                BaseStateToken(ident=new_token or token, cls=self.app._state)
-            ) as state:
-                state.router_data[constants.RouteVar.SESSION_ID] = sid
-                # Record the identity the state was loaded under; duplicate-token
-                # handling can hand back a fresh one here.
-                state.router_data[constants.RouteVar.CLIENT_TOKEN] = new_token or token
-                # Rebuild from router_data to keep the session var in step with it.
-                if (
-                    session := SessionData.from_router_data(state.router_data)
-                ) != state.rx_router_session:
-                    state.rx_router_session = session
+        raise AttributeError(msg) from ex
+    return getattr(module, attribute)

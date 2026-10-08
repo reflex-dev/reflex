@@ -484,11 +484,35 @@ def run_frontend_prod(host: str, port: int):
         )
 
 
+def _uvicorn_can_serve_websockets() -> bool:
+    """Whether a websocket protocol library uvicorn can use is installed.
+
+    Returns:
+        True if websockets or wsproto is importable.
+    """
+    return (
+        importlib.util.find_spec("websockets") is not None
+        or importlib.util.find_spec("wsproto") is not None
+    )
+
+
+@once
+def _warn_about_uvicorn_websockets():
+    """Warn when the selected uvicorn cannot serve websockets."""
+    if not _uvicorn_can_serve_websockets():
+        logger.warning(
+            "Uvicorn has no websocket protocol library installed, so the default "
+            "WebSocket transport will not connect. Install `reflex[uvicorn]` or "
+            "use Granian (REFLEX_USE_GRANIAN=1)."
+        )
+
+
 @once
 def _warn_user_about_uvicorn():
     logger.warning(
         "Using Uvicorn for backend as it is installed. This behavior will change in 0.8.0 to use Granian by default."
     )
+    _warn_about_uvicorn_websockets()
 
 
 def should_use_granian():
@@ -498,10 +522,18 @@ def should_use_granian():
         True if Granian should be used.
     """
     if environment.REFLEX_USE_GRANIAN.is_set():
-        return environment.REFLEX_USE_GRANIAN.get()
+        use_granian = environment.REFLEX_USE_GRANIAN.get()
+        if not use_granian:
+            # Asking for uvicorn explicitly is the likeliest way to end up
+            # without a websocket library, so this check cannot live on the
+            # auto-detect branch alone.
+            _warn_about_uvicorn_websockets()
+        return use_granian
     if (
         importlib.util.find_spec("uvicorn") is None
         or importlib.util.find_spec("gunicorn") is None
+        # Granian is always installed and serves the event socket itself.
+        or not _uvicorn_can_serve_websockets()
     ):
         return True
     _warn_user_about_uvicorn()
@@ -727,7 +759,53 @@ def run_uvicorn_backend(host: str, port: int, loglevel: LogLevel):
         reload=True,
         reload_dirs=list(map(str, get_reload_paths())),
         reload_delay=0.1,
+        **uvicorn_websocket_options(),
     )
+
+
+def _uvicorn_ws_max_size() -> int:
+    """Websocket message size limit for uvicorn.
+
+    Never below uvicorn's 16 MiB default, so unrelated websocket endpoints
+    keep working; raised when the Reflex policy limit needs more.
+
+    Returns:
+        The message size limit in bytes.
+    """
+    return max(environment.REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE.get(), 16 * 1024 * 1024)
+
+
+def uvicorn_websocket_options() -> dict[str, Any]:
+    """The app's websocket policy as uvicorn settings.
+
+    Every uvicorn launch path applies these, including the gunicorn worker
+    class, which is how the production server receives options gunicorn itself
+    does not forward.
+
+    Returns:
+        The uvicorn configuration keyword arguments.
+    """
+    return {
+        "ws_max_size": _uvicorn_ws_max_size(),
+        "ws_per_message_deflate": environment.REFLEX_SOCKET_PER_MESSAGE_DEFLATE.get(),
+    }
+
+
+def _uvicorn_websocket_args() -> list[str]:
+    """The app's websocket policy as uvicorn command line arguments.
+
+    Returns:
+        The command line arguments.
+    """
+    options = uvicorn_websocket_options()
+    return [
+        *("--ws-max-size", str(options["ws_max_size"])),
+        # A BOOLEAN-valued option, not a flag: uvicorn rejects --no-... forms.
+        *(
+            "--ws-per-message-deflate",
+            str(options["ws_per_message_deflate"]).lower(),
+        ),
+    ]
 
 
 HOTRELOAD_IGNORE_EXTENSIONS = (
@@ -765,6 +843,32 @@ def _granian_log_dictconfig() -> dict[str, Any] | None:
     return {"handlers": {"console": json_handler, "access": json_handler}}
 
 
+# The largest websocket frame Granian receives; it drops larger ones, with no
+# setting to raise the limit.
+_GRANIAN_MAX_FRAME_SIZE = 16 * 1024 * 1024
+
+
+def _cap_message_size_for_granian():
+    """Lower the message size limit to what Granian can receive.
+
+    The limit is advertised to clients, which size what they send by it; a
+    message Granian drops is lost with the socket. Lowered in the environment,
+    so the workers it spawns read the capped value too.
+    """
+    configured = environment.REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE.get()
+    if configured <= _GRANIAN_MAX_FRAME_SIZE:
+        return
+    logger.warning(
+        f"REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE is {configured} bytes, but Granian "
+        f"drops websocket frames over {_GRANIAN_MAX_FRAME_SIZE} bytes; capping "
+        "it there. Run uvicorn (`reflex[uvicorn]`, REFLEX_USE_GRANIAN=0) for "
+        "larger messages."
+    )
+    os.environ[environment.REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE.name] = str(
+        _GRANIAN_MAX_FRAME_SIZE
+    )
+
+
 def run_granian_backend(host: str, port: int, loglevel: LogLevel):
     """Run the backend in development mode using Granian.
 
@@ -774,6 +878,7 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
         loglevel: The log level.
     """
     logger.debug("Using Granian for backend")
+    _cap_message_size_for_granian()
 
     if environment.REFLEX_STRICT_HOT_RELOAD.get():
         import multiprocessing
@@ -983,6 +1088,7 @@ def run_uvicorn_backend_prod(
             *("--host", host),
             *("--port", str(port)),
             *("--workers", str(_get_backend_workers())),
+            *_uvicorn_websocket_args(),
             "--factory",
             app_module,
         ]
@@ -998,7 +1104,10 @@ def run_uvicorn_backend_prod(
             "-m",
             "gunicorn",
             "--preload",
-            *("--worker-class", "uvicorn.workers.UvicornH11Worker"),
+            *(
+                "--worker-class",
+                "reflex.utils.uvicorn_worker.ReflexUvicornWorker",
+            ),
             *("--threads", str(_get_backend_workers())),
             *("--bind", f"{host}:{port}"),
             *env_args,
@@ -1030,6 +1139,7 @@ def run_granian_backend_prod(
         loglevel: The log level.
         app_target: The ASGI app target to run. Defaults to the reflex app instance.
     """
+    _cap_message_size_for_granian()
     from granian.constants import Interfaces
     from granian.log import LogLevels
     from granian.server import Server as Granian
