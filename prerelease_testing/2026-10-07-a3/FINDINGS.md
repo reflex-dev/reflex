@@ -195,9 +195,11 @@ Numbered A3-xx. "Pending verification" until a `verify_*` item reports.
   ~1 RTT of another tab booting (session restore, reload, new tab). Fix location: the boot echo — keep #7493's re-marking for `get_delta`
   overrides, but never write back an unchanged echo (the verifier's scratch patch of the compiled state.js: 0 storms).
 - **Fix prototyped (10-07, at the maintainer's request)** on branch `claude/a3-11-storage-echo` (frontend only, `state.js`): do not write
-  an echoed local/session storage value back (cookies still renew `max_age`); on a storage event send the value stored now, not
-  `e.newValue`; resync a synced var whose echo crossed a newer stored value. Storm driver vs published a3: dev 0 storms in 11 runs
-  (a3 3/4), prod 0/7; `on_load` stamps (A3-12) 0 storms in 16 runs, all converge (a3 4/4 storms). 3 Playwright regression tests fail on main. PR [reflex-dev/reflex#7505](https://github.com/reflex-dev/reflex/pull/7505).
+  an echoed localStorage value back unless the value stored now is one the tab itself wrote after sending it (cookies and session
+  storage written as before); on a storage event send the value stored now, not `e.newValue`. Final commit d03ddb107 vs published
+  a3: storm driver dev 0/5 (a3 3/4), prod 0/3; `on_load` stamps (A3-12) 0 storms in 16 runs, all converge (a3 4/4 storms); verifier
+  100 ms RTT and dev-reload scenarios 0 storms in 13 runs (race fired in all 7 click runs). Playwright regression tests fail on main.
+  PR [reflex-dev/reflex#7505](https://github.com/reflex-dev/reflex/pull/7505); design history in `a3_hydration/pr7505/NOTES.md`.
 
 ### A3-12: `sync=True` LocalStorage written concurrently by several tabs (an on_load that stamps a synced var, a browser session restore) loops forever between the tabs (MEDIUM, pre-existing on 0.9.12, a2 and a3; CONFIRMED by independent verifier; fixed by the same PR reflex#7505)
 - Item `a3_hydration` (inbox 2). `src/syncstamp` (`Stamp.last = rx.LocalStorage("", name="ss_last", sync=True)` set to a per-tab value in
@@ -207,7 +209,7 @@ Numbered A3-xx. "Pending verification" until a `verify_*` item reports.
   whose `on_load` stamps a synced var, then one dev backend reload (a save, deploy or restart): every tab reconnects, re-runs on_load and
   the loop never ends (a3, a2, 0.9.12 2/2 each); 6 restored background tabs 2/2 each; explorer `/stamp 6` 2/2 each; 20–65k frames per
   5 s, tabs end on 2–3 values. Fixing the storage-sync path alone ends the loop but leaves a tab on a stale value unless it re-reads
-  localStorage when a sync answer disagrees — which #7505 does (0 storms, all converge in 16 runs).
+  localStorage — which #7505 does: storage events send the value stored now (0 storms, all converge in 16 + 6 runs).
 
 ### A3-13: #7493 re-sends client-storage vars and their dependent computed vars in a second boot delta, so storage-dependent computed vars run twice per page load (LOW, performance; same as 0.9.12, a2 ran them once)
 - Item `a3_events_tp` (inbox 2). `events/src/bootdup` (core only): on each reload with a stored value a3 sends 4 deltas and evaluates every
