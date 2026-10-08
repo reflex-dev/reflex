@@ -14,12 +14,22 @@ import json
 import sys
 import threading
 
+from reflex_base.environment import environment
 from websockets.exceptions import ConnectionClosed
 
 from tests.benchmarks.support.socket_client import EventClient, _connect
 
-# Seconds between checks for pings while the sessions are held.
-_KEEPALIVE_INTERVAL = 1.0
+
+def _keepalive_interval() -> float:
+    """Seconds between checks for pings while the sessions are held.
+
+    A pong goes out at the first check after its ping, so checking faster than
+    the server's ping timeout keeps every session inside its deadline.
+
+    Returns:
+        The interval.
+    """
+    return min(1.0, environment.REFLEX_SOCKET_TIMEOUT.get().total_seconds() / 2)
 
 
 def _keep_alive(clients: list[EventClient], stop: threading.Event) -> None:
@@ -29,7 +39,8 @@ def _keep_alive(clients: list[EventClient], stop: threading.Event) -> None:
         clients: The held sessions.
         stop: Set when the sessions are released.
     """
-    while not stop.wait(_KEEPALIVE_INTERVAL):
+    interval = _keepalive_interval()
+    while not stop.wait(interval):
         for client in clients:
             # A session the server ended stays ended; keep the others alive.
             with contextlib.suppress(ConnectionClosed, ConnectionError):

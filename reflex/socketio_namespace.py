@@ -115,7 +115,9 @@ class EventNamespace(AsyncNamespace, BaseEventNamespace):
             return False
         if boot_event is not None:
             try:
-                await self.on_event(sid, boot_event)
+                # Not through on_event: a failure here refuses the connect
+                # rather than disconnecting a session not yet acknowledged.
+                await self._dispatch_event(sid, boot_event)
             except Exception as exc:
                 # Refused rather than raised: Socket.IO would keep a raising
                 # connect registered yet unanswered, and the client would wait
@@ -145,6 +147,22 @@ class EventNamespace(AsyncNamespace, BaseEventNamespace):
         Args:
             sid: The Socket.IO session id.
             data: The event data.
+        """
+        try:
+            await self._dispatch_event(sid, data)
+        except exceptions.EventDeserializationError:
+            # Client-controlled input a Reflex client never sends; end the
+            # session, as the plain transport does, rather than log a
+            # traceback per frame.
+            logger.debug(f"Disconnecting session {sid}: undeserializable event.")
+            await self.disconnect(sid)
+
+    async def _dispatch_event(self, sid: str, data: Any) -> None:
+        """Hand one front-end event to the event processor.
+
+        Args:
+            sid: The Socket.IO session id.
+            data: The event data.
 
         Raises:
             RuntimeError: If the Socket.IO is badly initialized.
@@ -161,14 +179,7 @@ class EventNamespace(AsyncNamespace, BaseEventNamespace):
                 msg = "Socket.IO environ is not initialized."
                 raise RuntimeError(msg)
             scope = self._scopes[sid] = environ["asgi.scope"]
-        try:
-            await self.handle_event(sid, data, scope)
-        except exceptions.EventDeserializationError:
-            # Client-controlled input a Reflex client never sends; end the
-            # session, as the plain transport does, rather than log a
-            # traceback per frame.
-            logger.debug(f"Disconnecting session {sid}: undeserializable event.")
-            await self.disconnect(sid)
+        await self.handle_event(sid, data, scope)
 
     async def on_ping(self, sid: str):
         """Event for testing the API endpoint.

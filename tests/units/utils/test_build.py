@@ -209,13 +209,16 @@ def test_build_preserves_prerendered_pages_when_assets_collide(
 
 
 def _patch_env_json(
-    mocker: MockerFixture, tmp_path: Path, plugins: list[Plugin] | None = None
+    mocker: MockerFixture,
+    tmp_path: Path,
+    plugins: list[Plugin] | None = None,
+    transport: str = "websocket",
 ):
     web_dir = tmp_path / ".web"
     web_dir.mkdir()
     mocker.patch("reflex.utils.build.prerequisites.get_web_dir", return_value=web_dir)
     config = mocker.Mock()
-    config.transport = "websocket"
+    config.transport = transport
     config.plugins = plugins or []
     mocker.patch("reflex.utils.build.get_config", return_value=config)
     mocker.patch("reflex.utils.build.is_in_app_harness", return_value=False)
@@ -269,3 +272,33 @@ def test_set_env_json_later_plugin_wins(tmp_path: Path, mocker: MockerFixture):
     assert env["SHARED"] == "second"
     assert env["ONLY_FIRST"] == 1
     assert env["ONLY_SECOND"] == 2
+
+
+@pytest.mark.parametrize(
+    ("transport", "engine_transport", "socketio"),
+    [
+        ("websocket", "websocket", False),
+        ("socketio", "websocket", True),
+        ("polling", "polling", True),
+    ],
+)
+def test_set_env_json_keeps_transport_an_engine_io_name(
+    tmp_path: Path,
+    mocker: MockerFixture,
+    transport: str,
+    engine_transport: str,
+    socketio: bool,
+):
+    """TRANSPORT stays a name socket.io-client accepts; SOCKETIO picks the protocol.
+
+    Third-party frontend code hands TRANSPORT to socket.io-client to share the
+    app's Socket.IO connection, as xy's charts do, and "socketio" is no
+    engine.io transport.
+    """
+    web_dir = _patch_env_json(mocker, tmp_path, transport=transport)
+
+    build.set_env_json()
+
+    env = json.loads((web_dir / "env.json").read_text())
+    assert env["TRANSPORT"] == engine_transport
+    assert env["SOCKETIO"] is socketio

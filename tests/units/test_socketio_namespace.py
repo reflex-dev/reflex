@@ -172,3 +172,25 @@ async def test_undeserializable_event_disconnects_the_session(
     namespace.disconnect.assert_awaited_once_with("sid1")
     mock_app.event_processor.enqueue.assert_not_awaited()
     assert all(record.levelno <= logging.DEBUG for record in caplog.records)
+
+
+@pytest.mark.asyncio
+async def test_connect_with_a_malformed_boot_event_is_refused(
+    namespace: EventNamespace, mock_app: Mock
+):
+    """A boot event that does not deserialize refuses the connect.
+
+    Disconnecting from inside the connect handler, as a later malformed event
+    does, would acknowledge a session that never hydrated.
+    """
+    namespace.disconnect = AsyncMock()
+    environ = {"QUERY_STRING": "token=tok1", "asgi.scope": {"headers": []}}
+
+    refused = await namespace.on_connect("sid1", environ, {"event": "not an event"})
+    # Let the token cleanup task run.
+    await asyncio.sleep(0)
+
+    assert refused is False
+    namespace.disconnect.assert_not_awaited()
+    mock_app.event_processor.enqueue.assert_not_awaited()
+    assert "tok1" not in namespace.token_to_sid

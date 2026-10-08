@@ -70,6 +70,23 @@ _PING_FRAME = json.dumps([PING_MESSAGE], separators=_COMPACT)
 _STATIC_ROUTER_DATA = "_reflex_static_router_data"
 
 
+def _decode_header_value(value: bytes) -> str:
+    """Decode a header value, as UTF-8 where it is valid.
+
+    Args:
+        value: The raw header value.
+
+    Returns:
+        The decoded value.
+    """
+    try:
+        return value.decode()
+    except UnicodeDecodeError:
+        # Header octets need not be UTF-8; Latin-1 maps every byte, as ASGI
+        # servers and Starlette decode them.
+        return value.decode("latin-1")
+
+
 def _decode_asgi_headers(headers: Iterable[tuple[bytes, bytes]]) -> dict[str, str]:
     """Decode raw ASGI scope header pairs into a str-keyed dict.
 
@@ -79,7 +96,7 @@ def _decode_asgi_headers(headers: Iterable[tuple[bytes, bytes]]) -> dict[str, st
     Returns:
         A dict mapping decoded header names to decoded values.
     """
-    return {k.decode("utf-8"): v.decode("utf-8") for (k, v) in headers}
+    return {k.decode("latin-1"): _decode_header_value(v) for (k, v) in headers}
 
 
 def build_static_router_data(sid: str, asgi_scope: Mapping[str, Any]) -> dict[str, Any]:

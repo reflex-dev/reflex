@@ -1425,6 +1425,23 @@ def _run_client_script(tmp_path: Path, source: str, *args: str) -> Any:
     return json.loads(result.stdout)
 
 
+def test_header_values_that_are_not_utf8_are_kept():
+    """A header may carry any octets; one that is not UTF-8 must not fail the connection.
+
+    The connection-scoped router data is built from the headers on the first
+    event, so a decode error dropped every event the connection sent. UTF-8
+    values still decode as before.
+    """
+    router_data = event_namespace.build_static_router_data(
+        "sid1",
+        {"headers": [(b"x-raw", b"\xff\xfe"), (b"x-name", "José".encode())]},
+    )
+
+    headers = router_data["headers"]
+    assert headers["x-raw"] == b"\xff\xfe".decode("latin-1")
+    assert headers["x-name"] == "José"
+
+
 def test_binary_frame_sizes_attachments_in_bytes():
     """An attachment is measured in bytes, whatever its item size.
 

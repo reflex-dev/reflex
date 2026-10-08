@@ -322,3 +322,23 @@ def test_baseline_server_startup_failure_surfaces_thread_exception(monkeypatch):
         BaselineSocketServer(response={}),
     ):
         pass
+
+
+@pytest.mark.parametrize(("timeout", "interval"), [(None, 1.0), ("100ms", 0.05)])
+def test_idle_clients_answer_pings_within_the_ping_timeout(
+    monkeypatch: pytest.MonkeyPatch, timeout: str | None, interval: float
+):
+    """Held sessions poll for pings fast enough to beat the server's deadline.
+
+    A pong goes out at the first poll after its ping, so the gap between
+    client frames is the ping interval plus the poll period; it has to stay
+    under the interval plus the ping timeout.
+    """
+    from tests.benchmarks.support import idle_clients
+
+    if timeout is None:
+        monkeypatch.delenv("REFLEX_SOCKET_TIMEOUT", raising=False)
+    else:
+        monkeypatch.setenv("REFLEX_SOCKET_TIMEOUT", timeout)
+
+    assert idle_clients._keepalive_interval() == pytest.approx(interval)

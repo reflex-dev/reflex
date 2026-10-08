@@ -216,7 +216,7 @@ if (typeof window !== "undefined") {
   queueMicrotask(() => {
     if (
       socketStarted ||
-      env.TRANSPORT !== "websocket" ||
+      env.SOCKETIO ||
       Object.keys(app.initialState ?? {}).length <= 1 ||
       isBackendDisabled() ||
       document.visibilityState === "hidden"
@@ -759,24 +759,22 @@ export const connect = async (
   // Create the socket. A new session's token is saved here, once the app has
   // mounted, even when a transport warmed up with it earlier.
   socketStarted = true;
-  const transport = transports[0];
   try {
     const session_token = getToken();
     if (
       warmSocket &&
-      (transport !== "websocket" ||
-        warmSocket.io.opts.query.token !== session_token)
+      (env.SOCKETIO || warmSocket.io.opts.query.token !== session_token)
     ) {
       discardWarmSocket();
     }
-    if (transport === "websocket") {
+    if (!env.SOCKETIO) {
       // Default transport: plain WebSocket speaking the Reflex event protocol.
       socket.current = warmSocket ?? createSocket(endpoint, session_token);
       warmSocket = null;
       cancelWarmup();
     } else {
-      // Socket.IO transport ("socketio" over websocket, or "polling"); the
-      // client library is only loaded when this transport is configured.
+      // Socket.IO, over the engine.io transports given; the client library
+      // is only loaded when this transport is configured.
       const { default: io } = await import("socket.io-client");
       if (socket.cancelConnect) {
         // The event loop unmounted while the import was pending.
@@ -784,7 +782,7 @@ export const connect = async (
       }
       socket.current = io(endpoint.href, {
         path: endpoint.pathname,
-        transports: [transport === "socketio" ? "websocket" : transport],
+        transports,
         protocols: [reflexEnvironment.version],
         autoUnref: false,
         autoConnect: false,
@@ -798,7 +796,7 @@ export const connect = async (
         parseJsonLenient(str, false);
       // Channels are a plain-WebSocket protocol feature.
       disableChannels(
-        `Channels require transport="websocket", not "${transport}".`,
+        'Channels require transport="websocket" in rxconfig.py, not Socket.IO.',
       );
     }
   } catch (error) {

@@ -19,6 +19,7 @@ async function setup({
   hidden = false,
   storedToken = "original-token",
   transport = "websocket",
+  socketio = false,
   importFails = false,
 } = {}) {
   const sockets = [];
@@ -113,7 +114,11 @@ async function setup({
     },
     mergician: { mergician() {} },
     "$/env.json": {
-      default: { EVENT: "ws://localhost:8000/_event", TRANSPORT: transport },
+      default: {
+        EVENT: "ws://localhost:8000/_event",
+        TRANSPORT: transport,
+        SOCKETIO: socketio,
+      },
     },
     "$/reflex.json": { default: { version: "test" } },
     "universal-cookie": { default: class {} },
@@ -260,11 +265,12 @@ test("a warm transport carrying another session's token is replaced", async () =
   assert.equal(app.socket.current.io.opts.query.token, "replaced-token");
 });
 
-for (const transport of ["websocket", "socketio"]) {
-  test(`reconnect over ${transport} uses the assigned token and requests a full hydrate`, async () => {
-    const app = await setup({ transport });
+for (const socketio of [false, true]) {
+  test(`reconnect ${socketio ? "over socket.io " : ""}uses the assigned token and requests a full hydrate`, async () => {
+    const app = await setup({ socketio });
     app.flush();
-    await app.connect([transport]);
+    await app.connect();
+    assert.equal(app.socket.current.kind, socketio ? "socketio" : "websocket");
     app.socket.current.connected = false;
     app.socket.current.reconnect();
     assert.equal(app.sockets.length, 1);
@@ -326,28 +332,23 @@ test("blocked session storage does not throw from speculative setup", async () =
 });
 
 test("a socket.io client that fails to load is a connection error", async () => {
-  const app = await setup({ transport: "socketio", importFails: true });
-  await app.connect(["socketio"]);
+  const app = await setup({ socketio: true, importFails: true });
+  await app.connect();
   assert.equal(app.socket.current, null);
   assert.equal(app.connectErrors().length, 1);
   assert.match(String(app.connectErrors()[0]), /dynamically imported module/);
 });
 
-for (const [transport, engineTransport] of [
-  ["socketio", "websocket"],
-  ["polling", "polling"],
-]) {
-  test(`a caller selecting ${transport} gets a socket.io session carrying the boot event`, async () => {
-    const app = await setup();
+for (const transport of ["websocket", "polling"]) {
+  test(`socket.io over ${transport} gets the engine.io transport and the boot event`, async () => {
+    // TRANSPORT is an engine.io name, handed to socket.io-client as is.
+    const app = await setup({ socketio: true, transport });
     app.flush();
     await app.connect([transport]);
-    assert.equal(app.sockets[0].disconnects, 1);
+    assert.equal(app.sockets.length, 1);
     assert.equal(app.socket.current.kind, "socketio");
     assert.equal(app.socket.current.io.opts.autoConnect, false);
-    assert.deepEqual(
-      [...app.socket.current.io.opts.transports],
-      [engineTransport],
-    );
+    assert.deepEqual([...app.socket.current.io.opts.transports], [transport]);
     assert.equal(app.socket.current.namespaceConnects, 1);
     assert.deepEqual(app.firstHydrates, [true]);
     assert.equal(app.socket.current.auth.event.router_data.pathname, "/page");
@@ -360,7 +361,7 @@ for (const config of [
   { disabled: true },
   { hidden: true },
   // The socket.io client is only loaded on connect.
-  { transport: "socketio" },
+  { socketio: true },
 ]) {
   test(`skip speculative connections for ${JSON.stringify(config)}`, async () => {
     const app = await setup(config);
