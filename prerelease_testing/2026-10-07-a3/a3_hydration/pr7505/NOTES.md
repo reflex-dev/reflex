@@ -43,3 +43,12 @@ Final commit d03ddb107 (`results/d03ddb107/`):
 Plus: `test_hydration_storage.py` 22/22 (dev+prod), Selenium client_storage/upload/connection_banner/call_script 23/23, state.js
 unit test, pre-commit. Rerun as above after `rm -rf` of the `.web` dirs in `stamp-fix`, `run-fix` and `vh-fix-dev` (template
 changes only reach `.web` on a reflex version change).
+
+## Lean variant tried at the maintainer's request (10-08): no echo bookkeeping
+
+`results/lean_variant.diff` on top of main: the storage event sends `localStorage.getItem` and dispatches it locally, every
+echo is still written. Result: it does **not** stop the loop. PR Playwright tests: `keeps_newer_value` ping-pongs in prod
+(`old, new, old, new, …` writes) and ends on the older value in dev. Storm matrix (`results/lean_variant_matrix.txt`): explorer storm
+1/3 runs stormed (~3.5k storage events per tab, tabs split s3/s2); `/stamp 6` 2/3 stormed (32–36k frames per 5 s), the third
+converged after 1,737 frames (PR: ~100). Writing a stale echo flips storage and the other tab answers that flip, so a frontend
+fix has to recognise and skip stale echoes, which needs a record of the values sent.

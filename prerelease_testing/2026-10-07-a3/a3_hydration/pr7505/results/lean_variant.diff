@@ -1,0 +1,27 @@
+diff --git a/packages/reflex-base/src/reflex_base/.templates/web/utils/state.js b/packages/reflex-base/src/reflex_base/.templates/web/utils/state.js
+index 6916df563..64f3ae597 100644
+--- a/packages/reflex-base/src/reflex_base/.templates/web/utils/state.js
++++ b/packages/reflex-base/src/reflex_base/.templates/web/utils/state.js
+@@ -1265,9 +1265,19 @@ export const useEventLoop = (
+ 
+     // e is StorageEvent
+     const handleStorage = (e) => {
+-      if (storage_to_state_map[e.key]) {
+-        const vars = {};
+-        vars[storage_to_state_map[e.key]] = e.newValue;
++      // Session storage changes in same-origin frames raise storage events too.
++      const state_key = storage_to_state_map[e.key];
++      if (e.storageArea === localStorage && state_key) {
++        // A tab gets the events of other tabs' writes after its own newer
++        // write too, so use the value stored now rather than e.newValue.
++        const value = localStorage.getItem(e.key);
++        // Show it right away; the backend applies it for handlers and
++        // computed vars.
++        const dot = state_key.lastIndexOf(".");
++        dispatch[state_key.slice(0, dot)]?.({
++          [state_key.slice(dot + 1)]: value,
++        });
++        const vars = { [state_key]: value };
+         const event = ReflexEvent(
+           `${app.state_name}.reflex___state____update_vars_internal_state.update_vars_internal`,
+           { vars: vars },
