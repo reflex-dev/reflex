@@ -1,0 +1,18 @@
+reflex 0.9.12 python 3.12.3
+ROW A1 after P.add_var: 'dyn' in C.__fields__ / C.vars / D.__fields__ / D.vars | False / True / False / True; C.dyn js=reflex___state____state____main_____p1.dyn_rx_state_ D.dyn js=reflex___state____state____main_____p1.dyn_rx_state_ C.vars[dyn] js=reflex___state____state____main_____p1.dyn_rx_state_
+ROW A2 tree read before C.add_var | p.dyn=7 c.dyn=7 d.dyn=7
+ROW A3 C.add_var('dyn', int, 9) | accepted
+ROW A4 C after the add_var attempt | C.__fields__ has dyn=True same-as-P's=False owner='?' default=9; C.vars[dyn] js=reflex___state____state____main_____p1____main_____c2.dyn_rx_state_; C.dyn js=reflex___state____state____main_____p1____main_____c2.dyn_rx_state_; 'dyn' in C.base_vars=True; 'dyn' in C.__dict__=True
+ROW A5 tree after (read/write/dict/pickle/reset) | p.dyn=7 c.dyn=7; after c.dyn=3: p.dyn=3 c.dyn=3 p.dirty=['dyn'] c.dirty=[]; dict P.dyn=3 C keys=['b_rx_state_', 'dyn_rx_state_']; pickle(c) vars=['b']; pickle(p) dyn=3; reset -> p.dyn=9 c.dyn=9
+ROW A6 compile_state(P) (initial frontend state) | P.dyn=7 C keys=['b_rx_state_', 'dyn_rx_state_']
+ROW A7 schema C._to_schema() | 670ffa0496c5088017f6f8187ac8ecb7
+ROW A8 retry C.add_var('dyn', int, 9) | NameError: The variable 'dyn' already exist. Use a different name
+ROW A9 follow the error message: C.__fields__['dyn'].default = 11 | after C.__fields__['dyn'].default=11: p.dyn=7 c.dyn=7 (P field default=7)
+ROW A10 D (defined after P.add_var).add_var('dyn', int, 9) | ok
+ROW A11 C.add_var('dyn2') (new name) still works | ok
+ROW A12 P.add_var('dyn') again -> NameError expected | NameError: The variable 'dyn' already exist. Use a different name
+ROW B1 class assignment of an INHERITED add_var var through a substate | static inherited: E.a=5 -> ok; P2.dyn=5 (declaring) -> ok; E.dyn=5 (before) -> ok; F.dyn=5 (after) -> ok; E.dyn now 5; tree: p.dyn=7 e.dyn=7; mock.patch.object(G,'dyn',42) inside=42 after=int
+ROW C1 static redeclaration of a parent var in a substate | annotated a: int = 5: BaseVarShadowsInheritedVarError: The var `a` in __main__.K9 shadows a var inherited from __main__.P8; use a different name instead; unannotated a = 5: BaseVarShadowsInheritedVarError: The var `a` in __main__.K10 shadows a var inherited from __main__.P8; use a different name instead
+ROW D1 __init_subclass__ hook calling cls.add_var('loading') for every subclass (grandchild) | Page1(Hooked) ok; Detail(Page1) ok; p1.loading=True d.loading=True Detail.loading js=reflex___state____state__reflex___istate___dynamic____hooked__reflex___istate___dynamic____page1__reflex___istate___dynamic____detail.loading_rx_state_
+ROW D2 OrbitLab CacheBuster pattern (own computed vars only; then a substate overriding one) | parent + substate with its own computed var ok (SelectOpts.computed_vars=['options']); substate overriding computed var 'sectors' ok
+ROW D3 `if name not in S.__fields__: S.add_var(name)` guard on parent then substate | P11.add_var -> ok; C12.add_var -> ok

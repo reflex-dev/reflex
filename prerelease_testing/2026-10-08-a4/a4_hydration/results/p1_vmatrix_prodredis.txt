@@ -1,0 +1,22 @@
+Thu Oct  8 15:38:26 UTC 2026
+ 15:38:26 up 40 min,  0 user,  load average: 1.31, 3.54, 3.29
+lproxy 3663->3662 50ms pid=22590
+started vh-a3-prod pid=22695 venv=a3 mode=prod env=[REFLEX_API_URL=http://localhost:3663 REFLEX_REDIS_URL=redis://localhost:8669] log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a4_hydration/v/logs/vh-a3-prod-1.log
+a3prodredis_rtt100_raw3 #1: {"click_t": 1791473921.873, "visibility": ["visible", "hidden", "hidden"], "windows_5s": [0, 0], "storm": false, "converged": true, "theme_final": ["red", "red", "red"], "ls_theme": "red", "doc_final": ["", "", ""], "ls_doc": null, "timer_rate_bg_tab_1s": 2, "timer_rate_fg_tab_1s": 100}
+a3prodredis_rtt100_raw3 #2: {"click_t": 1791473941.702, "visibility": ["visible", "hidden", "hidden"], "windows_5s": [8389, 10851], "storm": true, "converged": false, "theme_final": ["red", "red", "green"], "ls_theme": "red", "doc_final": ["", "", ""], "ls_doc": null, "timer_rate_bg_tab_1s": 2, "timer_rate_fg_tab_1s": 100}
+a3prodredis_rtt100_raw3 #3: {"click_t": 1791473962.632, "visibility": ["visible", "hidden", "hidden"], "windows_5s": [9427, 9249], "storm": true, "converged": true, "theme_final": ["red", "red", "red"], "ls_theme": "green", "doc_final": ["", "", ""], "ls_doc": null, "timer_rate_bg_tab_1s": 2, "timer_rate_fg_tab_1s": 100}
+a3prodredis_rtt100_restore7_st300_1click #1: {"scenario": "restore", "clicks": [["pick-red", 1791473984.217, 0.033]], "ok_hyd": true, "windows_5s": [16202, 15379], "storm": true, "converged": false, "theme_final": ["green", "green", "red", "green", "green", "red", "green"], "ls_theme": "green", "doc_final": ["warm", "warm", "warm", "warm", "warm", "warm", "warm"], "ls_doc": "warm", "tab0_timeline": ["light", "green", "red", "green", "red", "green", "red", "green", "red", "green", "red", "green", "red", "green", "red", "green", "red", "green", "red", "green", "red", "green", "red", "green", "red", "green", "red", "green", "red", "green", "red", "green", "red", "green", "red", "green", "red", "green", "red", "green"], "heal_windows_5s": 
+a3prodredis_rtt100_restore7_st300_1click #2: {"scenario": "restore", "clicks": [["pick-red", 1791474006.735, 0.093]], "ok_hyd": true, "windows_5s": [11512, 12373], "storm": true, "converged": false, "theme_final": ["red", "red", "red", "green", "green", "red", "red"], "ls_theme": "green", "doc_final": ["warm", "warm", "warm", "warm", "warm", "warm", "warm"], "ls_doc": "warm", "tab0_timeline": ["light", "green", "red", "green", "red", "green", "red", "green", "red", "green", "red", "green", "red", "green", "red", "green", "red", "green", "red", "green", "red", "green", "red", "green", "red", "green", "red", "green", "red", "green", "red", "green", "red", "green", "red", "green", "red", "green", "red", "green"], "heal_windows_5s": null, 
+a3prodredis_rtt100_rawdocs6_st0 #1: {"click_t": 1791474027.854, "visibility": ["visible", "hidden", "hidden", "hidden", "hidden", "hidden"], "windows_5s": [17417, 16899], "storm": true, "converged": false, "theme_final": ["green", "green", "green", "green", "green", "green"], "ls_theme": "green", "doc_final": ["d0", "d0", "d0", "d3", "d3", "d5"], "ls_doc": "d5", "timer_rate_bg_tab_1s": 2, "timer_rate_fg_tab_1s": 100}
+a3prodredis_rtt100_rawdocs6_st0 #2: {"click_t": 1791474049.525, "visibility": ["visible", "hidden", "hidden", "hidden", "hidden", "hidden"], "windows_5s": [16910, 15745], "storm": true, "converged": false, "theme_final": ["green", "green", "green", "green", "green", "green"], "ls_theme": "green", "doc_final": ["d3", "d3", "d4", "d5", "d5", "d0"], "ls_doc": "d0", "timer_rate_bg_tab_1s": 2, "timer_rate_fg_tab_1s": 100}
+stopped vh-a3-prod (pgid 22695)
+redis-ser 22546 root    6u  IPv4 107882      0t0  TCP *:8669 (LISTEN)
+python    22590 root    6u  IPv4 106851      0t0  TCP 127.0.0.1:3663 (LISTEN)
+lproxy 3663 stopped
+redis stopped
+Thu Oct  8 15:41:10 UTC 2026
+ 15:41:10 up 43 min,  0 user,  load average: 11.42, 6.43, 4.36
+lproxy 3663->3662 50ms pid=25809
+started vh-a4-prod pid=25822 venv=a4 mode=prod env=[REFLEX_API_URL=http://localhost:3663 REFLEX_REDIS_URL=redis://localhost:8669] log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a4_hydration/v/logs/vh-a4-prod-1.log
+server not up
+a4prodredis_rtt100_raw3 #1: 

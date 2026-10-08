@@ -1,0 +1,34 @@
+───────────────────────────── Initializing dynhook ─────────────────────────────
+Info: Initializing the web directory.
+Success: Initialized dynhook. Install dependencies from `requirements.txt` with 
+`uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a4/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 427, in compile_or_validate_app
+    get_compiled_app(
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a4/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 336, in get_compiled_app
+    app, app_module = get_and_validate_app(
+                      ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a4/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 303, in get_and_validate_app
+    app_module = get_app(reload=reload)
+                 ^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a4/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 263, in get_app
+    __import__(module, fromlist=(constants.CompileVars.APP,))
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/verify_class_state4/run/dynhook-a4/dynhook/dynhook.py", line 23, in <module>
+    class Detail(Page1):
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a4/lib/python3.12/site-packages/reflex_base/vars/base.py", line 4873, in __new__
+    new_cls = super().__new__(cls, name, bases, namespace)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen abc>", line 106, in __new__
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/verify_class_state4/run/dynhook-a4/dynhook/dynhook.py", line 12, in __init_subclass__
+    cls.add_var("loading", bool, False)
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a4/lib/python3.12/site-packages/reflex/state.py", line 1348, in add_var
+    cls.add_field(name, var, default_value)
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a4/lib/python3.12/site-packages/reflex/state.py", line 1316, in add_field
+    super().add_field(name, var, default_value)
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a4/lib/python3.12/site-packages/reflex_base/vars/base.py", line 4934, in add_field
+    setattr(cls, name, new_field)
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a4/lib/python3.12/site-packages/reflex_base/vars/base.py", line 4776, in __setattr__
+    raise _state_var_assignment_error(cls, name, "assigning")
+TypeError: 'loading' is a state var of Detail; assigning it on the class would replace the var. Set its default with Detail.__fields__['loading'].default = ..., or declare class-level config as ClassVar.

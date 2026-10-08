@@ -1,0 +1,18 @@
+reflex 0.10.0a4 python 3.12.3
+ROW A1 after P.add_var: 'dyn' in C.__fields__ / C.vars / D.__fields__ / D.vars | False / True / False / True; C.dyn js=reflex___state____state____main_____p1.dyn_rx_state_ D.dyn js=reflex___state____state____main_____p1.dyn_rx_state_ C.vars[dyn] js=reflex___state____state____main_____p1.dyn_rx_state_
+ROW A2 tree read before C.add_var | p.dyn=7 c.dyn=7 d.dyn=7
+ROW A3 C.add_var('dyn', int, 9) | EXC TypeError: 'dyn' is a state var of C2; assigning it on the class would replace the var. Set its default with C2.__fields__['dyn'].default = ..., or declare class-level config as Cla @ base.py:4776
+ROW A4 C after the add_var attempt | C.__fields__ has dyn=True same-as-P's=False owner=None default=9; C.vars[dyn] js=reflex___state____state____main_____p1.dyn_rx_state_; C.dyn js=reflex___state____state____main_____p1.dyn_rx_state_; 'dyn' in C.base_vars=False; 'dyn' in C.__dict__=False
+ROW A5 tree after (read/write/dict/pickle/reset) | p.dyn=7 c.dyn=7; after c.dyn=3: p.dyn=3 c.dyn=3 p.dirty=['dyn'] c.dirty=[]; dict P.dyn=3 C keys=['b_rx_state_']; pickle(c) vars=['b']; pickle(p) dyn=3; reset -> p.dyn=7 c.dyn=7
+ROW A6 compile_state(P) (initial frontend state) | P.dyn=7 C keys=['b_rx_state_']
+ROW A7 schema C._to_schema() | e20976072067acfacda309a672a406ec
+ROW A8 retry C.add_var('dyn', int, 9) | NameError: The variable 'dyn' already exist. Use a different name
+ROW A9 follow the error message: C.__fields__['dyn'].default = 11 | after C.__fields__['dyn'].default=11: p.dyn=7 c.dyn=7 (P field default=7)
+ROW A10 D (defined after P.add_var).add_var('dyn', int, 9) | TypeError: 'dyn' is a state var of D3; assigning it on the class would replace the var. Set its default with D3.__fields_
+ROW A11 C.add_var('dyn2') (new name) still works | ok
+ROW A12 P.add_var('dyn') again -> NameError expected | NameError: The variable 'dyn' already exist. Use a different name
+ROW B1 class assignment of an INHERITED add_var var through a substate | static inherited: E.a=5 -> TypeError: 'a' is a state var of E5; assigning it on the class would replace the var. Set its default with E5.__fields__[; P2.dyn=5 (declaring) -> TypeError: 'dyn' is a state var of P4; assigning it on the class would replace the var. Set its default with P4.__fields_; E.dyn=5 (before) -> ok; F.dyn=5 (after) -> ok; E.dyn now 5; tree: p.dyn=7 e.dyn=5; mock.patch.object(G,'dyn',42) inside=42 after=reflex___state____state____main_____p4.dyn_rx_state_
+ROW C1 static redeclaration of a parent var in a substate | annotated a: int = 5: created, own=True K.a js=reflex___state____state____main_____p8____main_____k9.a_rx_state_ p.a=1 k.a=6; unannotated a = 5: created, own=True K.a js=reflex___state____state____main_____p8____main_____k10.a_rx_state_ p.a=1 k.a=6
+ROW D1 __init_subclass__ hook calling cls.add_var('loading') for every subclass (grandchild) | Page1(Hooked) ok; TypeError: 'loading' is a state var of Detail; assigning it on the class would replace the var. Set its default with Detail.__field @ ['state.py:1348', 'state.py:1316', 'base.py:4934', 'base.py:4776']
+ROW D2 OrbitLab CacheBuster pattern (own computed vars only; then a substate overriding one) | parent + substate with its own computed var ok (SelectOpts.computed_vars=['options']); TypeError: '_cached_sectors' is a state var of Override; assigning it on the class would replace the var. Set its default with Over @ ['state.py:1348', 'state.py:1316', 'base.py:4934', 'base.py:4776']
+ROW D3 `if name not in S.__fields__: S.add_var(name)` guard on parent then substate | P11.add_var -> ok; C12.add_var -> TypeError: 'form_id' is a state var of C12; assigning it on the class would replace the var. Set its default with C12.__f

@@ -1,0 +1,6 @@
+state_auto_setters has been deprecated in version 0.9.0. auto setters will be removed; use explicit event handlers instead. It will be completely removed in 1.0. (rxconfig.py:3)
+reflex 0.9.12 auto_setters=True
+ROW 1 parent var set_color + child var color | created; CColl.set_color=EventHandler PColl.set_color=StringCastedVar(reflex___state____state__reflex___istate___dynamic___p_coll.set_color_rx_state_); 'set_color' in CColl.event_handlers=True in CColl.__fields__=True; child setter -> c.color='blue'; c.set_color (instance read)=str; parent var still works: p.set_color='pp'; compiled P keys=['set_color_rx_state_'] C keys=['color_rx_state_']; rx.text(CColl.set_color) -> ChildrenTypeError: Component Text received child EventHandler(event_actions={}, fn=<function set_co
+ROW 2 same class: set_color var + color var | created; SSame.set_color=StringCastedVar(reflex___state____state__reflex___istate___dynamic___s_same.set_color_rx_state_) 'set_color' in event_handlers=False; s.set_color='p'
+ROW 3 child declares an explicit handler named like an inherited var (set_color) | created; CExp.set_color=EventHandler
+ROW 4 grandparent var set_size + grandchild var size | created

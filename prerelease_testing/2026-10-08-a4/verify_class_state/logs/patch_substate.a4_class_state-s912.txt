@@ -1,0 +1,8 @@
+
+SUBSTATE: no exception
+after: Child.limit is Parent's field var: reflex___state____state__test_patch_substate____parent.limit_rx_state_
+fresh instance: 10
+.
+DECLARING: no exception
+...
+4 passed in 0.29s

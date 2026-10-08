@@ -1,0 +1,6 @@
+state_auto_setters has been deprecated in version 0.9.0. auto setters will be removed; use explicit event handlers instead. It will be completely removed in 1.0. (rxconfig.py:3)
+reflex 0.10.0a3 auto_setters=True
+ROW 1 parent var set_color + child var color | EXC TypeError: Invalid default for field 'set_color': expected <class 'str'>, got EventSpec(event_actions={}, handler=EventHandler(event_actions={}, fn=<function set_color at 0x7f2b7c6e0ea0>), client_handler_name='' @ ['state.py:1302', 'state.py:1399', 'base.py:4923']
+ROW 2 same class: set_color var + color var | created; SSame.set_color=StringCastedVar(reflex___state____state__reflex___istate___dynamic___s_same.set_color_rx_state_) 'set_color' in event_handlers=False; s.set_color='p'
+ROW 3 child declares an explicit handler named like an inherited var (set_color) | created; CExp.set_color=EventHandler
+ROW 4 grandparent var set_size + grandchild var size | EXC TypeError: Invalid default for field 'set_size': expected <class 'int'>, got EventSpec(event_actions={}, handler=EventHandler(event_actions={}, fn=<function set_size at 0x7f2b7c6e2ac0>), client_handler_name='',  @ ['state.py:1302', 'state.py:1399', 'base.py:4923']

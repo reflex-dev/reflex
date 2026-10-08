@@ -1,0 +1,62 @@
+
+SUBSTATE CHAIN (outermost first):
+  TypeError: 'limit' is a state var of Child; deleting it on the class would replace the var. Set its default with Child.__fields__['limit'].default = ..., or declare class-level config as ClassVar.
+  TypeError: 'limit' is a state var of Child; assigning it on the class would replace the var. Set its default with Child.__fields__['limit'].default = ..., or declare class-level config as ClassVar.
+after: Child.limit is Parent's field var: reflex___state____state__test_patch_substate____parent.limit_rx_state_
+fresh instance: 10
+.
+DECLARING CHAIN (outermost first):
+  TypeError: 'limit' is a state var of Parent; assigning it on the class would replace the var. Set its default with Parent.__fields__['limit'].default = ..., or declare class-level config as ClassVar.
+.FF
+=================================== FAILURES ===================================
+___________________________ test_show_substate_patch ___________________________
+/usr/lib/python3.12/unittest/mock.py:1567: in __enter__
+    setattr(self.target, self.attribute, new_attr)
+../../../envs/a4_class_state-a4/lib/python3.12/site-packages/reflex_base/vars/base.py:4776: in __setattr__
+    raise _state_var_assignment_error(cls, name, "assigning")
+E   TypeError: 'limit' is a state var of Child; assigning it on the class would replace the var. Set its default with Child.__fields__['limit'].default = ..., or declare class-level config as ClassVar.
+
+During handling of the above exception, another exception occurred:
+test_patch_substate.py:53: in test_show_substate_patch
+    with mock.patch.object(Child, "limit", 99):
+/usr/lib/python3.12/unittest/mock.py:1580: in __enter__
+    if not self.__exit__(*sys.exc_info()):
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/unittest/mock.py:1588: in __exit__
+    delattr(self.target, self.attribute)
+../../../envs/a4_class_state-a4/lib/python3.12/site-packages/reflex_base/vars/base.py:4797: in __delattr__
+    raise _state_var_assignment_error(cls, name, "deleting")
+E   TypeError: 'limit' is a state var of Child; deleting it on the class would replace the var. Set its default with Child.__fields__['limit'].default = ..., or declare class-level config as ClassVar.
+___________________ test_show_substate_patch_decorator_form ____________________
+/usr/lib/python3.12/unittest/mock.py:1567: in __enter__
+    setattr(self.target, self.attribute, new_attr)
+../../../envs/a4_class_state-a4/lib/python3.12/site-packages/reflex_base/vars/base.py:4776: in __setattr__
+    raise _state_var_assignment_error(cls, name, "assigning")
+E   TypeError: 'limit' is a state var of Child; assigning it on the class would replace the var. Set its default with Child.__fields__['limit'].default = ..., or declare class-level config as ClassVar.
+
+During handling of the above exception, another exception occurred:
+test_patch_substate.py:62: in test_show_substate_patch_decorator_form
+    inner()
+/usr/lib/python3.12/unittest/mock.py:1387: in patched
+    with self.decoration_helper(patched,
+/usr/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+/usr/lib/python3.12/unittest/mock.py:1369: in decoration_helper
+    arg = exit_stack.enter_context(patching)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/contextlib.py:526: in enter_context
+    result = _enter(cm)
+             ^^^^^^^^^^
+/usr/lib/python3.12/unittest/mock.py:1580: in __enter__
+    if not self.__exit__(*sys.exc_info()):
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/unittest/mock.py:1588: in __exit__
+    delattr(self.target, self.attribute)
+../../../envs/a4_class_state-a4/lib/python3.12/site-packages/reflex_base/vars/base.py:4797: in __delattr__
+    raise _state_var_assignment_error(cls, name, "deleting")
+E   TypeError: 'limit' is a state var of Child; deleting it on the class would replace the var. Set its default with Child.__fields__['limit'].default = ..., or declare class-level config as ClassVar.
+=========================== short test summary info ============================
+FAILED test_patch_substate.py::test_show_substate_patch - TypeError: 'limit' ...
+FAILED test_patch_substate.py::test_show_substate_patch_decorator_form - Type...
+2 failed, 2 passed in 1.22s

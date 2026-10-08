@@ -42,6 +42,8 @@ class Prefs(rx.State):
     san: str = rx.LocalStorage("san-default", name="h4_san", sync=True)
     sanns: str = rx.LocalStorage("sanns-default", name="h4_sanns")
     bg_runs: int = 0
+    # a sync=False and a sync=True var reading/writing ONE storage key (the sync one lives in Sub)
+    shared_ns: str = rx.LocalStorage("shared-default", name="h4_shared")
 
     @rx.var
     def syn_len(self) -> int:
@@ -58,6 +60,10 @@ class Prefs(rx.State):
                     trace("SANITISE", tok=self.router.session.client_token[:8], field=f, before=sub[k], after=sanitise(sub[k]))
                     sub[k] = sanitise(sub[k])
         return delta
+
+    @rx.event
+    def set_shared_ns(self, v: str):
+        self.shared_ns = v
 
     @rx.event
     def set_syn(self, v: str):
@@ -141,6 +147,11 @@ class Prefs(rx.State):
 class Sub(Prefs):
     sub: str = rx.LocalStorage("sub-default", name="h4_sub", sync=True)
     subck: str = rx.Cookie("subck-default", name="h4_subck", max_age=7200)
+    shared_s: str = rx.LocalStorage("shared-default", name="h4_shared", sync=True)
+
+    @rx.event
+    def set_shared_s(self, v: str):
+        self.shared_s = v
 
     @rx.event
     def set_sub(self, v: str):
@@ -195,6 +206,8 @@ def values():
         rx.text(Stamp.last, id="v-last"),
         rx.text(Stamp.visits, id="v-visits"),
         rx.text(Prefs.bg_runs, id="v-bgruns"),
+        rx.text(Prefs.shared_ns, id="v-shns"),
+        rx.text(Sub.shared_s, id="v-shs"),
     )
 
 
@@ -211,6 +224,10 @@ def controls():
         rx.button("long", on_click=Prefs.special("long"), id="sp-long"),
         rx.button("chain", on_click=Prefs.chain, id="chain"),
         rx.button("bg", on_click=Prefs.bg_write, id="bg"),
+        rx.button("rm-syn", on_click=rx.remove_local_storage("h4_syn"), id="rm-syn"),
+        rx.button("clear-ls", on_click=rx.clear_local_storage(), id="clear-ls"),
+        rx.input(id="in-shns", on_blur=Prefs.set_shared_ns),
+        rx.input(id="in-shs", on_blur=Sub.set_shared_s),
         box_a,
         box_b,
         rx.hstack(

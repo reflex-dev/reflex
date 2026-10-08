@@ -1,0 +1,6 @@
+reflex 0.10.0a4
+route args installed: {'slug': 'DynamicRouteVar', 'splat': 'DynamicRouteVar', 'id': 'DynamicRouteVar'}
+Late sees slug: True | Late.slug js: reflex___state____state.slug_rx_state_
+add_var calls during add_page: []
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+compile ok

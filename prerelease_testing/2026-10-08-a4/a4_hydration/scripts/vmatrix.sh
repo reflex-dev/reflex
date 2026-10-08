@@ -12,14 +12,20 @@ NAME=vh-$VE-dev; [ $MODE != dev ] && NAME=vh-$VE-prod
 if [ $MODE = dev ]; then
   $V/scripts/vlproxy.sh start 8661 8660 50
   $V/scripts/vsrv.sh start $NAME $VE dev $V/src/vhsync 3660 8660 REFLEX_API_URL=http://localhost:8661
-  $NP $DRV $V/drivers/waitsrv.py 400 http://localhost:3660/ http://localhost:8660/ping > /dev/null || echo "server not up"
+  $NP $DRV $V/drivers/waitsrv.py 400 http://localhost:3660/ http://localhost:8660/ping > /dev/null || { echo "server not up"; exit 1; }
   FP=3660
 else
   EXTRA=""
-  if [ $MODE = prodredis ]; then redis-server --port 8669 --save '' --appendonly no > $V/logs/redis-8669.log 2>&1 & echo $! > $V/run/redis.pid; sleep 1; EXTRA=REFLEX_REDIS_URL=redis://localhost:8669; fi
+  if [ $MODE = prodredis ]; then
+    for i in $(seq 1 40); do lsof -iTCP:8669 -sTCP:LISTEN -P -n > /dev/null 2>&1 || break; sleep 0.5; done   # previous redis still shutting down
+    redis-server --port 8669 --save '' --appendonly no > $V/logs/redis-8669.log 2>&1 & echo $! > $V/run/redis.pid
+    for i in $(seq 1 40); do redis-cli -p 8669 ping 2>/dev/null | grep -q PONG && break; sleep 0.25; done
+    redis-cli -p 8669 ping | grep -q PONG || { echo "redis not up"; exit 1; }
+    EXTRA=REFLEX_REDIS_URL=redis://localhost:8669
+  fi
   $V/scripts/vlproxy.sh start 3663 3662 50
   $V/scripts/vsrv.sh start $NAME $VE prod $V/src/vhsync 3662 3662 REFLEX_API_URL=http://localhost:3663 $EXTRA
-  $NP $DRV $V/drivers/waitsrv.py 500 http://localhost:3662/ http://localhost:3662/ping > /dev/null || echo "server not up"
+  $NP $DRV $V/drivers/waitsrv.py 500 http://localhost:3662/ http://localhost:3662/ping > /dev/null || { echo "server not up"; exit 1; }
   FP=3663
 fi
 sleep 4
@@ -32,5 +38,5 @@ if [ $MODE = dev ]; then
 fi
 $V/scripts/vsrv.sh stop $NAME
 if [ $MODE = dev ]; then $V/scripts/vlproxy.sh stop 8661; else $V/scripts/vlproxy.sh stop 3663; fi
-[ -f $V/run/redis.pid ] && { kill $(cat $V/run/redis.pid); rm -f $V/run/redis.pid; echo "redis stopped"; }
+[ -f $V/run/redis.pid ] && { kill $(cat $V/run/redis.pid); for i in $(seq 1 40); do lsof -iTCP:8669 -sTCP:LISTEN -P -n > /dev/null 2>&1 || break; sleep 0.5; done; rm -f $V/run/redis.pid; echo "redis stopped"; }
 true

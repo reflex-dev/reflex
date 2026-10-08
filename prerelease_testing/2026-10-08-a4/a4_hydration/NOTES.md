@@ -54,3 +54,14 @@ booted across the click holding the stale value (= the race was actually hit). R
 
 a4 server log: nothing but the shutdown `[ERROR] Unexpected exit from worker-1`. a3 log additionally: 21x `Failed to close
 websocket ... Broken pipe` and `Received event from session ... with no associated` (storm-time, as in the a3 pass).
+
+| scenario, **prod + Redis** (app 3662 one port, proxy 3663, redis 8669, 9 granian workers) | a3 (positive control) | **a4** |
+|---|---|---|
+| raw CDP, 3 restored background tabs + 1 click | **2/3 storm** (8-11k frames / 5 s; one run ends with localStorage on the OLD `green`); race hit 3/3 | **0/3 storm**, 0 frames, all tabs + localStorage `red`; race hit 3/3 |
+| Playwright, 7 tabs restored 300 ms apart + 1 click | **2/2 storm** (11-16k frames / 5 s; tabs end mixed red/green, localStorage `green` = the user's click LOST) | **0/2 storm**, all 7 tabs + localStorage `red`; race hit 2/2 |
+| A3-12: raw CDP, 6 background tabs on `/doc/d0..d5` | **2/2 storm** (16-17k / 5 s, 3-4 slugs) | **0/2 storm**, all 6 tabs + localStorage on one slug (`d2`, `d1`) |
+
+Procedural: the first a4 prod+Redis attempt never started (the a3 leg's `redis-server` was still releasing port 8669, the new one
+failed with `bind: Address already in use`, the app logged `Unable to connect to Redis` and exited); `vmatrix.sh` now waits for the
+port to free and for `PONG`, and the a4 leg was re-run alone right after (`results/p1_vmatrix_prodredis_a4.txt`). a4 prod+Redis
+server log: only the granian "more workers than CPU cores" warning and the deprecation warnings also present on a3.

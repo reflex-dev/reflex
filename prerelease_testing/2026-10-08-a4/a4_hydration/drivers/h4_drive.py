@@ -44,7 +44,7 @@ INIT = """(() => {
   Object.assign(window.WebSocket, {CONNECTING: 0, OPEN: 1, CLOSING: 2, CLOSED: 3});
 })();"""
 
-IDS = ["v-syn", "v-nos", "v-ses", "v-ck", "v-san", "v-sanns", "v-sub", "v-subck", "v-last", "v-visits", "v-bgruns",
+IDS = ["v-syn", "v-nos", "v-ses", "v-ck", "v-san", "v-sanns", "v-sub", "v-subck", "v-last", "v-visits", "v-bgruns", "v-shns", "v-shs",
        "box-a-syn", "box-a-nos", "box-b-syn", "box-b-nos"]
 RESULTS = {"base": BASE, "checks": {}, "noise": {}}
 
@@ -469,12 +469,64 @@ async def c20_boot_writes(b):
         record("C20_returning_boot_writes", v["v-syn"] == "ret-syn" and v["v-nos"] == "ret-nos", writes=w, frames=f)
 
 
+async def c21_remove_clear(b):
+    """rx.remove_local_storage / rx.clear_local_storage of a synced key in tab1: what tab2, storage and reloads see (diagnostic, compared a3 vs a4)."""
+    async with Ctx(b, "C21") as c:
+        t1 = await c.page("/", tag="t1")
+        t2 = await c.page("/", tag="t2")
+        await set_in(t1, "syn", "keep-me")
+        await wait_until(lambda: _conv([t1, t2], "keep-me"), timeout=5)
+        await writes(t2, reset=True)
+        await t1.click("#rm-syn")
+        await asyncio.sleep(2.0)
+        q = await quiet([t1, t2], 1.5)
+        lsv = await t1.evaluate("() => localStorage.getItem('h4_syn')")
+        st = {"ls": lsv, "t1": (await vals(t1))["v-syn"], "t2": (await vals(t2))["v-syn"], "t2_writes": await writes(t2), "t2_se": await t2.evaluate("() => window.__se.slice(-4)")}
+        await t2.reload()
+        await hyd(t2)
+        st["t2_reload"] = (await vals(t2))["v-syn"]
+        st["ls_after_reload"] = await t2.evaluate("() => localStorage.getItem('h4_syn')")
+        record("C21_remove_synced_key", lsv is None and q < 10, quiet_frames=q, **st)
+        await set_in(t1, "syn", "again")
+        await wait_until(lambda: _conv([t1, t2], "again"), timeout=5)
+        await t1.click("#clear-ls")
+        await asyncio.sleep(2.0)
+        q = await quiet([t1, t2], 1.5)
+        l = await ls(t1)
+        record("C21_clear_local_storage", q < 10, quiet_frames=q, ls=l, t1=(await vals(t1))["v-syn"], t2=(await vals(t2))["v-syn"])
+
+
+async def c23_shared_name(b):
+    """A sync=False var (Prefs.shared_ns) and a sync=True var (Sub.shared_s) on ONE storage key h4_shared."""
+    async with Ctx(b, "C23") as c:
+        t1 = await c.page("/", tag="t1")
+        t2 = await c.page("/", tag="t2")
+        await set_in(t1, "shns", "via-ns")
+        ok1 = await wait_until(lambda: _lsget(t1, "h4_shared", "via-ns"), timeout=4)
+        await asyncio.sleep(1.0)
+        s1 = {"t1": [(await vals(t1))[k] for k in ("v-shns", "v-shs")], "t2": [(await vals(t2))[k] for k in ("v-shns", "v-shs")]}
+        await set_in(t1, "shs", "via-s")
+        ok2 = await wait_until(lambda: _lsget(t1, "h4_shared", "via-s"), timeout=4)
+        await asyncio.sleep(1.0)
+        s2 = {"t1": [(await vals(t1))[k] for k in ("v-shns", "v-shs")], "t2": [(await vals(t2))[k] for k in ("v-shns", "v-shs")]}
+        # the value t1 sent at boot was "shared-default"? no: nothing stored at boot. Now t2 writes via-ns again through ns
+        await set_in(t2, "shns", "via-ns")
+        ok3 = await wait_until(lambda: _lsget(t2, "h4_shared", "via-ns"), timeout=4)
+        await t1.reload()
+        await hyd(t1)
+        s3 = [(await vals(t1))[k] for k in ("v-shns", "v-shs")]
+        q = await quiet([t1, t2], 1.5)
+        record("C23_shared_name_sync_and_nosync", ok1[0] and ok2[0] and ok3[0] and s3 == ["via-ns", "via-ns"] and q < 10,
+               ls_waits=[ok1[:2], ok2[:2], ok3[:2]], after_ns_write=s1, after_s_write=s2, t1_reload=s3, quiet_frames=q)
+
+
 async def main():
     async with async_playwright() as pw:
         b = await pw.chromium.launch(executable_path=CHROMIUM)
         for name, fn in (("C1", c1_fresh), ("C2", c2_nosync), ("C3", c3_sync), ("C4", c4_sanitise), ("C6", c6_session),
                          ("C7", c7_cookie), ("C10", c10_onload), ("C11", c11_bg_chain_empty_special),
-                         ("C15", c15_component_substate_nav), ("C20", c20_boot_writes)):
+                         ("C15", c15_component_substate_nav), ("C20", c20_boot_writes), ("C21", c21_remove_clear),
+                         ("C23", c23_shared_name)):
             if not want(name):
                 continue
             try:
