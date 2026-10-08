@@ -56,6 +56,9 @@ const event_queue = [];
 // The event that sends browser storage values to the backend.
 const UPDATE_VARS_INTERNAL =
   "reflex___state____update_vars_internal_state.update_vars_internal";
+// The frontend event that sends one synced localStorage var. It is built into
+// an UPDATE_VARS_INTERNAL event when it is sent: see syncLocalStorageEvent.
+const SYNC_LOCAL_STORAGE = "_sync_local_storage";
 
 // Browser storage values sent to the backend, by state key, oldest first, each
 // with the count of this tab's localStorage writes when it was sent. The
@@ -258,7 +261,8 @@ export const isStateful = () => {
   return event_queue.some(
     (event) =>
       typeof event?.name === "string" &&
-      event.name.startsWith("reflex___state"),
+      (event.name.startsWith("reflex___state") ||
+        event.name === SYNC_LOCAL_STORAGE),
   );
 };
 
@@ -344,6 +348,21 @@ function urlFrom(string) {
   }
   return undefined;
 }
+
+/**
+ * Build the event that sends a synced localStorage var to the backend.
+ *
+ * A storage event queues only which var to send. The value is read here, when
+ * the event is sent, so that it and the write count recorded with it come from
+ * the same moment: the event may have waited for a reconnect, and storage may
+ * have changed meanwhile.
+ * @param payload The storage name and state key of the var.
+ * @returns The update_vars_internal event.
+ */
+const syncLocalStorageEvent = ({ key, state_key }) =>
+  ReflexEvent(`${app.state_name}.${UPDATE_VARS_INTERNAL}`, {
+    vars: { [state_key]: localStorage.getItem(key) },
+  });
 
 /**
  * Handle frontend event or send the event to the backend via Websocket.
@@ -530,7 +549,12 @@ export const applyEvent = async (event, socket, navigate, params) => {
 
   // Send the event to the server.
   if (socket) {
-    const routed_event = withRouterData(event, params);
+    const routed_event = withRouterData(
+      event.name == SYNC_LOCAL_STORAGE
+        ? syncLocalStorageEvent(event.payload)
+        : event,
+      params,
+    );
     recordSentStorageValues(routed_event);
     // Instrumentation hook (installed by reflex-otel): may add a traceparent.
     window.__reflex_otel?.onEventSend?.(routed_event);
@@ -1337,11 +1361,9 @@ export const useEventLoop = (
       const state_key = storage_to_state_map[e.key];
       // Session storage changes in same-origin frames raise storage events too.
       if (state_key && e.storageArea === localStorage) {
-        // A tab can get another tab's event after its own newer write, so send
-        // the value stored now rather than e.newValue.
-        const vars = { [state_key]: localStorage.getItem(e.key) };
+        // The value is read when the event is sent: see syncLocalStorageEvent.
         addEvents(
-          [ReflexEvent(`${app.state_name}.${UPDATE_VARS_INTERNAL}`, { vars })],
+          [ReflexEvent(SYNC_LOCAL_STORAGE, { key: e.key, state_key })],
           e,
         );
       }

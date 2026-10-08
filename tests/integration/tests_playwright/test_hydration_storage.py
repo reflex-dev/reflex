@@ -605,3 +605,34 @@ def test_replaced_storage_echo_does_not_hide_later_change(
     page.wait_for_function("localStorage.getItem('hydrate-replace') === 'sent'")
     page.wait_for_timeout(500)
     expect(page.locator("#replace-value")).to_have_text("sent")
+
+
+def test_synced_storage_event_while_disconnected_sends_current_value(
+    hydration_storage_app: AppHarness, page: Page
+):
+    """A storage event received while disconnected syncs the value stored at send time.
+
+    The event waits for the reconnect, and storage can change again before it
+    is sent. Sending the value from when the event fired would leave this tab's
+    backend behind storage and the other tabs.
+
+    Args:
+        hydration_storage_app: The running app.
+        page: A fresh browser page.
+    """
+    socket = EventSocket(page)
+    open_synced(hydration_storage_app, page)
+    # The tab disconnects as on navigation, another tab stores a value, and then
+    # another before the reconnect sends the queued event.
+    page.evaluate(
+        """() => {
+            window.dispatchEvent(new Event('pagehide'));
+            window.otherTabStores('stale');
+            window.otherTabStores('fresh', { event: null });
+        }"""
+    )
+    socket.wait_sent("update_vars_internal")
+    page.wait_for_timeout(500)
+    expect(page.locator("#sync-value")).to_have_text("fresh")
+    assert not any("update_vars_internal" in m and '"stale"' in m for m in socket.sent)
+    assert page.evaluate("localStorage.getItem('hydrate-sync')") == "fresh"
