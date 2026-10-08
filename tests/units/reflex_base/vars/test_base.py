@@ -1565,14 +1565,20 @@ def test_field_set_default():
     assert fields["count"].default is dataclasses.MISSING
     assert (S().count, S().count) == (0, 1)
 
+    # None is a default value, and a None factory counts as not given.
+    fields["maybe"].set_default(None, default_factory=None)
+    assert (fields["maybe"].default, fields["maybe"].default_factory) == (None, None)
+    assert S().maybe is None
+
 
 @pytest.mark.parametrize(
     ("kwargs", "message"),
     [
         ({}, "requires a default or a default_factory"),
+        ({"default_factory": None}, "requires a default or a default_factory"),
         ({"default": 1, "default_factory": lambda: 1}, "not both"),
     ],
-    ids=["neither", "both"],
+    ids=["neither", "factory_none", "both"],
 )
 def test_field_set_default_takes_exactly_one(kwargs: dict[str, Any], message: str):
     """set_default needs exactly one of default and default_factory.

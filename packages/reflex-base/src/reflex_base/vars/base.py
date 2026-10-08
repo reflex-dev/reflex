@@ -4094,7 +4094,7 @@ class Field(Generic[FIELD_TYPE]):
         self,
         default: FIELD_TYPE | MISSING_TYPE = MISSING,
         *,
-        default_factory: Callable[[], FIELD_TYPE] | MISSING_TYPE = MISSING,
+        default_factory: Callable[[], FIELD_TYPE] | None = None,
     ) -> None:
         """Set the default of the field, replacing its default or factory.
 
@@ -4110,13 +4110,13 @@ class Field(Generic[FIELD_TYPE]):
         Raises:
             TypeError: If neither or both of default and default_factory are given.
         """
-        if default is MISSING and default_factory is MISSING:
+        if default is MISSING and default_factory is None:
             msg = "set_default requires a default or a default_factory."
             raise TypeError(msg)
-        if default is not MISSING and default_factory is not MISSING:
+        if default is not MISSING and default_factory is not None:
             msg = "set_default takes a default or a default_factory, not both."
             raise TypeError(msg)
-        if default_factory is MISSING:
+        if default_factory is None:
             arguments = _default_arguments(default)
             self.default = arguments["default"]
             self.default_factory = arguments["default_factory"]
