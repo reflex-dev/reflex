@@ -1324,7 +1324,8 @@ export const useEventLoop = (
 
     // e is StorageEvent
     const handleStorage = (e) => {
-      if (storage_to_state_map[e.key]) {
+      // Session storage changes in same-origin frames raise storage events too.
+      if (e.storageArea === localStorage && storage_to_state_map[e.key]) {
         const vars = {};
         // A tab gets the events of other tabs' writes after its own newer
         // write too, so send the value stored now rather than e.newValue.
