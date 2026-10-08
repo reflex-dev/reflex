@@ -13,7 +13,9 @@ from reflex_components_radix.themes.components.text_field import TextFieldRoot
         (False, '"off"'),
         (True, '"on"'),
         (Var(_js_expr="enabled", _var_type=bool), '(enabled ? "on" : "off")'),
+        (Var(_js_expr="flag", _var_type=bool | None), '(flag ? "on" : "off")'),
         (Var(_js_expr="hint", _var_type=str), "hint"),
+        (Var(_js_expr="maybe_hint", _var_type=str | None), "maybe_hint"),
     ],
 )
 def test_auto_complete_renders_a_string(auto_complete: Any, expected: str):

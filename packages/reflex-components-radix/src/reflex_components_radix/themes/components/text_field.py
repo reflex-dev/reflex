@@ -6,7 +6,7 @@ from typing import Literal
 
 from reflex_base.components.component import Component, ComponentNamespace, field
 from reflex_base.event import EventHandler, input_event, key_event
-from reflex_base.utils.types import is_optional, safe_issubclass
+from reflex_base.utils.types import is_optional, safe_issubclass, value_inside_optional
 from reflex_base.vars.base import Var
 from reflex_base.vars.number import ternary_operation
 from reflex_components_core.core.breakpoints import Responsive
@@ -108,7 +108,7 @@ class TextFieldRoot(elements.Input, RadixThemesComponent):
         if isinstance(auto_complete, bool):
             props["auto_complete"] = "on" if auto_complete else "off"
         elif isinstance(auto_complete, Var) and safe_issubclass(
-            auto_complete._var_type, bool
+            value_inside_optional(auto_complete._var_type), bool
         ):
             props["auto_complete"] = ternary_operation(
                 auto_complete, Var.create("on"), Var.create("off")
