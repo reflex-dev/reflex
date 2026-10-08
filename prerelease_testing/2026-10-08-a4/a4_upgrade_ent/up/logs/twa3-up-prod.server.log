@@ -334,3 +334,24 @@ Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
 [INFO] Started worker-9
 Warning: Frontend version 0.10.0a3 for session aYizopoxjmCFpEgdAAAB does not 
 match the backend version 0.10.0a4.
+[INFO] Shutting down granian
+[INFO] Stopping worker-3
+[INFO] Stopping worker-1
+[INFO] Stopping worker-5
+[INFO] Stopping worker-7
+[INFO] Stopping worker-4
+[INFO] Stopping worker-9
+[INFO] Stopping worker-6
+[INFO] Stopping worker-8
+[INFO] Stopping worker-2
+[INFO] Stopped worker-1
+[INFO] Stopped worker-2
+[INFO] Stopped worker-3
+[INFO] Stopped worker-4
+[INFO] Stopped worker-5
+[INFO] Stopped worker-6
+[INFO] Stopped worker-7
+[INFO] Stopped worker-8
+[INFO] Stopped worker-9
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

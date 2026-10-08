@@ -1,0 +1,81 @@
+### entv prod a4-ent 16:18:36
+[start.sh] venv=a4-ent reflex=0.10.0a4 reflex-base=0.10.0a4 reflex-enterprise=0.9.7a5 reflex_from=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a4-ent/lib/python3.12/site-packages/reflex/__init__.py
+started pid=29175 pgid=29175
+ready after 12s (frontend 200, /ping 200)
+driver exit=0
+reserved ports free
+     error: * All AG Grid Enterprise features are unlocked for trial.                                                                  *
+     error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *
+     error: ****************************************************************************************************************************
+[s13_dynamic_route_full_load] grids(headers,cells,badges)={'w_state': (2, 6, 0)} probes={'probe-gridstate_cols': 'gridstate_cols|HAS_REFLEX|[{"field":"make"},{"field":"price"}]'} counts={'gridstate_cols': 1} reflexSetAt=131.1000000005588 cellRenders=
+   t=130.3 ws_out {"nsp": "/_event", "auth_keys": ["event"], "auth_mentions_hydrate_and_load": true, "auth_event_name": "reflex___state____state.hydrate_and_load"}
+   t=145.9 delta substates=['reflex___state____state']
+   t=146.6 delta substates=['reflex___state____state']
+   console errors/warnings: 7; pageerrors: 0
+     error: ****************************************************************************************************************************
+     error: ************************************************ AG Grid Enterprise License ************************************************
+     error: ************************************************** License Key Not Found ***************************************************
+     error: * All AG Grid Enterprise features are unlocked for trial.                                                                  *
+     error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *
+     error: ****************************************************************************************************************************
+[s10_full_load_second_context] grids(headers,cells,badges)={'w_state': (2, 6, 0), 'w_literal': (2, 6, 0)} probes={'probe-gridstate_cols': 'gridstate_cols|NO_REFLEX|[{"field":"make"},{"field":"price"}]', 'probe-literal': 'literal|NO_REFLEX|"lit"'} cou
+   t=187.7 ws_out {"nsp": "/_event", "auth_keys": ["event"], "auth_mentions_hydrate_and_load": true, "auth_event_name": "reflex___state____state.hydrate_and_load"}
+   t=284.5 delta substates=['reflex___state____state']
+   t=285.1 delta substates=['reflex___state____state']
+   console errors/warnings: 14; pageerrors: 0
+     error: ****************************************************************************************************************************
+     error: ************************************************ AG Grid Enterprise License ************************************************
+     error: ************************************************** License Key Not Found ***************************************************
+     error: * All AG Grid Enterprise features are unlocked for trial.                                                                  *
+     error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *
+     error: ****************************************************************************************************************************
+### aggrid_min prod a4-ent 16:20:38
+[start.sh] venv=a4-ent reflex=0.10.0a4 reflex-base=0.10.0a4 reflex-enterprise=0.9.7a5 reflex_from=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a4-ent/lib/python3.12/site-packages/reflex/__init__.py
+started pid=30154 pgid=30154
+ready after 8s (frontend 200, /ping 200)
+driver exit=0
+reserved ports free
+ "console_benign": 0,
+ "console_errors": 1,
+ "console_warnings": 0,
+ "page_errors": 0,
+ "failed_requests": 0,
+ "http_errors": 0
+}
+  console_errors: {"t": 0.71, "ctx": "min", "type": "error", "text": "Failed to load resource: the server responded with a status of 404 (Not Found)", "url": "http://localhost:3471/", "location": {"url": "http://localhost:3471/favicon.ico", "line": 0
+server tracebacks: entv=0 aggrid_min=0
+### demo dnd prod a4-ent 16:20:57
+[start.sh] venv=a4-ent reflex=0.10.0a4 reflex-base=0.10.0a4 reflex-enterprise=0.9.7a5 reflex_from=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a4-ent/lib/python3.12/site-packages/reflex/__init__.py
+started pid=30512 pgid=30512
+ready after 10s (frontend 200, /ping 200)
+driver exit=0 27 pass / 0 fail
+"console_errors":0,"console_warnings":0,"page_errors":0,"failed_requests":0,"http_errors":0
+server tracebacks: 0
+reserved ports free
+### demo flow prod a4-ent 16:21:51
+[start.sh] venv=a4-ent reflex=0.10.0a4 reflex-base=0.10.0a4 reflex-enterprise=0.9.7a5 reflex_from=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a4-ent/lib/python3.12/site-packages/reflex/__init__.py
+started pid=31107 pgid=31107
+ready after 8s (frontend 200, /ping 200)
+driver exit=0 20 pass / 2 fail
+[FAIL] index lists 6 flow demos: ['Add Node on Edge Drop Demo', 'Connection Limit Demo', 'Custom Node Demo', 'Drag Handle Demo', 'Intersections', 'Feature Overview', 'Built with Reflex']
+[FAIL] overview: after reload the moved position, deleted node and emoji persist (session state): {'moved': (-124.246, 160.583), 'now': (0.0, 100.0)}
+"console_errors":0,"console_warnings":0,"page_errors":1,"failed_requests":0,"http_errors":0
+server tracebacks: 0
+reserved ports free
+### demo mantine prod a4-ent 16:22:39
+[start.sh] venv=a4-ent reflex=0.10.0a4 reflex-base=0.10.0a4 reflex-enterprise=0.9.7a5 reflex_from=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a4-ent/lib/python3.12/site-packages/reflex/__init__.py
+started pid=31521 pgid=31521
+ready after 16s (frontend 200, /ping 200)
+driver exit=0 23 pass / 0 fail
+"console_errors":0,"console_warnings":0,"page_errors":1,"failed_requests":0,"http_errors":0
+server tracebacks: 0
+reserved ports free
+### demo map prod a4-ent 16:23:22
+[start.sh] venv=a4-ent reflex=0.10.0a4 reflex-base=0.10.0a4 reflex-enterprise=0.9.7a5 reflex_from=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a4-ent/lib/python3.12/site-packages/reflex/__init__.py
+started pid=32272 pgid=32272
+ready after 8s (frontend 200, /ping 200)
+driver exit=0 4 pass / 0 fail
+"console_errors":54,"console_warnings":0,"page_errors":0,"failed_requests":54,"http_errors":0
+server tracebacks: 0
+reserved ports free
+### grid done 16:23:47

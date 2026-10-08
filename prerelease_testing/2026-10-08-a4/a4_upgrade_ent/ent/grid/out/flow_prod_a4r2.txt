@@ -1,0 +1,40 @@
+[GUARD] driver=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/bin/python server venv=a4-ent versions=0.10.0a4 0.9.7a5
+[NOTE] guard: 0.10.0a4 0.9.7a5
+[FAIL] index lists 6 flow demos: ['Add Node on Edge Drop Demo', 'Connection Limit Demo', 'Custom Node Demo', 'Drag Handle Demo', 'Intersections', 'Feature Overview', 'Built with Reflex']
+[PASS] overview: 11 nodes and 6 edges render: {'nodes': 11, 'edges': 6}
+[PASS] overview: minimap + controls + background present: 
+[PASS] overview: pointer drag moves Default Node (on_nodes_change -> State.set_nodes): {'before': (0.0, 100.0), 'after': (-124.246, 160.583)}
+[PASS] overview: toolbar button sets State.emoji (🔥 shown in tools node): 🔥
+[PASS] overview: × on a button edge removes it (run_script set_edges): {'before': 6, 'after': 5}
+[PASS] overview: 'Node width' input resizes node 2-3 via State.set_dimensions: z-index: 1; transform: translate(80px, 300px); pointer-events: all; visibility: visible; width: 120px; height: 80px;
+[NOTE] overview: Output Node shows .selected after click (controlled nodes round trip)
+[PASS] overview: Backspace deletes the selected Output Node: 10
+[PASS] overview: controls zoom-in changes the viewport transform: {'before': 'transform: translate(578.266px, 69.2162px) scale(0.973872);', 'after': 'transform: translate(553.919px, -6.94062px) scale(1.16865);'}
+[PASS] overview: after reload the moved position, deleted node and emoji persist (session state): {'moved': (-124.246, 160.583), 'now': (-124.246, 160.583)}
+[PASS] add-node-on-edge-drop: dropping a connection on the pane adds Node 1 + an edge (on_connect_end + screen_to_flow_position): {'before': 1, 'after': 2, 'edges': 1}
+[PASS] add-node-on-edge-drop: second drop adds Node 2: Node
+Node 1
+Node 2
+[PASS] add-node-on-edge-drop: a new session starts with only the initial node (no cross-session leak of default_factory list): Node
+[PASS] connection-limit: Node 1 -> custom target handle creates an edge: 1
+[PASS] connection-limit: second connection to the same handle is refused (is_connectable from get_node_connections): 1
+[PASS] custom-node: color input -> State.on_change_color updates node label: Custom Color Picker Node: #ff0000
+[PASS] custom-node: background bg_color follows State: rgb(255, 0, 0)
+[PASS] custom-node: minimap node_color (ArgsFunctionOperation + rx.match on State var) uses the new color: ['rgb(255, 255, 255)', 'rgb(255, 0, 0)', 'rgb(255, 255, 255)', 'rgb(255, 255, 255)']
+[PASS] custom-node: on_connect adds an animated edge (connection.merge({animated: true})): {'before': 3, 'after': 4, 'animated': 4}
+[PASS] drag-handle: dragging the label text does not move the node: {'before': (200.0, 200.0), 'after_label_drag': (200.0, 200.0)}
+[PASS] drag-handle: dragging the custom handle moves the node (uncontrolled default_nodes): {'before': (200.0, 200.0), 'after': (239.0, 239.5)}
+[PASS] intersections: dragging node over Node 3 highlights it (on_node_drag throttle + get_intersecting_nodes): ['3']
+{
+ "checks_failed": [
+  "index lists 6 flow demos"
+ ],
+ "n_checks": 22,
+ "console_total": 9,
+ "console_benign": 0,
+ "console_errors": 0,
+ "console_warnings": 0,
+ "page_errors": 0,
+ "failed_requests": 0,
+ "http_errors": 0
+}

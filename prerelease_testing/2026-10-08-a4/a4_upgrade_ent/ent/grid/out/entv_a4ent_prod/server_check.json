@@ -1,0 +1,10 @@
+{
+ "listeners": [
+  {
+   "pid": "29257",
+   "cmd": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a4-ent/bin/python /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a4-ent/bin/reflex run --frontend-port 3470 --backend-port 3470 --loglevel debug --env prod "
+  }
+ ],
+ "venv": "a4-ent",
+ "versions": "reflex=0.10.0a4 reflex-base=0.10.0a4 reflex-enterprise=0.9.7a5 reflex_from=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a4-ent/lib/python3.12/site-packages/reflex/__init__.py"
+}

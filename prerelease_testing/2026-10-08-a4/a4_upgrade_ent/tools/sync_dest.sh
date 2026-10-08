@@ -7,7 +7,7 @@ DEST=/home/user/reflex/prerelease_testing/2026-10-08-a4/a4_upgrade_ent
 mkdir -p $DEST
 EXC=(--exclude=.web --exclude=node_modules --exclude=.states --exclude=assets/external --exclude='*.db' --exclude=reflex.lock --exclude=__pycache__
      --exclude='*.pyc' --exclude=uploaded_files --exclude=profiles --exclude='*.pid' --exclude='*.pgid' --exclude=pids --exclude='*.png' --exclude='*.webm'
-     --exclude='*.zip' --exclude=.git --exclude=runs --exclude=screenshots)
+     --exclude='*.zip' --exclude=.git --exclude=runs --exclude=screenshots --exclude=a3ref)
 tar -C $W "${EXC[@]}" --exclude='up/run' --exclude='tp/run' --exclude='ent/auth/run' --exclude='ent/auth/vauth_*' --exclude='ent/auth/entauth_a*' -cf - . | tar -C $DEST -xf -
 # screenshots: jpg only, small
 find $DEST -name "*.jpg" -size +120k -delete
@@ -42,4 +42,10 @@ for f in Path(sys.argv[1]).rglob("*"):
             return o
         f.write_text(json.dumps(trim(d), indent=1))
 PY
+du -sh $DEST
+# size trim: grid screenshots only for the N-025 run, flow reload probes keep their txt (JSON gzipped), big JSONs gzipped
+find $DEST/ent/grid/out -name '*.jpg' ! -path '*entv_a4ent_prod*' -delete
+find $DEST/ent/grid/out/entv_a4ent_prod -name '*.jpg' | sort | tail -n +7 | xargs -r rm -f
+rm -rf $DEST/ent/auth/vauthx_a4e
+find $DEST \( -name '*.json' -o -name '*.log' \) -size +30k -exec gzip -f {} \;
 du -sh $DEST

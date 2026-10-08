@@ -1,0 +1,55 @@
+## fresh anonymous browser (per rep): hash writes / app storage writes / cookies / cookie syncs / sent events
+a3e-dev-redis rep0: hash_writes=[] app_writes=[('ls', 'debug'), ('ls', 'last_compiled_theme'), ('ls', 'theme')] ls=['theme', 'last_compiled_theme'] cookies=[] totals={'sent:check_if_iframed': 1, 'sent:check_if_iframed_cb': 1, 'sent:hydrate_and_load': 4, 'sent:on_load_internal': 4}
+a3e-dev-redis rep1: hash_writes=[] app_writes=[('ls', 'debug'), ('ls', 'last_compiled_theme'), ('ls', 'theme')] ls=['theme', 'last_compiled_theme'] cookies=[] totals={'sent:check_if_iframed': 1, 'sent:check_if_iframed_cb': 1, 'sent:hydrate_and_load': 4, 'sent:on_load_internal': 4}
+a4e-dev-redis rep0: hash_writes=[] app_writes=[('ls', 'debug'), ('ls', 'last_compiled_theme'), ('ls', 'theme')] ls=['theme', 'last_compiled_theme'] cookies=[] totals={'sent:check_if_iframed': 1, 'sent:check_if_iframed_cb': 1, 'sent:hydrate_and_load': 4, 'sent:on_load_internal': 4}
+a4e-dev-redis rep1: hash_writes=[] app_writes=[('ls', 'debug'), ('ls', 'last_compiled_theme'), ('ls', 'theme')] ls=['theme', 'last_compiled_theme'] cookies=[] totals={'sent:check_if_iframed': 1, 'sent:check_if_iframed_cb': 1, 'sent:hydrate_and_load': 4, 'sent:on_load_internal': 4}
+
+## signed-in page loads: per step counts
+a3e-dev-redis rep0 login=True error=None
+   tab1 reload 0                {'hash_write': 1, 'sent:hydrate_and_load': 1}  {'tab1_who': 'alice'}
+   tab1 reload 1                {'hash_write': 1, 'sent:hydrate_and_load': 1}  {'tab1_who': 'alice'}
+   tab1 reload 2                {'hash_write': 1, 'sent:hydrate_and_load': 1}  {'tab1_who': 'alice'}
+   tab2 open /vault             {'hash_write': 1, 'sent:hydrate_and_load': 1}  {'tab1_who': 'alice', 'tab2_who': 'alice'}
+   tab3 open /                  {'hash_write': 1, 'sent:hydrate_and_load': 1}  {'tab1_who': 'alice', 'tab2_who': 'alice', 'tab3_who': 'alice'}
+   tab3 client nav to /vault    {'hash_write': 1, 'sent:on_load_internal': 1, 'sent:update_vars_internal': 1}  {'tab1_who': 'alice', 'tab2_who': 'alice', 'tab3_who': 'alice'}
+   idle 10 s (3 tabs)           {}  {'tab1_who': 'alice', 'tab2_who': 'alice', 'tab3_who': 'alice'}
+   tab1 add                     {'sent:add_entry': 1}  {'tab1_who': 'alice', 'tab2_who': 'alice', 'tab3_who': 'alice'}
+   totals {'console_error': 1, 'cookie_sync_200': 1, 'hash_write': 8, 'sent:add_entry': 1, 'sent:check_if_iframed': 1, 'sent:check_if_iframed_cb': 1, 'sent:hydrate_and_load': 7, 'sent:on_load_internal': 3, 'sent:redirect_to_login': 1, 'sent:update_access_token_hash_in_browser': 1, 'sent:update_vars_internal': 2} entries=['click1:alice']
+a3e-dev-redis rep1 login=True error=None
+   tab1 reload 0                {'hash_write': 1, 'sent:hydrate_and_load': 1}  {'tab1_who': 'alice'}
+   tab1 reload 1                {'hash_write': 1, 'sent:hydrate_and_load': 1}  {'tab1_who': 'alice'}
+   tab1 reload 2                {'hash_write': 1, 'sent:hydrate_and_load': 1}  {'tab1_who': 'alice'}
+   tab2 open /vault             {'hash_write': 1, 'sent:hydrate_and_load': 1}  {'tab1_who': 'alice', 'tab2_who': 'alice'}
+   tab3 open /                  {'hash_write': 1, 'sent:hydrate_and_load': 1}  {'tab1_who': 'alice', 'tab2_who': 'alice', 'tab3_who': 'alice'}
+   tab3 client nav to /vault    {'hash_write': 1, 'sent:on_load_internal': 1, 'sent:update_vars_internal': 1}  {'tab1_who': 'alice', 'tab2_who': 'alice', 'tab3_who': 'alice'}
+   idle 10 s (3 tabs)           {}  {'tab1_who': 'alice', 'tab2_who': 'alice', 'tab3_who': 'alice'}
+   tab1 add                     {'sent:add_entry': 1}  {'tab1_who': 'alice', 'tab2_who': 'alice', 'tab3_who': 'alice'}
+   totals {'cookie_sync_200': 1, 'hash_write': 8, 'sent:add_entry': 1, 'sent:check_if_iframed': 1, 'sent:check_if_iframed_cb': 1, 'sent:hydrate_and_load': 7, 'sent:on_load_internal': 3, 'sent:redirect_to_login': 1, 'sent:update_access_token_hash_in_browser': 1, 'sent:update_vars_internal': 2} entries=['click1:alice']
+a4e-dev-redis rep0 login=True error=None
+   tab1 reload 0                {'sent:hydrate_and_load': 1}  {'tab1_who': 'alice'}
+   tab1 reload 1                {'sent:hydrate_and_load': 1}  {'tab1_who': 'alice'}
+   tab1 reload 2                {'sent:hydrate_and_load': 1}  {'tab1_who': 'alice'}
+   tab2 open /vault             {'sent:hydrate_and_load': 1}  {'tab1_who': 'alice', 'tab2_who': 'alice'}
+   tab3 open /                  {'sent:hydrate_and_load': 1}  {'tab1_who': 'alice', 'tab2_who': 'alice', 'tab3_who': 'alice'}
+   tab3 client nav to /vault    {'sent:on_load_internal': 1, 'sent:update_vars_internal': 1}  {'tab1_who': 'alice', 'tab2_who': 'alice', 'tab3_who': 'alice'}
+   idle 10 s (3 tabs)           {}  {'tab1_who': 'alice', 'tab2_who': 'alice', 'tab3_who': 'alice'}
+   tab1 add                     {'sent:add_entry': 1}  {'tab1_who': 'alice', 'tab2_who': 'alice', 'tab3_who': 'alice'}
+   totals {'console_error': 1, 'cookie_sync_200': 1, 'hash_write': 1, 'sent:add_entry': 1, 'sent:check_if_iframed': 1, 'sent:check_if_iframed_cb': 1, 'sent:hydrate_and_load': 7, 'sent:on_load_internal': 3, 'sent:redirect_to_login': 1, 'sent:update_access_token_hash_in_browser': 1, 'sent:update_vars_internal': 2} entries=['click1:alice']
+a4e-dev-redis rep1 login=True error=None
+   tab1 reload 0                {'sent:hydrate_and_load': 1}  {'tab1_who': 'alice'}
+   tab1 reload 1                {'sent:hydrate_and_load': 1}  {'tab1_who': 'alice'}
+   tab1 reload 2                {'sent:hydrate_and_load': 1}  {'tab1_who': 'alice'}
+   tab2 open /vault             {'sent:hydrate_and_load': 1}  {'tab1_who': 'alice', 'tab2_who': 'alice'}
+   tab3 open /                  {'sent:hydrate_and_load': 1}  {'tab1_who': 'alice', 'tab2_who': 'alice', 'tab3_who': 'alice'}
+   tab3 client nav to /vault    {'sent:on_load_internal': 1, 'sent:update_vars_internal': 1}  {'tab1_who': 'alice', 'tab2_who': 'alice', 'tab3_who': 'alice'}
+   idle 10 s (3 tabs)           {}  {'tab1_who': 'alice', 'tab2_who': 'alice', 'tab3_who': 'alice'}
+   tab1 add                     {'sent:add_entry': 1}  {'tab1_who': 'alice', 'tab2_who': 'alice', 'tab3_who': 'alice'}
+   totals {'cookie_sync_200': 1, 'hash_write': 1, 'sent:add_entry': 1, 'sent:check_if_iframed': 1, 'sent:check_if_iframed_cb': 1, 'sent:hydrate_and_load': 7, 'sent:on_load_internal': 3, 'sent:redirect_to_login': 1, 'sent:update_access_token_hash_in_browser': 1, 'sent:update_vars_internal': 2} entries=['click1:alice']
+
+## relogin
+a3e-dev-redis rep0 ok=True bob_view=['bob', '0', []] bob_entries=['click1:bob'] newtab=['bob', '/vault'] totals={'console_error': 1, 'cookie_sync_200': 3, 'hash_write': 13, 'sent:add_entry': 2, 'sent:check_if_iframed': 1, 'sent:check_if_iframed_cb': 1, 'sent:hydrate_and_load': 8, 'sent:logout': 1, 'sent:on_load_internal': 4, 'sent:redirect_to_login': 2, 'sent:update_access_token_hash_in_browser': 3, 'sent:update_vars_internal': 3}
+a3e-dev-redis rep1 ok=True bob_view=['bob', '0', []] bob_entries=['click1:bob'] newtab=['bob', '/vault'] totals={'cookie_sync_200': 3, 'hash_write': 13, 'sent:add_entry': 2, 'sent:check_if_iframed': 1, 'sent:check_if_iframed_cb': 1, 'sent:hydrate_and_load': 8, 'sent:logout': 1, 'sent:on_load_internal': 4, 'sent:redirect_to_login': 2, 'sent:update_access_token_hash_in_browser': 3, 'sent:update_vars_internal': 3}
+a4e-dev-redis rep0 ok=True bob_view=['bob', '0', []] bob_entries=['click1:bob'] newtab=['bob', '/vault'] totals={'console_error': 1, 'cookie_sync_200': 3, 'hash_write': 4, 'sent:add_entry': 2, 'sent:check_if_iframed': 1, 'sent:check_if_iframed_cb': 1, 'sent:hydrate_and_load': 8, 'sent:logout': 1, 'sent:on_load_internal': 4, 'sent:redirect_to_login': 2, 'sent:update_access_token_hash_in_browser': 3, 'sent:update_vars_internal': 3}
+a4e-dev-redis rep1 ok=True bob_view=['bob', '0', []] bob_entries=['click1:bob'] newtab=['bob', '/vault'] totals={'cookie_sync_200': 3, 'hash_write': 4, 'sent:add_entry': 2, 'sent:check_if_iframed': 1, 'sent:check_if_iframed_cb': 1, 'sent:hydrate_and_load': 8, 'sent:logout': 1, 'sent:on_load_internal': 4, 'sent:redirect_to_login': 2, 'sent:update_access_token_hash_in_browser': 3, 'sent:update_vars_internal': 3}
+
+## pubslash (anonymous direct loads)

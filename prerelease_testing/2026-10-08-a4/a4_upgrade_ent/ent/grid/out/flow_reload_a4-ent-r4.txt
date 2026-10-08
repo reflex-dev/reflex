@@ -1,0 +1,26 @@
+[GUARD] driver=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/bin/python server venv=a4-ent versions=0.10.0a4 0.9.7a5
+[NOTE] guard: 0.10.0a4 0.9.7a5
+[PASS] flow overview: moved node position survives reload: {'before reload': {'1-2': (-124.246, 160.583), '1-3 present': 1, 'emoji': '🔥', 'nodes': 11}, 'after reload 1': {'1-2': (-124.246, 160.583), '1-3 present': 1, 'emoji': '🔥', 'nodes': 11}, 'reload 1: frames mentioning overview_state': 1, 'reload 1: frame sample': '42/_event,["event",{"delta":{"reflex__
+[PASS] flow overview: emoji (State.emoji) survives reload: {'before reload': {'1-2': (-124.246, 160.583), '1-3 present': 1, 'emoji': '🔥', 'nodes': 11}, 'after reload 1': {'1-2': (-124.246, 160.583), '1-3 present': 1, 'emoji': '🔥', 'nodes': 11}, 'reload 1: frames mentioning overview_state': 1, 'reload 1: frame sample': '42/_event,["event",{"delta":{"reflex__
+before reload: {"1-2": [-124.246, 160.583], "1-3 present": 1, "emoji": "🔥", "nodes": 11}
+after reload 1: {"1-2": [-124.246, 160.583], "1-3 present": 1, "emoji": "🔥", "nodes": 11}
+reload 1: frames mentioning overview_state: 1
+reload 1: frame sample: "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3478\",\"origin\":\"http://localhost:3478\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"HvIKYgFTB0GVBnC/iv1jJA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\","
+reload 1: events sent during boot: ["reflex___state____state.hydrate_and_load"]
+after reload 2: {"1-2": [-124.246, 160.583], "1-3 present": 1, "emoji": "🔥", "nodes": 11}
+reload 2: frames mentioning overview_state: 1
+reload 2: frame sample: "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3478\",\"origin\":\"http://localhost:3478\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"xWu65iFVBPFb//w+uo9DHA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\","
+reload 2: events sent during boot: ["reflex___state____state.hydrate_and_load"]
+after client-side nav back: {"1-2": [-124.246, 160.583], "1-3 present": 1, "emoji": "🔥", "nodes": 11}
+[NOTE] {"before reload": {"1-2": [-124.246, 160.583], "1-3 present": 1, "emoji": "🔥", "nodes": 11}, "after reload 1": {"1-2": [-124.246, 160.583], "1-3 present": 1, "emoji": "🔥", "nodes": 11}, "reload 1: frames mentioning overview_state": 1, "reload 1: frame sample": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3478\",\"origin\":\"http://localhost:3478\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"HvIKYgFTB0GVBnC/iv1jJA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",", "reload 1: events sent during boot": ["reflex___state____state.hydrate_and_load"], "after reload 2": {"1-2": [-124.246, 160.583], "1-3 present": 1, "emoji": "🔥", "nodes": 11}, "reload 2: frames mentioning overview_state": 1, "reload 2: frame sample": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3478\",\"origin\":\"http://localhost:3478\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"xWu65iFVBPFb//w+uo9DHA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",", "reload 2: events sent during boot": ["reflex___state____state.hydrate_and_load"], "after client-side nav back": {"1-2": [-124.246, 160.583], "1-3 present": 1, "emoji": "🔥", "nodes": 11}}
+{
+ "checks_failed": [],
+ "n_checks": 2,
+ "console_total": 4,
+ "console_benign": 0,
+ "console_errors": 0,
+ "console_warnings": 0,
+ "page_errors": 0,
+ "failed_requests": 0,
+ "http_errors": 0
+}

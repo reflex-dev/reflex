@@ -1,0 +1,141 @@
+{
+ "checks": [
+  {
+   "name": "login form renders",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "empty email rejected by package",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "redirect to /check-your-email happened",
+   "ok": true,
+   "detail": "['http://localhost:8467/', 'http://localhost:8467/', 'http://localhost:8467/', 'http://localhost:8467/check-your-email', 'http://localhost:8467/']"
+  },
+  {
+   "name": "stays on /check-your-email (no immediate bounce to /)",
+   "ok": false,
+   "detail": "final url=http://localhost:8467/ navs=['http://localhost:8467/', 'http://localhost:8467/', 'http://localhost:8467/', 'http://localhost:8467/check-your-email', 'http://localhost:8467/']"
+  },
+  {
+   "name": "magic link printed by dev server",
+   "ok": true,
+   "detail": "http://localhost:8467/magic-link-auth?email=user475396%40example.com&otp=30fe9c0b&redir=%2F"
+  },
+  {
+   "name": "magic link logs in and redirects to / (tab2)",
+   "ok": true,
+   "detail": "Welcome back!\n\nYou are logged in as user475396@example.com.\n\nLogout\nBuilt with Reflex"
+  },
+  {
+   "name": "tab1 (check-your-email) follows via LocalStorage sync + moment interval",
+   "ok": true,
+   "detail": "url=http://localhost:8467/ text=Welcome back!\n\nYou are logged in as user475396@example.com.\n\nLogout\nBuilt with Reflex"
+  },
+  {
+   "name": "OTP cannot be reused (fresh context)",
+   "ok": true,
+   "detail": "Login failed!\nBuilt with Reflex"
+  },
+  {
+   "name": "logout shows login form (tab1)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "tab2 logged out via LocalStorage sync",
+   "ok": true,
+   "detail": "Enter your email to log in\nSend Magic Link\nBuilt with Reflex"
+  },
+  {
+   "name": "per-IP rate limit eventually triggers",
+   "ok": true,
+   "detail": "limited at attempt 6"
+  }
+ ],
+ "anomalies": {
+  "console_nonbenign": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "bad_responses": []
+ },
+ "console_all": [
+  {
+   "where": "reuse-link",
+   "page": "ctxB",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "benign": false
+  },
+  {
+   "where": "logout",
+   "page": "tab2",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "benign": false
+  },
+  {
+   "where": "rate-limit",
+   "page": "tab1",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "rate-limit",
+   "page": "tab1",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "rate-limit",
+   "page": "tab1",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "rate-limit",
+   "page": "tab1",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "rate-limit",
+   "page": "tab1",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "rate-limit",
+   "page": "tab1",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "rate-limit",
+   "page": "tab1",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "rate-limit",
+   "page": "tab1",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "benign": false
+  }
+ ],
+ "failed_requests_all": [],
+ "bad_responses_all": [],
+ "ws": [],
+ "email": "user475396@example.com"
+}

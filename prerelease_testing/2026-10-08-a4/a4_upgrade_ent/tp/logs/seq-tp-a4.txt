@@ -1,0 +1,62 @@
+### la dev 16:00:23
+migrate la_dev rc=0
+started pid=16532 (pgid) venv=a4_upgrade_ent-tp app=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a4_upgrade_ent/tp/run/a4/la_dev fp=3463 bp=8463 log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a4_upgrade_ent/tp/logs/la-a4-dev.log
+UP after 4s (http://localhost:3463/)
+PASS new tab while session valid -> protected content
+PASS new tab after session expiry -> /login :: http://localhost:3463/login
+SUMMARY checks=38 failed=2 console_err/warn=0 pageerrors=0 failedreq=0 badresp=0
+stopped 16532
+### la prod 16:01:09
+migrate la_prod rc=0
+started pid=17379 (pgid) venv=a4_upgrade_ent-tp app=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a4_upgrade_ent/tp/run/a4/la_prod fp=8467 bp=8467 log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a4_upgrade_ent/tp/logs/la-a4-prod.log
+UP after 7s (http://localhost:8467/)
+PASS new tab while session valid -> protected content
+PASS new tab after session expiry -> /login :: http://localhost:8467/login
+SUMMARY checks=38 failed=2 console_err/warn=0 pageerrors=0 failedreq=0 badresp=0
+stopped 17379
+### la prodredis 16:01:54
+migrate la_prodredis rc=0
+started pid=17706 (pgid) venv=a4_upgrade_ent-tp app=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a4_upgrade_ent/tp/run/a4/la_prodredis fp=8467 bp=8467 log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a4_upgrade_ent/tp/logs/la-a4-prodredis.log
+UP after 7s (http://localhost:8467/)
+PASS new tab while session valid -> protected content
+PASS new tab after session expiry -> /login :: http://localhost:8467/login
+SUMMARY checks=38 failed=2 console_err/warn=0 pageerrors=0 failedreq=0 badresp=0
+redis keys: 24
+stopped 17706
+### ml dev 16:02:39
+migrate ml_dev rc=0
+started pid=18375 (pgid) venv=a4_upgrade_ent-tp app=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a4_upgrade_ent/tp/run/a4/ml_dev fp=3463 bp=8463 log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a4_upgrade_ent/tp/logs/ml-a4-dev.log
+UP after 5s (http://localhost:3463/)
+Send Magic Link
+PASS per-IP rate limit eventually triggers :: limited at attempt 6
+SUMMARY checks=11 failed=1 console_err/warn=0 pageerrors=0 failedreq=0 badresp=0
+stopped 18375
+### ml prod 16:03:09
+migrate ml_prod rc=0
+started pid=18839 (pgid) venv=a4_upgrade_ent-tp app=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a4_upgrade_ent/tp/run/a4/ml_prod fp=8467 bp=8467 log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a4_upgrade_ent/tp/logs/ml-a4-prod.log
+UP after 7s (http://localhost:8467/)
+Built with Reflex
+PASS per-IP rate limit eventually triggers :: limited at attempt 6
+SUMMARY checks=11 failed=1 console_err/warn=0 pageerrors=0 failedreq=0 badresp=0
+stopped 18839
+--- cmp a3 vs a4 local_auth dev: checks A=38 B=38 failing A=2 B=2 differing=0 
+base /home/user/reflex/prerelease_testing/2026-10-07-a3/a3_events_tp/tp/out/local_auth/a3-dev-report.json: 0 distinct anomalies
+== /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a4_upgrade_ent/tp/out/local_auth/a4-dev-report.json: 0 distinct; only-in-base=0 only-in-this=0
+--- cmp a3 vs a4 local_auth prod: checks A=38 B=38 failing A=2 B=2 differing=0 
+base /home/user/reflex/prerelease_testing/2026-10-07-a3/a3_events_tp/tp/out/local_auth/a3-prod-report.json: 0 distinct anomalies
+== /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a4_upgrade_ent/tp/out/local_auth/a4-prod-report.json: 0 distinct; only-in-base=0 only-in-this=0
+--- cmp a3 vs a4 local_auth prod-redis: checks A=38 B=38 failing A=2 B=2 differing=0 
+base /home/user/reflex/prerelease_testing/2026-10-07-a3/a3_events_tp/tp/out/local_auth/a3-prod-redis-report.json: 0 distinct anomalies
+== /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a4_upgrade_ent/tp/out/local_auth/a4-prodredis-report.json: 0 distinct; only-in-base=0 only-in-this=0
+--- cmp a3 vs a4 magic_link dev: checks A=11 B=11 failing A=1 B=1 differing=0 
+base /home/user/reflex/prerelease_testing/2026-10-07-a3/a3_events_tp/tp/out/magic_link/a3-dev-report.json: 0 distinct anomalies
+== /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a4_upgrade_ent/tp/out/magic_link/a4-dev-report.json: 0 distinct; only-in-base=0 only-in-this=0
+--- cmp a3 vs a4 magic_link prod: checks A=11 B=11 failing A=1 B=1 differing=0 
+base /home/user/reflex/prerelease_testing/2026-10-07-a3/a3_events_tp/tp/out/magic_link/a3-prod-report.json: 0 distinct anomalies
+== /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a4_upgrade_ent/tp/out/magic_link/a4-prod-report.json: 0 distinct; only-in-base=0 only-in-this=0
+la-a4-dev.log: tracebacks=0 TypeError=0
+la-a4-prod.log: tracebacks=0 TypeError=0
+la-a4-prodredis.log: tracebacks=0 TypeError=0
+ml-a4-dev.log: tracebacks=0 TypeError=0
+ml-a4-prod.log: tracebacks=0 TypeError=0
+### tp done 16:03:38
