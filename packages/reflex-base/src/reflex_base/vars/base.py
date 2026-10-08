@@ -4092,8 +4092,8 @@ class Field(Generic[FIELD_TYPE]):
 
     def set_default(
         self,
-        *,
         default: FIELD_TYPE | MISSING_TYPE = MISSING,
+        *,
         default_factory: Callable[[], FIELD_TYPE] | MISSING_TYPE = MISSING,
     ) -> None:
         """Set the default of the field, replacing its default or factory.
@@ -4729,8 +4729,7 @@ def _state_var_assignment_error(cls: type, field: Field, action: str) -> TypeErr
     return TypeError(
         f"{field._name!r} is a state var of {declared} would replace the var. "
         f"Set its default with {owner.__name__}.__fields__[{field._name!r}]"
-        f".set_default(default=...){scope}, or declare class-level config as "
-        "ClassVar."
+        f".set_default(...){scope}, or declare class-level config as ClassVar."
     )
 
 

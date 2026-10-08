@@ -74,17 +74,13 @@ def HydrationStorageApp():
             self.factory = "changed"
 
     fields = AssignedStorageState.__fields__
-    fields["local"].set_default(
-        default=rx.LocalStorage("assigned", name="assigned-local")
-    )
+    fields["local"].set_default(rx.LocalStorage("assigned", name="assigned-local"))
     fields["session"].set_default(
-        default=rx.SessionStorage("assigned", name="assigned-session")
+        rx.SessionStorage("assigned", name="assigned-session")
     )
-    fields["cookie"].set_default(default=rx.Cookie("assigned", name="assigned-cookie"))
+    fields["cookie"].set_default(rx.Cookie("assigned", name="assigned-cookie"))
     # A storage value as the default replaces the declared factory.
-    fields["factory"].set_default(
-        default=rx.LocalStorage("assigned", name="assigned-factory")
-    )
+    fields["factory"].set_default(rx.LocalStorage("assigned", name="assigned-factory"))
 
     class PreferenceState(rx.ComponentState):
         pref: str = rx.LocalStorage("declared", name="assigned-pref")
@@ -105,7 +101,7 @@ def HydrationStorageApp():
                 The preference and a button changing it.
             """
             cls.__fields__["pref"].set_default(
-                default=rx.LocalStorage(initial, name="assigned-pref")
+                rx.LocalStorage(initial, name="assigned-pref")
             )
             return rx.box(
                 rx.text(cls.pref, id="assigned-pref"),

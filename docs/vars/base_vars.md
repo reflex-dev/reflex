@@ -90,8 +90,8 @@ class WatchlistState(rx.State):
     opened_at: float = 0.0
 
 
-WatchlistState.__fields__["ticker"].set_default(default="MSFT")
-WatchlistState.__fields__["symbols"].set_default(default=["AAPL", "MSFT"])
+WatchlistState.__fields__["ticker"].set_default("MSFT")
+WatchlistState.__fields__["symbols"].set_default(["AAPL", "MSFT"])
 WatchlistState.__fields__["opened_at"].set_default(default_factory=time.time)
 ```
 

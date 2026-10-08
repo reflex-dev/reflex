@@ -108,7 +108,7 @@ class EditableText(rx.ComponentState):
         # Set the initial value of the State var.
         initial_value = props.pop("initial_value", None)
         if initial_value is not None:
-            cls.__fields__["text"].set_default(default=initial_value)
+            cls.__fields__["text"].set_default(initial_value)
 
         # Form elements for editing, saving and reverting the text.
         edit_controls = rx.hstack(
@@ -181,7 +181,7 @@ class ThemeToggle(rx.ComponentState):
     @classmethod
     def get_component(cls, key: str, initial: str = "light", **props):
         cls.__fields__["theme"].set_default(
-            default=rx.LocalStorage(initial, name=f"theme_{key}")
+            rx.LocalStorage(initial, name=f"theme_{key}")
         )
         return rx.text(cls.theme, **props)
 ```
