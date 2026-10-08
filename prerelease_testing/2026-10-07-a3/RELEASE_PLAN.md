@@ -1,6 +1,6 @@
 # Release plan after the 0.10.0a3 re-verification (reflex / reflex-base 0.10.0a3 + reflex-enterprise 0.9.7a5)
 
-**Status: FINAL (#7505 merged as 03a2e95e7, #7513 as 9b81d8c3f; class-default assignment backed out by #7516, in review)** — every exploration item and all four independent verifications (A3-01..A3-12) are in. Rubric (testing skill): fix before release =
+**Status: FINAL (#7505 merged as 03a2e95e7, #7513 as 9b81d8c3f; class-default assignment backed out by #7516, merged as 064ba6714)** — every exploration item and all four independent verifications (A3-01..A3-12) are in. Rubric (testing skill): fix before release =
 confirmed regression vs the previous stable (0.9.12), security-relevant, significant user impact, or trivially small. Evidence:
 [FINDINGS.md](./FINDINGS.md). Supersedes [../2026-10-07/RELEASE_PLAN.md](../2026-10-07/RELEASE_PLAN.md) for everything it re-checked.
 
@@ -31,7 +31,7 @@ No upgrade regression 0.9.12 → a3 or a2 → a3; F-002/F-003/F-004 stay fixed; 
   2063422c8 limits echo skipping to `sync=True` vars after review found a lost handler write for a `sync=False` var, re-run 8/8
   converge; Playwright regression tests fail on main). Two intermediate designs were rejected during review (one reintroduced the
   storm, one lost a value when the socket reply beat the `storage` event) — [a3_hydration/pr7505/NOTES.md](./a3_hydration/pr7505/NOTES.md).
-- **A3-01** (LOW, regression vs a2; CONFIRMED) — PR #7512 closed 10-08: the maintainer decided to back class-level default assignment out of 0.10 instead ([review](https://github.com/reflex-dev/reflex/pull/7512)). **[reflex-dev/reflex#7516](https://github.com/reflex-dev/reflex/pull/7516)** removes the #7461/#7495 assignment layer; `BaseStateMeta.__setattr__` now raises `TypeError` on an assignment over a state var (a ClassVar or new name is fine), defaults are set with `State.__fields__[name].default`, tests patch the field. Breaking vs 0.9.12 (which silently accepted the assignment), documented in the upgrade guide. Original plan, trivially small arm: in `BaseStateMeta.__setattr__`, push the "kept default" undo entry
+- **A3-01** (LOW, regression vs a2; CONFIRMED) — PR #7512 closed 10-08: the maintainer decided to back class-level default assignment out of 0.10 instead ([review](https://github.com/reflex-dev/reflex/pull/7512)). **[reflex-dev/reflex#7516](https://github.com/reflex-dev/reflex/pull/7516)** (merged 10-08 as 064ba6714) removes the #7461/#7495 assignment layer; `BaseStateMeta.__setattr__` now raises `TypeError` on an assignment over a state var (a ClassVar or new name is fine), defaults are set with `State.__fields__[name].default`, tests patch the field. Breaking vs 0.9.12 (which silently accepted the assignment), documented in the upgrade guide. Original plan, trivially small arm: in `BaseStateMeta.__setattr__`, push the "kept default" undo entry
   before `_keep_client_storage` / `_accepts_default` can raise (so a rejected `mock.patch.object` / pytest-mock patch round-trips), and
   make `__delattr__` and the identity restore pop only an entry that the same patch pushed. The docs already promise the round trip.
 - **A3-06** (LOW, docs; CONFIRMED by a verifier and found independently by two clusters) — **merged 10-08 as [reflex-dev/reflex#7513](https://github.com/reflex-dev/reflex/pull/7513)**: add to the upgrade guide's background-task
@@ -47,13 +47,13 @@ No upgrade regression 0.9.12 → a3 or a2 → a3; F-002/F-003/F-004 stay fixed; 
 - A3-12 — fixed together with A3-11 by #7505; no issue needed.
 - Several `sync=True` vars sharing one storage `name` only sync the last one (pre-existing, found reviewing #7505) — filed
   [reflex-dev/reflex#7506](https://github.com/reflex-dev/reflex/issues/7506).
-- A3-02 — filed [#7507](https://github.com/reflex-dev/reflex/issues/7507) (moot if #7516 lands: class assignment raises). (LOW) `None` / non-str values assigned to a storage var drop storage (extend the N-005 fix; related to #7498).
+- A3-02 — filed [#7507](https://github.com/reflex-dev/reflex/issues/7507) (moot since #7516 merged: class assignment raises). (LOW) `None` / non-str values assigned to a storage var drop storage (extend the N-005 fix; related to #7498).
 - A3-13 — filed [#7508](https://github.com/reflex-dev/reflex/issues/7508). (LOW, perf, same as 0.9.12) storage-dependent computed vars evaluated twice per page load (second boot delta).
 - A3-07 — filed [#7509](https://github.com/reflex-dev/reflex/issues/7509). (LOW, pre-existing; CONFIRMED) `reflex run --json` ignores a pid-only SIGINT; under supervisord `stopsignal=INT` the stop SIGKILLs only
   the supervisor and leaves the app serving as orphans that block the restart. Small fix: forward SIGINT like SIGTERM in `log.py:519`.
 - A3-08 — filed [#7510](https://github.com/reflex-dev/reflex/issues/7510). (LOW; CONFIRMED, second trigger: a second Ctrl-C during the drain) #7428's drain cap ends the JSON stream mid-record (one
   blocking write of the whole batch on a daemon thread); a consumer that stops reading blocks shutdown forever on every version.
-- A3-04 — filed [#7511](https://github.com/reflex-dev/reflex/issues/7511) (moot if #7516 lands). (LOW) class-default assign/restore is not thread-safe.
+- A3-04 — filed [#7511](https://github.com/reflex-dev/reflex/issues/7511) (moot since #7516 merged). (LOW) class-default assign/restore is not thread-safe.
 - A3-05 — not new: symptom and import-first workaround added to [reflex#7479](https://github.com/reflex-dev/reflex/issues/7479#issuecomment-6052150382).
 - N-006 remainder (silent `str()` / `%s` / `!s` paths, cryptic `id=` error) — added to [reflex#7459](https://github.com/reflex-dev/reflex/issues/7459#issuecomment-6052149625).
 
