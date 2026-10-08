@@ -1,1 +1,0 @@
-Stop sending request cookies, including HttpOnly cookies, and standard authorization, Cloudflare Access, OAuth2 Proxy, AWS ALB, and Google IAP credential headers to frontend router data. On-load events no longer copy request router metadata to the frontend; server-side access to request headers is unchanged.

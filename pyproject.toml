@@ -32,20 +32,21 @@ dependencies = [
   "starlette >=1.3.1",
   "typing_extensions >=4.13.0",
   "wrapt >=1.17.0,<2.6",
-  "reflex-base >= 0.9.13.dev0",
-  "reflex-components-code >= 0.9.0",
-  "reflex-components-core >= 0.9.6",
-  "reflex-components-dataeditor >= 0.9.0",
-  "reflex-components-gridjs >= 0.9.0",
-  "reflex-components-lucide >= 0.9.0",
-  "reflex-components-markdown >= 0.9.0",
-  "reflex-components-moment >= 0.9.4",
-  "reflex-components-plotly >= 0.9.0",
-  "reflex-components-radix >= 0.9.9",
-  "reflex-components-react-player >= 0.9.0",
-  "reflex-components-recharts >= 0.9.0",
-  "reflex-components-sonner >= 0.9.0",
-  "reflex-hosting-cli >= 0.1.71",
+  "reflex-base >= 0.10.0a2.dev0",
+  "reflex-components-code >= 0.10.0",
+  "reflex-components-core >= 0.10.0",
+  "reflex-components-dataeditor >= 0.10.0",
+  "reflex-components-gridjs >= 0.10.0",
+  "reflex-components-lucide >= 1.1.0",
+  "reflex-components-markdown >= 0.10.0",
+  "reflex-components-moment >= 0.10.0",
+  "reflex-components-plotly >= 0.10.0",
+  "reflex-components-radix >= 0.10.0",
+  "reflex-components-react-player >= 0.10.0",
+  "reflex-components-recharts >= 0.10.0",
+  "reflex-components-sonner >= 0.10.0",
+  # 0.1.73a1 predates the Python 3.11 train; the floor lifts to the next alpha.
+  "reflex-hosting-cli >= 0.2.0, != 0.1.73a1",
 ]
 
 classifiers = [
@@ -418,8 +419,8 @@ internal-packages = ["reflex-components-internal", "reflex-site-shared"]
 # changelog detection, no news fragment, and publish refuses it.
 never-publish-packages = ["integrations-docs", "reflex-bench"]
 
-# reflex's metadata pins reflex-base exactly, so the two always release together
-# at one version and reflex uploads only after reflex-base is on PyPI.
+# reflex pins reflex-base exactly and publishes after it, reusing a base tag at
+# its own version when one exists. reflex-base releases on its own.
 [[tool.reflex-release.lockstep]]
 members = ["reflex", "reflex-base"]
 publish-last = ["reflex"]
