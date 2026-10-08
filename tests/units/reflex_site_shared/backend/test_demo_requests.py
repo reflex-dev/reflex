@@ -180,7 +180,8 @@ def test_every_website_demo_form_forwards_to_slack(
         return rx.fragment()
 
     monkeypatch.setattr(module, "demo_form_dialog", recording_dialog)
-    component()
+    # An `rx.memo` builds its body once, so call the body itself.
+    getattr(component, "__wrapped__", component)()
 
     assert [call.get("on_submit") for call in calls] == [
         DemoRequestState.post_demo_request

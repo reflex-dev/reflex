@@ -17,24 +17,37 @@ POSTS_PER_WINDOW = 100
 MAX_FIELD_LENGTH = 1000
 MAX_EMAIL_LENGTH = 254
 
+# The form's field names.
+FIRST_NAME = "first_name"
+LAST_NAME = "last_name"
+EMAIL = "email"
+JOB_TITLE = "job_title"
+COMPANY_NAME = "company_name"
+LOOKING_TO_BUILD = "internal_tools"
+EMPLOYEES = "number_of_employees"
+HEARD_ABOUT_US = "how_did_you_hear_about_us"
+INTERESTED_IN = "interested_in"
+TECHNICAL_LEVEL = "technical_level"
+PHONE_NUMBER = "phone_number"
+
 # Select values are not checked: their options live in the form.
 REQUIRED_FIELDS = (
-    "first_name",
-    "last_name",
-    "email",
-    "job_title",
-    "company_name",
-    "internal_tools",
-    "number_of_employees",
-    "how_did_you_hear_about_us",
-    "interested_in",
-    "technical_level",
+    FIRST_NAME,
+    LAST_NAME,
+    EMAIL,
+    JOB_TITLE,
+    COMPANY_NAME,
+    LOOKING_TO_BUILD,
+    EMPLOYEES,
+    HEARD_ABOUT_US,
+    INTERESTED_IN,
+    TECHNICAL_LEVEL,
 )
 DETAIL_FIELDS = (
-    ("number_of_employees", "Company size"),
-    ("interested_in", "Interested in"),
-    ("technical_level", "Technical level"),
-    ("how_did_you_hear_about_us", "Heard about us"),
+    (EMPLOYEES, "Company size"),
+    (INTERESTED_IN, "Interested in"),
+    (TECHNICAL_LEVEL, "Technical level"),
+    (HEARD_ABOUT_US, "Heard about us"),
 )
 _LABEL = r"[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?"
 # The form's `type="email"` pattern with a dotted domain, less the backtick:
@@ -63,7 +76,7 @@ def contactable(form_data: dict[str, Any]) -> bool:
     """
     if not all(str(form_data.get(key) or "").strip() for key in REQUIRED_FIELDS):
         return False
-    email = str(form_data["email"]).strip()
+    email = str(form_data[EMAIL]).strip()
     return (
         len(email) <= MAX_EMAIL_LENGTH
         and bool(_EMAIL_SHAPE.match(email))
@@ -109,21 +122,19 @@ def demo_request_message(form_data: dict[str, Any], page: str) -> str:
         The Slack message.
     """
     name = " ".join(
-        filter(
-            None, map(_quote, (form_data.get("first_name"), form_data.get("last_name")))
-        )
+        filter(None, map(_quote, (form_data.get(FIRST_NAME), form_data.get(LAST_NAME))))
     )
     role = " at ".join(
         filter(
             None,
-            map(_quote, (form_data.get("job_title"), form_data.get("company_name"))),
+            map(_quote, (form_data.get(JOB_TITLE), form_data.get(COMPANY_NAME))),
         )
     )
     header = f":calendar: *Website demo request from {name or 'someone'}*"
     if role:
         header += f" — {role}"
-    lines = [header, f"*Email:* {_email(form_data.get('email'))}"]
-    if phone := _quote(form_data.get("phone_number")):
+    lines = [header, f"*Email:* {_email(form_data.get(EMAIL))}"]
+    if phone := _quote(form_data.get(PHONE_NUMBER)):
         lines.append(f"*Phone:* {phone}")
     lines += [
         f"*{label}:* {value}"
@@ -131,7 +142,7 @@ def demo_request_message(form_data: dict[str, Any], page: str) -> str:
         if (value := _quote(form_data.get(key)))
     ]
     lines.append(f"*Page:* {_quote(page)}")
-    if build := _quote(form_data.get("internal_tools")):
+    if build := _quote(form_data.get(LOOKING_TO_BUILD)):
         lines += ["*Looking to build:*", f">{build}"]
     return "\n".join(lines)
 
