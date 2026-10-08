@@ -150,7 +150,7 @@ def test_run_backend_does_not_announce_granian_before_startup(
 def test_frontend_readiness_messages(
     tmp_path: Path, mocker: MockerFixture, backend_present: bool, granian: bool
 ) -> None:
-    """Granian readiness is independent of frontend and legacy startup messages."""
+    """The frontend line keeps its text; Granian defers only the backend line."""
     from reflex.utils import processes
 
     mocker.patch.object(exec_utils, "get_web_dir", return_value=tmp_path)
@@ -173,11 +173,7 @@ def test_frontend_readiness_messages(
     else:
         notify.assert_not_called()
     message = output.call_args.args[0]
-    if backend_present and granian:
-        assert "Frontend running at:" in message
-        assert "App running at:" not in message
-    else:
-        assert "App running at:" in message
+    assert "App running at:" in message
     assert ("Frontend-only mode" in message) is not backend_present
 
 

@@ -321,14 +321,10 @@ def run_process_and_launch_url(
                     if first_run:
                         url = match.group(1)
 
-                        if backend_present and should_use_granian():
-                            console.print(
-                                f"Frontend running at: [bold green]{url.rstrip('/')}/[/bold green]"
-                            )
-                        else:
-                            notify_frontend(url, backend_present)
-                            if backend_present:
-                                notify_backend()
+                        notify_frontend(url, backend_present)
+                        # Granian workers announce the backend after lifespan startup.
+                        if backend_present and not should_use_granian():
+                            notify_backend()
                         first_run = False
                     else:
                         console.print("Frontend is restarting...")
@@ -351,7 +347,7 @@ def run_frontend(root: Path, port: str, backend_present: bool = True):
     js_runtimes.validate_frontend_dependencies(init=False)
 
     # Run the frontend in development mode.
-    console.rule("[bold green]Starting frontend")
+    console.rule("[bold green]App Running")
     os.environ["PORT"] = str(get_config().frontend_port if port is None else port)
     run_process_and_launch_url(
         [

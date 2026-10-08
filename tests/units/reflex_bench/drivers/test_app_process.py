@@ -389,11 +389,11 @@ def test_ready_lines_skip_announcements_that_are_not_urls():
 
 
 def test_dev_ready_lines_wait_for_backend_after_frontend():
-    """Separate frontend readiness must not mark the whole dev app ready."""
+    """The frontend line alone must not mark the whole dev app ready."""
     watcher = app_process._ReadyLines(
         app_process._topology("dev", HEAD, backend_only=False).ready
     )
-    watcher.feed("Frontend running at: http://localhost:13000/", 1.0)
+    watcher.feed("App running at: http://localhost:13000/", 1.0)
     assert watcher.urls == {"frontend": "http://localhost:13000"}
     assert not watcher.done
 

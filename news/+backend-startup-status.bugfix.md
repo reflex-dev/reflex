@@ -1,1 +1,1 @@
-Development mode now reports a Granian backend as running only after successful app startup and reports unexpected worker exits while waiting for changes. Tools parsing full-stack development logs should recognize `Frontend running at:` for the frontend URL and wait for `Backend running at:` for backend startup.
+Development mode now prints `Backend running at:` for a Granian backend only after the app finishes startup, and warns when a backend worker exits while waiting for changes. `App running at:` is still printed when the frontend is ready.
