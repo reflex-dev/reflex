@@ -1567,22 +1567,26 @@ def test_field_set_default():
 
 
 @pytest.mark.parametrize(
-    "kwargs",
-    [{}, {"default": 1, "default_factory": lambda: 1}],
+    ("kwargs", "message"),
+    [
+        ({}, "requires a default or a default_factory"),
+        ({"default": 1, "default_factory": lambda: 1}, "not both"),
+    ],
     ids=["neither", "both"],
 )
-def test_field_set_default_takes_exactly_one(kwargs: dict[str, Any]):
+def test_field_set_default_takes_exactly_one(kwargs: dict[str, Any], message: str):
     """set_default needs exactly one of default and default_factory.
 
     Args:
         kwargs: The arguments passed to set_default.
+        message: The expected error message.
     """
 
     class S(BaseState):
         count: int = 0
 
     field = S.get_fields()["count"]
-    with pytest.raises(TypeError, match="exactly one of default or default_factory"):
+    with pytest.raises(TypeError, match=message):
         field.set_default(**kwargs)
     assert (field.default, field.default_factory) == (0, None)
 

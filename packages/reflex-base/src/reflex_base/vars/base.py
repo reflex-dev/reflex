@@ -4108,10 +4108,13 @@ class Field(Generic[FIELD_TYPE]):
             default_factory: A function building the default for each instance.
 
         Raises:
-            TypeError: If not exactly one of default and default_factory is given.
+            TypeError: If neither or both of default and default_factory are given.
         """
-        if (default is MISSING) == (default_factory is MISSING):
-            msg = "set_default takes exactly one of default or default_factory."
+        if default is MISSING and default_factory is MISSING:
+            msg = "set_default requires a default or a default_factory."
+            raise TypeError(msg)
+        if default is not MISSING and default_factory is not MISSING:
+            msg = "set_default takes a default or a default_factory, not both."
             raise TypeError(msg)
         if default_factory is MISSING:
             arguments = _default_arguments(default)
