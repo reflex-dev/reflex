@@ -78,6 +78,11 @@ jobs:
           for version in ("0.9.12", "0.10.0"):
               subject = resolve(version, python="3.12", home=Path(os.environ["REFLEX_BENCH_HOME"]))
               assert subject.reflex_version == version, subject
+              # The playground's database requires SQLAlchemy's async extra on ARM64.
+              subprocess.run(
+                  ["uv", "pip", "install", "--python", str(subject.python), "sqlalchemy[asyncio]"], check=True
+              )
+              subprocess.run(["uv", "pip", "check", "--python", str(subject.python)], check=True)
               packages = subprocess.check_output(
                   ["uv", "pip", "list", "--python", str(subject.python), "--format", "json"], text=True
               )
