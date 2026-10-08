@@ -1,6 +1,6 @@
 # Release plan after the 0.10.0a3 re-verification (reflex / reflex-base 0.10.0a3 + reflex-enterprise 0.9.7a5)
 
-**Status: FINAL (#7505 at 3df9341a5 awaiting approval; class-default assignment backed out by #7516)** — every exploration item and all four independent verifications (A3-01..A3-12) are in. Rubric (testing skill): fix before release =
+**Status: FINAL (#7505 merged 10-08 as 03a2e95e7; class-default assignment backed out by #7516, in review)** — every exploration item and all four independent verifications (A3-01..A3-12) are in. Rubric (testing skill): fix before release =
 confirmed regression vs the previous stable (0.9.12), security-relevant, significant user impact, or trivially small. Evidence:
 [FINDINGS.md](./FINDINGS.md). Supersedes [../2026-10-07/RELEASE_PLAN.md](../2026-10-07/RELEASE_PLAN.md) for everything it re-checked.
 
