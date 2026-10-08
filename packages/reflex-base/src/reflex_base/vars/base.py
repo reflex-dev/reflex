@@ -4090,6 +4090,40 @@ class Field(Generic[FIELD_TYPE]):
         """
         return cls(annotated_type=annotated_type, **_default_arguments(value))
 
+    def set_default(
+        self,
+        default: FIELD_TYPE | MISSING_TYPE = MISSING,
+        *,
+        default_factory: Callable[[], FIELD_TYPE] | None = None,
+    ) -> None:
+        """Set the default of the field, replacing its default or factory.
+
+        A mutable default, like a list, becomes a factory returning a copy of
+        the value as it was when set, so no two instances share it. The change
+        applies to values not yet stored on an instance, such as in a new
+        session or after ``reset()``.
+
+        Args:
+            default: The new default value.
+            default_factory: A function building the default for each instance.
+
+        Raises:
+            TypeError: If neither or both of default and default_factory are given.
+        """
+        if default is MISSING and default_factory is None:
+            msg = "set_default requires a default or a default_factory."
+            raise TypeError(msg)
+        if default is not MISSING and default_factory is not None:
+            msg = "set_default takes a default or a default_factory, not both."
+            raise TypeError(msg)
+        if default_factory is None:
+            arguments = _default_arguments(default)
+            self.default = arguments["default"]
+            self.default_factory = arguments["default_factory"]
+        else:
+            self.default = MISSING
+            self.default_factory = default_factory
+
     def default_value(self) -> FIELD_TYPE | None:
         """Get the default value for the field.
 
@@ -4665,28 +4699,40 @@ def _default_arguments(value: Any) -> dict[str, Any]:
     """
     if types.is_immutable(value):
         return {"default": value, "default_factory": None}
+    # Copy the value once, so later changes by whoever passed it in do not
+    # reach the default.
     return {
         "default": MISSING,
-        "default_factory": functools.partial(copy.deepcopy, value),
+        "default_factory": functools.partial(copy.deepcopy, copy.deepcopy(value)),
     }
 
 
-def _state_var_assignment_error(cls: type, name: str, action: str) -> TypeError:
+def _state_var_assignment_error(cls: type, field: Field, action: str) -> TypeError:
     """Build the error for replacing a state var through its class.
 
     Args:
         cls: The state class the attribute is set or deleted through.
-        name: The name of the state var.
+        field: The field of the state var.
         action: What was done to the class attribute, like "assigning".
 
     Returns:
-        The error, naming the var and how to change its default instead.
+        The error, naming the state declaring the var and how to change its
+        default there instead.
     """
+    owner = field._owner or cls
+    if owner is cls:
+        declared = f"{owner.__name__}; {action} it on the class"
+        scope = ""
+    else:
+        declared = (
+            f"{owner.__name__}, inherited by {cls.__name__}; {action} it on "
+            f"{cls.__name__}"
+        )
+        scope = ", which applies to every state that inherits it"
     return TypeError(
-        f"{name!r} is a state var of {cls.__name__}; {action} it on the class "
-        f"would replace the var. Set its default with "
-        f"{cls.__name__}.__fields__[{name!r}].default = ..., or declare "
-        "class-level config as ClassVar."
+        f"{field._name!r} is a state var of {declared} would replace the var. "
+        f"Set its default with {owner.__name__}.__fields__[{field._name!r}]"
+        f".set_default(...){scope}, or declare class-level config as ClassVar."
     )
 
 
@@ -4773,7 +4819,7 @@ class BaseStateMeta(ABCMeta):
                 # Assigning the var's own field back, as a patch undoing a
                 # failed assignment does, changes nothing.
                 return
-            raise _state_var_assignment_error(cls, name, "assigning")
+            raise _state_var_assignment_error(cls, existing, "assigning")
         super().__setattr__(name, value)
 
     def __delattr__(cls, name: str) -> None:
@@ -4792,9 +4838,9 @@ class BaseStateMeta(ABCMeta):
         if (
             name not in cls.__dict__
             and name in cls.__fields__
-            and isinstance(_inherited_value(cls.__mro__, name), Field)
+            and isinstance(existing := _inherited_value(cls.__mro__, name), Field)
         ):
-            raise _state_var_assignment_error(cls, name, "deleting")
+            raise _state_var_assignment_error(cls, existing, "deleting")
         super().__delattr__(name)
 
     def __new__(

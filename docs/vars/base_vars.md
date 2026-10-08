@@ -77,30 +77,36 @@ def ticker_example():
 
 A state var is a descriptor on its state class, so assigning to it through the
 class raises `TypeError` instead of replacing the var. To change a var's default,
-set it on the var's field:
+call `set_default` on the var's field with either a `default` value or a
+`default_factory` function:
 
 ```python
+import time
+
+
 class WatchlistState(rx.State):
     ticker: str = "AAPL"
     symbols: list[str] = []
+    opened_at: float = 0.0
 
 
-WatchlistState.__fields__["ticker"].default = "MSFT"
-WatchlistState.__fields__["symbols"].default_factory = lambda: ["AAPL", "MSFT"]
+WatchlistState.__fields__["ticker"].set_default("MSFT")
+WatchlistState.__fields__["symbols"].set_default(["AAPL", "MSFT"])
+WatchlistState.__fields__["opened_at"].set_default(default_factory=time.time)
 ```
 
 The default applies to values not yet stored on an instance, which includes
 every new session and `reset()`. Values already stored on an instance stay the
-same. A field uses its `default` when one is set, and otherwise calls its
-`default_factory`. A `default` is shared by every instance, so give a mutable
-default a `default_factory` that builds a new value each time. The field does
-not check the value against the var's annotation. A browser storage var keeps
-its storage name and options only with a storage value as its default, such as
-`rx.LocalStorage("dark", name="theme")`, or, for a var annotated with a storage
-type, a `default_factory` that returns one. Given a plain string, a var
-annotated `str` becomes an ordinary var, and one annotated with a storage type,
-such as `rx.LocalStorage`, stays in browser storage under the default key and
-options.
+same. Pass exactly one of `default` and `default_factory`; a `default_factory`
+is called for each new instance. `set_default` copies a mutable `default`, such
+as a list, when you set it and gives each instance its own copy, so sessions
+never share it and later changes to the value you passed do not reach the
+default. It does not check the value against the var's annotation. A browser
+storage var keeps its storage name and options only with a storage value as its
+default, such as `rx.LocalStorage("dark", name="theme")`. Given a plain string,
+a var annotated `str` becomes an ordinary var, and one annotated with a storage
+type, such as `rx.LocalStorage`, stays in browser storage under the default key
+and options.
 
 An inherited var belongs to the state that declared it, so changing its field
 also changes the default for every state that inherits it. Each generated

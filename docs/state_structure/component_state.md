@@ -108,7 +108,7 @@ class EditableText(rx.ComponentState):
         # Set the initial value of the State var.
         initial_value = props.pop("initial_value", None)
         if initial_value is not None:
-            cls.__fields__["text"].default = initial_value
+            cls.__fields__["text"].set_default(initial_value)
 
         # Form elements for editing, saving and reverting the text.
         edit_controls = rx.hstack(
@@ -160,7 +160,7 @@ def editable_text_example():
     )
 ```
 
-Setting `cls.__fields__["text"].default` in `get_component` sets the default for
+Calling `cls.__fields__["text"].set_default` in `get_component` sets the default for
 that component's new state class, which owns a copy of each field: other
 components keep their own defaults. Resetting the component's state restores the
 configured default. Assigning `cls.text` itself raises `TypeError`, because
@@ -180,7 +180,9 @@ class ThemeToggle(rx.ComponentState):
 
     @classmethod
     def get_component(cls, key: str, initial: str = "light", **props):
-        cls.__fields__["theme"].default = rx.LocalStorage(initial, name=f"theme_{key}")
+        cls.__fields__["theme"].set_default(
+            rx.LocalStorage(initial, name=f"theme_{key}")
+        )
         return rx.text(cls.theme, **props)
 ```
 

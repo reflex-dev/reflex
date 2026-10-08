@@ -1447,12 +1447,154 @@ def test_class_assignment_over_a_var_raises(name: str):
     declared = Parent.get_fields()[name]
     for cls in (Parent, Child):
         with pytest.raises(
-            TypeError, match=f"'{name}' is a state var of {cls.__name__}"
+            TypeError, match=f"'{name}' is a state var of {Parent.__name__}"
         ):
             setattr(cls, name, 5)
     assert Parent.__dict__[name] is declared
     assert name not in Child.__dict__
     assert declared.default == 0
+
+
+def test_class_assignment_error_names_the_declaring_state():
+    """The error through a substate points at the state declaring the var."""
+
+    class Parent(BaseState):
+        count: int = 0
+
+    class Child(Parent):
+        pass
+
+    parent, child = Parent.__name__, Child.__name__
+    with pytest.raises(TypeError) as exc_info:
+        Child.count = 9  # pyright: ignore[reportAttributeAccessIssue]
+    message = str(exc_info.value)
+    assert message.startswith(
+        f"'count' is a state var of {parent}, inherited by {child}; assigning "
+        f"it on {child} would replace the var."
+    )
+    assert f"{parent}.__fields__['count'].set_default(...)" in message
+    assert "every state that inherits it" in message
+    assert f"{child}.__fields__" not in message
+
+    with pytest.raises(TypeError) as exc_info:
+        Parent.count = 9
+    message = str(exc_info.value)
+    assert message.startswith(
+        f"'count' is a state var of {parent}; assigning it on the class would "
+        "replace the var."
+    )
+    assert "every state that inherits it" not in message
+
+
+def test_class_assignment_error_names_the_state_mixing_in_a_var():
+    """A state mixing in a var owns its copy, so the error names that state."""
+
+    class Mixin(State, mixin=True):
+        count: int = 0
+
+    class Mixed(Mixin, State):
+        pass
+
+    class Child(Mixed):
+        pass
+
+    mixin, mixed, child = Mixin.__name__, Mixed.__name__, Child.__name__
+    for cls, owner, declared in (
+        (Mixin, mixin, mixin),
+        (Mixed, mixed, mixed),
+        (Child, mixed, f"{mixed}, inherited by {child}"),
+    ):
+        with pytest.raises(TypeError) as exc_info:
+            cls.count = 9
+        message = str(exc_info.value)
+        assert message.startswith(f"'count' is a state var of {declared}; "), cls
+        assert f"{owner}.__fields__['count'].set_default(...)" in message
+    assert Mixed.get_fields()["count"] is not Mixin.get_fields()["count"]
+
+
+def test_class_assignment_error_suggests_set_default():
+    """The error suggests set_default for a mutable and an immutable value alike."""
+
+    class S(BaseState):
+        items: list[str] = []
+
+    for value in (["a"], ("a",)):
+        with pytest.raises(TypeError) as exc_info:
+            S.items = value  # pyright: ignore[reportAttributeAccessIssue]
+        assert f"{S.__name__}.__fields__['items'].set_default(...)" in str(
+            exc_info.value
+        )
+
+
+def test_field_set_default():
+    """set_default copies a mutable default per instance and keeps one kind of default."""
+
+    class S(BaseState):
+        count: int = 0
+        items: list[str] = []
+        maybe: list[str] | None = None
+        stamp: list[int] = []
+
+    fields = S.get_fields()
+    fields["count"].set_default(5)
+    assert (fields["count"].default, fields["count"].default_factory) == (5, None)
+    assert S().count == 5
+
+    # A mutable default replaces a set default with a factory copying the value
+    # as it was when set.
+    value = ["a"]
+    fields["maybe"].set_default(value)
+    assert fields["maybe"].default is dataclasses.MISSING
+    first, second = S(), S()
+    assert first.maybe is not value
+    assert first.maybe is not None
+    first.maybe.append("changed")
+    value.append("changed")
+    assert second.maybe == ["a"]
+    assert S().maybe == ["a"]
+
+    # An immutable default, here passed by keyword, replaces a factory.
+    fields["items"].set_default(default=("x",))
+    assert fields["items"].default == ("x",)
+    assert fields["items"].default_factory is None
+    assert S().items == ("x",)
+
+    # A factory replaces a set default and is called for each instance.
+    calls = iter(range(10))
+    fields["count"].set_default(default_factory=lambda: next(calls))
+    assert fields["count"].default is dataclasses.MISSING
+    assert (S().count, S().count) == (0, 1)
+
+    # None is a default value, and a None factory counts as not given.
+    fields["maybe"].set_default(None, default_factory=None)
+    assert (fields["maybe"].default, fields["maybe"].default_factory) == (None, None)
+    assert S().maybe is None
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "message"),
+    [
+        ({}, "requires a default or a default_factory"),
+        ({"default_factory": None}, "requires a default or a default_factory"),
+        ({"default": 1, "default_factory": lambda: 1}, "not both"),
+    ],
+    ids=["neither", "factory_none", "both"],
+)
+def test_field_set_default_takes_exactly_one(kwargs: dict[str, Any], message: str):
+    """set_default needs exactly one of default and default_factory.
+
+    Args:
+        kwargs: The arguments passed to set_default.
+        message: The expected error message.
+    """
+
+    class S(BaseState):
+        count: int = 0
+
+    field = S.get_fields()["count"]
+    with pytest.raises(TypeError, match=message):
+        field.set_default(**kwargs)
+    assert (field.default, field.default_factory) == (0, None)
 
 
 def test_class_assignment_of_other_attributes_is_allowed():
@@ -1512,11 +1654,15 @@ def test_inherited_var_patch_raises_type_error():
     declared = Parent.get_fields()["value"]
     # The patch's cleanup deletes the attribute it failed to set on Child.
     with (
-        pytest.raises(TypeError, match="'value' is a state var of Child"),
+        pytest.raises(
+            TypeError,
+            match=f"'value' is a state var of {Parent.__name__}, inherited by "
+            f"{Child.__name__}",
+        ),
         mock.patch.object(Child, "value", 99),
     ):
         pass
-    with pytest.raises(TypeError, match="deleting it on the class"):
+    with pytest.raises(TypeError, match=f"deleting it on {Child.__name__}"):
         del Child.value
     assert Parent.__dict__["value"] is declared
     assert "value" not in Child.__dict__
