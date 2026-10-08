@@ -150,7 +150,9 @@ lost; a run that goes on to wait for something else, stops, or goes back round a
 schedule, discards it. A run holds one event at a time, whichever wait it is for, so
 while one is held a second delivery is refused and `deliver` returns 0 for it, rather
 than replacing an answer already given — and a discarded event means its sender is the
-one who has to send it again.
+one who has to send it again. The held event stops counting once a worker takes it to
+run its step: an event delivered while that step runs is held for the next wait, so a
+run that waits on the same step again, such as a conversation, misses nothing.
 Passing a `key` makes delivery idempotent: a run refuses a key it has already taken,
 remembering the last sixteen. A key is taken when the run runs the event, not when it is
 held, so a resend of an event that was discarded is accepted. Arguments are checked
@@ -553,7 +555,7 @@ async with run_workflows(Session, on_idle=register):
 ```
 
 `wake` is the other half: whatever the platform reaches when that instant
-arrives calls it, and the request is held open until the worker has taken the
+arrives calls it, and the request is held open until the worker has run the
 work or has nothing left to take. Holding it open is the point on hosts that
 only give an instance CPU while it is answering a request.
 
@@ -564,8 +566,9 @@ async def wake_workflows() -> Response:
     return Response(status_code=200 if caught_up else 503)
 ```
 
-It returns True once the worker has made a pass that claimed nothing and the
-instant behind that pass has been reported. Both halves matter: the first is the
+It returns True once the worker has made a pass that claimed nothing, with none
+of the steps it took still running, and the instant behind that pass has been
+reported. Both halves matter: the first is the
 worker saying there is nothing it can take — either nothing is due, or what is
 due is held back by a limit and waiting longer would not help — and the second
 is the promise that whatever wakes this deployment has been told when to do it

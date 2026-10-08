@@ -179,35 +179,54 @@ you called it) and the directory name under `packages/` for the rest.
 
 ### Lockstep packages
 
-Packages that must always release together at the same version — typically
-because one pins the other exactly — form a lockstep group:
+Packages that release at one version — typically because one pins the other
+exactly — form a lockstep group:
 
 ```toml
 [[tool.reflex-release.lockstep]]
 members = ["mypkg", "mypkg-base"]
-# Members that publish only after every other member is uploaded and tagged.
+# Members that publish only after the others are uploaded and tagged.
 publish-last = ["mypkg"]
-# Rewrite each publish-last member's requirement on its siblings to
+# Rewrite each publish-last member's requirement on the others to
 # "== <version>" before building.
 pin-exact = true
 ```
 
-This gives you, for free:
+Without `publish-last`, the members only ever release together: they share one
+*Dispatch release* checkbox, selecting one selects all, their next version
+comes from the highest baseline among them, and an unsatisfiable dependency
+pin in one holds back the whole group.
 
-- selecting one member in *Dispatch release* selects the whole group, and all
-  members are planned at one version (the highest baseline among them);
-- `release_from_changelog` publishes `publish-last` members only after the rest
-  of the batch succeeded — never shipping a wheel whose exact pin does not
-  exist on PyPI yet;
-- a member with nothing to report still gets its section, holding towncrier's
-  "No significant changes." placeholder — nobody hand-writes a changelog entry
-  just to satisfy the invariant, and a member does not even need a `news/`
-  directory;
-- detection **fails closed** if one member's changelog is bumped without the
-  other's (re-dispatching a release fixes it, materializing the whole group).
+With `publish-last`, each member gets its own checkbox and the group is
+directional:
+
+- an early member (`mypkg-base`) releases on its own, from its own baseline;
+- a `publish-last` member (`mypkg`) advances from its own baseline and needs
+  every early member tagged at the new version. One already tagged there is
+  reused — after base publishes `1.2.0a2`, `mypkg` at `1.2.0a1` continues to
+  `1.2.0a2` on that release even if base has moved on since. Otherwise the
+  early member is planned at the same version, unless its changelog is already
+  past it, which stops the plan;
+- `release_from_changelog` publishes `publish-last` members after the rest of
+  the batch, and `prepare-publish` refuses to build one until every early
+  member's tag exists, so a manual publish dispatch cannot run ahead either;
+- `publish-last` members do not need each other; each pins the early members
+  only.
+
+This is what dependency-first phases rest on: publish base, wait for its tag,
+then the packages that need it, and the dependent last. Each phase lifts its
+`.dev` floors to the versions tagged by the phases before it.
+
+In either kind of group, a member dragged in by its sibling still gets its
+changelog section, holding towncrier's "No significant changes." placeholder,
+and detection **fails closed** if a member's changelog is bumped without the
+siblings it needs being tagged or in the same batch.
 
 `pin-exact` rewrites the requirement in the publishing package's
-`pyproject.toml` at build time only; it is never committed.
+`pyproject.toml` at build time only; it is never committed. The pinned version
+must satisfy the requirement as declared — planning and the build both check,
+so a floor raised past the sibling version a release would reuse stops it
+before anything is materialized.
 
 ### Dependency pins across a release
 
@@ -278,9 +297,9 @@ the lock.
 
 A floor nothing published satisfies has nowhere to go, and the package is
 **held back** rather than materialized into a version that could never be
-published — auto-selected packages are dropped from the batch (a lockstep group
-whole, since its members only release together) and listed in the run summary;
-an explicitly selected one fails the dispatch. Release the depended-on package
+published — auto-selected packages are dropped from the batch, together with
+the lockstep partners that need them, and listed in the run summary; an
+explicitly selected one fails the dispatch. Release the depended-on package
 first and the next release lifts the pin by itself.
 
 Two things are deliberately left alone: a floor on a lockstep sibling that
@@ -329,22 +348,22 @@ news/                          # fragments for the root package
 packages/widget-core/news/     # fragments for packages/widget-core
 ```
 
-A fragment is a markdown file named `<pr-number>.<type>.md` holding one or two
-sentences written for someone reading release notes:
+A fragment is a markdown file named `+<slug>.<type>.md` (an orphan fragment)
+or `<pr-number>.<type>.md`, holding one or two sentences written for someone
+reading release notes:
 
 ```bash
-uvx reflex-release create 1234.feature.md                        # root package
-uvx reflex-release create --package widget-core 1234.bugfix.md   # sub-package
+uvx reflex-release create +new-widget.feature.md                      # root package
+uvx reflex-release create --package widget-core +fix-crash.bugfix.md  # sub-package
 ```
 
-Before you know the PR number, use an orphan fragment (`+something.feature.md`).
-Renaming it once the PR exists is nice but optional: when the release
-materializes the changelog, every orphan fragment left over is renamed after the
-pull request whose commit added it — read out of that commit's subject, which
-GitHub writes as `Merge pull request #N ...` or `... (#N)` — so its entry gets
-the usual link. A fragment whose commit
-landed outside a pull request keeps its orphan name and its entry gets no link,
-with a warning in the job log. CI requires a fragment for every package whose
+The PR number is optional, and there is no need to rename an orphan fragment
+once the PR exists: when the release materializes the changelog, every orphan
+fragment left over is renamed after the pull request whose commit added it —
+read out of that commit's subject, which GitHub writes as
+`Merge pull request #N ...` or `... (#N)` — so its entry gets the usual link. A
+fragment whose commit landed outside a pull request keeps its orphan name and
+its entry gets no link, with a warning in the job log. CI requires a fragment for every package whose
 source the PR touches; the `skip-changelog` label waives that for changes that
 genuinely are not user-facing.
 
@@ -620,10 +639,11 @@ review-sensitive field.
 ## Cutting a release
 
 Run **Dispatch release** from the Actions tab. Each package gets its own
-checkbox, generated from your configuration; a lockstep group gets a single
-checkbox covering all its members, since they only ever release together.
-Selecting nothing auto-selects: packages with pending news fragments, or — for
-`release-from-prerelease` — packages whose changelog is topped by an alpha.
+checkbox, generated from your configuration; a lockstep group without
+`publish-last` gets a single checkbox covering all its members, since they only
+ever release together. Selecting nothing auto-selects: packages with pending
+news fragments, or — for `release-from-prerelease` — packages whose changelog is
+topped by an alpha.
 
 Because the checkboxes are generated, **adding or removing a package changes
 `dispatch_release.yml`** — run `reflex-release sync` and commit it with the new
