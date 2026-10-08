@@ -31,7 +31,7 @@ def now() -> datetime.datetime:
     Returns:
         Now, in UTC.
     """
-    return datetime.datetime.now(datetime.timezone.utc)
+    return datetime.datetime.now(datetime.UTC)
 
 
 async def watch(database, item: str, due_in: datetime.timedelta, signals: int = 0):

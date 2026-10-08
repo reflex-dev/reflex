@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from reflex_base.utils import format
+from reflex_base.vars.base import Field
 
 
 class ClientStorageBase:
@@ -19,6 +20,21 @@ class ClientStorageBase:
         return {
             format.to_camel_case(k): v for k, v in vars(self).items() if v is not None
         }
+
+    def _with_value(self, value: Any) -> Any:
+        """Hold a plain string under the same storage type and options.
+
+        Args:
+            value: The value to hold.
+
+        Returns:
+            A storage value of this type and options holding a plain string, or
+            any other value, including another storage value, unchanged.
+        """
+        if isinstance(value, str) and not isinstance(value, ClientStorageBase):
+            # Every storage type takes its options as keyword arguments.
+            return type(self)(value, **vars(self))  # pyright: ignore[reportCallIssue]
+        return value
 
 
 class Cookie(ClientStorageBase, str):
@@ -142,3 +158,6 @@ class SessionStorage(ClientStorageBase, str):
             inst = super().__new__(cls, object)
         inst.name = name
         return inst
+
+
+Field._client_storage = ClientStorageBase

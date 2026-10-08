@@ -1,5 +1,7 @@
 """Tests for reflex_base.vars.base state metaclass field handling."""
 
+import asyncio
+import contextlib
 import dataclasses
 import datetime
 import enum
@@ -14,20 +16,28 @@ import traceback
 import typing
 import weakref
 from abc import ABC, abstractmethod
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from pathlib import Path
-from typing import Any, ClassVar, Literal, TypeVar
+from typing import Any, ClassVar, Generic, Literal, Protocol, Self, TypeVar
+from unittest import mock
 
 import pytest
 from reflex_base import constants
 from reflex_base.constants import RouteArgType
 from reflex_base.environment import _load_dotenv_from_files, environment
 from reflex_base.utils import serializers
-from reflex_base.utils.exceptions import ReflexRuntimeError, StateValueError
+from reflex_base.utils.exceptions import (
+    BackendVarFormatError,
+    ReflexRuntimeError,
+    StateValueError,
+    UntypedVarError,
+)
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import get_field_type
 from reflex_base.vars.base import (
     _ABC_BOOKKEEPING_NAME,
+    _MAX_REPLACED_DEFAULTS,
+    _REPLACED_DEFAULTS_ATTR,
     FIELD_TYPE,
     GLOBAL_CACHE,
     BaseStateMeta,
@@ -50,12 +60,760 @@ from reflex_base.vars.base import (
 from reflex_base.vars.number import NumberVar
 from reflex_base.vars.object import ObjectVar
 from reflex_base.vars.sequence import ArrayVar, StringVar
-from typing_extensions import Self, TypeAliasType, TypeVarTuple, Unpack
+from typing_extensions import TypeAliasType, TypeVarTuple
 
 from reflex.istate.proxy import MutableProxy
 from reflex.state import BaseState, State, _override_base_method
 
 _MARKER_ATTR = "_marker"
+
+
+@pytest.mark.parametrize("mutable", [False, True])
+@pytest.mark.parametrize("name", ["_value", "value"])
+def test_class_assignment_preserves_field(mutable: bool, name: str):
+    """Changing a default preserves its descriptor and instance tracking.
+
+    Args:
+        mutable: Whether the default is mutable.
+        name: The backend or frontend field name.
+    """
+
+    class ConfigState(BaseState):
+        _value: str | list[str] | None = None
+        value: str | list[str] | None = None
+
+    declared = ConfigState.get_fields()[name]
+    original = ConfigState()
+    assert getattr(original, name) is None
+    replacement = ["configured"] if mutable else "configured"
+    setattr(ConfigState, name, replacement)
+    assert ConfigState.__dict__[name] is declared
+    assert getattr(original, name) is None
+
+    first = ConfigState()
+    second = ConfigState()
+    assert getattr(first, name) == getattr(second, name) == replacement
+    restored = ConfigState()
+    restored.__setstate__(pickle.loads(pickle.dumps(first.__getstate__())))
+    assert getattr(restored, name) == replacement
+
+    first._clean()
+    setattr(first, name, "changed")
+    assert name in first.dirty_vars
+    assert first._was_touched
+    first.reset()
+    assert getattr(first, name) == replacement
+    if mutable:
+        getattr(first, name).append("session-only")
+        assert getattr(second, name) == replacement == ["configured"]
+
+
+@pytest.mark.parametrize("name", ["_value", "value"])
+@pytest.mark.parametrize("inherited", [False, True])
+def test_class_assignment_sets_default_factory(name: str, inherited: bool):
+    """Validate a factory once and retain its descriptor for future defaults.
+
+    Args:
+        name: The backend or frontend field name.
+        inherited: Whether to configure the factory through a subclass.
+    """
+
+    class ConfigState(BaseState):
+        _value: list[str] = ["old"]
+        value: list[str] = ["old"]
+
+    class Child(ConfigState):
+        pass
+
+    declared = ConfigState.get_fields()[name]
+    original = ConfigState()
+    assert getattr(original, name) == ["old"]
+    calls = []
+
+    def factory() -> list[str]:
+        """Record calls and return a fresh mutable default.
+
+        Returns:
+            An independent configured value.
+        """
+        calls.append(True)
+        return ["new"]
+
+    setattr(Child if inherited else ConfigState, name, factory)
+    assert calls == [True]
+    assert ConfigState.get_fields()[name] is Child.get_fields()[name] is declared
+    assert ConfigState.__dict__[name] is declared
+    assert declared.default is dataclasses.MISSING
+    assert declared.default_factory is factory
+    assert name not in Child.__dict__
+    assert getattr(original, name) == ["old"]
+
+    first, second = ConfigState(), ConfigState()
+    assert getattr(first, name) == getattr(second, name) == ["new"]
+    assert calls == [True] * 3
+    getattr(first, name).append("session")
+    assert getattr(second, name) == ["new"]
+    first.reset()
+    assert getattr(first, name) == ["new"]
+    assert calls == [True] * 4
+
+
+def test_class_assignment_unwraps_mutable_proxy():
+    """A proxied value read from a state instance becomes a plain default."""
+
+    class ConfigState(BaseState):
+        items: list[str] = []
+
+    source = ConfigState()
+    source.items.append("a")
+    assert isinstance(source.items, MutableProxy)
+    ConfigState.items = source.items
+    declared = ConfigState.get_fields()["items"]
+    held = declared.default_factory.args[0]  # pyright: ignore[reportFunctionMemberAccess, reportOptionalMemberAccess]
+    assert type(held) is list
+    assert held == ["a"]
+    fresh = ConfigState()
+    assert fresh.items == ["a"]
+    fresh.items.append("b")
+    assert source.items == ["a"]
+    ref = weakref.ref(source)
+    del source
+    gc.collect()
+    assert ref() is None
+
+
+def test_class_assignment_keeps_accepted_callables():
+    """A callable the field's annotation accepts is the default, not a factory."""
+    calls = []
+
+    def handler(value: int = 0) -> int:
+        """Record a call that assignment must never make.
+
+        Args:
+            value: The argument a factory could not supply.
+
+        Returns:
+            The argument.
+        """
+        calls.append(value)
+        return value
+
+    class ConfigState(BaseState):
+        _handler: Callable[[int], int] | None = None
+        _factory: Callable[[], int] = int
+        _anything: Any = None
+
+    for name in ("_handler", "_factory", "_anything"):
+        setattr(ConfigState, name, handler)
+        assert getattr(ConfigState(), name) is handler
+    assert calls == []
+
+
+def test_class_assignment_accepts_type_parameter_defaults():
+    """A field annotated with a type parameter checks a default against its bound."""
+
+    class Reader(Protocol):
+        def read(self) -> str: ...
+
+    class FileReader:
+        def read(self) -> str:
+            """Read a fixed value.
+
+            Returns:
+                The value.
+            """
+            return "read"
+
+    E = TypeVar("E")
+    N = TypeVar("N", bound=int)
+    R = TypeVar("R", bound=Reader)
+
+    class GenericState(BaseState, Generic[E, N, R]):
+        _value: E = None  # pyright: ignore[reportAssignmentType]
+        _count: N = 0  # pyright: ignore[reportAssignmentType]
+        _reader: R | None = None
+
+    class IntState(GenericState[int, int, FileReader]):
+        pass
+
+    GenericState._reader = FileReader()  # pyright: ignore[reportAttributeAccessIssue, reportGeneralTypeIssues]
+    assert IntState()._reader.read() == "read"  # pyright: ignore[reportOptionalMemberAccess]
+
+    IntState._value = 5  # pyright: ignore[reportAttributeAccessIssue]
+    assert IntState()._value == 5
+    GenericState._value = "text"  # pyright: ignore[reportAttributeAccessIssue, reportGeneralTypeIssues]
+    assert IntState()._value == "text"
+    with pytest.raises(TypeError, match="Invalid default"):
+        GenericState._count = "text"  # pyright: ignore[reportAttributeAccessIssue, reportGeneralTypeIssues]
+    GenericState._count = 5  # pyright: ignore[reportAttributeAccessIssue, reportGeneralTypeIssues]
+    assert IntState()._count == 5
+
+
+@pytest.mark.parametrize("name", ["_value", "value"])
+@pytest.mark.parametrize(
+    "failure", ["wrong_type", "raises", "needs_argument", "var", "field"]
+)
+def test_class_assignment_rejects_invalid_factory(name: str, failure: str):
+    """A failed factory validation cannot change an existing default.
+
+    Args:
+        name: The backend or frontend field name.
+        failure: The invalid result or invocation failure to test.
+    """
+
+    class ConfigState(BaseState):
+        _value: str = "old"
+        value: str = "old"
+
+    calls = []
+    error = RuntimeError("factory failed")
+
+    def factory() -> Any:
+        """Return an invalid value or raise during validation.
+
+        Returns:
+            An invalid default.
+
+        Raises:
+            RuntimeError: When testing a failing factory invocation.
+        """
+        calls.append(True)
+        if failure == "raises":
+            raise error
+        if failure == "var":
+            return ConfigState.value
+        if failure == "field":
+            return field("new")
+        return 1
+
+    def needs_argument(value: str) -> str:
+        """Require an argument that a default factory cannot supply.
+
+        Args:
+            value: A required argument.
+
+        Returns:
+            The argument.
+        """
+        return value
+
+    declared = ConfigState.get_fields()[name]
+    previous_default, previous_factory = declared.default, declared.default_factory
+    expected = {
+        "wrong_type": "Invalid default",
+        "raises": "Default factory.*failed",
+        "needs_argument": "Default factory.*failed",
+        "var": r"ClassVar\[rx.Var\]",
+        "field": "computed var",
+    }[failure]
+    with pytest.raises(TypeError, match=expected) as exc:
+        setattr(
+            ConfigState,
+            name,
+            needs_argument if failure == "needs_argument" else factory,
+        )
+    if failure == "raises":
+        assert exc.value.__cause__ is error
+    assert ConfigState.get_fields()[name] is declared
+    assert declared.default is previous_default
+    assert declared.default_factory is previous_factory
+    assert getattr(ConfigState(), name) == "old"
+    assert calls == ([] if failure == "needs_argument" else [True])
+
+
+@pytest.mark.parametrize("name", ["_value", "value"])
+def test_class_assignment_closes_coroutine_probe(name: str):
+    """Close a validation coroutine while retaining supported future defaults.
+
+    Args:
+        name: The coroutine-typed backend or string-typed frontend field name.
+    """
+
+    class ConfigState(BaseState):
+        _value: typing.Coroutine[Any, Any, str] | None = None
+        value: str = "old"
+
+    probes = []
+
+    async def result() -> str:
+        """Return a value when a coroutine default is awaited.
+
+        Returns:
+            The configured value.
+        """
+        await asyncio.sleep(0)
+        return "new"
+
+    def factory() -> typing.Coroutine[Any, Any, str]:
+        """Record the created coroutine so its cleanup can be checked.
+
+        Returns:
+            A new coroutine.
+        """
+        coroutine = result()
+        probes.append(coroutine)
+        return coroutine
+
+    if name == "value":
+        with pytest.raises(TypeError, match="Invalid default"):
+            setattr(ConfigState, name, factory)
+        assert ConfigState().value == "old"
+    else:
+        setattr(ConfigState, name, factory)
+        coroutine = ConfigState()._value
+        assert coroutine is not None
+        assert asyncio.run(coroutine) == "new"
+    assert probes[0].cr_frame is None
+
+
+@pytest.mark.parametrize("name", ["_value", "value"])
+@pytest.mark.parametrize("replacement", ["wrong", ["wrong"], None])
+def test_class_assignment_rejects_invalid_default(name: str, replacement: Any):
+    """Invalid defaults cannot change the declared field or its configuration.
+
+    Args:
+        name: The backend or frontend field name.
+        replacement: A value incompatible with the field's type.
+    """
+
+    class ConfigState(BaseState):
+        _value: list[int] = []
+        value: list[int] = []
+
+    declared = ConfigState.get_fields()[name]
+    original_factory = declared.default_factory
+    with pytest.raises(TypeError, match=r"Invalid default.*list\[int\]"):
+        setattr(ConfigState, name, replacement)
+    assert ConfigState.get_fields()[name] is declared
+    assert declared.default_factory is original_factory
+    assert getattr(ConfigState(), name) == []
+
+
+@pytest.mark.parametrize("name", ["_value", "value", "server_value"])
+@pytest.mark.parametrize("inherited", [False, True])
+@pytest.mark.parametrize(
+    "kind",
+    [
+        "var",
+        "literal",
+        "bound_field",
+        "field",
+        "factory_field",
+        "raw_field",
+    ],
+)
+def test_class_assignment_rejects_vars_and_fields(
+    name: str, kind: str, inherited: bool
+):
+    """Reject every Var and Field assignment without changing field bindings.
+
+    Args:
+        name: The backend or frontend field name.
+        kind: The Var or Field to assign.
+        inherited: Whether to assign through an inheriting state.
+    """
+
+    class SourceState(BaseState):
+        _source: str = "source"
+        source: str = "source"
+
+    class ConfigState(BaseState):
+        _value: Any = "old"
+        value: str = "old"
+        server_value: str = field(default="old", is_var=False)
+
+    class Child(ConfigState):
+        pass
+
+    calls = []
+
+    def factory() -> str:
+        """Record an unexpected evaluation of a rejected factory.
+
+        Returns:
+            A valid default that must never be requested.
+        """
+        calls.append(True)
+        return "new"
+
+    replacement = {
+        "var": SourceState.source,
+        "literal": Var.create("literal"),
+        "bound_field": SourceState.get_fields()["_source"],
+        "field": field("new"),
+        "factory_field": field(default_factory=factory),
+        "raw_field": Field(default="new"),
+    }[kind]
+    declared = ConfigState.get_fields()[name]
+    advice = "computed var" if "field" in kind else "ClassVar\\[rx.Var\\]"
+    with pytest.raises(TypeError, match=advice):
+        setattr(Child if inherited else ConfigState, name, replacement)
+    assert ConfigState.get_fields()[name] is declared
+    assert Child.get_fields()[name] is declared
+    assert ConfigState.__dict__[name] is declared
+    assert name not in Child.__dict__
+    assert declared._owner is ConfigState
+    assert getattr(ConfigState(), name) == "old"
+    assert SourceState()._source == "source"
+    assert calls == []
+
+
+def test_class_assignment_allows_optional_defaults_and_var_classvars():
+    """Optional defaults and explicit shared Var references remain supported."""
+
+    class ConfigState(BaseState):
+        value: Field[int | None] = field(default=1)
+        reference: ClassVar[Var] = Var.create("old")
+
+    ConfigState.reference = ConfigState.value
+    ConfigState.value = None
+    assert ConfigState().value is None
+    assert ConfigState.reference is ConfigState.value
+
+
+def test_class_assignment_preserves_shadowing_classvar():
+    """A ClassVar shadowing an inherited field remains ordinary configuration."""
+
+    class Parent(BaseState):
+        _value: str = "old"
+
+    class Child(Parent):
+        _value: ClassVar[str] = "child"  # pyright: ignore[reportIncompatibleVariableOverride]
+
+    Child._value = "new"
+    assert Child._value == "new"
+    assert Parent()._value == "old"
+
+
+def test_backend_class_assignment_replaces_default_factory():
+    """A class assignment replaces a factory without evaluating it."""
+    calls = []
+
+    def factory():
+        """Count default-factory evaluations.
+
+        Returns:
+            The original default.
+        """
+        calls.append(True)
+        return "old"
+
+    class ConfigState(BaseState):
+        _value: Any = field(default_factory=factory, is_var=False)
+
+    ConfigState._value = "new"
+    assert calls == []
+    assert ConfigState()._value == "new"
+    assert calls == []
+
+
+def test_backend_class_assignment_inherited_field_and_classvar():
+    """Assignments update the owning field, while ClassVars remain ordinary attrs."""
+
+    class Parent(BaseState):
+        _value: str = "old"
+        _config: ClassVar[str] = "old"
+
+    class Child(Parent):
+        pass
+
+    declared = Parent.get_fields()["_value"]
+    Child._value = "new"
+    assert "_value" not in Child.__dict__
+    assert Child.get_fields()["_value"] is declared
+    assert Parent()._value == "new"
+    assert Child()._value == "new"
+    Child._config = "child"
+    assert Parent._config == "old"
+    assert Child._config == "child"
+
+
+@contextlib.contextmanager
+def _patched_default(
+    mechanism: str, target: type, name: str, value: Any
+) -> Iterator[None]:
+    """Patch a class attribute, then undo the patch the way a testing tool does.
+
+    Args:
+        mechanism: The tool or manual protocol that saves and restores the attribute.
+        target: The class to patch.
+        name: The attribute to patch.
+        value: The temporary value.
+
+    Yields:
+        While the patch is applied.
+    """
+    if mechanism == "monkeypatch":
+        with pytest.MonkeyPatch.context() as patcher:
+            patcher.setattr(target, name, value)
+            yield
+    elif mechanism == "mock":
+        with mock.patch.object(target, name, value):
+            yield
+    else:
+        saved = getattr(target, name)
+        setattr(target, name, value)
+        yield
+        if mechanism == "delattr":
+            delattr(target, name)
+        else:
+            setattr(target, name, saved)
+
+
+def _patch_target(kind: str) -> tuple[type[BaseState], str]:
+    """Declare vars of every kind on fresh states.
+
+    Args:
+        kind: The state to patch through and the var name, as ``state:name``.
+
+    Returns:
+        The state to patch the var through, and the var's name.
+    """
+
+    class Mixin(BaseState, mixin=True):
+        _mixin_private: int = 5
+        mixin_public: int = 5
+
+    class Parent(BaseState):
+        _private: int = 5
+        public: int = 5
+        _field_private: Field[int] = field(5)
+        field_public: Field[int] = field(5)
+        _excluded: int = None  # pyright: ignore[reportAssignmentType]
+        _factory: Field[list[int]] = field(default_factory=lambda: [5])
+
+    class Child(Parent):
+        pass
+
+    class Mixed(Mixin, BaseState):
+        pass
+
+    state, _, name = kind.partition(":")
+    return {"parent": Parent, "child": Child, "mixed": Mixed}[state], name
+
+
+@pytest.mark.parametrize("mechanism", ["monkeypatch", "mock", "getattr", "delattr"])
+@pytest.mark.parametrize(
+    "kind",
+    [
+        "parent:_private",
+        "parent:public",
+        "parent:_field_private",
+        "parent:field_public",
+        "parent:_excluded",
+        "parent:_factory",
+        "mixed:_mixin_private",
+        "mixed:mixin_public",
+        "child:_private",
+        "child:public",
+    ],
+)
+def test_class_assignment_patch_round_trip(kind: str, mechanism: str):
+    """Undoing a patched default restores the default configured before it.
+
+    Testing tools save the class attribute, which is the field (or, read
+    through the class, its Var), then assign it back or delete the attribute.
+
+    Args:
+        kind: The state to patch through and the var name, as ``state:name``.
+        mechanism: How the patch is applied and undone.
+    """
+    target, name = _patch_target(kind)
+    declared = target.get_fields()[name]
+    owner = declared._owner
+    assert owner is not None
+    in_target_dict = name in target.__dict__
+    class_value = getattr(target, name)
+    original = declared.default_value()
+    configured = [7] if name == "_factory" else 7
+    setattr(target, name, configured)
+    unread = target()
+
+    with _patched_default(mechanism, target, name, [99] if name == "_factory" else 99):
+        assert getattr(target(), name) in (99, [99])
+
+    assert target.get_fields()[name] is owner.__dict__[name] is declared
+    assert (name in target.__dict__) is in_target_dict
+    assert getattr(target, name) is class_value
+    assert getattr(target(), name) == configured
+    assert getattr(unread, name) == configured
+    # An inherited var resets with the state that declares it.
+    fresh = owner()
+    setattr(fresh, name, [1] if name == "_factory" else 1)
+    fresh.reset()
+    assert getattr(fresh, name) == configured
+
+    delattr(target, name)
+    assert declared.default_value() == original
+    assert getattr(target(), name) == original
+
+
+def test_class_assignment_nested_patches_unwind():
+    """Nested patches of one default unwind to each previous default in turn."""
+
+    class ConfigState(BaseState):
+        _value: int = 5
+
+    with pytest.MonkeyPatch.context() as outer:
+        outer.setattr(ConfigState, "_value", 6)
+        with mock.patch.object(ConfigState, "_value", 7):
+            assert ConfigState()._value == 7
+        assert ConfigState()._value == 6
+    assert ConfigState()._value == 5
+
+
+def test_class_assignment_history_is_bounded():
+    """Repeated assignments keep a bounded history that still unwinds nested patches."""
+
+    class ConfigState(BaseState):
+        _value: int = 0
+
+    declared = ConfigState.get_fields()["_value"]
+    for value in range(1, 101):
+        ConfigState._value = value
+    replaced = declared.__dict__[_REPLACED_DEFAULTS_ATTR]
+    assert len(replaced) == _MAX_REPLACED_DEFAULTS
+
+    with pytest.MonkeyPatch.context() as outer:
+        outer.setattr(ConfigState, "_value", 101)
+        with pytest.MonkeyPatch.context() as middle:
+            middle.setattr(ConfigState, "_value", 102)
+            with mock.patch.object(ConfigState, "_value", 103):
+                assert ConfigState()._value == 103
+                assert len(replaced) == _MAX_REPLACED_DEFAULTS
+            assert ConfigState()._value == 102
+        assert ConfigState()._value == 101
+    assert ConfigState()._value == 100
+
+    # Undoing steps back through the assignments kept, then leaves the oldest.
+    kept = len(replaced)
+    for _ in range(kept + 1):
+        del ConfigState._value
+    assert ConfigState.__dict__["_value"] is declared
+    assert ConfigState()._value == 100 - kept
+
+
+def test_class_assignment_calls_declared_factory_only_for_frontend_strings():
+    """A declared factory is only called to learn the browser storage it produces.
+
+    Only a frontend var is stored in the browser, and only a string is kept in
+    browser storage, so other assignments leave the factory uncalled.
+    """
+    calls = []
+
+    def recorded(name: str, value: Any) -> Callable[[], Any]:
+        """Make a default factory that records each call.
+
+        Args:
+            name: The name recorded for a call.
+            value: The value the factory produces.
+
+        Returns:
+            The default factory.
+        """
+
+        def factory() -> Any:
+            """Produce the declared default, recording the call.
+
+            Returns:
+                The declared default.
+            """
+            calls.append(name)
+            return value
+
+        return factory
+
+    class ConfigState(BaseState):
+        items: Field[list[int]] = field(default_factory=recorded("items", [1]))
+        label: Field[str] = field(default_factory=recorded("label", "declared"))
+        _label: Field[str] = field(default_factory=recorded("_label", "declared"))
+
+    ConfigState.items = [2]
+    ConfigState._label = "assigned"
+    assert calls == []
+    ConfigState.label = "assigned"
+    assert calls == ["label"]
+    assert type(ConfigState.get_fields()["label"].default) is str
+    state = ConfigState()
+    assert (state.items, state.label, state._label) == ([2], "assigned", "assigned")
+
+
+def test_failed_class_assignment_leaves_the_default_in_place():
+    """Cleaning up after a failed patch keeps the configured default.
+
+    A failed assignment adds an undo entry that restores what it left in
+    place, so the cleanup of a patching tool, which re-assigns the saved field
+    or deletes the attribute, does not undo an earlier assignment.
+    """
+
+    class ConfigState(BaseState):
+        _value: int = 0
+
+    class ChildState(ConfigState):
+        pass
+
+    ConfigState._value = 5
+    with (
+        pytest.raises(TypeError, match="Invalid default"),
+        mock.patch.object(ConfigState, "_value", "invalid"),
+    ):
+        pass
+    assert ConfigState()._value == 5
+
+    # Through a subclass the cleanup deletes the attribute instead.
+    with (
+        pytest.raises(TypeError, match="Invalid default"),
+        mock.patch.object(ChildState, "_value", "invalid"),
+    ):
+        pass
+    assert ChildState()._value == 5
+
+    def failing() -> int:
+        """Stand in for a factory that cannot run.
+
+        Raises:
+            RuntimeError: Always.
+        """
+        msg = "cannot run"
+        raise RuntimeError(msg)
+
+    with (
+        pytest.raises(TypeError, match="failed"),
+        mock.patch.object(ConfigState, "_value", failing),
+    ):
+        pass
+    assert ConfigState()._value == 5
+
+    # The successful assignment is still the one a later undo restores.
+    del ConfigState._value
+    assert ConfigState()._value == 0
+
+
+def test_class_assignment_delattr_restores_default():
+    """Deleting a var through its class restores its previous default, keeping the field."""
+
+    class ConfigState(BaseState):
+        _value: list[int] = [1]
+        _other: int = 0
+
+    declared = ConfigState.get_fields()["_value"]
+    factory = declared.default_factory
+    del ConfigState._value
+    assert ConfigState.__dict__["_value"] is declared
+    assert ConfigState()._value == [1]
+
+    ConfigState._value = [2]
+    ConfigState._value = [3]
+    del ConfigState._value
+    assert ConfigState()._value == [2]
+    del ConfigState._value
+    assert declared.default_factory is factory
+    assert ConfigState()._value == [1]
+
+    ConfigState._value = declared  # pyright: ignore[reportAttributeAccessIssue]
+    assert ConfigState()._value == [1]
+    with pytest.raises(TypeError, match="computed var"):
+        ConfigState._value = ConfigState.get_fields()["_other"]  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def test_custom_field_attr_survives_annotated_rebuild():
@@ -196,18 +954,18 @@ def test_guess_type_resolves_variadic_type_alias(alias_cls: type) -> None:
     just the one a plain positional zip would pair it with.
     """
     ts = TypeVarTuple("ts")
-    tup = alias_cls("Tup", tuple[Unpack[ts]], type_params=(ts,))  # pyright: ignore[reportGeneralTypeIssues]
+    tup = alias_cls("Tup", tuple[*ts], type_params=(ts,))  # pyright: ignore[reportGeneralTypeIssues]
     var = Var(_js_expr="t", _var_type=tup[str, int]).guess_type()
     assert isinstance(var, ArrayVar)
     assert var._var_type == tuple[str, int]
 
     t = TypeVar("t")
-    prefixed = alias_cls("Prefixed", dict[t, tuple[Unpack[ts]]], type_params=(t, ts))  # pyright: ignore[reportGeneralTypeIssues]
+    prefixed = alias_cls("Prefixed", dict[t, tuple[*ts]], type_params=(t, ts))  # pyright: ignore[reportGeneralTypeIssues]
     prefixed_var = Var(_js_expr="p", _var_type=prefixed[str, int, float]).guess_type()
     assert isinstance(prefixed_var, ObjectVar)
     assert prefixed_var._var_type == dict[str, tuple[int, float]]
 
-    suffixed = alias_cls("Suffixed", dict[t, tuple[Unpack[ts]]], type_params=(ts, t))  # pyright: ignore[reportGeneralTypeIssues]
+    suffixed = alias_cls("Suffixed", dict[t, tuple[*ts]], type_params=(ts, t))  # pyright: ignore[reportGeneralTypeIssues]
     suffixed_var = Var(_js_expr="s", _var_type=suffixed[int, float, str]).guess_type()
     assert isinstance(suffixed_var, ObjectVar)
     assert suffixed_var._var_type == dict[str, tuple[int, float]]
@@ -1304,6 +2062,112 @@ def test_backend_field_is_not_type_checked():
     assert model._value == 1
 
 
+@pytest.mark.parametrize("name", ["_secret", "bookkeeping"])
+def test_backend_field_format_raises(name: str):
+    """Formatting a backend var raises instead of embedding its repr.
+
+    Args:
+        name: The backend field to format, underscore-prefixed or is_var=False.
+    """
+
+    class Model(EvenMoreBasicBaseState):
+        _secret: int = 42
+        bookkeeping: int = field(default=0, is_var=False)
+
+    with pytest.raises(
+        BackendVarFormatError, match=rf"Backend var 'Model\.{name}' exists only"
+    ):
+        f"{getattr(Model, name)}px"
+
+
+@pytest.mark.parametrize("mixin", [False, True])
+@pytest.mark.parametrize(("name", "default"), [("_secret", 42), ("bookkeeping", 0)])
+def test_backend_field_format_error_names_the_fix(name: str, default: int, mixin: bool):
+    """The backend var format error names the var and how to use it in the UI.
+
+    Args:
+        name: The backend field to format, underscore-prefixed or is_var=False.
+        default: The default value of that field.
+        mixin: Whether the field is declared on a mixin.
+    """
+
+    class Model(EvenMoreBasicBaseState, mixin=mixin):
+        _secret: int = 42
+        bookkeeping: int = field(default=0, is_var=False)
+
+    with pytest.raises(BackendVarFormatError) as exc_info:
+        f"{getattr(Model, name)}px"
+
+    message = str(exc_info.value)
+    assert f"Backend var 'Model.{name}' exists only on the server" in message
+    assert f"Use Model.{name}.default_value() for its default value" in message
+    assert "declare it as ClassVar[...]" in message
+    assert "use a regular state var" in message
+    # The suggested call returns the default.
+    assert getattr(Model, name).default_value() == default
+
+
+def test_mixin_field_format_raises():
+    """A mixin's frontend field has no Var, and the error says to use the including state."""
+
+    class Mixin(EvenMoreBasicBaseState, mixin=True):
+        count: int = 0
+
+    with pytest.raises(
+        BackendVarFormatError, match=r"Var 'Mixin\.count' is declared on a mixin state"
+    ):
+        f"{Mixin.count}"
+
+
+def test_unbound_field_format_raises():
+    """An unbound field has no Var to format, and the error shows its definition."""
+    with pytest.raises(
+        BackendVarFormatError,
+        match=r"^Field\(default=0, is_var=True, annotated_type=typing.Any\) has no",
+    ):
+        f"{field(default=0)}"
+
+
+def test_untyped_var_item_access_reports_backend_var_key():
+    """Indexing an untyped Var with a backend var names the key, not a format error."""
+
+    class Model(EvenMoreBasicBaseState):
+        _secret: int = 42
+
+    with pytest.raises(UntypedVarError, match=r"access the item 'Field\(default=42"):
+        Var(_js_expr="x")[Model._secret]  # pyright: ignore[reportIndexIssue]
+
+
+def test_backend_field_literal_var_reports_repr():
+    """Creating a LiteralVar from a backend var reports its repr, not a format error."""
+
+    class Model(EvenMoreBasicBaseState):
+        _secret: int = 42
+
+    with pytest.raises(
+        TypeError, match=r"Tried to create a LiteralVar from Field\(default=42"
+    ):
+        LiteralVar.create(Model._secret)
+
+
+def test_mistyped_backend_field_value_logs_repr(caplog: pytest.LogCaptureFixture):
+    """Assigning a backend var to a typed field logs its repr and stores it.
+
+    Args:
+        caplog: The log capture fixture.
+    """
+
+    class Model(EvenMoreBasicBaseState):
+        _secret: int = 42
+        count: int = 0
+
+    model = Model()  # pyright: ignore[reportCallIssue]
+    with caplog.at_level(logging.ERROR, logger="reflex_base.vars.base"):
+        model.count = Model._secret  # pyright: ignore[reportAttributeAccessIssue]
+    assert "but got Field(default=42" in caplog.text
+    assert model.__dict__["count"] is Model._secret
+
+
 def test_classvar_over_inherited_field_is_not_a_field():
     """A ClassVar redeclaring an inherited field stays a class attribute."""
 
@@ -1763,3 +2627,77 @@ async def test_cached_async_computed_var_checks_return_type_on_recompute_only(
     state.items = [5]
     assert await state.doubled == [10]
     assert checked == [[2, 4, 6], [10]]
+
+
+def test_private_names_are_not_fields():
+    """A double-underscore name is a plain class attribute unless declared a field.
+
+    A name-mangled private attribute, a hand-mangled one and a dunder stay
+    ordinary attributes, as before fields became descriptors.
+    """
+
+    class Model(EvenMoreBasicBaseState):
+        __mangled: int = 1  # pyright: ignore[reportGeneralTypeIssues]
+        __unannotated = 2
+        _Model__by_hand: int = 3
+        __dunder__: int = 4
+        __declared: Field[int] = field(default=5)  # pyright: ignore[reportGeneralTypeIssues]
+        __unannotated_declared = field(default=6)  # pyright: ignore[reportGeneralTypeIssues]
+        _backend: int = 7
+
+    assert set(Model.__fields__) == {
+        "_Model__declared",
+        "_Model__unannotated_declared",
+        "_backend",
+    }
+    assert Model.__fields__["_Model__declared"]._backend
+    model = Model()
+    for name, value in (
+        ("_Model__mangled", 1),
+        ("_Model__unannotated", 2),
+        ("_Model__by_hand", 3),
+        ("__dunder__", 4),
+    ):
+        assert vars(Model)[name] == value
+        assert getattr(model, name) == value
+    for name, value in (
+        ("_Model__declared", 5),
+        ("_Model__unannotated_declared", 6),
+    ):
+        assert getattr(model, name) == value
+
+
+def test_private_names_of_plain_base_are_not_fields():
+    """A plain base's private names are not fields of a model inheriting it either."""
+
+    class Plain:
+        __mangled: int = 1
+        __dunder__: int = 2
+        _backend: int = 3
+
+    class Model(Plain, EvenMoreBasicBaseState):
+        pass
+
+    assert set(Model.__fields__) == {"_backend"}
+    name = "_Plain__mangled"
+    assert getattr(Model(), name) == 1
+
+
+def test_new_default_for_inherited_private_field_stays_a_field():
+    """A private name shadowing an inherited explicit field is a field as well."""
+
+    class Parent(EvenMoreBasicBaseState):
+        __counter__: Field[int] = field(default=1)
+
+    class Annotated(Parent):
+        __counter__: int = 2  # pyright: ignore[reportIncompatibleVariableOverride]
+
+    class Unannotated(Parent):
+        __counter__ = 2  # pyright: ignore[reportAssignmentType]
+
+    for child in (Annotated, Unannotated):
+        child_field = child.__fields__["__counter__"]
+        assert child_field is not Parent.__fields__["__counter__"]
+        assert child_field.default == 2
+        assert isinstance(vars(child)["__counter__"], Field)
+        assert child().__counter__ == 2
