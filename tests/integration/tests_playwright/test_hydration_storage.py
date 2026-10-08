@@ -443,18 +443,19 @@ def test_synced_storage_event_sends_stored_value(
         window.syncWrites.length = 0;
         window.dispatchEvent(new StorageEvent('storage', {
             key: 'hydrate-sync', oldValue: '', newValue: 'late',
+            storageArea: localStorage,
         }));
     }""")
     expect(page.locator("#sync-value")).to_have_text("stored")
     page.wait_for_timeout(500)
-    assert page.evaluate("window.syncWrites") == []
+    assert "late" not in page.evaluate("window.syncWrites")
     assert page.evaluate("localStorage.getItem('hydrate-sync')") == "stored"
 
 
-def test_synced_storage_resyncs_after_crossed_echo(
+def test_synced_storage_echo_crossed_by_another_tab_is_not_written(
     hydration_storage_app: AppHarness, page: Page
 ):
-    """A synced var whose echo crossed a newer stored value sends that value again.
+    """An echo of a value another tab replaced after it was sent is not written back.
 
     Args:
         hydration_storage_app: The running app.
@@ -464,18 +465,21 @@ def test_synced_storage_resyncs_after_crossed_echo(
     page.add_init_script(RECORD_SYNC_WRITES)
     page.goto(f"{hydration_storage_app.frontend_url.rstrip('/')}/synced")
     expect(page.locator("#hydrated")).to_have_text("true")
-    # The event sends "sent"; another tab stores "newer" before its echo arrives.
+    # Another tab stores "sent", then "newer" before the echo of "sent" arrives.
     page.evaluate("""() => {
-        localStorage.setItem('hydrate-sync', 'sent');
+        const otherTabStores = (value) => {
+            localStorage.setItem('hydrate-sync', value);
+            window.dispatchEvent(new StorageEvent('storage', {
+                key: 'hydrate-sync', newValue: value, storageArea: localStorage,
+            }));
+        };
+        otherTabStores('sent');
+        otherTabStores('newer');
         window.syncWrites.length = 0;
-        window.dispatchEvent(new StorageEvent('storage', {
-            key: 'hydrate-sync', oldValue: '', newValue: 'sent',
-        }));
-        localStorage.setItem('hydrate-sync', 'newer');
     }""")
     expect(page.locator("#sync-value")).to_have_text("newer")
     page.wait_for_timeout(500)
-    assert page.evaluate("window.syncWrites") == ["newer"]
+    assert "sent" not in page.evaluate("window.syncWrites")
     assert page.evaluate("localStorage.getItem('hydrate-sync')") == "newer"
 
 

@@ -57,11 +57,14 @@ const event_queue = [];
 const UPDATE_VARS_INTERNAL =
   "reflex___state____update_vars_internal_state.update_vars_internal";
 
+// Writes by other tabs to each localStorage var, counted from storage events.
+const otherTabWrites = {};
 // Browser storage values this tab sent to the backend, oldest first, by state
-// key. The backend echoes them back, so that get_delta overrides see them.
+// key, with the other tabs' writes to the var counted when each was sent. The
+// backend echoes them back, so that get_delta overrides see them.
 const sentStorageValues = {};
-// Bounds the values kept for a key whose replies never arrive, as when a
-// get_delta override drops them. It exceeds the values of one key in flight
+// Bounds the values kept for a key whose replies never match, as when a
+// get_delta override changes them. It exceeds the values of one key in flight
 // at once: a synced var written at 60 Hz over a one second round trip.
 const MAX_SENT_STORAGE_VALUES = 256;
 
@@ -907,20 +910,7 @@ export const connect = async (
             on_hydrated_queue.length = 0;
           }
         }
-        const resync = applyClientStorageDelta(client_storage, update.delta);
-        if (resync) {
-          queueEvents(
-            [
-              ReflexEvent(`${app.state_name}.${UPDATE_VARS_INTERNAL}`, {
-                vars: resync,
-              }),
-            ],
-            socket,
-            false,
-            navigate,
-            params,
-          ).catch(reportStateUpdateError);
-        }
+        applyClientStorageDelta(client_storage, update.delta);
       }
       if (update.events && update.events.length > 0) {
         queueEvents(update.events, socket, false, navigate, params).catch(
@@ -1078,7 +1068,7 @@ const recordSentStorageValues = (event) => {
   // ReflexEvent leaves out an empty payload.
   for (const [state_key, value] of Object.entries(event.payload?.vars ?? {})) {
     const sent = (sentStorageValues[state_key] ??= []);
-    sent.push(value);
+    sent.push({ value, other_writes: otherTabWrites[state_key] ?? 0 });
     if (sent.length > MAX_SENT_STORAGE_VALUES) {
       sent.shift();
     }
@@ -1086,30 +1076,26 @@ const recordSentStorageValues = (event) => {
 };
 
 /**
- * Consume the reply to a browser storage value this tab sent to the backend.
- * The backend answers the values in the order they were sent, so a reply that
- * matches none of them, changed by a handler or get_delta override, answers
- * the oldest. Values sent before a matching one were answered already.
+ * Whether a value echoes one this tab sent before another tab replaced it.
+ * Consumes the echoed value and the values sent before it, whose echoes passed.
  * @param state_key The state key of the browser storage var.
  * @param value The value the backend sent for it.
- * @returns Whether the value echoes one this tab sent.
+ * @returns Whether writing the value would overwrite another tab's newer one.
  */
-const consumeStorageEcho = (state_key, value) => {
+const isStaleStorageEcho = (state_key, value) => {
   const sent = sentStorageValues[state_key];
-  if (!sent?.length) {
+  const index = sent ? sent.findIndex((entry) => entry.value === value) : -1;
+  if (index === -1) {
     return false;
   }
-  const index = sent.indexOf(value);
-  sent.splice(0, index === -1 ? 1 : index + 1);
-  return index !== -1;
+  const { other_writes } = sent.splice(0, index + 1)[index];
+  return (otherTabWrites[state_key] ?? 0) > other_writes;
 };
 
 /**
  * Update client storage values based on backend state delta.
  * @param client_storage The client storage object from context.js
  * @param delta The state update from the backend
- * @returns The synced localStorage values to send again, as the backend echoed
- *   older ones, or undefined.
  */
 const applyClientStorageDelta = (client_storage, delta) => {
   // find the main state and check for is_hydrated
@@ -1128,48 +1114,38 @@ const applyClientStorageDelta = (client_storage, delta) => {
     }
   }
   // Save known client storage values to cookies and localStorage.
-  let resync;
   for (const substate in delta) {
     for (const key in delta[substate]) {
       const state_key = `${substate}.${key}`;
       const value = delta[substate][key];
-      // Rewriting a value this tab sent would overwrite a newer one another
-      // tab stored meanwhile and, for a synced var, echo it to the other tabs.
-      // A cookie is still rewritten, which renews its max_age.
-      const echo = consumeStorageEcho(state_key, value);
+      // The backend echoes the values a tab sends. Writing back one that
+      // another tab replaced since would overwrite the newer value and, for a
+      // synced var, make the other tabs answer with theirs, over and over.
+      const stale = isStaleStorageEcho(state_key, value);
       if (client_storage.cookies && state_key in client_storage.cookies) {
         const cookie_options = { ...client_storage.cookies[state_key] };
         const cookie_name = cookie_options.name || state_key;
         delete cookie_options.name; // name is not a valid cookie option
         cookies.set(cookie_name, value, cookie_options);
-      } else if (typeof window === "undefined") {
-        continue;
       } else if (
         client_storage.local_storage &&
-        state_key in client_storage.local_storage
+        state_key in client_storage.local_storage &&
+        typeof window !== "undefined"
       ) {
-        const options = client_storage.local_storage[state_key];
-        const name = options.name || state_key;
-        if (!echo) {
-          localStorage.setItem(name, value);
-        } else if (options.sync) {
-          // Another tab may have stored a newer value after this tab sent it.
-          const stored = localStorage.getItem(name);
-          if (stored !== value) {
-            (resync ??= {})[state_key] = stored;
-          }
+        if (!stale) {
+          const options = client_storage.local_storage[state_key];
+          localStorage.setItem(options.name || state_key, value);
         }
       } else if (
-        !echo &&
         client_storage.session_storage &&
-        state_key in client_storage.session_storage
+        state_key in client_storage.session_storage &&
+        typeof window !== "undefined"
       ) {
         const session_options = client_storage.session_storage[state_key];
         sessionStorage.setItem(session_options.name || state_key, value);
       }
     }
   }
-  return resync;
 };
 
 /**
@@ -1339,20 +1315,22 @@ export const useEventLoop = (
     if (client_storage.local_storage && typeof window !== "undefined") {
       for (const state_key in client_storage.local_storage) {
         const options = client_storage.local_storage[state_key];
-        if (options.sync) {
-          const local_storage_value_key = options.name || state_key;
-          storage_to_state_map[local_storage_value_key] = state_key;
-        }
+        storage_to_state_map[options.name || state_key] = state_key;
       }
     }
 
     // e is StorageEvent
     const handleStorage = (e) => {
-      if (storage_to_state_map[e.key]) {
+      const state_key = storage_to_state_map[e.key];
+      if (state_key === undefined || e.storageArea !== localStorage) {
+        return;
+      }
+      otherTabWrites[state_key] = (otherTabWrites[state_key] ?? 0) + 1;
+      if (client_storage.local_storage[state_key].sync) {
         const vars = {};
         // A tab gets the events of other tabs' writes after its own newer
         // write too, so send the value stored now rather than e.newValue.
-        vars[storage_to_state_map[e.key]] = localStorage.getItem(e.key);
+        vars[state_key] = localStorage.getItem(e.key);
         const event = ReflexEvent(`${app.state_name}.${UPDATE_VARS_INTERNAL}`, {
           vars: vars,
         });
