@@ -118,9 +118,14 @@ with mock.patch.object(WatchlistState.__fields__["ticker"], "default", "MSFT"):
     ...
 ```
 
-Declare configuration that all sessions share, such as a client or a lock, as a
-`ClassVar`. It stays an ordinary class attribute, so assigning it through the
-class is allowed, and it is never copied for each instance.
+Declare class-level configuration, such as a client or a lock, as a `ClassVar`.
+It stays an ordinary class attribute, so assigning it through the class is
+allowed, and it is never copied for each instance. Each backend worker process
+holds its own value, though, so a lock only serializes the sessions on its own
+worker. A value set at import time, such as at module level, starts the same in
+every worker, but a change made after the workers start, such as in an event
+handler, never reaches the other workers. Keep a value that every session must
+see in a state var or an external store.
 
 ```md alert warning
 # Change defaults before the app starts running.
@@ -167,7 +172,7 @@ it to build the UI from a constant, such as
 `_options`. Assigning to `MyState._token` raises `TypeError`: change its default
 through its field as described above.
 
-For configuration shared by all sessions, declare a `ClassVar` instead:
+For class-level configuration, declare a `ClassVar` instead:
 
 ```python
 from typing import ClassVar
@@ -184,6 +189,8 @@ MyState._endpoint = "https://example.com/v2"
 `ClassVar` values are ordinary class attributes and are not part of session state.
 Reading one on the class returns the plain value, and an object that cannot be
 copied, such as a client or lock, is shared rather than copied for each instance.
+Each backend worker holds its own value, as described under
+[Changing Defaults](#changing-defaults).
 
 ```python demo exec
 import numpy as np
