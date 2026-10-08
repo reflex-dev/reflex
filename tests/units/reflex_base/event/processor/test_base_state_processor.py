@@ -1943,6 +1943,7 @@ async def test_hydrate_passes_client_storage_through_get_delta(
     class ReconcileState(State):
         token_hash: str = rx.LocalStorage("")
         unset: str = rx.Cookie("unset-default")
+        status: str = "initial"
 
         @_override_base_method
         def get_delta(self) -> Delta:
@@ -1957,6 +1958,7 @@ async def test_hydrate_passes_client_storage_through_get_delta(
                 seen.append(value)
                 if value == "stale":
                     subdelta[key] = "fresh"
+                    self.status = "reconciled"
             return delta
 
         @event
@@ -1972,9 +1974,18 @@ async def test_hydrate_passes_client_storage_through_get_delta(
             computed_values.append(storage_state.token_hash)
             return storage_state.token_hash
 
+        @rx.var(cache=True, auto_deps=False)
+        async def status_copy(self) -> str:
+            storage_state = await self.get_state(ReconcileState)
+            return storage_state.status
+
     DependentState.computed_vars["token_hash_copy"].add_dependency(
         DependentState,
         ReconcileState.token_hash,  # pyright: ignore[reportArgumentType]
+    )
+    DependentState.computed_vars["status_copy"].add_dependency(
+        DependentState,
+        ReconcileState.status,  # pyright: ignore[reportArgumentType]
     )
 
     wired_app.add_page(
@@ -1982,6 +1993,7 @@ async def test_hydrate_passes_client_storage_through_get_delta(
             ReconcileState.token_hash,
             ReconcileState.unset,
             DependentState.token_hash_copy,
+            DependentState.status_copy,
         ),
         route="/",
         on_load=ReconcileState.load if with_load else None,
@@ -2018,6 +2030,13 @@ async def test_hydrate_passes_client_storage_through_get_delta(
     assert computed_values == (
         ["stale", "fresh"] if client_value == "stale" else ["fresh"]
     )
+    status_key = "status_copy" + FIELD_MARKER
+    if client_value == "stale":
+        assert any(
+            delta.get(DependentState.get_full_name(), {}).get(status_key)
+            == "reconciled"
+            for _, delta in emitted_deltas
+        )
 
 
 @pytest.mark.parametrize(

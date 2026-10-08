@@ -89,7 +89,6 @@ from reflex.istate.delta import (
     DeltaMapping,
     _resolve_delta,
     _suppress_computed_var_dependency_invalidation,
-    _suppress_delta_dependency_invalidation,
     build_delta,
     clean_state,
     resolve_delta,
@@ -1945,10 +1944,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             var_names: The vars of this state that changed; all its dirty vars if omitted.
         """
         self._mark_ancestors_dirty()
-        if _suppress_delta_dependency_invalidation.get():
-            self._mark_dirty_computed_vars(())
-        else:
-            self._mark_dirty_computed_vars(var_names)
+        self._mark_dirty_computed_vars(var_names)
 
     def _mark_ancestors_dirty(self) -> None:
         """Record this state as a dirty substate of each of its ancestors."""
@@ -2403,8 +2399,7 @@ class State(BaseState):
         from reflex_base.event.context import EventContext
 
         self._reset_client_storage()
-        with _suppress_computed_var_dependency_invalidation():
-            applied = await _apply_client_storage_vars(self, vars) if vars else []
+        applied = await _apply_client_storage_vars(self, vars) if vars else []
         self._clean()
         # The snapshot must carry is_hydrated=False: the frontend skips
         # writing client storage for a delta that is not yet hydrated, and
@@ -2427,8 +2422,21 @@ class State(BaseState):
             var_state.dirty_vars.add(var_name)
             var_state._mark_ancestors_dirty()
         if applied:
-            with _suppress_computed_var_dependency_invalidation():
+            dirty_before_probe: dict[int, tuple[BaseState, set[str]]] = {}
+            states_to_check: list[BaseState] = [self]
+            while states_to_check:
+                state = states_to_check.pop()
+                dirty_before_probe[id(state)] = (state, set(state.dirty_vars))
+                states_to_check.extend(state.substates.values())
+            suppressed_sources = frozenset((id(state), name) for state, name in applied)
+            with _suppress_computed_var_dependency_invalidation(suppressed_sources):
                 correction_delta = await self._get_resolved_delta()
+            mutated_vars = [
+                (state, name)
+                for state, dirty_vars in dirty_before_probe.values()
+                for name in state.dirty_vars - dirty_vars
+                if name not in state.computed_vars
+            ]
             changed_vars = []
             for var_state, var_name in applied:
                 key = var_name + FIELD_MARKER
@@ -2440,13 +2448,13 @@ class State(BaseState):
                 if overridden:
                     setattr(var_state, var_name, subdelta[key])
                     changed_vars.append((var_state, var_name))
-            if changed_vars:
+            if changed_vars or mutated_vars:
                 # Discard the probe's dirtiness before producing a full-tree
                 # delta. This makes dependencies on sibling states visible and
                 # prevents expired/always-dirty computed vars from being
                 # evaluated a second time in the correction pass.
                 self._clean()
-                for var_state, var_name in changed_vars:
+                for var_state, var_name in [*changed_vars, *mutated_vars]:
                     var_state.dirty_vars.add(var_name)
                     var_state._mark_dirty((var_name,))
                 corrected_delta = await self._get_resolved_delta()
