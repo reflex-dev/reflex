@@ -4,6 +4,7 @@
 
 - Require Python 3.11 or newer; Python 3.10 is no longer supported. ([#7449](https://github.com/reflex-dev/reflex/issues/7449))
 - Assigning over a state var's field through its state class raises `TypeError`; change its default with the field's `set_default` instead, such as `State.__fields__["count"].set_default(10)`. ([#7516](https://github.com/reflex-dev/reflex/issues/7516))
+- Mutable values provided as state var defaults are deep-copied when assigned at class creation time or passed to `set_default`, so later changes to the original object no longer reach new sessions. A module-level list filled in after the `class` statement, such as `options: list[str] = OPTIONS` followed by `OPTIONS.append(...)`, now starts every session empty: fill it before the class is defined, or declare `default_factory=lambda: list(OPTIONS)`. ([#7519](https://github.com/reflex-dev/reflex/issues/7519))
 - Formatting a backend var as a string, e.g. `width=f"{State._size}px"`, now raises `BackendVarFormatError` (a `VarTypeError`) instead of embedding its default value. The error names the fix: read its default with `State._size.default_value()`, declare a constant shared by all sessions as `ClassVar[...]`, or use a regular state var for a value the UI shows and updates. ([#7456](https://github.com/reflex-dev/reflex/issues/7456), [#7496](https://github.com/reflex-dev/reflex/issues/7496))
 - `reflex_base.utils.types.is_backend_base_variable` and `RESERVED_BACKEND_VAR_NAMES` are removed: whether a state var is a backend var is now a property of its `Field` in `get_fields()`. By convention, fields named with a leading `_` are backend vars. `is_mutable_type` moved to `reflex_base.utils.types` (still importable from `reflex.istate.proxy`). ([#7312](https://github.com/reflex-dev/reflex/issues/7312))
 - `PageContext.get()` and `CompileContext.get()` now raise `LookupError` instead of `RuntimeError` when no context is active, the same as every other `BaseContext` subclass. Compiler plugins that catch `RuntimeError` around these calls should catch `LookupError`. ([#6553](https://github.com/reflex-dev/reflex/issues/6553))
@@ -14,7 +15,7 @@
 #### State vars
 
 - `Field` is now the descriptor holding a state var's value, and `EventHandler` binds to the state that declares it when accessed on a state instance. ([#7312](https://github.com/reflex-dev/reflex/issues/7312))
-- Add `Field.set_default` to change a state var's default, given exactly one of `default` or `default_factory`, such as `State.__fields__["items"].set_default(["a"])`. A mutable `default` is copied when set and again for each instance, so sessions never share it. ([#7519](https://github.com/reflex-dev/reflex/issues/7519))
+- Add `Field.set_default` to change a state var's default, given exactly one of `default` or `default_factory`, such as `State.__fields__["items"].set_default(["a"])`. ([#7519](https://github.com/reflex-dev/reflex/issues/7519))
 - A double-underscore state attribute (a name-mangled `__private` name or a dunder) can now be a backend var by declaring it with an explicit `rx.field()` value, e.g. `__counter: rx.Field[int] = rx.field(0)`. Without one it stays a plain class attribute, like in 0.9.x. ([#7465](https://github.com/reflex-dev/reflex/issues/7465))
 
 #### Configuration
