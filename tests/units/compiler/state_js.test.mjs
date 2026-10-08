@@ -18,6 +18,7 @@ async function setup({
   disabled = false,
   hidden = false,
   storedToken = "original-token",
+  deferNamespaceConnect = false,
 } = {}) {
   const sockets = [];
   const microtasks = [];
@@ -80,16 +81,19 @@ async function setup({
         ]) {
           assert.ok(handlers.has(name), `missing handler: ${name}`);
         }
-        if (typeof this.auth === "function") {
-          this.auth((auth) => {
-            this.auth = auth;
-          });
-        }
         this.namespaceConnects++;
-        this.connected = true;
-        handlers.get("connect")();
-        handlers.get("new_token")("assigned-token");
-        handlers.get("event")({ delta: { child: { count: 7 } } });
+        this.finishNamespaceConnect = () => {
+          if (typeof this.auth === "function") {
+            this.auth((auth) => {
+              this.auth = auth;
+            });
+          }
+          this.connected = true;
+          handlers.get("connect")();
+          handlers.get("new_token")("assigned-token");
+          handlers.get("event")({ delta: { child: { count: 7 } } });
+        };
+        if (!deferNamespaceConnect) this.finishNamespaceConnect();
       },
       disconnect() {
         this.disconnects++;
@@ -201,10 +205,12 @@ test("warm the transport without hydrating, then reuse it with every handler att
 });
 
 test("connection auth uses the route current when the namespace connects", async () => {
-  const app = await setup();
+  const app = await setup({ deferNamespaceConnect: true });
   app.flush();
-  app.window.location = new URL("http://localhost:3000/other?query=value");
   await app.connect();
+  assert.equal(app.socket.current.namespaceConnects, 1);
+  app.window.location = new URL("http://localhost:3000/other?query=value");
+  app.socket.current.finishNamespaceConnect();
   assert.equal(app.socket.current.auth.event.router_data.pathname, "/other");
   assert.equal(
     app.socket.current.auth.event.router_data.asPath,
