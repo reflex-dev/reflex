@@ -44,15 +44,32 @@ def page():
 State.get_fields()["_items"].default_value()
 ```
 
-## Assigning a default through a state class
+## Assigning a state var through its class
 
-On 0.9, `State.count = 10` replaced the class attribute, but new instances still started at the declared default. In 0.10 it updates the var's default and the var stays a var ([#7461](https://github.com/reflex-dev/reflex/pull/7461)); [Changing Defaults](/docs/vars/base-vars/#changing-defaults) has the full rules. Check these before relying on it:
+On 0.9, `State.count = 10` replaced the class attribute, but new instances still started at the declared default. In 0.10 a state var is a descriptor on its class, and assigning over it raises `TypeError` instead of breaking the var. This includes pytest's `monkeypatch.setattr` and `unittest.mock.patch.object` on a var. Change the default on the var's field, patch the field in tests, and declare class-level configuration as `ClassVar`:
 
-- It changes the default for values not yet stored on an instance, which includes every new session and `reset()`. A value already stored on an instance keeps it.
-- The value must satisfy the var's annotation, or `TypeError: Invalid default for field` is raised. An unannotated var is typed from its default, so `_client = None` accepts only `None`; annotate the var with the type you assign.
-- A zero-argument callable that the annotation does not accept, such as a function or a class, is called once during the assignment to check what it returns, then becomes the default factory. Do not assign something whose call has side effects.
-- Mutable defaults are copied for every instance. A live client, lock or connection assigned to an `Any` or `Optional[...]` var is accepted, but reading the var on a new instance then raises `TypeError: cannot pickle '_thread.lock' object`. Declare an object that all sessions share as `ClassVar[...]`, which is never copied.
-- Assigning on a mixin only affects states created afterwards. Do not assign defaults in event handlers, lifespan tasks, or at any other time after the app has started running: such an assignment only affects the worker process that ran it.
+```python
+from typing import ClassVar
+from unittest import mock
+
+import httpx
+
+import reflex as rx
+
+
+class State(rx.State):
+    count: int = 0
+    _client: ClassVar[httpx.AsyncClient | None] = None
+
+
+State.__fields__["count"].default = 10  # 0.9: State.count = 10
+State._client = httpx.AsyncClient()  # a ClassVar stays an ordinary class attribute
+
+with mock.patch.object(State.__fields__["count"], "default", 99):
+    ...
+```
+
+[Changing Defaults](/docs/vars/base-vars/#changing-defaults) has the details, including mutable defaults and browser storage vars.
 
 ## Calling inherited handlers from background tasks
 
