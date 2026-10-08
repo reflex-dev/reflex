@@ -1,0 +1,15 @@
+PONG
+oidc pid 28754 redis pid 28753
+OK
+started pid/pgid 28808 (a4-ent vauth_a4e prod redis=yes workers=1) log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_upgrade_ent/ent/auth/logs/a4e-prod-redis-1w.server.log
+ready after 9s
+SUMMARY a4e-prod-redis-1w stale: {"p1_corrected": 3, "p2_corrected": 3, "p3_logged_out": 3, "p4_logged_out": 3} of 3
+SUMMARY a4e-prod-redis-1w away: tab1 logged out after Back 3/3
+SUMMARY a4e-prod-redis-1w xtab: tab1 logged out 3/3; accepted-after-logout 0/3
+rep 0: race(tab1 re-wrote old hash)=False empty-hash writes=[('tab2', 0.05), ('tab2', 0.07)] tab2 sent reconcile=False -> tab1_logged_out=True
+rep 1: race(tab1 re-wrote old hash)=False empty-hash writes=[('tab2', 0.04), ('tab2', 0.06)] tab2 sent reconcile=False -> tab1_logged_out=True
+rep 2: race(tab1 re-wrote old hash)=False empty-hash writes=[('tab2', 0.04), ('tab2', 0.06)] tab2 sent reconcile=False -> tab1_logged_out=True
+SUMMARY a4e-prod-redis-1w loads: see per-step counts above
+stopped
+stopped-infra
+server log: tracebacks=0 TypeError=0

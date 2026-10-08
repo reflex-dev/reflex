@@ -1,0 +1,9 @@
+Using Python 3.12.3 environment at: envs/a5_upgrade_ent-twa4
+Resolved 51 packages in 368ms
+Prepared 2 packages in 0.67ms
+Uninstalled 2 packages in 64ms
+Installed 2 packages in 7ms
+ - reflex==0.10.0a4
+ + reflex==0.10.0a5
+ - reflex-base==0.10.0a4
+ + reflex-base==0.10.0a5

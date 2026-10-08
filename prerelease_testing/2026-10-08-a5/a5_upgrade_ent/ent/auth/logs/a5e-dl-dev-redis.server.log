@@ -22,12 +22,13 @@ frontend_compression_formats=['gzip'], frontend_packages=[],
 frontend_lazy_bundled_libraries=False, 
 state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
 redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
-_non_default_attributes={'plugins', 'loglevel', 'app_name', 'telemetry_enabled',
-'disable_plugins', 'redis_url'}, env_file=None, state_auto_setters=False, 
-default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
-extra_overlay_function=None, hydrate_fallback=None, plugins=[AuthPlugin()], 
-disable_plugins=[<class 'reflex_base.plugins.sitemap.SitemapPlugin'>], 
-transport='websocket', use_single_port=None)
+_non_default_attributes={'app_name', 'disable_plugins', 'plugins', 
+'telemetry_enabled', 'loglevel', 'redis_url'}, env_file=None, 
+state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[AuthPlugin()], disable_plugins=[<class 
+'reflex_base.plugins.sitemap.SitemapPlugin'>], transport='websocket', 
+use_single_port=None)
 Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
 Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
 Debug: [Reflex 0.10.0a5 with Python 3.12.3 (PATH: 
@@ -68,7 +69,7 @@ make this explicit, or remove Radix components to avoid loading the stylesheet.
 It will be completely removed in 1.0. 
 (/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
 /envs/a5-ent/lib/python3.12/site-packages/reflex_components_radix/plugin.py:76)
-Debug: [timing] Compile pages: 0.64s
+Debug: [timing] Compile pages: 0.34s
 Debug: [timing] Copy assets: 0.00s
 Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 31/30 0:00:00
 Debug: Using cached value for _install_frontend_packages with payload: 
@@ -88,7 +89,7 @@ Debug: Copying .web/package.json to
 /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
 apps/a5_upgrade_ent/ent/auth/vauthd_a5e/reflex.lock/package.json
 Debug: [timing] Install Frontend Packages: 0.01s
-Debug: [timing] Write to Disk: 0.01s
+Debug: [timing] Write to Disk: 0.00s
 ───────────────────────────────── App Running ──────────────────────────────────
 Debug: Running command: ['/root/.bun/bin/bun', 'run', 'dev']
 Debug: Starting frontend
@@ -103,9 +104,9 @@ d/apps/a5_upgrade_ent/ent/auth/vauthd_a5e/requirements.txt',
 /apps/a5_upgrade_ent/ent/auth/vauthd_a5e/assets', 
 '/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
 /apps/a5_upgrade_ent/ent/auth/vauthd_a5e/rxconfig.py']
-[INFO] Starting granian (main PID: 14739)
+[INFO] Starting granian (main PID: 13381)
 [INFO] Listening at: http://0.0.0.0:8620
-[INFO] Spawning worker-1 with PID: 14806
+[INFO] Spawning worker-1 with PID: 13437
 Debug: Registered lifespan task: _setup_event_processor
 Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
 [INFO] Started worker-1
@@ -113,7 +114,7 @@ Debug:   ➜  Local:   http://localhost:3620/
 App running at: http://localhost:3620/
 Backend running at: http://0.0.0.0:8620
 Debug:   ➜  Network: http://192.0.2.2:3620/  eth0
-Debug: 8:37:57 PM [vite] (ssr) connected.
+Debug: 9:38:06 PM [vite] (ssr) connected.
 Debug: Files in the public directory are served at the root path.
 Debug: Instead of 
 /public/external/reflex_enterprise/components/message_listener/messageListener.j
@@ -165,8 +166,9 @@ Debug: Instead of
 /public/external/reflex_enterprise/components/message_listener/messageListener.j
 s, use 
 /external/reflex_enterprise/components/message_listener/messageListener.js.
-[INFO] Shutting down granian
 [INFO] Stopping worker-1
+[ERROR] Unexpected exit from worker-1
+[INFO] Shutting down granian
 [INFO] Stopped worker-1
 [INFO] Granian shutdown completed, see ya!
 Info: Reflex app stopped.

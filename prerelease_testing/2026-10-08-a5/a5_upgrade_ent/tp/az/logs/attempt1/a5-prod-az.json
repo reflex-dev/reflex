@@ -1,0 +1,65 @@
+{
+ "A_deeplink": {
+  "redirect_uri": "http%3A%2F%2Flocalhost%3A8467%2Fauthorization-code%2Fcallback",
+  "back": false,
+  "final_url": "http://localhost:8467/authorization-code/callback/?code=3SkOUDv5jWtnHyZ6mApbmskhKwAgKSYm56cRQNV7G9Nlksi1&state=BAeX2MlMyXRucmcpkRhkgeve6B0QoSeTDTSIoG5H3M6LCoNvuDtwnSo7PT35cypxALK60LQ2wE-JXyR2IemBOw",
+  "loads": "/protected/?x=1&y=two | /protected/?x=1&y=two",
+  "error": "",
+  "ok": false
+ },
+ "C_clientnav": {
+  "url": "http://localhost:8467/protected?x=nav",
+  "loads": "/protected/?x=1&y=two | /protected/?x=1&y=two | /protected?x=nav",
+  "ok": true
+ },
+ "B_button": {
+  "redirect_uri": "http%3A%2F%2Flocalhost%3A8467%2Fauthorization-code%2Fcallback",
+  "back": false,
+  "final_url": "http://localhost:8467/authorization-code/callback/?code=VSnmHhmyqb4P0C0NItQuaOMYsUPHuWlexA3pAK8PkZp1jpQE&state=17fIHKZ0ulyZPYH3J4271zn3uE8WHKQOTIB2nzB-4xlP5Ni1ksCKMFJz8uptEzk8adOEEgPtL_ZKmIwcZVTo_Q",
+  "ok": false
+ },
+ "errors": [
+  {
+   "ctx": "A",
+   "kind": "console",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+   "ctx": "A",
+   "kind": "console",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "ctx": "A",
+   "kind": "console",
+   "text": "Failed to load resource: the server responded with a status of 404 (NOT FOUND)"
+  },
+  {
+   "ctx": "B",
+   "kind": "console",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  }
+ ],
+ "navs": [
+  "http://localhost:8467/protected/?x=1&y=two",
+  "http://localhost:8467/protected/?x=1&y=two",
+  "http://localhost:8467/protected/?x=1&y=two",
+  "http://localhost:8638/oauth2/authorize?client_id=az-client&redirect_uri=http%3A%2F%2Flocalhost%3A8467%2Fauthorization-code%2Fcallback&scope=openid+email+profile",
+  "http://localhost:8467/authorization-code/callback/?code=3SkOUDv5jWtnHyZ6mApbmskhKwAgKSYm56cRQNV7G9Nlksi1&state=BAeX2MlMyXRucmcpkRhkgeve6B0QoSeTDTSIoG5H3M6LCoNvu",
+  "http://localhost:8467/authorization-code/callback/?code=3SkOUDv5jWtnHyZ6mApbmskhKwAgKSYm56cRQNV7G9Nlksi1&state=BAeX2MlMyXRucmcpkRhkgeve6B0QoSeTDTSIoG5H3M6LCoNvu",
+  "http://localhost:8467/authorization-code/callback/?code=3SkOUDv5jWtnHyZ6mApbmskhKwAgKSYm56cRQNV7G9Nlksi1&state=BAeX2MlMyXRucmcpkRhkgeve6B0QoSeTDTSIoG5H3M6LCoNvu",
+  "http://localhost:8467/protected/?x=1&y=two",
+  "http://localhost:8467/",
+  "http://localhost:8467/",
+  "http://localhost:8467/",
+  "http://localhost:8467/protected?x=nav",
+  "http://localhost:8467/",
+  "http://localhost:8467/",
+  "http://localhost:8467/",
+  "http://localhost:8638/oauth2/authorize?client_id=az-client&redirect_uri=http%3A%2F%2Flocalhost%3A8467%2Fauthorization-code%2Fcallback&scope=openid+email+profile",
+  "http://localhost:8467/authorization-code/callback/?code=VSnmHhmyqb4P0C0NItQuaOMYsUPHuWlexA3pAK8PkZp1jpQE&state=17fIHKZ0ulyZPYH3J4271zn3uE8WHKQOTIB2nzB-4xlP5Ni1k",
+  "http://localhost:8467/authorization-code/callback/?code=VSnmHhmyqb4P0C0NItQuaOMYsUPHuWlexA3pAK8PkZp1jpQE&state=17fIHKZ0ulyZPYH3J4271zn3uE8WHKQOTIB2nzB-4xlP5Ni1k",
+  "http://localhost:8467/authorization-code/callback/?code=VSnmHhmyqb4P0C0NItQuaOMYsUPHuWlexA3pAK8PkZp1jpQE&state=17fIHKZ0ulyZPYH3J4271zn3uE8WHKQOTIB2nzB-4xlP5Ni1k",
+  "http://localhost:8467/"
+ ]
+}

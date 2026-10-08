@@ -1,0 +1,46 @@
+== a5e-dl-dev-redis: frames-with-credential reasons (summed over reps, A/B/CDEFG):
+     9 x elsewhere VALUE _oidc_generic_granted_scopes_partitioned httpOnly=True
+     6 x elsewhere VALUE _oidc_generic_id_token_partitioned httpOnly=True
+     context: Ayyyz4EC1O1BJrcjKJEXqL9DxtOm2qxp0MhYKEgx8cbxStK2OhC8pW3JfqXnQOpPwMiA&id_token_hint=<VALUE>
+     context: R-G5io-9GEXMSZSie57fRR89oiGPgqXgCm92CSO4mLSc9VA0xe-5Hw","granted_scopes_rx_state_":<VALUE>
+     context: eTHG_phuWtj2EnL5w7yl_vQpC2VH4mamjU_bEpr0TDmbBxact4mXkQ","granted_scopes_rx_state_":<VALUE>
+     context: fhV_Vhf0vgbfPzVIOd7rPe2YZmUFfi8v86oZ5JLepCNwHpeESXh3zA","granted_scopes_rx_state_":<VALUE>
+     context: mW-Y1S3h7iW19HY7xVL5D512uf9EzBAEX9QJSZsIRAqwJjx94YBgyikQl5u0DCNQxdpg&id_token_hint=<VALUE>
+     context: oLQYyy2rlMtnic7m5xFx-1quX92rd68WyPP9Fc0YGcxSHkb8u2Y-2ooD-cCchpnmBzXg&id_token_hint=<VALUE>
+== a5e-dl-prod-redis-1w: frames-with-credential reasons (summed over reps, A/B/CDEFG):
+     6 x elsewhere VALUE _oidc_generic_granted_scopes_partitioned httpOnly=True
+     4 x elsewhere VALUE _oidc_generic_id_token_partitioned httpOnly=True
+     context: 7EDAqu2QFqmWHlLHs42wlIvwo3TuW-vqyiq17mMxiTR6wjdrH9LlwIznGXdy_9doQxmw&id_token_hint=<VALUE>
+     context: CXrzqbjRZsn5-ECbul_qjTYiO2OS8wJv7j3Pl-uM5auRxkElI-SKbA","granted_scopes_rx_state_":<VALUE>
+     context: T69emVDAN3Z6w7tGxn9OEbO5RVP6g_Ij3e0YhnzIN6WrDsnIxVd2ZA","granted_scopes_rx_state_":<VALUE>
+     context: v-6TTymE9LRVEqf6XV9LB6IhRQYbj9LOMqSuDfwjZJGlRRtniWrgPYRsxAxQCIxsTujw&id_token_hint=<VALUE>
+== a4e-dl-dev-redis: frames-with-credential reasons (summed over reps, A/B/CDEFG):
+     9 x elsewhere VALUE _oidc_generic_granted_scopes_partitioned httpOnly=True
+     6 x elsewhere VALUE _oidc_generic_id_token_partitioned httpOnly=True
+     9 x router_headers VALUE _oidc_generic_id_token_partitioned httpOnly=True
+     9 x router_headers VALUE _oidc_generic_refresh_token_partitioned httpOnly=True
+    30 x router_headers key cookie
+     context: -SVSlKAt0HjHJJb_fUGy-4J6l00eJeNnhiPYDwl9cwSLww36TnEf0g","granted_scopes_rx_state_":<VALUE>
+     context: 1TTkXnKfykgX384AgS8he7ynq0aE5By1sJaTpBfsLV2-wGboJ8WFrN2Jea0xva_b62yg&id_token_hint=<VALUE>
+     context: 2mIjXq9ffC0wssh-CF-XF4e9I5Khov6t1Ji4YsI4Q; _oidc_generic_refresh_token_partitioned=<VALUE>
+     context: 9ufketqij9mzau&expires_at=1791495863.7082815\"; _oidc_generic_id_token_partitioned=<VALUE>
+     context: BtsucXuPzNXhiOkhJbJJVx-BOIctjSEdqEze_RdXfVdKUwSArInhzQ","granted_scopes_rx_state_":<VALUE>
+     context: FGk7YZbkvut37DNkgo7E2rr9q5Dfgps8f6-9wYKlyZfmaNX775rmsQ","granted_scopes_rx_state_":<VALUE>
+== a4e-dl-prod-redis-1w: frames-with-credential reasons (summed over reps, A/B/CDEFG):
+     6 x elsewhere VALUE _oidc_generic_granted_scopes_partitioned httpOnly=True
+     4 x elsewhere VALUE _oidc_generic_id_token_partitioned httpOnly=True
+     6 x router_headers VALUE _oidc_generic_id_token_partitioned httpOnly=True
+     6 x router_headers VALUE _oidc_generic_refresh_token_partitioned httpOnly=True
+    20 x router_headers key cookie
+     context: IhWwbyCyJyAQ0lTJeopfEaercnwJXS94XaGxCvzicvK1ZIjCayPHDA","granted_scopes_rx_state_":<VALUE>
+     context: UVwLGN5rLpHZJs&expires_at=1791495896.3936338\"; _oidc_generic_id_token_partitioned=<VALUE>
+     context: VcApoNLIZhMBtRJEgsIEF8uVkheu7zy1F3Uj1eV3txX_iNjAJ19MRw","granted_scopes_rx_state_":<VALUE>
+     context: c2MDXvE839WRKHYKLhlpBvePOLBdOMHOjjvX1ucXQ; _oidc_generic_refresh_token_partitioned=<VALUE>
+     context: loqglWK5H4PoFFRt1ySdgBZKr-O8HItPhisX8BQSO3ksiNZxZajYkgYwPMor9PfDeJ7w&id_token_hint=<VALUE>
+     context: mdCStXyMLdXD2hmgdJa6Gs5n_iKe5-X3-9gJwMNbg; _oidc_generic_refresh_token_partitioned=<VALUE>
+== s912e5-dl-dev-redis: frames-with-credential reasons (summed over reps, A/B/CDEFG):
+     9 x elsewhere VALUE _oidc_generic_granted_scopes_partitioned httpOnly=True
+     6 x elsewhere VALUE _oidc_generic_id_token_partitioned httpOnly=True
+     9 x router_headers VALUE _oidc_generic_id_token_partitioned httpOnly=True
+     9 x router_headers VALUE _oidc_generic_refresh_token_partitioned httpOnly=True
+    30 x router_headers key cookie

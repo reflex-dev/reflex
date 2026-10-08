@@ -1,0 +1,66 @@
+PONG
+oidc pid 14677 redis pid 14676
+OK
+started pid/pgid 14739 (a5-ent vauthd_a5e dev redis=yes workers=default) log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_upgrade_ent/ent/auth/logs/a5e-dl-dev-redis.server.log
+VENV_GUARD venv=a5-ent reflex 0.10.0a5 reflex-base 0.10.0a5 reflex-enterprise 0.9.7a5 file /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a5-ent/lib/python3.12/site-packages/reflex/__init__.py
+ready after 16s
+{"rep": 1, "A_ok": false, "A_redirect_to": "/vault?x=1&y=two%20words", "A_final": "http://localhost:3620/vault?x=1&y=two%20words", "B_ok": false, "B_redirect_to": "/item/abc?z=9", "B_final": "http://localhost:3620/item/abc?z=9", "C_ok": true, "C_redirect_to": "/vault?x=nav", "D_ok": false, "E_ok": false, "F_ok": true, "F_after_logout_url": "http://localhost:8638/oauth2/end_session?state=ZzMtXCd79gz1_TqKIRFg2jT3MOByOG98mUY9p4tsIjI8ZBaBQnP7uaj7JdcJKY7aJ1QNV2E6auDSXaFe_rUEGg&id_token_hint=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6IjhXcE9nNTlpZnVZNm1LdTJoTm9mRVZpX3BHNVYzMFZKTGxwTjQzSF93WU0ifQ.ey
+{"rep": 2, "A_ok": false, "A_redirect_to": "/vault?x=1&y=two%20words", "A_final": "http://localhost:3620/vault?x=1&y=two%20words", "B_ok": false, "B_redirect_to": "/item/abc?z=9", "B_final": "http://localhost:3620/item/abc?z=9", "C_ok": true, "C_redirect_to": "/vault?x=nav", "D_ok": false, "E_ok": false, "F_ok": true, "F_after_logout_url": "http://localhost:8638/oauth2/end_session?state=pHb94fMnv0PVH3qHi-CqHqvtJmbbwXz64vY22DALJWbj03-DF-WShHrbt2aU_df9XOQTr1FvtXi5SulB0T54Hg&id_token_hint=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6IjhXcE9nNTlpZnVZNm1LdTJoTm9mRVZpX3BHNVYzMFZKTGxwTjQzSF93WU0ifQ.ey
+{"rep": 3, "A_ok": false, "A_redirect_to": "/vault?x=1&y=two%20words", "A_final": "http://localhost:3620/vault?x=1&y=two%20words", "B_ok": false, "B_redirect_to": "/item/abc?z=9", "B_final": "http://localhost:3620/item/abc?z=9", "C_ok": true, "C_redirect_to": "/vault?x=nav", "D_ok": false, "E_ok": false, "F_ok": true, "F_after_logout_url": "http://localhost:8638/oauth2/end_session?state=fWNwTtchAgsWad4Um-HCdxDCs2NXXY3kGfQuIObILA4yfbsQLgtdVUKXXpNRnwMkL5LIT9lnx9rlqcJVL-hxhw&id_token_hint=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6IjhXcE9nNTlpZnVZNm1LdTJoTm9mRVZpX3BHNVYzMFZKTGxwTjQzSF93WU0ifQ.ey
+SUMMARY a5e-dl-dev-redis deeplink: {"A": 0, "B": 0, "C": 3, "D": 0, "E": 0, "F": 3, "G": 0} of 3
+stopped
+server log a5e-dl-dev-redis: tracebacks=0 deprecate=5
+audit records: 108; session_id present in 108
+    3 x event_handler    allowed                route='/' sub=alice handler=probe
+    3 x event_handler    redirected_to_login    route='/item/abc' sub=None handler=on_page_load
+    3 x event_handler    allowed                route='/item/abc' sub=alice handler=on_page_load
+    3 x event_handler    allowed                route='/item/abc' sub=alice handler=add_entry
+    9 x event_handler    allowed                route='/item/xyz' sub=alice handler=on_page_load
+    9 x event_handler    redirected_to_login    route='/vault' sub=None handler=on_page_load
+   12 x event_handler    allowed                route='/vault' sub=alice handler=on_page_load
+    3 x event_handler    allowed                route='/vault' sub=alice handler=add_entry
+    3 x event_handler    allowed                route='/vault2' sub=alice handler=on_page_load
+    9 x login_completed  success                route='/callback' sub=alice handler=None
+    9 x login_started    success                route='/login' sub=None handler=None
+    3 x logout           success                route='/vault' sub=alice handler=None
+    3 x page_load        redirected_to_login    route='/item/abc' sub=None handler=None
+    3 x page_load        allowed                route='/item/abc' sub=alice handler=None
+    9 x page_load        allowed                route='/item/xyz' sub=alice handler=None
+    9 x page_load        redirected_to_login    route='/vault' sub=None handler=None
+   12 x page_load        allowed                route='/vault' sub=alice handler=None
+    3 x page_load        allowed                route='/vault2' sub=alice handler=None
+page_load records with a non-protected route (stale router view?): 0
+OK
+started pid/pgid 15722 (a5-ent vauthd_a5e prod redis=yes workers=1) log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_upgrade_ent/ent/auth/logs/a5e-dl-prod-redis-1w.server.log
+ready after 25s
+{"rep": 1, "A_ok": false, "A_redirect_to": "/vault/?x=1&y=two%20words", "A_final": "http://localhost:8621/vault/?x=1&y=two%20words", "B_ok": false, "B_redirect_to": "/item/abc?z=9", "B_final": "http://localhost:8621/item/abc?z=9", "C_ok": true, "C_redirect_to": "/vault?x=nav", "D_ok": false, "E_ok": false, "F_ok": false, "F_after_logout_url": "http://localhost:8638/oauth2/end_session?state=DThxvs-yP8T7a0jZUiMw0kwIvNTIxgqf6-tN9VNESQJqfUjm5w5flaGTf_foODvSIXDyvBH17ut0sxuamp7mYg&id_token_hint=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6IjhXcE9nNTlpZnVZNm1LdTJoTm9mRVZpX3BHNVYzMFZKTGxwTjQzSF93WU0ifQ
+{"rep": 2, "A_ok": false, "A_redirect_to": "/vault/?x=1&y=two%20words", "A_final": "http://localhost:8621/vault/?x=1&y=two%20words", "B_ok": false, "B_redirect_to": "/item/abc?z=9", "B_final": "http://localhost:8621/item/abc?z=9", "C_ok": true, "C_redirect_to": "/vault?x=nav", "D_ok": false, "E_ok": false, "F_ok": false, "F_after_logout_url": "http://localhost:8638/oauth2/end_session?state=bUf6VTQIrIk6_TpiXb3GTNtlcsfnv9FKelCBjk5Q-BKdTT0lCa96vt6vQn_GHo2J-yR6h8-oEJScG3w5DCGLUg&id_token_hint=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6IjhXcE9nNTlpZnVZNm1LdTJoTm9mRVZpX3BHNVYzMFZKTGxwTjQzSF93WU0ifQ
+SUMMARY a5e-dl-prod-redis-1w deeplink: {"A": 0, "B": 0, "C": 2, "D": 0, "E": 0, "F": 0, "G": 0} of 2
+stopped
+server log a5e-dl-prod-redis-1w: tracebacks=0 deprecate=5
+audit records: 72; session_id present in 72
+    2 x event_handler    allowed                route='/' sub=alice handler=probe
+    2 x event_handler    redirected_to_login    route='/item/abc' sub=None handler=on_page_load
+    2 x event_handler    allowed                route='/item/abc' sub=alice handler=on_page_load
+    2 x event_handler    allowed                route='/item/abc' sub=alice handler=add_entry
+    6 x event_handler    allowed                route='/item/xyz' sub=alice handler=on_page_load
+    2 x event_handler    redirected_to_login    route='/vault' sub=None handler=on_page_load
+    4 x event_handler    allowed                route='/vault' sub=alice handler=on_page_load
+    4 x event_handler    redirected_to_login    route='/vault/' sub=None handler=on_page_load
+    4 x event_handler    allowed                route='/vault/' sub=alice handler=on_page_load
+    2 x event_handler    allowed                route='/vault/' sub=alice handler=add_entry
+    2 x event_handler    allowed                route='/vault2' sub=alice handler=on_page_load
+    6 x login_completed  success                route='/callback/' sub=alice handler=None
+    6 x login_started    success                route='/login' sub=None handler=None
+    2 x logout           success                route='/vault/' sub=alice handler=None
+    2 x page_load        redirected_to_login    route='/item/abc' sub=None handler=None
+    2 x page_load        allowed                route='/item/abc' sub=alice handler=None
+    6 x page_load        allowed                route='/item/xyz' sub=alice handler=None
+    2 x page_load        redirected_to_login    route='/vault' sub=None handler=None
+    4 x page_load        allowed                route='/vault' sub=alice handler=None
+    4 x page_load        redirected_to_login    route='/vault/' sub=None handler=None
+    4 x page_load        allowed                route='/vault/' sub=alice handler=None
+    2 x page_load        allowed                route='/vault2' sub=alice handler=None
+page_load records with a non-protected route (stale router view?): 0
+stopped-infra
+### deeplink a5e done 20:43:17

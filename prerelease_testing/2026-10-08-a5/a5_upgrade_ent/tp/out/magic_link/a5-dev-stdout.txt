@@ -1,0 +1,21 @@
+PASS login form renders
+PASS empty email rejected by package
+PASS redirect to /check-your-email happened :: ['http://localhost:3463/', 'http://localhost:3463/', 'http://localhost:3463/check-your-email', 'http://localhost:3463/']
+FAIL stays on /check-your-email (no immediate bounce to /) :: final url=http://localhost:3463/ navs=['http://localhost:3463/', 'http://localhost:3463/', 'http://localhost:3463/check-your-email', 'http://localhost:3463/']
+PASS magic link printed by dev server :: http://localhost:3463/magic-link-auth?email=user494727%40example.com&otp=b4a9e818&redir=%2F
+PASS magic link logs in and redirects to / (tab2) :: Welcome back!
+
+You are logged in as user494727@example.com.
+
+Logout
+PASS tab1 (check-your-email) follows via LocalStorage sync + moment interval :: url=http://localhost:3463/ text=Welcome back!
+
+You are logged in as user494727@example.com.
+
+Logout
+PASS OTP cannot be reused (fresh context) :: Login failed!
+PASS logout shows login form (tab1)
+PASS tab2 logged out via LocalStorage sync :: Enter your email to log in
+Send Magic Link
+PASS per-IP rate limit eventually triggers :: limited at attempt 6
+SUMMARY checks=11 failed=1 console_err/warn=0 pageerrors=0 failedreq=0 badresp=0

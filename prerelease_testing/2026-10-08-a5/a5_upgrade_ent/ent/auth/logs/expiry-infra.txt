@@ -1,0 +1,3 @@
+PONG
+oidc pid 10606 redis pid 10605
+stopped-infra

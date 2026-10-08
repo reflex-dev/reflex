@@ -1,0 +1,248 @@
+{
+ "tag": "fd-up-firstload-editor",
+ "url": "http://localhost:3600",
+ "args": {
+  "url": "http://localhost:3600",
+  "outdir": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_upgrade_ent/up/shots/fd",
+  "tag": "fd-up-firstload-editor",
+  "profile": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_upgrade_ent/up/profiles/fd",
+  "wait": 6.0,
+  "expect_text": [
+   "Existing Forms"
+  ],
+  "keep": [
+   "_auth_token=28b76634-e036-4460-f87e-d76aa0f4d619"
+  ],
+  "forbid_writes": true,
+  "reload": false,
+  "path": "/edit/form/"
+ },
+ "checks": [
+  {
+   "name": "text visible: 'Existing Forms'",
+   "status": "pass",
+   "detail": "Form Designer | Existing Forms | New Form | Form Name | Built with"
+  },
+  {
+   "name": "kept _auth_token",
+   "status": "pass",
+   "detail": "start='28b76634-e036-4460-f87e-d76aa0f4d619' end='28b76634-e036-4460-f87e-d76aa0f4d619'"
+  },
+  {
+   "name": "no CHANGING app storage/cookie writes during first load (framework keys token/theme/last_compiled_theme/debug ignored)",
+   "status": "pass",
+   "detail": "[]"
+  }
+ ],
+ "cookies_before": [],
+ "end": {
+  "ls": {
+   "theme": "system",
+   "last_compiled_theme": "system",
+   "_auth_token": "28b76634-e036-4460-f87e-d76aa0f4d619"
+  },
+  "ss": {
+   "token": "d7ac0726-c872-467d-d473-2b9ea7b01ca5"
+  },
+  "cookie": ""
+ },
+ "body_text": "Form Designer\nExisting Forms\nNew Form\nForm Name\nBuilt with",
+ "cookies_after": [],
+ "doc_start": {
+  "type": "snapshot",
+  "when": "doc_start",
+  "ls": {
+   "theme": "system",
+   "last_compiled_theme": "system",
+   "_auth_token": "28b76634-e036-4460-f87e-d76aa0f4d619"
+  },
+  "ss": {},
+  "cookie": "",
+  "t": 45,
+  "path": "/edit/form/"
+ },
+ "writes_idempotent_counts": {
+  "setItem _auth_token": 1
+ },
+ "writes_total": 3,
+ "writes": [
+  {
+   "type": "removeItem",
+   "store": "local",
+   "key": "debug",
+   "prev": null,
+   "t": 1815,
+   "path": "/edit/form/"
+  },
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "token",
+   "value": "d7ac0726-c872-467d-d473-2b9ea7b01ca5",
+   "prev": null,
+   "same": false,
+   "vlen": 36,
+   "t": 2082,
+   "path": "/edit/form/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "_auth_token",
+   "value": "28b76634-e036-4460-f87e-d76aa0f4d619",
+   "prev": "28b76634-e036-4460-f87e-d76aa0f4d619",
+   "same": true,
+   "vlen": 36,
+   "t": 2104,
+   "path": "/edit/form/"
+  }
+ ],
+ "writes_changing": [
+  {
+   "type": "removeItem",
+   "store": "local",
+   "key": "debug",
+   "prev": null,
+   "t": 1815,
+   "path": "/edit/form/"
+  },
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "token",
+   "value": "d7ac0726-c872-467d-d473-2b9ea7b01ca5",
+   "prev": null,
+   "same": false,
+   "vlen": 36,
+   "t": 2082,
+   "path": "/edit/form/"
+  }
+ ],
+ "writes_changing_app": [],
+ "writes_idempotent": [
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "_auth_token",
+   "value": "28b76634-e036-4460-f87e-d76aa0f4d619",
+   "prev": "28b76634-e036-4460-f87e-d76aa0f4d619",
+   "same": true,
+   "vlen": 36,
+   "t": 2104,
+   "path": "/edit/form/"
+  }
+ ],
+ "ws": [
+  {
+   "t": 7.86,
+   "dir": "recv",
+   "data": "0{\"sid\":\"Xgfi15b0Sh3zFk9dAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "t": 7.87,
+   "dir": "sent",
+   "data": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.auth_token_rx_state_\":\"28b76634-e036-4460-f87e-d76aa0f4d619\"},\"hashes\":[\"7f02077446d480d6\",\"a0d6c49668dae97a\",\"72c4c6e4d5ca6372\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"ce9ce44eccafc12e\",\"b0b4835a001a4843\",\"dc444275bfc30eb3\",\"c68bb4ed71ecc55b\",\"b971016ed11f5146\",\"f13ccfd1edf5d20e\",\"cb3bd1e58984a23f\",\"475ba198521ff3f6\"]},\"router_data\":{\"pathname\":\"/edit/form/\",\"asPath\":\"/edit/form/\"}}}"
+  },
+  {
+   "t": 7.87,
+   "dir": "recv",
+   "data": "40/_event,{\"sid\":\"8Y6HxHNSPOi8Wpc1AAAB\"}"
+  },
+  {
+   "t": 7.87,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8600\",\"origin\":\"http://localhost:3600\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"dWiyMJPcVsfsEd/8DUCWWg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8600\",\"origin\":\"http://localhost:3600\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"dWiyMJPcVsfsEd/8DUCWWg==\",\"sec-websocket-protocol\":\"0.10.0a5\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3600\",\"path\":\"/edit/form\",\"raw_path\":\"/edit/form/\",\"full_path\":\"http://localhost:3600/edit/form\",\"full_raw_path\":\"http://localhost:3600/edit/form/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/edit/form\",\"rx_router_session_rx_state_\":{\"client_token\":\"d7ac0726-c872-467d-d473-2b9ea7b01ca5\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"8Y6HxHNSPOi8Wpc1AAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3600\",\"origin\":\"http://localhost:3600\",\"path\":\"/edit/form/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3600/edit/form/\"},\"is_hydrated_rx_state_\":false},\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state\":{\"auth_token_rx_state_\":\"28b76634-e036-4460-f87e-d76aa0f4d619\",\"authenticated_user_rx_state_\":{\"enabled\":true,\"username\":\"qa_admin\",\"id\":1},\"is_authenticated_rx_state_\":true},\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state\":{\"is_admin_rx_state_\":true}}}]"
+  },
+  {
+   "t": 7.87,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state\":{\"is_authenticated_rx_state_\":true,\"authenticated_user_rx_state_\":{\"enabled\":true,\"username\":\"qa_admin\",\"id\":1},\"auth_token_rx_state_\":\"28b76634-e036-4460-f87e-d76aa0f4d619\"},\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state\":{\"is_admin_rx_state_\":true}}}]"
+  },
+  {
+   "t": 7.87,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "t": 7.87,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_editor____form_editor_state\":{\"form_rx_state_\":{\"owner_id\":1,\"id\":null,\"name\":\"\",\"fields\":[],\"responses\":[],\"user\":null}}}}]"
+  },
+  {
+   "t": 7.87,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "t": 7.87,
+   "dir": "sent",
+   "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state.load_forms\",\"router_data\":{\"pathname\":\"/edit/form/\",\"asPath\":\"/edit/form/\"}}]"
+  },
+  {
+   "t": 7.87,
+   "dir": "sent",
+   "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state.load_forms\",\"router_data\":{\"pathname\":\"/edit/form/\",\"asPath\":\"/edit/form/\"}}]"
+  },
+  {
+   "t": 7.87,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state\":{\"forms_rx_state_\":[{\"name\":\"Upgrade Survey\",\"id\":1,\"owner_id\":1,\"fields\":[{\"name\":\"favorite_food\",\"type_\":\"text\",\"prompt\":\"What is your favorite food?\",\"id\":1,\"required\":false,\"form_id\":1,\"options\":[],\"field_values\":[]},{\"name\":\"age\",\"type_\":\"number\",\"prompt\":\"How old are you?\",\"id\":2,\"required\":true,\"form_id\":1,\"options\":[],\"field_values\":[]},{\"name\":\"color\",\"type_\":\"radio\",\"prompt\":\"Favorite color\",\"id\":3,\"required\":false,\"form_id\":1,\"options\":[{\"label\":\"Red\",\"field_id\":3,\"value\":\"\",\"id\":1},{\"label\":\"Blue\",\"field_id\":3,\"value\":\"\",\"id\":2}],\"field_values\":[]},{\"name\":\"size\",\"type_\":\"select\",\"prompt\":\"Shirt size\",\"id\":4,\"required\":false,\"form_id\":1,\"options\":[{\"label\":\"Small\",\"field_id\":4,\"value\":\"\",\"id\":3},{\"label\":\"Large\",\"field_id\":4,\"value\":\"\",\"id\":4}],\"field_values\":[]}],\"user\":{\"enabled\":true,\"username\":\"qa_admin\",\"id\":1}}]}}}]"
+  },
+  {
+   "t": 7.87,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state\":{\"forms_rx_state_\":[{\"name\":\"Upgrade Survey\",\"id\":1,\"owner_id\":1,\"fields\":[{\"name\":\"favorite_food\",\"type_\":\"text\",\"prompt\":\"What is your favorite food?\",\"id\":1,\"required\":false,\"form_id\":1,\"options\":[],\"field_values\":[]},{\"name\":\"age\",\"type_\":\"number\",\"prompt\":\"How old are you?\",\"id\":2,\"required\":true,\"form_id\":1,\"options\":[],\"field_values\":[]},{\"name\":\"color\",\"type_\":\"radio\",\"prompt\":\"Favorite color\",\"id\":3,\"required\":false,\"form_id\":1,\"options\":[{\"label\":\"Red\",\"field_id\":3,\"value\":\"\",\"id\":1},{\"label\":\"Blue\",\"field_id\":3,\"value\":\"\",\"id\":2}],\"field_values\":[]},{\"name\":\"size\",\"type_\":\"select\",\"prompt\":\"Shirt size\",\"id\":4,\"required\":false,\"form_id\":1,\"options\":[{\"label\":\"Small\",\"field_id\":4,\"value\":\"\",\"id\":3},{\"label\":\"Large\",\"field_id\":4,\"value\":\"\",\"id\":4}],\"field_values\":[]}],\"user\":{\"enabled\":true,\"username\":\"qa_admin\",\"id\":1}}]}}}]"
+  }
+ ],
+ "console": [
+  {
+   "t": 1.32,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "t": 1.79,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "t": 7.86,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "t": 7.86,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  }
+ ],
+ "pageerrors": [],
+ "bad_requests": [],
+ "summary": {
+  "doc_start_ls_keys": [
+   "_auth_token",
+   "last_compiled_theme",
+   "theme"
+  ],
+  "doc_start_cookie_names": [],
+  "end_ls_keys": [
+   "_auth_token",
+   "last_compiled_theme",
+   "theme"
+  ],
+  "end_ss_keys": [
+   "token"
+  ],
+  "end_cookie_names": [],
+  "n_writes": 3,
+  "n_changing": 2,
+  "n_changing_app": 0,
+  "n_idempotent": 1,
+  "console_errors": [],
+  "pageerrors": [],
+  "bad_requests": [],
+  "idempotent_counts": {
+   "setItem _auth_token": 1
+  }
+ }
+}

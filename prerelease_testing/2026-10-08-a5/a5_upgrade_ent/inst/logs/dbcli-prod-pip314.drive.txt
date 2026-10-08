@@ -1,0 +1,11 @@
+TITLE: Dbcli | Index
+BODY:  add |  | 2 |  | note 1 |  | note 2 |  | Built with Reflex
+  did  click: '#add'
+  did  click: '#add'
+  did  expect_text: 'note 2'
+  did  goto: 'http://localhost:3602/'
+  did  wait: 1500
+  did  expect_text: 'note 2'
+  [error] Failed to load resource: the server responded with a status of 404 (Not Found)
+  [log] Disconnect websocket on page navigation
+RESULT: ANOMALIES FOUND

@@ -1,8 +1,10 @@
-20724:C 08 Oct 2026 20:45:30.059 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
-20724:C 08 Oct 2026 20:45:30.059 # Redis version=7.0.15, bits=64, commit=00000000, modified=0, pid=20724, just started
-20724:C 08 Oct 2026 20:45:30.059 # Configuration loaded
-20724:M 08 Oct 2026 20:45:30.060 * monotonic clock: POSIX clock_gettime
-20724:M 08 Oct 2026 20:45:30.060 * Running mode=standalone, port=8629.
-20724:M 08 Oct 2026 20:45:30.060 # Server initialized
-20724:M 08 Oct 2026 20:45:30.060 # WARNING Memory overcommit must be enabled! Without it, a background save or replication may fail under low memory condition. Being disabled, it can can also cause failures without low memory condition, see https://github.com/jemalloc/jemalloc/issues/1328. To fix this issue add 'vm.overcommit_memory = 1' to /etc/sysctl.conf and then reboot or run the command 'sysctl vm.overcommit_memory=1' for this to take effect.
-20724:M 08 Oct 2026 20:45:30.061 * Ready to accept connections
+15588:C 08 Oct 2026 21:42:05.627 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+15588:C 08 Oct 2026 21:42:05.627 # Redis version=7.0.15, bits=64, commit=00000000, modified=0, pid=15588, just started
+15588:C 08 Oct 2026 21:42:05.628 # Configuration loaded
+15588:M 08 Oct 2026 21:42:05.628 * monotonic clock: POSIX clock_gettime
+15588:M 08 Oct 2026 21:42:05.629 * Running mode=standalone, port=8629.
+15588:M 08 Oct 2026 21:42:05.629 # Server initialized
+15588:M 08 Oct 2026 21:42:05.629 # WARNING Memory overcommit must be enabled! Without it, a background save or replication may fail under low memory condition. Being disabled, it can can also cause failures without low memory condition, see https://github.com/jemalloc/jemalloc/issues/1328. To fix this issue add 'vm.overcommit_memory = 1' to /etc/sysctl.conf and then reboot or run the command 'sysctl vm.overcommit_memory=1' for this to take effect.
+15588:M 08 Oct 2026 21:42:05.629 * Ready to accept connections
+15588:M 08 Oct 2026 21:42:42.057 # User requested shutdown...
+15588:M 08 Oct 2026 21:42:42.057 # Redis is now ready to exit, bye bye...

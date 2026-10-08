@@ -1,0 +1,55 @@
+{
+ "A_deeplink": {
+  "redirect_uri": "http%3A%2F%2Flocalhost%3A3463%2Fauthorization-code%2Fcallback",
+  "back": false,
+  "final_url": "http://localhost:3463/authorization-code/callback?code=BG2Hmm2pzTnaX4BbDbmgi4Pb7WuxxDNisNue5Cm71M8BldBo&state=sXIVta1fQvm4p1lZK1OyXAhd5Spm5DI6hLpAPtGpAteiOpEVMoL-j1HC6nqpl219Oy6MGwlZ1c8Fn_n4zUkoxg",
+  "loads": "/protected?x=1&y=two | /protected?x=1&y=two",
+  "error": "",
+  "ok": false
+ },
+ "C_clientnav": {
+  "url": "http://localhost:3463/protected?x=nav",
+  "loads": "/protected?x=1&y=two | /protected?x=1&y=two | /protected?x=nav",
+  "ok": true
+ },
+ "B_button": {
+  "redirect_uri": "http%3A%2F%2Flocalhost%3A3463%2Fauthorization-code%2Fcallback",
+  "back": false,
+  "final_url": "http://localhost:3463/authorization-code/callback?code=ieN48vMcvIkgf0ftk50gpUw3UimIUoHRluggYV4FStyCM272&state=x93Kc5WEHdT6XDFLNYNyNkwCRFj3vPh8_S4LnmyrWbtCaOcN46Rzn0ePGAjkgJ7LIpiL9NQI-IyykZjQMGTkaQ",
+  "ok": false
+ },
+ "errors": [
+  {
+   "ctx": "A",
+   "kind": "console",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "ctx": "A",
+   "kind": "console",
+   "text": "Failed to load resource: the server responded with a status of 404 (NOT FOUND)"
+  },
+  {
+   "ctx": "B",
+   "kind": "console",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  }
+ ],
+ "navs": [
+  "http://localhost:3463/protected?x=1&y=two",
+  "http://localhost:3463/protected?x=1&y=two",
+  "http://localhost:8638/oauth2/authorize?client_id=az-client&redirect_uri=http%3A%2F%2Flocalhost%3A3463%2Fauthorization-code%2Fcallback&scope=openid+email+profile",
+  "http://localhost:3463/authorization-code/callback?code=BG2Hmm2pzTnaX4BbDbmgi4Pb7WuxxDNisNue5Cm71M8BldBo&state=sXIVta1fQvm4p1lZK1OyXAhd5Spm5DI6hLpAPtGpAteiOpEVMo",
+  "http://localhost:3463/authorization-code/callback?code=BG2Hmm2pzTnaX4BbDbmgi4Pb7WuxxDNisNue5Cm71M8BldBo&state=sXIVta1fQvm4p1lZK1OyXAhd5Spm5DI6hLpAPtGpAteiOpEVMo",
+  "http://localhost:3463/protected?x=1&y=two",
+  "http://localhost:3463/",
+  "http://localhost:3463/",
+  "http://localhost:3463/protected?x=nav",
+  "http://localhost:3463/",
+  "http://localhost:3463/",
+  "http://localhost:8638/oauth2/authorize?client_id=az-client&redirect_uri=http%3A%2F%2Flocalhost%3A3463%2Fauthorization-code%2Fcallback&scope=openid+email+profile",
+  "http://localhost:3463/authorization-code/callback?code=ieN48vMcvIkgf0ftk50gpUw3UimIUoHRluggYV4FStyCM272&state=x93Kc5WEHdT6XDFLNYNyNkwCRFj3vPh8_S4LnmyrWbtCaOcN46",
+  "http://localhost:3463/authorization-code/callback?code=ieN48vMcvIkgf0ftk50gpUw3UimIUoHRluggYV4FStyCM272&state=x93Kc5WEHdT6XDFLNYNyNkwCRFj3vPh8_S4LnmyrWbtCaOcN46",
+  "http://localhost:3463/"
+ ]
+}

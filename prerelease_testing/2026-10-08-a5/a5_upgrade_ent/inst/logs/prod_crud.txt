@@ -1,0 +1,6 @@
+pip314 prod up after 9s
+pip314 drive rc=1 RESULT: ANOMALIES FOUND
+pip314 rows: 2 tracebacks=0
+uv311 prod up after 10s
+uv311 drive rc=1 RESULT: ANOMALIES FOUND
+uv311 rows: 2 tracebacks=0

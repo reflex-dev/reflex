@@ -1,0 +1,55 @@
+{
+ "A_deeplink": {
+  "redirect_uri": "http%3A%2F%2Flocalhost%3A3463%2Fauthorization-code%2Fcallback",
+  "back": true,
+  "final_url": "http://localhost:3463/protected?x=1&y=two",
+  "loads": "/protected?x=1&y=two | /protected?x=1&y=two",
+  "error": "",
+  "ok": true
+ },
+ "C_clientnav": {
+  "url": "http://localhost:3463/protected?x=nav",
+  "loads": "/protected?x=1&y=two | /protected?x=1&y=two | /protected?x=nav",
+  "ok": true
+ },
+ "B_button": {
+  "redirect_uri": "http%3A%2F%2Flocalhost%3A3463%2Fauthorization-code%2Fcallback",
+  "back": true,
+  "final_url": "http://localhost:3463/",
+  "ok": true
+ },
+ "errors": [
+  {
+   "ctx": "A",
+   "kind": "console",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "ctx": "A",
+   "kind": "console",
+   "text": "Failed to load resource: the server responded with a status of 404 (NOT FOUND)"
+  },
+  {
+   "ctx": "B",
+   "kind": "console",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  }
+ ],
+ "navs": [
+  "http://localhost:3463/protected?x=1&y=two",
+  "http://localhost:3463/protected?x=1&y=two",
+  "http://localhost:8638/oauth2/authorize?client_id=az-client&redirect_uri=http%3A%2F%2Flocalhost%3A3463%2Fauthorization-code%2Fcallback&scope=openid+email+profile",
+  "http://localhost:3463/authorization-code/callback?code=MmXz03wGFoXMOmwF3U3YElZ7j9gI0bTTkzlmM0P8ze5sUagn&state=ew7-YFrG-XGW7OFVWQ0yIBUeA6lV1V31o5Ak_rnOCvJHsX0ip9",
+  "http://localhost:3463/authorization-code/callback?code=MmXz03wGFoXMOmwF3U3YElZ7j9gI0bTTkzlmM0P8ze5sUagn&state=ew7-YFrG-XGW7OFVWQ0yIBUeA6lV1V31o5Ak_rnOCvJHsX0ip9",
+  "http://localhost:3463/protected?x=1&y=two",
+  "http://localhost:3463/",
+  "http://localhost:3463/",
+  "http://localhost:3463/protected?x=nav",
+  "http://localhost:3463/",
+  "http://localhost:3463/",
+  "http://localhost:8638/oauth2/authorize?client_id=az-client&redirect_uri=http%3A%2F%2Flocalhost%3A3463%2Fauthorization-code%2Fcallback&scope=openid+email+profile",
+  "http://localhost:3463/authorization-code/callback?code=9TrvynSlTqfC5tzbkJ8Q3y3lw2QCZnS30PBKbdy3TzTE8Gya&state=K7aUrHOp6oMMWcllgkRFywf3BOtaimuCPkG1wdTA0bSunVI1Vz",
+  "http://localhost:3463/authorization-code/callback?code=9TrvynSlTqfC5tzbkJ8Q3y3lw2QCZnS30PBKbdy3TzTE8Gya&state=K7aUrHOp6oMMWcllgkRFywf3BOtaimuCPkG1wdTA0bSunVI1Vz",
+  "http://localhost:3463/"
+ ]
+}

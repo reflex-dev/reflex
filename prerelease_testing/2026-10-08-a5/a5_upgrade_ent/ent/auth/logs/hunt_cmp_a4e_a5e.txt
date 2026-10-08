@@ -43,6 +43,26 @@ a5e-dev-redis rep1 login=True error=None
    idle 10 s (3 tabs)           {}  {'tab1_who': 'alice', 'tab2_who': 'alice', 'tab3_who': 'alice'}
    tab1 add                     {'sent:add_entry': 1}  {'tab1_who': 'alice', 'tab2_who': 'alice', 'tab3_who': 'alice'}
    totals {'cookie_sync_200': 1, 'hash_write': 1, 'sent:add_entry': 1, 'sent:check_if_iframed': 1, 'sent:check_if_iframed_cb': 1, 'sent:hydrate_and_load': 7, 'sent:on_load_internal': 3, 'sent:redirect_to_login': 1, 'sent:update_access_token_hash_in_browser': 1, 'sent:update_vars_internal': 2} entries=['click1:alice']
+a4e-prod-redis-1w rep0 login=True error=None
+   tab1 reload 0                {'sent:hydrate_and_load': 1}  {'tab1_who': 'alice'}
+   tab1 reload 1                {'sent:hydrate_and_load': 1}  {'tab1_who': 'alice'}
+   tab1 reload 2                {'sent:hydrate_and_load': 1}  {'tab1_who': 'alice'}
+   tab2 open /vault             {'sent:hydrate_and_load': 1}  {'tab1_who': 'alice', 'tab2_who': 'alice'}
+   tab3 open /                  {'sent:hydrate_and_load': 1}  {'tab1_who': 'alice', 'tab2_who': 'alice', 'tab3_who': 'alice'}
+   tab3 client nav to /vault    {'sent:on_load_internal': 1, 'sent:update_vars_internal': 1}  {'tab1_who': 'alice', 'tab2_who': 'alice', 'tab3_who': 'alice'}
+   idle 10 s (3 tabs)           {}  {'tab1_who': 'alice', 'tab2_who': 'alice', 'tab3_who': 'alice'}
+   tab1 add                     {'sent:add_entry': 1}  {'tab1_who': 'alice', 'tab2_who': 'alice', 'tab3_who': 'alice'}
+   totals {'console_error': 2, 'cookie_sync_200': 1, 'hash_write': 1, 'sent:add_entry': 1, 'sent:check_if_iframed': 1, 'sent:check_if_iframed_cb': 1, 'sent:hydrate_and_load': 7, 'sent:on_load_internal': 3, 'sent:redirect_to_login': 1, 'sent:update_access_token_hash_in_browser': 1, 'sent:update_vars_internal': 2} entries=['click1:alice']
+a5e-prod-redis-1w rep0 login=True error=None
+   tab1 reload 0                {'sent:hydrate_and_load': 1}  {'tab1_who': 'alice'}
+   tab1 reload 1                {'sent:hydrate_and_load': 1}  {'tab1_who': 'alice'}
+   tab1 reload 2                {'sent:hydrate_and_load': 1}  {'tab1_who': 'alice'}
+   tab2 open /vault             {'sent:hydrate_and_load': 1}  {'tab1_who': 'alice', 'tab2_who': 'alice'}
+   tab3 open /                  {'sent:hydrate_and_load': 1}  {'tab1_who': 'alice', 'tab2_who': 'alice', 'tab3_who': 'alice'}
+   tab3 client nav to /vault    {'sent:on_load_internal': 1, 'sent:update_vars_internal': 1}  {'tab1_who': 'alice', 'tab2_who': 'alice', 'tab3_who': 'alice'}
+   idle 10 s (3 tabs)           {}  {'tab1_who': 'alice', 'tab2_who': 'alice', 'tab3_who': 'alice'}
+   tab1 add                     {'sent:add_entry': 1}  {'tab1_who': 'alice', 'tab2_who': 'alice', 'tab3_who': 'alice'}
+   totals {'console_error': 2, 'cookie_sync_200': 1, 'hash_write': 1, 'sent:add_entry': 1, 'sent:check_if_iframed': 1, 'sent:check_if_iframed_cb': 1, 'sent:hydrate_and_load': 7, 'sent:on_load_internal': 3, 'sent:redirect_to_login': 1, 'sent:update_access_token_hash_in_browser': 1, 'sent:update_vars_internal': 2} entries=['click1:alice']
 
 ## relogin
 a4e-dev-redis rep0 ok=True bob_view=['bob', '0', []] bob_entries=['click1:bob'] newtab=['bob', '/vault'] totals={'console_error': 1, 'cookie_sync_200': 3, 'hash_write': 4, 'sent:add_entry': 2, 'sent:check_if_iframed': 1, 'sent:check_if_iframed_cb': 1, 'sent:hydrate_and_load': 8, 'sent:logout': 1, 'sent:on_load_internal': 4, 'sent:redirect_to_login': 2, 'sent:update_access_token_hash_in_browser': 3, 'sent:update_vars_internal': 3}

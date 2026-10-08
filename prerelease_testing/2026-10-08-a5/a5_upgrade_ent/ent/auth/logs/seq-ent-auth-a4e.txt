@@ -4,3 +4,76 @@ oidc pid 20725 redis pid 20724
 OK
 started pid/pgid 20782 (a4-ent vauth_a4e dev redis=yes workers=default) log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_upgrade_ent/ent/auth/logs/a4e-dev-redis.server.log
 VENV_GUARD venv=a4-ent reflex 0.10.0a4 reflex-base 0.10.0a4 reflex-enterprise 0.9.7a5 file /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a4-ent/lib/python3.12/site-packages/reflex/__init__.py
+ready after 7s
+{"rep": 1, "p1_boot_events": ["hydrate_and_load", "reconcile_tokens_after_sync"], "p1_boot_vars": [{"latest_access_token_hash_ls_rx_state_": "bogus-910440"}], "p1_after": "", "p1_corrected": true, "p1_cookie_syncs": [200, 200], "p2_login": true, "p2_real": "e070fcb4810804cd...", "p2_boot_events": ["
+{"rep": 2, "p1_boot_events": ["hydrate_and_load", "reconcile_tokens_after_sync"], "p1_boot_vars": [{"latest_access_token_hash_ls_rx_state_": "bogus-659896"}], "p1_after": "", "p1_corrected": true, "p1_cookie_syncs": [200, 200], "p2_login": true, "p2_real": "8f09ec0dec2bfaa5...", "p2_boot_events": ["
+SUMMARY a4e-dev-redis stale: {"p1_corrected": 3, "p2_corrected": 3, "p3_logged_out": 3, "p4_logged_out": 3} of 3
+wrote /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_upgrade_ent/ent/auth/logs/a4e-dev-redis-stale.json
+{"rep": 1, "login": true, "tab2_logged_in": true, "cookies_after_logout": [], "ls_hash_after_logout": "", "tab1_back_url": "http://localhost:3620/vault", "tab1_boot_events": ["hydrate_and_load", "reconcile_tokens_after_sync"], "tab1_who": "", "tab1_add": ["0", null, []], "tab1_path_final": "/login",
+{"rep": 2, "login": true, "tab2_logged_in": true, "cookies_after_logout": [], "ls_hash_after_logout": "", "tab1_back_url": "http://localhost:3620/vault", "tab1_boot_events": ["hydrate_and_load", "reconcile_tokens_after_sync"], "tab1_who": "", "tab1_add": ["0", null, []], "tab1_path_final": "/login",
+SUMMARY a4e-dev-redis away: tab1 logged out after Back 3/3
+wrote /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_upgrade_ent/ent/auth/logs/a4e-dev-redis-away.json
+{"rep": 1, "login": true, "tab1_hash_after_login": "feb3b423ec4e6441...", "cookies_after_login": ["_oidc_generic_access_token_data_partitioned", "_oidc_generic_granted_scopes_partitioned", "_oidc_generic_id_token_partitioned", "_oidc_generic_refresh_token_partitioned"], "tab2_logged_in": true, "t_lo
+{"rep": 2, "login": true, "tab1_hash_after_login": "67766fac54771eae...", "cookies_after_login": ["_oidc_generic_access_token_data_partitioned", "_oidc_generic_granted_scopes_partitioned", "_oidc_generic_id_token_partitioned", "_oidc_generic_refresh_token_partitioned"], "tab2_logged_in": true, "t_lo
+SUMMARY a4e-dev-redis xtab: tab1 logged out 3/3; accepted-after-logout 0/3
+wrote /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_upgrade_ent/ent/auth/logs/a4e-dev-redis-xtab.json
+rep 0: race(tab1 re-wrote old hash)=True empty-hash writes=[('tab2', 0.04), ('tab2', 0.08), ('tab2', 0.78)] tab2 sent reconcile=True -> tab1_logged_out=True
+rep 1: race(tab1 re-wrote old hash)=False empty-hash writes=[('tab2', 0.05), ('tab2', 0.08)] tab2 sent reconcile=False -> tab1_logged_out=True
+rep 2: race(tab1 re-wrote old hash)=True empty-hash writes=[('tab2', 0.04), ('tab2', 0.06), ('tab2', 0.74)] tab2 sent reconcile=True -> tab1_logged_out=True
+{"rep": 1, "steps": {"tab1 reload 0": {"sent:hydrate_and_load": 1, "tab1_who": "alice", "tab1_path": "/vault"}, "tab1 reload 1": {"sent:hydrate_and_load": 1, "tab1_who": "alice", "tab1_path": "/vault"}, "tab1 reload 2": {"sent:hydrate_and_load": 1, "tab1_who": "alice", "tab1_path": "/vault"}, "tab2 
+SUMMARY a4e-dev-redis loads: see per-step counts above
+wrote /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_upgrade_ent/ent/auth/logs/a4e-dev-redis-hunt-loads.json
+{"rep": 1, "alice_login": true, "alice_after_reload": ["alice", "1", ["click1:alice"]], "after_logout": {"who": "", "hash": "", "cookies": []}, "bob_login": true, "bob_view": ["bob", "0", []], "hash_changed": true, "bob_after_reload": ["bob", "/vault"], "bob_entries": ["click1:bob"], "newtab": ["bob
+SUMMARY a4e-dev-redis relogin: ok 2/2
+wrote /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_upgrade_ent/ent/auth/logs/a4e-dev-redis-hunt-relogin.json
+stopped
+server log a4e-dev-redis: tracebacks=0 TypeError=0
+### part 2 entauth_a4e dev redis 20:53:01
+OK
+started pid=24412 pgid=24412
+ready after 10s
+{"case": "cycle", "label": "a4e-dev-redis", "page_errors": [], "failed_requests": [{"url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css", "failure": "net::ERR_TUNNEL_CONNECTION_FAILED", "method": "GET"}, {"url": "http://localhost:8620/_reflex/cookies/sync", "failure": "net::ERR_ABO
+{"case": "pubnav", "label": "a4e-dev-redis", "page_errors": [], "failed_requests": [{"url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css", "failure": "net::ERR_TUNNEL_CONNECTION_FAILED", "method": "GET"}, {"url": "http://localhost:8620/_reflex/cookies/sync", "failure": "net::ERR_AB
+{"case": "twotab", "label": "a4e-dev-redis", "page_errors": [], "failed_requests": [{"url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css", "failure": "net::ERR_TUNNEL_CONNECTION_FAILED", "method": "GET"}, {"url": "http://localhost:8620/_reflex/cookies/sync", "failure": "net::ERR_AB
+{"case": "xtab", "label": "a4e-dev-redis", "page_errors": [], "failed_requests": [{"url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css", "failure": "net::ERR_TUNNEL_CONNECTION_FAILED", "method": "GET"}, {"url": "http://localhost:8620/_reflex/cookies/sync", "failure": "net::ERR_ABOR
+ALL_PASSED
+{"i": 3, "tab1_logged_out": true, "ls_hash_6s_after_logout_empty": true, "tab1_sync_req_cookies": [[], []]}
+{"i": 4, "tab1_logged_out": true, "ls_hash_6s_after_logout_empty": true, "tab1_sync_req_cookies": [["_oidc_generic_access_token_data_partitioned", "_oidc_generic_granted_scopes_partitioned", "_oidc_generic_id_token_partitioned", "_oidc_generic_refresh_token_partitioned"], [], []]}
+TAB1_LOGGED_OUT 5 / 5
+{"case": "loggedin_boot", "i": 2, "ls_real_prefix": "14b07e1343ed", "ls_after_boot_prefix": "14b07e1343ed", "reconcile_sent": 1, "cookie_syncs": 1, "hash_ls_writes": ["14b07e1343ed"], "sent": ["40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_", "reconcile_tokens_after_sync"], "corre
+{"case": "live_update", "i": 2, "ls_after": "", "reconcile_sent": 1, "cookie_syncs": 2, "hash_ls_writes": ["deadbeefdead", ""], "sent": ["update_vars_internal", "reconcile_tokens_after_sync", "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_"], "corrected": true, "console_errors": [
+CORRECTED {"anon_boot": [3, 3], "loggedin_boot": [3, 3], "live_update": [3, 3]}
+{"scenario": "garbage_public", "label": "a4e-dev-redis", "samples_public": [[0.5, "/", "anonymous |  | initial-secret |  | 0 |  | var-placeholder |  | public:0 |  | admin-placeholder |  | async-admin-placehol"], [1.0, "/", "anonymous |  | initial-secret |  | 0 |  | var-placeholder |  | public:0 |  |
+{"scenario": "garbage_id_refresh", "label": "a4e-dev-redis", "id_cookie_replaced": true, "n_id_cookies": 2, "samples": [[0.5, "/dashboard", "dashboard-content |  | Alice Admin |  | alice@example.com |  | generic |  | force refresh | go public | list |  | initia"], [1.0, "/dashboard", "dashboard-cont
+{"scenario": "garbage_all_after_login", "label": "a4e-dev-redis", "samples": [[0.5, "/dashboard", "dashboard-content |  | Alice Admin |  | alice@example.com |  | generic |  | force refresh | go public | list |  | reveal"], [1.0, "/dashboard", "dashboard-content |  | Alice Admin |  | alice@example.co
+SUMMARY {'reload_writes': True, 'newtab_writes': True, 'garbage_protected': False, 'garbage_public': False, 'garbage_id_refresh': False, 'garbage_all_after_login': True}
+stopped
+server log entauth a4e: tracebacks=0 TypeError=0
+### part 3 a4 auth matrix 20:58:33
+{"case": "test_logout_resets_state_so_next_user_sees_no_leak", "passed": true}
+{"attempt": 2, "passed": true, "final_values": {"secret": "initial-secret", "secret-view": "computed:initial-secret", "admin-view": "admin-data", "async-admin-view": "async-admin-data"}}
+{"attempt": 3, "passed": true, "final_values": {"secret": "initial-secret", "secret-view": "computed:initial-secret", "admin-view": "admin-data", "async-admin-view": "async-admin-data"}}
+ready after 5s
+{"case": "iframe_popup", "passed": true, "page_errors": [], "failed_requests": [{"url": "http://localhost:8623/_reflex/cookies/sync", "failure": "net::ERR_ABORTED"}, {"url": "http://localhost:8623/_reflex/cookies/sync", "failure": "net::ERR_ABORTED"}, {"url": "http://localhost:8623/_reflex/cookies/s
+{"case": "iframe_pending_event_replay", "passed": true, "page_errors": [], "failed_requests": [{"url": "http://localhost:8623/_reflex/cookies/sync", "failure": "net::ERR_ABORTED"}, {"url": "http://localhost:8623/_reflex/cookies/sync", "failure": "net::ERR_ABORTED"}], "http_errors": [], "frame_observ
+{"attempt": 2, "passed": true, "frame_url": "http://localhost:3623/"}
+{"attempt": 3, "passed": true, "frame_url": "http://localhost:3623/"}
+MCP OAuth discovery, registration, browser consent, PKCE, protected event, code replay and refresh rotation passed
+ready after 4s
+{"case": "iframe_popup", "passed": true, "page_errors": [], "failed_requests": [{"url": "http://localhost:8623/_reflex/cookies/sync", "failure": "net::ERR_ABORTED"}, {"url": "http://localhost:8623/_reflex/cookies/sync", "failure": "net::ERR_ABORTED"}, {"url": "http://localhost:8623/_reflex/cookies/s
+{"case": "iframe_pending_event_replay", "passed": true, "page_errors": [], "failed_requests": [{"url": "http://localhost:8623/_reflex/cookies/sync", "failure": "net::ERR_ABORTED"}, {"url": "http://localhost:8623/_reflex/cookies/sync", "failure": "net::ERR_ABORTED"}], "http_errors": [], "frame_observ
+Anonymous MCP token rejection, events, computed reads, redaction and session isolation passed
+A4_MATRIX_DONE
+auth-full: 22/22
+reload-repeat: 3/3
+auth-min-default: 4/4
+iframe-repeat: 3/3
+auth-min-extra: 4/4
+MCP OAuth discovery, registration, browser consent, PKCE, protected event, code replay and refresh rotation passed
+Anonymous MCP token rejection, events, computed reads, redaction and session isolation passed
+auth-full-server.log: tracebacks=0
+auth-min-default-server.log: tracebacks=0
+auth-min-extra-server.log: tracebacks=0
+mcp-anonymous-server.log: tracebacks=0
+stopped-infra
+### ent auth done 21:00:36

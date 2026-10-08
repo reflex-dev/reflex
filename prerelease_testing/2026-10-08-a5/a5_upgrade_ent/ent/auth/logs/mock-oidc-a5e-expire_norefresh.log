@@ -1,0 +1,9 @@
+Local OIDC provider http://localhost:8638 max_age=30 refresh=False pid=10996
+127.0.0.1 - - [08/Oct/2026 21:29:20] "GET /.well-known/openid-configuration HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 21:29:29] "GET /.well-known/openid-configuration HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 21:29:29] "GET /oauth2/authorize?client_id=reflex-integration-test&redirect_uri=http://localhost:3620/callback&scope=openid+email+profile&state=rnrjaopw_JCFGGZrZOEd8YHUoggQf5nvuVN1x_LAzyAx73E0CCOucHnanvlZyuUJAv7C8ubPTqsnIlErBlB5eQ&code_challenge=RLA33F7GchYlNhDKbduD-aZnfUDLCRj__892NFZ4LtA&code_challenge_method=S256&response_type=code&response_mode=query HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 21:29:29] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [08/Oct/2026 21:29:29] "[32mPOST /oauth2/authorize?client_id=reflex-integration-test&redirect_uri=http://localhost:3620/callback&scope=openid+email+profile&state=rnrjaopw_JCFGGZrZOEd8YHUoggQf5nvuVN1x_LAzyAx73E0CCOucHnanvlZyuUJAv7C8ubPTqsnIlErBlB5eQ&code_challenge=RLA33F7GchYlNhDKbduD-aZnfUDLCRj__892NFZ4LtA&code_challenge_method=S256&response_type=code&response_mode=query HTTP/1.1[0m" 302 -
+127.0.0.1 - - [08/Oct/2026 21:29:30] "POST /oauth2/token HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 21:29:30] "GET /jwks HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 21:29:30] "GET /userinfo HTTP/1.1" 200 -

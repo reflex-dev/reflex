@@ -1,0 +1,98 @@
+### fd base 21:12:34
+migrate rc=0
+started reflex pid=1354 (21:12:39) log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_upgrade_ent/up/logs/fd-base.server.log
+UP after 10s (frontend 200, backend /ping 200)
+[ANOMALY] login: auto-redirects away from /login (pre-existing FAIL on 0.9.x): http://localhost:3600/login
+[ANOMALY] re-login: auto-redirects away from /login (pre-existing FAIL on 0.9.x): http://localhost:3600/login
+== fd-base-full: {'pass': 18, 'fail': 0, 'anomaly': 2, 'skipped': 0}  console_total=55 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=355
+[ANOMALY] console: no unexpected errors/warnings + no page errors: [{"page": "main", "t": 13.041, "type": "error", "text": "Received `%s` for a non-boolean attribute `%s`.\n\nIf you want to write it to the DOM, pass a string instead: %s=\"%s\" or %s={value.toS
+== fd-base-entry: {'pass': 14, 'fail': 0, 'anomaly': 1, 'skipped': 0}  console_total=25 unexpected_console=6 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=80
+  UNEXPECTED CONSOLE: error Received `%s` for a non-boolean attribute `%s`.
+  UNEXPECTED CONSOLE: error In HTML, %s cannot be a descendant of <%s>.
+  UNEXPECTED CONSOLE: error <%s> cannot contain a nested %s.
+  UNEXPECTED CONSOLE: error The pseudo class ":first-child" is potentially unsafe when doing server-side rendering. Try changing it to ":first-of-type".
+  UNEXPECTED CONSOLE: error The pseudo class ":first-child" is potentially unsafe when doing server-side rendering. Try changing it to ":first-of-type".
+  UNEXPECTED CONSOLE: error The pseudo class ":first-child" is potentially unsafe when doing server-side rendering. Try changing it to ":first-of-type".
+PASS text visible: 'Existing Forms' | Form Designer | Existing Forms | New Form | Form Name | Built with
+PASS no CHANGING app storage/cookie writes during first load (framework keys token/theme/last_compiled_theme/debug ignored) | []
+ "n_changing_app": 0,
+CHANGING WRITE: removeItem debug prev= None new= None
+CHANGING WRITE: setItem token prev= None new= '819c0579-88b0-4b07-a9d7-4be69808011a'
+idempotent write x1: setItem _auth_token
+SHUTDOWN: main pid 1354 still alive 15s after SIGTERM
+ORPHAN after SIGTERM: port=3600 pid=1425 cmd=node /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_upgrade_ent/up/form-designer/.web/node_modules/
+### fd upgrade 21:14:07
+freeze diff fd: < reflex==0.9.12 < reflex-base==0.9.12 < reflex-components-code==0.9.6 < reflex-components-core==0.9.10.post1 < reflex-components-dataeditor==0.9.3.post1 < reflex-components-gridjs==0.9.2.post1 < reflex-components-lucide==1.0.4 < reflex-components-markdown==0.9.4.post1 < reflex-components-moment==0.9.4 < reflex-components-plotly==0.9.7 < reflex-components-radix==0.9.10.post1 < reflex-components-react-player==0.9.2 < reflex-components-recharts==0.9.4.post1 < reflex-components-sonner==0.9.4 < reflex-hosting-cli==0.1.72 > reflex==0.10.0a5 > reflex-base==0.10.0a5 > reflex-build-sdk==0.1.0a1 > reflex-components-code==0.10.0a2 > reflex-components-core==0.10.0a2 > reflex-components-dataeditor==0.10.0a1 > reflex-components-gridjs==0.10.0a2 > reflex-components-lucide==1.1.0a1 > reflex-components-markdown==0.10.0a2 > reflex-components-moment==0.10.0a2 > reflex-components-plotly==0.10.0a2 > reflex-components-radix==0.10.0a2 > reflex-components-react-player==0.10.0a1 > reflex-components-recharts==0.10.0a2 > reflex-components-sonner==0.10.0a1 > reflex-hosting-cli==0.2.0a1 < sqlalchemy==2.0.54 > sqlalchemy==2.1.4 < wrapt==2.3.0 > wrapt==2.5.0 
+Checked 53 packages in 1ms
+All installed packages are compatible
+### fd up 21:14:08
+started reflex pid=2012 (21:14:08) log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_upgrade_ent/up/logs/fd-up.server.log
+UP after 10s (frontend 200, backend /ping 200)
+package.json diff: < "moment": "2.30.1", < "react": "19.2.8", > "moment": "2.31.0", > "react": "19.3.0", < "react-dom": "19.2.8", < "react-error-boundary": "6.1.2", > "react-dom": "19.3.0", > "react-error-boundary": "6.1.6", < "socket.io-client": "4.8.3", > "socket.io-client": "4.8.4", < "autoprefixer": "10.5.4", < "postcss": "8.5.26", > "autoprefixer": "10.6.1", > "postcss": "8.5.29", < "vite": "8.2.2" > "vite": "8.3.2" 
+auth token from base snapshot: 28b76634-e03...
+PASS text visible: 'Existing Forms' | Form Designer | Existing Forms | New Form | Form Name | Built with
+PASS kept _auth_token | start='28b76634-e036-4460-f87e-d76aa0f4d619' end='28b76634-e036-4460-f87e-d76aa0f4d619'
+PASS no CHANGING app storage/cookie writes during first load (framework keys token/theme/last_compiled_theme/debug ignored) | []
+ "n_changing_app": 0,
+CHANGING WRITE: removeItem debug prev= None new= None
+CHANGING WRITE: setItem token prev= None new= 'd7ac0726-c872-467d-d473-2b9ea7b01ca5'
+idempotent write x1: setItem _auth_token
+[ANOMALY] re-login: auto-redirects away from /login (pre-existing FAIL on 0.9.x): http://localhost:3600/login
+== fd-up-up: {'pass': 12, 'fail': 0, 'anomaly': 1, 'skipped': 0}  console_total=35 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=138
+[ANOMALY] console: no unexpected errors/warnings + no page errors: [{"page": "main", "t": 12.987, "type": "error", "text": "In HTML, %s cannot be a descendant of <%s>.\nThis will cause a hydration error.%s <button> button \n\n  ...\n    <Collapsible data-orien
+== fd-up-entry: {'pass': 14, 'fail': 0, 'anomaly': 1, 'skipped': 0}  console_total=25 unexpected_console=6 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=65
+  UNEXPECTED CONSOLE: error In HTML, %s cannot be a descendant of <%s>.
+  UNEXPECTED CONSOLE: error <%s> cannot contain a nested %s.
+  UNEXPECTED CONSOLE: error Received `%s` for a non-boolean attribute `%s`.
+  UNEXPECTED CONSOLE: error The pseudo class ":first-child" is potentially unsafe when doing server-side rendering. Try changing it to ":first-of-type".
+  UNEXPECTED CONSOLE: error The pseudo class ":first-child" is potentially unsafe when doing server-side rendering. Try changing it to ":first-of-type".
+  UNEXPECTED CONSOLE: error The pseudo class ":first-child" is potentially unsafe when doing server-side rendering. Try changing it to ":first-of-type".
+SHUTDOWN: main pid 2012 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+makemigrations rc=0 version files: 3
+### fd prod 21:15:08
+started reflex pid=2544 (21:15:08) log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_upgrade_ent/up/logs/fd-up-prod.server.log
+UP after 13s (frontend 200, backend /ping 200)
+prod /edit/form/1 -> 200
+prod /form/1 -> 200
+prod /responses/1 -> 200
+prod /nope -> 404
+prod /login -> 307
+[ANOMALY] re-login: auto-redirects away from /login (pre-existing FAIL on 0.9.x): http://localhost:3600/login/
+== fd-up-prod-up: {'pass': 12, 'fail': 0, 'anomaly': 1, 'skipped': 0}  console_total=8 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=132
+== fd-up-prod-entry: {'pass': 15, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=3 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=62
+SHUTDOWN: main pid 2544 exited after SIGTERM in ~3s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### fd cold 21:15:54
+started reflex pid=2925 (21:15:55) log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_upgrade_ent/up/logs/fd-cold.server.log
+UP after 7s (frontend 200, backend /ping 200)
+cold package.json == up
+cold file list == up
+[ANOMALY] re-login: auto-redirects away from /login (pre-existing FAIL on 0.9.x): http://localhost:3600/login
+== fd-cold-up: {'pass': 12, 'fail': 0, 'anomaly': 1, 'skipped': 0}  console_total=35 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=138
+SHUTDOWN: main pid 2925 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+--- fd-base server-log warnings:
+      5 /tmp/claude-0/-home-user-reflex/<tok>/scratchpad/envs/a5_upgrade_ent-fd/lib/python3.12/site-packages/pydantic/main.py:520: UserWarning: Pydantic serializer warnings:
+      3 Debug: 9:13:37 PM [vite] (client) [console.error] The pseudo class 
+      1 Debug: This will cause a hydration error.
+      1 Debug: 9:13:37 PM [vite] (client) [console.error] Received `true` for a 
+      1 Debug: 9:13:37 PM [vite] (client) [console.error] In HTML, <button> cannot be a 
+      1 Debug: 9:13:37 PM [vite] (client) [console.error] <button> cannot contain a 
+--- fd-up server-log warnings:
+      3 Debug: 9:14:57 PM [vite] (client) [console.error] The pseudo class 
+      2 /tmp/claude-0/-home-user-reflex/<tok>/scratchpad/envs/a5_upgrade_ent-fd/lib/python3.12/site-packages/pydantic/main.py:520: UserWarning: Pydantic serializer warnings:
+      1 [INFO] Failed to close websocket with error Io(Os { code: 32, kind: BrokenPipe, message: "Broken pipe" })
+      1 Debug: error: script "dev" exited with code 143
+      1 Debug: This will cause a hydration error.
+      1 Debug: 9:14:57 PM [vite] (client) [console.error] Received `true` for a 
+      1 Debug: 9:14:57 PM [vite] (client) [console.error] In HTML, <button> cannot be a 
+      1 Debug: 9:14:57 PM [vite] (client) [console.error] <button> cannot contain a 
+--- fd-up-prod server-log warnings:
+      2 /tmp/claude-0/-home-user-reflex/<tok>/scratchpad/envs/a5_upgrade_ent-fd/lib/python3.12/site-packages/pydantic/main.py:520: UserWarning: Pydantic serializer warnings:
+      1 build.chunkSizeWarningLimit.
+      1 Debug: - Adjust chunk size limit for this warning via 
+--- fd-cold server-log warnings:
+      2 /tmp/claude-0/-home-user-reflex/<tok>/scratchpad/envs/a5_upgrade_ent-fd/lib/python3.12/site-packages/pydantic/main.py:520: UserWarning: Pydantic serializer warnings:
+      1 Debug: error: script "dev" exited with code 143
+### fd done 21:16:28

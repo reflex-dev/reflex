@@ -22,7 +22,11 @@ HERE = Path(__file__).resolve().parent
 base, label = sys.argv[1], sys.argv[2]
 
 
+PUMP = {}
+
+
 def wait_for(fn, timeout=30.0):
+    """Poll fn(); pumps Playwright's event loop between polls (time.sleep starves it: page.url would never update)."""
     end = time.time() + timeout
     while time.time() < end:
         try:
@@ -31,7 +35,7 @@ def wait_for(fn, timeout=30.0):
                 return v
         except Exception:
             pass
-        time.sleep(0.25)
+        PUMP["page"].wait_for_timeout(250)
     return None
 
 
@@ -43,6 +47,7 @@ def txt(p, sel):
 
 
 def capture(p, log, name):
+    PUMP["page"] = p
     p.on("console", lambda m: m.type == "error" and log.append({"ctx": name, "kind": "console", "text": m.text[:200]}))
     p.on("pageerror", lambda e: log.append({"ctx": name, "kind": "pageerror", "text": str(e)[:200]}))
     p.on("response", lambda r: r.status >= 400 and log.append({"ctx": name, "kind": "http", "status": r.status, "url": r.url[:120]}))
@@ -66,7 +71,7 @@ with sync_playwright() as pw:
     capture(p, log, "A")
     p.goto(base + "/protected?x=1&y=two")
     r = {"redirect_uri": authorize(p)}
-    r["back"] = bool(wait_for(lambda: urlparse(p.url).path == "/protected" and txt(p, "#has_token") == "true", 40))
+    r["back"] = bool(wait_for(lambda: urlparse(p.url).path.rstrip("/") == "/protected" and txt(p, "#has_token") == "true", 40))
     r["final_url"] = p.url
     r["loads"] = txt(p, "#loads")
     r["error"] = txt(p, "#error")
@@ -76,8 +81,8 @@ with sync_playwright() as pw:
     wait_for(lambda: txt(p, "#has_token") == "true", 20)
     p.click("#nav-protected")
     wait_for(lambda: "x=nav" in (txt(p, "#loads") or ""), 20)
-    time.sleep(1.5)
-    res["C_clientnav"] = {"url": p.url, "loads": txt(p, "#loads"), "ok": urlparse(p.url).path == "/protected" and (txt(p, "#loads") or "").endswith("/protected?x=nav")}
+    p.wait_for_timeout(1500)
+    res["C_clientnav"] = {"url": p.url, "loads": txt(p, "#loads"), "ok": urlparse(p.url).path.rstrip("/") == "/protected" and (txt(p, "#loads") or "").replace("/protected/?", "/protected?").endswith("/protected?x=nav")}
     p.screenshot(path=str(HERE.parent / "shots" / f"{label}-A.png"))
     ctx.close()
     ctx = b.new_context()
@@ -85,7 +90,7 @@ with sync_playwright() as pw:
     capture(p, log, "B")
     p.goto(base + "/")
     wait_for(lambda: txt(p, "#has_token") == "false", 20)
-    time.sleep(1.0)
+    p.wait_for_timeout(1000)
     p.get_by_role("button", name="Login with Microsoft").click()
     r = {"redirect_uri": authorize(p)}
     r["back"] = bool(wait_for(lambda: urlparse(p.url).path == "/" and txt(p, "#has_token") == "true", 40))

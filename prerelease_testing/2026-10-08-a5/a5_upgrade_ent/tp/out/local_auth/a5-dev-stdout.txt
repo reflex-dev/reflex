@@ -1,0 +1,52 @@
+PASS index heading :: http://localhost:3463/
+PASS index shows Login link when anonymous
+PASS require_login redirects anonymous to /login :: http://localhost:3463/login
+PASS register page reached :: http://localhost:3463/register
+PASS password mismatch error
+PASS registration success message
+PASS redirected to /login after registration
+PASS duplicate username rejected
+PASS bad password error
+PASS login redirects back to /need2login (redirect_to) :: http://localhost:3463/need2login
+PASS protected content visible
+PASS Logout link visible when authenticated
+PASS ProtectedState.on_load data
+PASS user-info username :: Username: alice494576
+
+No extra UserInfo for 1
+PASS user-info without extra info :: Username: alice494576
+
+No extra UserInfo for 1
+PASS still logged in after reload
+PASS second tab (same context) shares login
+PASS fresh context is anonymous -> /login :: http://localhost:3463/login
+PASS after logout index shows Login link
+PASS after logout /protected -> /login :: http://localhost:3463/login
+PASS second tab logged out after reload :: http://localhost:3463/login
+PASS custom registration success
+PASS custom user info email :: Username: bob494576
+
+Email: bob494576@example.com
+
+Account Created From: 127.0.0.1
+PASS custom user info created_from_ip :: Username: bob494576
+
+Email: bob494576@example.com
+
+Account Created From: 127.0.0.1
+PASS whoami LoginState sees parent computed var
+PASS whoami MyLocalAuthState sees user
+PASS whoami email (substate computed var)
+PASS whoami probe handler (get_state + inherited computed) :: user=bob494576 id=2 auth=True same_token=True email=bob494576@example.com
+PASS whoami after logout: email cleared
+PASS whoami after user switch shows U1
+PASS whoami after user switch: no email for U1
+PASS whoami probe after switch :: user=alice494576 id=1 auth=True same_token=True email=None
+FAIL subclass override of _validate_fields honoured via self.handle_registration() :: error_message='<gone>' success='<gone>' url=http://localhost:3463/login
+FAIL short-password user NOT created by strict register (DB) :: db row=(3, 'short494576', 1)
+PASS short session login
+PASS short session authenticated
+PASS new tab while session valid -> protected content
+PASS new tab after session expiry -> /login :: http://localhost:3463/login
+SUMMARY checks=38 failed=2 console_err/warn=0 pageerrors=0 failedreq=1 badresp=0
+  ANOMALY failed_requests: {"where": "logout", "page": "main", "url": "http://localhost:3463/app/routes/_index.jsx?import", "failure": "net::ERR_ABORTED"}

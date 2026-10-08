@@ -24,8 +24,8 @@ frontend_compression_formats=['gzip'], frontend_packages=[],
 frontend_lazy_bundled_libraries=False, 
 state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
 redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
-_non_default_attributes={'redis_url', 'api_url', 'app_name', 'disable_plugins', 
-'loglevel', 'plugins', 'telemetry_enabled'}, env_file=None, 
+_non_default_attributes={'redis_url', 'telemetry_enabled', 'loglevel', 
+'api_url', 'plugins', 'app_name', 'disable_plugins'}, env_file=None, 
 state_auto_setters=False, default_color_mode='system', 
 show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
 hydrate_fallback=None, plugins=[AuthPlugin()], disable_plugins=[<class 
@@ -65,7 +65,7 @@ make this explicit, or remove Radix components to avoid loading the stylesheet.
 It will be completely removed in 1.0. 
 (/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
 /envs/a5-ent/lib/python3.12/site-packages/reflex_components_radix/plugin.py:76)
-Debug: [timing] Compile pages: 0.34s
+Debug: [timing] Compile pages: 0.30s
 Debug: [timing] Copy assets: 0.00s
 Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 31/30 0:00:00
 Debug: Using cached value for _install_frontend_packages with payload: 
@@ -84,8 +84,8 @@ apps/a5_upgrade_ent/ent/auth/vauthd_a5e/reflex.lock/bun.lock
 Debug: Copying .web/package.json to 
 /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
 apps/a5_upgrade_ent/ent/auth/vauthd_a5e/reflex.lock/package.json
-Debug: [timing] Install Frontend Packages: 0.01s
-Debug: [timing] Write to Disk: 0.08s
+Debug: [timing] Install Frontend Packages: 0.00s
+Debug: [timing] Write to Disk: 0.01s
 Debug: Running command: ['/root/.bun/bin/bun', 'run', 'export']
 Debug: Creating Production Build
 Debug: $ react-router build
@@ -109,37 +109,37 @@ Debug: build/client/assets/text-CpxtK-id.js
 0.66 kB │ gzip:  0.43 kB
 Debug: build/client/assets/link-DhkP1oWJ.js                                     
 0.73 kB │ gzip:  0.45 kB
-Debug: build/client/assets/_login_._index-BGl_nsBD.js                           
+Debug: build/client/assets/_login_._index-DQ6wPwAW.js                           
 0.74 kB │ gzip:  0.45 kB
-Debug: build/client/assets/app-B5AZjDV-.js                                      
+Debug: build/client/assets/app-0uwha4Z9.js                                      
 1.25 kB │ gzip:  0.36 kB
-Debug: build/client/assets/_logout_._index-BVt3h3WD.js                          
+Debug: build/client/assets/_logout_._index-DKBlVuFu.js                          
 1.40 kB │ gzip:  0.65 kB
-Debug: build/client/assets/_callback_._index-B0PBsDM0.js                        
+Debug: build/client/assets/_callback_._index-DWdafbWi.js                        
 1.41 kB │ gzip:  0.66 kB
 Debug: 
-build/client/assets/__reflex_oidc_generic_._popup-login_._index-Ch9V4Kfa.js     
+build/client/assets/__reflex_oidc_generic_._popup-login_._index-R_ti4mnN.js     
 1.44 kB │ gzip:  0.68 kB
 Debug: 
-build/client/assets/__reflex_oidc_generic_._popup-logout_._index-JAEXuSBD.js    
+build/client/assets/__reflex_oidc_generic_._popup-logout_._index-BhbaYLMa.js    
 1.48 kB │ gzip:  0.70 kB
-Debug: build/client/assets/container-DkVM-AsN.js                                
+Debug: build/client/assets/container-F7znE8k1.js                                
 1.79 kB │ gzip:  0.81 kB
-Debug: build/client/assets/_index-B9DqrxHP.js                                   
+Debug: build/client/assets/_index-C9ejg82X.js                                   
 1.85 kB │ gzip:  0.78 kB
-Debug: build/client/assets/auth-BQnoBEPH.js                                     
+Debug: build/client/assets/auth-C_vAjVvA.js                                     
 2.90 kB │ gzip:  0.90 kB
-Debug: build/client/assets/_vault_._index-BiI2XTxu.js                           
+Debug: build/client/assets/_vault_._index-CcyuzieJ.js                           
 2.93 kB │ gzip:  1.02 kB
-Debug: build/client/assets/_vault2_._index-BG7QvUZg.js                          
+Debug: build/client/assets/_vault2_._index-Db3hg_hX.js                          
 2.93 kB │ gzip:  1.02 kB
-Debug: build/client/assets/_item_.__item_._index-DfBEmgrB.js                    
+Debug: build/client/assets/_item_.__item_._index-DhTFF5fb.js                    
 2.93 kB │ gzip:  1.02 kB
-Debug: build/client/assets/button-zDICZYvu.js                                   
+Debug: build/client/assets/button-qNBtukS1.js                                   
 2.96 kB │ gzip:  1.49 kB
 Debug: build/client/assets/react-dom-CraYhmig.js                                
 3.86 kB │ gzip:  1.39 kB
-Debug: build/client/assets/vauthd-B83X5pXL.js                                   
+Debug: build/client/assets/vauthd-CCgbJ9V7.js                                   
 4.46 kB │ gzip:  0.88 kB
 Debug: build/client/assets/flex-CqnKavO3.js                                     
 13.36 kB │ gzip:  4.16 kB
@@ -149,29 +149,14 @@ Debug: build/client/assets/errorBoundaries-CFf5efiI.js
 33.50 kB │ gzip: 11.74 kB
 Debug: build/client/assets/components-HNXWQJj3.js                               
 86.79 kB │ gzip: 28.72 kB
-Debug: build/client/assets/spinner-BJM_N-W2.js                                  
+Debug: build/client/assets/spinner-UONQKoVn.js                                  
 107.94 kB │ gzip: 31.76 kB
 Debug: build/client/assets/entry.client-H-Leh00q.js                             
 210.92 kB │ gzip: 66.26 kB
-Debug: build/client/assets/root-tme5pHjr.js                                     
+Debug: build/client/assets/root-C0SBth88.js                                     
 306.42 kB │ gzip: 86.39 kB
 Debug: 
-Debug: ✓ built in 10.08s
-Debug: [33m[PLUGIN_TIMINGS] [0mJavaScript callbacks ran for 8.2s of this 9.9s 
-build (83%).
-Debug: The slowest callbacks, timed inside each callback (the wait before a 
-callback starts is excluded, the time it awaits is included):
-Debug:   - plugin vite:css transform (36%, 3.5s, 1 call)
-Debug: Additional callback time came from the callbacks below and from callbacks
-under 1s.
-Debug: 2 callbacks are listed without a time. Their calls overlapped, so the 
-time inside one call includes work from other calls. To find their cost, profile
-the build with `node --cpu-prof`:
-Debug:   - plugin react-router:dot-server resolveId (1670 calls)
-Debug:   - plugin react-router:build-client-route transform (452 calls)
-Debug: See https://rolldown.rs/reference/InputOptions.checks#bundlertimings for 
-more details.
-Debug: 
+Debug: ✓ built in 1.94s
 Debug: vite v8.3.2 building ssr environment for production...
 Debug: transforming...
 Debug: ⚠️ Paths with dynamic/splat params cannot be prerendered when using 
@@ -195,18 +180,7 @@ gzip:  0.20 kB
 Debug: build/server/index.js                                     90.91 kB │ 
 gzip: 19.65 kB
 Debug: 
-Debug: ✓ built in 3.65s
-Debug: [33m[PLUGIN_TIMINGS] [0mJavaScript callbacks ran for 3.2s of this 3.6s 
-build (88%).
-Debug: The slowest callbacks, timed inside each callback (the wait before a 
-callback starts is excluded, the time it awaits is included):
-Debug:   - plugin react-router:virtual-modules load (83%, 3.0s, 37 calls)
-Debug:   - plugin vite:css transform (52%, 1.9s, 1 call)
-Debug: These rows add up to more than the total. Callbacks can overlap, so the 
-same time counts for more than one row.
-Debug: See https://rolldown.rs/reference/InputOptions.checks#bundlertimings for 
-more details.
-Debug: 
+Debug: ✓ built in 780ms
 Debug: Prerender (html): / -> build/client/index.html
 Debug: Prerender (html): /_reflex_oidc_generic/popup-logout -> 
 build/client/_reflex_oidc_generic/popup-logout/index.html
@@ -219,7 +193,7 @@ Debug: Prerender (html): /vault2 -> build/client/vault2/index.html
 Debug: Prerender (html): /login -> build/client/login/index.html
 Debug: Prerender (html): /vault -> build/client/vault/index.html
 Debug: Prerender (html): SPA Fallback -> build/client/__spa-fallback.html
-Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:18
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:03
 Debug: Copying .web/build/client/logout/index.html to 
 .web/build/client/logout.html
 Debug: Copying .web/build/client/vault/index.html to 
@@ -244,9 +218,9 @@ scratchpad/apps/a5_upgrade_ent/ent/auth/vauthd_a5e/.web/build/client'), 'gzip']
 ───────────────────────────────── App Running ──────────────────────────────────
 App running at: http://0.0.0.0:8621/
 Debug: Using Granian for backend
-[INFO] Starting granian (main PID: 15722)
+[INFO] Starting granian (main PID: 13948)
 [INFO] Listening at: http://0.0.0.0:8621
-[INFO] Spawning worker-1 with PID: 15871
+[INFO] Spawning worker-1 with PID: 14008
 Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
 [INFO] Started worker-1
 DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 

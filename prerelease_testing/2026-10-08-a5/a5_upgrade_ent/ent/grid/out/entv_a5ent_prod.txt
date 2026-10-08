@@ -1,0 +1,147 @@
+server check ok: /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a5-ent/bin/python /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a
+server versions: reflex=0.10.0a5 reflex-base=0.10.0a5 reflex-enterprise=0.9.7a5
+[s1_full_load] grids(headers,cells,badges)={'w_state': (2, 6, 0), 'w_literal': (2, 6, 0)} probes={'probe-gridstate_cols': 'gridstate_cols|NO_REFLEX|[{"field":"make"},{"field":"price"}]', 'probe-literal': 'literal|NO_REFLEX|"lit"'} counts={'gridstate_cols': 1, 'literal': 1} reflexSetAt=305.1000000005588 cellRenders={'n': 0, 'first_t': None, 'without_reflex': 0, 'by_src': {}}
+   t=304.5 ws_out {"nsp": "/_event", "auth_keys": ["event"], "auth_mentions_hydrate_and_load": true, "auth_event_name": "reflex___state____state.hydrate_and_load"}
+   t=435.6 delta substates=['reflex___state____state']
+   t=436.4 delta substates=['reflex___state____state']
+   console errors/warnings: 15; pageerrors: 0
+     error: Failed to load resource: the server responded with a status of 404 (Not Found)
+     error: ****************************************************************************************************************************
+     error: ************************************************ AG Grid Enterprise License ************************************************
+     error: ************************************************** License Key Not Found ***************************************************
+     error: * All AG Grid Enterprise features are unlocked for trial.                                                                  *
+     error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *
+[s2_reload] grids(headers,cells,badges)={'w_state': (2, 6, 0), 'w_literal': (2, 6, 0)} probes={'probe-gridstate_cols': 'gridstate_cols|NO_REFLEX|[{"field":"make"},{"field":"price"}]', 'probe-literal': 'literal|NO_REFLEX|"lit"'} counts={'gridstate_cols': 1, 'literal': 1} reflexSetAt=172.40000000037253 cellRenders={'n': 0, 'first_t': None, 'without_reflex': 0, 'by_src': {}}
+   t=172 ws_out {"nsp": "/_event", "auth_keys": ["event"], "auth_mentions_hydrate_and_load": true, "auth_event_name": "reflex___state____state.hydrate_and_load"}
+   t=237.7 delta substates=['reflex___state____state']
+   t=238.1 delta substates=['reflex___state____state']
+   console errors/warnings: 14; pageerrors: 0
+     error: ****************************************************************************************************************************
+     error: ************************************************ AG Grid Enterprise License ************************************************
+     error: ************************************************** License Key Not Found ***************************************************
+     error: * All AG Grid Enterprise features are unlocked for trial.                                                                  *
+     error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *
+     error: ****************************************************************************************************************************
+[s3_after_unrelated_event] grids(headers,cells,badges)={'w_state': (2, 6, 0), 'w_literal': (2, 6, 0)} probes={'probe-gridstate_cols': 'gridstate_cols|NO_REFLEX|[{"field":"make"},{"field":"price"}]', 'probe-literal': 'literal|NO_REFLEX|"lit"'} counts={'gridstate_cols': 1, 'literal': 1} reflexSetAt=172.40000000037253 cellRenders={'n': 0, 'first_t': None, 'without_reflex': 0, 'by_src': {}}
+   t=172 ws_out {"nsp": "/_event", "auth_keys": ["event"], "auth_mentions_hydrate_and_load": true, "auth_event_name": "reflex___state____state.hydrate_and_load"}
+   t=237.7 delta substates=['reflex___state____state']
+   t=238.1 delta substates=['reflex___state____state']
+   t=7520.4 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.entv___entv____other_state.bump", "payload_keys": []}
+   t=7524.8 delta substates=['reflex___state____state.entv___entv____other_state']
+[s4_after_same_substate_event] grids(headers,cells,badges)={'w_state': (2, 6, 0), 'w_literal': (2, 6, 0)} probes={'probe-gridstate_cols': 'gridstate_cols|HAS_REFLEX|[{"field":"make"},{"field":"price"}]', 'probe-literal': 'literal|NO_REFLEX|"lit"'} counts={'gridstate_cols': 2, 'literal': 1} reflexSetAt=172.40000000037253 cellRenders={'n': 0, 'first_t': None, 'without_reflex': 0, 'by_src': {}}
+   t=172 ws_out {"nsp": "/_event", "auth_keys": ["event"], "auth_mentions_hydrate_and_load": true, "auth_event_name": "reflex___state____state.hydrate_and_load"}
+   t=237.7 delta substates=['reflex___state____state']
+   t=238.1 delta substates=['reflex___state____state']
+   t=7520.4 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.entv___entv____other_state.bump", "payload_keys": []}
+   t=7524.8 delta substates=['reflex___state____state.entv___entv____other_state']
+   t=13660.7 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.entv___entv____grid_state.bump", "payload_keys": []}
+   t=13666.4 delta substates=['reflex___state____state.entv___entv____grid_state']
+[s5_reload_after_state_changed] grids(headers,cells,badges)={'w_state': (2, 6, 0), 'w_literal': (2, 6, 0)} probes={'probe-gridstate_cols': 'gridstate_cols|HAS_REFLEX|[{"field":"make"},{"field":"price"}]', 'probe-literal': 'literal|NO_REFLEX|"lit"'} counts={'gridstate_cols': 2, 'literal': 1} reflexSetAt=150.59999999962747 cellRenders={'n': 0, 'first_t': None, 'without_reflex': 0, 'by_src': {}}
+   t=150.1 ws_out {"nsp": "/_event", "auth_keys": ["event"], "auth_mentions_hydrate_and_load": true, "auth_event_name": "reflex___state____state.hydrate_and_load"}
+   t=224.6 delta substates=['reflex___state____state', 'reflex___state____state.entv___entv____other_state', 'reflex___state____state.entv___entv____grid_state']
+   t=225.1 delta substates=['reflex___state____state']
+   console errors/warnings: 14; pageerrors: 0
+     error: ****************************************************************************************************************************
+     error: ************************************************ AG Grid Enterprise License ************************************************
+     error: ************************************************** License Key Not Found ***************************************************
+     error: * All AG Grid Enterprise features are unlocked for trial.                                                                  *
+     error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *
+     error: ****************************************************************************************************************************
+[s6_client_nav_from_other] grids(headers,cells,badges)={'w_state': (2, 6, 0), 'w_literal': (2, 6, 0)} probes={'probe-gridstate_cols': 'gridstate_cols|HAS_REFLEX|[{"field":"make"},{"field":"price"}]', 'probe-literal': 'literal|HAS_REFLEX|"lit"'} counts={'gridstate_cols': 1, 'literal': 1} reflexSetAt=216.8999999994412 cellRenders={'n': 0, 'first_t': None, 'without_reflex': 0, 'by_src': {}}
+   t=216 ws_out {"nsp": "/_event", "auth_keys": ["event"], "auth_mentions_hydrate_and_load": true, "auth_event_name": "reflex___state____state.hydrate_and_load"}
+   t=222.9 delta substates=['reflex___state____state']
+   t=224.2 delta substates=['reflex___state____state']
+   t=3654.6 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal", "payload_keys": []}
+   t=3708.9 delta substates=['reflex___state____state']
+   console errors/warnings: 14; pageerrors: 0
+     error: ****************************************************************************************************************************
+     error: ************************************************ AG Grid Enterprise License ************************************************
+     error: ************************************************** License Key Not Found ***************************************************
+     error: * All AG Grid Enterprise features are unlocked for trial.                                                                  *
+     error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *
+     error: ****************************************************************************************************************************
+[s7_full_load_then_nav_away_and_back] grids(headers,cells,badges)={'w_state': (2, 6, 0), 'w_literal': (2, 6, 0)} probes={'probe-gridstate_cols': 'gridstate_cols|HAS_REFLEX|[{"field":"make"},{"field":"price"}]', 'probe-literal': 'literal|HAS_REFLEX|"lit"'} counts={'gridstate_cols': 2, 'literal': 3} reflexSetAt=322.40000000037253 cellRenders={'n': 0, 'first_t': None, 'without_reflex': 0, 'by_src': {}}
+   t=321.7 ws_out {"nsp": "/_event", "auth_keys": ["event"], "auth_mentions_hydrate_and_load": true, "auth_event_name": "reflex___state____state.hydrate_and_load"}
+   t=474.4 delta substates=['reflex___state____state']
+   t=475.3 delta substates=['reflex___state____state']
+   t=3562.2 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal", "payload_keys": []}
+   t=3581.5 delta substates=['reflex___state____state']
+   t=6699.4 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal", "payload_keys": []}
+   t=6756.1 delta substates=['reflex___state____state']
+   console errors/warnings: 14; pageerrors: 0
+     error: ****************************************************************************************************************************
+     error: ************************************************ AG Grid Enterprise License ************************************************
+     error: ************************************************** License Key Not Found ***************************************************
+     error: * All AG Grid Enterprise features are unlocked for trial.                                                                  *
+     error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *
+     error: ****************************************************************************************************************************
+[s8_memo_full_load] grids(headers,cells,badges)={'w_memo_props': (2, 6, 0), 'w_memo_state': (2, 6, 0)} probes={} counts={} reflexSetAt=342.1000000005588 cellRenders={'n': 0, 'first_t': None, 'without_reflex': 0, 'by_src': {}}
+   t=341.3 ws_out {"nsp": "/_event", "auth_keys": ["event"], "auth_mentions_hydrate_and_load": true, "auth_event_name": "reflex___state____state.hydrate_and_load"}
+   t=495.4 delta substates=['reflex___state____state']
+   t=496.6 delta substates=['reflex___state____state']
+   console errors/warnings: 14; pageerrors: 0
+     error: ****************************************************************************************************************************
+     error: ************************************************ AG Grid Enterprise License ************************************************
+     error: ************************************************** License Key Not Found ***************************************************
+     error: * All AG Grid Enterprise features are unlocked for trial.                                                                  *
+     error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *
+     error: ****************************************************************************************************************************
+[s9_onload_page_full_load] grids(headers,cells,badges)={'w_onload': (2, 6, 0), 'w_state2': (2, 6, 0)} probes={} counts={} reflexSetAt=327.70000000018626 cellRenders={'n': 0, 'first_t': None, 'without_reflex': 0, 'by_src': {}}
+   t=326.9 ws_out {"nsp": "/_event", "auth_keys": ["event"], "auth_mentions_hydrate_and_load": true, "auth_event_name": "reflex___state____state.hydrate_and_load"}
+   t=464.3 delta substates=['reflex___state____state']
+   t=464.9 delta substates=['reflex___state____state']
+   t=465.1 delta substates=['reflex___state____state.entv___entv____load_state']
+   t=465.4 delta substates=['reflex___state____state']
+   console errors/warnings: 14; pageerrors: 0
+     error: ****************************************************************************************************************************
+     error: ************************************************ AG Grid Enterprise License ************************************************
+     error: ************************************************** License Key Not Found ***************************************************
+     error: * All AG Grid Enterprise features are unlocked for trial.                                                                  *
+     error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *
+     error: ****************************************************************************************************************************
+[s11 detail] {'w_detail_state': {'detail_rows': 1, 'detail_headers': ['Count', 'Value'], 'detail_cells': 4}, 'w_detail_literal': {'detail_rows': 1, 'detail_headers': ['Count', 'Value'], 'detail_cells': 4}}
+[s11_detail_expand] grids(headers,cells,badges)={'w_detail_state': (4, 8, 0), 'w_detail_literal': (4, 8, 0)} probes={} counts={} reflexSetAt=322.30000000074506 cellRenders={'n': 0, 'first_t': None, 'without_reflex': 0, 'by_src': {}}
+   t=321.4 ws_out {"nsp": "/_event", "auth_keys": ["event"], "auth_mentions_hydrate_and_load": true, "auth_event_name": "reflex___state____state.hydrate_and_load"}
+   t=492.5 delta substates=['reflex___state____state']
+   t=493.8 delta substates=['reflex___state____state']
+   console errors/warnings: 28; pageerrors: 0
+     error: ****************************************************************************************************************************
+     error: ************************************************ AG Grid Enterprise License ************************************************
+     error: ************************************************** License Key Not Found ***************************************************
+     error: * All AG Grid Enterprise features are unlocked for trial.                                                                  *
+     error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *
+     error: ****************************************************************************************************************************
+[s12 renderer] badges=3
+[s12_renderer_full_load] grids(headers,cells,badges)={'w_renderer': (2, 6, 3)} probes={} counts={} reflexSetAt=290 cellRenders={'n': 0, 'first_t': None, 'without_reflex': 0, 'by_src': {}}
+   t=288.8 ws_out {"nsp": "/_event", "auth_keys": ["event"], "auth_mentions_hydrate_and_load": true, "auth_event_name": "reflex___state____state.hydrate_and_load"}
+   t=406.3 delta substates=['reflex___state____state']
+   t=407 delta substates=['reflex___state____state']
+   console errors/warnings: 7; pageerrors: 0
+     error: ****************************************************************************************************************************
+     error: ************************************************ AG Grid Enterprise License ************************************************
+     error: ************************************************** License Key Not Found ***************************************************
+     error: * All AG Grid Enterprise features are unlocked for trial.                                                                  *
+     error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *
+     error: ****************************************************************************************************************************
+[s13_dynamic_route_full_load] grids(headers,cells,badges)={'w_state': (2, 6, 0)} probes={'probe-gridstate_cols': 'gridstate_cols|HAS_REFLEX|[{"field":"make"},{"field":"price"}]'} counts={'gridstate_cols': 1} reflexSetAt=193.40000000037253 cellRenders={'n': 0, 'first_t': None, 'without_reflex': 0, 'by_src': {}}
+   t=192.6 ws_out {"nsp": "/_event", "auth_keys": ["event"], "auth_mentions_hydrate_and_load": true, "auth_event_name": "reflex___state____state.hydrate_and_load"}
+   t=211.2 delta substates=['reflex___state____state']
+   t=215.3 delta substates=['reflex___state____state']
+   console errors/warnings: 7; pageerrors: 0
+     error: ****************************************************************************************************************************
+     error: ************************************************ AG Grid Enterprise License ************************************************
+     error: ************************************************** License Key Not Found ***************************************************
+     error: * All AG Grid Enterprise features are unlocked for trial.                                                                  *
+     error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *
+     error: ****************************************************************************************************************************
+[s10_full_load_second_context] grids(headers,cells,badges)={'w_state': (2, 6, 0), 'w_literal': (2, 6, 0)} probes={'probe-gridstate_cols': 'gridstate_cols|NO_REFLEX|[{"field":"make"},{"field":"price"}]', 'probe-literal': 'literal|NO_REFLEX|"lit"'} counts={'gridstate_cols': 1, 'literal': 1} reflexSetAt=350.5 cellRenders={'n': 0, 'first_t': None, 'without_reflex': 0, 'by_src': {}}
+   t=349.5 ws_out {"nsp": "/_event", "auth_keys": ["event"], "auth_mentions_hydrate_and_load": true, "auth_event_name": "reflex___state____state.hydrate_and_load"}
+   t=506.6 delta substates=['reflex___state____state']
+   t=507.5 delta substates=['reflex___state____state']
+   console errors/warnings: 14; pageerrors: 0
+     error: ****************************************************************************************************************************
+     error: ************************************************ AG Grid Enterprise License ************************************************
+     error: ************************************************** License Key Not Found ***************************************************
+     error: * All AG Grid Enterprise features are unlocked for trial.                                                                  *
+     error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *
+     error: ****************************************************************************************************************************

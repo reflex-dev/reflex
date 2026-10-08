@@ -1,0 +1,10 @@
+started pid=10250 (pgid) venv=a5_upgrade_ent-tp app=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_upgrade_ent/tp/run/a5/ga_dev fp=3463 bp=8463 log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_upgrade_ent/tp/logs/ga-a5-dev.log
+UP after 6s (http://localhost:3463/)
+  ANOMALY bad_responses: {"where": "protected", "page": "main", "url": "https://accounts.google.com/gsi/button?type=standard&theme=outline&size=large&text=undefined&shape=undefined&logo_alignment=undefined&width=undefine
+  ANOMALY bad_responses: {"where": "partially", "page": "main", "url": "https://accounts.google.com/gsi/button?type=standard&theme=outline&size=large&text=undefined&shape=undefined&logo_alignment=undefined&width=undefine
+  ANOMALY bad_responses: {"where": "after-inject", "page": "main", "url": "https://accounts.google.com/gsi/button?type=standard&theme=outline&size=large&text=undefined&shape=undefined&logo_alignment=undefined&width=undef
+stopped 10250
+checks A=13 B=13 failing A=1 B=1 differing=0
+base /home/user/reflex/prerelease_testing/2026-10-07-a3/a3_events_tp/tp/out/google_auth/a3-dev-report.json: 11 distinct anomalies
+== /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_upgrade_ent/tp/out/google_auth/a5-dev-report.json: 11 distinct; only-in-base=0 only-in-this=0
+ga-a5-dev.log: tracebacks=0 TypeError=0

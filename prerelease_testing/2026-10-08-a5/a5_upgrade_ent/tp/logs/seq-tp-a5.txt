@@ -1,0 +1,62 @@
+### la dev 21:22:45
+migrate la_dev rc=0
+started pid=8426 (pgid) venv=a5_upgrade_ent-tp app=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_upgrade_ent/tp/run/a5/la_dev fp=3463 bp=8463 log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_upgrade_ent/tp/logs/la-a5-dev.log
+UP after 9s (http://localhost:3463/)
+PASS new tab after session expiry -> /login :: http://localhost:3463/login
+SUMMARY checks=38 failed=2 console_err/warn=0 pageerrors=0 failedreq=1 badresp=0
+  ANOMALY failed_requests: {"where": "logout", "page": "main", "url": "http://localhost:3463/app/routes/_index.jsx?import", "failure": "net::ERR_ABORTED"}
+stopped 8426
+### la prod 21:23:41
+migrate la_prod rc=0
+started pid=8864 (pgid) venv=a5_upgrade_ent-tp app=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_upgrade_ent/tp/run/a5/la_prod fp=8467 bp=8467 log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_upgrade_ent/tp/logs/la-a5-prod.log
+UP after 9s (http://localhost:8467/)
+PASS new tab while session valid -> protected content
+PASS new tab after session expiry -> /login :: http://localhost:8467/login
+SUMMARY checks=38 failed=2 console_err/warn=0 pageerrors=0 failedreq=0 badresp=0
+stopped 8864
+### la prodredis 21:24:30
+migrate la_prodredis rc=0
+started pid=9199 (pgid) venv=a5_upgrade_ent-tp app=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_upgrade_ent/tp/run/a5/la_prodredis fp=8467 bp=8467 log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_upgrade_ent/tp/logs/la-a5-prodredis.log
+UP after 10s (http://localhost:8467/)
+PASS new tab while session valid -> protected content
+PASS new tab after session expiry -> /login :: http://localhost:8467/login
+SUMMARY checks=38 failed=2 console_err/warn=0 pageerrors=0 failedreq=0 badresp=0
+redis keys: 24
+stopped 9199
+### ml dev 21:25:19
+migrate ml_dev rc=0
+started pid=9616 (pgid) venv=a5_upgrade_ent-tp app=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_upgrade_ent/tp/run/a5/ml_dev fp=3463 bp=8463 log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_upgrade_ent/tp/logs/ml-a5-dev.log
+UP after 5s (http://localhost:3463/)
+Send Magic Link
+PASS per-IP rate limit eventually triggers :: limited at attempt 6
+SUMMARY checks=11 failed=1 console_err/warn=0 pageerrors=0 failedreq=0 badresp=0
+stopped 9616
+### ml prod 21:25:53
+migrate ml_prod rc=0
+started pid=9900 (pgid) venv=a5_upgrade_ent-tp app=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_upgrade_ent/tp/run/a5/ml_prod fp=8467 bp=8467 log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_upgrade_ent/tp/logs/ml-a5-prod.log
+UP after 9s (http://localhost:8467/)
+Built with Reflex
+PASS per-IP rate limit eventually triggers :: limited at attempt 6
+SUMMARY checks=11 failed=1 console_err/warn=0 pageerrors=0 failedreq=0 badresp=0
+stopped 9900
+--- cmp a3 vs a5 local_auth dev: checks A=38 B=38 failing A=2 B=2 differing=0 
+base /home/user/reflex/prerelease_testing/2026-10-07-a3/a3_events_tp/tp/out/local_auth/a3-dev-report.json: 0 distinct anomalies
+== /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_upgrade_ent/tp/out/local_auth/a5-dev-report.json: 0 distinct; only-in-base=0 only-in-this=0
+--- cmp a3 vs a5 local_auth prod: checks A=38 B=38 failing A=2 B=2 differing=0 
+base /home/user/reflex/prerelease_testing/2026-10-07-a3/a3_events_tp/tp/out/local_auth/a3-prod-report.json: 0 distinct anomalies
+== /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_upgrade_ent/tp/out/local_auth/a5-prod-report.json: 0 distinct; only-in-base=0 only-in-this=0
+--- cmp a3 vs a5 local_auth prod-redis: checks A=38 B=38 failing A=2 B=2 differing=0 
+base /home/user/reflex/prerelease_testing/2026-10-07-a3/a3_events_tp/tp/out/local_auth/a3-prod-redis-report.json: 0 distinct anomalies
+== /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_upgrade_ent/tp/out/local_auth/a5-prodredis-report.json: 0 distinct; only-in-base=0 only-in-this=0
+--- cmp a3 vs a5 magic_link dev: checks A=11 B=11 failing A=1 B=1 differing=0 
+base /home/user/reflex/prerelease_testing/2026-10-07-a3/a3_events_tp/tp/out/magic_link/a3-dev-report.json: 0 distinct anomalies
+== /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_upgrade_ent/tp/out/magic_link/a5-dev-report.json: 0 distinct; only-in-base=0 only-in-this=0
+--- cmp a3 vs a5 magic_link prod: checks A=11 B=11 failing A=1 B=1 differing=0 
+base /home/user/reflex/prerelease_testing/2026-10-07-a3/a3_events_tp/tp/out/magic_link/a3-prod-report.json: 0 distinct anomalies
+== /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_upgrade_ent/tp/out/magic_link/a5-prod-report.json: 0 distinct; only-in-base=0 only-in-this=0
+la-a5-dev.log: tracebacks=0 TypeError=0
+la-a5-prod.log: tracebacks=0 TypeError=0
+la-a5-prodredis.log: tracebacks=0 TypeError=0
+ml-a5-dev.log: tracebacks=0 TypeError=0
+ml-a5-prod.log: tracebacks=0 TypeError=0
+### tp done 21:26:28

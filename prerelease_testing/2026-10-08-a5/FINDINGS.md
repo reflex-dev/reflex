@@ -1,6 +1,6 @@
 # Findings — final pre-release pass on reflex 0.10.0a5 / reflex-base 0.10.0a5 (+ reflex-enterprise 0.9.7a5), 2026-10-08
 
-**Status: IN PROGRESS (a5_upgrade_ent pending).** Previous passes: [../2026-10-08-a4/](../2026-10-08-a4/FINDINGS.md),
+**Status: FINAL.** Previous passes: [../2026-10-08-a4/](../2026-10-08-a4/FINDINGS.md),
 [../2026-10-07-a3/](../2026-10-07-a3/FINDINGS.md), [../2026-10-07/](../2026-10-07/FINDINGS.md). Context:
 [CAMPAIGN_STATE.md](./CAMPAIGN_STATE.md).
 
@@ -29,7 +29,12 @@ in the installed wheels; `.pyi` audit PASS (122 stubs); blank app clean in dev a
 | A3-11 (a3) | `sync=True` boot-echo storm | a3 3/4 dev, 3/3 prod storms | **fixed**: a5 0/5 dev, 0/4 prod; all tabs + localStorage on the last value | `a5_hydration_router/` |
 | A3-12 (a3) | on_load stamp loop | a3 2/2 dev, 2/2 prod | **fixed**: a5 0/3 dev, 0/3 prod, one value | `a5_hydration_router/` |
 | A4-01 / A4-02 (a4, not fixed) | substate `add_var` / auto-setter collisions | — | **unchanged** (message text changed by #7519 only) | `a5_class_state/` |
-| N-032, N-025, N-001, F-005, F-006, F-014 | enterprise / install | — | pending (`a5_upgrade_ent`) | |
+| N-032 (a2) | OIDC cross-tab logout | a2 + ent a4 (earlier passes) | **fixed**: vdrv stale P1–P4 / away / xtab 3/3 each, 0 accepted after logout, dev + Redis and prod 1 worker; entauth suites ALL_PASSED; = a4 back to back | `a5_upgrade_ent/ent/auth/` |
+| N-025 (a2) | prod AG Grid Var `column_defs` | ent a4 (earlier passes) | **fixed**: entv prod s1–s13 byte-identical to the a4 pass; aggrid_min 4/4 | `a5_upgrade_ent/ent/grid/` |
+| N-001 (a2) | `reflex[db]` without greenlet | a2 | **fixed**: fresh `reflex[db]==0.10.0a5` on 3.11 and 3.14, pip (no `--pre`) and uv, nothing added: greenlet 3.5.6 via the extra; `reflex db init/makemigrations/migrate` rc 0; prod CRUD | `a5_upgrade_ent/inst/` |
+| F-005 (a1) | sqlmodel cap | a1 | **fixed**: sqlmodel 0.0.48 + SQLAlchemy 2.1.4; migrations apply on a fresh db | `a5_upgrade_ent/inst/` |
+| F-006 (a1) | component floors | a1 | **fixed**: `pip install reflex==0.10.0a5` without `--pre` resolves the full train (uv still needs `--prerelease=allow`, as on every alpha) | `a5_upgrade_ent/inst/` |
+| F-014 (a1) | `reflex component` message | a2 | **fixed**: every form exits 1 with the wrapping-docs + component-template pointer; hidden from `--help` | `a5_upgrade_ent/inst/` |
 
 ## Spot check of the a5 changes
 - **#7360 (router data, security)** — works as claimed, no functional regression (`a5_hydration_router`). The backend's
@@ -43,7 +48,14 @@ in the installed wheels; `.pyi` audit PASS (122 stubs); blank app clean in dev a
   websocket frames and the DOM; a5 has 0 occurrences in frames, prerendered HTML, DOM and console (dev, prod, prod +
   Redis). `State.router.headers.cookie` / `["cookie"]` render "" with a compile-log deprecation per call site;
   `raw_headers` lose exactly the 9 filtered names. reflex-local-auth 36/38 (known) + 14/14 storage; google-auth guard
-  path unchanged.
+  path unchanged. Enterprise (`a5_upgrade_ent`): auth matrix 36/36 + MCP OAuth + anonymous MCP (api-token /
+  `persist_router_data` path), expiry / proactive refresh / revoke, a new deep-link probe (`/vault?x=1&y=two%20words` →
+  login → back on the same URL; dynamic routes; anonymous client nav keeps `redirect_to`; every on_load sees its own url /
+  query / params / host / client_token / session_id; logout re-protects) and audit page_load routes all equal a4 and
+  0.9.12; the only difference is the intended one — the HttpOnly `_oidc_*` id/refresh token cookies reach the browser in
+  `rx_router_headers` on a4 / 0.9.12 and never on a5, while server-side cookie reads still work. reflex-azure-auth 0.1.2
+  (on_load callback reading `router.url.query_parameters`) against the mock IdP passes on a5 and a4. No component-side use
+  of `router.headers.cookie` / `raw_headers` in 38 downstream wheels, the auth packages or reflex-examples.
 - **#7519 (`Field.set_default`, copy at definition, error owner)** — `set_default` and every docs sample work as
   documented; the TypeError names the declaring state (substates, grandchildren, mixins, ComponentState) and its
   suggested fix works e2e; hot reload, AppHarness, 22-package sweep = a4; all 112 enterprise modules import. One medium
@@ -109,3 +121,19 @@ in the installed wheels; `.pyi` audit PASS (122 stubs); blank app clean in dev a
   an event arg `State.router.headers.cookie` now delivers "". The deprecation names `deprecation_version="0.9.13"` inside
   a 0.10 alpha (fine if #7360 is also released in 0.9.13).
 - Unchanged and filed earlier: A3-07, A3-08, A3-09, A3-10, A3-13, A4-01, A4-02, A4-03, N-026, N-028, N-033, reflex#7506.
+
+## Install, upgrade and third-party (`a5_upgrade_ent`)
+In place: form-designer (reflex[db] + local-auth), github-stats and twitter prod + Redis 0.9.12 → a5, and twitter a4 → a5
+(only reflex + reflex-base move; `.web/package.json` unchanged; 0.9.12- and a4-pickled Redis sessions load) give exactly
+the a4 pass's per-check results; cold rebuilds equal. 22-package import sweep = a4; reflex-local-auth 36/38 dev / prod /
+prod + Redis, magic-link 10/11, google-auth 12/13 (known failures only). Demo smoke: dnd 27/27, flow 20/22 (N-026),
+mantine 23/23 (+ N-028), map 4/4.
+
+## Cluster summaries
+- `preflight` — publish, wheel contents, `.pyi` audit, changelog, blank-app smoke: clean (`preflight/NOTES.md`).
+- `a5_hydration_router` — #7360 verified (no regression; security claim holds with a4 as the leaking control); F-002,
+  F-003, A3-11, A3-12 fixed with positive controls (`a5_hydration_router/NOTES.md`).
+- `a5_class_state` — #7519 hunt: A5-01 … A5-05; every class-state regression fixed with positive controls; A4-01 / A4-02
+  unchanged (`a5_class_state/NOTES.md`; verification `verify_class_state5/NOTES.md`).
+- `a5_upgrade_ent` — enterprise, installs, upgrades, third-party: no new issue; N-032, N-025, N-001, F-005, F-006, F-014
+  fixed (`a5_upgrade_ent/NOTES.md`).

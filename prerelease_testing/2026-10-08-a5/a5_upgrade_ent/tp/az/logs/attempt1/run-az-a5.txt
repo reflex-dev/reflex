@@ -1,0 +1,8 @@
+{"A_deeplink": false, "C_clientnav": true, "B_button": false, "errors": 3, "navs": 15}
+{"redirect_uri": "http%3A%2F%2Flocalhost%3A3463%2Fauthorization-code%2Fcallback", "back": false, "final_url": "http://localhost:3463/authorization-code/callback?code=BG2Hmm2pzTnaX4BbDbmgi4Pb7WuxxDNisNue5Cm71M8BldBo&state=sXIVta1fQvm4p1lZK1OyXAhd5Spm5DI6hLpAPtGpAteiOpEVMoL-j1HC6nqpl219Oy6MGwlZ1c8Fn_n4zUkoxg", "loads": "/protected?x=1&y=two | /protected?x=1&y=two", "error": "", "ok": false}
+SUMMARY a5-dev A False B False C True errors 3
+az-a5-dev server: tracebacks=0 verification_failed=0
+{"A_deeplink": false, "C_clientnav": true, "B_button": false, "errors": 4, "navs": 20}
+{"redirect_uri": "http%3A%2F%2Flocalhost%3A8467%2Fauthorization-code%2Fcallback", "back": false, "final_url": "http://localhost:8467/authorization-code/callback/?code=3SkOUDv5jWtnHyZ6mApbmskhKwAgKSYm56cRQNV7G9Nlksi1&state=BAeX2MlMyXRucmcpkRhkgeve6B0QoSeTDTSIoG5H3M6LCoNvuDtwnSo7PT35cypxALK60LQ2wE-JXyR2IemBOw", "loads": "/protected/?x=1&y=two | /protected/?x=1&y=two", "error": "", "ok": false}
+SUMMARY a5-prod A False B False C True errors 4
+az-a5-prod server: tracebacks=0 verification_failed=0
