@@ -710,14 +710,14 @@ def app_logs(
         since: datetime.datetime | None = None
         until: datetime.datetime | None = None
         if offset:
-            until = datetime.datetime.now(datetime.timezone.utc)
+            until = datetime.datetime.now(datetime.UTC)
             since = until - datetime.timedelta(seconds=offset)
         elif start or end:
             if not (start and end):
                 logger.error("must provide both start and end")
                 raise click.exceptions.Exit(1)
-            since = datetime.datetime.fromtimestamp(start, datetime.timezone.utc)
-            until = datetime.datetime.fromtimestamp(end, datetime.timezone.utc)
+            since = datetime.datetime.fromtimestamp(start, datetime.UTC)
+            until = datetime.datetime.fromtimestamp(end, datetime.UTC)
         # Asked for no window at all: send none, so the span is the API's own
         # rather than one this command invented. A window of its own would
         # report nothing for an app whose last line predates it, where the

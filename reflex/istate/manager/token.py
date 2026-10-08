@@ -4,9 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 import pickle
-from typing import TYPE_CHECKING, BinaryIO, Generic, TypeVar
-
-from typing_extensions import Self
+from typing import TYPE_CHECKING, BinaryIO, Generic, Self, TypeVar
 
 from reflex.utils import console
 

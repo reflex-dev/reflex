@@ -272,8 +272,11 @@ _SUPERVISED_ENV_VAR = "REFLEX_OUTPUT_SUPERVISED"
 # stops waiting for descendants that still hold the pipe.
 _DRAIN_IDLE_SECONDS = 0.5
 
-# How long the supervisor drains the pipes after the child exits, at most.
+# Maximum drain time after the child exits, excluding time forwarding output.
 _DRAIN_MAX_SECONDS = 5
+
+# Stop shutdown after 30 seconds even when a consumer blocks every write.
+_DRAIN_WALL_SECONDS = 30
 
 # Line ends in child output; a lone ``\r`` ends a progress-bar update.
 _LINE_END = re.compile(rb"\r\n|\r|\n")
@@ -325,7 +328,7 @@ def _to_records(
     Returns:
         The JSON lines, each ending with a newline.
     """
-    timestamp = datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
+    timestamp = datetime.datetime.now(tz=datetime.UTC).isoformat()
     out: list[bytes] = []
 
     def record(message: str, level: str = level, exception: str | None = None):
@@ -390,6 +393,9 @@ class _OutputPump(threading.Thread):
         self.logger_name = name
         # When the reader started waiting for data; None while it works.
         self.idle_since: float | None = None
+        # Cumulative write time and the start of any ongoing write.
+        self._write_state: tuple[float, float | None] = (0.0, None)
+        self._write_lock = threading.Lock()
 
     def run(self):
         """Forward the pipe until every writer closed it."""
@@ -420,27 +426,53 @@ class _OutputPump(threading.Thread):
             final: Whether the output ended.
         """
         data = _to_records(lines, traceback, self.level, self.logger_name, final)
+        with self._write_lock:
+            elapsed, _ = self._write_state
+            started = time.monotonic()
+            self._write_state = (elapsed, started)
         # Keep reading when the consumer is gone: a full pipe blocks the child.
         with contextlib.suppress(OSError):
             _write_all(self.write_fd, data)
+        with self._write_lock:
+            self._write_state = (elapsed + time.monotonic() - started, None)
 
-    def drain(self, exited_at: float):
+    def writing_snapshot(self) -> tuple[float, float]:
+        """Capture the current time and cumulative write duration together.
+
+        Returns:
+            The monotonic time and seconds spent writing up to that time.
+        """
+        with self._write_lock:
+            elapsed, started = self._write_state
+            now = time.monotonic()
+            return now, elapsed if started is None else elapsed + now - started
+
+    def drain(self, exited_at: float, writing_at_exit: float, wall_deadline: float):
         """Wait until the pipe is drained after the child exited.
 
         Returns early when the reader sat idle for a while after the exit, or
-        when the drain took too long: only a descendant that outlived the
-        child still holds the pipe.
+        when the drain took too long. Time spent forwarding output does not
+        count toward the active limit. A separate wall deadline bounds shutdown
+        even when a consumer stops reading.
 
         Args:
-            exited_at: The monotonic time the child exited.
+            exited_at: The monotonic time of the pump's snapshot after child exit.
+            writing_at_exit: The cumulative write time at that snapshot.
+            wall_deadline: The shared monotonic deadline for shutdown.
         """
         while self.is_alive():
             self.join(0.05)
-            now = time.monotonic()
+            now, writing_elapsed = self.writing_snapshot()
             idle_since = self.idle_since
-            if now - exited_at > _DRAIN_MAX_SECONDS or (
-                idle_since is not None
-                and now - max(idle_since, exited_at) > _DRAIN_IDLE_SECONDS
+            # Seconds charged against the five-second active drain budget.
+            drain_elapsed = now - exited_at - (writing_elapsed - writing_at_exit)
+            if (
+                now > wall_deadline
+                or drain_elapsed > _DRAIN_MAX_SECONDS
+                or (
+                    idle_since is not None
+                    and now - max(idle_since, exited_at) > _DRAIN_IDLE_SECONDS
+                )
             ):
                 return
 
@@ -492,9 +524,10 @@ def supervise_output(args: list[str]) -> int:
         except KeyboardInterrupt:
             # The child gets the same interrupt and shuts down on its own.
             continue
-    exited_at = time.monotonic()
-    for pump in pumps:
-        pump.drain(exited_at)
+    wall_deadline = time.monotonic() + _DRAIN_WALL_SECONDS
+    snapshots = [pump.writing_snapshot() for pump in pumps]
+    for pump, (exited_at, writing_at_exit) in zip(pumps, snapshots, strict=True):
+        pump.drain(exited_at, writing_at_exit, wall_deadline)
     # A child killed by a signal reports -signum; shells report 128 + signum.
     return returncode if returncode >= 0 else 128 - returncode
 
@@ -521,7 +554,7 @@ class JsonHandler(logging.Handler):
                 message = strip_markup(message)
             payload = {
                 "timestamp": datetime.datetime.fromtimestamp(
-                    record.created, tz=datetime.timezone.utc
+                    record.created, tz=datetime.UTC
                 ).isoformat(),
                 "level": logging.getLevelName(record.levelno).lower(),
                 "logger": record.name,
@@ -811,7 +844,7 @@ def emit_json_print(
         {
             # Extras first: the canonical fields below always win.
             **fields,
-            "timestamp": datetime.datetime.now(tz=datetime.timezone.utc).isoformat(),
+            "timestamp": datetime.datetime.now(tz=datetime.UTC).isoformat(),
             "level": level,
             "logger": "reflex.console",
             "message": strip_markup(msg),
