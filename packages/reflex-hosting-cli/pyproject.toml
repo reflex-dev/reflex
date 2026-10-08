@@ -35,7 +35,7 @@ dependencies = [
     # workspace's dev build until the 0.1.0 alpha publishes and materialization
     # lifts it; the cap admits 0.1.0 and the ``0.1.1.devN`` builds that follow
     # its tag, but not 0.1.1 itself.
-    "reflex-build-sdk[httpx] >=0.1.0a1,<0.1.1.post,!=0.1.1",
+    "reflex-build-sdk[httpx] >=0.1.0,<0.1.1.post,!=0.1.1",
     "rich >=13,<16",
 ]
 
