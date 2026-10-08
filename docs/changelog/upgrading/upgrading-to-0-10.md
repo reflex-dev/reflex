@@ -61,6 +61,8 @@ In a background task, `self` is a proxy that only allows changes inside `async w
 - Outside `async with self`, a call that modifies state raises `ImmutableStateError`; a read-only handler still runs.
 - Inside it, `self` in the called handler is the proxy, so `type(self)` is `StateProxy`. Use `self.__class__` to get the state class; `isinstance(self, Parent)` still works.
 
+Writing a var inherited from a parent state outside `async with self` now raises `ImmutableStateError` too, whether the task assigns it directly (`self.count += 1`) or through any handler. On 0.9 such a write raised nothing: with the in-memory state manager it landed without the lock, and with Redis it was silently lost. Changing a mutable inherited var in place, such as `self.items.append(...)`, already raised on 0.9.
+
 On 0.9 this background task wrote to the parent state without the lock; on 0.10 the first call raises `ImmutableStateError`:
 
 ```python
