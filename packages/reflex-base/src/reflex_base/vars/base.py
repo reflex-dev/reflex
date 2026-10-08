@@ -16,7 +16,6 @@ import re
 import string
 import warnings
 from abc import ABCMeta
-from collections import deque
 from collections.abc import Callable, Coroutine, Iterable, Mapping, Sequence
 from dataclasses import MISSING
 from decimal import Decimal
@@ -3894,18 +3893,9 @@ if TYPE_CHECKING:
 
 FIELD_TYPE = TypeVar("FIELD_TYPE")
 
-# The field attribute holding the defaults replaced by class assignments, which
-# undoing an assignment restores, most recent last.
-_REPLACED_DEFAULTS_ATTR = "_replaced_defaults"
-
-# How many replaced defaults a field keeps: undoing reaches back through as many
-# nested patches, and assigning a default repeatedly does not grow the history.
-_MAX_REPLACED_DEFAULTS = 16
-
 # Custom attrs never copied from a source field: get_field_type duck-types
 # pydantic fields on `.annotation`, so carrying it over would shadow the
-# real class annotation; the binding attrs and the defaults replaced by class
-# assignments belong to the source's own class.
+# real class annotation; the binding attrs belong to the source's own class.
 _RESERVED_FIELD_ATTRS = frozenset({
     "annotation",
     "_owner",
@@ -3914,7 +3904,6 @@ _RESERVED_FIELD_ATTRS = frozenset({
     "_tracked",
     "_plain_types",
     "_var",
-    _REPLACED_DEFAULTS_ATTR,
 })
 
 # Exact types of values that are never wrapped in a MutableProxy. Checking them
@@ -3976,12 +3965,6 @@ class Field(Generic[FIELD_TYPE]):
     # are wrapped in it when read, so in-place changes mark the field dirty.
     # Until then no value is a proxy: isinstance against () is always false.
     _proxy: ClassVar[Any] = ()
-
-    # The browser storage base class, installed by reflex.istate.storage: a
-    # factory producing such a value collapses to the value, which carries the
-    # storage classification and options, and a plain value assigned to such a
-    # default is wrapped like it. Until then nothing matches ().
-    _client_storage: ClassVar[Any] = ()
 
     # The class and attribute the field is bound to, set by __set_name__.
     _owner: type | None = None
@@ -4106,40 +4089,6 @@ class Field(Generic[FIELD_TYPE]):
             The field.
         """
         return cls(annotated_type=annotated_type, **_default_arguments(value))
-
-    def _assign_default(
-        self, default: Any, default_factory: Callable[[], Any] | None
-    ) -> None:
-        """Replace the default from a class assignment, keeping the previous one.
-
-        The previous default is restored when the assignment is undone. At most
-        ``_MAX_REPLACED_DEFAULTS`` previous defaults are kept, dropping the oldest.
-
-        Args:
-            default: The new default value, or MISSING.
-            default_factory: The new default factory, or None.
-        """
-        if (replaced := self.__dict__.get(_REPLACED_DEFAULTS_ATTR)) is None:
-            replaced = self.__dict__[_REPLACED_DEFAULTS_ATTR] = deque(
-                maxlen=_MAX_REPLACED_DEFAULTS
-            )
-        replaced.append((self.default, self.default_factory))
-        self.default = default
-        self.default_factory = default_factory
-
-    def _restore_default(self) -> None:
-        """Undo the most recent class assignment of the default, if any."""
-        if replaced := self.__dict__.get(_REPLACED_DEFAULTS_ATTR):
-            self.default, self.default_factory = replaced.pop()
-
-    def _keep_default(self) -> None:
-        """Record a failed class assignment, which leaves the default in place.
-
-        A patching tool whose assignment failed still undoes it, by assigning
-        the saved field back or deleting the attribute; that then restores the
-        default that was in place rather than an earlier one.
-        """
-        self._assign_default(self.default, self.default_factory)
 
     def default_value(self) -> FIELD_TYPE | None:
         """Get the default value for the field.
@@ -4722,80 +4671,23 @@ def _default_arguments(value: Any) -> dict[str, Any]:
     }
 
 
-def _accepts_default(declared: Field, value: Any) -> bool:
-    """Whether a field's annotation accepts a value as its default.
+def _state_var_assignment_error(cls: type, name: str, action: str) -> TypeError:
+    """Build the error for replacing a state var through its class.
 
     Args:
-        declared: The field.
-        value: The candidate default.
+        cls: The state class the attribute is set or deleted through.
+        name: The name of the state var.
+        action: What was done to the class attribute, like "assigning".
 
     Returns:
-        Whether the value satisfies the field's annotation.
-
-    Raises:
-        TypeError: If the value is a Var or a Field, which no field defaults to.
+        The error, naming the var and how to change its default instead.
     """
-    if isinstance(value, Var):
-        msg = (
-            "A Var cannot be a field default. Use ClassVar[rx.Var] to save "
-            "references to vars in state."
-        )
-        raise TypeError(msg)
-    if isinstance(value, Field):
-        msg = (
-            "A Field cannot overwrite another field. Define a "
-            "computed var to read the field at runtime instead."
-        )
-        raise TypeError(msg)
-    return _isinstance(value, declared.outer_type_, nested=1, treat_var_as_type=False)
-
-
-def _keep_client_storage(declared: Field, value: Any) -> Any:
-    """Keep the browser storage a field's default declares for a plain value.
-
-    A browser storage var is classified and configured by its default value,
-    so a plain value replacing it must carry the same storage type and options.
-    A default factory only reveals the storage it produces when called, so it
-    is called once for a plain string assigned to a frontend var, the only kind
-    the browser stores. A storage value assigned brings its own options, so it
-    replaces the factory without calling it.
-
-    Args:
-        declared: The field.
-        value: The candidate default.
-
-    Returns:
-        The value held by the declared storage, or the value unchanged.
-    """
-    storage: Any = declared.default
-    if (
-        declared.default is MISSING
-        and declared.default_factory is not None
-        and not declared._backend
-        and isinstance(value, str)
-        and not isinstance(value, declared._client_storage)
-    ):
-        storage = declared.default_factory()
-    if isinstance(storage, declared._client_storage):
-        return storage._with_value(value)
-    return value
-
-
-def _assigned_field(cls: BaseStateMeta, name: str) -> Field | None:
-    """Get the field a class attribute assignment or deletion configures.
-
-    Args:
-        cls: The state class the attribute is assigned through.
-        name: The attribute name.
-
-    Returns:
-        The field the class resolves the name to, declared by this class or
-        inherited from a base, or None if the name resolves to anything else.
-    """
-    declared = cls.__fields__.get(name)
-    if declared is None or _inherited_value(cls.__mro__, name) is not declared:
-        return None
-    return declared
+    return TypeError(
+        f"{name!r} is a state var of {cls.__name__}; {action} it on the class "
+        f"would replace the var. Set its default with "
+        f"{cls.__name__}.__fields__[{name!r}].default = ..., or declare "
+        "class-level config as ClassVar."
+    )
 
 
 def _is_descriptor(value: Any) -> bool:
@@ -4859,84 +4751,51 @@ class BaseStateMeta(ABCMeta):
         _reflex_state_root: BaseStateMeta
 
     def __setattr__(cls, name: str, value: Any) -> None:
-        """Update a field's default while retaining its descriptor.
+        """Set a class attribute, refusing to replace a state var.
 
-        A value the field's annotation accepts becomes the default. A
-        zero-argument callable it does not accept becomes the default factory,
-        after one call validates what it produces, unless it produces a browser
-        storage value, which becomes the default itself. A plain value, assigned
-        or produced by an assigned factory, keeps the storage type and options of
-        a browser storage default, or of the value a frontend var's declared
-        default factory produces, which is called once to find them. Assigning
-        the field itself, or the Var read through the class, undoes the most
-        recent assignment, as patching tools do to restore what they saved; a
-        failed assignment is undone the same way and leaves the default as it
-        was.
+        A field is the descriptor of a state var, so assigning over it through
+        the class would replace the var. Deleting the attribute first still
+        replaces it on purpose, as a test patch can.
 
         Args:
             name: The class attribute being assigned.
-            value: Its new default value or zero-argument default factory.
+            value: Its new value.
 
         Raises:
-            TypeError: If the default is another Var or Field, does not satisfy
-                the field's annotation, or its factory fails.
+            TypeError: If the attribute is a state var.
         """
-        declared = _assigned_field(cls, name)
-        if declared is None:
-            super().__setattr__(name, value)
-            return
-        if value is declared or (declared._var is not None and value is declared._var):
-            declared._restore_default()
-            return
-        if isinstance(value, declared._proxy):
-            # A value read from a state instance is proxied for dirty tracking;
-            # the default must not retain that instance through the proxy.
-            value = value.__wrapped__
-        default = _keep_client_storage(declared, value)
-        accepted = _accepts_default(declared, default)
-        if not accepted and callable(value):
-            # The field cannot hold the callable itself, so it is a factory:
-            # call it once to validate what it produces.
-            try:
-                default = value()
-            except Exception as err:
-                declared._keep_default()
-                msg = f"Default factory for field '{name}' failed: {err}"
-                raise TypeError(msg) from err
-            if inspect.iscoroutine(default):
-                default.close()
-            default = _keep_client_storage(declared, default)
-            accepted = _accepts_default(declared, default)
-            if accepted and not isinstance(default, declared._client_storage):
-                # Keep the callable to produce future defaults.
-                declared._assign_default(MISSING, value)
+        # Only a declared name can resolve to a field; skip the lookup otherwise.
+        existing = (
+            _inherited_value(cls.__mro__, name) if name in cls.__fields__ else None
+        )
+        if isinstance(existing, Field):
+            if value is existing:
+                # Assigning the var's own field back, as a patch undoing a
+                # failed assignment does, changes nothing.
                 return
-            # Browser storage is classified and configured by the value itself,
-            # and the browser supplies later values, so the value produced once
-            # here is the default rather than the factory.
-        if not accepted:
-            declared._keep_default()
-            msg = (
-                f"Invalid default for field '{name}': expected "
-                f"{declared.outer_type_}, got {default!r} of type {type(default)}."
-            )
-            raise TypeError(msg)
-        declared._assign_default(**_default_arguments(default))
+            raise _state_var_assignment_error(cls, name, "assigning")
+        super().__setattr__(name, value)
 
     def __delattr__(cls, name: str) -> None:
-        """Undo the most recent assignment of a field's default, retaining its descriptor.
+        """Delete a class attribute, refusing to delete a state var it inherits.
 
-        Patching tools delete the attribute to undo a patch made through a
-        class that inherits the field.
+        The class does not hold an inherited var, so deleting it would fail, as
+        the cleanup of a refused patch through a substate does; this names the
+        var instead.
 
         Args:
             name: The class attribute being deleted.
+
+        Raises:
+            TypeError: If the attribute is a state var inherited from a base.
         """
-        declared = _assigned_field(cls, name)
-        if declared is None:
-            super().__delattr__(name)
-            return
-        declared._restore_default()
+        if (
+            name not in cls.__dict__
+            and name in cls.__fields__
+            and isinstance(_inherited_value(cls.__mro__, name), Field)
+        ):
+            raise _state_var_assignment_error(cls, name, "deleting")
+        super().__delattr__(name)
 
     def __new__(
         cls,

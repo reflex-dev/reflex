@@ -3,8 +3,6 @@
 ### Bug Fixes
 
 - Avoid premature truncation of JSON logs when consumers read slowly during shutdown, while limiting output draining to 30 seconds after the command exits. ([#7428](https://github.com/reflex-dev/reflex/issues/7428))
-- A plain value assigned through a state class, or produced by an assigned factory, to a field whose default is a browser storage value, or whose default factory produces one, keeps that storage type and options. ([#7495](https://github.com/reflex-dev/reflex/issues/7495))
-- Assigning a field (or its Var, read through the class) back to its state class, or deleting the class attribute, undoes the most recent default assignment, so patch-and-restore tools round-trip a class-level default. ([#7495](https://github.com/reflex-dev/reflex/issues/7495))
 
 ### Miscellaneous
 
@@ -24,7 +22,6 @@
 ### Bug Fixes
 
 - Formatting a backend var as a string, e.g. `width=f"{State._size}px"`, now raises `BackendVarFormatError` (a `VarTypeError`) instead of silently embedding the field's repr in the page. ([#7456](https://github.com/reflex-dev/reflex/issues/7456))
-- Assign a value through a state class to update a declared field's default. The default cannot be a Field or Var instance, and must satisfy the field's annotation. A zero-argument callable the annotation does not accept becomes the default factory, validated by calling it once. ([#7461](https://github.com/reflex-dev/reflex/issues/7461))
 
 
 ## v0.10.0a1 (2026-10-05)

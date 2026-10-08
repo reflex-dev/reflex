@@ -397,7 +397,8 @@ def _is_plain_private_name(cls: type[BaseState], name: str) -> bool:
 def _bind_attr(cls: type, name: str, value: Any) -> None:
     """Set a descriptor on a class, binding it to the class as class creation does.
 
-    Bypass the metaclass's default assignment handling during field registration.
+    Bypass the metaclass guard against replacing a state var: a field copied from
+    a mixin replaces the mixin's on purpose.
 
     Args:
         cls: The class.
