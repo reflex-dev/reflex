@@ -180,9 +180,7 @@ class ThemeToggle(rx.ComponentState):
 
     @classmethod
     def get_component(cls, key: str, initial: str = "light", **props):
-        cls.__fields__["theme"].default = rx.LocalStorage(
-            initial, name=f"theme_{key}"
-        )
+        cls.__fields__["theme"].default = rx.LocalStorage(initial, name=f"theme_{key}")
         return rx.text(cls.theme, **props)
 ```
 
