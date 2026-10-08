@@ -601,10 +601,7 @@ def generate_class_documentation(cls: type) -> ClassDocumentation:
             methods=methods,
         )
     except Exception as e:
-        import sys
-
-        if sys.version_info >= (3, 11):
-            e.add_note(
-                f"Error generating documentation for class {cls.__module__}.{cls.__qualname__}"
-            )
+        e.add_note(
+            f"Error generating documentation for class {cls.__module__}.{cls.__qualname__}"
+        )
         raise

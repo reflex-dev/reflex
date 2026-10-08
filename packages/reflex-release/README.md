@@ -329,22 +329,22 @@ news/                          # fragments for the root package
 packages/widget-core/news/     # fragments for packages/widget-core
 ```
 
-A fragment is a markdown file named `<pr-number>.<type>.md` holding one or two
-sentences written for someone reading release notes:
+A fragment is a markdown file named `+<slug>.<type>.md` (an orphan fragment)
+or `<pr-number>.<type>.md`, holding one or two sentences written for someone
+reading release notes:
 
 ```bash
-uvx reflex-release create 1234.feature.md                        # root package
-uvx reflex-release create --package widget-core 1234.bugfix.md   # sub-package
+uvx reflex-release create +new-widget.feature.md                      # root package
+uvx reflex-release create --package widget-core +fix-crash.bugfix.md  # sub-package
 ```
 
-Before you know the PR number, use an orphan fragment (`+something.feature.md`).
-Renaming it once the PR exists is nice but optional: when the release
-materializes the changelog, every orphan fragment left over is renamed after the
-pull request whose commit added it — read out of that commit's subject, which
-GitHub writes as `Merge pull request #N ...` or `... (#N)` — so its entry gets
-the usual link. A fragment whose commit
-landed outside a pull request keeps its orphan name and its entry gets no link,
-with a warning in the job log. CI requires a fragment for every package whose
+The PR number is optional, and there is no need to rename an orphan fragment
+once the PR exists: when the release materializes the changelog, every orphan
+fragment left over is renamed after the pull request whose commit added it —
+read out of that commit's subject, which GitHub writes as
+`Merge pull request #N ...` or `... (#N)` — so its entry gets the usual link. A
+fragment whose commit landed outside a pull request keeps its orphan name and
+its entry gets no link, with a warning in the job log. CI requires a fragment for every package whose
 source the PR touches; the `skip-changelog` label waives that for changes that
 genuinely are not user-facing.
 

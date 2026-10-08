@@ -7,14 +7,6 @@ from pathlib import Path
 
 import pytest
 
-# The script relies on ``tomllib`` (stdlib only on 3.11+); on 3.10 it falls back to the
-# ``tomli`` backport. Skip the whole module when neither is available, so the tests still
-# run on 3.10 whenever ``tomli`` happens to be installed.
-if sys.version_info < (3, 11):
-    pytest.importorskip(
-        "tomli", reason="check_min_deps requires tomli on Python < 3.11"
-    )
-
 from scripts import check_min_deps
 
 
@@ -434,7 +426,7 @@ def test_build_wheelhouse_builds_every_source_once(
     fake_run = _FakeRun(
         built={
             # Both satisfy what the root package declares, so neither is rebuilt.
-            "reflex-base": "0.9.12.post1.dev0+abc1234",
+            "reflex-base": "0.9.13.dev1+abc1234",
             "reflex-hosting-cli": "0.1.71.post1.dev0+abc1234",
         }
     )
@@ -451,7 +443,7 @@ def test_build_wheelhouse_builds_every_source_once(
     )
     assert detail is None
     assert check_min_deps._workspace_pins(package, versions)[0] == [
-        "reflex-base==0.9.12.post1.dev0+abc1234",
+        "reflex-base==0.9.13.dev1+abc1234",
         "reflex-hosting-cli==0.1.71.post1.dev0+abc1234",
     ]
 
