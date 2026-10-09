@@ -48,8 +48,10 @@ from reflex_base.event import (
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor, EventProcessor
 from reflex_base.registry import RegistrationContext
+from reflex_base.session import SessionToken, SessionTokenManager
 from reflex_base.telemetry_context import CompileTrigger, TelemetryContext
 from reflex_base.utils import memo_paths
+from reflex_base.utils.compat import MISSING_TYPE
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import ASGIApp, Message, Receive, Scope, Send
 from reflex_base.vars.dep_tracking import is_dependency
@@ -85,6 +87,12 @@ from reflex.route import (
     get_route_args,
     replace_brackets_with_keywords,
     verify_route_validity,
+)
+from reflex.session import (
+    SessionMiddleware,
+    session_authorization_error,
+    session_endpoint,
+    trusted_session_origins,
 )
 from reflex.state import BaseState, State, StateUpdate, all_base_state_classes
 from reflex.utils import (
@@ -479,6 +487,10 @@ class App(MiddlewareMixin, LifespanMixin):
     # The backend API object.
     _api: Starlette | None = None
 
+    _session_token_manager: SessionTokenManager = dataclasses.field(
+        init=False, repr=False
+    )
+
     # The state class to use for the app.
     _state: type[BaseState] | None = None
 
@@ -843,6 +855,10 @@ class App(MiddlewareMixin, LifespanMixin):
                 if isinstance(api_transformer, Starlette):
                     # Mount the api to the starlette app.
                     App._add_cors(api_transformer)
+                    api_transformer.add_exception_handler(
+                        exceptions.SessionAuthorizationError,
+                        session_authorization_error,
+                    )
                     api_transformer.mount("", asgi_app)
                     asgi_app = api_transformer
                 else:
@@ -850,6 +866,11 @@ class App(MiddlewareMixin, LifespanMixin):
                     asgi_app = api_transformer(asgi_app)
 
         top_asgi_app = Starlette(lifespan=self._run_lifespan_tasks)
+        top_asgi_app.add_middleware(
+            SessionMiddleware,
+            manager=self._session_token_manager,
+            api_url=config.api_url,
+        )
         # Make sure Reflex contexts are attached for each request.
         top_asgi_app.add_middleware(_ContextMiddleware, reflex_app=self)
         top_asgi_app.mount("", asgi_app)
@@ -859,12 +880,25 @@ class App(MiddlewareMixin, LifespanMixin):
         return top_asgi_app
 
     def _add_default_endpoints(self):
-        """Add default api endpoints (ping)."""
+        """Add the framework's HTTP endpoints."""
         # To test the server.
         if not self._api:
             return
 
         config = get_config()
+        self._session_token_manager = SessionTokenManager(
+            config.app_name,
+            ttl=config.session_token_ttl,
+            refresh_interval=config.session_token_refresh_interval,
+        )
+        self._api.add_exception_handler(
+            exceptions.SessionAuthorizationError, session_authorization_error
+        )
+        self._api.add_route(
+            config.prepend_backend_path("/_reflex/session"),
+            self._issue_session,
+            methods=["POST"],
+        )
         self._api.add_route(
             config.prepend_backend_path(str(constants.Endpoint.PING)),
             ping,
@@ -874,6 +908,23 @@ class App(MiddlewareMixin, LifespanMixin):
             config.prepend_backend_path(str(constants.Endpoint.HEALTH)),
             health,
             methods=["GET"],
+        )
+
+    async def _issue_session(self, request: Request) -> Response:
+        """Issue a browser session using the current public URLs.
+
+        Args:
+            request: The incoming session request.
+
+        Returns:
+            Session metadata and the HttpOnly cookie.
+        """
+        config = get_config()
+        return await session_endpoint(
+            request,
+            manager=self._session_token_manager,
+            api_url=config.api_url,
+            allowed_origins=trusted_session_origins(config),
         )
 
     def _add_optional_endpoints(self):
@@ -1822,6 +1873,8 @@ class App(MiddlewareMixin, LifespanMixin):
         token: str,
         background: bool = False,
         previous_dirty_vars: dict[str, set[str]] | None = None,
+        *,
+        session_token: SessionToken | MISSING_TYPE | None = dataclasses.MISSING,
     ) -> contextlib.AbstractAsyncContextManager[BaseState]: ...
 
     @overload
@@ -1830,6 +1883,8 @@ class App(MiddlewareMixin, LifespanMixin):
         token: BaseStateToken,
         background: bool = False,
         previous_dirty_vars: dict[str, set[str]] | None = None,
+        *,
+        session_token: SessionToken | MISSING_TYPE | None = dataclasses.MISSING,
     ) -> contextlib.AbstractAsyncContextManager[BaseState]: ...
 
     @contextlib.asynccontextmanager
@@ -1838,6 +1893,8 @@ class App(MiddlewareMixin, LifespanMixin):
         token: BaseStateToken | str,
         background: bool = False,
         previous_dirty_vars: dict[str, set[str]] | None = None,
+        *,
+        session_token: SessionToken | MISSING_TYPE | None = dataclasses.MISSING,
         **context: Unpack[StateModificationContext],
     ) -> AsyncIterator[BaseState]:
         """Modify the state out of band.
@@ -1846,6 +1903,7 @@ class App(MiddlewareMixin, LifespanMixin):
             token: The token to modify the state for.
             background: Whether the modification is happening in a background task.
             previous_dirty_vars: Vars that are considered dirty from a previous operation.
+            session_token: The session authorizing access, or omitted to inherit the current context.
 
         Yields:
             The state to modify.
@@ -1868,7 +1926,9 @@ class App(MiddlewareMixin, LifespanMixin):
             # shared-state fan-out runs in a task that copied the triggering
             # event's context for a different client. No-op without an EventContext.
             try:
-                forked_context = EventContext.get().fork(token=token.ident)
+                forked_context = EventContext.get().fork(
+                    token=token.ident, session_token=session_token
+                )
             except LookupError:
                 pass
             else:
@@ -2128,6 +2188,9 @@ class EventNamespace(AsyncNamespace):
         # connect time instead of for every event on the connection.
         self._static_router_data: dict[str, dict[str, Any]] = {}
 
+        self._sessions: dict[str, SessionToken] = {}
+        self._session_refresh_at: dict[str, float] = {}
+
         # Start time and count of the current process-wide client_error window.
         self._client_error_window_start = 0.0
         self._client_error_window_count = 0
@@ -2174,14 +2237,33 @@ class EventNamespace(AsyncNamespace):
         )
         query_params = urllib.parse.parse_qs(environ.get("QUERY_STRING", ""))
         token_list = query_params.get("token", [])
-        if token_list:
-            # The boot event is the connection's first event: processing it
-            # records the new sid and token on the state under the state lock.
-            await self.link_token_to_sid(
-                sid, token_list[0], update_state=boot_event is None
-            )
+        token = token_list[0] if token_list else ""
+        mode = environment.REFLEX_SESSION_TOKEN_MODE.get()
+        issued_session = None
+        if mode != "off":
+            manager = self.app._session_token_manager
+            session = environ.get("asgi.scope", {}).get("reflex.session")
+            issue_session = session is None
+            if session is None:
+                session = manager.create()
+            self._sessions[sid] = session
+            self._session_refresh_at[sid] = session.issued_at + manager.refresh_interval
+            if not token or (mode == "enforce" and not session.authorizes(token)):
+                token = manager.create_client_token(session)
+                await self.emit("new_token", token, to=sid)
+            if issue_session:
+                issued_session = session
+        if token:
+            # The boot event records the new sid and token under its state lock.
+            await self.link_token_to_sid(sid, token, update_state=boot_event is None)
         else:
             logger.warning(f"No token provided in connection for session {sid}")
+        if issued_session is not None:
+            await self.emit(
+                "session_token",
+                self.app._session_token_manager.encode(issued_session),
+                to=sid,
+            )
 
         subprotocol = environ.get("HTTP_SEC_WEBSOCKET_PROTOCOL")
         if subprotocol and subprotocol != constants.Reflex.VERSION:
@@ -2203,6 +2285,8 @@ class EventNamespace(AsyncNamespace):
                 # token link and connection data made above before the error
                 # refuses the connect.
                 self._static_router_data.pop(sid, None)
+                self._sessions.pop(sid, None)
+                self._session_refresh_at.pop(sid, None)
                 if (linked_token := self.sid_to_token.get(sid)) is not None:
                     await self._token_manager.disconnect_token(linked_token, sid)
                 raise
@@ -2258,6 +2342,8 @@ class EventNamespace(AsyncNamespace):
             otel.record_connection(-1)
         self._client_error_counts.pop(sid, None)
         self._static_router_data.pop(sid, None)
+        self._sessions.pop(sid, None)
+        self._session_refresh_at.pop(sid, None)
         # Get token before cleaning up
         disconnect_token = self.sid_to_token.get(sid)
         if disconnect_token:
@@ -2326,6 +2412,13 @@ class EventNamespace(AsyncNamespace):
             )
             return
 
+        session = self._sessions.get(sid)
+        if session is not None and time.time() >= self._session_refresh_at[sid]:
+            self._session_refresh_at[sid] = (
+                time.time() + self.app._session_token_manager.refresh_interval
+            )
+            await self.emit("session_refresh", to=sid)
+
         fields = data
 
         if isinstance(fields, str):
@@ -2384,10 +2477,10 @@ class EventNamespace(AsyncNamespace):
             else "404"
         ).removeprefix("/")
         if not otel.enabled:
-            await self.app.event_processor.enqueue(token, event)
+            await self.app.event_processor.enqueue(token, event, session_token=session)
             return
         with otel.remote_context(fields):
-            await self.app.event_processor.enqueue(token, event)
+            await self.app.event_processor.enqueue(token, event, session_token=session)
 
     async def on_ping(self, sid: str):
         """Event for testing the API endpoint.
@@ -2492,7 +2585,22 @@ class EventNamespace(AsyncNamespace):
                 without an extra load and save of the whole state tree.
         """
         # Use TokenManager for duplicate detection and Redis support
-        new_token = await self._token_manager.link_token_to_sid(token, sid)
+        session = self._sessions.get(sid)
+        if session is not None:
+            # Validate before linking or loading any client state.
+            context = dataclasses.replace(
+                EventContext.get(), token=token, session_token=session
+            )
+            with context:
+                new_token = await self._token_manager.link_token_to_sid(
+                    token,
+                    sid,
+                    token_factory=functools.partial(
+                        self.app._session_token_manager.create_client_token, session
+                    ),
+                )
+        else:
+            new_token = await self._token_manager.link_token_to_sid(token, sid)
 
         if new_token:
             # Duplicate detected, emit new token to client
@@ -2500,15 +2608,23 @@ class EventNamespace(AsyncNamespace):
 
         # Update client state to apply new sid/token for running background tasks.
         if update_state and self.app._state is not None:
-            async with self.app.state_manager.modify_state(
-                BaseStateToken(ident=new_token or token, cls=self.app._state)
-            ) as state:
-                state.router_data[constants.RouteVar.SESSION_ID] = sid
-                # Record the identity the state was loaded under; duplicate-token
-                # handling can hand back a fresh one here.
-                state.router_data[constants.RouteVar.CLIENT_TOKEN] = new_token or token
-                # Rebuild from router_data to keep the session var in step with it.
-                if (
-                    session := SessionData.from_router_data(state.router_data)
-                ) != state.rx_router_session:
-                    state.rx_router_session = session
+            context = EventContext.get().fork(
+                token=new_token or token, session_token=session
+            )
+            with context:
+                async with self.app.state_manager.modify_state(
+                    BaseStateToken(ident=new_token or token, cls=self.app._state)
+                ) as state:
+                    state.router_data[constants.RouteVar.SESSION_ID] = sid
+                    # Record the identity the state was loaded under; duplicate-token
+                    # handling can hand back a fresh one here.
+                    state.router_data[constants.RouteVar.CLIENT_TOKEN] = (
+                        new_token or token
+                    )
+                    # Rebuild from router_data to keep the session var in step with it.
+                    if (
+                        router_session := SessionData.from_router_data(
+                            state.router_data
+                        )
+                    ) != state.rx_router_session:
+                        state.rx_router_session = router_session
