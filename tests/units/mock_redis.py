@@ -11,7 +11,11 @@ from unittest.mock import AsyncMock, Mock
 from redis.asyncio import Redis
 from redis.typing import EncodableT, KeyT
 
-from reflex.istate.manager.redis import _FENCED_SAVE_SCRIPT
+from reflex.istate.manager.redis import (
+    _EXTEND_LOCK_SCRIPT,
+    _FENCED_SAVE_SCRIPT,
+    _RELEASE_LOCK_SCRIPT,
+)
 from reflex.utils import prerequisites
 
 WRONGTYPE_MESSAGE = "WRONGTYPE Operation against a key holding the wrong kind of value"
@@ -191,25 +195,40 @@ def mock_redis() -> Redis:
         return _Pipeline()
 
     async def mock_eval(script: str, numkeys: int, *keys_and_args: Any) -> Any:
-        """Emulate the one script the redis state manager runs.
+        """Emulate the scripts the redis state manager runs.
 
-        It is the fenced save: check the lock held in KEYS[1] against ARGV[1],
-        write the remaining keys with the expiration in ARGV[2], and return
-        the lock's PTTL, or None without writing when the lock is not held.
+        The fenced save checks the lock held in KEYS[1] against ARGV[1], writes
+        the remaining keys with the expiration in ARGV[2], and returns the
+        lock's PTTL, or None without writing when the lock is not held. The
+        lock release deletes the lock in KEYS[1] only while it holds ARGV[1],
+        and returns the ID that held it. The lock extension sets the lock's
+        expiration to ARGV[2] milliseconds only while it holds ARGV[1], and
+        returns 1 when it did.
 
         Args:
-            script: The Lua source, which must be the fenced save script.
+            script: The Lua source, which must be one of the state manager's.
             numkeys: How many leading entries of keys_and_args are keys.
             keys_and_args: The keys followed by the arguments.
 
         Returns:
-            The lock's PTTL after writing, or None when nothing was written.
+            The script's reply.
 
         Raises:
-            NotImplementedError: If the script is not the fenced save script.
+            NotImplementedError: If the script is not one of the state manager's.
         """
+        if script == _RELEASE_LOCK_SCRIPT:
+            lock_key, lock_id = keys_and_args
+            owner = await redis_mock.get(lock_key)
+            if owner == lock_id:
+                await redis_mock.delete(lock_key)
+            return owner
+        if script == _EXTEND_LOCK_SCRIPT:
+            lock_key, lock_id, px = keys_and_args
+            if await redis_mock.get(lock_key) != lock_id:
+                return 0
+            return int(await redis_mock.pexpire(lock_key, int(px)))
         if script != _FENCED_SAVE_SCRIPT:
-            msg = "mock_redis only emulates the state manager's fenced save script."
+            msg = "mock_redis only emulates the state manager's scripts."
             raise NotImplementedError(msg)
         lock_key, *state_keys = keys_and_args[:numkeys]
         lock_id, expiration, *payloads = keys_and_args[numkeys:]
