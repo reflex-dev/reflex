@@ -188,6 +188,7 @@ class ClientStateVar(Var):
                 VarData(
                     hooks=hooks,
                     imports=imports,
+                    shared_scope_keys={id_name} if not global_ref else None,
                 ),
             ),
         )
@@ -230,7 +231,10 @@ class ClientStateVar(Var):
         setter = (
             _client_state_ref(self._setter_name)._replace(merge_var_data=self._var_data)
             if self._global_ref
-            else Var(self._setter_name)
+            else Var(
+                self._setter_name,
+                _var_data=VarData(shared_scope_keys={self._id_name}),
+            )
         ).to(FunctionVar)
 
         if value is not NoValue:

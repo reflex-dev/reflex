@@ -87,6 +87,87 @@ def _subtree_has_reactive_data(
     return result
 
 
+def _subtree_requires_shared_scope(
+    component: Component,
+    scope_owners: dict[str, set[int]],
+    _seen: set[int] | None = None,
+) -> None:
+    """Collect components using each local hook scope in a subtree.
+
+    Args:
+        component: Subtree root to scan.
+        scope_owners: Scope-key to component-identity mapping being populated.
+        _seen: Component identities already visited through children or Vars.
+    """
+    if _seen is None:
+        _seen = set()
+    component_id = id(component)
+    if component_id in _seen:
+        return
+    _seen.add(component_id)
+
+    for var in component._get_vars(include_children=False):
+        var_data = var._get_all_var_data()
+        if var_data is None:
+            continue
+        for key in var_data.shared_scope_keys:
+            scope_owners.setdefault(key, set()).add(component_id)
+        for embedded in var_data.components:
+            if isinstance(embedded, Component):
+                _subtree_requires_shared_scope(embedded, scope_owners, _seen)
+
+    for child in component.children:
+        if isinstance(child, Component):
+            _subtree_requires_shared_scope(child, scope_owners, _seen)
+    for prop_component in component._get_components_in_props():
+        if isinstance(prop_component, Component):
+            _subtree_requires_shared_scope(prop_component, scope_owners, _seen)
+
+
+def _subtree_splits_shared_scope(
+    component: Component, shared_scope_counts: dict[str, int]
+) -> bool:
+    """Whether memoizing this subtree would separate users of a shared hook scope.
+
+    Args:
+        component: Subtree candidate for memoization.
+        shared_scope_counts: Total component users of each shared scope on the page.
+
+    Returns:
+        Whether this subtree contains only part of any shared scope.
+    """
+    if not shared_scope_counts:
+        return False
+    scope_owners: dict[str, set[int]] = {}
+    _subtree_requires_shared_scope(component, scope_owners)
+    return any(
+        0 < len(scope_owners.get(key, ())) < count
+        for key, count in shared_scope_counts.items()
+    )
+
+
+def _component_uses_shared_scope(
+    component: Component, shared_scope_counts: dict[str, int]
+) -> bool:
+    """Whether a component directly uses a hook scope shared across components.
+
+    Args:
+        component: Component being considered for memoization.
+        shared_scope_counts: Shared hook scopes present on the page.
+
+    Returns:
+        Whether the component directly carries a shared-scope Var.
+    """
+    if not shared_scope_counts:
+        return False
+    return any(
+        key in shared_scope_counts
+        for var in component._get_vars(include_children=False)
+        if (var_data := var._get_all_var_data()) is not None
+        for key in var_data.shared_scope_keys
+    )
+
+
 def _component_subtree_is_reactive(
     component: Component, _cache: dict[int, bool]
 ) -> bool:
@@ -264,10 +345,21 @@ class MemoizeStatefulPlugin(Plugin):
             return None
         if not isinstance(comp, Component):
             return None
+        root = page_context.root_component
+        if comp is root or page_context._owned.get(id(root)) is comp:
+            scope_owners: dict[str, set[int]] = {}
+            _subtree_requires_shared_scope(comp, scope_owners)
+            page_context.memoize_shared_scope_counts = {
+                key: len(owners)
+                for key, owners in scope_owners.items()
+                if len(owners) > 1
+            }
         if page_context.memoize_suppressor_stack:
             return None
         strategy = get_memoization_strategy(comp)
         if strategy is not MemoizationStrategy.SNAPSHOT:
+            return None
+        if _subtree_splits_shared_scope(comp, page_context.memoize_shared_scope_counts):
             return None
         snapshot_boundary = is_snapshot_boundary(comp)
 
@@ -326,6 +418,9 @@ class MemoizeStatefulPlugin(Plugin):
             stack.pop()
 
         if stack:
+            return None
+
+        if _component_uses_shared_scope(comp, page_context.memoize_shared_scope_counts):
             return None
 
         if len(children) != len(comp.children) or any(

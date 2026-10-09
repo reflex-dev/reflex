@@ -21,6 +21,7 @@ def ClientStateApp():
             self.show = True
 
     shared = rx._x.client_state(default="initial")
+    local = rx._x.client_state(default="local-initial", global_ref=False)
     backend_default = rx._x.client_state(default=ClientStateAppState.default_text)
 
     def index():
@@ -40,6 +41,16 @@ def ClientStateApp():
             rx.button("set", on_click=shared.set_value("clicked"), id="setter"),
         )
 
+    def local_siblings():
+        return rx.box(
+            rx.text(local.value, id="local-reader"),
+            rx.button(
+                "set local",
+                on_click=local.set_value("local-clicked"),
+                id="local-setter",
+            ),
+        )
+
     def backend_default_page():
         return rx.box(
             rx.input(
@@ -56,6 +67,7 @@ def ClientStateApp():
     app = rx.App()
     app.add_page(index)
     app.add_page(siblings)
+    app.add_page(local_siblings, route="/local-siblings")
     app.add_page(backend_default_page, route="/backend-default")
 
 
@@ -108,6 +120,25 @@ def test_sibling_setter_updates_reader(
     expect(page.locator("#reader")).to_have_text("initial")
     page.click("#setter")
     expect(page.locator("#reader")).to_have_text("clicked")
+    assert errors == []
+
+
+def test_local_sibling_setter_updates_reader(
+    client_state_app: AppHarness, page: Page
+) -> None:
+    """A sibling local-state setter updates its reader without a scope error.
+
+    Args:
+        client_state_app: Running app harness.
+        page: Playwright page.
+    """
+    assert client_state_app.frontend_url is not None
+    errors = _collect_page_errors(page)
+    page.goto(client_state_app.frontend_url.removesuffix("/") + "/local-siblings")
+
+    expect(page.locator("#local-reader")).to_have_text("local-initial")
+    page.click("#local-setter")
+    expect(page.locator("#local-reader")).to_have_text("local-clicked")
     assert errors == []
 
 
