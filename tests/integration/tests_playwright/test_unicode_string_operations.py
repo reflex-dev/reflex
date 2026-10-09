@@ -14,6 +14,8 @@ def UnicodeStringApp():
 
     class UnicodeState(rx.State):
         value: str = "a\U0001f600b"
+        plain: str = "hello"
+        missing: str | None = None
 
     app = rx.App(_state=UnicodeState)
 
@@ -26,6 +28,17 @@ def UnicodeStringApp():
             ),
             rx.text(UnicodeState.value[::-1], id="reverse"),
             rx.text(UnicodeState.value[1], id="character"),
+            rx.text(UnicodeState.value[1:], id="slice"),
+            rx.text(
+                UnicodeState.plain.length(),  # pyright: ignore[reportAttributeAccessIssue]
+                id="plain-length",
+            ),
+            rx.text(UnicodeState.plain[1:3], id="plain-slice"),
+            rx.text(UnicodeState.plain[-1], id="plain-character"),
+            rx.text(
+                UnicodeState.missing.length(),  # pyright: ignore[reportAttributeAccessIssue, reportOptionalMemberAccess]
+                id="missing-length",
+            ),
         )
 
 
@@ -48,7 +61,7 @@ def unicode_string_app(
 def test_unicode_string_operations_preserve_code_points(
     unicode_string_app: AppHarness, page: Page
 ):
-    """Length, reverse slicing, and indexing keep surrogate pairs intact."""
+    """Length, slicing, and indexing keep surrogate pairs intact and handle None."""
     assert unicode_string_app.frontend_url is not None
     page_errors: list[str] = []
     console_errors: list[str] = []
@@ -65,5 +78,10 @@ def test_unicode_string_operations_preserve_code_points(
     expect(page.locator("#length")).to_have_text("3")
     expect(page.locator("#reverse")).to_have_text("b\U0001f600a")
     expect(page.locator("#character")).to_have_text("\U0001f600")
+    expect(page.locator("#slice")).to_have_text("\U0001f600b")
+    expect(page.locator("#plain-length")).to_have_text("5")
+    expect(page.locator("#plain-slice")).to_have_text("el")
+    expect(page.locator("#plain-character")).to_have_text("o")
+    expect(page.locator("#missing-length")).to_have_text("0")
     assert not page_errors
     assert not console_errors

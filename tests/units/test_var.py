@@ -550,28 +550,20 @@ def test_var_replace_var_data():
     [
         Var(_js_expr="list", _var_type=list[int]).guess_type(),
         Var(_js_expr="tuple", _var_type=tuple[int, int]).guess_type(),
-        Var(_js_expr="str", _var_type=str).guess_type(),
     ],
 )
 def test_var_indexing_lists(var):
-    """Test that we can index into str, list or tuple vars.
+    """Test that we can index into list or tuple vars.
 
     Args:
-        var : The str, list or tuple base var.
+        var : The list or tuple base var.
     """
     # Test basic indexing.
-    if var._var_type is str:
-        assert str(var[0]) == f'Array.from(({var._js_expr}) ?? "").at?.(0)'
-        assert str(var[1]) == f'Array.from(({var._js_expr}) ?? "").at?.(1)'
-    else:
-        assert str(var[0]) == f"{var._js_expr}?.at?.(0)"
-        assert str(var[1]) == f"{var._js_expr}?.at?.(1)"
+    assert str(var[0]) == f"{var._js_expr}?.at?.(0)"
+    assert str(var[1]) == f"{var._js_expr}?.at?.(1)"
 
     # Test negative indexing.
-    if var._var_type is str:
-        assert str(var[-1]) == f'Array.from(({var._js_expr}) ?? "").at?.(-1)'
-    else:
-        assert str(var[-1]) == f"{var._js_expr}?.at?.(-1)"
+    assert str(var[-1]) == f"{var._js_expr}?.at?.(-1)"
 
 
 @pytest.mark.parametrize(
@@ -606,11 +598,11 @@ def test_var_indexing_str():
     assert str_var[0]._var_type is str
 
     # Test basic indexing.
-    assert str(str_var[0]) == 'Array.from((str) ?? "").at?.(0)'
-    assert str(str_var[1]) == 'Array.from((str) ?? "").at?.(1)'
+    assert str(str_var[0]) == "pyStrAt(str, 0)"
+    assert str(str_var[1]) == "pyStrAt(str, 1)"
 
     # Test negative indexing.
-    assert str(str_var[-1]) == 'Array.from((str) ?? "").at?.(-1)'
+    assert str(str_var[-1]) == "pyStrAt(str, -1)"
 
 
 @pytest.mark.parametrize(
@@ -739,21 +731,43 @@ def test_str_var_slicing():
     assert str_var[:1]._var_type is str
 
     # Test basic slicing.
-    assert str(str_var[:1]) == 'Array.from((str)).slice(undefined, 1).join("")'
-    assert str(str_var[1:]) == 'Array.from((str)).slice(1, undefined).join("")'
-    assert str(str_var[:]) == 'Array.from((str)).slice(undefined, undefined).join("")'
-    assert str(str_var[1:2]) == 'Array.from((str)).slice(1, 2).join("")'
+    assert str(str_var[:1]) == "pyStrSlice(str, null, 1)"
+    assert str(str_var[1:]) == "pyStrSlice(str, 1, null)"
+    assert str(str_var[:]) == "pyStrSlice(str, null, null)"
+    assert str(str_var[1:2]) == "pyStrSlice(str, 1, 2)"
 
     # Test negative slicing.
-    assert str(str_var[:-1]) == 'Array.from((str)).slice(undefined, -1).join("")'
-    assert str(str_var[-1:]) == 'Array.from((str)).slice(-1, undefined).join("")'
-    assert str(str_var[:-2]) == 'Array.from((str)).slice(undefined, -2).join("")'
-    assert str(str_var[-2:]) == 'Array.from((str)).slice(-2, undefined).join("")'
+    assert str(str_var[:-1]) == "pyStrSlice(str, null, -1)"
+    assert str(str_var[-1:]) == "pyStrSlice(str, -1, null)"
+    assert str(str_var[:-2]) == "pyStrSlice(str, null, -2)"
+    assert str(str_var[-2:]) == "pyStrSlice(str, -2, null)"
     assert (
         str(str_var[::-1])
-        == 'Array.from((str)).slice(undefined, undefined).reverse().join("")'
+        == 'pyStrChars(str).slice(undefined, undefined).reverse().join("")'
     )
-    assert str(str_var[1]) == 'Array.from((str) ?? "").at?.(1)'
+    assert str(str_var[1:3:1]) == 'pyStrChars(str).slice(1, 3).join("")'
+    assert str(str_var[1]) == "pyStrAt(str, 1)"
+
+
+@pytest.mark.parametrize(
+    ("var", "tag"),
+    [
+        (Var(_js_expr="str").to(str).length(), "pyStrLength"),
+        (Var(_js_expr="str").to(str)[0], "pyStrAt"),
+        (Var(_js_expr="str").to(str)[1:], "pyStrSlice"),
+        (Var(_js_expr="str").to(str)[::-1], "pyStrChars"),
+    ],
+)
+def test_str_var_codepoint_imports(var: Var, tag: str):
+    """Test that code-point string operations import their state.js helper.
+
+    Args:
+        var: The string operation var.
+        tag: The helper the operation calls.
+    """
+    var_data = var._get_all_var_data()
+    assert var_data is not None
+    assert ImportVar(tag=tag) in dict(var_data.imports)[f"$/{Dirs.STATE_PATH}"]
 
 
 def test_dict_indexing():
@@ -1119,7 +1133,7 @@ def test_deep_equals_accepts_python_values_and_preserves_var_data():
 def test_string_operations():
     basic_string = LiteralStringVar.create("Hello, World!")
 
-    assert str(basic_string.length()) == 'Array.from(("Hello, World!")).length'
+    assert str(basic_string.length()) == 'pyStrLength("Hello, World!")'
     assert str(basic_string.lower()) == '"Hello, World!".toLowerCase()'
     assert str(basic_string.lstrip()) == 'pyLstrip("Hello, World!", null)'
     assert str(basic_string.upper()) == '"Hello, World!".toUpperCase()'
