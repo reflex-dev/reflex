@@ -5,6 +5,7 @@ Covers behaviors previously exercised by the deleted
 ``EventHandler`` prop (``event(some_value)``) and raw pass-through to an
 inner event trigger (``on_change=event``). Also covers recursion through a
 self-referencing component memo rendering a tree via ``rx.foreach``.
+Exercises compiler-enabled and compiler-disabled builds in dev and prod.
 """
 
 from collections.abc import Generator
@@ -12,7 +13,7 @@ from collections.abc import Generator
 import pytest
 from playwright.sync_api import Page, expect
 
-from reflex.testing import AppHarness
+from reflex.testing import AppHarness, AppHarnessProd
 
 
 def MemoApp():
@@ -28,6 +29,7 @@ def MemoApp():
 
     class MemoState(rx.State):
         last_value: str = ""
+        numbers: rx.Field[list[int]] = rx.field(default_factory=lambda: [1, 2, 3, 4])
         order: list[str] = ["row-a", "row-b", "row-c"]
         tree: TreeNode = TreeNode(
             name="root",
@@ -54,6 +56,11 @@ def MemoApp():
         @rx.event
         def reverse_order(self):
             self.order = list(reversed(self.order))
+
+        @rx.event
+        def replace_numbers(self):
+            """Replace the source array for the frontend calculation."""
+            self.numbers = [2, 4, 6, 8, 9]
 
     @rx.memo
     def my_memoed_component(
@@ -97,6 +104,21 @@ def MemoApp():
         # component that must still render and follow its prop.
         return rx.text(value, id="unwrapped-label")
 
+    @rx.memo
+    def derived_count(divisor: rx.Var[int]) -> rx.Component:
+        """Compute a filtered count from state in the generated component.
+
+        Args:
+            divisor: Keep numbers divisible by this value.
+
+        Returns:
+            The number of matching elements.
+        """
+        return rx.text(
+            MemoState.numbers.filter(lambda number: number % divisor == 0).length(),
+            id="derived-count",
+        )
+
     def index() -> rx.Component:
         return rx.vstack(
             rx.input(
@@ -122,6 +144,12 @@ def MemoApp():
                 id="keyed-rows",
             ),
             unwrapped_label(value=MemoState.last_value),
+            derived_count(divisor=2),
+            rx.button(
+                "replace-numbers",
+                id="replace-numbers",
+                on_click=MemoState.replace_numbers,
+            ),
             framed(
                 rx.text(MemoState.last_value, id="framed-child"),
                 title=MemoState.last_value,
@@ -132,23 +160,46 @@ def MemoApp():
     app.add_page(index)
 
 
-@pytest.fixture(scope="module")
-def memo_app(
-    tmp_path_factory: pytest.TempPathFactory,
-) -> Generator[AppHarness, None, None]:
-    """Run the memo app under an AppHarness.
+@pytest.fixture(
+    scope="module", params=[False, True], ids=["compiler-off", "compiler-on"]
+)
+def react_compiler(request: pytest.FixtureRequest) -> bool:
+    """Select whether the app uses React Compiler.
 
     Args:
+        request: Pytest fixture request containing the compiler flag.
+
+    Returns:
+        Whether to enable React Compiler.
+    """
+    return request.param
+
+
+@pytest.fixture(scope="module")
+def memo_app(
+    app_harness_env: type[AppHarness],
+    tmp_path_factory: pytest.TempPathFactory,
+    react_compiler: bool,
+) -> Generator[AppHarness, None, None]:
+    """Run the memo app in dev and prod with React Compiler off and on.
+
+    Args:
+        app_harness_env: The development or production app harness.
         tmp_path_factory: Pytest fixture for creating temporary directories.
+        react_compiler: Whether to enable React Compiler.
 
     Yields:
         The running harness.
     """
-    with AppHarness.create(
-        root=tmp_path_factory.mktemp("memo_app"),
-        app_source=MemoApp,
-    ) as harness:
-        yield harness
+    name = f"memoapp_{app_harness_env.__name__.lower()}_{int(react_compiler)}"
+    with pytest.MonkeyPatch.context() as monkeypatch:
+        monkeypatch.setenv("REFLEX_REACT_COMPILER", str(react_compiler))
+        with app_harness_env.create(
+            root=tmp_path_factory.mktemp(name),
+            app_name=name,
+            app_source=MemoApp,
+        ) as harness:
+            yield harness
 
 
 def _load_page(page: Page, memo_app: AppHarness) -> None:
@@ -303,3 +354,53 @@ def test_memo_wrapper_none_renders_and_updates(
     expect(page.locator("#unwrapped-label")).to_have_text("")
     page.locator("#memo-input").fill("unwrapped_update")
     expect(page.locator("#unwrapped-label")).to_have_text("unwrapped_update")
+
+
+def test_memo_derived_array_updates(memo_app: AppHarness, page: Page) -> None:
+    """Derived values stay current after unrelated writes and array replacement.
+
+    Args:
+        memo_app: Running app harness.
+        page: Playwright page.
+    """
+    _load_page(page, memo_app)
+    count = page.locator("#derived-count")
+    expect(count).to_have_text("2")
+
+    page.locator("#memo-input").fill("before replacement")
+    expect(page.locator("#memo-last-value")).to_have_text("before replacement")
+    expect(count).to_have_text("2")
+
+    page.click("#replace-numbers")
+    expect(count).to_have_text("4")
+
+    page.locator("#memo-input").fill("after replacement")
+    expect(page.locator("#memo-last-value")).to_have_text("after replacement")
+    expect(count).to_have_text("4")
+
+
+def test_react_compiler_transforms_generated_components(
+    memo_app: AppHarness, react_compiler: bool, page: Page
+) -> None:
+    """Verify the actual served app component uses the compiler runtime.
+
+    Args:
+        memo_app: Running app harness.
+        react_compiler: Whether React Compiler should be active.
+        page: Playwright page.
+    """
+    if isinstance(memo_app, AppHarnessProd):
+        pytest.skip("Vite serves individual source modules only in development")
+    _load_page(page, memo_app)
+    web_dir = memo_app.app_path / ".web"
+    modules = [
+        path
+        for path in (web_dir / "app_components").rglob("*.jsx")
+        if '"derived-count"' in path.read_text()
+    ]
+    assert len(modules) == 1
+    assert memo_app.frontend_url is not None
+    module_url = f"{memo_app.frontend_url.rstrip('/')}/{modules[0].relative_to(web_dir).as_posix()}"
+    response = page.request.get(module_url)
+    assert response.ok
+    assert ("compiler-runtime" in response.text()) is react_compiler

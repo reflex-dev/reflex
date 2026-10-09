@@ -67,6 +67,16 @@ def test_frozen_lockfile_default(base_config_values):
     assert config.frozen_lockfile is True
 
 
+def test_react_compiler_default(base_config_values):
+    """Keep React Compiler disabled unless the app opts in.
+
+    Args:
+        base_config_values: Config values.
+    """
+    assert rx.Config(**base_config_values).react_compiler is False
+    assert rx.Config(**base_config_values, react_compiler=True).react_compiler is True
+
+
 @pytest.mark.parametrize(
     ("env_var", "value"),
     [
@@ -84,6 +94,8 @@ def test_frozen_lockfile_default(base_config_values):
         ("REFLEX_TELEMETRY_ENABLED", True),
         ("REFLEX_FROZEN_LOCKFILE", False),
         ("REFLEX_FROZEN_LOCKFILE", True),
+        ("REFLEX_REACT_COMPILER", False),
+        ("REFLEX_REACT_COMPILER", True),
         ("REFLEX_DEFAULT_COLOR_MODE", "dark"),
     ],
 )
