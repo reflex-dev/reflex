@@ -1094,6 +1094,49 @@ async def test_oplock_lease_keeps_its_lock_for_queued_uses(
 
 
 @pytest.mark.asyncio
+async def test_oplock_lease_renews_its_lock_when_the_cached_state_changes_hands(
+    state_manager_redis: StateManagerRedis,
+    root_state: type[RedisTestState],
+    short_lock_expiration: int,
+):
+    """A lease renews its lock for the next use as soon as that use starts.
+
+    The renewal for the first use lets the lock expire with that use's
+    deadline, and the next periodic renewal would only come after it.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        root_state: The root state class.
+        short_lock_expiration: The lock expiration time in milliseconds.
+    """
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=root_state)
+    state_manager_redis._oplock_enabled = True
+    # The flush starts at a tenth of the expiration and renews every third,
+    # so no periodic renewal falls between the handoff and the first deadline.
+    state_manager_redis.oplock_hold_time_ms = short_lock_expiration // 10
+    await _subscribed(state_manager_redis)
+
+    async with state_manager_redis.modify_state(token):
+        lease_task = await state_manager_redis._get_local_lease(token.lock_key)
+        assert lease_task is not None
+
+    async def use(seconds: float):
+        async with state_manager_redis.modify_state(token) as state:
+            assert isinstance(state, root_state)
+            state.count += 1
+            await asyncio.sleep(seconds)
+
+    await asyncio.gather(
+        use(short_lock_expiration * 0.9 / 1000), use(short_lock_expiration * 0.6 / 1000)
+    )
+    await lease_task
+
+    final_state = await state_manager_redis.get_state(token)
+    assert isinstance(final_state, root_state)
+    assert final_state.count == 2
+
+
+@pytest.mark.asyncio
 async def test_oplock_lease_lets_a_use_past_the_lock_expiration_expire(
     state_manager_redis: StateManagerRedis,
     root_state: type[RedisTestState],
