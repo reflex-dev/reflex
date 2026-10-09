@@ -60,9 +60,30 @@ from tests.units.reflex_cli.sdk import api_error, fake_client
 _client = fake_client
 
 
+def test_upload_client_uses_sdk_default_transport(mocker: MockerFixture):
+    """The upload client's retry wrapper preserves SDK transport selection.
+
+    Args:
+        mocker: The pytest-mock fixture.
+    """
+    transport = MagicMock()
+    default_transport = mocker.patch(
+        "reflex_cli.utils.hosting.default_transport",
+        return_value=transport,
+        create=True,
+    )
+
+    with hosting.upload_client(_client()):
+        default_transport.assert_called_once_with()
+        transport.close.assert_not_called()
+
+    transport.close.assert_called_once_with()
+
+
 @pytest.mark.parametrize("base_path", ["", "/proxy", "/nested/proxy/"])
+@pytest.mark.parametrize("refusal_code", ["app_busy", "app_scaling"])
 def test_upload_client_retries_submission_without_uploading_again(
-    mocker: MockerFixture, tmp_path: Path, base_path: str
+    mocker: MockerFixture, tmp_path: Path, base_path: str, refusal_code: str
 ):
     """Scaling retries reuse the uploaded build and close their HTTP transport.
 
@@ -70,6 +91,7 @@ def test_upload_client_retries_submission_without_uploading_again(
         mocker: The pytest-mock fixture.
         tmp_path: The directory for the build archives.
         base_path: The backend URL's optional path prefix.
+        refusal_code: The server's legacy or dedicated scaling refusal code.
     """
     mocker.patch.object(
         constants.Hosting, "HOSTING_SERVICE", f"https://build.example{base_path}"
@@ -77,12 +99,7 @@ def test_upload_client_retries_submission_without_uploading_again(
     deployments_path = f"{base_path.rstrip('/')}/api/v1/deployments"
     mock_api = MockAPI()
     transport = MockTransport(mock_api)
-    mocker.patch(
-        "reflex_cli.utils.hosting.HttpxTransport", return_value=transport, create=True
-    )
-    mocker.patch(
-        "reflex_build_sdk._sync._client.default_transport", return_value=transport
-    )
+    mocker.patch("reflex_cli.utils.hosting.default_transport", return_value=transport)
     sleep = mocker.patch("time.sleep")
     client = _client()
     client.api.token = "test-token"
@@ -115,9 +132,13 @@ def test_upload_client_retries_submission_without_uploading_again(
         deployments_path,
         reply(
             409,
-            headers={"x-reflex-error-code": "app_busy"},
+            headers={"x-reflex-error-code": refusal_code},
             json={
-                "detail": "the app is currently being scaled; wait for the scale to finish, then deploy again"
+                "detail": (
+                    "the app is currently being scaled; wait for the scale to finish, then deploy again"
+                    if refusal_code == "app_busy"
+                    else "Scaling is underway. Please retry later."
+                )
             },
         ),
         reply(201, json=deployment_id),
@@ -970,11 +991,9 @@ def test_set_instance_bounds_preserves_server_errors(
     )
 
 
-@pytest.mark.parametrize(
-    "error_type", [APIConnectionError, APITimeoutError, APIResponseValidationError]
-)
+@pytest.mark.parametrize("error_type", [APIConnectionError, APITimeoutError])
 def test_set_instance_bounds_preserves_uncertain_outcomes(
-    error_type: type[APIConnectionError] | type[APIResponseValidationError],
+    error_type: type[APIConnectionError],
 ):
     """A write without a usable answer must reach the deploy's uncertainty guard.
 
@@ -983,11 +1002,7 @@ def test_set_instance_bounds_preserves_uncertain_outcomes(
     """
     client = _client()
     response = api_error(200, "invalid response").response
-    error = (
-        error_type("invalid response", response=response)
-        if issubclass(error_type, APIResponseValidationError)
-        else error_type("lost response", request=response.request)
-    )
+    error = error_type("lost response", request=response.request)
     client.api.apps.set_instance_bounds.side_effect = error
 
     with pytest.raises(error_type) as raised:
@@ -995,6 +1010,51 @@ def test_set_instance_bounds_preserves_uncertain_outcomes(
 
     assert raised.value is error
     client.api.apps.set_instance_bounds.assert_called_once()
+
+
+@pytest.mark.parametrize("during_write", [False, True])
+def test_set_instance_bounds_warns_about_undecodable_success(
+    during_write: bool, caplog: pytest.LogCaptureFixture
+):
+    """An undecodable write response still carries the server's success status.
+
+    Args:
+        during_write: Whether decoding failed after the write or preliminary read.
+        caplog: The captured log messages.
+    """
+    client = _client()
+    client.api.apps.get.return_value.name = "my-app"
+    response = api_error(
+        200,
+        "invalid response",
+        method="POST" if during_write else "GET",
+        path="apps/app-1/instance_bounds" if during_write else "apps/app-1",
+    ).response
+    error = APIResponseValidationError("invalid response", response=response)
+    operation = (
+        client.api.apps.set_instance_bounds if during_write else client.api.apps.get
+    )
+    operation.side_effect = error
+
+    with pytest.raises(APIResponseValidationError) as raised:
+        set_instance_bounds("app-1", client, min_instances=2)
+
+    assert raised.value is error
+    assert client.api.apps.set_instance_bounds.call_count == int(during_write)
+    warnings = [
+        record.getMessage()
+        for record in caplog.records
+        if record.levelno == logging.WARNING
+    ]
+    if during_write:
+        assert len(warnings) == 1
+        assert "server reported success" in warnings[0]
+        assert "response could not be decoded" in warnings[0]
+        assert "bounds may have changed" in warnings[0]
+        assert "my-app" in warnings[0]
+        assert "may or may not have been applied" not in warnings[0]
+    else:
+        assert not warnings
 
 
 def test_validate_token_names_the_product_it_logs_in_through(

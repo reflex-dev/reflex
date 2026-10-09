@@ -20,7 +20,6 @@ from packaging import version
 from reflex_cli import constants
 from reflex_cli.utils import console, log
 from reflex_cli.utils.dependency import extract_domain
-from reflex_cli.utils.deploy import _retry_scaling_conflicts
 
 if TYPE_CHECKING:
     from reflex_build_sdk.types import App, AppSummary, GcpConnection
@@ -1105,17 +1104,12 @@ def deploy(
         bounds_applied = min_instances is not None or max_instances is not None
         if bounds_applied:
             try:
-                bounds_error = _retry_scaling_conflicts(
-                    lambda: hosting.set_instance_bounds(
-                        app_id=str(app.id),
-                        min_instances=min_instances,
-                        max_instances=max_instances,
-                        client=authenticated_client,
-                    ),
-                    path=f"apps/{app.id}/instance_bounds",
-                    url=f"{authenticated_client.api.base_url}/api/v1/apps/{app.id}/instance_bounds",
-                    action="the instance bounds update",
-                    attempts=8,
+                bounds_error = hosting.set_instance_bounds(
+                    app_id=str(app.id),
+                    min_instances=min_instances,
+                    max_instances=max_instances,
+                    client=authenticated_client,
+                    retry_scaling=True,
                 )
             except ReflexBuildError as ex:
                 hosting.exit_reporting(

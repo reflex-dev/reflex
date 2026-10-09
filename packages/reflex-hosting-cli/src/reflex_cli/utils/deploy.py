@@ -6,7 +6,6 @@ import logging
 import time
 from collections.abc import Callable
 from http import HTTPStatus
-from threading import local
 from typing import TypeVar
 
 from reflex_build_sdk import APIStatusError, ConflictError
@@ -16,16 +15,19 @@ logger = logging.getLogger(__name__)
 
 _T = TypeVar("_T")
 _SCALING_RETRY_DELAY = 15
-_DEPLOYMENTS_PATH = "deployments"
+_DEPLOYMENT_SCALING_CODE = "app_scaling"
+_LEGACY_DEPLOYMENT_SCALING_DETAIL = (
+    "the app is currently being scaled; wait for the scale to finish, then deploy again"
+)
 
 
-def _is_scaling_conflict(error: APIStatusError, path: str, *, url: str) -> bool:
+def _is_scaling_conflict(error: APIStatusError, *, url: str, code: str) -> bool:
     """Identify a refusal that guarantees a write was blocked by scaling.
 
     Args:
         error: The SDK's typed refusal.
-        path: The expected endpoint below ``/api/v1/``.
         url: The endpoint's full URL on the configured backend.
+        code: The expected scaling refusal code.
 
     Returns:
         Whether this request was explicitly refused before applying its write.
@@ -36,25 +38,24 @@ def _is_scaling_conflict(error: APIStatusError, path: str, *, url: str) -> bool:
         or error.request.url != url
     ):
         return False
-    if path == _DEPLOYMENTS_PATH:
-        # app_busy also covers stopping and another deployment, so its code
-        # alone does not identify the scale that this retry waits for.
-        return error.code == "app_busy" and error.detail == (
-            "the app is currently being scaled; wait for the scale to finish, "
-            "then deploy again"
-        )
-    return error.code == "instance_bounds_scale_conflict"
+    # Older servers use app_busy for scaling, stopping, and another deployment.
+    # Only the exact scaling detail guarantees the submission can be retried.
+    return error.code == code or (
+        code == _DEPLOYMENT_SCALING_CODE
+        and error.code == "app_busy"
+        and error.detail == _LEGACY_DEPLOYMENT_SCALING_DETAIL
+    )
 
 
 def _retry_scaling_conflicts(
-    operation: Callable[[], _T], *, path: str, url: str, action: str, attempts: int
+    operation: Callable[[], _T], *, url: str, code: str, action: str, attempts: int
 ) -> _T:
     """Retry only writes the server explicitly refused because of scaling.
 
     Args:
         operation: The SDK operation to attempt.
-        path: The expected endpoint below ``/api/v1/``.
         url: The endpoint's full URL on the configured backend.
+        code: The expected scaling refusal code.
         action: The action described in progress messages.
         attempts: The maximum number of calls, including the initial attempt.
 
@@ -65,7 +66,7 @@ def _retry_scaling_conflicts(
         APIStatusError: If scaling persists or the refusal is unrelated.
     """
     return _ScalingRetryBudget(attempts=attempts).run(
-        operation, path=path, url=url, action=action
+        operation, url=url, code=code, action=action
     )
 
 
@@ -82,14 +83,14 @@ class _ScalingRetryBudget:
         self._used = 0
 
     def run(
-        self, operation: Callable[[], _T], *, path: str, url: str, action: str
+        self, operation: Callable[[], _T], *, url: str, code: str, action: str
     ) -> _T:
         """Retry a refused operation within the remaining scaling wait budget.
 
         Args:
             operation: The operation to attempt.
-            path: The expected endpoint below ``/api/v1/``.
             url: The endpoint's full URL on the configured backend.
+            code: The expected scaling refusal code.
             action: The action described in progress messages.
 
         Returns:
@@ -103,7 +104,7 @@ class _ScalingRetryBudget:
                 return operation()
             except APIStatusError as ex:
                 if self._used >= self._retries or not _is_scaling_conflict(
-                    ex, path, url=url
+                    ex, url=url, code=code
                 ):
                     raise
             self._used += 1
@@ -114,14 +115,12 @@ class _ScalingRetryBudget:
             time.sleep(_SCALING_RETRY_DELAY)
 
 
-class _SubmissionRetryState(local):
-    """Retain at most one submission's budget per calling thread."""
-
-    submission: tuple[Request, _ScalingRetryBudget] | None = None
-
-
 class _DeploymentRetryTransport:
-    """Retry refused submissions while preserving their uploaded archive reservation."""
+    """Retry one deployment's refused submission using its uploaded archives.
+
+    The CLI creates a fresh upload client and transport for each deployment.
+    Its scaling budget is shared across the SDK's safe retries of that submission.
+    """
 
     def __init__(self, transport: Transport, *, url: str) -> None:
         """Wrap the transport used by a deployment's upload client.
@@ -132,7 +131,7 @@ class _DeploymentRetryTransport:
         """
         self._transport = transport
         self._url = url
-        self._state = _SubmissionRetryState()
+        self._budget = _ScalingRetryBudget(attempts=12)
 
     def send(self, request: Request) -> Response:
         """Send a request, waiting only when a deployment is refused for scaling.
@@ -154,16 +153,10 @@ class _DeploymentRetryTransport:
             return self._transport.send(request)
         # Submit bodies are immutable bytes. Replaying this request keeps the
         # stored_build_id and avoids reserving and uploading the archives again.
-        # The SDK reuses this Request for its own safe retries. Those must not
-        # restart the scaling budget, and concurrent submissions need separate budgets.
-        submission = self._state.submission
-        if submission is None or submission[0] is not request:
-            submission = (request, _ScalingRetryBudget(attempts=12))
-            self._state.submission = submission
-        return submission[1].run(
+        return self._budget.run(
             lambda: self._send_submission(request),
-            path=_DEPLOYMENTS_PATH,
             url=self._url,
+            code=_DEPLOYMENT_SCALING_CODE,
             action="deployment",
         )
 
@@ -194,7 +187,7 @@ class _DeploymentRetryTransport:
             response=response,
             detail=detail,
         )
-        if _is_scaling_conflict(error, _DEPLOYMENTS_PATH, url=self._url):
+        if _is_scaling_conflict(error, url=self._url, code=_DEPLOYMENT_SCALING_CODE):
             raise error
         return response
 

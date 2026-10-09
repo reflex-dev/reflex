@@ -1435,7 +1435,7 @@ def test_deploy_does_not_retry_other_app_busy_reasons(
 
 
 @pytest.mark.parametrize("previous_conflict", [False, True])
-@pytest.mark.parametrize("failure", ["connection", "timeout", "response", "decode"])
+@pytest.mark.parametrize("failure", ["connection", "timeout", "decode"])
 def test_deploy_does_not_retry_unknown_bounds_outcomes(
     mocker: MockerFixture,
     mock_export_fn: MagicMock,
@@ -1473,6 +1473,45 @@ def test_deploy_does_not_retry_unknown_bounds_outcomes(
         "may or may not have been applied" in message
         for message in _log_messages(caplog, logging.WARNING)
     )
+
+
+@pytest.mark.parametrize("previous_conflict", [False, True])
+def test_deploy_stops_after_undecodable_bounds_success(
+    mocker: MockerFixture,
+    mock_export_fn: MagicMock,
+    previous_conflict: bool,
+    caplog: pytest.LogCaptureFixture,
+):
+    """An undecodable success stops deployment without retrying changed bounds.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        mock_export_fn: The mocked build exporter.
+        previous_conflict: Whether a scaling refusal preceded the successful write.
+        caplog: The captured log messages.
+    """
+    recorder, _ = _scaling_deploy_recorder(mocker)
+    refusal = _bounds_scaling_refusal()
+    error = _unknown_deploy_outcome("response", refusal)
+    recorder.bounds.side_effect = [refusal, error] if previous_conflict else [error]
+
+    with pytest.raises(click.exceptions.Exit):
+        cli.deploy(
+            app_name="fake-app",
+            export_fn=mock_export_fn,
+            interactive=False,
+            min_instances=2,
+        )
+
+    assert recorder.bounds.call_count == 1 + previous_conflict
+    assert recorder.sleep.call_count == int(previous_conflict)
+    recorder.submit.assert_not_called()
+    warnings = _log_messages(caplog, logging.WARNING)
+    assert len(warnings) == 1
+    assert "server reported success" in warnings[0]
+    assert "response could not be decoded" in warnings[0]
+    assert "bounds may have changed" in warnings[0]
+    assert "may or may not have been applied" not in warnings[0]
 
 
 @pytest.mark.parametrize("previous_conflict", [False, True])
@@ -1774,6 +1813,7 @@ def test_deploy_sets_instance_bounds_before_submitting(
     assert bounds_kwargs["app_id"] == str(_APP_ID)
     assert bounds_kwargs["min_instances"] == min_instances
     assert bounds_kwargs["max_instances"] == max_instances
+    assert bounds_kwargs["retry_scaling"] is True
 
 
 def test_deploy_without_instance_bounds_flags_skips_the_call(
