@@ -2,6 +2,14 @@
 
 <!-- towncrier release notes start -->
 
+## v0.2.0 (2026-10-08)
+
+### Breaking Changes
+
+- Require Python 3.11 or newer; Python 3.10 is no longer supported.
+- Require `reflex-base` 0.10 or newer.
+
+
 ## v0.1.0 (2026-09-11)
 
 ### Features

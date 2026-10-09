@@ -10,3 +10,9 @@ they do not restart the scaling wait budget. Other failures, including a lost
 submission response, are reported without replaying an uncertain write.
 If an instance-bounds write has an uncertain outcome, including a server error,
 the CLI warns that the bounds may have changed.
+
+If an access token is expired or rejected, run `reflex login` to authenticate
+again. If you supply a token explicitly, replace it with a valid token or remove
+the override before using the saved login: unset `REFLEX_ACCESS_TOKEN` or omit
+`--token`. Logging in does not replace an environment variable or command-line
+token. Noninteractive commands exit on rejection without opening a browser.

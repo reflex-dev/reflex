@@ -622,9 +622,11 @@ def test_rejected_token_in_non_interactive_mode_does_not_prompt(
     assert exc_info.value.exit_code == 1
     browser.assert_not_called()
     errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
-    assert errors == [
+    assert len(errors) == 1
+    assert errors[0].startswith(
         f"The access token from the {source.value} was rejected: access denied (auth request id: req-1)"
-    ]
+    )
+    assert "reflex login" in errors[0]
 
 
 def test_rejected_config_token_in_non_interactive_mode_is_removed(
@@ -679,7 +681,7 @@ def test_unvalidated_token_in_non_interactive_mode_is_not_called_rejected(
     browser.assert_not_called()
     errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
     assert errors == [
-        "Unable to validate the access token from the config file: server error (auth request id: req-2)"
+        "Unable to validate the access token from the config file: server error (auth request id: req-2). Please try again later."
     ]
 
 

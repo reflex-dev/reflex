@@ -468,8 +468,38 @@ def get_existing_access_token_with_source() -> tuple[str, TokenSource]:
     return "", TokenSource.NONE
 
 
-def rejected_token_message(source: TokenSource, err: TokenValidationError) -> str:
-    """Describe a token the control plane would not validate.
+def rejected_token_message(source: TokenSource, err: TokenAccessDeniedError) -> str:
+    """Describe a rejected token and how to replace it for its source.
+
+    Args:
+        source: Where the token was loaded from.
+        err: The validation error.
+
+    Returns:
+        The message to report.
+    """
+    if source is TokenSource.ENVIRONMENT:
+        recovery = (
+            "Replace REFLEX_ACCESS_TOKEN with a valid token, or unset it and run "
+            "`reflex login` to authenticate."
+        )
+    elif source is TokenSource.OPTION:
+        recovery = (
+            "Replace the --token value with a valid token, or omit --token and run "
+            "`reflex login` to authenticate."
+        )
+    else:
+        recovery = "Run `reflex login` to authenticate."
+    return (
+        f"The access token from the {source.value} was rejected: {err} "
+        f"(auth request id: {err.request_id}). {recovery}"
+    )
+
+
+def _token_validation_failure_message(
+    source: TokenSource, err: TokenValidationError
+) -> str:
+    """Describe a temporary validation failure and suggest retrying.
 
     Args:
         source: Where the token was loaded from.
@@ -479,8 +509,8 @@ def rejected_token_message(source: TokenSource, err: TokenValidationError) -> st
         The message to report.
     """
     return (
-        f"The access token from the {source.value} was rejected: {err} "
-        f"(auth request id: {err.request_id})"
+        f"Unable to validate the access token from the {source.value}: "
+        f"{err} (auth request id: {err.request_id}). Please try again later."
     )
 
 
@@ -934,10 +964,7 @@ def get_authenticated_client(
             raise click.exceptions.Exit(1) from err
         except TokenValidationError as err:
             api.close()
-            logger.error(
-                f"Unable to validate the access token from the {source.value}: "
-                f"{err} (auth request id: {err.request_id})"
-            )
+            logger.error(_token_validation_failure_message(source, err))
             raise click.exceptions.Exit(1) from err
         return AuthenticatedClient(api, me)
 

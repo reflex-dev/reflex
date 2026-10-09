@@ -6,6 +6,7 @@ import dataclasses
 import datetime
 import enum
 import functools
+import gc
 import inspect
 import io
 import json
@@ -17,10 +18,11 @@ import sys
 import threading
 from collections import namedtuple
 from collections.abc import AsyncGenerator, Callable, Mapping
+from hashlib import md5
 from textwrap import dedent
 from types import MethodType, ModuleType
 from typing import Any, ClassVar, Literal, TypeVar, cast
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 import pytest_asyncio
@@ -60,7 +62,7 @@ from reflex.istate.data import (
     URLData,
     _FrozenDictStrStr,
 )
-from reflex.istate.delta import _suppress_delta_recording
+from reflex.istate.delta import Delta, _suppress_delta_recording
 from reflex.istate.manager import StateManager
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
@@ -69,10 +71,12 @@ from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import MutableProxy, StateProxy
 from reflex.state import (
     BaseState,
-    Delta,
     ImmutableStateError,
     OnLoadInternalState,
     State,
+    StateUpdate,
+    _load_events_for_page,
+    is_serializable,
     state_snapshot_hashes,
 )
 from reflex.testing import chdir
@@ -118,7 +122,6 @@ formatted_router_vars = {
         "origin": "",
         "upgrade": "",
         "connection": "",
-        "cookie": "",
         "pragma": "",
         "cache_control": "",
         "user_agent": "",
@@ -320,6 +323,65 @@ def test_state() -> TestState:
         A test state.
     """
     return TestState()  # pyright: ignore [reportCallIssue]
+
+
+@pytest.mark.parametrize("method", ["dict", "get_delta"])
+def test_router_cookies_not_sent_to_frontend(test_state: TestState, method: str):
+    """Initial state and deltas omit cookies while preserving server access.
+
+    Args:
+        test_state: A state.
+        method: The state serialization entry point.
+    """
+    test_state.router = RouterData.from_router_data({
+        RouteVar.HEADERS: {"cookie": "session=secret", "user-agent": "browser"},
+    })
+
+    payload = json.loads(json_dumps(getattr(test_state, method)()))
+    headers = payload[test_state.get_full_name()]["rx_router_headers" + FIELD_MARKER]
+
+    assert "cookie" not in headers
+    assert headers["raw_headers"] == {"user-agent": "browser"}
+    assert "secret" not in json_dumps(payload)
+    assert test_state.router.headers.cookie == "session=secret"
+
+
+def test_load_events_do_not_copy_router_data(app_module_mock):
+    """On-load events leave routing in the server context without copying headers.
+
+    Args:
+        app_module_mock: The mock module holding the app.
+    """
+    app = app_module_mock.app = App(_state=State)
+    script = rx.call_script("window.loaded = true")
+    app.add_page(
+        lambda: "hello",
+        route="/",
+        on_load=[script, TestState.set_num1(1)],
+    )
+    router_data: dict[str, Any] = {
+        RouteVar.PATH: "/",
+        RouteVar.ORIGIN: "https://example.com/",
+        RouteVar.QUERY: {"name": "test"},
+        RouteVar.HEADERS: {"cookie": "session=secret", "user-agent": "browser"},
+    }
+    state = State(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    state.router_data = router_data
+    state.router = RouterData.from_router_data(router_data)
+    load_events = _load_events_for_page(state)
+    assert load_events is not None
+    assert len(load_events) == 3
+    frontend_event, backend_event, _ = load_events
+    assert isinstance(frontend_event, Event)
+    assert isinstance(backend_event, Event)
+    assert frontend_event.router_data == {}
+    assert backend_event.router_data == {}
+    payload = json.loads(json_dumps(StateUpdate(events=[frontend_event])))
+
+    assert "secret" not in json_dumps(payload)
+    assert payload["events"][0]["payload"] == Event.from_event_type(script)[0].payload
+    assert state.router_data is router_data
+    assert router_data[RouteVar.HEADERS]["cookie"] == "session=secret"
 
 
 @pytest.fixture
@@ -1797,16 +1859,13 @@ async def test_uncached_async_computed_var_unchanged_omitted_from_delta():
     assert await aus._get_resolved_delta() == {}
 
 
-# Withholding an async var can only close the wrapper coroutine; the getter
-# coroutine it holds is then collected unawaited, which a filter cannot reach
-# and this test is not about.
-@pytest.mark.filterwarnings(
-    "ignore:coroutine '.*_awaitable_result' was never awaited:RuntimeWarning",
-)
 @pytest.mark.parametrize("mode", ["dropped", "replaced"])
 @pytest.mark.parametrize("is_async", [False, True])
 async def test_uncached_var_withheld_by_delta_override_is_resent(
-    mode: str, is_async: bool, monkeypatch: pytest.MonkeyPatch
+    mode: str,
+    is_async: bool,
+    monkeypatch: pytest.MonkeyPatch,
+    recwarn: pytest.WarningsRecorder,
 ):
     """An uncached var withheld by a `get_delta` override is sent once released.
 
@@ -1820,6 +1879,7 @@ async def test_uncached_var_withheld_by_delta_override_is_resent(
         mode: Whether the override drops the key or replaces its value.
         is_async: Whether the uncached var is an async one.
         monkeypatch: Pytest monkeypatch fixture.
+        recwarn: Fixture capturing warnings from withheld coroutines.
     """
 
     class WithheldState(BaseState):
@@ -1903,6 +1963,8 @@ async def test_uncached_var_withheld_by_delta_override_is_resent(
     if mode == "replaced":
         restored[full_name][key] = "secret-1"
     assert await state._get_resolved_delta() == restored
+    gc.collect()
+    assert not [warning for warning in recwarn if warning.category is RuntimeWarning]
 
 
 async def test_uncached_computed_var_recorded_only_once_delivered():
@@ -4460,12 +4522,9 @@ def test_router_var_dep_does_not_warn_for_the_var_form(
     """
     # `console.deprecate` logs and dedupes rather than printing, so record the
     # calls instead of scraping output.
-    from reflex import state as state_module
-
     deprecations: list[str] = []
     monkeypatch.setattr(
-        state_module.console,
-        "deprecate",
+        "reflex.state.console.deprecate",
         lambda *, feature_name, **kwargs: deprecations.append(feature_name),
     )
 
@@ -5518,6 +5577,132 @@ class AppObjectState(BaseState):
     _value: Any = None
 
 
+class DefaultSchemaState(BaseState):
+    """A pickleable state used to verify compatibility after default changes."""
+
+    value: Field[int] = field(default=1)
+
+
+@pytest.mark.parametrize("default", [2, 3, lambda: 4])
+def test_default_change_preserves_serialized_state(default: Any):
+    """Changing a default preserves the schema and previously serialized values.
+
+    Args:
+        default: The new default value or factory.
+    """
+    state = DefaultSchemaState(value=99)
+    data = state._serialize()
+    schema = DefaultSchemaState._to_schema()
+    defaults = (
+        {"default": dataclasses.MISSING, "default_factory": default}
+        if callable(default)
+        else {"default": default}
+    )
+    try:
+        with patch.multiple(DefaultSchemaState.get_fields()["value"], **defaults):
+            DefaultSchemaState._to_schema.cache_clear()
+            assert DefaultSchemaState._to_schema() == schema
+            restored = BaseState._deserialize(data)
+            assert isinstance(restored, DefaultSchemaState)
+            assert restored.value == 99
+            assert DefaultSchemaState().value == (
+                default() if callable(default) else default
+            )
+    finally:
+        DefaultSchemaState._to_schema.cache_clear()
+
+
+def test_state_schema_depends_on_names_and_types():
+    """Names and declared types affect compatibility; defaults do not."""
+
+    class First(BaseState):
+        value: int = 1
+
+    class DifferentDefault(BaseState):
+        value: int = 2
+
+    class DifferentType(BaseState):
+        value: str = "1"
+
+    class DifferentName(BaseState):
+        other: int = 1
+
+    schema = First._to_schema()
+    assert DifferentDefault._to_schema() == schema
+    assert DifferentType._to_schema() != schema
+    assert DifferentName._to_schema() != schema
+
+
+@pytest.mark.parametrize("type_name", ["builtins.int", "builtins.str"])
+def test_deserialize_previous_schema_format(type_name: str):
+    """Accept compatible hashes from the previous schema format only.
+
+    Args:
+        type_name: The type stored in the previous schema.
+    """
+    previous_fields = [
+        (
+            name,
+            type_name
+            if name == "value"
+            else f"{declared.type_.__module__}.{declared.type_.__qualname__}",
+            declared.default if is_serializable(declared.default) else None,
+        )
+        for name, declared in DefaultSchemaState.get_fields().items()
+        if name in DefaultSchemaState.base_vars
+    ]
+    legacy_schema = md5(pickle.dumps(sorted(previous_fields))).hexdigest()
+    data = pickle.dumps((legacy_schema, DefaultSchemaState(value=99)))
+    if type_name == "builtins.int":
+        restored = BaseState._deserialize(data)
+        assert isinstance(restored, DefaultSchemaState)
+        assert restored.value == 99
+    else:
+        with pytest.raises(StateSchemaMismatchError):
+            BaseState._deserialize(data)
+
+
+def test_reset_client_storage_uses_declared_factories():
+    """Hydration evaluates declared factories for all browser storage types."""
+    calls = []
+
+    def factory(storage_type: type) -> Any:
+        """Record calls and return the configured browser default.
+
+        Args:
+            storage_type: The browser storage value type.
+
+        Returns:
+            The new storage value.
+        """
+        calls.append(storage_type)
+        return storage_type("new")
+
+    class StorageState(BaseState):
+        cookie: rx.Field[rx.Cookie] = rx.field(
+            default_factory=lambda: factory(rx.Cookie)
+        )
+        local: rx.Field[rx.LocalStorage] = rx.field(
+            default_factory=lambda: factory(rx.LocalStorage)
+        )
+        session: rx.Field[rx.SessionStorage] = rx.field(
+            default_factory=lambda: factory(rx.SessionStorage)
+        )
+
+    assert calls == []
+    state = StorageState(
+        cookie=rx.Cookie("saved"),
+        local=rx.LocalStorage("saved"),
+        session=rx.SessionStorage("saved"),
+    )
+    state._reset_client_storage()
+    assert state.cookie == state.local == state.session == "new"
+    assert calls == [rx.Cookie, rx.LocalStorage, rx.SessionStorage]
+    state._reset_client_storage()
+    assert state.cookie == state.local == state.session == "new"
+    assert calls == [rx.Cookie, rx.LocalStorage, rx.SessionStorage] * 2
+
+
 @pytest.mark.parametrize(
     "breakage",
     [
@@ -6546,6 +6731,26 @@ def test_composite_var_dep_tracks_fields_in_every_state():
         state_cls._potentially_dirty_states.discard(consumer_name)
 
 
+def test_getstate_holds_only_the_fields_of_the_state():
+    """A pickle holds the state's own fields and nothing for older workers.
+
+    Workers of the previous release cannot load a state of this one, so the
+    empty entries once added for them are gone.
+    """
+
+    class OwnFieldsState(BaseState):
+        count: int = 0
+        _secret: str = ""
+
+    state = OwnFieldsState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    state.count = 2
+
+    pickled = state.__getstate__()
+    assert pickled["count"] == 2
+    assert pickled["_secret"] == ""
+    assert not {"dirty_vars", "dirty_substates", "_backend_vars"} & pickled.keys()
+
+
 def test_setstate_migrates_older_pickles():
     """Older pickles kept backend vars in a dict of their own and the dirty sets."""
 
@@ -6776,3 +6981,98 @@ def test_cached_computed_var_timestamp_is_only_stored_with_an_interval():
     # The cache and the interval timestamp survive a trip through redis.
     restored = BaseState._deserialize(state._serialize())
     assert restored.__dict__ == state.__dict__
+
+
+def test_private_attribute_is_assignable(clean_registration_context):
+    """A name-mangled private attribute is a plain attribute, not a backend var.
+
+    Assigning it from a handler neither raises nor marks the state dirty.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+
+    class PrivateState(BaseState):
+        __counter: int = 0  # pyright: ignore[reportGeneralTypeIssues]
+        __declared: rx.Field[int] = rx.field(0)  # pyright: ignore[reportGeneralTypeIssues]
+
+        def bump(self):
+            self.__counter += 1
+            self.__declared += 1
+
+    counter, declared = "_PrivateState__counter", "_PrivateState__declared"
+    assert counter not in PrivateState.get_fields()
+    assert PrivateState.get_fields()[declared]._backend
+    state = PrivateState()  # pyright: ignore[reportCallIssue]
+    state.bump()
+    assert getattr(state, counter) == 1
+    assert getattr(state, declared) == 1
+    assert state.dirty_vars == {declared}
+
+
+def test_private_attribute_of_underscored_class_and_mixin_is_assignable(
+    clean_registration_context,
+):
+    """Private names mangled with another prefix than the state's own are assignable.
+
+    Python strips the leading underscores of the class name when mangling, and
+    a mixin method mangles with the mixin's name.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+
+    class PrivateMixin(BaseState, mixin=True):
+        def bump_mixin(self):
+            self.__from_mixin = 1
+
+    class _PrivateState(PrivateMixin, BaseState):
+        def bump(self):
+            self.__own = 2
+
+    state = _PrivateState()  # pyright: ignore[reportCallIssue]
+    state.bump()
+    state.bump_mixin()
+    assert vars(state)["_PrivateState__own"] == 2
+    assert vars(state)["_PrivateMixin__from_mixin"] == 1
+    assert not state.dirty_vars
+
+
+def test_undeclared_double_underscore_name_is_rejected(clean_registration_context):
+    """Only dunders and names a class of the state mangles are plain attributes.
+
+    A name like ``_x__y`` has the form of ``__y`` mangled by a class ``x``, but
+    no class of the state has that name, so it is an undeclared var.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+
+    class GuardMixin(BaseState, mixin=True):
+        def bump_mixin(self):
+            self.__from_mixin = 1
+
+    def make_state() -> type[BaseState]:
+        class GuardState(GuardMixin, BaseState):
+            def bump(self):
+                self.__scratch = 1
+                self.__marker__ = 2
+
+        return GuardState
+
+    # A second local class with the same name is renamed, but its methods
+    # mangle with the name it was defined with.
+    make_state()
+    state_cls = make_state()
+    assert state_cls.__name__ != "GuardState"
+    state = state_cls()  # pyright: ignore[reportCallIssue]
+    state.bump()  # pyright: ignore[reportAttributeAccessIssue]
+    state.bump_mixin()  # pyright: ignore[reportAttributeAccessIssue]
+    assert vars(state)["_GuardState__scratch"] == 1
+    assert vars(state)["_GuardMixin__from_mixin"] == 1
+    assert vars(state)["__marker__"] == 2
+    state._BaseState__private = 3  # pyright: ignore[reportAttributeAccessIssue]
+    for name in ("_x__y", "_sneaky__name", "_GuardStat__y", "_GuardState_y__z"):
+        with pytest.raises(SetUndefinedStateVarError):
+            setattr(state, name, 1)
+    assert not state.dirty_vars
