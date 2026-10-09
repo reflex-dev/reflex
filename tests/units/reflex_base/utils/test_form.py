@@ -195,6 +195,34 @@ def test_transform_form_data_to_typed_dict_coerces_lists_and_bools():
     }
 
 
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        ("on", True),
+        ("true", True),
+        ("yes", True),
+        ("1", True),
+        ("anything", True),
+        ("", False),
+        ("false", False),
+        ("False", False),
+        ("off", False),
+        ("OFF", False),
+        ("no", False),
+        ("n", False),
+        ("0", False),
+    ],
+)
+def test_transform_form_data_to_typed_dict_reads_false_like_bools(
+    value: str, expected: bool
+):
+    """A bool field is False for a false-like string, as a select or hidden input submits."""
+    form_data = _transform(
+        _TagsMultiData, {FORM_DATA_ENTRIES_KEY: [["name", "x"], ["subscribe", value]]}
+    )
+    assert form_data["subscribe"] is expected
+
+
 def test_transform_form_data_to_typed_dict_with_missing_fields():
     """Unsubmitted required fields are empty or False; NotRequired ones are left out."""
     form_data = _transform(_TagsMultiData, {FORM_DATA_ENTRIES_KEY: [["name", "x"]]})

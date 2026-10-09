@@ -25,6 +25,10 @@ FORM_DATA_ENTRIES_KEY = "__reflex_form_data__"
 # Suffix of field names that submit a list, like the ``range[]`` of a slider.
 _LIST_KEY_SUFFIX = "[]"
 
+# Values of a ``bool`` field that read as False, as for boolean environment
+# variables, plus the "off" opposite to a checkbox's default "on".
+_FALSE_STRINGS = frozenset({"", "0", "false", "n", "no", "off"})
+
 _K = TypeVar("_K")
 _V_co = TypeVar("_V_co", covariant=True)
 
@@ -39,6 +43,21 @@ def _is_list_key(key: object) -> bool:
         Whether the name ends in ``[]``.
     """
     return isinstance(key, str) and key.endswith(_LIST_KEY_SUFFIX)
+
+
+def _form_bool(value: Any) -> bool:
+    """Read a submitted value as a bool.
+
+    Args:
+        value: The submitted value.
+
+    Returns:
+        False for None or a false-like string such as ``"false"`` or ``"off"``,
+        otherwise whether the value is truthy.
+    """
+    if isinstance(value, str):
+        return value.strip().lower() not in _FALSE_STRINGS
+    return bool(value)
 
 
 class FormData(Mapping[_K, _V_co]):
@@ -188,7 +207,7 @@ class _CoercedFormField:
     # ``name[]`` entries a multi-value control such as a two-thumb slider
     # submits, unless ``name[]`` is a field of its own.
     names: tuple[str, ...]
-    # "list" takes every value, "bool" whether the last value is truthy, and
+    # "list" takes every value, "bool" whether the last value is not false-like, and
     # "last" the last value of a ``name[]`` field that is not a list.
     kind: Literal["list", "bool", "last"]
     # An unsubmitted list or bool field is left out unless it is required: then
@@ -266,7 +285,8 @@ def _form_data_as_typed_dict(form_data: FormData, typed_dict: Any) -> dict[str, 
     Returns:
         The dict of the form data, where ``list`` fields hold every value
         submitted under their name (or as ``name[]`` when that is not a field
-        of its own), ``bool`` fields whether a truthy value was submitted, and
+        of its own), ``bool`` fields whether a value other than a false-like
+        string such as ``"false"`` or ``"off"`` was submitted, and
         ``name[]`` fields of other types their last value. An unsubmitted list
         or bool field is left out when it is not required, and otherwise is
         None when its type allows None, else an empty list or False.
@@ -287,7 +307,7 @@ def _form_data_as_typed_dict(form_data: FormData, typed_dict: Any) -> dict[str, 
         elif field.kind == "list":
             result[field.name] = form_data.getlist(field.name)
         elif field.kind == "bool":
-            result[field.name] = bool(form_data.get(field.name))
+            result[field.name] = _form_bool(form_data.get(field.name))
         else:
             result[field.name] = form_data[field.name]
     return result

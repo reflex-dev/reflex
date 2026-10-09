@@ -212,8 +212,9 @@ other name: `form_data["range[]"]` is the last value and
 A `TypedDict` instead lets you declare the field without brackets: a list field
 `range: list[str]` collects the values submitted as `range[]`, unless the
 `TypedDict` also declares a `range[]` field. A declared `name[]` field of any
-other type is filled like any other field: a `bool` field is `True` when a
-non-empty value was submitted, and other types get the last value.
+other type is filled like any other field: a `bool` field is read as described
+in [List and bool fields](#list-and-bool-fields), and other types get the last
+value.
 ```
 
 ## Validating Form Data with a TypedDict
@@ -298,9 +299,11 @@ value for them:
 
 - A `list[str]` field holds every value submitted under its name, in order, or
   an empty list when there are none.
-- A `bool` field is `True` when a non-empty value was submitted under its name
-  and `False` otherwise, so an unchecked checkbox or switch reads as `False`
-  instead of a missing key.
+- A `bool` field is `False` when no value was submitted under its name, so an
+  unchecked checkbox or switch reads as `False` instead of a missing key. A
+  submitted value is `True` unless it is empty or, ignoring case, `"false"`,
+  `"off"`, `"no"`, `"n"` or `"0"`, so a select, radio group or hidden input
+  submitting `"false"` reads as `False`.
 
 When no value is submitted for a field whose type allows `None`, such as
 `list[str] | None` or `bool | None`, the field is `None` instead. A field
