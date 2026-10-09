@@ -110,20 +110,20 @@ def _suppress_computed_var_dependency_invalidation(
 
 
 def _get_unsuppressed_var_names(
-    state: BaseState, var_names: Iterable[str] | None
+    state: BaseState,
+    var_names: Iterable[str] | None,
+    suppressed: frozenset[tuple[int, str]],
 ) -> Iterable[str] | None:
     """Exclude selected source vars from computed-var invalidation.
 
     Args:
         state: The state whose dependencies are being invalidated.
         var_names: The changed var names, or None to use all dirty vars.
+        suppressed: The state vars excluded from dependency invalidation.
 
     Returns:
         The var names that should invalidate computed dependencies.
     """
-    suppressed = _suppressed_delta_dependency_sources.get()
-    if not suppressed:
-        return var_names
     excluded = {name for state_id, name in suppressed if state_id == id(state)}
     return (
         state.dirty_vars - excluded
@@ -272,9 +272,13 @@ def build_delta(state: BaseState) -> Delta:
     """
     delta = {}
 
-    state._mark_dirty_computed_vars(
-        _get_unsuppressed_var_names(state, state.dirty_vars)
-    )
+    suppressed_sources = _suppressed_delta_dependency_sources.get()
+    if suppressed_sources:
+        state._mark_dirty_computed_vars(
+            _get_unsuppressed_var_names(state, state.dirty_vars, suppressed_sources)
+        )
+    else:
+        state._mark_dirty_computed_vars()
     delta_vars = state.dirty_vars & state._frontend_var_names
 
     always_dirty_computed_vars = state._always_dirty_computed_vars
