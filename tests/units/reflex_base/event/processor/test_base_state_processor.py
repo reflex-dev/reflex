@@ -20,13 +20,18 @@ from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import environment
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor
+from reflex_base.event.processor.base_state_processor import (
+    _prepare_event_payload,
+    _transform_event_payload,
+)
 from reflex_base.registry import RegistrationContext
+from reflex_base.utils.form import FORM_DATA_ENTRIES_KEY, FormData
 
 import reflex as rx
 from reflex import event
 from reflex.app import App
 from reflex.compiler.utils import compile_state
-from reflex.event import Event, EventSpec
+from reflex.event import Event, EventHandler, EventSpec
 from reflex.istate.delta import Delta
 from reflex.istate.manager import StateManager
 from reflex.istate.manager.disk import StateManagerDisk
@@ -1653,6 +1658,96 @@ async def test_navigation_delta_elides_connection_scoped_router_vars(
     # A reconnect (new sid, same headers) re-sends only the session.
     await run_event(view("/b", sid="sid2"))
     assert router_vars_in_deltas() == {"rx_router_session"}
+
+
+_FORM_DATA_ENTRIES = [["tag", "a"], ["name", "x"], ["tag", "b"]]
+
+
+@dataclasses.dataclass
+class _TagsRecord:
+    tag: str
+    name: str
+
+
+def test_transform_event_payload_decodes_unannotated_form_data():
+    """Form data reaches an unannotated handler arg as a dict."""
+    payload = _transform_event_payload(
+        {"form_data": {FORM_DATA_ENTRIES_KEY: _FORM_DATA_ENTRIES}}, {}
+    )
+    assert payload == {"form_data": {"tag": "b", "name": "x"}}
+
+
+def test_transform_event_payload_form_data_to_dataclass():
+    """Decoded form entries still feed structured annotations."""
+    payload = _transform_event_payload(
+        {"form_data": {FORM_DATA_ENTRIES_KEY: _FORM_DATA_ENTRIES}},
+        {"form_data": _TagsRecord},
+    )
+    assert payload["form_data"] == _TagsRecord(tag="b", name="x")
+
+
+@pytest.mark.parametrize(
+    ("hint", "expected"),
+    [(_TagsRecord, _TagsRecord(tag="b", name="x")), (dict, {"tag": "b", "name": "x"})],
+)
+def test_transform_event_payload_passes_form_data_on_as_dict(hint, expected):
+    """A FormData passed on to another handler is built like submitted form data."""
+    payload = _transform_event_payload(
+        {"data": FormData([("tag", "a"), ("name", "x"), ("tag", "b")])},
+        {"data": hint},
+    )
+    assert payload["data"] == expected
+    assert type(payload["data"]) is type(expected)
+
+
+def test_prepare_event_payload_transforms_form_data():
+    """A payload is transformed for the handler's annotations."""
+
+    def handler(self, form_data: FormData[str, str], count: int):
+        pass
+
+    payload = _prepare_event_payload(
+        EventHandler(fn=handler),
+        {"form_data": {FORM_DATA_ENTRIES_KEY: _FORM_DATA_ENTRIES}, "count": "3"},
+    )
+    assert payload["form_data"].getlist("tag") == ["a", "b"]
+    assert payload["count"] == 3
+
+
+def test_prepare_event_payload_falls_back_to_form_data_dict(caplog):
+    """When an arg cannot be transformed, form data still arrives as a dict."""
+
+    def handler(self, form_data: _TagsRecord, count: int):
+        pass
+
+    with caplog.at_level(logging.WARNING):
+        payload = _prepare_event_payload(
+            EventHandler(fn=handler),
+            {
+                "form_data": {
+                    FORM_DATA_ENTRIES_KEY: [*_FORM_DATA_ENTRIES, ["extra", "y"]]
+                },
+                "count": "3",
+            },
+        )
+    assert payload == {
+        "form_data": {"tag": "b", "name": "x", "extra": "y"},
+        "count": "3",
+    }
+    assert "Error transforming event payload" in caplog.text
+
+
+def test_prepare_event_payload_falls_back_when_hints_do_not_resolve():
+    """Unresolvable annotations still never expose the wrapped form entries."""
+
+    def handler(self, form_data: "_UndefinedFormData"):  # noqa: F821 # pyright: ignore[reportUndefinedVariable]
+        pass
+
+    payload = _prepare_event_payload(
+        EventHandler(fn=handler),
+        {"form_data": {FORM_DATA_ENTRIES_KEY: _FORM_DATA_ENTRIES}},
+    )
+    assert payload == {"form_data": {"tag": "b", "name": "x"}}
 
 
 def _boot_event(name: str, payload: dict[str, Any]) -> Event:

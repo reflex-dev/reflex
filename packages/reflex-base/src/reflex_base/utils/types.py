@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import ast
+import builtins
 import dataclasses
 import logging
 import sys
@@ -269,6 +271,268 @@ def get_type_hints(obj: Any) -> dict[str, Any]:
         The type hints of the class.
     """
     return get_type_hints_og(obj)
+
+
+def _typed_dict_qualifier(hint: Any) -> Any:
+    """Get the ``Required``/``NotRequired`` qualifier of a TypedDict field hint.
+
+    Args:
+        hint: The field's hint, resolved with extras.
+
+    Returns:
+        The origin of the hint once ``Annotated`` and ``ReadOnly`` are unwrapped.
+    """
+    while (origin := get_origin_og(hint)) in (
+        typing_extensions.Annotated,
+        typing_extensions.ReadOnly,
+    ):
+        hint = get_args(hint)[0]
+    return origin
+
+
+_TYPED_DICT_QUALIFIERS = (
+    typing_extensions.Annotated,
+    typing_extensions.NotRequired,
+    typing_extensions.ReadOnly,
+    typing_extensions.Required,
+)
+
+
+class _LenientNames(dict):
+    """Names to evaluate an annotation with: an undefined name reads as ``Any``."""
+
+    def __init__(self, globalns: dict[str, Any]):
+        """Look names up in a module's globals, then in builtins.
+
+        Args:
+            globalns: The module's globals.
+        """
+        super().__init__()
+        self._globalns = globalns
+
+    def defines(self, key: str) -> bool:
+        """Check whether a name is a global or a builtin.
+
+        Args:
+            key: The name.
+
+        Returns:
+            Whether the name is defined.
+        """
+        return key in self._globalns or hasattr(builtins, key)
+
+    def __missing__(self, key: str) -> Any:
+        """Resolve a name the annotation uses.
+
+        Args:
+            key: The name.
+
+        Returns:
+            The global or builtin it names, otherwise ``Any``.
+        """
+        if key in self._globalns:
+            return self._globalns[key]
+        return getattr(builtins, key, Any)
+
+
+class _UndefinedAttributes(ast.NodeTransformer):
+    """Shorten ``a.b.c`` to ``a`` when ``a`` is undefined, so it reads as ``Any``."""
+
+    def __init__(self, names: _LenientNames):
+        """Check names against those an annotation is evaluated with.
+
+        Args:
+            names: The names the annotation is evaluated with.
+        """
+        self._names = names
+
+    def visit_Attribute(self, node: ast.Attribute) -> ast.AST:
+        """Replace an attribute of an undefined name by the name.
+
+        Args:
+            node: The attribute access.
+
+        Returns:
+            The undefined root name, otherwise the visited node.
+        """
+        root = node.value
+        while isinstance(root, ast.Attribute):
+            root = root.value
+        if isinstance(root, ast.Name) and not self._names.defines(root.id):
+            return root
+        return self.generic_visit(node)
+
+
+def _eval_lenient(source: str, globalns: dict[str, Any]) -> Any:
+    """Evaluate an annotation, reading undefined names and their attributes as ``Any``.
+
+    Args:
+        source: The annotation's source.
+        globalns: The globals of the module defining the annotation.
+
+    Returns:
+        The evaluated annotation.
+    """
+    names = _LenientNames(globalns)
+    tree = _UndefinedAttributes(names).visit(ast.parse(source, mode="eval"))
+    return eval(compile(tree, "<annotation>", "eval"), globalns, names)
+
+
+def _typed_dict_annotations(typed_dict: Any) -> dict[str, Any]:
+    """Get a TypedDict's field annotations without failing on undefined names.
+
+    Args:
+        typed_dict: The TypedDict class.
+
+    Returns:
+        Each field's annotation, with names that cannot be resolved, as those
+        imported only for type checking, left as forward references.
+    """
+    return typing_extensions.get_annotations(
+        typed_dict, format=typing_extensions.Format.FORWARDREF
+    )
+
+
+def _typed_dict_hints(typed_dict: Any, include_extras: bool) -> dict[str, Any]:
+    """Resolve the hints of a TypedDict's fields.
+
+    A name that cannot be resolved, as one imported only for type checking,
+    reads as ``Any`` in the field that uses it, so the other fields still
+    resolve.
+
+    Args:
+        typed_dict: The TypedDict class.
+        include_extras: Whether to keep qualifiers and ``Annotated`` metadata.
+
+    Returns:
+        The hint of each field.
+    """
+    try:
+        return typing_extensions.get_type_hints(
+            typed_dict, include_extras=include_extras
+        )
+    except NameError:
+        pass
+    hints = {}
+    for name, hint in _typed_dict_annotations(typed_dict).items():
+        if isinstance(hint, typing.ForwardRef):
+            module = sys.modules.get(hint.__forward_module__ or typed_dict.__module__)
+            globalns = vars(module) if module is not None else {}
+            hint = _eval_lenient(hint.__forward_arg__, globalns)
+        while not include_extras and get_origin_og(hint) in _TYPED_DICT_QUALIFIERS:
+            hint = get_args(hint)[0]
+        hints[name] = hint
+    return hints
+
+
+def get_required_typed_dict_keys(typed_dict: Any) -> frozenset[str]:
+    """Resolve the required keys of a TypedDict.
+
+    ``__required_keys__`` misses ``Required``/``NotRequired`` qualifiers it
+    cannot see at class creation: those written as strings under postponed
+    annotations, and ``typing_extensions`` qualifiers on a ``typing.TypedDict``
+    on Python 3.10. The resolved type hints correct it.
+
+    Args:
+        typed_dict: The TypedDict class, or a specialization of a generic one.
+
+    Returns:
+        The names of the required keys.
+    """
+    typed_dict = get_origin_og(typed_dict) or typed_dict
+    required = frozenset(getattr(typed_dict, "__required_keys__", frozenset()))
+    try:
+        hints = _typed_dict_hints(typed_dict, include_extras=True)
+    except Exception:
+        return required
+    qualifiers = {name: _typed_dict_qualifier(hint) for name, hint in hints.items()}
+    return (
+        required
+        | {
+            name
+            for name, origin in qualifiers.items()
+            if origin is typing_extensions.Required
+        }
+    ) - {
+        name
+        for name, origin in qualifiers.items()
+        if origin is typing_extensions.NotRequired
+    }
+
+
+def get_typed_dict_field_types(typed_dict: Any) -> dict[str, Any]:
+    """Resolve the field types of a TypedDict.
+
+    Qualifiers and ``Annotated`` metadata are stripped, type aliases resolved,
+    names that cannot be resolved read as ``Any`` in the fields that use them,
+    and type arguments substituted: those of a specialization (``Data[str]``)
+    and those of the specialized generic bases fields are inherited through
+    (``class Data(Base[str])``), unless the subclass redeclares the field.
+
+    Args:
+        typed_dict: The TypedDict class, or a specialization of a generic one.
+
+    Returns:
+        The type of each field.
+
+    Raises:
+        TypeError: If a field's type has a type variable the TypedDict does not
+            declare, as when Python 3.11 drops the type arguments of a
+            ``typing.TypedDict`` subclass of a specialized generic TypedDict.
+    """
+    origin = get_origin_og(typed_dict) or typed_dict
+    field_types = _typed_dict_hints(origin, include_extras=False)
+    # Hints of inherited fields still name the generic base's type parameters,
+    # so take them from each base unless this class redeclares the field.
+    annotations = _typed_dict_annotations(origin)
+    for base in typing_extensions.get_original_bases(origin):
+        base_origin = get_origin_og(base) or base
+        if typing_extensions.is_typeddict(base_origin):
+            if base is base_origin and (
+                params := getattr(base_origin, "__parameters__", ())
+            ):
+                # An unsubscripted generic base takes its type parameters'
+                # defaults, or Any; a TypeVar has no has_default before 3.13.
+                base = base_origin[
+                    tuple(
+                        param.__default__
+                        if getattr(param, "has_default", bool)()
+                        else Any
+                        for param in params
+                    )
+                ]
+            base_annotations = _typed_dict_annotations(base_origin)
+            field_types.update(
+                (name, hint)
+                for name, hint in get_typed_dict_field_types(base).items()
+                if annotations[name] == base_annotations[name]
+            )
+    substitution = _match_type_args(
+        getattr(origin, "__parameters__", ()), get_args(typed_dict)
+    )
+    declared = getattr(typed_dict, "__parameters__", ())
+    for name, hint in field_types.items():
+        if hint in substitution:
+            hint = substitution[hint]
+        elif substitution and (params := getattr(hint, "__parameters__", ())):
+            hint = _apply_type_params(hint, params, substitution)
+        hint = resolve_type_alias(hint)
+        params = (
+            (hint,)
+            if isinstance(hint, TypeVar)
+            else getattr(hint, "__parameters__", ())
+        )
+        if undeclared := [param for param in params if param not in declared]:
+            msg = (
+                f"Field {name!r} of TypedDict {origin.__qualname__} has type {hint}, "
+                f"but the TypedDict does not declare {', '.join(map(str, undeclared))}. "
+                "On Python 3.11, a typing.TypedDict subclass drops the type "
+                "arguments of its generic bases: define these TypedDicts with "
+                "typing_extensions.TypedDict instead."
+            )
+            raise TypeError(msg)
+        field_types[name] = hint
+    return field_types
 
 
 def _unionize(args: list[GenericType]) -> GenericType:

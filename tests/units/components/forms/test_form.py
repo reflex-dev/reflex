@@ -1,8 +1,14 @@
-from typing import NotRequired, TypedDict
+import logging
+from typing import Any, NotRequired, TypedDict, TypeVar
 
 import pytest
+from reflex_base.components.component import Component
 from reflex_base.event import EventChain, prevent_default
-from reflex_base.utils.exceptions import EventHandlerValueError
+from reflex_base.utils.exceptions import (
+    EventHandlerArgTypeMismatchError,
+    EventHandlerValueError,
+)
+from reflex_base.utils.form import FormData
 from reflex_base.vars.base import Var
 from reflex_components_core.core.debounce import DebounceInput
 from reflex_components_core.el.elements.base import BaseHTML
@@ -17,6 +23,8 @@ from reflex_components_radix.primitives.form import Form, FormMessage
 
 import reflex as rx
 from reflex.compiler.utils import _root_only_custom_code
+
+_T = TypeVar("_T")
 
 EMAIL_FIELD_ID = "email"
 EMAIL_LABEL_ID = "email_label"
@@ -173,6 +181,177 @@ def test_on_submit_accepts_id_backed_typed_dict_form_data():
     assert isinstance(form.event_triggers["on_submit"], EventChain)
 
 
+def test_on_submit_rejects_typed_dict_with_unresolved_field_types():
+    """A TypedDict whose field types cannot be resolved fails at compile time."""
+
+    class LooseData(TypedDict):
+        tags: _T  # pyright: ignore[reportGeneralTypeIssues]
+
+    class LooseState(rx.State):
+        @rx.event
+        def on_submit(self, form_data: LooseData):
+            pass
+
+    with pytest.raises(EventHandlerValueError, match=r"typing_extensions\.TypedDict"):
+        HTMLForm.create(
+            Input.create(name="tags"),
+            id="loose",
+            on_submit=LooseState.on_submit,
+        )
+
+
+class _SubmitState(rx.State):
+    @rx.event
+    def on_submit(self, form_data: dict):
+        pass
+
+
+def test_on_submit_warns_for_controls_with_only_an_id(caplog):
+    """Submitting a control with a static id but no name by its id is deprecated."""
+    with caplog.at_level(logging.WARNING):
+        HTMLForm.create(
+            Input.create(id="only_id_input"),
+            rx.checkbox(id="only_id_checkbox"),
+            on_submit=_SubmitState.on_submit,
+        )
+    assert "only_id_input" in caplog.text
+    assert "only_id_checkbox" in caplog.text
+    assert "`name`" in caplog.text
+
+
+def _native_control(tag: str) -> Component:
+    """Create a custom component rendering a native form control.
+
+    Args:
+        tag: The native element.
+
+    Returns:
+        The component, with an id but no name.
+    """
+
+    class NativeControl(BaseHTML):
+        pass
+
+    NativeControl.tag = tag
+    return NativeControl.create(id=f"native_{tag}")
+
+
+def _opted_in_control() -> Component:
+    """Create a custom component that opts in as a form control.
+
+    Returns:
+        The component, with an id but no name.
+    """
+
+    class CustomControl(rx.Component):
+        tag = "CustomControl"
+        _is_form_control = True
+
+    return CustomControl.create(id="custom_control")
+
+
+def _memoized_control() -> Component:
+    """Create a component whose memoized type is a form control.
+
+    Returns:
+        The component, with an id but no name.
+    """
+
+    class MemoizedInput(Input):
+        _is_form_control = False
+        _wrapped_component_type = Input
+
+    return MemoizedInput.create(id="memoized_input")
+
+
+@pytest.mark.parametrize(
+    ("control", "control_id"),
+    [
+        (lambda: _native_control("input"), "native_input"),
+        (lambda: _native_control("select"), "native_select"),
+        (lambda: _native_control("textarea"), "native_textarea"),
+        (_opted_in_control, "custom_control"),
+        (_memoized_control, "memoized_input"),
+        (
+            lambda: DebounceInput.create(
+                Input.create(id="debounced_input", on_change=rx.console_log)
+            ),
+            "debounced_input",
+        ),
+    ],
+)
+def test_on_submit_warns_for_custom_controls_with_only_an_id(
+    control, control_id, caplog
+):
+    """Custom, memoized and debounced controls count as form controls."""
+    with caplog.at_level(logging.WARNING):
+        HTMLForm.create(control(), on_submit=_SubmitState.on_submit)
+    assert repr(control_id) in caplog.text
+
+
+@pytest.mark.parametrize(
+    "control",
+    [
+        lambda: Input.create(id="named_input", name="named_input"),
+        lambda: Input.create(id="submit_input", type="submit"),
+        lambda: Input.create(id=Var(_js_expr="dynamic_id", _var_type=str)),
+        lambda: rx.button("Submit", id="submit_button"),
+        lambda: rx.text("Email", id="email_label"),
+        lambda: rx.box(Input.create(name="wrapped_input"), id="input_wrapper"),
+        lambda: Input.create(id="disabled_input", disabled=True),
+    ],
+)
+def test_on_submit_does_not_warn_for_submitted_or_valueless_controls(control, caplog):
+    """Named, disabled and value-less controls and dynamic ids need no warning."""
+    with caplog.at_level(logging.WARNING):
+        HTMLForm.create(control(), on_submit=_SubmitState.on_submit)
+    assert "`name`" not in caplog.text
+
+
+def test_form_without_form_data_handler_does_not_warn(caplog):
+    """A form whose submit handler takes no form data has nothing to miss."""
+    with caplog.at_level(logging.WARNING):
+        HTMLForm.create(Input.create(id="unsubmitted_input"))
+    assert "unsubmitted_input" not in caplog.text
+
+
+def test_on_submit_accepts_typed_dict_with_unresolvable_field_types():
+    """A field type that cannot be resolved, as under TYPE_CHECKING, still compiles."""
+
+    class OrderData(TypedDict):
+        name: str
+        amount: "Decimal"  # noqa: F821 # pyright: ignore[reportUndefinedVariable]
+        tip: "NotRequired[Decimal]"  # noqa: F821 # pyright: ignore[reportUndefinedVariable]
+        fee: "NotRequired[billing.Money]"  # noqa: F821 # pyright: ignore[reportUndefinedVariable]
+
+    class OrderState(rx.State):
+        @rx.event
+        def on_submit(self, form_data: OrderData):
+            pass
+
+    HTMLForm.create(
+        Input.create(name="name"),
+        Input.create(name="amount"),
+        on_submit=OrderState.on_submit,
+    )
+    with pytest.raises(EventHandlerValueError, match="amount"):
+        HTMLForm.create(Input.create(name="name"), on_submit=OrderState.on_submit)
+
+
+@pytest.mark.parametrize("form_factory", [HTMLForm.create, Form.create])
+def test_on_submit_collects_form_data_with_id_refs(form_factory):
+    """The submit handler reads FormData, passing the values of id refs to replace it."""
+    form = form_factory(
+        Input.create(id="email_input", name="email"),
+        on_submit=Var(_js_expr="submit_it", _var_type=EventChain),
+    )
+    (hook,) = form.add_hooks()
+    assert (
+        "const form_data = getFormData($form, "
+        '({ ["email_input"] : getRefValue(refs["ref_email_input"]) }));'
+    ) in hook
+
+
 def test_on_submit_accepts_typed_dict_with_optional_fields():
     """Optional TypedDict keys should not be required in the form."""
 
@@ -207,6 +386,32 @@ def test_on_submit_accepts_typed_dict_with_optional_fields():
         HTMLForm.create(
             Input.create(name="email"),
             on_submit=StrictState.on_submit,
+        )
+
+
+def test_on_submit_typed_dict_list_field_accepts_bracketed_control_name():
+    """A required list field is filled by controls named ``name[]``."""
+
+    class TagsData(TypedDict):
+        tags: list[str]
+        pick: str
+
+    class TagsState(rx.State):
+        @rx.event
+        def on_submit(self, form_data: TagsData):
+            pass
+
+    HTMLForm.create(
+        Input.create(name="tags[]"),
+        Input.create(name="pick"),
+        on_submit=TagsState.on_submit,
+    )
+    # Only a list field takes the bracketed name.
+    with pytest.raises(EventHandlerValueError, match="pick"):
+        HTMLForm.create(
+            Input.create(name="tags"),
+            Input.create(name="pick[]"),
+            on_submit=TagsState.on_submit,
         )
 
 
@@ -307,6 +512,75 @@ def test_on_submit_accepts_typed_dict_with_inherited_optional_fields():
         on_submit=SignupState.on_submit,
     )
     assert isinstance(form_with_both.event_triggers["on_submit"], EventChain)
+
+
+@pytest.mark.parametrize(
+    "annotation",
+    [
+        FormData,
+        FormData[str, Any],
+        FormData[str, str],
+        FormData[str, str] | None,
+        rx.form.FormData,
+    ],
+)
+@pytest.mark.parametrize("form_factory", [HTMLForm.create, Form.create])
+def test_on_submit_accepts_form_data_annotation(form_factory, annotation, caplog):
+    """FormData-annotated submit handlers are accepted without a mismatch warning."""
+
+    class TagsState(rx.State):
+        @rx.event
+        def on_submit(self, form_data: annotation):  # pyright: ignore[reportInvalidTypeForm]
+            pass
+
+    with caplog.at_level(logging.WARNING):
+        form = form_factory(
+            Input.create(name="tag"),
+            on_submit=TagsState.on_submit,
+        )
+
+    assert isinstance(form.event_triggers["on_submit"], EventChain)
+    assert "intentionally ignored" not in caplog.text
+
+
+@pytest.mark.parametrize(
+    "control",
+    [
+        lambda: rx.checkbox("Subscribe", name="subscribe"),
+        lambda: rx.switch(name="subscribe"),
+        lambda: Input.create(type="checkbox", name="subscribe"),
+    ],
+)
+def test_on_submit_typed_dict_bool_field_accepts_toggle_controls(control):
+    """Checkboxes and switches satisfy a required TypedDict bool field."""
+
+    class PrefsData(TypedDict):
+        subscribe: bool
+
+    class PrefsState(rx.State):
+        @rx.event
+        def on_submit(self, form_data: PrefsData):
+            pass
+
+    form = HTMLForm.create(control(), on_submit=PrefsState.on_submit)
+    assert isinstance(form.event_triggers["on_submit"], EventChain)
+
+
+def test_form_data_is_exported_on_the_form_namespace():
+    """Apps annotate form data with rx.form.FormData."""
+    assert rx.form.FormData is FormData
+
+
+def test_on_submit_rejects_non_mapping_form_data():
+    """A non-mapping annotation is a type mismatch, not a failed comparison."""
+
+    class TagsState(rx.State):
+        @rx.event
+        def on_submit(self, form_data: list[str]):
+            pass
+
+    with pytest.raises(EventHandlerArgTypeMismatchError):
+        HTMLForm.create(on_submit=TagsState.on_submit)  # pyright: ignore[reportArgumentType]
 
 
 def test_on_submit_accepts_controls_associated_via_form_attribute():

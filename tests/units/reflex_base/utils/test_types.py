@@ -1,13 +1,25 @@
 """Tests for reflex_base.utils.types."""
 
+import importlib
 import json
 import subprocess
 import sys
 import typing
-from collections.abc import Callable
-from typing import Annotated, Literal, Protocol, TypeVar, runtime_checkable
+from collections.abc import Callable, Sequence
+from typing import (
+    Annotated,
+    Any,
+    Generic,
+    Literal,
+    NotRequired,
+    Protocol,
+    Required,
+    TypeVar,
+    runtime_checkable,
+)
 
 import pytest
+import typing_extensions
 from reflex_base.utils.types import (
     ASGIApp,
     Message,
@@ -15,10 +27,18 @@ from reflex_base.utils.types import (
     Scope,
     Send,
     _isinstance,
+    get_required_typed_dict_keys,
+    get_typed_dict_field_types,
     resolve_type_alias,
     typehint_issubclass,
 )
-from typing_extensions import ParamSpec, TypeAliasType, TypeVarTuple
+from typing_extensions import (
+    ParamSpec,
+    ReadOnly,
+    TypeAliasType,
+    TypedDict,
+    TypeVarTuple,
+)
 
 P = ParamSpec("P")
 Ts = TypeVarTuple("Ts")
@@ -281,3 +301,233 @@ def test_isinstance_unwraps_annotated() -> None:
     assert not _isinstance(
         {"a": "x"}, dict[str, Annotated[int, "meta"]], nested=2, treat_var_as_type=False
     )
+
+
+class _OptionalBase(TypedDict, total=False):
+    nickname: str
+    email: Required[str]
+
+
+class _SignupData(_OptionalBase):
+    name: str
+    message: NotRequired[str]
+
+
+def test_get_required_typed_dict_keys():
+    """Required keys honor NotRequired, Required and inherited totality."""
+    assert get_required_typed_dict_keys(_SignupData) == {"name", "email"}
+
+
+def test_get_required_typed_dict_keys_with_postponed_annotations(tmp_path, monkeypatch):
+    """Qualifiers written as strings under postponed annotations still count."""
+    (tmp_path / "postponed_typed_dicts.py").write_text(
+        "from __future__ import annotations\n"
+        "from typing import Annotated, TypedDict\n"
+        "from typing_extensions import NotRequired, Required\n"
+        "class Data(TypedDict):\n"
+        "    name: str\n"
+        "    message: NotRequired[str]\n"
+        "    agree: Annotated[NotRequired[bool], 'optional consent']\n"
+        "class Partial(TypedDict, total=False):\n"
+        "    email: Required[str]\n"
+        "    phone: Annotated[Required[str], 'contact']\n"
+        "    nickname: str\n"
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+    module = importlib.import_module("postponed_typed_dicts")
+    try:
+        assert get_required_typed_dict_keys(module.Data) == {"name"}
+        assert get_required_typed_dict_keys(module.Partial) == {"email", "phone"}
+    finally:
+        del sys.modules["postponed_typed_dicts"]
+
+
+def test_typed_dict_helpers_resolve_around_unresolvable_names(tmp_path, monkeypatch):
+    """A name imported only for type checking reads as Any in its own field."""
+    (tmp_path / "type_checking_typed_dicts.py").write_text(
+        "from __future__ import annotations\n"
+        "from typing import TYPE_CHECKING, TypedDict\n"
+        "from typing_extensions import NotRequired\n"
+        "if TYPE_CHECKING:\n"
+        "    import decimal\n"
+        "    from decimal import Decimal\n"
+        "class Order(TypedDict):\n"
+        "    tags: list[str]\n"
+        "    amounts: list[Decimal]\n"
+        "    amount: Decimal\n"
+        "    total: decimal.Decimal | None\n"
+        "    tip: NotRequired[Decimal]\n"
+        "    fee: NotRequired[decimal.context.Decimal]\n"
+        "    agree: NotRequired[bool]\n"
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+    module = importlib.import_module("type_checking_typed_dicts")
+    try:
+        assert get_required_typed_dict_keys(module.Order) == {
+            "tags",
+            "amounts",
+            "amount",
+            "total",
+        }
+        assert get_typed_dict_field_types(module.Order) == {
+            "tags": list[str],
+            "amounts": list[Any],
+            "amount": Any,
+            "total": Any | None,
+            "tip": Any,
+            "fee": Any,
+            "agree": bool,
+        }
+    finally:
+        del sys.modules["type_checking_typed_dicts"]
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 14), reason="annotations are evaluated lazily from 3.14"
+)
+def test_typed_dict_helpers_resolve_lazy_annotations(tmp_path, monkeypatch):
+    """Lazily evaluated annotations with an unresolvable name still resolve."""
+    (tmp_path / "lazy_typed_dicts.py").write_text(
+        "from typing import TYPE_CHECKING, TypedDict\n"
+        "from typing_extensions import NotRequired\n"
+        "if TYPE_CHECKING:\n"
+        "    from decimal import Decimal\n"
+        "class Base(TypedDict):\n"
+        "    tags: list[str]\n"
+        "    amounts: list[Decimal]\n"
+        "class Order(Base):\n"
+        "    tip: NotRequired[Decimal]\n"
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+    module = importlib.import_module("lazy_typed_dicts")
+    try:
+        assert get_required_typed_dict_keys(module.Order) == {"tags", "amounts"}
+        field_types = get_typed_dict_field_types(module.Order)
+        assert field_types["tags"] == list[str]
+        assert typing.get_origin(field_types["amounts"]) is list
+        assert "tip" in field_types
+    finally:
+        del sys.modules["lazy_typed_dicts"]
+
+
+_FieldT = TypeVar("_FieldT")
+_ItemT = TypeVar("_ItemT")
+
+
+class _GenericBase(TypedDict, Generic[_FieldT]):
+    value: _FieldT
+    maybe: _FieldT | None
+
+
+class _GenericMiddle(_GenericBase[list[_ItemT]], Generic[_ItemT]):
+    flag: bool
+
+
+class _Concrete(_GenericMiddle[str]):
+    name: str
+
+
+def test_get_typed_dict_field_types_through_generic_bases():
+    """Inherited fields resolve through every specialized generic base."""
+    assert get_typed_dict_field_types(_Concrete) == {
+        "value": list[str],
+        "maybe": list[str] | None,
+        "flag": bool,
+        "name": str,
+    }
+    assert get_typed_dict_field_types(_GenericMiddle[int])["value"] == list[int]
+
+
+class _PlainSubclass(_Concrete):
+    pass
+
+
+def test_get_typed_dict_field_types_through_plain_subclass():
+    """A subclass without type arguments keeps its bases' specialized fields."""
+    assert get_typed_dict_field_types(_PlainSubclass) == get_typed_dict_field_types(
+        _Concrete
+    )
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 11), reason="typing.TypedDict is generic from Python 3.11"
+)
+def test_get_typed_dict_field_types_through_stdlib_plain_subclass():
+    """A plain subclass of a specialized typing.TypedDict resolves, or fails loudly.
+
+    Python 3.11 keeps no trace of the specialized base on such a subclass.
+    """
+
+    class Base(typing.TypedDict, Generic[_FieldT]):
+        value: _FieldT
+
+    class Concrete(Base[list[str]]):
+        pass
+
+    class Plain(Concrete):
+        pass
+
+    if sys.version_info >= (3, 12):
+        assert get_typed_dict_field_types(Plain) == {"value": list[str]}
+    else:
+        with pytest.raises(TypeError, match=r"typing_extensions\.TypedDict"):
+            get_typed_dict_field_types(Plain)
+
+
+class _Unresolved(TypedDict):
+    value: _FieldT  # pyright: ignore[reportGeneralTypeIssues]
+
+
+def test_get_typed_dict_field_types_rejects_unresolved_type_variables():
+    """A field typed by a type variable its class does not declare is an error."""
+    with pytest.raises(TypeError, match="_Unresolved"):
+        get_typed_dict_field_types(_Unresolved)
+    assert get_typed_dict_field_types(_GenericBase)["value"] is _FieldT
+
+
+class _BareGenericChild(_GenericBase):
+    name: str
+
+
+class _BareGenericGrandchild(_BareGenericChild):
+    pass
+
+
+def test_get_typed_dict_field_types_through_unsubscripted_generic_base():
+    """An unsubscripted generic base has Any for type parameters without defaults."""
+    expected = {"value": Any, "maybe": Any | None, "name": str}
+    assert get_typed_dict_field_types(_BareGenericChild) == expected
+    assert get_typed_dict_field_types(_BareGenericGrandchild) == expected
+
+
+_DefaultT = typing_extensions.TypeVar("_DefaultT", default=bool)
+
+
+class _DefaultBase(TypedDict, Generic[_DefaultT]):
+    flag: _DefaultT
+
+
+class _DefaultChild(_DefaultBase):
+    pass
+
+
+def test_get_typed_dict_field_types_unsubscripted_base_uses_defaults():
+    """An unsubscripted generic base takes its type parameters' defaults."""
+    assert get_typed_dict_field_types(_DefaultChild) == {"flag": bool}
+
+
+class _ReadOnlyBase(TypedDict, Generic[_FieldT]):
+    value: ReadOnly[_FieldT]
+    other: ReadOnly[_FieldT]
+
+
+class _Narrowed(_ReadOnlyBase[Sequence[str]]):
+    value: ReadOnly[list[str]]
+
+
+def test_get_typed_dict_field_types_keeps_redeclared_fields():
+    """A field a subclass redeclares keeps its own type over the base's."""
+    assert get_typed_dict_field_types(_Narrowed) == {
+        "value": list[str],
+        "other": Sequence[str],
+    }

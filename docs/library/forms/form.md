@@ -161,15 +161,60 @@ def form_example():
 ```md alert info
 # Using `name` vs `id`.
 
-When using the `name` attribute in form controls like `rx.switch`, `rx.radio_group`, and `rx.checkbox`, these controls will only be included in the form data if their values are set (e.g., if the checkbox is checked, the switch is toggled, or a radio option is selected).
+When using the `name` attribute in form controls like `rx.switch`, `rx.radio_group`, and `rx.checkbox`, these controls will only be included in the form data if their values are set (e.g., if the checkbox is checked, the switch is toggled, or a radio option is selected). Read them with `form_data.get(...)`, or declare them as `bool` fields of a [TypedDict](#validating-form-data-with-a-typeddict).
 
-If you need these controls to be passed in the form data even when their values are not set, you can use the `id` attribute instead of name. The id attribute ensures that the control is always included in the submitted form data, regardless of whether its value is set or not.
-
-Custom native `input`, `select`, and `textarea` components with an `id` are included automatically. For other custom form controls, set `_is_form_control = True` on the component class to include its ID-based value in submissions.
+A control with an `id` is also included in the form data under its `id`, even when its value is not set, and that value replaces the value submitted under the same `name`, unless the form submits that `name` more than once. Custom native `input`, `select`, and `textarea` components with an `id` are included automatically. For other custom form controls, set `_is_form_control = True` on the component class to include its ID-based value in submissions. Including controls by `id` is deprecated and will be removed in Reflex 0.11, so give every submitted control a `name`.
 ```
 
 ```md video https://youtube.com/embed/ITOZkzjtjUA?start=5287&end=6040
 # Video: Forms
+```
+
+## Fields with the Same Name
+
+Several controls can share a `name`, such as a group of checkboxes. A `dict`
+annotation keeps only the last value submitted for each name. To receive every
+value in the order the form submitted them, annotate the handler's parameter
+with `rx.form.FormData` and read them with `getlist` (or its alias `getAll`, as in
+the browser's `FormData`):
+
+```python
+class ToppingsState(rx.State):
+    toppings: list[str] = []
+
+    @rx.event
+    def handle_submit(self, form_data: rx.form.FormData[str, str]):
+        self.toppings = form_data.getlist("topping")
+
+
+def toppings_form():
+    return rx.form(
+        rx.el.input(type="checkbox", name="topping", value="cheese"),
+        rx.el.input(type="checkbox", name="topping", value="olives"),
+        rx.button("Submit", type="submit"),
+        on_submit=ToppingsState.handle_submit,
+    )
+```
+
+`rx.form.FormData` is a read-only mapping: indexing it with
+`form_data["topping"]` returns the last value, the same as a `dict`, and
+`form_data.multi_items()` returns every `(name, value)` pair. A
+[TypedDict](#validating-form-data-with-a-typeddict) can also collect repeated
+names with a `list[str]` field.
+
+```md alert info
+# Names ending in `[]`.
+
+A two-thumb `rx.slider(name="range")` submits each of its values as `range[]`.
+Like any repeated name, a `dict` keeps only the last of them, while
+`rx.form.FormData` gives them all with `form_data.getlist("range[]")`.
+
+A `TypedDict` instead lets you declare the field without brackets: a list field
+`range: list[str]` collects the values submitted as `range[]`, unless the
+`TypedDict` also declares a `range[]` field. A declared `name[]` field of any
+other type is filled like any other field: a `bool` field is read as described
+in [List and bool fields](#list-and-bool-fields), and other types get the last
+value.
 ```
 
 ## Validating Form Data with a TypedDict
@@ -246,6 +291,57 @@ class ContactForm(TypedDict):
     email: str  # required: a control named "email" must exist
     message: NotRequired[str]  # optional: no control required
 ```
+
+### List and bool fields
+
+Two kinds of `TypedDict` fields are filled in even when the form submits no
+value for them:
+
+- A `list[str]` field holds every value submitted under its name, in order, or
+  an empty list when there are none.
+- A `bool` field is `False` when no value was submitted under its name, so an
+  unchecked checkbox or switch reads as `False` instead of a missing key. A
+  submitted value is `True` unless, ignoring case and surrounding whitespace,
+  it is empty or `"false"`, `"off"`, `"no"`, `"n"` or `"0"`, so a select, radio
+  group or hidden input submitting `"false"` reads as `False`.
+
+When no value is submitted for a field whose type allows `None`, such as
+`list[str] | None` or `bool | None`, the field is `None` instead. A field
+marked `NotRequired` is left out when no value is submitted for it, whatever
+its type.
+
+```python
+class PreferencesForm(TypedDict):
+    toppings: list[str]  # every checked "toppings" checkbox
+    subscribe: bool  # False when the checkbox is unchecked
+    notify: bool | None  # None when the switch is off
+
+
+class PreferencesState(rx.State):
+    preferences: PreferencesForm | None = None
+
+    @rx.event
+    def handle_submit(self, form_data: PreferencesForm):
+        self.preferences = form_data
+
+
+def preferences_form():
+    return rx.form(
+        rx.el.input(type="checkbox", name="toppings", value="cheese"),
+        rx.el.input(type="checkbox", name="toppings", value="olives"),
+        rx.checkbox("Subscribe", name="subscribe"),
+        rx.switch(name="notify"),
+        rx.button("Submit", type="submit"),
+        on_submit=PreferencesState.handle_submit,
+    )
+```
+
+Other fields keep the last value submitted for their name.
+
+Generic `TypedDict`s work too, such as `class Data(Base[list[str]])`. On
+Python 3.11, a further `typing.TypedDict` subclass of `Data` loses those type
+arguments and Reflex rejects the form when it compiles, so define these
+`TypedDict`s with `typing_extensions.TypedDict` instead.
 
 If a required field is missing, creating the form fails fast with a message that
 lists the expected, missing, and matching fields:

@@ -180,6 +180,84 @@ assert.ok(!('ref' in mergeSlotProps({ref: null}, {inputRef: ownRef}, 'inputRef')
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="node missing")
+def test_form_data_args_are_wrapped_before_emit() -> None:
+    """Form data reads as a plain object but is sent as its ordered entries."""
+    content = STATE_JS_TEMPLATE.read_text()
+    start = content.index("const FORM_DATA_ENTRIES_KEY =")
+    end = (
+        content.index("\n};\n", content.index("export const encodeFormDataArgs =")) + 4
+    )
+    subprocess.run(
+        [
+            "node",
+            "--input-type=module",
+            "--eval",
+            """
+// The test form stands in for an HTMLFormElement: an array of its entries.
+globalThis.FormData = class {
+  constructor(form) { this.form = form; }
+  entries() { return this.form.values(); }
+};
+"""
+            + content[start:end]
+            + """
+import assert from 'node:assert/strict';
+const file = {name: 'upload.txt'};
+const formData = getFormData([['tag', 'a'], ['file', file], ['tag', 'b']]);
+assert.deepEqual(Object.keys(formData), ['tag', 'file']);
+assert.equal(formData.tag, 'b');
+const event = {name: 'state.submit', payload: {form_data: formData, count: 1}};
+const sent = encodeFormDataArgs(event);
+// The wrapped entries are plain own properties, so they survive Socket.IO
+// copying the payload to extract binary attachments.
+const copied = JSON.parse(JSON.stringify({...sent.payload}));
+assert.deepEqual(copied, {
+  form_data: {__reflex_form_data__: [['tag', 'a'], ['file', {name: 'upload.txt'}], ['tag', 'b']]},
+  count: 1,
+});
+assert.equal(sent.payload.form_data.__reflex_form_data__[1][1], file);
+// The event itself is left as it was.
+assert.equal(event.payload.form_data, formData);
+const plain = {name: 'state.other', payload: {count: 1}};
+assert.equal(encodeFormDataArgs(plain), plain);
+// Values read from id refs replace the form's entries of the same name.
+const withRefs = getFormData(
+  [['tag', 'a'], ['agree', 'on'], ['tag', 'b']],
+  {agree: true, unset: null},
+);
+assert.deepEqual({...withRefs}, {tag: 'b', agree: true, unset: null});
+assert.deepEqual(
+  encodeFormDataArgs({name: 'state.submit', payload: {form_data: withRefs}})
+    .payload.form_data.__reflex_form_data__,
+  [['tag', 'a'], ['tag', 'b'], ['agree', true], ['unset', null]],
+);
+// A name submitted more than once, like a checkbox group with an id, keeps
+// its values instead of taking the ref's single value.
+const group = getFormData(
+  [['colors', 'red'], ['colors', 'blue']],
+  {colors: 'red'},
+);
+assert.deepEqual(
+  encodeFormDataArgs({name: 'state.submit', payload: {form_data: group}})
+    .payload.form_data.__reflex_form_data__,
+  [['colors', 'red'], ['colors', 'blue']],
+);
+""",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+
+def test_state_js_keeps_ref_value_exports_for_older_form_components() -> None:
+    """Published reflex-components-core forms import these helpers from state.js."""
+    content = STATE_JS_TEMPLATE.read_text()
+    assert "export const getRefValue =" in content
+    assert "export const getRefValues =" in content
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node missing")
 def test_apply_delta_shares_unchanged_values() -> None:
     """Deltas keep the identity of unchanged plain objects and arrays."""
     content = STATE_JS_TEMPLATE.read_text()

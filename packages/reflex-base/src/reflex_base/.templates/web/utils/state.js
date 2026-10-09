@@ -655,7 +655,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
     recordSentStorageValues(routed_event);
     // Instrumentation hook (installed by reflex-otel): may add a traceparent.
     window.__reflex_otel?.onEventSend?.(routed_event);
-    socket.emit("event", routed_event);
+    socket.emit("event", encodeFormDataArgs(routed_event));
   }
 };
 
@@ -1851,4 +1851,57 @@ export const spreadArraysOrObjects = (first, second) => {
   } else {
     throw new Error("Both parameters must be either arrays or objects.");
   }
+};
+
+// Wire key wrapping a form's ordered [name, value] entries; must match
+// FORM_DATA_ENTRIES_KEY in reflex_base.utils.form.
+const FORM_DATA_ENTRIES_KEY = "__reflex_form_data__";
+const formDataEntries = Symbol("formDataEntries");
+
+/**
+ * Collect the fields of a submitted form.
+ * @param form The form element.
+ * @param refValues Values read from the refs of controls with an id, keyed by
+ * the id. Each replaces the form's own entry of the same name, unless the form
+ * submitted that name more than once.
+ * @returns An object mapping each field name to its last value, which also
+ * carries every entry so repeated names reach the backend.
+ */
+export const getFormData = (form, refValues = {}) => {
+  const formEntries = [...new FormData(form).entries()];
+  const counts = new Map();
+  for (const [name] of formEntries) {
+    counts.set(name, (counts.get(name) ?? 0) + 1);
+  }
+  const refEntries = Object.entries(refValues).filter(
+    ([name]) => !(counts.get(name) > 1),
+  );
+  const replaced = new Set(refEntries.map(([name]) => name));
+  const entries = [
+    ...formEntries.filter(([name]) => !replaced.has(name)),
+    ...refEntries,
+  ];
+  return Object.defineProperty(Object.fromEntries(entries), formDataEntries, {
+    value: entries,
+  });
+};
+
+/**
+ * Wrap the form data among an event's arguments as its ordered entries.
+ *
+ * Done before the event reaches Socket.IO: its binary attachment handling (a
+ * form with a file input) copies objects without their symbol-keyed entries.
+ * @param event The event to send.
+ * @returns The event, copied with wrapped entries when it carries form data.
+ */
+export const encodeFormDataArgs = (event) => {
+  let payload;
+  for (const [name, value] of Object.entries(event.payload ?? {})) {
+    const entries = value?.[formDataEntries];
+    if (entries) {
+      payload ??= { ...event.payload };
+      payload[name] = { [FORM_DATA_ENTRIES_KEY]: entries };
+    }
+  }
+  return payload ? { ...event, payload } : event;
 };

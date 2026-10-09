@@ -109,11 +109,20 @@ def FormSubmitName(
 
     class FormState(rx.State):
         form_data: rx.Field[dict] = rx.field(default_factory=dict)
+        tags: rx.Field[list[str]] = rx.field(default_factory=list)
         val: str = "foo"
         options: list[str] = ["option1", "option2"]
 
+        @rx.event
         def form_submit(self, form_data: dict):
-            self.form_data = form_data
+            # A file input submits its contents as bytes.
+            self.form_data = {
+                name: value for name, value in form_data.items() if name != "attachment"
+            }
+
+        @rx.event
+        def form_submit_all(self, form_data: rx.form.FormData[str, str]):
+            self.tags = form_data.getlist("tag")
 
     app = rx.App()
 
@@ -129,11 +138,17 @@ def FormSubmitName(
                 rx.vstack(
                     rx.input(name="name_input"),
                     rx.input(name="empty_input"),
+                    rx.el.input(type="hidden", name="tag", value="a"),
+                    rx.el.input(type="hidden", name="tag", value="b"),
+                    # Its File makes Socket.IO send the event as a binary packet.
+                    rx.el.input(type="file", name="attachment"),
                     rx.checkbox(name="bool_input"),
                     rx.switch(name="bool_input2"),
                     rx.checkbox(name="bool_input3"),
                     rx.switch(name="bool_input4"),
                     rx.slider(name="slider_input", default_value=[50], width="100%"),
+                    # Two thumbs submit their values as "range_input[]".
+                    rx.slider(name="range_input", default_value=[20, 80], width="100%"),
                     rx.radio(FormState.options, name="radio_input"),
                     rx.select(
                         FormState.options,
@@ -150,11 +165,12 @@ def FormSubmitName(
                     rx.icon_button(rx.icon(tag="plus")),
                     id=form_content_wrapper_id,
                 ),
-                on_submit=FormState.form_submit,
+                on_submit=[FormState.form_submit, FormState.form_submit_all],
                 custom_attrs={"action": "/invalid"},
                 id=form_id,
             ),
             rx.text(FormState.form_data.to_string(), id="form-data"),
+            rx.text(FormState.tags.to_string(), id="tags"),
             rx.spacer(),
             height="100vh",
         )
@@ -285,6 +301,14 @@ async def test_submit(driver, form_submit: AppHarness):
     assert form_data["select_input"] == "option1"
     assert form_data["text_area_input"] == "Some\nText"
     assert form_data["debounce_input"] == "bar baz"
+    if by == By.NAME:
+        # A dict keeps the last value of a repeated name; FormData keeps them all.
+        assert form_data["range_input[]"] == "80"
+        assert form_data["tag"] == "b"
+        tags = form_submit.poll_for_content(
+            driver.find_element(By.ID, "tags"), exp_not_equal="[]"
+        )
+        assert json.loads(tags) == ["a", "b"]
 
     # submitting the form should NOT change the url (preventDefault on_submit event)
     assert driver.current_url == prev_url
