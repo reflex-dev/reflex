@@ -220,17 +220,6 @@ assert.equal(sent.payload.form_data.__reflex_form_data__[1][1], file);
 assert.equal(event.payload.form_data, formData);
 const plain = {name: 'state.other', payload: {count: 1}};
 assert.equal(encodeFormDataArgs(plain), plain);
-// Values read from id refs replace the form's entries of the same name.
-const withRefs = getFormData(
-  [['tag', 'a'], ['agree', 'on'], ['tag', 'b']],
-  {agree: true, unset: null},
-);
-assert.deepEqual({...withRefs}, {tag: 'b', agree: true, unset: null});
-assert.deepEqual(
-  encodeFormDataArgs({name: 'state.submit', payload: {form_data: withRefs}})
-    .payload.form_data.__reflex_form_data__,
-  [['tag', 'a'], ['tag', 'b'], ['agree', true], ['unset', null]],
-);
 """,
         ],
         check=True,
