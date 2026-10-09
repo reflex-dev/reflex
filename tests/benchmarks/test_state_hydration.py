@@ -1,4 +1,12 @@
-"""Track state-tree hydration costs below and above the metadata LRU capacity."""
+"""Track complete snapshots of small and large state trees.
+
+A snapshot resolves every substate's full name through the per-class metadata
+caches (name and parent) on its way to serializing it, so a regression in those
+caches shows up here too. A separate benchmark that only re-read the cached
+metadata was dropped: with no serialization work to dilute them, CPython's
+attribute-cache and specialization costs dominated, and those move several
+percent with whatever ran earlier in the process.
+"""
 
 import pytest
 from pytest_codspeed import BenchmarkFixture
@@ -42,27 +50,3 @@ def test_hydration_snapshot(
         benchmark: The benchmark fixture.
     """
     benchmark(hydration_state.dict)
-
-
-def test_hydration_metadata(
-    hydration_state: BaseState, benchmark: BenchmarkFixture
-) -> None:
-    """Measure repeated metadata walks without state serialization costs.
-
-    Args:
-        hydration_state: The populated tree whose classes to visit.
-        benchmark: The benchmark fixture.
-    """
-    classes = [
-        type(hydration_state),
-        *(type(s) for s in hydration_state.substates.values()),
-    ]
-
-    @benchmark
-    def walk() -> None:
-        """Visit the metadata used to fetch and reconnect a state tree."""
-        for cls in classes:
-            cls.get_name()
-            cls.get_full_name()
-            cls.get_parent_state()
-            cls.get_root_state()

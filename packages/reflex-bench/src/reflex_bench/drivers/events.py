@@ -633,7 +633,7 @@ class _Session:
         async with gate:
             try:
                 await asyncio.wait_for(self._open(), PRIME_TIMEOUT_S)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 step = "linked" if self._hydrated.is_set() else "hydrated"
                 self._fail(f"not {step} within {PRIME_TIMEOUT_S:g} s")
             except Exception as exc:
@@ -847,7 +847,7 @@ class _Session:
                     self._send_closed(t0, measure_from, end), timeout
                 )
             await self._drain(drain_until)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             # The closed loop's last event stays unanswered.
             pass
         except ConnectionClosed as exc:

@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-import sys
 from collections.abc import Iterator
 from functools import partial
 from hashlib import md5
-from typing import Any, ClassVar, Literal, get_origin, get_type_hints
+from typing import Any, ClassVar, Literal, get_type_hints
 
 from reflex_base.components.component import BaseComponent, Component, field
 from reflex_base.components.tags.tag import CommonTag
@@ -32,7 +31,7 @@ from reflex_base.utils.imports import ImportDict
 from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.number import ternary_operation
-from typing_extensions import NotRequired, is_typeddict
+from typing_extensions import is_typeddict
 
 from reflex_components_core.el.element import Element
 
@@ -180,12 +179,7 @@ def _get_form_control_refs(component: BaseComponent) -> set[str]:
 
 
 def _get_required_typed_dict_fields(typed_dict_type: type[Any]) -> frozenset[str]:
-    """Resolve required TypedDict keys across Python versions.
-
-    On Python 3.11+ ``__required_keys__`` is reliable.  On 3.10,
-    ``typing.TypedDict`` combined with ``typing_extensions.NotRequired``
-    fails to populate ``__required_keys__``, so we patch the result by
-    subtracting fields whose annotation is wrapped with ``NotRequired``.
+    """Resolve the required keys of a TypedDict.
 
     Args:
         typed_dict_type: The TypedDict class to inspect.
@@ -193,21 +187,7 @@ def _get_required_typed_dict_fields(typed_dict_type: type[Any]) -> frozenset[str
     Returns:
         The required field names for the TypedDict.
     """
-    required = frozenset(getattr(typed_dict_type, "__required_keys__", frozenset()))
-    if sys.version_info >= (3, 11):
-        return required
-
-    # On 3.10, __required_keys__ ignores NotRequired from typing_extensions.
-    # Subtract any field explicitly marked NotRequired.
-    try:
-        hints = get_type_hints(typed_dict_type, include_extras=True)
-    except Exception:
-        return required
-
-    not_required = frozenset(
-        name for name, hint in hints.items() if get_origin(hint) is NotRequired
-    )
-    return required - not_required
+    return frozenset(getattr(typed_dict_type, "__required_keys__", frozenset()))
 
 
 def _format_field_list(fields: tuple[str, ...]) -> str:

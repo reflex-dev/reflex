@@ -65,8 +65,10 @@ def test_navigate_for_real(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         pathname = wire.ROUTES[route][0]
         assert f'"path":"{pathname}"' in extra["reply"]
         assert set(extra["delta_bytes"]) == {ROOT_STATE}
-        # The hydration on "/" came first.
-        assert extra["hydration"]["received_frames"] == 4
+        # The hydration on "/" came first: the open, the namespace ack, the
+        # hydrate delta, on_load_internal's update of the always dirty
+        # rx.dynamic var of /widgets, and the delta setting is_hydrated.
+        assert extra["hydration"]["received_frames"] == 5
     # The dynamic route argument is a var of the root state.
     assert '"item_id_rx_state_":"42"' in entries["item"]["sample_extra"][0]["reply"]
 
