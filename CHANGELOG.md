@@ -1,3 +1,10 @@
+## v0.9.13 (2026-10-08)
+
+### Bug Fixes
+
+- The `db` extra now installs `greenlet`, which SQLAlchemy 2.1 no longer pulls in on its own, so `rx.Model`, `rx.session()` and the `reflex db` commands work again on a fresh `pip install reflex[db]` instead of failing with `ImportError: The SQLAlchemy asyncio module requires that the Python 'greenlet' library is installed`. ([#7466](https://github.com/reflex-dev/reflex/issues/7466))
+
+
 ## v0.9.12 (2026-09-21)
 
 ### Breaking Changes
