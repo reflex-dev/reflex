@@ -559,11 +559,25 @@ arrives calls it, and the request is held open until the worker has run the
 work or has nothing left to take. Holding it open is the point on hosts that
 only give an instance CPU while it is answering a request.
 
+In a Reflex app, the route goes on a FastAPI app passed as `api_transformer`, in
+the process that runs the worker:
+
 ```python
-@app.api.get("/wake")
+from datetime import timedelta
+
+import reflex_workflow
+from fastapi import FastAPI, Response
+
+api = FastAPI()
+
+
+@api.post("/wake")
 async def wake_workflows() -> Response:
     caught_up = await reflex_workflow.wake(timedelta(seconds=50))
     return Response(status_code=200 if caught_up else 503)
+
+
+app = rx.App(api_transformer=api)
 ```
 
 It returns True once the worker has made a pass that claimed nothing, with none
