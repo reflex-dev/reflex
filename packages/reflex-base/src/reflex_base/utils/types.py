@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import builtins
 import dataclasses
 import logging
@@ -309,6 +310,17 @@ class _LenientNames(dict):
         super().__init__()
         self._globalns = globalns
 
+    def defines(self, key: str) -> bool:
+        """Check whether a name is a global or a builtin.
+
+        Args:
+            key: The name.
+
+        Returns:
+            Whether the name is defined.
+        """
+        return key in self._globalns or hasattr(builtins, key)
+
     def __missing__(self, key: str) -> Any:
         """Resolve a name the annotation uses.
 
@@ -321,6 +333,49 @@ class _LenientNames(dict):
         if key in self._globalns:
             return self._globalns[key]
         return getattr(builtins, key, Any)
+
+
+class _UndefinedAttributes(ast.NodeTransformer):
+    """Shorten ``a.b.c`` to ``a`` when ``a`` is undefined, so it reads as ``Any``."""
+
+    def __init__(self, names: _LenientNames):
+        """Check names against those an annotation is evaluated with.
+
+        Args:
+            names: The names the annotation is evaluated with.
+        """
+        self._names = names
+
+    def visit_Attribute(self, node: ast.Attribute) -> ast.AST:
+        """Replace an attribute of an undefined name by the name.
+
+        Args:
+            node: The attribute access.
+
+        Returns:
+            The undefined root name, otherwise the visited node.
+        """
+        root = node.value
+        while isinstance(root, ast.Attribute):
+            root = root.value
+        if isinstance(root, ast.Name) and not self._names.defines(root.id):
+            return root
+        return self.generic_visit(node)
+
+
+def _eval_lenient(source: str, globalns: dict[str, Any]) -> Any:
+    """Evaluate an annotation, reading undefined names and their attributes as ``Any``.
+
+    Args:
+        source: The annotation's source.
+        globalns: The globals of the module defining the annotation.
+
+    Returns:
+        The evaluated annotation.
+    """
+    names = _LenientNames(globalns)
+    tree = _UndefinedAttributes(names).visit(ast.parse(source, mode="eval"))
+    return eval(compile(tree, "<annotation>", "eval"), globalns, names)
 
 
 def _typed_dict_annotations(typed_dict: Any) -> dict[str, Any]:
@@ -363,7 +418,7 @@ def _typed_dict_hints(typed_dict: Any, include_extras: bool) -> dict[str, Any]:
         if isinstance(hint, typing.ForwardRef):
             module = sys.modules.get(hint.__forward_module__ or typed_dict.__module__)
             globalns = vars(module) if module is not None else {}
-            hint = eval(hint.__forward_arg__, globalns, _LenientNames(globalns))
+            hint = _eval_lenient(hint.__forward_arg__, globalns)
         while not include_extras and get_origin_og(hint) in _TYPED_DICT_QUALIFIERS:
             hint = get_args(hint)[0]
         hints[name] = hint

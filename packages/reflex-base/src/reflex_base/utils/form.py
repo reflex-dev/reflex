@@ -355,8 +355,11 @@ def transform_form_data(value: Any, hinted_args: Any) -> Any:
         if typed_dict is not None:
             return _form_data_as_typed_dict(FormData(entries), typed_dict)
         return _form_data_dict(entries)
-    if typed_dict is not None and isinstance(value, FormData):
-        return _form_data_as_typed_dict(value, typed_dict)
+    # A FormData passed on from another handler, as it was submitted.
+    if isinstance(value, FormData):
+        if typed_dict is not None:
+            return _form_data_as_typed_dict(value, typed_dict)
+        return _form_data_dict(value._items)
     return value
 
 

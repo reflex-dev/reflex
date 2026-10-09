@@ -349,12 +349,15 @@ def test_typed_dict_helpers_resolve_around_unresolvable_names(tmp_path, monkeypa
         "from typing import TYPE_CHECKING, TypedDict\n"
         "from typing_extensions import NotRequired\n"
         "if TYPE_CHECKING:\n"
+        "    import decimal\n"
         "    from decimal import Decimal\n"
         "class Order(TypedDict):\n"
         "    tags: list[str]\n"
         "    amounts: list[Decimal]\n"
         "    amount: Decimal\n"
+        "    total: decimal.Decimal | None\n"
         "    tip: NotRequired[Decimal]\n"
+        "    fee: NotRequired[decimal.context.Decimal]\n"
         "    agree: NotRequired[bool]\n"
     )
     monkeypatch.syspath_prepend(str(tmp_path))
@@ -364,12 +367,15 @@ def test_typed_dict_helpers_resolve_around_unresolvable_names(tmp_path, monkeypa
             "tags",
             "amounts",
             "amount",
+            "total",
         }
         assert get_typed_dict_field_types(module.Order) == {
             "tags": list[str],
             "amounts": list[Any],
             "amount": Any,
+            "total": Any | None,
             "tip": Any,
+            "fee": Any,
             "agree": bool,
         }
     finally:

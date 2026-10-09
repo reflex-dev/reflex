@@ -1686,6 +1686,20 @@ def test_transform_event_payload_form_data_to_dataclass():
     assert payload["form_data"] == _TagsRecord(tag="b", name="x")
 
 
+@pytest.mark.parametrize(
+    ("hint", "expected"),
+    [(_TagsRecord, _TagsRecord(tag="b", name="x")), (dict, {"tag": "b", "name": "x"})],
+)
+def test_transform_event_payload_passes_form_data_on_as_dict(hint, expected):
+    """A FormData passed on to another handler is built like submitted form data."""
+    payload = _transform_event_payload(
+        {"data": FormData([("tag", "a"), ("name", "x"), ("tag", "b")])},
+        {"data": hint},
+    )
+    assert payload["data"] == expected
+    assert type(payload["data"]) is type(expected)
+
+
 def test_prepare_event_payload_transforms_form_data():
     """A payload is transformed for the handler's annotations."""
 

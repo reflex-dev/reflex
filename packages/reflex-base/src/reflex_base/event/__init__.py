@@ -50,8 +50,10 @@ from reflex_base.utils.types import (
     ArgsSpec,
     GenericType,
     Unset,
+    is_optional,
     safe_issubclass,
     typehint_issubclass,
+    value_inside_optional,
 )
 from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var, _owner_state
@@ -2098,9 +2100,15 @@ def _check_event_args_subclass_of_callback(
             try:
                 if isinstance(provided_type, TypeVar):
                     # A generic spec arg takes on the callback's type within its
-                    # bound, or as one of its constraints.
+                    # bound, or as one of its constraints; an optional callback
+                    # type accepts what its non-None type does.
+                    admitted_type = (
+                        value_inside_optional(callback_param_type)
+                        if is_optional(callback_param_type)
+                        else callback_param_type
+                    )
                     compare_result = any(
-                        typehint_issubclass(callback_param_type, admitted)
+                        typehint_issubclass(admitted_type, admitted)
                         for admitted in provided_type.__constraints__
                         or (provided_type.__bound__ or Any,)
                     )

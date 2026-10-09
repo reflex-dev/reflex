@@ -29,6 +29,7 @@ from reflex_base.utils.exceptions import (
     EventHandlerTypeError,
     EventHandlerValueError,
 )
+from reflex_base.utils.form import FormData
 from reflex_base.vars.base import Field, LiteralVar, Var, field
 from rich.console import Console
 from typing_extensions import TypeAliasType
@@ -1604,6 +1605,8 @@ _CONSTRAINED_SPEC_ARG = TypeVar("_CONSTRAINED_SPEC_ARG", int, str)
     [
         (_BOUNDED_SPEC_ARG, dict[str, str], True),
         (_BOUNDED_SPEC_ARG, list[str], False),
+        (_BOUNDED_SPEC_ARG, FormData[str, str] | None, True),
+        (_BOUNDED_SPEC_ARG, list[str] | None, False),
         (_CONSTRAINED_SPEC_ARG, int, True),
         (_CONSTRAINED_SPEC_ARG, str, True),
         (_CONSTRAINED_SPEC_ARG, float, False),

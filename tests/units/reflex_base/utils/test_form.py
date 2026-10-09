@@ -479,7 +479,10 @@ class _UnresolvableData(TypedDict):
 
 def test_transform_form_data_coerces_around_unresolvable_fields():
     """A field type that cannot be resolved leaves the other fields coerced."""
-    assert _transform(_UnresolvableData) == {"tag": ["a", "b"], "name": "x"}
+    assert _transform(
+        _UnresolvableData,
+        {FORM_DATA_ENTRIES_KEY: [*_FORM_DATA_ENTRIES, ["amount", "1.25"]]},
+    ) == {"tag": ["a", "b"], "name": "x", "amount": "1.25"}
 
 
 def test_transform_form_data_with_unhashable_annotation():

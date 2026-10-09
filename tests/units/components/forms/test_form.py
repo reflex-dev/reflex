@@ -227,6 +227,7 @@ def test_on_submit_accepts_typed_dict_with_unresolvable_field_types():
         name: str
         amount: "Decimal"  # noqa: F821 # pyright: ignore[reportUndefinedVariable]
         tip: "NotRequired[Decimal]"  # noqa: F821 # pyright: ignore[reportUndefinedVariable]
+        fee: "NotRequired[billing.Money]"  # noqa: F821 # pyright: ignore[reportUndefinedVariable]
 
     class OrderState(rx.State):
         @rx.event
@@ -411,7 +412,13 @@ def test_on_submit_accepts_typed_dict_with_inherited_optional_fields():
 
 @pytest.mark.parametrize(
     "annotation",
-    [FormData, FormData[str, Any], FormData[str, str], rx.form.FormData],
+    [
+        FormData,
+        FormData[str, Any],
+        FormData[str, str],
+        FormData[str, str] | None,
+        rx.form.FormData,
+    ],
 )
 @pytest.mark.parametrize("form_factory", [HTMLForm.create, Form.create])
 def test_on_submit_accepts_form_data_annotation(form_factory, annotation, caplog):
