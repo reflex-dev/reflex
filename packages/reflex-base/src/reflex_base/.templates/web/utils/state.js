@@ -33,12 +33,9 @@ const SAME_DOMAIN_HOSTNAMES = ["localhost", "0.0.0.0", "::", "0:0:0:0:0:0:0:0"];
 // Global variable to hold the token.
 let token;
 
-// A token generated for the transport warmed up before the app mounted. It is
-// saved to the session storage by getToken, once the mounted app connects.
-let unsavedToken;
-
-// Key for the token in the session storage.
-const TOKEN_KEY = "token";
+// Share cookie exchange and refresh requests in this tab.
+let sessionRequest;
+let initialSessionExchange;
 
 // create cookie instance
 const cookies = new Cookies();
@@ -82,7 +79,7 @@ const locationRef = {
 };
 
 /**
- * Generate a UUID (Used for session tokens).
+ * Generate a UUID for component identifiers.
  * Taken from: https://stackoverflow.com/questions/105034/how-do-i-create-a-guid-uuid
  * @returns A UUID.
  */
@@ -111,25 +108,17 @@ export const getToken = () => {
     return token;
   }
   if (typeof window !== "undefined") {
-    if (!window.sessionStorage.getItem(TOKEN_KEY)) {
-      window.sessionStorage.setItem(TOKEN_KEY, unsavedToken ?? generateUUID());
-    }
-    token = window.sessionStorage.getItem(TOKEN_KEY);
+    token = window.sessionStorage.getItem(`${sessionStorageKey()}:token`) || "";
   }
-  return token;
+  return token || "";
 };
 
-/**
- * Get the token for the current session without saving a new one.
- *
- * A new token only reaches the session storage when the mounted app
- * connects, so anything waiting for it there sees the rendered page.
- * @returns The saved token, or a new one that getToken saves later.
- */
+/** Get the saved client token to warm the transport before the app mounts. */
 const peekToken = () =>
   token ||
-  window.sessionStorage.getItem(TOKEN_KEY) ||
-  (unsavedToken ??= generateUUID());
+  window.sessionStorage.getItem(`${sessionStorageKey()}:token`) ||
+  window.sessionStorage.getItem("token") ||
+  "";
 
 /**
  * Get the URL for the backend server
@@ -161,6 +150,78 @@ export const getBackendURL = (url_str) => {
   return endpoint;
 };
 
+/** Namespace browser state by the backend URL, including its port and path. */
+const sessionStorageKey = () => `reflex:${getBackendURL(EVENTURL).href}`;
+
+/** Store only the non-secret tab routing token in JavaScript-accessible storage. */
+const setToken = (value) => {
+  token = value;
+  window.sessionStorage.setItem(`${sessionStorageKey()}:token`, value);
+};
+
+/** Wait until credentialed HTTP calls can use the initial session cookie. */
+export const waitForSession = async () => {
+  await initialSessionExchange;
+};
+
+/** Exchange an in-band credential or refresh the HTTP-only session cookie. */
+const ensureSession = async (sessionCredential) => {
+  if (sessionRequest) return sessionRequest;
+  const key = sessionStorageKey();
+  const refresh = async () => {
+    const endpoint = getBackendURL(EVENTURL);
+    endpoint.protocol = endpoint.protocol === "wss:" ? "https:" : "http:";
+    endpoint.pathname = endpoint.pathname.replace(
+      /\/_event\/?$/,
+      "/_reflex/session",
+    );
+    endpoint.search = "";
+    const headers = { "Content-Type": "application/json" };
+    const previousToken = getToken();
+    if (previousToken) headers["Reflex-Client-Token"] = previousToken;
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 10000);
+    try {
+      const response = await window.fetch(endpoint.href, {
+        method: "POST",
+        credentials: "include",
+        headers,
+        body: JSON.stringify(
+          sessionCredential ? { session_token: sessionCredential } : {},
+        ),
+        signal: controller.signal,
+      });
+      if (!response.ok) {
+        throw new Error(`Session request failed: ${response.status}`);
+      }
+      const session = await response.json();
+      if (
+        typeof session.client_token !== "string" ||
+        !session.client_token ||
+        !Number.isFinite(session.expires_in) ||
+        session.expires_in <= 0
+      ) {
+        throw new Error("Invalid session response");
+      }
+      setToken(session.client_token);
+      // Refresh halfway through the lifetime; the server remains authoritative.
+      window.localStorage.setItem(
+        `${key}:expires_at`,
+        Date.now() + session.expires_in * 500,
+      );
+    } catch (error) {
+      window.localStorage.removeItem(`${key}:expires_at`);
+      throw error;
+    } finally {
+      window.clearTimeout(timeout);
+    }
+  };
+  sessionRequest = refresh().finally(() => {
+    sessionRequest = null;
+  });
+  return sessionRequest;
+};
+
 /**
  * Check if the backend is disabled.
  *
@@ -187,6 +248,7 @@ const createSocket = (endpoint, transports, token) =>
     protocols: [reflexEnvironment.version],
     autoUnref: false,
     autoConnect: false,
+    withCredentials: true,
     query: { token },
     reconnection: false,
   });
@@ -217,6 +279,16 @@ if (typeof window !== "undefined") {
       return;
     }
     try {
+      // A cold transport would capture cookies before the shared session lock.
+      if (
+        !(
+          Number(
+            window.localStorage.getItem(`${sessionStorageKey()}:expires_at`),
+          ) > Date.now()
+        )
+      ) {
+        return;
+      }
       warmSocket = createSocket(
         getBackendURL(EVENTURL),
         [env.TRANSPORT],
@@ -610,18 +682,28 @@ export const applyRestEvent = async (event, socket, navigate, params) => {
       extra_args[name] = event.payload[name];
     }
     // Start upload, but do not wait for it, which would block other events.
-    uploadFiles(
-      event.name,
-      event.payload.files,
-      event.payload.upload_id,
-      event.payload.on_upload_progress,
-      event.payload.extra_headers,
-      extra_args,
-      socket,
-      refs,
-      getBackendURL,
-      getToken,
-    );
+    const startUpload = () =>
+      uploadFiles(
+        event.name,
+        event.payload.files,
+        event.payload.upload_id,
+        event.payload.on_upload_progress,
+        event.payload.extra_headers,
+        extra_args,
+        socket,
+        refs,
+        getBackendURL,
+        getToken,
+      );
+    if (initialSessionExchange) {
+      waitForSession()
+        .then(startUpload)
+        .catch((error) => {
+          console.error("Upload session error:", error.message);
+        });
+    } else {
+      startUpload();
+    }
   }
 };
 
@@ -724,7 +806,7 @@ export const connect = async (
   // Socket already allocated, just reconnect it if needed.
   if (socket.current) {
     if (!socket.current.connected) {
-      socket.current.reconnect();
+      await socket.current.reconnect();
     }
     return;
   }
@@ -763,8 +845,15 @@ export const connect = async (
     warmSocket ?? createSocket(endpoint, transports, session_token);
   warmSocket = null;
   cancelWarmup();
-  socket.current.auth = bootAuth(true);
-  socket.current.wait_connect = !socket.current.connected;
+  socket.current.wait_connect = false;
+  let firstConnect = true;
+  let finishBootstrap;
+  let exchangingSession = false;
+  const releaseBootstrap = () => {
+    finishBootstrap?.();
+    finishBootstrap = null;
+  };
+  socket.current.releaseSessionBootstrap = releaseBootstrap;
   // Ensure undefined fields in events are sent as null instead of removed
   socket.current.io.encoder.replacer = (k, v) => (v === undefined ? null : v);
   socket.current.io.decoder.tryParse = (str) => {
@@ -775,17 +864,48 @@ export const connect = async (
     }
   };
   // Set up a reconnect helper function
-  socket.current.reconnect = () => {
+  socket.current.reconnect = async () => {
     if (
       socket.current &&
       !socket.current.connected &&
       !socket.current.wait_connect
     ) {
       socket.current.wait_connect = true;
-      socket.current.io.opts.query = { token: getToken() }; // Update token for reconnect.
-      // A reconnect rehydrates in full: the reducers no longer hold the defaults.
-      socket.current.auth = bootAuth(false);
-      socket.current.connect();
+      const current = socket.current;
+      const start = () => {
+        if (socket.current !== current) {
+          releaseBootstrap();
+          return;
+        }
+        current.io.opts.query = {
+          token: getToken() || window.sessionStorage.getItem("token") || "",
+        };
+        current.auth = bootAuth(firstConnect);
+        initialSessionExchange = undefined;
+        current.connect();
+      };
+      const key = sessionStorageKey();
+      if (
+        window.navigator?.locks &&
+        !(Number(window.localStorage.getItem(`${key}:expires_at`)) > Date.now())
+      ) {
+        // Only cold tabs wait. The first socket hydrates while its in-band
+        // credential becomes a cookie; the next tab then shares that cookie.
+        window.navigator.locks
+          .request(
+            `${key}:session`,
+            () =>
+              new Promise((resolve) => {
+                finishBootstrap = resolve;
+                start();
+              }),
+          )
+          .catch((error) => {
+            if (socket.current === current) onConnectError(error);
+          });
+      } else {
+        start();
+      }
     }
   };
 
@@ -831,6 +951,8 @@ export const connect = async (
 
   // Once the socket is open, hydrate the page.
   socket.current.on("connect", async () => {
+    if (!exchangingSession) releaseBootstrap();
+    firstConnect = false;
     socket.current.wait_connect = false;
     setConnectErrors([]);
     window.__reflex_otel?.onSocketConnect?.();
@@ -842,7 +964,8 @@ export const connect = async (
     }
   });
 
-  socket.current.on("connect_error", (error) => {
+  const onConnectError = (error, retry) => {
+    releaseBootstrap();
     socket.current.wait_connect = false;
     let n_connect_errors = 0;
     setConnectErrors((connectErrors) => {
@@ -851,14 +974,19 @@ export const connect = async (
       return new_errors;
     });
     window.setTimeout(() => {
+      if (socket.current && retry) return retry();
       if (socket.current && !socket.current.connected) {
-        socket.current.reconnect();
+        return socket.current.reconnect();
       }
     }, 200 * n_connect_errors); // Incremental backoff
-  });
+  };
+  socket.current.on("connect_error", onConnectError);
 
   socket.current.on("disconnect", (reason, details) => {
+    if (!exchangingSession) releaseBootstrap();
+    firstConnect = false;
     socket.current.wait_connect = false;
+    socket.current.rehydrate = true;
     window.__reflex_otel?.onSocketDisconnect?.(reason);
     const try_reconnect =
       reason !== "io server disconnect" && reason !== "io client disconnect";
@@ -943,12 +1071,46 @@ export const connect = async (
     }
   });
   socket.current.on("new_token", async (new_token) => {
-    token = new_token;
-    window.sessionStorage.setItem(TOKEN_KEY, new_token);
+    setToken(new_token);
+  });
+  const refreshSession = async (sessionCredential) => {
+    try {
+      const previousToken = getToken();
+      const request = ensureSession(sessionCredential);
+      if (sessionCredential) initialSessionExchange = request;
+      await request;
+      if (initialSessionExchange === request)
+        initialSessionExchange = undefined;
+      if (socket.current?.connected && getToken() !== previousToken) {
+        socket.current.disconnect();
+        await socket.current.reconnect();
+      }
+    } catch (error) {
+      if (socket.current) {
+        onConnectError(
+          error,
+          sessionCredential
+            ? undefined
+            : () => {
+                if (socket.current.connected) return refreshSession();
+              },
+        );
+      }
+    }
+  };
+  socket.current.on("session_refresh", () => refreshSession());
+  socket.current.on("session_token", async (sessionCredential) => {
+    exchangingSession = true;
+    try {
+      await refreshSession(sessionCredential);
+    } finally {
+      exchangingSession = false;
+      releaseBootstrap();
+    }
   });
 
   document.addEventListener("visibilitychange", checkVisibility);
-  socket.current.connect();
+  await socket.current.reconnect();
 };
 
 /**
@@ -1320,6 +1482,7 @@ export const useEventLoop = (
     return () => {
       mounted.current = false;
       if (socket.current) {
+        socket.current.releaseSessionBootstrap?.();
         socket.current.disconnect();
         socket.current.off();
         socket.current = null;
