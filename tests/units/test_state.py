@@ -34,6 +34,7 @@ from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import Event, EventHandler
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils import format, types
 from reflex_base.utils.exceptions import (
     InvalidLockWarningThresholdError,
@@ -52,6 +53,7 @@ from typing_extensions import TypeAliasType
 
 import reflex as rx
 from reflex.app import App
+from reflex.compiler.utils import compile_state
 from reflex.environment import environment
 from reflex.istate.data import (
     HeaderData,
@@ -1659,6 +1661,192 @@ async def test_uncached_computed_var_unchanged_omitted_from_delta():
     }
     ucs._clean()
     assert await ucs._get_resolved_delta() == {}
+
+
+@pytest.fixture
+def isolated_hydration_state(
+    clean_registration_context: RegistrationContext, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Isolate the uncached substates registered by hydration tests.
+
+    Args:
+        clean_registration_context: A fresh registry for the test states and app.
+        monkeypatch: Restore the root's dirty-substate registry after the test.
+    """
+    monkeypatch.setattr(State, "_always_dirty_substates", set())
+
+
+@pytest.mark.usefixtures("isolated_hydration_state")
+@pytest.mark.parametrize("hydrate_mode", ["legacy", "full", "matching", "mismatched"])
+async def test_hydration_records_uncached_computed_values(
+    hydrate_mode: str,
+    attached_mock_event_context: EventContext,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    app_module_mock: Mock,
+):
+    """Hydrated values are not resent until they change, including after reconnects.
+
+    Args:
+        hydrate_mode: The hydration handler and initial-state hash mode.
+        attached_mock_event_context: The context capturing emitted snapshots.
+        emitted_deltas: The snapshots sent to the client.
+        app_module_mock: The module containing the hydration handler's app.
+    """
+
+    class HydratedState(State):
+        value: int = 0
+
+        @rx.var(cache=False)
+        def sync_value(self) -> list[int]:
+            """Return the current value in a mutable container.
+
+            Returns:
+                A list containing the current value.
+            """
+            return [self.value]
+
+    class HydratedChild(HydratedState):
+        @rx.var(cache=False)
+        async def async_value(self) -> int:
+            """Return the inherited value asynchronously.
+
+            Returns:
+                The current inherited value.
+            """
+            return self.value
+
+    app_module_mock.app = App(_state=State)
+    app_module_mock.app.add_page(lambda: rx.text(HydratedChild.async_value), route="/")
+    hashes = state_snapshot_hashes(compile_state(State))
+    if hydrate_mode == "mismatched":
+        hashes[0] = "mismatch"
+    root = State()
+    root.rx_router_session = SessionData(client_token=attached_mock_event_context.token)
+    parent = await root.get_state(HydratedState)
+    child = await root.get_state(HydratedChild)
+    parent_name = HydratedState.get_full_name()
+    child_name = HydratedChild.get_full_name()
+    sync_key = "sync_value" + FIELD_MARKER
+    async_key = "async_value" + FIELD_MARKER
+
+    for expected in (0, 1):
+        emitted_deltas.clear()
+        if hydrate_mode == "legacy":
+            await root.hydrate()
+        else:
+            await root.hydrate_and_load(
+                None, hashes if hydrate_mode in {"matching", "mismatched"} else None
+            )
+        snapshot = emitted_deltas[0][1]
+        if hydrate_mode == "matching" and expected == 0:
+            assert "value" + FIELD_MARKER not in snapshot.get(parent_name, {})
+        # The correction pass re-evaluates uncached vars even with matching hashes.
+        assert snapshot[parent_name][sync_key] == [expected]
+        assert snapshot[child_name][async_key] == expected
+
+        delta = await root._get_resolved_delta()
+        assert sync_key not in delta.get(parent_name, {})
+        assert async_key not in delta.get(child_name, {})
+        root._clean()
+
+        # Recording must survive the per-substate persistence used by Redis.
+        restored = BaseState._deserialize(parent._serialize())
+        restored.parent_state = root
+        restored_child = BaseState._deserialize(child._serialize())
+        restored_child.parent_state = restored
+        restored.substates[child.get_name()] = restored_child
+        assert await restored._get_resolved_delta() == {}
+
+        parent.value += 1
+        delta = await root._get_resolved_delta()
+        assert delta[parent_name][sync_key] == [expected + 1]
+        assert delta[child_name][async_key] == expected + 1
+        root._clean()
+
+
+@pytest.mark.usefixtures("isolated_hydration_state")
+@pytest.mark.parametrize("with_hashes", [True, False])
+async def test_hydration_records_corrected_uncached_values(
+    with_hashes: bool,
+    attached_mock_event_context: EventContext,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    app_module_mock: Mock,
+):
+    """Record the correction delivered after snapshot evaluation, not its old value.
+
+    Args:
+        with_hashes: Whether to filter the snapshot against compiled defaults.
+        attached_mock_event_context: The context capturing emitted snapshots.
+        emitted_deltas: The snapshots sent to the client.
+        app_module_mock: The module containing the hydration handler's app.
+    """
+    values = [0]
+
+    class HydratedState(State):
+        @rx.var(cache=False)
+        async def value(self) -> int:
+            """Return a changing external value.
+
+            Returns:
+                The next external value, then the last value on later reads.
+            """
+            return values.pop(0) if len(values) > 1 else values[0]
+
+    app_module_mock.app = App(_state=State)
+    app_module_mock.app.add_page(lambda: rx.text(HydratedState.value), route="/")
+    hashes = state_snapshot_hashes(compile_state(State))
+    values[:] = [1, 2]
+    root = State()
+    root.rx_router_session = SessionData(client_token=attached_mock_event_context.token)
+    await root.hydrate_and_load(None, hashes if with_hashes else None)
+    name = HydratedState.get_full_name()
+    key = "value" + FIELD_MARKER
+    assert emitted_deltas[0][1][name][key] == 2
+    assert key not in (await root._get_resolved_delta()).get(name, {})
+
+
+@pytest.mark.usefixtures("isolated_hydration_state")
+@pytest.mark.parametrize("handler", ["hydrate", "hydrate_and_load"])
+@pytest.mark.parametrize("delivery", ["absent", "failed"])
+async def test_unsent_hydration_does_not_record_uncached_values(
+    handler: str,
+    delivery: str,
+    attached_mock_event_context: EventContext,
+):
+    """A snapshot that cannot be emitted must not suppress a later real delta.
+
+    Args:
+        handler: The hydration handler to exercise.
+        delivery: Whether emission is unavailable or raises an error.
+        attached_mock_event_context: The context to fork for failed delivery.
+    """
+
+    class HydratedState(State):
+        @rx.var(cache=False)
+        def value(self) -> int:
+            """Return a fixed uncached value.
+
+            Returns:
+                A fixed integer.
+            """
+            return 42
+
+    root = State()
+    emit = AsyncMock(side_effect=RuntimeError("cannot emit"))
+    with dataclasses.replace(
+        attached_mock_event_context,
+        emit_delta_impl=emit if delivery == "failed" else None,
+    ):
+        if delivery == "failed":
+            with pytest.raises(RuntimeError, match="cannot emit"):
+                await getattr(root, handler)()
+        else:
+            # Without an emitter, hydrate_and_load still checks the app's routes.
+            app = App(_state=State)
+            app.add_page(lambda: rx.text(HydratedState.value), route="/")
+            await getattr(root, handler)()
+    delta = await root._get_resolved_delta()
+    assert delta[HydratedState.get_full_name()]["value" + FIELD_MARKER] == 42
 
 
 async def test_uncached_computed_var_scalar_key_distinguishes_types():

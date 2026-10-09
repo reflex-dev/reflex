@@ -87,7 +87,9 @@ from reflex.istate.data import (
 from reflex.istate.delta import (
     Delta,
     DeltaMapping,
+    _record_snapshot,
     _resolve_delta,
+    _suppress_delta_recording,
     build_delta,
     clean_state,
     resolve_delta,
@@ -2351,7 +2353,9 @@ class State(BaseState):
         # Get the initial state if needed.
         ctx = EventContext.get()
         if ctx.emit_delta_impl is not None:
-            await ctx.emit_delta(delta=await _resolve_delta(self.dict()))
+            snapshot = await _resolve_delta(self.dict())
+            await ctx.emit_delta(delta=snapshot)
+            _record_snapshot(self, snapshot)
 
         # since a full dict was captured, clean any dirtiness
         self._clean()
@@ -2407,13 +2411,18 @@ class State(BaseState):
         self.is_hydrated = False
         ctx = EventContext.get()
         if ctx.emit_delta_impl is not None:
-            delta = await _resolve_delta(self.dict())
+            snapshot = delta = await _resolve_delta(self.dict())
             if hashes:
                 delta = await _diff_against_initial_state(type(self), delta, hashes)
             # Include the guard and values changed while resolving the snapshot.
-            for state_name, changes in (await self._get_resolved_delta()).items():
+            # Only the successful emission below makes these values count as sent.
+            with _suppress_delta_recording():
+                corrections = await self._get_resolved_delta()
+            for state_name, changes in corrections.items():
+                snapshot.setdefault(state_name, {}).update(changes)
                 delta.setdefault(state_name, {}).update(changes)
             await ctx.emit_delta(delta=delta)
+            _record_snapshot(self, snapshot)
             # Follow-up corrections must be allowed to write browser storage.
             self.dirty_vars.discard(constants.CompileVars.IS_HYDRATED)
         # The browser's values only: the reset defaults stay clean, so they are

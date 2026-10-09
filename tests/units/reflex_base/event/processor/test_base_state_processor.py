@@ -1561,6 +1561,9 @@ def _boot_event(name: str, payload: dict[str, Any]) -> Event:
     )
 
 
+@pytest.mark.parametrize(
+    "processor_state_manager", ["in_process", "disk", "redis"], indirect=True
+)
 async def test_hydrate_and_load_single_lock_cycle(
     wired_app: App,
     real_base_state_processor: BaseStateEventProcessor,
@@ -1579,6 +1582,24 @@ async def test_hydrate_and_load_single_lock_cycle(
     class CookieState(State):
         flavor: str = rx.Cookie("plain")
         loads: int = 0
+
+        @rx.var(cache=False)
+        def label(self) -> str:
+            """Return the cookie value without caching it.
+
+            Returns:
+                The current flavor.
+            """
+            return self.flavor
+
+        @rx.var(cache=False)
+        async def async_label(self) -> str:
+            """Return the cookie value asynchronously without caching it.
+
+            Returns:
+                The current flavor.
+            """
+            return self.flavor
 
         @event
         def on_load_handler(self):
@@ -1608,6 +1629,11 @@ async def test_hydrate_and_load_single_lock_cycle(
     assert snapshot[state_name][hydrated_key] is False
     assert snapshot[CookieState.get_full_name()]["flavor" + FIELD_MARKER] == "chocolate"
     assert snapshot[CookieState.get_full_name()]["loads" + FIELD_MARKER] == 0
+    assert snapshot[CookieState.get_full_name()]["label" + FIELD_MARKER] == "chocolate"
+    assert (
+        snapshot[CookieState.get_full_name()]["async_label" + FIELD_MARKER]
+        == "chocolate"
+    )
     assert [d for _, d in emitted_deltas[1:]] == [
         {CookieState.get_full_name(): {"flavor" + FIELD_MARKER: "chocolate"}},
         {state_name: {hydrated_key: False}},
@@ -1623,6 +1649,10 @@ async def test_hydrate_and_load_single_lock_cycle(
         await future.wait_all()
     snapshot = emitted_deltas[0][1]
     assert snapshot[CookieState.get_full_name()]["flavor" + FIELD_MARKER] == "plain"
+    assert snapshot[CookieState.get_full_name()]["label" + FIELD_MARKER] == "plain"
+    assert (
+        snapshot[CookieState.get_full_name()]["async_label" + FIELD_MARKER] == "plain"
+    )
     assert emitted_deltas[2][1] == {
         CookieState.get_full_name(): {"loads" + FIELD_MARKER: 2}
     }
