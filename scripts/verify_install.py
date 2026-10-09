@@ -8,22 +8,15 @@ dependencies except workspace siblings whose versions may not be published yet.
 """
 
 # /// script
-# requires-python = ">=3.10"
-# dependencies = [
-#     "tomli; python_version < '3.11'",
-# ]
+# requires-python = ">=3.11"
 # ///
 
 import os
 import subprocess
 import sys
 import tempfile
+import tomllib
 from pathlib import Path
-
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    import tomli as tomllib  # pyright: ignore[reportMissingImports]
 
 
 def workspace_siblings(package: str) -> tuple[str, ...]:
