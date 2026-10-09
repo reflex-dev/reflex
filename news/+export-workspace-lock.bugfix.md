@@ -1,0 +1,1 @@
+Production exports, `reflex run --env prod`, and preview startup that share a `.web` directory now wait for one another instead of overwriting each other's compiled frontend and archives. The lock file `.web/.reflex-build.lock` stays in place between commands.
