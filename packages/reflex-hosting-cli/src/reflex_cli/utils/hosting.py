@@ -493,6 +493,24 @@ def rejected_token_message(source: TokenSource, err: TokenAccessDeniedError) -> 
     )
 
 
+def _token_validation_failure_message(
+    source: TokenSource, err: TokenValidationError
+) -> str:
+    """Describe a temporary validation failure and suggest retrying.
+
+    Args:
+        source: Where the token was loaded from.
+        err: The validation error.
+
+    Returns:
+        The message to report.
+    """
+    return (
+        f"Unable to validate the access token from the {source.value}: "
+        f"{err} (auth request id: {err.request_id}). Please try again later."
+    )
+
+
 def get_existing_access_token() -> str:
     """Fetch the access token from the existing config if applicable.
 
@@ -932,10 +950,7 @@ def get_authenticated_client(
             raise click.exceptions.Exit(1) from err
         except TokenValidationError as err:
             api.close()
-            logger.error(
-                f"Unable to validate the access token from the {source.value}: "
-                f"{err} (auth request id: {err.request_id})"
-            )
+            logger.error(_token_validation_failure_message(source, err))
             raise click.exceptions.Exit(1) from err
         return AuthenticatedClient(api, me)
 

@@ -110,10 +110,7 @@ def whoami_command(token: str | None, loglevel: str, as_json: bool):
         logger.error(hosting.rejected_token_message(source, err))
         raise click.exceptions.Exit(1) from err
     except TokenValidationError as err:
-        logger.error(
-            f"Unable to validate the access token from the {source.value}: "
-            f"{err} (auth request id: {err.request_id}). Please try again later."
-        )
+        logger.error(hosting._token_validation_failure_message(source, err))
         raise click.exceptions.Exit(1) from err
 
     identity = {

@@ -588,7 +588,7 @@ def test_unvalidated_token_in_non_interactive_mode_is_not_called_rejected(
     browser.assert_not_called()
     errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
     assert errors == [
-        "Unable to validate the access token from the config file: server error (auth request id: req-2)"
+        "Unable to validate the access token from the config file: server error (auth request id: req-2). Please try again later."
     ]
 
 
