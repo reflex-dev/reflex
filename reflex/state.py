@@ -122,8 +122,10 @@ def _collect_dirty_vars() -> Iterator[set[tuple[BaseState, str]]]:
 
 def _state_ancestors(state: BaseState) -> Iterator[BaseState]:
     """Yield the parents of a state, from nearest to root."""
-    while (state := state.parent_state) is not None:
-        yield state
+    parent = state.parent_state
+    while parent is not None:
+        yield parent
+        parent = parent.parent_state
 
 
 def _dirty_delta_roots(state: BaseState) -> Iterator[BaseState]:
