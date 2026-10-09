@@ -231,6 +231,17 @@ assert.deepEqual(
     .payload.form_data.__reflex_form_data__,
   [['tag', 'a'], ['tag', 'b'], ['agree', true], ['unset', null]],
 );
+// A name submitted more than once, like a checkbox group with an id, keeps
+// its values instead of taking the ref's single value.
+const group = getFormData(
+  [['colors', 'red'], ['colors', 'blue']],
+  {colors: 'red'},
+);
+assert.deepEqual(
+  encodeFormDataArgs({name: 'state.submit', payload: {form_data: group}})
+    .payload.form_data.__reflex_form_data__,
+  [['colors', 'red'], ['colors', 'blue']],
+);
 """,
         ],
         check=True,

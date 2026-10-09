@@ -163,7 +163,7 @@ def form_example():
 
 When using the `name` attribute in form controls like `rx.switch`, `rx.radio_group`, and `rx.checkbox`, these controls will only be included in the form data if their values are set (e.g., if the checkbox is checked, the switch is toggled, or a radio option is selected). Read them with `form_data.get(...)`, or declare them as `bool` fields of a [TypedDict](#validating-form-data-with-a-typeddict).
 
-A control with an `id` is also included in the form data under its `id`, even when its value is not set, and that value replaces any value submitted under the same `name`. Custom native `input`, `select`, and `textarea` components with an `id` are included automatically. For other custom form controls, set `_is_form_control = True` on the component class to include its ID-based value in submissions. Including controls by `id` is deprecated and will be removed in Reflex 0.11, so give every submitted control a `name`.
+A control with an `id` is also included in the form data under its `id`, even when its value is not set, and that value replaces the value submitted under the same `name`, unless the form submits that `name` more than once. Custom native `input`, `select`, and `textarea` components with an `id` are included automatically. For other custom form controls, set `_is_form_control = True` on the component class to include its ID-based value in submissions. Including controls by `id` is deprecated and will be removed in Reflex 0.11, so give every submitted control a `name`.
 ```
 
 ```md video https://youtube.com/embed/ITOZkzjtjUA?start=5287&end=6040
