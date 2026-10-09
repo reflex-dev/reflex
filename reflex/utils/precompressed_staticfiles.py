@@ -11,6 +11,7 @@ from mimetypes import guess_type
 from os import PathLike
 from pathlib import Path
 
+import anyio.to_thread
 from starlette.datastructures import Headers
 from starlette.responses import FileResponse, Response
 from starlette.staticfiles import NotModifiedResponse, StaticFiles
@@ -135,7 +136,11 @@ class PrecompressedStaticFiles(StaticFiles):
         scope: Scope,
         status_code: int = 200,
     ) -> Response:
-        """Build a FileResponse, swapping in a precompressed sidecar when possible.
+        """Build the FileResponse for the uncompressed file.
+
+        With sidecar encodings configured this response is provisional:
+        ``get_response`` picks the sidecar off the event loop and finishes the
+        response (``Vary``/``Content-Encoding`` and the conditional check).
 
         Args:
             full_path: The resolved on-disk path to the uncompressed file.
@@ -144,37 +149,44 @@ class PrecompressedStaticFiles(StaticFiles):
             status_code: The response status code to use.
 
         Returns:
-            A file response that serves the best matching asset variant.
+            A file response for the uncompressed file.
         """
-        response_path: str | PathLike[str] = full_path
-        response_stat = stat_result
-        response_headers: dict[str, str] = {}
         media_type = (
             "text/javascript"
             if Path(full_path).suffix.lower() in {".js", ".mjs"}
             else guess_type(os.fspath(full_path))[0]
         )
-
-        if self._encodings:
-            response_headers["Vary"] = "Accept-Encoding"
-            sidecar = self._select_sidecar(full_path, scope)
-            if sidecar is not None:
-                content_encoding, response_path, response_stat = sidecar
-                response_headers["Content-Encoding"] = content_encoding
-
         response = FileResponse(
-            response_path,
+            full_path,
             status_code=status_code,
-            headers=response_headers or None,
             media_type=media_type,
-            stat_result=response_stat,
+            stat_result=stat_result,
         )
+        if self._encodings:
+            return response
+        return self._conditional(response, scope)
+
+    def _conditional(self, response: FileResponse, scope: Scope) -> Response:
+        """Turn ``response`` into a 304 when the client's cached copy is current.
+
+        Args:
+            response: The file response about to be served.
+            scope: The ASGI request scope.
+
+        Returns:
+            ``response`` or a ``NotModifiedResponse`` carrying its headers.
+        """
         if self.is_not_modified(response.headers, Headers(scope=scope)):
             return NotModifiedResponse(response.headers)
         return response
 
     async def get_response(self, path: str, scope: Scope) -> Response:
-        """Serve ``path``, re-routing the 404.html fallback through ``file_response``.
+        """Serve ``path``, swapping in a precompressed sidecar when possible.
+
+        The sidecar lookup stats files, so it runs in a worker thread like
+        Starlette's own path lookup. This also covers the 404.html fallback,
+        which Starlette builds with a bare FileResponse, and which is served
+        with status 200 when the path matches one of the app's routes.
 
         Args:
             path: The requested relative file path.
@@ -184,29 +196,43 @@ class PrecompressedStaticFiles(StaticFiles):
             The resolved static response for the request.
         """
         response = await super().get_response(path, scope)
+        if not isinstance(response, FileResponse) or response.stat_result is None:
+            return response
+        status_code = response.status_code
+        # SPA fallback: a path with no prerendered file that still matches the
+        # app's route table is a valid page, so serve it with 200 and reserve
+        # 404 for genuinely unknown paths. ``path`` was normalized with OS
+        # separators, so restore the URL form before matching (Windows serves
+        # ``articles\\7`` here).
         if (
             self.html
-            and isinstance(response, FileResponse)
-            and response.status_code == 404
-            and response.stat_result is not None
+            and status_code == 404
+            and self._router is not None
+            and self._router("/" + path.replace(os.sep, "/")) is not None
         ):
-            # SPA fallback: a path with no prerendered file that still matches
-            # the app's route table is a valid page, so serve it with 200 and
-            # reserve 404 for genuinely unknown paths.
-            # ``path`` was normalized with OS separators, so restore the URL
-            # form before matching (Windows serves ``articles\\7`` here).
-            if (
-                self._router is not None
-                and self._router("/" + path.replace(os.sep, "/")) is not None
-            ):
-                return self.file_response(
-                    response.path, response.stat_result, scope, status_code=200
-                )
-            # Starlette's get_response builds the 404.html fallback with bare
-            # FileResponse, bypassing file_response. Re-route it so the
-            # sidecar/Vary handling applies.
-            if self._encodings:
-                return self.file_response(
-                    response.path, response.stat_result, scope, status_code=404
-                )
-        return response
+            status_code = 200
+        if not self._encodings:
+            if status_code == response.status_code:
+                return response
+            return self.file_response(
+                response.path, response.stat_result, scope, status_code=status_code
+            )
+        sidecar = await anyio.to_thread.run_sync(
+            self._select_sidecar, response.path, scope
+        )
+        headers = {"Vary": "Accept-Encoding"}
+        response_path: str | PathLike[str] = response.path
+        response_stat = response.stat_result
+        if sidecar is not None:
+            content_encoding, response_path, response_stat = sidecar
+            headers["Content-Encoding"] = content_encoding
+        return self._conditional(
+            FileResponse(
+                response_path,
+                status_code=status_code,
+                headers=headers,
+                media_type=response.media_type,
+                stat_result=response_stat,
+            ),
+            scope,
+        )
