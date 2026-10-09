@@ -18,9 +18,7 @@ def TypedDictFormSubmit(form_component):
     Args:
         form_component: The str name of the form component to use.
     """
-    from typing import TypedDict
-
-    from typing_extensions import NotRequired
+    from typing import NotRequired, TypedDict
 
     import reflex as rx
 

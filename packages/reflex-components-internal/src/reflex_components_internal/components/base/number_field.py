@@ -283,7 +283,7 @@ class HighLevelNumberField(NumberFieldRoot):
         size = props.pop("size", "md")
         if size not in NUMBER_FIELD_SIZE_VARIANTS:
             available_sizes = ", ".join(NUMBER_FIELD_SIZE_VARIANTS)
-            msg = f"Invalid size: {size}. Available sizes: {available_sizes}"
+            msg = f"Invalid size: {size!s}. Available sizes: {available_sizes}"
             raise ValueError(msg)
 
         if children:

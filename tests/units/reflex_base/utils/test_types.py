@@ -6,7 +6,17 @@ import subprocess
 import sys
 import typing
 from collections.abc import Callable, Sequence
-from typing import Annotated, Any, Generic, Literal, TypeVar
+from typing import (
+    Annotated,
+    Any,
+    Generic,
+    Literal,
+    NotRequired,
+    Protocol,
+    Required,
+    TypeVar,
+    runtime_checkable,
+)
 
 import pytest
 import typing_extensions
@@ -23,21 +33,16 @@ from reflex_base.utils.types import (
     typehint_issubclass,
 )
 from typing_extensions import (
-    NotRequired,
     ParamSpec,
     ReadOnly,
-    Required,
     TypeAliasType,
     TypedDict,
     TypeVarTuple,
-    Unpack,
 )
 
 P = ParamSpec("P")
 Ts = TypeVarTuple("Ts")
-Handlers = TypeAliasType(
-    "Handlers", tuple[Callable[P, int], Unpack[Ts]], type_params=(P, Ts)
-)
+Handlers = TypeAliasType("Handlers", tuple[Callable[P, int], *Ts], type_params=(P, Ts))
 
 
 def test_types_import_keeps_optional_orm_lazy():
@@ -139,8 +144,8 @@ def test_asgi_aliases_keep_their_names():
 def test_resolve_type_alias_substitutes_param_spec():
     """A ParamSpec is substituted even next to a TypeVarTuple.
 
-    That combination falls back to manual substitution on 3.10 and 3.11, which
-    has to treat a ParamSpec as a type parameter too.
+    That combination falls back to manual substitution on 3.11, which has to
+    treat a ParamSpec as a type parameter too.
     """
     resolved = resolve_type_alias(Handlers[[str], bool, float])
     assert resolved == tuple[Callable[[str], int], bool, float]
@@ -173,6 +178,43 @@ def test_isinstance_resolves_type_alias(alias_cls: type) -> None:
     assert _isinstance(None, maybe, nested=1, treat_var_as_type=False)
     assert _isinstance("x", maybe, nested=1, treat_var_as_type=False)
     assert not _isinstance(1, maybe, nested=1, treat_var_as_type=False)
+
+
+def test_isinstance_checks_type_parameter_bounds() -> None:
+    """A type parameter, which a field never resolves, checks only its bound."""
+    t = TypeVar("t")
+    bounded = TypeVar("bounded", bound=str)
+    constrained = TypeVar("constrained", int, str)
+    forward = TypeVar("forward", bound="Unresolvable")  # noqa: F821  # pyright: ignore[reportUndefinedVariable]
+    assert _isinstance(1, t, nested=1, treat_var_as_type=False)
+    assert _isinstance("x", t | None, nested=1, treat_var_as_type=False)
+    assert not _isinstance("x", list[t], nested=1, treat_var_as_type=False)  # pyright: ignore[reportGeneralTypeIssues]
+    assert _isinstance("x", bounded, nested=1, treat_var_as_type=False)
+    assert not _isinstance(1, bounded, nested=1, treat_var_as_type=False)
+    assert _isinstance(1, constrained, nested=1, treat_var_as_type=False)
+    assert _isinstance("x", constrained, nested=1, treat_var_as_type=False)
+    assert not _isinstance(1.5, constrained, nested=1, treat_var_as_type=False)
+    assert _isinstance(object(), forward, nested=1, treat_var_as_type=False)
+
+
+def test_isinstance_accepts_unchecked_protocol() -> None:
+    """A protocol without runtime_checkable cannot be checked, so it accepts any value."""
+    t_co = TypeVar("t_co", covariant=True)
+
+    class Reader(Protocol):
+        def read(self) -> str: ...
+
+    class Source(Protocol[t_co]):
+        def get(self) -> t_co: ...
+
+    @runtime_checkable
+    class CheckedReader(Protocol):
+        def read(self) -> str: ...
+
+    bounded = TypeVar("bounded", bound=Reader)
+    for annotation in (Reader, Reader | None, bounded, Source[int]):
+        assert _isinstance(object(), annotation, nested=1, treat_var_as_type=False)
+    assert not _isinstance(object(), CheckedReader, nested=1, treat_var_as_type=False)
 
 
 @pytest.mark.parametrize("alias_cls", _type_alias_types())

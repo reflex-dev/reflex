@@ -129,11 +129,7 @@ def _transform_event_arg(value: Any, hinted_args: Any) -> Any:
         if value is None:
             return value
         hinted_args = types.value_inside_optional(hinted_args)
-    if (
-        isinstance(value, dict)
-        and isinstance(hinted_args, type)
-        and not types.is_generic_alias(hinted_args)  # py3.10
-    ):
+    if isinstance(value, dict) and isinstance(hinted_args, type):
         from reflex.model import Model
 
         if issubclass(hinted_args, Model):

@@ -2,7 +2,7 @@
 
 import pickle
 from collections.abc import Mapping
-from typing import Annotated, Any, Generic, TypedDict, TypeVar
+from typing import Annotated, Any, Generic, NotRequired, TypedDict, TypeVar
 
 import pytest
 import typing_extensions
@@ -12,7 +12,7 @@ from reflex_base.utils.form import (
     form_data_as_dict,
     transform_form_data,
 )
-from typing_extensions import NotRequired, TypeAliasType
+from typing_extensions import TypeAliasType
 
 ITEMS = [("tag", "a"), ("name", "x"), ("tag", "b")]
 
