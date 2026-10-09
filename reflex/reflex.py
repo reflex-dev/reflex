@@ -1141,6 +1141,37 @@ def rename(new_name: str):
     rename_app(new_name, get_config().loglevel)
 
 
+_COMPONENT_REMOVED = (
+    "`reflex component` was removed in Reflex 0.10. Wrap React components "
+    "directly in your app (https://reflex.dev/docs/wrapping-react/overview/) "
+    "and start reusable component packages from the component template: "
+    "https://github.com/reflex-dev/component-template"
+)
+
+
+@cli.command(
+    name="component",
+    hidden=True,
+    help=_COMPONENT_REMOVED,
+    context_settings={"ignore_unknown_options": True},
+)
+@click.argument("args", nargs=-1, type=click.UNPROCESSED)
+def component(args: tuple[str, ...]):
+    """Point users of the removed component CLI at its replacement.
+
+    Accepts any subcommand and flags so `reflex component init`, `build`,
+    `share`, and `install` all land here instead of a "No such command" error.
+
+    Args:
+        args: The removed subcommand and its flags, ignored.
+
+    Raises:
+        Exit: Always, after reporting where the component workflow moved.
+    """
+    logger.error(_COMPONENT_REMOVED)
+    raise click.exceptions.Exit(1)
+
+
 cli.add_command(
     _LazyCommand(
         "deploy",

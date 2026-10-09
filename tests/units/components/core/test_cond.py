@@ -1,5 +1,5 @@
 import json
-from typing import Any, Literal, cast
+from typing import Any, Literal, assert_type, cast
 
 import pytest
 from reflex_base.components.component import Component
@@ -9,7 +9,6 @@ from reflex_base.vars.base import LiteralVar, Var, computed_var
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.core.cond import Cond, cond
 from reflex_components_radix.themes.typography.text import Text
-from typing_extensions import assert_type
 
 from reflex.state import BaseState
 
