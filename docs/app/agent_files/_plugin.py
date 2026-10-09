@@ -208,6 +208,16 @@ def _ordered_entries(
             entries,
             key=lambda entry: MCP_DOC_ORDER[entry.url_path.as_posix()],
         )
+    if section == "API Reference":
+        from reflex_docs.pages.docs.apiref import section_order
+
+        # Grouped as the docs sidebar groups them; a page with no place in
+        # section_order keeps its position at the end of the section.
+        order = {slug: index for index, slug in enumerate(section_order)}
+        return sorted(
+            entries,
+            key=lambda entry: order.get(entry.url_path.stem, len(order)),
+        )
     return entries
 
 
@@ -587,7 +597,7 @@ def generate_environment_variables_markdown() -> tuple[Path, str]:
     """
     import inspect
 
-    from reflex.config import EnvironmentVariables
+    from reflex_base.environment import EnvironmentVariables
 
     env_vars = [
         (name, var)
@@ -632,7 +642,7 @@ def generate_environment_variables_markdown() -> tuple[Path, str]:
         "",
         "# Environment Variables",
         "",
-        "`reflex.config.EnvironmentVariables`",
+        f"`{EnvironmentVariables.__module__}.{EnvironmentVariables.__qualname__}`",
         "",
         "Reflex provides a number of environment variables that can be used to configure the behavior of your application.",
         "These environment variables can be set in your shell environment or in a `.env` file.",
@@ -656,27 +666,8 @@ def generate_dynamic_api_reference_files() -> tuple[tuple[Path, str], ...]:
     Returns:
         The generated dynamic API reference markdown assets.
     """
-    import reflex as rx
-    from reflex.istate.manager import StateManager
-    from reflex.utils.imports import ImportVar
+    from reflex_docs.pages.docs.apiref import env_var_prefixes, modules
 
-    modules = [
-        rx.App,
-        rx.Component,
-        rx.ComponentState,
-        rx.Config,
-        rx.event.Event,
-        rx.event.EventHandler,
-        rx.event.EventSpec,
-        # rx.Model excluded: deprecated in 0.9.2, removed in 1.0.
-        StateManager,
-        rx.State,
-        ImportVar,
-        rx.Var,
-    ]
-    # Classes whose fields can be overridden via prefixed environment variables;
-    # the fields table gets an extra column listing each generated env var name.
-    env_var_prefixes = {rx.Config: "REFLEX_"}
     files = []
     for module in modules:
         slug = module.__name__.lower()

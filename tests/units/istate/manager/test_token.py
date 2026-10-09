@@ -137,34 +137,6 @@ def test_base_state_token_get_and_reset_touched(clean_registration_context):
     assert BaseStateToken.get_and_reset_touched_state(state) is False
 
 
-def test_base_state_token_get_and_reset_touched_shadowed_by_var(
-    clean_registration_context,
-):
-    """A state var named like the touched-state method does not break persistence.
-
-    Args:
-        clean_registration_context: A fresh, empty registration context.
-    """
-    from reflex.state import BaseState
-
-    TouchState = type(
-        "TouchState",
-        (BaseState,),
-        {
-            "__module__": __name__,
-            "__qualname__": "TouchState",
-            "__annotations__": {"_get_was_touched": int, "x": int},
-            "_get_was_touched": 7,
-            "x": 0,
-        },
-    )
-    state = TouchState()
-    state.x = 1
-    assert BaseStateToken.get_and_reset_touched_state(state) is True
-    assert state._was_touched is False
-    assert state._get_was_touched == 7
-
-
 def test_from_legacy_token(clean_registration_context):
     """from_legacy_token parses 'ident_state.path' into a BaseStateToken.
 
@@ -210,3 +182,26 @@ def test_from_legacy_token_none_root_raises():
     """from_legacy_token with root_state=None raises ValueError."""
     with pytest.raises(ValueError, match="Root state must be provided"):
         BaseStateToken.from_legacy_token("tok_some.state", root_state=None)
+
+
+def test_base_state_token_state_key_matches_the_token_of_the_state(
+    clean_registration_context,
+):
+    """The key of a state class is the string of the token for that class.
+
+    Args:
+        clean_registration_context: A fresh, empty registration context.
+    """
+    from reflex.state import BaseState
+
+    class KeyRoot(BaseState):
+        pass
+
+    class KeyChild(KeyRoot):
+        pass
+
+    token = BaseStateToken(ident="client-abc", cls=KeyRoot)
+
+    assert token._state_key(KeyRoot) == str(token)
+    assert token._state_key(KeyChild) == str(token.with_cls(KeyChild))
+    assert token._state_key(KeyChild) == f"client-abc_{KeyChild.get_full_name()}"

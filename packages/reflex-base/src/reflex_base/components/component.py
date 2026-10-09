@@ -324,6 +324,7 @@ class BaseComponentMeta(FieldBasedMeta, ABCMeta):
 
 
 _COMPILE_CACHE_ATTRS = (
+    "_memo_analysis_key",
     "_cached_render_result",
     "_vars_cache",
     "_imports_cache",
@@ -790,6 +791,13 @@ class Component(BaseComponent, ABC):
     # props to change the name of
     _rename_props: ClassVar[dict[str, str]] = {}
 
+    # The prop that carries a ref to the rendered DOM element for components
+    # whose root does not accept ``ref`` directly (e.g. ``DebounceInput``, a
+    # class component that exposes the real ``<input>`` through ``input_ref``).
+    # Auto-memo wrappers route a runtime-injected ref to this prop so it
+    # reaches the element instead of a class-component instance.
+    _dom_ref_prop: ClassVar[str | None] = None
+
     # Whether this component contributes a named field to form submission data.
     _is_form_control: ClassVar[bool] = False
 
@@ -991,7 +999,9 @@ class Component(BaseComponent, ABC):
                     expected_type = types.get_field_type(type(self), key)
 
                 if not satisfies_type_hint(value, expected_type):
-                    value_name = value._js_expr if isinstance(value, Var) else value
+                    value_name = (
+                        value._js_expr if isinstance(value, Var) else repr(value)
+                    )
 
                     additional_info = (
                         " You can call `.bool()` on the value to convert it to a boolean."
@@ -1069,7 +1079,7 @@ class Component(BaseComponent, ABC):
                         raise TypeError(msg)
                     has_var = True
                 else:
-                    msg = f"Invalid class_name passed for prop {type(self).__name__}.class_name, expected type str, got value {c} of type {type(c)}."
+                    msg = f"Invalid class_name passed for prop {type(self).__name__}.class_name, expected type str, got value {c!s} of type {type(c)}."
                     raise TypeError(msg)
             if has_var:
                 kwargs["class_name"] = LiteralArrayVar.create(

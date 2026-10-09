@@ -9,7 +9,7 @@ import types
 import typing
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from enum import Enum
-from functools import cached_property, lru_cache
+from functools import lru_cache
 from importlib.util import find_spec
 from types import GenericAlias
 from typing import (  # noqa: UP035
@@ -33,11 +33,11 @@ from typing import (  # noqa: UP035
     get_args,
     is_typeddict,
 )
+from typing import Self as Self
 from typing import get_origin as get_origin_og
 from typing import get_type_hints as get_type_hints_og
 
 import typing_extensions
-from typing_extensions import Self as Self
 from typing_extensions import TypeAliasType, TypeVarTuple
 from typing_extensions import override as override
 
@@ -52,6 +52,8 @@ if TYPE_CHECKING:
 # Potential GenericAlias types for isinstance checks.
 GenericAliasTypes = (_GenericAlias, GenericAlias, _SpecialGenericAlias)
 
+_AnnotatedAlias = type(typing.Annotated[int, ""])
+
 # Potential Union types for isinstance checks.
 UnionTypes = (Union, types.UnionType)
 
@@ -64,13 +66,9 @@ TypeAliasTypes: tuple[type, ...] = (
     else (TypeAliasType,)
 )
 
-# Potential TypeVarTuple classes for isinstance checks (native on 3.11+,
-# typing_extensions backport otherwise).
-TypeVarTuples: tuple[type, ...] = (
-    (TypeVarTuple, typing.TypeVarTuple)
-    if sys.version_info >= (3, 11)
-    else (TypeVarTuple,)
-)
+# Potential TypeVarTuple classes for isinstance checks: the native class and
+# the typing_extensions backport, which may be distinct.
+TypeVarTuples: tuple[type, ...] = (TypeVarTuple, typing.TypeVarTuple)
 
 # Potential type parameter classes for isinstance checks. The typing_extensions
 # ParamSpec instantiates the native class, so it needs no separate entry.
@@ -84,7 +82,6 @@ PrimitiveTypes = (int, float, bool, str, list, dict, set, tuple)
 StateVarTypes = (*PrimitiveTypes, type(None))
 
 if TYPE_CHECKING:
-    from reflex.state import BaseState
     from reflex_base.vars.base import Var
 
 VAR1 = TypeVar("VAR1", bound="Var")
@@ -189,8 +186,6 @@ PrimitiveToAnnotation = {
     tuple: Tuple,  # noqa: UP006
     dict: Dict,  # noqa: UP006
 }
-
-RESERVED_BACKEND_VAR_NAMES = {"_abc_impl", "_backend_vars", "_was_touched", "_mixin"}
 
 
 class Unset:
@@ -487,16 +482,29 @@ def _apply_type_params(
     try:
         return value[tuple(flattened)]  # pyright: ignore[reportIndexIssue]
     except TypeError:
-        # Python 3.10 subscription predates PEP 646, and 3.11 rejects a ParamSpec
-        # next to an unpacked TypeVarTuple, so substitute by hand instead.
+        # Python 3.11 rejects a ParamSpec next to an unpacked TypeVarTuple, so
+        # substitute by hand instead.
         return _substitute_type_params(value, substitution)
 
 
-def resolve_type_alias(cls: GenericType) -> GenericType:
-    """Resolve a TypeAliasType (PEP 695 ``type`` statement) to its underlying value.
+def _annotated_origin(cls: Any) -> Any:
+    """Get the type that ``Annotated[X, ...]`` annotates.
 
-    Handles bare aliases, subscripted generic aliases (``Keys[str]`` for
-    ``type Keys[T] = list[T]``, substituting the type parameters into the
+    Args:
+        cls: The type to inspect.
+
+    Returns:
+        ``X`` for ``Annotated[X, ...]``, else None.
+    """
+    return cls.__origin__ if type(cls) is _AnnotatedAlias else None
+
+
+def resolve_type_alias(cls: GenericType) -> GenericType:
+    """Resolve a type alias to its underlying value.
+
+    Unwraps ``Annotated[X, ...]`` to ``X``, and resolves TypeAliasTypes (PEP 695
+    ``type`` statement): bare aliases, subscripted generic aliases (``Keys[str]``
+    for ``type Keys[T] = list[T]``, substituting the type parameters into the
     alias value), and aliases appearing as members of a union.
 
     Args:
@@ -505,10 +513,14 @@ def resolve_type_alias(cls: GenericType) -> GenericType:
     Returns:
         The resolved type, or the original type if it contains no alias.
     """
+    # ``Annotated`` metadata (a pydantic discriminator, a validator, a unit) is
+    # never part of the type Reflex reasons about, and ``__origin__`` already
+    # flattens nested annotations. Unwrapped before the alias branches so that
+    # ``Annotated[SomeAlias, ...]`` resolves both layers.
+    if (annotated := _annotated_origin(cls)) is not None:
+        return resolve_type_alias(annotated)
     origin = get_origin(cls)
-    # The subscripted case is checked first: on Python 3.10 ``types.GenericAlias``
-    # proxies ``__class__`` to its origin, so ``Keys[str]`` passes an isinstance
-    # check against TypeAliasType and would lose its arguments.
+    # The subscripted case is checked first so ``Keys[str]`` keeps its arguments.
     if isinstance(origin, TypeAliasTypes):
         value = resolve_type_alias(origin.__value__)
         if params := getattr(value, "__parameters__", ()):
@@ -987,6 +999,32 @@ def _isinstance(
                     treat_var_as_type=treat_var_as_type,
                     treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
                 )
+            if isinstance(cls, TypeVar):
+                # A field never resolves its type parameter, so a value only
+                # has to satisfy the bound or one of the constraints. A string
+                # bound cannot be resolved here and accepts anything.
+                bounds = (
+                    (cls.__bound__,)
+                    if cls.__bound__ is not None
+                    else cls.__constraints__
+                )
+                return (
+                    not bounds
+                    or any(isinstance(bound, (str, ForwardRef)) for bound in bounds)
+                    or any(
+                        _isinstance(
+                            obj,
+                            bound,
+                            nested=nested,
+                            treat_var_as_type=treat_var_as_type,
+                            treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
+                        )
+                        for bound in bounds
+                    )
+                )
+            if typing_extensions.is_protocol(cls):
+                # A protocol without @runtime_checkable cannot be checked.
+                return True
             raise
 
     args = _get_args_cached(cls)
@@ -1096,6 +1134,9 @@ def _isinstance(
                 treat_var_as_type=treat_var_as_type,
                 treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
             )
+        if typing_extensions.is_protocol(origin):
+            # A subscripted protocol without @runtime_checkable cannot be checked.
+            return True
         raise
 
 
@@ -1138,69 +1179,6 @@ def is_valid_var_type(type_: type) -> bool:
         or serializers.has_serializer(type_)
         or dataclasses.is_dataclass(type_)
     )
-
-
-def is_backend_base_variable(name: str, cls: type[BaseState]) -> bool:
-    """Check if this variable name correspond to a backend variable.
-
-    Args:
-        name: The name of the variable to check
-        cls: The class of the variable to check (must be a BaseState subclass)
-
-    Returns:
-        bool: The result of the check
-    """
-    if name in RESERVED_BACKEND_VAR_NAMES:
-        return False
-
-    if not name.startswith("_"):
-        return False
-
-    if name.startswith("__"):
-        return False
-
-    if name.startswith(f"_{cls.__name__}__"):
-        return False
-
-    hints = cls._get_type_hints()
-    if name in hints:
-        hint = get_origin(hints[name])
-        if hint == ClassVar:
-            return False
-
-    if name in cls.inherited_backend_vars:
-        return False
-
-    from reflex_base.vars.base import Field, Var, is_computed_var
-
-    # Read the class dicts directly: `getattr` would run the descriptor this
-    # lookup is meant to detect, against a class that is still being built.
-    for klass in cls.__mro__:
-        if name in klass.__dict__:
-            value = klass.__dict__[name]
-            break
-    else:
-        return True
-
-    if type(value) is classmethod:
-        return False
-    if callable(value):
-        return False
-
-    if isinstance(
-        value,
-        (
-            types.FunctionType,
-            property,
-            cached_property,
-        ),
-    ) or is_computed_var(value):
-        return False
-
-    # Custom descriptors should be invoked via their __get__/__set__
-    # rather than shadowed by backend var storage. Field/Var define
-    # __get__ for type-checking but are not user descriptors.
-    return not hasattr(type(value), "__get__") or isinstance(value, (Field, Var))
 
 
 def check_type_in_allowed_types(value_type: type, allowed_types: Iterable) -> bool:
@@ -1317,6 +1295,21 @@ def typehint_issubclass(
         return treat_any_as_subtype_of_everything
     if possible_subclass is NoReturn:
         return True
+
+    # ``Annotated[X, ...]`` compares as ``X``. ``get_origin`` reports ``X``
+    # rather than ``Annotated``, so the comparisons below would otherwise read
+    # the hint as a bare ``X`` carrying the metadata as a type argument.
+    if (
+        _annotated_origin(possible_subclass) is not None
+        or _annotated_origin(possible_superclass) is not None
+    ):
+        return typehint_issubclass(
+            resolve_type_alias(possible_subclass),
+            resolve_type_alias(possible_superclass),
+            treat_mutable_superclasss_as_immutable=treat_mutable_superclasss_as_immutable,
+            treat_literals_as_union_of_types=treat_literals_as_union_of_types,
+            treat_any_as_subtype_of_everything=treat_any_as_subtype_of_everything,
+        )
 
     provided_type_origin = get_origin(possible_subclass)
     accepted_type_origin = get_origin(possible_superclass)
@@ -1505,10 +1498,7 @@ def resolve_annotations(
     annotations = {}
     for name, value in raw_annotations.items():
         if isinstance(value, str):
-            if sys.version_info == (3, 10, 0):
-                value = ForwardRef(value, is_argument=False)
-            else:
-                value = ForwardRef(value, is_argument=False, is_class=True)
+            value = ForwardRef(value, is_argument=False, is_class=True)
         try:
             if sys.version_info >= (3, 13):
                 value = _eval_type(value, base_globals, None, type_params=())
@@ -1581,6 +1571,40 @@ def is_immutable(i: Any) -> bool:
         Whether the value is immutable.
     """
     return isinstance(i, IMMUTABLE_TYPES)
+
+
+_MUTABLE_BUILTIN_TYPES = (list, dict, set)
+
+_MUTABLE_MODEL_BASES = (
+    ("sqlalchemy.orm.decl_api", "DeclarativeBase"),
+    ("pydantic.main", "BaseModel"),
+)
+
+
+@lru_cache(maxsize=1024)
+def is_mutable_type(type_: type) -> bool:
+    """Check if a type is mutable, so in-place changes to a state value of it must be tracked.
+
+    Args:
+        type_: The type to check.
+
+    Returns:
+        Whether the type is mutable and should be wrapped.
+    """
+    from reflex_base.vars.base import Var
+
+    if issubclass(type_, _MUTABLE_BUILTIN_TYPES) or (
+        dataclasses.is_dataclass(type_) and not issubclass(type_, Var)
+    ):
+        return True
+    # A model's defining module is already loaded before its subclasses exist.
+    # Read its namespace directly so lazy module attributes cannot load packages.
+    for module_name, base_name in _MUTABLE_MODEL_BASES:
+        if (module := sys.modules.get(module_name)) is not None:
+            base = vars(module).get(base_name)
+            if base is not None and issubclass(type_, base):
+                return True
+    return False
 
 
 if not TYPE_CHECKING:

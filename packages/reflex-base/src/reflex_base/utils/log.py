@@ -26,8 +26,12 @@ import functools
 import json
 import logging
 import os
+import re
 import shutil
+import signal
+import subprocess
 import sys
+import threading
 import time
 from collections.abc import Generator
 from pathlib import Path
@@ -63,7 +67,8 @@ PACKAGE_LOGGER_NAMES = (
     "reflex_components_plotly",
     "reflex_components_react_player",
     "reflex_otel",
-    "reflex_sdk",
+    "reflex_build_sdk",
+    "reflex_workflow",
 )
 
 # The single logger the reflex sinks attach to; parent of every package logger.
@@ -259,6 +264,274 @@ def _write_json(payload: dict, *, stderr: bool):
     stream.flush()
 
 
+# The supervisor PID, set for the child of supervise_output() and inherited
+# by its descendants.
+_SUPERVISED_ENV_VAR = "REFLEX_OUTPUT_SUPERVISED"
+
+# How long a reader may sit idle after the child exits before the supervisor
+# stops waiting for descendants that still hold the pipe.
+_DRAIN_IDLE_SECONDS = 0.5
+
+# Maximum drain time after the child exits, excluding time forwarding output.
+_DRAIN_MAX_SECONDS = 5
+
+# Stop shutdown after 30 seconds even when a consumer blocks every write.
+_DRAIN_WALL_SECONDS = 30
+
+# Line ends in child output; a lone ``\r`` ends a progress-bar update.
+_LINE_END = re.compile(rb"\r\n|\r|\n")
+
+
+def is_output_supervised() -> bool:
+    """Check whether this process runs under supervise_output().
+
+    Returns:
+        True if a parent process turns this process's output into JSON records.
+    """
+    return bool(os.environ.get(_SUPERVISED_ENV_VAR))
+
+
+def _is_json_record(line: bytes) -> bool:
+    """Check whether a line already is a JSON log record.
+
+    Args:
+        line: The line to check.
+
+    Returns:
+        True if the line is a JSON object with a level and a message.
+    """
+    if not line.startswith(b"{"):
+        return False
+    try:
+        record = json.loads(line)
+    except ValueError:
+        return False
+    return isinstance(record, dict) and "level" in record and "message" in record
+
+
+def _to_records(
+    lines: list[bytes], traceback: list[str], level: str, name: str, final: bool
+) -> bytes:
+    """Convert raw output lines to JSON lines.
+
+    Lines that already are JSON log records pass through unchanged. A Python
+    traceback is collected, across calls, into one record with the traceback
+    text in its ``exception`` field.
+
+    Args:
+        lines: Complete output lines, without their newline.
+        traceback: The lines of a traceback still being collected.
+        level: The record level for plain lines.
+        name: The logger name for the records.
+        final: Whether the output ended, so an open traceback is emitted too.
+
+    Returns:
+        The JSON lines, each ending with a newline.
+    """
+    timestamp = datetime.datetime.now(tz=datetime.UTC).isoformat()
+    out: list[bytes] = []
+
+    def record(message: str, level: str = level, exception: str | None = None):
+        payload = {
+            "timestamp": timestamp,
+            "level": level,
+            "logger": name,
+            "message": message,
+        }
+        if exception is not None:
+            payload["exception"] = exception
+        out.append(json.dumps(payload).encode())
+
+    for raw in lines:
+        if _is_json_record(raw):
+            out.append(raw)
+            continue
+        line = raw.decode("utf-8", "replace")
+        if traceback:
+            traceback.append(line)
+            # Frames are indented; the exception line is not.
+            if line.strip() and not line[0].isspace():
+                record(line.strip(), "error", "\n".join(traceback) + "\n")
+                traceback.clear()
+        elif line.startswith("Traceback (most recent call last):"):
+            traceback.append(line)
+        else:
+            record(line)
+    if final and traceback:
+        record(traceback[-1].strip(), "error", "\n".join(traceback) + "\n")
+    return b"".join(line + b"\n" for line in out)
+
+
+def _write_all(fd: int, data: bytes):
+    """Write all bytes to a file descriptor.
+
+    Args:
+        fd: The file descriptor.
+        data: The bytes to write.
+    """
+    view = memoryview(data)
+    while view:
+        view = view[os.write(fd, view) :]
+
+
+class _OutputPump(threading.Thread):
+    """Reader thread that turns one child output pipe into JSON lines."""
+
+    def __init__(self, read_fd: int, write_fd: int, level: str, name: str):
+        """Create the reader.
+
+        Args:
+            read_fd: The read end of the child's output pipe.
+            write_fd: The file descriptor to write JSON lines to.
+            level: The record level for plain lines.
+            name: The logger name for the records.
+        """
+        super().__init__(name=f"reflex-output-{name}", daemon=True)
+        self.read_fd = read_fd
+        self.write_fd = write_fd
+        self.level = level
+        self.logger_name = name
+        # When the reader started waiting for data; None while it works.
+        self.idle_since: float | None = None
+        # Cumulative write time and the start of any ongoing write.
+        self._write_state: tuple[float, float | None] = (0.0, None)
+        self._write_lock = threading.Lock()
+
+    def run(self):
+        """Forward the pipe until every writer closed it."""
+        pending = b""
+        traceback: list[str] = []
+        while True:
+            self.idle_since = time.monotonic()
+            chunk = os.read(self.read_fd, 1 << 16)
+            self.idle_since = None
+            if not chunk:
+                break
+            data = pending + chunk
+            # A trailing \r may be the first half of a \r\n.
+            cut = len(data) - data.endswith(b"\r")
+            *lines, pending = _LINE_END.split(data[:cut])
+            pending += data[cut:]
+            self._write(lines, traceback, final=False)
+        os.close(self.read_fd)
+        pending = pending.removesuffix(b"\r")
+        self._write([pending] if pending else [], traceback, final=True)
+
+    def _write(self, lines: list[bytes], traceback: list[str], final: bool):
+        """Write converted lines, dropping them if the consumer is gone.
+
+        Args:
+            lines: Complete output lines.
+            traceback: The lines of a traceback still being collected.
+            final: Whether the output ended.
+        """
+        data = _to_records(lines, traceback, self.level, self.logger_name, final)
+        with self._write_lock:
+            elapsed, _ = self._write_state
+            started = time.monotonic()
+            self._write_state = (elapsed, started)
+        # Keep reading when the consumer is gone: a full pipe blocks the child.
+        with contextlib.suppress(OSError):
+            _write_all(self.write_fd, data)
+        with self._write_lock:
+            self._write_state = (elapsed + time.monotonic() - started, None)
+
+    def writing_snapshot(self) -> tuple[float, float]:
+        """Capture the current time and cumulative write duration together.
+
+        Returns:
+            The monotonic time and seconds spent writing up to that time.
+        """
+        with self._write_lock:
+            elapsed, started = self._write_state
+            now = time.monotonic()
+            return now, elapsed if started is None else elapsed + now - started
+
+    def drain(self, exited_at: float, writing_at_exit: float, wall_deadline: float):
+        """Wait until the pipe is drained after the child exited.
+
+        Returns early when the reader sat idle for a while after the exit, or
+        when the drain took too long. Time spent forwarding output does not
+        count toward the active limit. A separate wall deadline bounds shutdown
+        even when a consumer stops reading.
+
+        Args:
+            exited_at: The monotonic time of the pump's snapshot after child exit.
+            writing_at_exit: The cumulative write time at that snapshot.
+            wall_deadline: The shared monotonic deadline for shutdown.
+        """
+        while self.is_alive():
+            self.join(0.05)
+            now, writing_elapsed = self.writing_snapshot()
+            idle_since = self.idle_since
+            # Seconds charged against the five-second active drain budget.
+            drain_elapsed = now - exited_at - (writing_elapsed - writing_at_exit)
+            if (
+                now > wall_deadline
+                or drain_elapsed > _DRAIN_MAX_SECONDS
+                or (
+                    idle_since is not None
+                    and now - max(idle_since, exited_at) > _DRAIN_IDLE_SECONDS
+                )
+            ):
+                return
+
+
+def supervise_output(args: list[str]) -> int:
+    """Run a command and turn everything it and its descendants print into JSON records.
+
+    The command runs with its stdout and stderr on pipes, which every process
+    it starts inherits. Reader threads write each line to this process's
+    stdout and stderr as a JSON record: lines that already are JSON log
+    records pass through, and a Python traceback becomes one record.
+
+    Args:
+        args: The command to run.
+
+    Returns:
+        The command's exit code.
+    """
+    for stream in (sys.stdout, sys.stderr):
+        if stream is not None:
+            stream.flush()
+    # The readers decode UTF-8; Python otherwise uses the locale encoding.
+    # A configured error handler is kept.
+    _, _, errors = os.environ.get("PYTHONIOENCODING", "").partition(":")
+    env = {
+        "PYTHONUNBUFFERED": "1",
+        **os.environ,
+        _SUPERVISED_ENV_VAR: str(os.getpid()),
+        "PYTHONIOENCODING": f"utf-8:{errors}" if errors else "utf-8",
+    }
+    # Raw pipes that only the readers close: closing a pipe while a reader is
+    # blocked on it waits for that read on Windows.
+    out_read, out_write = os.pipe()
+    err_read, err_write = os.pipe()
+    proc = subprocess.Popen(args, stdout=out_write, stderr=err_write, env=env)
+    os.close(out_write)
+    os.close(err_write)
+    pumps = [
+        _OutputPump(out_read, 1, "info", "stdout"),
+        _OutputPump(err_read, 2, "warning", "stderr"),
+    ]
+    for pump in pumps:
+        pump.start()
+    signal.signal(signal.SIGTERM, lambda *_: proc.terminate())
+    while True:
+        try:
+            returncode = proc.wait()
+            break
+        except KeyboardInterrupt:
+            # The child gets the same interrupt and shuts down on its own.
+            continue
+    wall_deadline = time.monotonic() + _DRAIN_WALL_SECONDS
+    snapshots = [pump.writing_snapshot() for pump in pumps]
+    for pump, (exited_at, writing_at_exit) in zip(pumps, snapshots, strict=True):
+        pump.drain(exited_at, writing_at_exit, wall_deadline)
+    # A child killed by a signal reports -signum; shells report 128 + signum.
+    return returncode if returncode >= 0 else 128 - returncode
+
+
 class JsonHandler(logging.Handler):
     """Emit one JSON object per record for machine consumption."""
 
@@ -281,7 +554,7 @@ class JsonHandler(logging.Handler):
                 message = strip_markup(message)
             payload = {
                 "timestamp": datetime.datetime.fromtimestamp(
-                    record.created, tz=datetime.timezone.utc
+                    record.created, tz=datetime.UTC
                 ).isoformat(),
                 "level": logging.getLevelName(record.levelno).lower(),
                 "logger": record.name,
@@ -571,7 +844,7 @@ def emit_json_print(
         {
             # Extras first: the canonical fields below always win.
             **fields,
-            "timestamp": datetime.datetime.now(tz=datetime.timezone.utc).isoformat(),
+            "timestamp": datetime.datetime.now(tz=datetime.UTC).isoformat(),
             "level": level,
             "logger": "reflex.console",
             "message": strip_markup(msg),
@@ -832,6 +1105,15 @@ def _is_framework_filename(filename: str) -> bool:
     Returns:
         Whether the file lives under one of the excluded framework roots.
     """
+    # Generated code carries a pseudo-name rather than a path: `<string>` for
+    # `exec` and a dataclass's generated `__init__`, `<frozen ...>` for the
+    # import machinery. Neither is a user call site, and treating one as a path
+    # would resolve it against the cwd, so whether it counted as framework code
+    # would depend on where the app was started from. Other bracketed names are
+    # left alone on purpose: `<stdin>` and an `<ipython-input-N-...>` cell are
+    # exactly where an interactive user would look for their own call.
+    if filename == "<string>" or filename.startswith("<frozen "):
+        return True
     frame_path = Path(filename).resolve()
     return any(
         frame_path.is_relative_to(root) for root in _exclude_paths_from_frame_info()

@@ -8,6 +8,7 @@ import copy
 import dataclasses
 import datetime
 import functools
+import hashlib
 import inspect
 import json
 import logging
@@ -24,8 +25,10 @@ from typing import (
     Annotated,
     Any,
     ClassVar,
+    Final,
     Generic,
     Literal,
+    LiteralString,
     NoReturn,
     ParamSpec,
     Protocol,
@@ -37,23 +40,27 @@ from typing import (
     overload,
 )
 
-from typing_extensions import LiteralString, dataclass_transform, override
+from typing_extensions import dataclass_transform, override
 
 from reflex_base import constants
 from reflex_base.constants.compiler import Hooks
 from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.environment import _on_env_var_set, environment
 from reflex_base.utils import exceptions, imports, serializers, types
 from reflex_base.utils.compat import MISSING_TYPE, annotations_from_namespace
 from reflex_base.utils.decorator import once
 from reflex_base.utils.exceptions import (
+    BackendVarFormatError,
     ComputedVarSignatureError,
+    EventHandlerShadowsBuiltInStateMethodError,
     ReflexRuntimeError,
+    StateValueError,
     UntypedComputedVarError,
     VarAttributeError,
     VarDependencyError,
     VarTypeError,
 )
-from reflex_base.utils.format import format_state_name
+from reflex_base.utils.format import format_state_name, json_dumps
 from reflex_base.utils.imports import (
     ImmutableImportDict,
     ImmutableParsedImportDict,
@@ -68,6 +75,7 @@ from reflex_base.utils.types import (
     _isinstance,
     get_origin,
     has_args,
+    is_mutable_type,
     safe_issubclass,
     unionize,
 )
@@ -114,6 +122,9 @@ class VarSubclassEntry:
 
 _var_subclasses: list[VarSubclassEntry] = []
 _var_literal_subclasses: list[tuple[type[LiteralVar], VarSubclassEntry]] = []
+# Var type -> the ToOperation class ``Var.guess_type`` casts such a var to. Only
+# plain registry conversions are kept. Reset whenever the registry changes.
+_to_operation_by_var_type: dict[GenericType, type[ToOperation]] = {}
 # Exact value type -> the literal class claiming it, or None when no literal
 # class does. Reset whenever a literal subclass registers.
 _literal_var_by_type: dict[type, type[LiteralVar] | None] = {}
@@ -217,6 +228,7 @@ def _clear_var_subclass_lookup_caches() -> None:
     _var_subclass_for_conversion.cache_clear()
     _var_subclass_matching_python_types.cache_clear()
     _var_subclass_for_var_output.cache_clear()
+    _to_operation_by_var_type.clear()
 
 
 def _register_var_subclass_entry(entry: VarSubclassEntry) -> None:
@@ -276,6 +288,34 @@ def insert_app_wraps(
         target[key] = wrapper
 
 
+def _normalize_field_dependencies(
+    field_dependencies: Mapping[str, Iterable[str]] | None,
+    state: str,
+    field_name: str,
+) -> Mapping[str, tuple[str, ...]]:
+    """Build the canonical state -> fields mapping from the accepted shorthands.
+
+    Args:
+        field_dependencies: The canonical mapping, if the caller gave one.
+        state: The single enclosing state, for the shorthand form.
+        field_name: A single field of `state`.
+
+    Returns:
+        A mapping of state name to its deduped field names.
+    """
+    if field_dependencies is not None:
+        return {
+            state_name: tuple(dict.fromkeys(names))
+            for state_name, names in field_dependencies.items()
+        }
+    names = (field_name,) if field_name else ()
+    # A state with no named field still has to be recorded: plenty of vars
+    # carry only the state (for imports and hooks) and nothing reads a field.
+    if not state and not names:
+        return {}
+    return {state: names}
+
+
 @dataclasses.dataclass(
     eq=True,
     frozen=True,
@@ -283,11 +323,17 @@ def insert_app_wraps(
 class VarData:
     """Metadata associated with a x."""
 
-    # The name of the enclosing state.
-    state: str = dataclasses.field(default="")
-
-    # The name of the field in the state.
-    field_name: str = dataclasses.field(default="")
+    # Every state field this var is built from, grouped by the state that owns
+    # it. A var normally stands for a single field of a single state, but one
+    # composed of several -- possibly spanning several states -- names all of
+    # them, so a dependency on it tracks each field it actually reads.
+    # Built fresh for every VarData and never mutated afterwards, so it is
+    # effectively frozen like the tuples beside it. A plain dict rather than a
+    # MappingProxyType because VarData is pickled along with the states holding
+    # it, and mappingproxy cannot be pickled.
+    field_dependencies: Mapping[str, tuple[str, ...]] = dataclasses.field(
+        default_factory=dict
+    )
 
     # Imports needed to render this var
     imports: ParsedImportTuple = dataclasses.field(default_factory=tuple)
@@ -320,18 +366,26 @@ class VarData:
         position: Hooks.HookPosition | None = None,
         components: Iterable[BaseComponent] | None = None,
         app_wraps: Iterable[tuple[int, BaseComponent]] | None = None,
+        field_dependencies: Mapping[str, Iterable[str]] | None = None,
     ):
         """Initialize the var data.
 
         Args:
-            state: The name of the enclosing state.
-            field_name: The name of the field in the state.
+            state: The name of the enclosing state. Shorthand for a
+                single-state ``field_dependencies``; ignored when that is given.
+            field_name: The name of the field in ``state``. Ignored when
+                ``field_dependencies`` is given.
             imports: Imports needed to render this var.
             hooks: Hooks that need to be present in the component to render this var.
             deps: Dependencies of the var for useCallback.
             position: Position of the hook in the component.
             components: Components that are part of this var.
             app_wraps: App-level wrapper components this var requires when used.
+            field_dependencies: Every state field this var is built from,
+                grouped by owning state. The canonical form; ``state``,
+                and ``field_name`` are the shorthand for a single state with a
+                single field. Keyword-only in practice: it trails the older
+                parameters so positional callers of those are unaffected.
         """
         if isinstance(hooks, str):
             hooks = [hooks]
@@ -340,8 +394,11 @@ class VarData:
         immutable_imports: ParsedImportTuple = tuple(
             (k, tuple(v)) for k, v in parse_imports(imports or {}).items()
         )
-        object.__setattr__(self, "state", state)
-        object.__setattr__(self, "field_name", field_name)
+        object.__setattr__(
+            self,
+            "field_dependencies",
+            _normalize_field_dependencies(field_dependencies, state, field_name),
+        )
         object.__setattr__(self, "imports", immutable_imports)
         object.__setattr__(self, "hooks", tuple(hooks or {}))
         object.__setattr__(self, "deps", tuple(deps or []))
@@ -353,14 +410,42 @@ class VarData:
             # Merge our dependencies first, so they can be referenced.
             merged_var_data = VarData.merge(*hooks.values(), self)
             if merged_var_data is not None:
-                object.__setattr__(self, "state", merged_var_data.state)
-                object.__setattr__(self, "field_name", merged_var_data.field_name)
+                object.__setattr__(
+                    self,
+                    "field_dependencies",
+                    merged_var_data.field_dependencies,
+                )
                 object.__setattr__(self, "imports", merged_var_data.imports)
                 object.__setattr__(self, "hooks", merged_var_data.hooks)
                 object.__setattr__(self, "deps", merged_var_data.deps)
                 object.__setattr__(self, "position", merged_var_data.position)
                 object.__setattr__(self, "components", merged_var_data.components)
                 object.__setattr__(self, "app_wraps", merged_var_data.app_wraps)
+
+    @property
+    def state(self) -> str:
+        """The name of the enclosing state.
+
+        A var may be built from fields of more than one state; this reports
+        only the first. Read ``field_dependencies`` to see every state.
+
+        Returns:
+            The first state name, or an empty string if there is none.
+        """
+        return next(iter(self.field_dependencies), "")
+
+    @property
+    def field_name(self) -> str:
+        """The name of the field in the state.
+
+        A var built from several fields reports only the first, of the first
+        state. Read ``field_dependencies`` to see all of them.
+
+        Returns:
+            The first field name, or an empty string if there is none.
+        """
+        field_names = self.field_dependencies.get(self.state, ())
+        return field_names[0] if field_names else ""
 
     def old_school_imports(self) -> ImportDict:
         """Return the imports as a mutable dict.
@@ -392,16 +477,20 @@ class VarData:
         if len(all_var_datas) == 1:
             return all_var_datas[0]
 
-        # Get the first non-empty field name or default to empty string.
-        field_name = next(
-            (var_data.field_name for var_data in all_var_datas if var_data.field_name),
-            "",
-        )
-
-        # Get the first non-empty state or default to empty string.
-        state = next(
-            (var_data.state for var_data in all_var_datas if var_data.state), ""
-        )
+        # Union every state's fields, in order and deduped, so a var composed
+        # of several fields -- across as many states as it reaches -- carries
+        # all of them and a dependency on it tracks each one. Accumulated as
+        # ordered sets and materialized once: this runs for every var
+        # operation, so rebuilding a tuple per contributing var costs.
+        seen_fields: dict[str, dict[str, None]] = {}
+        for var_data in all_var_datas:
+            for state_name, names in var_data.field_dependencies.items():
+                seen = seen_fields.get(state_name)
+                if seen is None:
+                    seen_fields[state_name] = dict.fromkeys(names)
+                else:
+                    for name in names:
+                        seen[name] = None
 
         hooks: dict[str, VarData | None] = {
             hook: None for var_data in all_var_datas for hook in var_data.hooks
@@ -411,7 +500,13 @@ class VarData:
             *(var_data.imports for var_data in all_var_datas)
         )
 
-        deps = [dep for var_data in all_var_datas for dep in var_data.deps]
+        deps = list(
+            {
+                dep._hash_key(): dep
+                for var_data in all_var_datas
+                for dep in var_data.deps
+            }.values()
+        )
 
         positions = list(
             dict.fromkeys(
@@ -437,8 +532,7 @@ class VarData:
             insert_app_wraps(app_wraps, var_data.app_wraps)
 
         return VarData(
-            state=state,
-            field_name=field_name,
+            field_dependencies=seen_fields,
             imports=imports_,
             hooks=hooks,
             deps=deps,
@@ -456,36 +550,38 @@ class VarData:
             True if any field is set to a non-default value.
         """
         return bool(
-            self.state
+            self.field_dependencies
             or self.imports
             or self.hooks
-            or self.field_name
             or self.deps
             or self.position
             or self.components
             or self.app_wraps
         )
 
+    @functools.cached_property
     def _identity_key(self) -> tuple:
-        """Return a hashable key for ``__eq__`` and ``__hash__``.
+        """A hashable key for ``__eq__`` and ``__hash__``.
 
-        ``components`` and ``app_wraps`` hold ``BaseComponent`` instances whose
-        ``__eq__`` override drops the default hash. Use component identity for
-        embedded components because they can contribute hooks/imports, and use
-        the compiler's app-wrap registry key for wrappers so fresh provider
-        instances with the same role still compare equal. App wraps are a set
-        of required roles, so a ``frozenset`` keeps identity insensitive to the
-        order vars happened to merge in (``a + b`` and ``b + a`` stay equal).
+        ``deps`` holds Vars, which a container can never compare because
+        ``Var.__eq__`` builds a ``BooleanVar``, so they are reduced to their
+        ``_hash_key()``. ``components`` and ``app_wraps`` hold ``BaseComponent``
+        instances whose ``__eq__`` override drops the default hash. Use
+        component identity for embedded components because they can contribute
+        hooks/imports, and use the compiler's app-wrap registry key for
+        wrappers so fresh provider instances with the same role still compare
+        equal. App wraps are a set of required roles, so a ``frozenset`` keeps
+        identity insensitive to the order vars happened to merge in
+        (``a + b`` and ``b + a`` stay equal).
 
         Returns:
             A hashable tuple uniquely identifying this VarData.
         """
         return (
-            self.state,
-            self.field_name,
+            tuple(self.field_dependencies.items()),
             self.imports,
             self.hooks,
-            self.deps,
+            tuple(dep._hash_key() for dep in self.deps),
             self.position,
             tuple(id(component) for component in self.components),
             frozenset(
@@ -505,7 +601,7 @@ class VarData:
         """
         if not isinstance(other, VarData):
             return NotImplemented
-        return self._identity_key() == other._identity_key()
+        return self._identity_key == other._identity_key
 
     def __hash__(self) -> int:
         """Hash consistent with ``__eq__``.
@@ -513,7 +609,16 @@ class VarData:
         Returns:
             A hash over render-time fields and hashable component metadata.
         """
-        return hash(self._identity_key())
+        return self._cached_hash
+
+    @functools.cached_property
+    def _cached_hash(self) -> int:
+        """The hash, cached because every Var interpolation recomputes it.
+
+        Returns:
+            A hash over render-time fields and hashable component metadata.
+        """
+        return hash(self._identity_key)
 
     @classmethod
     def from_state(cls, state: type[BaseState] | str, field_name: str = "") -> VarData:
@@ -735,13 +840,28 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
                 _var_data=VarData.merge(self._var_data, var_data_),
             )
 
+    def _hash_key(self) -> tuple[Any, ...]:
+        """Return the canonical identity of this var.
+
+        ``__eq__`` builds a ``BooleanVar`` rather than returning a bool, and
+        bool-ifying a Var raises, so a Var can never be compared by a container.
+        Every structural comparison goes through this key instead, which holds
+        no Var objects and is therefore safe to nest in tuples, dicts and sets.
+        Subclasses that need a different identity override this rather than
+        ``__hash__``, so hashing and ``equals`` can never drift apart.
+
+        Returns:
+            A hashable tuple uniquely identifying this var.
+        """
+        return (self._js_expr, self._var_type, self._get_all_var_data())
+
     def __hash__(self) -> int:
         """Define a hash function for the var.
 
         Returns:
             The hash of the var.
         """
-        return hash((self._js_expr, self._var_type, self._var_data))
+        return hash(self._hash_key())
 
     def _get_all_var_data(self) -> VarData | None:
         """Get all VarData associated with the Var.
@@ -750,6 +870,23 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
             The VarData of the components and all of its children.
         """
         return self._var_data
+
+    def _dependency_fields(self) -> Mapping[str, tuple[str, ...]]:
+        """The state fields a ComputedVar depending on this Var must track.
+
+        A Var normally stands for a single field of a single state, but one
+        composed of several must name all of them, or a ``deps=[that_var]``
+        dependency would track only some of the fields it reads and leave the
+        computed var stale when any of the others change. A composite var may
+        also span several states, so the fields stay grouped by their owner.
+        ``VarData.merge`` unions them as vars combine, so the merged VarData
+        already knows every one.
+
+        Returns:
+            The fields to register the dependency against, by state name.
+        """
+        all_var_data = self._get_all_var_data()
+        return all_var_data.field_dependencies if all_var_data is not None else {}
 
     def __deepcopy__(self, memo: dict[int, Any]) -> Self:
         """Deepcopy the var.
@@ -771,11 +908,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         Returns:
             Whether the vars are equal.
         """
-        return (
-            self._js_expr == other._js_expr
-            and self._var_type == other._var_type
-            and self._get_all_var_data() == other._get_all_var_data()
-        )
+        return self._hash_key() == other._hash_key()
 
     @overload
     def _replace(
@@ -823,12 +956,11 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         if kwargs.get("_var_full_name_needs_state_prefix", False) is not False:
             msg = "The _var_full_name_needs_state_prefix argument is not supported for Var."
             raise TypeError(msg)
+        var_data = kwargs.pop("_var_data", self._var_data)
         value_with_replaced = dataclasses.replace(
             self,
             _var_type=_var_type or self._var_type,
-            _var_data=VarData.merge(
-                kwargs.get("_var_data", self._var_data), merge_var_data
-            ),
+            _var_data=VarData.merge(var_data, merge_var_data),
             **kwargs,
         )
 
@@ -1031,8 +1163,6 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         Returns:
             The converted var.
         """
-        from .object import ObjectVar
-
         fixed_output_type = get_origin(output) or output
 
         # If the first argument is a python type, we map it to the corresponding Var type.
@@ -1043,28 +1173,32 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         if fixed_output_type is None:
             return get_to_operation(NoneVar).create(self)  # pyright: ignore [reportReturnType]
 
+        is_class = isinstance(output, type)
+        if (
+            is_class
+            and (output_entry := _var_subclass_for_var_output(output)) is not None
+        ):
+            current_var_type = self._var_type
+            if current_var_type is Any:
+                new_var_type = var_type
+            else:
+                new_var_type = var_type or current_var_type
+            return output_entry.to_var_subclass.create(  # pyright: ignore [reportReturnType]
+                value=self, _var_type=new_var_type
+            )
+
+        from .object import ObjectVar
+
         # Handle fixed_output_type being Base or a dataclass.
         if can_use_in_object_var(output):
             return self.to(ObjectVar, output)
 
-        if isinstance(output, type):
-            output_entry = _var_subclass_for_var_output(output)
-            if output_entry is not None:
-                current_var_type = self._var_type
-                if current_var_type is Any:
-                    new_var_type = var_type
-                else:
-                    new_var_type = var_type or current_var_type
-                return output_entry.to_var_subclass.create(  # pyright: ignore [reportReturnType]
-                    value=self, _var_type=new_var_type
-                )
-
-            # If we can't determine the first argument, we just replace the _var_type.
-            if not safe_issubclass(output, Var) or var_type is None:
-                return dataclasses.replace(
-                    self,
-                    _var_type=output,
-                )
+        # If we can't determine the first argument, we just replace the _var_type.
+        if is_class and (not safe_issubclass(output, Var) or var_type is None):
+            return dataclasses.replace(
+                self,
+                _var_type=output,
+            )
 
         # We couldn't determine the output type to be any other Var type, so we replace the _var_type.
         if var_type is not None:
@@ -1099,9 +1233,16 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         Raises:
             TypeError: If the type is not supported for guessing.
         """
+        var_type = self._var_type
+        try:
+            to_operation = _to_operation_by_var_type.get(var_type)
+        except TypeError:  # An unhashable type is no key.
+            to_operation = None
+        if to_operation is not None:
+            return to_operation.create(value=self, _var_type=var_type)  # pyright: ignore [reportReturnType]
+
         from .object import ObjectVar
 
-        var_type = self._var_type
         if var_type is None:
             return self.to(None)
         if var_type is NoReturn:
@@ -1130,7 +1271,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
 
             union_entry = _var_subclass_matching_python_types(tuple(fixed_inner_types))
             if union_entry is not None:
-                return self.to(union_entry.var_subclass, self._var_type)
+                return self._to_guessed(union_entry)
 
             if can_use_in_object_var(var_type):
                 return self.to(ObjectVar, self._var_type)
@@ -1150,12 +1291,32 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
 
         guessed_entry = _var_subclass_matching_python_types((fixed_type,))
         if guessed_entry is not None:
-            return self.to(guessed_entry.var_subclass, self._var_type)
+            return self._to_guessed(guessed_entry)
 
         if can_use_in_object_var(fixed_type):
             return self.to(ObjectVar, self._var_type)
 
         return self
+
+    def _to_guessed(self, entry: VarSubclassEntry) -> Var:
+        """Convert the var to the Var subclass guessed for its type.
+
+        Args:
+            entry: The registry entry matching the var's type.
+
+        Returns:
+            The converted var.
+        """
+        converted = self.to(entry.var_subclass, self._var_type)
+        if (
+            isinstance(converted, ToOperation)
+            and converted._original is self
+            and converted._var_type is self._var_type
+        ):
+            # A plain cast depends on the var type alone, so remember its class.
+            with contextlib.suppress(TypeError):  # An unhashable type is no key.
+                _to_operation_by_var_type[self._var_type] = type(converted)
+        return converted
 
     @staticmethod
     def _get_setter_name_for_name(
@@ -1264,6 +1425,20 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         from .number import boolify
 
         return boolify(self)
+
+    def deep_equals(self, other: Var | Any) -> BooleanVar:
+        """Compare this var with another value by nested structure.
+
+        Unlike ``==``, which uses JavaScript identity equality for objects and
+        arrays, this operation compares nested arrays and objects recursively.
+
+        Args:
+            other: The value to compare with.
+
+        Returns:
+            A BooleanVar representing the structural equality check.
+        """
+        return deep_equal_operation(self, other)
 
     def is_none(self) -> BooleanVar:
         """Check if the var is None.
@@ -1479,7 +1654,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
             if self._var_type is Any:
                 raise exceptions.UntypedVarError(
                     self,
-                    f"access the item '{key}'",
+                    f"access the item '{key!s}'",
                 )
             msg = f"Var of type {self._var_type} does not support item access."
             raise TypeError(msg)
@@ -1574,9 +1749,12 @@ class ToOperation:
         Returns:
             The attribute of the var.
         """
+        if name == "_js_expr":
+            return self._original._js_expr
+
         from .object import ObjectVar
 
-        if isinstance(self, ObjectVar) and name != "_js_expr":
+        if isinstance(self, ObjectVar):
             return ObjectVar.__getattr__(self, name)
         return getattr(self._original, name)
 
@@ -1584,13 +1762,17 @@ class ToOperation:
         """Post initialization."""
         object.__delattr__(self, "_js_expr")
 
-    def __hash__(self) -> int:
-        """Calculate the hash value of the object.
+    def _hash_key(self) -> tuple[Any, ...]:
+        """Return the canonical identity of this var.
+
+        Identical to ``Var._hash_key``, but reads the expression straight off
+        ``_original``: ``__post_init__`` deletes ``_js_expr``, so the inherited
+        version would pay a ``__getattr__`` round trip on every hash.
 
         Returns:
-            int: The hash value of the object.
+            A hashable tuple uniquely identifying this var.
         """
-        return hash(self._original)
+        return (self._original._js_expr, self._var_type, self._get_all_var_data())
 
     def _get_all_var_data(self) -> VarData | None:
         """Get all the var data.
@@ -1701,13 +1883,18 @@ class LiteralVar(Var[VAR_TYPE]):
         Raises:
             TypeError: If the value is not a supported type for LiteralVar.
         """
-        from .object import LiteralObjectVar
-        from .sequence import ArrayVar, LiteralStringVar
+        if (literal_subclass := _literal_var_by_type.get(type(value))) is not None:
+            return literal_subclass.create(value, _var_data=_var_data)
 
         if isinstance(value, Var):
             if _var_data is None:
                 return value
             return value._replace(merge_var_data=_var_data)
+
+        # Importing these registers the literal classes, which the first lookup needs
+        # (EMPTY_VAR_STR is built while base.py is still loading).
+        from .object import LiteralObjectVar
+        from .sequence import ArrayVar, LiteralStringVar
 
         if (literal_subclass := _literal_var_for(value)) is not None:
             return literal_subclass.create(value, _var_data=_var_data)
@@ -1752,7 +1939,7 @@ class LiteralVar(Var[VAR_TYPE]):
         if isinstance(value, range):
             return ArrayVar.range(value.start, value.stop, value.step)
 
-        msg = f"Unsupported type {type(value)} for LiteralVar. Tried to create a LiteralVar from {value}."
+        msg = f"Unsupported type {type(value)} for LiteralVar. Tried to create a LiteralVar from {value!r}."
         raise TypeError(msg)
 
     if not TYPE_CHECKING:
@@ -1831,7 +2018,7 @@ class LiteralVar(Var[VAR_TYPE]):
         if isinstance(value, range):
             return None
 
-        msg = f"Unsupported type {type(value)} for LiteralVar. Tried to create a LiteralVar from {value}."
+        msg = f"Unsupported type {type(value)} for LiteralVar. Tried to create a LiteralVar from {value!r}."
         raise TypeError(msg)
 
     @property
@@ -1968,19 +2155,22 @@ def var_operation(  # pyright: ignore [reportInconsistentOverload]
 
     @functools.wraps(func)
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> Var[T]:
-        args_vars = {
-            func_args[i]: (LiteralVar.create(arg) if not isinstance(arg, Var) else arg)
-            for i, arg in enumerate(args)
-        }
-        kwargs_vars = {
-            key: LiteralVar.create(value) if not isinstance(value, Var) else value
-            for key, value in kwargs.items()
-        }
+        args_vars = [
+            arg if isinstance(arg, Var) else LiteralVar.create(arg) for arg in args
+        ]
+        op_args = tuple(zip(func_args, args_vars))  # noqa: B905  (strict=False costs a kwargs dict per call)
+        kwargs_vars: dict[str, Var] = {}
+        if kwargs:
+            kwargs_vars = {
+                key: value if isinstance(value, Var) else LiteralVar.create(value)
+                for key, value in kwargs.items()
+            }
+            op_args += tuple(kwargs_vars.items())
 
         return CustomVarOperation.create(
             name=func.__name__,
-            args=tuple(list(args_vars.items()) + list(kwargs_vars.items())),
-            return_var=func(*args_vars.values(), **kwargs_vars),  # pyright: ignore [reportCallIssue, reportReturnType]
+            args=op_args,
+            return_var=func(*args_vars, **kwargs_vars),  # pyright: ignore [reportCallIssue, reportReturnType]
         ).guess_type()
 
     return wrapper
@@ -2050,28 +2240,33 @@ class cached_property:  # noqa: N801
         if self._attrname is None:
             self._attrname = name
             self._cached_field_name = "_reflex_cache_" + name
-            cached_field_name = self._cached_field_name
 
-            original_del = getattr(owner, "__del__", None)
+            # One __del__ per owner covers the cached properties of its bases too,
+            # rather than a chain with one link per property.
+            previous_del = getattr(owner, "__del__", None)
+            cached_field_names = (
+                *getattr(previous_del, "cached_field_names", ()),
+                self._cached_field_name,
+            )
+            original_del = getattr(previous_del, "original_del", previous_del)
 
-            def delete_property(this: Any):
-                """Delete the cached property.
+            def delete_properties(this: Any):
+                """Delete the cached properties.
 
                 Args:
-                    this: The object to delete the cached property from.
+                    this: The object to delete the cached properties from.
                 """
-                try:
-                    unique_id = object.__getattribute__(this, cached_field_name)
-                except AttributeError:
-                    if original_del is not None:
-                        original_del(this)
-                    return
-                GLOBAL_CACHE.pop(unique_id, None)
+                cache_keys = this.__dict__
+                for cached_field_name in cached_field_names:
+                    if (unique_id := cache_keys.get(cached_field_name)) is not None:
+                        GLOBAL_CACHE.pop(unique_id, None)
 
                 if original_del is not None:
                     original_del(this)
 
-            owner.__del__ = delete_property
+            delete_properties.cached_field_names = cached_field_names  # pyright: ignore [reportFunctionMemberAccess]
+            delete_properties.original_del = original_del  # pyright: ignore [reportFunctionMemberAccess]
+            owner.__del__ = delete_properties
 
         elif name != self._attrname:
             msg = (
@@ -2184,20 +2379,28 @@ class CachedVarOperation:
             self._var_data,
         )
 
-    def __hash__(self: DataclassInstance) -> int:
-        """Calculate the hash of the object.
 
-        Returns:
-            The hash of the object.
-        """
-        return hash((
-            type(self).__name__,
-            *[
-                getattr(self, field.name)
-                for field in dataclasses.fields(self)
-                if field.name not in ["_js_expr", "_var_data", "_var_type"]
-            ],
-        ))
+_DEEP_EQUAL_IMPORT: ImportDict = {
+    "lodash.isequal@4.5.0": [ImportVar(tag="isEqual", is_default=True)],
+}
+
+
+@var_operation
+def deep_equal_operation(lhs: Var | Any, rhs: Var | Any):
+    """Compare two frontend values by nested structure.
+
+    Args:
+        lhs: The left-hand value.
+        rhs: The right-hand value.
+
+    Returns:
+        Whether the values are structurally equal.
+    """
+    return var_operation_return(
+        js_expression=f"isEqual({lhs!s}, {rhs!s})",
+        var_type=bool,
+        var_data=VarData(imports=_DEEP_EQUAL_IMPORT),
+    )
 
 
 _PY_AND_IMPORT: ImportDict = {
@@ -2236,7 +2439,7 @@ def _and_operation(a: Var, b: Var):
         The result of the logical AND operation.
     """
     return var_operation_return(
-        js_expression=f"pyAnd({a}, () => ({b}))",
+        js_expression=f"pyAnd({a!s}, () => ({b!s}))",
         var_type=unionize(a._var_type, b._var_type),
         var_data=VarData(imports=_PY_AND_IMPORT),
     )
@@ -2269,7 +2472,7 @@ def _or_operation(a: Var, b: Var):
         The result of the logical OR operation.
     """
     return var_operation_return(
-        js_expression=f"pyOr({a}, () => ({b}))",
+        js_expression=f"pyOr({a!s}, () => ({b!s}))",
         var_type=unionize(a._var_type, b._var_type),
         var_data=VarData(imports=_PY_OR_IMPORT),
     )
@@ -2287,6 +2490,69 @@ class FakeComputedVarBaseClass(property):
     """A fake base class for ComputedVar to avoid inheriting from property."""
 
     __pydantic_run_validation__ = False
+
+
+# Marker for a value that has no delta key. Compared by identity and never stored
+# on a state instance, so it is safe from serialization round trips.
+_UNKEYABLE_VALUE: Final = object()
+
+# Marker for a computed var without a cached value. Private, so unlike
+# `dataclasses.MISSING` no computed value can be it.
+_NOT_CACHED: Final = object()
+
+# Types whose instances are immutable and cheap to compare directly. float is
+# deliberately absent: NaN is not equal to itself, so floats are keyed by their
+# serialized form instead of comparing equal to nothing forever.
+_ATOMIC_DELTA_VALUE_TYPES: Final = frozenset({str, int, bool, type(None)})
+
+# Size of the digest used to key non-atomic delta values.
+_DELTA_VALUE_DIGEST_SIZE: Final = 16
+
+
+def _delta_value_key(value: Any) -> Any:
+    """Get a comparable, alias-free key for a value going into a delta.
+
+    Immutable scalars are keyed by themselves, paired with their type so that
+    Python-equal but JSON-distinct values (``1`` and ``True``) do not collide.
+    Everything else is keyed by a digest of its serialized form: that is exactly
+    what the client receives, so a value without a registered serializer keys by
+    the ``null`` the client would get, it cannot be invalidated by a later
+    in-place mutation of the value, and it stays small no matter how big the
+    value is.
+
+    Args:
+        value: The value to key.
+
+    Returns:
+        The key, or ``_UNKEYABLE_VALUE`` if the value cannot be serialized.
+    """
+    value_type = type(value)
+    if value_type in _ATOMIC_DELTA_VALUE_TYPES:
+        return (value_type, value)
+    try:
+        return hashlib.blake2b(
+            json_dumps(value).encode(), digest_size=_DELTA_VALUE_DIGEST_SIZE
+        ).digest()
+    except Exception:
+        return _UNKEYABLE_VALUE
+
+
+@functools.cache
+def _type_check_depth() -> int:
+    """Get how many container levels state var type checks look into.
+
+    The checks only log an error, so production mode checks just the outer type
+    instead of walking every element. Reading the environment costs more than
+    the check it would skip, so the mode is resolved once and re-resolved when
+    ``environment.REFLEX_ENV_MODE.set`` changes it.
+
+    Returns:
+        The ``nested`` depth to pass to ``_isinstance``.
+    """
+    return 0 if environment.REFLEX_ENV_MODE.get() == constants.Env.PROD else 1
+
+
+_on_env_var_set(environment.REFLEX_ENV_MODE.name, _type_check_depth.cache_clear)
 
 
 def is_computed_var(obj: Any) -> TypeGuard[ComputedVar]:
@@ -2332,6 +2598,9 @@ class ComputedVar(Var[RETURN_TYPE]):
     )  # pyright: ignore [reportAssignmentType]
 
     _name: str = dataclasses.field(default="")
+
+    # The state class the computed var is bound to, set by __set_name__.
+    _owner = None
 
     def __init__(
         self,
@@ -2445,16 +2714,17 @@ class ComputedVar(Var[RETURN_TYPE]):
         if deps is None:
             deps = self._static_deps
         if isinstance(dep, Var):
-            state_name = (
-                all_var_data.state
-                if (all_var_data := dep._get_all_var_data()) and all_var_data.state
-                else None
-            )
-            if all_var_data is not None:
-                var_name = all_var_data.field_name
+            if (all_var_data := dep._get_all_var_data()) is not None:
+                # A composite Var names every state field it is built from, in
+                # each state that owns them.
+                field_dependencies = all_var_data.field_dependencies
+                if field_dependencies:
+                    for state_name, field_names in field_dependencies.items():
+                        deps.setdefault(state_name or None, set()).update(field_names)
+                else:
+                    deps.setdefault(None, set())
             else:
-                var_name = dep._js_expr
-            deps.setdefault(state_name, set()).add(var_name)
+                deps.setdefault(None, set()).add(dep._js_expr)
         elif isinstance(dep, str) and dep != "":
             deps.setdefault(None, set()).add(dep)
         else:
@@ -2505,7 +2775,7 @@ class ComputedVar(Var[RETURN_TYPE]):
 
         return type(self)(**field_values)
 
-    @property
+    @functools.cached_property
     def _cache_attr(self) -> str:
         """The attribute used to cache the value on the instance.
 
@@ -2514,7 +2784,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         """
         return f"__cached_{self._js_expr}"
 
-    @property
+    @functools.cached_property
     def _last_updated_attr(self) -> str:
         """The attribute used to store the last updated timestamp.
 
@@ -2522,6 +2792,55 @@ class ComputedVar(Var[RETURN_TYPE]):
             An attribute name.
         """
         return f"__last_updated_{self._js_expr}"
+
+    @functools.cached_property
+    def _last_delta_key_attr(self) -> str:
+        """The attribute used to store the key of the last value sent in a delta.
+
+        Returns:
+            An attribute name.
+        """
+        return f"__last_delta_{self._js_expr}"
+
+    def _pending_delta_record(
+        self, instance: BaseState, value: Any, token: str
+    ) -> tuple[str, tuple[str, Any] | None] | None:
+        """Decide whether the value an uncached var contributes has to be sent.
+
+        Uncached vars are recomputed for every delta, but recomputing does not
+        imply the value changed. Keeping a key for the last value that was sent
+        to the client allows an unchanged value to be omitted from the delta,
+        avoiding a needless re-render on the frontend.
+
+        The client token is recorded alongside the key because a single state
+        instance can serve several clients (linked shared states): a value that
+        was already sent to one client still has to be sent to the others.
+
+        Nothing is written here: only the caller knows which of the values it
+        computes survive into the delta the client actually receives, and a
+        value that a downstream filter withholds still has to be sent later.
+
+        Args:
+            instance: The state instance that the computed var is attached to.
+            value: The freshly computed value.
+            token: The client token the delta is being produced for.
+
+        Returns:
+            None when the value matches the last one recorded as sent and can
+            be left out of the delta, otherwise the instance attribute holding
+            the record and what to store in it once the value has been
+            delivered -- None there for a value that cannot be compared, whose
+            record has to be dropped instead.
+        """
+        attr = self._last_delta_key_attr
+        key = _delta_value_key(value)
+        if key is _UNKEYABLE_VALUE:
+            # The value can never be compared, so it always has to be sent.
+            return attr, None
+        recorded = (token, key)
+        if getattr(instance, attr, None) == recorded:
+            return None
+        return attr, recorded
 
     def needs_update(self, instance: BaseState) -> bool:
         """Check if the computed var needs to be updated.
@@ -2601,7 +2920,7 @@ class ComputedVar(Var[RETURN_TYPE]):
     @overload
     def __get__(self, instance: BaseState, owner: type) -> RETURN_TYPE: ...
 
-    def __get__(self, instance: BaseState | None, owner: type):
+    def __get__(self, instance: Any, owner: type):
         """Get the ComputedVar value.
 
         If the value is already cached on the instance, return the cached value.
@@ -2614,9 +2933,7 @@ class ComputedVar(Var[RETURN_TYPE]):
             The value of the var for the given instance.
         """
         if instance is None:
-            state_where_defined = owner
-            while self._name in state_where_defined.inherited_vars:
-                state_where_defined = state_where_defined.get_parent_state()
+            state_where_defined = self._owner or owner
 
             field_name = (
                 format_state_name(state_where_defined.get_full_name())
@@ -2631,25 +2948,73 @@ class ComputedVar(Var[RETURN_TYPE]):
                 existing_var=self,
             )
 
+        owner_cls = self._owner
+        if owner_cls is not None and type(instance) is not owner_cls:
+            instance = _owner_state(instance, owner_cls)
         if not self._cache:
             value = self.fget(instance)
-        else:
-            # handle caching
-            if not hasattr(instance, self._cache_attr) or self.needs_update(instance):
-                # Set cache attr on state instance.
-                setattr(instance, self._cache_attr, self.fget(instance))
-                # Ensure the computed var gets serialized to redis.
-                instance._was_touched = True
-                # Set the last updated timestamp on the state instance.
-                setattr(instance, self._last_updated_attr, datetime.datetime.now())
-            value = getattr(instance, self._cache_attr)
+            self._check_deprecated_return_type(instance, value)
+            return value
 
-        self._check_deprecated_return_type(instance, value)
-
+        # handle caching
+        cache = instance.__dict__
+        cache_attr = self._cache_attr
+        value = cache.get(cache_attr, _NOT_CACHED)
+        if value is _NOT_CACHED or (
+            self._update_interval is not None and self.needs_update(instance)
+        ):
+            # Set cache attr on state instance.
+            value = cache[cache_attr] = self.fget(instance)
+            # Ensure the computed var gets serialized to redis.
+            instance._was_touched = True
+            if self._update_interval is not None:
+                # Only needs_update reads the last updated timestamp.
+                cache[self._last_updated_attr] = datetime.datetime.now()
+            self._check_deprecated_return_type(instance, value)
         return value
 
+    def __set_name__(self, owner: type[BaseState], name: str) -> None:
+        """Bind the computed var to the state class it is assigned to.
+
+        Args:
+            owner: The state class.
+            name: The attribute name.
+        """
+        object.__setattr__(self, "_owner", owner)
+
+    def _owner_instance(self, instance: BaseState) -> BaseState:
+        """Get the instance of the owning state, which caches the value.
+
+        Args:
+            instance: The state instance the computed var was accessed on.
+
+        Returns:
+            ``instance`` or its ancestor instance of the owning state class.
+        """
+        owner = self._owner
+        if owner is None or type(instance) is owner:
+            return instance
+        return _owner_state(instance, owner)
+
+    @functools.cached_property
+    def _plain_types(self) -> frozenset[Any]:
+        """The classes whose instances match the return type without the full type check.
+
+        Returns:
+            The classes that take no arguments in the return type, or in the members of a union.
+        """
+        return _plain_types_of(self._var_type)
+
     def _check_deprecated_return_type(self, instance: BaseState, value: Any) -> None:
-        if not _isinstance(value, self._var_type, nested=1, treat_var_as_type=False):
+        """Log an error if a computed value does not match the return type.
+
+        Args:
+            instance: The state instance the value was computed for.
+            value: The computed value.
+        """
+        if type(value) not in self._plain_types and not _isinstance(
+            value, self._var_type, nested=_type_check_depth(), treat_var_as_type=False
+        ):
             logger.error(
                 f"Computed var '{type(instance).__name__}.{self._name}' must return"
                 f" a value of type '{self._var_type}', got '{value!s}' of type {type(value)}."
@@ -2712,8 +3077,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         Args:
             instance: the state instance that needs to recompute the value.
         """
-        with contextlib.suppress(AttributeError):
-            delattr(instance, self._cache_attr)
+        instance.__dict__.pop(self._cache_attr, None)  # pyright: ignore [reportAttributeAccessIssue]
 
     def add_dependency(self, objclass: type[BaseState], dep: Var):
         """Explicitly add a dependency to the ComputedVar.
@@ -2730,24 +3094,30 @@ class ComputedVar(Var[RETURN_TYPE]):
                 state and field name
         """
         if all_var_data := dep._get_all_var_data():
-            state_name = all_var_data.state
-            if state_name:
-                var_name = all_var_data.field_name
-                if var_name:
-                    self._static_deps.setdefault(state_name, set()).add(var_name)
-                    target_state_class = objclass.get_root_state().get_class_substate(
-                        state_name
-                    )
+            # A composite Var names every state field it is built from, and may
+            # span several states; register against each of them.
+            registered = False
+            for state_name, field_names in all_var_data.field_dependencies.items():
+                var_names = tuple(filter(None, field_names))
+                if not state_name or not var_names:
+                    continue
+                self._static_deps.setdefault(state_name, set()).update(var_names)
+                target_state_class = objclass.get_root_state().get_class_substate(
+                    state_name
+                )
+                for var_name in var_names:
                     target_state_class._var_dependencies.setdefault(
                         var_name, set()
                     ).add((
                         objclass.get_full_name(),
                         self._name,
                     ))
-                    target_state_class._potentially_dirty_states.add(
-                        objclass.get_full_name()
-                    )
-                    return
+                target_state_class._potentially_dirty_states.add(
+                    objclass.get_full_name()
+                )
+                registered = True
+            if registered:
+                return
         msg = (
             "ComputedVar dependencies must be Var instances with a state and "
             f"field name, got {dep!r}."
@@ -2886,9 +3256,10 @@ class AsyncComputedVar(ComputedVar[RETURN_TYPE]):
         if instance is None:
             return super(AsyncComputedVar, self).__get__(instance, owner)
 
+        instance = self._owner_instance(instance)
         if not self._cache:
 
-            async def _awaitable_result(instance: BaseState = instance) -> RETURN_TYPE:
+            async def _awaitable_result(instance: Any = instance) -> RETURN_TYPE:
                 value = await self.fget(instance)
                 self._check_deprecated_return_type(instance, value)
                 return value
@@ -2896,16 +3267,21 @@ class AsyncComputedVar(ComputedVar[RETURN_TYPE]):
             return _awaitable_result()
 
         # handle caching
-        async def _awaitable_result(instance: BaseState = instance) -> RETURN_TYPE:
-            if not hasattr(instance, self._cache_attr) or self.needs_update(instance):
+        async def _awaitable_result(instance: Any = instance) -> RETURN_TYPE:
+            cache = instance.__dict__
+            cache_attr = self._cache_attr
+            value = cache.get(cache_attr, _NOT_CACHED)
+            if value is _NOT_CACHED or (
+                self._update_interval is not None and self.needs_update(instance)
+            ):
                 # Set cache attr on state instance.
-                setattr(instance, self._cache_attr, await self.fget(instance))
+                value = cache[cache_attr] = await self.fget(instance)
                 # Ensure the computed var gets serialized to redis.
                 instance._was_touched = True
-                # Set the last updated timestamp on the state instance.
-                setattr(instance, self._last_updated_attr, datetime.datetime.now())
-            value = getattr(instance, self._cache_attr)
-            self._check_deprecated_return_type(instance, value)
+                if self._update_interval is not None:
+                    # Only needs_update reads the last updated timestamp.
+                    cache[self._last_updated_attr] = datetime.datetime.now()
+                self._check_deprecated_return_type(instance, value)
             return value
 
         return _awaitable_result()
@@ -3519,17 +3895,88 @@ FIELD_TYPE = TypeVar("FIELD_TYPE")
 
 # Custom attrs never copied from a source field: get_field_type duck-types
 # pydantic fields on `.annotation`, so carrying it over would shadow the
-# real class annotation.
-_RESERVED_FIELD_ATTRS = frozenset({"annotation"})
+# real class annotation; the binding attrs belong to the source's own class.
+_RESERVED_FIELD_ATTRS = frozenset({
+    "annotation",
+    "_owner",
+    "_name",
+    "_backend",
+    "_tracked",
+    "_plain_types",
+    "_var",
+})
+
+# Exact types of values that are never wrapped in a MutableProxy. Checking them
+# first spares the is_mutable_type lookup on most field reads.
+_SCALAR_TYPES: Final = frozenset({str, int, float, bool, type(None)})
+
+
+def _plain_types_of(type_: Any) -> frozenset[Any]:
+    """Get the classes whose instances match a type without the full type check.
+
+    Args:
+        type_: The type, possibly a union.
+
+    Returns:
+        The classes that take no arguments in the type, or in the members of a union.
+    """
+    return frozenset(
+        arg
+        for arg in (get_args(type_) if types.is_union(type_) else (type_,))
+        if isinstance(arg, type) and not get_args(arg)
+    )
+
+
+def _owner_state(state: Any, owner: type) -> Any:
+    """Get the instance holding an attribute bound to a state class.
+
+    Args:
+        state: The state instance the attribute was accessed on.
+        owner: The state class the attribute is bound to.
+
+    Returns:
+        The instance of ``owner`` in the state tree above (or at) ``state``,
+        or ``state`` itself if it has no such ancestor, like a substate
+        instantiated on its own.
+    """
+    instance = state
+    while type(instance) is not owner:
+        # A plain model without a state tree has no parent_state.
+        instance = getattr(instance, "parent_state", None)
+        if instance is None:
+            return state
+    return instance
 
 
 class Field(Generic[FIELD_TYPE]):
-    """A field for a state."""
+    """A state field: its declaration, and the descriptor holding its value.
+
+    The value lives in the ``__dict__`` of the instance of the state class the
+    field is bound to; reading or writing it through a substate reaches that
+    ancestor instance.
+    """
 
     if TYPE_CHECKING:
         type_: GenericType
         default: FIELD_TYPE | MISSING_TYPE | None
         default_factory: Callable[[], FIELD_TYPE | None] | None
+
+    # The MutableProxy type, installed by reflex.istate.proxy: mutable values
+    # are wrapped in it when read, so in-place changes mark the field dirty.
+    # Until then no value is a proxy: isinstance against () is always false.
+    _proxy: ClassVar[Any] = ()
+
+    # The class and attribute the field is bound to, set by __set_name__.
+    _owner: type | None = None
+    _name: str = ""
+    # Whether the value stays on the backend, never sent to the client.
+    _backend: bool = False
+    # Whether the owner tracks changes, like a state; a plain model does not.
+    _tracked: bool = False
+    # Classes whose instances match the type without the full type check.
+    _plain_types: frozenset[Any] = frozenset()
+    # The Var standing for the field on its owner, if sent to the client.
+    _var: Var | None = None
 
     def __init__(
         self,
@@ -3556,8 +4003,10 @@ class Field(Generic[FIELD_TYPE]):
         self.is_var = is_var
         if annotated_type is not MISSING:
             type_origin = get_origin(annotated_type) or annotated_type
-            if type_origin is Field and (
-                args := getattr(annotated_type, "__args__", None)
+            if (
+                isinstance(type_origin, type)
+                and issubclass(type_origin, Field)
+                and (args := getattr(annotated_type, "__args__", None))
             ):
                 annotated_type: GenericType = args[0]
                 type_origin = get_origin(annotated_type) or annotated_type
@@ -3594,6 +4043,87 @@ class Field(Generic[FIELD_TYPE]):
                 if key not in self.__dict__ and key not in _RESERVED_FIELD_ATTRS:
                     self.__dict__[key] = value
 
+    def __set_name__(self, owner: type, name: str) -> None:
+        """Bind the field to the class storing its value.
+
+        Args:
+            owner: The class the field is assigned to.
+            name: The attribute name of the field.
+        """
+        self._owner = owner
+        self._name = name
+        self._backend = not self.is_var or name.startswith("_")
+        self._tracked = hasattr(owner, "_mark_dirty")
+        self._plain_types = _plain_types_of(self.outer_type_)
+
+    def _replace(self, **kwargs: Any) -> Self:
+        """Derive an unbound field of the same class, with some arguments replaced.
+
+        A subclass taking arguments of its own passes them on, like
+        ``super()._replace(**{"tag": self.tag, **kwargs})``.
+
+        Args:
+            **kwargs: The arguments of the new field to replace.
+
+        Returns:
+            The new field.
+        """
+        return type(self)(**{
+            "default": self.default,
+            "default_factory": self.default_factory,
+            "is_var": self.is_var,
+            "annotated_type": self.annotated_type,
+            "source_field": self,
+            **kwargs,
+        })
+
+    @classmethod
+    def _with_default(cls, value: Any, annotated_type: Any = MISSING) -> Self:
+        """Create a field defaulting to a value, copied per instance if mutable.
+
+        Args:
+            value: The default value.
+            annotated_type: The type of the field.
+
+        Returns:
+            The field.
+        """
+        return cls(annotated_type=annotated_type, **_default_arguments(value))
+
+    def set_default(
+        self,
+        default: FIELD_TYPE | MISSING_TYPE = MISSING,
+        *,
+        default_factory: Callable[[], FIELD_TYPE] | None = None,
+    ) -> None:
+        """Set the default of the field, replacing its default or factory.
+
+        A mutable default, like a list, becomes a factory returning a copy of
+        the value as it was when set, so no two instances share it. The change
+        applies to values not yet stored on an instance, such as in a new
+        session or after ``reset()``.
+
+        Args:
+            default: The new default value.
+            default_factory: A function building the default for each instance.
+
+        Raises:
+            TypeError: If neither or both of default and default_factory are given.
+        """
+        if default is MISSING and default_factory is None:
+            msg = "set_default requires a default or a default_factory."
+            raise TypeError(msg)
+        if default is not MISSING and default_factory is not None:
+            msg = "set_default takes a default or a default_factory, not both."
+            raise TypeError(msg)
+        if default_factory is None:
+            arguments = _default_arguments(default)
+            self.default = arguments["default"]
+            self.default_factory = arguments["default_factory"]
+        else:
+            self.default = MISSING
+            self.default_factory = default_factory
+
     def default_value(self) -> FIELD_TYPE | None:
         """Get the default value for the field.
 
@@ -3625,17 +4155,103 @@ class Field(Generic[FIELD_TYPE]):
             return f"Field(default={self.default!r}, is_var={self.is_var}{annotated_type_str})"
         return f"Field(default_factory={self.default_factory!r}, is_var={self.is_var}{annotated_type_str})"
 
-    if TYPE_CHECKING:
+    def __format__(self, format_spec: str) -> str:
+        """Refuse to format the field: only a Var has a frontend expression.
 
-        def __set__(self, instance: Any, value: FIELD_TYPE):
-            """Set the Var.
+        Class access reaches the field itself only when it has no Var (a backend
+        var, or any field of a mixin state), so formatting it would otherwise
+        silently embed its repr in the page.
 
-            Args:
-                instance: The instance of the class setting the Var.
-                value: The value to set the Var to.
+        Args:
+            format_spec: The format specifier (unused).
 
-            # noqa: DAR101 self
-            """
+        Raises:
+            BackendVarFormatError: Always; the field has no frontend var.
+        """
+        path = f"{self._owner.__name__}.{self._name}" if self._owner else None
+        name = f"'{path}'" if path else repr(self)
+        if self._backend:
+            msg = (
+                f"Backend var {name} exists only on the server and has no"
+                " frontend value, so it cannot be used in the UI. Use"
+                f" {path}.default_value() for its default value, declare it as"
+                " ClassVar[...] for a constant shared by all sessions, or use a"
+                " regular state var for a value the UI should show and update."
+            )
+        elif getattr(self._owner, "_mixin", False):
+            msg = (
+                f"Var {name} is declared on a mixin state, which has no"
+                " frontend vars. Access it through a state that includes the"
+                " mixin instead."
+            )
+        else:
+            msg = f"{name} has no frontend var, so it cannot be used in the UI."
+        raise BackendVarFormatError(msg)
+
+    def _get_raw(self, instance: Any) -> FIELD_TYPE | None:
+        """Get the value on a state instance, never wrapped in a proxy.
+
+        Args:
+            instance: The state instance the field is read on.
+
+        Returns:
+            The value of the field.
+        """
+        state = (
+            instance
+            if type(instance) is self._owner
+            else _owner_state(instance, self._owner)  # pyright: ignore[reportArgumentType]
+        )
+        try:
+            return state.__dict__[self._name]
+        except KeyError:
+            value = state.__dict__[self._name] = self.default_value()
+            return value
+
+    def __set__(self, instance: Any, value: FIELD_TYPE):
+        """Set the value, marking the field dirty.
+
+        Args:
+            instance: The state instance the field is set on.
+            value: The value to set.
+        """
+        state = (
+            instance
+            if type(instance) is self._owner
+            else _owner_state(instance, self._owner)  # pyright: ignore[reportArgumentType]
+        )
+        if isinstance(value, self._proxy):
+            value = value.__wrapped__  # pyright: ignore[reportAttributeAccessIssue]
+        if (
+            # Only values sent to the client are type checked.
+            not self._backend
+            and type(value) not in self._plain_types
+            and not _isinstance(
+                value,
+                self.outer_type_,
+                nested=_type_check_depth(),
+                treat_var_as_type=False,
+            )
+        ):
+            logger.error(
+                f"Expected field '{type(state).__name__}.{self._name}' to receive type"
+                f" '{self.outer_type_}', but got {value!r} of type '{type(value)}'."
+            )
+        state.__dict__[self._name] = value
+        if self._tracked:
+            self._mark_dirty(state)
+
+    def _mark_dirty(self, state: Any) -> None:
+        """Record that the field changed on a state instance.
+
+        Args:
+            state: The state instance holding the field.
+        """
+        state.dirty_vars.add(self._name)
+        if not state._was_touched:
+            # Assigning goes through the state's __setattr__ hook in dev mode.
+            state._was_touched = True
+        state._mark_dirty((self._name,))
 
     @overload
     def __get__(self: Field[None], instance: None, owner: Any) -> NoneVar: ...
@@ -3712,12 +4328,36 @@ class Field(Generic[FIELD_TYPE]):
     def __get__(self, instance: Any, owner: Any) -> FIELD_TYPE: ...
 
     def __get__(self, instance: Any, owner: Any):  # pyright: ignore [reportInconsistentOverload]
-        """Get the Var.
+        """Get the Var on class access, or the value on instance access.
 
         Args:
-            instance: The instance of the class accessing the Var.
-            owner: The class that the Var is attached to.
+            instance: The state instance accessing the field, or None.
+            owner: The class the field is accessed through.
+
+        Returns:
+            The Var (or this field, if it has none) for class access, else the
+            value, wrapped in a MutableProxy if mutable (and not a bookkeeping
+            field declared with ``is_var=False``).
         """
+        if instance is None:
+            return self if self._var is None else self._var
+        state = (
+            instance
+            if type(instance) is self._owner
+            else _owner_state(instance, self._owner)  # pyright: ignore[reportArgumentType]
+        )
+        try:
+            value = state.__dict__[self._name]
+        except KeyError:
+            value = state.__dict__[self._name] = self.default_value()
+        if (
+            (value_type := type(value)) not in _SCALAR_TYPES
+            and self._tracked
+            and self.is_var
+            and is_mutable_type(value_type)
+        ):
+            return self._proxy(wrapped=value, state=state, field_name=self._name)
+        return value
 
 
 @overload
@@ -3811,7 +4451,7 @@ def _linearize_bases(bases: tuple[type, ...]) -> list[type]:
                 del sequence[0]
 
 
-def _inherited_value(lookup_order: list[type], name: str) -> Any:
+def _inherited_value(lookup_order: Sequence[type], name: str) -> Any:
     """Look up an inherited class attribute without running descriptors.
 
     Args:
@@ -3827,6 +4467,319 @@ def _inherited_value(lookup_order: list[type], name: str) -> Any:
     return MISSING
 
 
+_FIELD_MAP_NAMES = frozenset({"__fields__", "__own_fields__", "__inherited_fields__"})
+
+# ``ABCMeta`` writes this onto every class it creates, so an ``ABC`` mixin carries its own.
+_ABC_BOOKKEEPING_NAME = "_abc_impl"
+
+
+@functools.cache
+def _reserved_state_members(root: BaseStateMeta) -> dict[str, Any]:
+    """Return the framework members of a root state, without Python protocols.
+
+    Args:
+        root: The state class declared with ``state_root=True``.
+
+    Returns:
+        Reserved names and their original descriptors, without invoking them.
+    """
+    members = {}
+    for base in reversed(root.__mro__[:-1]):
+        namespace = vars(base)
+        members.update(
+            (name, namespace.get(name))
+            for name in namespace.keys() | annotations_from_namespace(namespace).keys()
+            if not name.startswith("__") or name in _FIELD_MAP_NAMES
+        )
+    return members
+
+
+def _validate_state_name(root: BaseStateMeta, name: str, value: Any = None) -> None:
+    """Reject declarations that replace framework methods or bookkeeping.
+
+    Args:
+        root: The state class whose namespace is reserved.
+        name: The declared or dynamically registered name.
+        value: The raw class declaration, when available.
+
+    Raises:
+        StateValueError: If a declaration uses a reserved name.
+        EventHandlerShadowsBuiltInStateMethodError: If a method overrides a builtin.
+    """
+    members = _reserved_state_members(root)
+    if name not in members:
+        return
+    method = value.__func__ if isinstance(value, (classmethod, staticmethod)) else value
+    if isinstance(method, FunctionType):
+        if value is members[name] or getattr(method, "__override_base_method__", False):
+            return
+        msg = f"The event handler name `{name}` shadows a builtin State method; use a different name instead"
+        raise EventHandlerShadowsBuiltInStateMethodError(msg)
+    msg = f"State name `{name}` is reserved by {root.__name__}; use a different name instead."
+    raise StateValueError(msg)
+
+
+def _validate_inherited_members(
+    root: BaseStateMeta, base: type, seen: set[str]
+) -> None:
+    """Check the members a Python mixin or model base adds to a state.
+
+    Args:
+        root: The state class whose namespace is reserved.
+        base: A base class that is not itself a state of that root.
+        seen: Names an earlier base already provides in the MRO.
+    """
+    is_model = isinstance(base, BaseStateMeta)
+    if is_model:
+        # Model fields are inherited even when an earlier base masks their
+        # class attributes in the MRO.
+        for member in base.__own_fields__:
+            _validate_state_name(root, member)
+        seen.update(base.__own_fields__)
+    for member, value in vars(base).items():
+        if (
+            member not in seen
+            and member != _ABC_BOOKKEEPING_NAME
+            and not (is_model and (member in _FIELD_MAP_NAMES or member == "_mixin"))
+        ):
+            _validate_state_name(root, member, value)
+
+
+def _validate_state_declaration(
+    root: BaseStateMeta, lookup_order: list[type], namespace: dict[str, Any]
+) -> None:
+    """Check a state's declarations and Python mixins before it is constructed.
+
+    Args:
+        root: The state class whose namespace the new class may not shadow.
+        lookup_order: The bases of the new class in method resolution order.
+        namespace: The unmodified class namespace.
+
+    Raises:
+        StateValueError: If a declaration uses the name of a base's slot.
+    """
+    declared = namespace.keys() | annotations_from_namespace(namespace).keys()
+    for member in declared:
+        _validate_state_name(root, member, namespace.get(member))
+    seen = set(declared)
+    for base in lookup_order:
+        if not declared.isdisjoint(slots := _slot_names(vars(base))):
+            msg = (
+                f"State names {sorted(declared.intersection(slots))} are reserved by "
+                f"{base.__name__}; use different names instead."
+            )
+            raise StateValueError(msg)
+        if (
+            not issubclass(base, root)
+            and base is not EvenMoreBasicBaseState
+            and base is not object
+        ):
+            _validate_inherited_members(root, base, seen)
+        seen.update(vars(base))
+
+
+def _private_prefixes(class_name: str) -> tuple[str, str]:
+    """Get the prefixes of the names Python treats as private in a class body.
+
+    A private name is a plain attribute of the class unless it is declared a
+    field explicitly, as it was before fields became descriptors.
+
+    Args:
+        class_name: The name of the class being created.
+
+    Returns:
+        The dunder prefix and the prefix ``__name`` is mangled to in the class.
+    """
+    return "__", f"_{class_name.lstrip('_')}__"
+
+
+def _unannotated_fields(
+    namespace: Mapping[str, Any], private: tuple[str, ...]
+) -> dict[str, Field]:
+    """Get the fields a class namespace declares by value alone.
+
+    Args:
+        namespace: The class namespace.
+        private: The prefixes of names that are fields only when declared as such.
+
+    Returns:
+        The fields by name.
+    """
+    annotations = annotations_from_namespace(namespace)
+    slots = _slot_names(namespace)
+    fields = {}
+    for key, value in namespace.items():
+        if key in annotations or key in slots:
+            continue
+        if isinstance(value, Field):
+            if value.annotated_type is not Any:
+                fields[key] = value
+            else:
+                fields[key] = value._replace(
+                    annotated_type=Any
+                    if value.default is MISSING
+                    else figure_out_type(value.default)
+                )
+        elif (
+            not key.startswith(private)
+            and not callable(value)
+            and not isinstance(value, (staticmethod, classmethod, Var))
+            and not _is_descriptor(value)
+        ):
+            fields[key] = Field._with_default(value, figure_out_type(value))
+    return fields
+
+
+def _annotated_fields(
+    namespace: Mapping[str, Any],
+    lookup_order: Sequence[type],
+    private: tuple[str, ...],
+) -> dict[str, Field]:
+    """Get the fields a class namespace declares by annotation.
+
+    Args:
+        namespace: The class namespace.
+        lookup_order: The bases of the class in method resolution order.
+        private: The prefixes of names that are fields only when declared as such.
+
+    Returns:
+        The fields by name.
+    """
+    slots = _slot_names(namespace)
+    fields = {}
+    for key, annotation in types.resolve_annotations(
+        annotations_from_namespace(namespace), namespace["__module__"]
+    ).items():
+        if types.is_classvar(annotation) or key in slots:
+            continue
+        value = namespace.get(key, MISSING)
+        inherited = _inherited_value(lookup_order, key)
+        if (
+            key.startswith(private)
+            and not isinstance(value, Field)
+            and not isinstance(inherited, Field)
+        ):
+            # A private name is a plain attribute unless declared a field, here
+            # or on a base it shadows.
+            continue
+        declared = value if value is not MISSING else inherited
+        if _is_descriptor(declared):
+            # A property, computed var or other descriptor under an annotated
+            # name stays as is, here or on a base; a field would shadow it.
+            continue
+        if value is MISSING:
+            if isinstance(declared, Field) and _is_tree_state(declared._owner):
+                # Re-annotating an inherited var only restates its type.
+                continue
+            if isinstance(declared, Field) or not callable(declared):
+                # Declared by a mixin or plain base: its default applies here.
+                value = declared
+        if value is MISSING:
+            fields[key] = Field(annotated_type=annotation)
+        elif isinstance(value, Field):
+            fields[key] = value._replace(annotated_type=annotation)
+        elif isinstance(inherited, Field):
+            # A new default for an inherited field keeps its kind of field.
+            fields[key] = inherited._replace(
+                annotated_type=annotation, **_default_arguments(value)
+            )
+        else:
+            fields[key] = Field._with_default(value, annotation)
+    return fields
+
+
+def _default_arguments(value: Any) -> dict[str, Any]:
+    """Get the field arguments defaulting to a value, copied per instance if mutable.
+
+    Args:
+        value: The default value.
+
+    Returns:
+        The default and default factory arguments of a field.
+    """
+    if types.is_immutable(value):
+        return {"default": value, "default_factory": None}
+    # Copy the value once, so later changes by whoever passed it in do not
+    # reach the default.
+    return {
+        "default": MISSING,
+        "default_factory": functools.partial(copy.deepcopy, copy.deepcopy(value)),
+    }
+
+
+def _state_var_assignment_error(cls: type, field: Field, action: str) -> TypeError:
+    """Build the error for replacing a state var through its class.
+
+    Args:
+        cls: The state class the attribute is set or deleted through.
+        field: The field of the state var.
+        action: What was done to the class attribute, like "assigning".
+
+    Returns:
+        The error, naming the state declaring the var and how to change its
+        default there instead.
+    """
+    owner = field._owner or cls
+    if owner is cls:
+        declared = f"{owner.__name__}; {action} it on the class"
+        scope = ""
+    else:
+        declared = (
+            f"{owner.__name__}, inherited by {cls.__name__}; {action} it on "
+            f"{cls.__name__}"
+        )
+        scope = ", which applies to every state that inherits it"
+    return TypeError(
+        f"{field._name!r} is a state var of {declared} would replace the var. "
+        f"Set its default with {owner.__name__}.__fields__[{field._name!r}]"
+        f".set_default(...){scope}, or declare class-level config as ClassVar."
+    )
+
+
+def _is_descriptor(value: Any) -> bool:
+    """Whether a class attribute is a descriptor defining its own access, rather than a field.
+
+    Args:
+        value: The class attribute.
+
+    Returns:
+        True for properties, computed vars and other descriptors; False for
+        fields and plain functions.
+    """
+    return hasattr(type(value), "__get__") and not isinstance(
+        value, (Field, FunctionType)
+    )
+
+
+def _slot_names(namespace: Mapping[str, Any]) -> tuple[str, ...]:
+    """Get the names a class namespace declares in ``__slots__``.
+
+    Args:
+        namespace: The class namespace, like ``vars(cls)``.
+
+    Returns:
+        The slot names; a single string declares one slot.
+    """
+    slots = namespace.get("__slots__", ())
+    return (slots,) if isinstance(slots, str) else tuple(slots)
+
+
+def _is_tree_state(cls: Any) -> bool:
+    """Whether a class is a node of a state tree, rather than a mixin or root base.
+
+    Args:
+        cls: The class to check.
+
+    Returns:
+        True for state classes that are instantiated in a state tree.
+    """
+    return (
+        isinstance(cls, BaseStateMeta)
+        and not cls._mixin
+        and getattr(cls, "_reflex_state_root", cls) is not cls
+    )
+
+
 @dataclass_transform(kw_only_default=True, field_specifiers=(field,))
 class BaseStateMeta(ABCMeta):
     """Meta class for BaseState."""
@@ -3839,12 +4792,64 @@ class BaseStateMeta(ABCMeta):
         # Whether this state class is a mixin and should not be instantiated.
         _mixin: bool = False
 
+        # The state declared with ``state_root=True`` that this class descends
+        # from; its namespace is reserved for the whole hierarchy.
+        _reflex_state_root: BaseStateMeta
+
+    def __setattr__(cls, name: str, value: Any) -> None:
+        """Set a class attribute, refusing to replace a state var.
+
+        A field is the descriptor of a state var, so assigning over it through
+        the class would replace the var. Deleting the attribute first still
+        replaces it on purpose, as a test patch can.
+
+        Args:
+            name: The class attribute being assigned.
+            value: Its new value.
+
+        Raises:
+            TypeError: If the attribute is a state var.
+        """
+        # Only a declared name can resolve to a field; skip the lookup otherwise.
+        existing = (
+            _inherited_value(cls.__mro__, name) if name in cls.__fields__ else None
+        )
+        if isinstance(existing, Field):
+            if value is existing:
+                # Assigning the var's own field back, as a patch undoing a
+                # failed assignment does, changes nothing.
+                return
+            raise _state_var_assignment_error(cls, existing, "assigning")
+        super().__setattr__(name, value)
+
+    def __delattr__(cls, name: str) -> None:
+        """Delete a class attribute, refusing to delete a state var it inherits.
+
+        The class does not hold an inherited var, so deleting it would fail, as
+        the cleanup of a refused patch through a substate does; this names the
+        var instead.
+
+        Args:
+            name: The class attribute being deleted.
+
+        Raises:
+            TypeError: If the attribute is a state var inherited from a base.
+        """
+        if (
+            name not in cls.__dict__
+            and name in cls.__fields__
+            and isinstance(existing := _inherited_value(cls.__mro__, name), Field)
+        ):
+            raise _state_var_assignment_error(cls, existing, "deleting")
+        super().__delattr__(name)
+
     def __new__(
         cls,
         name: str,
         bases: tuple[type, ...],
         namespace: dict[str, Any],
         mixin: bool = False,
+        state_root: bool = False,
     ) -> type:
         """Create a new class.
 
@@ -3853,120 +4858,68 @@ class BaseStateMeta(ABCMeta):
             bases: The bases of the class.
             namespace: The namespace of the class.
             mixin: Whether the class is a mixin and should not be instantiated.
+            state_root: Whether the class defines the framework namespace that
+                its subclasses may not shadow.
 
         Returns:
             The new class.
         """
+        lookup_order = _linearize_bases(bases)
+        for base in bases:
+            root = getattr(base, "_reflex_state_root", None)
+            if root is not None:
+                _validate_state_declaration(root, lookup_order, namespace)
+                break
+
         state_bases = [
             base for base in bases if issubclass(base, EvenMoreBasicBaseState)
         ]
         mixin = mixin or (
             bool(state_bases) and all(base._mixin for base in state_bases)
         )
-        # Add the field to the class
         inherited_fields: dict[str, Field] = {}
-        own_fields: dict[str, Field] = {}
-        resolved_annotations = types.resolve_annotations(
-            annotations_from_namespace(namespace), namespace["__module__"]
-        )
-
-        for base in bases[::-1]:
-            if hasattr(base, "__inherited_fields__"):
-                inherited_fields.update(base.__inherited_fields__)
-        for base in bases[::-1]:
-            if hasattr(base, "__own_fields__"):
+        for base in reversed(lookup_order):
+            if isinstance(base, BaseStateMeta):
                 inherited_fields.update(base.__own_fields__)
-
-        for key, value in [
-            (key, value)
-            for key, value in namespace.items()
-            if key not in resolved_annotations
-        ]:
-            if isinstance(value, Field):
-                if value.annotated_type is not Any:
-                    new_value = value
-                elif value.default is not MISSING:
-                    new_value = Field(
-                        default=value.default,
-                        is_var=value.is_var,
-                        annotated_type=figure_out_type(value.default),
-                        source_field=value,
-                    )
-                else:
-                    new_value = Field(
-                        default_factory=value.default_factory,
-                        is_var=value.is_var,
-                        annotated_type=Any,
-                        source_field=value,
-                    )
-            elif (
-                not key.startswith("__")
+            elif base is not object:
+                # A plain base's annotated backend attributes are fields of the
+                # states using it.
+                inherited_fields.update(
+                    (key, value)
+                    for key, value in _annotated_fields(
+                        vars(base), base.__mro__[1:], _private_prefixes(base.__name__)
+                    ).items()
+                    if key.startswith("_")
+                )
+        private = _private_prefixes(name)
+        own_fields = _unannotated_fields(namespace, private) | _annotated_fields(
+            namespace, lookup_order, private
+        )
+        annotations = annotations_from_namespace(namespace)
+        for key, value in namespace.items():
+            if (
+                key in inherited_fields
+                # Annotated names, like ClassVars, are declared as annotated.
+                and key not in annotations
+                and not isinstance(value, Field)
                 and not callable(value)
-                and not isinstance(value, (staticmethod, classmethod, property, Var))
+                and not _is_descriptor(value)
             ):
-                if types.is_immutable(value):
-                    new_value = Field(
-                        default=value,
-                        annotated_type=figure_out_type(value),
-                    )
-                else:
-                    new_value = Field(
-                        default_factory=functools.partial(copy.deepcopy, value),
-                        annotated_type=figure_out_type(value),
-                    )
-            else:
-                continue
-
-            own_fields[key] = new_value
-
-        lookup_order = _linearize_bases(bases)
-
-        for key, annotation in resolved_annotations.items():
-            value = namespace.get(key, MISSING)
-
-            if types.is_classvar(annotation):
-                # If the annotation is a classvar, skip it.
-                continue
-
-            declared = (
-                value if value is not MISSING else _inherited_value(lookup_order, key)
-            )
-            if isinstance(declared, property):
-                # A (hybrid) property under an annotated name stays a descriptor,
-                # here or on a base; a field would shadow it with a stored value.
-                continue
-
-            if value is MISSING:
-                value = Field(
-                    annotated_type=annotation,
-                )
-            elif not isinstance(value, Field):
-                if types.is_immutable(value):
-                    value = Field(
-                        default=value,
-                        annotated_type=annotation,
-                    )
-                else:
-                    value = Field(
-                        default_factory=functools.partial(copy.deepcopy, value),
-                        annotated_type=annotation,
-                    )
-            else:
-                value = Field(
-                    default=value.default,
-                    default_factory=value.default_factory,
-                    is_var=value.is_var,
-                    annotated_type=annotation,
-                    source_field=value,
+                # A new default for an inherited field declares a field of its own.
+                own_fields[key] = inherited_fields[key]._replace(
+                    **_default_arguments(value)
                 )
 
-            own_fields[key] = value
-
+        # The fields are the class attributes: descriptors storing the values.
+        namespace.update(own_fields)
         namespace["__own_fields__"] = own_fields
         namespace["__inherited_fields__"] = inherited_fields
         namespace["__fields__"] = inherited_fields | own_fields
         namespace["_mixin"] = mixin
-        return super().__new__(cls, name, bases, namespace)
+        new_cls = super().__new__(cls, name, bases, namespace)
+        if state_root:
+            new_cls._reflex_state_root = new_cls
+        return new_cls
 
 
 class EvenMoreBasicBaseState(metaclass=BaseStateMeta):
@@ -3982,12 +4935,12 @@ class EvenMoreBasicBaseState(metaclass=BaseStateMeta):
             **kwargs: The kwargs to pass to the state.
         """
         super().__init__()
+        fields = type(self).__fields__
         for key, value in kwargs.items():
-            object.__setattr__(self, key, value)
-        for name, value in type(self).get_fields().items():
-            if name not in kwargs:
-                default_value = value.default_value()
-                object.__setattr__(self, name, default_value)
+            if key in fields:
+                vars(self)[key] = value
+            else:
+                object.__setattr__(self, key, value)
 
     def set(self, **kwargs):
         """Mutate the state by setting the given kwargs. Returns the state.
@@ -4022,17 +4975,10 @@ class EvenMoreBasicBaseState(metaclass=BaseStateMeta):
             var: The variable to add a field for.
             default_value: The default value of the field.
         """
-        if types.is_immutable(default_value):
-            new_field = Field(
-                default=default_value,
-                annotated_type=var._var_type,
-            )
-        else:
-            new_field = Field(
-                default_factory=functools.partial(copy.deepcopy, default_value),
-                annotated_type=var._var_type,
-            )
+        new_field = Field._with_default(default_value, var._var_type)
         cls.__fields__[name] = new_field
+        setattr(cls, name, new_field)
+        new_field.__set_name__(cls, name)
 
 
 EMPTY_VAR_STR: Var[str] = LiteralVar.create("")

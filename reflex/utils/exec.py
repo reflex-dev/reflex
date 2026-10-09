@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import contextlib
+import functools
 import hashlib
 import importlib.util
 import json
@@ -13,7 +14,8 @@ import re
 import socket
 import subprocess
 import sys
-from collections.abc import Mapping, Sequence
+import threading
+from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 from typing import Any, NamedTuple, TypedDict
 
@@ -22,7 +24,7 @@ from reflex_base.config import get_config
 from reflex_base.constants.base import LogLevel
 from reflex_base.environment import environment
 from reflex_base.telemetry_context import CompileTrigger
-from reflex_base.utils import console
+from reflex_base.utils import console, log
 from reflex_base.utils.decorator import once
 
 from reflex.utils import path_ops
@@ -33,6 +35,8 @@ logger = logging.getLogger(__name__)
 
 # For uvicorn windows bug fix (#2335)
 frontend_process = None
+_frontend_process_lock = threading.Lock()
+_frontend_shutting_down = False
 
 DEV_BACKEND_RELOAD_MARKER = ".reflex_dev_backend_started"
 
@@ -224,25 +228,23 @@ _DEV_CONDITION_FLAG = "--conditions=development"
 def _with_development_condition(environ: Mapping[str, str]) -> dict[str, str]:
     """Copy an environment with the `development` export condition enabled.
 
-    react-router's dev CLI requires the condition and re-executes itself with
-    NODE_OPTIONS to enable it; bun does not apply NODE_OPTIONS when it runs
-    the CLI on node-less installs, so the restarted process trips the CLI's
-    restart guard and exits. Enabling the condition for both runtimes in the
-    dev server's environment lets it start under either, without leaking the
-    setting into the parent process.
+    react-router's dev CLI requires the condition and relaunches itself to
+    enable it. Setting it up front skips that relaunch under node, which reads
+    NODE_OPTIONS. Bun applies neither NODE_OPTIONS nor BUN_OPTIONS to the
+    process it spawns for a package script, so a node-less install relaunches
+    regardless and relies on the CLI passing the condition along as a flag.
+    The setting does not leak into the parent process.
 
     Args:
         environ: The base environment.
 
     Returns:
-        A copy of the environment with the flag merged into NODE_OPTIONS and
-        BUN_OPTIONS.
+        A copy of the environment with the flag merged into NODE_OPTIONS.
     """
     env = dict(environ)
-    for options_var in ("NODE_OPTIONS", "BUN_OPTIONS"):
-        existing = env.get(options_var, "")
-        if _DEV_CONDITION_FLAG not in existing.split():
-            env[options_var] = f"{existing} {_DEV_CONDITION_FLAG}".strip()
+    existing = env.get("NODE_OPTIONS", "")
+    if _DEV_CONDITION_FLAG not in existing.split():
+        env["NODE_OPTIONS"] = f"{existing} {_DEV_CONDITION_FLAG}".strip()
     return env
 
 
@@ -296,7 +298,10 @@ def run_process_and_launch_url(
                 **kwargs,
             )
             global frontend_process
-            frontend_process = process
+            with _frontend_process_lock:
+                frontend_process = process
+                if _frontend_shutting_down and process.poll() is None:
+                    process.terminate()
         if process.stdout:
             for line in processes.stream_logs("Starting frontend", process):
                 new_content, new_hash = get_package_json_and_hash(json_file_path)
@@ -358,8 +363,59 @@ def notify_app_running():
     console.rule("[bold green]App Running")
 
 
-def get_frontend_mount():
+def _match_routable_page(router: Callable[[str], str | None], path: str) -> str | None:
+    """Match a path against the app routes, excluding paths the frontend renders as 404.
+
+    The compiler registers a synthetic ``404`` page, so a literal ``/404``
+    request would otherwise count as routable and lose its 404 status. The
+    router also aliases ``/index`` to the index page, which the frontend does
+    not route, so only the bare root path counts as the index page.
+
+    Args:
+        router: The app route matcher.
+        path: The request path.
+
+    Returns:
+        The matching route, or None when the path matches no route, only the
+        404 page, or the index page through its ``/index`` alias.
+    """
+    route = router(path)
+    if route == constants.Page404.SLUG or (
+        route == constants.PageNames.INDEX_ROUTE and path.strip("/")
+    ):
+        return None
+    return route
+
+
+def get_routes_manifest_router() -> Callable[[str], str | None] | None:
+    """Build a route matcher from the routes manifest written at compile time.
+
+    Returns:
+        A route matcher, or None when no manifest exists or it is not valid JSON.
+    """
+    from reflex.route import get_router
+
+    manifest = get_web_dir() / constants.Dirs.ROUTES_MANIFEST
+    try:
+        routes = json.loads(manifest.read_text())
+    except OSError:
+        return None
+    except ValueError as err:
+        logger.warning(
+            f"Ignoring invalid routes manifest {manifest} ({err}); dynamic routes "
+            "without a prerendered file will be served with status 404."
+        )
+        return None
+    return get_router(routes)
+
+
+def get_frontend_mount(router: Callable[[str], str | None] | None = None):
     """Get a Starlette Mount for the compiled frontend static files.
+
+    Args:
+        router: Optional route matcher (e.g. ``app.router``) used to serve
+            routable SPA paths with status 200 instead of 404. When None, a
+            matcher is built from the compiled routes manifest if present.
 
     Returns:
         A Mount serving the compiled frontend static files.
@@ -370,6 +426,13 @@ def get_frontend_mount():
     from reflex.utils.precompressed_staticfiles import PrecompressedStaticFiles
 
     config = get_config()
+
+    if router is None:
+        router = get_routes_manifest_router()
+    if router is not None:
+        # The mount strips the frontend path, and the router matches paths
+        # relative to it, so mount-relative request paths match as-is.
+        router = functools.partial(_match_routable_page, router)
 
     static_dir = (
         prerequisites.get_web_dir()
@@ -383,6 +446,7 @@ def get_frontend_mount():
             directory=static_dir,
             html=True,
             encodings=config.frontend_compression_formats,
+            router=router,
         ),
         name="frontend",
     )
@@ -489,7 +553,8 @@ def get_app_instance_from_file() -> str:
     Returns:
         The app module for the backend.
     """
-    return f"{get_app_file()}:{constants.CompileVars.APP}"
+    get_app_file()
+    return get_app_instance()
 
 
 def run_backend(
@@ -685,6 +750,22 @@ HOTRELOAD_IGNORE_PATTERNS = (
 )
 
 
+def _granian_log_dictconfig() -> dict[str, Any] | None:
+    """Get the Granian logging config override for the active log mode.
+
+    Granian replaces top-level keys of its default config, so both of its
+    handlers are redefined.
+
+    Returns:
+        A config routing Granian records through the JSON handler in JSON
+        mode, otherwise None to keep the Granian defaults.
+    """
+    if not log.is_json_mode():
+        return None
+    json_handler = {"()": "reflex_base.utils.log.JsonHandler"}
+    return {"handlers": {"console": json_handler, "access": json_handler}}
+
+
 def run_granian_backend(host: str, port: int, loglevel: LogLevel):
     """Run the backend in development mode using Granian.
 
@@ -712,9 +793,27 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
         On Linux each worker otherwise binds only after loading the app, so
         requests during a reload are refused. With the supervisor holding the
         socket they wait in the accept backlog for the new worker.
+
+        The socket is released again whenever no worker is left to serve it --
+        a worker that died on its own (an app module that raises on import), or
+        the supervisor shutting down -- so that clients are refused right away
+        instead of waiting in the accept backlog. The next worker spawn
+        re-creates it.
         """
 
+        def __init__(self, *args, **kwargs):
+            """Create the supervisor.
+
+            Args:
+                args: Positional arguments for the Granian server.
+                kwargs: Keyword arguments for the Granian server.
+            """
+            super().__init__(*args, **kwargs)
+            self._socket_lock = threading.RLock()
+            self._spawn_count = 0
+
         def _init_shared_socket(self):
+            """Bind the listening socket in the supervisor process."""
             self._ssp = SocketSpec(self.bind_addr, self.bind_port, self.backlog)
             self._shd = self._ssp.build()
             self._sfd = self._shd.get_fd()
@@ -722,6 +821,90 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
             sock = socket.socket(fileno=self._sfd)
             sock.set_inheritable(True)
             self._sso = sock
+            # Resolve port 0 so a re-created socket keeps the same port.
+            self.bind_port = sock.getsockname()[1]
+
+        def _shared_socket_is_open(self) -> bool:
+            """Report whether the supervisor still holds the listening socket.
+
+            Returns:
+                Whether the listening socket is open.
+            """
+            return self._sso is not None and self._sso.fileno() >= 0
+
+        def _close_shared_socket(self):
+            """Release the listening socket, so the port refuses connections."""
+            with self._socket_lock:
+                if not self._shared_socket_is_open():
+                    return
+                # The socket object and granian's SocketHolder wrap the same
+                # handle, which must be closed exactly once: by dropping the
+                # holder on Windows, and by the socket object elsewhere, where
+                # the holder never closes it. The released object stays in
+                # place for granian to detach on shutdown.
+                if constants.IS_WINDOWS:
+                    self._sso.detach()
+                else:
+                    self._sso.close()
+                self._shd = self._sfd = None
+
+        def _release_socket_unless_served(self, wrk: Any, spawn_count: int):
+            """Release the socket when an exited worker leaves nobody serving.
+
+            Workers stopped by the supervisor keep the socket bound: their
+            replacement is already on its way and requests should queue for it.
+
+            Args:
+                wrk: The worker that exited.
+                spawn_count: The spawn counter when that worker was created.
+            """
+            if wrk.interrupt_by_parent:
+                return
+            with self._socket_lock:
+                if spawn_count == self._spawn_count and not any(
+                    worker.is_alive() for worker in self.wrks
+                ):
+                    self._close_shared_socket()
+
+        def _spawn_worker(self, idx: int, target: Any, callback_loader: Any):
+            """Spawn a worker, re-creating the socket if it has been released.
+
+            Args:
+                idx: The index of the worker.
+                target: The worker entrypoint.
+                callback_loader: The loader for the ASGI app.
+
+            Returns:
+                The spawned worker.
+            """
+            with self._socket_lock:
+                if not self._shared_socket_is_open():
+                    self._init_shared_socket()
+                self._spawn_count += 1
+                spawn_count = self._spawn_count
+                wrk = super()._spawn_worker(
+                    idx=idx, target=target, callback_loader=callback_loader
+                )
+            granian_watcher = wrk._watcher
+
+            def watcher():
+                granian_watcher()
+                self._release_socket_unless_served(wrk, spawn_count)
+
+            wrk._watcher = watcher
+            return wrk
+
+        def shutdown(self, exit_code: int = 0):
+            """Release the listening socket, then shut the supervisor down.
+
+            Granian only detaches the socket object, which leaves the port
+            bound for as long as the supervisor process lives.
+
+            Args:
+                exit_code: The exit code to terminate with.
+            """
+            self._close_shared_socket()
+            super().shutdown(exit_code)
 
     reset_dev_backend_reload_marker()
     environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.set(True)
@@ -733,6 +916,7 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
         port=port,
         interface=Interfaces.ASGI,
         log_level=LogLevels(loglevel.value),
+        log_dictconfig=_granian_log_dictconfig(),
         reload=True,
         reload_paths=get_reload_paths(),
         reload_ignore_worker_failure=True,
@@ -860,6 +1044,7 @@ def run_granian_backend_prod(
         port=port,
         interface=Interfaces.ASGI,
         log_level=LogLevels(os.getenv("GRANIAN_LOG_LEVEL", loglevel.value)),
+        log_dictconfig=_granian_log_dictconfig(),
         workers=int(os.getenv("GRANIAN_WORKERS", str(_get_backend_workers()))),
     )
 

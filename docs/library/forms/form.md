@@ -164,6 +164,8 @@ def form_example():
 When using the `name` attribute in form controls like `rx.switch`, `rx.radio_group`, and `rx.checkbox`, these controls will only be included in the form data if their values are set (e.g., if the checkbox is checked, the switch is toggled, or a radio option is selected).
 
 If you need these controls to be passed in the form data even when their values are not set, you can use the `id` attribute instead of name. The id attribute ensures that the control is always included in the submitted form data, regardless of whether its value is set or not.
+
+Custom native `input`, `select`, and `textarea` components with an `id` are included automatically. For other custom form controls, set `_is_form_control = True` on the component class to include its ID-based value in submissions.
 ```
 
 ```md video https://youtube.com/embed/ITOZkzjtjUA?start=5287&end=6040
@@ -298,7 +300,7 @@ class DynamicFormState(rx.State):
         ]
 
     @rx.event
-    def add_field(self, form_data: dict):
+    def add_form_field(self, form_data: dict):
         new_field = form_data.get("new_field")
         if not new_field:
             return
@@ -331,7 +333,7 @@ def dynamic_form():
                 rx.input(placeholder="New Field", name="new_field"),
                 rx.button("+", type="submit"),
             ),
-            on_submit=DynamicFormState.add_field,
+            on_submit=DynamicFormState.add_form_field,
             reset_on_submit=True,
         ),
         rx.divider(),

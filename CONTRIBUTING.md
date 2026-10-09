@@ -6,7 +6,7 @@ Here is a quick guide on how to run Reflex repo locally so you can start contrib
 
 **Prerequisites:**
 
-- uv version >= 0.9.17 and add it to your path (see [UV Docs](https://docs.astral.sh/uv/getting-started/installation/) for more info).
+- uv version >= 0.11.8 and add it to your path (see [UV Docs](https://docs.astral.sh/uv/getting-started/installation/) for more info).
 
 **1. Fork this repository:**
 Fork this repository by clicking on the `Fork` button on the top right.
@@ -62,7 +62,7 @@ Each PR that changes the source of a published package must add a news fragment 
 
 **Where:** add the fragment under the affected package's `news/` directory. For the main `reflex` package, that's the repo-root `news/`. For sub-packages it's `packages/<name>/news/`.
 
-**Filename:** `<pr-or-issue-number>.<type>.md`, where `<type>` is one of:
+**Filename:** `+<slug>.<type>.md` (an [orphan fragment](https://towncrier.readthedocs.io/en/stable/cli.html#towncrier-create)), or `<pr-or-issue-number>.<type>.md` if you prefer, where `<type>` is one of:
 
 | Type | When to use |
 | --- | --- |
@@ -79,12 +79,12 @@ Each PR that changes the source of a published package must add a news fragment 
 **Create a fragment from the CLI:**
 
 ```bash
-uv run reflex-release create --package reflex-components-lucide 1234.feature.md
+uv run reflex-release create --package reflex-components-lucide +lucide-icons.feature.md
 ```
 
 Drop `--package` for a fragment against the main `reflex` package.
 
-If you don't yet know the PR number, use an [orphan fragment](https://towncrier.readthedocs.io/en/stable/cli.html#towncrier-create) (`+.feature.md`). Renaming it after opening the PR is nice, but not required: the release workflow renames any orphan fragment that made it to `main` after the PR that merged it, so the changelog entry still links to it.
+**The PR number is optional.** You don't need to know it, or rename the fragment after opening the PR: the release workflow renames every orphan fragment that made it to `main` after the PR that merged it, so the changelog entry still links to it.
 
 **Skipping the fragment check:** for PRs that are genuinely not user-facing (CI-only tweaks, script fixes, test-only changes), apply the `skip-changelog` label on the PR to bypass the changelog CI check.
 
@@ -115,16 +115,17 @@ a release branch — never by tagging manually. The pieces:
      `release-from-prerelease` collapses the accumulated alpha sections into
      one final-version section — alpha headings never ship in a final
      changelog.
-   - `reflex` and `reflex-base` are a lockstep pair and share one checkbox:
-     selecting it releases both at the same version. The checkboxes are
-     generated from the package list, so adding or removing a package means
-     re-running `uv run reflex-release sync`.
+   - `reflex` and `reflex-base` are a lockstep pair with separate checkboxes:
+     `reflex-base` releases on its own, while `reflex` needs `reflex-base`
+     tagged at the same version — reusing an existing tag or releasing base
+     alongside. The checkboxes are generated from the package list, so adding
+     or removing a package means re-running `uv run reflex-release sync`.
 2. **Release from changelog** (`release_from_changelog.yml`) runs on every push
    to `main`, `r/pre-*`, and `r/hotfix/**`: any package whose newest changelog
    version has no git tag gets built and queued for publishing. Final
    (non-alpha) versions only publish from `main` or `r/hotfix/**`; alphas only
-   from `r/pre-*`/`r/hotfix/**`. `reflex` and `reflex-base` are checked as a
-   lockstep pair and `reflex` publishes only after the rest of the batch.
+   from `r/pre-*`/`r/hotfix/**`. `reflex` publishes only after the rest of the
+   batch, once its `reflex-base` tag exists.
 3. **Publish to PyPI** (`publish.yml`, also manually dispatchable with a
    package + version) validates and builds without privileges, then **waits
    for a human to approve the `pypi` environment deployment** — every upload,

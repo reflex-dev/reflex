@@ -358,6 +358,7 @@ def sync_root_package_json_to_web() -> bool:
 
     Returns:
         True if an existing ``.web/package.json`` was meaningfully changed.
+        Formatting and object key order do not count as changes.
         Initial creation does not count as a meaningful change since no install
         cache could exist yet.
     """
@@ -367,7 +368,7 @@ def sync_root_package_json_to_web() -> bool:
 
     output_path = get_web_lockfile_path(constants.PackageJson.PATH)
     rendered = _compile_package_json()
-    if output_path.exists() and output_path.read_text() == rendered:
+    if _read_package_json_object(output_path) == json.loads(rendered):
         return False
 
     changed = output_path.exists()
@@ -452,11 +453,18 @@ def initialize_web_directory():
     """Initialize the web directory on reflex init."""
     logger.info("Initializing the web directory.")
 
-    # Reuse the hash if one is already created, so we don't over-write it when running reflex init
-    project_hash = get_project_hash()
+    web_dir = get_web_dir()
+    # Keep JSON writers out of their same-directory staging window while the
+    # frontend tree is removed and recreated.
+    with (
+        path_ops.json_file_lock(web_dir / constants.Reflex.JSON),
+        path_ops.json_file_lock(web_dir / constants.Dirs.ENV_JSON),
+    ):
+        # Reuse the hash if one is already created, so we don't over-write it when running reflex init
+        project_hash = get_project_hash()
 
-    logger.debug(f"Copying {constants.Templates.Dirs.WEB_TEMPLATE} to {get_web_dir()}")
-    path_ops.copy_tree(constants.Templates.Dirs.WEB_TEMPLATE, str(get_web_dir()))
+        logger.debug(f"Copying {constants.Templates.Dirs.WEB_TEMPLATE} to {web_dir}")
+        path_ops.copy_tree(constants.Templates.Dirs.WEB_TEMPLATE, str(web_dir))
 
     logger.debug("Restoring lockfiles.")
     sync_root_lockfiles_to_web()

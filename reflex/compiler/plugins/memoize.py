@@ -23,6 +23,10 @@ from __future__ import annotations
 import dataclasses
 from typing import Any
 
+from reflex_base.components.app_wraps import (
+    collect_var_app_wraps_for_component,
+    collect_var_app_wraps_in_subtree,
+)
 from reflex_base.components.component import BaseComponent, Component
 from reflex_base.components.memo import create_passthrough_component_memo
 from reflex_base.components.memoize_helpers import (
@@ -38,11 +42,6 @@ from reflex_base.plugins.base import Plugin
 from reflex_components_core.base.bare import Bare
 from reflex_components_core.core.cond import Cond
 from reflex_components_core.core.match import Match
-
-from reflex.compiler.plugins.builtin import (
-    collect_var_app_wraps_for_component,
-    collect_var_app_wraps_in_subtree,
-)
 
 
 def _subtree_has_reactive_data(
@@ -404,6 +403,8 @@ class MemoizeStatefulPlugin(Plugin):
         # wrapped subtree. Delegate ref collection to the original component
         # so descendants inside the memo body remain reachable for ref lookup.
         object.__setattr__(wrapper, "_get_all_refs", comp._get_all_refs)
+        # Keep each ref's owning control available after replacing the subtree.
+        object.__setattr__(wrapper, "_form_control_source", comp)
         return wrapper
 
 

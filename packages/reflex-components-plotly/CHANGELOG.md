@@ -1,3 +1,25 @@
+## v0.10.0 (2026-10-08)
+
+### Breaking Changes
+
+- Require Python 3.11 or newer; Python 3.10 is no longer supported. ([#7449](https://github.com/reflex-dev/reflex/issues/7449))
+
+### Bug Fixes
+
+- Normalize string Plotly layout titles to the `{"title": {"text": "..."}}` format required by Plotly.js. ([#7226](https://github.com/reflex-dev/reflex/issues/7226))
+
+
+## v0.9.7 (2026-09-21)
+
+### Bug Fixes
+
+- `rx.plotly(..., id="...")` now reaches the DOM: the `id` prop is rendered as react-plotly.js's `divId`, which is the only id prop the library forwards to its container div. ([#6977](https://github.com/reflex-dev/reflex/issues/6977))
+
+### Miscellaneous
+
+- Avoid redundant frontend dependency installation when using Plotly components. ([#6850](https://github.com/reflex-dev/reflex/issues/6850))
+
+
 ## v0.9.6 (2026-09-11)
 
 ### Miscellaneous

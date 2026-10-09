@@ -3,6 +3,15 @@
 import pytest
 
 
+def test_mobile_navigation_auth_links_directly_to_enterprise_docs():
+    """The shared mobile menu must not send readers through the legacy alias."""
+    from reflex_site_shared.views.sidebar import solutions_panel
+
+    rendered = str(solutions_panel())
+    assert "/docs/enterprise/auth/overview/" in rendered
+    assert "/docs/authentication/authentication-overview/" not in rendered
+
+
 @pytest.mark.parametrize("label", ["APIs", "URLs"])
 def test_ai_integration_group_and_page_use_matching_acronyms(label):
     """Keep plural acronyms consistent between sidebar groups and their pages."""
@@ -33,6 +42,23 @@ def test_cross_reference_excluded_from_prev_next_chain():
     prev, next_ = get_prev_next("/enterprise/auth/overview/")
     assert prev is not None and prev.link == "/enterprise/event-handler-api/"
     assert next_ is not None and next_.link == "/enterprise/auth/secure-by-default/"
+
+
+def test_upgrade_guide_leads_the_changelog_section():
+    """The 0.10 upgrade guide sits in an Upgrading accordion atop the Changelog section."""
+    from reflex_docs.templates.docpage.sidebar.sidebar_items.learn import learn
+    from reflex_docs.templates.docpage.sidebar.sidebar_items.reference import (
+        changelog_items,
+    )
+
+    upgrading = changelog_items[0]
+    assert upgrading.names == "Upgrading"
+    assert [child.names for child in upgrading.children] == ["Upgrading to 0.10"]
+    assert upgrading.children[0].link == "/changelog/upgrading/upgrading-to-0-10/"
+    assert changelog_items[1].link == "/changelog/"
+
+    getting_started = next(item for item in learn if item.names == "Getting Started")
+    assert all("Upgrading" not in child.names for child in getting_started.children)
 
 
 @pytest.mark.parametrize("active", [False, True])
@@ -88,3 +114,50 @@ def test_group_with_nested_pages_remains_expandable():
     assert rendered.count('jsx("details"') == 2
     assert 'href:"/postgres/"' in rendered
     assert 'href:"/sqlite/"' in rendered
+
+
+def test_api_reference_groups_related_symbols():
+    """The API reference section keeps related symbols adjacent."""
+    from reflex_docs.templates.docpage.sidebar.sidebar_items.reference import (
+        api_reference,
+    )
+
+    assert [item.names for item in api_reference] == [
+        "App",
+        "Config",
+        "Environment Variables",
+        "State",
+        "StateManager",
+        "Component",
+        "ComponentState",
+        "Event Triggers",
+        "Special Events",
+        "EventHandler",
+        "EventSpec",
+        "Event",
+        "Var",
+        "ImportVar",
+        "Var System",
+        "CLI",
+        "Browser Storage",
+        "Browser Javascript",
+        "Plugins",
+        "Utils",
+        "Telemetry",
+        "Observability",
+    ]
+
+
+def test_api_reference_section_order_places_every_page_once():
+    """Every API reference page has exactly one explicit place in the section."""
+    from reflex_docs.pages.docs import api_reference as pages
+    from reflex_docs.pages.docs.apiref import section_order
+    from reflex_docs.templates.docpage.sidebar.sidebar_items.reference import (
+        api_reference,
+    )
+
+    paths = {route.path for route in vars(pages).values()}
+    assert {f"/api-reference/{slug}/" for slug in section_order} == paths
+
+    links = [item.link for item in api_reference]
+    assert len(links) == len(set(links)) == len(paths)

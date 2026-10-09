@@ -7,11 +7,18 @@ readme = "README.md"
 authors = [{ name = "Reflex", email = "maintainers@reflex.dev" }]
 maintainers = [{ name = "Reflex", email = "maintainers@reflex.dev" }]
 keywords = ["release", "changelog", "towncrier", "github-actions", "pypi", "gitops"]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: 3.15",
+]
 dependencies = [
   "packaging >=24.2,<27",
   "towncrier >=24.8.0,<26",
-  "tomli >=2.0.1; python_version < '3.11'",
   "tzdata >=2024.1; sys_platform == 'win32'",
 ]
 
@@ -27,6 +34,7 @@ source = "uv-dynamic-versioning"
 [tool.uv-dynamic-versioning]
 pattern-prefix = "reflex-release-"
 fallback-version = "0.0.0dev0"
+bump = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/reflex_release"]

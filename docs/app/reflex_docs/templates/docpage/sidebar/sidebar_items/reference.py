@@ -3,33 +3,35 @@ from .item import create_item
 
 
 def get_sidebar_items_changelog():
-    from reflex_docs.pages.docs import changelog_packages
+    from reflex_docs.pages.docs import changelog, changelog_packages
 
+    upgrading = SideBarItem(
+        names="Upgrading",
+        children=[
+            SideBarItem(
+                names="Upgrading to 0.10",
+                link=changelog.upgrading.upgrading_to_0_10.path,
+            ),
+        ],
+    )
     return [
-        SideBarItem(names=package, link=route)
-        for package, route in changelog_packages.items()
+        upgrading,
+        *(
+            SideBarItem(names=package, link=route)
+            for package, route in changelog_packages.items()
+        ),
     ]
 
 
 def get_sidebar_items_api_reference():
     from reflex_docs.pages.docs import api_reference, apiref
 
-    return [
-        create_item(route)
-        for route in [
-            *apiref.pages,
-            api_reference.var_system,
-            api_reference.cli,
-            api_reference.event_triggers,
-            api_reference.special_events,
-            api_reference.browser_storage,
-            api_reference.browser_javascript,
-            api_reference.plugins,
-            api_reference.utils,
-            api_reference.telemetry,
-            api_reference.observability,
-        ]
-    ]
+    pages = {route.path: route for route in vars(api_reference).values()}
+    routes = [pages.pop(f"/api-reference/{slug}/") for slug in apiref.section_order]
+    # A page added under docs/api-reference/ without a place in section_order
+    # lands at the end rather than dropping out of the sidebar.
+    routes += pages.values()
+    return [create_item(route) for route in routes]
 
 
 api_reference = get_sidebar_items_api_reference()

@@ -5,6 +5,7 @@ from reflex_components_internal import button
 from reflex_components_internal.blocks.demo_form import demo_form_dialog
 
 import reflex as rx
+from reflex_site_shared.backend.demo_requests import DemoRequestState
 from reflex_site_shared.components.icons import get_icon
 from reflex_site_shared.components.marketing_button import button as marketing_button
 from reflex_site_shared.constants import (
@@ -327,7 +328,7 @@ def solutions_panel() -> rx.Component:
                 drawer_panel_item(
                     nav_icon("LoginMethodIcon"),
                     "Auth",
-                    "/docs/authentication/authentication-overview/",
+                    "/docs/enterprise/auth/overview/",
                 ),
                 drawer_panel_item(
                     nav_icon("UserUnlock01Icon"),
@@ -353,6 +354,7 @@ def solutions_panel() -> rx.Component:
                 "/customers/",
             ),
             demo_form_dialog(
+                on_submit=DemoRequestState.post_demo_request,
                 trigger=rx.el.div(
                     *drawer_row_content(custom_nav_icon("reflex_small"), "Book a demo"),
                     class_name=ui.cn(DRAWER_ROW_CLASS, "cursor-pointer"),

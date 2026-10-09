@@ -12,14 +12,28 @@ from selenium.webdriver.common.keys import Keys
 
 from reflex.testing import AppHarness
 
+FORM_CONTENT_WRAPPER_ID = "form_content_wrapper"
+FORM_ID = "form_id"
 
-def FormSubmit(form_component):
+
+def FormSubmit(
+    form_component,
+    form_id=FORM_ID,
+    form_content_wrapper_id=FORM_CONTENT_WRAPPER_ID,
+):
     """App with a form using on_submit.
 
     Args:
         form_component: The str name of the form component to use.
+        form_id: The form element ID.
+        form_content_wrapper_id: The non-control wrapper ID.
     """
+    from reflex_components_core.el.elements.base import BaseHTML
+
     import reflex as rx
+
+    class NativeInput(BaseHTML):
+        tag = "input"
 
     class FormState(rx.State):
         form_data: rx.Field[dict] = rx.field(default_factory=dict)
@@ -42,12 +56,17 @@ def FormSubmit(form_component):
             eval(form_component)(
                 rx.vstack(
                     rx.input(id="name_input"),
+                    rx.input(id="empty_input"),
+                    NativeInput.create(
+                        id="native_input", custom_attrs={"defaultValue": "native"}
+                    ),
                     rx.checkbox(id="bool_input"),
                     rx.switch(id="bool_input2"),
                     rx.checkbox(id="bool_input3"),
                     rx.switch(id="bool_input4"),
                     rx.slider(id="slider_input", default_value=[50], width="100%"),
                     rx.radio(["option1", "option2"], id="radio_input"),
+                    rx.radio_group(["u1", "u2"], id="radio_unset"),
                     rx.radio(FormState.var_options, id="radio_input_var"),
                     rx.select(
                         ["option1", "option2"],
@@ -62,9 +81,11 @@ def FormSubmit(form_component):
                         on_change=rx.console_log,
                     ),
                     rx.button("Submit", type_="submit"),
+                    id=form_content_wrapper_id,
                 ),
                 on_submit=FormState.form_submit,
                 custom_attrs={"action": "/invalid"},
+                id=form_id,
             ),
             rx.text(FormState.form_data.to_string(), id="form-data"),
             rx.spacer(),
@@ -72,11 +93,17 @@ def FormSubmit(form_component):
         )
 
 
-def FormSubmitName(form_component):
+def FormSubmitName(
+    form_component,
+    form_id=FORM_ID,
+    form_content_wrapper_id=FORM_CONTENT_WRAPPER_ID,
+):
     """App with a form using on_submit.
 
     Args:
         form_component: The str name of the form component to use.
+        form_id: The form element ID.
+        form_content_wrapper_id: The non-control wrapper ID.
     """
     import reflex as rx
 
@@ -101,6 +128,7 @@ def FormSubmitName(form_component):
             eval(form_component)(
                 rx.vstack(
                     rx.input(name="name_input"),
+                    rx.input(name="empty_input"),
                     rx.checkbox(name="bool_input"),
                     rx.switch(name="bool_input2"),
                     rx.checkbox(name="bool_input3"),
@@ -120,9 +148,11 @@ def FormSubmitName(form_component):
                     ),
                     rx.button("Submit", type_="submit"),
                     rx.icon_button(rx.icon(tag="plus")),
+                    id=form_content_wrapper_id,
                 ),
                 on_submit=FormState.form_submit,
                 custom_attrs={"action": "/invalid"},
+                id=form_id,
             ),
             rx.text(FormState.form_data.to_string(), id="form-data"),
             rx.spacer(),
@@ -238,7 +268,10 @@ async def test_submit(driver, form_submit: AppHarness):
 
     print(form_data)
 
+    assert FORM_ID not in form_data
+    assert FORM_CONTENT_WRAPPER_ID not in form_data
     assert form_data["name_input"] == "foo"
+    assert form_data["empty_input"] == ""
     assert form_data["bool_input"]
     assert form_data["bool_input2"]
     assert not form_data.get("bool_input3", False)
@@ -246,6 +279,9 @@ async def test_submit(driver, form_submit: AppHarness):
 
     assert form_data["slider_input"] == "50"
     assert form_data["radio_input"] == "option2"
+    if by == By.ID:
+        assert form_data["radio_unset"] is None
+        assert form_data["native_input"] == "native"
     assert form_data["select_input"] == "option1"
     assert form_data["text_area_input"] == "Some\nText"
     assert form_data["debounce_input"] == "bar baz"

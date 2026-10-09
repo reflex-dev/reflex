@@ -25,26 +25,26 @@ def hero() -> rx.Component:
             rx.el.div(
                 rx.el.a(
                     button(
-                        "Build with AI",
+                        "Explore Framework",
                         ui.icon("ArrowRight01Icon"),
                         variant="primary",
                         size="lg",
                         class_name="!px-6",
                         native_button=False,
                     ),
-                    href="/ai/",
+                    href=getting_started.introduction.path,
                     class_name="rounded-full focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
                 ),
                 rx.el.a(
                     button(
-                        "Explore Framework",
+                        "Build with AI",
                         ui.icon("ArrowRight01Icon"),
                         variant="outline",
                         size="lg",
                         class_name="!px-6",
                         native_button=False,
                     ),
-                    href=getting_started.introduction.path,
+                    href="/ai/",
                     class_name="rounded-full focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
                 ),
                 class_name="flex flex-wrap items-center gap-3",
