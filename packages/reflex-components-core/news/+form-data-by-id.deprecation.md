@@ -1,0 +1,1 @@
+Submitting a form control's value under its `id` is deprecated and will be removed in 0.11. Compiling a form whose `on_submit` handler takes the form data now warns about each value-bearing control that has a static `id` but no `name`; give it a `name`, e.g. `rx.input(id="email")` becomes `rx.input(id="email", name="email")`.

@@ -396,7 +396,16 @@ class MemoizeStatefulPlugin(Plugin):
         # right mirrored memo file.
         compile_context.auto_memo_components[tag, definition.source_module] = definition
 
-        return wrapper_factory()
+        wrapper = wrapper_factory()
+        # The wrapper has no structural children at the page level, but parents
+        # walking ``_get_all_refs`` (e.g. ``Form._get_form_refs`` collecting
+        # ref_<id> mappings into ``handleSubmit``) need to see refs from the
+        # wrapped subtree. Delegate ref collection to the original component
+        # so descendants inside the memo body remain reachable for ref lookup.
+        object.__setattr__(wrapper, "_get_all_refs", comp._get_all_refs)
+        # Keep each ref's owning control available after replacing the subtree.
+        object.__setattr__(wrapper, "_form_control_source", comp)
+        return wrapper
 
 
 __all__ = ["MemoizeStatefulPlugin"]

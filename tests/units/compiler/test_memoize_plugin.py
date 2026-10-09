@@ -2154,16 +2154,16 @@ def _compile_memo_module_text(ctx: CompileContext) -> str:
 
 
 @pytest.mark.parametrize("form_factory", [rx.form.root, rx.el.form])
-def test_form_memo_collects_form_data_by_name(form_factory) -> None:
-    """Generated submit handlers read FormData, not id refs, through auto-memos."""
+def test_form_memo_preserves_control_refs(form_factory) -> None:
+    """Generated submit handlers keep control refs through nested auto-memos."""
     from reflex_components_core.el.elements.forms import Form
 
     ctx, _ = _compile_single_page(
         lambda: form_factory(
             rx.box(
-                rx.input(name="plain_field", id="plain_field"),
-                rx.input(name="debounced_field", on_change=rx.console_log),
-                rx.radio_group(["a", "b"], name="unset_field"),
+                rx.input(id="plain_field"),
+                rx.input(id="debounced_field", on_change=rx.console_log),
+                rx.radio_group(["a", "b"], id="unset_field"),
                 rx.text("Label", id="label"),
                 id="wrapper",
             ),
@@ -2177,8 +2177,10 @@ def test_form_memo_collects_form_data_by_name(form_factory) -> None:
     ]
     assert len(forms) == 1
     form_hooks = "\n".join(forms[0].add_hooks())
-    assert "getFormData($form)" in form_hooks
-    assert "getRefValue" not in form_hooks
+    assert "getFormData($form, " in form_hooks
+    for field_id in ("plain_field", "debounced_field", "unset_field"):
+        assert f'getRefValue(refs["ref_{field_id}"])' in form_hooks
+    assert 'getRefValue(refs["ref_label"])' not in form_hooks
 
 
 def test_title_memo_body_renders_text_interpolation_not_bare_component() -> None:
@@ -2772,7 +2774,7 @@ def test_memo_forwarded_ref_merges_with_id_ref() -> None:
     """A root's own ``id``-derived ref rides its props into the runtime merge.
 
     An injected ref must not clobber the ``useRef`` that backs
-    ``refs['ref_<id>']`` (e.g. focus and scroll helpers), and vice
+    ``refs['ref_<id>']`` (form value collection, focus helpers), and vice
     versa — ``mergeSlotProps`` composes both at runtime via ``mergeRefs``, so
     the compiled body must keep the plain ``ref_<id>`` inside its own props.
     """

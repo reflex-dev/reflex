@@ -388,11 +388,11 @@ class _ScalarData(TypedDict):
 
 
 def test_transform_form_data_maps_bracketed_names_only_into_list_fields():
-    """A non-list field does not take ``name[]`` entries, which stay a list."""
+    """A non-list field does not take ``name[]`` entries, which keep their last value."""
     form_data = _transform(
         _ScalarData, {FORM_DATA_ENTRIES_KEY: [["pick[]", "a"], ["pick[]", "b"]]}
     )
-    assert form_data == {"pick[]": ["a", "b"]}
+    assert form_data == {"pick[]": "b"}
 
 
 _LiteralBrackets = TypedDict("_LiteralBrackets", {"tags": list[str], "tags[]": str})
@@ -520,17 +520,17 @@ def test_transform_form_data_with_unhashable_annotation():
 
 @pytest.mark.parametrize("hint", [Any, dict, dict[str, Any]])
 def test_transform_form_data_bracketed_names_to_dict(hint: Any):
-    """A dict of submitted form data holds ``name[]`` values as lists."""
+    """A dict of submitted form data holds the last value of a ``name[]``, like any name."""
     assert _transform(
         hint, {FORM_DATA_ENTRIES_KEY: [list(item) for item in _BRACKETED_ITEMS]}
-    ) == {"range[]": ["20", "80"], "name": "x", "one[]": ["a"]}
+    ) == {"range[]": "80", "name": "x", "one[]": "a"}
 
 
 def test_form_data_as_dict_bracketed_names():
-    """The fallback dict also holds ``name[]`` values as lists."""
-    assert form_data_as_dict({FORM_DATA_ENTRIES_KEY: [["one[]", "a"]]}) == {
-        "one[]": ["a"]
-    }
+    """The fallback dict also holds the last value of a ``name[]``."""
+    assert form_data_as_dict({
+        FORM_DATA_ENTRIES_KEY: [["one[]", "a"], ["one[]", "b"]]
+    }) == {"one[]": "b"}
 
 
 _BracketedScalars = TypedDict(
@@ -557,5 +557,5 @@ def test_transform_form_data_bracketed_typed_dict_fields_follow_their_type():
         "pick[]": "b",
         "agree[]": False,
         "picks[]": ["c"],
-        "other[]": ["d"],
+        "other[]": "d",
     }

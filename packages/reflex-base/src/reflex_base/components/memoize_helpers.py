@@ -9,7 +9,8 @@ in ``reflex-components-core`` (e.g. ``WindowEventListener``, ``upload``).
 Auto-memoized components compile using one of two render strategies:
 
 - Passthrough memo bodies render the root component with a ``{children}`` hole.
-  The page still renders the descendants.
+  The page still renders the descendants, which keeps root-level introspection
+  such as ``Form._get_form_refs`` working against the authored child tree.
 - Snapshot memo bodies render the captured subtree in the memo module. This is
   required for non-recursive memoization leaves and structural forms
   (``Foreach``) whose stateful render logic belongs inside the memo component

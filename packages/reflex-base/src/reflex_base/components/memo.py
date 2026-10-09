@@ -318,9 +318,12 @@ class MemoComponentDefinition(MemoDefinition):
         default_factory=frozenset, repr=False, compare=False
     )
     # For passthrough wrappers built by the auto-memoize plugin: the
-    # ``Bare``-wrapped ``{children}`` placeholder that replaces the root's
-    # descendants in the memo body, so descendants emit their refs, imports
-    # and hooks in the page scope rather than inside the memo body.
+    # ``Bare``-wrapped ``{children}`` placeholder used when rendering the memo
+    # body. The ``component`` keeps its ORIGINAL children so compile-time
+    # walkers (``Form._get_form_refs`` etc.) can introspect the subtree; the
+    # compiler swaps to this placeholder only for the JSX render and for
+    # imports collection, so descendants emit their refs/imports/hooks in the
+    # page scope rather than being duplicated inside the memo body.
     passthrough_hole_child: Component | None = None
     # For wrappers built by the auto-memoize plugin: make the wrapper
     # transparent to its parent by forwarding runtime-injected props to the
@@ -2131,8 +2134,19 @@ def create_passthrough_component_memo(
         captured_hole_child.append(hole_bare)
         # Substitute the ``{children}`` hole for the original descendants so
         # the memo body's hash and JSX both reflect the placeholder, not the
-        # specific children at any given call site.
+        # specific children at any given call site. Original descendants stay
+        # reachable on the page-level wrapper via the plugin's
+        # ``_get_all_refs`` delegation back to the source component.
         new_component.children = [hole_bare]
+        object.__setattr__(new_component, "_form_control_source", component)
+        # Compile-time walkers that need the real subtree (notably
+        # ``Form._get_form_refs`` collecting id-based input refs into the
+        # generated ``handleSubmit`` JS) call ``self._get_all_refs()`` while
+        # the memo body's hooks are computed. With the hole substituted in,
+        # that walk would return nothing and the form handler would emit an
+        # empty ``field_ref_mapping``. Delegate ref collection back to the
+        # source component so descendants behind the hole remain visible.
+        object.__setattr__(new_component, "_get_all_refs", component._get_all_refs)
         return new_component
 
     # The compiler owns this fixed signature; no user annotations need resolving.

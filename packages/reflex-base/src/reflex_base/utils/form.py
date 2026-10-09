@@ -33,18 +33,6 @@ _K = TypeVar("_K")
 _V_co = TypeVar("_V_co", covariant=True)
 
 
-def _is_list_key(key: object) -> bool:
-    """Check whether a form field name holds a list, as names ending in ``[]`` do.
-
-    Args:
-        key: The field name.
-
-    Returns:
-        Whether the name ends in ``[]``.
-    """
-    return isinstance(key, str) and key.endswith(_LIST_KEY_SUFFIX)
-
-
 def _form_bool(value: Any) -> bool:
     """Read a submitted value as a bool.
 
@@ -207,9 +195,8 @@ class _CoercedFormField:
     # ``name[]`` entries a multi-value control such as a two-thumb slider
     # submits, unless ``name[]`` is a field of its own.
     names: tuple[str, ...]
-    # "list" takes every value, "bool" whether the last value is not false-like, and
-    # "last" the last value of a ``name[]`` field that is not a list.
-    kind: Literal["list", "bool", "last"]
+    # "list" takes every value, "bool" whether the last value is not false-like.
+    kind: Literal["list", "bool"]
     # An unsubmitted list or bool field is left out unless it is required: then
     # it is None when its type allows None, otherwise an empty list or False.
     optional: bool
@@ -225,8 +212,7 @@ def _typed_dict_form_fields(typed_dict: Any) -> tuple[_CoercedFormField, ...]:
             of a generic one.
 
     Returns:
-        The ``list`` and ``bool`` fields, optional or not, and the ``name[]``
-        fields of other types.
+        The ``list`` and ``bool`` fields, optional or not.
     """
     required = types.get_required_typed_dict_keys(typed_dict)
     field_types = types.get_typed_dict_field_types(typed_dict)
@@ -240,8 +226,6 @@ def _typed_dict_form_fields(typed_dict: Any) -> tuple[_CoercedFormField, ...]:
                 names = (name, bracketed)
         elif field_type is bool:
             kind = "bool"
-        elif _is_list_key(name):
-            kind = "last"
         else:
             continue
         fields.append(
@@ -256,25 +240,6 @@ def _typed_dict_form_fields(typed_dict: Any) -> tuple[_CoercedFormField, ...]:
     return tuple(fields)
 
 
-def _form_data_dict(entries: Iterable[tuple[str, Any]]) -> dict[str, Any]:
-    """Build the dict of submitted form data for a handler without FormData.
-
-    Args:
-        entries: The form's ``(name, value)`` entries, in submission order.
-
-    Returns:
-        Each name's last value, or the list of every value of a name ending in
-        ``[]``, as a two-thumb slider submits.
-    """
-    result = {}
-    for name, value in entries:
-        if _is_list_key(name):
-            result.setdefault(name, []).append(value)
-        else:
-            result[name] = value
-    return result
-
-
 def _form_data_as_typed_dict(form_data: FormData, typed_dict: Any) -> dict[str, Any]:
     """Build the dict for a TypedDict-annotated form data argument.
 
@@ -286,15 +251,15 @@ def _form_data_as_typed_dict(form_data: FormData, typed_dict: Any) -> dict[str, 
         The dict of the form data, where ``list`` fields hold every value
         submitted under their name (or as ``name[]`` when that is not a field
         of its own), ``bool`` fields whether a value other than a false-like
-        string such as ``"false"`` or ``"off"`` was submitted, and
-        ``name[]`` fields of other types their last value. An unsubmitted list
+        string such as ``"false"`` or ``"off"`` was submitted, and other
+        fields their last value. An unsubmitted list
         or bool field is left out when it is not required, and otherwise is
         None when its type allows None, else an empty list or False.
     """
-    result = _form_data_dict(form_data._items)
+    result = dict(form_data._dict)
     for field in _typed_dict_form_fields(typed_dict):
         if not any(name in form_data for name in field.names):
-            if not field.required or field.kind == "last":
+            if not field.required:
                 continue
             if field.optional:
                 result[field.name] = None
@@ -306,10 +271,8 @@ def _form_data_as_typed_dict(form_data: FormData, typed_dict: Any) -> dict[str, 
             result.pop(field.names[1], None)
         elif field.kind == "list":
             result[field.name] = form_data.getlist(field.name)
-        elif field.kind == "bool":
-            result[field.name] = _form_bool(form_data.get(field.name))
         else:
-            result[field.name] = form_data[field.name]
+            result[field.name] = _form_bool(form_data.get(field.name))
     return result
 
 
@@ -374,12 +337,12 @@ def transform_form_data(value: Any, hinted_args: Any) -> Any:
     if entries is not None:
         if typed_dict is not None:
             return _form_data_as_typed_dict(FormData(entries), typed_dict)
-        return _form_data_dict(entries)
+        return dict(entries)
     # A FormData passed on from another handler, as it was submitted.
     if isinstance(value, FormData):
         if typed_dict is not None:
             return _form_data_as_typed_dict(value, typed_dict)
-        return _form_data_dict(value._items)
+        return dict(value._dict)
     return value
 
 
@@ -393,4 +356,4 @@ def form_data_as_dict(value: Any) -> Any:
         The dict of submitted form data, otherwise the value unchanged.
     """
     entries = _form_data_entries(value)
-    return value if entries is None else _form_data_dict(entries)
+    return value if entries is None else dict(entries)
