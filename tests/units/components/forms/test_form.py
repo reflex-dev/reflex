@@ -26,14 +26,6 @@ from reflex.compiler.utils import _root_only_custom_code
 
 _T = TypeVar("_T")
 
-EMAIL_FIELD_ID = "email"
-EMAIL_LABEL_ID = "email_label"
-SUBMIT_BUTTON_ID = "submit_button"
-INPUT_WRAPPER_ID = "input_wrapper"
-FORM_ID = "form_id"
-DEBOUNCED_INPUT_ID = "debounced_input"
-MEMOIZED_INPUT_ID = "memoized_input"
-
 
 def test_render_on_submit():
     """Test that on_submit event chain is rendered as a separate function."""
@@ -52,92 +44,6 @@ def test_render_no_on_submit():
     assert isinstance(f.event_triggers["on_submit"], EventChain)
     assert len(f.event_triggers["on_submit"].events) == 1
     assert f.event_triggers["on_submit"].events[0] == prevent_default
-
-
-def test_form_submit_preserves_null_control_values():
-    """ID-backed form controls remain in the payload when their value is null."""
-
-    class FormState(rx.State):
-        @rx.event
-        def on_submit(self, form_data: dict):
-            pass
-
-    form = HTMLForm.create(
-        rx.box(
-            Input.create(id=EMAIL_FIELD_ID),
-            rx.text("Email", id=EMAIL_LABEL_ID),
-            rx.button("Submit", id=SUBMIT_BUTTON_ID),
-            id=INPUT_WRAPPER_ID,
-        ),
-        on_submit=FormState.on_submit,
-        id=FORM_ID,
-    )
-    submit_hook = form.add_hooks()[0]
-    assert "filter(([, value]) => value != null)" not in submit_hook
-    assert f"ref_{EMAIL_FIELD_ID}" in submit_hook
-    assert f"ref_{EMAIL_LABEL_ID}" not in submit_hook
-    assert f"ref_{SUBMIT_BUTTON_ID}" not in submit_hook
-    assert f"ref_{INPUT_WRAPPER_ID}" not in submit_hook
-    assert f"ref_{FORM_ID}" not in submit_hook
-
-
-@pytest.mark.parametrize("native_tag", ["input", "select", "textarea"])
-def test_form_refs_include_custom_native_controls(native_tag):
-    """Custom native input elements with IDs are included in form data."""
-
-    class NativeInput(BaseHTML):
-        tag = native_tag
-
-    form = HTMLForm.create(NativeInput.create(id="native_input"))
-
-    assert "ref_native_input" in form.add_hooks()[0]
-
-
-def test_form_refs_follow_replaced_children():
-    """Replacing form children must not retain refs from the previous subtree."""
-    form = HTMLForm.create(Input.create(id="original"))
-    assert 'getRefValue(refs["ref_original"])' in form.add_hooks()[0]
-
-    form.children = [Input.create(id="replacement")]
-
-    hook = form.add_hooks()[0]
-    assert 'getRefValue(refs["ref_replacement"])' in hook
-    assert 'getRefValue(refs["ref_original"])' not in hook
-
-
-def test_form_refs_include_opted_in_custom_controls():
-    """Custom wrapped controls can opt in to ID-based form data."""
-
-    class CustomControl(rx.Component):
-        tag = "CustomControl"
-        _is_form_control = True
-
-    form = HTMLForm.create(CustomControl.create(id="custom_control"))
-
-    assert "ref_custom_control" in form.add_hooks()[0]
-
-
-def test_form_refs_include_debounced_controls():
-    """ID-only debounced inputs remain available to submit handlers."""
-    form = HTMLForm.create(
-        DebounceInput.create(
-            Input.create(id=DEBOUNCED_INPUT_ID, on_change=rx.console_log)
-        )
-    )
-
-    assert f"ref_{DEBOUNCED_INPUT_ID}" in form.add_hooks()[0]
-
-
-def test_form_refs_include_memoized_controls(monkeypatch):
-    """Memo wrappers retain the form-control marker of their wrapped component."""
-
-    class MemoizedInput(Input):
-        _is_form_control = False
-
-    monkeypatch.setattr(MemoizedInput, "_wrapped_component_type", Input, raising=False)
-    form = HTMLForm.create(MemoizedInput.create(id=MEMOIZED_INPUT_ID))
-
-    assert f"ref_{MEMOIZED_INPUT_ID}" in form.add_hooks()[0]
 
 
 @pytest.mark.parametrize("form_factory", [HTMLForm.create, Form.create])
@@ -162,8 +68,8 @@ def test_on_submit_accepts_typed_dict_form_data(form_factory):
     assert isinstance(form.event_triggers["on_submit"], EventChain)
 
 
-def test_on_submit_accepts_id_backed_typed_dict_form_data():
-    """Static ids that are mirrored into form_data should satisfy TypedDict keys."""
+def test_on_submit_rejects_id_backed_typed_dict_form_data():
+    """Static ids are not submitted, so they cannot satisfy TypedDict keys."""
 
     class SignupData(TypedDict):
         email_input: str
@@ -173,12 +79,11 @@ def test_on_submit_accepts_id_backed_typed_dict_form_data():
         def on_submit(self, form_data: SignupData):
             pass
 
-    form = HTMLForm.create(
-        Input.create(id="email_input"),
-        on_submit=SignupState.on_submit,
-    )
-
-    assert isinstance(form.event_triggers["on_submit"], EventChain)
+    with pytest.raises(EventHandlerValueError, match="email_input"):
+        HTMLForm.create(
+            Input.create(id="email_input"),
+            on_submit=SignupState.on_submit,
+        )
 
 
 def test_on_submit_rejects_typed_dict_with_unresolved_field_types():
@@ -207,7 +112,7 @@ class _SubmitState(rx.State):
 
 
 def test_on_submit_warns_for_controls_with_only_an_id(caplog):
-    """Submitting a control with a static id but no name by its id is deprecated."""
+    """A control with a static id but no name is no longer submitted, so warn."""
     with caplog.at_level(logging.WARNING):
         HTMLForm.create(
             Input.create(id="only_id_input"),
@@ -338,18 +243,35 @@ def test_on_submit_accepts_typed_dict_with_unresolvable_field_types():
         HTMLForm.create(Input.create(name="name"), on_submit=OrderState.on_submit)
 
 
+def test_on_submit_typed_dict_ignores_dynamic_ids():
+    """A dynamic id cannot contribute a form_data key, so validation still runs."""
+
+    class SignupData(TypedDict):
+        email: str
+
+    class SignupState(rx.State):
+        @rx.event
+        def on_submit(self, form_data: SignupData):
+            pass
+
+    with pytest.raises(EventHandlerValueError):
+        HTMLForm.create(
+            Input.create(id=Var(_js_expr="dynamic_id", _var_type=str)),
+            on_submit=SignupState.on_submit,
+        )
+
+
 @pytest.mark.parametrize("form_factory", [HTMLForm.create, Form.create])
-def test_on_submit_collects_form_data_with_id_refs(form_factory):
-    """The submit handler reads FormData, passing the values of id refs to replace it."""
+def test_on_submit_collects_form_data_by_name_only(form_factory):
+    """The submit handler reads FormData by name and never reads id refs."""
     form = form_factory(
         Input.create(id="email_input", name="email"),
         on_submit=Var(_js_expr="submit_it", _var_type=EventChain),
     )
     (hook,) = form.add_hooks()
-    assert (
-        "const form_data = getFormData($form, "
-        '({ ["email_input"] : getRefValue(refs["ref_email_input"]) }));'
-    ) in hook
+    assert "const form_data = getFormData($form);" in hook
+    assert "ref_email_input" not in hook
+    assert "getRefValue" not in hook
 
 
 def test_on_submit_accepts_typed_dict_with_optional_fields():

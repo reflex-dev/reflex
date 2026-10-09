@@ -159,11 +159,9 @@ def form_example():
 ```
 
 ```md alert info
-# Using `name` vs `id`.
+# Form data is keyed by `name`.
 
-When using the `name` attribute in form controls like `rx.switch`, `rx.radio_group`, and `rx.checkbox`, these controls will only be included in the form data if their values are set (e.g., if the checkbox is checked, the switch is toggled, or a radio option is selected). Read them with `form_data.get(...)`, or declare them as `bool` fields of a [TypedDict](#validating-form-data-with-a-typeddict).
-
-A control with an `id` is also included in the form data under its `id`, even when its value is not set, and that value replaces the value submitted under the same `name`, unless the form submits that `name` more than once. Custom native `input`, `select`, and `textarea` components with an `id` are included automatically. For other custom form controls, set `_is_form_control = True` on the component class to include its ID-based value in submissions. Including controls by `id` is deprecated and will be removed in Reflex 0.11, so give every submitted control a `name`.
+Only controls with a `name` are included in the form data; the `id` attribute does not add a field. Following standard HTML form behavior, controls like `rx.switch`, `rx.radio_group`, and `rx.checkbox` are only included when their values are set (e.g., if the checkbox is checked, the switch is toggled, or a radio option is selected), so read them with `form_data.get(...)`, or declare them as `bool` fields of a [TypedDict](#validating-form-data-with-a-typeddict).
 ```
 
 ```md video https://youtube.com/embed/ITOZkzjtjUA?start=5287&end=6040
@@ -203,11 +201,13 @@ def toppings_form():
 names with a `list[str]` field.
 
 ```md alert info
-# Names ending in `[]`.
+# Dict fields ending in `[]` hold lists.
 
-A two-thumb `rx.slider(name="range")` submits each of its values as `range[]`.
-Like any repeated name, a `dict` keeps only the last of them, while
-`rx.form.FormData` gives them all with `form_data.getlist("range[]")`.
+With a `dict` annotation, a field name ending in `[]`, such as the `range[]`
+that a two-thumb `rx.slider(name="range")` submits, reads as a list of its
+values, even when only one was submitted. `rx.form.FormData` treats it like any
+other name: `form_data["range[]"]` is the last value and
+`form_data.getlist("range[]")` gives them all.
 
 A `TypedDict` instead lets you declare the field without brackets: a list field
 `range: list[str]` collects the values submitted as `range[]`, unless the
@@ -228,7 +228,7 @@ Instead, you can annotate the handler's parameter with a
 This gives you typed, autocompleted access to each field inside the handler, and
 Reflex validates the form **at compile time**: every required key of the
 `TypedDict` must have a matching form control. If a required field has no
-control with that `name` (or `id`), Reflex raises an `EventHandlerValueError`
+control with that `name`, Reflex raises an `EventHandlerValueError`
 before the app starts, pointing out exactly which fields are missing.
 
 ```python demo exec
@@ -369,7 +369,7 @@ rx.form(
 # When is validation skipped?
 
 The check only runs when the form fields are statically known. It is
-automatically skipped when control `name`/`id` values are dynamic (for example,
+automatically skipped when control `name` values are dynamic (for example,
 built with `rx.foreach`), or when the form has an `id` (since controls can be
 associated from elsewhere via the HTML `form` attribute). In those cases the
 `TypedDict` still provides typed access inside the handler. At runtime

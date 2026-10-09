@@ -1790,6 +1790,9 @@ export const mergeSlotProps = (injectedProps, ownProps, refProp) => {
   return merged;
 };
 
+// Kept for forms compiled by reflex-components-core releases that read field
+// values from refs.
+
 /**
  * Get the value from a ref.
  * @param ref The ref to get the value from.
@@ -1861,26 +1864,11 @@ const formDataEntries = Symbol("formDataEntries");
 /**
  * Collect the fields of a submitted form.
  * @param form The form element.
- * @param refValues Values read from the refs of controls with an id, keyed by
- * the id. Each replaces the form's own entry of the same name, unless the form
- * submitted that name more than once.
  * @returns An object mapping each field name to its last value, which also
  * carries every entry so repeated names reach the backend.
  */
-export const getFormData = (form, refValues = {}) => {
-  const formEntries = [...new FormData(form).entries()];
-  const counts = new Map();
-  for (const [name] of formEntries) {
-    counts.set(name, (counts.get(name) ?? 0) + 1);
-  }
-  const refEntries = Object.entries(refValues).filter(
-    ([name]) => !(counts.get(name) > 1),
-  );
-  const replaced = new Set(refEntries.map(([name]) => name));
-  const entries = [
-    ...formEntries.filter(([name]) => !replaced.has(name)),
-    ...refEntries,
-  ];
+export const getFormData = (form) => {
+  const entries = [...new FormData(form).entries()];
   return Object.defineProperty(Object.fromEntries(entries), formDataEntries, {
     value: entries,
   });
