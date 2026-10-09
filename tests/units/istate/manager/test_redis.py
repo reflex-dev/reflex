@@ -7,9 +7,9 @@ import os
 import time
 import uuid
 from collections import Counter
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Awaitable, Callable
 from types import ModuleType
-from typing import Any
+from typing import Any, cast
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -17,6 +17,7 @@ import pytest_asyncio
 from reflex_base.utils.exceptions import EnvironmentVarValueError, LockExpiredError
 
 from reflex.istate.manager.redis import (
+    _RELEASE_LOCK_SCRIPT,
     StateManagerRedis,
     _default_lock_expiration,
     _default_oplock_hold_time_ms,
@@ -1120,6 +1121,48 @@ async def test_cancel_while_acquiring_lock_releases_it(
 
 
 @pytest.mark.asyncio
+async def test_cancel_while_releasing_lock_releases_it(
+    state_manager_redis: StateManagerRedis,
+    root_state: type[RedisTestState],
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A release cut short by a cancellation still deletes the lock.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        root_state: The root state class.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=root_state)
+    releasing = asyncio.Event()
+    # redis-py types EVAL replies as str; the lock release replies with bytes.
+    redis_eval = cast("Callable[..., Awaitable[Any]]", state_manager_redis.redis.eval)
+
+    async def first_release_hangs(script: str, *args: Any) -> Any:
+        if script == _RELEASE_LOCK_SCRIPT and not releasing.is_set():
+            releasing.set()
+            await asyncio.Event().wait()
+        return await redis_eval(script, *args)
+
+    monkeypatch.setattr(state_manager_redis.redis, "eval", first_release_hangs)
+
+    async def hold_lock():
+        async with state_manager_redis._lock(token):
+            pass
+
+    task = asyncio.create_task(hold_lock())
+    await releasing.wait()
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+
+    assert (
+        await state_manager_redis.redis.get(state_manager_redis._lock_key(token))
+        is None
+    )
+
+
+@pytest.mark.asyncio
 async def test_lock_release_after_expiration_keeps_the_next_owner(
     state_manager_redis: StateManagerRedis,
     root_state: type[RedisTestState],
@@ -1144,15 +1187,55 @@ async def test_lock_release_after_expiration_keeps_the_next_owner(
 
 
 @pytest.mark.asyncio
-async def test_oplock_lease_break_extends_the_lock_for_a_cached_holder(
+async def test_oplock_lease_keeps_its_lock_for_queued_uses(
     state_manager_redis: StateManagerRedis,
     root_state: type[RedisTestState],
     short_lock_expiration: int,
 ):
-    """A lease that breaks while the cached state is in use extends its lock.
+    """A lease keeps its lock while the uses queued ahead of its flush run.
 
-    Otherwise the flush that follows the holder finds the lock expired and the
-    changes made under the lease are lost.
+    Each use stays within the lock expiration, but together they outlast it, so
+    without renewal the flush would find the lock expired and drop their changes.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        root_state: The root state class.
+        short_lock_expiration: The lock expiration time in milliseconds.
+    """
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=root_state)
+    state_manager_redis._oplock_enabled = True
+    state_manager_redis.oplock_hold_time_ms = short_lock_expiration // 2
+    await _subscribed(state_manager_redis)
+
+    async with state_manager_redis.modify_state(token):
+        lease_task = await state_manager_redis._get_local_lease(token.lock_key)
+        assert lease_task is not None
+
+    async def use():
+        async with state_manager_redis.modify_state(token) as state:
+            assert isinstance(state, root_state)
+            state.count += 1
+            await asyncio.sleep(short_lock_expiration * 0.6 / 1000)
+
+    # Both queue up on the cached state before the lease breaks.
+    await asyncio.gather(use(), use())
+    await lease_task
+
+    final_state = await state_manager_redis.get_state(token)
+    assert isinstance(final_state, root_state)
+    assert final_state.count == 2
+
+
+@pytest.mark.asyncio
+async def test_oplock_lease_lets_a_use_past_the_lock_expiration_expire(
+    state_manager_redis: StateManagerRedis,
+    root_state: type[RedisTestState],
+    short_lock_expiration: int,
+):
+    """A use of the cached state longer than the lock expiration loses the lock.
+
+    Its lease ends in LockExpiredError without writing, as a handler holding
+    the lock itself would.
 
     Args:
         state_manager_redis: The StateManagerRedis to test.
@@ -1169,15 +1252,88 @@ async def test_oplock_lease_break_extends_the_lock_for_a_cached_holder(
         state.count += 1
         lease_task = await state_manager_redis._get_local_lease(token.lock_key)
         assert lease_task is not None
-        # Still in use past the lock's original expiration, within the
-        # expiration it gets from the lease break.
         await asyncio.sleep(short_lock_expiration * 1.25 / 1000)
 
-    await lease_task
-
+    with pytest.raises(LockExpiredError):
+        await lease_task
     final_state = await state_manager_redis.get_state(token)
     assert isinstance(final_state, root_state)
-    assert final_state.count == 1
+    assert final_state.count == 0
+
+
+@pytest.mark.asyncio
+async def test_oplock_lease_renewal_leaves_another_holders_lock_alone(
+    state_manager_redis: StateManagerRedis,
+    root_state: type[RedisTestState],
+    short_lock_expiration: int,
+):
+    """A lease whose lock another holder took never extends that holder's lock.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        root_state: The root state class.
+        short_lock_expiration: The lock expiration time in milliseconds.
+    """
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=root_state)
+    lock_key = state_manager_redis._lock_key(token)
+    state_manager_redis._oplock_enabled = True
+    state_manager_redis.oplock_hold_time_ms = short_lock_expiration // 2
+    await _subscribed(state_manager_redis)
+
+    async with state_manager_redis.modify_state(token):
+        lease_task = await state_manager_redis._get_local_lease(token.lock_key)
+        assert lease_task is not None
+
+    async with state_manager_redis.modify_state(token):
+        # The lease's lock expires and another holder takes it, for less time
+        # than this use keeps the cached state past the lease break.
+        await state_manager_redis.redis.delete(lock_key)
+        await state_manager_redis.redis.set(
+            lock_key, b"other", px=short_lock_expiration * 6 // 10
+        )
+        await asyncio.sleep(short_lock_expiration * 0.9 / 1000)
+        assert await state_manager_redis.redis.get(lock_key) is None
+
+    with pytest.raises(LockExpiredError):
+        await lease_task
+
+
+@pytest.mark.asyncio
+async def test_oplock_lease_reports_a_failed_renewal(
+    state_manager_redis: StateManagerRedis,
+    root_state: type[RedisTestState],
+    short_lock_expiration: int,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A lock renewal that fails ends the lease with its error.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        root_state: The root state class.
+        short_lock_expiration: The lock expiration time in milliseconds.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=root_state)
+    state_manager_redis._oplock_enabled = True
+    state_manager_redis.oplock_hold_time_ms = short_lock_expiration // 2
+    await _subscribed(state_manager_redis)
+
+    async with state_manager_redis.modify_state(token):
+        lease_task = await state_manager_redis._get_local_lease(token.lock_key)
+        assert lease_task is not None
+
+    class RenewalError(Exception):
+        """Raised by the failing renewal."""
+
+    async def failing_renewal(lock_key: bytes, lock_id: bytes, px: int) -> bool:  # noqa: RUF029
+        raise RenewalError
+
+    monkeypatch.setattr(state_manager_redis, "_extend_lock", failing_renewal)
+    # In use past the lease break, so the flush renews the lock while it waits.
+    async with state_manager_redis.modify_state(token):
+        await asyncio.sleep(short_lock_expiration * 0.75 / 1000)
+    with pytest.raises(RenewalError):
+        await lease_task
 
 
 @pytest.mark.asyncio
