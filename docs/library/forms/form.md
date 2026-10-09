@@ -301,9 +301,9 @@ value for them:
   an empty list when there are none.
 - A `bool` field is `False` when no value was submitted under its name, so an
   unchecked checkbox or switch reads as `False` instead of a missing key. A
-  submitted value is `True` unless it is empty or, ignoring case, `"false"`,
-  `"off"`, `"no"`, `"n"` or `"0"`, so a select, radio group or hidden input
-  submitting `"false"` reads as `False`.
+  submitted value is `True` unless, ignoring case and surrounding whitespace,
+  it is empty or `"false"`, `"off"`, `"no"`, `"n"` or `"0"`, so a select, radio
+  group or hidden input submitting `"false"` reads as `False`.
 
 When no value is submitted for a field whose type allows `None`, such as
 `list[str] | None` or `bool | None`, the field is `None` instead. A field
