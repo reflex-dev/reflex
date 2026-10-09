@@ -43,8 +43,7 @@ class BaseContext:
             The active context instance.
 
         Raises:
-            LookupError: If no context has been set and no usage message is configured.
-            RuntimeError: If no context has been set and a usage message is configured.
+            LookupError: If no context has been set.
         """
         try:
             return cls._context_var.get()
@@ -52,7 +51,7 @@ class BaseContext:
             if cls._get_usage is None:
                 raise
             msg = f"{cls.__name__}.get() must be called {cls._get_usage}."
-            raise RuntimeError(msg) from exc
+            raise LookupError(msg) from exc
 
     @classmethod
     def set(cls, context: Self) -> Token[Self]:

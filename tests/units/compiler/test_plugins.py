@@ -622,31 +622,31 @@ def test_context_lifecycle_and_cleanup() -> None:
         root_component=Fragment.create(),
     )
 
-    with pytest.raises(RuntimeError, match=r"CompileContext\.get.*compilation"):
+    with pytest.raises(LookupError, match=r"CompileContext\.get.*compilation"):
         CompileContext.get()
     with pytest.raises(RuntimeError, match="must be entered"):
         compile_ctx.ensure_context_attached()
 
     with compile_ctx:
         assert CompileContext.get() is compile_ctx
-        with pytest.raises(RuntimeError, match=r"PageContext\.get.*page compilation"):
+        with pytest.raises(LookupError, match=r"PageContext\.get.*page compilation"):
             PageContext.get()
         with page_ctx:
             assert CompileContext.get() is compile_ctx
             assert PageContext.get() is page_ctx
             page_ctx.ensure_context_attached()
-        with pytest.raises(RuntimeError, match=r"PageContext\.get.*page compilation"):
+        with pytest.raises(LookupError, match=r"PageContext\.get.*page compilation"):
             PageContext.get()
         assert CompileContext.get() is compile_ctx
 
-    with pytest.raises(RuntimeError, match=r"CompileContext\.get.*compilation"):
+    with pytest.raises(LookupError, match=r"CompileContext\.get.*compilation"):
         CompileContext.get()
 
     with pytest.raises(ValueError, match="boom"), compile_ctx:
         msg = "boom"
         raise ValueError(msg)
 
-    with pytest.raises(RuntimeError, match=r"CompileContext\.get.*compilation"):
+    with pytest.raises(LookupError, match=r"CompileContext\.get.*compilation"):
         CompileContext.get()
 
 
@@ -662,7 +662,7 @@ def test_compilation_context_get_outside_compile_raises_descriptive_error(
 ) -> None:
     """Context access outside compilation explains when the context is available."""
     with pytest.raises(
-        RuntimeError,
+        LookupError,
         match=rf"{context_class.__name__}\.get\(\).*{activity}",
     ):
         context_class.get()
