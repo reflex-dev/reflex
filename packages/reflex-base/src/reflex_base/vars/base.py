@@ -4285,12 +4285,22 @@ class Field(Generic[FIELD_TYPE]):
 
     @overload
     def __get__(
-        self: Field[list[V]]
-        | Field[set[V]]
-        | Field[list[V] | None]
-        | Field[set[V] | None],
-        instance: None,
-        owner: Any,
+        self: Field[list[V]], instance: None, owner: Any
+    ) -> ArrayVar[Sequence[V]]: ...
+
+    @overload
+    def __get__(
+        self: Field[set[V]], instance: None, owner: Any
+    ) -> ArrayVar[Sequence[V]]: ...
+
+    @overload
+    def __get__(
+        self: Field[list[V] | None], instance: None, owner: Any
+    ) -> ArrayVar[Sequence[V]]: ...
+
+    @overload
+    def __get__(
+        self: Field[set[V] | None], instance: None, owner: Any
     ) -> ArrayVar[Sequence[V]]: ...
 
     @overload

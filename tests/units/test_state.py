@@ -2142,11 +2142,14 @@ def test_computed_var_depends_on_parent_non_cached():
 
 
 @pytest.mark.parametrize("use_partial", [True, False])
-def test_cached_var_depends_on_event_handler(use_partial: bool):
+def test_cached_var_depends_on_event_handler(
+    use_partial: bool, monkeypatch: pytest.MonkeyPatch
+):
     """A cached var that calls an event handler calculates deps correctly.
 
     Args:
         use_partial: if true, replace the EventHandler with functools.partial
+        monkeypatch: The pytest monkeypatch fixture.
     """
     counter = 0
 
@@ -2171,7 +2174,8 @@ def test_cached_var_depends_on_event_handler(use_partial: bool):
             def __get__(self, instance: Any, owner: Any = None) -> Any:
                 return self if instance is None else MethodType(self, instance)
 
-        HandlerState.handler = MethodPartial(HandlerState.handler.fn)  # pyright: ignore [reportFunctionMemberAccess]
+        handler_fn = HandlerState.event_handlers["handler"].fn
+        monkeypatch.setattr(HandlerState, "handler", MethodPartial(handler_fn))
         assert isinstance(HandlerState.handler, functools.partial)
     else:
         assert isinstance(HandlerState.handler, EventHandler)
