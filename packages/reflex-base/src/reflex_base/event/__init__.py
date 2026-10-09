@@ -1391,15 +1391,18 @@ class FileUpload:
         """
         from reflex_components_core.core.upload import (
             DEFAULT_UPLOAD_ID,
-            get_upload_files_context_var_data,
+            UploadFilesProvider,
         )
 
         upload_id = self.upload_id if self.upload_id is not None else DEFAULT_UPLOAD_ID
-        upload_files_var = Var(
-            _js_expr="filesById",
-            _var_type=dict[str, Any],
-            _var_data=VarData.merge(get_upload_files_context_var_data()),
-        ).to(ObjectVar)[LiteralVar.create(upload_id)]
+        upload_files_var = (
+            Var("__upload_files")
+            ._as_ref()
+            ._replace(
+                merge_var_data=VarData(app_wraps=((5, UploadFilesProvider.create()),))
+            )
+            .to(ObjectVar, dict[str, Any])[LiteralVar.create(upload_id)]
+        )
         spec_args = [
             (
                 Var(_js_expr="files"),

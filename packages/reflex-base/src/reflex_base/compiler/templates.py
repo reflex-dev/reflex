@@ -484,6 +484,8 @@ export function getConnectErrors() {{
 
 export function UploadFilesProvider({{ children }}) {{
   const [filesById, setFilesById] = useState({{}})
+  // Serialized callbacks run outside components and read the current selection.
+  refs["__upload_files"] = filesById;
   refs["__clear_selected_files"] = (id) => setFilesById(filesById => {{
     const newFilesById = {{...filesById}}
     delete newFilesById[id]
