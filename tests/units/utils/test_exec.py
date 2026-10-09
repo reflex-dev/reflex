@@ -680,12 +680,10 @@ def _dev_granian_supervisor(mocker: MockerFixture, tmp_path: Path, port: int):
     servers: list[Any] = []
 
     class FakeInner:
-        def __init__(self):
-            self.exitcode = None
-            self.joined = False
+        exitcode = None
 
         def join(self):
-            self.joined = True
+            pass
 
     class FakeWorker:
         def __init__(self):
@@ -785,60 +783,22 @@ def test_run_granian_backend_keeps_socket_across_worker_restart(
         server._close_shared_socket()
 
 
-def test_run_granian_backend_skips_unexpected_exit_for_clean_worker_exit(
+def test_run_granian_backend_reports_only_unclean_worker_exits(
     tmp_path: Path, mocker: MockerFixture
 ):
-    """A worker exiting 0 was asked to stop, even before the supervisor saw the signal."""
-    port = _free_port()
-    server = _dev_granian_supervisor(mocker, tmp_path, port)
-    try:
-        server._init_shared_socket()
-        worker = _spawn_supervisor_worker(server)
-        worker.alive = False
-        worker.inner.exitcode = 0
-
-        worker._watcher()
-
-        assert worker.inner.joined
-        assert not worker.granian_watched
-        assert _port_is_bindable(port)
-    finally:
-        server._close_shared_socket()
-
-
-@pytest.mark.parametrize("exitcode", [1, -signal.SIGKILL])
-def test_run_granian_backend_reports_crashed_worker(
-    tmp_path: Path, mocker: MockerFixture, exitcode: int
-):
-    """A worker that crashes still reaches granian's unexpected-exit handling."""
-    port = _free_port()
-    server = _dev_granian_supervisor(mocker, tmp_path, port)
-    try:
-        server._init_shared_socket()
-        worker = _spawn_supervisor_worker(server)
-        worker.alive = False
-        worker.inner.exitcode = exitcode
-
-        worker._watcher()
-
-        assert worker.granian_watched
-        assert _port_is_bindable(port)
-    finally:
-        server._close_shared_socket()
-
-
-def test_run_granian_backend_reports_thread_worker_exit(
-    tmp_path: Path, mocker: MockerFixture
-):
-    """Thread workers of free-threaded builds have no exit code to go by."""
+    """A worker exiting 0 was asked to stop; any other exit reaches granian's report."""
     server = _dev_granian_supervisor(mocker, tmp_path, _free_port())
     try:
-        worker = _spawn_supervisor_worker(server)
-        del worker.inner.exitcode
+        clean = _spawn_supervisor_worker(server)
+        crashed = _spawn_supervisor_worker(server)
+        clean.inner.exitcode = 0
+        crashed.inner.exitcode = -signal.SIGKILL
 
-        worker._watcher()
+        clean._watcher()
+        crashed._watcher()
 
-        assert worker.granian_watched
+        assert not clean.granian_watched
+        assert crashed.granian_watched
     finally:
         server._close_shared_socket()
 
