@@ -1,0 +1,124 @@
+"""Extra pages for the thirdparty cluster (not part of upstream local_auth_demo).
+
+- /tp-expiry: log in with a 6 second session to exercise session expiry.
+- /tp-strict-register: a RegistrationState subclass that overrides the
+  `_validate_fields` hook and delegates to the inherited `handle_registration`
+  handler via `self.handle_registration(...)` (same delegation pattern as the
+  upstream demo's MyRegisterState).
+- /tp-whoami: substate reads of the inherited computed vars + get_state.
+"""
+
+from __future__ import annotations
+
+import datetime
+from typing import Any
+
+import reflex as rx
+import reflex_local_auth
+from reflex_local_auth.user import LocalUser
+from sqlmodel import select
+
+from .custom_user_info import MyLocalAuthState
+
+
+class ShortSessionState(reflex_local_auth.LoginState):
+    """Log in with a very short session."""
+
+    short_message: str = ""
+
+    @rx.event
+    def quick_login(self, form_data: dict[str, Any]):
+        with rx.session() as session:
+            user = session.exec(
+                select(LocalUser).where(LocalUser.username == form_data["username"])
+            ).one_or_none()
+        if user is None or not user.verify(form_data["password"]):
+            self.short_message = "bad credentials"
+            return
+        self._login(user.id, expiration_delta=datetime.timedelta(seconds=6))
+        self.short_message = f"short session for {user.username}"
+
+
+@rx.page(route="/tp-expiry")
+def tp_expiry() -> rx.Component:
+    return rx.vstack(
+        rx.heading("Short session login"),
+        rx.form(
+            rx.input(id="username", name="username", placeholder="Username"),
+            rx.input(id="password", name="password", type="password", placeholder="Password"),
+            rx.button("Quick login", id="quick_login"),
+            on_submit=ShortSessionState.quick_login,
+        ),
+        rx.text(ShortSessionState.short_message, id="short_message"),
+        rx.text(
+            "authenticated=",
+            rx.cond(reflex_local_auth.LocalAuthState.is_authenticated, "yes", "no"),
+            id="expiry_auth",
+        ),
+        rx.text(reflex_local_auth.LocalAuthState.authenticated_user.username, id="expiry_user"),
+    )
+
+
+class StrictRegisterState(reflex_local_auth.RegistrationState):
+    """Customize validation by overriding the package's hook."""
+
+    def _validate_fields(self, username, password, confirm_password):
+        if password and len(password) < 8:
+            self.error_message = "STRICT: password must be at least 8 characters"
+            return rx.set_focus("password")
+        return super()._validate_fields(username, password, confirm_password)
+
+    @rx.event
+    def handle_strict(self, form_data: dict[str, Any]):
+        return self.handle_registration(form_data)
+
+
+@rx.page(route="/tp-strict-register")
+def tp_strict_register() -> rx.Component:
+    return rx.vstack(
+        rx.heading("Strict register"),
+        rx.form(
+            rx.input(id="username", name="username", placeholder="Username"),
+            rx.input(id="password", name="password", type="password", placeholder="Password"),
+            rx.input(id="confirm_password", name="confirm_password", type="password", placeholder="Confirm"),
+            rx.button("Strict sign up", id="strict_signup"),
+            on_submit=StrictRegisterState.handle_strict,
+        ),
+        rx.text(reflex_local_auth.RegistrationState.error_message, id="strict_error"),
+        rx.text(
+            "success=",
+            rx.cond(reflex_local_auth.RegistrationState.success, "yes", "no"),
+            id="strict_success",
+        ),
+    )
+
+
+class WhoAmIState(MyLocalAuthState):
+    message: str = ""
+
+    @rx.event
+    async def probe(self):
+        base = await self.get_state(reflex_local_auth.LocalAuthState)
+        info = self.authenticated_user_info
+        self.message = (
+            f"user={self.authenticated_user.username!s} id={self.authenticated_user.id} "
+            f"auth={self.is_authenticated} same_token={base.auth_token == self.auth_token} "
+            f"email={info.email if info else None}"
+        )
+
+
+@rx.page(route="/tp-whoami")
+def tp_whoami() -> rx.Component:
+    return rx.vstack(
+        rx.heading("Who am I"),
+        rx.button("Probe", id="probe", on_click=WhoAmIState.probe),
+        rx.text(WhoAmIState.message, id="whoami_message"),
+        rx.text(reflex_local_auth.LoginState.authenticated_user.username, id="login_state_user"),
+        rx.text(MyLocalAuthState.authenticated_user.username, id="my_state_user"),
+        rx.cond(
+            MyLocalAuthState.authenticated_user_info,
+            rx.text(MyLocalAuthState.authenticated_user_info.email, id="my_state_email"),
+            rx.text("no-info", id="my_state_email"),
+        ),
+        rx.link("Logout", href="/tp-whoami", id="whoami_logout", on_click=reflex_local_auth.LocalAuthState.do_logout),
+    )

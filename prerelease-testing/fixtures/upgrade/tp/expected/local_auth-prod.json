@@ -1,0 +1,161 @@
+{
+"source": "a5 pass (reflex 0.10.0a5) local_auth prod; trimmed to what bin/cmp_checks.py and bin/compare_console.py read",
+"checks": [
+{
+"name": "index heading",
+"ok": true
+},
+{
+"name": "index shows Login link when anonymous",
+"ok": true
+},
+{
+"name": "require_login redirects anonymous to /login",
+"ok": true
+},
+{
+"name": "register page reached",
+"ok": true
+},
+{
+"name": "password mismatch error",
+"ok": true
+},
+{
+"name": "registration success message",
+"ok": true
+},
+{
+"name": "redirected to /login after registration",
+"ok": true
+},
+{
+"name": "duplicate username rejected",
+"ok": true
+},
+{
+"name": "bad password error",
+"ok": true
+},
+{
+"name": "login redirects back to /need2login (redirect_to)",
+"ok": true
+},
+{
+"name": "protected content visible",
+"ok": true
+},
+{
+"name": "Logout link visible when authenticated",
+"ok": true
+},
+{
+"name": "ProtectedState.on_load data",
+"ok": true
+},
+{
+"name": "user-info username",
+"ok": true
+},
+{
+"name": "user-info without extra info",
+"ok": true
+},
+{
+"name": "still logged in after reload",
+"ok": true
+},
+{
+"name": "second tab (same context) shares login",
+"ok": true
+},
+{
+"name": "fresh context is anonymous -> /login",
+"ok": true
+},
+{
+"name": "after logout index shows Login link",
+"ok": true
+},
+{
+"name": "after logout /protected -> /login",
+"ok": true
+},
+{
+"name": "second tab logged out after reload",
+"ok": true
+},
+{
+"name": "custom registration success",
+"ok": true
+},
+{
+"name": "custom user info email",
+"ok": true
+},
+{
+"name": "custom user info created_from_ip",
+"ok": true
+},
+{
+"name": "whoami LoginState sees parent computed var",
+"ok": true
+},
+{
+"name": "whoami MyLocalAuthState sees user",
+"ok": true
+},
+{
+"name": "whoami email (substate computed var)",
+"ok": true
+},
+{
+"name": "whoami probe handler (get_state + inherited computed)",
+"ok": true
+},
+{
+"name": "whoami after logout: email cleared",
+"ok": true
+},
+{
+"name": "whoami after user switch shows U1",
+"ok": true
+},
+{
+"name": "whoami after user switch: no email for U1",
+"ok": true
+},
+{
+"name": "whoami probe after switch",
+"ok": true
+},
+{
+"name": "subclass override of _validate_fields honoured via self.handle_registration()",
+"ok": false
+},
+{
+"name": "short-password user NOT created by strict register (DB)",
+"ok": false
+},
+{
+"name": "short session login",
+"ok": true
+},
+{
+"name": "short session authenticated",
+"ok": true
+},
+{
+"name": "new tab while session valid -> protected content",
+"ok": true
+},
+{
+"name": "new tab after session expiry -> /login",
+"ok": true
+}
+],
+"console_all": [],
+"anomalies": {
+"page_errors": []
+}
+}
