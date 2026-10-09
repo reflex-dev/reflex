@@ -12,7 +12,9 @@ import logging
 import pickle
 import re
 import sys
+import threading
 from collections.abc import Callable, Iterable, Iterator, Sequence
+from contextvars import ContextVar
 from datetime import timedelta
 from hashlib import md5
 from types import FunctionType
@@ -88,6 +90,7 @@ from reflex.istate.delta import (
     Delta,
     DeltaMapping,
     _resolve_delta,
+    _suppress_computed_var_dependency_invalidation,
     build_delta,
     clean_state,
     resolve_delta,
@@ -97,6 +100,49 @@ from reflex.istate.proxy import MutableProxy
 from reflex.istate.storage import ClientStorageBase
 from reflex.utils import console, format, types
 from reflex.utils.exec import is_testing_env
+
+_dirty_var_collector: ContextVar[set[tuple[BaseState, str]] | None] = ContextVar(
+    "_dirty_var_collector", default=None
+)
+_dirty_var_collection_depth = 0
+_dirty_var_collection_lock = threading.Lock()
+
+
+@contextlib.contextmanager
+def _collect_dirty_vars() -> Iterator[set[tuple[BaseState, str]]]:
+    """Collect vars dirtied by assignments in the current context.
+
+    Yields:
+        The set of state vars dirtied while the context is active.
+    """
+    global _dirty_var_collection_depth
+    dirty_vars: set[tuple[BaseState, str]] = set()
+    with _dirty_var_collection_lock:
+        _dirty_var_collection_depth += 1
+    token = _dirty_var_collector.set(dirty_vars)
+    try:
+        yield dirty_vars
+    finally:
+        _dirty_var_collector.reset(token)
+        with _dirty_var_collection_lock:
+            _dirty_var_collection_depth -= 1
+
+
+def _state_ancestors(state: BaseState) -> Iterator[BaseState]:
+    """Yield the parents of a state, from nearest to root."""
+    parent = state.parent_state
+    while parent is not None:
+        yield parent
+        parent = parent.parent_state
+
+
+def _dirty_delta_roots(state: BaseState) -> Iterator[BaseState]:
+    """Yield the highest dirty states whose deltas include their dirty descendants."""
+    if state.dirty_vars:
+        yield state
+        return
+    for substate_name in state.dirty_substates:
+        yield from _dirty_delta_roots(state.substates[substate_name])
 
 
 @functools.cache
@@ -1943,6 +1989,13 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         Args:
             var_names: The vars of this state that changed; all its dirty vars if omitted.
         """
+        if _dirty_var_collection_depth:
+            collector = _dirty_var_collector.get()
+            if collector is not None:
+                var_names = tuple(self.dirty_vars if var_names is None else var_names)
+                collector.update(
+                    (self, name) for name in var_names if name not in self.computed_vars
+                )
         self._mark_ancestors_dirty()
         self._mark_dirty_computed_vars(var_names)
 
@@ -2416,11 +2469,73 @@ class State(BaseState):
             await ctx.emit_delta(delta=delta)
             # Follow-up corrections must be allowed to write browser storage.
             self.dirty_vars.discard(constants.CompileVars.IS_HYDRATED)
-        # The browser's values only: the reset defaults stay clean, so they are
-        # not written back to the browser.
-        for var_state, var_name in applied:
-            var_state.dirty_vars.add(var_name)
-            var_state._mark_dirty((var_name,))
+        if applied:
+            applied_states = {id(state): state for state, _ in applied}
+            storage_states = {
+                state_id: state
+                for state_id, state in applied_states.items()
+                if not any(
+                    id(ancestor) in applied_states
+                    for ancestor in _state_ancestors(state)
+                )
+            }
+            probe_root = any(
+                type(ancestor).get_delta is not BaseState.get_delta
+                for state in storage_states.values()
+                for ancestor in _state_ancestors(state)
+            )
+            # Parent overrides wrap child deltas, so keep their root traversal.
+            if probe_root:
+                storage_states = {id(self): self}
+            for var_state, var_name in applied:
+                var_state.dirty_vars.add(var_name)
+                var_state._mark_ancestors_dirty()
+            suppressed_sources = frozenset((id(state), name) for state, name in applied)
+            with (
+                _collect_dirty_vars() as mutated_vars,
+                _suppress_computed_var_dependency_invalidation(suppressed_sources),
+            ):
+                correction_delta: Delta = {}
+                for state in storage_states.values():
+                    state_delta = await state._get_resolved_delta()
+                    for state_name, changes in state_delta.items():
+                        correction_delta.setdefault(state_name, {}).update(changes)
+            changed_vars = []
+            for var_state, var_name in applied:
+                key = var_name + FIELD_MARKER
+                subdelta = correction_delta.get(var_state.get_full_name(), {})
+                browser_value = var_state.get_value(var_name)
+                overridden = key in subdelta and _serialize_var(
+                    subdelta[key]
+                ) != _serialize_var(browser_value)
+                if overridden:
+                    setattr(var_state, var_name, subdelta[key])
+                    changed_vars.append((var_state, var_name))
+            if changed_vars or mutated_vars:
+                # Discard the probe's dirtiness before producing a full-tree
+                # delta. This makes dependencies on sibling states visible
+                # and avoids evaluating interval vars in the probe again.
+                self._clean()
+                for var_state, var_name in [*changed_vars, *mutated_vars]:
+                    var_state.dirty_vars.add(var_name)
+                    var_state._mark_dirty((var_name,))
+                correction_states = list(_dirty_delta_roots(self))
+                if any(
+                    type(ancestor).get_delta is not BaseState.get_delta
+                    for state in correction_states
+                    for ancestor in _state_ancestors(state)
+                ):
+                    correction_states = [self]
+                corrected_delta: Delta = {}
+                for state in correction_states:
+                    state_delta = await state._get_resolved_delta()
+                    for state_name, changes in state_delta.items():
+                        corrected_delta.setdefault(state_name, {}).update(changes)
+                for state_name, changes in corrected_delta.items():
+                    correction_delta.setdefault(state_name, {}).update(changes)
+            if ctx.emit_delta_impl is not None and correction_delta:
+                await ctx.emit_delta(delta=correction_delta)
+            self._clean()
         if not RegistrationContext.get().app.get_load_events(self.rx_router_url.path):
             self.is_hydrated = True
             return None

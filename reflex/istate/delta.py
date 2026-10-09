@@ -6,7 +6,7 @@ import asyncio
 import contextlib
 import inspect
 import time
-from collections.abc import Coroutine, Iterator, Mapping
+from collections.abc import Coroutine, Iterable, Iterator, Mapping
 from contextvars import ContextVar
 from typing import TYPE_CHECKING, Any, Final, NamedTuple
 
@@ -38,6 +38,13 @@ _DROP_FROM_DELTA: Final = object()
 # discarded traversal's flag into one of those would suppress a real update.
 _record_delta_values: ContextVar[bool] = ContextVar(
     "_record_delta_values", default=True
+)
+
+# During the client-storage reconciliation probe, dirty storage vars must reach
+# get_delta overrides without invalidating their computed dependents. Expired
+# and always-dirty computed vars are still processed by build_delta.
+_suppressed_delta_dependency_sources: ContextVar[frozenset[tuple[int, str]]] = (
+    ContextVar("_suppressed_delta_dependency_sources", default=frozenset())
 )
 
 
@@ -80,6 +87,49 @@ def _suppress_delta_recording() -> Iterator[None]:
     finally:
         _pending_delta_records.reset(records_token)
         _record_delta_values.reset(token)
+
+
+@contextlib.contextmanager
+def _suppress_computed_var_dependency_invalidation(
+    sources: frozenset[tuple[int, str]],
+) -> Iterator[None]:
+    """Suppress computed-var invalidation for selected state vars.
+
+    Args:
+        sources: State instance ids and var names whose dependents should not be
+            invalidated during the traversal.
+
+    Yields:
+        None, with computed-var dependency invalidation suppressed.
+    """
+    token = _suppressed_delta_dependency_sources.set(sources)
+    try:
+        yield
+    finally:
+        _suppressed_delta_dependency_sources.reset(token)
+
+
+def _get_unsuppressed_var_names(
+    state: BaseState,
+    var_names: Iterable[str] | None,
+    suppressed: frozenset[tuple[int, str]],
+) -> Iterable[str] | None:
+    """Exclude selected source vars from computed-var invalidation.
+
+    Args:
+        state: The state whose dependencies are being invalidated.
+        var_names: The changed var names, or None to use all dirty vars.
+        suppressed: The state vars excluded from dependency invalidation.
+
+    Returns:
+        The var names that should invalidate computed dependencies.
+    """
+    excluded = {name for state_id, name in suppressed if state_id == id(state)}
+    return (
+        state.dirty_vars - excluded
+        if var_names is None
+        else (name for name in var_names if name not in excluded)
+    )
 
 
 def _commit_delta_records(pending: list[_DeltaRecord], delta: Delta) -> None:
@@ -222,7 +272,13 @@ def build_delta(state: BaseState) -> Delta:
     """
     delta = {}
 
-    state._mark_dirty_computed_vars()
+    suppressed_sources = _suppressed_delta_dependency_sources.get()
+    if suppressed_sources:
+        state._mark_dirty_computed_vars(
+            _get_unsuppressed_var_names(state, state.dirty_vars, suppressed_sources)
+        )
+    else:
+        state._mark_dirty_computed_vars()
     delta_vars = state.dirty_vars & state._frontend_var_names
 
     always_dirty_computed_vars = state._always_dirty_computed_vars
