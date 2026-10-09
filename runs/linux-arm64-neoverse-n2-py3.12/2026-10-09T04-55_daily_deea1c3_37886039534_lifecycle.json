@@ -1,0 +1,2811 @@
+{
+  "schema": "reflex-bench/1",
+  "tool": {
+    "name": "reflex-bench",
+    "version": "0.0.1.dev3688+deea1c3c0"
+  },
+  "invocation": {
+    "id": "4909ef1b-34ec-49c5-803e-d0789df2d8df",
+    "argv": [
+      "run",
+      "--suite",
+      "daily",
+      "lifecycle.*",
+      "--kind",
+      "daily",
+      "--json",
+      "lifecycle.json",
+      "--no-save",
+      "--fail-on",
+      "never"
+    ],
+    "started_at": "2026-10-09T04:55:09Z",
+    "duration_s": 75.17,
+    "mode": "ci",
+    "kind": "daily",
+    "ci": {
+      "provider": "github",
+      "run_id": "37886039534",
+      "url": "https://github.com/reflex-dev/reflex/actions/runs/37886039534",
+      "runner": "GitHub Actions 1001194181"
+    },
+    "rng_seed": 2118418256
+  },
+  "subjects": {
+    "A": {
+      "spec": "workspace",
+      "source": "workspace",
+      "python": "/home/runner/work/reflex/reflex/.venv/bin/python",
+      "python_version": "3.12.3",
+      "reflex_version": "0.10.1.dev1+deea1c3c0",
+      "commit": "deea1c3c05fcc603270547a278dc9390502f5673",
+      "dirty": false,
+      "extra": {
+        "granian": "2.8.3"
+      }
+    }
+  },
+  "machine": {
+    "profile_id": "linux-arm64-neoverse-n2-py3.12",
+    "os": "Linux",
+    "kernel": "6.17.0-1022-azure",
+    "arch": "arm64",
+    "cpu_model": "Neoverse-N2",
+    "cpu_count": 4,
+    "ram_bytes": 16722010112,
+    "governor": null,
+    "turbo": null,
+    "load_avg_1m": 0.66,
+    "ac_power": null,
+    "cgroup_v2": true,
+    "container": false,
+    "virtualized": true,
+    "tools": {
+      "bun": false,
+      "node": true,
+      "chromium": true
+    }
+  },
+  "fixture": null,
+  "policy": {
+    "runs": null,
+    "min_runs": 10,
+    "max_runs": 30,
+    "min_time_s": 30.0,
+    "warmup": null,
+    "timeout_s": null,
+    "smoke": false,
+    "alpha": 0.01,
+    "correction": "holm",
+    "threshold_rel": 0.03,
+    "confidence": 0.95,
+    "bootstrap_resamples": 10000,
+    "fail_on": "never",
+    "fail_on_inconclusive": false
+  },
+  "benchmarks": [
+    {
+      "id": "lifecycle.compile.cold",
+      "params": {
+        "app": "playground"
+      },
+      "kind": "time",
+      "version": "sha256:cb603e1bff9acc234529e18f4c400c82e6d11332a76579c1d090246e91161204",
+      "status": "failed",
+      "error": "RuntimeError: reflex compile exited with code 1:\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1552, in main\n    rv = self.invoke(ctx)\n         ^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 2032, in invoke\n    return _process_result(sub_ctx.command.invoke(sub_ctx))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1415, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 910, in invoke\n    return callback(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/reflex.py\", line 846, in compile\n    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger=\"cli_compile\")\n  File \"/home/runner/work/reflex/reflex/reflex/utils/prerequisites.py\", line 339, in get_compiled_app\n    app._compile(\n  File \"/home/runner/work/reflex/reflex/reflex/app.py\", line 1734, in _compile\n    compiler.compile_app(\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 1322, in compile_app\n    compile_ctx.compile(\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 716, in compile\n    page_ctx = self.hooks.eval_page(\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 268, in eval_page\n    result = hook_impl(page_fn, page=page, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/plugins/builtin.py\", line 42, in eval_page\n    component = compiler.into_component(page_fn)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 968, in into_component\n    component_called = component()\n                       ^^^^^^^^^^^\n  File \"/home/runner/work/_temp/reflex-bench/cache/deea1c3c05fcc603270547a278dc9390502f5673/lifecycle.compile.cold/f69c7cc79630/app/playground/pages/charts.py\", line 89, in charts\n    rx.plotly(data=ChartsState.figure.to(Any)),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py\", line 307, in create\n    from plotly.graph_objs.layout import Template\nModuleNotFoundError: No module named 'plotly'\nHappened while evaluating page 'charts'",
+      "traceback_tail": "    self._call(\"setup_cache\")\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/registry.py\", line 536, in _call\n    method(self.ctx)\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/suites/lifecycle.py\", line 461, in setup_cache\n    _run(ctx, [\"compile\"], cwd=app, env=_env(ctx, bun_cache=_bun_cache(ctx)))\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/suites/lifecycle.py\", line 244, in _run\n    run_cli(ctx.subject.python, args, cwd=cwd, env=env, timeout=PRIME_S).check()\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/drivers/app_process.py\", line 930, in check\n    raise RuntimeError(msg)\nRuntimeError: reflex compile exited with code 1:\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1552, in main\n    rv = self.invoke(ctx)\n         ^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 2032, in invoke\n    return _process_result(sub_ctx.command.invoke(sub_ctx))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1415, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 910, in invoke\n    return callback(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/reflex.py\", line 846, in compile\n    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger=\"cli_compile\")\n  File \"/home/runner/work/reflex/reflex/reflex/utils/prerequisites.py\", line 339, in get_compiled_app\n    app._compile(\n  File \"/home/runner/work/reflex/reflex/reflex/app.py\", line 1734, in _compile\n    compiler.compile_app(\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 1322, in compile_app\n    compile_ctx.compile(\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 716, in compile\n    page_ctx = self.hooks.eval_page(\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 268, in eval_page\n    result = hook_impl(page_fn, page=page, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/plugins/builtin.py\", line 42, in eval_page\n    component = compiler.into_component(page_fn)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 968, in into_component\n    component_called = component()\n                       ^^^^^^^^^^^\n  File \"/home/runner/work/_temp/reflex-bench/cache/deea1c3c05fcc603270547a278dc9390502f5673/lifecycle.compile.cold/f69c7cc79630/app/playground/pages/charts.py\", line 89, in charts\n    rx.plotly(data=ChartsState.figure.to(Any)),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py\", line 307, in create\n    from plotly.graph_objs.layout import Template\nModuleNotFoundError: No module named 'plotly'\nHappened while evaluating page 'charts'",
+      "dims": {},
+      "metrics": {
+        "wall": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "cpu": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "peak_mem": {
+          "unit": "B",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        }
+      },
+      "sample_meta": [],
+      "sample_extra": [],
+      "failed_arms": [
+        "A"
+      ]
+    },
+    {
+      "id": "lifecycle.compile.incremental",
+      "params": {
+        "app": "playground"
+      },
+      "kind": "time",
+      "version": "sha256:59609c8363ad202a8ad78b1940d7179619fd7c78e648f6fc8d313f3f24d3fdc8",
+      "status": "failed",
+      "error": "RuntimeError: reflex compile exited with code 1:\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1552, in main\n    rv = self.invoke(ctx)\n         ^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 2032, in invoke\n    return _process_result(sub_ctx.command.invoke(sub_ctx))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1415, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 910, in invoke\n    return callback(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/reflex.py\", line 846, in compile\n    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger=\"cli_compile\")\n  File \"/home/runner/work/reflex/reflex/reflex/utils/prerequisites.py\", line 339, in get_compiled_app\n    app._compile(\n  File \"/home/runner/work/reflex/reflex/reflex/app.py\", line 1734, in _compile\n    compiler.compile_app(\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 1322, in compile_app\n    compile_ctx.compile(\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 716, in compile\n    page_ctx = self.hooks.eval_page(\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 268, in eval_page\n    result = hook_impl(page_fn, page=page, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/plugins/builtin.py\", line 42, in eval_page\n    component = compiler.into_component(page_fn)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 968, in into_component\n    component_called = component()\n                       ^^^^^^^^^^^\n  File \"/home/runner/work/_temp/reflex-bench/cache/deea1c3c05fcc603270547a278dc9390502f5673/lifecycle.compile.incremental/f69c7cc79630/app/playground/pages/charts.py\", line 89, in charts\n    rx.plotly(data=ChartsState.figure.to(Any)),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py\", line 307, in create\n    from plotly.graph_objs.layout import Template\nModuleNotFoundError: No module named 'plotly'\nHappened while evaluating page 'charts'",
+      "traceback_tail": "    self._call(\"setup_cache\")\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/registry.py\", line 536, in _call\n    method(self.ctx)\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/suites/lifecycle.py\", line 537, in setup_cache\n    _run(ctx, [\"compile\"], cwd=app, env=_env(ctx))\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/suites/lifecycle.py\", line 244, in _run\n    run_cli(ctx.subject.python, args, cwd=cwd, env=env, timeout=PRIME_S).check()\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/drivers/app_process.py\", line 930, in check\n    raise RuntimeError(msg)\nRuntimeError: reflex compile exited with code 1:\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1552, in main\n    rv = self.invoke(ctx)\n         ^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 2032, in invoke\n    return _process_result(sub_ctx.command.invoke(sub_ctx))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1415, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 910, in invoke\n    return callback(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/reflex.py\", line 846, in compile\n    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger=\"cli_compile\")\n  File \"/home/runner/work/reflex/reflex/reflex/utils/prerequisites.py\", line 339, in get_compiled_app\n    app._compile(\n  File \"/home/runner/work/reflex/reflex/reflex/app.py\", line 1734, in _compile\n    compiler.compile_app(\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 1322, in compile_app\n    compile_ctx.compile(\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 716, in compile\n    page_ctx = self.hooks.eval_page(\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 268, in eval_page\n    result = hook_impl(page_fn, page=page, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/plugins/builtin.py\", line 42, in eval_page\n    component = compiler.into_component(page_fn)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 968, in into_component\n    component_called = component()\n                       ^^^^^^^^^^^\n  File \"/home/runner/work/_temp/reflex-bench/cache/deea1c3c05fcc603270547a278dc9390502f5673/lifecycle.compile.incremental/f69c7cc79630/app/playground/pages/charts.py\", line 89, in charts\n    rx.plotly(data=ChartsState.figure.to(Any)),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py\", line 307, in create\n    from plotly.graph_objs.layout import Template\nModuleNotFoundError: No module named 'plotly'\nHappened while evaluating page 'charts'",
+      "dims": {},
+      "metrics": {
+        "wall": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "cpu": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "peak_mem": {
+          "unit": "B",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        }
+      },
+      "sample_meta": [],
+      "sample_extra": [],
+      "failed_arms": [
+        "A"
+      ]
+    },
+    {
+      "id": "lifecycle.compile.warm",
+      "params": {
+        "app": "playground"
+      },
+      "kind": "time",
+      "version": "sha256:352cf69f52c7b88cf4c5de70fc2d4387e5678552b7e2c8f6c0af24fac7b90327",
+      "status": "failed",
+      "error": "RuntimeError: reflex compile exited with code 1:\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1552, in main\n    rv = self.invoke(ctx)\n         ^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 2032, in invoke\n    return _process_result(sub_ctx.command.invoke(sub_ctx))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1415, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 910, in invoke\n    return callback(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/reflex.py\", line 846, in compile\n    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger=\"cli_compile\")\n  File \"/home/runner/work/reflex/reflex/reflex/utils/prerequisites.py\", line 339, in get_compiled_app\n    app._compile(\n  File \"/home/runner/work/reflex/reflex/reflex/app.py\", line 1734, in _compile\n    compiler.compile_app(\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 1322, in compile_app\n    compile_ctx.compile(\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 716, in compile\n    page_ctx = self.hooks.eval_page(\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 268, in eval_page\n    result = hook_impl(page_fn, page=page, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/plugins/builtin.py\", line 42, in eval_page\n    component = compiler.into_component(page_fn)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 968, in into_component\n    component_called = component()\n                       ^^^^^^^^^^^\n  File \"/home/runner/work/_temp/reflex-bench/cache/deea1c3c05fcc603270547a278dc9390502f5673/lifecycle.compile.warm/f69c7cc79630/app/playground/pages/charts.py\", line 89, in charts\n    rx.plotly(data=ChartsState.figure.to(Any)),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py\", line 307, in create\n    from plotly.graph_objs.layout import Template\nModuleNotFoundError: No module named 'plotly'\nHappened while evaluating page 'charts'",
+      "traceback_tail": "    self._call(\"setup_cache\")\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/registry.py\", line 536, in _call\n    method(self.ctx)\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/suites/lifecycle.py\", line 537, in setup_cache\n    _run(ctx, [\"compile\"], cwd=app, env=_env(ctx))\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/suites/lifecycle.py\", line 244, in _run\n    run_cli(ctx.subject.python, args, cwd=cwd, env=env, timeout=PRIME_S).check()\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/drivers/app_process.py\", line 930, in check\n    raise RuntimeError(msg)\nRuntimeError: reflex compile exited with code 1:\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1552, in main\n    rv = self.invoke(ctx)\n         ^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 2032, in invoke\n    return _process_result(sub_ctx.command.invoke(sub_ctx))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1415, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 910, in invoke\n    return callback(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/reflex.py\", line 846, in compile\n    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger=\"cli_compile\")\n  File \"/home/runner/work/reflex/reflex/reflex/utils/prerequisites.py\", line 339, in get_compiled_app\n    app._compile(\n  File \"/home/runner/work/reflex/reflex/reflex/app.py\", line 1734, in _compile\n    compiler.compile_app(\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 1322, in compile_app\n    compile_ctx.compile(\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 716, in compile\n    page_ctx = self.hooks.eval_page(\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 268, in eval_page\n    result = hook_impl(page_fn, page=page, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/plugins/builtin.py\", line 42, in eval_page\n    component = compiler.into_component(page_fn)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 968, in into_component\n    component_called = component()\n                       ^^^^^^^^^^^\n  File \"/home/runner/work/_temp/reflex-bench/cache/deea1c3c05fcc603270547a278dc9390502f5673/lifecycle.compile.warm/f69c7cc79630/app/playground/pages/charts.py\", line 89, in charts\n    rx.plotly(data=ChartsState.figure.to(Any)),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py\", line 307, in create\n    from plotly.graph_objs.layout import Template\nModuleNotFoundError: No module named 'plotly'\nHappened while evaluating page 'charts'",
+      "dims": {},
+      "metrics": {
+        "wall": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "cpu": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "peak_mem": {
+          "unit": "B",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        }
+      },
+      "sample_meta": [],
+      "sample_extra": [],
+      "failed_arms": [
+        "A"
+      ]
+    },
+    {
+      "id": "lifecycle.export.dev",
+      "params": {
+        "app": "playground"
+      },
+      "kind": "time",
+      "version": "sha256:e6303893364e6c28d3c66820cf48e6bf1da4a810fef1d85860ee13e219008969",
+      "status": "failed",
+      "error": "RuntimeError: reflex compile exited with code 1:\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1552, in main\n    rv = self.invoke(ctx)\n         ^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 2032, in invoke\n    return _process_result(sub_ctx.command.invoke(sub_ctx))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1415, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 910, in invoke\n    return callback(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/reflex.py\", line 846, in compile\n    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger=\"cli_compile\")\n  File \"/home/runner/work/reflex/reflex/reflex/utils/prerequisites.py\", line 339, in get_compiled_app\n    app._compile(\n  File \"/home/runner/work/reflex/reflex/reflex/app.py\", line 1734, in _compile\n    compiler.compile_app(\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 1322, in compile_app\n    compile_ctx.compile(\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 716, in compile\n    page_ctx = self.hooks.eval_page(\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 268, in eval_page\n    result = hook_impl(page_fn, page=page, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/plugins/builtin.py\", line 42, in eval_page\n    component = compiler.into_component(page_fn)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 968, in into_component\n    component_called = component()\n                       ^^^^^^^^^^^\n  File \"/home/runner/work/_temp/reflex-bench/cache/deea1c3c05fcc603270547a278dc9390502f5673/lifecycle.export.dev/f69c7cc79630/app/playground/pages/charts.py\", line 89, in charts\n    rx.plotly(data=ChartsState.figure.to(Any)),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py\", line 307, in create\n    from plotly.graph_objs.layout import Template\nModuleNotFoundError: No module named 'plotly'\nHappened while evaluating page 'charts'",
+      "traceback_tail": "    self._call(\"setup_cache\")\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/registry.py\", line 536, in _call\n    method(self.ctx)\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/suites/lifecycle.py\", line 537, in setup_cache\n    _run(ctx, [\"compile\"], cwd=app, env=_env(ctx))\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/suites/lifecycle.py\", line 244, in _run\n    run_cli(ctx.subject.python, args, cwd=cwd, env=env, timeout=PRIME_S).check()\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/drivers/app_process.py\", line 930, in check\n    raise RuntimeError(msg)\nRuntimeError: reflex compile exited with code 1:\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1552, in main\n    rv = self.invoke(ctx)\n         ^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 2032, in invoke\n    return _process_result(sub_ctx.command.invoke(sub_ctx))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1415, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 910, in invoke\n    return callback(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/reflex.py\", line 846, in compile\n    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger=\"cli_compile\")\n  File \"/home/runner/work/reflex/reflex/reflex/utils/prerequisites.py\", line 339, in get_compiled_app\n    app._compile(\n  File \"/home/runner/work/reflex/reflex/reflex/app.py\", line 1734, in _compile\n    compiler.compile_app(\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 1322, in compile_app\n    compile_ctx.compile(\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 716, in compile\n    page_ctx = self.hooks.eval_page(\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 268, in eval_page\n    result = hook_impl(page_fn, page=page, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/plugins/builtin.py\", line 42, in eval_page\n    component = compiler.into_component(page_fn)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 968, in into_component\n    component_called = component()\n                       ^^^^^^^^^^^\n  File \"/home/runner/work/_temp/reflex-bench/cache/deea1c3c05fcc603270547a278dc9390502f5673/lifecycle.export.dev/f69c7cc79630/app/playground/pages/charts.py\", line 89, in charts\n    rx.plotly(data=ChartsState.figure.to(Any)),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py\", line 307, in create\n    from plotly.graph_objs.layout import Template\nModuleNotFoundError: No module named 'plotly'\nHappened while evaluating page 'charts'",
+      "dims": {},
+      "metrics": {
+        "wall": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "cpu": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "peak_mem": {
+          "unit": "B",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        }
+      },
+      "sample_meta": [],
+      "sample_extra": [],
+      "failed_arms": [
+        "A"
+      ]
+    },
+    {
+      "id": "lifecycle.export.prod",
+      "params": {
+        "app": "playground"
+      },
+      "kind": "time",
+      "version": "sha256:f26997a03679fa54953d0d61d48ce2fa46f488f1f71d6148f47000bf712f5686",
+      "status": "failed",
+      "error": "RuntimeError: reflex compile exited with code 1:\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1552, in main\n    rv = self.invoke(ctx)\n         ^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 2032, in invoke\n    return _process_result(sub_ctx.command.invoke(sub_ctx))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1415, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 910, in invoke\n    return callback(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/reflex.py\", line 846, in compile\n    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger=\"cli_compile\")\n  File \"/home/runner/work/reflex/reflex/reflex/utils/prerequisites.py\", line 339, in get_compiled_app\n    app._compile(\n  File \"/home/runner/work/reflex/reflex/reflex/app.py\", line 1734, in _compile\n    compiler.compile_app(\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 1322, in compile_app\n    compile_ctx.compile(\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 716, in compile\n    page_ctx = self.hooks.eval_page(\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 268, in eval_page\n    result = hook_impl(page_fn, page=page, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/plugins/builtin.py\", line 42, in eval_page\n    component = compiler.into_component(page_fn)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 968, in into_component\n    component_called = component()\n                       ^^^^^^^^^^^\n  File \"/home/runner/work/_temp/reflex-bench/cache/deea1c3c05fcc603270547a278dc9390502f5673/lifecycle.export.prod/f69c7cc79630/app/playground/pages/charts.py\", line 89, in charts\n    rx.plotly(data=ChartsState.figure.to(Any)),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py\", line 307, in create\n    from plotly.graph_objs.layout import Template\nModuleNotFoundError: No module named 'plotly'\nHappened while evaluating page 'charts'",
+      "traceback_tail": "    self._call(\"setup_cache\")\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/registry.py\", line 536, in _call\n    method(self.ctx)\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/suites/lifecycle.py\", line 537, in setup_cache\n    _run(ctx, [\"compile\"], cwd=app, env=_env(ctx))\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/suites/lifecycle.py\", line 244, in _run\n    run_cli(ctx.subject.python, args, cwd=cwd, env=env, timeout=PRIME_S).check()\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/drivers/app_process.py\", line 930, in check\n    raise RuntimeError(msg)\nRuntimeError: reflex compile exited with code 1:\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1552, in main\n    rv = self.invoke(ctx)\n         ^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 2032, in invoke\n    return _process_result(sub_ctx.command.invoke(sub_ctx))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1415, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 910, in invoke\n    return callback(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/reflex.py\", line 846, in compile\n    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger=\"cli_compile\")\n  File \"/home/runner/work/reflex/reflex/reflex/utils/prerequisites.py\", line 339, in get_compiled_app\n    app._compile(\n  File \"/home/runner/work/reflex/reflex/reflex/app.py\", line 1734, in _compile\n    compiler.compile_app(\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 1322, in compile_app\n    compile_ctx.compile(\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 716, in compile\n    page_ctx = self.hooks.eval_page(\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 268, in eval_page\n    result = hook_impl(page_fn, page=page, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/plugins/builtin.py\", line 42, in eval_page\n    component = compiler.into_component(page_fn)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 968, in into_component\n    component_called = component()\n                       ^^^^^^^^^^^\n  File \"/home/runner/work/_temp/reflex-bench/cache/deea1c3c05fcc603270547a278dc9390502f5673/lifecycle.export.prod/f69c7cc79630/app/playground/pages/charts.py\", line 89, in charts\n    rx.plotly(data=ChartsState.figure.to(Any)),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py\", line 307, in create\n    from plotly.graph_objs.layout import Template\nModuleNotFoundError: No module named 'plotly'\nHappened while evaluating page 'charts'",
+      "dims": {},
+      "metrics": {
+        "wall": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "cpu": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "peak_mem": {
+          "unit": "B",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        }
+      },
+      "sample_meta": [],
+      "sample_extra": [],
+      "failed_arms": [
+        "A"
+      ]
+    },
+    {
+      "id": "lifecycle.import",
+      "params": {},
+      "kind": "time",
+      "version": "sha256:c861a8a7fed27aae979b7144c747df2f2e3ce1812cf0fb38e08501955d15c3ca",
+      "status": "ok",
+      "error": null,
+      "traceback_tail": null,
+      "dims": {},
+      "metrics": {
+        "wall": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {
+            "A": [
+              0.4678870169999527,
+              0.4631763800000499,
+              0.4574326409999685,
+              0.4640810480000255,
+              0.4538004529999853,
+              0.47005732100001296,
+              0.47138469700001906,
+              0.4642864529999997,
+              0.4668764439999791,
+              0.46442184299996825,
+              0.4622738510000204,
+              0.46047035899999855,
+              0.45812333800000715,
+              0.4662011269999766,
+              0.4475910919999819,
+              0.45013106999999764,
+              0.4503308530000254,
+              0.4503130829999691,
+              0.44631303799997113,
+              0.45241070599996647,
+              0.46292335099997217,
+              0.46196565099995723,
+              0.4644552760000238,
+              0.4589164490000144,
+              0.4635715379999965,
+              0.46752837400003955,
+              0.45936669200000324,
+              0.44951871999995774,
+              0.43667455700000346,
+              0.42791636300000846,
+              0.43076704700001756
+            ]
+          },
+          "summary": {
+            "A": {
+              "n": 30,
+              "median": 0.4599185255000009,
+              "ci": [
+                0.45241070599996647,
+                0.4635715379999965
+              ],
+              "mean": 0.45677599383333056,
+              "stddev": 0.010904041223750072,
+              "min": 0.42791636300000846,
+              "max": 0.47138469700001906,
+              "q1": 0.45031752549998316,
+              "q3": 0.46423510175000615,
+              "mad": 0.00620033699999567,
+              "cv": 0.02387174757640342,
+              "outliers": {
+                "mild": 1,
+                "severe": 0
+              }
+            }
+          },
+          "comparison": null,
+          "warnings": []
+        }
+      },
+      "sample_meta": [
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:20.588Z",
+          "warmup": true,
+          "duration_s": 0.474850361
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:21.063Z",
+          "warmup": false,
+          "duration_s": 0.470144572
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:21.533Z",
+          "warmup": false,
+          "duration_s": 0.464367168
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:21.998Z",
+          "warmup": false,
+          "duration_s": 0.471090976
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:22.469Z",
+          "warmup": false,
+          "duration_s": 0.460613615
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:22.930Z",
+          "warmup": false,
+          "duration_s": 0.47709898
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:23.408Z",
+          "warmup": false,
+          "duration_s": 0.4782868
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:23.886Z",
+          "warmup": false,
+          "duration_s": 0.471074264
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:24.358Z",
+          "warmup": false,
+          "duration_s": 0.473769583
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:24.832Z",
+          "warmup": false,
+          "duration_s": 0.471295213
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:25.303Z",
+          "warmup": false,
+          "duration_s": 0.469287514
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:25.773Z",
+          "warmup": false,
+          "duration_s": 0.467326657
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:26.240Z",
+          "warmup": false,
+          "duration_s": 0.465012788
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:26.706Z",
+          "warmup": false,
+          "duration_s": 0.473042161
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:27.179Z",
+          "warmup": false,
+          "duration_s": 0.454584297
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:27.634Z",
+          "warmup": false,
+          "duration_s": 0.457108636
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:28.091Z",
+          "warmup": false,
+          "duration_s": 0.457285697
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:28.549Z",
+          "warmup": false,
+          "duration_s": 0.457264872
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:29.006Z",
+          "warmup": false,
+          "duration_s": 0.453238778
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:29.460Z",
+          "warmup": false,
+          "duration_s": 0.459248555
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:29.919Z",
+          "warmup": false,
+          "duration_s": 0.469800361
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:30.389Z",
+          "warmup": false,
+          "duration_s": 0.468698433
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:30.858Z",
+          "warmup": false,
+          "duration_s": 0.471445713
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:31.330Z",
+          "warmup": false,
+          "duration_s": 0.465963345
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:31.796Z",
+          "warmup": false,
+          "duration_s": 0.470321689
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:32.267Z",
+          "warmup": false,
+          "duration_s": 0.474277061
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:32.741Z",
+          "warmup": false,
+          "duration_s": 0.466100026
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:33.208Z",
+          "warmup": false,
+          "duration_s": 0.456386074
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:33.665Z",
+          "warmup": false,
+          "duration_s": 0.443333169
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:34.108Z",
+          "warmup": false,
+          "duration_s": 0.434759012
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:34.543Z",
+          "warmup": false,
+          "duration_s": 0.437406514
+        }
+      ],
+      "sample_extra": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "id": "lifecycle.init.cold",
+      "params": {},
+      "kind": "time",
+      "version": "sha256:2a5f4a2b5e6bcdd195fef8c0f1a001aaca49f62dc196f6c48ceefd442c85c3e2",
+      "status": "ok",
+      "error": null,
+      "traceback_tail": null,
+      "dims": {
+        "collector": "cgroup"
+      },
+      "metrics": {
+        "wall": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {
+            "A": [
+              1.453612738000004,
+              1.450103610000042,
+              1.4325228440000046,
+              1.606867809999983,
+              1.3610360239999864,
+              1.3586485210000205,
+              1.3702614079999762,
+              1.3879924569999957,
+              1.3816146380000305,
+              1.383566447000021,
+              2.1720181100000104,
+              1.5142047599999842,
+              1.406129405999991,
+              1.4291601880000258,
+              1.764092933000029,
+              1.3485071279999943,
+              1.4902522779999572,
+              1.3772493019999956,
+              1.5050780260000352,
+              1.3770139179999887,
+              1.4774494719999893
+            ]
+          },
+          "summary": {
+            "A": {
+              "n": 21,
+              "median": 1.4291601880000258,
+              "ci": [
+                1.3772493019999956,
+                1.4902522779999572
+              ],
+              "mean": 1.4784467627619078,
+              "stddev": 0.18658224957128453,
+              "min": 1.3485071279999943,
+              "max": 2.1720181100000104,
+              "q1": 1.3772493019999956,
+              "q3": 1.4902522779999572,
+              "mad": 0.05214627000003702,
+              "cv": 0.1262015341172837,
+              "outliers": {
+                "mild": 1,
+                "severe": 1
+              }
+            }
+          },
+          "comparison": null,
+          "warnings": [
+            "high variance: CV 13 % (warns at 10 %)",
+            "max is 52 % above the median",
+            "1 severe outlier (sample 10: +52 %). Kept."
+          ]
+        },
+        "cpu": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {
+            "A": [
+              0.394119,
+              0.387622,
+              0.389436,
+              0.393438,
+              0.397478,
+              0.40091,
+              0.405449,
+              0.400835,
+              0.403131,
+              0.405552,
+              0.398917,
+              0.398338,
+              0.400818,
+              0.392572,
+              0.396878,
+              0.396763,
+              0.397785,
+              0.40207,
+              0.427355,
+              0.408803,
+              0.403794
+            ]
+          },
+          "summary": {
+            "A": {
+              "n": 21,
+              "median": 0.398917,
+              "ci": [
+                0.396763,
+                0.403131
+              ],
+              "mean": 0.4000982380952381,
+              "stddev": 0.008215352955928075,
+              "min": 0.387622,
+              "max": 0.427355,
+              "q1": 0.396763,
+              "q3": 0.403131,
+              "mad": 0.0042139999999999955,
+              "cv": 0.02053333949941694,
+              "outliers": {
+                "mild": 0,
+                "severe": 1
+              }
+            }
+          },
+          "comparison": null,
+          "warnings": [
+            "1 severe outlier (sample 18: +7 %). Kept."
+          ]
+        },
+        "peak_mem": {
+          "unit": "B",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {
+            "A": [
+              36020224.0,
+              36413440.0,
+              36065280.0,
+              36306944.0,
+              36515840.0,
+              36593664.0,
+              36556800.0,
+              36306944.0,
+              36700160.0,
+              36122624.0,
+              36585472.0,
+              36577280.0,
+              36589568.0,
+              36532224.0,
+              36519936.0,
+              36257792.0,
+              36257792.0,
+              36540416.0,
+              36327424.0,
+              36319232.0,
+              36253696.0
+            ]
+          },
+          "summary": {
+            "A": {
+              "n": 21,
+              "median": 36413440.0,
+              "ci": [
+                36257792.0,
+                36556800.0
+              ],
+              "mean": 36398226.28571428,
+              "stddev": 192773.89116401185,
+              "min": 36020224.0,
+              "max": 36700160.0,
+              "q1": 36257792.0,
+              "q3": 36556800.0,
+              "mad": 155648.0,
+              "cv": 0.005296244098566762,
+              "outliers": {
+                "mild": 0,
+                "severe": 0
+              }
+            }
+          },
+          "comparison": null,
+          "warnings": []
+        }
+      },
+      "sample_meta": [
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:35.009Z",
+          "warmup": false,
+          "duration_s": 1.462701967
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:36.493Z",
+          "warmup": false,
+          "duration_s": 1.458229745
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:37.972Z",
+          "warmup": false,
+          "duration_s": 1.440956573
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:39.434Z",
+          "warmup": false,
+          "duration_s": 1.615909948
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:41.070Z",
+          "warmup": false,
+          "duration_s": 1.369924062
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:42.461Z",
+          "warmup": false,
+          "duration_s": 1.367181173
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:43.850Z",
+          "warmup": false,
+          "duration_s": 1.378942327
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:45.249Z",
+          "warmup": false,
+          "duration_s": 1.396793741
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:46.667Z",
+          "warmup": false,
+          "duration_s": 1.390875567
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:48.080Z",
+          "warmup": false,
+          "duration_s": 1.392407027
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:49.493Z",
+          "warmup": false,
+          "duration_s": 2.180585762
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:51.695Z",
+          "warmup": false,
+          "duration_s": 1.523847212
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:53.240Z",
+          "warmup": false,
+          "duration_s": 1.415327132
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:54.678Z",
+          "warmup": false,
+          "duration_s": 1.437855579
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:56.136Z",
+          "warmup": false,
+          "duration_s": 1.772363672
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:57.929Z",
+          "warmup": false,
+          "duration_s": 1.357021722
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:55:59.308Z",
+          "warmup": false,
+          "duration_s": 1.498969662
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:56:00.827Z",
+          "warmup": false,
+          "duration_s": 1.386008672
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:56:02.235Z",
+          "warmup": false,
+          "duration_s": 1.514649524
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:56:03.772Z",
+          "warmup": false,
+          "duration_s": 1.385899164
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:56:05.179Z",
+          "warmup": false,
+          "duration_s": 1.485944906
+        }
+      ],
+      "sample_extra": [
+        {
+          "phases": {
+            "total": 1.453612738000004,
+            "cpu_total": 0.394119,
+            "python": 1.453612738000004,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 1.073612738000004,
+            "cpu": {
+              "python": 0.38,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "deleted_bytes": {
+            "web": 0
+          }
+        },
+        {
+          "phases": {
+            "total": 1.450103610000042,
+            "cpu_total": 0.387622,
+            "python": 1.450103610000042,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 1.0801036100000418,
+            "cpu": {
+              "python": 0.37,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "deleted_bytes": {
+            "web": 112271
+          }
+        },
+        {
+          "phases": {
+            "total": 1.4325228440000046,
+            "cpu_total": 0.389436,
+            "python": 1.4325228440000046,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 1.0625228440000045,
+            "cpu": {
+              "python": 0.37,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "deleted_bytes": {
+            "web": 112271
+          }
+        },
+        {
+          "phases": {
+            "total": 1.606867809999983,
+            "cpu_total": 0.393438,
+            "python": 1.606867809999983,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 1.2168678099999828,
+            "cpu": {
+              "python": 0.39,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "deleted_bytes": {
+            "web": 112270
+          }
+        },
+        {
+          "phases": {
+            "total": 1.3610360239999864,
+            "cpu_total": 0.397478,
+            "python": 1.3610360239999864,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.9810360239999864,
+            "cpu": {
+              "python": 0.38,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "deleted_bytes": {
+            "web": 112271
+          }
+        },
+        {
+          "phases": {
+            "total": 1.3586485210000205,
+            "cpu_total": 0.40091,
+            "python": 1.3586485210000205,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.9686485210000205,
+            "cpu": {
+              "python": 0.39,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "deleted_bytes": {
+            "web": 112271
+          }
+        },
+        {
+          "phases": {
+            "total": 1.3702614079999762,
+            "cpu_total": 0.405449,
+            "python": 1.3702614079999762,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.9802614079999762,
+            "cpu": {
+              "python": 0.39,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "deleted_bytes": {
+            "web": 112271
+          }
+        },
+        {
+          "phases": {
+            "total": 1.3879924569999957,
+            "cpu_total": 0.400835,
+            "python": 1.3879924569999957,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.9979924569999957,
+            "cpu": {
+              "python": 0.39,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "deleted_bytes": {
+            "web": 112270
+          }
+        },
+        {
+          "phases": {
+            "total": 1.3816146380000305,
+            "cpu_total": 0.403131,
+            "python": 1.3816146380000305,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.9916146380000305,
+            "cpu": {
+              "python": 0.39,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "deleted_bytes": {
+            "web": 112271
+          }
+        },
+        {
+          "phases": {
+            "total": 1.383566447000021,
+            "cpu_total": 0.405552,
+            "python": 1.383566447000021,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.9835664470000212,
+            "cpu": {
+              "python": 0.39999999999999997,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "deleted_bytes": {
+            "web": 112271
+          }
+        },
+        {
+          "phases": {
+            "total": 2.1720181100000104,
+            "cpu_total": 0.398917,
+            "python": 2.1720181100000104,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 1.7820181100000103,
+            "cpu": {
+              "python": 0.39,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "deleted_bytes": {
+            "web": 112270
+          }
+        },
+        {
+          "phases": {
+            "total": 1.5142047599999842,
+            "cpu_total": 0.398338,
+            "python": 1.5142047599999842,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 1.1242047599999843,
+            "cpu": {
+              "python": 0.38999999999999996,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "deleted_bytes": {
+            "web": 112271
+          }
+        },
+        {
+          "phases": {
+            "total": 1.406129405999991,
+            "cpu_total": 0.400818,
+            "python": 1.406129405999991,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 1.016129405999991,
+            "cpu": {
+              "python": 0.38999999999999996,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "deleted_bytes": {
+            "web": 112271
+          }
+        },
+        {
+          "phases": {
+            "total": 1.4291601880000258,
+            "cpu_total": 0.392572,
+            "python": 1.4291601880000258,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 1.0491601880000259,
+            "cpu": {
+              "python": 0.38,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "deleted_bytes": {
+            "web": 112271
+          }
+        },
+        {
+          "phases": {
+            "total": 1.764092933000029,
+            "cpu_total": 0.396878,
+            "python": 1.764092933000029,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 1.3840929330000291,
+            "cpu": {
+              "python": 0.38,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "deleted_bytes": {
+            "web": 112271
+          }
+        },
+        {
+          "phases": {
+            "total": 1.3485071279999943,
+            "cpu_total": 0.396763,
+            "python": 1.3485071279999943,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.9685071279999943,
+            "cpu": {
+              "python": 0.38,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "deleted_bytes": {
+            "web": 112271
+          }
+        },
+        {
+          "phases": {
+            "total": 1.4902522779999572,
+            "cpu_total": 0.397785,
+            "python": 1.4902522779999572,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 1.1002522779999573,
+            "cpu": {
+              "python": 0.38999999999999996,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "deleted_bytes": {
+            "web": 112271
+          }
+        },
+        {
+          "phases": {
+            "total": 1.3772493019999956,
+            "cpu_total": 0.40207,
+            "python": 1.3772493019999956,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.9872493019999957,
+            "cpu": {
+              "python": 0.38999999999999996,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "deleted_bytes": {
+            "web": 112271
+          }
+        },
+        {
+          "phases": {
+            "total": 1.5050780260000352,
+            "cpu_total": 0.427355,
+            "python": 1.5050780260000352,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 1.0950780260000352,
+            "cpu": {
+              "python": 0.41,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "deleted_bytes": {
+            "web": 112271
+          }
+        },
+        {
+          "phases": {
+            "total": 1.3770139179999887,
+            "cpu_total": 0.408803,
+            "python": 1.3770139179999887,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.9770139179999888,
+            "cpu": {
+              "python": 0.39999999999999997,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "deleted_bytes": {
+            "web": 112271
+          }
+        },
+        {
+          "phases": {
+            "total": 1.4774494719999893,
+            "cpu_total": 0.403794,
+            "python": 1.4774494719999893,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 1.0874494719999892,
+            "cpu": {
+              "python": 0.39,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "deleted_bytes": {
+            "web": 112269
+          }
+        }
+      ]
+    },
+    {
+      "id": "lifecycle.init.warm",
+      "params": {},
+      "kind": "time",
+      "version": "sha256:5255f3da1d7ff90afc2dadddd8fff5b213258a94074f91f98b190fe29bbb5282",
+      "status": "ok",
+      "error": null,
+      "traceback_tail": null,
+      "dims": {
+        "collector": "cgroup"
+      },
+      "metrics": {
+        "wall": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {
+            "A": [
+              0.45559388999998873,
+              0.46394694499997513,
+              0.4461084600000049,
+              0.45790647900003023,
+              0.47108742599999687,
+              0.4643417240000076,
+              0.43810612800001536,
+              0.4496913579999955,
+              0.44209182100001954,
+              0.4595256059999997,
+              0.44184475000002976,
+              0.4386667770000372,
+              0.4532730699999661,
+              0.4339842549999844,
+              0.4613969790000283,
+              0.4669030030000272,
+              0.441344560999994,
+              0.4663224910000281,
+              0.46537573499995233,
+              0.43488021199999594,
+              0.4753264020000074,
+              0.43576382999998486,
+              0.4473763930000132,
+              0.43219095800003515,
+              0.4428003480000484,
+              0.4435197920000178,
+              0.4556772749999709,
+              0.4710359089999656,
+              0.43958707000001596,
+              0.4598095009999952
+            ]
+          },
+          "summary": {
+            "A": {
+              "n": 30,
+              "median": 0.4514822139999808,
+              "ci": [
+                0.44209182100001954,
+                0.4598095009999952
+              ],
+              "mean": 0.4518493049333377,
+              "stddev": 0.012827185858845576,
+              "min": 0.43219095800003515,
+              "max": 0.4753264020000074,
+              "q1": 0.4414696082500029,
+              "q3": 0.4633094534999884,
+              "mad": 0.011016398499975821,
+              "cv": 0.028388194291320196,
+              "outliers": {
+                "mild": 0,
+                "severe": 0
+              }
+            }
+          },
+          "comparison": null,
+          "warnings": []
+        },
+        "cpu": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {
+            "A": [
+              0.385747,
+              0.375121,
+              0.378331,
+              0.378894,
+              0.382881,
+              0.382389,
+              0.378946,
+              0.377909,
+              0.382361,
+              0.381732,
+              0.377402,
+              0.380497,
+              0.379584,
+              0.383352,
+              0.382642,
+              0.383833,
+              0.384957,
+              0.38508,
+              0.384836,
+              0.378746,
+              0.392691,
+              0.386079,
+              0.392133,
+              0.378743,
+              0.380513,
+              0.381077,
+              0.376573,
+              0.391082,
+              0.381794,
+              0.383584
+            ]
+          },
+          "summary": {
+            "A": {
+              "n": 30,
+              "median": 0.3820775,
+              "ci": [
+                0.379584,
+                0.383584
+              ],
+              "mean": 0.3823169666666667,
+              "stddev": 0.0043236264510831375,
+              "min": 0.375121,
+              "max": 0.392691,
+              "q1": 0.378907,
+              "q3": 0.38458525,
+              "mad": 0.0029409999999999714,
+              "cv": 0.01130901013569928,
+              "outliers": {
+                "mild": 0,
+                "severe": 0
+              }
+            }
+          },
+          "comparison": null,
+          "warnings": []
+        },
+        "peak_mem": {
+          "unit": "B",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {
+            "A": [
+              36028416.0,
+              36331520.0,
+              36315136.0,
+              36282368.0,
+              36376576.0,
+              36249600.0,
+              36339712.0,
+              36294656.0,
+              36413440.0,
+              36376576.0,
+              36028416.0,
+              36392960.0,
+              36380672.0,
+              36253696.0,
+              36372480.0,
+              36384768.0,
+              36376576.0,
+              36421632.0,
+              36061184.0,
+              36356096.0,
+              36372480.0,
+              36237312.0,
+              36392960.0,
+              36302848.0,
+              36384768.0,
+              36106240.0,
+              36388864.0,
+              36118528.0,
+              36335616.0,
+              36339712.0
+            ]
+          },
+          "summary": {
+            "A": {
+              "n": 30,
+              "median": 36339712.0,
+              "ci": [
+                36294656.0,
+                36376576.0
+              ],
+              "mean": 36300526.93333333,
+              "stddev": 116647.05012009323,
+              "min": 36028416.0,
+              "max": 36421632.0,
+              "q1": 36260864.0,
+              "q3": 36379648.0,
+              "mad": 45056.0,
+              "cv": 0.003213370713166725,
+              "outliers": {
+                "mild": 3,
+                "severe": 0
+              }
+            }
+          },
+          "comparison": null,
+          "warnings": []
+        }
+      },
+      "sample_meta": [
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:56:06.672Z",
+          "warmup": false,
+          "duration_s": 0.464098981
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:56:07.139Z",
+          "warmup": false,
+          "duration_s": 0.47255471
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:56:07.613Z",
+          "warmup": false,
+          "duration_s": 0.454840044
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:56:08.071Z",
+          "warmup": false,
+          "duration_s": 0.466441282
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:56:08.539Z",
+          "warmup": false,
+          "duration_s": 0.479879485
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:56:09.021Z",
+          "warmup": false,
+          "duration_s": 0.472915673
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:56:09.497Z",
+          "warmup": false,
+          "duration_s": 0.446874498
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:56:09.946Z",
+          "warmup": false,
+          "duration_s": 0.458278666
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:56:10.406Z",
+          "warmup": false,
+          "duration_s": 0.450686539
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:56:10.859Z",
+          "warmup": false,
+          "duration_s": 0.468100707
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:56:11.330Z",
+          "warmup": false,
+          "duration_s": 0.45072806
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:56:11.783Z",
+          "warmup": false,
+          "duration_s": 0.447078088
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:56:12.233Z",
+          "warmup": false,
+          "duration_s": 0.461895356
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:56:12.697Z",
+          "warmup": false,
+          "duration_s": 0.442839897
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:56:13.142Z",
+          "warmup": false,
+          "duration_s": 0.47005116
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:56:13.614Z",
+          "warmup": false,
+          "duration_s": 0.475788888
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:56:14.092Z",
+          "warmup": false,
+          "duration_s": 0.44993114
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:56:14.544Z",
+          "warmup": false,
+          "duration_s": 0.475159964
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:56:15.022Z",
+          "warmup": false,
+          "duration_s": 0.474224369
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:56:15.499Z",
+          "warmup": false,
+          "duration_s": 0.443494968
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:56:15.944Z",
+          "warmup": false,
+          "duration_s": 0.486145046
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:56:16.433Z",
+          "warmup": false,
+          "duration_s": 0.444374745
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:56:16.880Z",
+          "warmup": false,
+          "duration_s": 0.456208211
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:56:17.338Z",
+          "warmup": false,
+          "duration_s": 0.440867227
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:56:17.781Z",
+          "warmup": false,
+          "duration_s": 0.451870925
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:56:18.236Z",
+          "warmup": false,
+          "duration_s": 0.452229687
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:56:18.690Z",
+          "warmup": false,
+          "duration_s": 0.464340025
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:56:19.157Z",
+          "warmup": false,
+          "duration_s": 0.47993104
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:56:19.639Z",
+          "warmup": false,
+          "duration_s": 0.448079621
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-09T04:56:20.090Z",
+          "warmup": false,
+          "duration_s": 0.468473866
+        }
+      ],
+      "sample_extra": [
+        {
+          "phases": {
+            "total": 0.45559388999998873,
+            "cpu_total": 0.385747,
+            "python": 0.45559388999998873,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.08559388999998874,
+            "cpu": {
+              "python": 0.37,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.46394694499997513,
+            "cpu_total": 0.375121,
+            "python": 0.46394694499997513,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.10394694499997514,
+            "cpu": {
+              "python": 0.36,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.4461084600000049,
+            "cpu_total": 0.378331,
+            "python": 0.4461084600000049,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.07610846000000493,
+            "cpu": {
+              "python": 0.37,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.45790647900003023,
+            "cpu_total": 0.378894,
+            "python": 0.45790647900003023,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.09790647900003024,
+            "cpu": {
+              "python": 0.36,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.47108742599999687,
+            "cpu_total": 0.382881,
+            "python": 0.47108742599999687,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.10108742599999687,
+            "cpu": {
+              "python": 0.37,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.4643417240000076,
+            "cpu_total": 0.382389,
+            "python": 0.4643417240000076,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.09434172400000762,
+            "cpu": {
+              "python": 0.37,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.43810612800001536,
+            "cpu_total": 0.378946,
+            "python": 0.43810612800001536,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.06810612800001536,
+            "cpu": {
+              "python": 0.37,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.4496913579999955,
+            "cpu_total": 0.377909,
+            "python": 0.4496913579999955,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.0796913579999955,
+            "cpu": {
+              "python": 0.37,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.44209182100001954,
+            "cpu_total": 0.382361,
+            "python": 0.44209182100001954,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.07209182100001954,
+            "cpu": {
+              "python": 0.37,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.4595256059999997,
+            "cpu_total": 0.381732,
+            "python": 0.4595256059999997,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.0895256059999997,
+            "cpu": {
+              "python": 0.37,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.44184475000002976,
+            "cpu_total": 0.377402,
+            "python": 0.44184475000002976,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.08184475000002978,
+            "cpu": {
+              "python": 0.36,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.4386667770000372,
+            "cpu_total": 0.380497,
+            "python": 0.4386667770000372,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.0686667770000372,
+            "cpu": {
+              "python": 0.37,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.4532730699999661,
+            "cpu_total": 0.379584,
+            "python": 0.4532730699999661,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.08327306999996609,
+            "cpu": {
+              "python": 0.37,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.4339842549999844,
+            "cpu_total": 0.383352,
+            "python": 0.4339842549999844,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.06398425499998439,
+            "cpu": {
+              "python": 0.37,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.4613969790000283,
+            "cpu_total": 0.382642,
+            "python": 0.4613969790000283,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.0913969790000283,
+            "cpu": {
+              "python": 0.37,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.4669030030000272,
+            "cpu_total": 0.383833,
+            "python": 0.4669030030000272,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.09690300300002719,
+            "cpu": {
+              "python": 0.37,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.441344560999994,
+            "cpu_total": 0.384957,
+            "python": 0.441344560999994,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.06134456099999397,
+            "cpu": {
+              "python": 0.38,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.4663224910000281,
+            "cpu_total": 0.38508,
+            "python": 0.4663224910000281,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.0963224910000281,
+            "cpu": {
+              "python": 0.37,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.46537573499995233,
+            "cpu_total": 0.384836,
+            "python": 0.46537573499995233,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.09537573499995233,
+            "cpu": {
+              "python": 0.37,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.43488021199999594,
+            "cpu_total": 0.378746,
+            "python": 0.43488021199999594,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.06488021199999594,
+            "cpu": {
+              "python": 0.37,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.4753264020000074,
+            "cpu_total": 0.392691,
+            "python": 0.4753264020000074,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.09532640200000742,
+            "cpu": {
+              "python": 0.38,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.43576382999998486,
+            "cpu_total": 0.386079,
+            "python": 0.43576382999998486,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.05576382999998486,
+            "cpu": {
+              "python": 0.38,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.4473763930000132,
+            "cpu_total": 0.392133,
+            "python": 0.4473763930000132,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.06737639300001319,
+            "cpu": {
+              "python": 0.38,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.43219095800003515,
+            "cpu_total": 0.378743,
+            "python": 0.43219095800003515,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.07219095800003517,
+            "cpu": {
+              "python": 0.36,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.4428003480000484,
+            "cpu_total": 0.380513,
+            "python": 0.4428003480000484,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.07280034800004842,
+            "cpu": {
+              "python": 0.37,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.4435197920000178,
+            "cpu_total": 0.381077,
+            "python": 0.4435197920000178,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.07351979200001779,
+            "cpu": {
+              "python": 0.37,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.4556772749999709,
+            "cpu_total": 0.376573,
+            "python": 0.4556772749999709,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.09567727499997092,
+            "cpu": {
+              "python": 0.36,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.4710359089999656,
+            "cpu_total": 0.391082,
+            "python": 0.4710359089999656,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.09103590899996561,
+            "cpu": {
+              "python": 0.38,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.43958707000001596,
+            "cpu_total": 0.381794,
+            "python": 0.43958707000001596,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.06958707000001596,
+            "cpu": {
+              "python": 0.37,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.4598095009999952,
+            "cpu_total": 0.383584,
+            "python": 0.4598095009999952,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.08980950099999518,
+            "cpu": {
+              "python": 0.37,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        }
+      ]
+    },
+    {
+      "id": "lifecycle.run.backend_only.ready",
+      "params": {
+        "app": "playground"
+      },
+      "kind": "startup",
+      "version": "sha256:18e44325a74c3ed436cd3fa4fec9ab46ec6cdd6612a30b60896550bdfb288a28",
+      "status": "failed",
+      "error": "RuntimeError: reflex compile exited with code 1:\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1552, in main\n    rv = self.invoke(ctx)\n         ^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 2032, in invoke\n    return _process_result(sub_ctx.command.invoke(sub_ctx))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1415, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 910, in invoke\n    return callback(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/reflex.py\", line 846, in compile\n    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger=\"cli_compile\")\n  File \"/home/runner/work/reflex/reflex/reflex/utils/prerequisites.py\", line 339, in get_compiled_app\n    app._compile(\n  File \"/home/runner/work/reflex/reflex/reflex/app.py\", line 1734, in _compile\n    compiler.compile_app(\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 1322, in compile_app\n    compile_ctx.compile(\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 716, in compile\n    page_ctx = self.hooks.eval_page(\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 268, in eval_page\n    result = hook_impl(page_fn, page=page, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/plugins/builtin.py\", line 42, in eval_page\n    component = compiler.into_component(page_fn)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 968, in into_component\n    component_called = component()\n                       ^^^^^^^^^^^\n  File \"/home/runner/work/_temp/reflex-bench/cache/deea1c3c05fcc603270547a278dc9390502f5673/lifecycle.run.backend_only.ready/f69c7cc79630/app/playground/pages/charts.py\", line 89, in charts\n    rx.plotly(data=ChartsState.figure.to(Any)),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py\", line 307, in create\n    from plotly.graph_objs.layout import Template\nModuleNotFoundError: No module named 'plotly'\nHappened while evaluating page 'charts'",
+      "traceback_tail": "    self._call(\"setup_cache\")\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/registry.py\", line 536, in _call\n    method(self.ctx)\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/suites/lifecycle.py\", line 537, in setup_cache\n    _run(ctx, [\"compile\"], cwd=app, env=_env(ctx))\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/suites/lifecycle.py\", line 244, in _run\n    run_cli(ctx.subject.python, args, cwd=cwd, env=env, timeout=PRIME_S).check()\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/drivers/app_process.py\", line 930, in check\n    raise RuntimeError(msg)\nRuntimeError: reflex compile exited with code 1:\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1552, in main\n    rv = self.invoke(ctx)\n         ^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 2032, in invoke\n    return _process_result(sub_ctx.command.invoke(sub_ctx))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1415, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 910, in invoke\n    return callback(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/reflex.py\", line 846, in compile\n    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger=\"cli_compile\")\n  File \"/home/runner/work/reflex/reflex/reflex/utils/prerequisites.py\", line 339, in get_compiled_app\n    app._compile(\n  File \"/home/runner/work/reflex/reflex/reflex/app.py\", line 1734, in _compile\n    compiler.compile_app(\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 1322, in compile_app\n    compile_ctx.compile(\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 716, in compile\n    page_ctx = self.hooks.eval_page(\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 268, in eval_page\n    result = hook_impl(page_fn, page=page, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/plugins/builtin.py\", line 42, in eval_page\n    component = compiler.into_component(page_fn)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 968, in into_component\n    component_called = component()\n                       ^^^^^^^^^^^\n  File \"/home/runner/work/_temp/reflex-bench/cache/deea1c3c05fcc603270547a278dc9390502f5673/lifecycle.run.backend_only.ready/f69c7cc79630/app/playground/pages/charts.py\", line 89, in charts\n    rx.plotly(data=ChartsState.figure.to(Any)),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py\", line 307, in create\n    from plotly.graph_objs.layout import Template\nModuleNotFoundError: No module named 'plotly'\nHappened while evaluating page 'charts'",
+      "dims": {},
+      "metrics": {
+        "process_ready": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "http_ready": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        }
+      },
+      "sample_meta": [],
+      "sample_extra": [],
+      "failed_arms": [
+        "A"
+      ]
+    },
+    {
+      "id": "lifecycle.run.dev.ready",
+      "params": {
+        "app": "playground"
+      },
+      "kind": "startup",
+      "version": "sha256:ce300710c590fc3b10bbc823a8c0a521a65f383479731d334aa4fd5deb6603e8",
+      "status": "failed",
+      "error": "RuntimeError: reflex compile exited with code 1:\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1552, in main\n    rv = self.invoke(ctx)\n         ^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 2032, in invoke\n    return _process_result(sub_ctx.command.invoke(sub_ctx))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1415, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 910, in invoke\n    return callback(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/reflex.py\", line 846, in compile\n    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger=\"cli_compile\")\n  File \"/home/runner/work/reflex/reflex/reflex/utils/prerequisites.py\", line 339, in get_compiled_app\n    app._compile(\n  File \"/home/runner/work/reflex/reflex/reflex/app.py\", line 1734, in _compile\n    compiler.compile_app(\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 1322, in compile_app\n    compile_ctx.compile(\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 716, in compile\n    page_ctx = self.hooks.eval_page(\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 268, in eval_page\n    result = hook_impl(page_fn, page=page, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/plugins/builtin.py\", line 42, in eval_page\n    component = compiler.into_component(page_fn)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 968, in into_component\n    component_called = component()\n                       ^^^^^^^^^^^\n  File \"/home/runner/work/_temp/reflex-bench/cache/deea1c3c05fcc603270547a278dc9390502f5673/lifecycle.run.dev.ready/f69c7cc79630/app/playground/pages/charts.py\", line 89, in charts\n    rx.plotly(data=ChartsState.figure.to(Any)),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py\", line 307, in create\n    from plotly.graph_objs.layout import Template\nModuleNotFoundError: No module named 'plotly'\nHappened while evaluating page 'charts'",
+      "traceback_tail": "    self._call(\"setup_cache\")\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/registry.py\", line 536, in _call\n    method(self.ctx)\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/suites/lifecycle.py\", line 537, in setup_cache\n    _run(ctx, [\"compile\"], cwd=app, env=_env(ctx))\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/suites/lifecycle.py\", line 244, in _run\n    run_cli(ctx.subject.python, args, cwd=cwd, env=env, timeout=PRIME_S).check()\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/drivers/app_process.py\", line 930, in check\n    raise RuntimeError(msg)\nRuntimeError: reflex compile exited with code 1:\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1552, in main\n    rv = self.invoke(ctx)\n         ^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 2032, in invoke\n    return _process_result(sub_ctx.command.invoke(sub_ctx))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1415, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 910, in invoke\n    return callback(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/reflex.py\", line 846, in compile\n    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger=\"cli_compile\")\n  File \"/home/runner/work/reflex/reflex/reflex/utils/prerequisites.py\", line 339, in get_compiled_app\n    app._compile(\n  File \"/home/runner/work/reflex/reflex/reflex/app.py\", line 1734, in _compile\n    compiler.compile_app(\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 1322, in compile_app\n    compile_ctx.compile(\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 716, in compile\n    page_ctx = self.hooks.eval_page(\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 268, in eval_page\n    result = hook_impl(page_fn, page=page, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/plugins/builtin.py\", line 42, in eval_page\n    component = compiler.into_component(page_fn)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 968, in into_component\n    component_called = component()\n                       ^^^^^^^^^^^\n  File \"/home/runner/work/_temp/reflex-bench/cache/deea1c3c05fcc603270547a278dc9390502f5673/lifecycle.run.dev.ready/f69c7cc79630/app/playground/pages/charts.py\", line 89, in charts\n    rx.plotly(data=ChartsState.figure.to(Any)),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py\", line 307, in create\n    from plotly.graph_objs.layout import Template\nModuleNotFoundError: No module named 'plotly'\nHappened while evaluating page 'charts'",
+      "dims": {},
+      "metrics": {
+        "process_ready": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "http_ready": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        }
+      },
+      "sample_meta": [],
+      "sample_extra": [],
+      "failed_arms": [
+        "A"
+      ]
+    },
+    {
+      "id": "lifecycle.run.preview.ready",
+      "params": {
+        "app": "playground"
+      },
+      "kind": "startup",
+      "version": "sha256:78771370f10b671885cf4a5d67c1f3af4c1462ec8a6138545439a9e6416cc3db",
+      "status": "failed",
+      "error": "RuntimeError: reflex compile exited with code 1:\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1552, in main\n    rv = self.invoke(ctx)\n         ^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 2032, in invoke\n    return _process_result(sub_ctx.command.invoke(sub_ctx))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1415, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 910, in invoke\n    return callback(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/reflex.py\", line 846, in compile\n    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger=\"cli_compile\")\n  File \"/home/runner/work/reflex/reflex/reflex/utils/prerequisites.py\", line 339, in get_compiled_app\n    app._compile(\n  File \"/home/runner/work/reflex/reflex/reflex/app.py\", line 1734, in _compile\n    compiler.compile_app(\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 1322, in compile_app\n    compile_ctx.compile(\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 716, in compile\n    page_ctx = self.hooks.eval_page(\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 268, in eval_page\n    result = hook_impl(page_fn, page=page, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/plugins/builtin.py\", line 42, in eval_page\n    component = compiler.into_component(page_fn)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 968, in into_component\n    component_called = component()\n                       ^^^^^^^^^^^\n  File \"/home/runner/work/_temp/reflex-bench/cache/deea1c3c05fcc603270547a278dc9390502f5673/lifecycle.run.preview.ready/f69c7cc79630/app/playground/pages/charts.py\", line 89, in charts\n    rx.plotly(data=ChartsState.figure.to(Any)),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py\", line 307, in create\n    from plotly.graph_objs.layout import Template\nModuleNotFoundError: No module named 'plotly'\nHappened while evaluating page 'charts'",
+      "traceback_tail": "    self._call(\"setup_cache\")\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/registry.py\", line 536, in _call\n    method(self.ctx)\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/suites/lifecycle.py\", line 537, in setup_cache\n    _run(ctx, [\"compile\"], cwd=app, env=_env(ctx))\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/suites/lifecycle.py\", line 244, in _run\n    run_cli(ctx.subject.python, args, cwd=cwd, env=env, timeout=PRIME_S).check()\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/drivers/app_process.py\", line 930, in check\n    raise RuntimeError(msg)\nRuntimeError: reflex compile exited with code 1:\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1552, in main\n    rv = self.invoke(ctx)\n         ^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 2032, in invoke\n    return _process_result(sub_ctx.command.invoke(sub_ctx))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1415, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 910, in invoke\n    return callback(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/reflex.py\", line 846, in compile\n    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger=\"cli_compile\")\n  File \"/home/runner/work/reflex/reflex/reflex/utils/prerequisites.py\", line 339, in get_compiled_app\n    app._compile(\n  File \"/home/runner/work/reflex/reflex/reflex/app.py\", line 1734, in _compile\n    compiler.compile_app(\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 1322, in compile_app\n    compile_ctx.compile(\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 716, in compile\n    page_ctx = self.hooks.eval_page(\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 268, in eval_page\n    result = hook_impl(page_fn, page=page, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/plugins/builtin.py\", line 42, in eval_page\n    component = compiler.into_component(page_fn)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 968, in into_component\n    component_called = component()\n                       ^^^^^^^^^^^\n  File \"/home/runner/work/_temp/reflex-bench/cache/deea1c3c05fcc603270547a278dc9390502f5673/lifecycle.run.preview.ready/f69c7cc79630/app/playground/pages/charts.py\", line 89, in charts\n    rx.plotly(data=ChartsState.figure.to(Any)),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py\", line 307, in create\n    from plotly.graph_objs.layout import Template\nModuleNotFoundError: No module named 'plotly'\nHappened while evaluating page 'charts'",
+      "dims": {},
+      "metrics": {
+        "process_ready": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "http_ready": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        }
+      },
+      "sample_meta": [],
+      "sample_extra": [],
+      "failed_arms": [
+        "A"
+      ]
+    },
+    {
+      "id": "lifecycle.run.prod.ready",
+      "params": {
+        "app": "playground"
+      },
+      "kind": "startup",
+      "version": "sha256:903940a5dc3b26a701428dd95e6681bb38dbbcb850a166d5ad6d7ba60375d6e7",
+      "status": "failed",
+      "error": "RuntimeError: reflex compile exited with code 1:\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1552, in main\n    rv = self.invoke(ctx)\n         ^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 2032, in invoke\n    return _process_result(sub_ctx.command.invoke(sub_ctx))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1415, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 910, in invoke\n    return callback(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/reflex.py\", line 846, in compile\n    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger=\"cli_compile\")\n  File \"/home/runner/work/reflex/reflex/reflex/utils/prerequisites.py\", line 339, in get_compiled_app\n    app._compile(\n  File \"/home/runner/work/reflex/reflex/reflex/app.py\", line 1734, in _compile\n    compiler.compile_app(\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 1322, in compile_app\n    compile_ctx.compile(\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 716, in compile\n    page_ctx = self.hooks.eval_page(\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 268, in eval_page\n    result = hook_impl(page_fn, page=page, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/plugins/builtin.py\", line 42, in eval_page\n    component = compiler.into_component(page_fn)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 968, in into_component\n    component_called = component()\n                       ^^^^^^^^^^^\n  File \"/home/runner/work/_temp/reflex-bench/cache/deea1c3c05fcc603270547a278dc9390502f5673/lifecycle.run.prod.ready/f69c7cc79630/app/playground/pages/charts.py\", line 89, in charts\n    rx.plotly(data=ChartsState.figure.to(Any)),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py\", line 307, in create\n    from plotly.graph_objs.layout import Template\nModuleNotFoundError: No module named 'plotly'\nHappened while evaluating page 'charts'",
+      "traceback_tail": "    self._call(\"setup_cache\")\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/registry.py\", line 536, in _call\n    method(self.ctx)\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/suites/lifecycle.py\", line 537, in setup_cache\n    _run(ctx, [\"compile\"], cwd=app, env=_env(ctx))\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/suites/lifecycle.py\", line 244, in _run\n    run_cli(ctx.subject.python, args, cwd=cwd, env=env, timeout=PRIME_S).check()\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/drivers/app_process.py\", line 930, in check\n    raise RuntimeError(msg)\nRuntimeError: reflex compile exited with code 1:\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1552, in main\n    rv = self.invoke(ctx)\n         ^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 2032, in invoke\n    return _process_result(sub_ctx.command.invoke(sub_ctx))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1415, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 910, in invoke\n    return callback(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/reflex.py\", line 846, in compile\n    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger=\"cli_compile\")\n  File \"/home/runner/work/reflex/reflex/reflex/utils/prerequisites.py\", line 339, in get_compiled_app\n    app._compile(\n  File \"/home/runner/work/reflex/reflex/reflex/app.py\", line 1734, in _compile\n    compiler.compile_app(\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 1322, in compile_app\n    compile_ctx.compile(\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 716, in compile\n    page_ctx = self.hooks.eval_page(\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 268, in eval_page\n    result = hook_impl(page_fn, page=page, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/plugins/builtin.py\", line 42, in eval_page\n    component = compiler.into_component(page_fn)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 968, in into_component\n    component_called = component()\n                       ^^^^^^^^^^^\n  File \"/home/runner/work/_temp/reflex-bench/cache/deea1c3c05fcc603270547a278dc9390502f5673/lifecycle.run.prod.ready/f69c7cc79630/app/playground/pages/charts.py\", line 89, in charts\n    rx.plotly(data=ChartsState.figure.to(Any)),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py\", line 307, in create\n    from plotly.graph_objs.layout import Template\nModuleNotFoundError: No module named 'plotly'\nHappened while evaluating page 'charts'",
+      "dims": {},
+      "metrics": {
+        "process_ready": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "http_ready": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        }
+      },
+      "sample_meta": [],
+      "sample_extra": [],
+      "failed_arms": [
+        "A"
+      ]
+    }
+  ]
+}
