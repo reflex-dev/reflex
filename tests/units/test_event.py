@@ -1,3 +1,4 @@
+import inspect
 import json
 import shutil
 import subprocess
@@ -1264,6 +1265,19 @@ def test_event_chain_create_lambda_rejects_non_union_callable_var():
             cast(LambdaEventCallback[Any], return_plain_callable_var),
             args_spec=lambda e: [e],
         )
+
+
+def test_lambda_event_callback_only_requires_a_readable_code_object():
+    """Bound methods expose a read-only ``__code__``, so the protocol must not need a settable one."""
+
+    class Handlers:
+        def on_value(self, value: str) -> None: ...
+
+    assert Handlers().on_value.__code__ is Handlers.on_value.__code__
+
+    code = inspect.getattr_static(LambdaEventCallback, "__code__")
+    assert isinstance(code, property)
+    assert code.fset is None
 
 
 def test_event_chain_create_wraps_plain_function_var_kwargs():
