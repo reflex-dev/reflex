@@ -2154,6 +2154,71 @@ async def test_hydrate_probes_nested_storage_states_once(
     assert child_storage_probes == 1
 
 
+async def test_hydrate_correction_skips_unrelated_uncached_computed_vars(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A stale storage correction does not reevaluate unrelated state branches.
+
+    Args:
+        wired_app: The app wired to the state manager.
+        real_base_state_processor: The event processor.
+        token: The client token.
+    """
+    unrelated_computations = 0
+
+    class StorageState(State):
+        value: str = rx.LocalStorage("")
+
+        @_override_base_method
+        def get_delta(self) -> Delta:
+            delta = super().get_delta()
+            key = "value" + FIELD_MARKER
+            subdelta = delta.get(self.get_full_name(), {})
+            if subdelta.get(key) == "stale":
+                subdelta[key] = "fresh"
+            return delta
+
+    class UnrelatedState(State):
+        @rx.var(cache=False)
+        def value(self) -> str:
+            nonlocal unrelated_computations
+            unrelated_computations += 1
+            return "unchanged"
+
+    wired_app.add_page(
+        lambda: rx.text(StorageState.value, UnrelatedState.value), route="/"
+    )
+    wired_app._compile_page("index")
+    boot_name = Event.from_event_type(State.hydrate_and_load())[0].name  # pyright: ignore[reportCallIssue]
+
+    async def hydrate(value: str) -> int:
+        """Hydrate with a storage value and return unrelated computations.
+
+        Args:
+            value: The browser-provided storage value.
+
+        Returns:
+            The number of unrelated computed-var evaluations.
+        """
+        nonlocal unrelated_computations
+        unrelated_computations = 0
+        payload = {
+            "vars": {f"{StorageState.get_full_name()}.value{FIELD_MARKER}": value}
+        }
+        async with real_base_state_processor as processor:
+            await (
+                await processor.enqueue(token, _boot_event(boot_name, payload))
+            ).wait_all()
+        return unrelated_computations
+
+    fresh_computations = await hydrate("fresh")
+    stale_computations = await hydrate("stale")
+
+    assert stale_computations == fresh_computations
+
+
 @pytest.mark.parametrize(
     "processor_state_manager", ["in_process", "redis"], indirect=True
 )

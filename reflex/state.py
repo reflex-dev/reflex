@@ -126,6 +126,15 @@ def _state_ancestors(state: BaseState) -> Iterator[BaseState]:
         yield state
 
 
+def _dirty_delta_roots(state: BaseState) -> Iterator[BaseState]:
+    """Yield the highest dirty states whose deltas include their dirty descendants."""
+    if state.dirty_vars:
+        yield state
+        return
+    for substate_name in state.dirty_substates:
+        yield from _dirty_delta_roots(state.substates[substate_name])
+
+
 @functools.cache
 def _stale_pickle_keys(cls: type[BaseState]) -> frozenset[str]:
     """Get the keys of pickles that are not restored into the instance dict.
@@ -2498,7 +2507,18 @@ class State(BaseState):
                 for var_state, var_name in [*changed_vars, *mutated_vars]:
                     var_state.dirty_vars.add(var_name)
                     var_state._mark_dirty((var_name,))
-                corrected_delta = await self._get_resolved_delta()
+                correction_states = list(_dirty_delta_roots(self))
+                if any(
+                    type(ancestor).get_delta is not BaseState.get_delta
+                    for state in correction_states
+                    for ancestor in _state_ancestors(state)
+                ):
+                    correction_states = [self]
+                corrected_delta: Delta = {}
+                for state in correction_states:
+                    state_delta = await state._get_resolved_delta()
+                    for state_name, changes in state_delta.items():
+                        corrected_delta.setdefault(state_name, {}).update(changes)
                 for state_name, changes in corrected_delta.items():
                     correction_delta.setdefault(state_name, {}).update(changes)
             if ctx.emit_delta_impl is not None and correction_delta:
