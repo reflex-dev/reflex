@@ -27,6 +27,14 @@ def test_format_queue_events_empty():
     assert str(format.format_queue_events(None)) == "(() => null)"
 
 
+def test_format_queue_events_accepts_a_tuple():
+    """A tuple of events formats like a list of them."""
+    events = (rx.console_log("a"), rx.console_log("b"))
+    assert str(format.format_queue_events(events)) == str(
+        format.format_queue_events(list(events))
+    )
+
+
 def test_format_queue_events_args_spec():
     """The args spec names the callback parameters."""
     var = format.format_queue_events(

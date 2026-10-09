@@ -3,6 +3,7 @@
 This module provides a comprehensive intro form that validates company emails.
 """
 
+from collections.abc import Sequence
 from typing import Any
 
 import reflex as rx
@@ -288,12 +289,23 @@ def intro_form(
 
     Returns:
         A Reflex form component with all intro form fields
+
+    Raises:
+        TypeError: If on_submit is a string rather than events.
     """
     prefix = id_prefix or get_unique_variable_name()
     email_id = f"{prefix}_user_email"
 
+    # A str is a Sequence too, but never a list of events.
+    if isinstance(on_submit, str):
+        msg = f"on_submit takes events, not the string {on_submit!r}."
+        raise TypeError(msg)
     extra: list[IndividualEventType[dict[str, Any]]] = (
-        on_submit if isinstance(on_submit, list) else [on_submit] if on_submit else []
+        list(on_submit)
+        if isinstance(on_submit, Sequence)
+        else [on_submit]
+        if on_submit
+        else []
     )
 
     form = rx.el.form(

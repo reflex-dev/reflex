@@ -1,9 +1,9 @@
-"""Calling an event handler on the state class types as the event it creates."""
+"""Inferred types for `reflex_base.event` that are part of the public contract."""
 
 from collections.abc import Callable
 from typing import Any, assert_type
 
-from reflex_base.event import EventCallback, event
+from reflex_base.event import EventCallback, EventSpec, EventType, event
 from reflex_base.vars.base import Var
 
 from reflex.state import State
@@ -46,3 +46,15 @@ assert_type(_HandlerState.four(1, "a", True), EventCallback[float])
 # A handler is a callable of its arguments, so it can be passed where one is expected.
 _one: Callable[[int], Any] = _HandlerState.one
 _two: Callable[[int, str], Any] = _HandlerState.two
+
+
+def _event_prop(value: EventType[()]) -> None: ...
+
+
+def _event_sequences(
+    specs: list[EventSpec], handlers: tuple[EventCallback[()], ...]
+) -> None:
+    # An event prop takes a list variable of events, not only a list literal,
+    # and a tuple of them.
+    _event_prop(specs)
+    _event_prop(handlers)

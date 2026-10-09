@@ -50,6 +50,7 @@ from reflex_base.utils.types import (
     ArgsSpec,
     GenericType,
     Unset,
+    is_non_string_sequence,
     safe_issubclass,
     typehint_issubclass,
 )
@@ -104,7 +105,7 @@ class Event:
     @classmethod
     def from_event_type(
         cls,
-        events: "IndividualEventType | list[IndividualEventType] | None",
+        events: "IndividualEventType | Sequence[IndividualEventType] | None",
         *,
         router_data: dict[str, Any] | None = None,
     ) -> "list[Event]":
@@ -121,8 +122,14 @@ class Event:
         if events is None:
             return []
 
-        # If the handler returns a single event, wrap it in a list.
-        if not isinstance(events, list):
+        # If the handler returns a single event, wrap it in a list. The single
+        # event kinds come first: they are the common case, and cheaper to check
+        # than the Sequence ABC.
+        if (
+            isinstance(events, (Event, EventSpec))
+            or callable(events)
+            or not is_non_string_sequence(events)
+        ):
             events = [events]
 
         # Fix the events created by the handler.
@@ -1021,7 +1028,7 @@ class EventChain(EventActionsMixin):
         events: list[EventSpec | EventVar | FunctionVar] = []
 
         # If the input is a list of event handlers, create an event chain.
-        if isinstance(value, list):
+        if is_non_string_sequence(value):
             for v in value:
                 if isinstance(v, (EventHandler, EventSpec)):
                     # Call the event handler to get the event.
@@ -2412,9 +2419,9 @@ def call_event_fn(
     # Call the function with the parsed args.
     out = fn(*[*parsed_args][:number_of_fn_args])
 
-    # Normalize common heterogeneous event collections into individual events
-    # while keeping other scalar values for validation below.
-    out = list(out) if isinstance(out, (list, tuple)) else [out]
+    # A sequence holds individual events; wrap any other value for validation below.
+    if not is_non_string_sequence(out):
+        out = [out]
 
     def _dispatch_mixed_event_var(event_like_var: Var) -> FunctionVar:
         """Wrap a mixed event-like Var into a callable frontend dispatcher.
@@ -2526,7 +2533,7 @@ def get_handler_args(
 
 
 def fix_events(
-    events: list[EventSpec | EventHandler] | None,
+    events: Sequence[EventSpec | EventHandler] | None,
     token: str | None = None,
     router_data: dict[str, Any] | None = None,
 ) -> list[Event]:
@@ -2558,7 +2565,7 @@ def fix_events(
         return []
 
     # If the handler returns a single event, wrap it in a list.
-    if not isinstance(events, list):
+    if not is_non_string_sequence(events):
         events = [events]
 
     # Fix the events created by the handler.
@@ -3038,7 +3045,10 @@ LAMBDA_OR_STATE = TypeAliasType(
     type_params=(ARGS,),
 )
 
-ItemOrList = V | list[V]
+
+# A Sequence rather than a list: lists are invariant, so a `list[EventSpec]`
+# variable would not count as a list of every kind of event.
+ItemOrList = V | Sequence[V]
 
 BASIC_EVENT_TYPES = TypeAliasType(
     "BASIC_EVENT_TYPES", EventSpec | EventHandler | Var[Any], type_params=()
