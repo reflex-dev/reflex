@@ -1,6 +1,7 @@
 """Tests for development backend launchers in ``reflex.utils.exec``."""
 
 import builtins
+import gc
 import logging
 import multiprocessing
 import os
@@ -19,6 +20,7 @@ from reflex_base.environment import environment
 from reflex_base.utils import serializers
 
 from reflex.utils import exec as exec_utils
+from reflex.utils import prerequisites, telemetry
 from reflex.utils.precompressed_staticfiles import PrecompressedStaticFiles
 
 DEV_BACKEND_RELOAD_ENV_NAME = environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.name
@@ -396,6 +398,216 @@ def test_arbitrate_ssr_env_var_wins(monkeypatch: pytest.MonkeyPatch):
     assert exec_utils.arbitrate_ssr(True) is False
 
 
+def _fake_granian_prod(
+    mocker: MockerFixture, calls: list[str], telemetry_stopped: bool = True
+):
+    """Patch granian and the prod launcher's collaborators, recording call order."""
+    granian_server = pytest.importorskip("granian.server")
+
+    class FakeGranian:
+        def __init__(self, *_args, **_kwargs):
+            pass
+
+        def startup(self, *_args):
+            calls.append("workers")
+
+        def serve(self):
+            calls.append("serve")
+            self.startup(None, None)
+
+    mocker.patch.object(granian_server, "Server", FakeGranian)
+    mocker.patch.object(
+        exec_utils, "get_app_instance_from_file", return_value="app:app"
+    )
+    mocker.patch.object(exec_utils, "_get_backend_workers", return_value=1)
+    mocker.patch.object(
+        multiprocessing,
+        "set_start_method",
+        side_effect=lambda method, force=False: calls.append(f"start:{method}"),
+    )
+    mocker.patch.object(
+        prerequisites, "get_app", side_effect=lambda: calls.append("preload")
+    )
+    mocker.patch.object(
+        serializers,
+        "_prepare_serializers_for_fork",
+        side_effect=lambda: calls.append("serializers"),
+    )
+    mocker.patch.object(
+        telemetry,
+        "_shutdown_executor",
+        side_effect=lambda: calls.append("drain") or telemetry_stopped,
+    )
+    mocker.patch.object(gc, "freeze", side_effect=lambda: calls.append("freeze"))
+
+
+def test_run_granian_backend_prod_preloads_app_before_forking(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """With fork, the app is imported, telemetry drained and the heap frozen first.
+
+    ``on_started`` runs only once the workers have been started.
+    """
+    monkeypatch.setenv(environment.REFLEX_BACKEND_START_METHOD.name, "fork")
+    calls: list[str] = []
+    _fake_granian_prod(mocker, calls)
+
+    exec_utils.run_granian_backend_prod(
+        host="0.0.0.0",
+        port=8000,
+        loglevel=exec_utils.LogLevel.INFO,
+        on_started=lambda: calls.append("started"),
+    )
+
+    assert calls == [
+        "start:fork",
+        "preload",
+        "serializers",
+        "drain",
+        "freeze",
+        "serve",
+        "workers",
+        "started",
+    ]
+
+
+def test_run_granian_backend_prod_spawns_when_telemetry_is_stuck(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """A telemetry thread that outlives the drain makes forking unsafe.
+
+    The app is still imported under the requested start method, so anything it
+    creates at import time uses the same context as before the fallback.
+    """
+    monkeypatch.setenv(environment.REFLEX_BACKEND_START_METHOD.name, "fork")
+    calls: list[str] = []
+    _fake_granian_prod(mocker, calls, telemetry_stopped=False)
+
+    exec_utils.run_granian_backend_prod(
+        host="0.0.0.0", port=8000, loglevel=exec_utils.LogLevel.INFO
+    )
+
+    assert calls == [
+        "start:fork",
+        "preload",
+        "serializers",
+        "drain",
+        "start:spawn",
+        "serve",
+        "workers",
+    ]
+
+
+def test_run_granian_backend_prod_spawn_skips_preload(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """Spawned workers re-import the app, so the supervisor does not load it."""
+    monkeypatch.setenv(environment.REFLEX_BACKEND_START_METHOD.name, "spawn")
+    calls: list[str] = []
+    _fake_granian_prod(mocker, calls)
+
+    exec_utils.run_granian_backend_prod(
+        host="0.0.0.0", port=8000, loglevel=exec_utils.LogLevel.INFO
+    )
+
+    assert calls == ["start:spawn", "serve", "workers"]
+
+
+def test_run_granian_backend_prod_custom_target_only_freezes(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """A non-reflex target lives in an already-imported module."""
+    monkeypatch.setenv(environment.REFLEX_BACKEND_START_METHOD.name, "fork")
+    calls: list[str] = []
+    _fake_granian_prod(mocker, calls)
+
+    exec_utils.run_granian_backend_prod(
+        host="0.0.0.0",
+        port=8000,
+        loglevel=exec_utils.LogLevel.INFO,
+        app_target="reflex.utils.exec:_frontend_prod_app",
+    )
+
+    assert calls == ["start:fork", "serializers", "drain", "freeze", "serve", "workers"]
+
+
+@pytest.mark.parametrize("use_granian", [True, False])
+def test_run_backend_prod_forwards_on_started(mocker: MockerFixture, use_granian: bool):
+    """The prod backend hands ``on_started`` to whichever server it runs."""
+    mocker.patch.object(exec_utils, "should_use_granian", return_value=use_granian)
+    launcher = mocker.patch.object(
+        exec_utils,
+        "run_granian_backend_prod" if use_granian else "run_uvicorn_backend_prod",
+    )
+    on_started = mocker.Mock()
+
+    exec_utils.run_backend_prod(
+        "0.0.0.0", 8000, exec_utils.LogLevel.INFO, on_started=on_started
+    )
+
+    launcher.assert_called_once_with(
+        "0.0.0.0", 8000, exec_utils.LogLevel.INFO, on_started=on_started
+    )
+
+
+@pytest.mark.parametrize("use_granian", [True, False])
+def test_run_frontend_prod_forwards_on_started(
+    mocker: MockerFixture, use_granian: bool
+):
+    """The prod frontend server hands ``on_started`` to its launcher."""
+    mocker.patch.object(exec_utils, "should_use_granian", return_value=use_granian)
+    launcher = mocker.patch.object(
+        exec_utils,
+        "run_granian_backend_prod" if use_granian else "run_uvicorn_backend_prod",
+    )
+    on_started = mocker.Mock()
+
+    exec_utils.run_frontend_prod("0.0.0.0", 3000, on_started=on_started)
+
+    assert launcher.call_args.kwargs["on_started"] is on_started
+
+
+def test_run_uvicorn_backend_prod_calls_on_started_before_launch(
+    mocker: MockerFixture,
+):
+    """The server runs in a separate interpreter, so the callback runs first."""
+    calls: list[str] = []
+    mocker.patch.object(exec_utils, "_get_backend_workers", return_value=1)
+    mocker.patch(
+        "reflex.utils.processes.new_process",
+        side_effect=lambda *_args, **_kwargs: calls.append("launch"),
+    )
+
+    exec_utils.run_uvicorn_backend_prod(
+        "0.0.0.0",
+        8000,
+        exec_utils.LogLevel.INFO,
+        app_target="app:app",
+        on_started=lambda: calls.append("started"),
+    )
+
+    assert calls == ["started", "launch"]
+
+
+@pytest.mark.parametrize(
+    ("default_method", "expected"),
+    [("fork", "fork"), ("forkserver", "fork"), ("spawn", None)],
+)
+def test_backend_start_method_follows_platform_default(
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    default_method: str,
+    expected: str | None,
+):
+    """Fork is forced only where the interpreter already defaults to forking."""
+    monkeypatch.delenv(environment.REFLEX_BACKEND_START_METHOD.name, raising=False)
+    mocker.patch.object(
+        multiprocessing, "get_start_method", return_value=default_method
+    )
+
+    assert exec_utils._backend_start_method() == expected
+
+
 def test_get_routes_manifest_router_missing_manifest(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
 ):
@@ -596,6 +808,7 @@ def test_run_granian_backend_prod_json_logs_in_json_mode(
         exec_utils, "get_app_instance_from_file", return_value="app:app"
     )
     mocker.patch.object(exec_utils, "_get_backend_workers", return_value=1)
+    mocker.patch.object(exec_utils, "_backend_start_method", return_value=None)
     granian_server = pytest.importorskip("granian.server")
     options: dict[str, object] = {}
 

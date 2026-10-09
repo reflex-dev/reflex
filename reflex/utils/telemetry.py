@@ -7,6 +7,7 @@ import logging
 import multiprocessing
 import os
 import platform
+import subprocess
 import sys
 import threading
 import urllib.request
@@ -22,6 +23,7 @@ from reflex_base import constants
 from reflex_base.config import get_config
 from reflex_base.environment import environment
 from reflex_base.registry import RegistrationContext
+from reflex_base.utils import log
 from reflex_base.utils.decorator import once, once_unless_none
 from reflex_base.utils.exceptions import ReflexError
 
@@ -476,6 +478,9 @@ def _send(
 
 _executor_lock = threading.Lock()
 _executor: ThreadPoolExecutor | None = None
+# Set by _shutdown_executor(): a process that is about to fork, and may fork
+# again later, never starts another pool (and thread). Forked children reset it.
+_paused = False
 
 
 def _get_telemetry_executor() -> ThreadPoolExecutor:
@@ -490,15 +495,159 @@ def _get_telemetry_executor() -> ThreadPoolExecutor:
 
     Returns:
         The shared single-worker telemetry executor.
+
+    Raises:
+        RuntimeError: When the pool is stopped for a pending fork.
     """
     global _executor
     if _executor is None:
         with _executor_lock:
+            if _paused:
+                msg = "Telemetry is paused for a pending fork."
+                raise RuntimeError(msg)
             if _executor is None:
                 _executor = ThreadPoolExecutor(
                     max_workers=1, thread_name_prefix="reflex-telemetry"
                 )
     return _executor
+
+
+def _shutdown_executor(timeout: float = 2) -> bool:
+    """Deliver queued telemetry and stop the worker thread for good.
+
+    Called by a supervisor before it forks workers, so no telemetry thread is
+    alive at that fork or any later one (e.g. a worker respawn). From then on
+    in-process sends are dropped; use ``_send_detached`` instead. A send that
+    stalls past the timeout (e.g. on a DNS lookup) is abandoned so it cannot
+    hold up startup, and the caller must then not fork.
+
+    Args:
+        timeout: Maximum number of seconds to wait for queued telemetry.
+
+    Returns:
+        Whether the worker thread has stopped, i.e. whether forking is safe.
+    """
+    global _executor, _paused
+    with _executor_lock:
+        _paused = True
+        executor = _executor
+    if executor is None:
+        return True
+    drained = _flush(timeout)
+    if not drained:
+        logger.debug(f"Telemetry did not drain within {timeout}s before forking.")
+    # Stay published while stopping: a racing send() then fails to submit (and
+    # is suppressed) instead of starting a second pool before the fork.
+    executor.shutdown(wait=drained, cancel_futures=True)
+    stopped = not any(thread.is_alive() for thread in executor._threads)
+    with _executor_lock:
+        if _executor is executor:
+            _executor = None
+        if not stopped:
+            # The caller will not fork with a live thread, so sends may resume.
+            _paused = False
+    return stopped
+
+
+def _reset_executor_after_fork() -> None:
+    """Drop the inherited executor and lock; the child owns neither's thread."""
+    global _executor, _executor_lock, _paused
+    _executor_lock = threading.Lock()
+    _executor = None
+    _paused = False
+
+
+if hasattr(os, "register_at_fork"):
+    os.register_at_fork(after_in_child=_reset_executor_after_fork)
+
+
+# Run by _send_detached in a fresh interpreter (argv: event, mode). In
+# "detach" mode it forks once more and exits, so the supervisor reaps it at
+# once and the sender is reparented to whoever reaps orphans.
+_DETACH = """\
+import os
+import sys
+
+if sys.argv[2] == "detach":
+    if os.fork():
+        os._exit(0)
+    os.setsid()
+"""
+_SEND_EVENT = """\
+from reflex.utils import telemetry
+
+telemetry._process_event(sys.argv[1], True)
+telemetry._flush(30)
+os._exit(0)
+"""
+# Seconds the supervisor waits for its direct child before killing it.
+_DETACHED_TIMEOUT = 10
+_PR_GET_CHILD_SUBREAPER = 37
+
+
+def _reaps_orphans() -> bool:
+    """Report whether a detached sender could be left unreaped.
+
+    True as PID 1 (a container without an init) or as a Linux child
+    subreaper, which inherit the sender but never reap it as a server
+    supervisor, and under reflex's own ``reflex run --json`` output
+    supervisor running as PID 1, which inherits it but only waits for its own
+    child. Any other PID 1 parent is taken to be an init that reaps orphans.
+
+    Returns:
+        Whether orphans of this process may be left as zombies.
+    """
+    if os.getpid() == 1 or (os.getppid() == 1 and log.is_output_supervised()):
+        return True
+    if sys.platform != "linux":
+        return False
+    import ctypes
+
+    flag = ctypes.c_int()
+    with suppress(Exception):
+        prctl = ctypes.CDLL(None, use_errno=True).prctl
+        if prctl(_PR_GET_CHILD_SUBREAPER, ctypes.byref(flag), 0, 0, 0) == 0:
+            return bool(flag.value)
+    return False
+
+
+def _send_detached(event: str) -> None:
+    """Send an event without a telemetry thread in a process that forks.
+
+    A supervisor that paused telemetry to fork workers safely hands the event
+    to a fresh interpreter, so it never gains a thread or waits on the
+    network. The direct child exits right after detaching the sender, so no
+    zombie is left, and ``close_fds`` keeps the server's sockets out of it.
+    Where orphans would come back to this process (PID 1, a subreaper), the
+    direct child sends itself and is waited for instead. A child that
+    outlives ``_DETACHED_TIMEOUT`` is killed and reaped. Any other process
+    sends in-process without waiting on a child.
+
+    Args:
+        event: The event name.
+    """
+    with _executor_lock:
+        paused = _paused
+    if not paused or not hasattr(os, "fork"):
+        # Nothing forks this process with a telemetry thread alive.
+        send(event)
+        return
+    with suppress(Exception):
+        if not get_config().telemetry_enabled:
+            return
+        mode = "attached" if _reaps_orphans() else "detach"
+        child = subprocess.Popen(
+            [sys.executable, "-c", _DETACH + _SEND_EVENT, event, mode],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            close_fds=True,
+        )
+        try:
+            child.wait(timeout=_DETACHED_TIMEOUT)
+        except subprocess.TimeoutExpired:
+            child.kill()
+            child.wait()
 
 
 def _current_registration_context() -> RegistrationContext | None:
@@ -571,10 +720,12 @@ def _submit(fn: Callable[..., Any], /, *args, **kwargs) -> None:
         kwargs: Keyword arguments forwarded to ``fn``.
     """
     registration_context = _current_registration_context()
-    with suppress(Exception):
+    try:
         _get_telemetry_executor().submit(
             _run_suppressed, registration_context, fn, *args, **kwargs
         )
+    except Exception as err:
+        logger.debug(f"Dropped telemetry event: {err}")
 
 
 def _flush(timeout: float | None = None) -> bool:

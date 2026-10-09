@@ -15,6 +15,7 @@ import click.testing
 import psutil
 import pytest
 from pytest_mock import MockerFixture
+from reflex_base import constants
 
 from reflex import reflex
 from reflex.testing import DEFAULT_TIMEOUT
@@ -169,6 +170,44 @@ def test_compile_app_worker_flushes_telemetry_on_failure(mocker):
         reflex._compile_app_worker(app_task, (), {})
 
     flush.assert_called_once_with()
+
+
+@pytest.mark.parametrize(
+    ("running_mode", "launcher"),
+    [
+        (constants.RunningMode.BACKEND_ONLY, "run_backend_prod"),
+        (constants.RunningMode.FRONTEND_ONLY, "run_frontend_prod"),
+    ],
+)
+def test_run_prod_sends_telemetry_once_the_server_started(
+    mocker, running_mode: constants.RunningMode, launcher: str
+):
+    """The run-prod event waits for the server and leaves the supervisor.
+
+    Sending it from another process keeps the supervisor, which granian may
+    fork again to respawn workers, free of telemetry threads.
+    """
+    from reflex.utils import build, exec, processes, telemetry
+
+    send = mocker.patch.object(telemetry, "_send_detached")
+    mocker.patch.object(reflex, "get_config")
+    mocker.patch.object(reflex, "_compile_app")
+    mocker.patch.object(reflex, "_skip_compile")
+    mocker.patch.object(build, "setup_frontend_prod")
+    mocker.patch.object(processes, "atexit_handler")
+    mocker.patch("atexit.register")
+    mocker.patch.object(exec, "notify_app_running")
+    mocker.patch.object(exec, "notify_frontend")
+
+    def serve(*_args, on_started):
+        send.assert_not_called()
+        on_started()
+
+    mocker.patch.object(exec, launcher, side_effect=serve)
+
+    reflex._run_prod(running_mode, 8000, "127.0.0.1")
+
+    send.assert_called_once_with("run-prod")
 
 
 def test_cloud_commands_registered():
