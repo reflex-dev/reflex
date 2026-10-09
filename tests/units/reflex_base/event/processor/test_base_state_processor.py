@@ -2102,6 +2102,58 @@ async def test_hydrate_reconciles_json_distinct_storage_values(
         assert storage_state.value is True
 
 
+async def test_hydrate_probes_nested_storage_states_once(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A parent probe already visits child states that also own storage vars.
+
+    Args:
+        wired_app: The app wired to the state manager.
+        real_base_state_processor: The event processor.
+        token: The client token.
+    """
+    child_storage_probes = 0
+
+    class ParentStorageState(State):
+        parent_value: str = rx.LocalStorage("")
+
+    class ChildStorageState(ParentStorageState):
+        child_value: str = rx.LocalStorage("")
+
+        @rx.var(cache=False)
+        def uncached_value(self) -> str:
+            return self.child_value
+
+        @_override_base_method
+        def get_delta(self) -> Delta:
+            nonlocal child_storage_probes
+            if "child_value" in self.dirty_vars:
+                child_storage_probes += 1
+            return super().get_delta()
+
+    wired_app.add_page(
+        lambda: rx.text(ParentStorageState.parent_value, ChildStorageState.child_value),
+        route="/",
+    )
+    wired_app._compile_page("index")
+    boot_name = Event.from_event_type(State.hydrate_and_load())[0].name  # pyright: ignore[reportCallIssue]
+    payload = {
+        "vars": {
+            f"{ParentStorageState.get_full_name()}.parent_value{FIELD_MARKER}": "parent",
+            f"{ChildStorageState.get_full_name()}.child_value{FIELD_MARKER}": "child",
+        }
+    }
+
+    async with real_base_state_processor as processor:
+        await (
+            await processor.enqueue(token, _boot_event(boot_name, payload))
+        ).wait_all()
+
+    assert child_storage_probes == 1
+
+
 @pytest.mark.parametrize(
     "processor_state_manager", ["in_process", "redis"], indirect=True
 )

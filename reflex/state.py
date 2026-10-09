@@ -2449,7 +2449,15 @@ class State(BaseState):
             # Follow-up corrections must be allowed to write browser storage.
             self.dirty_vars.discard(constants.CompileVars.IS_HYDRATED)
         if applied:
-            storage_states = {id(state): state for state, _ in applied}
+            applied_states = {id(state): state for state, _ in applied}
+            storage_states = {
+                state_id: state
+                for state_id, state in applied_states.items()
+                if not any(
+                    id(ancestor) in applied_states
+                    for ancestor in _state_ancestors(state)
+                )
+            }
             probe_root = any(
                 type(ancestor).get_delta is not BaseState.get_delta
                 for state in storage_states.values()
