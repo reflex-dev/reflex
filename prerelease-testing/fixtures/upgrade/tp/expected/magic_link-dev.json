@@ -1,0 +1,53 @@
+{
+"source": "a5 pass (reflex 0.10.0a5) magic_link dev; trimmed to what bin/cmp_checks.py and bin/compare_console.py read",
+"checks": [
+{
+"name": "login form renders",
+"ok": true
+},
+{
+"name": "empty email rejected by package",
+"ok": true
+},
+{
+"name": "redirect to /check-your-email happened",
+"ok": true
+},
+{
+"name": "stays on /check-your-email (no immediate bounce to /)",
+"ok": false
+},
+{
+"name": "magic link printed by dev server",
+"ok": true
+},
+{
+"name": "magic link logs in and redirects to / (tab2)",
+"ok": true
+},
+{
+"name": "tab1 (check-your-email) follows via LocalStorage sync + moment interval",
+"ok": true
+},
+{
+"name": "OTP cannot be reused (fresh context)",
+"ok": true
+},
+{
+"name": "logout shows login form (tab1)",
+"ok": true
+},
+{
+"name": "tab2 logged out via LocalStorage sync",
+"ok": true
+},
+{
+"name": "per-IP rate limit eventually triggers",
+"ok": true
+}
+],
+"console_all": [],
+"anomalies": {
+"page_errors": []
+}
+}

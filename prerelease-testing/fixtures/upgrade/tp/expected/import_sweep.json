@@ -1,0 +1,117 @@
+{
+ "source": "reflex 0.10.0 (compact-upgrade-tp venv, 2026-10-09), = the a5 pass; trimmed for bin/cmp_sweep.py",
+ "results": {
+  "reflex_local_auth": {
+   "status": "ok",
+   "error": null,
+   "warnings": []
+  },
+  "reflex_global_hotkey": {
+   "status": "ok",
+   "error": null,
+   "warnings": []
+  },
+  "reflex_google_auth": {
+   "status": "ok",
+   "error": null,
+   "warnings": []
+  },
+  "reflex_magic_link_auth": {
+   "status": "ok",
+   "error": null,
+   "warnings": []
+  },
+  "reflex_intersection_observer": {
+   "status": "ok",
+   "error": null,
+   "warnings": []
+  },
+  "reflex_audio_capture": {
+   "status": "ok",
+   "error": null,
+   "warnings": []
+  },
+  "reflex_webcam": {
+   "status": "ok",
+   "error": null,
+   "warnings": []
+  },
+  "reflex_simpleicons": {
+   "status": "ok",
+   "error": null,
+   "warnings": []
+  },
+  "reflex_monaco": {
+   "status": "ok",
+   "error": null,
+   "warnings": []
+  },
+  "reflex_calendar": {
+   "status": "ok",
+   "error": null,
+   "warnings": []
+  },
+  "reflex_pyplot": {
+   "status": "ok",
+   "error": null,
+   "warnings": []
+  },
+  "reflex_chakra": {
+   "status": "error",
+   "error": "ImportError: cannot import name '_issubclass' from 'reflex.utils.types' (<venv>/lib/python3.12/site-packages/reflex/utils/types.py)",
+   "warnings": []
+  },
+  "reflex_ag_grid": {
+   "status": "error",
+   "error": "ModuleNotFoundError: No module named 'reflex.base'",
+   "warnings": []
+  },
+  "reflex_google_recaptcha_v2": {
+   "status": "ok",
+   "error": null,
+   "warnings": []
+  },
+  "reflex_clerk": {
+   "status": "ok",
+   "error": null,
+   "warnings": [
+    "AuthlibDeprecationWarning: authlib.jose module is deprecated, please use joserfc instead.\nIt will be compatible before version 2.0.0. "
+   ]
+  },
+  "reflex_motion": {
+   "status": "ok",
+   "error": null,
+   "warnings": []
+  },
+  "reflex_type_animation": {
+   "status": "ok",
+   "error": null,
+   "warnings": []
+  },
+  "reflex_image_zoom": {
+   "status": "ok",
+   "error": null,
+   "warnings": []
+  },
+  "reflex_dynoselect": {
+   "status": "ok",
+   "error": null,
+   "warnings": []
+  },
+  "rx_color_picker": {
+   "status": "ok",
+   "error": null,
+   "warnings": []
+  },
+  "reflex_qrcode": {
+   "status": "ok",
+   "error": null,
+   "warnings": []
+  },
+  "reflex_chat": {
+   "status": "ok",
+   "error": null,
+   "warnings": []
+  }
+ }
+}

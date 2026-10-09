@@ -1,0 +1,32 @@
+--- a/magic_link_auth_demo/magic_link_auth_demo/magic_link_auth_demo.py
++++ b/magic_link_auth_demo/magic_link_auth_demo/magic_link_auth_demo.py
+@@ -1,3 +1,4 @@
++import os
+ from typing import Any
+ 
+ import reflex as rx
+@@ -18,7 +19,9 @@
+ 
+     @rx.var(cache=True)
+     def is_prod_mode(self) -> bool:
+-        return is_prod_mode()
++        # ML_FORCE_DEV=1 (thirdparty cluster): behave like dev (no captcha/mailgun, link printed to the
++        # server log) even when running `--env prod`, so the prod build can be driven without Google/Mailgun.
++        return is_prod_mode() and not os.environ.get("ML_FORCE_DEV")
+ 
+     @rx.event
+     async def handle_submit_login(self, form_data: dict[str, Any]):
+--- a/magic_link_auth_demo/rxconfig.py
++++ b/magic_link_auth_demo/rxconfig.py
+@@ -1,5 +1,11 @@
++import os as _os
++
+ import reflex as rx
+ 
++# venv guard (a3_events_tp): bin/start_app.sh exports TP_EXPECT_VENV, the AppHarness tests export TP_VENV
++_EXPECT_VENV = _os.environ.get("TP_EXPECT_VENV") or _os.environ.get("TP_VENV", "")
++assert _EXPECT_VENV and f"/envs/{_EXPECT_VENV}/" in rx.__file__, (rx.__file__, _EXPECT_VENV)
++
+ config = rx.Config(
+     app_name="magic_link_auth_demo",
+     db_url="sqlite:///reflex.db",
