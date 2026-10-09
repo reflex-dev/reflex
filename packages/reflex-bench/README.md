@@ -964,7 +964,9 @@ within its 2 s window, so they run on the standard runner only. Exact metrics
 (`wire.*`, `size.*`) and memory never run there: they are as good on a standard
 runner. Both jobs install the harness with `uv sync --no-dev --group bench
 --extra db` on Python 3.12 (the `dev` group builds libsass from source on
-arm64) and cache only the Playwright browser; `REFLEX_BENCH_HOME` is a fresh
+arm64; the `bench` group adds `plotly`, which the playground needs besides the
+`db` extra, as `SUBJECT_REQUIREMENTS` does for subject venvs) and cache only
+the Playwright browser; `REFLEX_BENCH_HOME` is a fresh
 temporary directory, so every cache a measured phase reads is the harness's own.
 
 **Budget.** The macro runner has 500 billed minutes a month and bills the whole

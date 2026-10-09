@@ -11,11 +11,13 @@ import subprocess
 import sys
 import threading
 import time
+import tomllib
 from collections.abc import Callable, Sequence
 from datetime import timedelta
 from pathlib import Path
 
 import pytest
+from packaging.requirements import Requirement
 from reflex_bench import subjects
 from reflex_bench.context import Subject, installed_version
 
@@ -239,6 +241,23 @@ def test_subject_requirements_carry_the_playground_dependencies():
         "alembic>=1.15.2,<2.0",
         "plotly>=6.0,<7.0",
     )
+
+
+def test_benchmark_ci_install_carries_the_subject_requirements():
+    # CI measures the workspace in an env of `uv sync --no-dev --group bench
+    # --extra db`, which must run the playground like a subject venv does.
+    pyproject = tomllib.loads(
+        (Path(__file__).parents[3] / "pyproject.toml").read_text()
+    )
+    installed = {
+        Requirement(requirement).name
+        for requirement in (
+            *pyproject["dependency-groups"]["bench"],
+            *pyproject["project"]["optional-dependencies"]["db"],
+        )
+    }
+    for requirement in subjects.SUBJECT_REQUIREMENTS:
+        assert Requirement(requirement).name in installed
 
 
 @pytest.mark.parametrize("spec", ["0.8.23", "git:v0.0.1", "path:repo"])
