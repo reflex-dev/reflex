@@ -58,6 +58,13 @@ The `Var` system also supports some other basic operations.
 For example, `NumberVar` supports basic arithmetic operations like `+` and `-`, as in Python.
 It also supports comparisons that return a `BooleanVar`.
 
+`StringVar.length()`, integer indexing, and slicing count Unicode code points,
+matching Python string indexing and slicing. A non-BMP character such as
+`"\U0001f600"` counts as one code point. These operations do not count grapheme
+clusters, so a visible character made from multiple code points may still have a
+length greater than one. Explicit string methods such as `split()` continue to
+follow their JavaScript operation semantics.
+
 Custom `Var` operations can also be defined:
 
 ```py

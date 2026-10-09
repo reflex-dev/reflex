@@ -1506,6 +1506,58 @@ export const pyRstrip = (s, chars) => {
 export const pyStrip = (s, chars) =>
   chars == null ? s.trim() : pyRstrip(pyLstrip(s, chars), chars);
 
+const SURROGATE_RE = /[\uD800-\uDFFF]/;
+
+/***
+ * Python-semantics code points of a string, skipping the copy when possible.
+ * A string without surrogates has one code unit per code point, so it is
+ * returned as-is and its native length/at/slice already match Python.
+ * @param {string?} s The string; null/undefined counts as "".
+ * @returns {string | string[]} The string itself, or its code points.
+ */
+const codePoints = (s) => {
+  s ??= "";
+  return SURROGATE_RE.test(s) ? Array.from(s) : s;
+};
+
+/***
+ * Python-semantics len(s): count code points, not UTF-16 code units.
+ * @param {string?} s The string.
+ * @returns {number} The number of code points.
+ */
+export const pyStrLength = (s) => codePoints(s).length;
+
+/***
+ * Python-semantics s[i]: index by code point.
+ * @param {string?} s The string.
+ * @param {number} i The index; negative counts from the end.
+ * @returns {string | undefined} The code point, or undefined out of range.
+ */
+export const pyStrAt = (s, i) => codePoints(s).at(i);
+
+/***
+ * Python-semantics s[start:stop]: slice by code point.
+ * @param {string?} s The string.
+ * @param {number?} start The start index; null/undefined slices from the start.
+ * @param {number?} stop The stop index; null/undefined slices to the end.
+ * @returns {string} The sliced string.
+ */
+export const pyStrSlice = (s, start, stop) => {
+  const chars = codePoints(s);
+  const slice = chars.slice(start ?? 0, stop ?? chars.length);
+  return typeof slice === "string" ? slice : slice.join("");
+};
+
+/***
+ * Python-semantics list(s): split a string into code points.
+ * @param {string?} s The string.
+ * @returns {string[]} The code points.
+ */
+export const pyStrChars = (s) => {
+  const chars = codePoints(s);
+  return typeof chars === "string" ? chars.split("") : chars;
+};
+
 /***
  * Python-semantics flat map: map each element through fn and concatenate the
  * results, iterating each one the way Python does (arrays yield their
