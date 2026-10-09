@@ -214,6 +214,83 @@ def plotly_funnel_chart():
     return rx.center(rx.plotly(width="100%", data=funnel_fig))
 ```
 
+## Maps
+
+Use `rx.plotly.map` for MapLibre maps. It loads a smaller bundle supporting
+`scattermap`, `choroplethmap`, `densitymap` and ordinary `scatter` traces.
+MapLibre does not require a Mapbox access token, though your chosen tile provider
+may require its own credentials.
+
+```python demo exec defer
+map_fig = go.Figure(
+    go.Scattermap(
+        lat=[37.77, 37.78],
+        lon=[-122.42, -122.41],
+        mode="markers",
+        marker=dict(size=14),
+    )
+)
+map_fig.update_layout(
+    map=dict(
+        style="open-street-map",
+        center=dict(lat=37.77, lon=-122.42),
+        zoom=11,
+    ),
+    margin=dict(l=0, r=0, t=0, b=0),
+)
+
+
+def plotly_map():
+    return rx.plotly.map(data=map_fig, width="100%", height="400px")
+```
+
+Use the full `rx.plotly` component when a figure combines map traces with other
+trace types, such as bars or heatmaps. Locale settings, reactive data and event
+handlers work on `rx.plotly.map` as on the full component.
+
+### Migrating Mapbox figures
+
+`rx.plotly.mapbox` is deprecated as of Reflex 0.10.0 and will be removed in Reflex
+1.0. Migrate
+`go.Scattermapbox`, `go.Choroplethmapbox` and `go.Densitymapbox` to `go.Scattermap`,
+`go.Choroplethmap` and `go.Densitymap`. Plotly Express provides the corresponding
+`px.scatter_map`, `px.choropleth_map` and `px.density_map` functions.
+
+Change `layout.mapbox` to `layout.map` and remove `config.mapboxAccessToken`.
+Update numbered subplot references as well, such as `mapbox2` to `map2`. Review
+your map style and layers for Mapbox-specific URLs or credentials.
+
+During deprecation, `rx.plotly.mapbox` keeps its Plotly.js 3.7 bundle. Existing
+Mapbox-only figures can continue using it while they migrate. That bundle only
+supports the three Mapbox trace types and ordinary scatter traces; it is not a
+fallback for arbitrary mixed figures. Migrate those figures to MapLibre traces
+and render them with the full `rx.plotly` component.
+
+The default `rx.plotly` component logs a browser warning when a figure contains
+Mapbox traces or subplot settings, including figures received through state
+updates. These inputs cannot render with Plotly.js 4; follow the migration above.
+
+### Plotly.js 4 compatibility
+
+The default component and all variants except the deprecated `rx.plotly.mapbox`
+use Plotly.js 4.0. Figures previously passed to the default component with
+Mapbox traces need the migration above. Other upstream changes to check include:
+
+- MathJax 2 is no longer supported; use MathJax 3 or 4.
+- Chart Studio options including `showLink`, `linkText`, `sendData`, `showSources`
+  and `showEditInChartStudio` are removed, as are trace `stream`, `*src`
+  attributes and `layout.hidesources`.
+- Fractional `rgb()` and `rgba()` channels are no longer interpreted as
+  percentages. Use explicit percentage channels or values from 0 to 255.
+  Invalid CSS colors and `hsv()` color strings are no longer accepted.
+- Overlaying axes now default to `tickmode="sync"`, `splom.axis.matches` defaults
+  to `True` and geographic plots fit their bounds to locations by default. Set
+  the relevant values explicitly when preserving the previous appearance.
+
+See the [Plotly.js 4.0 changelog](https://github.com/plotly/plotly.js/blob/v4.0.0/CHANGELOG.md)
+for the complete list of upstream changes.
+
+
 ## Locale Configuration
 
 Use `locale` to localize Plotly number/date formatting and modebar labels:
@@ -263,7 +340,7 @@ def mountain_surface():
     )
 ```
 
-📊 **Dataset source:** [mt_bruno_elevation.csv](https://raw.githubusercontent.com/plotly/datasets/master/api_docs/mt_bruno_elevation.csv)
+**Dataset source:** [mt_bruno_elevation.csv](https://raw.githubusercontent.com/plotly/datasets/master/api_docs/mt_bruno_elevation.csv)
 
 ## Financial Charts
 

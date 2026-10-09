@@ -11,6 +11,7 @@ from reflex.testing import AppHarness
 def PlotlyLocaleApp():
     """App rendering a plotly figure with no locale, two locales, and a state config."""
     import plotly.graph_objects as go
+    from reflex_components_plotly.plotly import Point
 
     import reflex as rx
 
@@ -36,6 +37,45 @@ def PlotlyLocaleApp():
         @rx.event
         def change_title(self):
             self.plotly_layout = {"title": "Updated state title", "height": 240}
+
+    class PlotlyMapState(rx.State):
+        latitude: float = 37.77
+        clicks: int = 0
+
+        @rx.var
+        def map_figure(self) -> go.Figure:
+            """Build a map whose marker moves with the state.
+
+            Returns:
+                A figure with a marker at the current latitude.
+            """
+            return go.Figure(
+                go.Scattermap(
+                    lat=[self.latitude],
+                    lon=[-122.42],
+                    mode="markers",
+                    marker={"size": 24, "color": "red"},
+                )
+            )
+
+        @rx.event
+        def move_marker(self):
+            """Move the map marker without replacing the map component."""
+            self.latitude = 37.78
+
+        @rx.event
+        def click_marker(self, points: list[Point]):
+            """Record a browser click delivered with map point data."""
+            if points and points[0].get("lat") == self.latitude:
+                self.clicks += 1
+
+    class PlotlyMigrationState(rx.State):
+        figure: rx.Field[go.Figure | None] = rx.field(None)
+
+        @rx.event
+        def use_mapbox(self):
+            """Load a legacy map after the initial chart has rendered."""
+            self.figure = go.Figure(go.Scattermapbox(lat=[37.77], lon=[-122.42]))
 
     app = rx.App()
 
@@ -71,6 +111,83 @@ def PlotlyLocaleApp():
                 "Update title",
                 id="update_plot_title",
                 on_click=PlotlyLayoutState.change_title,
+            ),
+        )
+
+    @app.add_page
+    def maps():
+        """Render modern and legacy map bundles together without external tiles.
+
+        Returns:
+            The maps and controls used to exercise updates and events.
+        """
+        map_layout = {
+            "style": "white-bg",
+            "center": {"lat": 37.77, "lon": -122.42},
+            "zoom": 10,
+        }
+        return rx.vstack(
+            rx.plotly.map(
+                data=PlotlyMapState.map_figure,
+                layout={"map": map_layout, "margin": {"l": 0, "r": 0, "t": 0, "b": 0}},
+                locale="de",
+                on_click=PlotlyMapState.click_marker,
+                id="modern-map",
+                width="600px",
+                height="300px",
+            ),
+            rx.plotly.mapbox(
+                data=go.Figure(
+                    go.Scattermapbox(lat=[37.77], lon=[-122.42], mode="markers")
+                ),
+                layout={"mapbox": map_layout},
+                locale="fr",
+                id="legacy-map",
+                width="600px",
+                height="300px",
+            ),
+            rx.button(
+                "Move marker", id="move-marker", on_click=PlotlyMapState.move_marker
+            ),
+            rx.text(PlotlyMapState.clicks, id="map-clicks"),
+        )
+
+    @app.add_page
+    def mapbox_literal() -> rx.Component:
+        """Render a literal figure containing an unsupported Mapbox trace.
+
+        Returns:
+            The default renderer with a legacy map figure.
+        """
+        return rx.plotly(
+            data=go.Figure(go.Scattermapbox(lat=[37.77], lon=[-122.42])),
+            id="migration-plot",
+        )
+
+    @app.add_page
+    def mapbox_layout() -> rx.Component:
+        """Render a figure with a separate legacy Mapbox subplot setting.
+
+        Returns:
+            The default renderer with a numbered Mapbox layout.
+        """
+        return rx.plotly(data=figure, layout={"mapbox2": {}}, id="migration-plot")
+
+    @app.add_page
+    def mapbox_state() -> rx.Component:
+        """Render a loading figure that receives a legacy map through state.
+
+        Returns:
+            The default renderer and a button that loads a Mapbox figure.
+        """
+        return rx.vstack(
+            rx.plotly(
+                data=PlotlyMigrationState.figure.to(go.Figure),
+                template=None,
+                id="migration-plot",
+            ),
+            rx.button(
+                "Use Mapbox", id="use-mapbox", on_click=PlotlyMigrationState.use_mapbox
             ),
         )
 
@@ -206,3 +323,95 @@ def test_plotly_layout_titles(page: Page, plotly_locale_app: AppHarness):
     expect(page.locator("#plot_title_state .gtitle")).to_have_text(
         "Updated state title"
     )
+
+
+def test_plotly_map_bundles(page: Page, plotly_locale_app: AppHarness):
+    """Both map bundles render together with locales, updates and click events."""
+    assert plotly_locale_app.frontend_url is not None
+    errors: list[str] = []
+    warnings: list[str] = []
+    page.on("pageerror", lambda error: errors.append(str(error)))
+    page.on(
+        "console",
+        lambda message: (
+            warnings.append(message.text)
+            if "rx.plotly uses Plotly.js 4" in message.text
+            else None
+        ),
+    )
+    page.goto(f"{plotly_locale_app.frontend_url.rstrip('/')}/maps")
+
+    for plot_id, subplot, trace_type, locale, pan_title in (
+        ("modern-map", "map", "scattermap", "de", "Verschieben"),
+        ("legacy-map", "mapbox", "scattermapbox", "fr", "Translation"),
+    ):
+        page.wait_for_function(
+            """([id, subplot]) => {
+                const plot = document.getElementById(id);
+                return plot?._fullLayout?.[subplot]?._subplot?.map?.loaded();
+            }""",
+            arg=[plot_id, subplot],
+            timeout=60_000,
+        )
+        plot = page.locator(f"#{plot_id}")
+        expect(plot.get_by_role("region", name="Map", exact=True)).to_be_visible()
+        assert plot.evaluate("plot => plot._fullData[0].type") == trace_type
+        assert plot.evaluate("plot => plot._context.locale") == locale
+        expect(
+            plot.locator('.modebar-btn[data-attr="dragmode"][data-val="pan"]')
+        ).to_have_attribute("data-title", pan_title)
+
+    page.locator("#move-marker").click()
+    page.wait_for_function(
+        """() => {
+            const plot = document.getElementById('modern-map');
+            const map = plot._fullLayout.map._subplot.map;
+            return plot._fullData[0].lat[0] === 37.78 && map.loaded() &&
+                map.queryRenderedFeatures(map.project([-122.42, 37.78])).length > 0;
+        }"""
+    )
+    page.locator("#modern-map").scroll_into_view_if_needed()
+    point = page.locator("#modern-map").evaluate(
+        """plot => {
+            const map = plot._fullLayout.map._subplot.map;
+            const point = map.project([-122.42, 37.78]);
+            const rect = map.getCanvas().getBoundingClientRect();
+            return {x: rect.x + point.x, y: rect.y + point.y};
+        }"""
+    )
+    page.mouse.click(point["x"], point["y"])
+    expect(page.locator("#map-clicks")).to_have_text("1")
+    assert not errors
+    assert not warnings
+
+
+@pytest.mark.parametrize("route", ["mapbox-literal", "mapbox-layout", "mapbox-state"])
+def test_plotly_mapbox_migration_warning(
+    page: Page, plotly_locale_app: AppHarness, route: str
+):
+    """Warn for literal and reactive Mapbox inputs to the default renderer."""
+    assert plotly_locale_app.frontend_url is not None
+    errors: list[str] = []
+    page.on("pageerror", lambda error: errors.append(str(error)))
+    warnings: list[str] = []
+    page.on(
+        "console",
+        lambda message: (
+            warnings.append(message.text)
+            if message.type == "warning" and "rx.plotly" in message.text
+            else None
+        ),
+    )
+    page.goto(f"{plotly_locale_app.frontend_url.rstrip('/')}/{route}")
+    expect(page.locator("#migration-plot .main-svg").first).to_be_visible(
+        timeout=60_000
+    )
+    if route == "mapbox-state":
+        assert not warnings
+        with page.expect_console_message(
+            predicate=lambda message: "rx.plotly.map" in message.text
+        ):
+            page.locator("#use-mapbox").click()
+    assert len(warnings) == 1
+    assert "layout.map" in warnings[0]
+    assert not errors

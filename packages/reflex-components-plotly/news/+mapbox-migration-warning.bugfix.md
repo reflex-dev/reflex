@@ -1,0 +1,1 @@
+Warn in the browser when the default `rx.plotly` component receives unsupported Mapbox traces or subplot settings, including through state updates, with guidance for migrating to MapLibre or using the deprecated Mapbox component.
