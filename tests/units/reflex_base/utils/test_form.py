@@ -472,6 +472,16 @@ def test_transform_form_data_bracketed_names_to_form_data(hint: Any):
     assert form_data.getlist("range[]") == ["20", "80"]
 
 
+class _UnresolvableData(TypedDict):
+    tag: list[str]
+    amount: "Decimal"  # noqa: F821 # pyright: ignore[reportUndefinedVariable]
+
+
+def test_transform_form_data_unresolvable_typed_dict_to_dict():
+    """A TypedDict whose field types cannot be resolved gets the plain dict."""
+    assert _transform(_UnresolvableData) == _transform(dict)
+
+
 def test_transform_form_data_with_unhashable_annotation():
     """An annotation that cannot be cached is still read."""
     assert _transform(Annotated[dict, {"unhashable": True}]) == _transform(dict)

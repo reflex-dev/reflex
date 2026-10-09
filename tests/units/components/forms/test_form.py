@@ -220,6 +220,27 @@ def test_form_without_form_data_handler_does_not_warn(caplog):
     assert "unsubmitted_input" not in caplog.text
 
 
+def test_on_submit_accepts_typed_dict_with_unresolvable_field_types():
+    """A field type that cannot be resolved, as under TYPE_CHECKING, still compiles."""
+
+    class OrderData(TypedDict):
+        name: str
+        amount: "Decimal"  # noqa: F821 # pyright: ignore[reportUndefinedVariable]
+
+    class OrderState(rx.State):
+        @rx.event
+        def on_submit(self, form_data: OrderData):
+            pass
+
+    HTMLForm.create(
+        Input.create(name="name"),
+        Input.create(name="amount"),
+        on_submit=OrderState.on_submit,
+    )
+    with pytest.raises(EventHandlerValueError, match="amount"):
+        HTMLForm.create(Input.create(name="name"), on_submit=OrderState.on_submit)
+
+
 def test_on_submit_typed_dict_ignores_dynamic_ids():
     """A dynamic id cannot contribute a form_data key, so validation still runs."""
 
