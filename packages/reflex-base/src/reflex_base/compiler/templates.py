@@ -234,17 +234,20 @@ if (typeof window !== "undefined") {{
   const loaders = {{
 {loaders}
   }};
-  let pending;
-  window.__reflex_load = () => {{
-    if (!pending) {{
-      pending = Promise.all(Object.entries(loaders).map(async ([name, load]) => {{
-        window.__reflex[name] = await load();
-      }})).catch((error) => {{
-        pending = undefined;
-        throw error;
-      }});
-    }}
-    return pending;
+  const pending = Object.create(null);
+  window.__reflex_load = (libraries = Object.keys(loaders)) => {{
+    const hasOwn = (object, name) => Object.prototype.hasOwnProperty.call(object, name);
+    return Promise.all(libraries.filter((name) => hasOwn(loaders, name) && !hasOwn(window.__reflex, name)).map((name) => {{
+      if (!pending[name]) {{
+        pending[name] = loaders[name]().then((module) => {{
+          window.__reflex[name] = module;
+        }}).catch((error) => {{
+          delete pending[name];
+          throw error;
+        }});
+      }}
+      return pending[name];
+    }}));
   }};
 }}
 """
