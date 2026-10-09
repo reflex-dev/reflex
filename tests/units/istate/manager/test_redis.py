@@ -6,15 +6,16 @@ import enum
 import os
 import time
 import uuid
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Awaitable, Callable
 from types import ModuleType
-from typing import Any
+from typing import Any, cast
 
 import pytest
 import pytest_asyncio
 from reflex_base.utils.exceptions import EnvironmentVarValueError, LockExpiredError
 
 from reflex.istate.manager.redis import (
+    _RELEASE_LOCK_SCRIPT,
     StateManagerRedis,
     _default_lock_expiration,
     _default_oplock_hold_time_ms,
@@ -976,6 +977,48 @@ async def test_cancel_while_acquiring_lock_releases_it(
 
     task = asyncio.create_task(modify())
     await lock_set.wait()
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+
+    assert (
+        await state_manager_redis.redis.get(state_manager_redis._lock_key(token))
+        is None
+    )
+
+
+@pytest.mark.asyncio
+async def test_cancel_while_releasing_lock_releases_it(
+    state_manager_redis: StateManagerRedis,
+    root_state: type[RedisTestState],
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A release cut short by a cancellation still deletes the lock.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        root_state: The root state class.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=root_state)
+    releasing = asyncio.Event()
+    # redis-py types EVAL replies as str; the lock release replies with bytes.
+    redis_eval = cast("Callable[..., Awaitable[Any]]", state_manager_redis.redis.eval)
+
+    async def first_release_hangs(script: str, *args: Any) -> Any:
+        if script == _RELEASE_LOCK_SCRIPT and not releasing.is_set():
+            releasing.set()
+            await asyncio.Event().wait()
+        return await redis_eval(script, *args)
+
+    monkeypatch.setattr(state_manager_redis.redis, "eval", first_release_hangs)
+
+    async def hold_lock():
+        async with state_manager_redis._lock(token):
+            pass
+
+    task = asyncio.create_task(hold_lock())
+    await releasing.wait()
     task.cancel()
     with pytest.raises(asyncio.CancelledError):
         await task

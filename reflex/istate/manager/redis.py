@@ -1247,7 +1247,7 @@ class StateManagerRedis(StateManager):
         except BaseException:
             # A cancelled acquisition can have set the lock without receiving
             # the reply; release it rather than leave it until it expires.
-            await asyncio.shield(self._release_lock(lock_key, lock_id))
+            await self._release_lock(lock_key, lock_id)
             # It may also have taken the wakeup meant for the next waiter.
             self._notify_next_waiter(lock_key)
             raise
@@ -1259,25 +1259,29 @@ class StateManagerRedis(StateManager):
             state_is_locked = False
             raise
         finally:
-            if state_is_locked:
-                owner = await asyncio.shield(self._release_lock(lock_key, lock_id))
-                if owner == lock_id:
-                    if self._debug_enabled:
-                        logger.debug(
-                            f"{SMR} [{time.monotonic() - start:.3f}] {lock_key.decode()} released by {lock_id.decode()}"
+            try:
+                if state_is_locked:
+                    owner = await self._release_lock(lock_key, lock_id)
+                    if owner == lock_id:
+                        if self._debug_enabled:
+                            logger.debug(
+                                f"{SMR} [{time.monotonic() - start:.3f}] {lock_key.decode()} released by {lock_id.decode()}"
+                            )
+                    elif owner is not None:
+                        # The caller held the lock past its expiration without a
+                        # `set_state` noticing, and another holder took it since.
+                        logger.warning(
+                            f"{lock_key.decode()} expired while held by {lock_id.decode()} and now belongs to {owner.decode()}, leaving it to them."
                         )
-                elif owner is not None:
-                    # The caller held the lock past its expiration without a
-                    # `set_state` noticing, and another holder took it since.
-                    logger.warning(
-                        f"{lock_key.decode()} expired while held by {lock_id.decode()} and now belongs to {owner.decode()}, leaving it to them."
-                    )
-            # To avoid race when a waiter is registered after the del message is
-            # processed, and to let the waiters re-check a lock that expired.
-            self._notify_next_waiter(lock_key)
+            finally:
+                # To avoid race when a waiter is registered after the del message is
+                # processed, and to let the waiters re-check a lock that expired.
+                self._notify_next_waiter(lock_key)
 
     async def _release_lock(self, lock_key: bytes, lock_id: bytes) -> bytes | None:
         """Delete the redis lock if it is still held by the given ID.
+
+        A cancellation waits for the release to finish before it propagates.
 
         Args:
             lock_key: The redis key for the lock.
@@ -1288,7 +1292,13 @@ class StateManagerRedis(StateManager):
         """
         # redis-py types EVAL arguments as str; the lock key and ID are bytes here.
         release = cast("Callable[..., Awaitable[bytes | None]]", self.redis.eval)
-        return await release(_RELEASE_LOCK_SCRIPT, 1, lock_key, lock_id)
+        try:
+            return await release(_RELEASE_LOCK_SCRIPT, 1, lock_key, lock_id)
+        except asyncio.CancelledError:
+            # The release may not have reached redis, so run it again where the
+            # cancellation cannot stop it; only this path pays for the extra task.
+            await asyncio.shield(release(_RELEASE_LOCK_SCRIPT, 1, lock_key, lock_id))
+            raise
 
     async def close(self):
         """Explicitly close the redis connection and connection_pool.
