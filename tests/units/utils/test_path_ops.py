@@ -11,8 +11,9 @@ import subprocess
 import sys
 import threading
 from concurrent.futures import ThreadPoolExecutor
-from contextlib import contextmanager
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import Mock
 
 import pytest
 
@@ -49,6 +50,24 @@ def _assert_json_lock_held(file_path: Path) -> None:
         os.close(fd)
 
 
+def _report_json_lock_attempt(monkeypatch: pytest.MonkeyPatch, attempted) -> None:
+    """Report the updater's actual OS lock call without changing its behavior.
+
+    Args:
+        monkeypatch: The fixture used to wrap the native lock function.
+        attempted: Event set when the native lock function is called.
+    """
+    module, name = (msvcrt, "locking") if sys.platform == "win32" else (fcntl, "flock")
+    original_lock = getattr(module, name)
+
+    def report_lock(*args):
+        """Signal the attempt and call the real OS lock."""
+        attempted.set()
+        original_lock(*args)
+
+    monkeypatch.setattr(module, name, report_lock)
+
+
 def _pause_json_update_before_write(
     file_path: str,
     update: dict[str, object],
@@ -72,33 +91,21 @@ def _pause_json_update_before_write(
 def _update_json_in_process(
     file_path: str,
     update: dict[str, object],
-    lock_blocked,
+    lock_attempted,
     read_started,
     completed,
 ) -> None:
     """Apply an update and report its progress from a child process."""
-    original_json_file_lock = path_ops.json_file_lock
     original_json_load = path_ops.json.load
-
-    @contextmanager
-    def probed_json_file_lock(target: str | Path):
-        """Report contention before waiting for the writer's lock.
-
-        Yields:
-            The resolved JSON path.
-        """
-        _assert_json_lock_held(Path(target))
-        lock_blocked.set()
-        with original_json_file_lock(target) as resolved:
-            yield resolved
 
     def report_json_read(file, *args, **kwargs):
         read_started.set()
         return original_json_load(file, *args, **kwargs)
 
-    path_ops.json_file_lock = probed_json_file_lock
-    path_ops.json.load = report_json_read
-    path_ops.update_json_file(file_path, update)
+    with pytest.MonkeyPatch.context() as monkeypatch:
+        _report_json_lock_attempt(monkeypatch, lock_attempted)
+        monkeypatch.setattr(path_ops.json, "load", report_json_read)
+        path_ops.update_json_file(file_path, update)
     completed.set()
 
 
@@ -200,6 +207,29 @@ def test_update_json_file_without_writable_lock_directory(
         "updated": True,
     }
     assert not list(tmp_path.glob(".reflex.json.*.tmp"))
+
+
+@pytest.mark.parametrize(
+    ("error_number", "expected_attempts"), [(errno.EDEADLK, 3), (errno.EACCES, 1)]
+)
+def test_json_file_lock_retries_only_windows_contention(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    error_number: int,
+    expected_attempts: int,
+):
+    """Retry Windows contention timeouts but retain the unavailable-lock fallback."""
+    locking = Mock(side_effect=[OSError(error_number, "lock unavailable")] * 2 + [None])
+    monkeypatch.setattr(path_ops, "sys", SimpleNamespace(platform="win32"))
+    monkeypatch.setattr(
+        path_ops,
+        "msvcrt",
+        SimpleNamespace(locking=locking, LK_LOCK=1),
+        raising=False,
+    )
+
+    with path_ops.json_file_lock(tmp_path / "reflex.json"):
+        assert locking.call_count == expected_attempts
 
 
 def test_update_json_file_serializes_concurrent_updates(
@@ -308,11 +338,10 @@ def test_web_directory_cleanup_waits_for_staged_json_update(
     target.write_text(json.dumps({"base": True}), encoding="utf-8")
     stage_written = threading.Event()
     release_writer = threading.Event()
-    cleanup_lock_blocked = threading.Event()
+    cleanup_lock_attempted = threading.Event()
     cleanup_reached = threading.Event()
     allow_cleanup = threading.Event()
     original_dump = path_ops.json.dump
-    original_json_file_lock = path_ops.json_file_lock
 
     def pausing_dump(value, file, *, ensure_ascii):
         file.write("{")
@@ -322,19 +351,6 @@ def test_web_directory_cleanup_waits_for_staged_json_update(
         file.seek(0)
         file.truncate()
         original_dump(value, file, ensure_ascii=ensure_ascii)
-
-    @contextmanager
-    def probed_json_file_lock(file_path: Path):
-        """Report contention before frontend cleanup can remove staged files.
-
-        Yields:
-            The resolved JSON path.
-        """
-        if file_path.resolve() == target.resolve():
-            _assert_json_lock_held(file_path)
-            cleanup_lock_blocked.set()
-        with original_json_file_lock(file_path) as resolved:
-            yield resolved
 
     def destructive_copy(_source, _destination):
         cleanup_reached.set()
@@ -366,12 +382,12 @@ def test_web_directory_cleanup_waits_for_staged_json_update(
         assert stage_written.wait(timeout=5)
         staged_files = list(web_dir.glob(".reflex.json.*.tmp"))
         assert len(staged_files) == 1
-        monkeypatch.setattr(path_ops, "json_file_lock", probed_json_file_lock)
+        _report_json_lock_attempt(monkeypatch, cleanup_lock_attempted)
         monkeypatch.setattr(path_ops, "copy_tree", destructive_copy)
         cleanup = executor.submit(frontend_skeleton.initialize_web_directory)
         try:
-            assert cleanup_lock_blocked.wait(timeout=5)
-            assert not cleanup_reached.is_set()
+            assert cleanup_lock_attempted.wait(timeout=5)
+            assert not cleanup_reached.wait(timeout=0.2)
             assert staged_files[0].exists()
             release_writer.set()
             assert cleanup_reached.wait(timeout=5)
@@ -444,7 +460,7 @@ def test_update_json_file_processes_merge_disjoint_updates(
     process_context = multiprocessing.get_context("spawn")
     inside_critical_section = process_context.Event()
     release_update = process_context.Event()
-    second_lock_blocked = process_context.Event()
+    second_lock_attempted = process_context.Event()
     second_read_started = process_context.Event()
     second_completed = process_context.Event()
     first = process_context.Process(
@@ -461,7 +477,7 @@ def test_update_json_file_processes_merge_disjoint_updates(
         args=(
             str(target),
             {"second": True},
-            second_lock_blocked,
+            second_lock_attempted,
             second_read_started,
             second_completed,
         ),
@@ -477,8 +493,8 @@ def test_update_json_file_processes_merge_disjoint_updates(
             target_directory.mkdir()
             assert lock_path.is_file()
         second.start()
-        assert second_lock_blocked.wait(timeout=10)
-        assert not second_read_started.is_set()
+        assert second_lock_attempted.wait(timeout=10)
+        assert not second_read_started.wait(timeout=0.2)
         assert not second_completed.is_set()
         if replace_target_directory:
             assert not target.exists()

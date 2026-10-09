@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import contextlib
+import errno
 import hashlib
 import json
 import logging
@@ -294,7 +295,15 @@ def json_file_lock(file_path: str | Path) -> Iterator[Path]:
             lock_path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
             lock_fd = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o600)
             if sys.platform == "win32":
-                msvcrt.locking(lock_fd, msvcrt.LK_LOCK, 1)
+                while True:
+                    try:
+                        msvcrt.locking(lock_fd, msvcrt.LK_LOCK, 1)
+                        break
+                    except OSError as error:
+                        # LK_LOCK already waits between attempts, but gives up
+                        # after ten attempts while another writer may own it.
+                        if error.errno != errno.EDEADLK:
+                            raise
             else:
                 fcntl.flock(lock_fd, fcntl.LOCK_EX)
         except OSError as error:
