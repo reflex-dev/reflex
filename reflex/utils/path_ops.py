@@ -2,19 +2,30 @@
 
 from __future__ import annotations
 
+import contextlib
+import hashlib
 import json
+import logging
 import os
 import re
+import secrets
 import shutil
 import stat
+import sys
+import unicodedata
+from collections.abc import Iterator
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 from reflex_base.config import get_config
 from reflex_base.environment import environment
 
-if TYPE_CHECKING:
-    from filelock import BaseFileLock
+if sys.platform == "win32":
+    import msvcrt
+else:
+    import fcntl
+
+logger = logging.getLogger(__name__)
+_JSON_LOCKS_DIR = "locks/json"
 
 # Shorthand for join.
 join = os.linesep.join
@@ -251,44 +262,49 @@ def _json_file_lock_path(file_path: Path) -> Path:
     Returns:
         A path in Reflex's per-user data directory keyed by the target path.
     """
-    import hashlib
-
-    from reflex import constants
-
-    normalized_path = os.path.normcase(os.fspath(file_path.resolve()))
-    if constants.IS_MACOS:
-        import unicodedata
-
+    normalized_path = os.path.normcase(os.fspath(file_path))
+    if sys.platform == "darwin":
         # posixpath.normcase is a no-op on macOS, even when the underlying APFS
         # volume is case-insensitive and Unicode-normalizing.
         normalized_path = unicodedata.normalize("NFC", normalized_path).casefold()
     target_digest = hashlib.sha256(os.fsencode(normalized_path)).hexdigest()
-    lock_directory = (
-        environment.REFLEX_DIR.get().expanduser().resolve() / constants.JSON_LOCKS_DIR
-    )
-    lock_directory.mkdir(mode=0o700, parents=True, exist_ok=True)
+    lock_directory = environment.REFLEX_DIR.get().expanduser() / _JSON_LOCKS_DIR
     return lock_directory / f"{target_digest}.lock"
 
 
-def _json_file_lock(file_path: Path) -> BaseFileLock:
-    """Get the process-safe lock for a JSON file.
+@contextlib.contextmanager
+def json_file_lock(file_path: str | Path) -> Iterator[Path]:
+    """Lock a JSON file across processes, or proceed unlocked if unavailable.
+
+    The lock lives outside the target directory so frontend cleanup can use it
+    while replacing that directory. This context manager is not reentrant.
 
     Args:
-        file_path: The normalized path of the JSON file.
+        file_path: The path of the JSON file.
 
-    Returns:
-        A reentrant lock shared by callers targeting the same file.
+    Yields:
+        The resolved target path. Callers must still write atomically because
+        read-only lock directories and unsupported locks use an unlocked fallback.
     """
-    # Keep this import off CLI startup paths that do not write JSON metadata.
-    from filelock import FileLock
-
-    return FileLock(
-        _json_file_lock_path(file_path),
-        mode=0o600,
-        is_singleton=True,
-        fallback_to_soft=False,
-        preserve_lock_file=True,
-    )
+    file_path = Path(file_path).resolve()
+    lock_fd = None
+    try:
+        try:
+            lock_path = _json_file_lock_path(file_path)
+            lock_path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+            lock_fd = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o600)
+            if sys.platform == "win32":
+                msvcrt.locking(lock_fd, msvcrt.LK_LOCK, 1)
+            else:
+                fcntl.flock(lock_fd, fcntl.LOCK_EX)
+        except OSError as error:
+            logger.debug(f"Cannot lock {file_path}; proceeding unlocked: {error}")
+        yield file_path
+    finally:
+        if lock_fd is not None:
+            # Closing releases the OS lock, including when the body raises.
+            # Keep the lock file so waiting writers always use the same inode.
+            os.close(lock_fd)
 
 
 def _write_json_file(file_path: Path, value: dict[str, object]) -> None:
@@ -298,22 +314,10 @@ def _write_json_file(file_path: Path, value: dict[str, object]) -> None:
         file_path: The destination JSON file.
         value: The complete JSON object to write.
     """
-    import contextlib
-    import secrets
-
     open_flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY | getattr(os, "O_BINARY", 0)
-    for _ in range(100):
-        temp_path = file_path.with_name(f".{file_path.name}.{secrets.token_hex(8)}.tmp")
-        try:
-            # Unlike tempfile.mkstemp's fixed 0600, mode 0666 preserves the old
-            # Path.touch behavior by letting the process umask set new-file mode.
-            temp_fd = os.open(temp_path, open_flags, 0o666)
-        except FileExistsError:
-            continue
-        break
-    else:
-        msg = f"Unable to allocate a temporary file for {file_path}"
-        raise FileExistsError(msg)
+    temp_path = file_path.with_name(f".{file_path.name}.{secrets.token_hex(8)}.tmp")
+    # Preserve the old Path.touch behavior by letting umask set new-file mode.
+    temp_fd = os.open(temp_path, open_flags, 0o666)
 
     try:
         if file_path.exists():
@@ -341,12 +345,8 @@ def update_json_file(file_path: str | Path, update_dict: dict[str, object]) -> N
         file_path: the path to the JSON file.
         update_dict: object to update json.
     """
-    fp = Path(file_path).resolve()
-
-    # Create the parent directory if it doesn't exist.
-    fp.parent.mkdir(parents=True, exist_ok=True)
-
-    with _json_file_lock(fp):
+    with json_file_lock(file_path) as fp:
+        fp.parent.mkdir(parents=True, exist_ok=True)
         # An absent or empty file represents an empty JSON object.
         json_object: dict[str, object] = {}
         if fp.exists() and fp.stat().st_size:

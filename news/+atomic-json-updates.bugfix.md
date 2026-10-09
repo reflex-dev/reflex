@@ -1,1 +1,1 @@
-Prevent concurrent Reflex processes from corrupting or losing updates to shared JSON metadata files.
+Use atomic writes and OS locks to protect shared JSON metadata from concurrent Reflex processes. When locks are unavailable (for example, with a read-only `REFLEX_DIR`), writes remain atomic but concurrent updates may overwrite each other.

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import errno
 import json
 import multiprocessing
 import os
@@ -10,20 +11,42 @@ import subprocess
 import sys
 import threading
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
-from filelock import Timeout
 
 from reflex import constants
 from reflex.utils import frontend_skeleton, path_ops
 from reflex.utils.path_ops import write_file
+
+if sys.platform == "win32":
+    import msvcrt
+else:
+    import fcntl
 
 
 @pytest.fixture(autouse=True)
 def _isolate_reflex_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Keep persistent JSON locks inside each test's temporary directory."""
     monkeypatch.setenv("REFLEX_DIR", str(tmp_path / "reflex-data"))
+
+
+def _assert_json_lock_held(file_path: Path) -> None:
+    """Verify a writer holds the OS lock for the given JSON file.
+
+    Args:
+        file_path: The target JSON file.
+    """
+    fd = os.open(path_ops._json_file_lock_path(file_path.resolve()), os.O_RDWR)
+    try:
+        with pytest.raises(OSError):
+            if sys.platform == "win32":
+                msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+            else:
+                fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    finally:
+        os.close(fd)
 
 
 def _pause_json_update_before_write(
@@ -54,37 +77,26 @@ def _update_json_in_process(
     completed,
 ) -> None:
     """Apply an update and report its progress from a child process."""
-    original_json_file_lock = path_ops._json_file_lock
+    original_json_file_lock = path_ops.json_file_lock
     original_json_load = path_ops.json.load
 
-    class ProbedLock:
-        """Prove the public updater encounters an already-held lock."""
+    @contextmanager
+    def probed_json_file_lock(target: str | Path):
+        """Report contention before waiting for the writer's lock.
 
-        def __init__(self, lock) -> None:
-            self.lock = lock
-
-        def __enter__(self):
-            try:
-                self.lock.acquire(timeout=0)
-            except Timeout:
-                lock_blocked.set()
-            else:
-                self.lock.release()
-                msg = "JSON updater unexpectedly acquired the held lock"
-                raise AssertionError(msg)
-            return self.lock.acquire()
-
-        def __exit__(self, exception_type, exception, traceback):
-            self.lock.release()
-
-    def probed_json_file_lock(target: Path):
-        return ProbedLock(original_json_file_lock(target))
+        Yields:
+            The resolved JSON path.
+        """
+        _assert_json_lock_held(Path(target))
+        lock_blocked.set()
+        with original_json_file_lock(target) as resolved:
+            yield resolved
 
     def report_json_read(file, *args, **kwargs):
         read_started.set()
         return original_json_load(file, *args, **kwargs)
 
-    path_ops._json_file_lock = probed_json_file_lock
+    path_ops.json_file_lock = probed_json_file_lock
     path_ops.json.load = report_json_read
     path_ops.update_json_file(file_path, update)
     completed.set()
@@ -113,13 +125,17 @@ def _join_process(process) -> None:
         process.join(timeout=10)
 
 
-def test_path_ops_keeps_filelock_import_lazy():
-    """Importing path helpers alone does not pay the filelock import cost."""
+def test_update_json_file_does_not_import_filelock(tmp_path: Path):
+    """JSON writes do not load the optional development dependency filelock."""
     result = subprocess.run(
         [
             sys.executable,
             "-c",
-            "import sys; import reflex.utils.path_ops; print('filelock' in sys.modules)",
+            (
+                "import sys; from reflex.utils.path_ops import update_json_file; "
+                "update_json_file(sys.argv[1], {}); print('filelock' in sys.modules)"
+            ),
+            str(tmp_path / "reflex.json"),
         ],
         check=True,
         capture_output=True,
@@ -127,6 +143,63 @@ def test_path_ops_keeps_filelock_import_lazy():
     )
 
     assert result.stdout.strip() == "False"
+
+
+@pytest.mark.parametrize("operation", ["mkdir", "open", "lock"])
+@pytest.mark.parametrize("error_number", [errno.EACCES, errno.EROFS])
+def test_update_json_file_without_writable_lock_directory(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    operation: str,
+    error_number: int,
+):
+    """An unavailable lock location must not prevent a writable JSON update."""
+    target = tmp_path / "reflex.json"
+    target.write_text('{"existing": true}', encoding="utf-8")
+    lock_directory = tmp_path / "reflex-data" / "locks" / "json"
+    original_mkdir = Path.mkdir
+    original_open = os.open
+
+    def mkdir(path, *args, **kwargs):
+        """Reject lock directory creation only.
+
+        Returns:
+            The original mkdir result for other directories.
+        """
+        if path == lock_directory:
+            raise OSError(error_number, "lock directory is not writable")
+        return original_mkdir(path, *args, **kwargs)
+
+    def open_file(path, *args, **kwargs):
+        """Reject opening lock files only.
+
+        Returns:
+            An open file descriptor for other files.
+        """
+        if Path(path).parent == lock_directory:
+            raise OSError(error_number, "lock file is not writable")
+        return original_open(path, *args, **kwargs)
+
+    def lock_file(*args):
+        """Simulate an unavailable OS lock."""
+        raise OSError(error_number, "lock is unavailable")
+
+    if operation == "mkdir":
+        monkeypatch.setattr(Path, "mkdir", mkdir)
+    elif operation == "open":
+        monkeypatch.setattr(os, "open", open_file)
+    elif sys.platform == "win32":
+        monkeypatch.setattr(msvcrt, "locking", lock_file)
+    else:
+        monkeypatch.setattr(fcntl, "flock", lock_file)
+
+    path_ops.update_json_file(target, {"updated": True})
+
+    assert json.loads(target.read_text(encoding="utf-8")) == {
+        "existing": True,
+        "updated": True,
+    }
+    assert not list(tmp_path.glob(".reflex.json.*.tmp"))
 
 
 def test_update_json_file_serializes_concurrent_updates(
@@ -161,11 +234,7 @@ def test_update_json_file_serializes_concurrent_updates(
             {"first": True},
         )
         assert first_dump_started.wait(timeout=5)
-        with (
-            pytest.raises(Timeout),
-            path_ops._json_file_lock(target.resolve()).acquire(timeout=0),
-        ):
-            pass
+        _assert_json_lock_held(target)
         second_update = executor.submit(
             path_ops.update_json_file,
             target,
@@ -182,14 +251,19 @@ def test_update_json_file_serializes_concurrent_updates(
     }
 
 
+@pytest.mark.parametrize("lock_available", [True, False])
 def test_update_json_file_never_exposes_partial_json(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    lock_available: bool,
 ):
     """Readers see the old document until the new document is complete."""
     target = tmp_path / "reflex.json"
     original = {"base": True}
     target.write_text(json.dumps(original), encoding="utf-8")
+    if not lock_available:
+        # A regular file cannot contain the lock directory.
+        monkeypatch.setenv("REFLEX_DIR", str(target))
     partial_dump_written = threading.Event()
     finish_dump = threading.Event()
 
@@ -238,7 +312,7 @@ def test_web_directory_cleanup_waits_for_staged_json_update(
     cleanup_reached = threading.Event()
     allow_cleanup = threading.Event()
     original_dump = path_ops.json.dump
-    original_json_file_lock = path_ops._json_file_lock
+    original_json_file_lock = path_ops.json_file_lock
 
     def pausing_dump(value, file, *, ensure_ascii):
         file.write("{")
@@ -249,31 +323,18 @@ def test_web_directory_cleanup_waits_for_staged_json_update(
         file.truncate()
         original_dump(value, file, ensure_ascii=ensure_ascii)
 
-    class ProbedLock:
-        """Report that frontend cleanup encounters the writer's lock."""
-
-        def __init__(self, lock) -> None:
-            self.lock = lock
-
-        def __enter__(self):
-            try:
-                self.lock.acquire(timeout=0)
-            except Timeout:
-                cleanup_lock_blocked.set()
-            else:
-                self.lock.release()
-                msg = "frontend cleanup unexpectedly acquired the writer lock"
-                raise AssertionError(msg)
-            return self.lock.acquire()
-
-        def __exit__(self, exception_type, exception, traceback):
-            self.lock.release()
-
+    @contextmanager
     def probed_json_file_lock(file_path: Path):
-        lock = original_json_file_lock(file_path)
-        if file_path == target.resolve():
-            return ProbedLock(lock)
-        return lock
+        """Report contention before frontend cleanup can remove staged files.
+
+        Yields:
+            The resolved JSON path.
+        """
+        if file_path.resolve() == target.resolve():
+            _assert_json_lock_held(file_path)
+            cleanup_lock_blocked.set()
+        with original_json_file_lock(file_path) as resolved:
+            yield resolved
 
     def destructive_copy(_source, _destination):
         cleanup_reached.set()
@@ -305,7 +366,7 @@ def test_web_directory_cleanup_waits_for_staged_json_update(
         assert stage_written.wait(timeout=5)
         staged_files = list(web_dir.glob(".reflex.json.*.tmp"))
         assert len(staged_files) == 1
-        monkeypatch.setattr(path_ops, "_json_file_lock", probed_json_file_lock)
+        monkeypatch.setattr(path_ops, "json_file_lock", probed_json_file_lock)
         monkeypatch.setattr(path_ops, "copy_tree", destructive_copy)
         cleanup = executor.submit(frontend_skeleton.initialize_web_directory)
         try:
@@ -463,8 +524,6 @@ def test_update_json_file_crash_preserves_target_and_releases_lock(tmp_path: Pat
     staged_files = list(tmp_path.glob(".reflex.json.*.tmp"))
     assert len(staged_files) == 1
     assert staged_files[0].read_text(encoding="utf-8") == "{"
-    with path_ops._json_file_lock(target.resolve()).acquire(timeout=1):
-        pass
     path_ops.update_json_file(target, {"after_crash": True})
     assert json.loads(target.read_text(encoding="utf-8")) == {
         **original,
@@ -609,15 +668,16 @@ def test_update_json_file_distinct_files_do_not_block_each_other(
         second_update.result(timeout=5)
 
 
-def test_json_file_lock_is_reentrant_for_normalized_path(tmp_path: Path):
-    """Repeated lock objects for one normalized path can nest in one thread."""
-    target = (tmp_path / "nested" / ".." / "reflex.json").resolve()
-    first_lock = path_ops._json_file_lock(target)
-    second_lock = path_ops._json_file_lock(target)
+def test_json_file_lock_releases_after_body_error(tmp_path: Path):
+    """Body errors propagate once and release the lock for later updates."""
+    target = tmp_path / "reflex.json"
+    with pytest.raises(OSError, match="body error"), path_ops.json_file_lock(target):
+        _assert_json_lock_held(target)
+        msg = "body error"
+        raise OSError(msg)
 
-    assert first_lock is second_lock
-    with first_lock.acquire(timeout=1), second_lock.acquire(timeout=0):
-        pass
+    path_ops.update_json_file(target, {"after_error": True})
+    assert json.loads(target.read_text(encoding="utf-8")) == {"after_error": True}
 
 
 def test_json_file_lock_sidecar_persists_with_private_permissions(tmp_path: Path):
@@ -648,7 +708,9 @@ def test_update_json_file_normalizes_symlink_alias(tmp_path: Path):
     assert alias.is_symlink()
     assert json.loads(target.read_text(encoding="utf-8")) == {"updated": True}
     assert path_ops._json_file_lock_path(target).is_file()
-    assert path_ops._json_file_lock_path(target) == path_ops._json_file_lock_path(alias)
+    assert path_ops._json_file_lock_path(
+        target.resolve()
+    ) == path_ops._json_file_lock_path(alias.resolve())
 
 
 @pytest.mark.skipif(not constants.IS_MACOS, reason="macOS path normalization")
