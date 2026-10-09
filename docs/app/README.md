@@ -1,6 +1,6 @@
 # Reflex Docs
 
-Run the docs app with **Python 3.11+**. The XY demonstrations require it; the conditional XY dependency keeps the shared workspace resolvable for the framework's Python 3.10 tests.
+Run the docs app with **Python 3.11+**, which the XY demonstrations require.
 
 ## Getting Started
 

@@ -29,7 +29,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -364,7 +364,7 @@ def deploy_command(
         logger.error(str(ex))
         raise click.exceptions.Exit(1) from ex
 
-    version_value = version_tag or datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+    version_value = version_tag or datetime.now(UTC).strftime("%Y%m%d-%H%M%S")
     deploy_env = {
         ENV_GCP_PROJECT: gcp_project,
         ENV_GCP_REGION: region,
