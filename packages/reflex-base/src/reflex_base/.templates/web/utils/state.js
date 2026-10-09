@@ -46,10 +46,6 @@ const cookies = new Cookies();
 // Dictionary holding component references.
 export const refs = {};
 
-// Set when the backend sends a delta the frontend cannot process. A mismatch
-// between frontend and backend state definitions is fatal (#6019): no further
-// events are sent until the frontend is rebuilt/reloaded.
-let backend_state_mismatch = false;
 // Array holding pending events to be processed.
 const event_queue = [];
 
@@ -671,14 +667,6 @@ export const processEvent = async (socket, navigate, params) => {
     return;
   }
 
-  // A backend/frontend state mismatch is fatal; do not send further events.
-  // Drop pending events too: callers drain the queue in while-loops that
-  // would otherwise spin forever on an early return.
-  if (backend_state_mismatch) {
-    event_queue.length = 0;
-    return;
-  }
-
   // Only proceed if we're not already processing an event.
   if (event_queue.length === 0) {
     return;
@@ -731,7 +719,6 @@ export const connect = async (
 
   // Get backend URL object from the endpoint.
   const endpoint = getBackendURL(EVENTURL);
-  const on_hydrated_queue = [];
 
   // The hydrate event rides in the socket.io CONNECT packet, so the backend
   // starts loading state as soon as the namespace connects instead of after
@@ -829,9 +816,13 @@ export const connect = async (
     socket.current.disconnect();
   };
 
+  // Report each unknown substate once per connection without stopping events.
+  const reported_missing_substates = new Set();
+
   // Once the socket is open, hydrate the page.
   socket.current.on("connect", async () => {
     socket.current.wait_connect = false;
+    reported_missing_substates.clear();
     setConnectErrors([]);
     window.__reflex_otel?.onSocketConnect?.();
     window.addEventListener("pagehide", pagehideHandler);
@@ -880,58 +871,61 @@ export const connect = async (
     });
   };
 
-  // On each received message, queue the updates and events.
-  socket.current.on("event", (update) => {
-    if (backend_state_mismatch) {
-      // A fatal state mismatch was already detected; drop further updates.
-      return;
-    }
-    // Validate the whole delta before dispatching anything, so a bad substate
-    // does not result in a partially applied state update. Walk the delta once
-    // and only allocate when a substate is actually missing.
-    let missing_substates;
-    for (const substate in update.delta) {
+  // Drop substates without a dispatch function from a delta. Only a mismatched
+  // delta is copied, preserving the received update for other listeners.
+  const withoutUnknownSubstates = (delta) => {
+    let known = delta;
+    for (const substate in delta) {
       if (typeof dispatch[substate] !== "function") {
-        (missing_substates ??= []).push(substate);
+        if (known === delta) {
+          known = { ...delta };
+        }
+        delete known[substate];
       }
     }
-    if (missing_substates !== undefined) {
-      const errorMsg = `Cannot process state update: no dispatch function for substate(s) "${missing_substates.join(
-        '", "',
-      )}". Try refreshing the page or clearing your browser cache. This error usually indicates a mismatch between frontend and backend state definitions. If you are the developer of this app, rebuild the frontend and check that api_url is correct.`;
-      console.error(errorMsg);
-      // Surface the error in the backend terminal logs.
-      socket.current.emit(CLIENT_ERROR_EVENT, {
-        message: errorMsg,
-        substate: missing_substates.join(", "),
-        error_type: ERROR_TYPE_DISPATCH_MISSING,
-      });
-      backend_state_mismatch = true;
+    return known;
+  };
+
+  // Warn about unknown substates and surface them in the backend terminal
+  // logs, once per substate per connection.
+  const reportUnknownSubstates = (substates) => {
+    const unreported = substates.filter(
+      (substate) => !reported_missing_substates.has(substate),
+    );
+    if (unreported.length === 0) {
       return;
     }
+    for (const substate of unreported) {
+      reported_missing_substates.add(substate);
+    }
+    const errorMsg = `Skipping state update for unknown substate(s): no dispatch function for "${unreported.join(
+      '", "',
+    )}". Try refreshing the page or clearing your browser cache. This error usually indicates a mismatch between frontend and backend state definitions. If you are the developer of this app, rebuild the frontend and check that api_url is correct.`;
+    console.warn(errorMsg);
+    socket.current.emit(CLIENT_ERROR_EVENT, {
+      message: errorMsg,
+      substate: unreported.join(", "),
+      error_type: ERROR_TYPE_DISPATCH_MISSING,
+    });
+  };
+
+  // On each received message, queue the updates and events.
+  socket.current.on("event", (update) => {
+    // Skip unknown substates in both reducer and client-storage updates.
+    const delta = withoutUnknownSubstates(update.delta);
+    if (delta !== update.delta) {
+      reportUnknownSubstates(
+        Object.keys(update.delta).filter(
+          (substate) => !Object.hasOwn(delta, substate),
+        ),
+      );
+    }
     try {
-      if (update.delta) {
-        for (const substate in update.delta) {
-          dispatch[substate](update.delta[substate]);
-          // handle events waiting for `is_hydrated`
-          if (
-            substate === app.state_name &&
-            update.delta[substate]?.is_hydrated_rx_state_
-          ) {
-            // Deliberately not awaited: the rest of the delta and the client
-            // storage below must be applied before this handler yields, or a
-            // later update can interleave and apply its delta first.
-            queueEvents(
-              on_hydrated_queue,
-              socket,
-              false,
-              navigate,
-              params,
-            ).catch(reportStateUpdateError);
-            on_hydrated_queue.length = 0;
-          }
+      if (delta) {
+        for (const substate in delta) {
+          dispatch[substate](delta[substate]);
         }
-        applyClientStorageDelta(client_storage, update.delta);
+        applyClientStorageDelta(client_storage, delta);
       }
       if (update.events && update.events.length > 0) {
         queueEvents(update.events, socket, false, navigate, params).catch(

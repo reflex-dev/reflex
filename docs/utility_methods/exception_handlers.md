@@ -13,6 +13,12 @@ They are used to handle exceptions that occur in the `frontend` and `backend` re
 
 The `frontend` errors are coming from the JavaScript side of the application, while `backend` errors are coming from the the event handlers on the Python side.
 
+### Frontend and backend state mismatches
+
+If a backend update names a substate that the compiled frontend does not recognize, Reflex skips that substate. Updates to known substates and subsequent events continue to work. Reflex warns in the browser console and reports each unknown substate to `frontend_exception_handler` once per connection.
+
+This can happen when a backend deploy adds state while a browser still uses an older frontend bundle. Refresh the page to load the matching bundle. If the warning persists, rebuild the frontend and check that `api_url` points to the intended backend. Skipping unknown substates does not make incompatible state definitions interchangeable.
+
 ## Register an Exception Handler
 
 To register an exception handler, assign it to `app.frontend_exception_handler` or `app.backend_exception_handler` to assign a function that will handle the exception.

@@ -2901,10 +2901,10 @@ class ComponentState(State, mixin=True):
 class StateUpdate:
     """A state update sent to the frontend.
 
-    Each substate key in the delta must have a dispatch function registered in
-    the frontend; otherwise the frontend reports a fatal ``client_error`` back
-    to the backend (see ``EventNamespace.on_client_error``), since this
-    indicates mismatched frontend and backend state definitions.
+    Substates without a registered frontend dispatch function are skipped and
+    reported to the backend through ``client_error`` (see
+    ``EventNamespace.on_client_error``). Known substates and events continue
+    to be processed despite the mismatched state definitions.
     """
 
     # The state delta.

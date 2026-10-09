@@ -565,7 +565,7 @@ const SubstateProvider = ({{ children, substateName, contextName }}) => {{
   // A layout effect, not a passive one: layout effects for the whole commit
   // run before any passive effect, so every dispatcher is registered before
   // ``EventLoopProvider`` (mounted below this provider) connects the socket.
-  // A delta naming an unregistered substate is a fatal state mismatch.
+  // A delta naming an unregistered substate is skipped with a warning.
   useIsomorphicLayoutEffect(() => {{
     dispatchers[substateName] = dispatchSubstate;
     return () => {{
