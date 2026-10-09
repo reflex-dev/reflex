@@ -1,0 +1,1 @@
+A background event handler no longer keeps the dispatch-time frame references (the processor's local variables) alive for as long as it runs. A handler can still reach the state tree through its state proxy until it first enters `async with self`.

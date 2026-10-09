@@ -523,6 +523,9 @@ class BaseStateEventProcessor(EventProcessor):
         # background task's own state changes are emitted (and cleaned) by its
         # `async with self` context exits, which re-acquire the lock.
         proxy = StateProxy(substate)
+        # Drop frame references to the dispatch-time state tree so they do not
+        # pin it for the whole (possibly long-running) handler.
+        del state, substate, root_state
         handler_error: BaseException | None = None
         try:
             await process_event(

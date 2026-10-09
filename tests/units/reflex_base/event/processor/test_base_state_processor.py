@@ -3,8 +3,10 @@
 import asyncio
 import contextlib
 import dataclasses
+import gc
 import logging
 import traceback
+import weakref
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any, cast
@@ -31,6 +33,7 @@ from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
 from reflex.istate.manager.token import BaseStateToken
+from reflex.istate.proxy import StateProxy
 from reflex.middleware.middleware import Middleware
 from reflex.state import (
     BaseState,
@@ -2122,3 +2125,45 @@ async def test_reconnect_cancels_stale_on_load_without_load_events(
     async with _read_back(real_base_state_processor, token) as root:
         assert (await root.get_state(SlowLoadState)).seen != "stale-finished"
         assert (await root.get_state(State)).is_hydrated is True
+
+
+@pytest.mark.parametrize("processor_state_manager", ["redis"], indirect=True)
+async def test_background_handler_does_not_retain_dispatch_state_tree(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A running background handler does not keep the dispatch-time state tree alive.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    refs: list[weakref.ref] = []
+    started = asyncio.Event()
+    stop = asyncio.Event()
+
+    class RetainState(State):
+        @event(background=True)
+        async def wait_outside_context(self):
+            refs.append(
+                weakref.ref(cast(StateProxy, self).__wrapped__._get_root_state())
+            )
+            # The proxy releases the dispatch substate on its first context.
+            async with self:
+                pass
+            started.set()
+            await stop.wait()
+
+    async with real_base_state_processor as processor:
+        await processor.enqueue(
+            token, Event.from_event_type(RetainState.wait_outside_context())[0]
+        )
+        await asyncio.wait_for(started.wait(), 5)
+        gc.collect()
+        retained = refs[0]() is not None
+        stop.set()
+        await processor.join(5)
+
+    assert not retained
