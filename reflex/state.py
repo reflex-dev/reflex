@@ -12,6 +12,7 @@ import logging
 import pickle
 import re
 import sys
+import threading
 from collections.abc import Callable, Iterable, Iterator, Sequence
 from contextvars import ContextVar
 from datetime import timedelta
@@ -104,6 +105,7 @@ _dirty_var_collector: ContextVar[set[tuple[BaseState, str]] | None] = ContextVar
     "_dirty_var_collector", default=None
 )
 _dirty_var_collection_depth = 0
+_dirty_var_collection_lock = threading.Lock()
 
 
 @contextlib.contextmanager
@@ -115,13 +117,15 @@ def _collect_dirty_vars() -> Iterator[set[tuple[BaseState, str]]]:
     """
     global _dirty_var_collection_depth
     dirty_vars: set[tuple[BaseState, str]] = set()
-    _dirty_var_collection_depth += 1
+    with _dirty_var_collection_lock:
+        _dirty_var_collection_depth += 1
     token = _dirty_var_collector.set(dirty_vars)
     try:
         yield dirty_vars
     finally:
         _dirty_var_collector.reset(token)
-        _dirty_var_collection_depth -= 1
+        with _dirty_var_collection_lock:
+            _dirty_var_collection_depth -= 1
 
 
 def _state_ancestors(state: BaseState) -> Iterator[BaseState]:
