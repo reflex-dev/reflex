@@ -6,7 +6,7 @@ import logging
 from collections.abc import Iterator
 from functools import partial
 from hashlib import md5
-from typing import Any, ClassVar, Literal, get_type_hints
+from typing import Any, ClassVar, Literal, get_origin, get_type_hints
 
 from reflex_base.components.component import BaseComponent, Component, field
 from reflex_base.components.tags.tag import CommonTag
@@ -32,6 +32,7 @@ from reflex_base.utils.imports import ImportDict
 from reflex_base.utils.types import (
     get_required_typed_dict_keys,
     get_typed_dict_field_types,
+    value_inside_optional,
 )
 from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
@@ -180,6 +181,29 @@ def _is_form_control_component(component: BaseComponent) -> bool:
     if getattr(wrapped_component_type, "_is_form_control", False):
         return True
     return getattr(component, "tag", None) in _NATIVE_FORM_CONTROL_TAGS
+
+
+def _form_fills_field(
+    name: str, field_types: dict[str, Any], form_keys: set[str]
+) -> bool:
+    """Check whether a form's static field names fill a TypedDict field.
+
+    Args:
+        name: The TypedDict field.
+        field_types: The TypedDict's field types.
+        form_keys: The form's static field names.
+
+    Returns:
+        Whether a field of that name is submitted or, for a list field, one
+        named ``name[]``, unless the TypedDict declares ``name[]`` itself.
+    """
+    if name in form_keys:
+        return True
+    bracketed = f"{name}[]"
+    if bracketed not in form_keys or bracketed in field_types:
+        return False
+    field_type = value_inside_optional(field_types[name])
+    return (get_origin(field_type) or field_type) is list
 
 
 def _format_field_list(fields: tuple[str, ...]) -> str:
@@ -442,7 +466,9 @@ class Form(BaseHTML):
         if not isinstance(on_submit, EventChain):
             return
 
-        typed_dict_contracts: list[tuple[str, type[Any], frozenset[str]]] = []
+        typed_dict_contracts: list[
+            tuple[str, type[Any], frozenset[str], dict[str, Any]]
+        ] = []
         for event in on_submit.events:
             if not isinstance(event, EventSpec):
                 return
@@ -470,7 +496,7 @@ class Form(BaseHTML):
 
             # Fail at compile time rather than coerce submissions wrongly.
             try:
-                get_typed_dict_field_types(annotation)
+                field_types = get_typed_dict_field_types(annotation)
             except TypeError as err:
                 msg = f"Cannot submit form data to on_submit handler `{func.__qualname__}`: {err}"
                 raise EventHandlerValueError(msg) from err
@@ -480,6 +506,7 @@ class Form(BaseHTML):
                 func.__qualname__,
                 annotation,
                 required_fields,
+                field_types,
             ))
 
         if not typed_dict_contracts:
@@ -492,19 +519,26 @@ class Form(BaseHTML):
 
         form_keys, has_dynamic_names = self._get_static_form_field_names()
 
-        for handler_name, typed_dict_type, required_fields in typed_dict_contracts:
+        for (
+            handler_name,
+            typed_dict_type,
+            required_fields,
+            field_types,
+        ) in typed_dict_contracts:
             required_field_names = tuple(sorted(required_fields))
             if not required_field_names:
                 continue
 
             missing_fields = tuple(
-                field for field in required_field_names if field not in form_keys
+                field
+                for field in required_field_names
+                if not _form_fills_field(field, field_types, form_keys)
             )
             if not missing_fields or has_dynamic_names:
                 continue
 
             present_fields = tuple(
-                field for field in required_field_names if field in form_keys
+                field for field in required_field_names if field not in missing_fields
             )
             msg = (
                 f"Form field mismatch for on_submit handler `{handler_name}`.\n\n"

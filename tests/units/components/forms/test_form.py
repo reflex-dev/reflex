@@ -311,6 +311,32 @@ def test_on_submit_accepts_typed_dict_with_optional_fields():
         )
 
 
+def test_on_submit_typed_dict_list_field_accepts_bracketed_control_name():
+    """A required list field is filled by controls named ``name[]``."""
+
+    class TagsData(TypedDict):
+        tags: list[str]
+        pick: str
+
+    class TagsState(rx.State):
+        @rx.event
+        def on_submit(self, form_data: TagsData):
+            pass
+
+    HTMLForm.create(
+        Input.create(name="tags[]"),
+        Input.create(name="pick"),
+        on_submit=TagsState.on_submit,
+    )
+    # Only a list field takes the bracketed name.
+    with pytest.raises(EventHandlerValueError, match="pick"):
+        HTMLForm.create(
+            Input.create(name="tags"),
+            Input.create(name="pick[]"),
+            on_submit=TagsState.on_submit,
+        )
+
+
 def test_on_submit_allows_extra_typed_dict_form_fields():
     """Forms may include more fields than the TypedDict requires."""
 
