@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import datetime
+import json
 import logging
 from collections.abc import Sequence
+from textwrap import indent
 from typing import Any
 
 import click
@@ -747,7 +749,30 @@ def app_logs(
         printed = 0
         for record in records:
             entry = hosting.as_json_document(record)
-            logger.info(pprint.pformat(entry, indent=2) if pretty else entry)
+            if pretty:
+                message = pprint.pformat(entry, indent=2)
+            else:
+                timestamp = entry.get("timestamp")
+                level = str(entry.get("log_level") or "info").upper()
+                log_message = entry.get("message", "")
+                if isinstance(log_message, dict):
+                    log_message = json.dumps(log_message, ensure_ascii=False)
+                prefix = f"{timestamp} [{level}]" if timestamp else f"[{level}]"
+                message_lines = (
+                    str(log_message)
+                    .replace("\r\n", "\n")
+                    .replace("\r", "\n")
+                    .split("\n")
+                )
+                message = f"{prefix} {message_lines[0]}"
+                if len(message_lines) > 1:
+                    message += "\n" + indent(
+                        "\n".join(message_lines[1:]), "  ", lambda _: True
+                    )
+                if (details := entry.get("details")) is not None:
+                    details = str(details).replace("\r\n", "\n").replace("\r", "\n")
+                    message += "\n" + indent(details, "  ", lambda _: True)
+            console.print(message, markup=False, soft_wrap=True)
             printed += 1
             if printed % _LOGS_PAGE_SIZE:
                 continue
