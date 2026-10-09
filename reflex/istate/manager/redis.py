@@ -231,6 +231,10 @@ class StateManagerRedis(StateManager):
     _cached_state_users_since: dict[str, float] = dataclasses.field(
         default_factory=dict, init=False
     )
+    # Wakes a flushing lease's lock renewal when its cached state changes hands.
+    _cached_state_handoffs: dict[str, asyncio.Event] = dataclasses.field(
+        default_factory=dict, init=False
+    )
     # The unique ID for this state manager, the domain for _local_leases.
     _instance_id: str = dataclasses.field(default_factory=lambda: str(uuid.uuid4()))
 
@@ -571,11 +575,11 @@ class StateManagerRedis(StateManager):
             if cached_state is not None:
                 # The lease keeps its lock alive for this use, within the
                 # lock expiration from now (see `_create_lease_break_task`).
-                self._cached_state_users_since[token.lock_key] = time.monotonic()
+                self._hand_off_cached_state(token.lock_key, time.monotonic())
                 try:
                     yield cached_state
                 finally:
-                    self._cached_state_users_since.pop(token.lock_key, None)
+                    self._hand_off_cached_state(token.lock_key, None)
                     # A waiter queued on the redis lock only learns about the
                     # lease from here, also when the holder failed.
                     self._notify_next_waiter(self._lock_key(token))
@@ -766,20 +770,29 @@ class StateManagerRedis(StateManager):
             # it from now. A use that runs over loses the lock, and the flush
             # then fails instead of writing.
             expiration = self.lock_expiration / 1000
-            while True:
-                now = time.monotonic()
-                if (since := self._cached_state_users_since.get(lock_key)) is None:
-                    deadline = now + expiration
-                else:
-                    deadline = (
-                        since if broken_at is None else max(since, broken_at)
-                    ) + expiration
-                ttl_ms = int((deadline - now) * 1000)
-                if ttl_ms <= 0 or not await self._extend_lock(
-                    redis_lock_key, lock_id, ttl_ms
-                ):
-                    return
-                await asyncio.sleep(expiration / 3)
+            handoff = self._cached_state_handoffs[lock_key] = asyncio.Event()
+            try:
+                while True:
+                    handoff.clear()
+                    now = time.monotonic()
+                    if (since := self._cached_state_users_since.get(lock_key)) is None:
+                        deadline = now + expiration
+                    else:
+                        deadline = (
+                            since if broken_at is None else max(since, broken_at)
+                        ) + expiration
+                    ttl_ms = int((deadline - now) * 1000)
+                    if ttl_ms <= 0 or not await self._extend_lock(
+                        redis_lock_key, lock_id, ttl_ms
+                    ):
+                        return
+                    # The lock may now expire with the current user's deadline,
+                    # so renew it as soon as the next user takes over.
+                    with contextlib.suppress(TimeoutError, asyncio.TimeoutError):
+                        await asyncio.wait_for(handoff.wait(), expiration / 3)
+            finally:
+                if self._cached_state_handoffs.get(lock_key) is handoff:
+                    del self._cached_state_handoffs[lock_key]
 
         async def do_flush() -> None:
             if (state_lock := self._cached_states_locks.get(lock_key)) is None:
@@ -924,6 +937,23 @@ class StateManagerRedis(StateManager):
                 task.add_done_callback(on_lease_done)
                 return task
         return None
+
+    def _hand_off_cached_state(self, lock_key: str, since: float | None) -> None:
+        """Record when the current user of a cached state got it.
+
+        Wakes the lock renewal of the lease flushing that state, if any, which
+        then renews the lock for the new user.
+
+        Args:
+            lock_key: The token's lock key.
+            since: The monotonic time the user got the state, None once it is done.
+        """
+        if since is None:
+            self._cached_state_users_since.pop(lock_key, None)
+        else:
+            self._cached_state_users_since[lock_key] = since
+        if (handoff := self._cached_state_handoffs.get(lock_key)) is not None:
+            handoff.set()
 
     @staticmethod
     def _lock_key(token: StateToken[Any]) -> bytes:
