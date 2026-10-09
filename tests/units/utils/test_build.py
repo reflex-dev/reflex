@@ -4,14 +4,97 @@ from __future__ import annotations
 
 import gzip
 import json
+import zipfile
 from pathlib import Path
 
 import pytest
 import reflex_base
 from pytest_mock import MockerFixture
+from reflex_base import constants
 
 from reflex.plugins import EmbedPlugin, Plugin
 from reflex.utils import build, path_ops
+
+
+@pytest.mark.parametrize("suffix", [".gz", ".br", ".zst"])
+@pytest.mark.parametrize("component_name", list(constants.ComponentName))
+def test_zip_precompressed_sidecars(
+    tmp_path: Path, suffix: str, component_name: constants.ComponentName
+):
+    """Skip recompression for frontend sidecars and preserve backend compression."""
+    static_dir = tmp_path / "static"
+    static_dir.mkdir()
+    source = b"export const greeting = 'hello';\n" * 100
+    sidecar = gzip.compress(source)
+    (static_dir / "app.js").write_bytes(source)
+    (static_dir / f"app.js{suffix}").write_bytes(sidecar)
+    target = tmp_path / "frontend.zip"
+
+    build._zip(
+        component_name=component_name,
+        target=target,
+        root_directory=static_dir,
+        exclude_venv_directories=False,
+    )
+
+    with zipfile.ZipFile(target) as archive:
+        assert archive.read("app.js") == source
+        assert archive.read(f"app.js{suffix}") == sidecar
+        assert archive.getinfo("app.js").compress_type == zipfile.ZIP_DEFLATED
+        assert archive.getinfo(f"app.js{suffix}").compress_type == (
+            zipfile.ZIP_STORED
+            if component_name == constants.ComponentName.FRONTEND
+            else zipfile.ZIP_DEFLATED
+        )
+
+
+def test_zip_excludes_files_and_hardlink_aliases(tmp_path: Path):
+    """Archive exclusions must match file identity, including hard-linked aliases."""
+    root = tmp_path / "app"
+    root.mkdir()
+    (root / "app.py").write_text("print('app')")
+    excluded_file = root / "secret.txt"
+    excluded_file.write_text("secret")
+    (root / "alias.txt").hardlink_to(excluded_file)
+    excluded_dir = root / "excluded"
+    excluded_dir.mkdir()
+    (excluded_dir / "private.txt").write_text("private")
+    target = tmp_path / "backend.zip"
+
+    build._zip(
+        component_name=constants.ComponentName.BACKEND,
+        target=target,
+        root_directory=root,
+        exclude_venv_directories=True,
+        files_to_exclude={excluded_file, excluded_dir, root / "missing"},
+    )
+
+    with zipfile.ZipFile(target) as archive:
+        assert archive.namelist() == ["app.py"]
+        assert archive.read("app.py") == b"print('app')"
+
+
+@pytest.mark.skipif(constants.IS_WINDOWS, reason="Requires directory symlinks")
+def test_zip_excludes_directory_symlink_aliases(tmp_path: Path):
+    """An excluded directory must also be skipped through a symbolic link."""
+    root = tmp_path / "app"
+    root.mkdir()
+    excluded_dir = root / "excluded"
+    excluded_dir.mkdir()
+    (excluded_dir / "private.txt").write_text("private")
+    (root / "alias").symlink_to(excluded_dir, target_is_directory=True)
+    target = tmp_path / "backend.zip"
+
+    build._zip(
+        component_name=constants.ComponentName.BACKEND,
+        target=target,
+        root_directory=root,
+        exclude_venv_directories=True,
+        files_to_exclude={excluded_dir},
+    )
+
+    with zipfile.ZipFile(target) as archive:
+        assert archive.namelist() == []
 
 
 def test_compress_static_output_overwrites_stale_sidecars(
