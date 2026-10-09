@@ -3,6 +3,8 @@
 import asyncio
 import contextlib
 import dataclasses
+import gc
+import inspect
 import logging
 import traceback
 from collections.abc import Mapping
@@ -616,6 +618,106 @@ async def test_background_event_without_context_still_flushes_a_delta(
     assert any(d.get(state_name, {}).get(beat_key) == 7 for _, d in emitted_deltas), (
         f"no delta refreshed the uncached var: {emitted_deltas}"
     )
+
+
+@pytest.mark.parametrize("mode", ["dropped", "replaced"])
+@pytest.mark.parametrize(
+    "processor_state_manager", ["in_process", "disk"], indirect=True
+)
+async def test_filtered_async_var_is_delivered_after_release(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+    mode: str,
+    monkeypatch: pytest.MonkeyPatch,
+    recwarn: pytest.WarningsRecorder,
+):
+    """Events can withhold an async var then deliver it without leaking coroutines.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked event processor.
+        emitted_deltas: Deltas emitted by the event processor.
+        token: The client token.
+        mode: Whether the filter drops the value or replaces it with a placeholder.
+        monkeypatch: Pytest monkeypatch fixture.
+        recwarn: Fixture capturing warnings from withheld coroutines.
+    """
+
+    class FilteredAsyncState(State):
+        n: int = 0
+        _withhold: bool = True
+
+        @rx.var(cache=False)
+        async def secret(self) -> str:
+            """Return the current secret.
+
+            Returns:
+                The secret derived from the current state.
+            """
+            await asyncio.sleep(0)
+            return f"secret-{self.n}"
+
+        @event
+        def update(self, n: int, withhold: bool):
+            """Set the value and whether its computed secret may be delivered.
+
+            Args:
+                n: The new value.
+                withhold: Whether to filter out the secret.
+            """
+            self.n = n
+            self._withhold = withhold
+
+    state_name = FilteredAsyncState.get_full_name()
+    key = "secret" + FIELD_MARKER
+    original_get_delta = BaseState.get_delta
+
+    def filtered_get_delta(self: FilteredAsyncState) -> rx.state.Delta:
+        """Filter a secret before the processor resolves its coroutine.
+
+        Args:
+            self: The state whose delta is being filtered.
+
+        Returns:
+            The filtered delta.
+        """
+        delta = original_get_delta(self)
+        if self._withhold and key in delta.get(state_name, {}):
+            value = delta[state_name].pop(key)
+            assert inspect.iscoroutine(value)
+            value.close()
+            if mode == "replaced":
+                delta[state_name][key] = "anon"
+        return delta
+
+    monkeypatch.setattr(FilteredAsyncState, "get_delta", filtered_get_delta)
+    async with _read_back(real_base_state_processor, token) as root:
+        root.router_data = {"pathname": "/", "query": {}}
+
+    async with real_base_state_processor as processor:
+        for n, withhold, expected in [
+            (1, True, ["anon"] if mode == "replaced" else []),
+            (1, False, ["secret-1"]),
+            (1, False, []),
+            (2, True, ["anon"] if mode == "replaced" else []),
+            (1, False, ["secret-1"] if mode == "replaced" else []),
+        ]:
+            emitted_deltas.clear()
+            await _send(
+                processor,
+                token,
+                Event.from_event_type(FilteredAsyncState.update(n, withhold))[0],
+            )
+            assert [
+                delta[state_name][key]
+                for _, delta in emitted_deltas
+                if key in delta.get(state_name, {})
+            ] == expected
+
+    gc.collect()
+    assert not [warning for warning in recwarn if warning.category is RuntimeWarning]
 
 
 async def test_background_event_raising_without_context_still_flushes_a_delta(
