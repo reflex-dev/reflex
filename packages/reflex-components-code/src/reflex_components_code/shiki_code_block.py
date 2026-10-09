@@ -513,15 +513,6 @@ class ShikiJsTransformer(ShikiBaseTransformers):
         })
     )
 
-    def __post_init__(self):
-        """Convert user-supplied fns and style to their var and Style types."""
-        self.fns = [
-            (FunctionStringVar.create(x) if not isinstance(x, FunctionStringVar) else x)
-            for x in self.fns or []
-        ]
-        if self.style is not None:
-            self.style = Style(self.style)
-
 
 class ShikiCodeBlock(Component, MarkdownComponentMap):
     """A Code block."""

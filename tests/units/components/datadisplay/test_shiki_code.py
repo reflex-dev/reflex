@@ -179,12 +179,6 @@ def test_shiki_high_level_code_block_use_transformers():
         assert var._var_value == value
 
 
-def test_shiki_js_transformer_fns_none_is_empty():
-    """Passing fns=None should produce no transformer functions, not raise."""
-    transformer = ShikiJsTransformer(library="lib", fns=None, style=None)  # pyright: ignore [reportArgumentType]
-    assert transformer.fns == []
-
-
 @pytest.mark.parametrize(
     ("children", "props"),
     [
