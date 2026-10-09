@@ -1,3 +1,14 @@
+## v0.10.0 (2026-10-08)
+
+### Breaking Changes
+
+- Require Python 3.11 or newer; Python 3.10 is no longer supported. ([#7449](https://github.com/reflex-dev/reflex/issues/7449))
+
+### Miscellaneous
+
+- Update Shiki and its transformers to 4.5.0. ([#7424](https://github.com/reflex-dev/reflex/issues/7424))
+
+
 ## v0.9.6 (2026-09-21)
 
 ### Bug Fixes

@@ -15,9 +15,9 @@ import uuid
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, TypedDict, cast
+from typing import Any, NotRequired, TypedDict, cast
 
 from reflex_base import constants
 from reflex_base.config import get_config
@@ -26,7 +26,6 @@ from reflex_base.registry import RegistrationContext
 from reflex_base.utils import log
 from reflex_base.utils.decorator import once, once_unless_none
 from reflex_base.utils.exceptions import ReflexError
-from typing_extensions import NotRequired
 
 from reflex.utils import processes
 from reflex.utils.js_runtimes import get_bun_version, get_node_version
@@ -39,7 +38,6 @@ from reflex.utils.prerequisites import (
 
 logger = logging.getLogger(__name__)
 
-UTC = timezone.utc
 POSTHOG_API_URL: str = "https://app.posthog.com/capture/"
 
 

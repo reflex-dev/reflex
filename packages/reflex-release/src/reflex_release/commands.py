@@ -36,6 +36,7 @@ from .changelog import (
 from .config import POST_RELEASE_INPUTS, POST_RELEASE_WORKFLOW_KEY, Config, is_final
 from .devpins import (
     LOCK_FILE,
+    PinUpgrade,
     blocker_advice,
     blocking_pins,
     describe_blockers,
@@ -54,7 +55,7 @@ from .discovery import (
     run_towncrier,
     title_format,
 )
-from .dist import pin_exact, verify_dist
+from .dist import check_exact_pin, pin_exact, verify_dist
 from .gitutil import (
     changed_files,
     commit_exists,
@@ -172,8 +173,7 @@ def _lockstep_errors(config: Config, due: dict[str, str]) -> list[str]:
     """Verify the lockstep invariant for a release batch.
 
     Every lockstep partner of a due package must either be due at the identical
-    version in the same batch or already carry the tag for that version (the
-    retry case where one half published earlier).
+    version in the same batch or already carry the tag for that version.
 
     Args:
         config: The repository configuration.
@@ -188,12 +188,8 @@ def _lockstep_errors(config: Config, due: dict[str, str]) -> list[str]:
             partner_tag = config.tag_for(partner, version)
             if due.get(partner) != version and not tag_exists(config.root, partner_tag):
                 errors.append(
-                    f"{package} v{version} is due but its lockstep partner {partner} "
-                    f"is neither due at v{version} nor already tagged {partner_tag}; "
-                    "publishing would break their exact pin. Re-run the Dispatch "
-                    "release workflow: selecting either member materializes the "
-                    "whole group, writing an empty changelog entry for members "
-                    "that have no news fragments."
+                    f"{package} v{version} needs {partner} at v{version}, which is "
+                    f"neither in this batch nor tagged {partner_tag}"
                 )
     return errors
 
@@ -260,10 +256,10 @@ def cmd_detect(config: Config, ref_name: str) -> None:
         fail("lockstep invariant violated; no package was published")
 
 
-def _drop_unpublishable_pins(
-    config: Config, packages: list[str], action: str, explicit: bool
-) -> tuple[list[str], list[str]]:
-    """Hold back packages whose dependency pins no published version satisfies.
+def _held_back(
+    blocked: dict[str, list[PinUpgrade]], planned: dict[str, str], explicit: bool
+) -> list[str]:
+    """Report the packages a plan held back over unsatisfiable dependency pins.
 
     Materialization lifts a ``*.dev`` (and, for a final version, a prerelease)
     dependency floor to the earliest published version that satisfies it. A
@@ -271,49 +267,99 @@ def _drop_unpublishable_pins(
     releasable yet — releasing it would either publish an uninstallable pin or
     stop at the publish-time gate with the changelog already bumped.
 
-    A lockstep group is held back whole: its members only ever release together.
-
     Args:
-        config: The repository configuration.
-        packages: The selected packages, lockstep groups already expanded.
-        action: The release action being planned.
+        blocked: The unsatisfiable pins, by package.
+        planned: What is left of the plan.
         explicit: Whether the selection was made by hand. An explicit selection
             that cannot be released is an error; an auto-selected package is
             simply left out of the batch.
 
     Returns:
-        The releasable packages and the human-readable reasons the others were
-        held back.
+        The human-readable reasons, for the run summary.
     """
-    blocked = blocking_pins(
-        config, packages, allow_prereleases=action not in FINAL_ACTIONS
-    )
-    if not blocked:
-        return packages, []
-
     reasons = describe_blockers(blocked)
+    listing = "\n".join(f"  {line}" for line in reasons)
     if explicit:
-        listing = "\n".join(f"  {line}" for line in reasons)
         fail(
             "the selected package(s) declare dependency pins that no published "
             f"version satisfies:\n{listing}\n\n{blocker_advice(blocked)}"
         )
-
-    held = {
-        member
-        for package in blocked
-        for member in (package, *config.lockstep_partners(package))
-    }
     for line in reasons:
         notice(f"held back from this release — {line}")
-    remaining = [package for package in packages if package not in held]
-    if not remaining:
+    if not planned:
         fail(
-            "every auto-selected package declares a dependency pin that no "
-            "published version satisfies:\n"
-            + "\n".join(f"  {line}" for line in reasons)
+            "every auto-selected package is held back by a dependency pin that "
+            f"no published version satisfies:\n{listing}"
         )
-    return remaining, reasons
+    return reasons
+
+
+def _plan_versions(
+    config: Config,
+    packages: list[str],
+    action: str,
+    blocked: dict[str, list[PinUpgrade]],
+) -> tuple[dict[str, str], list[str]]:
+    """Plan the next version of each selected package and of the partners it needs.
+
+    Members of a lockstep group without ``publish-last`` advance together from
+    the highest baseline among them. A ``publish-last`` member advances from its
+    own baseline and needs every early member tagged at the new version; one not
+    tagged there yet is planned at it too.
+
+    A blocked package is held back before its version is planned, so an action
+    that does not apply to it cannot stop its siblings. A package whose needed
+    partner is blocked is held back with the partner.
+
+    Args:
+        config: The repository configuration.
+        packages: The selected packages.
+        action: One of the keys in :data:`~reflex_release.versions.ACTIONS`.
+        blocked: The unsatisfiable pins of the selected packages and of their
+            lockstep partners, by package.
+
+    Returns:
+        Package name to planned version, the selected packages first, and the
+        selected packages held back.
+    """
+    planned: dict[str, str] = {}
+    held: list[str] = []
+    for package in packages:
+        if package in blocked:
+            held.append(package)
+            continue
+        group = config.lockstep_group(package)
+        members = (
+            group.members
+            if group is not None and not group.publish_last
+            else (package,)
+        )
+        known = [v for m in members if (v := current_version(config, m)) is not None]
+        planned[package] = next_version(max(known, default=None), action, package)
+    for package in list(planned):
+        version = planned[package]
+        missing: list[str] = []
+        for partner in config.lockstep_partners(package):
+            if partner in planned:
+                continue
+            tag = config.tag_for(partner, version)
+            if tag_exists(config.root, tag):
+                notice(f"{package} v{version} reuses the published {tag}")
+            else:
+                missing.append(partner)
+        if any(partner in blocked for partner in missing):
+            held.append(package)
+            del planned[package]
+            continue
+        for partner in missing:
+            own = current_version(config, partner)
+            if own is not None and own >= Version(version):
+                fail(
+                    f"{package} v{version} needs {config.tag_for(partner, version)}, "
+                    f"but {partner} is already at v{own}"
+                )
+            planned[partner] = version
+    return planned, held
 
 
 def cmd_plan(config: Config, action: str, selection: str) -> None:
@@ -323,8 +369,9 @@ def cmd_plan(config: Config, action: str, selection: str) -> None:
     ``$GITHUB_OUTPUT``. An empty selection auto-detects the packages to release:
     those with pending news fragments — or, for ``release-from-prerelease``,
     those whose changelog is topped by an alpha (their fragments are already
-    consumed). A package whose dependency pins no published version satisfies is
-    not eligible either way (see :func:`_drop_unpublishable_pins`).
+    consumed). Lockstep partners the selection needs are planned with it (see
+    :func:`_plan_versions`). A package whose dependency pins no published version
+    satisfies is not eligible either way (see :func:`_held_back`).
 
     Args:
         config: The repository configuration.
@@ -360,35 +407,37 @@ def cmd_plan(config: Config, action: str, selection: str) -> None:
             fail(f"no packages selected and no package has {source}")
         notice(f"no packages selected; auto-detected {', '.join(packages)}")
 
-    # Lockstep members always release together at the same version, so selecting
-    # one selects the whole group and the group shares a single baseline.
-    for package in list(packages):
-        packages.extend(
-            partner
-            for partner in config.lockstep_partners(package)
-            if partner not in packages
+    candidates = list(
+        dict.fromkeys(
+            name
+            for package in packages
+            for name in (package, *config.lockstep_partners(package))
         )
-
-    packages, disqualified = _drop_unpublishable_pins(
-        config, packages, action, explicit=how == "explicit"
     )
+    blocked = blocking_pins(
+        config, candidates, allow_prereleases=action not in FINAL_ACTIONS
+    )
+    planned, held = _plan_versions(config, packages, action, blocked)
+    disqualified = _held_back(blocked, planned, how == "explicit") if held else []
+    if errors := _lockstep_errors(config, planned):
+        fail("\n".join(errors))
 
     releases: list[dict[str, str]] = []
-    for package in packages:
-        group = config.lockstep_group(package)
-        members = group.members if group is not None else (package,)
-        baselines = [current_version(config, member) for member in members]
-        known = [version for version in baselines if version is not None]
-        current = max(known) if known else None
-        planned = next_version(current, action, package)
-        tag = config.tag_for(package, planned)
+    for package, version in planned.items():
+        tag = config.tag_for(package, version)
         if tag_exists(config.root, tag):
             fail(f"tag {tag} already exists")
+        # Checked here as well as at build time, before any changelog is bumped.
+        pyproject = config.package_path(package) / "pyproject.toml"
+        for target in config.exact_pin_targets(package):
+            check_exact_pin(
+                pyproject, config.distribution_name(target), Version(version)
+            )
         own = current_version(config, package)
         releases.append({
             "package": package,
             "current": str(own) if own is not None else "",
-            "next": planned,
+            "next": version,
             "tag": tag,
         })
 
@@ -560,8 +609,14 @@ def cmd_prepare_publish(
         notice(f"{package} has no CHANGELOG.md; skipping changelog check.")
 
     for partner in config.lockstep_partners(package):
-        if tag_exists(config.root, config.tag_for(partner, str(version))):
+        partner_tag = config.tag_for(partner, str(version))
+        if tag_exists(config.root, partner_tag):
             continue
+        if config.publishes_last(package):
+            fail(
+                f"{package} v{version} publishes after {partner}, but "
+                f"{partner_tag} is not tagged yet"
+            )
         partner_path = config.changelog_path(partner)
         partner_newest = (
             latest_version(partner_path.read_text(encoding="utf-8"))
@@ -618,9 +673,8 @@ def cmd_prepare_publish(
 def cmd_pin_lockstep(config: Config, package: str, version: str) -> None:
     """Pin a package's lockstep siblings to the exact release version.
 
-    Lockstep packages release together at one version, so the sibling that
-    publishes last must ship metadata depending on exactly the versions
-    published alongside it rather than on a floor.
+    A ``publish-last`` member depends on its siblings at the identical version,
+    published in this batch or an earlier one.
 
     Args:
         config: The repository configuration.

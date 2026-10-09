@@ -1,3 +1,18 @@
+## v0.2.0 (2026-10-08)
+
+### Breaking Changes
+
+- Require Python 3.11 or newer; Python 3.10 is no longer supported. ([#7449](https://github.com/reflex-dev/reflex/issues/7449))
+
+### Features
+
+- Let the early members of a `publish-last` lockstep group release on their own. A `publish-last` member reuses a sibling tag at its version when one exists, and its exact pins are checked against the declared requirement at plan time. ([#7464](https://github.com/reflex-dev/reflex/issues/7464))
+
+### Bug Fixes
+
+- Dispatch release forms keep their per-package checkboxes up to 24 packages, rather than falling back to a free-text field past 19. `workflow_dispatch` has accepted 25 inputs since December 2025. ([#7288](https://github.com/reflex-dev/reflex/issues/7288))
+
+
 ## v0.1.1 (2026-09-11)
 
 ### Bug Fixes

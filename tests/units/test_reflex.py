@@ -75,6 +75,7 @@ def _run_cli_probe(probe: str) -> dict[str, object]:
         (["--help"], _CLI_STARTUP_DENIED_MODULES),
         (["--version"], _CLI_STARTUP_DENIED_MODULES),
         (["run", "--help"], _CLI_STARTUP_DENIED_MODULES),
+        (["component", "--help"], _CLI_STARTUP_DENIED_MODULES),
         (
             ["deploy", "--help"],
             _CLI_STARTUP_DENIED_MODULES - {"reflex_cli.v2.deploy"},
@@ -88,6 +89,7 @@ def _run_cli_probe(probe: str) -> dict[str, object]:
         "help",
         "version",
         "run-help",
+        "component-help",
         "deploy-help",
         "cloud-help",
     ],
@@ -266,9 +268,89 @@ print(json.dumps({
     }
 
 
-def test_component_command_is_not_registered():
-    """The custom components CLI has been removed."""
-    assert "component" not in reflex.cli.commands
+_COMPONENT_TEMPLATE_URL = "https://github.com/reflex-dev/component-template"
+
+
+def test_component_command_is_hidden():
+    """The removed component CLI keeps a shim that stays out of the listing."""
+    assert reflex.cli.commands["component"].hidden
+
+    result = click.testing.CliRunner().invoke(reflex.cli, ["--help"])
+
+    assert result.exit_code == 0
+    listed = [line.split()[0] for line in result.output.splitlines() if line.strip()]
+    assert "component" not in listed
+
+
+@pytest.mark.parametrize(
+    "args",
+    [
+        [],
+        ["init"],
+        ["build"],
+        ["install", "reflex-example"],
+        ["share", "--no-interactive"],
+        ["--library-name", "reflex-example"],
+    ],
+)
+def test_component_command_points_to_template(
+    caplog: pytest.LogCaptureFixture, args: list[str]
+):
+    """Every removed component subcommand reports where the workflow moved.
+
+    Args:
+        caplog: The pytest log capture fixture.
+        args: The arguments a user of the old workflow passes.
+    """
+    result = click.testing.CliRunner().invoke(reflex.cli.commands["component"], args)
+
+    assert result.exit_code == 1
+    assert _COMPONENT_TEMPLATE_URL in caplog.text
+    assert "No such option" not in result.output
+    assert "No such command" not in result.output
+
+
+@pytest.mark.parametrize("args", [["--help"], ["init", "--help"]])
+def test_component_help_points_to_template(
+    monkeypatch: pytest.MonkeyPatch, args: list[str]
+):
+    """Asking the removed component CLI for help prints the pointer.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+        args: The help invocation after ``reflex component``.
+    """
+    from reflex_base.utils import log
+
+    # Registered so teardown restores the variable the CLI callback sets.
+    monkeypatch.setenv(log._MANAGED_ENV_VAR, "true")
+    try:
+        result = click.testing.CliRunner().invoke(reflex.cli, ["component", *args])
+    finally:
+        log._reset()
+
+    assert result.exit_code == 0, result.output
+    assert _COMPONENT_TEMPLATE_URL in result.output
+
+
+def test_component_command_dispatches_from_cli():
+    """``reflex component init`` reaches the shim instead of a usage error."""
+    completed = subprocess.run(
+        [sys.executable, "-m", "reflex", "component", "init"],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=30,
+        env={
+            **os.environ,
+            "REFLEX_CHECK_LATEST_VERSION": "false",
+            "REFLEX_TELEMETRY_ENABLED": "false",
+        },
+    )
+
+    assert completed.returncode == 1, completed.stderr
+    assert _COMPONENT_TEMPLATE_URL in completed.stderr
+    assert "No such command" not in completed.stderr
 
 
 def test_lazy_command_delegates_click_introspection(monkeypatch: pytest.MonkeyPatch):

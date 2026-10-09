@@ -1,3 +1,33 @@
+## v0.2.0 (2026-10-08)
+
+### Breaking Changes
+
+- Some `reflex cloud` commands changed what they report: ([#7207](https://github.com/reflex-dev/reflex/issues/7207))
+  - A refused request exits non-zero instead of printing a `"... failed: ..."` line and exiting 0, and `--json` writes no document. This includes `vmtypes` and `regions`, which answered a failed request with an empty listing, and `apps stop`, `apps start` and `apps delete`, which now report their own outcome rather than echoing the server's message.
+  - `apps history --json` replaces `hostname` with the deployment's `url`, reports `vm type` as the machine's name rather than an object, and reports `timestamp` as an ISO 8601 string with an offset. `apps inspect --json` drops `hostname` from `latest_deployment`.
+  - `create-token --json` replaces `expires_in_days` with `expires_at`, an ISO 8601 string or `null`, carrying the expiry the server applied.
+  - `apps logs` drops its unused `--cursor` option, and its `--json` document returns every line in the window rather than one page.
+  - `apps status --watch --json` reports `"success": null` when the watch stopped before the deployment finished.
+  - `project role-permissions` lists permission names rather than objects.
+  - `reflex deploy` requires a control plane that signs upload URLs; the multipart upload fallback for older ones, and its "payload is too large (over 100MB)" hint, are gone.
+- Require Python 3.11 or newer; Python 3.10 is no longer supported. ([#7449](https://github.com/reflex-dev/reflex/issues/7449))
+
+### Bug Fixes
+
+- `reflex cloud` reports a refusal as the sentence the API wrote rather than a message of its own, and an expired token now says to run `reflex login` wherever it turns up — not only where a command started by authenticating. ([#7207](https://github.com/reflex-dev/reflex/issues/7207))
+- `reflex cloud apps delete` now exits non-zero when the app ID is not found. ([#7295](https://github.com/reflex-dev/reflex/issues/7295))
+- With `--no-interactive`, a rejected access token now fails right away with the same message `reflex cloud whoami` gives, instead of starting the browser login. ([#7298](https://github.com/reflex-dev/reflex/issues/7298))
+- Preserve a different stored access token when authentication rejects an outdated or explicitly supplied token. ([#7321](https://github.com/reflex-dev/reflex/issues/7321))
+- `reflex deploy` now consistently shows the "Built with Reflex" badge on apps deployed on the free tier, including apps built with earlier reflex releases. Paid plans can still hide it with `show_built_with_reflex=False`. ([#7333](https://github.com/reflex-dev/reflex/issues/7333))
+- `reflex cloud apps list`, `apps history` and `apps inspect` keep app names and app and deployment IDs whole on one line, so you can copy them from a normal-width terminal. `apps list` and `apps history` show fewer columns; `--json` still returns every field. `apps inspect` shows one field per row. Tables no longer draw cell borders. ([#7351](https://github.com/reflex-dev/reflex/issues/7351))
+- `reflex cloud secrets update` now prints a success line naming the keys it set and whether the app is rebooting, like `secrets delete` already did. Only key names are printed; values are never logged. ([#7352](https://github.com/reflex-dev/reflex/issues/7352))
+- Fail `reflex deploy` before building when an explicitly requested project does not exist or does not own the selected app. Accept equivalent UUID spellings, including uppercase and unhyphenated project IDs. ([#7355](https://github.com/reflex-dev/reflex/issues/7355))
+
+### Miscellaneous
+
+- `reflex-hosting-cli` now talks to Reflex Build through `reflex-build-sdk`, so every command shares the SDK's retries, timeouts and typed errors. While the SDK is pre-1.0, the CLI pins it to a single patch line, so upgrade `reflex-hosting-cli` to move to a newer SDK rather than upgrading the SDK on its own. ([#7207](https://github.com/reflex-dev/reflex/issues/7207))
+
+
 ## v0.1.72 (2026-09-11)
 
 ### Breaking Changes
