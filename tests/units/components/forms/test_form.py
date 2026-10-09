@@ -226,6 +226,7 @@ def test_on_submit_accepts_typed_dict_with_unresolvable_field_types():
     class OrderData(TypedDict):
         name: str
         amount: "Decimal"  # noqa: F821 # pyright: ignore[reportUndefinedVariable]
+        tip: "NotRequired[Decimal]"  # noqa: F821 # pyright: ignore[reportUndefinedVariable]
 
     class OrderState(rx.State):
         @rx.event

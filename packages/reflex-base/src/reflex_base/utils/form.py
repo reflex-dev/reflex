@@ -207,14 +207,10 @@ def _typed_dict_form_fields(typed_dict: Any) -> tuple[_CoercedFormField, ...]:
 
     Returns:
         The ``list`` and ``bool`` fields, optional or not, and the ``name[]``
-        fields of other types; none when a field type cannot be resolved, as
-        for one imported only for type checking, so the form data is a dict.
+        fields of other types.
     """
-    try:
-        field_types = types.get_typed_dict_field_types(typed_dict)
-    except NameError:
-        return ()
     required = types.get_required_typed_dict_keys(typed_dict)
+    field_types = types.get_typed_dict_field_types(typed_dict)
     fields = []
     for name, hint in field_types.items():
         field_type = types.value_inside_optional(hint)

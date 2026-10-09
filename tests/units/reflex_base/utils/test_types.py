@@ -342,6 +342,68 @@ def test_get_required_typed_dict_keys_with_postponed_annotations(tmp_path, monke
         del sys.modules["postponed_typed_dicts"]
 
 
+def test_typed_dict_helpers_resolve_around_unresolvable_names(tmp_path, monkeypatch):
+    """A name imported only for type checking reads as Any in its own field."""
+    (tmp_path / "type_checking_typed_dicts.py").write_text(
+        "from __future__ import annotations\n"
+        "from typing import TYPE_CHECKING, TypedDict\n"
+        "from typing_extensions import NotRequired\n"
+        "if TYPE_CHECKING:\n"
+        "    from decimal import Decimal\n"
+        "class Order(TypedDict):\n"
+        "    tags: list[str]\n"
+        "    amounts: list[Decimal]\n"
+        "    amount: Decimal\n"
+        "    tip: NotRequired[Decimal]\n"
+        "    agree: NotRequired[bool]\n"
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+    module = importlib.import_module("type_checking_typed_dicts")
+    try:
+        assert get_required_typed_dict_keys(module.Order) == {
+            "tags",
+            "amounts",
+            "amount",
+        }
+        assert get_typed_dict_field_types(module.Order) == {
+            "tags": list[str],
+            "amounts": list[Any],
+            "amount": Any,
+            "tip": Any,
+            "agree": bool,
+        }
+    finally:
+        del sys.modules["type_checking_typed_dicts"]
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 14), reason="annotations are evaluated lazily from 3.14"
+)
+def test_typed_dict_helpers_resolve_lazy_annotations(tmp_path, monkeypatch):
+    """Lazily evaluated annotations with an unresolvable name still resolve."""
+    (tmp_path / "lazy_typed_dicts.py").write_text(
+        "from typing import TYPE_CHECKING, TypedDict\n"
+        "from typing_extensions import NotRequired\n"
+        "if TYPE_CHECKING:\n"
+        "    from decimal import Decimal\n"
+        "class Base(TypedDict):\n"
+        "    tags: list[str]\n"
+        "    amounts: list[Decimal]\n"
+        "class Order(Base):\n"
+        "    tip: NotRequired[Decimal]\n"
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+    module = importlib.import_module("lazy_typed_dicts")
+    try:
+        assert get_required_typed_dict_keys(module.Order) == {"tags", "amounts"}
+        field_types = get_typed_dict_field_types(module.Order)
+        assert field_types["tags"] == list[str]
+        assert typing.get_origin(field_types["amounts"]) is list
+        assert "tip" in field_types
+    finally:
+        del sys.modules["lazy_typed_dicts"]
+
+
 _FieldT = TypeVar("_FieldT")
 _ItemT = TypeVar("_ItemT")
 

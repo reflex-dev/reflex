@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import builtins
 import dataclasses
 import logging
 import sys
@@ -288,6 +289,87 @@ def _typed_dict_qualifier(hint: Any) -> Any:
     return origin
 
 
+_TYPED_DICT_QUALIFIERS = (
+    typing_extensions.Annotated,
+    typing_extensions.NotRequired,
+    typing_extensions.ReadOnly,
+    typing_extensions.Required,
+)
+
+
+class _LenientNames(dict):
+    """Names to evaluate an annotation with: an undefined name reads as ``Any``."""
+
+    def __init__(self, globalns: dict[str, Any]):
+        """Look names up in a module's globals, then in builtins.
+
+        Args:
+            globalns: The module's globals.
+        """
+        super().__init__()
+        self._globalns = globalns
+
+    def __missing__(self, key: str) -> Any:
+        """Resolve a name the annotation uses.
+
+        Args:
+            key: The name.
+
+        Returns:
+            The global or builtin it names, otherwise ``Any``.
+        """
+        if key in self._globalns:
+            return self._globalns[key]
+        return getattr(builtins, key, Any)
+
+
+def _typed_dict_annotations(typed_dict: Any) -> dict[str, Any]:
+    """Get a TypedDict's field annotations without failing on undefined names.
+
+    Args:
+        typed_dict: The TypedDict class.
+
+    Returns:
+        Each field's annotation, with names that cannot be resolved, as those
+        imported only for type checking, left as forward references.
+    """
+    return typing_extensions.get_annotations(
+        typed_dict, format=typing_extensions.Format.FORWARDREF
+    )
+
+
+def _typed_dict_hints(typed_dict: Any, include_extras: bool) -> dict[str, Any]:
+    """Resolve the hints of a TypedDict's fields.
+
+    A name that cannot be resolved, as one imported only for type checking,
+    reads as ``Any`` in the field that uses it, so the other fields still
+    resolve.
+
+    Args:
+        typed_dict: The TypedDict class.
+        include_extras: Whether to keep qualifiers and ``Annotated`` metadata.
+
+    Returns:
+        The hint of each field.
+    """
+    try:
+        return typing_extensions.get_type_hints(
+            typed_dict, include_extras=include_extras
+        )
+    except NameError:
+        pass
+    hints = {}
+    for name, hint in _typed_dict_annotations(typed_dict).items():
+        if isinstance(hint, typing.ForwardRef):
+            module = sys.modules.get(hint.__forward_module__ or typed_dict.__module__)
+            globalns = vars(module) if module is not None else {}
+            hint = eval(hint.__forward_arg__, globalns, _LenientNames(globalns))
+        while not include_extras and get_origin_og(hint) in _TYPED_DICT_QUALIFIERS:
+            hint = get_args(hint)[0]
+        hints[name] = hint
+    return hints
+
+
 def get_required_typed_dict_keys(typed_dict: Any) -> frozenset[str]:
     """Resolve the required keys of a TypedDict.
 
@@ -305,7 +387,7 @@ def get_required_typed_dict_keys(typed_dict: Any) -> frozenset[str]:
     typed_dict = get_origin_og(typed_dict) or typed_dict
     required = frozenset(getattr(typed_dict, "__required_keys__", frozenset()))
     try:
-        hints = get_type_hints_og(typed_dict, include_extras=True)
+        hints = _typed_dict_hints(typed_dict, include_extras=True)
     except Exception:
         return required
     qualifiers = {name: _typed_dict_qualifier(hint) for name, hint in hints.items()}
@@ -327,6 +409,7 @@ def get_typed_dict_field_types(typed_dict: Any) -> dict[str, Any]:
     """Resolve the field types of a TypedDict.
 
     Qualifiers and ``Annotated`` metadata are stripped, type aliases resolved,
+    names that cannot be resolved read as ``Any`` in the fields that use them,
     and type arguments substituted: those of a specialization (``Data[str]``)
     and those of the specialized generic bases fields are inherited through
     (``class Data(Base[str])``), unless the subclass redeclares the field.
@@ -343,11 +426,10 @@ def get_typed_dict_field_types(typed_dict: Any) -> dict[str, Any]:
             ``typing.TypedDict`` subclass of a specialized generic TypedDict.
     """
     origin = get_origin_og(typed_dict) or typed_dict
-    # typing_extensions strips its own qualifiers, which typing does not on 3.10.
-    field_types = typing_extensions.get_type_hints(origin)
+    field_types = _typed_dict_hints(origin, include_extras=False)
     # Hints of inherited fields still name the generic base's type parameters,
     # so take them from each base unless this class redeclares the field.
-    annotations = origin.__annotations__
+    annotations = _typed_dict_annotations(origin)
     for base in typing_extensions.get_original_bases(origin):
         base_origin = get_origin_og(base) or base
         if typing_extensions.is_typeddict(base_origin):
@@ -364,7 +446,7 @@ def get_typed_dict_field_types(typed_dict: Any) -> dict[str, Any]:
                         for param in params
                     )
                 ]
-            base_annotations = base_origin.__annotations__
+            base_annotations = _typed_dict_annotations(base_origin)
             field_types.update(
                 (name, hint)
                 for name, hint in get_typed_dict_field_types(base).items()

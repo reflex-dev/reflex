@@ -477,9 +477,9 @@ class _UnresolvableData(TypedDict):
     amount: "Decimal"  # noqa: F821 # pyright: ignore[reportUndefinedVariable]
 
 
-def test_transform_form_data_unresolvable_typed_dict_to_dict():
-    """A TypedDict whose field types cannot be resolved gets the plain dict."""
-    assert _transform(_UnresolvableData) == _transform(dict)
+def test_transform_form_data_coerces_around_unresolvable_fields():
+    """A field type that cannot be resolved leaves the other fields coerced."""
+    assert _transform(_UnresolvableData) == {"tag": ["a", "b"], "name": "x"}
 
 
 def test_transform_form_data_with_unhashable_annotation():

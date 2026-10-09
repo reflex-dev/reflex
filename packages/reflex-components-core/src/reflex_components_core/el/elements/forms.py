@@ -471,10 +471,6 @@ class Form(BaseHTML):
             # Fail at compile time rather than coerce submissions wrongly.
             try:
                 get_typed_dict_field_types(annotation)
-            except NameError:
-                # A type imported only for type checking cannot be resolved:
-                # submissions then reach the handler without field coercion.
-                pass
             except TypeError as err:
                 msg = f"Cannot submit form data to on_submit handler `{func.__qualname__}`: {err}"
                 raise EventHandlerValueError(msg) from err
