@@ -1,0 +1,18 @@
+# Build outputs and runtime state of the fixture apps: regenerable, never commit them.
+.web/
+node_modules/
+.states/
+reflex.lock/
+__pycache__/
+*.pyc
+*.db
+*.sqlite
+*.sqlite3
+# Virtualenvs and downloaded wheels (the enterprise offline wheel is proprietary).
+.venv/
+venv/
+*.whl
+# Bulky run outputs: keep them in $SB scratch; commit only small trimmed evidence next to a finding's NOTES.md.
+*.har
+*.webm
+*.trace.zip
