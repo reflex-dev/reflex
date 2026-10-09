@@ -2157,6 +2157,7 @@ async def test_hydrate_probes_nested_storage_states_once(
 async def test_hydrate_correction_skips_unrelated_uncached_computed_vars(
     wired_app: App,
     real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
     token: str,
 ):
     """A stale storage correction does not reevaluate unrelated state branches.
@@ -2164,6 +2165,7 @@ async def test_hydrate_correction_skips_unrelated_uncached_computed_vars(
     Args:
         wired_app: The app wired to the state manager.
         real_base_state_processor: The event processor.
+        emitted_deltas: Captured deltas.
         token: The client token.
     """
     unrelated_computations = 0
@@ -2214,9 +2216,15 @@ async def test_hydrate_correction_skips_unrelated_uncached_computed_vars(
         return unrelated_computations
 
     fresh_computations = await hydrate("fresh")
+    emitted_deltas.clear()
     stale_computations = await hydrate("stale")
 
     assert stale_computations == fresh_computations
+    assert any(
+        delta.get(StorageState.get_full_name(), {}).get("value" + FIELD_MARKER)
+        == "fresh"
+        for _, delta in emitted_deltas
+    )
 
 
 @pytest.mark.parametrize(

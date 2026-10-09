@@ -103,6 +103,7 @@ from reflex.utils.exec import is_testing_env
 _dirty_var_collector: ContextVar[set[tuple[BaseState, str]] | None] = ContextVar(
     "_dirty_var_collector", default=None
 )
+_dirty_var_collection_depth = 0
 
 
 @contextlib.contextmanager
@@ -112,12 +113,15 @@ def _collect_dirty_vars() -> Iterator[set[tuple[BaseState, str]]]:
     Yields:
         The set of state vars dirtied while the context is active.
     """
+    global _dirty_var_collection_depth
     dirty_vars: set[tuple[BaseState, str]] = set()
+    _dirty_var_collection_depth += 1
     token = _dirty_var_collector.set(dirty_vars)
     try:
         yield dirty_vars
     finally:
         _dirty_var_collector.reset(token)
+        _dirty_var_collection_depth -= 1
 
 
 def _state_ancestors(state: BaseState) -> Iterator[BaseState]:
@@ -1980,12 +1984,13 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         Args:
             var_names: The vars of this state that changed; all its dirty vars if omitted.
         """
-        collector = _dirty_var_collector.get()
-        if collector is not None:
-            var_names = tuple(self.dirty_vars if var_names is None else var_names)
-            collector.update(
-                (self, name) for name in var_names if name not in self.computed_vars
-            )
+        if _dirty_var_collection_depth:
+            collector = _dirty_var_collector.get()
+            if collector is not None:
+                var_names = tuple(self.dirty_vars if var_names is None else var_names)
+                collector.update(
+                    (self, name) for name in var_names if name not in self.computed_vars
+                )
         self._mark_ancestors_dirty()
         self._mark_dirty_computed_vars(var_names)
 
