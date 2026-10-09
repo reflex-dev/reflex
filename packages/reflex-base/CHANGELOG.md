@@ -67,6 +67,11 @@
 - Update generated apps to React 19.3, Vite 8.3.2, Socket.IO client 4.8.4, Autoprefixer 10.6.1, and PostCSS 8.5.29. Update the bundled Bun runtime to 1.4.2. ([#7424](https://github.com/reflex-dev/reflex/issues/7424))
 
 
+## v0.9.13 (2026-10-08)
+
+No significant changes.
+
+
 ## v0.9.12 (2026-09-21)
 
 ### Features
