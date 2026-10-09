@@ -75,7 +75,7 @@ def test_every_template_pins_the_uv_it_installs() -> None:
     added to a template without one would silently install an unpinned uv.
     """
     found = 0
-    for template in sorted(TEMPLATE_DIR.glob("*.yml")):
+    for template in sorted(TEMPLATE_DIR.rglob("*.yml")):
         lines = template.read_text(encoding="utf-8").splitlines()
         for index, line in enumerate(lines):
             if _UV_SETUP not in line:
@@ -123,7 +123,7 @@ def test_render_quiets_setup_uv_only_where_there_is_no_checkout(
     block there would quietly turn a cache it wants off.
     """
     found = 0
-    for name in GENERATED_WORKFLOWS:
+    for name in (*CORE_WORKFLOWS, INTERNAL_WORKFLOW):
         checked_out, bare = _uv_steps_by_checkout(render(name, config))
         found += len(bare)
         for step in bare:

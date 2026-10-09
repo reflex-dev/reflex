@@ -1,0 +1,1 @@
+Add changelog-driven application deployments with configurable build and deploy workflows, optional pinned source submodules, queued staging and production promotion, and speculative development builds. Release tags and GitHub releases are created only after production deployment succeeds.
