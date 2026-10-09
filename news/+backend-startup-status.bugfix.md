@@ -1,0 +1,1 @@
+Development mode now prints `Backend running at:` for a Granian backend only after the app finishes startup, and warns when a backend worker exits while waiting for changes. `App running at:` is still printed when the frontend is ready.

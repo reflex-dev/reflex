@@ -17,7 +17,7 @@ import sys
 import threading
 from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
-from typing import Any, NamedTuple, TypedDict
+from typing import TYPE_CHECKING, Any, NamedTuple, TypedDict
 
 from reflex_base import constants
 from reflex_base.config import get_config
@@ -30,6 +30,9 @@ from reflex_base.utils.decorator import once
 from reflex.utils import path_ops
 from reflex.utils.misc import get_module_path
 from reflex.utils.prerequisites import get_web_dir
+
+if TYPE_CHECKING:
+    from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 logger = logging.getLogger(__name__)
 
@@ -209,16 +212,18 @@ def notify_frontend(url: str, backend_present: bool):
     )
 
 
-def notify_backend(host: str | None = None):
+def notify_backend(host: str | None = None, port: int | None = None):
     """Output a string notifying where the backend is running.
 
     Args:
         host: The backend host. If not provided, falls back to the config value.
+        port: The backend port. If not provided, falls back to the config value.
     """
     config = get_config()
     effective_host = host if host is not None else config.backend_host
+    effective_port = port if port is not None else config.backend_port
     console.print(
-        f"Backend running at: [bold green]http://{effective_host}:{config.backend_port}[/bold green]"
+        f"Backend running at: [bold green]http://{effective_host}:{effective_port}[/bold green]"
     )
 
 
@@ -322,7 +327,8 @@ def run_process_and_launch_url(
                         url = match.group(1)
 
                         notify_frontend(url, backend_present)
-                        if backend_present:
+                        # Granian workers announce the backend after lifespan startup.
+                        if backend_present and not should_use_granian():
                             notify_backend()
                         first_run = False
                     else:
@@ -580,9 +586,6 @@ def run_backend(
         else:
             nocompile.unlink(missing_ok=True)
 
-    if not frontend_present:
-        notify_backend(host)
-
     # Run the backend in development mode.
     if should_use_granian():
         # Forked workers inherit imported modules from the supervisor. Spawned
@@ -600,6 +603,8 @@ def run_backend(
 
         run_granian_backend(host, port, loglevel)
     else:
+        if not frontend_present:
+            notify_backend(host)
         run_uvicorn_backend(host, port, loglevel)
 
 
@@ -765,6 +770,48 @@ def _granian_log_dictconfig() -> dict[str, Any] | None:
     return {"handlers": {"console": json_handler, "access": json_handler}}
 
 
+def _load_dev_backend_app(
+    callback_loader: Callable[[], ASGIApp], host: str, port: int
+) -> ASGIApp:
+    """Load the dev app and report readiness after its lifespan startup succeeds.
+
+    Args:
+        callback_loader: The worker's app loader.
+        host: The backend host.
+        port: The bound backend port.
+
+    Returns:
+        The app with startup notification around its lifespan protocol.
+    """
+    app = callback_loader()
+
+    async def notify_startup(scope: Scope, receive: Receive, send: Send) -> None:
+        """Forward ASGI calls and announce successful lifespan startup.
+
+        Args:
+            scope: The ASGI connection scope.
+            receive: The ASGI receive callable.
+            send: The ASGI send callable.
+        """
+        if scope["type"] != "lifespan":
+            await app(scope, receive, send)
+            return
+
+        async def send_with_notification(message: Message) -> None:
+            """Forward a lifespan message before reporting successful startup.
+
+            Args:
+                message: The ASGI lifespan message.
+            """
+            await send(message)
+            if message["type"] == "lifespan.startup.complete":
+                notify_backend(host, port)
+
+        await app(scope, receive, send_with_notification)
+
+    return notify_startup
+
+
 def run_granian_backend(host: str, port: int, loglevel: LogLevel):
     """Run the backend in development mode using Granian.
 
@@ -864,6 +911,7 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
                     worker.is_alive() for worker in self.wrks
                 ):
                     self._close_shared_socket()
+                    console.warn("Backend worker exited; waiting for changes.")
 
         def _spawn_worker(self, idx: int, target: Any, callback_loader: Any):
             """Spawn a worker, re-creating the socket if it has been released.
@@ -882,7 +930,14 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
                 self._spawn_count += 1
                 spawn_count = self._spawn_count
                 wrk = super()._spawn_worker(
-                    idx=idx, target=target, callback_loader=callback_loader
+                    idx=idx,
+                    target=target,
+                    callback_loader=functools.partial(
+                        _load_dev_backend_app,
+                        callback_loader,
+                        self.bind_addr,
+                        self.bind_port,
+                    ),
                 )
             granian_watcher = wrk._watcher
 

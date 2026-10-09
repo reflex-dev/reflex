@@ -11,12 +11,13 @@ from http.client import HTTPConnection
 from multiprocessing.queues import Queue
 from pathlib import Path
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from pytest_mock import MockerFixture
 from reflex_base.environment import environment
 from reflex_base.utils import serializers
+from starlette.types import Message
 
 from reflex.utils import exec as exec_utils
 from reflex.utils.precompressed_staticfiles import PrecompressedStaticFiles
@@ -24,13 +25,20 @@ from reflex.utils.precompressed_staticfiles import PrecompressedStaticFiles
 DEV_BACKEND_RELOAD_ENV_NAME = environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.name
 
 
-def _run_granian_reload_test_app(app_dir: str, port_queue: Queue) -> None:
+def _run_granian_reload_test_app(
+    app_dir: str, port_queue: Queue, log_path: str | None = None
+) -> None:
     """Run a reloadable Granian app in a child process.
 
     Args:
         app_dir: Directory containing the test app module.
         port_queue: Queue receiving the supervisor's selected TCP port.
+        log_path: Optional file receiving supervisor and worker output.
     """
+    if log_path is not None:
+        with Path(log_path).open("w") as output:
+            os.dup2(output.fileno(), sys.stdout.fileno())
+            os.dup2(output.fileno(), sys.stderr.fileno())
     app_path = Path(app_dir)
     sys.path.insert(0, app_dir)
     exec_utils.get_app_instance_from_file = lambda: "reload_app:app"
@@ -120,6 +128,113 @@ def test_run_backend_manages_nocompile_marker(
     exec_utils.run_backend("127.0.0.1", 8000, frontend_present=frontend_present)
 
     assert marker.exists() is frontend_present
+
+
+def test_run_backend_does_not_announce_granian_before_startup(
+    tmp_path: Path, mocker: MockerFixture
+) -> None:
+    """Starting the supervisor does not establish that a worker is serving."""
+    mocker.patch.object(exec_utils, "get_web_dir", return_value=tmp_path)
+    mocker.patch.object(exec_utils, "should_use_granian", return_value=True)
+    mocker.patch.object(exec_utils, "run_granian_backend")
+    notify = mocker.patch.object(exec_utils, "notify_backend")
+
+    exec_utils.run_backend("127.0.0.1", 8000)
+
+    notify.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ("backend_present", "granian"), [(True, True), (True, False), (False, True)]
+)
+def test_frontend_readiness_messages(
+    tmp_path: Path, mocker: MockerFixture, backend_present: bool, granian: bool
+) -> None:
+    """The frontend line keeps its text; Granian defers only the backend line."""
+    from reflex.utils import processes
+
+    mocker.patch.object(exec_utils, "get_web_dir", return_value=tmp_path)
+    mocker.patch.object(
+        exec_utils, "get_package_json_and_hash", return_value=({}, "unchanged")
+    )
+    mocker.patch.object(exec_utils, "should_use_granian", return_value=granian)
+    mocker.patch.object(exec_utils, "frontend_process", None)
+    mocker.patch.object(processes, "new_process")
+    mocker.patch.object(
+        processes, "stream_logs", return_value=["Local: http://localhost:3000/"]
+    )
+    notify = mocker.patch.object(exec_utils, "notify_backend")
+    output = mocker.patch.object(exec_utils.console, "print")
+
+    exec_utils.run_process_and_launch_url(["unused"], backend_present=backend_present)
+
+    if backend_present and not granian:
+        notify.assert_called_once_with()
+    else:
+        notify.assert_not_called()
+    message = output.call_args.args[0]
+    assert "App running at:" in message
+    assert ("Frontend-only mode" in message) is not backend_present
+
+
+@pytest.mark.parametrize(
+    "message_type",
+    [
+        "lifespan.startup.complete",
+        "lifespan.startup.failed",
+        "lifespan.shutdown.complete",
+    ],
+)
+@pytest.mark.asyncio
+async def test_dev_backend_readiness_follows_lifespan(
+    message_type: str, mocker: MockerFixture
+) -> None:
+    """Only an accepted startup-complete message announces the backend."""
+    notify = mocker.patch.object(exec_utils, "notify_backend")
+    message: Message = {"type": message_type}
+
+    async def send_message(_scope, _receive, send):
+        """Simulate an app sending a lifespan result."""
+        notify.assert_not_called()
+        await send(message)
+
+    def accept_message(_message):
+        """Accept the result before any success message is printed."""
+        notify.assert_not_called()
+
+    send = AsyncMock(side_effect=accept_message)
+    app = exec_utils._load_dev_backend_app(lambda: send_message, "127.0.0.1", 8123)
+    notify.assert_not_called()
+    await app({"type": "lifespan"}, AsyncMock(), send)
+
+    send.assert_awaited_once_with(message)
+    if message_type == "lifespan.startup.complete":
+        notify.assert_called_once_with("127.0.0.1", 8123)
+    else:
+        notify.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_dev_backend_readiness_preserves_requests(mocker: MockerFixture) -> None:
+    """HTTP and websocket requests keep their original scope and callables."""
+    notify = mocker.patch.object(exec_utils, "notify_backend")
+    callback = AsyncMock()
+    app = exec_utils._load_dev_backend_app(lambda: callback, "127.0.0.1", 8123)
+    for scope_type in ("http", "websocket"):
+        scope = {"type": scope_type}
+        receive, send = AsyncMock(), AsyncMock()
+        await app(scope, receive, send)
+        callback.assert_awaited_with(scope, receive, send)
+    notify.assert_not_called()
+
+
+def test_dev_backend_import_failure_does_not_announce(mocker: MockerFixture) -> None:
+    """Import errors propagate without printing a successful startup message."""
+    notify = mocker.patch.object(exec_utils, "notify_backend")
+    loader = Mock(side_effect=RuntimeError("broken app"))
+    with pytest.raises(RuntimeError, match="broken app"):
+        exec_utils._load_dev_backend_app(loader, "127.0.0.1", 8123)
+    notify.assert_not_called()
 
 
 def test_run_backend_skips_app_preload_for_spawn(
@@ -742,6 +857,7 @@ def test_run_granian_backend_releases_socket_when_worker_dies(
     """A worker that dies on its own leaves the port refusing connections."""
     port = _free_port()
     server = _dev_granian_supervisor(mocker, tmp_path, port)
+    warning = mocker.patch.object(exec_utils.console, "warn")
     try:
         server._init_shared_socket()
         assert not _port_is_bindable(port)
@@ -751,6 +867,7 @@ def test_run_granian_backend_releases_socket_when_worker_dies(
         worker._watcher()
 
         assert _port_is_bindable(port)
+        warning.assert_called_once_with("Backend worker exited; waiting for changes.")
     finally:
         server._close_shared_socket()
 
@@ -761,6 +878,7 @@ def test_run_granian_backend_keeps_socket_across_worker_restart(
     """A worker stopped by the supervisor keeps the port bound for its successor."""
     port = _free_port()
     server = _dev_granian_supervisor(mocker, tmp_path, port)
+    warning = mocker.patch.object(exec_utils.console, "warn")
     try:
         server._init_shared_socket()
         worker = _spawn_supervisor_worker(server)
@@ -769,6 +887,7 @@ def test_run_granian_backend_keeps_socket_across_worker_restart(
         worker._watcher()
 
         assert not _port_is_bindable(port)
+        warning.assert_not_called()
     finally:
         server._close_shared_socket()
 
@@ -917,3 +1036,104 @@ def test_run_granian_backend_refuses_requests_while_the_app_is_broken(tmp_path: 
             process.kill()
             process.join()
         port_queue.close()
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="Granian uses this path on Linux")
+@pytest.mark.parametrize("failure", ["import", "lifespan"])
+def test_dev_backend_reports_failure_and_recovery(tmp_path: Path, failure: str) -> None:
+    """A real worker reports success only after recovering and completing startup."""
+    app_file = tmp_path / "reload_app.py"
+    output = tmp_path / "backend.log"
+    started = tmp_path / ".starting"
+    ready = tmp_path / ".ready"
+    source = """\
+import asyncio
+from contextlib import asynccontextmanager
+from pathlib import Path
+
+from starlette.applications import Starlette
+from starlette.responses import PlainTextResponse
+from starlette.routing import Route
+
+
+@asynccontextmanager
+async def lifespan(app):
+    root = Path(__file__).parent
+    (root / ".starting").touch()
+    while not (root / ".ready").exists():
+        await asyncio.sleep(0.05)
+    yield
+
+
+async def index(request):
+    return PlainTextResponse("ok")
+
+
+def app():
+    return Starlette(routes=[Route("/", index)], lifespan=lifespan)
+"""
+    broken_source = (
+        'raise RuntimeError("broken import")\n'
+        if failure == "import"
+        else source.replace(
+            "root = Path(__file__).parent", 'raise RuntimeError("broken lifespan")'
+        )
+    )
+    app_file.write_text(broken_source)
+    context = multiprocessing.get_context("spawn")
+    port_queue: Queue = context.Queue()
+    process = context.Process(
+        target=_run_granian_reload_test_app,
+        args=(str(tmp_path), port_queue, str(output)),
+    )
+
+    def wait_for(predicate) -> bool:
+        """Wait for an observable worker status within a bounded deadline.
+
+        Args:
+            predicate: The condition to wait for.
+
+        Returns:
+            Whether the condition became true before the deadline.
+        """
+        # Wait up to 20 seconds for the expected worker status.
+        deadline = time.monotonic() + 20
+        while time.monotonic() < deadline:
+            if predicate():
+                return True
+            time.sleep(0.05)
+        return False
+
+    process.start()
+    try:
+        port = port_queue.get(timeout=20)
+        assert wait_for(lambda: "waiting for changes" in output.read_text())
+        assert "Backend running at:" not in output.read_text()
+        assert _wait_for_refused_connection(port)
+
+        app_file.write_text(source)
+        assert wait_for(started.exists), output.read_text()
+        assert "Backend running at:" not in output.read_text()
+
+        ready.touch()
+        assert _wait_for_ok_response(port), output.read_text()
+        assert wait_for(lambda: "Backend running at:" in output.read_text())
+        assert f"http://127.0.0.1:{port}" in output.read_text()
+
+        # A later broken reload must report failure again and remain recoverable.
+        app_file.write_text(broken_source)
+        assert wait_for(lambda: output.read_text().count("waiting for changes") == 2)
+        assert output.read_text().count("Backend running at:") == 1
+        assert _wait_for_refused_connection(port)
+        app_file.write_text(source)
+        assert _wait_for_ok_response(port), output.read_text()
+        assert wait_for(lambda: output.read_text().count("Backend running at:") == 2)
+    finally:
+        process.terminate()
+        process.join(timeout=10)
+        if process.is_alive():
+            process.kill()
+            process.join()
+        port_queue.close()
+    assert not process.is_alive()
+    assert _port_is_bindable(port)
