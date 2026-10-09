@@ -1,4 +1,4 @@
-"""Calling an event handler on the state class types as the event it creates."""
+"""Inferred types for `reflex_base.event` that are part of the public contract."""
 
 from collections.abc import Callable
 from typing import Any, assert_type
@@ -46,3 +46,22 @@ assert_type(_HandlerState.four(1, "a", True), EventCallback[float])
 # A handler is a callable of its arguments, so it can be passed where one is expected.
 _one: Callable[[int], Any] = _HandlerState.one
 _two: Callable[[int, str], Any] = _HandlerState.two
+
+
+class _State(State):
+    @event
+    def set_name(self, name: str) -> None: ...
+
+
+class _Holder:
+    on_name: EventCallback[str] | None = None
+
+
+def _reads(state: _State, holder: _Holder) -> None:
+    # Read through its state class, a handler is the callback event triggers take.
+    assert_type(_State.set_name, EventCallback[str])
+    # Read through an instance of that state, it is the function bound to it.
+    assert_type(state.set_name, Callable[[str], Any])
+    # Stored anywhere else, e.g. a component or dataclass field, it stays the
+    # callback: only a state instance binds it.
+    assert_type(holder.on_name, EventCallback[str] | None)
