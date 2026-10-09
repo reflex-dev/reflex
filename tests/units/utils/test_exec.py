@@ -678,13 +678,22 @@ def _dev_granian_supervisor(mocker: MockerFixture, tmp_path: Path, port: int):
     granian_server = pytest.importorskip("granian.server")
     servers: list[Any] = []
 
+    class FakeInner:
+        exitcode = None
+
+        def join(self):
+            pass
+
     class FakeWorker:
         def __init__(self):
             self.interrupt_by_parent = False
             self.alive = True
+            self.inner = FakeInner()
+            self.granian_watched = False
 
         def _watcher(self):
-            """Stand in for granian's watcher body, which joins the process."""
+            """Stand in for granian's watcher body, which logs an unexpected exit."""
+            self.granian_watched = True
 
         def is_alive(self):
             return self.alive
@@ -769,6 +778,26 @@ def test_run_granian_backend_keeps_socket_across_worker_restart(
         worker._watcher()
 
         assert not _port_is_bindable(port)
+    finally:
+        server._close_shared_socket()
+
+
+def test_run_granian_backend_reports_only_unclean_worker_exits(
+    tmp_path: Path, mocker: MockerFixture
+):
+    """A worker exiting 0 was asked to stop; any other exit reaches granian's report."""
+    server = _dev_granian_supervisor(mocker, tmp_path, _free_port())
+    try:
+        clean = _spawn_supervisor_worker(server)
+        crashed = _spawn_supervisor_worker(server)
+        clean.inner.exitcode = 0
+        crashed.inner.exitcode = -1
+
+        clean._watcher()
+        crashed._watcher()
+
+        assert not clean.granian_watched
+        assert crashed.granian_watched
     finally:
         server._close_shared_socket()
 
