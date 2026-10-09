@@ -113,6 +113,8 @@ By default the frontend is served from the root of its domain and backend routes
 
 Both values are normalized to start with a `/`.
 
+When `frontend_path` is set, use `rx.asset()` for local files in the `assets/` directory. It adds the configured frontend path to the generated URL. Literal paths such as `src="/components/logo.svg"` are not rewritten, so they must already include the prefix (for example, `src="/app/components/logo.svg"`).
+
 ## Plugins
 
 Plugins extend the Reflex compiler. Add plugin instances via the `plugins` parameter, and disable plugins that are enabled by default (like the sitemap plugin) with `disable_plugins`:
