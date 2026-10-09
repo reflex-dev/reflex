@@ -4,7 +4,6 @@ import builtins
 import logging
 import multiprocessing
 import os
-import signal
 import socket
 import sys
 import time
@@ -792,7 +791,7 @@ def test_run_granian_backend_reports_only_unclean_worker_exits(
         clean = _spawn_supervisor_worker(server)
         crashed = _spawn_supervisor_worker(server)
         clean.inner.exitcode = 0
-        crashed.inner.exitcode = -signal.SIGKILL
+        crashed.inner.exitcode = -1
 
         clean._watcher()
         crashed._watcher()
