@@ -537,6 +537,8 @@ def _run_initial_install(
         "install",
         "--legacy-peer-deps",
     ]
+    if _is_npm(primary_package_manager):
+        install_args.append("--include=dev")
     if frozen_lockfile and _is_bun_package_manager(primary_package_manager):
         # ``--frozen-lockfile`` is bun-only; npm ignores it today and the
         # next major rejects unknown flags outright.
@@ -701,6 +703,12 @@ def _install_frontend_packages(
     )
 
     primary_package_manager = install_package_managers[0]
+    # Detect npm rather than bun: npm is always found by name, but a custom
+    # bun_path may be named anything, and bun silently ignores npm's flags.
+    is_bun = not _is_npm(primary_package_manager)
+    # npm drops devDependencies under NODE_ENV=production unless told otherwise;
+    # bun has no such flag and always installs them.
+    include_dev_args = [] if is_bun else ["--include=dev"]
 
     # No fallback to a different package manager: switching mid-flow could
     # bypass the persisted lockfile (e.g. on a package-integrity failure
@@ -747,6 +755,7 @@ def _install_frontend_packages(
                 primary_package_manager,
                 "remove",
                 "--legacy-peer-deps",
+                *include_dev_args,
                 *sorted(to_remove),
             ],
             show_status_message="Removing unused frontend packages",
@@ -804,14 +813,23 @@ def _install_frontend_packages(
                 primary_package_manager,
                 "add",
                 "--legacy-peer-deps",
-                "-d",
+                *include_dev_args,
+                # npm reads ``-d`` as ``--loglevel info``; only ``--save-dev`` saves
+                # into devDependencies.
+                "-d" if is_bun else "--save-dev",
                 *dev_deps_to_add,
             ],
             show_status_message="Installing frontend development dependencies",
         )
     if deps_to_add:
         run_package_manager(
-            [primary_package_manager, "add", "--legacy-peer-deps", *deps_to_add],
+            [
+                primary_package_manager,
+                "add",
+                "--legacy-peer-deps",
+                *include_dev_args,
+                *deps_to_add,
+            ],
             show_status_message="Installing frontend packages",
         )
 
@@ -819,7 +837,12 @@ def _install_frontend_packages(
         # Newly merged overrides with no add to carry them into the lockfile:
         # resolve them now so the persisted pair stays frozen-install ready.
         run_package_manager(
-            [primary_package_manager, "install", "--legacy-peer-deps"],
+            [
+                primary_package_manager,
+                "install",
+                "--legacy-peer-deps",
+                *include_dev_args,
+            ],
             show_status_message="Applying frontend package overrides",
         )
 
