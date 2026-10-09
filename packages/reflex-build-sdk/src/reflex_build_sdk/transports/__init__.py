@@ -20,6 +20,7 @@ from reflex_build_sdk.transports._base import (
     Transport,
     TransportError,
 )
+from reflex_build_sdk.transports._defaults import default_transport
 
 if TYPE_CHECKING:
     from reflex_build_sdk.transports._httpx import AsyncHttpxTransport, HttpxTransport
@@ -47,6 +48,7 @@ __all__ = [
     "Response",
     "Transport",
     "TransportError",
+    "default_transport",
 ]
 
 
