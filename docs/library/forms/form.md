@@ -201,7 +201,7 @@ def toppings_form():
 names with a `list[str]` field.
 
 ```md alert info
-# Names ending in `[]` hold lists.
+# Dict fields ending in `[]` hold lists.
 
 With a `dict` annotation, a field name ending in `[]`, such as the `range[]`
 that a two-thumb `rx.slider(name="range")` submits, reads as a list of its
