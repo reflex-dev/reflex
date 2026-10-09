@@ -426,7 +426,7 @@ class ShikiJsTransformer(ShikiBaseTransformers):
     library: str = "@shikijs/transformers@4.5.0"
     fns: list[FunctionStringVar] = dataclasses.field(
         default_factory=lambda: [
-            FunctionStringVar.create(fn) for fn in SHIKIJS_TRANSFORMER_FNS
+            FunctionStringVar.create(fn) for fn in sorted(SHIKIJS_TRANSFORMER_FNS)
         ]
     )
     style: Style | None = dataclasses.field(
@@ -512,29 +512,6 @@ class ShikiJsTransformer(ShikiBaseTransformers):
             # },
         })
     )
-
-    def __init__(self, **kwargs):
-        """Initialize the transformer.
-
-        Args:
-            kwargs: Kwargs to initialize the props.
-
-        """
-        fns = kwargs.pop("fns", None)
-        style = kwargs.pop("style", None)
-        if fns:
-            kwargs["fns"] = [
-                (
-                    FunctionStringVar.create(x)
-                    if not isinstance(x, FunctionStringVar)
-                    else x
-                )
-                for x in fns
-            ]
-
-        if style:
-            kwargs["style"] = Style(style)
-        super().__init__(**kwargs)
 
 
 class ShikiCodeBlock(Component, MarkdownComponentMap):
