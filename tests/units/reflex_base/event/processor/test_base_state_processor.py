@@ -1034,6 +1034,79 @@ async def test_rehydrate_runs_on_load_for_the_incoming_events_route(
         assert (await root.get_state(State)).is_hydrated is True
 
 
+@pytest.mark.parametrize(
+    "processor_state_manager", ["in_process", "redis"], indirect=True
+)
+async def test_superseded_handler_preserves_yielded_state(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    processor_state_manager: StateManager,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+):
+    """A replacement handler keeps writes already yielded by its cancelled predecessor.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked event processor.
+        processor_state_manager: The state manager backing the processor.
+        emitted_deltas: The deltas sent by the processor.
+        token: The client token.
+    """
+    if isinstance(processor_state_manager, StateManagerRedis):
+        processor_state_manager._oplock_enabled = False
+    started = asyncio.Event()
+
+    class RefreshState(State):
+        """Track writes from superseding foreground handlers."""
+
+        entries: list[str] = []
+
+        @event(supersedes=True)
+        async def refresh(self, tag: str):
+            """Record work before yielding and after completion or cancellation.
+
+            Args:
+                tag: The invocation to record.
+
+            Yields:
+                The state update before waiting.
+            """
+            self.entries = [*self.entries, f"{tag}:start"]
+            yield
+            if tag == "A":
+                started.set()
+                try:
+                    await asyncio.Event().wait()
+                except asyncio.CancelledError:
+                    self.entries = [*self.entries, f"{tag}:cancelled"]
+                    raise
+            self.entries = [*self.entries, f"{tag}:done"]
+
+    wired_app.add_page(lambda: rx.text("refresh"), route="/")
+    async with real_base_state_processor as processor:
+        first = await processor.enqueue(
+            token, _client_event(RefreshState.refresh("A"), _view("/"))
+        )
+        await asyncio.wait_for(started.wait(), timeout=5)
+        await _send(
+            processor, token, _client_event(RefreshState.refresh("B"), _view("/"))
+        )
+        assert first.done()
+
+    expected = ["A:start", "A:cancelled", "B:start", "B:done"]
+    async with _read_back(real_base_state_processor, token) as root:
+        assert (await root.get_state(RefreshState)).entries == expected
+    entry_deltas = [
+        fields["entries" + FIELD_MARKER]
+        for _, delta in emitted_deltas
+        if "entries" + FIELD_MARKER
+        in (fields := delta.get(RefreshState.get_full_name(), {}))
+    ]
+    assert ["A:start"] in entry_deltas
+    assert entry_deltas[-1] == expected
+
+
 async def test_rehydrate_after_expiry_does_not_reload_the_previous_route(
     wired_app: App,
     real_base_state_processor: BaseStateEventProcessor,

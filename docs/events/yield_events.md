@@ -8,6 +8,8 @@ A regular event handler will send a `StateUpdate` when it has finished running. 
 
 To do so, we can use the Python keyword `yield`. For every yield inside the function, a `StateUpdate` will be sent to the frontend with the changes up to this point in the execution of the event handler.
 
+When using Redis, cancelling a foreground event handler preserves its state changes as long as it still holds the state lock. This includes updates already yielded to the frontend before another invocation of an `@rx.event(supersedes=True)` handler cancels it.
+
 This example below shows how to yield 100 updates to the UI.
 
 ```python demo exec
