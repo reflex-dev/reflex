@@ -22,6 +22,8 @@ const EVENTURL = env.EVENT;
 
 // Socket event names (must match reflex_base/constants/event.py SocketEvent)
 const CLIENT_ERROR_EVENT = "client_error";
+const ON_LOAD_INTERNAL_EVENT =
+  "reflex___state____on_load_internal_state.on_load_internal";
 
 // Client error types (must match reflex_base/constants/event.py ClientErrorType)
 const ERROR_TYPE_DISPATCH_MISSING = "dispatch_function_missing";
@@ -732,17 +734,19 @@ export const connect = async (
   // Get backend URL object from the endpoint.
   const endpoint = getBackendURL(EVENTURL);
   const on_hydrated_queue = [];
+  let bootRoute;
 
   // The hydrate event rides in the socket.io CONNECT packet, so the backend
   // starts loading state as soon as the namespace connects instead of after
   // an extra round trip for the connect acknowledgement. The key is read by
   // the backend as CompileVars.CONNECT_AUTH_EVENT.
-  const bootAuth = (first) => {
+  const bootAuth = (first) => (callback) => {
     const boot_event = withRouterData(app.initialEvents(first)[0], params);
+    bootRoute = boot_event.router_data.asPath;
     recordSentStorageValues(boot_event);
     // Instrumentation hook (installed by reflex-otel): may add a traceparent.
     window.__reflex_otel?.onEventSend?.(boot_event);
-    return { event: boot_event };
+    callback({ event: boot_event });
   };
 
   // Create the socket. A new session's token is saved here, once the app has
@@ -763,6 +767,8 @@ export const connect = async (
     warmSocket ?? createSocket(endpoint, transports, session_token);
   warmSocket = null;
   cancelWarmup();
+  // Socket.IO calls this when the namespace connection is sent, so route data
+  // reflects any navigation that happened while the transport was connecting.
   socket.current.auth = bootAuth(true);
   socket.current.wait_connect = !socket.current.connected;
   // Ensure undefined fields in events are sent as null instead of removed
@@ -836,6 +842,18 @@ export const connect = async (
     window.__reflex_otel?.onSocketConnect?.();
     window.addEventListener("pagehide", pagehideHandler);
     window.addEventListener("beforeunload", disconnectTrigger);
+    // The connection auth event already loads its route. Discard navigation
+    // on_load events queued during the handshake only if that route is still
+    // current; otherwise the queued event is needed to load the newer route.
+    if (bootRoute === withRouterData({}, params).router_data.asPath) {
+      for (let i = event_queue.length - 1; i >= 0; i--) {
+        if (
+          event_queue[i]?.name === `${app.state_name}.${ON_LOAD_INTERNAL_EVENT}`
+        ) {
+          event_queue.splice(i, 1);
+        }
+      }
+    }
     // Drain any initial events from the queue.
     while (event_queue.length > 0) {
       await processEvent(socket.current, navigate, params);
