@@ -29,6 +29,27 @@ requires_ipv6 = pytest.mark.skipif(
 )
 
 
+@pytest.mark.parametrize(
+    ("cpu_count", "expected"),
+    [(None, 3), (0, 3), (1, 3), (2, 5), (3, 7), (4, 8), (64, 8)],
+)
+def test_get_num_workers_caps_automatic_worker_count(cpu_count, expected):
+    """Cap automatic worker counts while preserving the CPU-based default below the cap."""
+    redis_client = mock.Mock()
+    with (
+        mock.patch.object(
+            processes, "get_config", return_value=mock.Mock(transport="websocket")
+        ),
+        mock.patch.object(
+            processes.prerequisites, "get_redis_sync", return_value=redis_client
+        ),
+        mock.patch.object(processes.os, "cpu_count", return_value=cpu_count),
+    ):
+        assert processes.get_num_workers() == expected
+
+    redis_client.ping.assert_called_once_with()
+
+
 def test_is_process_on_port_free_port():
     """Test is_process_on_port returns False when port is free."""
     # Find a free port
