@@ -45,7 +45,7 @@ serves it together with the backend (event websocket, `/ping`, `/_upload`)
 from a single server on port `3000`. Pass `--frontend-port` or
 `--backend-port` to listen on a different port. When redis is configured,
 the server runs up to 8 worker processes by default (`2 * cpu_count + 1`, capped at 8).
-Set `GRANIAN_WORKERS` to override the default, including to use more workers.
+When using Granian, set `GRANIAN_WORKERS` to override the default, including to use more workers.
 
 The frontend and backend can also run as separate processes, for example to
 serve the frontend from a CDN and scale the backend independently. The
