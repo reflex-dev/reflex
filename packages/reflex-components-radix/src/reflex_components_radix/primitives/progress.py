@@ -16,7 +16,7 @@ from reflex_components_radix.themes.base import LiteralAccentColor, LiteralRadiu
 class ProgressComponent(RadixPrimitiveComponentWithClassName):
     """A Progress component."""
 
-    library = "@radix-ui/react-progress@1.1.14"
+    library = "@radix-ui/react-progress@1.1.16"
 
 
 class ProgressRoot(ProgressComponent):
@@ -24,6 +24,10 @@ class ProgressRoot(ProgressComponent):
 
     tag = "Root"
     alias = "RadixProgressRoot"
+
+    value: Var[int | None] = field(doc="The current progress value.")
+
+    max: Var[int | None] = field(doc="The maximum progress value.")
 
     radius: Var[LiteralRadius] = field(
         doc='Override theme radius for progress bar: "none" | "small" | "medium" | "large" | "full"'
@@ -117,12 +121,16 @@ class Progress(ProgressRoot):
         if "color_scheme" in props:
             progress_indicator_props["color_scheme"] = props.pop("color_scheme")
 
+        value = props.pop("value", 0)
+        max_value = props.pop("max", 100)
         return ProgressRoot.create(
             ProgressIndicator.create(
-                value=props.pop("value", 0),
-                max=props.pop("max", 100),
+                value=value,
+                max=max_value,
                 **progress_indicator_props,
             ),
+            value=value,
+            max=max_value,
             **props,
         )
 

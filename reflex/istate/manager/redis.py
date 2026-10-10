@@ -6,7 +6,6 @@ import dataclasses
 import inspect
 import logging
 import os
-import sys
 import time
 import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable
@@ -362,7 +361,7 @@ class StateManagerRedis(StateManager):
         # containing a GET for each state. An already populated tree needs no IO.
         redis_states = (
             await self.redis.mget([
-                str(token.with_cls(state_cls)) for state_cls in required_state_classes
+                token._state_key(state_cls) for state_cls in required_state_classes
             ])
             if required_state_classes
             else []
@@ -385,15 +384,14 @@ class StateManagerRedis(StateManager):
                     init_substates=False,
                     _reflex_internal_init=True,
                 )
-            flat_state_tree[state.get_full_name()] = state
+            state_full_name = state.get_full_name()
+            flat_state_tree[state_full_name] = state
             if state.get_parent_state() is not None:
-                parent_state_name, _dot, state_name = state.get_full_name().rpartition(
-                    "."
-                )
+                parent_state_name, _dot, state_name = state_full_name.rpartition(".")
                 parent_state = flat_state_tree.get(parent_state_name)
                 if parent_state is None:
                     msg = (
-                        f"Parent state for {state.get_full_name()} was not found "
+                        f"Parent state for {state_full_name} was not found "
                         "in the state tree, but should have already been fetched. "
                         "This is a bug"
                     )
@@ -441,10 +439,10 @@ class StateManagerRedis(StateManager):
             writes = [(str(token), pickle_state)] if pickle_state else []
 
         if lock_id is None:
-            pipeline = self.redis.pipeline(transaction=False)
-            for key, pickle_state in writes:
-                pipeline.set(key, pickle_state, ex=self.token_expiration)
             if writes:
+                pipeline = self.redis.pipeline(transaction=False)
+                for key, pickle_state in writes:
+                    pipeline.set(key, pickle_state, ex=self.token_expiration)
                 await pipeline.execute()
             return
 
@@ -513,7 +511,7 @@ class StateManagerRedis(StateManager):
             # Persist only the given state (parents or substates are excluded by
             # BaseState.__getstate__).
             if state._was_touched and (pickle_state := state._serialize()):
-                writes.append((str(token.with_cls(type(state))), pickle_state))
+                writes.append((token._state_key(type(state)), pickle_state))
             stack.extend(state.substates.values())
         return writes
 
@@ -1062,7 +1060,7 @@ class StateManagerRedis(StateManager):
             and (lease_task := self._local_leases.get(token)) is not None
             and not lease_task.done()
             and not lease_task.cancelled()
-            and (sys.version_info < (3, 11) or not lease_task.cancelling())
+            and not lease_task.cancelling()
         ):
             if raise_when_found:
                 raise OplockFound
@@ -1117,7 +1115,7 @@ class StateManagerRedis(StateManager):
                         lock_released_event.wait(),
                         timeout=max(self.lock_expiration / 1000, 0),
                     )
-                except (TimeoutError, asyncio.TimeoutError):
+                except TimeoutError:
                     if self._debug_enabled:
                         logger.debug(
                             f"{SMR} [{time.monotonic() - start:.3f}] {lock_key.decode()} wait timeout for {lock_id.decode()}"

@@ -59,11 +59,19 @@ def test_read_stateful_pages_marker_recovers_legacy_corruption(
     assert compiler._read_stateful_pages_marker() is None
 
 
+def test_read_stateful_pages_marker_recovers_undecodable_marker(tmp_path, mocker):
+    """A marker that is not valid UTF-8 requests full page evaluation."""
+    mocker.patch("reflex.utils.prerequisites.get_backend_dir", return_value=tmp_path)
+    # No BOM: json.loads() would decode a UTF-16 one and raise JSONDecodeError.
+    (tmp_path / constants.Dirs.STATEFUL_PAGES).write_bytes(b"\xff garbage")
+    assert compiler._read_stateful_pages_marker() is None
+
+
 @pytest.mark.parametrize("windows", [False, True])
 def test_read_stateful_pages_marker_sharing_violation(mocker, windows):
     """An unavailable Windows marker requests evaluation without hiding POSIX errors."""
     mocker.patch.object(constants, "IS_WINDOWS", windows)
-    mocker.patch.object(Path, "read_text", side_effect=PermissionError)
+    mocker.patch.object(Path, "read_bytes", side_effect=PermissionError)
     if windows:
         assert compiler._read_stateful_pages_marker() is None
     else:
