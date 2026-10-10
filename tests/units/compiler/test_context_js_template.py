@@ -198,6 +198,7 @@ def test_client_state_store_notifies_only_substate_subscribers(tmp_path: Path):
             "reflex___state____state__sub": {"value": 2},
         },
         state_name="reflex___state____state",
+        legacy_state_contexts={"reflex___state____state__sub"},
     ).replace("function ClientStateProvider", "export function ClientStateProvider")
     react_stub = """
 let hookIndex = 0;
@@ -277,10 +278,15 @@ const store = storeElement.props.value;
 react.setContextValue(registry.StateStoreContext, store);
 const first = registry.useStateContext("reflex___state____state");
 const second = registry.useStateContext("reflex___state____state__sub");
+const dispatchElement = storeElement.props.children;
+const legacyElement = dispatchElement.props.children;
+const legacyContext = legacyElement.type(legacyElement.props);
 let firstNotifications = 0;
 let secondNotifications = 0;
+let legacyNotifications = 0;
 react.subscriptions[0](() => firstNotifications++);
 react.subscriptions[1](() => secondNotifications++);
+react.subscriptions[2](() => legacyNotifications++);
 store.dispatchers["reflex___state____state__sub"]({ value: 2 });
 store.dispatchers["reflex___state____state__sub"]({});
 const noOpIdentityPreserved =
@@ -288,10 +294,15 @@ const noOpIdentityPreserved =
 const notificationsAfterNoOps = secondNotifications;
 store.dispatchers["reflex___state____state__sub"]({ value: 3 });
 const updated = registry.useStateContext("reflex___state____state__sub");
+const updatedLegacyContext = legacyElement.type(legacyElement.props);
 process.stdout.write(JSON.stringify({
   first,
   second,
   updated,
+  legacyContext: legacyContext.props.value,
+  updatedLegacyContext: updatedLegacyContext.props.value,
+  legacyContextMatches: legacyContext.type === mod.StateContexts.reflex___state____state__sub,
+  legacyNotifications,
   noOpIdentityPreserved,
   notificationsAfterNoOps,
   firstIdentityPreserved: store.getSnapshot("reflex___state____state") === first,
@@ -311,6 +322,10 @@ process.stdout.write(JSON.stringify({
         "first": {"value": 1},
         "second": {"value": 2},
         "updated": {"value": 3},
+        "legacyContext": {"value": 2},
+        "updatedLegacyContext": {"value": 3},
+        "legacyContextMatches": True,
+        "legacyNotifications": 1,
         "noOpIdentityPreserved": True,
         "notificationsAfterNoOps": 0,
         "firstIdentityPreserved": True,

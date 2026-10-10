@@ -21,6 +21,7 @@ export const UploadFilesContext = createContext(null);
 export const DispatchContext = createContext(null);
 export const EventLoopContext = createContext(null);
 export const StateStoreContext = createContext(null);
+const stateContexts = new Map();
 
 ColorModeContext.displayName = "ColorModeContext";
 UploadFilesContext.displayName = "UploadFilesContext";
@@ -29,13 +30,19 @@ EventLoopContext.displayName = "EventLoopContext";
 StateStoreContext.displayName = "StateStoreContext";
 
 /**
- * Return the shared context carrying the Python state store.
+ * Return the stable legacy context for a named Python state.
  *
  * @param {string} name - The dotted Python state name.
- * @returns {React.Context} The shared state-store context.
+ * @returns {React.Context} The named state's context object.
  */
-export function getStateContext(_name) {
-  return StateStoreContext;
+export function getStateContext(name) {
+  let context = stateContexts.get(name);
+  if (context === undefined) {
+    context = createContext(null);
+    context.displayName = `StateContext(${name})`;
+    stateContexts.set(name, context);
+  }
+  return context;
 }
 
 /**

@@ -32,6 +32,23 @@ from reflex.state import BaseState
 from reflex.utils import prerequisites
 
 
+@pytest.mark.parametrize(
+    ("javascript_code", "expected"),
+    [
+        ("useContext(StateContexts.state)", {"state"}),
+        (
+            'useContext(StateContexts["state"]); useContext(StateContexts.other)',
+            {"state", "other"},
+        ),
+        ("useContext(StateContexts[stateName])", {"*"}),
+        ('useStateContext("state")', set()),
+    ],
+)
+def test_legacy_state_context_names(javascript_code: str, expected: set[str]) -> None:
+    """Identify legacy context reads so generated providers can preserve them."""
+    assert compiler._legacy_state_context_names(javascript_code) == expected
+
+
 @pytest.mark.parametrize("content", ["", '["index",'])
 def test_read_stateful_pages_marker_recovers_legacy_corruption(
     tmp_path, mocker, content

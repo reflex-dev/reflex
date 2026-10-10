@@ -6,6 +6,7 @@ import collections
 import dataclasses
 import json
 import logging
+import re
 import sys
 from collections.abc import Callable, Iterable, Sequence
 from inspect import getmodule
@@ -246,6 +247,7 @@ def _compile_contexts(
     theme: Component | None,
     *,
     component_imports: ParsedImportDict | None = None,
+    legacy_state_contexts: set[str] | None = None,
 ) -> str:
     """Compile the initial state and contexts.
 
@@ -253,6 +255,7 @@ def _compile_contexts(
         state: The app state.
         theme: The top-level app theme.
         component_imports: Optional accumulator for initial component dependencies.
+        legacy_state_contexts: State context names used through the legacy React API.
 
     Returns:
         The compiled context file.
@@ -277,12 +280,14 @@ def _compile_contexts(
             is_dev_mode=not is_prod_mode(),
             default_color_mode=default_color_mode,
             disable_react_owner_stacks=disable_react_owner_stacks,
+            legacy_state_contexts=legacy_state_contexts,
         )
         if state and initial_state is not None
         else templates.context_template(
             is_dev_mode=not is_prod_mode(),
             default_color_mode=default_color_mode,
             disable_react_owner_stacks=disable_react_owner_stacks,
+            legacy_state_contexts=legacy_state_contexts,
         )
     )
 
@@ -766,6 +771,7 @@ def compile_contexts(
     theme: Component | None,
     *,
     component_imports: ParsedImportDict | None = None,
+    legacy_state_contexts: set[str] | None = None,
 ) -> tuple[str, str]:
     """Compile the initial state / context.
 
@@ -773,6 +779,7 @@ def compile_contexts(
         state: The app state.
         theme: The top-level app theme.
         component_imports: Optional accumulator for initial component dependencies.
+        legacy_state_contexts: State context names used through the legacy React API.
 
     Returns:
         The path and code of the compiled context.
@@ -781,8 +788,33 @@ def compile_contexts(
     output_path = utils.get_context_path()
 
     return output_path, _compile_contexts(
-        state, theme, component_imports=component_imports
+        state,
+        theme,
+        component_imports=component_imports,
+        legacy_state_contexts=legacy_state_contexts,
     )
+
+
+def _legacy_state_context_names(javascript_code: str) -> set[str]:
+    """Find state contexts read through the pre-store React context API."""
+    context_names = set(
+        re.findall(
+            r"\buseContext\s*\(\s*StateContexts\.([A-Za-z_$][\w$]*)\s*\)",
+            javascript_code,
+        )
+    )
+    context_names.update(
+        re.findall(
+            r"\buseContext\s*\(\s*StateContexts\[['\"]([^'\"]+)['\"]\]\s*\)",
+            javascript_code,
+        )
+    )
+    if re.search(
+        r"\buseContext\s*\(\s*StateContexts\s*\[\s*(?!['\"])",
+        javascript_code,
+    ):
+        context_names.add("*")
+    return context_names
 
 
 def compile_page(path: str, component: BaseComponent) -> tuple[str, str]:
@@ -1490,17 +1522,23 @@ def compile_app(
             compile_results.append(result)
         progress.advance(task)
 
-    compile_results.extend([
-        compile_contexts(
-            app._state,
-            radix_themes_plugin.get_theme(),
-            component_imports=all_imports,
-        ),
-        utils._compile_bundled_libraries(),
-    ])
-    progress.advance(task)
-
-    compile_results.append(compile_app_root(app_root, hydrate_fallback_export))
+    app_root_result = compile_app_root(app_root, hydrate_fallback_export)
+    legacy_state_contexts = set().union(
+        *(_legacy_state_context_names(code) for _, code in compile_results)
+    )
+    legacy_state_contexts.update(_legacy_state_context_names(app_root_result[1]))
+    compile_results.extend(
+        [
+            compile_contexts(
+                app._state,
+                radix_themes_plugin.get_theme(),
+                component_imports=all_imports,
+                legacy_state_contexts=legacy_state_contexts,
+            ),
+            utils._compile_bundled_libraries(),
+            app_root_result,
+        ]
+    )
     progress.advance(task)
 
     progress.stop()
