@@ -1,0 +1,1 @@
+Calling an upload handler with `rx.upload_files(...)` or `rx.upload_files_chunk(...)` as its only argument, as the upload docs show, now type-checks under pyright and ty, for a handler taking `list[rx.UploadFile]` or `rx.UploadChunkIterator`.
