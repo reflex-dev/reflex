@@ -18,6 +18,7 @@ from reflex.istate.manager import (
     StateManager,
     StateModificationContext,
     _default_token_expiration,
+    _mark_state_tree_dirty,
     _release_state_tree,
 )
 from reflex.istate.manager.token import TOKEN_TYPE, BaseStateToken, StateToken
@@ -177,6 +178,7 @@ class StateManagerDisk(StateManager):
 
             fresh_instance = await root_state.get_state(substate)
             instance = await self.load_state(substate_token)
+            is_new_state = instance is None
             if instance is not None:
                 # Ensure all substates exist, even if they weren't serialized previously.
                 instance.substates = fresh_instance.substates
@@ -184,6 +186,8 @@ class StateManagerDisk(StateManager):
                 instance = fresh_instance
             state.substates[substate.get_name()] = instance
             instance.parent_state = state
+            if is_new_state:
+                _mark_state_tree_dirty(instance)
 
             await self.populate_substates(token, instance, root_state)
 
@@ -216,6 +220,7 @@ class StateManagerDisk(StateManager):
             fresh_root_state = root_state_cls(_reflex_internal_init=True)
             if root_state is None:
                 root_state = fresh_root_state
+                _mark_state_tree_dirty(root_state)
             elif not isinstance(root_state, BaseState):
                 msg = "Deserialized state is not an instance of BaseState, cannot populate substates."
                 raise TypeError(msg)
