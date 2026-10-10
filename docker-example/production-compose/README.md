@@ -69,8 +69,8 @@ postgres; the binary wheel bundles libpq, so no extra system packages are
 needed in the image.
 
 With redis available, the backend runs up to 8 workers by default (`2 * cpu_count + 1`,
-capped at 8). Set `GRANIAN_WORKERS` in the `app` environment to override the
-default, including to use more workers.
+capped at 8). When using Granian, set `GRANIAN_WORKERS` in the `app` environment
+to override the default, including to use more workers.
 
 Postgres uses its own named docker volume for data persistence.
 
