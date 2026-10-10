@@ -1,5 +1,7 @@
 import datetime
 import math
+import subprocess
+import sys
 import tomllib
 from pathlib import Path
 from unittest import mock
@@ -491,3 +493,78 @@ def test_subclass_without_db_extra_points_to_install(class_kwargs: dict):
 
         class Item(_ClassThatErrorsOnInit, **class_kwargs):  # pyright: ignore[reportUnusedClass]
             name: str
+
+
+_NO_GREENLET_SCRIPT = """
+import sys
+
+GREENLET_MSG = "The SQLAlchemy asyncio module requires that the Python 'greenlet' library is installed."
+
+
+class _NoGreenlet:
+    def find_spec(self, name, path=None, target=None):
+        if name == "greenlet" or name.startswith("sqlalchemy.ext.asyncio"):
+            raise ImportError(GREENLET_MSG)
+        return None
+
+
+sys.meta_path.insert(0, _NoGreenlet())
+for mod in [
+    m for m in sys.modules if m == "greenlet" or m.startswith("sqlalchemy.ext.asyncio")
+]:
+    del sys.modules[mod]
+
+import sqlalchemy.orm
+import sqlmodel
+
+import reflex as rx
+import reflex.model
+
+
+class Base(sqlalchemy.orm.DeclarativeBase):
+    pass
+
+
+rx.ModelRegistry.register(Base)
+
+
+class Item(rx.Model, table=True):
+    name: str
+
+
+with rx.session("sqlite:///reflex.db") as session:
+    rx.Model.metadata.create_all(session.get_bind())
+    session.add(Item(name="widget"))
+    session.commit()
+    assert session.exec(sqlmodel.select(Item.name)).all() == ["widget"]
+
+try:
+    rx.asession("sqlite+aiosqlite:///reflex.db")
+except ImportError as err:
+    assert "greenlet" in str(err), err
+else:
+    raise AssertionError("asession should require greenlet")
+
+print("OK")
+"""
+
+
+def test_sync_db_api_without_greenlet(tmp_path: Path):
+    """The sync database API works when sqlalchemy.ext.asyncio cannot be imported.
+
+    SQLAlchemy 2.1 only installs greenlet with the ``asyncio`` extra, and without it
+    ``import sqlalchemy.ext.asyncio`` raises ImportError. Only the async helpers
+    should need it.
+
+    Args:
+        tmp_path: Working directory for the subprocess.
+    """
+    result = subprocess.run(
+        [sys.executable, "-c", _NO_GREENLET_SCRIPT],
+        capture_output=True,
+        text=True,
+        cwd=tmp_path,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip().endswith("OK")
