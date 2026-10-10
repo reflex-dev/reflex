@@ -27,7 +27,7 @@ otherwise — so it works directly as a check in a loop.
 """
 
 # /// script
-# requires-python = ">=3.10"
+# requires-python = ">=3.11"
 # dependencies = ["playwright"]
 # ///
 

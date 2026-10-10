@@ -1309,6 +1309,37 @@ def test_match_stateful_condition_memoizes_whole_match_and_stateful_branch() -> 
     assert any("withprop" in tag.lower() for tag in wrapper_tags)
 
 
+def test_match_stateful_case_condition_memoizes_match_and_branch() -> None:
+    """A state Var in a case condition memoizes Match and its stateful branch.
+
+    The case-condition Vars count toward Match's statefulness, so the memo
+    wrapper binds the state they read even when the subject is a literal.
+    Branches are still memoized independently.
+    """
+
+    def page() -> Component:
+        comp = rx.match(
+            True,
+            (SpecialFormMemoState.value == "a", WithProp.create(label=STATE_VAR)),
+            (
+                SpecialFormMemoState.value == "b",
+                WithProp.create(label=LiteralVar.create("B")),
+            ),
+            WithProp.create(label=LiteralVar.create("default")),
+        )
+        assert isinstance(comp, Component)
+        return comp
+
+    ctx, _page_ctx = _compile_single_page(page)
+    assert len(ctx.memoize_wrappers) == 2, (
+        "Expected both Match and its stateful branch component to be memoized, "
+        f"got wrappers: {list(ctx.memoize_wrappers)}"
+    )
+    wrapper_tags = tuple(ctx.memoize_wrappers)
+    assert any("match" in tag.lower() for tag in wrapper_tags)
+    assert any("withprop" in tag.lower() for tag in wrapper_tags)
+
+
 def test_cond_stateful_branch_component_renders_via_memoized_wrapper() -> None:
     """Components inside Cond branches must render via their memo wrappers.
 
@@ -1602,6 +1633,39 @@ def test_client_state_setter_in_call_function_event_imports_refs() -> None:
     )
 
 
+def test_client_state_setter_only_sibling_memo_initializes_state() -> None:
+    """A memoized sibling that only sets a global ``ClientStateVar`` owns its hooks.
+
+    Regression: the setter did not carry the ``useState``/``refs`` hooks, so a
+    button memo calling ``refs['_client_state_set<name>']`` relied on a sibling
+    rendering ``.value`` to define it. If that sibling was not mounted, clicking
+    raised ``TypeError: refs._client_state_set<name> is not a function``.
+    """
+    from reflex.experimental.client_state import ClientStateVar
+
+    shared = ClientStateVar.create("sibling", default="a")
+
+    def page() -> Component:
+        return rx.box(
+            rx.text(shared.value),
+            rx.el.button("set", on_click=shared.set_value("b")),
+        )
+
+    ctx, _page_ctx = _compile_single_page(page)
+    memo_code = _compile_memo_module_text(ctx)
+    button_memo = next(
+        chunk
+        for chunk in memo_code.split("export const ")
+        if chunk.startswith("Button_")
+    )
+    assert "refs['_client_state_setSibling'](\"b\")" in button_memo
+    assert (
+        "const [sibling, setSibling] = useState('_client_state_sibling' in refs"
+        " ? refs['_client_state_sibling'] : (\"a\"))" in button_memo
+    )
+    assert "refs['_client_state_setSibling'] = " in button_memo
+
+
 def test_debounce_input_memo_renders_react_debounce_wrapper() -> None:
     """``rx.input(value=..., on_change=..., debounce_timeout=N)`` memoizes via DebounceInput.
 
@@ -1847,7 +1911,7 @@ def test_moment_uses_react_moment_2_props_and_dependencies() -> None:
     """The wrapper exposes the react-moment 2.x props and dependencies."""
     assert Moment.library == "react-moment@2.0.2"
     assert Moment.lib_dependencies == [
-        "moment@2.30.1",
+        "moment@2.31.0",
     ]
 
     moment = Moment.create(
@@ -1863,10 +1927,10 @@ def test_moment_uses_react_moment_2_props_and_dependencies() -> None:
         "2026-08-30",
         duration_from_now=True,
     )
-    assert duration_from_now.add_imports()["moment-duration-format@2.2.2"] == ImportVar(
+    assert duration_from_now.add_imports()["moment-duration-format@2.3.2"] == ImportVar(
         tag=None
     )
-    assert "moment-duration-format@2.2.2" not in moment.add_imports()
+    assert "moment-duration-format@2.3.2" not in moment.add_imports()
 
 
 def test_moment_memo_body_renders_text_interpolation_not_bare_component() -> None:
@@ -2087,6 +2151,35 @@ def _compile_memo_module_text(ctx: CompileContext) -> str:
         memos=tuple(ctx.auto_memo_components.values()),
     )
     return "\n".join(code for _, code in memo_files)
+
+
+@pytest.mark.parametrize("form_factory", [rx.form.root, rx.el.form])
+def test_form_memo_preserves_control_refs(form_factory) -> None:
+    """Generated submit handlers keep control refs through nested auto-memos."""
+    from reflex_components_core.el.elements.forms import Form
+
+    ctx, _ = _compile_single_page(
+        lambda: form_factory(
+            rx.box(
+                rx.input(id="plain_field"),
+                rx.input(id="debounced_field", on_change=rx.console_log),
+                rx.radio_group(["a", "b"], id="unset_field"),
+                rx.text("Label", id="label"),
+                id="wrapper",
+            ),
+            id="form",
+        )
+    )
+    forms = [
+        definition.component
+        for definition in ctx.auto_memo_components.values()
+        if isinstance(definition.component, Form)
+    ]
+    assert len(forms) == 1
+    form_hooks = "\n".join(forms[0].add_hooks())
+    for field_id in ("plain_field", "debounced_field", "unset_field"):
+        assert f'getRefValue(refs["ref_{field_id}"])' in form_hooks
+    assert 'getRefValue(refs["ref_label"])' not in form_hooks
 
 
 def test_title_memo_body_renders_text_interpolation_not_bare_component() -> None:

@@ -1,0 +1,1 @@
+Fix `TypeError: refs._client_state_set... is not a function` when the backend pushes a global `rx._x.client_state` value before any component using it has mounted, such as one behind an `rx.cond` or a page that waits for hydration. The value is now kept for the first component that mounts.

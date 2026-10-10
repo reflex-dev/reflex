@@ -32,6 +32,7 @@ import click
 from reflex_build_sdk import (
     APIConnectionError,
     APIError,
+    APIResponseValidationError,
     APIStatusError,
     AuthenticationError,
     DeploymentFailedError,
@@ -44,12 +45,18 @@ from reflex_build_sdk import (
 )
 from reflex_build_sdk._decode import json_key
 from reflex_build_sdk._deploy import status_message_outcome
+from reflex_build_sdk.transports import default_transport
 from reflex_build_sdk.types import DeploymentReport, LoginRequest, Me
 
 import reflex_cli.constants as constants
 from reflex_cli.core.config import Config, RegionOption
 from reflex_cli.utils import console, log
 from reflex_cli.utils.dependency import is_valid_url
+from reflex_cli.utils.deploy import (
+    _DeploymentRetryTransport,
+    _is_scaling_conflict,
+    _retry_scaling_conflicts,
+)
 from reflex_cli.utils.exceptions import (
     ResponseError,
     ScaleAppError,
@@ -465,6 +472,52 @@ def get_existing_access_token_with_source() -> tuple[str, TokenSource]:
     return "", TokenSource.NONE
 
 
+def rejected_token_message(source: TokenSource, err: TokenAccessDeniedError) -> str:
+    """Describe a rejected token and how to replace it for its source.
+
+    Args:
+        source: Where the token was loaded from.
+        err: The validation error.
+
+    Returns:
+        The message to report.
+    """
+    if source is TokenSource.ENVIRONMENT:
+        recovery = (
+            "Replace REFLEX_ACCESS_TOKEN with a valid token, or unset it and run "
+            "`reflex login` to authenticate."
+        )
+    elif source is TokenSource.OPTION:
+        recovery = (
+            "Replace the --token value with a valid token, or omit --token and run "
+            "`reflex login` to authenticate."
+        )
+    else:
+        recovery = "Run `reflex login` to authenticate."
+    return (
+        f"The access token from the {source.value} was rejected: {err} "
+        f"(auth request id: {err.request_id}). {recovery}"
+    )
+
+
+def _token_validation_failure_message(
+    source: TokenSource, err: TokenValidationError
+) -> str:
+    """Describe a temporary validation failure and suggest retrying.
+
+    Args:
+        source: Where the token was loaded from.
+        err: The validation error.
+
+    Returns:
+        The message to report.
+    """
+    return (
+        f"Unable to validate the access token from the {source.value}: "
+        f"{err} (auth request id: {err.request_id}). Please try again later."
+    )
+
+
 def get_existing_access_token() -> str:
     """Fetch the access token from the existing config if applicable.
 
@@ -583,13 +636,18 @@ def _write_hosting_config(hosting_config: dict[str, Any]):
         raise
 
 
-def delete_token_from_config():
-    """Delete the invalid token from the config file if applicable."""
+def delete_token_from_config(token: str | None = None):
+    """Delete the token from the config file if it matches the expected token.
+
+    Args:
+        token: The token expected to be stored. If None, delete unconditionally.
+    """
     if constants.Hosting.HOSTING_JSON.exists():
         try:
             hosting_config = _read_hosting_config()
-            hosting_config.pop("access_token", None)
-            _write_hosting_config(hosting_config)
+            if token is None or hosting_config.get("access_token") == token:
+                hosting_config.pop("access_token", None)
+                _write_hosting_config(hosting_config)
         except Exception as ex:
             # Best efforts removing invalid token is OK
             logger.debug(
@@ -763,7 +821,8 @@ def identity_as_dict(me: Me) -> dict[str, Any]:
     }
 
 
-def upload_client(client: AuthenticatedClient) -> ReflexBuild:
+@contextlib.contextmanager
+def upload_client(client: AuthenticatedClient) -> Iterator[ReflexBuild]:
     """Build a client whose timeouts suit pushing a build's archives.
 
     The SDK's defaults are sized for API calls. An archive is not one: it is
@@ -773,15 +832,25 @@ def upload_client(client: AuthenticatedClient) -> ReflexBuild:
     Args:
         client: The authenticated client the deploy is running under.
 
-    Returns:
-        A client to submit the deployment with. The caller closes it.
+    Yields:
+        A client that retries confirmed scaling refusals without reuploading.
 
     """
-    return ReflexBuild(
-        token=client.token,
-        base_url=constants.Hosting.HOSTING_SERVICE,
-        timeout=UPLOAD_IO_TIMEOUT.total_seconds(),
-    )
+    base_url = constants.Hosting.HOSTING_SERVICE.rstrip("/")
+    with (
+        contextlib.closing(
+            _DeploymentRetryTransport(
+                default_transport(), url=f"{base_url}/api/v1/deployments"
+            )
+        ) as transport,
+        ReflexBuild(
+            token=client.token,
+            base_url=base_url,
+            timeout=UPLOAD_IO_TIMEOUT.total_seconds(),
+            transport=transport,
+        ) as uploader,
+    ):
+        yield uploader
 
 
 def validate_token(token: str) -> dict[str, Any]:
@@ -817,7 +886,7 @@ def _validate_with_retries(
             # getattr: mocks/foreign ValueErrors don't carry a request id.
             request_id = getattr(ex, "request_id", "") or get_auth_request_id()
             logger.error(f"Access denied (auth request id: {request_id})")
-            delete_token_from_config()
+            delete_token_from_config(access_token)
         except Exception as ex:
             request_id = getattr(ex, "request_id", "") or get_auth_request_id()
             logger.warning(
@@ -874,14 +943,34 @@ def get_authenticated_client(
         An authenticated client.
 
     Raises:
-        Exit: If no token is provided in non-interactive mode, or the browser
-            login did not produce one.
+        Exit: If no token is provided in non-interactive mode, the token is
+            rejected in non-interactive mode, or the browser login did not
+            produce one.
 
     """
-    env_token = get_existing_access_token() if not token else ""
-    if not token and not env_token and not interactive:
-        logger.error("Token is required for non-interactive mode.")
-        raise click.exceptions.Exit(1)
+    if not interactive:
+        if token:
+            access_token, source = token, TokenSource.OPTION
+        else:
+            access_token, source = get_existing_access_token_with_source()
+        if not access_token:
+            logger.error("Token is required for non-interactive mode.")
+            raise click.exceptions.Exit(1)
+        api = new_client(access_token)
+        try:
+            with console.status("Validating access token ..."):
+                me = _validate(access_token, api)
+        except TokenAccessDeniedError as err:
+            api.close()
+            logger.error(rejected_token_message(source, err))
+            if source is TokenSource.CONFIG:
+                delete_token_from_config(access_token)
+            raise click.exceptions.Exit(1) from err
+        except TokenValidationError as err:
+            api.close()
+            logger.error(_token_validation_failure_message(source, err))
+            raise click.exceptions.Exit(1) from err
+        return AuthenticatedClient(api, me)
 
     if (client := get_authentication_client(token)) is not None:
         return client
@@ -1165,11 +1254,27 @@ def find_gcp_connection(
     return None
 
 
+def _warn_unconfirmed_instance_bounds(app_name: str) -> None:
+    """Warn when a bounds write may have committed without acknowledgement.
+
+    Args:
+        app_name: The app whose instance bounds were being updated.
+    """
+    logger.warning(
+        f"Could not confirm the instance bounds of "
+        f"'{app_name}'; they may or may not have been applied. "
+        "Check the app in the Reflex Cloud dashboard before relying "
+        "on its scaling."
+    )
+
+
 def set_instance_bounds(
     app_id: str,
     client: AuthenticatedClient,
     min_instances: int | None = None,
     max_instances: int | None = None,
+    *,
+    retry_scaling: bool = False,
 ) -> str | None:
     """Set the autoscaling instance bounds on an app.
 
@@ -1183,23 +1288,74 @@ def set_instance_bounds(
         client: The authenticated client.
         min_instances: The minimum number of instances to keep running.
         max_instances: The maximum number of instances to scale out to.
+        retry_scaling: Whether to retry confirmed scaling refusals, up to eight
+            attempts with a 15-second wait between attempts.
 
     Returns:
         None on success, or a ``"set instance bounds failed: ..."`` string on
-        error (validation, unsupported platform, or a scale already running).
+        a non-retryable refusal (validation or unsupported platform).
+
+    Raises:
+        APIStatusError: If scaling refused the write or a server error left its
+            outcome unknown.
+        APIConnectionError: If contact is lost while reading or updating bounds.
+        APIResponseValidationError: If the response could not be decoded.
 
     """
-    try:
+    bounds_url = f"{client.api.base_url}/api/v1/apps/{app_id}/instance_bounds"
+    scaling_code = "instance_bounds_scale_conflict"
+
+    def update_bounds() -> None:
+        """Update the requested bounds, preserving the latest unspecified bound."""
         current = client.api.apps.get(app_id)
-        client.api.apps.set_instance_bounds(
-            app_id,
-            min_instances=current.min_instances
-            if min_instances is None
-            else min_instances,
-            max_instances=current.max_instances
-            if max_instances is None
-            else max_instances,
-        )
+        try:
+            client.api.apps.set_instance_bounds(
+                app_id,
+                min_instances=current.min_instances
+                if min_instances is None
+                else min_instances,
+                max_instances=current.max_instances
+                if max_instances is None
+                else max_instances,
+            )
+        except MissingTokenError:
+            raise
+        except APIResponseValidationError:
+            logger.warning(
+                f"The server reported success setting the instance bounds of "
+                f"'{current.name}', but its response could not be decoded. "
+                "The bounds may have changed even though this deploy stopped. "
+                "Check the app in the Reflex Cloud dashboard before relying "
+                "on its scaling."
+            )
+            raise
+        except APIStatusError as ex:
+            if ex.status_code >= 500:
+                _warn_unconfirmed_instance_bounds(current.name)
+            raise
+        except BaseException:
+            _warn_unconfirmed_instance_bounds(current.name)
+            raise
+
+    try:
+        if retry_scaling:
+            _retry_scaling_conflicts(
+                update_bounds,
+                url=bounds_url,
+                code=scaling_code,
+                action="the instance bounds update",
+                attempts=8,
+            )
+        else:
+            update_bounds()
+    except (APIConnectionError, APIResponseValidationError):
+        raise
+    except APIStatusError as ex:
+        if ex.status_code >= 500 or _is_scaling_conflict(
+            ex, url=bounds_url, code=scaling_code
+        ):
+            raise
+        return f"set instance bounds failed: {error_message(ex)}"
     except ReflexBuildError as ex:
         return f"set instance bounds failed: {error_message(ex)}"
     return None
@@ -1277,17 +1433,20 @@ def select_project(project: str, token: str | None = None) -> str:
 
 
 def normalize_project_id(value: Any) -> str | None:
-    """Normalize a project ID value, treating empty/whitespace strings and non-strings as None.
+    """Normalize a project ID, canonicalizing valid UUIDs.
 
     Args:
         value: The raw project ID value from config, CLI args, or hosting.json.
 
     Returns:
-        The stripped project ID, or None if the value is missing or blank.
+        The canonical UUID, stripped non-UUID string, or None if missing or blank.
     """
-    if isinstance(value, str) and value.strip():
-        return value.strip()
-    return None
+    if not isinstance(value, str) or not (value := value.strip()):
+        return None
+    try:
+        return str(uuid.UUID(value))
+    except ValueError:
+        return value
 
 
 def get_selected_project() -> str | None:

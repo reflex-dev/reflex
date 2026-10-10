@@ -25,7 +25,7 @@ status, so a package dropped for a failed lookup would take the audit's PASS wit
 """
 
 # /// script
-# requires-python = ">=3.10"
+# requires-python = ">=3.11"
 # ///
 
 from __future__ import annotations

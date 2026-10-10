@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import builtins
 import contextlib
-import copy
 import dataclasses
 import functools
+import hashlib
 import inspect
 import logging
 import pickle
@@ -22,6 +22,7 @@ from typing import (
     BinaryIO,
     ClassVar,
     ParamSpec,
+    Self,
     TypeVar,
     cast,
     get_type_hints,
@@ -62,6 +63,7 @@ from reflex_base.vars.base import (
     Var,
     _inherited_value,
     _is_descriptor,
+    _private_prefixes,
     _slot_names,
     _validate_state_name,
     computed_var,
@@ -69,7 +71,6 @@ from reflex_base.vars.base import (
     is_computed_var,
 )
 from rich.markup import escape
-from typing_extensions import Self
 
 import reflex.istate.dynamic
 from reflex import event
@@ -97,29 +98,26 @@ from reflex.istate.storage import ClientStorageBase
 from reflex.utils import console, format, types
 from reflex.utils.exec import is_testing_env
 
-# Entries in each pickle for workers of the previous release, which kept the
-# dirty tracking and backend vars in the instance dict. Remove in 1.0.
-_PREVIOUS_RELEASE_PICKLE_KEYS: dict[str, Any] = {
-    "dirty_vars": set(),
-    "dirty_substates": set(),
-    "_backend_vars": {},
-}
-
 
 @functools.cache
-def _stale_pickle_keys(cls: type) -> frozenset[str]:
-    """Get the keys of older pickles that are not restored into the instance dict.
+def _stale_pickle_keys(cls: type[BaseState]) -> frozenset[str]:
+    """Get the keys of pickles that are not restored into the instance dict.
 
     Args:
         cls: The state class.
 
     Returns:
-        The slot names of the class, now holding bookkeeping, and the RouterData
+        The slot names of the class, now holding bookkeeping, the RouterData
         entry from before the router split (not `constants.ROUTER`: the name is
-        frozen into payloads already on disk).
+        frozen into payloads already on disk) and the fields inherited from a
+        parent state, whose values live on the instance of the state declaring
+        them.
     """
     return frozenset(
-        {"router"}.union(*(_slot_names(vars(klass)) for klass in cls.__mro__))
+        {"router"}.union(
+            *(_slot_names(vars(klass)) for klass in cls.__mro__),
+            (name for name, f in cls.__fields__.items() if f._owner is not cls),
+        )
     )
 
 
@@ -139,11 +137,10 @@ if TYPE_CHECKING:
 var = computed_var
 
 
-if environment.REFLEX_PERF_MODE.get() != PerformanceMode.OFF:
-    # If the state is this large, it's considered a performance issue.
-    TOO_LARGE_SERIALIZED_STATE = environment.REFLEX_STATE_SIZE_LIMIT.get() * 1024
-    # Only warn about each state class size once.
-    _WARNED_ABOUT_STATE_SIZE: set[str] = set()
+# If the state is this large, it's considered a performance issue.
+TOO_LARGE_SERIALIZED_STATE = environment.REFLEX_STATE_SIZE_LIMIT.get() * 1024
+# Only warn about each state class size once.
+_WARNED_ABOUT_STATE_SIZE: set[str] = set()
 
 
 # For BaseState.get_var_value
@@ -298,6 +295,47 @@ def _override_base_method(fn: Callable[PARAMS, RETURN]) -> Callable[PARAMS, RETU
     return fn
 
 
+def _cache_per_class(
+    fn: Callable[[type[BaseState]], RETURN],
+) -> Callable[[type[BaseState]], RETURN]:
+    """Cache immutable metadata on the class that owns it.
+
+    The value lives in a dict that ``BaseState.__init_subclass__`` gives each
+    class, so subclasses never inherit their parent's cached result, lookups
+    stay O(1) however many state classes an app defines, and the cache dies
+    with its class.
+
+    Args:
+        fn: The class method to cache.
+
+    Returns:
+        A method that computes its value once per class.
+    """
+    cache_key = fn.__name__
+
+    @functools.wraps(fn)
+    def wrapped(cls: type[BaseState]) -> RETURN:
+        """Return the metadata owned by this class.
+
+        Args:
+            cls: The state class.
+
+        Returns:
+            The cached metadata.
+        """
+        # Every class has its own dict, so a plain attribute read finds it, and
+        # costs less than building a cls.__dict__ proxy on every state write.
+        cache = cls._reflex_internal_class_cache
+        try:
+            return cache[cache_key]
+        except KeyError:
+            value = fn(cls)
+            cache[cache_key] = value
+            return value
+
+    return wrapped
+
+
 def _has_data_descriptor(cls: type, name: str) -> bool:
     """Whether the class provides a descriptor that handles assignment for `name`.
 
@@ -316,15 +354,58 @@ def _has_data_descriptor(cls: type, name: str) -> bool:
     return False
 
 
+@_cache_per_class
+def _plain_private_prefixes(cls: type[BaseState]) -> tuple[str, ...]:
+    """Get the prefixes of the names a state sets as plain private attributes.
+
+    Names starting with a double underscore, like dunders and computed var
+    caches, are plain attributes, and so are private names a class of the
+    state mangles, from the name the class was defined with: a locally defined
+    state is renamed after its body is compiled.
+
+    Args:
+        cls: The state class.
+
+    Returns:
+        The private prefixes of the class, each base and each mixin.
+    """
+    return tuple(
+        dict.fromkeys(
+            prefix
+            for klass in cls.__mro__
+            for prefix in _private_prefixes(
+                klass.__dict__.get("__original_name__", klass.__name__)
+            )
+        )
+    )
+
+
+def _is_plain_private_name(cls: type[BaseState], name: str) -> bool:
+    """Whether assigning a name sets a plain private attribute rather than a var.
+
+    Args:
+        cls: The state class.
+        name: The attribute name.
+
+    Returns:
+        True for dunders and names mangled by the class, a base or a mixin.
+    """
+    # Every dunder or mangled name contains a double underscore.
+    return "__" in name and name.startswith(_plain_private_prefixes(cls))
+
+
 def _bind_attr(cls: type, name: str, value: Any) -> None:
     """Set a descriptor on a class, binding it to the class as class creation does.
+
+    Bypass the metaclass guard against replacing a state var: a field copied from
+    a mixin replaces the mixin's on purpose.
 
     Args:
         cls: The class.
         name: The attribute name.
         value: The descriptor.
     """
-    setattr(cls, name, value)
+    type.__setattr__(cls, name, value)
     value.__set_name__(cls, name)
 
 
@@ -461,6 +542,10 @@ _ROUTER_FIELD_NAMES = frozenset((*constants.ROUTER_VARS, constants.ROUTER_DATA))
 
 class BaseState(EvenMoreBasicBaseState, state_root=True):
     """The state of the app."""
+
+    # The class's cached immutable metadata; __init_subclass__ gives every
+    # subclass its own, so the cached values are never inherited.
+    _reflex_internal_class_cache: ClassVar[builtins.dict[str, Any]] = {}
 
     # A map from the var name to the var.
     vars: ClassVar[builtins.dict[str, Var]] = {}
@@ -651,6 +736,8 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
 
         super().__init_subclass__(**kwargs)
         cls._settable_names = set()
+
+        cls._reflex_internal_class_cache = {}
 
         if cls._mixin:
             return
@@ -1046,7 +1133,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
                     yield name, value
 
     @classmethod
-    @functools.lru_cache
+    @_cache_per_class
     def get_parent_state(cls) -> type[BaseState] | None:
         """Get the parent state.
 
@@ -1074,7 +1161,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         return None  # No known parent
 
     @classmethod
-    @functools.lru_cache
+    @_cache_per_class
     def get_root_state(cls) -> type[BaseState]:
         """Get the root state.
 
@@ -1094,7 +1181,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         return RegistrationContext.get().get_substates(cls)
 
     @classmethod
-    @functools.lru_cache
+    @_cache_per_class
     def get_name(cls) -> str:
         """Get the name of the state.
 
@@ -1105,7 +1192,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         return format.to_snake_case(f"{module}___{cls.__name__}")
 
     @classmethod
-    @functools.lru_cache
+    @_cache_per_class
     def get_full_name(cls) -> str:
         """Get the full name of the state.
 
@@ -1117,6 +1204,16 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         if parent_state is not None:
             name = parent_state.get_full_name() + "." + name
         return name
+
+    @classmethod
+    @functools.lru_cache
+    def _get_substate_path(cls) -> tuple[str, ...]:
+        """Get the path of the state from the root state.
+
+        Returns:
+            The names of the states from the root state down to this state.
+        """
+        return tuple(cls.get_full_name().split("."))
 
     @classmethod
     @functools.lru_cache
@@ -1427,11 +1524,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             cls = type(self)
             if name not in (settable := cls._settable_names):
                 if not (
-                    # Dunder names, like computed var caches, and mangled private names.
-                    name.startswith((
-                        "__",
-                        f"_{getattr(cls, '__original_name__', cls.__name__)}__",
-                    ))
+                    _is_plain_private_name(cls, name)
                     # A field, a property, or a bookkeeping slot handles the assignment.
                     or _has_data_descriptor(cls, name)
                 ):
@@ -1571,7 +1664,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         for prop_name in self.base_vars:
             field = fields[prop_name]
             if self._is_client_storage(field):
-                setattr(self, prop_name, copy.deepcopy(field.default))
+                setattr(self, prop_name, field.default_value())
 
         # Recursively reset the substate client storage.
         for substate in self.substates.values():
@@ -1589,16 +1682,19 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         Raises:
             ValueError: If the substate is not found.
         """
-        if len(path) == 0:
-            return self
-        if path[0] == self.get_name():
-            if len(path) == 1:
-                return self
-            path = path[1:]
-        if path[0] not in self.substates:
-            msg = f"Invalid path: {path}"
-            raise ValueError(msg)
-        return self.substates[path[0]].get_substate(path[1:])
+        state = self
+        index = 0
+        while index < len(path):
+            if path[index] == state.get_name():
+                index += 1
+                if index == len(path):
+                    return state
+            if path[index] not in state.substates:
+                msg = f"Invalid path: {path[index:]}"
+                raise ValueError(msg)
+            state = state.substates[path[index]]
+            index += 1
+        return state
 
     @classmethod
     def _get_potentially_dirty_states(cls) -> set[type[BaseState]]:
@@ -1678,7 +1774,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             StateMismatchError: If the state instance is not of the expected type.
         """
         root_state = self._get_root_state()
-        substate = root_state.get_substate(state_cls.get_full_name().split("."))
+        substate = root_state.get_substate(state_cls._get_substate_path())
         if not isinstance(substate, state_cls):
             msg = (
                 f"Searched for state {state_cls.get_full_name()} but found {substate}."
@@ -1777,14 +1873,19 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             self.dirty_vars.update(recomputed)
             if var_names is not None:
                 var_names = (*var_names, *recomputed)
+        dependencies = self._var_dependencies
+        # Only vars that have dependents are worth queuing.
         pending: list[tuple[BaseState, str]] = [
             (self, name)
             for name in (self.dirty_vars if var_names is None else var_names)
+            if name in dependencies
         ]
+        if not pending:
+            return
         seen: set[tuple[str, str]] = set()
         while pending:
             state, name = pending.pop()
-            for dependent in state._var_dependencies.get(name, ()):
+            for dependent in state._var_dependencies[name]:
                 if dependent in seen:
                     continue
                 seen.add(dependent)
@@ -1796,7 +1897,8 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
                     target._mark_ancestors_dirty()
                 target.computed_vars[cvar_name].mark_dirty(instance=target)
                 target.dirty_vars.add(cvar_name)
-                pending.append((target, cvar_name))
+                if cvar_name in target._var_dependencies:
+                    pending.append((target, cvar_name))
 
     def _expired_computed_vars(self) -> set[str]:
         """Determine ComputedVars that need to be recalculated based on the expiration time.
@@ -1873,6 +1975,12 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             TypeError: If the key is not a string or MutableProxy.
         """
         if isinstance(key, str):
+            # A StateProxy reports the wrapped state's __class__ but not its type,
+            # and reads through getattr below, on the state it wraps.
+            if (cls := type(self)) is self.__class__ and (
+                field := cls.__fields__.get(key)
+            ) is not None:
+                return field._get_raw(self)
             if isinstance(val := getattr(self, key), MutableProxy):
                 return val.__wrapped__
             return val
@@ -1973,8 +2081,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         for name, f in cls.__fields__.items():
             if f._owner is cls and name not in fields:
                 fields[name] = f.default_value()
-        # Empty entries that let workers of the previous release load it.
-        return {**fields, **_PREVIOUS_RELEASE_PICKLE_KEYS}
+        return fields
 
     def __setstate__(self, state: builtins.dict[str, Any]):
         """Set the state from redis deserialization.
@@ -1985,16 +2092,13 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             state: The state dict for deserialization.
         """
         self._init_bookkeeping()
-        cls = type(self)
         # Older pickles kept the backend vars in a dict of their own.
-        state.update(state.pop("_backend_vars", {}))
-        stale = _stale_pickle_keys(cls)
-        fields = cls.__fields__
-        vars(self).update(
-            (key, value)
-            for key, value in state.items()
-            if key not in stale and ((f := fields.get(key)) is None or f._owner is cls)
-        )
+        if backend_vars := state.pop("_backend_vars", None):
+            state.update(backend_vars)
+        instance_dict = vars(self)
+        instance_dict.update(state)
+        for key in _stale_pickle_keys(type(self)).intersection(instance_dict):
+            del instance_dict[key]
 
     def _check_state_size(
         self,
@@ -2027,7 +2131,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
     @classmethod
     @functools.lru_cache
     def _to_schema(cls) -> str:
-        """Convert a state to a schema.
+        """Hash the field names and types that determine state compatibility.
 
         Returns:
             The hash of the schema.
@@ -2035,12 +2139,11 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
 
         def _field_tuple(
             field_name: str,
-        ) -> tuple[str, Any, Any]:
+        ) -> tuple[str, str]:
             model_field = cls.__fields__[field_name]
             return (
                 field_name,
                 _serialize_type(model_field.type_),
-                (model_field.default if is_serializable(model_field.default) else None),
             )
 
         return md5(
@@ -2085,17 +2188,19 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             except HANDLED_PICKLE_ERRORS as ex:
                 error += f"Dill was also unable to pickle the state: {ex}"
 
-        if environment.REFLEX_PERF_MODE.get() != PerformanceMode.OFF:
+        if (
+            len(payload) > TOO_LARGE_SERIALIZED_STATE
+            and environment.REFLEX_PERF_MODE.get() != PerformanceMode.OFF
+        ):
             self._check_state_size(len(payload))
 
         if not payload:
             e = StateSerializationError(error)
-            if sys.version_info >= (3, 11):
-                try:
-                    debug_failed_pickles(self, pickle_function)
-                except HANDLED_PICKLE_ERRORS as ex:
-                    for note in ex.__notes__:
-                        e.add_note(note)
+            try:
+                debug_failed_pickles(self, pickle_function)
+            except HANDLED_PICKLE_ERRORS as ex:
+                for note in ex.__notes__:
+                    e.add_note(note)
             raise e
 
         return payload
@@ -2117,18 +2222,54 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
 
         Raises:
             ValueError: If both data and fp are provided, or neither are provided.
-            StateSchemaMismatchError: If the state schema does not match the expected schema.
+            StateSchemaMismatchError: If the state schema does not match the expected schema,
+                or the stored state can no longer be unpickled (e.g. a class it references
+                was moved, deleted or changed).
         """
         if data is not None and fp is None:
-            (substate_schema, state) = pickle.loads(data)
+            unpickle = functools.partial(pickle.loads, data)
         elif fp is not None and data is None:
-            (substate_schema, state) = pickle.load(fp)
+            unpickle = functools.partial(pickle.load, fp)
         else:
             msg = "Only one of `data` or `fp` must be provided"
             raise ValueError(msg)
-        if substate_schema != state._to_schema():
+        try:
+            (substate_schema, state) = unpickle()
+        except Exception as err:
+            msg = f"Stored state could not be unpickled: {err!r}"
+            raise StateSchemaMismatchError(msg) from err
+        if (
+            substate_schema != state._to_schema()
+            and substate_schema != _legacy_state_schema(type(state))
+        ):
             raise StateSchemaMismatchError
         return state
+
+
+def _legacy_state_schema(state_cls: type[BaseState]) -> str:
+    """Hash the previous schema format to restore compatible persisted states.
+
+    Args:
+        state_cls: The class whose previous schema to compute.
+
+    Returns:
+        The schema hash including defaults, as used by older Reflex versions.
+    """
+    fields = state_cls.__fields__
+    return md5(
+        pickle.dumps(
+            sorted(
+                (
+                    name,
+                    _serialize_type(fields[name].type_),
+                    fields[name].default
+                    if is_serializable(fields[name].default)
+                    else None,
+                )
+                for name in state_cls.base_vars
+            )
+        )
+    ).hexdigest()
 
 
 def _serialize_type(type_: Any) -> str:
@@ -2224,8 +2365,271 @@ class State(BaseState):
         """
         self.is_hydrated = value
 
+    @event
+    async def hydrate_and_load(
+        self,
+        vars: dict[str, Any] | None = None,
+        hashes: list[str] | None = None,
+    ) -> list[Event | EventSpec | event.EventCallback] | None:
+        """Hydrate the frontend and queue the current page's on_load handlers.
+
+        Sent by the frontend once per websocket (re)connect. Doing the client
+        storage reset, the browser-provided client storage values and the
+        state snapshot under one state lock avoids separate load/persist
+        cycles of the state tree. The snapshot does not pass through
+        ``get_delta`` and may not write browser storage, so this event's own
+        delta carries the browser-provided values again, as
+        ``update_vars_internal``'s does: ``get_delta`` overrides see them
+        there, and the browser stores what they return. A page with on_load
+        handlers then gets ``on_load_internal``, which only locks its leaf
+        substate.
+
+        Args:
+            vars: Client storage vars set in the browser, keyed by fully
+                qualified var name.
+            hashes: On the first hydrate of a page, the per-state hashes of the
+                compiled ``initialState`` the frontend still holds, in sorted
+                state name order. States whose hash matches the backend's
+                default snapshot only get the vars that differ from it;
+                everything else is sent in full.
+
+        Returns:
+            ``on_load_internal`` if the current page has on_load handlers.
+        """
+        from reflex_base.event.context import EventContext
+
+        self._reset_client_storage()
+        applied = await _apply_client_storage_vars(self, vars) if vars else []
+        self._clean()
+        # The snapshot must carry is_hydrated=False: the frontend skips
+        # writing client storage for a delta that is not yet hydrated, and
+        # the reset defaults above must not be written back to the browser.
+        self.is_hydrated = False
+        ctx = EventContext.get()
+        if ctx.emit_delta_impl is not None:
+            delta = await _resolve_delta(self.dict())
+            if hashes:
+                delta = await _diff_against_initial_state(type(self), delta, hashes)
+            # Include the guard and values changed while resolving the snapshot.
+            for state_name, changes in (await self._get_resolved_delta()).items():
+                delta.setdefault(state_name, {}).update(changes)
+            await ctx.emit_delta(delta=delta)
+            # Follow-up corrections must be allowed to write browser storage.
+            self.dirty_vars.discard(constants.CompileVars.IS_HYDRATED)
+        # The browser's values only: the reset defaults stay clean, so they are
+        # not written back to the browser.
+        for var_state, var_name in applied:
+            var_state.dirty_vars.add(var_name)
+            var_state._mark_dirty((var_name,))
+        if not RegistrationContext.get().app.get_load_events(self.rx_router_url.path):
+            self.is_hydrated = True
+            return None
+        # A separate superseding event, so a navigation can cancel the page's
+        # stale on_load work without cancelling this snapshot. The previous
+        # page's unfinished on_load chain was already cancelled when this
+        # event was enqueued (see BaseStateEventProcessor._supersede_previous).
+        return [OnLoadInternalState.on_load_internal]
+
 
 T = TypeVar("T", bound=BaseState)
+
+
+def _short_digest(text: str) -> str:
+    """Digest text into a short hex string.
+
+    Args:
+        text: The text to digest.
+
+    Returns:
+        The first 16 hex digits of its SHA-1.
+    """
+    return hashlib.sha1(text.encode()).hexdigest()[:16]
+
+
+def state_snapshot_hashes(snapshot: Delta) -> list[str]:
+    """Hash a full-tree snapshot as the frontend receives it.
+
+    Used at compile time for the ``initialState`` baked into the frontend and
+    at runtime for the backend's own default snapshot, so equal hashes mean the
+    frontend already holds exactly the backend's defaults for that state.
+
+    Args:
+        snapshot: A resolved full-tree dict, as returned by ``BaseState.dict``.
+
+    Returns:
+        A digest of the sorted state names, followed by a digest of each
+        state's serialized vars in that order; the first entry binds the
+        rest to the state names they were computed for.
+    """
+    names = sorted(snapshot)
+    return [
+        _short_digest("\n".join(names)),
+        *(
+            _short_digest(format.json_dumps(snapshot[state_name]))
+            for state_name in names
+        ),
+    ]
+
+
+@dataclasses.dataclass(frozen=True)
+class _InitialSnapshot:
+    """The defaults the compiled frontend holds, as the backend last computed them."""
+
+    # The number of state classes registered when the snapshot was taken.
+    n_state_classes: int
+    # Per state full name, each var's serialized default value.
+    serialized: dict[str, dict[str, str]]
+    # The digest of the sorted state names.
+    names_digest: str
+    # Per state full name, the hash of its serialized defaults.
+    hashes: dict[str, str]
+
+
+# Per root state class: the resolved default snapshot the frontend was compiled with.
+_initial_snapshot_cache: dict[type[BaseState], _InitialSnapshot] = {}
+
+
+def _serialize_var(value: Any) -> str:
+    """Serialize a var value exactly as it reaches the frontend.
+
+    Dict keys are not sorted: their order is observable (e.g. in
+    ``rx.foreach``), and sorting fails on keys of mixed types.
+
+    Args:
+        value: The resolved var value.
+
+    Returns:
+        The JSON text of the value.
+    """
+    return format.json_dumps(value)
+
+
+def cache_initial_snapshot(root_cls: type[BaseState], snapshot: Delta) -> None:
+    """Remember the default snapshot the frontend was compiled with.
+
+    Called by the compiler so a backend running in the compiling process
+    diffs hydrates against exactly the values baked into the bundle, and
+    picks up new defaults on every hot reload.
+
+    Args:
+        root_cls: The root state class the snapshot was taken from.
+        snapshot: The resolved full-tree default snapshot.
+    """
+    names_digest, *state_hashes = state_snapshot_hashes(snapshot)
+    _initial_snapshot_cache[root_cls] = _InitialSnapshot(
+        n_state_classes=len(all_base_state_classes),
+        serialized={
+            state_name: {name: _serialize_var(value) for name, value in vars.items()}
+            for state_name, vars in snapshot.items()
+        },
+        names_digest=names_digest,
+        hashes=dict(zip(sorted(snapshot), state_hashes, strict=True)),
+    )
+
+
+async def _diff_against_initial_state(
+    root_cls: type[BaseState], delta: Delta, hashes: list[str]
+) -> Delta:
+    """Drop vars the frontend already holds at their default value.
+
+    Values are compared in their serialized form, so a value that is
+    Python-equal but JSON-distinct from its default (``1`` vs ``1.0``,
+    ``0`` vs ``False``, a dict with its keys reordered) is still sent.
+
+    Args:
+        root_cls: The root state class; its default snapshot is computed once.
+        delta: The resolved full snapshot about to be sent.
+        hashes: The digest of the frontend's compiled state names followed
+            by its per-state hashes of the compiled ``initialState``, in
+            sorted state name order.
+
+    Returns:
+        The delta with unchanged vars removed for every state whose compiled
+        defaults match the backend's, and left untouched for the others.
+    """
+    cached = _initial_snapshot_cache.get(root_cls)
+    if cached is None or cached.n_state_classes != len(all_base_state_classes):
+        # No compile happened in this process, or state classes were defined
+        # after the last snapshot: compute the defaults the same way.
+        cache_initial_snapshot(
+            root_cls,
+            await _resolve_delta(
+                root_cls(_reflex_internal_init=True).dict(initial=True)
+            ),
+        )
+        cached = _initial_snapshot_cache[root_cls]
+    if len(hashes) != len(cached.hashes) + 1 or hashes[0] != cached.names_digest:
+        # The frontend was compiled against a different set of states, or the
+        # payload is malformed.
+        return delta
+    frontend_hashes = dict(zip(sorted(cached.hashes), hashes[1:], strict=True))
+    diff: Delta = {}
+    for state_name, state_vars in delta.items():
+        default_vars = cached.serialized.get(state_name)
+        if default_vars is None or frontend_hashes.get(state_name) != cached.hashes.get(
+            state_name
+        ):
+            diff[state_name] = state_vars
+            continue
+        changed = {
+            name: value
+            for name, value in state_vars.items()
+            if name not in default_vars or _serialize_var(value) != default_vars[name]
+        }
+        if changed:
+            diff[state_name] = changed
+    return diff
+
+
+async def _apply_client_storage_vars(
+    state: BaseState, vars: dict[str, Any]
+) -> list[tuple[BaseState, str]]:
+    """Apply browser-provided client storage values to the states that own them.
+
+    Args:
+        state: Any state in the tree; used to reach the owning substates.
+        vars: Fully qualified var names mapped to their browser values.
+
+    Returns:
+        Each var that was set, with the state that owns it.
+    """
+    applied: list[tuple[BaseState, str]] = []
+    for var, value in vars.items():
+        state_name, _, var_name = var.rpartition(".")
+        var_name = var_name.removesuffix(FIELD_MARKER)
+        var_state_cls = State.get_class_substate(state_name)
+        if var_state_cls._is_client_storage(var_name):
+            var_state = await state.get_state(var_state_cls)
+            setattr(var_state, var_name, value)
+            applied.append((var_state, var_name))
+    return applied
+
+
+def _load_events_for_page(
+    state: State,
+) -> list[Event | EventSpec | event.EventCallback] | None:
+    """Queue the on_load handlers for the page the client is on.
+
+    Sets ``is_hydrated`` directly when the page has no on_load handlers, so no
+    extra event round trip is needed for the common case.
+
+    Args:
+        state: Any state in the tree; ``is_hydrated`` is set through it.
+
+    Returns:
+        The on_load events followed by the hydrated flip, or None.
+    """
+    load_events = RegistrationContext.get().app.get_load_events(
+        state.rx_router_url.path
+    )
+    if not load_events:
+        state.is_hydrated = True
+        return None
+    state.is_hydrated = False
+    return [
+        *Event.from_event_type(load_events),
+        OnLoadInternalState.set_is_hydrated(True),
+    ]
 
 
 def dynamic(func: Callable[[T], Component]):
@@ -2344,13 +2748,7 @@ class UpdateVarsInternalState(State):
         Args:
             vars: The fully qualified vars and values to update.
         """
-        for var, value in vars.items():
-            state_name, _, var_name = var.rpartition(".")
-            var_name = var_name.removesuffix(FIELD_MARKER)
-            var_state_cls = State.get_class_substate(state_name)
-            if var_state_cls._is_client_storage(var_name):
-                var_state = await self.get_state(var_state_cls)
-                setattr(var_state, var_name, value)
+        await _apply_client_storage_vars(self, vars)
 
 
 class OnLoadInternalState(State):
@@ -2360,7 +2758,8 @@ class OnLoadInternalState(State):
     """
 
     # A newer navigation supersedes the previous unfinished on_load chain for
-    # the same client token, cancelling its stale work (#6593).
+    # the same client token, cancelling its stale work (#6593); so does a
+    # reconnect's hydrate_and_load, through the event processor.
     @event(supersedes=True)
     def on_load_internal(self) -> list[Event | EventSpec | event.EventCallback] | None:
         """Queue on_load handlers for the current page.
@@ -2368,20 +2767,20 @@ class OnLoadInternalState(State):
         Returns:
             The list of events to queue for on load handling.
         """
-        load_events = RegistrationContext.get().app.get_load_events(
-            self.rx_router_url.path
-        )
-        if not load_events:
-            self.is_hydrated = True
-            return None  # Fast path for navigation with no on_load events defined.
-        self.is_hydrated = False
-        return [
-            *Event.from_event_type(
-                load_events,
-                router_data=self.router_data,
-            ),
-            State.set_is_hydrated(True),
-        ]
+        return _load_events_for_page(self)
+
+    @event
+    def set_is_hydrated(self, value: bool) -> None:
+        """Set the hydrated flag from this leaf substate.
+
+        Targeting the leaf instead of ``State.set_is_hydrated`` keeps the
+        redis state manager from fetching and persisting every substate in the
+        app just to flip one root var.
+
+        Args:
+            value: The hydrated state.
+        """
+        self.is_hydrated = value
 
 
 class ComponentState(State, mixin=True):
@@ -2528,6 +2927,9 @@ class StateUpdate:
             )
 
 
+_STATE_UPDATE_FIELDS = tuple(field.name for field in dataclasses.fields(StateUpdate))
+
+
 @serializer(to=dict)
 def serialize_state_update(update: StateUpdate) -> dict:
     """Serialize a StateUpdate to a dictionary.
@@ -2539,7 +2941,7 @@ def serialize_state_update(update: StateUpdate) -> dict:
         The serialized StateUpdate.
     """
     return {
-        k.name: v for k in dataclasses.fields(update) if (v := getattr(update, k.name))
+        name: value for name in _STATE_UPDATE_FIELDS if (value := getattr(update, name))
     }
 
 

@@ -6,7 +6,6 @@ import collections
 import dataclasses
 import json
 import logging
-import sys
 from collections.abc import Callable, Iterable, Sequence
 from inspect import getmodule
 from pathlib import Path
@@ -52,7 +51,7 @@ from rich.progress import Progress
 from reflex.compiler import templates, utils
 from reflex.compiler.plugins import default_page_plugins
 from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin
-from reflex.state import BaseState, code_uses_state_contexts
+from reflex.state import BaseState, code_uses_state_contexts, state_snapshot_hashes
 from reflex.utils import console, frontend_skeleton, path_ops, prerequisites
 from reflex.utils.exec import get_compile_context, is_prod_mode
 from reflex.utils.prerequisites import get_web_dir
@@ -271,13 +270,14 @@ def _compile_contexts(
         templates.context_template(
             initial_state=initial_state,
             initial_state_json=initial_state_json,
+            initial_state_hashes=state_snapshot_hashes(initial_state),
             state_name=state.get_name(),
             client_storage=utils.compile_client_storage(state),
             is_dev_mode=not is_prod_mode(),
             default_color_mode=default_color_mode,
             disable_react_owner_stacks=disable_react_owner_stacks,
         )
-        if state
+        if state and initial_state is not None
         else templates.context_template(
             is_dev_mode=not is_prod_mode(),
             default_color_mode=default_color_mode,
@@ -1063,8 +1063,7 @@ def compile_unevaluated_page(
         )
 
     except Exception as e:
-        if sys.version_info >= (3, 11):
-            e.add_note(f"Happened while evaluating page {route!r}")
+        e.add_note(f"Happened while evaluating page {route!r}")
         raise
     else:
         return component
@@ -1209,7 +1208,7 @@ def _register_plugin_routes(app: App, plugins: Sequence[Plugin]) -> None:
 def _read_stateful_pages_marker() -> list[str] | None:
     """Read the routes that create state classes from a previous compile.
 
-    A missing marker or one truncated by an older writer requires full page
+    A missing marker or one corrupted by an older writer requires full page
     evaluation. New writers replace the marker atomically.
 
     Returns:
@@ -1217,8 +1216,10 @@ def _read_stateful_pages_marker() -> list[str] | None:
     """
     marker = prerequisites.get_backend_dir() / constants.Dirs.STATEFUL_PAGES
     try:
-        return json.loads(marker.read_text())
-    except (FileNotFoundError, json.JSONDecodeError):
+        return json.loads(marker.read_bytes())
+    except (FileNotFoundError, ValueError):
+        # ValueError covers both JSONDecodeError and the UnicodeDecodeError of a
+        # marker that is not valid UTF-8.
         return None
     except PermissionError:
         if constants.IS_WINDOWS:
@@ -1300,9 +1301,7 @@ def compile_app(
     reset_memo_component_classes()
     # Page evaluation rebuilds every chain that is not interned by handler, so
     # entries from an earlier compile can only retain dead chains.
-    context = RegistrationContext.ensure_context()
-    context._bound_event_chains.clear()
-    context._memoized_event_triggers.clear()
+    RegistrationContext.ensure_context()._reset_compile_caches()
     for plugin in compiler_plugins:
         for dependency in plugin.get_frontend_dependencies():
             _bundle_library(dependency)
@@ -1525,6 +1524,13 @@ def compile_app(
     frontend_skeleton.update_react_router_config(
         prerender_routes=prerender_routes,
     )
+
+    # Persist the route table so the standalone prod static server can serve
+    # routable SPA paths with 200 and reserve 404 for unknown ones.
+    compile_results.append((
+        constants.Dirs.ROUTES_MANIFEST,
+        json.dumps(app._page_routes),
+    ))
 
     if is_prod_mode():
         purge_web_pages_dir()
