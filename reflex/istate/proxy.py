@@ -9,7 +9,15 @@ import functools
 import inspect
 import json
 import sys
-from collections.abc import Callable, Sequence
+from collections.abc import (
+    Callable,
+    ItemsView,
+    Iterable,
+    Iterator,
+    MappingView,
+    Sequence,
+    ValuesView,
+)
 from importlib import import_module
 from importlib.util import find_spec
 from types import MethodType
@@ -608,6 +616,82 @@ def _new_proxy(
     return proxy
 
 
+def _proxied_items(
+    proxy: MutableProxy, pairs: Iterable[tuple[Any, Any]], with_keys: bool
+) -> Iterator[Any]:
+    """Read the values of a proxied dict's items back through the proxy.
+
+    Args:
+        proxy: The proxy of the dict.
+        pairs: The key-value pairs of the wrapped dict, in the order to yield.
+        with_keys: Whether to yield each key with its value, or the value alone.
+
+    Yields:
+        Each value, wrapped under its key if mutable, with its key if requested.
+    """
+    path = proxy._self_path
+    for key, value in pairs:
+        if type(value) not in _SCALAR_TYPES and (
+            isinstance(value, MutableProxy) or is_mutable_type(type(value))
+        ):
+            value = proxy._wrap_mutable(value, (*path, ("item", key)))
+        yield (key, value) if with_keys else value
+
+
+class _ProxyDictView(MappingView):
+    """A view of a proxied dict that reads each value back through the proxy.
+
+    `dict.values` and `dict.items` hand out the nested values unwrapped, so a
+    mutation made through a native view escapes dirty tracking. Reading each
+    value through the proxy wraps it under its key, as the `Mapping` mixins do
+    for a pure-Python mapping whose methods are rebound to the proxy.
+    """
+
+    __slots__ = ()
+
+    _mapping: MutableProxy
+    # Whether each element pairs the key with its value, as an items view does.
+    _with_keys = False
+
+    def __iter__(self) -> Iterator[Any]:
+        """Iterate the view in key order.
+
+        Returns:
+            An iterator over the elements, each value read through the proxy.
+        """
+        return _proxied_items(
+            self._mapping, self._mapping.__wrapped__.items(), self._with_keys
+        )
+
+    def __reversed__(self) -> Iterator[Any]:
+        """Iterate the view in reverse key order, like a native dict view.
+
+        Returns:
+            An iterator over the elements, each value read through the proxy.
+        """
+        return _proxied_items(
+            self._mapping, reversed(self._mapping.__wrapped__.items()), self._with_keys
+        )
+
+
+class _ProxyValuesView(_ProxyDictView, ValuesView):
+    """The values of a proxied dict."""
+
+    __slots__ = ()
+
+
+class _ProxyItemsView(_ProxyDictView, ItemsView):
+    """The items of a proxied dict."""
+
+    __slots__ = ()
+
+    _with_keys = True
+
+
+# The dict view methods, by name, replaced by views reading through the proxy.
+_DICT_VIEWS = {"items": _ProxyItemsView, "values": _ProxyValuesView}
+
+
 class MutableProxy(wrapt.ObjectProxy):
     """A proxy for a mutable object that tracks changes."""
 
@@ -932,6 +1016,13 @@ class MutableProxy(wrapt.ObjectProxy):
                 # Checked before wrapping: attributes of a `FunctionWrapper` are
                 # forwarded through a failing lookup that costs far more.
                 return functools.partial(func, self)
+
+            if (view_cls := _DICT_VIEWS.get(__name)) is not None and isinstance(
+                self.__wrapped__, dict
+            ):
+                # `dict.values`/`dict.items` hand out the nested values unwrapped:
+                # serve views that read each value back through this proxy.
+                return functools.partial(view_cls, self)
 
             if __name in type(self).__mark_dirty_attrs__:
                 # Wrap special callables, like "append", which should mark state dirty.

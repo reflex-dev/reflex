@@ -8,9 +8,9 @@ import subprocess
 import sys
 import weakref
 from asyncio import CancelledError
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from contextlib import asynccontextmanager
-from operator import attrgetter
+from operator import attrgetter, itemgetter
 from typing import Any, ClassVar
 
 import pytest
@@ -1334,3 +1334,111 @@ def test_subclass_overrides_a_framework_method():
     )
     state = ShadowState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
     assert state.get_value("k") == "shadow:k"
+
+
+class InventoryState(BaseState):
+    """A test state with a cached var summing nested values read through `values()`."""
+
+    inventory: dict[str, dict[str, int]] = {
+        "tea": {"stock": 10},
+        "coffee": {"stock": 20},
+    }
+
+    @rx.var(cache=True)
+    def total(self) -> int:
+        """Sum the stock over the inventory.
+
+        Returns:
+            The total stock.
+        """
+        return sum(item["stock"] for item in self.inventory.values())
+
+
+@pytest.mark.parametrize(
+    ("view_name", "unpack"),
+    [("values", lambda value: value), ("items", itemgetter(1))],
+)
+def test_mutable_proxy_dict_view_tracks_nested_mutation(
+    view_name: str, unpack: Callable[[Any], Any]
+) -> None:
+    """Nested values read through a dict view are proxies that mark the field dirty.
+
+    Args:
+        view_name: The dict view method to read the nested values through.
+        unpack: Extracts the value from an element of the view.
+    """
+    state = NestedMutableProxyState()
+    state._clean()
+    view = getattr(state.data, view_name)()
+    values = [unpack(item) for item in view]
+    assert all(isinstance(value, MutableProxy) for value in values)
+    assert not state.dirty_vars
+    for value in values:
+        value["z"] = 3
+    assert state.dirty_vars == {"data"}
+    assert state.data == {"a": {"x": 1, "z": 3}, "b": {"y": 2, "z": 3}}
+
+    # The view keeps the semantics of a dict view: live, sized, reversible, searchable.
+    assert len(view) == 2
+    state.data["c"] = {"w": 4}
+    assert len(view) == 3
+    assert [unpack(item) for item in reversed(view)] == [
+        {"w": 4},
+        {"y": 2, "z": 3},
+        {"x": 1, "z": 3},
+    ]
+    present, missing = {"w": 4}, {"w": 5}
+    if view_name == "items":
+        present, missing = ("c", present), ("c", missing)
+    assert present in view
+    assert missing not in view
+
+
+def test_mutable_proxy_dict_values_refresh_cached_var() -> None:
+    """A cached var over nested values recomputes after they change through `values()`."""
+    state = InventoryState()
+    assert state.total == 30
+    state._clean()
+    for item in state.inventory.values():
+        item["stock"] -= 1
+    assert state.dirty_vars == {"inventory", "total"}
+    assert state.inventory == {"tea": {"stock": 9}, "coffee": {"stock": 19}}
+    assert state.total == 28
+
+
+@pytest.mark.asyncio
+async def test_immutable_mutable_proxy_async_context_dict_view_paths(
+    token: str, attached_mock_event_context: EventContext
+) -> None:
+    """Proxies read through dict views refresh by the key they were read under."""
+    state_manager = attached_mock_event_context.state_manager
+
+    async with state_manager.modify_state(
+        BaseStateToken(ident=token, cls=NestedMutableProxyState)
+    ) as state:
+        state.router = RouterData.from_router_data({
+            "query": {},
+            "token": token,
+            "sid": "test_sid",
+        })
+        state_proxy = StateProxy(state)
+        [a_proxy, b_proxy] = state_proxy.data.values()
+        [(_, a_item_proxy), (_, b_item_proxy)] = state_proxy.data.items()
+
+    for proxy in (a_proxy, a_item_proxy):
+        assert isinstance(proxy, ImmutableMutableProxy)
+        assert proxy._self_path == (("item", "a"),)
+        with pytest.raises(ImmutableStateError):
+            proxy["x"] = 0
+    assert b_proxy._self_path == b_item_proxy._self_path == (("item", "b"),)
+
+    async with a_proxy as mutable_a:
+        mutable_a["x"] = 10
+    async with b_item_proxy as mutable_b:
+        mutable_b["y"] = 20
+
+    async with state_manager.modify_state(
+        BaseStateToken(ident=token, cls=NestedMutableProxyState)
+    ) as state:
+        assert isinstance(state, NestedMutableProxyState)
+        assert state.data == {"a": {"x": 10}, "b": {"y": 20}}
