@@ -89,8 +89,15 @@ def distributions(
 
 
 @pytest.mark.parametrize("workspace", [True, False])
+@pytest.mark.parametrize(
+    "requirement",
+    ["build-sibling>=1.0", "build-sibling; python_version >= '3.11'"],
+)
 def test_sdist_build_dependencies(
-    distributions: Path, monkeypatch: pytest.MonkeyPatch, workspace: bool
+    distributions: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    workspace: bool,
+    requirement: str,
 ):
     """Unpublished workspace build requirements work while external ones must resolve.
 
@@ -98,6 +105,7 @@ def test_sdist_build_dependencies(
         distributions: The built wheel and sdist.
         monkeypatch: The pytest monkeypatch fixture.
         workspace: Whether the build requirement is a local workspace sibling.
+        requirement: The build requirement to resolve.
     """
     root = distributions.parent
     sibling = root / "packages" / "build-sibling"
@@ -126,11 +134,6 @@ def test_sdist_build_dependencies(
         f"    name = {wheel_name!r}\n"
         "    shutil.copyfile(Path(__file__).parent / name, Path(wheel_directory) / name)\n"
         "    return name\n"
-    )
-    requirement = (
-        "build-sibling>=1.0"
-        if workspace
-        else f"build-sibling @ {(root / wheel_name).as_uri()}"
     )
     project = root / "pyproject.toml"
     project.write_text(

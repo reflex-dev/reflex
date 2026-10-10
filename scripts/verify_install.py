@@ -87,7 +87,7 @@ def build_workspace_wheelhouse(package: str, wheelhouse: Path) -> None:
             name: The package whose dependency graph to traverse.
         """
         for requirement in package_requirements(projects[name]):
-            dependency = re.split(r"[\s\[<>=!~@]", requirement, maxsplit=1)[0]
+            dependency = re.split(r"[;\s\[<>=!~@]", requirement, maxsplit=1)[0]
             dependency = re.sub(r"[-_.]+", "-", dependency).lower()
             if dependency in projects and dependency not in seen:
                 seen.add(dependency)
