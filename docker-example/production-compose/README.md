@@ -68,9 +68,9 @@ Add `psycopg[binary]` to `requirements.txt` so the backend can connect to
 postgres; the binary wheel bundles libpq, so no extra system packages are
 needed in the image.
 
-With redis available, the backend runs `2 * cpu_count + 1` worker processes.
-Set `GRANIAN_WORKERS` in the `app` environment to cap this on memory
-constrained hosts.
+With redis available, the backend runs up to 8 workers by default (`2 * cpu_count + 1`,
+capped at 8). Set `GRANIAN_WORKERS` in the `app` environment to override the
+default, including to use more workers.
 
 Postgres uses its own named docker volume for data persistence.
 
