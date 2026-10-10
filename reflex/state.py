@@ -2952,9 +2952,12 @@ def code_uses_state_contexts(javascript_code: str) -> bool:
         javascript_code: The Javascript code to check.
 
     Returns:
-        True if the code attempts to access a member of StateContexts.
+        True if the code subscribes to a state context.
     """
-    return bool("useContext(StateContexts" in javascript_code)
+    return bool(
+        "useStateContext(" in javascript_code
+        or "useContext(StateContexts" in javascript_code
+    )
 
 
 def reload_state_module(

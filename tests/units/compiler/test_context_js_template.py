@@ -12,14 +12,15 @@ from reflex_base.compiler.templates import context_template
 requires_node = pytest.mark.skipif(shutil.which("node") is None, reason="node missing")
 
 # Stand-ins for the modules context.js imports, keyed by the specifier they
-# replace. ``createElement`` returns a plain tree to walk, and every hook throws:
-# the server provider must not need React's dispatcher at all.
+# replace. Server tests fail if a client-only hook runs without a dispatcher.
 _STUB_MODULES = {
     "react": """
 const hook = (name) => () => {
   throw new Error(`${name} called while rendering on the server`);
 };
 export const useContext = hook("useContext");
+export const useCallback = hook("useCallback");
+export const useSyncExternalStore = hook("useSyncExternalStore");
 export const useMemo = hook("useMemo");
 export const useReducer = hook("useReducer");
 export const useRef = hook("useRef");
@@ -28,8 +29,18 @@ export const useEffect = hook("useEffect");
 export const useLayoutEffect = hook("useLayoutEffect");
 export const createElement = (type, props, ...children) => ({
   type,
-  props: { ...props, children: children.length === 1 ? children[0] : children },
+  props: {
+    ...props,
+    children: children.length
+      ? children.length === 1 ? children[0] : children
+      : props?.children,
+  },
 });
+export const createContext = (value) => {
+  const context = { defaultValue: value };
+  context.Provider = context;
+  return context;
+};
 """,
     "$/utils/state": """
 export const applyDelta = () => {};
@@ -43,16 +54,17 @@ export const ColorModeContext = {};
 export const UploadFilesContext = {};
 export const DispatchContext = {};
 export const EventLoopContext = {};
+export const StateStoreContext = { name: "StateStoreContext" };
+StateStoreContext.Provider = StateStoreContext;
 export const getStateContext = () => ({});
+export const useStateContext = () => ({});
 export const registerApp = () => {};
 export const eventLoop = {};
 """,
     "@emotion/react": "export const jsx = () => null;\n",
 }
 
-# Renders ``StateProvider`` around a leaf and reports every level between them,
-# outermost first: a component by name, or a context with whether its value is
-# the one the server should provide.
+# Renders ``StateProvider`` around a leaf and resolves its fixed-depth wrapper.
 _SERVER_RENDER_DRIVER = """
 import { pathToFileURL } from "node:url";
 const mod = await import(pathToFileURL(process.argv[2]).href);
@@ -62,17 +74,21 @@ let node = mod.StateProvider({ children: leaf });
 while (node !== leaf) {
   if (typeof node.type === "function") {
     levels.push({ component: node.type.name });
-    break;
-  }
-  if (node.type === mod.DispatchContext) {
+    node = node.type(node.props);
+  } else if (node.type === mod.DispatchContext) {
     levels.push({ context: "DispatchContext" });
+    node = node.props.children;
+  } else if (node.type === mod.StateStoreContext) {
+    const store = node.props.value;
+    levels.push({
+      context: "StateStoreContext",
+      first: store.getSnapshot(process.argv[3]),
+      last: store.getSnapshot(process.argv[4]),
+    });
+    node = node.props.children;
   } else {
-    const name = Object.keys(mod.StateContexts).find(
-      (key) => mod.StateContexts[key] === node.type,
-    );
-    levels.push({ context: name, value: node.props.value === mod.initialState[name] });
+    throw new Error("unexpected provider in state tree");
   }
-  node = node.props.children;
 }
 process.stdout.write(JSON.stringify(levels));
 """
@@ -91,7 +107,7 @@ def _event_loop_provider_body() -> str:
         state_name="state",
     )
     start = rendered.index("export function EventLoopProvider")
-    end = rendered.index("const useIsomorphicLayoutEffect", start)
+    end = rendered.index("function createStateStore", start)
     return rendered[start:end]
 
 
@@ -132,15 +148,10 @@ def test_event_loop_provider_still_publishes_module_dispatchers() -> None:
 
 
 @requires_node
-def test_server_state_provider_renders_one_context_per_substate(tmp_path: Path):
-    """On the server, each substate adds exactly one level to the page render.
-
-    React's server renderer recurses once per element level, so wrapping every
-    substate's context in its own component doubled the depth of every page and
-    overflowed the stack of apps with many substates.
-    """
+def test_server_state_provider_depth_is_constant_for_many_substates(tmp_path: Path):
+    """The server provider tree stays shallow as the state tree grows."""
     names = ["reflex___state____state"] + [
-        f"reflex___state____state__sub_{i}" for i in range(199)
+        f"reflex___state____state__sub_{i}" for i in range(4999)
     ]
     rendered = context_template(
         is_dev_mode=True,
@@ -158,13 +169,168 @@ def test_server_state_provider_renders_one_context_per_substate(tmp_path: Path):
     driver.write_text(_SERVER_RENDER_DRIVER)
 
     result = subprocess.run(
-        ["node", str(driver), str(module)],
+        ["node", str(driver), str(module), names[0], names[-1]],
         capture_output=True,
         encoding="utf-8",
     )
     assert result.returncode == 0, result.stderr
     levels = json.loads(result.stdout)
 
-    assert levels == [{"context": "DispatchContext"}] + [
-        {"context": name, "value": True} for name in names
+    assert levels == [
+        {"component": "StateStoreProviders"},
+        {
+            "context": "StateStoreContext",
+            "first": {"n": 0},
+            "last": {"n": len(names) - 1},
+        },
+        {"context": "DispatchContext"},
     ]
+
+
+@requires_node
+def test_client_state_store_notifies_only_substate_subscribers(tmp_path: Path):
+    """A client delta updates and notifies only the changed substate."""
+    rendered = context_template(
+        is_dev_mode=True,
+        default_color_mode='"light"',
+        initial_state={
+            "reflex___state____state": {"value": 1},
+            "reflex___state____state__sub": {"value": 2},
+        },
+        state_name="reflex___state____state",
+    ).replace("function ClientStateProvider", "export function ClientStateProvider")
+    react_stub = """
+let hookIndex = 0;
+let hookStates = [];
+const contextValues = new Map();
+export const subscriptions = [];
+export const useContext = (context) => contextValues.get(context);
+export const useCallback = (fn) => fn;
+export const useSyncExternalStore = (subscribe, getSnapshot) => {
+  subscriptions.push(subscribe);
+  return getSnapshot();
+};
+export const useMemo = (fn) => fn();
+export const useState = (initial) => {
+  const index = hookIndex++;
+  hookStates[index] ??= typeof initial === "function" ? initial() : initial;
+  return [hookStates[index], () => {}];
+};
+export const useEffect = () => {};
+export const createContext = (defaultValue) => {
+  const context = { defaultValue };
+  context.Provider = context;
+  return context;
+};
+export const createElement = (type, props, ...children) => ({
+  type,
+  props: {
+    ...props,
+    children: children.length
+      ? children.length === 1 ? children[0] : children
+      : props?.children,
+  },
+});
+export const setContextValue = (context, value) => contextValues.set(context, value);
+"""
+    state_stub = """
+export const applyDelta = (state, delta) => ({ ...state, ...delta });
+export const ReflexEvent = () => ({});
+export const hydrateClientStorage = () => ({});
+export const useEventLoop = () => [];
+export const refs = {};
+"""
+    registry_path = (
+        Path(__file__).parents[3]
+        / "packages/reflex-base/src/reflex_base/.templates/web/utils/context-registry.js"
+    )
+    registry_source = registry_path.read_text().replace(
+        'from "react"', 'from "./react.mjs"'
+    )
+    for specifier, source in (
+        ("react", react_stub),
+        ("$/utils/state", state_stub),
+        ("$/utils/context-registry", registry_source),
+        ("@emotion/react", "export const jsx = () => null;\n"),
+    ):
+        stub = tmp_path / (
+            "registry.mjs"
+            if specifier == "$/utils/context-registry"
+            else specifier.replace("/", "_").replace("$", "") + ".mjs"
+        )
+        stub.write_text(source)
+        rendered = rendered.replace(f'from "{specifier}"', f'from "./{stub.name}"')
+    module = tmp_path / "context.mjs"
+    module.write_text(rendered)
+    driver = tmp_path / "driver.mjs"
+    driver.write_text(
+        """
+import * as react from "./react.mjs";
+import * as registry from "./registry.mjs";
+globalThis.document = {};
+const mod = await import("./context.mjs");
+const leaf = { leaf: true };
+let node = mod.ClientStateProvider({ children: leaf });
+node = node.type(node.props);
+const storeElement = node;
+const store = storeElement.props.value;
+react.setContextValue(registry.StateStoreContext, store);
+const first = registry.useStateContext("reflex___state____state");
+const second = registry.useStateContext("reflex___state____state__sub");
+const legacyContext = registry.useLegacyStateContext(
+  mod.StateContexts.reflex___state____state__sub,
+);
+let firstNotifications = 0;
+let secondNotifications = 0;
+let legacyNotifications = 0;
+react.subscriptions[0](() => firstNotifications++);
+react.subscriptions[1](() => secondNotifications++);
+react.subscriptions[2](() => legacyNotifications++);
+store.dispatchers["reflex___state____state__sub"]({ value: 2 });
+store.dispatchers["reflex___state____state__sub"]({});
+const noOpIdentityPreserved =
+  store.getSnapshot("reflex___state____state__sub") === second;
+const notificationsAfterNoOps = secondNotifications;
+store.dispatchers["reflex___state____state__sub"]({ value: 3 });
+const updated = registry.useStateContext("reflex___state____state__sub");
+const updatedLegacyContext = registry.useLegacyStateContext(
+  mod.StateContexts.reflex___state____state__sub,
+);
+process.stdout.write(JSON.stringify({
+  first,
+  second,
+  updated,
+  legacyContext,
+  updatedLegacyContext,
+  legacyContextMatches: mod.StateContexts.reflex___state____state__sub.stateName ===
+    "reflex___state____state__sub",
+  legacyNotifications,
+  noOpIdentityPreserved,
+  notificationsAfterNoOps,
+  firstIdentityPreserved: store.getSnapshot("reflex___state____state") === first,
+  firstNotifications,
+  secondNotifications,
+}));
+"""
+    )
+
+    result = subprocess.run(
+        ["node", str(driver)],
+        capture_output=True,
+        encoding="utf-8",
+    )
+    assert result.returncode == 0, result.stderr
+    assert json.loads(result.stdout) == {
+        "first": {"value": 1},
+        "second": {"value": 2},
+        "updated": {"value": 3},
+        "legacyContext": {"value": 2},
+        "updatedLegacyContext": {"value": 3},
+        "legacyContextMatches": True,
+        "legacyNotifications": 1,
+        "noOpIdentityPreserved": True,
+        "notificationsAfterNoOps": 0,
+        "firstIdentityPreserved": True,
+        "firstNotifications": 0,
+        "secondNotifications": 1,
+    }

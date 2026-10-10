@@ -32,6 +32,66 @@ from reflex.state import BaseState
 from reflex.utils import prerequisites
 
 
+@pytest.mark.parametrize(
+    ("javascript_code", "expected_call"),
+    [
+        (
+            'import { useContext } from "react"; useContext(StateContexts.state)',
+            "useLegacyStateContext(StateContexts.state)",
+        ),
+        (
+            (
+                'import { useContext as useReactContext } from "react"; '
+                'useReactContext(StateContexts[ "state" ])'
+            ),
+            'useLegacyStateContext(StateContexts[ "state" ])',
+        ),
+        (
+            (
+                'import * as React from "react"; '
+                "React.useContext(StateContexts[stateName])"
+            ),
+            "useLegacyStateContext(StateContexts[stateName])",
+        ),
+        (
+            'import React from "react"; React.useContext(StateContexts.state)',
+            "useLegacyStateContext(StateContexts.state)",
+        ),
+    ],
+)
+def test_legacy_state_context_reads_use_shared_store(
+    javascript_code: str, expected_call: str
+) -> None:
+    """Rewrite supported legacy context reads to subscribe to the shared store."""
+    rewritten = compiler._rewrite_legacy_state_context_reads(javascript_code)
+
+    assert expected_call in rewritten
+    assert 'from "$/utils/context-registry"' in rewritten
+
+
+def test_legacy_state_context_rewrite_leaves_non_react_calls_unchanged() -> None:
+    """Do not rewrite unrelated functions named useContext."""
+    source = "function useContext(value) {} useContext(StateContexts.state)"
+
+    assert compiler._rewrite_legacy_state_context_reads(source) == source
+
+
+def test_legacy_state_context_rewrite_preserves_strings_and_comments() -> None:
+    """Only rewrite executable React calls, not matching text in source trivia."""
+    source = (
+        'import { useContext } from "react"; '
+        'const label = "useContext(StateContexts.text)"; '
+        "// useContext(StateContexts.comment)\n"
+        "useContext(StateContexts.active)"
+    )
+
+    rewritten = compiler._rewrite_legacy_state_context_reads(source)
+
+    assert '"useContext(StateContexts.text)"' in rewritten
+    assert "// useContext(StateContexts.comment)" in rewritten
+    assert "useLegacyStateContext(StateContexts.active)" in rewritten
+
+
 @pytest.mark.parametrize("content", ["", '["index",'])
 def test_read_stateful_pages_marker_recovers_legacy_corruption(
     tmp_path, mocker, content
@@ -1740,76 +1800,6 @@ def test_context_template_owner_stack_pin(disable_owner_stacks: bool):
     assert "REFLEX_REACT_OWNER_STACKS" in rendered
     # The trade-off must be stated where a reader of the output will see it.
     assert "captureOwnerStack" in rendered
-
-
-def _render_two_substate_context() -> str:
-    """Render the context template for a state with one substate.
-
-    Returns:
-        The rendered context module source.
-    """
-    from reflex_base.compiler.templates import context_template
-
-    return context_template(
-        is_dev_mode=True,
-        default_color_mode='"light"',
-        initial_state={
-            "reflex___state____state": {},
-            "reflex___state____state__sub": {},
-        },
-        state_name="reflex___state____state",
-    )
-
-
-def test_context_template_one_provider_per_substate():
-    """Each substate gets its own provider so one delta re-renders one context.
-
-    A single provider owning every reducer means any delta recreates every
-    ``StateContexts`` element; nesting one ``SubstateProvider`` per substate
-    keeps the untouched providers memoized.
-    """
-    rendered = _render_two_substate_context()
-
-    assert (
-        "const SUBSTATES = [\n"
-        "  ['reflex___state____state', 'reflex___state____state'],\n"
-        "  ['reflex___state____state__sub', 'reflex___state____state__sub'],\n"
-        "];" in rendered
-    )
-    # The reducers live in SubstateProvider; the client provider only composes.
-    client = rendered[
-        rendered.index("function ClientStateProvider") : rendered.index(
-            "function ServerStateProvider"
-        )
-    ]
-    assert "useReducer" not in client
-    assert "createElement(SubstateProvider, { substateName, contextName }, tree)" in (
-        client
-    )
-    assert "createElement(DispatchProvider, {}, tree)" in client
-
-
-def test_context_template_server_state_provider_is_flat():
-    """The server provides initial state without a component per substate.
-
-    Server rendering recurses once per element level, so a ``SubstateProvider``
-    around every context doubled the depth of every page render and overflowed
-    the stack of apps with many substates.
-    """
-    rendered = _render_two_substate_context()
-
-    server = rendered[rendered.index("function ServerStateProvider") :]
-    assert "SubstateProvider" not in server
-    assert "DispatchProvider" not in server
-    assert "useReducer" not in server
-    assert (
-        "StateContexts[contextName],\n"
-        "      { value: initialState[substateName] }," in server
-    )
-    assert rendered.rstrip().endswith(
-        "export const StateProvider =\n"
-        '  typeof document === "undefined" ? ServerStateProvider : ClientStateProvider;'
-    )
 
 
 def test_context_template_client_side_component_is_named():

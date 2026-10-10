@@ -4,7 +4,12 @@
 // a module the compiler rewrites: Vite re-executes a rewritten module on hot
 // update, and every module it imports along with it, but this module imports
 // nothing that can change and is never re-executed.
-import { createContext } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useSyncExternalStore,
+} from "react";
 
 export const ColorModeContext = createContext({
   rawColorMode: "system",
@@ -15,31 +20,56 @@ export const ColorModeContext = createContext({
 export const UploadFilesContext = createContext(null);
 export const DispatchContext = createContext(null);
 export const EventLoopContext = createContext(null);
+export const StateStoreContext = createContext(null);
+const stateContexts = new Map();
 
 ColorModeContext.displayName = "ColorModeContext";
 UploadFilesContext.displayName = "UploadFilesContext";
 DispatchContext.displayName = "DispatchContext";
 EventLoopContext.displayName = "EventLoopContext";
-
-const stateContexts = new Map();
+StateStoreContext.displayName = "StateStoreContext";
 
 /**
- * Return the context object carrying the named Python state.
- *
- * The first call for a name creates the context; later calls, including ones
- * made from a re-executed generated module, return the same object.
+ * Return the stable legacy context for a named Python state.
  *
  * @param {string} name - The dotted Python state name.
- * @returns {React.Context} The state's context object.
+ * @returns {React.Context} The named state's context object.
  */
 export function getStateContext(name) {
   let context = stateContexts.get(name);
   if (context === undefined) {
     context = createContext(null);
     context.displayName = `StateContext(${name})`;
+    context.stateName = name;
     stateContexts.set(name, context);
   }
   return context;
+}
+
+/**
+ * Subscribe a component to one Python substate in the shared store.
+ *
+ * @param {string} name - The dotted Python state name.
+ * @returns {object} The current state value for the named substate.
+ */
+export function useStateContext(name) {
+  const store = useContext(StateStoreContext);
+  const subscribe = useCallback(
+    (listener) => store.subscribe(name, listener),
+    [store, name],
+  );
+  const getSnapshot = useCallback(() => store.getSnapshot(name), [store, name]);
+  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+}
+
+/**
+ * Read a state through a legacy StateContexts entry using the shared store.
+ *
+ * @param {React.Context} context - The named state's stable context handle.
+ * @returns {object} The current state value.
+ */
+export function useLegacyStateContext(context) {
+  return useStateContext(context.stateName);
 }
 
 // Values the generated context module registers each time it executes. The

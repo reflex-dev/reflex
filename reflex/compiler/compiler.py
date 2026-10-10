@@ -6,6 +6,7 @@ import collections
 import dataclasses
 import json
 import logging
+import re
 from collections.abc import Callable, Iterable, Sequence
 from inspect import getmodule
 from pathlib import Path
@@ -780,7 +781,131 @@ def compile_contexts(
     output_path = utils.get_context_path()
 
     return output_path, _compile_contexts(
-        state, theme, component_imports=component_imports
+        state,
+        theme,
+        component_imports=component_imports,
+    )
+
+
+def _mask_javascript_literals_and_comments(javascript_code: str) -> str:
+    """Mask strings and comments while preserving JavaScript source offsets.
+
+    Args:
+        javascript_code: The JavaScript source to mask.
+
+    Returns:
+        Source with literals and comments masked at their original offsets.
+    """
+    masked = list(javascript_code)
+    index = 0
+    quote: str | None = None
+    quote_start = 0
+    while index < len(javascript_code):
+        char = javascript_code[index]
+        if quote is not None:
+            if char not in "\r\n":
+                masked[index] = " "
+            if char == "\\":
+                index += 1
+                if (
+                    index < len(javascript_code)
+                    and javascript_code[index] not in "\r\n"
+                ):
+                    masked[index] = " "
+            elif char == quote:
+                if javascript_code[quote_start : index + 1] in ('"react"', "'react'"):
+                    masked[quote_start : index + 1] = javascript_code[
+                        quote_start : index + 1
+                    ]
+                quote = None
+        elif char in "'\"`":
+            quote = char
+            quote_start = index
+            masked[index] = " "
+        elif javascript_code.startswith("//", index):
+            while index < len(javascript_code) and javascript_code[index] not in "\r\n":
+                masked[index] = " "
+                index += 1
+            continue
+        elif javascript_code.startswith("/*", index):
+            masked[index : index + 2] = "  "
+            index += 2
+            while index < len(javascript_code) and not javascript_code.startswith(
+                "*/", index
+            ):
+                if javascript_code[index] not in "\r\n":
+                    masked[index] = " "
+                index += 1
+            if index < len(javascript_code):
+                masked[index : index + 2] = "  "
+                index += 2
+            continue
+        index += 1
+    return "".join(masked)
+
+
+def _rewrite_legacy_state_context_reads(javascript_code: str) -> str:
+    """Read legacy StateContexts entries from the shared state store.
+
+    Args:
+        javascript_code: The JavaScript source to rewrite.
+
+    Returns:
+        Source with supported legacy context reads using the shared store.
+    """
+    if "useContext" not in javascript_code or "StateContexts" not in javascript_code:
+        return javascript_code
+    code_mask = _mask_javascript_literals_and_comments(javascript_code)
+    direct_hooks: set[str] = set()
+    namespace_hooks: set[str] = set(
+        re.findall(
+            r"import\s+\*\s+as\s+([\w$]+)\s+from\s*['\"]react['\"]",
+            code_mask,
+        )
+    )
+    for match in re.finditer(
+        r"import\s+(?:(?P<default>[\w$]+)\s*,?\s*)?(?:\{(?P<named>[^}]*)\})?"
+        r"\s*from\s*['\"]react['\"]",
+        code_mask,
+    ):
+        if match.group("default"):
+            namespace_hooks.add(match.group("default"))
+        direct_hooks.update(
+            alias or "useContext"
+            for alias in re.findall(
+                r"(?:^|,)\s*useContext(?:\s+as\s+([\w$]+))?\s*(?=,|$)",
+                match.group("named") or "",
+            )
+        )
+
+    callees = [rf"(?<![\w$.]){re.escape(name)}" for name in direct_hooks]
+    callees.extend(
+        rf"(?<![\w$]){re.escape(name)}\s*\.\s*useContext" for name in namespace_hooks
+    )
+    if not callees:
+        return javascript_code
+    pattern = re.compile(
+        rf"(?:{'|'.join(callees)})\s*\(\s*"
+        rf"(?P<context>StateContexts\s*(?:\.\s*[\w$]+|\[\s*[^\[\]]+\s*\]))\s*\)"
+    )
+    matches = list(pattern.finditer(code_mask))
+    if not matches:
+        return javascript_code
+
+    rewritten = []
+    last_end = 0
+    for match in matches:
+        start, end = match.span()
+        context_start, context_end = match.span("context")
+        rewritten.extend((
+            javascript_code[last_end:start],
+            "useLegacyStateContext(" + javascript_code[context_start:context_end] + ")",
+        ))
+        last_end = end
+    rewritten.append(javascript_code[last_end:])
+    return (
+        'import { useLegacyStateContext } from "$/utils/context-registry";\n'
+        + "".join(rewritten)
     )
 
 
@@ -1490,17 +1615,25 @@ def compile_app(
             compile_results.append(result)
         progress.advance(task)
 
+    context_result = compile_contexts(
+        app._state,
+        radix_themes_plugin.get_theme(),
+        component_imports=all_imports,
+    )
+    compile_results = [
+        (output_path, _rewrite_legacy_state_context_reads(code))
+        for output_path, code in compile_results
+    ]
+    app_root_path, app_root_code = compile_app_root(app_root, hydrate_fallback_export)
+    app_root_result = (
+        app_root_path,
+        _rewrite_legacy_state_context_reads(app_root_code),
+    )
     compile_results.extend([
-        compile_contexts(
-            app._state,
-            radix_themes_plugin.get_theme(),
-            component_imports=all_imports,
-        ),
+        context_result,
         utils._compile_bundled_libraries(),
+        app_root_result,
     ])
-    progress.advance(task)
-
-    compile_results.append(compile_app_root(app_root, hydrate_fallback_export))
     progress.advance(task)
 
     progress.stop()
