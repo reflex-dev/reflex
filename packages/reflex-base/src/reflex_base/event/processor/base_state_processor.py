@@ -375,12 +375,22 @@ class BaseStateEventProcessor(EventProcessor):
     frontend.
     """
 
+    @functools.cached_property
+    def _pending_hydrates(self) -> dict[str, dict[str, EventFuture]]:
+        """Hydrations cancellable on disconnect, but never by a navigation.
+
+        Returns:
+            Pending hydration futures indexed by client token and transaction id.
+        """
+        return {}
+
     async def _rehydrate(self, root_state: BaseState):
         """Rehydrate the state by calling the hydrate event handler.
 
         Args:
             root_state: The root state to rehydrate.
         """
+        from reflex.event import Event
         from reflex.state import OnLoadInternalState, State
 
         if type(root_state) is not State:
@@ -392,27 +402,50 @@ class BaseStateEventProcessor(EventProcessor):
         if routeless and root_state.is_hydrated:
             return
 
-        await process_event(
-            handler=State.event_handlers["hydrate"],
-            payload={},
-            state=root_state,
-            root_state=root_state,
-        )
-        if routeless:
-            # No page to load, but hydration still has to finish.
+        ctx = EventContext.get()
+        # Disconnect cancels this marker without cancelling the ordinary event.
+        pending = EventFuture(txid=ctx.txid)
+        self._pending_hydrates.setdefault(ctx.token, {})[pending.txid] = pending
+        try:
             await process_event(
-                handler=State.event_handlers["set_is_hydrated"],
-                payload={"value": True},
+                handler=State.event_handlers["hydrate"],
+                payload={},
                 state=root_state,
                 root_state=root_state,
             )
-            return
-        await process_event(
-            handler=OnLoadInternalState.event_handlers["on_load_internal"],
-            payload={},
-            state=await root_state.get_state(OnLoadInternalState),
-            root_state=root_state,
-        )
+            if routeless:
+                # No page to load, but hydration still has to finish.
+                await process_event(
+                    handler=State.event_handlers["set_is_hydrated"],
+                    payload={"value": True},
+                    state=root_state,
+                    root_state=root_state,
+                )
+                return
+            if pending.cancelled():
+                return
+            parent = self._futures[ctx.txid]
+            first_child = len(parent.children)
+            handler = OnLoadInternalState.event_handlers["on_load_internal"]
+            await process_event(
+                handler=handler,
+                payload={},
+                state=await root_state.get_state(OnLoadInternalState),
+                root_state=root_state,
+            )
+            # Inline rehydration bypasses enqueue's page-load registration. Track
+            # only its children so the ordinary event remains independent.
+            load_event = Event(name=format_event_handler(handler))
+            for index in range(first_child, len(parent.children)):
+                child = parent.children[index]
+                if pending.cancelled():
+                    child.cancel()
+                else:
+                    self._supersede_previous(
+                        token=ctx.token, event=load_event, tracked=child
+                    )
+        finally:
+            self._forget_hydrate(ctx.token, pending)
 
     def _supersede_previous(
         self, *, token: str, event: Event, tracked: EventFuture
@@ -436,7 +469,35 @@ class BaseStateEventProcessor(EventProcessor):
         boot_name, on_load_name = _connect_supersedes()
         if event.name == boot_name:
             self._cancel_older_chains((on_load_name, token), tracked.root_gen)
+            self._pending_hydrates.setdefault(token, {})[tracked.txid] = tracked
+            tracked.add_done_callback(functools.partial(self._forget_hydrate, token))
         return super()._supersede_previous(token=token, event=event, tracked=tracked)
+
+    def _forget_hydrate(self, token: str, future: EventFuture) -> None:
+        """Stop tracking a completed hydration invocation.
+
+        Its page-load descendants have their own supersession registration.
+
+        Args:
+            token: The client token.
+            future: The completed hydration future.
+        """
+        if (pending := self._pending_hydrates.get(token)) is not None:
+            pending.pop(future.txid, None)
+            if not pending:
+                del self._pending_hydrates[token]
+
+    def _on_disconnect(self, token: str) -> None:
+        """Cancel hydration and unfinished page-load chains for a disconnected client.
+
+        Args:
+            token: The disconnected client token.
+        """
+        _, on_load_name = _connect_supersedes()
+        for future in self._pending_hydrates.pop(token, {}).values():
+            future.cancel()
+        for future in self._superseded.pop((on_load_name, token), {}).values():
+            future.cancel()
 
     async def _execute_event(
         self, *, entry: EventQueueEntry, registered_handler: RegisteredEventHandler

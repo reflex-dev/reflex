@@ -460,6 +460,15 @@ class EventProcessor:
         await queue.put(EventQueueEntry(event=event, ctx=ev_ctx))
         return tracked
 
+    def _on_disconnect(self, token: str) -> None:
+        """Handle a client disconnect without cancelling independent event work.
+
+        Subclasses may cancel work tied to the disconnected page's lifecycle.
+
+        Args:
+            token: The disconnected client token.
+        """
+
     async def enqueue_many(self, token: str, *events: Event) -> Sequence[EventFuture]:
         """Enqueue multiple events to be processed.
 
@@ -585,15 +594,15 @@ class EventProcessor:
                 return
             parent = future.parent
             self._futures.pop(future.txid, None)
-            if (
-                (key := future.supersede_key) is not None
-                and (slot := self._superseded.get(key)) is not None
-                and slot.get(future.txid) is future
-                and future.all_done()
-            ):
-                del slot[future.txid]
-                if not slot:
-                    del self._superseded[key]
+            if future.supersede_key is not None and future.all_done():
+                # Inline page loads can also have their own supersession key.
+                for key in future.covered_supersede_keys:
+                    if (slot := self._superseded.get(key)) is not None and slot.get(
+                        future.txid
+                    ) is future:
+                        del slot[future.txid]
+                        if not slot:
+                            del self._superseded[key]
             if parent is None or not parent.txid:
                 return
             future = parent

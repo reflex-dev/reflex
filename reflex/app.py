@@ -2261,6 +2261,14 @@ class EventNamespace(AsyncNamespace):
         # Get token before cleaning up
         disconnect_token = self.sid_to_token.get(sid)
         if disconnect_token:
+            socket_record = self._token_manager.token_to_socket.get(disconnect_token)
+            if (
+                socket_record is not None
+                and socket_record.sid == sid
+                and socket_record.instance_id == self._token_manager.instance_id
+                and (processor := self.app._event_processor) is not None
+            ):
+                processor._on_disconnect(disconnect_token)
             # Use async cleanup through token manager
             task = asyncio.create_task(
                 self._token_manager.disconnect_token(disconnect_token, sid),
