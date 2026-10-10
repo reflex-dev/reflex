@@ -46,7 +46,9 @@ def distributions(
         sources += "missing-dependency.workspace = true\n"
     elif scenario == "external":
         sources += f'missing-dependency.url = "{missing.as_uri()}"\n'
-    (tmp_path / "pyproject.toml").write_text(sources)
+    (tmp_path / "pyproject.toml").write_text(
+        '[project]\nname = "install-check"\nversion = "1.0"\n' + sources
+    )
     monkeypatch.setattr(
         verify_install, "__file__", str(tmp_path / "scripts" / "verify_install.py")
     )
@@ -84,6 +86,79 @@ def distributions(
             member.size = len(content)
             sdist.addfile(member, io.BytesIO(content))
     return dist_dir
+
+
+@pytest.mark.parametrize("workspace", [True, False])
+def test_sdist_build_dependencies(
+    distributions: Path, monkeypatch: pytest.MonkeyPatch, workspace: bool
+):
+    """Unpublished workspace build requirements work while external ones must resolve.
+
+    Args:
+        distributions: The built wheel and sdist.
+        monkeypatch: The pytest monkeypatch fixture.
+        workspace: Whether the build requirement is a local workspace sibling.
+    """
+    root = distributions.parent
+    sibling = root / "packages" / "build-sibling"
+    sibling.mkdir(parents=True)
+    wheel_name = "build_sibling-1.0-py3-none-any.whl"
+    with (
+        zipfile.ZipFile(next(distributions.glob("*.whl"))) as original,
+        zipfile.ZipFile(sibling / wheel_name, "w") as wheel,
+    ):
+        for name in original.namelist():
+            wheel.writestr(
+                name.replace("install_check", "build_sibling"),
+                original.read(name).replace(b"install-check", b"build-sibling"),
+            )
+    build_system = (
+        '[build-system]\nrequires = []\nbuild-backend = "backend"\n'
+        'backend-path = ["."]\n'
+    )
+    (sibling / "pyproject.toml").write_text(
+        build_system + '[project]\nname = "build-sibling"\nversion = "1.0"\n'
+    )
+    (sibling / "backend.py").write_text(
+        "from pathlib import Path\n"
+        "import shutil\n"
+        "def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):\n"
+        f"    name = {wheel_name!r}\n"
+        "    shutil.copyfile(Path(__file__).parent / name, Path(wheel_directory) / name)\n"
+        "    return name\n"
+    )
+    requirement = (
+        "build-sibling>=1.0"
+        if workspace
+        else f"build-sibling @ {(root / wheel_name).as_uri()}"
+    )
+    project = root / "pyproject.toml"
+    project.write_text(
+        project.read_text()
+        + ("build-sibling.workspace = true\n" if workspace else "")
+        + '[tool.uv.workspace]\nmembers = ["packages/*"]\n'
+        + build_system.replace(
+            "requires = []", f"requires = [{json.dumps(requirement)}]"
+        )
+    )
+    path = next(distributions.glob("*.tar.gz"))
+    with tarfile.open(path) as archive:
+        files = {}
+        for member in archive.getmembers():
+            source = archive.extractfile(member)
+            assert source is not None
+            files[member.name] = source.read()
+    name = "install_check-1.0/pyproject.toml"
+    files[name] = files[name].replace(
+        b"requires = []", f"requires = [{json.dumps(requirement)}]".encode()
+    )
+    with tarfile.open(path, "w:gz") as archive:
+        for name, content in files.items():
+            member = tarfile.TarInfo(name)
+            member.size = len(content)
+            archive.addfile(member, io.BytesIO(content))
+    monkeypatch.setenv("DIST_DIR", str(distributions))
+    assert verify_install.main() == (0 if workspace else 1)
 
 
 @pytest.mark.parametrize(

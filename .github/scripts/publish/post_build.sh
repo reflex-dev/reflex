@@ -22,5 +22,6 @@ uv run --no-config --script \
 # approval and upload. Only workspace siblings are excluded because their
 # releases may still be pending. Fresh environments outside the checkout and
 # disabled uv caches keep the wheel from masking a broken source build.
+# A temporary sibling wheelhouse also serves unpublished build requirements.
 exec uv run --no-config --script \
   "$(dirname "$0")/../../../scripts/verify_install.py"

@@ -140,6 +140,10 @@ temporary environment. Only other packages declared as workspace sources in the
 root `pyproject.toml` are excluded from runtime dependency resolution because their
 releases may still be pending. Each package is verified when it is released.
 Source distributions still build in isolation with their build dependencies.
+Required workspace siblings are built from the checkout into a temporary
+wheelhouse offered to those build environments. The package being checked is
+never included in this wheelhouse. Exact lockstep siblings use the release's
+`VERSION` when provided by the publish workflow.
 Installation runs outside the checkout with uv configuration and caches disabled.
 A missing distribution format or failed installation stops publication.
 To run the installation check locally after building, use
