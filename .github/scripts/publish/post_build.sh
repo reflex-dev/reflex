@@ -15,5 +15,13 @@ set -euo pipefail
 #
 # Located relative to this hook rather than to the working directory, which is
 # what DIST_DIR is relative to.
-exec uv run --no-config --script \
+uv run --no-config --script \
   "$(dirname "$0")/../../../scripts/verify_pyi.py"
+
+# Install every archive separately with its external dependencies before
+# approval and upload. Only workspace siblings are excluded because their
+# releases may still be pending. Fresh environments outside the checkout and
+# disabled uv caches keep the wheel from masking a broken source build.
+# A temporary sibling wheelhouse also serves unpublished build requirements.
+exec uv run --no-config --script \
+  "$(dirname "$0")/../../../scripts/verify_install.py"
