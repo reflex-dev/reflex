@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import contextlib
 import logging
 import re
 from collections import defaultdict
@@ -19,7 +18,9 @@ if TYPE_CHECKING:
     from typing import TypeVar
 
     import sqlalchemy
+    import sqlalchemy.ext.asyncio
     import sqlmodel
+    from sqlmodel.ext.asyncio.session import AsyncSession
 
     SQLModelOrSqlAlchemy = (
         type[sqlmodel.SQLModel] | type[sqlalchemy.orm.DeclarativeBase]
@@ -68,11 +69,6 @@ if find_spec("sqlalchemy"):
     import sqlalchemy
     import sqlalchemy.exc
     import sqlalchemy.orm
-
-    # Requires greenlet, which SQLAlchemy 2.1 only installs with the asyncio extra.
-    # When it is missing, get_async_engine raises the ImportError on first use.
-    with contextlib.suppress(ImportError):
-        import sqlalchemy.ext.asyncio
 
     _ENGINE: dict[str, sqlalchemy.engine.Engine] = {}
     _ASYNC_ENGINE: dict[str, sqlalchemy.ext.asyncio.AsyncEngine] = {}
@@ -533,9 +529,6 @@ else:
 if find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic"):
     import sqlmodel
     from reflex_base.utils.serializers import serialize_sqlmodel as serialize_sqlmodel
-
-    with contextlib.suppress(ImportError):
-        from sqlmodel.ext.asyncio.session import AsyncSession
 
     _AsyncSessionLocal: dict[str | None, sqlalchemy.ext.asyncio.async_sessionmaker] = {}
 

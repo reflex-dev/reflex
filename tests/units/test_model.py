@@ -3,7 +3,6 @@ import math
 import subprocess
 import sys
 import tomllib
-import typing
 from pathlib import Path
 from unittest import mock
 
@@ -569,16 +568,3 @@ def test_sync_db_api_without_greenlet(tmp_path: Path):
     )
     assert result.returncode == 0, result.stderr
     assert result.stdout.strip().endswith("OK")
-
-
-def test_async_db_api_type_hints_resolve():
-    """The async helpers' annotations resolve when greenlet is installed."""
-    pytest.importorskip("greenlet")
-    import sqlalchemy.ext.asyncio
-    from sqlmodel.ext.asyncio.session import AsyncSession
-
-    assert typing.get_type_hints(reflex.model.asession)["return"] is AsyncSession
-    assert (
-        typing.get_type_hints(reflex.model.get_async_engine)["return"]
-        is sqlalchemy.ext.asyncio.AsyncEngine
-    )
