@@ -182,7 +182,6 @@ def test_memory_state_manager_delays_expiration_after_use_end_to_end(
     assert token_input.get_attribute("value") == token
 
 
-
 def test_background_task_refreshes_recreated_substate(
     memory_expiration_app: AppHarness,
     driver: WebDriver,
