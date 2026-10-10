@@ -4594,16 +4594,23 @@ def _private_prefixes(class_name: str) -> tuple[str, str]:
 
 
 def _unannotated_fields(
-    namespace: Mapping[str, Any], private: tuple[str, ...]
+    namespace: Mapping[str, Any],
+    private: tuple[str, ...],
+    require_serializable: bool = False,
 ) -> dict[str, Field]:
     """Get the fields a class namespace declares by value alone.
 
     Args:
         namespace: The class namespace.
         private: The prefixes of names that are fields only when declared as such.
+        require_serializable: Whether the fields must have serializable types.
 
     Returns:
         The fields by name.
+
+    Raises:
+        StateValueError: If a dataclasses.field default cannot be typed and the
+            class requires serializable fields.
     """
     annotations = annotations_from_namespace(namespace)
     slots = _slot_names(namespace)
@@ -4611,7 +4618,30 @@ def _unannotated_fields(
     for key, value in namespace.items():
         if key in annotations or key in slots:
             continue
-        if isinstance(value, Field):
+        if isinstance(value, dataclasses.Field):
+            # Unannotated dataclass fields follow the same conversion as
+            # annotated ones instead of deep-copying their mappingproxy.
+            factory = (
+                None if value.default_factory is MISSING else value.default_factory
+            )
+            if value.default is not MISSING:
+                annotated = figure_out_type(value.default)
+            elif factory in (list, dict, set, tuple):
+                annotated = factory
+            elif require_serializable:
+                msg = (
+                    f"Cannot infer the type of state var {key!r} from an "
+                    "unannotated dataclasses.field(...); add a type annotation."
+                )
+                raise StateValueError(msg)
+            else:
+                # A plain model is not serialized; Any matches rx.field here.
+                annotated = Any
+            fields[key] = field(
+                default=value.default,
+                default_factory=factory,
+            )._replace(annotated_type=annotated)
+        elif isinstance(value, Field):
             if value.annotated_type is not Any:
                 fields[key] = value
             else:
@@ -4674,6 +4704,17 @@ def _annotated_fields(
             if isinstance(declared, Field) or not callable(declared):
                 # Declared by a mixin or plain base: its default applies here.
                 value = declared
+        if isinstance(value, dataclasses.Field):
+            # A dataclasses.field(...) default keeps the default on the
+            # Field object; unpack it like rx.field(...) so the Field
+            # itself is never kept as the default (deep-copying it fails
+            # on its metadata mappingproxy).
+            value = field(
+                default=value.default,
+                default_factory=(
+                    None if value.default_factory is MISSING else value.default_factory
+                ),
+            )
         if value is MISSING:
             fields[key] = Field(annotated_type=annotation)
         elif isinstance(value, Field):
@@ -4892,9 +4933,14 @@ class BaseStateMeta(ABCMeta):
                     if key.startswith("_")
                 )
         private = _private_prefixes(name)
-        own_fields = _unannotated_fields(namespace, private) | _annotated_fields(
-            namespace, lookup_order, private
-        )
+        own_fields = _unannotated_fields(
+            namespace,
+            private,
+            require_serializable=state_root
+            or any(
+                getattr(base, "_reflex_state_root", None) is not None for base in bases
+            ),
+        ) | _annotated_fields(namespace, lookup_order, private)
         annotations = annotations_from_namespace(namespace)
         for key, value in namespace.items():
             if (
@@ -4902,6 +4948,7 @@ class BaseStateMeta(ABCMeta):
                 # Annotated names, like ClassVars, are declared as annotated.
                 and key not in annotations
                 and not isinstance(value, Field)
+                and not isinstance(value, dataclasses.Field)
                 and not callable(value)
                 and not _is_descriptor(value)
             ):
