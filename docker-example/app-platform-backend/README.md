@@ -39,8 +39,8 @@ backend, be sure to set REFLEX_REDIS_URL=redis://internal-redis-hostname to conn
 the redis service.
 
 With redis available, each replica runs up to 8 workers by default
-(`2 * cpu_count + 1`, capped at 8). Set `GRANIAN_WORKERS` to override the
-default, including to use more workers.
+(`2 * cpu_count + 1`, capped at 8). When using Granian, set `GRANIAN_WORKERS`
+to override the default, including to use more workers.
 
 If the app uses postgres, add `psycopg[binary]` to `requirements.txt`; the
 binary wheel bundles libpq, so no extra system packages are needed in the image.
