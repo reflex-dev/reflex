@@ -188,8 +188,12 @@ def test_background_task_refreshes_recreated_substate(
     driver: WebDriver,
 ):
     """A delayed background update must send defaults for expired substates."""
-    counter = driver.find_element(By.ID, "counter")
-    child_counter = driver.find_element(By.ID, "child-counter")
+    counter = AppHarness.poll_for_or_raise_timeout(
+        lambda: driver.find_element(By.ID, "counter")
+    )
+    child_counter = AppHarness.poll_for_or_raise_timeout(
+        lambda: driver.find_element(By.ID, "child-counter")
+    )
     driver.find_element(By.ID, "set-values").click()
     AppHarness.expect(lambda: counter.text == "11")
     AppHarness.expect(lambda: child_counter.text == "13")
