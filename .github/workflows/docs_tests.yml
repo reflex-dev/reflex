@@ -11,6 +11,9 @@ on:
       - 'packages/reflex-site-shared/**'
       - 'packages/integrations-docs/**'
       - '.github/workflows/docs_tests.yml'
+      - '.github/actions/changed_paths/**'
+      - '.github/actions/ci_gate/**'
+      - '.github/actions/setup_build_env/**'
 
 permissions:
   contents: read
@@ -44,6 +47,9 @@ jobs:
             packages/reflex-site-shared/**
             packages/integrations-docs/**
             .github/workflows/docs_tests.yml
+            .github/actions/changed_paths/**
+            .github/actions/ci_gate/**
+            .github/actions/setup_build_env/**
 
   docs-tests:
     needs: changes

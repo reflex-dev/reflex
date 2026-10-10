@@ -17,6 +17,9 @@ on:
       - "packages/**"
       - "pyproject.toml"
       - "uv.lock"
+      - "!**/*.md"
+      # The playground's content hash covers its Markdown too.
+      - "examples/playground/**"
   push:
     branches: ["main"]
     paths:
@@ -28,6 +31,9 @@ on:
       - "packages/**"
       - "pyproject.toml"
       - "uv.lock"
+      - "!**/*.md"
+      # The playground's content hash covers its Markdown too.
+      - "examples/playground/**"
 
 env:
   REFLEX_TELEMETRY_ENABLED: false

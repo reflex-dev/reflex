@@ -1,15 +1,38 @@
-"""Unit tests for scripts/changed_paths.py (the workflow path filter evaluator)."""
+"""Unit tests for scripts/changed_paths.py (the workflow path filter evaluator).
+
+Also covers .github/actions/changed_paths, the action that feeds it each event's
+changed files.
+"""
 
 import io
 import json
+import os
+import subprocess
+import sys
+from pathlib import Path
 
 import pytest
+import yaml
 
 from scripts import changed_paths
 
-# Fixtures modeled on the filters the workflows' `changes` jobs carry. They pin the
-# matching semantics; test_workflow_gates.py checks that the live filters compile.
-MARKDOWN_IGNORE = ["**/*.md"]
+REPO_ROOT = Path(__file__).parents[2]
+ACTION = REPO_ROOT / ".github" / "actions" / "changed_paths" / "action.yml"
+
+# Fixtures copied from the filters the workflows' `changes` jobs carry (unit_tests
+# and docs_tests). They pin the matching semantics; test_workflow_gates.py checks
+# that the live filters compile.
+DOCS_ONLY_IGNORE = [
+    "**/*.md",
+    "docs/**",
+    "docker-example/**",
+    ".github/**",
+    ".devcontainer/**",
+    ".claude/**",
+    "!.github/workflows/**",
+    "!.github/actions/**",
+    "!.github/rulesets/**",
+]
 DOCS_PATHS = [
     "docs/**",
     "packages/reflex-components-core/src/reflex_components_core/core/upload.py",
@@ -26,15 +49,33 @@ DOCS_PATHS = [
         (["docs/guide.md"], False),
         (["docs/a/b/c.md"], False),
         (["README.md", "docs/guide.md"], False),
+        (["packages/reflex-base/news/+fix.bugfix.md"], False),
+        (["docs/app/reflex_docs/whitelist.py"], False),
+        (["docker-example/production/Dockerfile"], False),
+        (["docs/app/app.py", ".github/ISSUE_TEMPLATE/bug_report.yml"], False),
+        ([".github/dependabot.yml"], False),
+        ([".devcontainer/devcontainer.json"], False),
+        ([".claude/settings.json"], False),
         (["reflex/app.py"], True),
         (["README.md", "reflex/app.py"], True),
+        (["docs/app/app.py", "pyproject.toml"], True),
+        # A negation puts the files the unit tests cover back under test.
+        ([".github/workflows/integration_tests.yml"], True),
+        ([".github/actions/changed_paths/action.yml"], True),
+        ([".github/actions/ci_gate/action.yml"], True),
+        ([".github/rulesets/main-required-checks.json"], True),
+        (["docs/guide.md", ".github/workflows/unit_tests.yml"], True),
         # Only the .md suffix is ignored; a similarly named file still runs.
-        (["docs/guide.mdx"], True),
+        (["reflex/guide.mdx"], True),
         (["notes.md.py"], True),
+        # The directories are anchored at the repo root.
+        (["packages/reflex-base/docs/api.py"], True),
+        (["tests/.github/fixture.yml"], True),
+        (["docs.py"], True),
     ],
 )
-def test_markdown_ignore(changed, expected):
-    assert changed_paths.triggers(changed, paths_ignore=MARKDOWN_IGNORE) is expected
+def test_docs_only_ignore(changed, expected):
+    assert changed_paths.triggers(changed, paths_ignore=DOCS_ONLY_IGNORE) is expected
 
 
 @pytest.mark.parametrize(
@@ -117,7 +158,7 @@ def test_unsupported_character_range_is_rejected():
 
 
 def test_empty_change_set_runs_the_jobs():
-    assert changed_paths.triggers([], paths_ignore=MARKDOWN_IGNORE) is True
+    assert changed_paths.triggers([], paths_ignore=DOCS_ONLY_IGNORE) is True
     assert changed_paths.triggers([], paths=DOCS_PATHS) is True
 
 
@@ -139,13 +180,19 @@ def test_changed_files_counts_both_names_of_a_rename():
         # A code file renamed to Markdown still removes code: the jobs must run.
         (
             ("docs/example.md", "scripts/example.py"),
-            {"paths_ignore": MARKDOWN_IGNORE},
+            {"paths_ignore": DOCS_ONLY_IGNORE},
             True,
         ),
         # Moving a file out of docs/ changes docs/ as much as editing it does.
         (("reflex/example.py", "docs/example.py"), {"paths": DOCS_PATHS}, True),
+        # Moving code into docs/ removes it from where it was: the jobs must run.
+        (
+            ("docs/app/example.py", "reflex/example.py"),
+            {"paths_ignore": DOCS_ONLY_IGNORE},
+            True,
+        ),
         # A rename that stays within ignored paths is still ignored.
-        (("docs/new.md", "docs/old.md"), {"paths_ignore": MARKDOWN_IGNORE}, False),
+        (("docs/new.md", "docs/old.md"), {"paths_ignore": DOCS_ONLY_IGNORE}, False),
     ],
 )
 def test_renames_are_filtered_on_both_names(renamed, filter_kwargs, expected):
@@ -202,3 +249,141 @@ def test_main_writes_the_verdict(monkeypatch, capsys, env, value, files, expecte
     monkeypatch.setattr("sys.stdin", io.StringIO("".join(f"{f}\n" for f in files)))
     assert changed_paths.main() == 0
     assert capsys.readouterr().out == expected
+
+
+def run_action(tmp_path, gh_lines=(), gh_fails=False, **event):
+    """Run the changed_paths action's script against a stubbed `gh`.
+
+    Args:
+        tmp_path: A scratch directory for the stub and the step's output file.
+        gh_lines: The lines the stub prints, as `gh --jq` would emit them.
+        gh_fails: Whether the stub exits with an error instead.
+        **event: The step's event environment (EVENT_NAME, PR_NUMBER, BEFORE,
+            AFTER).
+
+    Returns:
+        The `changed` output the step wrote, and the arguments of each gh call.
+    """
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    for name, body in {
+        "gh": '[ -n "$GH_LOG" ] && echo "$*" >> "$GH_LOG"\n'
+        '[ -z "$GH_FAIL" ] || exit 1\n'
+        'printf "%s" "$GH_OUTPUT"',
+        "python3": f'exec "{sys.executable}" "$@"',
+    }.items():
+        (bin_dir / name).write_text(f"#!/bin/sh\n{body}\n")
+        (bin_dir / name).chmod(0o755)
+    log, output = tmp_path / "gh.log", tmp_path / "output"
+    script = yaml.safe_load(ACTION.read_text(encoding="utf-8"))["runs"]["steps"][0][
+        "run"
+    ]
+    subprocess.run(
+        ["bash", "-c", script],
+        check=True,
+        capture_output=True,
+        env={
+            "PATH": f"{bin_dir}{os.pathsep}{os.environ['PATH']}",
+            "GITHUB_WORKSPACE": str(REPO_ROOT),
+            "GITHUB_OUTPUT": str(output),
+            "GH_LOG": str(log),
+            "GH_OUTPUT": "".join(f"{line}\n" for line in gh_lines),
+            "GH_FAIL": "1" if gh_fails else "",
+            "REPO": "owner/repo",
+            "FILTER_PATHS_IGNORE": "**/*.md\ndocs/**",
+            **event,
+        },
+    )
+    changed = output.read_text().strip().removeprefix("changed=")
+    calls = log.read_text().splitlines() if log.exists() else []
+    return changed, calls
+
+
+def files(*names):
+    """Format changed files the way the action's `gh --jq` filter emits them.
+
+    Args:
+        *names: Changed paths, or (filename, previous_filename) pairs for renames.
+
+    Returns:
+        One JSON object per line.
+    """
+    return [entry(*name) if isinstance(name, tuple) else entry(name) for name in names]
+
+
+PUSH = {"EVENT_NAME": "push", "BEFORE": "a1b2", "AFTER": "c3d4"}
+
+windows_has_no_bash = pytest.mark.skipif(
+    sys.platform == "win32", reason="the action runs under bash on Linux runners"
+)
+
+
+@windows_has_no_bash
+@pytest.mark.parametrize(
+    ("event", "gh_lines", "gh_fails", "expected", "endpoint"),
+    [
+        (
+            {"EVENT_NAME": "pull_request", "PR_NUMBER": "5"},
+            files("docs/guide.md", "README.md"),
+            False,
+            "false",
+            "repos/owner/repo/pulls/5/files",
+        ),
+        (
+            {"EVENT_NAME": "pull_request", "PR_NUMBER": "5"},
+            files("README.md", "reflex/app.py"),
+            False,
+            "true",
+            "repos/owner/repo/pulls/5/files",
+        ),
+        (PUSH, files("docs/app/app.py"), False, "false", "compare/a1b2...c3d4"),
+        (
+            PUSH,
+            files(("docs/app/app.py", "reflex/app.py")),
+            False,
+            "true",
+            "compare/a1b2...c3d4",
+        ),
+        # The compare API stops at 300 files, so the rest may be code.
+        (
+            PUSH,
+            files(*(f"docs/{n}.md" for n in range(300))),
+            False,
+            "true",
+            "compare/a1b2...c3d4",
+        ),
+        # A force push can leave the previous commit unreachable.
+        (PUSH, (), True, "true", "compare/a1b2...c3d4"),
+        # A push that creates a branch has nothing to compare against.
+        ({**PUSH, "BEFORE": "0" * 40}, (), False, "true", None),
+        ({"EVENT_NAME": "workflow_dispatch"}, (), False, "true", None),
+    ],
+    ids=[
+        "pr-docs-only",
+        "pr-code",
+        "push-docs-only",
+        "push-rename-out-of-code",
+        "push-truncated-compare",
+        "push-compare-fails",
+        "push-new-branch",
+        "workflow-dispatch",
+    ],
+)
+def test_action_evaluates_each_event(
+    tmp_path, event, gh_lines, gh_fails, expected, endpoint
+):
+    changed, calls = run_action(tmp_path, gh_lines, gh_fails, **event)
+    assert changed == expected
+    if endpoint is None:
+        assert calls == []
+    else:
+        assert len(calls) == 1
+        assert endpoint in calls[0]
+
+
+@windows_has_no_bash
+def test_action_fails_when_the_pull_request_files_are_unreadable(tmp_path):
+    # Pull requests gate merges, so an API failure fails the gate rather than
+    # guessing either way.
+    with pytest.raises(subprocess.CalledProcessError):
+        run_action(tmp_path, gh_fails=True, EVENT_NAME="pull_request", PR_NUMBER="5")

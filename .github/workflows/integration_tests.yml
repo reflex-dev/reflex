@@ -3,8 +3,6 @@ name: integration-tests
 on:
   push:
     branches: ["main"]
-    paths-ignore:
-      - "**/*.md"
   pull_request:
     branches: ["main"]
 
@@ -41,6 +39,7 @@ jobs:
       pull-requests: read
     outputs:
       run: ${{ steps.filter.outputs.changed }}
+      docs: ${{ steps.docs.outputs.changed }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -50,6 +49,29 @@ jobs:
         with:
           paths-ignore: |
             **/*.md
+            docs/**
+            docker-example/**
+            .github/**
+            .devcontainer/**
+            .claude/**
+            !.github/workflows/integration_tests.yml
+            !.github/actions/changed_paths/**
+            !.github/actions/ci_gate/**
+            !.github/actions/setup_build_env/**
+      # The reflex-docs jobs build the whole docs site, which also renders the
+      # repo's CHANGELOG.md files, so docs/ and Markdown changes run them.
+      - uses: ./.github/actions/changed_paths
+        id: docs
+        with:
+          paths-ignore: |
+            docker-example/**
+            .github/**
+            .devcontainer/**
+            .claude/**
+            !.github/workflows/integration_tests.yml
+            !.github/actions/changed_paths/**
+            !.github/actions/ci_gate/**
+            !.github/actions/setup_build_env/**
 
   example-counter-and-nba-proxy:
     needs: changes
@@ -127,7 +149,7 @@ jobs:
 
   reflex-docs:
     needs: changes
-    if: needs.changes.outputs.run == 'true'
+    if: needs.changes.outputs.docs == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -246,7 +268,8 @@ jobs:
           uv run --project ./rx-shout-from-template --no-sync bash scripts/integration.sh ./rx-shout-from-template prod
 
   reflex-docs-macos:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: changes
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.changes.outputs.docs == 'true'
     strategy:
       fail-fast: false
       matrix:

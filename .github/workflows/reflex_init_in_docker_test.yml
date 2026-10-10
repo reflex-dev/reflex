@@ -9,8 +9,6 @@ concurrency:
 on:
   push:
     branches: ["main"]
-    paths-ignore:
-      - "**/*.md"
   pull_request:
     branches: ["main"]
 
@@ -35,6 +33,14 @@ jobs:
         with:
           paths-ignore: |
             **/*.md
+            docs/**
+            docker-example/**
+            .github/**
+            .devcontainer/**
+            .claude/**
+            !.github/workflows/reflex_init_in_docker_test.yml
+            !.github/actions/changed_paths/**
+            !.github/actions/ci_gate/**
 
   # TODO we can extend to various starting points (e.g. Ubuntu with node, without node, with unzip, without unzip, etc.)
   # Currently starting point is: Ubuntu + unzip, xz-utils, Python suite.  No node.
