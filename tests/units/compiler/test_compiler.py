@@ -40,13 +40,17 @@ from reflex.utils import prerequisites
             "useLegacyStateContext(StateContexts.state)",
         ),
         (
-            'import { useContext as useReactContext } from "react"; '
-            'useReactContext(StateContexts[ "state" ])',
+            (
+                'import { useContext as useReactContext } from "react"; '
+                'useReactContext(StateContexts[ "state" ])'
+            ),
             'useLegacyStateContext(StateContexts[ "state" ])',
         ),
         (
-            'import * as React from "react"; '
-            "React.useContext(StateContexts[stateName])",
+            (
+                'import * as React from "react"; '
+                "React.useContext(StateContexts[stateName])"
+            ),
             "useLegacyStateContext(StateContexts[stateName])",
         ),
         (

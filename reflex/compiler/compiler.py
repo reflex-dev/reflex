@@ -788,7 +788,14 @@ def compile_contexts(
 
 
 def _mask_javascript_literals_and_comments(javascript_code: str) -> str:
-    """Mask strings and comments while preserving JavaScript source offsets."""
+    """Mask strings and comments while preserving JavaScript source offsets.
+
+    Args:
+        javascript_code: The JavaScript source to mask.
+
+    Returns:
+        Source with literals and comments masked at their original offsets.
+    """
     masked = list(javascript_code)
     index = 0
     quote: str | None = None
@@ -838,7 +845,14 @@ def _mask_javascript_literals_and_comments(javascript_code: str) -> str:
 
 
 def _rewrite_legacy_state_context_reads(javascript_code: str) -> str:
-    """Read legacy StateContexts entries from the shared state store."""
+    """Read legacy StateContexts entries from the shared state store.
+
+    Args:
+        javascript_code: The JavaScript source to rewrite.
+
+    Returns:
+        Source with supported legacy context reads using the shared store.
+    """
     if "useContext" not in javascript_code or "StateContexts" not in javascript_code:
         return javascript_code
     code_mask = _mask_javascript_literals_and_comments(javascript_code)
@@ -856,11 +870,13 @@ def _rewrite_legacy_state_context_reads(javascript_code: str) -> str:
     ):
         if match.group("default"):
             namespace_hooks.add(match.group("default"))
-        for alias in re.findall(
-            r"(?:^|,)\s*useContext(?:\s+as\s+([\w$]+))?\s*(?=,|$)",
-            match.group("named") or "",
-        ):
-            direct_hooks.add(alias or "useContext")
+        direct_hooks.update(
+            alias or "useContext"
+            for alias in re.findall(
+                r"(?:^|,)\s*useContext(?:\s+as\s+([\w$]+))?\s*(?=,|$)",
+                match.group("named") or "",
+            )
+        )
 
     callees = [rf"(?<![\w$.]){re.escape(name)}" for name in direct_hooks]
     callees.extend(
@@ -881,14 +897,10 @@ def _rewrite_legacy_state_context_reads(javascript_code: str) -> str:
     for match in matches:
         start, end = match.span()
         context_start, context_end = match.span("context")
-        rewritten.extend(
-            (
-                javascript_code[last_end:start],
-                "useLegacyStateContext("
-                + javascript_code[context_start:context_end]
-                + ")",
-            )
-        )
+        rewritten.extend((
+            javascript_code[last_end:start],
+            "useLegacyStateContext(" + javascript_code[context_start:context_end] + ")",
+        ))
         last_end = end
     rewritten.append(javascript_code[last_end:])
     return (
@@ -1617,13 +1629,11 @@ def compile_app(
         app_root_path,
         _rewrite_legacy_state_context_reads(app_root_code),
     )
-    compile_results.extend(
-        [
-            context_result,
-            utils._compile_bundled_libraries(),
-            app_root_result,
-        ]
-    )
+    compile_results.extend([
+        context_result,
+        utils._compile_bundled_libraries(),
+        app_root_result,
+    ])
     progress.advance(task)
 
     progress.stop()
