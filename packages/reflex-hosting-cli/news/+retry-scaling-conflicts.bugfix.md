@@ -1,0 +1,1 @@
+`reflex deploy` now waits and retries confirmed scaling conflicts with progress messages, reusing the uploaded build and preserving support for custom backend URL prefixes. It stops on unrelated failures and uncertain writes, and warns when bounds may remain changed after a failed deployment, including server errors and unreadable success responses.

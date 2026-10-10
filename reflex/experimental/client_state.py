@@ -22,6 +22,18 @@ _refs_import = {
 }
 
 
+def _client_state_key(var_name: str) -> str:
+    """Get the key of a ClientStateVar's slot in the global ``refs`` object.
+
+    Args:
+        var_name: The name of the variable.
+
+    Returns:
+        The key under which ``refs`` holds the ClientStateVar ref slot.
+    """
+    return f"_client_state_{var_name}"
+
+
 def _client_state_ref(var_name: str) -> Var:
     """Get the ref accessor Var for a ClientStateVar.
 
@@ -33,7 +45,7 @@ def _client_state_ref(var_name: str) -> Var:
         ``refs`` import from ``$/utils/state``.
     """
     return Var(
-        _js_expr=f"refs['_client_state_{var_name}']",
+        _js_expr=f"refs[{_client_state_key(var_name)!r}]",
         _var_data=VarData(imports=_refs_import),
     )
 
@@ -131,9 +143,21 @@ class ClientStateVar(Var):
         else:
             default_var = default
         setter_name = f"set{var_name.capitalize()}"
+        var_ref = _client_state_ref(var_name)
+        initial_value = str(default_var)
+        if global_ref:
+            # A component mounting after a set renders the shared value, and React
+            # skips a setter call equal to the current state, so starting from the
+            # default would swallow a later set back to the default. A set or pushed
+            # null is a value too, so only a missing slot falls back to the default.
+            initial_value = (
+                f"{_client_state_key(var_name)!r} in refs ? {var_ref!s} : ({initial_value})"
+                if initial_value
+                else str(var_ref)
+            )
         hooks: dict[str, VarData | None] = {
             f"const {id_name} = useId()": None,
-            f"const [{var_name}, {setter_name}] = useState({default_var!s})": None,
+            f"const [{var_name}, {setter_name}] = useState({initial_value})": None,
         }
         imports = {
             "react": [ImportVar(tag="useState"), ImportVar(tag="useId")],
@@ -141,7 +165,6 @@ class ClientStateVar(Var):
         if global_ref:
             arg_name = get_unique_variable_name()
             setter_ref = _client_state_ref(setter_name)
-            var_ref = _client_state_ref(var_name)
             var_dict_ref = _client_state_ref_dict(var_name)
             setter_dict_ref = _client_state_ref_dict(setter_name)
             func = ArgsFunctionOperationBuilder.create(
@@ -284,6 +307,8 @@ class ClientStateVar(Var):
         """Push a value to the client state variable from the backend.
 
         The event handler must `yield` or `return` the EventSpec to trigger the event.
+        Pushing before any component using the value has mounted keeps the value
+        for the first one that mounts.
 
         Args:
             value: The value to update.
@@ -298,4 +323,10 @@ class ClientStateVar(Var):
             msg = "ClientStateVar must be global to push the value."
             raise ValueError(msg)
         value = Var.create(value)
-        return run_script(f"{_client_state_ref(self._setter_name)}({value})")
+        setter = _client_state_ref(self._setter_name)
+        shared_value = _client_state_ref(self._getter_name)
+        # Only a mounted component defines the setter, so without one keep the value
+        # in the shared slot that the first component to mount starts from.
+        return run_script(
+            f"({setter} ?? ((pushed) => {{ {shared_value} = pushed; }}))({value})"
+        )

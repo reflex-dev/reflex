@@ -6,7 +6,6 @@ import collections
 import dataclasses
 import json
 import logging
-import sys
 from collections.abc import Callable, Iterable, Sequence
 from inspect import getmodule
 from pathlib import Path
@@ -1064,8 +1063,7 @@ def compile_unevaluated_page(
         )
 
     except Exception as e:
-        if sys.version_info >= (3, 11):
-            e.add_note(f"Happened while evaluating page {route!r}")
+        e.add_note(f"Happened while evaluating page {route!r}")
         raise
     else:
         return component
@@ -1210,7 +1208,7 @@ def _register_plugin_routes(app: App, plugins: Sequence[Plugin]) -> None:
 def _read_stateful_pages_marker() -> list[str] | None:
     """Read the routes that create state classes from a previous compile.
 
-    A missing marker or one truncated by an older writer requires full page
+    A missing marker or one corrupted by an older writer requires full page
     evaluation. New writers replace the marker atomically.
 
     Returns:
@@ -1218,8 +1216,10 @@ def _read_stateful_pages_marker() -> list[str] | None:
     """
     marker = prerequisites.get_backend_dir() / constants.Dirs.STATEFUL_PAGES
     try:
-        return json.loads(marker.read_text())
-    except (FileNotFoundError, json.JSONDecodeError):
+        return json.loads(marker.read_bytes())
+    except (FileNotFoundError, ValueError):
+        # ValueError covers both JSONDecodeError and the UnicodeDecodeError of a
+        # marker that is not valid UTF-8.
         return None
     except PermissionError:
         if constants.IS_WINDOWS:

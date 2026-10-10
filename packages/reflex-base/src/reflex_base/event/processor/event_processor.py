@@ -13,9 +13,7 @@ import sys
 import time
 from collections.abc import AsyncGenerator, Callable, Coroutine, Mapping, Sequence
 from contextvars import Token, copy_context
-from typing import TYPE_CHECKING, Any, TypeVar
-
-from typing_extensions import Self
+from typing import TYPE_CHECKING, Any, Self, TypeVar
 
 from reflex.app_mixins.middleware import MiddlewareMixin
 from reflex.istate.manager import StateManager
@@ -402,18 +400,22 @@ class EventProcessor:
             already enqueued it, the returned future is already cancelled and
             the event is dropped.
         """
+        # The event's router_data is bound before the entry exists, so entry.ctx
+        # is what the handler, the task metadata, and every event it yields all read.
         if ev_ctx is None:
             try:
-                ev_ctx = EventContext.get().fork(token=token)
+                ev_ctx = EventContext.get().fork(
+                    token=token, router_data=event.router_data
+                )
             except LookupError as le:
                 if self._root_context is not None:
-                    ev_ctx = self._root_context.fork(token=token)
+                    ev_ctx = self._root_context.fork(
+                        token=token, router_data=event.router_data
+                    )
                 else:
                     msg = "Event processor is not running, call .start(...) first."
                     raise RuntimeError(msg) from le
-        if event.router_data:
-            # Bound before the entry exists, so entry.ctx is what the handler,
-            # the task metadata, and every event it yields all read.
+        elif event.router_data:
             ev_ctx = dataclasses.replace(ev_ctx, router_data=event.router_data)
         queue = self._ensure_queue_task()
         txid = ev_ctx.txid
@@ -588,7 +590,7 @@ class EventProcessor:
                 # reusing the txid can chain recovery events normally.
                 return
             # Not checking future.all_done() to avoid waiting for grandchildren here.
-            if not all(c.done() for c in future.children):
+            if (children := future.children) and not all(c.done() for c in children):
                 return
             parent = future.parent
             self._futures.pop(future.txid, None)
@@ -770,7 +772,7 @@ class EventProcessor:
         coro = self._process_event_queue_entry(
             entry=entry, registered_handler=registered_handler
         )
-        name = f"reflex_event|{entry.event.name}|{entry.ctx.token}|{time.time()}"
+        name = f"reflex_event|{entry.event.name}|{entry.ctx.token}|{entry.ctx.txid}"
         loop = asyncio.get_running_loop()
         if (
             sys.version_info >= (3, 12)
@@ -943,14 +945,14 @@ class EventProcessor:
             True if a backend exception handler task was spawned and now owns
             the future's lifecycle, False otherwise.
         """
-        from reflex.utils import telemetry
-
         try:
             result = task.result()
         except asyncio.CancelledError:
             if future is not None and not future.done():
                 future.cancel()
         except Exception as ex:
+            from reflex.utils import telemetry
+
             if future is not None and not future.done():
                 future.set_exception(ex)
                 with contextlib.suppress(BaseException):
