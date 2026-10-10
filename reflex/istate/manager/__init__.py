@@ -333,6 +333,18 @@ class _ModifyStateWithLinks(Generic[TOKEN_TYPE]):
         return await self._state_context.__aexit__(exc_type, exc, tb) or suppressed
 
 
+def _mark_state_tree_dirty(state: "BaseState") -> None:
+    """Mark a newly created state tree for a complete client update.
+
+    Args:
+        state: The root of the state tree to mark.
+    """
+    state.dirty_vars.update(state._frontend_var_names)
+    state._mark_dirty()
+    for substate in state.substates.values():
+        _mark_state_tree_dirty(substate)
+
+
 def _release_state_tree(state: "BaseState"):
     """Clear the substate links of a purged state tree.
 

@@ -13,6 +13,8 @@ from reflex.testing import AppHarness
 
 def MemoryExpirationApp():
     """Reflex app that exposes state expiration through a simple counter UI."""
+    import asyncio
+
     import reflex as rx
 
     class State(rx.State):
@@ -21,6 +23,20 @@ def MemoryExpirationApp():
         @rx.event
         def increment(self):
             self.counter += 1
+
+        @rx.event(background=True)
+        async def delayed_update(self):
+            await asyncio.sleep(2)
+            async with self:
+                self.counter = 100
+
+    class ChildState(State):
+        child_counter: int = 0
+
+        @rx.event
+        def set_values(self):
+            self.counter = 11
+            self.child_counter = 13
 
     app = rx.App()
 
@@ -33,7 +49,14 @@ def MemoryExpirationApp():
                 is_read_only=True,
             ),
             rx.text(State.counter, id="counter"),
+            rx.text(ChildState.child_counter, id="child-counter"),
             rx.button("Increment", id="increment", on_click=State.increment),
+            rx.button("Set values", id="set-values", on_click=ChildState.set_values),
+            rx.button(
+                "Delayed update",
+                id="delayed-update",
+                on_click=State.delayed_update,
+            ),
         )
 
 
@@ -157,3 +180,23 @@ def test_memory_state_manager_delays_expiration_after_use_end_to_end(
     increment.click()
     AppHarness.expect(lambda: counter.text == "1")
     assert token_input.get_attribute("value") == token
+
+
+def test_background_task_refreshes_recreated_substate(
+    memory_expiration_app: AppHarness,
+    driver: WebDriver,
+):
+    """A delayed background update must send defaults for expired substates."""
+    counter = AppHarness.poll_for_or_raise_timeout(
+        lambda: driver.find_element(By.ID, "counter")
+    )
+    child_counter = AppHarness.poll_for_or_raise_timeout(
+        lambda: driver.find_element(By.ID, "child-counter")
+    )
+    driver.find_element(By.ID, "set-values").click()
+    AppHarness.expect(lambda: counter.text == "11")
+    AppHarness.expect(lambda: child_counter.text == "13")
+
+    driver.find_element(By.ID, "delayed-update").click()
+    AppHarness.expect(lambda: counter.text == "100", timeout=10)
+    AppHarness.expect(lambda: child_counter.text == "0", timeout=10)
