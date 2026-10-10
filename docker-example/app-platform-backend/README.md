@@ -38,8 +38,9 @@ The backend is built by the `Dockerfile` in this directory. When deploying the
 backend, be sure to set REFLEX_REDIS_URL=redis://internal-redis-hostname to connect to
 the redis service.
 
-With redis available, each replica runs `2 * cpu_count + 1` worker processes.
-Set `GRANIAN_WORKERS` to cap this on small instance sizes.
+With redis available, each replica runs up to 8 workers by default
+(`2 * cpu_count + 1`, capped at 8). Set `GRANIAN_WORKERS` to override the
+default, including to use more workers.
 
 If the app uses postgres, add `psycopg[binary]` to `requirements.txt`; the
 binary wheel bundles libpq, so no extra system packages are needed in the image.
