@@ -33,20 +33,59 @@ from reflex.utils import prerequisites
 
 
 @pytest.mark.parametrize(
-    ("javascript_code", "expected"),
+    ("javascript_code", "expected_call"),
     [
-        ("useContext(StateContexts.state)", {"state"}),
         (
-            'useContext(StateContexts["state"]); useContext(StateContexts.other)',
-            {"state", "other"},
+            'import { useContext } from "react"; useContext(StateContexts.state)',
+            "useLegacyStateContext(StateContexts.state)",
         ),
-        ("useContext(StateContexts[stateName])", {"*"}),
-        ('useStateContext("state")', set()),
+        (
+            'import { useContext as useReactContext } from "react"; '
+            'useReactContext(StateContexts[ "state" ])',
+            'useLegacyStateContext(StateContexts[ "state" ])',
+        ),
+        (
+            'import * as React from "react"; '
+            "React.useContext(StateContexts[stateName])",
+            "useLegacyStateContext(StateContexts[stateName])",
+        ),
+        (
+            'import React from "react"; React.useContext(StateContexts.state)',
+            "useLegacyStateContext(StateContexts.state)",
+        ),
     ],
 )
-def test_legacy_state_context_names(javascript_code: str, expected: set[str]) -> None:
-    """Identify legacy context reads so generated providers can preserve them."""
-    assert compiler._legacy_state_context_names(javascript_code) == expected
+def test_legacy_state_context_reads_use_shared_store(
+    javascript_code: str, expected_call: str
+) -> None:
+    """Rewrite supported legacy context reads to subscribe to the shared store."""
+    rewritten = compiler._rewrite_legacy_state_context_reads(javascript_code)
+
+    assert expected_call in rewritten
+    assert 'from "$/utils/context-registry"' in rewritten
+
+
+def test_legacy_state_context_rewrite_leaves_non_react_calls_unchanged() -> None:
+    """Do not rewrite unrelated functions named useContext."""
+    source = "function useContext(value) {} useContext(StateContexts.state)"
+
+    assert compiler._rewrite_legacy_state_context_reads(source) == source
+
+
+def test_legacy_state_context_rewrite_preserves_strings_and_comments() -> None:
+    """Only rewrite executable React calls, not matching text in source trivia."""
+    source = (
+        'import { useContext } from "react"; '
+        'const label = "useContext(StateContexts.text)"; '
+        "// useContext(StateContexts.comment)\n"
+        "useContext(StateContexts.active)"
+    )
+
+    rewritten = compiler._rewrite_legacy_state_context_reads(source)
+
+    assert '"useContext(StateContexts.text)"' in rewritten
+    assert "// useContext(StateContexts.comment)" in rewritten
+    assert "useLegacyStateContext(StateContexts.active)" in rewritten
 
 
 @pytest.mark.parametrize("content", ["", '["index",'])

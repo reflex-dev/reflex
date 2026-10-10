@@ -198,7 +198,6 @@ def test_client_state_store_notifies_only_substate_subscribers(tmp_path: Path):
             "reflex___state____state__sub": {"value": 2},
         },
         state_name="reflex___state____state",
-        legacy_state_contexts={"reflex___state____state__sub"},
     ).replace("function ClientStateProvider", "export function ClientStateProvider")
     react_stub = """
 let hookIndex = 0;
@@ -278,9 +277,9 @@ const store = storeElement.props.value;
 react.setContextValue(registry.StateStoreContext, store);
 const first = registry.useStateContext("reflex___state____state");
 const second = registry.useStateContext("reflex___state____state__sub");
-const dispatchElement = storeElement.props.children;
-const legacyElement = dispatchElement.props.children;
-const legacyContext = legacyElement.type(legacyElement.props);
+const legacyContext = registry.useLegacyStateContext(
+  mod.StateContexts.reflex___state____state__sub,
+);
 let firstNotifications = 0;
 let secondNotifications = 0;
 let legacyNotifications = 0;
@@ -294,14 +293,17 @@ const noOpIdentityPreserved =
 const notificationsAfterNoOps = secondNotifications;
 store.dispatchers["reflex___state____state__sub"]({ value: 3 });
 const updated = registry.useStateContext("reflex___state____state__sub");
-const updatedLegacyContext = legacyElement.type(legacyElement.props);
+const updatedLegacyContext = registry.useLegacyStateContext(
+  mod.StateContexts.reflex___state____state__sub,
+);
 process.stdout.write(JSON.stringify({
   first,
   second,
   updated,
-  legacyContext: legacyContext.props.value,
-  updatedLegacyContext: updatedLegacyContext.props.value,
-  legacyContextMatches: legacyContext.type === mod.StateContexts.reflex___state____state__sub,
+  legacyContext,
+  updatedLegacyContext,
+  legacyContextMatches: mod.StateContexts.reflex___state____state__sub.stateName ===
+    "reflex___state____state__sub",
   legacyNotifications,
   noOpIdentityPreserved,
   notificationsAfterNoOps,

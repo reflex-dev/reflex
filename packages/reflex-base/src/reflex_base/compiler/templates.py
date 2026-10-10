@@ -315,7 +315,6 @@ def context_template(
     state_name: str | None = None,
     client_storage: dict[str, dict[str, dict[str, Any]]] | None = None,
     disable_react_owner_stacks: bool = False,
-    legacy_state_contexts: set[str] | None = None,
 ):
     """Template for the context file.
 
@@ -332,8 +331,6 @@ def context_template(
         disable_react_owner_stacks: Whether to emit the snippet that disables
             React's dev-build owner-stack capture (an Error() constructed per
             created element, whose cost grows with render depth).
-        legacy_state_contexts: Formatted state names read through the legacy
-            ``useContext(StateContexts.<state>)`` API.
 
     Returns:
         Rendered context file content as string.
@@ -347,14 +344,6 @@ def context_template(
         f'{format_state_name(state_name)}: getStateContext("{state_name}"),'
         for state_name in initial_state
     ])
-    legacy_contexts_str = ",".join(
-        f"[{json.dumps(state_name)}, "
-        f"StateContexts[{json.dumps(format_state_name(state_name))}]]"
-        for state_name in initial_state
-        if "*" in (legacy_state_contexts or set())
-        or format_state_name(state_name) in (legacy_state_contexts or set())
-    )
-
     state_str = (
         rf"""
 export const state_name = "{state_name}"
@@ -583,25 +572,11 @@ function createStateStore() {{
 }}
 
 function StateStoreProviders({{ children, store }}) {{
-  let stateTree = children;
-  for (const [stateName, context] of LEGACY_STATE_CONTEXTS.slice().reverse()) {{
-    stateTree = createElement(
-      LegacyStateContextProvider,
-      {{ children: stateTree, stateName, context }},
-    );
-  }}
   return createElement(
     StateStoreContext,
     {{ value: store }},
-    createElement(DispatchContext, {{ value: store.dispatchers }}, stateTree),
+    createElement(DispatchContext, {{ value: store.dispatchers }}, children),
   );
-}}
-
-const LEGACY_STATE_CONTEXTS = [{legacy_contexts_str}];
-
-function LegacyStateContextProvider({{ children, stateName, context }}) {{
-  const state = useStateContext(stateName);
-  return createElement(context, {{ value: state }}, children);
 }}
 
 function ClientStateProvider({{ children }}) {{

@@ -40,6 +40,7 @@ export function getStateContext(name) {
   if (context === undefined) {
     context = createContext(null);
     context.displayName = `StateContext(${name})`;
+    context.stateName = name;
     stateContexts.set(name, context);
   }
   return context;
@@ -59,6 +60,16 @@ export function useStateContext(name) {
   );
   const getSnapshot = useCallback(() => store.getSnapshot(name), [store, name]);
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+}
+
+/**
+ * Read a state through a legacy StateContexts entry using the shared store.
+ *
+ * @param {React.Context} context - The named state's stable context handle.
+ * @returns {object} The current state value.
+ */
+export function useLegacyStateContext(context) {
+  return useStateContext(context.stateName);
 }
 
 // Values the generated context module registers each time it executes. The
