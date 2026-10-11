@@ -7076,3 +7076,33 @@ def test_undeclared_double_underscore_name_is_rejected(clean_registration_contex
         with pytest.raises(SetUndefinedStateVarError):
             setattr(state, name, 1)
     assert not state.dirty_vars
+
+
+@pytest.mark.parametrize(
+    ("annotation", "default"),
+    [
+        ("list[MissingItem]", []),
+        ("dict[str, MissingItem]", {}),
+        ("MissingItem | None", None),
+    ],
+)
+def test_var_annotation_with_undefined_name_raises_name_error(
+    annotation: str, default: Any
+) -> None:
+    """An annotation naming an undefined symbol raises a NameError naming it.
+
+    With postponed annotations the unresolved annotation used to reach var
+    typing as a ForwardRef and fail with an unrelated TypeError.
+
+    Args:
+        annotation: The annotation, which names a symbol that does not exist.
+        default: The default value of the var.
+    """
+    namespace = {
+        "__module__": __name__,
+        "__annotations__": {"items": annotation},
+        "items": default,
+    }
+
+    with pytest.raises(NameError, match="MissingItem"):
+        type("UndefinedNameState", (BaseState,), namespace)

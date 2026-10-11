@@ -21,6 +21,7 @@ from typing import (
     Any,
     BinaryIO,
     ClassVar,
+    ForwardRef,
     ParamSpec,
     Self,
     TypeVar,
@@ -270,6 +271,11 @@ def get_var_for_field(cls: type[BaseState], name: str, f: Field) -> Var:
     field_name = (
         format.format_state_name(cls.get_full_name()) + "." + name + FIELD_MARKER
     )
+
+    if isinstance(f.outer_type_, ForwardRef):
+        # The annotation could not be resolved. Resolving it again raises the
+        # NameError that names the missing symbol.
+        cls._get_type_hints()
 
     return dispatch(
         field_name=field_name,
