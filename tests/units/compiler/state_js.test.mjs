@@ -348,17 +348,29 @@ test("window.onerror reports an error event that carries no Error object", async
   // The benign ResizeObserver notification: a message, but `error` is null.
   const message =
     "ResizeObserver loop completed with undelivered notifications.";
-  assert.doesNotThrow(() => harness.window.onerror(message, "", 0, 0, null));
+  assert.doesNotThrow(() =>
+    harness.window.onerror(
+      message,
+      "http://localhost:3000/app.js",
+      12,
+      34,
+      null,
+    ),
+  );
   await new Promise((resolve) => setImmediate(resolve));
 
-  const events = sent.map((e) => JSON.stringify(e));
-  assert.ok(
-    events.some(
-      (e) =>
-        e.includes("handle_frontend_exception") && e.includes("ResizeObserver"),
-    ),
-    `expected a frontend exception event, got ${events.join(" | ")}`,
+  const event = sent.find(
+    (e) => e.name === "exception.handle_frontend_exception",
   );
+  assert.ok(
+    event,
+    `expected a frontend exception event, got ${JSON.stringify(sent)}`,
+  );
+  assert.equal(
+    event.payload.info,
+    message + "\n    at http://localhost:3000/app.js:12:34",
+  );
+  assert.equal(event.payload.component_stack, "");
 });
 
 test("window.onerror preserves the original Error message", async () => {
