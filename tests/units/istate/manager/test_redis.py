@@ -1380,6 +1380,66 @@ async def test_oplock_lease_reports_a_failed_renewal(
 
 
 @pytest.mark.asyncio
+async def test_oplock_lease_cancelled_while_flushing_keeps_its_lock_until_written(
+    state_manager_redis: StateManagerRedis,
+    root_state: type[RedisTestState],
+    short_lock_expiration: int,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A lease cancelled during its flush keeps its lock until the write lands.
+
+    Ending at the cancellation would release the lock under the write, which
+    the fenced write then fails, losing the change.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        root_state: The root state class.
+        short_lock_expiration: The lock expiration time in milliseconds.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=root_state)
+    lock_key = state_manager_redis._lock_key(token)
+    state_manager_redis._oplock_enabled = True
+    state_manager_redis.oplock_hold_time_ms = short_lock_expiration // 10
+    await _subscribed(state_manager_redis)
+
+    write_started = asyncio.Event()
+    write_continue = asyncio.Event()
+    set_state = state_manager_redis.set_state
+
+    async def held_set_state(*args: Any, **kwargs: Any) -> None:
+        write_started.set()
+        await write_continue.wait()
+        await set_state(*args, **kwargs)
+
+    monkeypatch.setattr(state_manager_redis, "set_state", held_set_state)
+
+    async with state_manager_redis.modify_state(token) as state:
+        assert isinstance(state, root_state)
+        state.count += 1
+        lease_task = await state_manager_redis._get_local_lease(token.lock_key)
+        assert lease_task is not None
+    lock_id = await state_manager_redis.redis.get(lock_key)
+    assert lock_id is not None
+
+    await write_started.wait()
+    lease_task.cancel()
+    for _ in range(10):
+        await asyncio.sleep(0)
+    assert not lease_task.done()
+    assert await state_manager_redis.redis.get(lock_key) == lock_id
+
+    write_continue.set()
+    with pytest.raises(asyncio.CancelledError):
+        await lease_task
+    assert await state_manager_redis.redis.get(lock_key) is None
+    monkeypatch.undo()
+    final_state = await state_manager_redis.get_state(token)
+    assert isinstance(final_state, root_state)
+    assert final_state.count == 1
+
+
+@pytest.mark.asyncio
 async def test_oplock_waiter_woken_when_the_cached_holder_raises(
     state_manager_redis: StateManagerRedis,
     root_state: type[RedisTestState],

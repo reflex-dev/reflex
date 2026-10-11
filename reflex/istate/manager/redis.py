@@ -847,9 +847,20 @@ class StateManagerRedis(StateManager):
                     await keep_alive
 
         async def flush() -> None:
+            # The flush runs to completion even when this task is cancelled,
+            # and this task waits for it: returning early would release the
+            # lock under the write, which the fenced write then fails, and let
+            # the next lease read the state before the write lands.
+            flushing = asyncio.create_task(do_flush())
+            cancelled_error: asyncio.CancelledError | None = None
+            while not flushing.done():
+                try:
+                    # Unlike awaiting the task, this neither cancels it nor raises its error.
+                    await asyncio.wait({flushing})
+                except asyncio.CancelledError as err:  # noqa: PERF203  # once per cancellation
+                    cancelled_error = err
             try:
-                # Shield the flush from cancellation to ensure it always runs to completion.
-                await asyncio.shield(do_flush())
+                flushing.result()
             except Exception as e:
                 # Propagate exception to the main loop, since we have nowhere to catch it.
                 asyncio.get_running_loop().call_exception_handler({
@@ -857,6 +868,8 @@ class StateManagerRedis(StateManager):
                     "exception": e,
                 })
                 raise
+            if cancelled_error is not None:
+                raise cancelled_error
 
         async def lease_breaker():
             nonlocal lease_started, broken_at
