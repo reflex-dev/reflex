@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 import importlib.metadata
 import logging
 import os
@@ -15,6 +16,12 @@ from pytest_mock import MockerFixture, MockFixture
 from reflex_base.config import Config, get_config
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.log import SUCCESS
+from reflex_build_sdk import (
+    APIConnectionError,
+    APIResponseValidationError,
+    APIStatusError,
+    APITimeoutError,
+)
 from reflex_build_sdk.types import (
     App,
     AppSummary,
@@ -36,6 +43,9 @@ _APP_ID = uuid.UUID(int=51)
 _PROJECT_ID = uuid.UUID(int=52)
 _RESERVATION = HostnameReservation(
     frontend_url="fake-hostname", backend_url="fake-server"
+)
+_SCALING_DETAIL = (
+    "the app is currently being scaled; wait for the scale to finish, then deploy again"
 )
 
 
@@ -1163,6 +1173,617 @@ def test_deploy_forwards_vmtype_to_create_deployment(
     assert recorder.create_deployment.call_args.kwargs["vm_type"] == "c2m2"
 
 
+def _scaling_deploy_recorder(
+    mocker: MockerFixture,
+) -> tuple[MagicMock, FakeClient]:
+    """Record a deployment using the real instance-bounds helper.
+
+    Args:
+        mocker: The pytest-mock fixture.
+
+    Returns:
+        The calls recorder and authenticated API client.
+    """
+    client = _common_deploy_mocks(mocker)
+    mocker.patch("reflex_cli.utils.hosting.search_app", return_value=app_summary())
+    client.api.apps.get.return_value = app(min_instances=1, max_instances=4)
+    recorder = MagicMock()
+    recorder.attach_mock(client.api.apps.set_instance_bounds, "bounds")
+    recorder.attach_mock(client.api.deployments.create, "submit")
+    recorder.attach_mock(mocker.patch("reflex_cli.utils.deploy.time.sleep"), "sleep")
+    return recorder, client
+
+
+def _bounds_scaling_refusal(
+    base_url: str = "https://build.reflex.dev",
+) -> APIStatusError:
+    """Build a refused bounds update because the app is being scaled.
+
+    Args:
+        base_url: The configured backend URL, including any path prefix.
+
+    Returns:
+        The SDK exception for the bounds scaling conflict.
+    """
+    return api_error(
+        409,
+        "a scale operation is already running",
+        code="instance_bounds_scale_conflict",
+        method="POST",
+        path=f"apps/{_APP_ID}/instance_bounds",
+        base_url=base_url,
+    )
+
+
+def _unknown_deploy_outcome(failure: str, refusal: APIStatusError) -> BaseException:
+    """Build an exception that leaves a write's outcome unknown.
+
+    Args:
+        failure: The kind of unknown outcome.
+        refusal: A previous refusal supplying the request metadata.
+
+    Returns:
+        The exception raised before the write is acknowledged.
+    """
+    if failure == "connection":
+        return APIConnectionError("connection lost", request=refusal.request)
+    if failure == "timeout":
+        return APITimeoutError("request timed out", request=refusal.request)
+    if failure == "response":
+        return APIResponseValidationError(
+            "invalid response",
+            response=dataclasses.replace(
+                refusal.response, status_code=200, content=b"invalid JSON"
+            ),
+        )
+    if failure == "interrupt":
+        return KeyboardInterrupt()
+    return ValueError("invalid JSON")
+
+
+@pytest.mark.parametrize("max_instances", [None, 8])
+@pytest.mark.parametrize(
+    "backend_url", ["https://build.reflex.dev", "https://build.reflex.dev/proxy"]
+)
+def test_deploy_retries_instance_bounds_scaling_conflict(
+    mocker: MockerFixture,
+    mock_export_fn: MagicMock,
+    max_instances: int | None,
+    backend_url: str,
+):
+    """A refused scaling operation waits and retries without exporting again.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        mock_export_fn: The mocked build exporter.
+        max_instances: An explicit maximum, or None to preserve the latest value.
+        backend_url: The configured backend URL, including any path prefix.
+    """
+    recorder, client = _scaling_deploy_recorder(mocker)
+    client.api.base_url = backend_url
+    client.api.apps.set_instance_bounds.side_effect = [
+        _bounds_scaling_refusal(backend_url),
+        None,
+    ]
+    client.api.apps.get.side_effect = [app(max_instances=4), app(max_instances=6)]
+
+    cli.deploy(
+        app_name="fake-app",
+        export_fn=mock_export_fn,
+        interactive=False,
+        min_instances=2,
+        max_instances=max_instances,
+    )
+
+    assert [call[0] for call in recorder.mock_calls] == [
+        "bounds",
+        "sleep",
+        "bounds",
+        "submit",
+    ]
+    assert recorder.bounds.call_args_list[0].kwargs == {
+        "min_instances": 2,
+        "max_instances": 4 if max_instances is None else max_instances,
+    }
+    assert recorder.bounds.call_args_list[1].kwargs == {
+        "min_instances": 2,
+        "max_instances": 6 if max_instances is None else max_instances,
+    }
+    recorder.sleep.assert_called_once_with(15)
+    assert [call.args[3:5] for call in mock_export_fn.call_args_list] == [
+        (False, True),
+        (True, False),
+    ]
+
+
+def test_deploy_exhausts_bounds_scaling_conflicts_without_another_sleep(
+    mocker: MockerFixture,
+    mock_export_fn: MagicMock,
+    caplog: pytest.LogCaptureFixture,
+):
+    """Persistent scaling conflicts stop at a bounded number of attempts.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        mock_export_fn: The mocked build exporter.
+        caplog: The captured log messages.
+    """
+    recorder, _ = _scaling_deploy_recorder(mocker)
+    recorder.bounds.side_effect = _bounds_scaling_refusal()
+
+    with pytest.raises(click.exceptions.Exit) as exc_info:
+        cli.deploy(
+            app_name="fake-app",
+            export_fn=mock_export_fn,
+            interactive=False,
+            min_instances=2,
+        )
+
+    assert exc_info.value.exit_code == 1
+    assert recorder.bounds.call_count == 8
+    assert recorder.sleep.call_count == 7
+    assert all(call.args == (15,) for call in recorder.sleep.call_args_list)
+    warnings = _log_messages(caplog, logging.WARNING)
+    assert not any(
+        "may or may not have been applied" in message for message in warnings
+    )
+    assert not any("even though this deploy failed" in message for message in warnings)
+    recorder.submit.assert_not_called()
+    assert mock_export_fn.call_count == 2
+
+
+@pytest.mark.parametrize("previous_conflict", [False, True])
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("status", 400),
+        ("code", "unrelated_conflict"),
+        ("code", ""),
+        ("method", "GET"),
+        ("path", "deployments/check"),
+        ("path", f"apps/{uuid.UUID(int=999)}/instance_bounds"),
+        ("base_url", "https://other.example"),
+        ("base_url", "https://build.reflex.dev/other-proxy"),
+    ],
+)
+@pytest.mark.parametrize(
+    "backend_url", ["https://build.reflex.dev", "https://build.reflex.dev/proxy"]
+)
+def test_deploy_does_not_retry_other_bounds_refusals(
+    mocker: MockerFixture,
+    mock_export_fn: MagicMock,
+    previous_conflict: bool,
+    field: str,
+    value: str | int,
+    backend_url: str,
+    caplog: pytest.LogCaptureFixture,
+):
+    """Only the exact refused scaling operation permits a retry.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        mock_export_fn: The mocked build exporter.
+        previous_conflict: Whether a retryable refusal preceded the final error.
+        field: The response or request field that does not match.
+        value: The nonmatching field value.
+        backend_url: The configured backend URL, including any path prefix.
+        caplog: The captured log messages.
+    """
+    recorder, client = _scaling_deploy_recorder(mocker)
+    client.api.base_url = backend_url
+    refusal = _bounds_scaling_refusal(backend_url)
+    other_refusal = api_error(
+        value if field == "status" and isinstance(value, int) else 409,
+        refusal.detail,
+        code=str(value) if field == "code" else refusal.code,
+        method=str(value) if field == "method" else "POST",
+        path=str(value) if field == "path" else f"apps/{_APP_ID}/instance_bounds",
+        base_url=str(value) if field == "base_url" else backend_url,
+    )
+    recorder.bounds.side_effect = (
+        [refusal, other_refusal] if previous_conflict else [other_refusal]
+    )
+
+    with pytest.raises(click.exceptions.Exit):
+        cli.deploy(
+            app_name="fake-app",
+            export_fn=mock_export_fn,
+            interactive=False,
+            min_instances=2,
+        )
+
+    assert recorder.bounds.call_count == 1 + previous_conflict
+    assert recorder.sleep.call_count == int(previous_conflict)
+    assert not any(
+        "may or may not have been applied" in message
+        for message in _log_messages(caplog, logging.WARNING)
+    )
+    recorder.submit.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "detail",
+    [
+        "the app already has a deployment in progress",
+        "a scale operation is already running",
+        _SCALING_DETAIL + ".",
+        "",
+    ],
+)
+def test_deploy_does_not_retry_other_app_busy_reasons(
+    mocker: MockerFixture,
+    mock_export_fn: MagicMock,
+    detail: str,
+):
+    """A generic app-busy conflict does not prove that submission is safe to retry.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        mock_export_fn: The mocked build exporter.
+        detail: A busy explanation other than the exact scaling refusal.
+    """
+    recorder, client = _scaling_deploy_recorder(mocker)
+    client.api.deployments.create.side_effect = api_error(
+        409, detail, code="app_busy", method="POST", path="deployments"
+    )
+
+    with pytest.raises(click.exceptions.Exit):
+        cli.deploy(app_name="fake-app", export_fn=mock_export_fn, interactive=False)
+
+    recorder.submit.assert_called_once()
+    recorder.sleep.assert_not_called()
+
+
+@pytest.mark.parametrize("previous_conflict", [False, True])
+@pytest.mark.parametrize("failure", ["connection", "timeout", "decode"])
+def test_deploy_does_not_retry_unknown_bounds_outcomes(
+    mocker: MockerFixture,
+    mock_export_fn: MagicMock,
+    previous_conflict: bool,
+    failure: str,
+    caplog: pytest.LogCaptureFixture,
+):
+    """An unanswered write is never repeated even after a confirmed refusal.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        mock_export_fn: The mocked build exporter.
+        previous_conflict: Whether a scaling refusal preceded the unanswered write.
+        failure: The kind of unknown response outcome.
+        caplog: The captured log messages.
+    """
+    recorder, _ = _scaling_deploy_recorder(mocker)
+    refusal = _bounds_scaling_refusal()
+    error = _unknown_deploy_outcome(failure, refusal)
+    recorder.bounds.side_effect = [refusal, error] if previous_conflict else [error]
+    expected_error = type(error) if failure == "decode" else click.exceptions.Exit
+
+    with pytest.raises(expected_error):
+        cli.deploy(
+            app_name="fake-app",
+            export_fn=mock_export_fn,
+            interactive=False,
+            min_instances=2,
+        )
+
+    assert recorder.bounds.call_count == 1 + previous_conflict
+    assert recorder.sleep.call_count == int(previous_conflict)
+    recorder.submit.assert_not_called()
+    assert any(
+        "may or may not have been applied" in message
+        for message in _log_messages(caplog, logging.WARNING)
+    )
+
+
+@pytest.mark.parametrize("previous_conflict", [False, True])
+def test_deploy_stops_after_undecodable_bounds_success(
+    mocker: MockerFixture,
+    mock_export_fn: MagicMock,
+    previous_conflict: bool,
+    caplog: pytest.LogCaptureFixture,
+):
+    """An undecodable success stops deployment without retrying changed bounds.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        mock_export_fn: The mocked build exporter.
+        previous_conflict: Whether a scaling refusal preceded the successful write.
+        caplog: The captured log messages.
+    """
+    recorder, _ = _scaling_deploy_recorder(mocker)
+    refusal = _bounds_scaling_refusal()
+    error = _unknown_deploy_outcome("response", refusal)
+    recorder.bounds.side_effect = [refusal, error] if previous_conflict else [error]
+
+    with pytest.raises(click.exceptions.Exit):
+        cli.deploy(
+            app_name="fake-app",
+            export_fn=mock_export_fn,
+            interactive=False,
+            min_instances=2,
+        )
+
+    assert recorder.bounds.call_count == 1 + previous_conflict
+    assert recorder.sleep.call_count == int(previous_conflict)
+    recorder.submit.assert_not_called()
+    warnings = _log_messages(caplog, logging.WARNING)
+    assert len(warnings) == 1
+    assert "server reported success" in warnings[0]
+    assert "response could not be decoded" in warnings[0]
+    assert "bounds may have changed" in warnings[0]
+    assert "may or may not have been applied" not in warnings[0]
+
+
+@pytest.mark.parametrize("previous_conflict", [False, True])
+@pytest.mark.parametrize("during_write", [False, True])
+@pytest.mark.parametrize("status_code", [500, 502, 503, 504])
+def test_deploy_bounds_server_error_warns_only_after_write(
+    mocker: MockerFixture,
+    mock_export_fn: MagicMock,
+    previous_conflict: bool,
+    during_write: bool,
+    status_code: int,
+    caplog: pytest.LogCaptureFixture,
+):
+    """Only a failed write has an uncertain outcome, and neither failure retries.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        mock_export_fn: The mocked build exporter.
+        previous_conflict: Whether a scaling refusal preceded the server error.
+        during_write: Whether the error came from the write or preliminary read.
+        status_code: The server error returned by the API.
+        caplog: The captured log messages.
+    """
+    recorder, client = _scaling_deploy_recorder(mocker)
+    error = api_error(
+        status_code,
+        "unavailable",
+        method="POST" if during_write else "GET",
+        path=f"apps/{_APP_ID}/instance_bounds" if during_write else f"apps/{_APP_ID}",
+    )
+    if during_write:
+        recorder.bounds.side_effect = (
+            [_bounds_scaling_refusal(), error] if previous_conflict else [error]
+        )
+    else:
+        client.api.apps.get.side_effect = [app(), error] if previous_conflict else error
+        recorder.bounds.side_effect = _bounds_scaling_refusal()
+
+    with pytest.raises(click.exceptions.Exit):
+        cli.deploy(
+            app_name="fake-app",
+            export_fn=mock_export_fn,
+            interactive=False,
+            min_instances=2,
+        )
+
+    assert recorder.bounds.call_count == int(previous_conflict) + during_write
+    assert recorder.sleep.call_count == int(previous_conflict)
+    recorder.submit.assert_not_called()
+    assert (
+        any(
+            "may or may not have been applied" in message
+            for message in _log_messages(caplog, logging.WARNING)
+        )
+        == during_write
+    )
+
+
+@pytest.mark.parametrize("previous_conflict", [False, True])
+@pytest.mark.parametrize(
+    "failure", ["connection", "timeout", "response", "decode", "interrupt"]
+)
+def test_deploy_failed_bounds_read_does_not_warn_about_a_write(
+    mocker: MockerFixture,
+    mock_export_fn: MagicMock,
+    previous_conflict: bool,
+    failure: str,
+    caplog: pytest.LogCaptureFixture,
+):
+    """A failed read cannot apply bounds, even after a prior write was refused.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        mock_export_fn: The mocked build exporter.
+        previous_conflict: Whether a refused write preceded the failed read.
+        failure: The failure encountered while reading the app.
+        caplog: The captured log messages.
+    """
+    recorder, client = _scaling_deploy_recorder(mocker)
+    error = _unknown_deploy_outcome(
+        failure, api_error(503, "unavailable", path=f"apps/{_APP_ID}")
+    )
+    client.api.apps.get.side_effect = [app(), error] if previous_conflict else error
+    recorder.bounds.side_effect = _bounds_scaling_refusal()
+    expected_error = (
+        type(error) if failure in {"decode", "interrupt"} else click.exceptions.Exit
+    )
+
+    with pytest.raises(expected_error):
+        cli.deploy(
+            app_name="fake-app",
+            export_fn=mock_export_fn,
+            interactive=False,
+            min_instances=2,
+        )
+
+    assert recorder.bounds.call_count == int(previous_conflict)
+    assert recorder.sleep.call_count == int(previous_conflict)
+    recorder.submit.assert_not_called()
+    assert not _log_messages(caplog, logging.WARNING)
+
+
+@pytest.mark.parametrize("during_wait", [False, True])
+def test_deploy_interrupted_bounds_does_not_retry_or_submit(
+    mocker: MockerFixture,
+    mock_export_fn: MagicMock,
+    during_wait: bool,
+    caplog: pytest.LogCaptureFixture,
+):
+    """Interrupts preserve whether the last bounds write was refused or unanswered.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        mock_export_fn: The mocked build exporter.
+        during_wait: Whether interruption happens after the write was refused.
+        caplog: The captured log messages.
+    """
+    recorder, _ = _scaling_deploy_recorder(mocker)
+    recorder.bounds.side_effect = (
+        _bounds_scaling_refusal() if during_wait else KeyboardInterrupt()
+    )
+    recorder.sleep.side_effect = KeyboardInterrupt()
+
+    with pytest.raises(KeyboardInterrupt):
+        cli.deploy(
+            app_name="fake-app",
+            export_fn=mock_export_fn,
+            interactive=False,
+            min_instances=2,
+        )
+
+    recorder.bounds.assert_called_once()
+    assert recorder.sleep.call_count == int(during_wait)
+    recorder.submit.assert_not_called()
+    warnings = _log_messages(caplog, logging.WARNING)
+    assert any(
+        "may or may not have been applied" in message for message in warnings
+    ) == (not during_wait)
+    assert not any("even though this deploy failed" in message for message in warnings)
+
+
+@pytest.mark.parametrize(
+    "failure", ["connection", "timeout", "response", "decode", "interrupt"]
+)
+def test_deploy_does_not_resubmit_unknown_submission_outcomes(
+    mocker: MockerFixture,
+    mock_export_fn: MagicMock,
+    failure: str,
+    caplog: pytest.LogCaptureFixture,
+):
+    """An SDK submit with an unknown outcome is called only once.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        mock_export_fn: The mocked build exporter.
+        failure: The kind of unknown submission outcome.
+        caplog: The captured log messages.
+    """
+    recorder, _ = _scaling_deploy_recorder(mocker)
+    refusal = api_error(
+        409, _SCALING_DETAIL, code="app_busy", method="POST", path="deployments"
+    )
+    error = _unknown_deploy_outcome(failure, refusal)
+    recorder.submit.side_effect = error
+    expected_error = (
+        type(error) if failure in {"decode", "interrupt"} else click.exceptions.Exit
+    )
+
+    with pytest.raises(expected_error):
+        cli.deploy(
+            app_name="fake-app",
+            export_fn=mock_export_fn,
+            interactive=False,
+            min_instances=2,
+        )
+
+    recorder.bounds.assert_called_once()
+    recorder.submit.assert_called_once()
+    recorder.sleep.assert_not_called()
+    assert any(
+        "even though this deploy failed" in message
+        for message in _log_messages(caplog, logging.WARNING)
+    )
+
+
+def test_deploy_watcher_failure_does_not_resubmit(
+    mocker: MockerFixture,
+    mock_export_fn: MagicMock,
+    caplog: pytest.LogCaptureFixture,
+):
+    """A lost watcher response cannot resubmit an accepted deployment.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        mock_export_fn: The mocked build exporter.
+        caplog: The captured log messages.
+    """
+    recorder, _ = _scaling_deploy_recorder(mocker)
+    watch = mocker.patch(
+        "reflex_cli.utils.hosting.watch_deployment_status",
+        side_effect=APIConnectionError(
+            "connection lost", request=_bounds_scaling_refusal().request
+        ),
+    )
+
+    with pytest.raises(APIConnectionError):
+        cli.deploy(
+            app_name="fake-app",
+            export_fn=mock_export_fn,
+            interactive=False,
+            min_instances=2,
+        )
+
+    recorder.bounds.assert_called_once()
+    recorder.submit.assert_called_once()
+    watch.assert_called_once()
+    recorder.sleep.assert_not_called()
+    assert not any(
+        "even though this deploy failed" in message
+        for message in _log_messages(caplog, logging.WARNING)
+    )
+
+
+@pytest.mark.parametrize("regions", [None, ["iad"]])
+def test_deploy_gcp_preserves_vmtype_and_region_notice_across_bounds_retry(
+    mocker: MockerFixture,
+    mock_export_fn: MagicMock,
+    regions: list[str] | None,
+    caplog: pytest.LogCaptureFixture,
+):
+    """GCP retries keep VM sizing and drop only regions, with one region notice.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        mock_export_fn: The mocked build exporter.
+        regions: The regions explicitly requested by the caller.
+        caplog: The captured log messages.
+    """
+    recorder, client = _scaling_deploy_recorder(mocker)
+    mocker.patch(
+        "reflex_cli.utils.hosting.search_app", return_value=app_summary(provider="gcp")
+    )
+    client.api.apps.get.return_value = app(
+        provider="gcp", min_instances=1, max_instances=4
+    )
+    recorder.bounds.side_effect = [_bounds_scaling_refusal(), None]
+
+    cli.deploy(
+        app_name="fake-app",
+        export_fn=mock_export_fn,
+        interactive=False,
+        regions=regions,
+        vmtype="c2m2",
+        min_instances=2,
+    )
+
+    assert recorder.bounds.call_count == 2
+    recorder.submit.assert_called_once()
+    assert recorder.submit.call_args.kwargs["vm_type"] == "c2m2"
+    assert recorder.submit.call_args.kwargs["regions"] is None
+    assert client.api.deployments.check.call_args.kwargs["vm_type"] == "c2m2"
+    assert client.api.deployments.check.call_args.kwargs["regions"] is None
+    notices = [
+        message
+        for message in _log_messages(caplog, logging.INFO)
+        if "Ignoring" in message
+    ]
+    assert len(notices) == int(bool(regions))
+    assert all("--region" in message and "vmtype" not in message for message in notices)
+    assert mock_export_fn.call_count == 2
+
+
 @pytest.mark.parametrize(
     ("min_instances", "max_instances"),
     [(1, 4), (2, None), (None, 8)],
@@ -1192,6 +1813,7 @@ def test_deploy_sets_instance_bounds_before_submitting(
     assert bounds_kwargs["app_id"] == str(_APP_ID)
     assert bounds_kwargs["min_instances"] == min_instances
     assert bounds_kwargs["max_instances"] == max_instances
+    assert bounds_kwargs["retry_scaling"] is True
 
 
 def test_deploy_without_instance_bounds_flags_skips_the_call(
@@ -1268,8 +1890,8 @@ def test_deploy_hedges_when_the_bounds_response_is_lost(
     caplog: pytest.LogCaptureFixture,
 ):
     """A dropped response leaves the outcome unknown, so neither is asserted."""
-    recorder, _ = _deploy_call_recorder(mocker)
-    recorder.set_instance_bounds.side_effect = KeyError("no route")
+    recorder, _ = _scaling_deploy_recorder(mocker)
+    recorder.bounds.side_effect = KeyError("no route")
 
     with pytest.raises(KeyError):
         cli.deploy(
@@ -1285,7 +1907,7 @@ def test_deploy_hedges_when_the_bounds_response_is_lost(
         if "instance bounds" in msg
     )
     assert "may or may not have been applied" in warning
-    recorder.create_deployment.assert_not_called()
+    recorder.submit.assert_not_called()
 
 
 def test_deploy_does_not_warn_about_bounds_it_never_applied(
