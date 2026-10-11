@@ -787,9 +787,16 @@ class StateManagerRedis(StateManager):
                     ):
                         return
                     # The lock may now expire with the current user's deadline,
-                    # so renew it as soon as the next user takes over.
-                    with contextlib.suppress(TimeoutError, asyncio.TimeoutError):
-                        await asyncio.wait_for(handoff.wait(), expiration / 3)
+                    # so renew it as soon as the next user takes over. Not
+                    # `asyncio.wait_for`, which can swallow the cancellation
+                    # that ends this loop on Python 3.11.
+                    renew_later = asyncio.get_running_loop().call_later(
+                        expiration / 3, handoff.set
+                    )
+                    try:
+                        await handoff.wait()
+                    finally:
+                        renew_later.cancel()
             finally:
                 if self._cached_state_handoffs.get(lock_key) is handoff:
                     del self._cached_state_handoffs[lock_key]
