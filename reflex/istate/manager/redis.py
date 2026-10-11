@@ -86,6 +86,26 @@ async def enable_keyspace_notifications(
             raise
 
 
+async def _wait_unless_cancelled(
+    task: asyncio.Task,
+) -> asyncio.CancelledError | None:
+    """Wait for a task to finish, unless the waiting task is cancelled first.
+
+    Unlike awaiting the task, this neither cancels it nor raises its error.
+
+    Args:
+        task: The task to wait for.
+
+    Returns:
+        The cancellation that interrupted the wait, if any.
+    """
+    try:
+        await asyncio.wait({task})
+    except asyncio.CancelledError as err:
+        return err
+    return None
+
+
 def _default_lock_expiration() -> int:
     """Get the default lock expiration time.
 
@@ -854,10 +874,7 @@ class StateManagerRedis(StateManager):
             flushing = asyncio.create_task(do_flush())
             cancelled_error: asyncio.CancelledError | None = None
             while not flushing.done():
-                try:
-                    # Unlike awaiting the task, this neither cancels it nor raises its error.
-                    await asyncio.wait({flushing})
-                except asyncio.CancelledError as err:  # noqa: PERF203  # once per cancellation
+                if (err := await _wait_unless_cancelled(flushing)) is not None:
                     cancelled_error = err
             try:
                 flushing.result()
