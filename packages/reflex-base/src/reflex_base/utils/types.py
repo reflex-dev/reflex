@@ -1151,7 +1151,8 @@ def is_dataframe(value: type) -> bool:
     """
     if is_generic_alias(value) or value == Any:
         return False
-    return value.__name__ == "DataFrame"
+    # An annotation that could not be resolved is a ForwardRef, which has no name.
+    return getattr(value, "__name__", None) == "DataFrame"
 
 
 def is_valid_var_type(type_: type) -> bool:

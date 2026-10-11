@@ -7078,12 +7078,30 @@ def test_undeclared_double_underscore_name_is_rejected(clean_registration_contex
     assert not state.dirty_vars
 
 
+_NO_DEFAULT = object()
+
+
 @pytest.mark.parametrize(
     ("annotation", "default"),
     [
         ("list[MissingItem]", []),
         ("dict[str, MissingItem]", {}),
         ("MissingItem | None", None),
+        ("list[MissingItem]", _NO_DEFAULT),
+        ("dict[str, MissingItem]", _NO_DEFAULT),
+        ("MissingItem | None", _NO_DEFAULT),
+        ("MissingItem", _NO_DEFAULT),
+        ("MissingItem", None),
+    ],
+    ids=[
+        "list",
+        "dict",
+        "optional",
+        "list-no-default",
+        "dict-no-default",
+        "optional-no-default",
+        "bare-no-default",
+        "bare-none-default",
     ],
 )
 def test_var_annotation_with_undefined_name_raises_name_error(
@@ -7092,17 +7110,34 @@ def test_var_annotation_with_undefined_name_raises_name_error(
     """An annotation naming an undefined symbol raises a NameError naming it.
 
     With postponed annotations the unresolved annotation used to reach var
-    typing as a ForwardRef and fail with an unrelated TypeError.
+    typing as a ForwardRef and fail with an unrelated TypeError or
+    AttributeError, whether or not the var has a default.
 
     Args:
         annotation: The annotation, which names a symbol that does not exist.
-        default: The default value of the var.
+        default: The default value of the var, or _NO_DEFAULT for none.
     """
-    namespace = {
+    namespace: dict[str, Any] = {
         "__module__": __name__,
         "__annotations__": {"items": annotation},
-        "items": default,
     }
+    if default is not _NO_DEFAULT:
+        namespace["items"] = default
 
     with pytest.raises(NameError, match="MissingItem"):
         type("UndefinedNameState", (BaseState,), namespace)
+
+
+def test_var_annotation_with_nested_forward_ref_is_left_alone() -> None:
+    """A ForwardRef inside a generic is not an unresolved annotation."""
+    from typing import ForwardRef
+
+    namespace = {
+        "__module__": __name__,
+        "__annotations__": {"items": list[ForwardRef("MissingItem")]},  # pyright: ignore[reportArgumentType]
+        "items": [],
+    }
+
+    state = type("NestedForwardRefState", (BaseState,), namespace)
+
+    assert "items" in state.get_fields()

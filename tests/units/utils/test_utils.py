@@ -334,6 +334,7 @@ class DataFrame:
         (dict, False),
         (DataFrame, True),
         (typing.Any, False),
+        (typing.ForwardRef("DataFrame"), False),
     ],
 )
 def test_is_dataframe(class_type, expected):

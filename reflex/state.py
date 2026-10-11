@@ -26,6 +26,7 @@ from typing import (
     Self,
     TypeVar,
     cast,
+    get_args,
     get_type_hints,
     overload,
 )
@@ -272,9 +273,14 @@ def get_var_for_field(cls: type[BaseState], name: str, f: Field) -> Var:
         format.format_state_name(cls.get_full_name()) + "." + name + FIELD_MARKER
     )
 
-    if isinstance(f.outer_type_, ForwardRef):
-        # The annotation could not be resolved. Resolving it again raises the
-        # NameError that names the missing symbol.
+    # An unresolved annotation is a ForwardRef, possibly inside the Optional that
+    # a var without a default is widened to. A ForwardRef nested in a generic
+    # (e.g. ``list["Item"]``) is left alone.
+    outer_types = (
+        get_args(f.outer_type_) if types.is_union(f.outer_type_) else (f.outer_type_,)
+    )
+    if any(isinstance(annotation, ForwardRef) for annotation in outer_types):
+        # Resolving it again raises the NameError that names the missing symbol.
         cls._get_type_hints()
 
     return dispatch(
