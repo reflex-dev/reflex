@@ -705,20 +705,13 @@ rx._run_dev(constants.RunningMode.FULLSTACK, 3000, 8000, "127.0.0.1")
     )
     child = None
     try:
-        deadline = time.monotonic() + DEFAULT_TIMEOUT
-        while time.monotonic() < deadline:
-            if launcher.poll() is not None:
-                pytest.fail(f"launcher exited early: {launcher.returncode}")
-            if pids.exists() and (pid := pids.read_text().strip()):
-                child = int(pid)
-                break
-            time.sleep(0.01)
-        assert child is not None
-        try:
-            launcher.wait(timeout=2)
-        except subprocess.TimeoutExpired:
-            pytest.fail("full-stack run hung after backend returned")
-        assert launcher.returncode == 0
+        # The launcher may finish before the parent gets scheduled to observe it.
+        _, stderr = launcher.communicate(timeout=DEFAULT_TIMEOUT)
+        assert pids.exists(), (
+            "frontend did not start: " + stderr.decode(errors="replace")[-1000:]
+        )
+        child = int(pids.read_text().strip())
+        assert launcher.returncode == 0, stderr.decode(errors="replace")[-1000:]
         with contextlib.suppress(psutil.NoSuchProcess):
             assert psutil.Process(child).status() in (
                 psutil.STATUS_ZOMBIE,
@@ -727,7 +720,7 @@ rx._run_dev(constants.RunningMode.FULLSTACK, 3000, 8000, "127.0.0.1")
     finally:
         if launcher.poll() is None:
             os.killpg(launcher.pid, signal.SIGKILL)
-            launcher.wait(timeout=DEFAULT_TIMEOUT)
+            launcher.communicate(timeout=DEFAULT_TIMEOUT)
         if child is not None:
             with contextlib.suppress(ProcessLookupError):
                 os.kill(child, signal.SIGKILL)
