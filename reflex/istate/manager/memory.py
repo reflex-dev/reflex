@@ -12,7 +12,6 @@ from reflex.istate.manager import (
     StateManager,
     StateModificationContext,
     _default_token_expiration,
-    _mark_state_tree_dirty,
     _release_state_tree,
 )
 from reflex.istate.manager.token import TOKEN_TYPE, BaseStateToken, StateToken
@@ -60,7 +59,6 @@ class StateManagerMemory(StateManager):
                 self.states[key] = token.cls.get_root_state()(
                     _reflex_internal_init=True
                 )
-                _mark_state_tree_dirty(self.states[key])
             else:
                 self.states[key] = token.cls()
         return cast(TOKEN_TYPE, self.states[key])
