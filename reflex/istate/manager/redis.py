@@ -784,6 +784,11 @@ class StateManagerRedis(StateManager):
         broken_at: float | None = None
 
         async def keep_lock_alive() -> None:
+            """Renew the lease's lock for each use of the cached state and for the flush.
+
+            Stops once the lease no longer owns the lock or a use runs past its
+            lock expiration.
+            """
             # Whoever uses the cached state ahead of the flush gets the lock
             # expiration from when they got it (or from an early lease break, if
             # later), as a handler holding the lock itself would; the flush gets
@@ -822,6 +827,11 @@ class StateManagerRedis(StateManager):
                     del self._cached_state_handoffs[lock_key]
 
         async def do_flush() -> None:
+            """Write the cached state to redis and end the local lease.
+
+            Keeps the lock alive while the uses queued ahead of the write and
+            the write itself run.
+            """
             if (state_lock := self._cached_states_locks.get(lock_key)) is None:
                 # If we lost the lock, we can't write the state, something went wrong.
                 logger.warning(
@@ -867,6 +877,11 @@ class StateManagerRedis(StateManager):
                     await keep_alive
 
         async def flush() -> None:
+            """Run the flush to completion and report a failure to the event loop.
+
+            A cancellation of this task waits for the flush and is re-raised
+            once the write is done.
+            """
             # The flush runs to completion even when this task is cancelled,
             # and this task waits for it: returning early would release the
             # lock under the write, which the fenced write then fails, and let
@@ -889,6 +904,7 @@ class StateManagerRedis(StateManager):
                 raise cancelled_error
 
         async def lease_breaker():
+            """Hold the lease until its hold time ends or it is broken, then flush it."""
             nonlocal lease_started, broken_at
             lease_started = True
             cancelled_error: asyncio.CancelledError | None = None
@@ -911,10 +927,16 @@ class StateManagerRedis(StateManager):
                         raise cancelled_error
 
         async def release_unstarted_lease() -> None:
+            """Flush the state of a lease cancelled before it started and release its lock."""
             async with lease_ctx:
                 await flush()
 
         def on_lease_done(lease: asyncio.Task) -> None:
+            """Schedule the cleanup of a lease that was cancelled before it started.
+
+            Args:
+                lease: The finished lease task.
+            """
             # A lease cancelled before its first step never ran lease_breaker,
             # so nothing else flushes its state and releases its lock.
             if lease_started:
