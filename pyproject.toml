@@ -18,7 +18,7 @@ maintainers = [
 ]
 readme = "README.md"
 keywords = ["web", "framework"]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 dependencies = [
   "click >=8.2",
   "granian[reload] >=2.7.4",
@@ -32,39 +32,43 @@ dependencies = [
   "starlette >=1.3.1",
   "typing_extensions >=4.13.0",
   "wrapt >=1.17.0,<2.6",
-  "reflex-base >= 0.9.12.dev0",
-  "reflex-components-code >= 0.9.0",
-  "reflex-components-core >= 0.9.6",
-  "reflex-components-dataeditor >= 0.9.0",
-  "reflex-components-gridjs >= 0.9.0",
-  "reflex-components-lucide >= 0.9.0",
-  "reflex-components-markdown >= 0.9.0",
-  "reflex-components-moment >= 0.9.4",
-  "reflex-components-plotly >= 0.9.0",
-  "reflex-components-radix >= 0.9.9",
-  "reflex-components-react-player >= 0.9.0",
-  "reflex-components-recharts >= 0.9.0",
-  "reflex-components-sonner >= 0.9.0",
-  "reflex-hosting-cli >= 0.1.71",
+  "reflex-base >= 0.10.0a2.dev0",
+  "reflex-components-code >= 0.10.0",
+  "reflex-components-core >= 0.10.0",
+  "reflex-components-dataeditor >= 0.10.0",
+  "reflex-components-gridjs >= 0.10.0",
+  "reflex-components-lucide >= 1.1.0",
+  "reflex-components-markdown >= 0.10.0",
+  "reflex-components-moment >= 0.10.0",
+  "reflex-components-plotly >= 0.10.0",
+  "reflex-components-radix >= 0.10.0",
+  "reflex-components-react-player >= 0.10.0",
+  "reflex-components-recharts >= 0.10.0",
+  "reflex-components-sonner >= 0.10.0",
+  # 0.1.73a1 predates the Python 3.11 train; the floor lifts to the next alpha.
+  "reflex-hosting-cli >= 0.2.0, != 0.1.73a1",
 ]
 
 classifiers = [
   "Development Status :: 4 - Beta",
   "License :: OSI Approved :: Apache Software License",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: 3.15",
 ]
 
 [project.optional-dependencies]
 db = [
   "alembic >=1.15.2,<2.0",
+  # SQLAlchemy 2.1 made greenlet an optional extra, but reflex.model imports
+  # sqlalchemy.ext.asyncio, which needs it at import time. 3.3 is the first
+  # release with wheels for every supported CPython, Python 3.14 included.
+  "greenlet >=3.3",
   "pydantic >=2.12.0,<3.0",
-  # 0.0.45 changes datetime columns to UTC and rejects existing naive values.
-  "sqlmodel >=0.0.24,<0.0.45",
+  "sqlmodel >=0.0.24",
 ]
 pydantic = ["reflex-base[pydantic]"]
 testing = [
@@ -208,7 +212,7 @@ exclude = [
 reportIncompatibleMethodOverride = false
 
 [tool.ruff]
-target-version = "py310"
+target-version = "py311"
 output-format = "concise"
 extend-exclude = ["tests/units/reflex_base/utils/pyi_generator/golden"]
 lint.isort.split-on-trailing-comma = false
@@ -220,6 +224,8 @@ lint.ignore = [
   "ANN2",
   "ANN4",
   "ARG",
+  # Timeouts are explicit parameters of the testing and state-manager APIs.
+  "ASYNC109",
   # Background event handlers hold `async with self` across `yield` by design.
   "ASYNC119",
   "BLE",
@@ -259,6 +265,9 @@ lint.ignore = [
   "TD",
   "TRY0",
   "TRY400", # User-facing errors deliberately omit tracebacks; debug logs carry diagnostics where appropriate.
+  # `StrEnum` renders members as their value where `(str, Enum)` renders
+  # `Cls.NAME`; these enums rely on the latter in `str()` and f-strings.
+  "UP042",
 ]
 lint.pydocstyle.convention = "google"
 lint.flake8-bugbear.extend-immutable-calls = [
@@ -410,8 +419,8 @@ internal-packages = ["reflex-components-internal", "reflex-site-shared"]
 # changelog detection, no news fragment, and publish refuses it.
 never-publish-packages = ["integrations-docs", "reflex-bench"]
 
-# reflex's metadata pins reflex-base exactly, so the two always release together
-# at one version and reflex uploads only after reflex-base is on PyPI.
+# reflex pins reflex-base exactly and publishes after it, reusing a base tag at
+# its own version when one exists. reflex-base releases on its own.
 [[tool.reflex-release.lockstep]]
 members = ["reflex", "reflex-base"]
 publish-last = ["reflex"]
@@ -482,9 +491,6 @@ backend_held = [
     # (including `get_state`, so it is not test-only). See #7026 for the reproduction
     # and the A/B that isolated it; requested in #6764.
     "redis",
-    # 0.0.45 changes datetime storage and requires existing database migrations.
-    # Keep naive datetime defaults working until a compatibility path is available.
-    "sqlmodel",
 ]
 backend_pinned = [
     # Linters are pinned deliberately and bumped on their own cadence.

@@ -96,7 +96,7 @@ created with `uv venv --relocatable --python <--python>` and never containing
 the harness. The key is the first 16 hex digits of the SHA-256 of the subject's
 identity (the version; the commit of a git ref; the absolute path, commit and
 dirty flag of a path), the `--python` value and the harness's extra subject
-requirements (none so far). A venv is built in a temporary directory and renamed
+requirements (`SUBJECT_REQUIREMENTS`: `sqlmodel` and `alembic`, the ranges of reflex's `db` extra, for the playground's database, and `plotly`, which `rx.plotly` imports). A venv is built in a temporary directory and renamed
 into place when complete, under a lock, so a half-built venv is never reused and
 concurrent runs build it once. A `path:` subject with uncommitted changes (or
 outside git) is rebuilt every time. The build happens before anything is timed
@@ -283,7 +283,12 @@ One invocation drives several fixtures, so the document-level `fixture` stays
 - **The playground**, `examples/playground`: a committed app whose hash is the
   line in its `.content-hash` (see its README for the element ids and hot reload
   targets benchmarks rely on). `materialize_playground(dest)` copies it without
-  build output.
+  build output. It has 21 pages (about 3000 component instances, 16 states)
+  and a sqlite table: loading the app seeds 2000 fixed rows into an empty table,
+  in one transaction, so each staged copy creates its `playground.db` once. It
+  needs `sqlmodel`, `alembic` and `plotly`, which
+  `SUBJECT_REQUIREMENTS` installs into subject venvs; the workspace gets them
+  from the `dev` group.
 - **Generated apps**, `reflex_bench.fixtures.generate`: `GenParams(pages,
   components_per_page, state_vars, substate_depth, computed_vars, seed)` gives a
   deterministic app of any size, hashed from the generator's source and the
@@ -590,9 +595,10 @@ app and reflex version, so every metric is exact and a sample is one run.
 - **Keepalives do not count**: an engine.io ping and its pong are timing, not
   payload, so a slow run moves the same bytes as a fast one.
 - **`wire.navigate`** sends what the frontend sends on a route change: one
-  `on_load_internal` with the new route's `router_data` (`update_vars_internal`
-  goes first only when the browser holds client storage vars, which the
-  playground has none of). The reply carries the root state's `router` and,
+  `on_load_internal` with the new route's `router_data`. `update_vars_internal`
+  goes first only once the browser holds a value of a client storage var (the
+  playground's `/storage` page sets some); a fresh browser holds none, on 0.8.23
+  and 0.9 alike, so neither the hydration nor the navigation sends it. The reply carries the root state's `router` and,
   on the dynamic route, the route argument.
 - **`wire.delta`** does not use the playground: its `setup_cache` writes a
   small app whose state holds 1000 ints in a list, 1000 keys in a dict and 200

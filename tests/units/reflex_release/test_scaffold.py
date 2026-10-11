@@ -342,7 +342,7 @@ def test_every_generated_run_step_pins_the_shell(config: Config, repo: Path) -> 
 def test_dispatch_inputs_give_a_lockstep_group_one_checkbox(
     config: Config, repo: Path
 ) -> None:
-    write_lockstep(repo)
+    write_lockstep(repo, publish_last=False)
     reloaded = load_config(repo)
     entries = dispatch_inputs(reloaded)
     assert [entry.input_id for entry in entries] == ["mypkg"]
@@ -353,7 +353,7 @@ def test_dispatch_inputs_give_a_lockstep_group_one_checkbox(
 def test_checkboxes_select_every_member_of_a_lockstep_group(
     config: Config, repo: Path
 ) -> None:
-    write_lockstep(repo)
+    write_lockstep(repo, publish_last=False)
     reloaded = load_config(repo)
     rendered = render("dispatch_release.yml", reloaded)
     assert "      mypkg:\n" in rendered
@@ -363,6 +363,22 @@ def test_checkboxes_select_every_member_of_a_lockstep_group(
         "PACKAGES"
     ]
     assert packages == "${{ inputs.mypkg && 'mypkg,widget-core' || '' }}"
+
+
+def test_dispatch_inputs_select_publish_last_and_its_dependency_separately(
+    config: Config, repo: Path
+) -> None:
+    """The workflow form can select an early sibling without its dependent."""
+    write_lockstep(repo)
+    reloaded = load_config(repo)
+    entries = dispatch_inputs(reloaded)
+    assert [(entry.input_id, entry.packages) for entry in entries] == [
+        ("mypkg", ("mypkg",)),
+        ("widget_core", ("widget-core",)),
+    ]
+    rendered = render("dispatch_release.yml", reloaded)
+    assert "${{ inputs.mypkg && 'mypkg' || '' }}" in rendered
+    assert "${{ inputs.widget_core && 'widget-core' || '' }}" in rendered
 
 
 def test_selection_parser_accepts_the_folded_scalar_shape() -> None:

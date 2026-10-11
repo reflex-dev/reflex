@@ -10,15 +10,10 @@ the workspace. ``bump = true`` derives ``0.9.10.post2.devN`` there instead, and
 ``0.9.13.devN`` after a final ``0.9.12``, so ``>= <next>.dev0`` always works.
 """
 
-import sys
+import tomllib
 from pathlib import Path
 
 import pytest
-
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    tomllib = pytest.importorskip("tomli", reason="requires tomli on Python < 3.11")
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 

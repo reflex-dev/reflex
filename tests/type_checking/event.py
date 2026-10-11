@@ -1,11 +1,10 @@
 """Inferred types for `reflex_base.event` that are part of the public contract."""
 
 from collections.abc import Callable
-from typing import Any
+from typing import Any, assert_type
 
 from reflex_base.event import EventCallback, event
 from reflex_base.vars.base import Var
-from typing_extensions import assert_type
 
 from reflex.state import State
 
