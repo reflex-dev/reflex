@@ -21,7 +21,7 @@ from collections.abc import AsyncGenerator, Callable, Mapping
 from hashlib import md5
 from textwrap import dedent
 from types import MethodType, ModuleType
-from typing import Any, ClassVar, Literal, TypeVar, cast
+from typing import Any, ClassVar, ForwardRef, Literal, TypeVar, cast
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -7130,7 +7130,6 @@ def test_var_annotation_with_undefined_name_raises_name_error(
 
 def test_var_annotation_with_nested_forward_ref_is_left_alone() -> None:
     """A ForwardRef inside a generic is not an unresolved annotation."""
-    from typing import ForwardRef
 
     namespace = {
         "__module__": __name__,
