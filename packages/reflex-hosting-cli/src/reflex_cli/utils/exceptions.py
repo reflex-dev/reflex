@@ -31,7 +31,19 @@ class TokenValidationError(ReflexHostingCliError):
 
 
 class TokenAccessDeniedError(TokenValidationError, ValueError):
-    """Raised when the control plane rejects the access token."""
+    """Raised when the control plane rejects the access token.
+
+    Trying again with the same token cannot succeed, so it is never retryable.
+    """
+
+    def __init__(self, message: str, request_id: str = ""):
+        """Initialize the error.
+
+        Args:
+            message: The error message.
+            request_id: The X-Request-ID header sent with the failed request.
+        """
+        super().__init__(message, request_id, retryable=False)
 
 
 class GetAppError(ReflexHostingCliError):

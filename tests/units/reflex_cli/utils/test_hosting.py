@@ -1156,6 +1156,30 @@ def test_validate_reports_the_status_of_a_refused_request(
     assert exc_info.value.retryable is retryable
 
 
+@pytest.mark.parametrize("status_code", [401, 403])
+def test_validate_does_not_call_a_rejected_token_retryable(status_code: int):
+    """A token the control plane refused is not worth trying again.
+
+    Args:
+        status_code: The status the API answered with.
+    """
+    client = _client()
+    client.api.auth.me.side_effect = api_error(status_code, "denied")
+
+    with pytest.raises(TokenAccessDeniedError) as exc_info:
+        hosting._validate("fictional-token", client.api)
+
+    assert exc_info.value.retryable is False
+    assert isinstance(exc_info.value, TokenValidationError)
+
+
+def test_token_access_denied_error_is_never_retryable():
+    """The error is not retryable however it is built."""
+    assert TokenAccessDeniedError("access denied").retryable is False
+    assert TokenAccessDeniedError("access denied", "req-1").retryable is False
+    assert TokenValidationError("server error").retryable is True
+
+
 @pytest.mark.parametrize("error", [APIConnectionError, APITimeoutError])
 def test_validate_retries_connection_failures(error: type[APIConnectionError]):
     """A request that never got an answer is worth trying again.
