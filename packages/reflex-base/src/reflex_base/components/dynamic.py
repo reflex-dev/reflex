@@ -1,5 +1,6 @@
 """Components that are dynamically generated on the backend."""
 
+import dataclasses
 from typing import TYPE_CHECKING, Any, Union
 
 from reflex_base import constants
@@ -202,15 +203,19 @@ def load_dynamic_serializer():
         for lib, names in component_imports.items():
             formatted_lib_name = format_library_name(lib)
             root_is_bundled = formatted_lib_name in libs_in_window
-            fallback = (
-                lib
-                if root_is_bundled or lib.startswith((".", "/", "$/", "http"))
-                else get_cdn_url(lib)
-            )
+            lib_is_path = lib.startswith((".", "/", "$/", "http"))
+            fallback = lib if root_is_bundled or lib_is_path else get_cdn_url(lib)
             for name in names:
                 subpath = name.package_path if name.package_path != "/" else ""
                 import_path = formatted_lib_name + subpath
                 is_bundled = root_is_bundled or import_path in libs_in_window
+                if subpath and not is_bundled and not lib_is_path:
+                    # jsdelivr requires `/+esm` to end the path, so the subpath
+                    # belongs in the CDN url rather than after it.
+                    imports.setdefault(get_cdn_url(lib + subpath), []).append(
+                        dataclasses.replace(name, package_path="/")
+                    )
+                    continue
                 imports.setdefault(lib if is_bundled else fallback, []).append(name)
                 if subpath and is_bundled:
                     _bundle_library(import_path)
