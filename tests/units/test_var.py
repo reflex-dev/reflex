@@ -1153,6 +1153,11 @@ def test_string_operations():
     assert str(basic_string * 2) == '"Hello, World!".repeat(Math.max(0, 2))'
     assert str(2 * basic_string) == '"Hello, World!".repeat(Math.max(0, 2))'
     assert str(basic_string * -1) == '"Hello, World!".repeat(Math.max(0, -1))'
+    float_count = LiteralNumberVar.create(2.5)
+    with pytest.raises(TypeError):
+        basic_string * float_count
+    with pytest.raises(TypeError):
+        float_count * basic_string
     assert (
         str(basic_string.split(" ").join(",")) == '"Hello, World!".split(" ").join(",")'
     )

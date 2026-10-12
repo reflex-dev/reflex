@@ -747,7 +747,9 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         Returns:
             StringVar: The resulting sequence after multiplication.
         """
-        if not isinstance(other, (NumberVar, int)):
+        if not isinstance(other, (NumberVar, int)) or (
+            isinstance(other, NumberVar) and other._is_strict_float()
+        ):
             raise_unsupported_operand_types("*", (type(self), type(other)))
 
         return string_repeat_operation(self, other)
@@ -761,7 +763,9 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         Returns:
             StringVar: The resulting sequence after multiplication.
         """
-        if not isinstance(other, (NumberVar, int)):
+        if not isinstance(other, (NumberVar, int)) or (
+            isinstance(other, NumberVar) and other._is_strict_float()
+        ):
             raise_unsupported_operand_types("*", (type(other), type(self)))
 
         return string_repeat_operation(self, other)

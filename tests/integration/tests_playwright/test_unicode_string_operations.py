@@ -97,7 +97,9 @@ def test_unicode_string_operations_preserve_code_points(
     expect(page.locator("#repeat-dynamic")).to_have_text("a\U0001f600ba\U0001f600b")
     expect(page.locator("#repeat-left")).to_have_text("a\U0001f600ba\U0001f600b")
     expect(page.locator("#repeat-negative")).to_be_empty()
-    expect(page.locator("#foreach")).to_have_text("a\U0001f600b")
+    foreach_items = page.locator("#foreach > *")
+    expect(foreach_items).to_have_count(3)
+    assert foreach_items.all_text_contents() == ["a", "\U0001f600", "b"]
     expect(page.locator("#character")).to_have_text("\U0001f600")
     expect(page.locator("#slice")).to_have_text("\U0001f600b")
     expect(page.locator("#plain-length")).to_have_text("5")
