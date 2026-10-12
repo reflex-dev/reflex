@@ -140,9 +140,10 @@ class ProxyTestState(rx.State):
 
 
 class RuntimeComputedProxyState(BaseState):
-    """State with a runtime-only computed value and a field-backed one."""
+    """State with runtime-only and field-backed computed values."""
 
     value: int = 1
+    _backend_value: int = 2
 
     @rx.var
     def doubled(self) -> int:
@@ -152,6 +153,15 @@ class RuntimeComputedProxyState(BaseState):
             The doubled state value.
         """
         return self.value * 2
+
+    @rx.var
+    def doubled_backend(self) -> int:
+        """A computed value that depends only on a backend field.
+
+        Returns:
+            The doubled backend value.
+        """
+        return self._backend_value * 2
 
     @rx.var
     def runtime_value(self) -> str:
@@ -227,6 +237,7 @@ async def test_state_proxy_recreation_skips_unavailable_runtime_computed_var(
     values = delta[RuntimeComputedProxyState.get_full_name()]
     assert values["value" + FIELD_MARKER] == 1
     assert values["doubled" + FIELD_MARKER] == 2
+    assert values["doubled_backend" + FIELD_MARKER] == 4
     assert "runtime_value" + FIELD_MARKER not in values
 
 

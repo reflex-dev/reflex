@@ -271,9 +271,14 @@ class StateProxy(wrapt.ObjectProxy):
             with _track_state_recreation() as recreated_states:
                 mutable_state = await self._self_actx.__aenter__()
             for state in recreated_states:
+                recreated_fields = {
+                    name
+                    for name, field in state.__fields__.items()
+                    if field._owner is type(state)
+                }
                 state._was_touched = True
                 state.dirty_vars.update(state.base_vars)
-                state._mark_dirty(state.base_vars)
+                state._mark_dirty(recreated_fields)
             refreshed_state = mutable_state.get_substate(self._self_substate_path)
             self._self_mutable = True
             self._self_entered_context = True
