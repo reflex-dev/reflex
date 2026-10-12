@@ -6,6 +6,7 @@ import multiprocessing
 import os
 import socket
 import sys
+import threading
 import time
 from http.client import HTTPConnection
 from multiprocessing.queues import Queue
@@ -682,7 +683,7 @@ def _dev_granian_supervisor(mocker: MockerFixture, tmp_path: Path, port: int):
         exitcode = None
 
         def join(self):
-            pass
+            """Return at once: the fake worker is never running."""
 
     class FakeWorker:
         def __init__(self):
@@ -705,6 +706,7 @@ def _dev_granian_supervisor(mocker: MockerFixture, tmp_path: Path, port: int):
             self.backlog = 16
             self.wrks = []
             self.shutdowns = []
+            self.main_loop_interrupt = threading.Event()
             self._ssp = self._shd = self._sfd = None
             self._sso: Any = None
             servers.append(self)
@@ -785,18 +787,28 @@ def test_run_granian_backend_keeps_socket_across_worker_restart(
 def test_run_granian_backend_reports_only_unclean_worker_exits(
     tmp_path: Path, mocker: MockerFixture
 ):
-    """A worker exiting 0 was asked to stop; any other exit reaches granian's report."""
-    server = _dev_granian_supervisor(mocker, tmp_path, _free_port())
+    """Only a worker exiting 0 while the supervisor is signalled skips granian's report."""
+    port = _free_port()
+    server = _dev_granian_supervisor(mocker, tmp_path, port)
     try:
-        clean = _spawn_supervisor_worker(server)
+        server._init_shared_socket()
+        stopped = _spawn_supervisor_worker(server)
+        stopped.inner.exitcode = 0
+        stopped.alive = False
+        server.main_loop_interrupt.set()
+        stopped._watcher()
+        assert not stopped.granian_watched
+        assert _port_is_bindable(port)
+
+        mocker.patch.object(server.main_loop_interrupt, "wait", return_value=False)
+        exited = _spawn_supervisor_worker(server)
+        exited.inner.exitcode = 0
+        exited._watcher()
+        assert exited.granian_watched
+
         crashed = _spawn_supervisor_worker(server)
-        clean.inner.exitcode = 0
         crashed.inner.exitcode = -1
-
-        clean._watcher()
         crashed._watcher()
-
-        assert not clean.granian_watched
         assert crashed.granian_watched
     finally:
         server._close_shared_socket()
