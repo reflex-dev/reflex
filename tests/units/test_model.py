@@ -1,8 +1,11 @@
+import datetime
 import math
+import tomllib
 from pathlib import Path
 from unittest import mock
 
 import pytest
+from packaging.requirements import Requirement
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import Event
 
@@ -23,8 +26,74 @@ from tests.units.test_state import (
 )
 
 pytest.importorskip("alembic")
-pytest.importorskip("sqlalchemy")
-pytest.importorskip("sqlmodel")
+sa = pytest.importorskip("sqlalchemy")
+sqlmodel = pytest.importorskip("sqlmodel")
+
+
+@pytest.mark.parametrize("version", ["0.0.45", "0.0.47"])
+def test_db_extra_accepts_utc_sqlmodel(version: str):
+    """The database extra must accept versions used to generate UTC migrations.
+
+    Args:
+        version: A SQLModel version supporting UTCDateTime.
+    """
+    project = tomllib.loads((Path(__file__).parents[2] / "pyproject.toml").read_text())
+    requirement = next(
+        parsed
+        for dep in project["project"]["optional-dependencies"]["db"]
+        if (parsed := Requirement(dep)).name == "sqlmodel"
+    )
+    assert requirement.specifier.contains(version)
+
+
+@pytest.mark.skipif(
+    not hasattr(sqlmodel, "UTCDateTime"), reason="SQLModel before 0.0.45"
+)
+def test_utc_datetime_migration_and_roundtrip(
+    tmp_working_dir: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    model_registry: type[ModelRegistry],
+):
+    """Generated UTC migrations work on fresh databases and retain aware datetimes.
+
+    Args:
+        tmp_working_dir: The database and migration directory.
+        monkeypatch: The configuration patch fixture.
+        model_registry: The isolated model registry.
+    """
+    monkeypatch.setattr(
+        reflex.constants, "ALEMBIC_CONFIG", str(tmp_working_dir / "alembic.ini")
+    )
+    config = mock.Mock(db_url=f"sqlite:///{tmp_working_dir}/reflex.db")
+    monkeypatch.setattr(reflex.model, "get_config", lambda: config)
+    alembic_init()
+
+    class UTCPost(Model, table=True):
+        created_at: datetime.datetime
+
+    with get_engine().connect() as connection:
+        assert alembic_autogenerate(connection=connection, message="UTC datetime")
+    migration = next((tmp_working_dir / "alembic" / "versions").glob("*.py"))
+    assert "sqlmodel.sql.sqltypes.UTCDateTime()" in migration.read_text()
+    assert migrate()
+
+    value = datetime.datetime(
+        2026, 9, 21, 12, tzinfo=datetime.timezone(datetime.timedelta(hours=5))
+    )
+    with reflex.model.session() as session:
+        session.add(UTCPost(created_at=value))
+        session.commit()
+        stored = session.exec(sqlmodel.select(UTCPost)).one()
+        assert stored.created_at == value
+        assert stored.created_at.utcoffset() == datetime.timedelta(0)
+
+    get_engine().dispose()
+    (tmp_working_dir / "reflex.db").unlink()
+    assert migrate()
+    with reflex.model.session() as session:
+        assert session.exec(sqlmodel.select(UTCPost)).all() == []
+
+    model_registry.get_metadata().clear()
 
 
 @pytest.fixture
@@ -115,6 +184,10 @@ def test_automigration(
     version_scripts = list(versions.glob("*.py"))
     assert len(version_scripts) == 1
     assert version_scripts[0].name.endswith("initial_revision.py")
+    assert set(sa.inspect(get_engine()).get_table_names()) == {
+        "alembic_version",
+        "alembicthing",
+    }
 
     with reflex.model.session() as session:
         session.add(AlembicThing(id=None, t1="foo"))
@@ -263,7 +336,8 @@ def test_automigration_add_column_with_callable_default(
     class AlembicCallable(Model, table=True):  # pyright: ignore [reportRedeclaration]
         t1: str
         created: datetime.datetime = sqlmodel.Field(
-            default_factory=datetime.datetime.now
+            default_factory=datetime.datetime.now,
+            sa_type=sa.DateTime(timezone=False),
         )
         count: int = 5
 
@@ -290,7 +364,8 @@ def test_automigration_add_column_with_callable_default(
     class AlembicCallable(Model, table=True):  # pyright: ignore [reportRedeclaration]
         t1: str
         created: datetime.datetime = sqlmodel.Field(
-            default_factory=datetime.datetime.now
+            default_factory=datetime.datetime.now,
+            sa_type=sa.DateTime(timezone=False),
         )
         count: int = 5
         note: str | None = sqlmodel.Field(default_factory=lambda: "generated")

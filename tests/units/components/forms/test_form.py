@@ -1,4 +1,4 @@
-from typing import TypedDict
+from typing import NotRequired, TypedDict
 
 import pytest
 from reflex_base.event import EventChain, prevent_default
@@ -14,7 +14,6 @@ from reflex_components_core.el.elements.forms import (
 )
 from reflex_components_core.el.elements.forms import Form as HTMLForm
 from reflex_components_radix.primitives.form import Form, FormMessage
-from typing_extensions import NotRequired
 
 import reflex as rx
 from reflex.compiler.utils import _root_only_custom_code

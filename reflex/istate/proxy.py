@@ -13,7 +13,16 @@ from collections.abc import Callable, Sequence
 from importlib import import_module
 from importlib.util import find_spec
 from types import MethodType
-from typing import TYPE_CHECKING, Any, Literal, NoReturn, SupportsIndex, TypeVar, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Literal,
+    NoReturn,
+    Self,
+    SupportsIndex,
+    TypeVar,
+    cast,
+)
 
 import wrapt
 from reflex_base import constants
@@ -31,7 +40,6 @@ from reflex_base.utils.types import (
     is_mutable_type,
 )
 from reflex_base.vars.base import Field
-from typing_extensions import Self
 
 from reflex.istate.manager.token import BaseStateToken
 

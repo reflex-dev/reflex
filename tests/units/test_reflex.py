@@ -74,6 +74,7 @@ def _run_cli_probe(probe: str) -> dict[str, object]:
         (["--help"], _CLI_STARTUP_DENIED_MODULES),
         (["--version"], _CLI_STARTUP_DENIED_MODULES),
         (["run", "--help"], _CLI_STARTUP_DENIED_MODULES),
+        (["component", "--help"], _CLI_STARTUP_DENIED_MODULES),
         (
             ["deploy", "--help"],
             _CLI_STARTUP_DENIED_MODULES - {"reflex_cli.v2.deploy"},
@@ -87,6 +88,7 @@ def _run_cli_probe(probe: str) -> dict[str, object]:
         "help",
         "version",
         "run-help",
+        "component-help",
         "deploy-help",
         "cloud-help",
     ],
@@ -227,9 +229,89 @@ print(json.dumps({
     }
 
 
-def test_component_command_is_not_registered():
-    """The custom components CLI has been removed."""
-    assert "component" not in reflex.cli.commands
+_COMPONENT_TEMPLATE_URL = "https://github.com/reflex-dev/component-template"
+
+
+def test_component_command_is_hidden():
+    """The removed component CLI keeps a shim that stays out of the listing."""
+    assert reflex.cli.commands["component"].hidden
+
+    result = click.testing.CliRunner().invoke(reflex.cli, ["--help"])
+
+    assert result.exit_code == 0
+    listed = [line.split()[0] for line in result.output.splitlines() if line.strip()]
+    assert "component" not in listed
+
+
+@pytest.mark.parametrize(
+    "args",
+    [
+        [],
+        ["init"],
+        ["build"],
+        ["install", "reflex-example"],
+        ["share", "--no-interactive"],
+        ["--library-name", "reflex-example"],
+    ],
+)
+def test_component_command_points_to_template(
+    caplog: pytest.LogCaptureFixture, args: list[str]
+):
+    """Every removed component subcommand reports where the workflow moved.
+
+    Args:
+        caplog: The pytest log capture fixture.
+        args: The arguments a user of the old workflow passes.
+    """
+    result = click.testing.CliRunner().invoke(reflex.cli.commands["component"], args)
+
+    assert result.exit_code == 1
+    assert _COMPONENT_TEMPLATE_URL in caplog.text
+    assert "No such option" not in result.output
+    assert "No such command" not in result.output
+
+
+@pytest.mark.parametrize("args", [["--help"], ["init", "--help"]])
+def test_component_help_points_to_template(
+    monkeypatch: pytest.MonkeyPatch, args: list[str]
+):
+    """Asking the removed component CLI for help prints the pointer.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+        args: The help invocation after ``reflex component``.
+    """
+    from reflex_base.utils import log
+
+    # Registered so teardown restores the variable the CLI callback sets.
+    monkeypatch.setenv(log._MANAGED_ENV_VAR, "true")
+    try:
+        result = click.testing.CliRunner().invoke(reflex.cli, ["component", *args])
+    finally:
+        log._reset()
+
+    assert result.exit_code == 0, result.output
+    assert _COMPONENT_TEMPLATE_URL in result.output
+
+
+def test_component_command_dispatches_from_cli():
+    """``reflex component init`` reaches the shim instead of a usage error."""
+    completed = subprocess.run(
+        [sys.executable, "-m", "reflex", "component", "init"],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=30,
+        env={
+            **os.environ,
+            "REFLEX_CHECK_LATEST_VERSION": "false",
+            "REFLEX_TELEMETRY_ENABLED": "false",
+        },
+    )
+
+    assert completed.returncode == 1, completed.stderr
+    assert _COMPONENT_TEMPLATE_URL in completed.stderr
+    assert "No such command" not in completed.stderr
 
 
 def test_lazy_command_delegates_click_introspection(monkeypatch: pytest.MonkeyPatch):
@@ -623,20 +705,13 @@ rx._run_dev(constants.RunningMode.FULLSTACK, 3000, 8000, "127.0.0.1")
     )
     child = None
     try:
-        deadline = time.monotonic() + DEFAULT_TIMEOUT
-        while time.monotonic() < deadline:
-            if launcher.poll() is not None:
-                pytest.fail(f"launcher exited early: {launcher.returncode}")
-            if pids.exists() and (pid := pids.read_text().strip()):
-                child = int(pid)
-                break
-            time.sleep(0.01)
-        assert child is not None
-        try:
-            launcher.wait(timeout=2)
-        except subprocess.TimeoutExpired:
-            pytest.fail("full-stack run hung after backend returned")
-        assert launcher.returncode == 0
+        # The launcher may finish before the parent gets scheduled to observe it.
+        _, stderr = launcher.communicate(timeout=DEFAULT_TIMEOUT)
+        assert pids.exists(), (
+            "frontend did not start: " + stderr.decode(errors="replace")[-1000:]
+        )
+        child = int(pids.read_text().strip())
+        assert launcher.returncode == 0, stderr.decode(errors="replace")[-1000:]
         with contextlib.suppress(psutil.NoSuchProcess):
             assert psutil.Process(child).status() in (
                 psutil.STATUS_ZOMBIE,
@@ -645,7 +720,7 @@ rx._run_dev(constants.RunningMode.FULLSTACK, 3000, 8000, "127.0.0.1")
     finally:
         if launcher.poll() is None:
             os.killpg(launcher.pid, signal.SIGKILL)
-            launcher.wait(timeout=DEFAULT_TIMEOUT)
+            launcher.communicate(timeout=DEFAULT_TIMEOUT)
         if child is not None:
             with contextlib.suppress(ProcessLookupError):
                 os.kill(child, signal.SIGKILL)
