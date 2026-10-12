@@ -5434,6 +5434,85 @@ def test_backend_var_inherits_field_default_and_surfaces_factory_errors():
         _ = FactoryState()._n  # pyright: ignore [reportCallIssue]
 
 
+def test_state_var_dataclasses_field_default():
+    """A state var default of dataclasses.field(...) compiles and resets (#7017)."""
+
+    class DataclassesFieldState(BaseState):
+        model: ModelDC = dataclasses.field(default_factory=ModelDC)
+        _tags: list[str] = dataclasses.field(default_factory=list)
+
+    state = DataclassesFieldState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    assert state.model == ModelDC()
+    assert state._tags == []
+    assert DataclassesFieldState.__fields__["_tags"].default_value() == []
+
+    state._tags.append("x")
+    state.reset()
+    assert state.model == ModelDC()
+    assert state._tags == []
+
+
+def test_state_dataclasses_field_without_backend_default():
+    """An annotated backend field uses its type default when bare."""
+
+    class BareBackendState(BaseState):
+        _n: int = dataclasses.field()
+
+    state = BareBackendState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    assert state._n == 0
+    assert BareBackendState.__fields__["_n"].default == 0
+
+
+def test_state_unannotated_dataclasses_factory():
+    """An unannotated dataclass field factory produces a serializable state var."""
+
+    class UnannotatedFieldState(BaseState):
+        items = dataclasses.field(default_factory=list)
+
+    state = UnannotatedFieldState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    assert state.items == []
+    state.items.append("x")
+    state.reset()
+    assert state.items == []
+
+
+@pytest.mark.usefixtures("forked_registration_context")
+@pytest.mark.parametrize("name", ["items", "_items"])
+def test_state_unannotated_dataclasses_mutable_default_is_copied(name):
+    """Mutable dataclass defaults stay isolated and reset to their original value.
+
+    Args:
+        name: A frontend or backend field name.
+    """
+    default = {"nested": []}
+    state_cls = type(
+        "MutableDataclassesFieldState",
+        (BaseState,),
+        {"__module__": __name__, name: dataclasses.field(default=default)},
+    )
+    first = state_cls(_reflex_internal_init=True)
+    second = state_cls(_reflex_internal_init=True)
+    getattr(first, name)["nested"].append("changed")
+    assert getattr(first, name) == {"nested": ["changed"]}
+    assert getattr(second, name) == default == {"nested": []}
+    first.reset()
+    assert getattr(first, name) == {"nested": []}
+    getattr(first, name)["nested"].append("again")
+    assert getattr(second, name) == default == {"nested": []}
+
+
+def test_state_unannotated_dataclasses_custom_factory_requires_annotation():
+    """A custom dataclass factory without an annotation raises a clear error."""
+
+    def make_items() -> list:
+        return []
+
+    with pytest.raises(StateValueError, match="add a type annotation"):
+
+        class CustomFactoryState(BaseState):
+            items = dataclasses.field(default_factory=make_items)
+
+
 def test_assignment_through_property_setter():
     """A property's setter runs instead of the undeclared-var guard."""
 
