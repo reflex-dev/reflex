@@ -233,7 +233,7 @@ def display_color_index_tuple(color):
             ForEachState.unicode_string,
             display_color,
             {
-                "iterable_state": f"pyStrChars({ForEachState.get_full_name()}.unicode_string{FIELD_MARKER})",
+                "iterable_state": f'Array.from(({ForEachState.get_full_name()}.unicode_string{FIELD_MARKER}) ?? "")',
             },
         ),
     ],
