@@ -9,6 +9,7 @@ from collections.abc import AsyncGenerator, Callable
 import pytest
 import pytest_asyncio
 
+from reflex.istate.manager import _track_state_recreation
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.token import BaseStateToken
@@ -181,6 +182,34 @@ async def test_disk_state_manager_set_state_refreshes_expiration(
     await state_manager_disk.set_state(state_token, state)
 
     assert state_manager_disk._token_last_touched[token][0] > touched_at
+
+
+@pytest.mark.asyncio
+async def test_disk_state_manager_reports_recreated_states(
+    state_manager_disk: StateManagerDisk,
+    token: str,
+):
+    """Missing persisted states should be reported for a background refresh."""
+    state_token = BaseStateToken(ident=token, cls=ExpiringChildState)
+
+    with _track_state_recreation() as recreated_states:
+        root = await state_manager_disk.get_state(state_token)
+    child = await root.get_state(ExpiringChildState)
+
+    assert recreated_states == [root, child]
+    assert not root.dirty_vars
+    assert not child.dirty_vars
+
+    root.value = 7
+    await state_manager_disk.set_state(state_token, root)
+    state_manager_disk._purge_token(state_token)
+
+    with _track_state_recreation() as recreated_states:
+        reloaded = await state_manager_disk.get_state(state_token)
+    reloaded_child = await reloaded.get_state(ExpiringChildState)
+
+    assert getattr(reloaded, "value", None) == 7
+    assert recreated_states == [reloaded_child]
 
 
 @pytest.mark.asyncio

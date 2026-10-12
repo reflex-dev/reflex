@@ -95,6 +95,22 @@ async def test_get_state_reads_tree_in_one_command():
 
 
 @pytest.mark.asyncio
+async def test_get_state_does_not_dirty_persisted_states_on_reload():
+    """Only recreated Redis states need defaults sent to the frontend."""
+    redis = mock_redis()
+    manager = StateManagerRedis(redis=redis)
+    token = BaseStateToken(ident="persisted-read", cls=RedisTestState)
+
+    state = await manager.get_state(token)
+    await manager.set_state(token, state)
+    reloaded_state = await manager.get_state(token)
+
+    assert not reloaded_state.dirty_vars
+    assert all(not child.dirty_vars for child in reloaded_state.substates.values())
+    await manager.close()
+
+
+@pytest.mark.asyncio
 async def test_get_state_reuses_populated_tree_without_reading():
     """Fetching an already attached state must not contact Redis or replace it."""
     redis = mock_redis()

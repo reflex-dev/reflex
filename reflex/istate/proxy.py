@@ -266,12 +266,15 @@ class StateProxy(wrapt.ObjectProxy):
             self._self_actx = ctx.state_manager.modify_state_with_links(
                 token=self._self_substate_token, event=self._self_event
             )
-            mutable_state = await self._self_actx.__aenter__()
-            refreshed_state = mutable_state.get_substate(self._self_substate_path)
-            if refreshed_state is not self.__wrapped__:
-                from reflex.istate.manager import _mark_state_tree_dirty
+            from reflex.istate.manager import _track_state_recreation
 
-                _mark_state_tree_dirty(mutable_state)
+            with _track_state_recreation() as recreated_states:
+                mutable_state = await self._self_actx.__aenter__()
+            for state in recreated_states:
+                state._was_touched = True
+                state.dirty_vars.update(state._frontend_var_names)
+                state._mark_dirty()
+            refreshed_state = mutable_state.get_substate(self._self_substate_path)
             self._self_mutable = True
             self._self_entered_context = True
             super().__setattr__("__wrapped__", refreshed_state)

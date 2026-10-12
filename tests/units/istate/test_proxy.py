@@ -610,6 +610,36 @@ async def test_immutable_mutable_proxy_async_context_manager(
 
 
 @pytest.mark.asyncio
+async def test_state_proxy_does_not_emit_delta_for_reloaded_unchanged_state(
+    token: str,
+    attached_mock_event_context: EventContext,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A freshly deserialized but unchanged state must not send a full delta."""
+    state_manager = attached_mock_event_context.state_manager
+    state_token = BaseStateToken(ident=token, cls=ProxyTestState)
+
+    async with state_manager.modify_state(state_token) as state:
+        state._clean()
+        state_proxy = StateProxy(state)
+
+    original_modify_state = state_manager.modify_state
+
+    @asynccontextmanager
+    async def reload_state(token: BaseStateToken, **context: Any):
+        async with original_modify_state(token, **context) as state:
+            yield token.deserialize(data=token.serialize(state))
+
+    monkeypatch.setattr(state_manager, "modify_state", reload_state)
+
+    async with state_proxy:
+        pass
+
+    assert not emitted_deltas
+
+
+@pytest.mark.asyncio
 async def test_immutable_mutable_proxy_async_context_dict_method_paths(
     token: str, attached_mock_event_context: EventContext
 ) -> None:

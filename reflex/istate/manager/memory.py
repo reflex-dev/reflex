@@ -13,6 +13,7 @@ from reflex.istate.manager import (
     StateModificationContext,
     _default_token_expiration,
     _release_state_tree,
+    _report_state_tree_recreation,
 )
 from reflex.istate.manager.token import TOKEN_TYPE, BaseStateToken, StateToken
 
@@ -56,9 +57,9 @@ class StateManagerMemory(StateManager):
         key = token.cache_key
         if key not in self.states:
             if isinstance(token, BaseStateToken):
-                self.states[key] = token.cls.get_root_state()(
-                    _reflex_internal_init=True
-                )
+                state = token.cls.get_root_state()(_reflex_internal_init=True)
+                _report_state_tree_recreation(state)
+                self.states[key] = state
             else:
                 self.states[key] = token.cls()
         return cast(TOKEN_TYPE, self.states[key])

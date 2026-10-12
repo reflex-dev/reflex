@@ -38,9 +38,22 @@ def MemoryExpirationApp():
             self.counter = 11
             self.child_counter = 13
 
+    class CounterComponent(rx.ComponentState):
+        value: int = 0
+
+        @rx.event
+        def set_value(self):
+            self.value = 17
+
+        @classmethod
+        def get_component(cls):
+            return rx.vstack(
+                rx.text(cls.value, id="component-counter"),
+                rx.button("Set component", id="set-component", on_click=cls.set_value),
+            )
+
     app = rx.App()
 
-    @app.add_page
     def index():
         return rx.vstack(
             rx.input(
@@ -58,6 +71,18 @@ def MemoryExpirationApp():
                 on_click=State.delayed_update,
             ),
         )
+
+    app.add_page(index)
+
+    def background_page():
+        """Render the background expiry case with a component substate.
+
+        Returns:
+            The page with state and component counters.
+        """
+        return rx.vstack(index(), CounterComponent.create())
+
+    app.add_page(background_page, route="/background")
 
 
 @pytest.fixture
@@ -182,21 +207,30 @@ def test_memory_state_manager_delays_expiration_after_use_end_to_end(
     assert token_input.get_attribute("value") == token
 
 
-def test_background_task_refreshes_recreated_substate(
+def test_background_task_refreshes_recreated_state_tree(
     memory_expiration_app: AppHarness,
     driver: WebDriver,
 ):
-    """A delayed background update must send defaults for expired substates."""
+    """A delayed background update must reset expired child and component state."""
+    frontend_url = memory_expiration_app.frontend_url
+    assert frontend_url is not None
+    driver.get(frontend_url.removesuffix("/") + "/background")
     counter = AppHarness.poll_for_or_raise_timeout(
         lambda: driver.find_element(By.ID, "counter")
     )
     child_counter = AppHarness.poll_for_or_raise_timeout(
         lambda: driver.find_element(By.ID, "child-counter")
     )
+    component_counter = AppHarness.poll_for_or_raise_timeout(
+        lambda: driver.find_element(By.ID, "component-counter")
+    )
     driver.find_element(By.ID, "set-values").click()
     AppHarness.expect(lambda: counter.text == "11")
     AppHarness.expect(lambda: child_counter.text == "13")
+    driver.find_element(By.ID, "set-component").click()
+    AppHarness.expect(lambda: component_counter.text == "17")
 
     driver.find_element(By.ID, "delayed-update").click()
     AppHarness.expect(lambda: counter.text == "100", timeout=10)
     AppHarness.expect(lambda: child_counter.text == "0", timeout=10)
+    AppHarness.expect(lambda: component_counter.text == "0", timeout=10)
