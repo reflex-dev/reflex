@@ -272,8 +272,8 @@ class StateProxy(wrapt.ObjectProxy):
                 mutable_state = await self._self_actx.__aenter__()
             for state in recreated_states:
                 state._was_touched = True
-                state.dirty_vars.update(state._frontend_var_names)
-                state._mark_dirty()
+                state.dirty_vars.update(state.base_vars)
+                state._mark_dirty(state.base_vars)
             refreshed_state = mutable_state.get_substate(self._self_substate_path)
             self._self_mutable = True
             self._self_entered_context = True

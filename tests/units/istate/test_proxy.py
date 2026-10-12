@@ -139,6 +139,30 @@ class ProxyTestState(rx.State):
     items: list[Item] = []
 
 
+class RuntimeComputedProxyState(BaseState):
+    """State with a runtime-only computed value and a field-backed one."""
+
+    value: int = 1
+
+    @rx.var
+    def doubled(self) -> int:
+        """A computed value that can be invalidated by the state field.
+
+        Returns:
+            The doubled state value.
+        """
+        return self.value * 2
+
+    @rx.var
+    def runtime_value(self) -> str:
+        """A route-provided value that is not available in background state.
+
+        Returns:
+            The route-provided value.
+        """
+        return self.dynamic  # pyright: ignore[reportAttributeAccessIssue]
+
+
 def test_mutable_proxy_pickle_preserves_object_identity():
     """Test that same object referenced directly and via proxy maintains identity."""
     state = ProxyTestState()
@@ -185,6 +209,25 @@ async def test_state_proxy_recovery(
     # After the exception, we should be able to enter the context again without issues
     async with state_proxy:
         pass
+
+
+@pytest.mark.asyncio
+async def test_state_proxy_recreation_skips_unavailable_runtime_computed_var(
+    attached_mock_event_context: EventContext,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+):
+    """Recreated fields refresh computed dependencies without evaluating route-only vars."""
+    state = RuntimeComputedProxyState()
+    state_proxy = StateProxy(state)
+
+    async with state_proxy:
+        pass
+
+    delta = emitted_deltas[-1][1]
+    values = delta[RuntimeComputedProxyState.get_full_name()]
+    assert values["value" + FIELD_MARKER] == 1
+    assert values["doubled" + FIELD_MARKER] == 2
+    assert "runtime_value" + FIELD_MARKER not in values
 
 
 @dataclasses.dataclass
