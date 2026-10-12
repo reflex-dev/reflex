@@ -53,6 +53,7 @@ class ForEachState(BaseState):
     colors_set: set[str] = {"red", "green"}
     bad_annotation_list: list = [["red", "orange"], ["yellow", "blue"]]
     color_index_tuple: tuple[int, str] = (0, "red")
+    unicode_string: str = "a\U0001f600b"
 
     default_factory_list: rx.Field[list[ForEachTag]] = rx.field(default_factory=list)
 
@@ -226,6 +227,13 @@ def display_color_index_tuple(color):
             {
                 "iterable_state": f"{ForEachState.get_full_name()}.color_index_tuple"
                 + FIELD_MARKER,
+            },
+        ),
+        (
+            ForEachState.unicode_string,
+            display_color,
+            {
+                "iterable_state": f"pyStrChars({ForEachState.get_full_name()}.unicode_string{FIELD_MARKER})",
             },
         ),
     ],

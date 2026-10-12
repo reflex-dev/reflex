@@ -65,6 +65,7 @@ class Foreach(Component):
         # noqa: DAR402 UntypedVarError
         """
         from reflex_base.vars import ArrayVar, ObjectVar, StringVar
+        from reflex_base.vars.sequence import string_codepoints_operation
 
         from reflex.state import ComponentState
 
@@ -93,7 +94,7 @@ class Foreach(Component):
             iterable = iterable.entries()
 
         if isinstance(iterable, StringVar):
-            iterable = iterable.split()
+            iterable = string_codepoints_operation(iterable)
 
         if not isinstance(iterable, ArrayVar):
             msg = (
