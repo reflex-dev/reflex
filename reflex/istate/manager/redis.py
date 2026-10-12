@@ -29,6 +29,7 @@ from reflex.istate.manager import (
     StateModificationContext,
     _default_token_expiration,
     _report_state_recreation,
+    _without_state_recreation_tracking,
 )
 from reflex.istate.manager.token import TOKEN_TYPE, BaseStateToken, StateToken
 from reflex.state import BaseState
@@ -800,10 +801,11 @@ class StateManagerRedis(StateManager):
                 lock_key not in self._local_leases
                 and await self._n_lock_contenders(self._lock_key(token)) == 0
             ):
-                self._local_leases[lock_key] = task = asyncio.create_task(
-                    lease_breaker(),
-                    name=f"reflex_lease_breaker|{lock_key}|{lock_id.decode()}",
-                )
+                with _without_state_recreation_tracking():
+                    self._local_leases[lock_key] = task = asyncio.create_task(
+                        lease_breaker(),
+                        name=f"reflex_lease_breaker|{lock_key}|{lock_id.decode()}",
+                    )
                 # Fetch the requested state into the cache.
                 self._cached_states[lock_key] = await self.get_state(token)
                 return task
@@ -910,12 +912,13 @@ class StateManagerRedis(StateManager):
 
     def _ensure_lock_task(self) -> None:
         """Ensure the lock updates subscriber task is running."""
-        ensure_task(
-            owner=self,
-            task_attribute="_lock_task",
-            coro_function=self._subscribe_lock_updates,
-            suppress_exceptions=[Exception],
-        )
+        with _without_state_recreation_tracking():
+            ensure_task(
+                owner=self,
+                task_attribute="_lock_task",
+                coro_function=self._subscribe_lock_updates,
+                suppress_exceptions=[Exception],
+            )
 
     async def _ensure_lock_task_subscribed(self, timeout: float | None = None) -> None:
         """Ensure the lock updates subscriber task is running and subscribed to avoid missing notifications.
