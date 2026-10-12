@@ -14,6 +14,7 @@ from reflex.istate.manager import (
     _default_token_expiration,
     _release_state_tree,
     _report_state_tree_recreation,
+    _without_state_recreation_tracking,
 )
 from reflex.istate.manager.token import TOKEN_TYPE, BaseStateToken, StateToken
 
@@ -140,10 +141,11 @@ class StateManagerMemory(StateManager):
         """Ensure the expiration background task is running."""
         if self._expiration_task is None or self._expiration_task.done():
             asyncio.get_running_loop()  # Ensure we're in an event loop.
-            self._expiration_task = asyncio.create_task(
-                self._expire_states(),
-                name="StateManagerMemory|Expiration",
-            )
+            with _without_state_recreation_tracking():
+                self._expiration_task = asyncio.create_task(
+                    self._expire_states(),
+                    name="StateManagerMemory|Expiration",
+                )
 
     @override
     async def get_state(self, token: StateToken[TOKEN_TYPE]) -> TOKEN_TYPE:

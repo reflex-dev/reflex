@@ -9,7 +9,7 @@ from collections.abc import AsyncGenerator, Callable
 import pytest
 import pytest_asyncio
 
-from reflex.istate.manager import _track_state_recreation
+from reflex.istate.manager import _STATE_RECREATION_TRACKER, _track_state_recreation
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.token import BaseStateToken
@@ -60,6 +60,30 @@ async def state_manager_memory() -> AsyncGenerator[StateManagerMemory]:
     state_manager = StateManagerMemory(token_expiration=1)
     yield state_manager
     await state_manager.close()
+
+
+@pytest.mark.asyncio
+async def test_expiration_task_does_not_inherit_recreation_tracker(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """The long-lived expiry task must not retain tracked state instances."""
+    state_manager = StateManagerMemory(token_expiration=60)
+    tracker_values: list[object] = []
+
+    async def capture_tracker() -> None:
+        await asyncio.sleep(0)
+        tracker_values.append(_STATE_RECREATION_TRACKER.get())
+
+    monkeypatch.setattr(state_manager, "_expire_states", capture_tracker)
+    with _track_state_recreation():
+        state_manager._ensure_expiration_task()
+
+    expiration_task = state_manager._expiration_task
+    assert expiration_task is not None
+    await expiration_task
+    await state_manager.close()
+
+    assert tracker_values == [None]
 
 
 @pytest.mark.asyncio

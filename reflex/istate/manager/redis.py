@@ -28,6 +28,7 @@ from reflex.istate.manager import (
     StateManager,
     StateModificationContext,
     _default_token_expiration,
+    _report_state_recreation,
 )
 from reflex.istate.manager.token import TOKEN_TYPE, BaseStateToken, StateToken
 from reflex.state import BaseState
@@ -384,6 +385,7 @@ class StateManagerRedis(StateManager):
                     init_substates=False,
                     _reflex_internal_init=True,
                 )
+                _report_state_recreation(state)
             state_full_name = state.get_full_name()
             flat_state_tree[state_full_name] = state
             if state.get_parent_state() is not None:

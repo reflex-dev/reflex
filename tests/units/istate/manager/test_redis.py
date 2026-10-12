@@ -16,6 +16,7 @@ import pytest
 import pytest_asyncio
 from reflex_base.utils.exceptions import EnvironmentVarValueError
 
+from reflex.istate.manager import _track_state_recreation
 from reflex.istate.manager.redis import (
     StateManagerRedis,
     _default_lock_expiration,
@@ -102,11 +103,48 @@ async def test_get_state_does_not_dirty_persisted_states_on_reload():
     token = BaseStateToken(ident="persisted-read", cls=RedisTestState)
 
     state = await manager.get_state(token)
+    state.foo = "persisted"
+    for substate in manager._get_populated_states(state).values():
+        substate._was_touched = True
     await manager.set_state(token, state)
-    reloaded_state = await manager.get_state(token)
+    with _track_state_recreation() as recreated_states:
+        reloaded_state = await manager.get_state(token)
 
+    assert isinstance(reloaded_state, RedisTestState)
+    assert reloaded_state.foo == "persisted"
+    assert not recreated_states
     assert not reloaded_state.dirty_vars
     assert all(not child.dirty_vars for child in reloaded_state.substates.values())
+    await manager.close()
+
+
+@pytest.mark.asyncio
+async def test_get_state_reports_missing_redis_substates():
+    """Missing Redis state keys are reported without reporting persisted states."""
+    redis = mock_redis()
+    manager = StateManagerRedis(redis=redis)
+    token = BaseStateToken(ident="missing-substate", cls=RedisTestState)
+    state_classes = sorted(
+        manager._get_required_state_classes(RedisTestState, subclasses=True),
+        key=lambda cls: cls.get_full_name(),
+    )
+    persisted_state = RedisTestState(foo="persisted")
+    redis.mget = AsyncMock(
+        return_value=[
+            persisted_state._serialize() if cls is RedisTestState else None
+            for cls in state_classes
+        ]
+    )
+
+    with _track_state_recreation() as recreated_states:
+        state = await manager.get_state(token)
+
+    assert isinstance(state, RedisTestState)
+    assert state.foo == "persisted"
+    assert {type(recreated).__name__ for recreated in recreated_states} == {
+        "SubState1",
+        "SubState2",
+    }
     await manager.close()
 
 
