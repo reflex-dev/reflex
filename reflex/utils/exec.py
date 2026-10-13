@@ -35,6 +35,8 @@ logger = logging.getLogger(__name__)
 
 # For uvicorn windows bug fix (#2335)
 frontend_process = None
+_frontend_process_lock = threading.Lock()
+_frontend_shutting_down = False
 
 DEV_BACKEND_RELOAD_MARKER = ".reflex_dev_backend_started"
 
@@ -296,7 +298,10 @@ def run_process_and_launch_url(
                 **kwargs,
             )
             global frontend_process
-            frontend_process = process
+            with _frontend_process_lock:
+                frontend_process = process
+                if _frontend_shutting_down and process.poll() is None:
+                    process.terminate()
         if process.stdout:
             for line in processes.stream_logs("Starting frontend", process):
                 new_content, new_hash = get_package_json_and_hash(json_file_path)
@@ -559,7 +564,8 @@ def get_app_instance_from_file() -> str:
     Returns:
         The app module for the backend.
     """
-    return f"{get_app_file()}:{constants.CompileVars.APP}"
+    get_app_file()
+    return get_app_instance()
 
 
 def run_backend(
@@ -893,8 +899,16 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
             granian_watcher = wrk._watcher
 
             def watcher():
-                granian_watcher()
+                wrk.inner.join()
                 self._release_socket_unless_served(wrk, spawn_count)
+                # A worker process exits 0 from its own SIGINT/SIGTERM handler,
+                # possibly before the supervisor, blocked in the reloader, has
+                # handled the same signal: give it a moment to catch up before
+                # reporting the exit as unexpected. Thread workers have no exit
+                # code and keep granian's handling.
+                exitcode = getattr(wrk.inner, "exitcode", None)
+                if exitcode != 0 or not self.main_loop_interrupt.wait(1):
+                    granian_watcher()
 
             wrk._watcher = watcher
             return wrk

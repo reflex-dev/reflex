@@ -40,6 +40,7 @@ from .number import (
     NumberVar,
     boolify,
     raise_unsupported_operand_types,
+    ternary_operation,
 )
 
 if TYPE_CHECKING:
@@ -781,7 +782,9 @@ class StringVar(Var[STRING_TYPE], python_types=str):
             The string slice operation.
         """
         if isinstance(i, slice):
-            return self.split()[i].join()
+            if i.step is None:
+                return string_slice_operation(self, i.start, i.stop)
+            return string_codepoints_operation(self)[i].join()
         if not isinstance(i, (int, NumberVar)) or (
             isinstance(i, NumberVar) and i._is_strict_float()
         ):
@@ -794,7 +797,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         Returns:
             The string length operation.
         """
-        return self.split().length()
+        return string_length_operation(self)
 
     def lower(self) -> StringVar:
         """Convert the string to lowercase.
@@ -1147,6 +1150,22 @@ _PY_RSTRIP_IMPORT: ImportDict = {
     f"$/{Dirs.STATE_PATH}": [ImportVar(tag="pyRstrip")],
 }
 
+_PY_STR_CHARS_IMPORT: ImportDict = {
+    f"$/{Dirs.STATE_PATH}": [ImportVar(tag="pyStrChars")],
+}
+
+_PY_STR_LENGTH_IMPORT: ImportDict = {
+    f"$/{Dirs.STATE_PATH}": [ImportVar(tag="pyStrLength")],
+}
+
+_PY_STR_AT_IMPORT: ImportDict = {
+    f"$/{Dirs.STATE_PATH}": [ImportVar(tag="pyStrAt")],
+}
+
+_PY_STR_SLICE_IMPORT: ImportDict = {
+    f"$/{Dirs.STATE_PATH}": [ImportVar(tag="pyStrSlice")],
+}
+
 
 @var_operation
 def string_strip_operation(
@@ -1284,6 +1303,40 @@ def string_ends_with_operation(
 
 
 @var_operation
+def string_codepoints_operation(string: StringVar[Any]):
+    """Convert a string to an array of Unicode code points.
+
+    Args:
+        string: The string to convert.
+
+    Returns:
+        The string's Unicode code points as an array.
+    """
+    return var_operation_return(
+        js_expression=f"pyStrChars({string!s})",
+        var_type=list[str],
+        var_data=VarData(imports=_PY_STR_CHARS_IMPORT),
+    )
+
+
+@var_operation
+def string_length_operation(string: StringVar[Any]):
+    """Get the number of Unicode code points in a string.
+
+    Args:
+        string: The string.
+
+    Returns:
+        The number of code points.
+    """
+    return var_operation_return(
+        js_expression=f"pyStrLength({string!s})",
+        var_type=int,
+        var_data=VarData(imports=_PY_STR_LENGTH_IMPORT),
+    )
+
+
+@var_operation
 def string_item_operation(string: StringVar[Any], index: NumberVar | int):
     """Get an item from a string.
 
@@ -1295,7 +1348,32 @@ def string_item_operation(string: StringVar[Any], index: NumberVar | int):
         The item from the string.
     """
     return var_operation_return(
-        js_expression=f"{string!s}?.at?.({index!s})", var_type=str
+        js_expression=f"pyStrAt({string!s}, {index!s})",
+        var_type=str,
+        var_data=VarData(imports=_PY_STR_AT_IMPORT),
+    )
+
+
+@var_operation
+def string_slice_operation(
+    string: StringVar[Any],
+    start: NumberVar | int | None,
+    stop: NumberVar | int | None,
+):
+    """Slice a string by Unicode code points.
+
+    Args:
+        string: The string.
+        start: The start index, or None to slice from the start.
+        stop: The stop index, or None to slice to the end.
+
+    Returns:
+        The sliced string.
+    """
+    return var_operation_return(
+        js_expression=f"pyStrSlice({string!s}, {start!s}, {stop!s})",
+        var_type=str,
+        var_data=VarData(imports=_PY_STR_SLICE_IMPORT),
     )
 
 
@@ -1632,22 +1710,39 @@ class ArraySliceOperation(CachedVarOperation, ArrayVar):
         normalized_end = (
             LiteralVar.create(end) if end is not None else Var(_js_expr="undefined")
         )
+        forward = f"{self._array!s}.slice({normalized_start!s}, {normalized_end!s})"
         if step is None:
-            return f"{self._array!s}.slice({normalized_start!s}, {normalized_end!s})"
+            return forward
         if not isinstance(step, Var):
-            if step < 0:
-                actual_start = end + 1 if end is not None else 0
-                actual_end = start + 1 if start is not None else self._array.length()
-                return str(self._array[actual_start:actual_end].reverse()[::-step])
             if step == 0:
                 msg = "slice step cannot be zero"
                 raise ValueError(msg)
-            return f"{self._array!s}.slice({normalized_start!s}, {normalized_end!s}).filter((_, i) => i % {step!s} === 0)"
+            if step == 1:
+                return forward
+            if step > 0:
+                return f"{forward}.filter((_, i) => i % {step} === 0)"
 
-        actual_start_reverse = end + 1 if end is not None else 0
-        actual_end_reverse = start + 1 if start is not None else self._array.length()
+        # A negative step is the reversed forward slice [end + 1:start + 1], where -1 + 1 is the length.
+        length = self._array.length()
 
-        return f"{self.step!s} > 0 ? {self._array!s}.slice({normalized_start!s}, {normalized_end!s}).filter((_, i) => i % {step!s} === 0) : {self._array!s}.slice({actual_start_reverse!s}, {actual_end_reverse!s}).reverse().filter((_, i) => i % {-step!s} === 0)"
+        def index_after(index: NumberVar | int) -> NumberVar | int:
+            if isinstance(index, int):
+                return length if index == -1 else index + 1
+            return ternary_operation(index == -1, length, index + 1).to(int)
+
+        reverse_start = "undefined" if end is None else index_after(end)
+        reverse_end = "undefined" if start is None else index_after(start)
+        # slice() already copies, so the in-place reverse() does not mutate the source.
+        backward = (
+            f"{self._array!s}.slice({reverse_start!s}, {reverse_end!s}).reverse()"
+        )
+
+        if not isinstance(step, Var):
+            if step == -1:
+                return backward
+            return f"{backward}.filter((_, i) => i % {-step} === 0)"
+
+        return f"({step!s} > 0 ? {forward}.filter((_, i) => i % {step!s} === 0) : {backward}.filter((_, i) => i % {-step!s} === 0))"
 
     @classmethod
     def create(

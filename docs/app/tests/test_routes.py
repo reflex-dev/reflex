@@ -1,6 +1,8 @@
 """Integration tests for all routes in Reflex."""
 
 import re
+import subprocess
+import sys
 from collections import Counter
 from pathlib import Path
 
@@ -76,6 +78,36 @@ def test_authentication_overview_moved_to_enterprise(routes_fixture):
 
     assert "/authentication/authentication-overview/" not in paths
     assert "/enterprise/auth/overview/" in paths
+
+
+def test_custom_components_routes_are_freed_for_their_redirects(routes_fixture):
+    """The removed custom components pages give way to redirects to wrapping React."""
+    paths = {route.path for route in routes_fixture if route.path}
+
+    assert not {path for path in paths if path.startswith("/custom-components/")}
+    assert "/wrapping-react/overview/" in paths
+
+
+def test_custom_components_urls_redirect_to_wrapping_react():
+    """Every removed custom components URL is registered as a redirect page."""
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "from reflex_docs.reflex_docs import app\n"
+            "for route in ('custom-components', 'custom-components/overview', "
+            "'custom-components/command-reference', "
+            "'custom-components/prerequisites-for-publishing'):\n"
+            "    page = app._unevaluated_pages[route]\n"
+            "    assert '/wrapping-react/overview/' in str(page.on_load), route\n",
+        ],
+        cwd=Path(__file__).resolve().parents[1],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=120,
+    )
+    assert result.returncode == 0, result.stderr[-2000:]
 
 
 def test_docs_route_descriptions_fit_search_snippet_length(routes_fixture):

@@ -164,7 +164,7 @@ class _Ready:
 
 @benchmark(
     id="browser.dev.ready",
-    suites=("pr", "daily"),
+    suites=("pr", "daily", "macro"),
     kind="startup",
     metrics=READY_METRICS,
     warmup=1,

@@ -609,12 +609,14 @@ class _Compile(_Primed):
             self.restore[0].write_bytes(self.restore[1])
 
 
-@_playground(id="lifecycle.compile.warm", suites=("pr", "daily"), estimate=1.3)
+@_playground(id="lifecycle.compile.warm", suites=("pr", "daily", "macro"), estimate=1.3)
 class CompileWarm(_Compile):
     """`reflex compile` of the primed playground, unchanged since the last compile."""
 
 
-@_playground(id="lifecycle.compile.incremental", suites=("pr", "daily"), estimate=1.3)
+@_playground(
+    id="lifecycle.compile.incremental", suites=("pr", "daily", "macro"), estimate=1.3
+)
 class CompileIncremental(_Compile):
     """`reflex compile` of the primed playground after an edit of the leaf component."""
 
@@ -733,7 +735,12 @@ class RunDevReady(_Ready):
     """`reflex run --env dev` of the primed playground until the Vite dev server answers GET /."""
 
 
-@_ready(id="lifecycle.run.prod.ready", timeout=SLOW_S + MARGIN_S, estimate=8)
+@_ready(
+    id="lifecycle.run.prod.ready",
+    suites=("daily", "macro"),
+    timeout=SLOW_S + MARGIN_S,
+    estimate=8,
+)
 class RunProdReady(_Ready):
     """`reflex run --env prod` of the primed playground: compile, frontend build and start."""
 
@@ -763,7 +770,7 @@ class RunBackendOnlyReady(_Ready):
 
 @benchmark(
     id="lifecycle.import",
-    suites=("daily",),
+    suites=("daily", "macro"),
     metrics={
         "wall": Metric(
             unit="s",

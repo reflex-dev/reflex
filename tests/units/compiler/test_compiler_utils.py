@@ -12,11 +12,12 @@ from reflex_components_core.base.script import Script
 from reflex_components_core.el.elements.metadata import Link
 from reflex_components_core.el.elements.typography import Div
 
+import reflex as rx
 from reflex.compiler import utils
 from reflex.compiler.utils import compile_state, create_document_root
 from reflex.compiler.utils import write_file as compiler_write_file
 from reflex.constants.state import FIELD_MARKER
-from reflex.state import State
+from reflex.state import State, state_snapshot_hashes
 from reflex.utils.path_ops import write_file
 from reflex.vars.base import computed_var
 
@@ -209,6 +210,58 @@ async def test_compile_state_resolves_async_computed_vars_with_running_event_loo
     assert values[f"a{FIELD_MARKER}"] == 1
     assert values[f"b{FIELD_MARKER}"] == 2
     assert values[f"async_value{FIELD_MARKER}"] == "resolved"
+
+
+def test_compile_state_hashes_dict_with_mixed_key_types(
+    forked_registration_context: RegistrationContext,
+):
+    """A dict default mixing int and str keys compiles and hashes without comparing keys.
+
+    Args:
+        forked_registration_context: Keeps the test's state out of other tests.
+    """
+
+    class MixedKeyState(State):
+        mapping: dict[str | int, str] = {1: "one", "two": "two"}
+
+    compiled = compile_state(MixedKeyState)
+    assert _get_state_values(compiled, MixedKeyState) == {
+        f"mapping{FIELD_MARKER}": {1: "one", "two": "two"}
+    }
+    assert len(state_snapshot_hashes(compiled)) == len(compiled) + 1
+
+
+def test_compile_client_storage_honors_default_factories(
+    forked_registration_context: RegistrationContext,
+):
+    """Factory-backed browser storage fields compile with the options they produce.
+
+    Args:
+        forked_registration_context: Keeps the test's state out of other tests.
+    """
+
+    class StorageState(State):
+        cookie: rx.Field[rx.Cookie] = rx.field(
+            default_factory=lambda: rx.Cookie("new", name="cookie-key", max_age=60)
+        )
+        local: rx.Field[rx.LocalStorage] = rx.field(
+            default_factory=lambda: rx.LocalStorage("new", name="local-key", sync=True)
+        )
+        session: rx.Field[rx.SessionStorage] = rx.field(
+            default_factory=lambda: rx.SessionStorage("new", name="session-key")
+        )
+
+    compiled = utils.compile_client_storage(StorageState)
+    name = StorageState.get_full_name()
+    cookie = compiled[constants.COOKIES][f"{name}.cookie{FIELD_MARKER}"]
+    assert (cookie["name"], cookie["maxAge"]) == ("cookie-key", 60)
+    assert compiled[constants.LOCAL_STORAGE][f"{name}.local{FIELD_MARKER}"] == {
+        "name": "local-key",
+        "sync": True,
+    }
+    assert compiled[constants.SESSION_STORAGE][f"{name}.session{FIELD_MARKER}"] == {
+        "name": "session-key"
+    }
 
 
 def test_document_root_allows_static_id_on_head_script():

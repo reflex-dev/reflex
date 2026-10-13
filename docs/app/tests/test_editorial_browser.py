@@ -60,28 +60,6 @@ def test_article_theme_preserves_live_example_styles_and_events(page: Page):
     expect(value).to_have_text(str(before + 1))
 
 
-def test_gallery_sort_menu_supports_keyboard_selection(page: Page):
-    """The gallery sort trigger remains usable after adopting shared controls."""
-    page.goto(f"{PREVIEW_URL}/docs/custom-components/", wait_until="networkidle")
-    trigger = page.get_by_role("button", name="Sort", exact=True)
-    trigger.focus()
-    trigger.press("Enter")
-    recent = page.get_by_role("menuitem", name="Recent")
-    expect(recent).to_be_visible()
-    recent.focus()
-    recent.press("Enter")
-    expect(page.get_by_role("button", name="Sort: Recent", exact=True)).to_be_visible()
-    expect(page.get_by_role("menuitem", name="Recent")).to_have_count(0)
-    page.get_by_role("button", name="Sort: Recent", exact=True).press("Enter")
-    downloads = page.get_by_role("menuitem", name="Downloads", exact=True)
-    downloads.focus()
-    downloads.press("Enter")
-    expect(
-        page.get_by_role("button", name="Sort: Downloads", exact=True)
-    ).to_be_visible()
-    expect(downloads).to_have_count(0)
-
-
 def test_low_level_form_example_has_valid_inline_result_markup(page: Page):
     """Inline submitted values must not cause the browser to repair nested paragraphs."""
     errors = []

@@ -1741,6 +1741,12 @@
         /* padding: 0rem 0.125rem 0rem 0.125rem; */
     }
 
+    /* Inline code in a heading scales with the heading rather than staying body-sized. */
+    :is(h1, h2, h3, h4) .code-style {
+        font-size: 0.875em;
+        line-height: inherit;
+    }
+
     .code-error-style {
         font-family: var(--font-jetbrains);
         font-size: 0.835rem;

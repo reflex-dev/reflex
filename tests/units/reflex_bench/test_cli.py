@@ -7,9 +7,10 @@ import dataclasses
 import json
 import os
 import platform
+import signal
 import sys
 import time
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterator, Mapping
 from pathlib import Path
 from typing import Any
 
@@ -22,7 +23,7 @@ from reflex_bench.registry import Benchmark, Metric
 from reflex_bench.schema import dump, load, validate
 from reflex_bench.suites.selftest import noise_value
 
-from .factories import WALL, make_doc, make_entry
+from .factories import WALL, make_doc, make_entry, make_run
 
 HARNESS_PYTHON = f"{sys.version_info.major}.{sys.version_info.minor}"
 QUICK_SELF_TESTS = (
@@ -200,6 +201,9 @@ def test_run_autosaves_and_resolves_baselines(home: Path):
 def interrupting() -> Iterator[None]:
     """Register a benchmark whose first sample interrupts the harness like Ctrl-C.
 
+    SIGINT gets Python's handler for the test: ``interrupt_main`` does nothing
+    when the runner was started with SIGINT ignored (CI, background jobs).
+
     Yields:
         Nothing; the benchmark is unregistered afterwards.
     """
@@ -215,9 +219,11 @@ def interrupting() -> Iterator[None]:
         Interrupting, id="test.interrupting", metrics={"value": Metric("s", "lower")}
     )
     registry.register(bench)
+    previous = signal.signal(signal.SIGINT, signal.default_int_handler)
     try:
         yield
     finally:
+        signal.signal(signal.SIGINT, previous)
         registry.REGISTRY.pop(bench.id)
 
 
@@ -397,12 +403,32 @@ def test_compare_refuses_other_profiles_unless_forced(
     monkeypatch.setenv("REFLEX_BENCH_PROFILE", "other-profile")
     assert _noise_run("head.json", "--seed", "2").exit_code == 0
     refused = invoke("compare", "base.json", "head.json")
-    assert refused.exit_code == 1
+    assert refused.exit_code == 4
     assert "machine profile differs: test-profile vs other-profile" in refused.output
     assert "nothing compared: no benchmark has samples on both sides" in refused.output
     forced = invoke("compare", "base.json", "head.json", "--force")
     assert forced.exit_code == 0, forced.output
     assert "(forced: series keys not checked)" in forced.output
+
+
+@pytest.mark.parametrize(
+    ("base", "head", "code"),
+    [
+        (make_run(1.0, day=1), make_run(1.0, day=2), 0),
+        (make_run(1.0, day=1), make_run(1.0, day=2, version="sha256:" + "1" * 64), 4),
+        (make_run(1.0, day=1), make_run(1.0, day=2, status="failed"), 1),
+        ({}, make_run(1.0, day=2), 1),
+    ],
+    ids=["compared", "nothing compared", "every benchmark failed", "unreadable base"],
+)
+def test_compare_tells_nothing_compared_from_errors(
+    home: Path, base: Mapping[str, Any], head: Mapping[str, Any], code: int
+):
+    # macro_benchmarks.yml keeps a labeled run green on 4 and fails on any other error.
+    for path, doc in (("base.json", base), ("head.json", head)):
+        Path(path).write_text(json.dumps(doc), encoding="utf-8")
+    result = invoke("compare", "base.json", "head.json", "--fail-on", "never")
+    assert result.exit_code == code, result.output
 
 
 def test_ci_mode(home: Path, monkeypatch: pytest.MonkeyPatch):
@@ -876,3 +902,71 @@ def test_ab_warns_when_the_arms_run_different_pythons(
     )  # fmt: skip
     assert result.exit_code == 0, result.output
     assert "arm A runs Python 3.12 and arm B Python 3.14" in result.output
+
+
+NOISE_WARM = "lifecycle.compile.warm[app=playground]"
+
+
+def test_list_macro_suite(home: Path):
+    result = invoke("list", "--suite", "macro")
+    assert result.exit_code == 0, result.output
+    names = [line.split()[0] for line in result.output.splitlines()[1:-1]]
+    assert names
+    assert "lifecycle.compile.warm[app=playground]" in names
+    assert "lifecycle.run.prod.ready[app=playground]" in names
+    assert not any(
+        name.startswith(("wire.", "size.", "memory.", "events.")) for name in names
+    )
+
+
+@pytest.fixture
+def history(home: Path, tmp_path: Path) -> Path:
+    runs = tmp_path / "runs" / "test-profile"
+    runs.mkdir(parents=True)
+    for day, median in enumerate([1.0, 1.02, 0.98], start=1):
+        dump(make_run(median, day=day), runs / f"2026-09-{day:02d}T03-17_daily.json")
+    (runs / "notes.txt").write_text("not a result", encoding="utf-8")
+    return runs
+
+
+def test_noise_reads_a_directory_as_json(history: Path):
+    result = invoke("noise", str(history), "--format", "json", "--min-runs", "3")
+    assert result.exit_code == 0, result.output
+    doc = json.loads(result.output)
+    assert doc["schema"] == "reflex-bench-noise/1"
+    assert len(doc["generated_from"]) == 3
+    wall = next(item for item in doc["series"] if item["metric"] == "wall")
+    assert wall["name"] == NOISE_WARM
+    assert wall["runs"] == 3
+    assert wall["class"] == "gate-candidate"
+    assert wall["profile_id"] == "test-profile"
+    assert wall["params"] == {"app": "playground"}
+
+
+def test_noise_markdown_and_terminal_tables(history: Path):
+    markdown = invoke("noise", str(history), "--format", "md")
+    assert markdown.exit_code == 0, markdown.output
+    assert markdown.output.startswith("| Benchmark | Metric | Runs |")
+    assert f"| `{NOISE_WARM}` | wall | 3 | 1.000 s |" in markdown.output
+    assert "noisy" in markdown.output
+    term = invoke("noise", str(history))
+    assert term.exit_code == 0, term.output
+    assert term.output.splitlines()[0].split()[:3] == ["benchmark", "metric", "runs"]
+    assert NOISE_WARM in term.output
+
+
+def test_noise_exits_1_when_no_result_matches(history: Path, tmp_path: Path):
+    other_kind = invoke("noise", str(history), "--kind", "pr")
+    assert other_kind.exit_code == 1
+    assert "no pr results" in other_kind.output
+    empty = tmp_path / "empty"
+    empty.mkdir()
+    assert invoke("noise", str(empty)).exit_code == 1
+
+
+def test_noise_rejects_invalid_results(home: Path, tmp_path: Path):
+    bad = tmp_path / "bad.json"
+    bad.write_text("{}", encoding="utf-8")
+    result = invoke("noise", str(bad))
+    assert result.exit_code == 1
+    assert "bad.json" in result.output

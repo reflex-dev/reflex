@@ -1,0 +1,1 @@
+A step can return `fan_out(children, then=step)` to run many child runs at once and carry on when the last one finishes. Each child is an ordinary run with its own retries and errors, and `self.children(Child)` reads them back.

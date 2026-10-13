@@ -244,6 +244,10 @@ redirects.extend([
     ("/hosting/adding-members/", "/hosting/project-members/"),
     ("/hosting/projects/", "/hosting/project-members/"),
     ("/authentication/authentication-overview/", "/enterprise/auth/overview/"),
+    ("/custom-components/", "/wrapping-react/overview/"),
+    ("/custom-components/overview/", "/wrapping-react/overview/"),
+    ("/custom-components/command-reference/", "/wrapping-react/overview/"),
+    ("/custom-components/prerequisites-for-publishing/", "/wrapping-react/overview/"),
 ])
 
 

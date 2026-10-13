@@ -57,6 +57,14 @@ class CompileVars(SimpleNamespace):
     EVENTS = "events"
     # The name of the initial hydrate event.
     HYDRATE = "hydrate"
+    # The name of the event sent on (re)connect: hydrate plus on_load in one step.
+    HYDRATE_AND_LOAD = "hydrate_and_load"
+    # The key of the socket.io CONNECT auth packet that carries the boot event.
+    CONNECT_AUTH_EVENT = "event"
+    # Payload keys of hydrate_and_load / update_vars_internal; they are passed
+    # through as handler kwargs, so they must match those parameter names.
+    PAYLOAD_VARS = "vars"
+    PAYLOAD_HASHES = "hashes"
     # The name of the is_hydrated variable.
     IS_HYDRATED = "is_hydrated"
     # The name of the function to add events to the queue.

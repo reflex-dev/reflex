@@ -53,7 +53,7 @@ def _escape(cell: str) -> str:
     return cell.replace("|", "\\|").replace("\n", " ")
 
 
-def _table(header: Sequence[str], rows: Sequence[Sequence[str]]) -> list[str]:
+def markdown_table(header: Sequence[str], rows: Sequence[Sequence[str]]) -> list[str]:
     """Build a GitHub markdown table.
 
     Args:
@@ -128,7 +128,7 @@ def render_comparison(doc: ResultDoc) -> str:
             "",
         ]
     if attention:
-        lines += [*_table(_COMPARISON_HEADER, attention), ""]
+        lines += [*markdown_table(_COMPARISON_HEADER, attention), ""]
     elif not failures:
         lines += [
             "No regressions, improvements or inconclusive results."
@@ -143,7 +143,7 @@ def render_comparison(doc: ResultDoc) -> str:
             "",
             f"<details><summary>{len(unchanged)} unchanged</summary>",
             "",
-            *_table(_COMPARISON_HEADER, unchanged),
+            *markdown_table(_COMPARISON_HEADER, unchanged),
             "",
             "</details>",
         ]
@@ -210,6 +210,6 @@ def render_result(doc: ResultDoc) -> str:
         "",
         f"Machine `{doc['machine']['profile_id']}`",
         "",
-        *_table(header, rows),
+        *markdown_table(header, rows),
         "",
     ])

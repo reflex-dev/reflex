@@ -1,11 +1,12 @@
 import reflex as rx
 from reflex_site_shared.constants import CONTRIBUTING_URL
 
-from reflex_docs.pages.docs.custom_components import custom_components
 from reflex_docs.pages.docs_landing.views.link_item import faded_borders, link_item
 
 
 def other_section() -> rx.Component:
+    from reflex_docs.pages.docs import wrapping_react
+
     return rx.el.section(
         rx.el.div(
             rx.el.h2(
@@ -29,7 +30,7 @@ def other_section() -> rx.Component:
                 "ReactIcon",
                 "Extending with React Components",
                 "See how to create and integrate your own React components into Reflex apps, allowing you to customize and extend your project’s capabilities.",
-                custom_components.path,
+                wrapping_react.overview.path,
                 has_padding_left=True,
             ),
             faded_borders(),

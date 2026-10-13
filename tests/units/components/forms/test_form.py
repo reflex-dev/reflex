@@ -1,9 +1,11 @@
-from typing import TypedDict
+from typing import NotRequired, TypedDict
 
 import pytest
 from reflex_base.event import EventChain, prevent_default
 from reflex_base.utils.exceptions import EventHandlerValueError
 from reflex_base.vars.base import Var
+from reflex_components_core.core.debounce import DebounceInput
+from reflex_components_core.el.elements.base import BaseHTML
 from reflex_components_core.el.elements.forms import (
     AUTO_HEIGHT_JS,
     ENTER_KEY_SUBMIT_JS,
@@ -12,10 +14,17 @@ from reflex_components_core.el.elements.forms import (
 )
 from reflex_components_core.el.elements.forms import Form as HTMLForm
 from reflex_components_radix.primitives.form import Form, FormMessage
-from typing_extensions import NotRequired
 
 import reflex as rx
 from reflex.compiler.utils import _root_only_custom_code
+
+EMAIL_FIELD_ID = "email"
+EMAIL_LABEL_ID = "email_label"
+SUBMIT_BUTTON_ID = "submit_button"
+INPUT_WRAPPER_ID = "input_wrapper"
+FORM_ID = "form_id"
+DEBOUNCED_INPUT_ID = "debounced_input"
+MEMOIZED_INPUT_ID = "memoized_input"
 
 
 def test_render_on_submit():
@@ -35,6 +44,92 @@ def test_render_no_on_submit():
     assert isinstance(f.event_triggers["on_submit"], EventChain)
     assert len(f.event_triggers["on_submit"].events) == 1
     assert f.event_triggers["on_submit"].events[0] == prevent_default
+
+
+def test_form_submit_preserves_null_control_values():
+    """ID-backed form controls remain in the payload when their value is null."""
+
+    class FormState(rx.State):
+        @rx.event
+        def on_submit(self, form_data: dict):
+            pass
+
+    form = HTMLForm.create(
+        rx.box(
+            Input.create(id=EMAIL_FIELD_ID),
+            rx.text("Email", id=EMAIL_LABEL_ID),
+            rx.button("Submit", id=SUBMIT_BUTTON_ID),
+            id=INPUT_WRAPPER_ID,
+        ),
+        on_submit=FormState.on_submit,
+        id=FORM_ID,
+    )
+    submit_hook = form.add_hooks()[0]
+    assert "filter(([, value]) => value != null)" not in submit_hook
+    assert f"ref_{EMAIL_FIELD_ID}" in submit_hook
+    assert f"ref_{EMAIL_LABEL_ID}" not in submit_hook
+    assert f"ref_{SUBMIT_BUTTON_ID}" not in submit_hook
+    assert f"ref_{INPUT_WRAPPER_ID}" not in submit_hook
+    assert f"ref_{FORM_ID}" not in submit_hook
+
+
+@pytest.mark.parametrize("native_tag", ["input", "select", "textarea"])
+def test_form_refs_include_custom_native_controls(native_tag):
+    """Custom native input elements with IDs are included in form data."""
+
+    class NativeInput(BaseHTML):
+        tag = native_tag
+
+    form = HTMLForm.create(NativeInput.create(id="native_input"))
+
+    assert "ref_native_input" in form.add_hooks()[0]
+
+
+def test_form_refs_follow_replaced_children():
+    """Replacing form children must not retain refs from the previous subtree."""
+    form = HTMLForm.create(Input.create(id="original"))
+    assert 'getRefValue(refs["ref_original"])' in form.add_hooks()[0]
+
+    form.children = [Input.create(id="replacement")]
+
+    hook = form.add_hooks()[0]
+    assert 'getRefValue(refs["ref_replacement"])' in hook
+    assert 'getRefValue(refs["ref_original"])' not in hook
+
+
+def test_form_refs_include_opted_in_custom_controls():
+    """Custom wrapped controls can opt in to ID-based form data."""
+
+    class CustomControl(rx.Component):
+        tag = "CustomControl"
+        _is_form_control = True
+
+    form = HTMLForm.create(CustomControl.create(id="custom_control"))
+
+    assert "ref_custom_control" in form.add_hooks()[0]
+
+
+def test_form_refs_include_debounced_controls():
+    """ID-only debounced inputs remain available to submit handlers."""
+    form = HTMLForm.create(
+        DebounceInput.create(
+            Input.create(id=DEBOUNCED_INPUT_ID, on_change=rx.console_log)
+        )
+    )
+
+    assert f"ref_{DEBOUNCED_INPUT_ID}" in form.add_hooks()[0]
+
+
+def test_form_refs_include_memoized_controls(monkeypatch):
+    """Memo wrappers retain the form-control marker of their wrapped component."""
+
+    class MemoizedInput(Input):
+        _is_form_control = False
+
+    monkeypatch.setattr(MemoizedInput, "_wrapped_component_type", Input, raising=False)
+    form = HTMLForm.create(MemoizedInput.create(id=MEMOIZED_INPUT_ID))
+
+    assert f"ref_{MEMOIZED_INPUT_ID}" in form.add_hooks()[0]
 
 
 @pytest.mark.parametrize("form_factory", [HTMLForm.create, Form.create])
