@@ -9,11 +9,13 @@ processing events.
 
 from __future__ import annotations
 
+import dataclasses
 from collections.abc import Generator
 
 import pytest
 from playwright.sync_api import Page, expect
 
+from reflex.state import StateUpdate
 from reflex.testing import AppHarness
 
 # Substate name with no dispatch function in the compiled frontend.
@@ -154,3 +156,42 @@ def test_unprocessable_delta_does_not_stop_events(
 
     page.click("#bump-btn")
     expect(page.locator("#counter")).to_have_text("1")
+
+
+def test_unknown_substate_in_hydrate_delta(
+    client_error_app: AppHarness, page: Page, monkeypatch: pytest.MonkeyPatch
+):
+    """The page hydrates when the hydrate delta names an unknown substate.
+
+    Args:
+        client_error_app: Running AppHarness instance.
+        page: Playwright page fixture.
+        monkeypatch: pytest fixture for patching outgoing updates.
+    """
+    assert client_error_app.frontend_url is not None
+    assert client_error_app.app_instance is not None
+    namespace = client_error_app.app_instance.event_namespace
+    assert namespace is not None
+    emit_update = namespace.emit_update
+    reports: list[str] = []
+    monkeypatch.setattr(
+        client_error_app.app_instance,
+        "frontend_exception_handler",
+        lambda exc: reports.append(str(exc)),
+    )
+
+    async def emit_with_unknown_substate(update: StateUpdate, token: str) -> None:
+        """Add an unknown substate to every outgoing update.
+
+        Args:
+            update: The outgoing state update.
+            token: The client token.
+        """
+        delta = {GHOST_SUBSTATE: {"value": 1}, **update.delta}
+        await emit_update(dataclasses.replace(update, delta=delta), token)
+
+    monkeypatch.setattr(namespace, "emit_update", emit_with_unknown_substate)
+    page.goto(client_error_app.frontend_url)
+    expect(page.locator("#token")).not_to_have_value("")
+    assert AppHarness._poll_for(lambda: reports)
+    assert GHOST_SUBSTATE in reports[0]
