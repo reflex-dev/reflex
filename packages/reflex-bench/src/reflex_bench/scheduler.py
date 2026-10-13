@@ -35,7 +35,7 @@ import traceback
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from concurrent.futures import Future
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, TypeVar
 
@@ -75,9 +75,7 @@ def utc_now(timespec: str = "milliseconds") -> str:
     Returns:
         E.g. ``2026-09-23T10:15:00.123Z``.
     """
-    return (
-        datetime.now(timezone.utc).isoformat(timespec=timespec).replace("+00:00", "Z")
-    )
+    return datetime.now(UTC).isoformat(timespec=timespec).replace("+00:00", "Z")
 
 
 def derive_seed(seed: int, *parts: str) -> int:

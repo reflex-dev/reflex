@@ -7,7 +7,7 @@ import shutil
 import subprocess
 import typing
 from collections.abc import Mapping, Sequence
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta, timezone
 from typing import cast
 
 import pytest
@@ -392,7 +392,7 @@ def test_basic_operations(TestObj):
 )
 def test_datetime_comparison_uses_timestamps(operation, operator):
     lhs = v(datetime(2024, 1, 1, 1, tzinfo=timezone(timedelta(hours=1))))
-    rhs = datetime(2024, 1, 1, tzinfo=timezone.utc)
+    rhs = datetime(2024, 1, 1, tzinfo=UTC)
 
     assert str(operation(lhs, rhs)) == (
         f'(compareDatetime("2024-01-01 01:00:00+01:00", '
@@ -403,9 +403,9 @@ def test_datetime_comparison_uses_timestamps(operation, operator):
 def test_datetime_comparison_preserves_microseconds():
     lhs = cast(
         DateTimeVar,
-        v(datetime(2024, 1, 1, microsecond=1, tzinfo=timezone.utc)),
+        v(datetime(2024, 1, 1, microsecond=1, tzinfo=UTC)),
     )
-    rhs = datetime(2024, 1, 1, microsecond=999, tzinfo=timezone.utc)
+    rhs = datetime(2024, 1, 1, microsecond=999, tzinfo=UTC)
 
     assert str(lhs < rhs) == (
         '(compareDatetime("2024-01-01 00:00:00.000001+00:00", '

@@ -238,7 +238,7 @@ async def test_lifespan_shutdown_cancels_all_tasks_before_waiting():
         finally:
             try:
                 await asyncio.wait_for(second_stopped.wait(), timeout=1)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 second_stopped_first.append(False)
             else:
                 second_stopped_first.append(True)

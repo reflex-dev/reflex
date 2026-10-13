@@ -120,7 +120,7 @@ def deployment_record(**fields) -> DeploymentRecord:
         "description": None,
         "reflex_version": "1.2.3",
         "python_version": "3.10",
-        "created_at": datetime.datetime(2024, 11, 29, 12, tzinfo=datetime.timezone.utc),
+        "created_at": datetime.datetime(2024, 11, 29, 12, tzinfo=datetime.UTC),
         "updated_at": None,
         "deployed_by": None,
         "vm_type": None,
