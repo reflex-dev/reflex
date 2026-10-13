@@ -346,7 +346,7 @@ def test_typed_dict_helpers_resolve_around_unresolvable_names(tmp_path, monkeypa
     """A name imported only for type checking reads as Any in its own field."""
     (tmp_path / "type_checking_typed_dicts.py").write_text(
         "from __future__ import annotations\n"
-        "from typing import TYPE_CHECKING, TypedDict\n"
+        "from typing import TYPE_CHECKING, Annotated, TypedDict\n"
         "from typing_extensions import NotRequired\n"
         "if TYPE_CHECKING:\n"
         "    import decimal\n"
@@ -363,6 +363,8 @@ def test_typed_dict_helpers_resolve_around_unresolvable_names(tmp_path, monkeypa
         "    maybe_seqs: NotRequired[Seq[decimal.Decimal] | None]\n"
         "    odd: make_type()\n"
         "    agree: NotRequired[bool]\n"
+        "    title: Annotated[str, {'label': 'Title'}]\n"
+        "    labels: list[Annotated[str, {'label': 'Tag'}]]\n"
     )
     monkeypatch.syspath_prepend(str(tmp_path))
     module = importlib.import_module("type_checking_typed_dicts")
@@ -374,8 +376,13 @@ def test_typed_dict_helpers_resolve_around_unresolvable_names(tmp_path, monkeypa
             "total",
             "seqs",
             "odd",
+            "title",
+            "labels",
         }
-        assert get_typed_dict_field_types(module.Order) == {
+        field_types = get_typed_dict_field_types(module.Order)
+        # Metadata nested in a field type, unhashable here, is kept.
+        assert typing.get_origin(field_types.pop("labels")) is list
+        assert field_types == {
             "tags": list[str],
             "amounts": list[Any],
             "amount": Any,
@@ -386,6 +393,7 @@ def test_typed_dict_helpers_resolve_around_unresolvable_names(tmp_path, monkeypa
             "maybe_seqs": Any | None,
             "odd": Any,
             "agree": bool,
+            "title": str,
         }
     finally:
         del sys.modules["type_checking_typed_dicts"]

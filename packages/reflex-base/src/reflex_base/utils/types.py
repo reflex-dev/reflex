@@ -517,7 +517,7 @@ def get_typed_dict_field_types(typed_dict: Any) -> dict[str, Any]:
     )
     declared = getattr(typed_dict, "__parameters__", ())
     for name, hint in field_types.items():
-        if hint in substitution:
+        if isinstance(hint, TypeVar) and hint in substitution:
             hint = substitution[hint]
         elif substitution and (params := getattr(hint, "__parameters__", ())):
             hint = _apply_type_params(hint, params, substitution)
