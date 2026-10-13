@@ -180,18 +180,17 @@ def test_compile_app_worker_flushes_telemetry_on_failure(mocker):
         (constants.RunningMode.FRONTEND_ONLY, "run_frontend_prod"),
     ],
 )
-def test_run_prod_sends_telemetry_once_the_server_started(
+def test_run_prod_sends_telemetry_synchronously(
     mocker, running_mode: constants.RunningMode, launcher: str
 ):
-    """The run-prod event waits for the server and leaves the supervisor.
+    """The run-prod event is delivered on the calling thread, before the server.
 
-    Sending it from another process keeps the supervisor, which granian may
-    fork again to respawn workers, free of telemetry threads.
+    The server forks its workers from this process, so the event must not be
+    queued on the telemetry thread pool.
     """
     from reflex.utils import build, exec, processes, telemetry
 
-    send = mocker.patch.object(telemetry, "_send_detached")
-    mocker.patch.object(reflex, "get_config")
+    config = mocker.patch.object(reflex, "get_config").return_value
     mocker.patch.object(reflex, "_compile_app")
     mocker.patch.object(reflex, "_skip_compile")
     mocker.patch.object(build, "setup_frontend_prod")
@@ -199,16 +198,16 @@ def test_run_prod_sends_telemetry_once_the_server_started(
     mocker.patch("atexit.register")
     mocker.patch.object(exec, "notify_app_running")
     mocker.patch.object(exec, "notify_frontend")
-
-    def serve(*_args, on_started):
-        send.assert_not_called()
-        on_started()
-
-    mocker.patch.object(exec, launcher, side_effect=serve)
+    queued = mocker.patch.object(telemetry, "send")
+    calls = mocker.Mock()
+    calls.attach_mock(mocker.patch.object(telemetry, "_send"), "send")
+    calls.attach_mock(mocker.patch.object(exec, launcher), "serve")
 
     reflex._run_prod(running_mode, 8000, "127.0.0.1")
 
-    send.assert_called_once_with("run-prod")
+    queued.assert_not_called()
+    calls.send.assert_called_once_with("run-prod", config.telemetry_enabled)
+    assert [name for name, _args, _kwargs in calls.mock_calls] == ["send", "serve"]
 
 
 def test_cloud_commands_registered():

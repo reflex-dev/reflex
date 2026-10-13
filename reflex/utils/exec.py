@@ -463,9 +463,7 @@ def _frontend_prod_app():
     return Starlette(routes=[get_frontend_mount()])
 
 
-def run_frontend_prod(
-    host: str, port: int, on_started: Callable[[], Any] | None = None
-):
+def run_frontend_prod(host: str, port: int):
     """Run the frontend in production mode by serving compiled static files.
 
     Uses the same granian/uvicorn infrastructure as the backend.
@@ -473,25 +471,16 @@ def run_frontend_prod(
     Args:
         host: The host to serve on.
         port: The port to serve on.
-        on_started: Called once the server's workers have been started.
     """
     loglevel = get_config().loglevel.subprocess_level()
 
     if should_use_granian():
         run_granian_backend_prod(
-            host,
-            port,
-            loglevel,
-            app_target=f"{__name__}:_frontend_prod_app",
-            on_started=on_started,
+            host, port, loglevel, app_target=f"{__name__}:_frontend_prod_app"
         )
     else:
         run_uvicorn_backend_prod(
-            host,
-            port,
-            loglevel,
-            app_target=f"{__name__}:_frontend_prod_app",
-            on_started=on_started,
+            host, port, loglevel, app_target=f"{__name__}:_frontend_prod_app"
         )
 
 
@@ -954,7 +943,6 @@ def run_backend_prod(
     port: int,
     loglevel: constants.LogLevel = constants.LogLevel.ERROR,
     mount_frontend_compiled_app: bool = False,
-    on_started: Callable[[], Any] | None = None,
 ):
     """Run the backend.
 
@@ -963,14 +951,13 @@ def run_backend_prod(
         port: The app port
         loglevel: The log level.
         mount_frontend_compiled_app: Whether to mount the compiled frontend app with the backend.
-        on_started: Called once the server's workers have been started.
     """
     environment.REFLEX_MOUNT_FRONTEND_COMPILED_APP.set(mount_frontend_compiled_app)
 
     if should_use_granian():
-        run_granian_backend_prod(host, port, loglevel, on_started=on_started)
+        run_granian_backend_prod(host, port, loglevel)
     else:
-        run_uvicorn_backend_prod(host, port, loglevel, on_started=on_started)
+        run_uvicorn_backend_prod(host, port, loglevel)
 
 
 def _get_backend_workers():
@@ -980,11 +967,7 @@ def _get_backend_workers():
 
 
 def run_uvicorn_backend_prod(
-    host: str,
-    port: int,
-    loglevel: LogLevel,
-    app_target: str | None = None,
-    on_started: Callable[[], Any] | None = None,
+    host: str, port: int, loglevel: LogLevel, app_target: str | None = None
 ):
     """Run the backend in production mode using Uvicorn.
 
@@ -993,8 +976,6 @@ def run_uvicorn_backend_prod(
         port: The app port
         loglevel: The log level.
         app_target: The ASGI app target to run. Defaults to the reflex app instance.
-        on_started: Called right before the server process is launched; it
-            runs in a separate interpreter, so nothing here is forked.
     """
     import os
     import shlex
@@ -1036,9 +1017,6 @@ def run_uvicorn_backend_prod(
     command += [
         *("--log-level", loglevel.value),
     ]
-
-    if on_started is not None:
-        on_started()
 
     processes.new_process(
         command,
@@ -1088,6 +1066,8 @@ def _preload_for_fork(app_target: str | None) -> bool:
         prerequisites.get_app()
     serializers._prepare_serializers_for_fork()
     # Forking while the telemetry thread may hold a lock can deadlock the child.
+    # Nothing in the supervisor sends telemetry after this point, so no thread
+    # exists at any later fork either (e.g. a worker respawn).
     if not telemetry._shutdown_executor():
         return False
     # Freezing keeps worker GC passes from writing to the preloaded objects'
@@ -1098,11 +1078,7 @@ def _preload_for_fork(app_target: str | None) -> bool:
 
 
 def run_granian_backend_prod(
-    host: str,
-    port: int,
-    loglevel: LogLevel,
-    app_target: str | None = None,
-    on_started: Callable[[], Any] | None = None,
+    host: str, port: int, loglevel: LogLevel, app_target: str | None = None
 ):
     """Run the backend in production mode using Granian.
 
@@ -1111,9 +1087,6 @@ def run_granian_backend_prod(
         port: The app port
         loglevel: The log level.
         app_target: The ASGI app target to run. Defaults to the reflex app instance.
-        on_started: Called in the supervisor once the workers have been started.
-            It must not start threads: granian forks the supervisor again to
-            respawn workers.
     """
     import multiprocessing
 
@@ -1131,21 +1104,7 @@ def run_granian_backend_prod(
             logger.debug("A telemetry send is still running; spawning workers.")
             multiprocessing.set_start_method("spawn", force=True)
 
-    class NotifyingGranian(Granian):  # pyright: ignore[reportGeneralTypeIssues]
-        """Granian server that reports when its workers have been started."""
-
-        def startup(self, *args, **kwargs):
-            """Start the supervisor and its workers, then notify the caller.
-
-            Args:
-                args: Positional arguments for the Granian startup.
-                kwargs: Keyword arguments for the Granian startup.
-            """
-            super().startup(*args, **kwargs)
-            if on_started is not None:
-                on_started()
-
-    granian_app = NotifyingGranian(
+    granian_app = Granian(
         target=app_target or get_app_instance_from_file(),
         factory=True,
         address=host,
