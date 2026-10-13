@@ -8,8 +8,8 @@ from reflex_components_core.el.elements.forms import Input as ReflexInput
 from reflex.components.component import Component, ComponentNamespace
 from reflex.event import EventHandler, passthrough_event_spec
 from reflex.utils.imports import ImportVar
-from reflex.vars.base import Var
-from reflex.vars.function import FunctionVar, ReflexCallable
+from reflex.vars.base import NoneVar, Var
+from reflex.vars.function import FunctionVar
 from reflex.vars.object import ObjectVar
 from reflex_components_internal.components.base.button import button
 from reflex_components_internal.components.base_ui import PACKAGE_NAME, BaseUIComponent
@@ -106,10 +106,25 @@ class MenuFilterProvider(MenuBaseComponent):
     auto_highlight: Var[bool | Literal["always"]]
 
     # A frontend function matching an item's text against the query, or null for external filtering.
-    filter: FunctionVar[ReflexCallable[[str, str], bool]] | Var[None]
+    filter: FunctionVar | NoneVar
 
     # The locale or locales used by the default text comparison.
     locale: Var[str | list[str]]
+
+    @classmethod
+    def create(cls, *children, **props) -> BaseUIComponent:
+        """Create a filter provider, preserving explicit None as JavaScript null.
+
+        Args:
+            *children: The menu or submenu root to make filterable.
+            **props: The filtering properties. Set filter to None for external filtering.
+
+        Returns:
+            The filter provider component.
+        """
+        if "filter" in props and props["filter"] is None:
+            props["filter"] = Var.create(None)
+        return super().create(*children, **props)
 
 
 class MenuRoot(MenuBaseComponent):
