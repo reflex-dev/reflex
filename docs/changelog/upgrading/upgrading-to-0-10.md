@@ -44,15 +44,56 @@ def page():
 State.get_fields()["_items"].default_value()
 ```
 
-## Assigning a default through a state class
+## Assigning a state var through its class
 
-On 0.9, `State.count = 10` replaced the class attribute, but new instances still started at the declared default. In 0.10 it updates the var's default and the var stays a var ([#7461](https://github.com/reflex-dev/reflex/pull/7461)); [Changing Defaults](/docs/vars/base-vars/#changing-defaults) has the full rules. Check these before relying on it:
+On 0.9, `State.count = 10` replaced the class attribute, but new instances still started at the declared default. In 0.10 a state var is a descriptor on its class, and assigning over it raises `TypeError` instead of breaking the var. This includes pytest's `monkeypatch.setattr` and `unittest.mock.patch.object` on a var. Change the default with the field's `set_default`, patch the field in tests, and declare class-level configuration as `ClassVar`:
 
-- It changes the default for values not yet stored on an instance, which includes every new session and `reset()`. A value already stored on an instance keeps it.
-- The value must satisfy the var's annotation, or `TypeError: Invalid default for field` is raised. An unannotated var is typed from its default, so `_client = None` accepts only `None`; annotate the var with the type you assign.
-- A zero-argument callable that the annotation does not accept, such as a function or a class, is called once during the assignment to check what it returns, then becomes the default factory. Do not assign something whose call has side effects.
-- Mutable defaults are copied for every instance. A live client, lock or connection assigned to an `Any` or `Optional[...]` var is accepted, but reading the var on a new instance then raises `TypeError: cannot pickle '_thread.lock' object`. Declare an object that all sessions share as `ClassVar[...]`, which is never copied.
-- Assigning on a mixin only affects states created afterwards. Do not assign defaults in event handlers, lifespan tasks, or at any other time after the app has started running: such an assignment only affects the worker process that ran it.
+```python
+from typing import ClassVar
+from unittest import mock
+
+import httpx
+
+import reflex as rx
+
+
+class State(rx.State):
+    count: int = 0
+    _client: ClassVar[httpx.AsyncClient | None] = None
+
+
+State.__fields__["count"].set_default(10)
+State._client = httpx.AsyncClient()  # a ClassVar stays an ordinary class attribute
+
+with mock.patch.object(State.__fields__["count"], "default", 99):
+    ...
+```
+
+On 0.9, assigning `State.__fields__["items"].default = []` was safe, because each instance got a copy of the default. In 0.10 every instance shares the field's `default`, so a mutable value assigned there leaks changes between sessions. `set_default(default=[])` copies a mutable value for each instance.
+
+[Changing Defaults](/docs/vars/base-vars/#changing-defaults) has the details, including browser storage vars.
+
+## Mutable defaults filled in after the class is defined
+
+In 0.10 a mutable default given in the class body, or passed to `set_default`, is deep-copied when it is assigned ([#7519](https://github.com/reflex-dev/reflex/pull/7519)). Changes made to the original object afterwards no longer reach new sessions. On 0.9, a module-level list filled in after the `class` statement still showed up in every new session; on 0.10 sessions start with the list as it was when the class was defined:
+
+```python
+OPTIONS: list[str] = []
+
+
+class State(rx.State):
+    options: list[str] = OPTIONS
+
+
+OPTIONS.append("late")  # 0.9: new sessions see ["late"]; 0.10: they see []
+```
+
+Fill the value before the class is defined, or declare a factory that reads it when each session starts, which works on both versions:
+
+```python
+class State(rx.State):
+    options: list[str] = rx.field(default_factory=lambda: list(OPTIONS))
+```
 
 ## Calling inherited handlers from background tasks
 
@@ -60,6 +101,8 @@ In a background task, `self` is a proxy that only allows changes inside `async w
 
 - Outside `async with self`, a call that modifies state raises `ImmutableStateError`; a read-only handler still runs.
 - Inside it, `self` in the called handler is the proxy, so `type(self)` is `StateProxy`. Use `self.__class__` to get the state class; `isinstance(self, Parent)` still works.
+
+Writing a var inherited from a parent state outside `async with self` now raises `ImmutableStateError` too, whether the task assigns it directly (`self.count += 1`) or through any handler. On 0.9 such a write raised nothing: with the in-memory state manager it landed without the lock, and with Redis it was silently lost. Changing a mutable inherited var in place, such as `self.items.append(...)`, already raised on 0.9.
 
 On 0.9 this background task wrote to the parent state without the lock; on 0.10 the first call raises `ImmutableStateError`:
 

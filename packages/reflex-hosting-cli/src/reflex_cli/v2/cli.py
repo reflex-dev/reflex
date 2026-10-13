@@ -1109,18 +1109,12 @@ def deploy(
                     min_instances=min_instances,
                     max_instances=max_instances,
                     client=authenticated_client,
+                    retry_scaling=True,
                 )
-            except BaseException:
-                # A dropped connection says nothing about whether the server
-                # applied the write, and the bounds are billable state, so hedge
-                # rather than report either outcome as fact.
-                logger.warning(
-                    f"Lost contact while setting the instance bounds of "
-                    f"'{app.name}'; they may or may not have been applied. "
-                    "Check the app in the Reflex Cloud dashboard before relying "
-                    "on its scaling."
+            except ReflexBuildError as ex:
+                hosting.exit_reporting(
+                    ex, f"set instance bounds failed: {hosting.error_message(ex)}"
                 )
-                raise
             if bounds_error:
                 logger.error(bounds_error)
                 raise click.exceptions.Exit(1)
