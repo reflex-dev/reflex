@@ -1,10 +1,13 @@
 """Ensure that Components returned by ComponentState.create have independent State classes."""
 
 import pytest
+from reflex_base import constants
 from reflex_base.utils.exceptions import ReflexRuntimeError
 from reflex_components_core.base.bare import Bare
 
 import reflex as rx
+from reflex.compiler.utils import compile_client_storage
+from reflex.constants.state import FIELD_MARKER
 
 
 def test_component_state():
@@ -64,7 +67,7 @@ def test_init_component_state() -> None:
 
 
 def test_component_state_defaults_from_props():
-    """Class assignments configure defaults independently for each component."""
+    """Field defaults set in get_component configure each component independently."""
 
     class ConfiguredComponentState(rx.ComponentState):
         count: int = 0
@@ -81,8 +84,8 @@ def test_component_state_defaults_from_props():
             Returns:
                 The component using the configured state vars.
             """
-            cls.count = initial_count
-            cls.labels = lambda: [label]  # pyright: ignore[reportAttributeAccessIssue]
+            cls.__fields__["count"].set_default(initial_count)
+            cls.__fields__["labels"].set_default(default_factory=lambda: [label])
             return rx.text(cls.count, cls.labels)
 
     first = ConfiguredComponentState.create(initial_count=5, label="first")
@@ -107,3 +110,42 @@ def test_component_state_defaults_from_props():
     assert first_state.labels == ["first"]
     assert second_state.count == 10
     assert second_state.labels == ["second"]
+
+
+def test_component_state_storage_default_per_component():
+    """A browser storage default set in get_component gives each component its own key."""
+
+    class PreferenceComponentState(rx.ComponentState):
+        pref: str = rx.LocalStorage("light", name="pref", sync=True)
+
+        @classmethod
+        def get_component(cls, initial: str) -> rx.Component:
+            """Configure the new state class before returning its component.
+
+            Args:
+                initial: The preference's default value.
+
+            Returns:
+                The component showing the preference.
+            """
+            cls.__fields__["pref"].set_default(
+                rx.LocalStorage(initial, name=f"pref-{initial}", sync=True)
+            )
+            return rx.text(cls.pref)
+
+    for initial in ("dark", "blue"):
+        state_cls = PreferenceComponentState.create(initial=initial).State
+        assert state_cls is not None
+        default = state_cls.get_fields()["pref"].default
+        assert isinstance(default, rx.LocalStorage)
+        assert default == initial
+        assert state_cls._is_client_storage("pref")
+        compiled = compile_client_storage(state_cls)
+        key = f"{state_cls.get_full_name()}.pref{FIELD_MARKER}"
+        assert compiled[constants.LOCAL_STORAGE][key] == {
+            "name": f"pref-{initial}",
+            "sync": True,
+        }
+    declared = PreferenceComponentState.get_fields()["pref"].default
+    assert isinstance(declared, rx.LocalStorage)
+    assert declared.name == "pref"
