@@ -4,7 +4,10 @@ import pytest
 from reflex_base.event import EventChain
 from reflex_base.utils.exceptions import EventHandlerValueError
 from reflex_components_core.el.elements.forms import Form as HTMLForm
-from reflex_components_radix.themes.components.checkbox_cards import checkbox_cards
+from reflex_components_radix.themes.components.checkbox_cards import (
+    CheckboxCardsRoot,
+    checkbox_cards,
+)
 
 import reflex as rx
 
@@ -42,18 +45,37 @@ class SignupState(rx.State):
         """
 
 
-def test_checkbox_cards_renders_value_props():
-    """The root renders name and default_value, and the item renders its value."""
+def test_checkbox_cards_item_renders_value_disabled_required():
+    """An item renders its value, disabled, and required props."""
+    item = checkbox_cards.item("Red", value="red", disabled=True, required=True)
+    props = item.render()["props"]
+
+    assert 'value:"red"' in props
+    assert "disabled:true" in props
+    assert "required:true" in props
+
+
+def test_checkbox_cards_root_renders_native_form_props():
+    """The root renders the native form and keyboard navigation props."""
     root = checkbox_cards.root(
         checkbox_cards.item("Red", value="red"),
         name="colors",
         default_value=["red"],
+        disabled=False,
+        required=True,
+        dir="ltr",
+        orientation="vertical",
+        loop=True,
     )
-    rendered = root.render()
+    props = root.render()["props"]
 
-    assert 'name:"colors"' in rendered["props"]
-    assert 'defaultValue:["red"]' in rendered["props"]
-    assert 'value:"red"' in rendered["children"][0]["props"]
+    assert 'name:"colors"' in props
+    assert 'defaultValue:["red"]' in props
+    assert "disabled:false" in props
+    assert "required:true" in props
+    assert 'dir:"ltr"' in props
+    assert 'orientation:"vertical"' in props
+    assert "loop:true" in props
 
 
 def test_checkbox_cards_root_renders_controlled_value_and_on_value_change():
@@ -68,6 +90,11 @@ def test_checkbox_cards_root_renders_controlled_value_and_on_value_change():
     assert f"value:{ColorState.colors!s}" in props
     on_value_change = next(p for p in props if p.startswith("onValueChange:"))
     assert 'on_colors_change", ({ ["value"] : _ev_0 })' in on_value_change
+
+
+def test_checkbox_cards_root_is_form_control():
+    """The root is a form control, so its name counts toward on_submit validation."""
+    assert CheckboxCardsRoot._is_form_control is True
 
 
 def test_on_submit_accepts_typed_dict_matching_checkbox_cards_name():

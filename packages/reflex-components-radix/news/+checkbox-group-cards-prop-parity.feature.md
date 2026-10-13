@@ -1,1 +1,1 @@
-`checkbox_group` and `checkbox_cards` now support a controlled `value` with `on_value_change`. `checkbox_cards` also accepts `name` and `default_value` on the root and `value` on each item, so it can be submitted with a form.
+`checkbox_group` and `checkbox_cards` now support a controlled `value` with `on_value_change`, and the native form props that `radio_group` and `radio_cards` already have.

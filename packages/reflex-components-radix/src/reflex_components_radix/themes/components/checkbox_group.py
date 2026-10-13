@@ -44,6 +44,24 @@ class CheckboxGroupRoot(RadixThemesComponent):
         doc="used to assign a name to the entire group of checkboxes"
     )
 
+    disabled: Var[bool] = field(doc="Whether the checkbox group is disabled")
+
+    required: Var[bool] = field(
+        doc="When true, every checkbox in the group must be checked before the owning form can be submitted."
+    )
+
+    orientation: Var[Literal["horizontal", "vertical"]] = field(
+        doc="The orientation of the component."
+    )
+
+    dir: Var[Literal["ltr", "rtl"]] = field(
+        doc="The reading direction of the checkbox group. If omitted, inherits globally from DirectionProvider or assumes LTR (left-to-right) reading mode."
+    )
+
+    loop: Var[bool] = field(
+        doc="When true, keyboard navigation will loop from last item to first, and vice versa."
+    )
+
     on_value_change: EventHandler[passthrough_event_spec(list[str])] = field(
         doc="Fired when the set of checked checkboxes changes."
     )
@@ -60,6 +78,10 @@ class CheckboxGroupItem(RadixThemesComponent):
 
     disabled: Var[bool] = field(
         doc="Use the native disabled attribute to create a disabled checkbox."
+    )
+
+    required: Var[bool] = field(
+        doc="When true, indicates that the user must check the checkbox item before the owning form can be submitted."
     )
 
 
