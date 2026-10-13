@@ -217,6 +217,9 @@ def test_on_submit_warns_for_controls_with_only_an_id(caplog):
     assert "only_id_input" in caplog.text
     assert "only_id_checkbox" in caplog.text
     assert "`name`" in caplog.text
+    # The fix changes a checkbox's value from a bool, which the warning says.
+    assert "'on'" in caplog.text
+    assert "TypedDict" in caplog.text
 
 
 def _native_control(tag: str) -> Component:
@@ -323,6 +326,7 @@ def test_on_submit_accepts_typed_dict_with_unresolvable_field_types():
         amount: "Decimal"  # noqa: F821 # pyright: ignore[reportUndefinedVariable]
         tip: "NotRequired[Decimal]"  # noqa: F821 # pyright: ignore[reportUndefinedVariable]
         fee: "NotRequired[billing.Money]"  # noqa: F821 # pyright: ignore[reportUndefinedVariable]
+        tags: "Seq[str]"  # noqa: F821 # pyright: ignore[reportUndefinedVariable]
 
     class OrderState(rx.State):
         @rx.event
@@ -332,6 +336,7 @@ def test_on_submit_accepts_typed_dict_with_unresolvable_field_types():
     HTMLForm.create(
         Input.create(name="name"),
         Input.create(name="amount"),
+        Input.create(name="tags"),
         on_submit=OrderState.on_submit,
     )
     with pytest.raises(EventHandlerValueError, match="amount"):

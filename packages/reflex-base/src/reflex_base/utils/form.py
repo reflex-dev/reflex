@@ -59,6 +59,15 @@ class FormData(Mapping[_K, _V_co]):
 
     __slots__ = ("_dict", "_items")
 
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        """Record a FormData subclass for the fast check of event arguments.
+
+        Args:
+            **kwargs: Arguments for the parent class.
+        """
+        super().__init_subclass__(**kwargs)
+        _FORM_DATA_TYPES.add(cls)
+
     _dict: dict[_K, _V_co]
     _items: tuple[tuple[_K, _V_co], ...]
 
@@ -186,6 +195,11 @@ class FormData(Mapping[_K, _V_co]):
         return list(self._items)
 
 
+# FormData and its subclasses: checking an event argument's type against them is
+# cheaper than an isinstance check against FormData, a Mapping ABC.
+_FORM_DATA_TYPES: set[type] = {FormData}
+
+
 @dataclasses.dataclass(frozen=True, slots=True)
 class _CoercedFormField:
     """A TypedDict field that submitted form data is coerced into."""
@@ -203,7 +217,7 @@ class _CoercedFormField:
     required: bool
 
 
-@functools.cache
+@functools.lru_cache(maxsize=256)
 def _typed_dict_form_fields(typed_dict: Any) -> tuple[_CoercedFormField, ...]:
     """Find the TypedDict fields that form data is coerced into.
 
@@ -288,11 +302,11 @@ def _form_data_entries(value: Any) -> list | None:
     return value.get(FORM_DATA_ENTRIES_KEY) if isinstance(value, dict) else None
 
 
-@functools.cache
+@functools.lru_cache(maxsize=256)
 def _form_data_annotation(hinted_args: Any) -> tuple[type[FormData] | None, Any]:
     """Find what an event argument's annotation asks of form data.
 
-    Cached, since every Mapping event argument is checked against its annotation.
+    Cached, since every dict event argument is checked against its annotation.
 
     Args:
         hinted_args: The type hint for the argument.
@@ -322,8 +336,12 @@ def transform_form_data(value: Any, hinted_args: Any) -> Any:
         plain mapping); for a TypedDict annotation of form data, its coerced
         dict; for other form data, its dict; otherwise the value unchanged.
     """
-    entries = _form_data_entries(value)
-    if entries is None and not isinstance(value, Mapping):
+    # Only a dict from the wire or a FormData passed on can hold form data.
+    if isinstance(value, dict):
+        entries = value.get(FORM_DATA_ENTRIES_KEY)
+    elif type(value) in _FORM_DATA_TYPES:
+        entries = None
+    else:
         return value
     try:
         form_data_type, typed_dict = _form_data_annotation(hinted_args)

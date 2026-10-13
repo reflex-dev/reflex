@@ -1876,11 +1876,14 @@ export const getFormData = (form, refValues = {}) => {
   const refEntries = Object.entries(refValues).filter(
     ([name]) => !(counts.get(name) > 1),
   );
-  const replaced = new Set(refEntries.map(([name]) => name));
-  const entries = [
-    ...formEntries.filter(([name]) => !replaced.has(name)),
-    ...refEntries,
-  ];
+  // Replace submitted values in place, then add the refs the form did not
+  // submit, as spreading the refs over the form's entries would.
+  const replaced = new Map(refEntries);
+  const entries = formEntries.map(([name, value]) => [
+    name,
+    replaced.has(name) ? replaced.get(name) : value,
+  ]);
+  entries.push(...refEntries.filter(([name]) => !counts.has(name)));
   return Object.defineProperty(Object.fromEntries(entries), formDataEntries, {
     value: entries,
   });

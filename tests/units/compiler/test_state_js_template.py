@@ -229,7 +229,16 @@ assert.deepEqual({...withRefs}, {tag: 'b', agree: true, unset: null});
 assert.deepEqual(
   encodeFormDataArgs({name: 'state.submit', payload: {form_data: withRefs}})
     .payload.form_data.__reflex_form_data__,
-  [['tag', 'a'], ['tag', 'b'], ['agree', true], ['unset', null]],
+  [['tag', 'a'], ['agree', true], ['tag', 'b'], ['unset', null]],
+);
+// A replaced value keeps its place, as when spreading the refs over the form's
+// entries.
+const ordered = getFormData([['title', 'typed'], ['note', 'n']], {title: 'ref'});
+assert.deepEqual(Object.keys(ordered), ['title', 'note']);
+assert.deepEqual(
+  encodeFormDataArgs({name: 'state.submit', payload: {form_data: ordered}})
+    .payload.form_data.__reflex_form_data__,
+  [['title', 'ref'], ['note', 'n']],
 );
 // A name submitted more than once, like a checkbox group with an id, keeps
 // its values instead of taking the ref's single value.

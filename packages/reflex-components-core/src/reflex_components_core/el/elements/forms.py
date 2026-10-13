@@ -501,7 +501,10 @@ class Form(BaseHTML):
                     ),
                     reason=(
                         "Form data will only include controls with a `name`. "
-                        f"Set `name={control_id!r}` to keep submitting its value"
+                        f"Set `name={control_id!r}` to keep submitting its value; "
+                        "a checkbox or switch then submits 'on' or nothing rather "
+                        "than True or False, so read it as a `bool` field of a "
+                        "TypedDict to keep a bool"
                     ),
                     deprecation_version="0.10.1",
                     removal_version="0.11.0",

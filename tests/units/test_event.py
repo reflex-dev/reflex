@@ -1,4 +1,5 @@
 import json
+import logging
 import shutil
 import subprocess
 from collections.abc import Callable, Mapping
@@ -1625,3 +1626,18 @@ def test_generic_event_spec_arg_admits_callback_types(spec_arg, annotation, acce
     else:
         with pytest.raises(EventHandlerArgTypeMismatchError):
             check()
+
+
+@pytest.mark.parametrize(
+    ("fallback_spec_arg", "warns"),
+    [(_BOUNDED_SPEC_ARG, False), (dict[str, str], True)],
+)
+def test_generic_event_spec_fallback_is_not_reported(fallback_spec_arg, warns, caplog):
+    """Matching a later generic spec is not reported as a mismatch with the first spec."""
+    with caplog.at_level(logging.WARNING):
+        _check_event_args_subclass_of_callback(
+            ["value"],
+            [tuple[Var[str]], tuple[Var[fallback_spec_arg]]],
+            {"value": dict[str, str]},
+        )
+    assert ("intentionally ignored" in caplog.text) is warns

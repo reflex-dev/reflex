@@ -335,8 +335,8 @@ class _LenientNames(dict):
         return getattr(builtins, key, Any)
 
 
-class _UndefinedAttributes(ast.NodeTransformer):
-    """Shorten ``a.b.c`` to ``a`` when ``a`` is undefined, so it reads as ``Any``."""
+class _UndefinedReferences(ast.NodeTransformer):
+    """Shorten ``a.b[c]`` to ``a`` when ``a`` is undefined, so it reads as ``Any``."""
 
     def __init__(self, names: _LenientNames):
         """Check names against those an annotation is evaluated with.
@@ -346,21 +346,23 @@ class _UndefinedAttributes(ast.NodeTransformer):
         """
         self._names = names
 
-    def visit_Attribute(self, node: ast.Attribute) -> ast.AST:
-        """Replace an attribute of an undefined name by the name.
+    def _visit_reference(self, node: ast.Attribute | ast.Subscript) -> ast.AST:
+        """Replace an attribute or subscript of an undefined name by the name.
 
         Args:
-            node: The attribute access.
+            node: The attribute access or subscript.
 
         Returns:
             The undefined root name, otherwise the visited node.
         """
         root = node.value
-        while isinstance(root, ast.Attribute):
+        while isinstance(root, (ast.Attribute, ast.Subscript)):
             root = root.value
         if isinstance(root, ast.Name) and not self._names.defines(root.id):
             return root
         return self.generic_visit(node)
+
+    visit_Attribute = visit_Subscript = _visit_reference  # noqa: N815
 
 
 def _eval_lenient(source: str, globalns: dict[str, Any]) -> Any:
@@ -371,11 +373,14 @@ def _eval_lenient(source: str, globalns: dict[str, Any]) -> Any:
         globalns: The globals of the module defining the annotation.
 
     Returns:
-        The evaluated annotation.
+        The evaluated annotation, or ``Any`` when it still cannot be evaluated.
     """
     names = _LenientNames(globalns)
-    tree = _UndefinedAttributes(names).visit(ast.parse(source, mode="eval"))
-    return eval(compile(tree, "<annotation>", "eval"), globalns, names)
+    try:
+        tree = _UndefinedReferences(names).visit(ast.parse(source, mode="eval"))
+        return eval(compile(tree, "<annotation>", "eval"), globalns, names)
+    except Exception:
+        return Any
 
 
 def _typed_dict_annotations(typed_dict: Any) -> dict[str, Any]:
