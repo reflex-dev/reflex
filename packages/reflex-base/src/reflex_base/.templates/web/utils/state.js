@@ -846,7 +846,11 @@ export const connect = async (
     window.__reflex_otel?.onEventSend?.(boot_event);
     const auth = { event: boot_event };
     const maxSize = env.MAX_HTTP_BUFFER_SIZE;
-    const size = new TextEncoder().encode(JSON.stringify(auth)).byteLength + 16;
+    const authPacket = `40${endpoint.pathname},${JSON.stringify(
+      auth,
+      (key, value) => (value === undefined ? null : value),
+    )}`;
+    const size = new TextEncoder().encode(authPacket).byteLength;
     if (typeof maxSize === "number" && size > maxSize) {
       if (
         lastRejectedAuthPayload?.setter !== setConnectErrors ||

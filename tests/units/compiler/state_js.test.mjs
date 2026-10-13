@@ -19,6 +19,7 @@ async function setup({
   hidden = false,
   storedToken = "original-token",
   maxHttpBufferSize = 1_000_000,
+  eventUrl = "ws://localhost:8000/_event",
   oversizedPayload,
   oversizedReconnectPayload,
 } = {}) {
@@ -27,6 +28,7 @@ async function setup({
   const timers = new Map();
   const firstHydrates = [];
   const updates = [];
+  const encodedInputs = [];
   let connectErrors = [];
   const window = new EventTarget();
   window.location = new URL("http://localhost:3000/page?query=value");
@@ -43,7 +45,12 @@ async function setup({
     console,
     URL,
     URLSearchParams,
-    TextEncoder,
+    TextEncoder: class extends TextEncoder {
+      encode(value, ...args) {
+        encodedInputs.push(value);
+        return super.encode(value, ...args);
+      }
+    },
     performance,
     ...(browser ? { window, document } : {}),
     queueMicrotask: (fn) => microtasks.push(fn),
@@ -104,7 +111,7 @@ async function setup({
     mergician: { mergician() {} },
     "$/env.json": {
       default: {
-        EVENT: "ws://localhost:8000/_event",
+        EVENT: eventUrl,
         TRANSPORT: "websocket",
         MAX_HTTP_BUFFER_SIZE: maxHttpBufferSize,
       },
@@ -183,6 +190,7 @@ async function setup({
     window,
     socket,
     updates,
+    encodedInputs,
     get connectErrors() {
       return connectErrors;
     },
@@ -205,9 +213,23 @@ async function setup({
 }
 
 test("reject an oversized UTF-8 hydration auth payload before connecting", async () => {
-  const app = await setup({
-    oversizedPayload: { vars: { large: "é".repeat(500_001) } },
+  const payload = {
+    vars: { large: "é".repeat(500_001), undefinedValue: undefined },
+  };
+  const options = {
+    eventUrl: "ws://localhost:8000/api/v1/_event",
+    oversizedPayload: payload,
+  };
+  const sizingApp = await setup({
+    ...options,
+    maxHttpBufferSize: Number.MAX_SAFE_INTEGER,
   });
+  sizingApp.flush();
+  await sizingApp.connect();
+  const packet = sizingApp.encodedInputs[0];
+  const maxHttpBufferSize = new TextEncoder().encode(packet).byteLength - 1;
+
+  const app = await setup({ ...options, maxHttpBufferSize });
   app.flush();
   await app.connect();
 
@@ -216,6 +238,9 @@ test("reject an oversized UTF-8 hydration auth payload before connecting", async
   assert.equal(app.connectErrors.length, 1);
   assert.match(app.connectErrors[0].message, /exceeds.*message limit/i);
   assert.match(app.connectErrors[0].message, /browser storage/i);
+  assert.equal(app.encodedInputs[0], packet);
+  assert.match(packet, /^40\/api\/v1\/_event,/);
+  assert.match(packet, /"undefinedValue":null/);
 });
 
 test("do not retry an oversized full hydration on reconnect", async () => {

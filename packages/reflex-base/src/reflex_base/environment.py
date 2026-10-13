@@ -797,7 +797,8 @@ class EnvironmentVariables:
     # The address to bind the HTTP client to. You can set this to "::" to enable IPv6.
     REFLEX_HTTP_CLIENT_BIND_ADDRESS: EnvVar[str | None] = env_var(None)
 
-    # Maximum size of the message in the websocket server in bytes.
+    # Maximum Socket.IO message size in bytes. Keep the value the same when
+    # building the frontend and running the backend.
     REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE: EnvVar[int] = env_var(
         constants.POLLING_MAX_HTTP_BUFFER_SIZE
     )
