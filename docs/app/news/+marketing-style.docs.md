@@ -1,0 +1,1 @@
+Align the documentation site with the marketing brand: Inter and Geist typography, the opal announcement banner, warm neutral surfaces, consistent controls, search, catalog cards, recipes, code examples, tables, callouts, compact Back/Next links, and footers. Preserve dark mode, keyboard access, mobile navigation, reduced motion, and live examples.

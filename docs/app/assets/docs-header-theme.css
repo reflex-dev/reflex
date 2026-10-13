@@ -1,0 +1,204 @@
+/* Docs keep a 64px fixed header and a 40px announcement contribution.
+   The banner artwork and glass treatment match the marketing site. */
+.docs-nav-frame {
+  left: 0;
+  --docs-control-shadow: 0 0 0 .5px rgb(0 0 0 / 12.5%), 0 1px 1px rgb(0 0 0 / 4%), 0 2px 4px rgb(0 0 0 / 4%);
+}
+.docs-nav-frame > .docs-navbar-header {
+  height: 64px;
+  padding-inline: 32px;
+  background: var(--background);
+  border-bottom: 1px solid var(--border-subtle);
+  border-radius: 0;
+  box-shadow: none;
+  transition: border-radius 200ms ease, background-color 200ms ease;
+}
+.docs-nav-frame:has([data-announcement]) > .docs-navbar-header {
+  margin-top: -24px;
+  border-radius: 24px 24px 0 0;
+}
+.docs-nav-frame > .docs-navbar-header > .docs-navbar-inner {
+  max-width: 1536px;
+}
+.docs-navbar-wordmark { width: 102px; height: auto; }
+.docs-navbar-docs-wordmark { height: 16px; width: auto; }
+.docs-navbar-brand { gap: 12px; }
+.docs-navbar-mobile-panel {
+  padding: 12px 24px 20px;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0 0 24px 24px;
+  box-shadow: 0 12px 24px -16px rgb(0 0 0 / 20%);
+}
+.docs-navbar-mobile-link { padding-inline: 8px; }
+.docs-navbar-mobile-link svg { color: var(--muted-foreground); }
+
+/* The in-page mobile drawer shares the desktop sidebar's typography. */
+.docs-sidebar-drawer { font-family: var(--font-sans); color: var(--foreground); }
+.docs-sidebar-drawer p,
+.docs-sidebar-drawer h3,
+.docs-sidebar-drawer summary { font-weight: 400; }
+.docs-sidebar-drawer h2 {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: .025em;
+  text-transform: none;
+}
+.docs-sidebar-drawer .docs-sidebar-drawer-title {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 24px;
+  letter-spacing: 0;
+}
+.docs-sidebar-drawer #sidebar-container { min-height: 0; }
+.docs-sidebar-drawer #sidebar-container > div { padding-left: 16px; padding-right: 20px; }
+.docs-sidebar-drawer a:not([aria-current='page']):not([aria-current='true']) p {
+  color: var(--muted-foreground);
+}
+.docs-sidebar-drawer a:hover p { color: var(--foreground); }
+.docs-sidebar-drawer a[aria-current='page'] p { font-weight: 500; }
+.docs-sidebar-drawer a:focus-visible,
+.docs-sidebar-drawer summary:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+@layer utilities {
+  html .docs-sidebar-drawer {
+    top: var(--docs-header-height) !important;
+    height: calc(100dvh - var(--docs-header-height)) !important;
+  }
+}
+
+.docs-nav-frame .docs-announcement {
+  position: relative;
+  isolation: isolate;
+  height: 64px;
+  padding-bottom: 24px;
+  width: 100%;
+  overflow: hidden;
+  background: #e8e7f1;
+  color: #000;
+  border: 0;
+  font-family: Inter, Arial, sans-serif;
+}
+.docs-announcement-glass {
+  display: flex;
+  position: absolute;
+  z-index: -2;
+  inset: -48px -12%;
+  pointer-events: none;
+  filter: blur(6px);
+  will-change: transform;
+  animation: docs-announcement-glass-drift 26s ease-in-out infinite alternate;
+}
+.docs-announcement-glass > span {
+  flex: 1;
+  background: url('/docs/header/opal.png') center 22% / cover no-repeat;
+}
+.docs-announcement-glass > span:nth-child(2) { background-position: center 62%; transform: scaleX(-1); }
+.docs-announcement-glass > span:nth-child(3) { background-position: center 38%; }
+.docs-announcement-glass > span:nth-child(4) { background-position: center 78%; transform: scaleX(-1); }
+.docs-announcement-glass > span:nth-child(5) { background-position: center 50%; }
+.docs-announcement::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(ellipse 34% 90% at 50% 36%, rgb(255 255 255 / 30%), transparent),
+    linear-gradient(180deg, rgb(255 255 255 / 28%), transparent 45%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 75%);
+}
+.docs-announcement-link {
+  display: block;
+  height: 100%;
+  width: 100%;
+  color: #000;
+  background: transparent;
+}
+.docs-announcement-content {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  margin-inline: auto;
+  padding-inline: 48px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.docs-announcement-badge {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  height: 20px;
+  padding-inline: 8px;
+  border-radius: 999px;
+  background: #000;
+  color: #fff;
+  font: 400 12px/18px Inter, Arial, sans-serif;
+}
+.docs-announcement-message {
+  color: #000;
+  font: 400 14px/20px Inter, Arial, sans-serif;
+  white-space: nowrap;
+}
+.docs-announcement-cta {
+  flex-shrink: 0;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: #fff;
+  color: #000;
+  font: 400 13px/20px Inter, Arial, sans-serif;
+  box-shadow: var(--docs-control-shadow);
+  white-space: nowrap;
+}
+.docs-announcement-dismiss {
+  position: absolute;
+  top: 20px;
+  right: 16px;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #000;
+  cursor: pointer;
+}
+.docs-announcement-dismiss:hover { background: rgb(255 255 255 / 35%); }
+.docs-announcement-link:focus-visible,
+.docs-announcement-dismiss:focus-visible { outline: 2px solid #000; }
+.docs-announcement-link:focus-visible { outline-offset: -4px; }
+.docs-announcement-dismiss:focus-visible { outline-offset: 2px; }
+@keyframes docs-announcement-glass-drift {
+  from { transform: translate3d(-5%, 0, 0) scale(1.04); }
+  to { transform: translate3d(5%, 0, 0) scale(1); }
+}
+@media (max-width: 1279px) {
+  .docs-nav-frame:has(.docs-navbar-menu[open]) > .docs-navbar-header {
+    border-radius: 0;
+  }
+}
+@media (max-width: 640px) {
+  .docs-announcement-cta { display: none; }
+}
+@media (max-width: 639px) {
+  .docs-nav-frame > .docs-navbar-header { padding-inline: 16px; }
+  .docs-navbar-inner { gap: 16px; }
+  .docs-navbar-brand { gap: 10px; }
+  .docs-navbar-wordmark { width: 92px; }
+  .docs-navbar-mobile-panel { padding-inline: 16px; }
+  .docs-announcement-content { padding-inline: 40px; gap: 8px; }
+  .docs-announcement-dismiss { right: 8px; }
+}
+@media (max-width: 379px) {
+  .docs-announcement-message { font-size: 13px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .docs-announcement-glass { animation: none; will-change: auto; }
+  .docs-nav-frame > .docs-navbar-header,
+  .docs-navbar-mobile-link { transition: none; }
+}
