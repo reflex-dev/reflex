@@ -8,6 +8,10 @@ const stateful = (id) => ({
   name: "reflex___state.test.event",
   payload: { id },
 });
+const speculative = (value, state = "test_state") => ({
+  name: "_dispatch_value",
+  payload: { state, delta: { value } },
+});
 const call = (fn, callback) => ({
   name: "_call_function",
   payload: { function: fn, callback },
@@ -104,12 +108,7 @@ for (const frontendFirst of [false, true]) {
         [
           null,
           frontendFirst ? q.local("frontend") : undefined,
-          [
-            {
-              name: "_dispatch_value",
-              payload: { state: "test_state", delta: { value: "speculative" } },
-            },
-          ],
+          [speculative("speculative")],
         ],
       ]);
       assert.deepEqual(q.output, frontendFirst ? [] : ["speculative"]);
@@ -125,6 +124,58 @@ for (const frontendFirst of [false, true]) {
     },
   );
 }
+
+test("an offline speculative update waits for frontend events added before it", async () => {
+  const q = await createQueue(false);
+  // As compiled event triggers do: one call per event.
+  await q.enqueue([stateful("backend")]);
+  await q.enqueue([q.local("frontend")]);
+  await q.enqueue([speculative("speculative")]);
+  assert.deepEqual(q.output, []);
+  q.socket.connected = true;
+  await q.drain();
+  assert.deepEqual(q.output, ["backend", "frontend", "speculative"]);
+});
+
+test("speculative updates are dropped after a fatal state mismatch", async () => {
+  const q = await createQueue();
+  q.runtime.setMismatch(true);
+  await q.enqueue([speculative("dropped"), q.local("local")]);
+  assert.deepEqual(q.output, []);
+  assert.equal(q.runtime.event_queue.length, 0);
+});
+
+test("a speculative update for a state that is not mounted warns and moves on", async () => {
+  const q = await createQueue();
+  const warnings = [];
+  const warn = console.warn;
+  console.warn = (message) => warnings.push(message);
+  try {
+    await q.enqueue([
+      speculative("lost", "missing_state"),
+      speculative("shown"),
+      stateful(1),
+    ]);
+  } finally {
+    console.warn = warn;
+  }
+  assert.deepEqual(warnings, [
+    "No state missing_state is mounted to dispatch a value to.",
+  ]);
+  assert.deepEqual(q.output, ["shown", 1]);
+});
+
+test("a prepended batch runs ahead of the queue in order", async () => {
+  const q = await createQueue(false);
+  await q.enqueue([stateful("backend")]);
+  await q.enqueue([speculative("speculative"), q.local("frontend")], true);
+  // Like the rest of the queue, it waits while a stateful event is offline.
+  assert.deepEqual(q.output, []);
+  q.socket.connected = true;
+  await q.drain();
+  assert.deepEqual(q.output, ["speculative", "frontend", "backend"]);
+  assert.equal(q.runtime.event_queue.length, 0);
+});
 
 test("empty and local-only queues work with absent or disconnected sockets", async () => {
   for (const socket of [null, { current: null }, { connected: false }]) {

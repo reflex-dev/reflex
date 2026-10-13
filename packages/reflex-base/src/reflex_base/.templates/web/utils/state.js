@@ -539,10 +539,12 @@ export const queueEvents = async (
     for (const event of normalized) {
       if (
         event.name == "_dispatch_value" &&
+        !backend_state_mismatch &&
         event_queue.every(isStatefulEvent)
       ) {
         // A speculative update is shown right away, even before the socket
         // connects, unless frontend events queued before it must run first.
+        // After a fatal state mismatch, it is queued and dropped like the rest.
         await applyEvent(event, socket, navigate, params);
       } else {
         event_queue.push(event);

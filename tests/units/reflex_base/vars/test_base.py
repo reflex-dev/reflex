@@ -13,6 +13,7 @@ from abc import ABC, abstractmethod
 from typing import Any, ClassVar, Literal, TypeVar
 
 import pytest
+from pytest_mock import MockerFixture
 from reflex_base.constants import RouteArgType
 from reflex_base.utils import serializers
 from reflex_base.utils.exceptions import ReflexRuntimeError, StateValueError
@@ -1066,6 +1067,7 @@ class DispatchValueState(State):
 
     status: Field[str] = field("")
     counts: Field[dict[str, int]] = field(default_factory=dict)
+    _secret: Field[int] = field(0)
 
     @computed_var
     def upper(self) -> str:
@@ -1084,7 +1086,12 @@ class DispatchValueSubstate(DispatchValueState):
 
 def test_dispatch_value():
     """A state var dispatches a delta for the state declaring it, on the frontend only."""
-    for var in (DispatchValueState.status, DispatchValueSubstate.status):
+    for var in (
+        DispatchValueState.status,
+        DispatchValueSubstate.status,
+        # A converted state var dispatches the var it converts.
+        DispatchValueState.status.to(str),
+    ):
         spec = var.dispatch_value(State.router.page.path)
         assert spec.handler.fn.__qualname__ == "_dispatch_value"
         assert {str(key): str(value) for key, value in spec.args} == {
@@ -1099,12 +1106,6 @@ def test_dispatch_value():
         .args[1][1]
         .equals(LiteralVar.create({"counts_rx_state_": {"a": 1}}))
     )
-    assert (
-        DispatchValueState.upper
-        .dispatch_value("A")
-        .args[1][1]
-        .equals(LiteralVar.create({"upper_rx_state_": "A"}))
-    )
 
 
 @pytest.mark.parametrize(
@@ -1113,17 +1114,57 @@ def test_dispatch_value():
         LiteralVar.create("a"),
         DispatchValueState.status.upper(),
         DispatchValueState.status + "a",
+        # Only the backend computes a computed var, converted or not.
+        DispatchValueState.upper,
+        DispatchValueState.upper.to(str),
         DispatchValueState.backend_upper,
+        DispatchValueState.backend_upper.to(str),
     ],
 )
 def test_dispatch_value_needs_state_var(var: Var):
-    """Only a state var itself can be dispatched.
+    """Only a state var sent to the client can be dispatched.
 
     Args:
-        var: A var that is not a state var.
+        var: A var that is not a state var sent to the client.
     """
     with pytest.raises(TypeError, match="dispatch_value"):
         var.dispatch_value("b")
+
+
+def test_dispatch_value_backend_field():
+    """A backend field has no var on its class, so nothing to dispatch."""
+    with pytest.raises(AttributeError, match="dispatch_value"):
+        DispatchValueState._secret.dispatch_value(1)  # pyright: ignore[reportAttributeAccessIssue]
+
+
+@pytest.mark.parametrize(
+    ("var", "value", "mismatched"),
+    [
+        (DispatchValueState.status, "ok", False),
+        (DispatchValueState.status, 1, True),
+        (DispatchValueState.counts, {"a": 1}, False),
+        (DispatchValueState.counts, {"a": "b"}, True),
+        # A var is checked by its type.
+        (DispatchValueState.status, State.router.page.path, False),
+        (DispatchValueState.counts, State.router.page.path, True),
+        # A converted var is checked against the var it converts.
+        (DispatchValueState.status.to(int), 5, True),
+    ],
+)
+def test_dispatch_value_checks_the_value_type(
+    var: Var, value: Any, mismatched: bool, mocker: MockerFixture
+):
+    """A value of another type than the var's is logged, as a backend write of it is.
+
+    Args:
+        var: The state var to dispatch.
+        value: The value to dispatch.
+        mismatched: Whether the value's type does not match the var's.
+        mocker: The pytest mocker fixture.
+    """
+    error_mock = mocker.patch("reflex_base.vars.base.logger.error")
+    var.dispatch_value(value)
+    assert error_mock.called is mismatched
 
 
 def test_inherited_field_on_plain_model():

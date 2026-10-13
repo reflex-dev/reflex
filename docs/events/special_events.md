@@ -55,10 +55,21 @@ def speculative_example():
     )
 ```
 
-Only state vars sent to the client can be dispatched; backend vars have no
-value on the frontend. Since the backend only sends the vars that changed, a
-handler should set any var it lets the frontend change, as `work` sets
-`loading` above.
+Only state vars sent to the client can be dispatched: backend vars have no
+value on the frontend, and only the backend computes computed vars. A computed
+var that depends on a dispatched var keeps its value until the backend sends it.
+
+Since the backend only sends the vars that changed, a handler should set any
+var it lets the frontend change, as `work` sets `loading` above. A handler that
+raises sends no update at all, so it should catch its errors and still set the
+var.
+
+The next value the backend sends for the var replaces the dispatched one, even
+when it comes from an older event. For example, with
+`on_change=lambda value: [State.text.dispatch_value(value), State.echo(value)]`,
+where `echo` takes a second to set `text`, typing "abc" quickly shows `abc` right
+away, then `a` and `ab` as the older events finish, before `abc` again. Avoid
+dispatching a var that slow handlers of earlier events also set.
 
 Events keep their order: a value dispatched after other frontend events, like
 `rx.call_script`, is shown once they have run, so put `dispatch_value` first to

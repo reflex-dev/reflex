@@ -23,6 +23,12 @@ def DispatchValueApp():
             await asyncio.sleep(1)
             self.status = "done"
 
+        @rx.event
+        def chain(self):
+            # Dispatched by the backend: the frontend shows it, as it never
+            # receives the var from this event.
+            return State.status.dispatch_value("chained")
+
     class Child(State):
         pass
 
@@ -55,6 +61,7 @@ def DispatchValueApp():
                 ],
                 id="late",
             ),
+            rx.button("Chain", on_click=State.chain, id="chain"),
             rx.text(State.status, id="status"),
             rx.text(State.items.join(","), id="items"),
         )
@@ -101,6 +108,13 @@ def test_dispatch_value(dispatch_value_app: AppHarness, page: Page):
     page.click("#add")
     expect(page.locator("#items")).to_have_text("pending")
 
+    page.click("#late")
+    expect(status).to_have_text("late")
+    expect(status).to_have_text("done")
+
+    page.click("#chain")
+    expect(status).to_have_text("chained")
+
 
 def test_dispatch_value_before_connecting(dispatch_value_app: AppHarness, page: Page):
     """A dispatched value leading its events shows while the backend is unreachable.
@@ -117,9 +131,4 @@ def test_dispatch_value_before_connecting(dispatch_value_app: AppHarness, page: 
     status = page.locator("#status")
     expect(status).to_have_text("idle")
     page.click("#work")
-    expect(status).to_have_text("working")
-
-    # Events before a dispatched value run first: here they wait for the backend.
-    page.click("#late")
-    page.wait_for_timeout(500)
     expect(status).to_have_text("working")
