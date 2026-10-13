@@ -143,8 +143,8 @@ dev = [
   "croniter",
 ]
 # The benchmark CI jobs: the harness without the dev group (libsass builds from
-# source on arm64).
-bench = ["reflex-bench"]
+# source on arm64), and the playground's own dependencies beyond reflex[db].
+bench = ["reflex-bench", "plotly>=6.0,<7.0"]
 
 
 [build-system]
