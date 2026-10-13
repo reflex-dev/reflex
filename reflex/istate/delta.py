@@ -6,7 +6,7 @@ import asyncio
 import contextlib
 import inspect
 import time
-from collections.abc import Coroutine, Iterable, Iterator, Mapping
+from collections.abc import Iterable, Iterator, Mapping
 from contextvars import ContextVar
 from typing import TYPE_CHECKING, Any, Final, NamedTuple
 
