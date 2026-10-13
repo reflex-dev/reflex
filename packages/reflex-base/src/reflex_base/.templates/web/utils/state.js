@@ -69,6 +69,7 @@ const MAX_SENT_STORAGE_VALUES = 256;
 // (vars of different state keys may share one).
 let localStorageWrites = 0;
 const lastLocalStorageWrites = {};
+let lastRejectedAuthPayload;
 
 // Mirrors the data router's location so applyEvent can populate router_data
 // with the in-widget URL. In embed mode the host page's window.location is
@@ -841,11 +842,36 @@ export const connect = async (
   // the backend as CompileVars.CONNECT_AUTH_EVENT.
   const bootAuth = (first) => {
     const boot_event = withRouterData(app.initialEvents(first)[0], params);
-    recordSentStorageValues(boot_event);
-    // Instrumentation hook (installed by reflex-otel): may add a traceparent.
+    // Instrumentation may add trace data, so measure the final auth payload.
     window.__reflex_otel?.onEventSend?.(boot_event);
-    return { event: boot_event };
+    const auth = { event: boot_event };
+    const maxSize = env.MAX_HTTP_BUFFER_SIZE;
+    const size = new TextEncoder().encode(JSON.stringify(auth)).byteLength + 16;
+    if (typeof maxSize === "number" && size > maxSize) {
+      if (
+        lastRejectedAuthPayload?.setter !== setConnectErrors ||
+        lastRejectedAuthPayload.size !== size
+      ) {
+        setConnectErrors((errors) => [
+          ...errors.slice(-9),
+          new Error(
+            `Hydration payload (${size} bytes) exceeds the WebSocket message limit (${maxSize} bytes). Reduce browser storage data and reload.`,
+          ),
+        ]);
+        lastRejectedAuthPayload = { setter: setConnectErrors, size };
+      }
+      return null;
+    }
+    lastRejectedAuthPayload = null;
+    recordSentStorageValues(boot_event);
+    return auth;
   };
+
+  const initialAuth = bootAuth(true);
+  if (!initialAuth) {
+    discardWarmSocket();
+    return;
+  }
 
   // Create the socket. A new session's token is saved here, once the app has
   // mounted, even when a transport warmed up with it earlier.
@@ -865,7 +891,7 @@ export const connect = async (
     warmSocket ?? createSocket(endpoint, transports, session_token);
   warmSocket = null;
   cancelWarmup();
-  socket.current.auth = bootAuth(true);
+  socket.current.auth = initialAuth;
   socket.current.wait_connect = !socket.current.connected;
   // Ensure undefined fields in events are sent as null instead of removed
   socket.current.io.encoder.replacer = (k, v) => (v === undefined ? null : v);
@@ -886,7 +912,12 @@ export const connect = async (
       socket.current.wait_connect = true;
       socket.current.io.opts.query = { token: getToken() }; // Update token for reconnect.
       // A reconnect rehydrates in full: the reducers no longer hold the defaults.
-      socket.current.auth = bootAuth(false);
+      const auth = bootAuth(false);
+      if (!auth) {
+        socket.current.wait_connect = false;
+        return;
+      }
+      socket.current.auth = auth;
       socket.current.connect();
     }
   };

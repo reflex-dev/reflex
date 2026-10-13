@@ -18,12 +18,16 @@ async function setup({
   disabled = false,
   hidden = false,
   storedToken = "original-token",
+  maxHttpBufferSize = 1_000_000,
+  oversizedPayload,
+  oversizedReconnectPayload,
 } = {}) {
   const sockets = [];
   const microtasks = [];
   const timers = new Map();
   const firstHydrates = [];
   const updates = [];
+  let connectErrors = [];
   const window = new EventTarget();
   window.location = new URL("http://localhost:3000/page?query=value");
   const storage = new Map(storedToken ? [["token", storedToken]] : []);
@@ -39,6 +43,7 @@ async function setup({
     console,
     URL,
     URLSearchParams,
+    TextEncoder,
     performance,
     ...(browser ? { window, document } : {}),
     queueMicrotask: (fn) => microtasks.push(fn),
@@ -98,7 +103,11 @@ async function setup({
     "socket.io-client": { default: io },
     mergician: { mergician() {} },
     "$/env.json": {
-      default: { EVENT: "ws://localhost:8000/_event", TRANSPORT: "websocket" },
+      default: {
+        EVENT: "ws://localhost:8000/_event",
+        TRANSPORT: "websocket",
+        MAX_HTTP_BUFFER_SIZE: maxHttpBufferSize,
+      },
     },
     "$/reflex.json": { default: { version: "test" } },
     "universal-cookie": { default: class {} },
@@ -118,12 +127,21 @@ async function setup({
             first
               ? {
                   name: "root.hydrate_and_load",
-                  payload: { hashes: ["defaults"] },
+                  payload: {
+                    hashes: ["defaults"],
+                    ...oversizedPayload,
+                  },
                 }
-              : { name: "root.hydrate_and_load" },
+              : oversizedReconnectPayload
+                ? {
+                    name: "root.hydrate_and_load",
+                    payload: oversizedReconnectPayload,
+                  }
+                : { name: "root.hydrate_and_load" },
           ];
         },
         initialState: stateful ? { root: {}, child: {} } : {},
+        clientStorage: {},
         onLoadInternalEvent() {},
         state_name: "root",
         exception_state_name: "exception",
@@ -165,6 +183,9 @@ async function setup({
     window,
     socket,
     updates,
+    get connectErrors() {
+      return connectErrors;
+    },
     dispose,
     flush: () => microtasks.splice(0).forEach((fn) => fn()),
     connect: (transports = ["websocket"]) =>
@@ -172,13 +193,48 @@ async function setup({
         socket,
         { child: (delta) => updates.push(delta.count) },
         transports,
-        () => {},
+        (update) => {
+          connectErrors =
+            typeof update === "function" ? update(connectErrors) : update;
+        },
         {},
         () => {},
         { current: {} },
       ),
   };
 }
+
+test("reject an oversized UTF-8 hydration auth payload before connecting", async () => {
+  const app = await setup({
+    oversizedPayload: { vars: { large: "é".repeat(500_001) } },
+  });
+  app.flush();
+  await app.connect();
+
+  assert.equal(app.socket.current, null);
+  assert.equal(app.sockets[0].namespaceConnects, 0);
+  assert.equal(app.connectErrors.length, 1);
+  assert.match(app.connectErrors[0].message, /exceeds.*message limit/i);
+  assert.match(app.connectErrors[0].message, /browser storage/i);
+});
+
+test("do not retry an oversized full hydration on reconnect", async () => {
+  const app = await setup({
+    oversizedReconnectPayload: { vars: { large: "x".repeat(1_000_001) } },
+  });
+  app.flush();
+  await app.connect();
+  const socket = app.socket.current;
+  socket.connected = false;
+  socket.wait_connect = false;
+
+  socket.reconnect();
+  socket.reconnect();
+
+  assert.equal(socket.namespaceConnects, 1);
+  assert.equal(app.connectErrors.length, 1);
+  assert.match(app.connectErrors[0].message, /exceeds.*message limit/i);
+});
 
 test("warm the transport without hydrating, then reuse it with every handler attached", async () => {
   const app = await setup();

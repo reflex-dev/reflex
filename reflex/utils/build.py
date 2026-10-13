@@ -9,6 +9,7 @@ from pathlib import Path, PurePosixPath
 
 from reflex_base import constants
 from reflex_base.config import get_config
+from reflex_base.environment import environment
 
 from reflex.utils import console, js_runtimes, path_ops, prerequisites, processes
 from reflex.utils.exec import frontend_env, is_in_app_harness
@@ -17,12 +18,13 @@ logger = logging.getLogger(__name__)
 
 
 def set_env_json():
-    """Write the upload url to a REFLEX_JSON."""
+    """Write frontend runtime settings to env.json."""
     config = get_config()
     env: dict[str, object] = {
         **{endpoint.name: endpoint.get_url() for endpoint in constants.Endpoint},
         "TRANSPORT": config.transport,
         "TEST_MODE": is_in_app_harness(),
+        "MAX_HTTP_BUFFER_SIZE": environment.REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE.get(),
     }
     for plugin in config.plugins:
         contribution = plugin.update_env_json()

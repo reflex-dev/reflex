@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 import reflex_base
 from pytest_mock import MockerFixture
+from reflex_base.constants import POLLING_MAX_HTTP_BUFFER_SIZE
 
 from reflex.plugins import EmbedPlugin, Plugin
 from reflex.utils import build, path_ops
@@ -235,6 +236,7 @@ def test_set_env_json_merges_plugin_contributions(
     env = json.loads((web_dir / "env.json").read_text())
     assert env["MOUNT_TARGET"] == "#reflex-root"
     assert env["TRANSPORT"] == "websocket"
+    assert env["MAX_HTTP_BUFFER_SIZE"] == POLLING_MAX_HTTP_BUFFER_SIZE
 
 
 def test_set_env_json_omits_plugin_keys_when_plugin_absent(
