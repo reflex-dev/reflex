@@ -1,1 +1,1 @@
-A background event handler no longer keeps the dispatch-time frame references (the processor's local variables) alive for as long as it runs. A handler can still reach the state tree through its state proxy until it first enters `async with self`.
+Long-running background event handlers no longer keep the state they were dispatched with in memory until they return: once a handler enters `async with self`, that earlier copy of the state can be freed.
