@@ -1609,27 +1609,35 @@ def test_app_logs_human_output_formats_log_fields(
     assert "{'event':" not in result.output
 
 
-def test_app_logs_human_output_preserves_empty_details(mocker: MockFixture):
-    """An empty details value remains distinct from a missing value."""
+def test_app_logs_human_output_prints_log_text_verbatim(mocker: MockFixture):
+    """Human output adds no blank lines and escapes terminal control sequences."""
     client = _authed(mocker)
     client.api.apps.logs.return_value = [
         LogRecord(
             ns=0,
             timestamp="2024-11-29T12:00:00Z",
             name="app",
-            message="ready",
+            message="ready\n",
             details="",
-            log_level="info",
-            region="sjc",
-            deployment_id=None,
-        )
+        ),
+        LogRecord(
+            ns=0,
+            timestamp="2024-11-29T12:00:01Z",
+            name="app",
+            message="real\x1b[1A\x1b[2Kforged :warning:",
+            details="link \x1b]8;;https://example.com\x1b\\here",
+            log_level="error",
+        ),
     ]
-    console_print = mocker.patch("reflex_cli.v2.apps.console.print")
 
     result = runner.invoke(apps_cli, ["logs", "app123"])
 
     assert result.exit_code == 0, result.output
-    assert console_print.call_args.args[0].endswith("\n")
+    assert result.output.endswith(
+        "2024-11-29T12:00:00Z [INFO] ready\n"
+        "2024-11-29T12:00:01Z [ERROR] real\\x1b[1A\\x1b[2Kforged :warning:\n"
+        "  link \\x1b]8;;https://example.com\\x1b\\here\n"
+    )
 
 
 def test_app_logs_json_output_never_follows(mocker: MockFixture):

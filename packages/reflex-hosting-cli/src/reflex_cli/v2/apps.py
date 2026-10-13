@@ -6,8 +6,7 @@ import datetime
 import json
 import logging
 from collections.abc import Sequence
-from textwrap import indent
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import click
 
@@ -23,6 +22,9 @@ from reflex_cli.utils.exceptions import (
 )
 from reflex_cli.utils.output import interactive_option, json_option, print_json
 
+if TYPE_CHECKING:
+    from reflex_build_sdk.types import LogRecord
+
 logger = logging.getLogger(__name__)
 
 # How many log lines `apps logs --follow` prints before prompting for more.
@@ -31,6 +33,15 @@ _LOGS_PAGE_SIZE = 100
 # The fields `apps list` and `apps history` show; --json carries all of them.
 _LIST_COLUMNS = ("id", "name", "description", "provider")
 _HISTORY_COLUMNS = ("id", "status", "timestamp", "can rollback", "description")
+
+# Terminal control characters print as escapes, so a log line cannot move the
+# cursor or rewrite the lines above it. Tabs stay, and line breaks are split off
+# before the escape.
+_CONTROL_ESCAPES = {
+    code: f"\\x{code:02x}"
+    for code in (*range(0x20), *range(0x7F, 0xA0))
+    if code not in (0x09, 0x0A)
+}
 
 
 def _print_records(records: list[dict[str, Any]], columns: Sequence[str]) -> None:
@@ -45,6 +56,30 @@ def _print_records(records: list[dict[str, Any]], columns: Sequence[str]) -> Non
         headers=columns,
         overflow="fold",
         no_wrap=("id", "name"),
+    )
+
+
+def _format_log_record(record: LogRecord) -> str:
+    """Render a log record as a ``timestamp [LEVEL] message`` line.
+
+    The message's further lines and the details follow indented, so no line
+    of a record can pass for the start of another.
+
+    Args:
+        record: The record to render.
+
+    Returns:
+        The record as terminal text.
+    """
+    message = record.message
+    if not isinstance(message, str):
+        message = json.dumps(message, ensure_ascii=False)
+    lines = message.splitlines()
+    if record.details:
+        lines.extend(record.details.splitlines())
+    level = (record.log_level or "info").upper()
+    return f"{record.timestamp} [{level}] " + "\n  ".join(lines).translate(
+        _CONTROL_ESCAPES
     )
 
 
@@ -748,31 +783,12 @@ def app_logs(
 
         printed = 0
         for record in records:
-            entry = hosting.as_json_document(record)
-            if pretty:
-                message = pprint.pformat(entry, indent=2)
-            else:
-                timestamp = entry.get("timestamp")
-                level = str(entry.get("log_level") or "info").upper()
-                log_message = entry.get("message", "")
-                if isinstance(log_message, dict):
-                    log_message = json.dumps(log_message, ensure_ascii=False)
-                prefix = f"{timestamp} [{level}]" if timestamp else f"[{level}]"
-                message_lines = (
-                    str(log_message)
-                    .replace("\r\n", "\n")
-                    .replace("\r", "\n")
-                    .split("\n")
-                )
-                message = f"{prefix} {message_lines[0]}"
-                if len(message_lines) > 1:
-                    message += "\n" + indent(
-                        "\n".join(message_lines[1:]), "  ", lambda _: True
-                    )
-                if (details := entry.get("details")) is not None:
-                    details = str(details).replace("\r\n", "\n").replace("\r", "\n")
-                    message += "\n" + indent(details, "  ", lambda _: True)
-            console.print(message, markup=False, soft_wrap=True)
+            message = (
+                pprint.pformat(hosting.as_json_document(record), indent=2)
+                if pretty
+                else _format_log_record(record)
+            )
+            console.print(message, markup=False, emoji=False, soft_wrap=True)
             printed += 1
             if printed % _LOGS_PAGE_SIZE:
                 continue
