@@ -52,24 +52,6 @@ class CheckboxCardsRoot(RadixThemesComponent):
         doc="The name of the group. Submitted with its owning form as part of a name/value pair."
     )
 
-    disabled: Var[bool] = field(doc="Whether the checkbox cards group is disabled")
-
-    required: Var[bool] = field(
-        doc="When true, every card in the group must be checked before the owning form can be submitted."
-    )
-
-    orientation: Var[Literal["horizontal", "vertical"]] = field(
-        doc="The orientation of the component."
-    )
-
-    dir: Var[Literal["ltr", "rtl"]] = field(
-        doc="The reading direction of the checkbox cards group. If omitted, inherits globally from DirectionProvider or assumes LTR (left-to-right) reading mode."
-    )
-
-    loop: Var[bool] = field(
-        doc="When true, keyboard navigation will loop from last item to first, and vice versa."
-    )
-
     on_value_change: EventHandler[passthrough_event_spec(list[str])] = field(
         doc="Fired when the set of checked cards changes."
     )
@@ -81,14 +63,6 @@ class CheckboxCardsItem(RadixThemesComponent):
     tag = "CheckboxCards.Item"
 
     value: Var[str] = field(doc="The value given as data when submitted with a name.")
-
-    disabled: Var[bool] = field(
-        doc="When true, prevents the user from interacting with the checkbox item."
-    )
-
-    required: Var[bool] = field(
-        doc="When true, indicates that the user must check the checkbox item before the owning form can be submitted."
-    )
 
 
 class CheckboxCards(SimpleNamespace):
