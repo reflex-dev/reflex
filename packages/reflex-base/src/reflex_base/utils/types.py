@@ -1012,16 +1012,18 @@ def _isinstance(
                     if cls.__bound__ is not None
                     else cls.__constraints__
                 )
-                return not allowed or any(
-                    _isinstance(
+                # A loop, not a generator: a closure would turn the arguments
+                # into cell variables, slowing down every call.
+                for arg in allowed:
+                    if _isinstance(
                         obj,
                         arg,
                         nested=nested,
                         treat_var_as_type=treat_var_as_type,
                         treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
-                    )
-                    for arg in allowed
-                )
+                    ):
+                        return True
+                return not allowed
             raise
 
     args = _get_args_cached(cls)
