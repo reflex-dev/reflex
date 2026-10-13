@@ -1,0 +1,1 @@
+Add `menu.filter_provider`, `menu.input`, and `menu.list` for searchable menus, plus `on_item_highlighted` callbacks receiving the item label and change reason on menu and submenu roots.
