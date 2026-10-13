@@ -163,7 +163,6 @@ async function setup({
     socket,
     updates,
     dispose,
-    getRefValue: module.namespace.getRefValue,
     flush: () => microtasks.splice(0).forEach((fn) => fn()),
     connect: (transports = ["websocket"]) =>
       module.namespace.connect(
@@ -306,22 +305,5 @@ for (const config of [
     app.flush();
     assert.equal(app.sockets.length, 0);
     assert.equal(app.timers.size, 0);
-  });
-}
-
-for (const className of ["rt-CheckboxGroupRoot", "rt-CheckboxCardsRoot"]) {
-  test(`a ${className} ref yields every checked value`, async () => {
-    const app = await setup();
-    const selectors = [];
-    const root = {
-      className,
-      querySelectorAll: (selector) => {
-        selectors.push(selector);
-        return [{ value: "red" }, { value: "green" }];
-      },
-      querySelector: () => ({ value: "red" }),
-    };
-    assert.deepEqual([...app.getRefValue({ current: root })], ["red", "green"]);
-    assert.deepEqual(selectors, ['[role="checkbox"][aria-checked="true"]']);
   });
 }

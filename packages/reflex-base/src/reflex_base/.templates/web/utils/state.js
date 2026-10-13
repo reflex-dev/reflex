@@ -1614,14 +1614,6 @@ export const getRefValue = (ref) => {
   } else if (ref.current.className?.includes("rt-SliderRoot")) {
     // find the actual slider
     return ref.current.querySelector(".rt-SliderThumb")?.ariaValueNow;
-  } else if (
-    ref.current.className?.includes("rt-CheckboxGroupRoot") ||
-    ref.current.className?.includes("rt-CheckboxCardsRoot")
-  ) {
-    return Array.from(
-      ref.current.querySelectorAll('[role="checkbox"][aria-checked="true"]'),
-      (checkbox) => checkbox.value,
-    );
   } else {
     //querySelector(":checked") is needed to get value from radio_group
     return (
