@@ -513,6 +513,13 @@ def test_transform_form_data_coerces_around_unresolvable_fields():
     ) == {"tag": ["a", "b"], "name": "x", "amount": "1.25"}
 
 
+@pytest.mark.parametrize("hint", [dict, Any, _TagsMultiData])
+def test_transform_form_data_converts_form_data_subclass_passed_on(hint: Any):
+    """A FormData subclass passed on is form data like FormData itself."""
+    form_data = _SubFormData([(name, value) for name, value in _FORM_DATA_ENTRIES])
+    assert _transform(hint, form_data) == _transform(hint)
+
+
 def test_transform_form_data_with_unhashable_annotation():
     """An annotation that cannot be cached is still read."""
     assert _transform(Annotated[dict, {"unhashable": True}]) == _transform(dict)

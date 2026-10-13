@@ -451,7 +451,9 @@ class Form(BaseHTML):
                 logger.warning(
                     f"The form control with id {control_id!r} has no `name`, so "
                     "its value is not included in the form data. Set "
-                    f"`name={control_id!r}` to submit it.",
+                    f"`name={control_id!r}` to submit it; a checkbox or switch "
+                    "then submits 'on' or nothing rather than True or False, so "
+                    "read it as a `bool` field of a TypedDict to get a bool.",
                     extra={"dedupe": True},
                 )
 

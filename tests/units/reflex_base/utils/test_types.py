@@ -350,6 +350,7 @@ def test_typed_dict_helpers_resolve_around_unresolvable_names(tmp_path, monkeypa
         "from typing_extensions import NotRequired\n"
         "if TYPE_CHECKING:\n"
         "    import decimal\n"
+        "    from collections.abc import Sequence as Seq\n"
         "    from decimal import Decimal\n"
         "class Order(TypedDict):\n"
         "    tags: list[str]\n"
@@ -358,6 +359,9 @@ def test_typed_dict_helpers_resolve_around_unresolvable_names(tmp_path, monkeypa
         "    total: decimal.Decimal | None\n"
         "    tip: NotRequired[Decimal]\n"
         "    fee: NotRequired[decimal.context.Decimal]\n"
+        "    seqs: Seq[str]\n"
+        "    maybe_seqs: NotRequired[Seq[decimal.Decimal] | None]\n"
+        "    odd: make_type()\n"
         "    agree: NotRequired[bool]\n"
     )
     monkeypatch.syspath_prepend(str(tmp_path))
@@ -368,6 +372,8 @@ def test_typed_dict_helpers_resolve_around_unresolvable_names(tmp_path, monkeypa
             "amounts",
             "amount",
             "total",
+            "seqs",
+            "odd",
         }
         assert get_typed_dict_field_types(module.Order) == {
             "tags": list[str],
@@ -376,6 +382,9 @@ def test_typed_dict_helpers_resolve_around_unresolvable_names(tmp_path, monkeypa
             "total": Any | None,
             "tip": Any,
             "fee": Any,
+            "seqs": Any,
+            "maybe_seqs": Any | None,
+            "odd": Any,
             "agree": bool,
         }
     finally:
