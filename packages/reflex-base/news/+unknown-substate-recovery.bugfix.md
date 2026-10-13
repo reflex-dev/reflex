@@ -1,1 +1,1 @@
-Keep frontend updates and events working when a backend delta contains an unknown substate. Skip that substate and report it once per connection while continuing to apply known state and browser storage updates.
+Frontend updates and events now keep working when a backend update names a substate the compiled frontend does not know. Reflex skips that substate and reports it once per connection.

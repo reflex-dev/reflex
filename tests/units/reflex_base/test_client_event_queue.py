@@ -1,4 +1,4 @@
-"""Execute behavioral regressions against the actual frontend event queue."""
+"""Execute behavioral regressions against the actual frontend runtime."""
 
 import shutil
 import subprocess
@@ -11,7 +11,7 @@ import pytest
 @pytest.mark.parametrize(
     "script", ["client_event_queue.mjs", "client_state_updates.mjs"]
 )
-def test_client_event_queue(script: str) -> None:
+def test_client_runtime(script: str) -> None:
     """Verify queue processing and incoming state updates.
 
     Args:

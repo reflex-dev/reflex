@@ -778,7 +778,7 @@ export const connect = async (
     socket.current.disconnect();
   };
 
-  // Report each unknown substate once per connection without stopping events.
+  // Unknown substates already reported on this connection.
   const reported_missing_substates = new Set();
 
   // Once the socket is open, hydrate the page.
@@ -833,21 +833,6 @@ export const connect = async (
     });
   };
 
-  // Drop substates without a dispatch function from a delta. Only a mismatched
-  // delta is copied, preserving the received update for other listeners.
-  const withoutUnknownSubstates = (delta) => {
-    let known = delta;
-    for (const substate in delta) {
-      if (typeof dispatch[substate] !== "function") {
-        if (known === delta) {
-          known = { ...delta };
-        }
-        delete known[substate];
-      }
-    }
-    return known;
-  };
-
   // Warn about unknown substates and surface them in the backend terminal
   // logs, once per substate per connection.
   const reportUnknownSubstates = (substates) => {
@@ -862,7 +847,7 @@ export const connect = async (
     }
     const errorMsg = `Skipping state update for unknown substate(s): no dispatch function for "${unreported.join(
       '", "',
-    )}". Try refreshing the page or clearing your browser cache. This error usually indicates a mismatch between frontend and backend state definitions. If you are the developer of this app, rebuild the frontend and check that api_url is correct.`;
+    )}". Try refreshing the page or clearing your browser cache. This usually indicates a mismatch between frontend and backend state definitions. If you are the developer of this app, rebuild the frontend and check that api_url is correct.`;
     console.warn(errorMsg);
     socket.current.emit(CLIENT_ERROR_EVENT, {
       message: errorMsg,
@@ -871,17 +856,31 @@ export const connect = async (
     });
   };
 
+  // Drop and report substates without a dispatch function. Only a mismatched
+  // delta is copied; the received update is not mutated.
+  const withoutUnknownSubstates = (delta) => {
+    let unknown;
+    for (const substate in delta) {
+      if (typeof dispatch[substate] !== "function") {
+        unknown ??= [];
+        unknown.push(substate);
+      }
+    }
+    if (unknown === undefined) {
+      return delta;
+    }
+    reportUnknownSubstates(unknown);
+    const known = { ...delta };
+    for (const substate of unknown) {
+      delete known[substate];
+    }
+    return known;
+  };
+
   // On each received message, queue the updates and events.
   socket.current.on("event", (update) => {
     // Skip unknown substates in both reducer and client-storage updates.
     const delta = withoutUnknownSubstates(update.delta);
-    if (delta !== update.delta) {
-      reportUnknownSubstates(
-        Object.keys(update.delta).filter(
-          (substate) => !Object.hasOwn(delta, substate),
-        ),
-      );
-    }
     try {
       if (delta) {
         for (const substate in delta) {

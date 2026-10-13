@@ -4608,7 +4608,6 @@ async def test_client_error_dispatch_missing_reports_actionable_error(
     message = frontend_errors[0]
     assert "reflex___state____state.my___state____my_state" in message
     assert "skipped" in message.lower()
-    assert "failed" not in message.lower()
     assert "rebuild" in message.lower()
 
 

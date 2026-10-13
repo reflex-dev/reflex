@@ -17,7 +17,7 @@ The `frontend` errors are coming from the JavaScript side of the application, wh
 
 If a backend update names a substate that the compiled frontend does not recognize, Reflex skips that substate. Updates to known substates and subsequent events continue to work. Reflex warns in the browser console and reports each unknown substate to `frontend_exception_handler` once per connection.
 
-This can happen when a backend deploy adds state while a browser still uses an older frontend bundle. Refresh the page to load the matching bundle. If the warning persists, rebuild the frontend and check that `api_url` points to the intended backend. Skipping unknown substates does not make incompatible state definitions interchangeable.
+This can happen when a backend deploy adds state while a browser still uses an older frontend bundle. Refresh the page to load the matching bundle. If the warning persists, rebuild the frontend and check that `api_url` points to the intended backend. Reflex only skips unknown substates; it does not reconcile other differences, such as a renamed state or a changed var.
 
 ## Register an Exception Handler
 
