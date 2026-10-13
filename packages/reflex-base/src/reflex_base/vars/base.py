@@ -84,6 +84,7 @@ if TYPE_CHECKING:
     from reflex.state import BaseState
     from reflex_base.components.component import BaseComponent
     from reflex_base.constants.colors import Color
+    from reflex_base.event import EventSpec
     from reflex_base.state.node import StateNode
 
     from .color import LiteralColorVar
@@ -893,6 +894,45 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
             A deepcopy of the var.
         """
         return self
+
+    def dispatch_value(self, value: Any) -> EventSpec:
+        """Show a value for this state var on the frontend right away.
+
+        A value whose type does not match the var's is logged as an error, as a
+        backend write of it would be.
+
+        Args:
+            value: The value to show, or a var (checked by its type).
+
+        Returns:
+            An event setting the value on the frontend only.
+
+        Raises:
+            TypeError: If the var is not a state var sent to the client.
+        """
+        from reflex_base.event import _dispatch_value
+
+        var_data = self._get_all_var_data()
+        if (
+            var_data is None
+            or not var_data.field_name
+            or self._js_expr
+            != f"{format_state_name(var_data.state)}.{var_data.field_name}{FIELD_MARKER}"
+        ):
+            msg = (
+                f"`dispatch_value` needs a state var sent to the client, not {self!s}."
+            )
+            raise TypeError(msg)
+        if not _isinstance(value, self._var_type, nested=1, treat_var_as_type=True):
+            value_type = value._var_type if isinstance(value, Var) else type(value)
+            logger.error(
+                f"Expected the value dispatched to state var '{var_data.field_name}'"
+                f" to have type '{self._var_type}', but got '{value!s}' of type"
+                f" '{value_type}'."
+            )
+        return _dispatch_value(
+            var_data.state, {var_data.field_name + FIELD_MARKER: value}
+        )
 
     def equals(self, other: Var) -> builtins.bool:
         """Check if two vars are equal.
@@ -1710,6 +1750,21 @@ class ToOperation:
     def __post_init__(self):
         """Post initialization."""
         object.__delattr__(self, "_js_expr")
+
+    def dispatch_value(self, value: Any) -> EventSpec:
+        """Show a value for the var converted on the frontend right away.
+
+        Class access to a state var or a computed var returns a converted var,
+        so this is how the original var's checks apply: a converted computed
+        var keeps its expression and var data, which would pass for a state var.
+
+        Args:
+            value: The value to show.
+
+        Returns:
+            An event setting the value on the frontend only.
+        """
+        return self._original.dispatch_value(value)
 
     def _hash_key(self) -> tuple[Any, ...]:
         """Return the canonical identity of this var.
@@ -2622,6 +2677,22 @@ class ComputedVar(Var[RETURN_TYPE]):
             msg = "ComputedVar dependencies must be Var instances or var names (non-empty strings)."
             raise TypeError(msg)
         return deps
+
+    @override
+    def dispatch_value(self, value: Any) -> NoReturn:
+        """Refuse to show a value for a computed var on the frontend.
+
+        Only the backend computes the var: a dispatched value would stay until a
+        var it depends on changes, and nothing else could replace it.
+
+        Args:
+            value: The value to show.
+
+        Raises:
+            TypeError: Always.
+        """
+        msg = f"`dispatch_value` cannot show a value for the computed var {self!s}: only the backend computes it."
+        raise TypeError(msg)
 
     @override
     def _replace(

@@ -1005,6 +1005,25 @@ def _isinstance(
                     treat_var_as_type=treat_var_as_type,
                     treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
                 )
+            # A type var allows its bound, one of its constraints, or anything.
+            if isinstance(cls, TypeVar):
+                allowed = (
+                    (cls.__bound__,)
+                    if cls.__bound__ is not None
+                    else cls.__constraints__
+                )
+                # A loop, not a generator: a closure would turn the arguments
+                # into cell variables, slowing down every call.
+                for arg in allowed:
+                    if _isinstance(
+                        obj,
+                        arg,
+                        nested=nested,
+                        treat_var_as_type=treat_var_as_type,
+                        treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
+                    ):
+                        return True
+                return not allowed
             raise
 
     args = _get_args_cached(cls)

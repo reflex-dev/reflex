@@ -246,3 +246,27 @@ def test_isinstance_unwraps_annotated() -> None:
     assert not _isinstance(
         {"a": "x"}, dict[str, Annotated[int, "meta"]], nested=2, treat_var_as_type=False
     )
+
+
+def test_isinstance_resolves_type_var() -> None:
+    """``_isinstance`` checks a TypeVar's bound or constraints instead of raising."""
+    unbound = TypeVar("unbound")
+    bound = TypeVar("bound", bound=str)
+    constrained = TypeVar("constrained", int, str)
+    assert _isinstance(object(), unbound, nested=1, treat_var_as_type=False)
+    assert _isinstance("x", bound, nested=1, treat_var_as_type=False)
+    assert not _isinstance(1, bound, nested=1, treat_var_as_type=False)
+    assert _isinstance(1, constrained, nested=1, treat_var_as_type=False)
+    assert not _isinstance(1.5, constrained, nested=1, treat_var_as_type=False)
+    assert _isinstance(
+        ["x"],
+        list[bound],  # pyright: ignore[reportGeneralTypeIssues]
+        nested=1,
+        treat_var_as_type=False,
+    )
+    assert not _isinstance(
+        [1],
+        list[bound],  # pyright: ignore[reportGeneralTypeIssues]
+        nested=1,
+        treat_var_as_type=False,
+    )

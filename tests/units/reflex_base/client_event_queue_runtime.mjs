@@ -3,7 +3,7 @@ import { SourceTextModule, SyntheticModule } from "node:vm";
 /** Evaluate the complete frontend module with isolated dependency stubs. */
 export async function createQueueRuntime(
   source,
-  { uploadFiles, throttle } = {},
+  { uploadFiles, throttle, dispatch } = {},
 ) {
   const unused = () => {
     throw new Error("Unexpected frontend dependency in queue test");
@@ -48,7 +48,7 @@ export async function createQueueRuntime(
     "$/utils/context": app,
     "$/utils/context-registry": {
       app,
-      eventLoop: { addEvents: unused },
+      eventLoop: { addEvents: unused, dispatch },
     },
     "$/utils/helpers/debounce": { default: unused },
     "$/utils/helpers/json": { parseJson: unused },
