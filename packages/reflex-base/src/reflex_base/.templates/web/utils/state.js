@@ -22,6 +22,15 @@ const EVENTURL = env.EVENT;
 
 // Socket event names (must match reflex_base/constants/event.py SocketEvent)
 const CLIENT_ERROR_EVENT = "client_error";
+const STATE_MISMATCH_EVENT = "state_mismatch";
+
+// sessionStorage key with the time of the last automatic reload (must match
+// LAST_RELOADED_KEY in reflex/state.py: the reload on a frontend error and the
+// reload on a state mismatch share one cooldown, so neither can loop).
+const LAST_RELOADED_KEY = "reflex_last_reloaded_on_error";
+
+// The id of the banner offering a reload when one already happened recently.
+const NEW_VERSION_BANNER_ID = "reflex-new-version-banner";
 
 // Client error types (must match reflex_base/constants/event.py ClientErrorType)
 const ERROR_TYPE_DISPATCH_MISSING = "dispatch_function_missing";
@@ -805,6 +814,74 @@ export const processEvent = async (socket, navigate, params) => {
 };
 
 /**
+ * Reload the page for a new version of the app, restarting the reload cooldown.
+ */
+const reloadForNewVersion = () => {
+  window.sessionStorage.setItem(LAST_RELOADED_KEY, Date.now().toString());
+  window.location.reload();
+};
+
+/**
+ * Show a banner saying a new version is available, with a reload button.
+ *
+ * Plain DOM rather than a React component: it must show whatever the app
+ * renders, and stay up while the page keeps working as well as it can.
+ */
+const showNewVersionBanner = () => {
+  if (document.getElementById(NEW_VERSION_BANNER_ID)) {
+    return;
+  }
+  const banner = document.createElement("div");
+  banner.id = NEW_VERSION_BANNER_ID;
+  banner.setAttribute("role", "alert");
+  banner.style.cssText =
+    "position:fixed;top:0;left:0;right:0;z-index:2147483647;display:flex;" +
+    "justify-content:center;align-items:center;gap:1rem;padding:0.5rem 1rem;" +
+    "background:#1c2024;color:#fff;font:1rem system-ui,sans-serif;";
+  banner.append("A new version of this app is available.");
+  const button = document.createElement("button");
+  button.textContent = "Reload";
+  button.style.cssText =
+    "padding:0.25rem 0.75rem;border:1px solid #fff;border-radius:4px;" +
+    "background:transparent;color:inherit;font:inherit;cursor:pointer;";
+  button.onclick = reloadForNewVersion;
+  banner.append(button);
+  document.body.append(banner);
+};
+
+/**
+ * Handle the backend reporting that this bundle was compiled for another
+ * state tree than the one it runs (sent on connect, see EventNamespace.on_connect).
+ *
+ * In prod the page reloads once per cooldown window. A mismatch inside the
+ * window means the reload landed on the same skew (a cached bundle, or several
+ * backend versions behind one load balancer), so a banner with a reload button
+ * shows instead and the page never loops. In dev a backend hot reload can
+ * reconnect before Vite serves the rebuilt bundle, so it only warns.
+ * @param info The backend's state schema hash and the reload cooldown in ms.
+ */
+const handleStateMismatch = (info) => {
+  const message =
+    "This page was built for another version of the app than the backend it " +
+    `connected to (state schema ${app.stateSchema}, backend ${info.backend}).`;
+  if (app.isDevMode) {
+    console.warn(
+      message +
+        " Reload the page if it stays out of date once the frontend rebuilds.",
+    );
+    return;
+  }
+  const last_reload =
+    parseInt(window.sessionStorage.getItem(LAST_RELOADED_KEY)) || 0;
+  if (Date.now() - last_reload > info.reload_cooldown_ms) {
+    reloadForNewVersion();
+    return;
+  }
+  console.warn(message + " Reload the page to get the new version.");
+  showNewVersionBanner();
+};
+
+/**
  * Connect to a websocket and set the handlers.
  * @param socket The socket object to connect.
  * @param dispatch The function to queue state update
@@ -837,14 +914,16 @@ export const connect = async (
 
   // The hydrate event rides in the socket.io CONNECT packet, so the backend
   // starts loading state as soon as the namespace connects instead of after
-  // an extra round trip for the connect acknowledgement. The key is read by
-  // the backend as CompileVars.CONNECT_AUTH_EVENT.
+  // an extra round trip for the connect acknowledgement. The keys are read by
+  // the backend as CompileVars.CONNECT_AUTH_EVENT and CONNECT_AUTH_STATE_SCHEMA;
+  // the state schema goes along on every (re)connect, since a reconnect can
+  // land on another backend version.
   const bootAuth = (first) => {
     const boot_event = withRouterData(app.initialEvents(first)[0], params);
     recordSentStorageValues(boot_event);
     // Instrumentation hook (installed by reflex-otel): may add a traceparent.
     window.__reflex_otel?.onEventSend?.(boot_event);
-    return { event: boot_event };
+    return { event: boot_event, state_schema: app.stateSchema };
   };
 
   // Create the socket. A new session's token is saved here, once the app has
@@ -1048,6 +1127,7 @@ export const connect = async (
     token = new_token;
     window.sessionStorage.setItem(TOKEN_KEY, new_token);
   });
+  socket.current.on(STATE_MISMATCH_EVENT, handleStateMismatch);
 
   document.addEventListener("visibilitychange", checkVisibility);
   socket.current.connect();

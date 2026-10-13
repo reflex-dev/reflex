@@ -322,6 +322,203 @@ test("a malformed event does not strand later queued events", async () => {
   assert.equal(q.runtime.event_queue.length, 0);
 });
 
+// sessionStorage key shared with the auto reload on frontend errors.
+const LAST_RELOADED_KEY = "reflex_last_reloaded_on_error";
+const BANNER_ID = "reflex-new-version-banner";
+const FRONTEND_SCHEMA = "frontend-schema";
+
+/** Connect the real event loop to a fake socket.io client in a fake browser. */
+async function createConnection({ isDevMode = false, lastReload } = {}) {
+  const sockets = [];
+  const reloads = [];
+  const storage = new Map();
+  if (lastReload !== undefined) {
+    storage.set(LAST_RELOADED_KEY, String(lastReload));
+  }
+  const element = (tag) => ({
+    tag,
+    children: [],
+    style: {},
+    attributes: {},
+    append(...nodes) {
+      this.children.push(...nodes);
+    },
+    setAttribute(name, value) {
+      this.attributes[name] = value;
+    },
+  });
+  const body = element("body");
+  const sessionStorage = {
+    getItem: (key) => storage.get(key) ?? null,
+    setItem: (key, value) => storage.set(key, String(value)),
+  };
+  const window = {
+    location: {
+      host: "localhost",
+      hostname: "localhost",
+      protocol: "http:",
+      pathname: "/",
+      search: "",
+      hash: "",
+      reload: () => reloads.push(true),
+    },
+    sessionStorage,
+    addEventListener() {},
+    removeEventListener() {},
+  };
+  const document = {
+    body,
+    visibilityState: "visible",
+    addEventListener() {},
+    createElement: element,
+    getElementById: (id) => body.children.find((n) => n.id === id) ?? null,
+  };
+  const io = (href, opts) => {
+    const socket = {
+      connected: false,
+      handlers: {},
+      emitted: [],
+      io: {
+        opts: { query: opts.query, transports: opts.transports },
+        encoder: {},
+        decoder: {},
+      },
+      on(name, fn) {
+        this.handlers[name] = fn;
+      },
+      off() {},
+      emit(name, payload) {
+        this.emitted.push([name, payload]);
+      },
+      connect() {
+        this.connected = true;
+        this.handlers.connect?.();
+      },
+      disconnect() {
+        this.connected = false;
+      },
+    };
+    sockets.push(socket);
+    return socket;
+  };
+  const runtime = await createQueueRuntime(source, {
+    io,
+    env: { EVENT: "http://localhost:8000/_event", TRANSPORT: "websocket" },
+    browser: { window, document, sessionStorage },
+    app: {
+      stateSchema: FRONTEND_SCHEMA,
+      isDevMode,
+      initialEvents: (first) => [
+        {
+          name: "test_state.hydrate_and_load",
+          payload: first ? { hashes: [] } : {},
+        },
+      ],
+    },
+  });
+  const socketRef = { current: null };
+  const params = { current: {} };
+  const navigate = () => {};
+  await runtime.connect(
+    socketRef,
+    {},
+    ["websocket"],
+    () => {},
+    {},
+    navigate,
+    params,
+  );
+  assert.equal(sockets.length, 1);
+  const socket = sockets[0];
+  return {
+    runtime,
+    socket,
+    reloads,
+    storage,
+    body,
+    banner: () => body.children.find((n) => n.id === BANNER_ID),
+    mismatch: (cooldown = 10000) =>
+      socket.handlers.state_mismatch({
+        backend: "backend-schema",
+        reload_cooldown_ms: cooldown,
+      }),
+    reconnect: () => {
+      socket.connected = false;
+      socketRef.current.reconnect();
+    },
+    enqueue: (events) =>
+      runtime.queueEvents(events, socketRef, false, navigate, params),
+  };
+}
+
+test("the state schema rides in the CONNECT auth on connect and reconnect", async () => {
+  const c = await createConnection();
+  assert.equal(c.socket.connected, true);
+  assert.equal(c.socket.auth.state_schema, FRONTEND_SCHEMA);
+  assert.equal(c.socket.auth.event.name, "test_state.hydrate_and_load");
+  assert.deepEqual(c.socket.auth.event.payload.hashes, []);
+
+  c.reconnect();
+  assert.equal(c.socket.connected, true);
+  assert.equal(c.socket.auth.state_schema, FRONTEND_SCHEMA);
+  assert.equal(c.socket.auth.event.payload.hashes, undefined);
+});
+
+test("a mismatch in prod reloads once per cooldown, then shows a banner", async () => {
+  const c = await createConnection();
+  c.mismatch();
+  assert.equal(c.reloads.length, 1);
+  assert.ok(Date.now() - Number(c.storage.get(LAST_RELOADED_KEY)) < 1000);
+  assert.equal(c.banner(), undefined);
+
+  // The reload landed on the same skew (a cached bundle, or several backend
+  // versions behind one load balancer): no loop, a banner instead.
+  c.mismatch();
+  c.mismatch();
+  assert.equal(c.reloads.length, 1);
+  const banner = c.banner();
+  assert.ok(banner);
+  assert.equal(c.body.children.filter((n) => n.id === BANNER_ID).length, 1);
+  assert.equal(banner.attributes.role, "alert");
+  assert.match(banner.children[0], /new version/i);
+  const button = banner.children.find((n) => n.tag === "button");
+  assert.equal(button.textContent, "Reload");
+
+  // The button reloads and restarts the cooldown.
+  c.storage.set(LAST_RELOADED_KEY, "1");
+  button.onclick();
+  assert.equal(c.reloads.length, 2);
+  assert.ok(Date.now() - Number(c.storage.get(LAST_RELOADED_KEY)) < 1000);
+
+  // Detection alone does not stop events: the page keeps working as it can.
+  await c.enqueue([stateful(1)]);
+  assert.deepEqual(c.socket.emitted.at(-1)[1].payload, { id: 1 });
+});
+
+test("a reload inside the cooldown window is skipped, outside it is taken", async () => {
+  const recent = await createConnection({ lastReload: Date.now() - 1000 });
+  recent.mismatch(10000);
+  assert.equal(recent.reloads.length, 0);
+  assert.ok(recent.banner());
+
+  const stale = await createConnection({ lastReload: Date.now() - 20000 });
+  stale.mismatch(10000);
+  assert.equal(stale.reloads.length, 1);
+  assert.equal(stale.banner(), undefined);
+});
+
+test("a mismatch in dev only warns", async (t) => {
+  const warn = t.mock.method(console, "warn", () => {});
+  const c = await createConnection({ isDevMode: true });
+  c.mismatch();
+  c.mismatch();
+  assert.equal(warn.mock.callCount(), 2);
+  assert.match(warn.mock.calls[0].arguments[0], /backend-schema/);
+  assert.equal(c.reloads.length, 0);
+  assert.equal(c.banner(), undefined);
+  assert.equal(c.storage.has(LAST_RELOADED_KEY), false);
+});
+
 test("stateful arrival during an offline local await pauses the later drain", async () => {
   const q = await createQueue(false);
   const wait = deferred();

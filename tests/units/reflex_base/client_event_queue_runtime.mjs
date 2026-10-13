@@ -3,7 +3,7 @@ import { SourceTextModule, SyntheticModule } from "node:vm";
 /** Evaluate the complete frontend module with isolated dependency stubs. */
 export async function createQueueRuntime(
   source,
-  { uploadFiles, throttle } = {},
+  { uploadFiles, throttle, io, env, browser, app: appValues } = {},
 ) {
   const unused = () => {
     throw new Error("Unexpected frontend dependency in queue test");
@@ -14,6 +14,7 @@ export async function createQueueRuntime(
     onLoadInternalEvent: unused,
     state_name: "test_state",
     exception_state_name: "test_exception_state",
+    ...appValues,
   };
   const dependencies = {
     "test:browser": {
@@ -23,10 +24,11 @@ export async function createQueueRuntime(
       document: {},
       localStorage: { clear() {}, removeItem() {} },
       sessionStorage: { clear() {}, removeItem() {} },
+      ...browser,
     },
-    "socket.io-client": { default: unused },
+    "socket.io-client": { default: io ?? unused },
     mergician: { mergician: unused },
-    "$/env.json": { default: {} },
+    "$/env.json": { default: env ?? {} },
     "$/reflex.json": { default: {} },
     "universal-cookie": {
       default: class {

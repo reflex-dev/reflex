@@ -44,3 +44,21 @@ app = rx.App(
     backend_exception_handler=custom_backend_handler,
 )
 ```
+
+## Frontend and backend state mismatch
+
+The compiled frontend and the backend can come from different builds of the app: a backend deploy changes the state while a browser keeps the old page, two backend versions run behind one load balancer during a rolling deploy, or `api_url` points at a backend that did not serve the frontend. The frontend then holds states, vars and event handlers the backend does not know, or the other way around.
+
+Reflex detects this when the frontend connects. The compiled frontend carries a hash of the state tree it was built for (the state names, their frontend vars with types, and their event handler names) and sends it with every socket connect and reconnect. The backend computes the same hash over its own state tree and compares the two. Defaults and values are not part of the hash, so changing a default value does not count as a mismatch.
+
+On a mismatch:
+
+- In production, the page reloads once to fetch the new frontend. The reload shares the `REFLEX_AUTO_RELOAD_COOLDOWN` (default 10 seconds) with the automatic reload on frontend errors, so a page never reloads in a loop. When a reload already happened inside the cooldown (the reload landed on the same mismatch, for example a cached page or mixed backend versions) the page shows a banner saying a new version of the app is available, with a reload button, and keeps working as well as it can.
+- In development, the frontend only logs a warning in the browser console. A backend hot reload can reconnect before the frontend dev server serves the rebuilt page, which gives a short-lived mismatch that resolves on its own.
+
+The backend logs one warning per mismatched connection. A state update that names a state the frontend does not know is still reported through the `frontend_exception_handler`, as before.
+
+```md alert warning
+# Load balancers need sticky sessions.
+When several backend versions run behind one load balancer, each reconnect can land on a different version, and the frontend cannot match all of them. Pin each client to one backend (sticky sessions) or to one deployment during a rollout; the framework cannot work around this.
+```
