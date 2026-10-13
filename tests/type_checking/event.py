@@ -1,11 +1,10 @@
 """Calling an event handler on the state class types as the event it creates."""
 
 from collections.abc import Callable
-from typing import Any
+from typing import Any, assert_type
 
 from reflex_base.event import EventCallback, event
 from reflex_base.vars.base import Var
-from typing_extensions import assert_type
 
 from reflex.state import State
 

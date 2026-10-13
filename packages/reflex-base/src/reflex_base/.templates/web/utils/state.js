@@ -46,12 +46,25 @@ const cookies = new Cookies();
 // Dictionary holding component references.
 export const refs = {};
 
-// Set when the backend sends a delta the frontend cannot process. A mismatch
-// between frontend and backend state definitions is fatal (#6019): no further
-// events are sent until the frontend is rebuilt/reloaded.
-let backend_state_mismatch = false;
 // Array holding pending events to be processed.
 const event_queue = [];
+
+// The event that sends browser storage values to the backend.
+const UPDATE_VARS_INTERNAL =
+  "reflex___state____update_vars_internal_state.update_vars_internal";
+// A frontend event naming one synced localStorage var, turned into an
+// UPDATE_VARS_INTERNAL event when it is sent: see syncLocalStorageEvent.
+const SYNC_LOCAL_STORAGE = "_sync_local_storage";
+
+// Synced localStorage values sent to the backend and not yet echoed back, by
+// state key, oldest first, with this tab's localStorage write count at the send.
+const sentStorageValues = {};
+// Bounds a key whose echoes a get_delta override changes, so they never match.
+const MAX_SENT_STORAGE_VALUES = 256;
+// This tab's localStorage write count, and its last write by storage name
+// (vars of different state keys may share one).
+let localStorageWrites = 0;
+const lastLocalStorageWrites = {};
 
 // Mirrors the data router's location so applyEvent can populate router_data
 // with the in-widget URL. In embed mode the host page's window.location is
@@ -241,7 +254,8 @@ export const isStateful = () => {
   return event_queue.some(
     (event) =>
       typeof event?.name === "string" &&
-      event.name.startsWith("reflex___state"),
+      (event.name.startsWith("reflex___state") ||
+        event.name === SYNC_LOCAL_STORAGE),
   );
 };
 
@@ -268,12 +282,114 @@ const normalizeEvents = (events) => {
 };
 
 /**
+ * Whether a value is a plain object (not an array, Date or class instance).
+ * @param value The value to check.
+ * @returns True if the value is a plain object.
+ */
+const isPlainObject = (value) => {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+  const proto = Object.getPrototypeOf(value);
+  return proto === Object.prototype || proto === null;
+};
+
+/**
+ * Structurally share the parts of next that deep-equal prev.
+ *
+ * Plain objects and arrays whose contents are unchanged keep the identity of
+ * the previous value, so memoized components and caches keyed on identity
+ * still hit. Any other value is taken from next as is.
+ * @param prev The previous value.
+ * @param next The new value.
+ * @returns prev if deep-equal to next, otherwise next with unchanged parts shared from prev.
+ */
+const replaceEqualDeep = (prev, next) => {
+  // Object.is, unlike ===, tells -0 from 0 and treats NaN as equal to itself.
+  if (Object.is(prev, next)) {
+    return prev;
+  }
+  if (Array.isArray(prev) && Array.isArray(next)) {
+    // Allocate only once an element differs; until then prev is the result.
+    let out;
+    for (let i = 0; i < next.length; i++) {
+      const value = replaceEqualDeep(prev[i], next[i]);
+      if (out === undefined && !Object.is(value, prev[i])) {
+        out = prev.slice(0, i);
+      }
+      out?.push(value);
+    }
+    if (out !== undefined) {
+      return out;
+    }
+    return prev.length === next.length ? prev : prev.slice(0, next.length);
+  }
+  if (isPlainObject(prev) && isPlainObject(next)) {
+    const keys = Object.keys(next);
+    let out;
+    // Spreading next keeps a JSON "__proto__" key an own data property, so the
+    // assignments below never hit the prototype setter.
+    const copyPrefix = (end) => {
+      out = { ...next };
+      for (let j = 0; j < end; j++) {
+        out[keys[j]] = prev[keys[j]];
+      }
+    };
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i];
+      if (!Object.hasOwn(prev, key)) {
+        if (out === undefined) {
+          copyPrefix(i);
+        }
+        continue;
+      }
+      const value = replaceEqualDeep(prev[key], next[key]);
+      if (out === undefined && !Object.is(value, prev[key])) {
+        copyPrefix(i);
+      }
+      if (out !== undefined) {
+        out[key] = value;
+      }
+    }
+    if (out !== undefined) {
+      return out;
+    }
+    // Mappings render in key order, so prev is only reused with the same keys
+    // in the same order.
+    const prevKeys = Object.keys(prev);
+    if (
+      prevKeys.length === keys.length &&
+      prevKeys.every((key, i) => key === keys[i])
+    ) {
+      return prev;
+    }
+    // Keys were removed or reordered; every remaining value is unchanged.
+    copyPrefix(keys.length);
+    return out;
+  }
+  return next;
+};
+
+/**
  * Apply a delta to the state.
+ *
+ * Unchanged values keep their previous identity, and a delta that changes
+ * nothing returns the same state object so useReducer skips the render.
  * @param state The state to apply the delta to.
  * @param delta The delta to apply.
+ * @returns The new state, or state itself if nothing changed.
  */
 export const applyDelta = (state, delta) => {
-  return { ...state, ...delta };
+  let out;
+  for (const key in delta) {
+    const own = Object.hasOwn(state, key);
+    const value = own ? replaceEqualDeep(state[key], delta[key]) : delta[key];
+    if (!own || !Object.is(value, state[key])) {
+      out ??= { ...state };
+      out[key] = value;
+    }
+  }
+  return out ?? state;
 };
 
 /**
@@ -327,6 +443,19 @@ function urlFrom(string) {
   }
   return undefined;
 }
+
+/**
+ * Build the update_vars_internal event for a synced localStorage var.
+ *
+ * The value is read when the event is sent, so it and the write count recorded
+ * with it come from the same moment.
+ * @param payload The storage name and state key of the var.
+ * @returns The update_vars_internal event.
+ */
+const syncLocalStorageEvent = ({ key, state_key }) =>
+  ReflexEvent(`${app.state_name}.${UPDATE_VARS_INTERNAL}`, {
+    vars: { [state_key]: localStorage.getItem(key) },
+  });
 
 /**
  * Handle frontend event or send the event to the backend via Websocket.
@@ -513,7 +642,13 @@ export const applyEvent = async (event, socket, navigate, params) => {
 
   // Send the event to the server.
   if (socket) {
-    const routed_event = withRouterData(event, params);
+    const routed_event = withRouterData(
+      event.name == SYNC_LOCAL_STORAGE
+        ? syncLocalStorageEvent(event.payload)
+        : event,
+      params,
+    );
+    recordSentStorageValues(routed_event);
     // Instrumentation hook (installed by reflex-otel): may add a traceparent.
     window.__reflex_otel?.onEventSend?.(routed_event);
     socket.emit("event", routed_event);
@@ -634,14 +769,6 @@ export const processEvent = async (socket, navigate, params) => {
     return;
   }
 
-  // A backend/frontend state mismatch is fatal; do not send further events.
-  // Drop pending events too: callers drain the queue in while-loops that
-  // would otherwise spin forever on an early return.
-  if (backend_state_mismatch) {
-    event_queue.length = 0;
-    return;
-  }
-
   // Only proceed if we're not already processing an event.
   if (event_queue.length === 0) {
     return;
@@ -694,7 +821,6 @@ export const connect = async (
 
   // Get backend URL object from the endpoint.
   const endpoint = getBackendURL(EVENTURL);
-  const on_hydrated_queue = [];
 
   // The hydrate event rides in the socket.io CONNECT packet, so the backend
   // starts loading state as soon as the namespace connects instead of after
@@ -702,6 +828,7 @@ export const connect = async (
   // the backend as CompileVars.CONNECT_AUTH_EVENT.
   const bootAuth = (first) => {
     const boot_event = withRouterData(app.initialEvents(first)[0], params);
+    recordSentStorageValues(boot_event);
     // Instrumentation hook (installed by reflex-otel): may add a traceparent.
     window.__reflex_otel?.onEventSend?.(boot_event);
     return { event: boot_event };
@@ -791,9 +918,13 @@ export const connect = async (
     socket.current.disconnect();
   };
 
+  // Unknown substates already reported on this connection.
+  const reported_missing_substates = new Set();
+
   // Once the socket is open, hydrate the page.
   socket.current.on("connect", async () => {
     socket.current.wait_connect = false;
+    reported_missing_substates.clear();
     setConnectErrors([]);
     window.__reflex_otel?.onSocketConnect?.();
     window.addEventListener("pagehide", pagehideHandler);
@@ -842,58 +973,60 @@ export const connect = async (
     });
   };
 
-  // On each received message, queue the updates and events.
-  socket.current.on("event", (update) => {
-    if (backend_state_mismatch) {
-      // A fatal state mismatch was already detected; drop further updates.
+  // Warn about unknown substates and surface them in the backend terminal
+  // logs, once per substate per connection.
+  const reportUnknownSubstates = (substates) => {
+    const unreported = substates.filter(
+      (substate) => !reported_missing_substates.has(substate),
+    );
+    if (unreported.length === 0) {
       return;
     }
-    // Validate the whole delta before dispatching anything, so a bad substate
-    // does not result in a partially applied state update. Walk the delta once
-    // and only allocate when a substate is actually missing.
-    let missing_substates;
-    for (const substate in update.delta) {
+    for (const substate of unreported) {
+      reported_missing_substates.add(substate);
+    }
+    const errorMsg = `Skipping state update for unknown substate(s): no dispatch function for "${unreported.join(
+      '", "',
+    )}". Try refreshing the page or clearing your browser cache. This usually indicates a mismatch between frontend and backend state definitions. If you are the developer of this app, rebuild the frontend and check that api_url is correct.`;
+    console.warn(errorMsg);
+    socket.current.emit(CLIENT_ERROR_EVENT, {
+      message: errorMsg,
+      substate: unreported.join(", "),
+      error_type: ERROR_TYPE_DISPATCH_MISSING,
+    });
+  };
+
+  // Drop and report substates without a dispatch function. Only a mismatched
+  // delta is copied; the received update is not mutated.
+  const withoutUnknownSubstates = (delta) => {
+    let unknown;
+    for (const substate in delta) {
       if (typeof dispatch[substate] !== "function") {
-        (missing_substates ??= []).push(substate);
+        unknown ??= [];
+        unknown.push(substate);
       }
     }
-    if (missing_substates !== undefined) {
-      const errorMsg = `Cannot process state update: no dispatch function for substate(s) "${missing_substates.join(
-        '", "',
-      )}". Try refreshing the page or clearing your browser cache. This error usually indicates a mismatch between frontend and backend state definitions. If you are the developer of this app, rebuild the frontend and check that api_url is correct.`;
-      console.error(errorMsg);
-      // Surface the error in the backend terminal logs.
-      socket.current.emit(CLIENT_ERROR_EVENT, {
-        message: errorMsg,
-        substate: missing_substates.join(", "),
-        error_type: ERROR_TYPE_DISPATCH_MISSING,
-      });
-      backend_state_mismatch = true;
-      return;
+    if (unknown === undefined) {
+      return delta;
     }
+    reportUnknownSubstates(unknown);
+    const known = { ...delta };
+    for (const substate of unknown) {
+      delete known[substate];
+    }
+    return known;
+  };
+
+  // On each received message, queue the updates and events.
+  socket.current.on("event", (update) => {
+    // Skip unknown substates in both reducer and client-storage updates.
+    const delta = withoutUnknownSubstates(update.delta);
     try {
-      if (update.delta) {
-        for (const substate in update.delta) {
-          dispatch[substate](update.delta[substate]);
-          // handle events waiting for `is_hydrated`
-          if (
-            substate === app.state_name &&
-            update.delta[substate]?.is_hydrated_rx_state_
-          ) {
-            // Deliberately not awaited: the rest of the delta and the client
-            // storage below must be applied before this handler yields, or a
-            // later update can interleave and apply its delta first.
-            queueEvents(
-              on_hydrated_queue,
-              socket,
-              false,
-              navigate,
-              params,
-            ).catch(reportStateUpdateError);
-            on_hydrated_queue.length = 0;
-          }
+      if (delta) {
+        for (const substate in delta) {
+          dispatch[substate](delta[substate]);
         }
-        applyClientStorageDelta(client_storage, update.delta);
+        applyClientStorageDelta(client_storage, delta);
       }
       if (update.events && update.events.length > 0) {
         queueEvents(update.events, socket, false, navigate, params).catch(
@@ -1038,6 +1171,48 @@ export const hydrateClientStorage = (client_storage) => {
 };
 
 /**
+ * Remember the synced localStorage values an event sends, to recognise their echoes.
+ *
+ * Only synced vars: the tab sends another tab's newer value only for those.
+ * @param event The event about to be sent.
+ */
+const recordSentStorageValues = (event) => {
+  // ReflexEvent leaves out an empty payload.
+  const vars = event.payload?.vars;
+  if (
+    vars === undefined ||
+    (event.name !== `${app.state_name}.hydrate_and_load` &&
+      event.name !== `${app.state_name}.${UPDATE_VARS_INTERNAL}`)
+  ) {
+    return;
+  }
+  const local_storage = app.clientStorage.local_storage;
+  for (const [state_key, value] of Object.entries(vars)) {
+    if (!local_storage?.[state_key]?.sync) {
+      continue;
+    }
+    const sent = (sentStorageValues[state_key] ??= []);
+    sent.push({ value, writes: localStorageWrites });
+    if (sent.length > MAX_SENT_STORAGE_VALUES) {
+      sent.shift();
+    }
+  }
+};
+
+/**
+ * Take the sent value that a backend value echoes, and the older ones with it.
+ * @param state_key The state key of the browser storage var.
+ * @param value The value the backend sent for it.
+ * @returns The sent value's entry, or undefined if the value is no echo.
+ */
+const takeEcho = (state_key, value) => {
+  const sent = sentStorageValues[state_key];
+  const index = sent?.findIndex((entry) => entry.value === value) ?? -1;
+  // Older values were echoed already, or changed by an override on the way.
+  return index === -1 ? undefined : sent.splice(0, index + 1)[index];
+};
+
+/**
  * Update client storage values based on backend state delta.
  * @param client_storage The client storage object from context.js
  * @param delta The state update from the backend
@@ -1062,28 +1237,41 @@ const applyClientStorageDelta = (client_storage, delta) => {
   for (const substate in delta) {
     for (const key in delta[substate]) {
       const state_key = `${substate}.${key}`;
+      const value = delta[substate][key];
       if (client_storage.cookies && state_key in client_storage.cookies) {
         const cookie_options = { ...client_storage.cookies[state_key] };
         const cookie_name = cookie_options.name || state_key;
         delete cookie_options.name; // name is not a valid cookie option
-        cookies.set(cookie_name, delta[substate][key], cookie_options);
+        cookies.set(cookie_name, value, cookie_options);
       } else if (
         client_storage.local_storage &&
         state_key in client_storage.local_storage &&
         typeof window !== "undefined"
       ) {
-        const options = client_storage.local_storage[state_key];
-        localStorage.setItem(options.name || state_key, delta[substate][key]);
+        const name = client_storage.local_storage[state_key].name || state_key;
+        const echo = takeEcho(state_key, value);
+        const last = lastLocalStorageWrites[name];
+        // Write an echo only over this tab's own later write, which the backend
+        // applied before the echoed event. Otherwise storage holds the sent
+        // value or another tab's newer one.
+        if (
+          !echo ||
+          (last?.writes > echo.writes &&
+            localStorage.getItem(name) === last.value)
+        ) {
+          localStorage.setItem(name, value);
+          lastLocalStorageWrites[name] = {
+            value,
+            writes: ++localStorageWrites,
+          };
+        }
       } else if (
         client_storage.session_storage &&
         state_key in client_storage.session_storage &&
         typeof window !== "undefined"
       ) {
         const session_options = client_storage.session_storage[state_key];
-        sessionStorage.setItem(
-          session_options.name || state_key,
-          delta[substate][key],
-        );
+        sessionStorage.setItem(session_options.name || state_key, value);
       }
     }
   }
@@ -1265,14 +1453,14 @@ export const useEventLoop = (
 
     // e is StorageEvent
     const handleStorage = (e) => {
-      if (storage_to_state_map[e.key]) {
-        const vars = {};
-        vars[storage_to_state_map[e.key]] = e.newValue;
-        const event = ReflexEvent(
-          `${app.state_name}.reflex___state____update_vars_internal_state.update_vars_internal`,
-          { vars: vars },
+      const state_key = storage_to_state_map[e.key];
+      // Session storage changes in same-origin frames raise storage events too.
+      if (state_key && e.storageArea === localStorage) {
+        // The value is read when the event is sent: see syncLocalStorageEvent.
+        addEvents(
+          [ReflexEvent(SYNC_LOCAL_STORAGE, { key: e.key, state_key })],
+          e,
         );
-        addEvents([event], e);
       }
     };
 

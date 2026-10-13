@@ -16,7 +16,6 @@ import time
 import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable
 
-import psycopg
 import pytest
 import pytest_asyncio
 from sqlalchemy import DateTime, String, func, insert, literal, select, update
@@ -25,15 +24,15 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 URL = os.environ.get("REFLEX_TEST_POSTGRES", "")
+if not URL:
+    pytest.skip(
+        "set REFLEX_TEST_POSTGRES to test against Postgres", allow_module_level=True
+    )
 ASYNC_URL = URL.replace("postgresql://", "postgresql+psycopg://", 1)
 
-pytestmark = [
-    pytest.mark.skipif(
-        not URL, reason="set REFLEX_TEST_POSTGRES to test against Postgres"
-    ),
-    pytest.mark.asyncio(loop_scope="module"),
-]
+pytestmark = pytest.mark.asyncio(loop_scope="module")
 
+import psycopg  # noqa: E402
 from reflex_workflow import (  # noqa: E402
     AttemptLog,
     Cron,
@@ -1128,9 +1127,9 @@ async def test_wake_in_is_queryable_and_waits(session_factory):
     assert row is not None
     assert row.next_step == "finish"
     assert row.wake_at is not None
-    assert row.wake_at > datetime.datetime.now(
-        datetime.timezone.utc
-    ) - datetime.timedelta(seconds=1)
+    assert row.wake_at > datetime.datetime.now(datetime.UTC) - datetime.timedelta(
+        seconds=1
+    )
     await wait_until(status_is(Delayed, key, "done"))
     finished = next(e for e in EVENTS if e.startswith(f"finish:{key}:"))
     assert float(finished.rsplit(":", 1)[1]) - started >= 1
@@ -1214,7 +1213,7 @@ async def insert_due(
         key: The row's key.
         claimed_until: Lease expiry relative to now; negative means already expired.
     """
-    now = datetime.datetime.now(datetime.timezone.utc)
+    now = datetime.datetime.now(datetime.UTC)
     async with factory() as session, session.begin():
         await session.execute(
             insert(Chain).values(
@@ -1683,7 +1682,7 @@ async def test_an_interval_keeps_its_grid_and_skips_what_was_missed(session_fact
     # One run, not one per missed minute, and the next is on the original grid.
     assert row.ticks == 1
     assert row.wake_at == anchor + 10 * minute
-    assert row.wake_at > datetime.datetime.now(datetime.timezone.utc)
+    assert row.wake_at > datetime.datetime.now(datetime.UTC)
 
 
 async def test_a_cron_schedule_sets_the_next_time_it_names(session_factory):
@@ -1694,8 +1693,8 @@ async def test_a_cron_schedule_sets_the_next_time_it_names(session_factory):
     row = await Repeating.by(Repeating.key == key).get()
     assert row is not None
     assert row.wake_at is not None
-    wake_at = row.wake_at.astimezone(datetime.timezone.utc)
-    now = datetime.datetime.now(datetime.timezone.utc)
+    wake_at = row.wake_at.astimezone(datetime.UTC)
+    now = datetime.datetime.now(datetime.UTC)
     assert (wake_at.minute, wake_at.second) == (0, 0)
     assert now < wake_at <= now + datetime.timedelta(hours=1)
 
@@ -2005,27 +2004,36 @@ async def test_a_worker_with_one_slot_still_visits_every_table(session_factory):
         await engine.dispose()
 
 
-async def test_a_rate_limit_lets_through_a_burst_then_refills(session_factory):
+@pytest.mark.parametrize("enqueue_delay", [0, 1.1])
+async def test_a_rate_limit_lets_through_a_burst_then_refills(
+    session_factory, monkeypatch, enqueue_delay
+):
+    """A full bucket allows a burst and a partial refill allows two more runs."""
     STARTS.clear()
     provider = f"provider-{uuid.uuid4().hex}"
-    started = time.monotonic()
+    # Four tokens per hour prevent setup or scheduling delays from refilling
+    # the bucket; backdating it by half an hour releases exactly two tokens.
+    period = datetime.timedelta(hours=1)
+    monkeypatch.setattr(
+        Metered, "__workflow_limit__", Limit(by="provider", rate=4, per=period)
+    )
+    await asyncio.sleep(enqueue_delay)
     await start_many(Metered, provider, 8, provider=provider)
 
-    async def all_done() -> bool:
-        """Tell whether every run has finished.
-
-        Returns:
-            Whether it has.
-        """
+    for expected in (4, 6, 8):
+        if expected > 4:
+            async with session_factory() as session, session.begin():
+                await session.execute(
+                    update(WorkflowRate)
+                    .where(WorkflowRate.key == claim.bucket_key(Metered, provider))
+                    .values(tokens=0, updated_at=func.now() - period / 2)
+                )
+        # A settled worker has finished its steps and found no more to claim.
+        assert await runner.wake(datetime.timedelta(seconds=30))
+        assert len(STARTS[provider]) == expected
         rows = await Metered.by(Metered.provider == provider).all()
-        return len(rows) == 8 and all(row.status == "done" for row in rows)
-
-    await wait_until(all_done, timeout=60)
-    times = sorted(t - started for t in STARTS[provider])
-    # Four at once from a full bucket, then the rest as it refills: two a second.
-    assert len(times) == 8
-    assert times[3] < 1
-    assert times[7] >= 1.5
+        assert len(rows) == 8
+        assert sum(row.status == "done" for row in rows) == expected
 
 
 async def test_a_rate_limit_holds_across_workers(session_factory):
@@ -2479,7 +2487,7 @@ async def test_a_run_keyed_by_more_than_json_holds_commits_and_is_recorded(
 async def test_a_fan_out_joins_up_when_its_keys_are_more_than_json_holds(
     session_factory,
 ):
-    start = datetime.datetime.now(datetime.timezone.utc)
+    start = datetime.datetime.now(datetime.UTC)
     await Window(at=start).start(Window.split)
 
     async def gathered() -> bool:
@@ -3047,7 +3055,7 @@ async def test_a_second_event_cannot_take_a_wait_that_already_holds_one(
     # Due now rather than at its timeout, so it is not left behind every run
     # with a nearer deadline while it already has what it was waiting for.
     assert row.wake_at is not None
-    assert row.wake_at < datetime.datetime.now(datetime.timezone.utc) + LEASE
+    assert row.wake_at < datetime.datetime.now(datetime.UTC) + LEASE
 
     assert await step_row(RaceReview, pk) == "ok"
     assert await status_is(RaceReview, key, "decided:approve:manager")()
@@ -3175,7 +3183,7 @@ async def test_start_gives_the_row_the_key_the_database_made(session_factory):
 async def test_a_customer_at_its_limit_does_not_hide_another_customers_work(
     session_factory,
 ):
-    now = datetime.datetime.now(datetime.timezone.utc)
+    now = datetime.datetime.now(datetime.UTC)
     async with session_factory() as session, session.begin():
         for index in range(claim.GROUPS_PER_PASS):
             # A customer running all it may, with more waiting behind it, and
@@ -3245,7 +3253,7 @@ async def test_a_claim_moved_on_before_it_ran_gives_its_lease_back(session_facto
 
 
 async def test_a_group_of_rows_with_no_group_is_held_to_its_limit_too(session_factory):
-    now = datetime.datetime.now(datetime.timezone.utc)
+    now = datetime.datetime.now(datetime.UTC)
     spec = Crowded.__workflow_limit__
     assert spec is not None
     async with session_factory() as session, session.begin():

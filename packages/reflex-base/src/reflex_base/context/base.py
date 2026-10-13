@@ -4,9 +4,7 @@ from __future__ import annotations
 
 from contextvars import ContextVar, Token
 from types import TracebackType
-from typing import ClassVar
-
-from typing_extensions import Self
+from typing import ClassVar, Self
 
 
 class BaseContext:

@@ -61,6 +61,13 @@ Alternatively, put a reverse proxy in front of both processes and route the
 backend routes (`/_event`, `/ping`, `/_upload`, `/_health`) to the backend
 port, as the `Caddyfile`s in the container examples below do.
 
+Instances of Reflex 0.9 and 0.10 cannot share a state store, whether Redis or
+the disk state manager's directory. A 0.10 instance loads state saved by 0.9,
+but a 0.9 instance discards state saved by 0.10, so a rolling deploy that runs
+both versions, or a rollback to 0.9 against the same store, resets the sessions
+that reach the older instance. Upgrade every instance of an app together, and
+clear the store (or point the app at a fresh one) when rolling back.
+
 ```md alert warning
 # Reverse Proxy and Websockets
 Because the backend uses websockets, some reverse proxy servers, like [nginx](https://nginx.org/en/docs/http/websocket.html) or [apache](https://httpd.apache.org/docs/2.4/mod/mod_proxy.html#protoupgrade), must be configured to pass the `Upgrade` header to allow backend connectivity.
