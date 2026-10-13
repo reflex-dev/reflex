@@ -98,7 +98,7 @@
   letter-spacing: .025em;
   text-transform: none;
 }
-.docs-sidebar a:not([aria-current='page']):not([aria-current='true']) p {
+.docs-sidebar a:where(:not([aria-current='page'], [aria-current='true'])) p {
   color: var(--muted-foreground);
 }
 .docs-sidebar a:hover p { color: var(--foreground); }
@@ -142,7 +142,6 @@
   margin-bottom: 24px;
 }
 .docs-page-navigation > a {
-  flex: 1;
   gap: 2px;
   padding: 10px 16px;
   border: 1px solid var(--border);

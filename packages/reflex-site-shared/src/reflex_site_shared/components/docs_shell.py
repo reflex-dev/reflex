@@ -844,7 +844,7 @@ def _docs_page_footer_content(
     controls = rx.box(
         rx.box(dark_mode_toggle(), class_name="[&>div]:!ml-0"),
         _docs_social_menu(),
-        class_name="flex w-full flex-row items-end justify-between gap-6",
+        class_name="flex w-full flex-row flex-wrap items-end justify-between gap-6",
     )
     copyright_status = rx.el.div(
         rx.text(

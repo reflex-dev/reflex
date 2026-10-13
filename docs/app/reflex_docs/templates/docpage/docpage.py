@@ -354,7 +354,11 @@ def page_navigation_link(title: str, href: str, *, forward: bool) -> rx.Componen
         class_name=(
             "group flex min-w-0 flex-col gap-1 rounded-lg p-3 no-underline "
             "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring "
-            + ("items-end text-right" if forward else "items-start text-left")
+            + (
+                "col-start-2 items-end text-right"
+                if forward
+                else "items-start text-left"
+            )
         ),
     )
 
@@ -444,9 +448,6 @@ def docpage(
                         forward=False,
                     )
                 )
-            else:
-                links.append(rx.fragment())
-            links.append(rx.spacer())
             if next:
                 links.append(
                     page_navigation_link(
@@ -455,8 +456,6 @@ def docpage(
                         forward=True,
                     )
                 )
-            else:
-                links.append(rx.fragment())
 
             toc = []
             doc_content = None
@@ -507,7 +506,8 @@ def docpage(
                             ),
                             rx.el.nav(
                                 *links,
-                                class_name="docs-page-navigation flex flex-row gap-2 mt-8 lg:mt-10 mb-6 lg:mb-12",
+                                aria_label="Adjacent documentation pages",
+                                class_name="docs-page-navigation grid grid-cols-2 gap-2 mt-8 lg:mt-10 mb-6 lg:mb-12",
                             ),
                             docpage_footer(path=path.rstrip("/"), edit_href=edit_href),
                             class_name="lg:mt-0 h-auto"

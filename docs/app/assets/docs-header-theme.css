@@ -52,7 +52,7 @@
 }
 .docs-sidebar-drawer #sidebar-container { min-height: 0; }
 .docs-sidebar-drawer #sidebar-container > div { padding-left: 16px; padding-right: 20px; }
-.docs-sidebar-drawer a:not([aria-current='page']):not([aria-current='true']) p {
+.docs-sidebar-drawer a:where(:not([aria-current='page'], [aria-current='true'])) p {
   color: var(--muted-foreground);
 }
 .docs-sidebar-drawer a:hover p { color: var(--foreground); }

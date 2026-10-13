@@ -263,6 +263,24 @@ def test_official_docs_footer_content_is_shared() -> None:
         assert f'href:"https://reflex.dev{path}"' in rendered
 
 
+def test_footer_theme_and_social_controls_can_wrap() -> None:
+    """Keep the social links reachable when they cannot fit beside theme controls."""
+    pending: list[BaseComponent] = [
+        docs_page_footer(issue_href="/issues/", edit_href="/edit/")
+    ]
+    while pending:
+        node = pending.pop()
+        if (
+            len(node.children) == 2
+            and "Toggle system color mode" in str(node.children[0])
+            and "Social link for Forum" in str(node.children[1])
+        ):
+            assert "flex-wrap" in str(cast(rx.Component, node).class_name)
+            return
+        pending.extend(node.children)
+    pytest.fail("Footer controls were not rendered")
+
+
 def test_docs_layout_uses_page_aware_footer_renderer() -> None:
     """Pass the discovered source page to a site-specific footer renderer."""
     page = DocsPage(
