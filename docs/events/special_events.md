@@ -57,12 +57,13 @@ def speculative_example():
 
 Only state vars sent to the client can be dispatched: backend vars have no
 value on the frontend, and only the backend computes computed vars. A computed
-var that depends on a dispatched var keeps its value until the backend sends it.
+var that depends on a dispatched var keeps its old value until the backend
+sends it, which it does once a handler sets the var it depends on.
 
 Since the backend only sends the vars that changed, a handler should set any
 var it lets the frontend change, as `work` sets `loading` above. A handler that
-raises sends no update at all, so it should catch its errors and still set the
-var.
+raises sends no update, unless it is a background task, so it should catch its
+errors and still set the var.
 
 The next value the backend sends for the var replaces the dispatched one, even
 when it comes from an older event. For example, with
