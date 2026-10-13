@@ -186,7 +186,9 @@ def test_run_prod_sends_telemetry_synchronously(
     """The run-prod event is delivered on the calling thread, before the server.
 
     The server forks its workers from this process, so the event must not be
-    queued on the telemetry thread pool.
+    queued on the telemetry thread pool. Going through ``_process_event`` keeps
+    the one-time alias migration, which a backend-only run has no other event
+    to ride on.
     """
     from reflex.utils import build, exec, processes, telemetry
 
@@ -200,7 +202,7 @@ def test_run_prod_sends_telemetry_synchronously(
     mocker.patch.object(exec, "notify_frontend")
     queued = mocker.patch.object(telemetry, "send")
     calls = mocker.Mock()
-    calls.attach_mock(mocker.patch.object(telemetry, "_send"), "send")
+    calls.attach_mock(mocker.patch.object(telemetry, "_process_event"), "send")
     calls.attach_mock(mocker.patch.object(exec, launcher), "serve")
 
     reflex._run_prod(running_mode, 8000, "127.0.0.1")

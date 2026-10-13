@@ -552,13 +552,16 @@ def test_maybe_alias_sends_create_alias_for_legacy_install(mocker: MockerFixture
     mocker.patch.object(telemetry, "ensure_reflex_installation_id", return_value=12345)
     mocker.patch.object(telemetry, "has_uuid_distinct_id_semantics", return_value=False)
     mark = mocker.patch.object(telemetry, "mark_uuid_distinct_id_semantics")
-    send_mock = mocker.patch.object(telemetry, "send")
+    send_mock = mocker.patch.object(telemetry, "_send")
+    queued = mocker.patch.object(telemetry, "send")
 
     telemetry._maybe_alias_legacy_distinct_id(telemetry_enabled=True)
 
     send_mock.assert_called_once_with(
         "$create_alias", True, properties={"alias": 12345}
     )
+    # The alias goes out on the calling thread, never through the pool.
+    queued.assert_not_called()
     mark.assert_called_once()
 
 
@@ -567,7 +570,7 @@ def test_maybe_alias_skips_for_uuid_native_install(mocker: MockerFixture):
     mocker.patch.object(telemetry, "ensure_reflex_installation_id", return_value=12345)
     mocker.patch.object(telemetry, "has_uuid_distinct_id_semantics", return_value=True)
     mark = mocker.patch.object(telemetry, "mark_uuid_distinct_id_semantics")
-    send_mock = mocker.patch.object(telemetry, "send")
+    send_mock = mocker.patch.object(telemetry, "_send")
 
     telemetry._maybe_alias_legacy_distinct_id(telemetry_enabled=True)
 
@@ -580,7 +583,7 @@ def test_maybe_alias_skips_without_installation_id(mocker: MockerFixture):
     mocker.patch.object(telemetry, "ensure_reflex_installation_id", return_value=None)
     has = mocker.patch.object(telemetry, "has_uuid_distinct_id_semantics")
     mark = mocker.patch.object(telemetry, "mark_uuid_distinct_id_semantics")
-    send_mock = mocker.patch.object(telemetry, "send")
+    send_mock = mocker.patch.object(telemetry, "_send")
 
     telemetry._maybe_alias_legacy_distinct_id(telemetry_enabled=True)
 
@@ -592,7 +595,7 @@ def test_maybe_alias_skips_without_installation_id(mocker: MockerFixture):
 def test_maybe_alias_skips_when_telemetry_disabled(mocker: MockerFixture):
     """Disabled telemetry does no work and leaves the marker unwritten."""
     ensure = mocker.patch.object(telemetry, "ensure_reflex_installation_id")
-    send_mock = mocker.patch.object(telemetry, "send")
+    send_mock = mocker.patch.object(telemetry, "_send")
 
     telemetry._maybe_alias_legacy_distinct_id(telemetry_enabled=False)
 
@@ -605,7 +608,7 @@ def test_maybe_alias_runs_at_most_once_per_process(mocker: MockerFixture):
     mocker.patch.object(telemetry, "ensure_reflex_installation_id", return_value=7)
     mocker.patch.object(telemetry, "has_uuid_distinct_id_semantics", return_value=False)
     mocker.patch.object(telemetry, "mark_uuid_distinct_id_semantics")
-    send_mock = mocker.patch.object(telemetry, "send")
+    send_mock = mocker.patch.object(telemetry, "_send")
 
     telemetry._maybe_alias_legacy_distinct_id(telemetry_enabled=True)
     telemetry._maybe_alias_legacy_distinct_id(telemetry_enabled=True)
@@ -625,8 +628,6 @@ def test_maybe_alias_create_alias_payload(
     )
 
     telemetry._maybe_alias_legacy_distinct_id(telemetry_enabled=True)
-    # The $create_alias is now sent on the telemetry worker thread; wait for it.
-    telemetry._flush()
 
     urlopen.assert_called_once()
     payload = posted_json(urlopen.call_args)

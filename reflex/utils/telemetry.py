@@ -674,8 +674,7 @@ def _maybe_alias_legacy_distinct_id(telemetry_enabled: bool | None) -> None:
             # Don't latch: a later enabled send in this process should retry.
             return
 
-        # Latch before the alias send below (which re-enters send()) so it cannot
-        # recurse and so the attempt happens at most once per process.
+        # Latch first so the attempt happens at most once per process.
         _legacy_alias_attempted = True
 
         # Resolve the installation id first: a brand-new install is created and
@@ -687,8 +686,10 @@ def _maybe_alias_legacy_distinct_id(telemetry_enabled: bool | None) -> None:
 
         # distinct_id is the UUID form (set by get_event_defaults); send the
         # legacy integer as ``alias`` so PostHog coerces it to the same float as
-        # the historic events and merges the two persons.
-        send("$create_alias", telemetry_enabled, properties={"alias": installation_id})
+        # the historic events and merges the two persons. Delivered on the
+        # calling thread: this runs from the worker, or from a caller that must
+        # not start one.
+        _send("$create_alias", telemetry_enabled, properties={"alias": installation_id})
 
         # Record the new semantics regardless of outcome; we must not retry every
         # run even if the lossy legacy id failed to match.
@@ -708,7 +709,9 @@ def send(
     pool, so neither the data gathering (blocking syscalls and subprocess calls)
     nor the synchronous HTTP request blocks the caller — in particular the
     asyncio event loop serving a running app. Delivery is best-effort: any
-    failure is suppressed and never surfaces to the caller.
+    failure is suppressed and never surfaces to the caller. A caller that must
+    not start a thread (a process about to fork) uses ``_process_event``
+    directly instead.
 
     Args:
         event: The event name.
