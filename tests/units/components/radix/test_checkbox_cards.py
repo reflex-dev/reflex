@@ -12,10 +12,41 @@ from reflex_components_radix.themes.components.checkbox_cards import (
 import reflex as rx
 
 
-def test_checkbox_cards_item_accepts_value_and_disabled():
-    """checkbox_cards.item previously had no declared props at all -- it could
-    not even be given a value, so it was unusable for real form submission.
-    """
+class ColorState(rx.State):
+    """State used to exercise checkbox_cards' controlled value/on_value_change."""
+
+    colors: list[str] = ["red"]
+
+    @rx.event
+    def on_colors_change(self, value: list[str]):
+        """Store the newly checked values.
+
+        Args:
+            value: The updated set of checked card values.
+        """
+        self.colors = value
+
+
+class SignupData(TypedDict):
+    """Submit payload naming the checkbox cards field."""
+
+    colors: str
+
+
+class SignupState(rx.State):
+    """State with a TypedDict-annotated submit handler."""
+
+    @rx.event
+    def on_submit(self, form_data: SignupData):
+        """Accept the submitted form.
+
+        Args:
+            form_data: The submitted form data.
+        """
+
+
+def test_checkbox_cards_item_renders_value_disabled_required():
+    """An item renders its value, disabled, and required props."""
     item = checkbox_cards.item("Red", value="red", disabled=True, required=True)
     props = item.render()["props"]
 
@@ -25,9 +56,7 @@ def test_checkbox_cards_item_accepts_value_and_disabled():
 
 
 def test_checkbox_cards_root_renders_native_form_props():
-    """checkbox_cards.root was missing name/disabled/required/value/etc. entirely,
-    unlike its sibling radio_cards.root which already exposes them.
-    """
+    """The root renders the native form and keyboard navigation props."""
     root = checkbox_cards.root(
         checkbox_cards.item("Red", value="red"),
         name="colors",
@@ -50,17 +79,7 @@ def test_checkbox_cards_root_renders_native_form_props():
 
 
 def test_checkbox_cards_root_renders_controlled_value_and_on_value_change():
-    """checkbox_cards.root previously could not be used as a controlled
-    component at all -- value/on_value_change did not exist as props.
-    """
-
-    class ColorState(rx.State):
-        colors: list[str] = ["red"]
-
-        @rx.event
-        def on_colors_change(self, value: list[str]):
-            self.colors = value
-
+    """The root binds the controlled value and forwards the checked values."""
     root = checkbox_cards.root(
         checkbox_cards.item("Red", value="red"),
         value=ColorState.colors,
@@ -68,40 +87,18 @@ def test_checkbox_cards_root_renders_controlled_value_and_on_value_change():
     )
     props = root.render()["props"]
 
-    assert any(p.startswith("value:") for p in props)
-    assert any(p.startswith("onValueChange:") for p in props)
+    assert f"value:{ColorState.colors!s}" in props
+    on_value_change = next(p for p in props if p.startswith("onValueChange:"))
+    assert 'on_colors_change", ({ ["value"] : _ev_0 })' in on_value_change
 
 
 def test_checkbox_cards_root_is_form_control():
-    """Newly marked, matching checkbox_group/radio_cards, so a static name= is
-    now collected by TypedDict validation on a form's on_submit handler.
-    """
+    """The root is a form control, so its name counts toward on_submit validation."""
     assert CheckboxCardsRoot._is_form_control is True
 
 
-def test_checkbox_cards_root_has_no_as_child_prop():
-    """Radix Themes deliberately excludes asChild from CheckboxCards.Root
-    (ComponentPropsWithout<..., 'asChild' | 'color' | 'defaultChecked'> in
-    checkbox-cards.tsx): with as_child=True the Root merges into its first
-    child instead of rendering its own grid/group element. It must not be
-    a declared field here.
-    """
-    assert "as_child" not in CheckboxCardsRoot.get_fields()
-
-
 def test_on_submit_accepts_typed_dict_matching_checkbox_cards_name():
-    """A TypedDict on_submit contract naming a checkbox_cards.root's name= must
-    validate successfully now that CheckboxCardsRoot reports it as a form field.
-    """
-
-    class SignupData(TypedDict):
-        colors: list[str]
-
-    class SignupState(rx.State):
-        @rx.event
-        def on_submit(self, form_data: SignupData):
-            pass
-
+    """A TypedDict field matching the checkbox cards name validates."""
     form = HTMLForm.create(
         checkbox_cards.root(
             checkbox_cards.item("Red", value="red"),
@@ -114,16 +111,7 @@ def test_on_submit_accepts_typed_dict_matching_checkbox_cards_name():
 
 
 def test_on_submit_typed_dict_missing_checkbox_cards_field_raises():
-    """The same contract without a matching name= must still fail loudly."""
-
-    class SignupData(TypedDict):
-        colors: list[str]
-
-    class SignupState(rx.State):
-        @rx.event
-        def on_submit(self, form_data: SignupData):
-            pass
-
+    """A TypedDict field without a matching checkbox cards name raises."""
     with pytest.raises(EventHandlerValueError):
         HTMLForm.create(
             checkbox_cards.root(

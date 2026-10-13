@@ -55,7 +55,7 @@ class CheckboxCardsRoot(RadixThemesComponent):
     disabled: Var[bool] = field(doc="Whether the checkbox cards group is disabled")
 
     required: Var[bool] = field(
-        doc="When true, every card in the group must be checked before the owning form can be submitted (Radix forwards this to every item, not just one of them)."
+        doc="When true, every card in the group must be checked before the owning form can be submitted."
     )
 
     orientation: Var[Literal["horizontal", "vertical"]] = field(

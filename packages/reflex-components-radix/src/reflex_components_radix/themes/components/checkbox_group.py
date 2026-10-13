@@ -47,7 +47,7 @@ class CheckboxGroupRoot(RadixThemesComponent):
     disabled: Var[bool] = field(doc="Whether the checkbox group is disabled")
 
     required: Var[bool] = field(
-        doc="When true, every item in the group must be checked before the owning form can be submitted (Radix forwards this to every item, not just one of them)."
+        doc="When true, every checkbox in the group must be checked before the owning form can be submitted."
     )
 
     orientation: Var[Literal["horizontal", "vertical"]] = field(
