@@ -4,6 +4,7 @@ import json
 import subprocess
 import sys
 import typing
+from collections import UserList
 from collections.abc import Callable
 from typing import Annotated, Literal, Protocol, TypeVar, runtime_checkable
 
@@ -15,6 +16,7 @@ from reflex_base.utils.types import (
     Scope,
     Send,
     _isinstance,
+    is_non_string_sequence,
     resolve_type_alias,
     typehint_issubclass,
 )
@@ -281,3 +283,26 @@ def test_isinstance_unwraps_annotated() -> None:
     assert not _isinstance(
         {"a": "x"}, dict[str, Annotated[int, "meta"]], nested=2, treat_var_as_type=False
     )
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        ([1], True),
+        ((1,), True),
+        (UserList([1]), True),
+        (range(1), True),
+        ("ab", False),
+        (b"ab", False),
+        ({"a": 1}, False),
+        (1, False),
+    ],
+)
+def test_is_non_string_sequence(value: object, expected: bool) -> None:
+    """Any sequence counts except a str or bytes, which hold characters, not items.
+
+    Args:
+        value: The value to check.
+        expected: Whether the value counts as a sequence.
+    """
+    assert is_non_string_sequence(value) is expected

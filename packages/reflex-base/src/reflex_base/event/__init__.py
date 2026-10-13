@@ -122,19 +122,9 @@ class Event:
         if events is None:
             return []
 
-        # If the handler returns a single event, wrap it in a list. The single
-        # event kinds come first: they are the common case, and cheaper to check
-        # than the Sequence ABC.
-        if (
-            isinstance(events, (Event, EventSpec))
-            or callable(events)
-            or not is_non_string_sequence(events)
-        ):
-            events = [events]
-
         # Fix the events created by the handler.
         out = []
-        for e in events:
+        for e in _event_sequence(events):
             if callable(e) and getattr(e, "__name__", "") == "<lambda>":
                 # A lambda was returned, assume the user wants to call it with no args.
                 e = e()
@@ -2382,6 +2372,27 @@ def check_fn_match_arg_spec(
         raise EventFnArgMismatchError(msg)
 
 
+def _event_sequence(events: Any) -> Sequence[Any]:
+    """Get events as a sequence, wrapping a single event-like value in a list.
+
+    The single event kinds come first: they are the common case, and cheaper to
+    check than the Sequence ABC.
+
+    Args:
+        events: A single event-like value or a sequence of them.
+
+    Returns:
+        The events as a sequence.
+    """
+    if (
+        isinstance(events, (Event, EventSpec))
+        or callable(events)
+        or not is_non_string_sequence(events)
+    ):
+        return [events]
+    return events
+
+
 def call_event_fn(
     fn: Callable,
     arg_spec: ArgsSpec | Sequence[ArgsSpec],
@@ -2418,10 +2429,6 @@ def call_event_fn(
 
     # Call the function with the parsed args.
     out = fn(*[*parsed_args][:number_of_fn_args])
-
-    # A sequence holds individual events; wrap any other value for validation below.
-    if not is_non_string_sequence(out):
-        out = [out]
 
     def _dispatch_mixed_event_var(event_like_var: Var) -> FunctionVar:
         """Wrap a mixed event-like Var into a callable frontend dispatcher.
@@ -2478,7 +2485,7 @@ def call_event_fn(
 
     # Convert any event specs to event specs.
     events = []
-    for e in out:
+    for e in _event_sequence(out):
         if isinstance(e, EventHandler):
             # An un-called EventHandler gets all of the args of the event trigger.
             e = call_event_handler(e, arg_spec, key=key)
@@ -2564,13 +2571,9 @@ def fix_events(
     if events is None:
         return []
 
-    # If the handler returns a single event, wrap it in a list.
-    if not is_non_string_sequence(events):
-        events = [events]
-
     # Fix the events created by the handler.
     out = []
-    for e in events:
+    for e in _event_sequence(events):
         if callable(e) and getattr(e, "__name__", "") == "<lambda>":
             # A lambda was returned, assume the user wants to call it with no args.
             e = e()

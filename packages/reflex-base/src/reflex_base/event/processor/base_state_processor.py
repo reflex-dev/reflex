@@ -25,6 +25,7 @@ from reflex_base.event.processor.future import EventFuture
 from reflex_base.registry import RegisteredEventHandler
 from reflex_base.utils.format import format_event_handler
 from reflex_base.utils.serializers import deserializers
+from reflex_base.utils.types import is_non_string_sequence
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +85,7 @@ def _check_valid_yield(events: Any, handler_name: str = "unknown") -> Any:
     if events is None or _is_valid_type(events):
         return events
 
-    if not (isinstance(events, Sequence) and not isinstance(events, (str, bytes))):
+    if not is_non_string_sequence(events):
         events = [events]
 
     try:

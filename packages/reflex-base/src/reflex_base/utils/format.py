@@ -14,6 +14,7 @@ from rich.markup import escape as escape_markup
 
 from reflex_base import constants
 from reflex_base.utils import exceptions
+from reflex_base.utils.types import is_non_string_sequence
 
 if TYPE_CHECKING:
     from reflex_base.components.component import ComponentStyle
@@ -552,7 +553,6 @@ def format_queue_events(
         call_event_fn,
         call_event_handler,
     )
-    from reflex_base.utils.types import is_non_string_sequence
     from reflex_base.vars import FunctionVar, Var, VarData
 
     if not events:

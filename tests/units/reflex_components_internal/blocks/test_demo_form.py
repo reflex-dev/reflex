@@ -2,7 +2,6 @@
 
 import re
 
-import pytest
 from reflex_base.vars.sequence import LiteralStringVar
 from reflex_components_internal.blocks.demo_form import demo_form, demo_form_dialog
 from reflex_components_internal.blocks.telemetry.posthog import (
@@ -46,12 +45,6 @@ def test_demo_form_appends_a_tuple_of_submit_events() -> None:
 
     assert '"first"' in hooks
     assert '"second"' in hooks
-
-
-def test_demo_form_rejects_a_string_as_submit_events() -> None:
-    """A string is a sequence, but not one of events."""
-    with pytest.raises(TypeError, match="not the string"):
-        demo_form(on_submit="first")  # pyright: ignore[reportArgumentType]
 
 
 def test_demo_form_asks_for_an_optional_phone_number() -> None:

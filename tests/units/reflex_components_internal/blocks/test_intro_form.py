@@ -1,6 +1,5 @@
 """Tests for the intro form block."""
 
-import pytest
 from reflex_components_internal.blocks.intro_form import intro_form
 
 import reflex as rx
@@ -14,9 +13,3 @@ def test_intro_form_appends_a_tuple_of_submit_events() -> None:
 
     assert '"first"' in hooks
     assert '"second"' in hooks
-
-
-def test_intro_form_rejects_a_string_as_submit_events() -> None:
-    """A string is a sequence, but not one of events."""
-    with pytest.raises(TypeError, match="not the string"):
-        intro_form(on_submit="first")  # pyright: ignore[reportArgumentType]

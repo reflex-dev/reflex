@@ -304,15 +304,22 @@ def is_none(cls: GenericType) -> bool:
 
 
 def is_non_string_sequence(value: object) -> TypeIs[Sequence[Any]]:
-    """Check if a value is a sequence other than a string, e.g. a list of events.
+    """Check if a value is a sequence other than a str or bytes, e.g. a list of events.
+
+    Separate list and tuple checks come first: they are the common case, and
+    cheaper than the Sequence ABC check.
 
     Args:
         value: The value to check.
 
     Returns:
-        Whether the value is a sequence and not a string.
+        Whether the value is a sequence and not a str or bytes.
     """
-    return isinstance(value, Sequence) and not isinstance(value, str)
+    return (
+        isinstance(value, list)  # noqa: SIM101 - a lone list check is the fastest
+        or isinstance(value, tuple)
+        or (isinstance(value, Sequence) and not isinstance(value, (str, bytes)))
+    )
 
 
 def is_union(cls: GenericType) -> bool:
