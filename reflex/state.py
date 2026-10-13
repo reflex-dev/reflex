@@ -1110,7 +1110,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         # Reset cached schema values; the frontend schema spans the tree, so a
         # change to any state invalidates every cached root.
         cls._to_schema.cache_clear()
-        cls._to_frontend_schema.cache_clear()
+        _frontend_schema.cache_clear()
 
     @classmethod
     def _iter_functions(cls) -> Iterator[tuple[str, FunctionType]]:
@@ -2157,7 +2157,6 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         ).hexdigest()
 
     @classmethod
-    @functools.lru_cache
     def _to_frontend_schema(cls) -> str:
         """Hash what a compiled frontend depends on, over the whole state tree.
 
@@ -2171,33 +2170,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         Returns:
             The hash of the frontend schema.
         """
-
-        def _state_entry(state: type[BaseState]) -> list[Any]:
-            fields = state.get_fields()
-            return [
-                state.get_full_name(),
-                sorted(
-                    (name, _serialize_type(fields[name].type_))
-                    for name in state.base_vars
-                ),
-                sorted(
-                    (name, _serialize_type(cvar._var_type))
-                    for name, cvar in state.computed_vars.items()
-                    if not cvar._backend
-                ),
-                sorted(state.event_handlers),
-            ]
-
-        entries = []
-        pending: list[type[BaseState]] = [cls]
-        while pending:
-            state = pending.pop()
-            entries.append(_state_entry(state))
-            pending.extend(state.get_substates())
-        entries.sort(key=operator.itemgetter(0))
-        return md5(
-            json.dumps(entries, separators=(",", ":")).encode("utf-8")
-        ).hexdigest()
+        return _frontend_schema(cls, RegistrationContext.get())
 
     def _serialize(self) -> bytes:
         """Serialize the state for redis.
@@ -2291,6 +2264,48 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         ):
             raise StateSchemaMismatchError
         return state
+
+
+@functools.lru_cache
+def _frontend_schema(root: type[BaseState], context: RegistrationContext) -> str:
+    """Hash the frontend schema of the state tree below ``root``.
+
+    The tree is read from ``context``, which is part of the cache key: apps in
+    one process run on forked registration contexts that share the root class
+    but not its substates. ``BaseState._init_var_dependency_dicts`` clears the
+    cache whenever a state is added or changed.
+
+    Args:
+        root: The state at the top of the tree.
+        context: The registration context holding the tree.
+
+    Returns:
+        The hash of the frontend schema.
+    """
+
+    def _state_entry(state: type[BaseState]) -> list[Any]:
+        fields = state.get_fields()
+        return [
+            state.get_full_name(),
+            sorted(
+                (name, _serialize_type(fields[name].type_)) for name in state.base_vars
+            ),
+            sorted(
+                (name, _serialize_type(cvar._var_type))
+                for name, cvar in state.computed_vars.items()
+                if not cvar._backend
+            ),
+            sorted(state.event_handlers),
+        ]
+
+    entries = []
+    pending = [root]
+    while pending:
+        state = pending.pop()
+        entries.append(_state_entry(state))
+        pending.extend(context.get_substates(state))
+    entries.sort(key=operator.itemgetter(0))
+    return md5(json.dumps(entries, separators=(",", ":")).encode("utf-8")).hexdigest()
 
 
 def _legacy_state_schema(state_cls: type[BaseState]) -> str:
@@ -2948,10 +2963,9 @@ class ComponentState(State, mixin=True):
 class StateUpdate:
     """A state update sent to the frontend.
 
-    Each substate key in the delta must have a dispatch function registered in
-    the frontend; otherwise the frontend reports a fatal ``client_error`` back
-    to the backend (see ``EventNamespace.on_client_error``), since this
-    indicates mismatched frontend and backend state definitions.
+    Substates without a registered frontend dispatch function are skipped and
+    reported to the backend through ``client_error`` (see
+    ``EventNamespace.on_client_error``).
     """
 
     # The state delta.

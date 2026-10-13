@@ -888,8 +888,16 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
             granian_watcher = wrk._watcher
 
             def watcher():
-                granian_watcher()
+                wrk.inner.join()
                 self._release_socket_unless_served(wrk, spawn_count)
+                # A worker process exits 0 from its own SIGINT/SIGTERM handler,
+                # possibly before the supervisor, blocked in the reloader, has
+                # handled the same signal: give it a moment to catch up before
+                # reporting the exit as unexpected. Thread workers have no exit
+                # code and keep granian's handling.
+                exitcode = getattr(wrk.inner, "exitcode", None)
+                if exitcode != 0 or not self.main_loop_interrupt.wait(1):
+                    granian_watcher()
 
             wrk._watcher = watcher
             return wrk

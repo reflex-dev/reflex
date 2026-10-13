@@ -4607,6 +4607,7 @@ async def test_client_error_dispatch_missing_reports_actionable_error(
     assert len(frontend_errors) == 1
     message = frontend_errors[0]
     assert "reflex___state____state.my___state____my_state" in message
+    assert "skipped" in message.lower()
     assert "rebuild" in message.lower()
 
 
@@ -5147,11 +5148,15 @@ async def test_on_connect_reports_state_schema_mismatch(
         to="new_sid",
     )
     on_event.assert_awaited_once_with("new_sid", boot_event)
-    mismatch_logs = [r for r in caplog.records if "frontend-schema" in r.getMessage()]
-    assert len(mismatch_logs) == 1
-    assert mismatch_logs[0].levelno == logging.WARNING
-    assert "backend-schema" in mismatch_logs[0].getMessage()
-    assert "new_sid" in mismatch_logs[0].getMessage()
+    app_warnings = [
+        r.getMessage()
+        for r in caplog.records
+        if r.name == "reflex.app" and r.levelno == logging.WARNING
+    ]
+    assert len(app_warnings) == 1
+    assert "frontend-schema" in app_warnings[0]
+    assert "backend-schema" in app_warnings[0]
+    assert "new_sid" in app_warnings[0]
 
     # The client-supplied hash is sanitized and bounded before it is logged.
     caplog.clear()
@@ -5160,8 +5165,12 @@ async def test_on_connect_reports_state_schema_mismatch(
         {"QUERY_STRING": "token=abc"},
         {"event": boot_event, "state_schema": "x\nforged line [bold]" + "y" * 500},
     )
-    (record,) = [r for r in caplog.records if "forged" in r.getMessage()]
-    message = record.getMessage()
+    (message,) = [
+        r.getMessage()
+        for r in caplog.records
+        if r.name == "reflex.app" and r.levelno == logging.WARNING
+    ]
+    assert "forged" in message
     assert "\n" not in message
     assert "\\[bold]" in message
     assert "(truncated)" in message

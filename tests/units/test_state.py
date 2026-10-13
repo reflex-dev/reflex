@@ -79,6 +79,7 @@ from reflex.state import (
     OnLoadInternalState,
     State,
     StateUpdate,
+    _frontend_schema,
     _load_events_for_page,
     all_base_state_classes,
     is_serializable,
@@ -5749,11 +5750,11 @@ def _frontend_schema_with(*patches: contextlib.AbstractContextManager) -> str:
     with contextlib.ExitStack() as stack:
         for p in patches:
             stack.enter_context(p)
-        FrontendSchemaRoot._to_frontend_schema.cache_clear()
+        _frontend_schema.cache_clear()
         try:
             return FrontendSchemaRoot._to_frontend_schema()
         finally:
-            FrontendSchemaRoot._to_frontend_schema.cache_clear()
+            _frontend_schema.cache_clear()
 
 
 def test_frontend_schema_ignores_defaults():
@@ -5858,11 +5859,40 @@ def test_frontend_schema_changes_when_state_added():
     try:
         assert FrontendSchemaRoot._to_frontend_schema() != schema
     finally:
-        RegistrationContext.get().get_substates(FrontendSchemaRoot).discard(
-            FrontendSchemaAdded
-        )
-        all_base_state_classes.pop(FrontendSchemaAdded.get_full_name(), None)
-        FrontendSchemaRoot._to_frontend_schema.cache_clear()
+        _forget_state(FrontendSchemaAdded)
+    assert FrontendSchemaRoot._to_frontend_schema() == schema
+
+
+def _forget_state(state: type[BaseState]) -> None:
+    """Remove a substate defined by a test from the registry and the caches.
+
+    Args:
+        state: The substate to forget.
+    """
+    context = RegistrationContext.get()
+    parent = state.get_parent_state()
+    assert parent is not None
+    context.get_substates(parent).discard(state)
+    context.base_states.pop(state.get_full_name(), None)
+    all_base_state_classes.pop(state.get_full_name(), None)
+    _frontend_schema.cache_clear()
+
+
+def test_frontend_schema_is_per_registration_context():
+    """Apps in one process run on forked contexts: each hashes its own tree."""
+    schema = FrontendSchemaRoot._to_frontend_schema()
+    token = RegistrationContext.set(RegistrationContext.get().fork())
+    try:
+
+        class FrontendSchemaForked(FrontendSchemaRoot):
+            pass
+
+        forked = FrontendSchemaRoot._to_frontend_schema()
+        assert forked != schema
+        assert FrontendSchemaRoot._to_frontend_schema() == forked
+    finally:
+        RegistrationContext.reset(token)
+    # The original context never saw the forked state, cached or not.
     assert FrontendSchemaRoot._to_frontend_schema() == schema
 
 
