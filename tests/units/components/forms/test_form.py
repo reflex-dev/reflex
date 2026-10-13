@@ -207,6 +207,16 @@ def test_on_submit_warns_for_custom_controls_with_only_an_id(
         lambda: rx.text("Email", id="email_label"),
         lambda: rx.box(Input.create(name="wrapped_input"), id="input_wrapper"),
         lambda: Input.create(id="disabled_input", disabled=True),
+        lambda: DebounceInput.create(
+            Input.create(
+                id="debounced_named", name="debounced_named", on_change=rx.console_log
+            )
+        ),
+        lambda: DebounceInput.create(
+            Input.create(
+                id="debounced_disabled", disabled=True, on_change=rx.console_log
+            )
+        ),
     ],
 )
 def test_on_submit_does_not_warn_for_submitted_or_valueless_controls(control, caplog):
@@ -314,6 +324,23 @@ def test_on_submit_accepts_typed_dict_with_optional_fields():
             Input.create(name="email"),
             on_submit=StrictState.on_submit,
         )
+
+
+def test_on_submit_typed_dict_accepts_debounced_control_name():
+    """A debounced control's name, carried in its custom attributes, fills a field."""
+
+    class EmailData(TypedDict):
+        email: str
+
+    class EmailState(rx.State):
+        @rx.event
+        def on_submit(self, form_data: EmailData):
+            pass
+
+    HTMLForm.create(
+        DebounceInput.create(Input.create(name="email", on_change=rx.console_log)),
+        on_submit=EmailState.on_submit,
+    )
 
 
 def test_on_submit_typed_dict_list_field_accepts_bracketed_control_name():

@@ -136,6 +136,25 @@ def _iter_form_components(component: BaseComponent) -> Iterator[BaseComponent]:
             yield from _iter_form_components(component_in_props)
 
 
+def _get_control_prop(component: BaseComponent, prop_name: str) -> Any:
+    """Get a form control's prop, also when it is carried as a custom attribute.
+
+    A DebounceInput carries the props of its input, such as ``name``, that it
+    does not declare itself in its custom attributes.
+
+    Args:
+        component: The component being inspected.
+        prop_name: The prop to get.
+
+    Returns:
+        The prop's value, or None when it is not set.
+    """
+    value = getattr(component, prop_name, None)
+    if value is None:
+        return getattr(component, "custom_attrs", {}).get(prop_name)
+    return value
+
+
 def _get_static_string_prop(
     component: BaseComponent,
     prop_name: str,
@@ -149,7 +168,7 @@ def _get_static_string_prop(
     Returns:
         The resolved string, ``_DYNAMIC_FORM_FIELD`` for dynamic vars, or ``None``.
     """
-    value = getattr(component, prop_name, None)
+    value = _get_control_prop(component, prop_name)
     if value is None:
         return None
     if isinstance(value, str):
@@ -440,7 +459,8 @@ class Form(BaseHTML):
                 # A disabled control is never submitted, named or not.
                 or (
                     isinstance(
-                        disabled := getattr(component, "disabled", None), LiteralVar
+                        disabled := _get_control_prop(component, "disabled"),
+                        LiteralVar,
                     )
                     and disabled._decode() is True
                 )
