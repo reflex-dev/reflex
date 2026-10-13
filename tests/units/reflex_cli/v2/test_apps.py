@@ -1628,6 +1628,14 @@ def test_app_logs_human_output_prints_log_text_verbatim(mocker: MockFixture):
             details="link \x1b]8;;https://example.com\x1b\\here",
             log_level="error",
         ),
+        LogRecord(
+            ns=0,
+            timestamp="2024-11-29T12:00:02Z",
+            name="app",
+            message="",
+            details="only details",
+            log_level="warn\x1b[2K\n2024-11-29T12:00:03Z [error",
+        ),
     ]
 
     result = runner.invoke(apps_cli, ["logs", "app123"])
@@ -1637,6 +1645,8 @@ def test_app_logs_human_output_prints_log_text_verbatim(mocker: MockFixture):
         "2024-11-29T12:00:00Z [INFO] ready\n"
         "2024-11-29T12:00:01Z [ERROR] real\\x1b[1A\\x1b[2Kforged :warning:\n"
         "  link \\x1b]8;;https://example.com\\x1b\\here\n"
+        "2024-11-29T12:00:02Z [WARN\\x1b[2K\\x0a2024-11-29T12:00:03Z [ERROR] \n"
+        "  only details\n"
     )
 
 

@@ -35,12 +35,11 @@ _LIST_COLUMNS = ("id", "name", "description", "provider")
 _HISTORY_COLUMNS = ("id", "status", "timestamp", "can rollback", "description")
 
 # Terminal control characters print as escapes, so a log line cannot move the
-# cursor or rewrite the lines above it. Tabs stay, and line breaks are split off
-# before the escape.
+# cursor or rewrite the lines above it. Tabs stay.
 _CONTROL_ESCAPES = {
     code: f"\\x{code:02x}"
     for code in (*range(0x20), *range(0x7F, 0xA0))
-    if code not in (0x09, 0x0A)
+    if code != 0x09
 }
 
 
@@ -74,13 +73,12 @@ def _format_log_record(record: LogRecord) -> str:
     message = record.message
     if not isinstance(message, str):
         message = json.dumps(message, ensure_ascii=False)
-    lines = message.splitlines()
+    lines = message.splitlines() or [""]
     if record.details:
         lines.extend(record.details.splitlines())
     level = (record.log_level or "info").upper()
-    return f"{record.timestamp} [{level}] " + "\n  ".join(lines).translate(
-        _CONTROL_ESCAPES
-    )
+    lines[0] = f"{record.timestamp} [{level}] {lines[0]}"
+    return "\n  ".join(line.translate(_CONTROL_ESCAPES) for line in lines)
 
 
 @click.group()
