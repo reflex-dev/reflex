@@ -9,10 +9,15 @@ import pytest
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is unavailable")
 @pytest.mark.parametrize(
-    "script", ["client_event_queue.mjs", "client_state_updates.mjs"]
+    "script",
+    [
+        "client_event_queue.mjs",
+        "client_state_updates.mjs",
+        "state_string_helpers.mjs",
+    ],
 )
 def test_client_runtime(script: str) -> None:
-    """Verify queue processing and incoming state updates.
+    """Verify queue processing, incoming state updates, and string helpers.
 
     Args:
         script: Runtime regression script to execute.
