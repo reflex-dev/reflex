@@ -17,7 +17,11 @@ from reflex_docs.views.search import search_bar
 
 
 def github_button() -> rx.Component:
-    """Render the compact GitHub link with its combined star count."""
+    """Render the compact GitHub link with its combined star count.
+
+    Returns:
+        A link to the Reflex GitHub repository showing the combined star count.
+    """
     total = GITHUB_STARS + XY_GITHUB_STARS
     stars = f"{(total + 999) // 1000}K"
     label = f"View Reflex on GitHub — {total:,} combined stars across Reflex and XY"
@@ -43,7 +47,11 @@ def github_button() -> rx.Component:
 
 
 def logo() -> rx.Component:
-    """Link each wordmark to its respective site overview."""
+    """Link each wordmark to its respective site overview.
+
+    Returns:
+        The Reflex and Docs wordmarks, each linking to its overview.
+    """
     focus_class = "rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
     return rx.el.div(
         rx.el.elements.a(
@@ -151,7 +159,11 @@ def menu_item(
 
 
 def navigation_menu() -> rx.Component:
-    """Render the docs section links, search, and responsive navigation actions."""
+    """Render the docs section links, search, and responsive navigation actions.
+
+    Returns:
+        The navigation menu holding the section links and header actions.
+    """
     return ui.navigation_menu.root(
         ui.navigation_menu.list(
             menu_item("Overview", "/", "/"),
@@ -222,7 +234,11 @@ def navigation_menu() -> rx.Component:
 
 @rx.memo
 def docs_navbar() -> rx.Component:
-    """Render the compact docs header with the marketing announcement treatment."""
+    """Render the compact docs header with the marketing announcement treatment.
+
+    Returns:
+        The fixed header frame with the announcement banner above the navbar.
+    """
     return rx.el.div(
         docs_announcement_banner(),
         rx.el.header(

@@ -729,9 +729,9 @@ def generate_props(
             rx.el.div(
                 comp,
                 class_name=(
-                    "flex flex-col items-center justify-center p-6 flex-1 "
+                    "docs-api-preview flex flex-col items-center justify-center p-6 flex-1 "
                     "bg-muted border-b lg:border-b-0 lg:border-r "
-                    "border-border-subtle min-w-0"
+                    "border-border-subtle min-w-0 overflow-x-auto"
                 ),
             ),
             rx.el.div(

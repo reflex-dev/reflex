@@ -116,6 +116,8 @@
   letter-spacing: -.006em;
 }
 .docs-reading-column .docs-heading {
+  min-width: 0;
+  overflow-wrap: anywhere;
   font-family: var(--font-heading);
   font-weight: 400;
   letter-spacing: -.035em;
@@ -204,6 +206,9 @@
   background: var(--muted);
 }
 .docs-article .docs-demo-preview { border-radius: var(--radius-card); }
+.docs-article :is(.docs-demo-preview, .docs-api-preview) {
+  align-items: safe center;
+}
 .docs-article .docs-callout { border-radius: 16px; }
 .docs-article .docs-callout > div { font-weight: 400; }
 .docs-markdown-table { border-radius: 16px; overflow-x: auto; }

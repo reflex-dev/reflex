@@ -8,7 +8,11 @@ from reflex_docs.pages.docs_landing.views.layout import CONTAINER, FOCUS
 
 
 def docs_cta() -> rx.Component:
-    """Render an open closing invitation with the existing product and demo links."""
+    """Render an open closing invitation with the existing product and demo links.
+
+    Returns:
+        The closing call-to-action section of the documentation overview.
+    """
     return rx.el.section(
         rx.el.div(
             rx.el.div(

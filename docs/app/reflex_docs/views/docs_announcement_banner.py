@@ -7,7 +7,11 @@ from reflex_site_shared.views.hosting_banner import HostingBannerState
 
 
 def docs_announcement_banner() -> rx.Component:
-    """Render the shared announcement content with docs-local presentation."""
+    """Render the shared announcement content with docs-local presentation.
+
+    Returns:
+        A wrapper that shows the dismissible announcement while the banner is visible.
+    """
     return rx.el.div(
         rx.cond(
             HostingBannerState.is_banner_visible,
