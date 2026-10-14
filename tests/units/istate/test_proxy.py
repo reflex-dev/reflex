@@ -21,6 +21,7 @@ from reflex_base.utils.exceptions import ImmutableStateError
 import reflex as rx
 from reflex.istate.data import HeaderData, PageData, RouterData
 from reflex.istate.manager import StateManager
+from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import (
     ImmutableMutableProxy,
@@ -190,10 +191,8 @@ async def test_state_proxy_recovery(
 async def test_recreated_state_invalidates_computed_vars_from_sibling_state(
     attached_mock_event_context: EventContext,
     emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
-    monkeypatch: pytest.MonkeyPatch,
 ):
     """StateProxy recreation refreshes a cross-state computed var cache."""
-    from reflex.istate.manager import _report_state_recreation
 
     class RootState(BaseState):
         pass
@@ -207,36 +206,44 @@ async def test_recreated_state_invalidates_computed_vars_from_sibling_state(
             source = await self.get_state(SourceState)
             return source.value
 
-    root = RootState()
-    source = cast(
-        SourceState, root.get_substate(SourceState.get_full_name().split("."))
+    state_manager = StateManagerMemory(token_expiration=60)
+    original_state_manager = attached_mock_event_context.state_manager
+    object.__setattr__(attached_mock_event_context, "state_manager", state_manager)
+    state_token = BaseStateToken(
+        ident=attached_mock_event_context.token,
+        cls=TargetState,
     )
-    target = cast(
-        TargetState, root.get_substate(TargetState.get_full_name().split("."))
-    )
-    root._clean()
-    computed_var = TargetState.computed_vars["source_value"]
-    cast(dict[str, Any], target.__dict__)[computed_var._cache_attr] = 1
+    try:
+        async with state_manager.modify_state(state_token) as root:
+            source = cast(
+                SourceState, root.get_substate(SourceState.get_full_name().split("."))
+            )
+            target = cast(
+                TargetState, root.get_substate(TargetState.get_full_name().split("."))
+            )
+            source.value = 1
+            computed_var = TargetState.computed_vars["source_value"]
+            cast(dict[str, Any], target.__dict__)[computed_var._cache_attr] = 1
 
-    @asynccontextmanager
-    async def recreate_state_context(*args, **kwargs):
-        _report_state_recreation(target)
-        yield root
+        state_proxy = StateProxy(target)
+        state_manager._purge_token(state_token)
+        async with state_proxy:
+            pass
 
-    monkeypatch.setattr(
-        attached_mock_event_context.state_manager,
-        "modify_state_with_links",
-        recreate_state_context,
-    )
-    async with StateProxy(target):
-        pass
-
-    assert target.__dict__[computed_var._cache_attr] == source.value
-    assert (
-        emitted_deltas[0][1][target.get_full_name()]["source_value" + FIELD_MARKER]
-        == source.value
-    )
-    assert not target._was_touched
+        recreated_target = state_proxy.__wrapped__
+        assert recreated_target.__dict__[computed_var._cache_attr] == 7
+        assert (
+            emitted_deltas[0][1][recreated_target.get_full_name()][
+                "source_value" + FIELD_MARKER
+            ]
+            == 7
+        )
+        assert not recreated_target._was_touched
+    finally:
+        await state_manager.close()
+        object.__setattr__(
+            attached_mock_event_context, "state_manager", original_state_manager
+        )
 
 
 @dataclasses.dataclass
