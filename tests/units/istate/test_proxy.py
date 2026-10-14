@@ -279,6 +279,37 @@ async def test_recreated_state_invalidates_computed_vars_from_sibling_state(
     assert delta[target.get_full_name()]["source_value" + FIELD_MARKER] == source.value
 
 
+def test_recreated_dependency_is_found_when_source_sibling_is_unloaded(
+    attached_mock_event_context: EventContext,
+):
+    """Use class dependency metadata when a Redis-loaded source sibling is absent."""
+
+    class RootState(BaseState):
+        pass
+
+    class SourceState(RootState):
+        value: int = 7
+
+    class TargetState(RootState):
+        @rx.var
+        async def source_value(self) -> int:
+            source = await self.get_state(SourceState)
+            return source.value
+
+    root = RootState()
+    target = cast(
+        TargetState, root.get_substate(TargetState.get_full_name().split("."))
+    )
+    root.substates.pop(SourceState.get_name())
+    computed_var = TargetState.computed_vars["source_value"]
+    cast(dict[str, Any], target.__dict__)[computed_var._cache_attr] = 1
+
+    _mark_recreated_cross_state_dependencies(root, [target])
+
+    assert "source_value" in target.dirty_vars
+    assert computed_var._cache_attr not in target.__dict__
+
+
 @dataclasses.dataclass
 class TaggedModel:
     """A dataclass with a mutable attribute for attr-path refresh tests."""
