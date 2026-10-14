@@ -189,8 +189,12 @@ async def test_state_proxy_recovery(
 @pytest.mark.asyncio
 async def test_recreated_state_invalidates_computed_vars_from_sibling_state(
     attached_mock_event_context: EventContext,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    monkeypatch: pytest.MonkeyPatch,
 ):
-    """A recreated state's cross-state computed var must not retain its old cache."""
+    """StateProxy recreation refreshes a cross-state computed var cache."""
+
+    from reflex.istate.manager import _report_state_recreation
 
     class RootState(BaseState):
         pass
@@ -211,17 +215,28 @@ async def test_recreated_state_invalidates_computed_vars_from_sibling_state(
     target = cast(
         TargetState, root.get_substate(TargetState.get_full_name().split("."))
     )
+    root._clean()
     computed_var = TargetState.computed_vars["source_value"]
     cast(dict[str, Any], target.__dict__)[computed_var._cache_attr] = 1
 
-    target.dirty_vars.update(target.computed_vars)
-    target._mark_dirty()
+    @asynccontextmanager
+    async def recreate_state_context(*args, **kwargs):
+        _report_state_recreation(target)
+        yield root
 
-    assert "source_value" in target.dirty_vars
+    monkeypatch.setattr(
+        attached_mock_event_context.state_manager,
+        "modify_state_with_links",
+        recreate_state_context,
+    )
+    async with StateProxy(target):
+        pass
+
     assert computed_var._cache_attr not in target.__dict__
-    assert await target.source_value == source.value
-    delta = await root._get_resolved_delta()
-    assert delta[target.get_full_name()]["source_value" + FIELD_MARKER] == source.value
+    assert emitted_deltas[0][1][target.get_full_name()][
+        "source_value" + FIELD_MARKER
+    ] == source.value
+    assert not target._was_touched
 
 
 @dataclasses.dataclass
