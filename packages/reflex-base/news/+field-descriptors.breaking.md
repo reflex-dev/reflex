@@ -1,1 +1,0 @@
-`reflex_base.utils.types.is_backend_base_variable` and `RESERVED_BACKEND_VAR_NAMES` are removed: whether a state var is a backend var is now a property of its `Field` in `get_fields()`. By convention, fields named with a leading `_` are backend vars. `is_mutable_type` moved to `reflex_base.utils.types` (still importable from `reflex.istate.proxy`).

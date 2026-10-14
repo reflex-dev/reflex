@@ -18,6 +18,7 @@ async function setup({
   disabled = false,
   hidden = false,
   storedToken = "original-token",
+  react = { useCallback() {}, useEffect() {}, useRef() {}, useState() {} },
 } = {}) {
   const sockets = [];
   const microtasks = [];
@@ -102,22 +103,25 @@ async function setup({
     },
     "$/reflex.json": { default: { version: "test" } },
     "universal-cookie": { default: class {} },
-    react: { useCallback() {}, useEffect() {}, useRef() {}, useState() {} },
+    react,
     "react-router": {
-      useLocation() {},
-      useNavigate() {},
-      useSearchParams() {},
-      useParams() {},
+      useLocation: () => ({ pathname: "/", search: "", hash: "" }),
+      useNavigate: () => () => {},
+      useSearchParams: () => [new URLSearchParams()],
+      useParams: () => ({}),
     },
     "$/utils/context-registry": {
       app: {
         initialEvents(first) {
           firstHydrates.push(first);
+          // Like ReflexEvent, a later hydrate without stored values has no payload.
           return [
-            {
-              name: "root.hydrate_and_load",
-              payload: first ? { hashes: ["defaults"] } : {},
-            },
+            first
+              ? {
+                  name: "root.hydrate_and_load",
+                  payload: { hashes: ["defaults"] },
+                }
+              : { name: "root.hydrate_and_load" },
           ];
         },
         initialState: stateful ? { root: {}, child: {} } : {},
@@ -162,6 +166,7 @@ async function setup({
     window,
     socket,
     updates,
+    module,
     dispose,
     flush: () => microtasks.splice(0).forEach((fn) => fn()),
     connect: (transports = ["websocket"]) =>
@@ -307,3 +312,84 @@ for (const config of [
     assert.equal(app.timers.size, 0);
   });
 }
+
+/** Run `useEventLoop` once with minimal hooks, keeping the effects it registers. */
+async function mountEventLoop() {
+  const effects = [];
+  const sent = [];
+  const emitted = {
+    connected: true,
+    emit: (name, payload) => sent.push(payload),
+  };
+  let refs = 0;
+  const harness = await setup({
+    react: {
+      useCallback: (fn) => fn,
+      useEffect: (fn) => effects.push(fn),
+      // The first ref is the socket; hand it a connected stand-in.
+      useRef: (initial) => ({ current: refs++ === 0 ? emitted : initial }),
+      useState: (initial) => [initial, () => {}],
+    },
+  });
+  harness.module.namespace.useEventLoop(
+    () => {},
+    () => [],
+    {},
+  );
+  return { harness, effects, sent };
+}
+
+test("window.onerror reports an error event that carries no Error object", async () => {
+  const { harness, effects, sent } = await mountEventLoop();
+  // Only the frontend-error effect touches `window.onerror`.
+  for (const effect of effects) effect();
+  assert.equal(typeof harness.window.onerror, "function");
+
+  // The benign ResizeObserver notification: a message, but `error` is null.
+  const message =
+    "ResizeObserver loop completed with undelivered notifications.";
+  assert.doesNotThrow(() =>
+    harness.window.onerror(
+      message,
+      "http://localhost:3000/app.js",
+      12,
+      34,
+      null,
+    ),
+  );
+  await new Promise((resolve) => setImmediate(resolve));
+
+  const event = sent.find(
+    (e) => e.name === "exception.handle_frontend_exception",
+  );
+  assert.ok(
+    event,
+    `expected a frontend exception event, got ${JSON.stringify(sent)}`,
+  );
+  assert.equal(
+    event.payload.info,
+    message + "\n    at http://localhost:3000/app.js:12:34",
+  );
+  assert.equal(event.payload.component_stack, "");
+});
+
+test("window.onerror preserves the original Error message", async () => {
+  const { harness, effects, sent } = await mountEventLoop();
+  for (const effect of effects) effect();
+  const error = new TypeError("same old message");
+  error.stack = "TypeError: same old message\n    at app.js:1:2";
+  assert.equal(
+    harness.window.onerror("ignored", "ignored.js", 9, 8, error),
+    false,
+  );
+  await new Promise((resolve) => setImmediate(resolve));
+  const event = sent.find(
+    (e) => e.name === "exception.handle_frontend_exception",
+  );
+  assert.ok(event);
+  assert.equal(
+    event.payload.info,
+    error.name + ": " + error.message + "\n" + error.stack,
+  );
+  assert.equal(event.payload.component_stack, "");
+});

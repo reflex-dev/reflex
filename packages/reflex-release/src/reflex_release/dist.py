@@ -10,6 +10,7 @@ import zipfile
 from collections.abc import Sequence
 from pathlib import Path
 
+from packaging.requirements import Requirement
 from packaging.version import InvalidVersion, Version
 
 from .actions import ReleaseError, fail
@@ -141,17 +142,18 @@ def verify_dist(
     return len(files)
 
 
-def pin_exact(pyproject: Path, dependency: str, version: Version) -> None:
-    """Rewrite a lower-bound requirement on a dependency to an exact pin.
-
-    Lockstep packages release together at one version, so a package that
-    publishes last must depend on exactly the sibling version published
-    alongside it rather than on a floor that a future release would satisfy.
+def check_exact_pin(
+    pyproject: Path, dependency: str, version: Version
+) -> re.Match[str]:
+    """Locate the requirement :func:`pin_exact` rewrites and check it admits the pin.
 
     Args:
         pyproject: The ``pyproject.toml`` of the package being built.
         dependency: The distribution name to pin.
         version: The version to pin it to.
+
+    Returns:
+        The match of the quoted requirement string in the file's text.
     """
     text = pyproject.read_text(encoding="utf-8")
     # Requirement strings are quoted TOML values, so the rewrite is anchored on
@@ -169,8 +171,27 @@ def pin_exact(pyproject: Path, dependency: str, version: Version) -> None:
             f'expected exactly one "{dependency} <specifier>" requirement in '
             f"{pyproject}, found {len(matches)}"
         )
-    new_pin = f'"{dependency}{matches[0]["extras"] or ""} == {version}"'
+    requirement = Requirement(matches[0].group(0)[1:-1])
+    if not requirement.specifier.contains(version, prereleases=True):
+        fail(f"{dependency} v{version} does not satisfy {requirement} in {pyproject}")
+    return matches[0]
+
+
+def pin_exact(pyproject: Path, dependency: str, version: Version) -> None:
+    """Rewrite a lower-bound requirement on a dependency to an exact pin.
+
+    A ``publish-last`` member depends on its siblings at the identical version,
+    published in this batch or an earlier one, so their floors become
+    ``== <version>`` in the metadata it ships.
+
+    Args:
+        pyproject: The ``pyproject.toml`` of the package being built.
+        dependency: The distribution name to pin.
+        version: The version to pin it to.
+    """
+    match = check_exact_pin(pyproject, dependency, version)
+    new_pin = f'"{dependency}{match["extras"] or ""} == {version}"'
     pyproject.write_text(
-        text.replace(matches[0].group(0), new_pin, 1), encoding="utf-8"
+        match.string.replace(match.group(0), new_pin, 1), encoding="utf-8"
     )
     sys.stderr.write(f"Pinned {new_pin} in {pyproject}\n")

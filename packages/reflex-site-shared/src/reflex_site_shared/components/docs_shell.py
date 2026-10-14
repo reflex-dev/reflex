@@ -10,6 +10,7 @@ import reflex_components_internal as ui
 from reflex_components_internal.blocks.demo_form import demo_form_dialog
 
 import reflex as rx
+from reflex_site_shared.backend.demo_requests import DemoRequestState
 from reflex_site_shared.backend.slack import escape_slack_text, post_to_slack
 from reflex_site_shared.backend.status import StatusState
 from reflex_site_shared.components.icons import get_icon
@@ -925,13 +926,14 @@ def docs_book_demo_action() -> rx.Component:
         Demo form dialog and trigger.
     """
     return demo_form_dialog(
+        on_submit=DemoRequestState.post_demo_request,
         trigger=button(
             "Book a Demo",
             size="sm",
             variant="primary",
             class_name="whitespace-nowrap",
             native_button=False,
-        )
+        ),
     )
 
 
