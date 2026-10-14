@@ -193,7 +193,6 @@ async def test_recreated_state_invalidates_computed_vars_from_sibling_state(
     monkeypatch: pytest.MonkeyPatch,
 ):
     """StateProxy recreation refreshes a cross-state computed var cache."""
-
     from reflex.istate.manager import _report_state_recreation
 
     class RootState(BaseState):
@@ -232,7 +231,7 @@ async def test_recreated_state_invalidates_computed_vars_from_sibling_state(
     async with StateProxy(target):
         pass
 
-    assert computed_var._cache_attr not in target.__dict__
+    assert target.__dict__[computed_var._cache_attr] == source.value
     assert (
         emitted_deltas[0][1][target.get_full_name()]["source_value" + FIELD_MARKER]
         == source.value
