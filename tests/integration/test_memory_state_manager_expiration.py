@@ -215,6 +215,11 @@ def test_background_task_refreshes_recreated_state_tree(
     frontend_url = memory_expiration_app.frontend_url
     assert frontend_url is not None
     driver.get(frontend_url.removesuffix("/") + "/background")
+    token_input = AppHarness.poll_for_or_raise_timeout(
+        lambda: driver.find_element(By.ID, "token")
+    )
+    token = token_input.get_attribute("value")
+    assert token is not None
     counter = AppHarness.poll_for_or_raise_timeout(
         lambda: driver.find_element(By.ID, "counter")
     )
@@ -234,3 +239,4 @@ def test_background_task_refreshes_recreated_state_tree(
     AppHarness.expect(lambda: counter.text == "100", timeout=10)
     AppHarness.expect(lambda: child_counter.text == "0", timeout=10)
     AppHarness.expect(lambda: component_counter.text == "0", timeout=10)
+    AppHarness.expect(lambda: token_input.get_attribute("value") == token)
