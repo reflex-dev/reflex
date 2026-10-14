@@ -994,6 +994,7 @@ export const connect = async (
   let firstConnect = true;
   let finishBootstrap;
   let exchangingSession = false;
+  let reconnectingSession = false;
   let sessionTimer;
   let sessionController;
   let resolveSession;
@@ -1006,20 +1007,31 @@ export const connect = async (
       currentSocket.emit("session_refresh");
     }
   };
-  const stopSessionExchange = () => {
+  const finishSessionExchange = () => {
+    resolveSession?.();
+    resolveSession = rejectSession = undefined;
+    initialSessionExchange = undefined;
+  };
+  const stopSessionExchange = (preserveReadiness = false) => {
     window.clearTimeout(sessionTimer);
     sessionController?.abort();
     sessionController = undefined;
     exchangingSession = false;
-    rejectSession?.(new Error("Session connection closed"));
-    resolveSession = rejectSession = undefined;
-    initialSessionExchange = undefined;
+    if (!preserveReadiness) {
+      reconnectingSession = false;
+      rejectSession?.(new Error("Session connection closed"));
+      resolveSession = rejectSession = undefined;
+      initialSessionExchange = undefined;
+    }
   };
   const releaseBootstrap = () => {
     finishBootstrap?.();
     finishBootstrap = null;
   };
-  socket.current.releaseSessionBootstrap = releaseBootstrap;
+  socket.current.releaseSessionBootstrap = () => {
+    stopSessionExchange();
+    releaseBootstrap();
+  };
   // Ensure undefined fields in events are sent as null instead of removed
   socket.current.io.encoder.replacer = (k, v) => (v === undefined ? null : v);
   socket.current.io.decoder.tryParse = (str) => {
@@ -1050,7 +1062,6 @@ export const connect = async (
             "",
         };
         current.auth = bootAuth(firstConnect);
-        initialSessionExchange = undefined;
         current.connect();
       };
       const key = sessionStorageKey();
@@ -1126,6 +1137,10 @@ export const connect = async (
 
   // Once the socket is open, hydrate the page.
   socket.current.on("connect", async () => {
+    if (reconnectingSession) {
+      reconnectingSession = false;
+      if (!exchangingSession) finishSessionExchange();
+    }
     if (!exchangingSession) {
       releaseBootstrap();
       requestSessionRefresh();
@@ -1161,7 +1176,9 @@ export const connect = async (
   socket.current.on("connect_error", onConnectError);
 
   socket.current.on("disconnect", (reason, details) => {
-    stopSessionExchange();
+    stopSessionExchange(
+      reconnectingSession && reason === "io client disconnect",
+    );
     releaseBootstrap();
     firstConnect = false;
     socket.current.wait_connect = false;
@@ -1282,13 +1299,14 @@ export const connect = async (
       );
       sessionFailures = 0;
       setConnectErrors([]);
-      resolveSession();
-      resolveSession = rejectSession = undefined;
-      initialSessionExchange = undefined;
       sessionTimer = window.setTimeout(requestSessionRefresh, refreshDelay);
       if (currentSocket.connected && getToken() !== previousToken) {
+        // Keep waiting HTTP calls queued until this cookie's socket is accepted.
+        reconnectingSession = true;
         currentSocket.disconnect();
         await currentSocket.reconnect();
+      } else {
+        finishSessionExchange();
       }
     } catch (error) {
       if (sessionController !== controller) return;

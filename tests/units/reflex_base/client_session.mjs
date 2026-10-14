@@ -309,6 +309,51 @@ test("cookie-wins exchange adopts its token and reconnects the provisional socke
   assert.equal(tab.runtime.getToken(), "cookie-tab");
 });
 
+for (const teardown of [false, true]) {
+  test(`cookie-wins readiness waits for reconnect and respects teardown=${teardown}`, async () => {
+    let finish;
+    const tab = await browserSession({
+      fetch: () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    });
+    await tab.connect();
+    const { exchange } = await tab.accept("provisional-tab", "credential");
+    let ready = false;
+    const pending = tab.runtime.waitForSession().then(() => {
+      ready = true;
+    });
+    pending.catch(() => {});
+    await tab.runtime.applyRestEvent(
+      { name: "upload", handler: "uploadFiles", payload: { files: [] } },
+      tab.socket.current,
+    );
+    finish({
+      ok: true,
+      json: async () => ({ client_token: "cookie-tab", expires_in: 3600 }),
+    });
+    await exchange;
+    await tick();
+    assert.equal(tab.socket.current.connected, false);
+    assert.equal(ready, false);
+    assert.equal(tab.uploads.length, 0);
+    if (teardown) {
+      tab.socket.current.releaseSessionBootstrap();
+      await assert.rejects(pending, /Session connection closed/);
+      await tick();
+      assert.equal(tab.uploads.length, 0);
+    } else {
+      await tab.accept("cookie-tab");
+      await pending;
+      await tick();
+      assert.equal(ready, true);
+      assert.equal(tab.uploads.length, 1);
+      assert.equal(tab.runtime.getToken(), "cookie-tab");
+    }
+  });
+}
+
 test("refresh and duplicate-tab updates preserve a socket with matching identity", async () => {
   const tab = await browserSession();
   await tab.connect();
