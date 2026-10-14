@@ -101,6 +101,7 @@ def test_bootstrap_session(manager: SessionTokenManager):
         assert response.json() == {
             "token_type": "cookie",
             "expires_in": 100,
+            "refresh_in": 50,
             "client_token": response.json()["client_token"],
         }
         assert session.authorizes(response.json()["client_token"])
@@ -459,11 +460,13 @@ async def test_websocket_validates_without_setting_cookie(
 
 
 @pytest.mark.asyncio
-async def test_http_context_isolation(manager: SessionTokenManager):
+@pytest.mark.parametrize("scope_type", ["http", "websocket"])
+async def test_request_context_isolation(manager: SessionTokenManager, scope_type: str):
     """Concurrent requests narrow the root context and restore it afterward.
 
     Args:
         manager: The session manager.
+        scope_type: The ASGI transport type.
     """
     sessions = [manager.create(), manager.create()]
     root = EventContext(
@@ -489,7 +492,7 @@ async def test_http_context_isolation(manager: SessionTokenManager):
             *[
                 middleware(
                     {
-                        "type": "http",
+                        "type": scope_type,
                         "headers": [
                             (
                                 b"cookie",
@@ -502,10 +505,54 @@ async def test_http_context_isolation(manager: SessionTokenManager):
                 )
                 for session in sessions
             ],
-            middleware({"type": "http", "headers": []}, AsyncMock(), AsyncMock()),
+            middleware({"type": scope_type, "headers": []}, AsyncMock(), AsyncMock()),
         )
         assert EventContext.get() is root
     assert set(observed) == {None, *(session.id for session in sessions)}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("authorized", [False, True])
+async def test_custom_websocket_state_authority(manager, monkeypatch, authorized):
+    """Custom WebSocket state access uses the browser session instead of SYSTEM."""
+    monkeypatch.setenv("REFLEX_SESSION_TOKEN_MODE", "enforce")
+    session = manager.create()
+    token = manager.create_client_token(session)
+    root = EventContext(
+        token="",
+        session_token=SessionToken.SYSTEM,
+        state_manager=AsyncMock(),
+        enqueue_impl=AsyncMock(),
+    )
+
+    async def inner(scope, receive, send):
+        """Access a client through the ambient request context."""
+        with EventContext.get().fork(token=token):
+            await send({"type": "websocket.accept"})
+
+    headers = (
+        [
+            (
+                b"cookie",
+                f"__Host-{manager.cookie_name}={manager.encode(session)}".encode(),
+            )
+        ]
+        if authorized
+        else []
+    )
+    send = AsyncMock()
+    with root:
+        await SessionMiddleware(inner, manager, "https://api.test")(
+            {"type": "websocket", "headers": headers},
+            AsyncMock(),
+            send,
+        )
+        assert EventContext.get() is root
+    send.assert_awaited_once_with(
+        {"type": "websocket.accept"}
+        if authorized
+        else {"type": "websocket.close", "code": 1008}
+    )
 
 
 @pytest.mark.asyncio

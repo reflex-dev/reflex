@@ -1,1 +1,1 @@
-Add browser sessions using HttpOnly cookies and a `POST /_reflex/session` endpoint that issues a client token bound to the requesting session. Sessions are validated for HTTP and WebSocket requests, and valid HTTP sessions refresh automatically.
+Add browser sessions using HttpOnly cookies and a `POST /_reflex/session` endpoint that issues a client token bound to the requesting session. Sessions scope HTTP and custom WebSocket state access; authenticated sockets can renew their cookie credentials without losing client state.

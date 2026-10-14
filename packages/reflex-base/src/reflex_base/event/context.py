@@ -150,7 +150,7 @@ class EventContext(BaseContext):
                 "Trusted server-side work may explicitly use SessionToken.SYSTEM. "
                 "REFLEX_SESSION_TOKEN_MODE=enforce rejects this access."
             ),
-            deprecation_version="0.9.13",
+            deprecation_version="0.10.1",
             removal_version="1.0",
         )
 

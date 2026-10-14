@@ -18,6 +18,7 @@ import tempfile
 import time
 import traceback
 import urllib.parse
+import uuid
 from collections.abc import (
     AsyncIterator,
     Callable,
@@ -2265,6 +2266,9 @@ class EventNamespace(AsyncNamespace):
         token = token_list[0] if token_list else ""
         mode = environment.REFLEX_SESSION_TOKEN_MODE.get()
         issued_session = None
+        if mode == "off" and not token:
+            token = str(uuid.uuid4())
+            await self.emit("new_token", token, to=sid)
         if mode != "off":
             manager = self.app._session_token_manager
             session = environ.get("asgi.scope", {}).get("reflex.session")
@@ -2315,6 +2319,23 @@ class EventNamespace(AsyncNamespace):
                 if (linked_token := self.sid_to_token.get(sid)) is not None:
                     await self._token_manager.disconnect_token(linked_token, sid)
                 raise
+
+    async def on_session_refresh(self, sid: str) -> None:
+        """Renew credentials for the session already authenticated by this socket.
+
+        Connection authority survives cookie expiry, including suspended browser
+        timers. The credential is delivered only to the requesting connection.
+
+        Args:
+            sid: The Socket.IO session id requesting renewal.
+        """
+        if (session := self._sessions.get(sid)) is None:
+            return
+        manager = self.app._session_token_manager
+        renewed = manager.refresh(session)
+        self._sessions[sid] = renewed
+        self._session_refresh_at[sid] = renewed.issued_at + manager.refresh_interval
+        await self.emit("session_token", manager.encode(renewed), to=sid)
 
     def _build_static_router_data(self, sid: str, environ: dict) -> dict[str, Any]:
         """Build the connection-scoped router_data entries for a socket.

@@ -120,7 +120,7 @@ def _session_cookie(
 
 
 class SessionMiddleware:
-    """Validate sessions, hide their credentials, and scope HTTP state access."""
+    """Validate sessions, hide their credentials, and scope request state access."""
 
     def __init__(self, app: ASGIApp, manager: SessionTokenManager, api_url: str):
         """Wrap an ASGI app with browser session handling.
@@ -176,10 +176,6 @@ class SessionMiddleware:
         scope["headers"] = headers
         session = self.manager.decode(credentials[0]) if len(credentials) == 1 else None
         scope["reflex.session"] = session
-        if scope["type"] == "websocket":
-            await self.app(scope, receive, send)
-            return
-
         response_started = False
 
         async def send_with_session(message: Message) -> None:
@@ -217,8 +213,15 @@ class SessionMiddleware:
             context = nullcontext()
         with context:
             try:
-                await self.app(scope, receive, send_with_session)
+                await self.app(
+                    scope,
+                    receive,
+                    send if scope["type"] == "websocket" else send_with_session,
+                )
             except SessionAuthorizationError as error:
+                if scope["type"] == "websocket":
+                    await send({"type": "websocket.close", "code": 1008})
+                    return
                 if response_started:
                     raise
                 response = await session_authorization_error(Request(scope), error)
@@ -315,6 +318,7 @@ async def session_endpoint(
         {
             "token_type": "cookie",
             "expires_in": manager.ttl,
+            "refresh_in": manager.refresh_interval,
             "client_token": client_token,
         },
         headers={"Cache-Control": "no-store"},

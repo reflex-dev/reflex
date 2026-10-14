@@ -5184,8 +5184,8 @@ async def test_connect_session_authorization(
         call.args[0]: call.args[1]
         for call in cast(AsyncMock, namespace.emit).call_args_list
     }
-    replacement_expected = mode != "off" and (
-        not incoming or (mode == "enforce" and (cookie != "valid" or client != "bound"))
+    replacement_expected = not incoming or (
+        mode == "enforce" and (cookie != "valid" or client != "bound")
     )
     assert ("new_token" in emitted) is replacement_expected
     assert ("session_token" in emitted) is (mode != "off" and cookie != "valid")
@@ -5300,6 +5300,36 @@ async def test_session_refresh_notice_is_throttled(
     assert "sid" not in namespace._session_refresh_at
 
 
+async def test_socket_renews_expired_cookie_without_changing_state_owner(
+    event_namespace_with_processor_mock,
+    mocker,
+):
+    """A live connection can renew its own session after an idle browser's cookie expires."""
+    namespace = event_namespace_with_processor_mock
+    manager = namespace.app._session_token_manager
+    session = manager.create()
+    token = manager.create_client_token(session)
+    environ = _connect_environ(token)
+    environ["asgi.scope"]["reflex.session"] = session
+    await namespace.on_connect("sid", environ)
+    mocker.patch("reflex_base.session.time.time", return_value=session.expires_at + 1)
+    assert manager.decode(manager.encode(session)) is None
+    await namespace.on_session_refresh("sid")
+    emitted = cast(AsyncMock, namespace.emit)
+    credential = emitted.call_args.args[1]
+    renewed = manager.decode(credential)
+    assert renewed is not None
+    assert renewed.id == session.id
+    assert renewed.authorizes(token)
+    assert namespace._sessions["sid"] == renewed
+    emitted.reset_mock()
+    task = namespace.on_disconnect("sid")
+    if task is not None:
+        await task
+    await namespace.on_session_refresh("sid")
+    emitted.assert_not_called()
+
+
 @pytest.mark.parametrize("compile_raises", [False, True])
 def test_compile_releases_memo_naming_caches(
     mocker: MockerFixture, compile_raises: bool
@@ -5402,14 +5432,18 @@ def _schema_checking_namespace(
 
 @pytest.mark.asyncio
 async def test_on_connect_reports_state_schema_mismatch(
-    event_namespace: EventNamespace, caplog: pytest.LogCaptureFixture
+    event_namespace: EventNamespace,
+    caplog: pytest.LogCaptureFixture,
+    monkeypatch: pytest.MonkeyPatch,
 ):
     """A frontend compiled for another state tree is told once, and still hydrates.
 
     Args:
         event_namespace: The event namespace.
         caplog: pytest fixture capturing backend log records.
+        monkeypatch: Environment fixture.
     """
+    monkeypatch.setenv("REFLEX_SESSION_TOKEN_MODE", "off")
     on_event, emit = _schema_checking_namespace(event_namespace, "backend-schema")
     boot_event = {"name": "state.hydrate_and_load", "payload": {}, "router_data": {}}
 
@@ -5467,15 +5501,20 @@ async def test_on_connect_reports_state_schema_mismatch(
         pytest.param(None, id="no-auth"),
     ],
 )
+@pytest.mark.usefixtures("attached_mock_event_context")
 async def test_on_connect_sends_no_mismatch_without_one(
-    event_namespace: EventNamespace, auth: dict[str, Any] | None
+    event_namespace: EventNamespace,
+    auth: dict[str, Any] | None,
+    monkeypatch: pytest.MonkeyPatch,
 ):
     """A matching or missing frontend schema sends nothing to the client.
 
     Args:
         event_namespace: The event namespace.
         auth: The CONNECT auth payload.
+        monkeypatch: Environment fixture.
     """
+    monkeypatch.setenv("REFLEX_SESSION_TOKEN_MODE", "off")
     on_event, emit = _schema_checking_namespace(event_namespace, "same")
     state = Mock(router_data={})
     event_namespace.app.state_manager.modify_state = Mock(
