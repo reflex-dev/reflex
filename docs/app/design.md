@@ -16,7 +16,7 @@ The shared base is `packages/reflex-site-shared/src/reflex_site_shared/styles/as
 | Strong boundary | `border-border-strong` |
 | Keyboard focus | `focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring` |
 
-Use Inter for text, Geist for editorial headings, and JetBrains Mono for code. Inter and Geist use pinned Fontsource variable WOFF2 packages with Latin subsets and `font-display: swap`, bundled through `assets/docs-theme.css`. Retain their copyright notices and shared SIL Open Font License in `assets/fonts/LICENSE.md`. Body and controls use weight 400; page titles use Geist 300. Article body is 15px with a 1.85 line height; retain a comfortable reading width instead of using the marketing site's large display sizing for prose.
+Use Inter for text, Geist for editorial headings, and JetBrains Mono for code. Inter and Geist use pinned Fontsource variable WOFF2 packages with Latin subsets and `font-display: swap`, bundled through `assets/docs-theme.css`. Body and controls use weight 400; page titles use Geist 300. Article body is 15px with a 1.85 line height; retain a comfortable reading width instead of using the marketing site's large display sizing for prose.
 
 Use capsule buttons (`rounded-control`), 12px inputs (`rounded-xl`), 20px cards (`rounded-card`), and 24px panels (`rounded-panel`). Keep primary and ghost actions flat; outlined actions use a solid border. Preserve labels, links, disabled states, and keyboard interaction.
 
