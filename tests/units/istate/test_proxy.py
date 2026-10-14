@@ -21,7 +21,6 @@ from reflex_base.utils.exceptions import ImmutableStateError
 import reflex as rx
 from reflex.istate.data import HeaderData, PageData, RouterData
 from reflex.istate.manager import StateManager
-from reflex.istate.manager.redis import StateManagerRedis
 from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import (
     ImmutableMutableProxy,
