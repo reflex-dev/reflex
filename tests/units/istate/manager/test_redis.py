@@ -67,8 +67,8 @@ class RedisAppObjectState(BaseState):
 
 
 @pytest.mark.asyncio
-async def test_get_state_reads_tree_in_one_command():
-    """Read persisted and missing states together, preserving their tree positions."""
+async def test_get_state_reads_tree_in_one_round_trip():
+    """Read persisted and missing states together in one round trip."""
     redis = mock_redis()
     manager = StateManagerRedis(redis=redis)
     token = BaseStateToken(ident="batched-read", cls=RedisTestState)
@@ -127,10 +127,11 @@ async def test_get_state_reports_missing_redis_substates():
         key=lambda cls: cls.get_full_name(),
     )
     persisted_state = RedisTestState(foo="persisted")
-    await redis.sadd(
-        token._state_manifest_key(),
-        *(token._state_key(cls) for cls in state_classes[1:]),
-    )
+    for state_cls in state_classes[1:]:
+        await redis.sadd(
+            token._state_manifest_key(),
+            token._state_key(state_cls),
+        )
     redis.mget = AsyncMock(
         return_value=[
             persisted_state._serialize() if cls is RedisTestState else None
