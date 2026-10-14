@@ -16,7 +16,7 @@ The shared base is `packages/reflex-site-shared/src/reflex_site_shared/styles/as
 | Strong boundary | `border-border-strong` |
 | Keyboard focus | `focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring` |
 
-Use Inter for text, Geist for editorial headings, and JetBrains Mono for code. Local Inter and Geist assets and their licenses are in `assets/fonts/`, reused from the marketing site. Body and controls use weight 400; page titles use Geist 300. Article body is 15px with a 1.85 line height; retain a comfortable reading width instead of using the marketing site's large display sizing for prose.
+Use Inter for text, Geist for editorial headings, and JetBrains Mono for code. Inter and Geist use pinned Fontsource variable WOFF2 packages with Latin subsets and `font-display: swap`, bundled through `assets/docs-theme.css`. Retain their license notices in `assets/fonts/`. Body and controls use weight 400; page titles use Geist 300. Article body is 15px with a 1.85 line height; retain a comfortable reading width instead of using the marketing site's large display sizing for prose.
 
 Use capsule buttons (`rounded-control`), 12px inputs (`rounded-xl`), 20px cards (`rounded-card`), and 24px panels (`rounded-panel`). Keep primary and ghost actions flat; outlined actions use a solid border. Preserve labels, links, disabled states, and keyboard interaction.
 
@@ -24,4 +24,4 @@ The light palette matches marketing: #fdfcfc canvas, #f5f3f1 quiet surfaces, bla
 
 New UI must not use numbered primary/secondary colors. Their CSS aliases remain for internal controls and downstream consumers. Scope editorial rules to `.docs-heading`, `.docs-prose`, and named shell hooks. Never target every heading, paragraph, or button inside an article: live examples must retain their own typography and interactions. Respect reduced-motion preferences and keep focus indicators visible.
 
-The announcement banner reuses the marketing opal artwork in `assets/header/opal.png`. Docs retain a compact 64px header with a 40px visible announcement. Mobile navigation and article offsets follow `--docs-header-height`; dismissal removes only the announcement contribution.
+The announcement banner reuses the marketing opal artwork in `assets/header/opal.avif`. Docs retain a compact 64px header with a 40px visible announcement. Mobile navigation and article offsets follow `--docs-header-height`; dismissal removes only the announcement contribution.

@@ -93,7 +93,7 @@
 }
 .docs-announcement-glass > span {
   flex: 1;
-  background: url('/docs/header/opal.png') center 22% / cover no-repeat;
+  background: url('/docs/header/opal.avif') center 22% / cover no-repeat;
 }
 .docs-announcement-glass > span:nth-child(2) { background-position: center 62%; transform: scaleX(-1); }
 .docs-announcement-glass > span:nth-child(3) { background-position: center 38%; }
