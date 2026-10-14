@@ -375,6 +375,20 @@ class StateManagerRedis(StateManager):
                 key.decode() if isinstance(key, bytes) else key
                 for key in manifest_keys
             }
+            untracked_keys = [
+                key
+                for key, redis_state in zip(state_keys, redis_states, strict=True)
+                if redis_state is not None and key not in persisted_state_keys
+            ]
+            if untracked_keys:
+                # Learn existing Redis keys on first access after introducing the manifest.
+                manifest_pipeline = self.redis.pipeline(transaction=False)
+                for key in untracked_keys:
+                    manifest_pipeline.sadd(token._state_manifest_key(), key)
+                manifest_pipeline.pexpire(
+                    token._state_manifest_key(), self.token_expiration * 1000
+                )
+                await manifest_pipeline.execute()
         else:
             redis_states = []
             persisted_state_keys = set()
