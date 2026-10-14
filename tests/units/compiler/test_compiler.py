@@ -42,11 +42,19 @@ def test_read_stateful_pages_marker_recovers_legacy_corruption(
     assert compiler._read_stateful_pages_marker() is None
 
 
+def test_read_stateful_pages_marker_recovers_undecodable_marker(tmp_path, mocker):
+    """A marker that is not valid UTF-8 requests full page evaluation."""
+    mocker.patch("reflex.utils.prerequisites.get_backend_dir", return_value=tmp_path)
+    # No BOM: json.loads() would decode a UTF-16 one and raise JSONDecodeError.
+    (tmp_path / constants.Dirs.STATEFUL_PAGES).write_bytes(b"\xff garbage")
+    assert compiler._read_stateful_pages_marker() is None
+
+
 @pytest.mark.parametrize("windows", [False, True])
 def test_read_stateful_pages_marker_sharing_violation(mocker, windows):
     """An unavailable Windows marker requests evaluation without hiding POSIX errors."""
     mocker.patch.object(constants, "IS_WINDOWS", windows)
-    mocker.patch.object(Path, "read_text", side_effect=PermissionError)
+    mocker.patch.object(Path, "read_bytes", side_effect=PermissionError)
     if windows:
         assert compiler._read_stateful_pages_marker() is None
     else:
@@ -692,6 +700,35 @@ def test_compile_contexts_theme_appearance_overrides_config(mocker: MockerFixtur
     _, code = compiler.compile_contexts(None, rx.theme(appearance="dark"))
 
     assert 'export const defaultColorMode = "dark"' in code
+
+
+def test_compile_contexts_embeds_frontend_state_schema():
+    """The context module carries the hash of the state tree it was compiled for.
+
+    The frontend sends it on every socket connect, and the backend computes
+    the same function over its own tree, so the two values drift only when
+    the trees do.
+    """
+
+    # A root of its own: compiling rx.State would instantiate every state other
+    # test modules registered in this process.
+    class SchemaContextRoot(BaseState):
+        value: int = 0
+
+    class SchemaContextChild(SchemaContextRoot):
+        name: str = ""
+
+    _, code = compiler.compile_contexts(SchemaContextRoot, None)
+
+    schema = SchemaContextRoot._to_frontend_schema()
+    assert f'export const stateSchema = "{schema}"' in code
+    start = code.index("registerApp({")
+    assert "stateSchema," in code[start : code.index("});", start)]
+    assert SchemaContextChild.get_full_name() in code
+
+    # Without state there is nothing to compare, and nothing to connect with.
+    _, code = compiler.compile_contexts(None, None)
+    assert "export const stateSchema = null" in code
 
 
 @pytest.mark.parametrize(

@@ -1659,7 +1659,10 @@ def test_client_state_setter_only_sibling_memo_initializes_state() -> None:
         if chunk.startswith("Button_")
     )
     assert "refs['_client_state_setSibling'](\"b\")" in button_memo
-    assert 'const [sibling, setSibling] = useState("a")' in button_memo
+    assert (
+        "const [sibling, setSibling] = useState('_client_state_sibling' in refs"
+        " ? refs['_client_state_sibling'] : (\"a\"))" in button_memo
+    )
     assert "refs['_client_state_setSibling'] = " in button_memo
 
 
@@ -2174,6 +2177,7 @@ def test_form_memo_preserves_control_refs(form_factory) -> None:
     ]
     assert len(forms) == 1
     form_hooks = "\n".join(forms[0].add_hooks())
+    assert "getFormData($form, " in form_hooks
     for field_id in ("plain_field", "debounced_field", "unset_field"):
         assert f'getRefValue(refs["ref_{field_id}"])' in form_hooks
     assert 'getRefValue(refs["ref_label"])' not in form_hooks

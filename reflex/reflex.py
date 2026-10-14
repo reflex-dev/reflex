@@ -277,6 +277,11 @@ def _init(
         reflex_build_redirect()
         return
 
+    # For an existing app, validate the configured app name rather than the
+    # name of the directory that happens to contain it.
+    if not name and constants.Config.FILE.exists():
+        name = get_config().app_name
+
     # Validate the app name.
     app_name = prerequisites.validate_app_name(name)
     console.rule(f"[bold]Initializing {app_name}")
@@ -561,12 +566,9 @@ def _run_prod(running_mode: constants.RunningMode, port: int, host: str):
 
     _skip_compile()
 
-    # Post the telemetry event once the workers are running, from a separate
-    # process: the server may fork its supervisor again to respawn workers, so
-    # it must never hold a telemetry thread.
-    def on_started():
-        """Send the run telemetry without a thread in the supervisor."""
-        telemetry._send_detached("run-prod")
+    # Post a telemetry event. Sent synchronously: on Linux the backend forks its
+    # workers from this process, which must hold no telemetry thread by then.
+    telemetry._process_event("run-prod", config.telemetry_enabled)
 
     # Display custom message when there is a keyboard interrupt.
     atexit.register(processes.atexit_handler)
@@ -578,14 +580,10 @@ def _run_prod(running_mode: constants.RunningMode, port: int, host: str):
     )
     if running_mode.has_backend():
         exec.run_backend_prod(
-            host,
-            port,
-            config.loglevel.subprocess_level(),
-            running_mode.has_frontend(),
-            on_started=on_started,
+            host, port, config.loglevel.subprocess_level(), running_mode.has_frontend()
         )
     else:
-        exec.run_frontend_prod(host, port, on_started=on_started)
+        exec.run_frontend_prod(host, port)
 
 
 def _run(

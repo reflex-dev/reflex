@@ -7,6 +7,7 @@ import multiprocessing
 import os
 import socket
 import sys
+import threading
 import time
 from http.client import HTTPConnection
 from multiprocessing.queues import Queue
@@ -583,19 +584,13 @@ def _fake_granian_prod(
 def test_run_granian_backend_prod_preloads_app_before_forking(
     mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
 ):
-    """With fork, the app is imported, telemetry drained and the heap frozen first.
-
-    ``on_started`` runs only once the workers have been started.
-    """
+    """With fork, the app is imported, telemetry drained and the heap frozen first."""
     monkeypatch.setenv(environment.REFLEX_BACKEND_START_METHOD.name, "fork")
     calls: list[str] = []
     _fake_granian_prod(mocker, calls)
 
     exec_utils.run_granian_backend_prod(
-        host="0.0.0.0",
-        port=8000,
-        loglevel=exec_utils.LogLevel.INFO,
-        on_started=lambda: calls.append("started"),
+        host="0.0.0.0", port=8000, loglevel=exec_utils.LogLevel.INFO
     )
 
     assert calls == [
@@ -606,7 +601,6 @@ def test_run_granian_backend_prod_preloads_app_before_forking(
         "freeze",
         "serve",
         "workers",
-        "started",
     ]
 
 
@@ -667,72 +661,7 @@ def test_run_granian_backend_prod_custom_target_only_freezes(
         app_target="reflex.utils.exec:_frontend_prod_app",
     )
 
-    assert calls == [
-        "start:fork",
-        "serializers",
-        "drain",
-        "freeze",
-        "serve",
-        "workers",
-    ]
-
-
-@pytest.mark.parametrize("use_granian", [True, False])
-def test_run_backend_prod_forwards_on_started(mocker: MockerFixture, use_granian: bool):
-    """The prod backend hands ``on_started`` to whichever server it runs."""
-    mocker.patch.object(exec_utils, "should_use_granian", return_value=use_granian)
-    launcher = mocker.patch.object(
-        exec_utils,
-        "run_granian_backend_prod" if use_granian else "run_uvicorn_backend_prod",
-    )
-    on_started = mocker.Mock()
-
-    exec_utils.run_backend_prod(
-        "0.0.0.0", 8000, exec_utils.LogLevel.INFO, on_started=on_started
-    )
-
-    launcher.assert_called_once_with(
-        "0.0.0.0", 8000, exec_utils.LogLevel.INFO, on_started=on_started
-    )
-
-
-@pytest.mark.parametrize("use_granian", [True, False])
-def test_run_frontend_prod_forwards_on_started(
-    mocker: MockerFixture, use_granian: bool
-):
-    """The prod frontend server hands ``on_started`` to its launcher."""
-    mocker.patch.object(exec_utils, "should_use_granian", return_value=use_granian)
-    launcher = mocker.patch.object(
-        exec_utils,
-        "run_granian_backend_prod" if use_granian else "run_uvicorn_backend_prod",
-    )
-    on_started = mocker.Mock()
-
-    exec_utils.run_frontend_prod("0.0.0.0", 3000, on_started=on_started)
-
-    assert launcher.call_args.kwargs["on_started"] is on_started
-
-
-def test_run_uvicorn_backend_prod_calls_on_started_before_launch(
-    mocker: MockerFixture,
-):
-    """The server runs in a separate interpreter, so the callback runs first."""
-    calls: list[str] = []
-    mocker.patch.object(exec_utils, "_get_backend_workers", return_value=1)
-    mocker.patch(
-        "reflex.utils.processes.new_process",
-        side_effect=lambda *_args, **_kwargs: calls.append("launch"),
-    )
-
-    exec_utils.run_uvicorn_backend_prod(
-        "0.0.0.0",
-        8000,
-        exec_utils.LogLevel.INFO,
-        app_target="app:app",
-        on_started=lambda: calls.append("started"),
-    )
-
-    assert calls == ["started", "launch"]
+    assert calls == ["start:fork", "serializers", "drain", "freeze", "serve", "workers"]
 
 
 @pytest.mark.parametrize(
@@ -1037,13 +966,22 @@ def _dev_granian_supervisor(mocker: MockerFixture, tmp_path: Path, port: int):
     granian_server = pytest.importorskip("granian.server")
     servers: list[Any] = []
 
+    class FakeInner:
+        exitcode = None
+
+        def join(self):
+            """Return at once: the fake worker is never running."""
+
     class FakeWorker:
         def __init__(self):
             self.interrupt_by_parent = False
             self.alive = True
+            self.inner = FakeInner()
+            self.granian_watched = False
 
         def _watcher(self):
-            """Stand in for granian's watcher body, which joins the process."""
+            """Stand in for granian's watcher body, which logs an unexpected exit."""
+            self.granian_watched = True
 
         def is_alive(self):
             return self.alive
@@ -1055,6 +993,7 @@ def _dev_granian_supervisor(mocker: MockerFixture, tmp_path: Path, port: int):
             self.backlog = 16
             self.wrks = []
             self.shutdowns = []
+            self.main_loop_interrupt = threading.Event()
             self._ssp = self._shd = self._sfd = None
             self._sso: Any = None
             servers.append(self)
@@ -1128,6 +1067,36 @@ def test_run_granian_backend_keeps_socket_across_worker_restart(
         worker._watcher()
 
         assert not _port_is_bindable(port)
+    finally:
+        server._close_shared_socket()
+
+
+def test_run_granian_backend_reports_only_unclean_worker_exits(
+    tmp_path: Path, mocker: MockerFixture
+):
+    """Only a worker exiting 0 while the supervisor is signalled skips granian's report."""
+    port = _free_port()
+    server = _dev_granian_supervisor(mocker, tmp_path, port)
+    try:
+        server._init_shared_socket()
+        stopped = _spawn_supervisor_worker(server)
+        stopped.inner.exitcode = 0
+        stopped.alive = False
+        server.main_loop_interrupt.set()
+        stopped._watcher()
+        assert not stopped.granian_watched
+        assert _port_is_bindable(port)
+
+        mocker.patch.object(server.main_loop_interrupt, "wait", return_value=False)
+        exited = _spawn_supervisor_worker(server)
+        exited.inner.exitcode = 0
+        exited._watcher()
+        assert exited.granian_watched
+
+        crashed = _spawn_supervisor_worker(server)
+        crashed.inner.exitcode = -1
+        crashed._watcher()
+        assert crashed.granian_watched
     finally:
         server._close_shared_socket()
 

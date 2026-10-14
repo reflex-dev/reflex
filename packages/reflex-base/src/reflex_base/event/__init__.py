@@ -50,8 +50,10 @@ from reflex_base.utils.types import (
     ArgsSpec,
     GenericType,
     Unset,
+    is_optional,
     safe_issubclass,
     typehint_issubclass,
+    value_inside_optional,
 )
 from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var, _owner_state
@@ -71,6 +73,8 @@ from reflex_base.vars.object import ObjectVar
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
+    from reflex_components_core.core._upload import UploadChunkIterator, UploadFile
+
     from reflex.state import BaseState
 
     BASE_STATE = TypeVar("BASE_STATE", bound=BaseState)
@@ -2094,16 +2098,32 @@ def _check_event_args_subclass_of_callback(
             type_match_found.setdefault(arg, False)
             callback_param_type = callback_param_name_to_type[arg]
 
+            provided_type = args_types_without_vars[i]
             try:
-                compare_result = typehint_issubclass(
-                    args_types_without_vars[i], callback_param_type
-                ) or _is_on_submit_mapping_event_arg_compatible_with_typed_dict(
-                    args_types_without_vars[i], callback_param_type, key
-                )
+                if isinstance(provided_type, TypeVar):
+                    # A generic spec arg takes on the callback's type within its
+                    # bound, or as one of its constraints; an optional callback
+                    # type accepts what its non-None type does.
+                    admitted_type = (
+                        value_inside_optional(callback_param_type)
+                        if is_optional(callback_param_type)
+                        else callback_param_type
+                    )
+                    compare_result = any(
+                        typehint_issubclass(admitted_type, admitted)
+                        for admitted in provided_type.__constraints__
+                        or (provided_type.__bound__ or Any,)
+                    )
+                else:
+                    compare_result = typehint_issubclass(
+                        provided_type, callback_param_type
+                    ) or _is_on_submit_mapping_event_arg_compatible_with_typed_dict(
+                        provided_type, callback_param_type, key
+                    )
             except TypeError as te:
                 callback_name_context = f" of {callback_name}" if callback_name else ""
                 key_context = f" for {key}" if key else ""
-                msg = f"Could not compare types {args_types_without_vars[i]} and {callback_param_type} for argument {arg}{callback_name_context}{key_context}."
+                msg = f"Could not compare types {provided_type} and {callback_param_type} for argument {arg}{callback_name_context}{key_context}."
                 raise TypeError(msg) from te
 
             if compare_result:
@@ -2115,13 +2135,16 @@ def _check_event_args_subclass_of_callback(
             )
             delayed_exceptions.append(
                 EventHandlerArgTypeMismatchError(
-                    f"Event handler {key} expects {args_types_without_vars[i]} for argument {arg} but got {callback_param_type}{as_annotated_in} instead."
+                    f"Event handler {key} expects {provided_type} for argument {arg} but got {callback_param_type}{as_annotated_in} instead."
                 )
             )
 
         if all(type_match_found.values()):
             delayed_exceptions.clear()
-            if event_spec_index:
+            # A generic spec matches the callback's own types, so it is not a fallback.
+            if event_spec_index and not any(
+                isinstance(arg, TypeVar) for arg in args_types_without_vars
+            ):
                 args = get_args(provided_event_types[0])
 
                 args_types_without_vars = [
@@ -2875,6 +2898,18 @@ class EventCallback(Generic[*P], EventActionsMixin):
     @overload
     def __call__(
         self: "EventCallback[V]", value: V | Var[V]
+    ) -> "EventCallback[()]": ...
+
+    # An upload spec stands in for the files, or the chunks, that reflex uploads to the
+    # handler. Only as the handler's sole argument: bound args next to it aren't typed.
+    @overload
+    def __call__(
+        self: "EventCallback[list[UploadFile]]", value: FileUpload
+    ) -> "EventCallback[()]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[UploadChunkIterator]", value: UploadFilesChunk
     ) -> "EventCallback[()]": ...
 
     @overload
