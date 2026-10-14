@@ -113,11 +113,14 @@ async function setup({
       app: {
         initialEvents(first) {
           firstHydrates.push(first);
+          // Like ReflexEvent, a later hydrate without stored values has no payload.
           return [
-            {
-              name: "root.hydrate_and_load",
-              payload: first ? { hashes: ["defaults"] } : {},
-            },
+            first
+              ? {
+                  name: "root.hydrate_and_load",
+                  payload: { hashes: ["defaults"] },
+                }
+              : { name: "root.hydrate_and_load" },
           ];
         },
         initialState: stateful ? { root: {}, child: {} } : {},

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import dataclasses
 import inspect
-import sys
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from copy import copy
 from enum import Enum
@@ -689,34 +688,6 @@ def _strip_annotated(annotation: Any) -> Any:
 
 _UNION_ORIGINS = (Union, UnionType)
 
-# Python <=3.10's ``get_type_hints`` rewrites a parameter with a ``= None``
-# default into ``Optional[...]``, hiding the real annotation from the param
-# classifiers; 3.11 dropped that behavior. Only those versions need the
-# ``_strip_optional`` normalization, so newer interpreters skip it entirely
-# rather than pay ``get_origin`` per parameter for a problem they don't have.
-_GET_TYPE_HINTS_WRAPS_NONE_DEFAULT = sys.version_info < (3, 11)
-
-
-def _strip_optional(annotation: Any) -> Any:
-    """Unwrap ``Optional[X]`` / ``X | None`` down to ``X``.
-
-    Restores the annotation the classifiers expect after Python <=3.10's
-    ``get_type_hints`` wraps a ``= None``-defaulted parameter in ``Optional``
-    (see ``_GET_TYPE_HINTS_WRAPS_NONE_DEFAULT``).
-
-    Args:
-        annotation: The annotation to normalize.
-
-    Returns:
-        The sole non-``None`` member of an ``Optional`` union, else the
-        annotation unchanged.
-    """
-    if get_origin(annotation) in _UNION_ORIGINS:
-        non_none = [arg for arg in get_args(annotation) if arg is not type(None)]
-        if len(non_none) == 1:
-            return non_none[0]
-    return annotation
-
 
 def _is_rest_annotation(annotation: Any) -> bool:
     """Check whether an annotation is a RestProp.
@@ -1364,8 +1335,6 @@ def _analyze_params(
         _check_parameter_kind(parameter, fn.__name__)
 
         annotation = hints.get(parameter.name, parameter.annotation)
-        if _GET_TYPE_HINTS_WRAPS_NONE_DEFAULT and parameter.default is None:
-            annotation = _strip_optional(annotation)
         is_missing = annotation is inspect.Parameter.empty
         # Legacy `@rx.memo` (the old `custom_component`) accepted missing and
         # bare Python-type annotations and auto-wrapped them in a `Var`. Coerce
