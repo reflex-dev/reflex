@@ -1,11 +1,13 @@
 """Tests for reflex.utils.js_runtimes install gating."""
 
+import json
 from pathlib import Path
 from unittest import mock
 
 import pytest
+from reflex_base import constants
 
-from reflex.utils import js_runtimes
+from reflex.utils import frontend_skeleton, js_runtimes
 
 BUN_PATH = Path("/usr/bin/bun")
 NPM_PATH = Path("/usr/bin/npm")
@@ -87,6 +89,39 @@ def _patch_unsupported_node(monkeypatch) -> None:
     """
     monkeypatch.setattr(js_runtimes, "check_node_version", lambda: False)
     monkeypatch.setattr(js_runtimes, "get_node_version", lambda: None)
+
+
+def test_npm_empty_dev_dependencies_preserves_frontend_install_cache(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """An npm manifest omitting empty devDependencies must not invalidate installs."""
+    monkeypatch.chdir(tmp_path)
+    web_dir = tmp_path / constants.Dirs.WEB
+    web_dir.mkdir()
+    monkeypatch.setattr(frontend_skeleton, "get_web_dir", lambda: web_dir)
+    monkeypatch.setattr(js_runtimes, "get_web_dir", lambda: web_dir)
+
+    root_package_json = frontend_skeleton.get_root_lockfile_path(
+        constants.PackageJson.PATH
+    )
+    root_package_json.parent.mkdir()
+    root_package_json.write_text(json.dumps({"dependencies": {"test-pkg": "1.0.0"}}))
+
+    npm_package_json = json.loads(frontend_skeleton._compile_package_json())
+    npm_package_json.pop("devDependencies", None)
+    web_package_json = frontend_skeleton.get_web_lockfile_path(
+        constants.PackageJson.PATH
+    )
+    web_package_json.write_text(json.dumps(npm_package_json, indent=2))
+
+    cache_file = js_runtimes._frontend_packages_cache_path()
+    cache_file.touch()
+    original_content = web_package_json.read_text()
+
+    js_runtimes._sync_root_lockfiles_for_frontend_install()
+
+    assert cache_file.exists()
+    assert web_package_json.read_text() == original_content
 
 
 def test_install_never_starts_with_unsupported_node(monkeypatch, install_mocks, caplog):
