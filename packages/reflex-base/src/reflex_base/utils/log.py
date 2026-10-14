@@ -522,8 +522,8 @@ def supervise_output(args: list[str]) -> int:
             returncode = proc.wait()
             break
         except KeyboardInterrupt:
-            # A PID-targeted SIGINT reaches only the supervisor.
-            if proc.poll() is None:
+            # A PID-targeted SIGINT reaches only the supervisor on POSIX.
+            if os.name == "posix" and proc.poll() is None:
                 proc.send_signal(signal.SIGINT)
             continue
     wall_deadline = time.monotonic() + _DRAIN_WALL_SECONDS
