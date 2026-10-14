@@ -8,7 +8,9 @@ import dataclasses
 import functools
 import hashlib
 import inspect
+import json
 import logging
+import operator
 import pickle
 import re
 import sys
@@ -1105,8 +1107,10 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
                     parent_state.get_parent_state(),
                 )
 
-        # Reset cached schema value
+        # Reset cached schema values; the frontend schema spans the tree, so a
+        # change to any state invalidates every cached root.
         cls._to_schema.cache_clear()
+        _frontend_schema.cache_clear()
 
     @classmethod
     def _iter_functions(cls) -> Iterator[tuple[str, FunctionType]]:
@@ -2152,6 +2156,22 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             )
         ).hexdigest()
 
+    @classmethod
+    def _to_frontend_schema(cls) -> str:
+        """Hash what a compiled frontend depends on, over the whole state tree.
+
+        For each state below (and including) this one: its full name, the
+        names and types of its frontend vars (base and computed), and its
+        event handler names. Defaults and values are left out, so a frontend
+        compiled from one tree matches a backend running another exactly when
+        the two trees are compatible. The compiler writes this hash into the
+        frontend and the backend compares it on each socket connect.
+
+        Returns:
+            The hash of the frontend schema.
+        """
+        return _frontend_schema(cls, RegistrationContext.get())
+
     def _serialize(self) -> bytes:
         """Serialize the state for redis.
 
@@ -2244,6 +2264,48 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         ):
             raise StateSchemaMismatchError
         return state
+
+
+@functools.lru_cache
+def _frontend_schema(root: type[BaseState], context: RegistrationContext) -> str:
+    """Hash the frontend schema of the state tree below ``root``.
+
+    The tree is read from ``context``, which is part of the cache key: apps in
+    one process run on forked registration contexts that share the root class
+    but not its substates. ``BaseState._init_var_dependency_dicts`` clears the
+    cache whenever a state is added or changed.
+
+    Args:
+        root: The state at the top of the tree.
+        context: The registration context holding the tree.
+
+    Returns:
+        The hash of the frontend schema.
+    """
+
+    def _state_entry(state: type[BaseState]) -> list[Any]:
+        fields = state.get_fields()
+        return [
+            state.get_full_name(),
+            sorted(
+                (name, _serialize_type(fields[name].type_)) for name in state.base_vars
+            ),
+            sorted(
+                (name, _serialize_type(cvar._var_type))
+                for name, cvar in state.computed_vars.items()
+                if not cvar._backend
+            ),
+            sorted(state.event_handlers),
+        ]
+
+    entries = []
+    pending = [root]
+    while pending:
+        state = pending.pop()
+        entries.append(_state_entry(state))
+        pending.extend(context.get_substates(state))
+    entries.sort(key=operator.itemgetter(0))
+    return md5(json.dumps(entries, separators=(",", ":")).encode("utf-8")).hexdigest()
 
 
 def _legacy_state_schema(state_cls: type[BaseState]) -> str:
