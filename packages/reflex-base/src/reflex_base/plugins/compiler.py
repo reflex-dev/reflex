@@ -623,6 +623,9 @@ class PageContext(BaseContext):
     # garbage collected, and Python may recycle its ``id()`` for a fresh
     # component, causing ``own()`` to hand back the wrong clone.
     _owned_refs: list[BaseComponent] = dataclasses.field(default_factory=list)
+    # Original component identity for page-owned clones, used by compiler passes
+    # whose prepasses run before plugins create those clones.
+    _owned_original_ids: dict[int, int] = dataclasses.field(default_factory=dict)
 
     def own(self, comp: _BaseComponentT) -> _BaseComponentT:
         """Return a page-local copy of ``comp``, cloning on first encounter.
@@ -644,6 +647,9 @@ class PageContext(BaseContext):
         self._owned[id(comp)] = new
         self._owned[id(new)] = new
         self._owned_refs.append(comp)
+        self._owned_original_ids[id(new)] = self._owned_original_ids.get(
+            id(comp), id(comp)
+        )
         return new
 
     def merged_imports(self, *, collapse: bool = False) -> ParsedImportDict:

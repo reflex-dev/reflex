@@ -1718,6 +1718,36 @@ def test_reused_local_client_state_reader_stays_in_page_scope() -> None:
     assert page_ctx.memoize_shared_scope_counts[local._id_name] == 3
 
 
+def test_styled_local_client_state_subtree_uses_original_split_id() -> None:
+    """A page-owned style clone retains the prepass shared-scope decision."""
+    from reflex.experimental.client_state import ClientStateVar
+
+    local = ClientStateVar.create("styled_reader", default="initial", global_ref=False)
+    styled = rx.auto_scroll(
+        rx.text(local.value),
+        rx.el.button("set", on_click=local.set_value("changed")),
+    )
+    root = rx.box(rx.text(local.value), styled)
+    page_ctx = PageContext(name="test", route="/", root_component=root)
+    plugin = MemoizeStatefulPlugin()
+
+    plugin.enter_component(root, page_context=page_ctx, compile_context=None)
+    styled_clone = page_ctx.own(styled)
+
+    assert page_ctx.memoize_shared_scope_split_ids is not None
+    assert id(styled) in page_ctx.memoize_shared_scope_split_ids
+    assert id(styled_clone) not in page_ctx.memoize_shared_scope_split_ids
+    assert page_ctx._owned_original_ids[id(styled_clone)] == id(styled)
+    assert (
+        plugin.enter_component(
+            styled_clone,
+            page_context=page_ctx,
+            compile_context=None,
+        )
+        is None
+    )
+
+
 def test_debounce_input_memo_renders_react_debounce_wrapper() -> None:
     """``rx.input(value=..., on_change=..., debounce_timeout=N)`` memoizes via DebounceInput.
 

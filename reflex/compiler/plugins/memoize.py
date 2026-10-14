@@ -204,6 +204,7 @@ def _subtree_splits_shared_scope(
     component: Component,
     shared_scope_counts: dict[str, int],
     split_component_ids: set[int] | None = None,
+    component_id: int | None = None,
 ) -> bool:
     """Whether memoizing this subtree would separate users of a shared hook scope.
 
@@ -211,12 +212,16 @@ def _subtree_splits_shared_scope(
         component: Subtree candidate for memoization.
         shared_scope_counts: Total component users of each shared scope on the page.
         split_component_ids: Precomputed candidates that split a shared scope.
+        component_id: Original component identity when ``component`` is a
+            page-owned clone created after the prepass.
 
     Returns:
         Whether this subtree contains only part of any shared scope.
     """
     if split_component_ids is not None:
-        return id(component) in split_component_ids
+        return (
+            component_id if component_id is not None else id(component)
+        ) in split_component_ids
     if not shared_scope_counts:
         return False
     scope_counts: dict[str, int] = {}
@@ -461,6 +466,7 @@ class MemoizeStatefulPlugin(Plugin):
             comp,
             page_context.memoize_shared_scope_counts,
             page_context.memoize_shared_scope_split_ids,
+            page_context._owned_original_ids.get(id(comp)),
         ):
             return None
         snapshot_boundary = is_snapshot_boundary(comp)
