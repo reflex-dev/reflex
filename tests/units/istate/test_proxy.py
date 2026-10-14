@@ -416,9 +416,6 @@ async def test_inherited_mutable_var_marks_its_owner(
     """
     state_token = BaseStateToken(ident=token, cls=InheritedListSubState)
     async with state_manager.modify_state(state_token) as root:
-        if isinstance(state_manager, StateManagerRedis):
-            for state in state_manager._get_populated_states(root).values():
-                state._was_touched = True
         proxy = StateProxy(
             root.get_substate(InheritedListSubState.get_full_name().split("."))
         )
