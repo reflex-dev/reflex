@@ -342,6 +342,7 @@ def test_web_directory_cleanup_waits_for_staged_json_update(
     cleanup_reached = threading.Event()
     allow_cleanup = threading.Event()
     original_dump = path_ops.json.dump
+    original_rm = path_ops.rm
 
     def pausing_dump(value, file, *, ensure_ascii):
         file.write("{")
@@ -352,11 +353,10 @@ def test_web_directory_cleanup_waits_for_staged_json_update(
         file.truncate()
         original_dump(value, file, ensure_ascii=ensure_ascii)
 
-    def destructive_copy(_source, _destination):
+    def destructive_remove(path):
         cleanup_reached.set()
         assert allow_cleanup.wait(timeout=5)
-        shutil.rmtree(web_dir)
-        web_dir.mkdir()
+        original_rm(path)
 
     monkeypatch.setattr(path_ops.json, "dump", pausing_dump)
     monkeypatch.setattr(frontend_skeleton, "get_web_dir", lambda: web_dir)
@@ -383,7 +383,7 @@ def test_web_directory_cleanup_waits_for_staged_json_update(
         staged_files = list(web_dir.glob(".reflex.json.*.tmp"))
         assert len(staged_files) == 1
         _report_json_lock_attempt(monkeypatch, cleanup_lock_attempted)
-        monkeypatch.setattr(path_ops, "copy_tree", destructive_copy)
+        monkeypatch.setattr(path_ops, "rm", destructive_remove)
         cleanup = executor.submit(frontend_skeleton.initialize_web_directory)
         try:
             assert cleanup_lock_attempted.wait(timeout=5)
