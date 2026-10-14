@@ -569,7 +569,14 @@ function createStateStore() {{
       Object.entries(nextInitialState).forEach(([substateName, value]) => {{
         const isNewSubstate = !Object.hasOwn(state, substateName);
         registerSubstate(substateName, value);
-        if (isNewSubstate) {{
+        const currentState = state[substateName];
+        const addedFields = Object.fromEntries(
+          Object.entries(value).filter(([key]) => !Object.hasOwn(currentState, key)),
+        );
+        if (Object.keys(addedFields).length > 0) {{
+          state[substateName] = {{ ...currentState, ...addedFields }};
+        }}
+        if (isNewSubstate || Object.keys(addedFields).length > 0) {{
           listeners.get(substateName)?.forEach((listener) => listener());
         }}
       }});

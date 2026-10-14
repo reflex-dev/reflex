@@ -800,8 +800,28 @@ def _mask_javascript_literals_and_comments(javascript_code: str) -> str:
 
     def mask_code(index: int, stop_at_template_brace: bool = False) -> int:
         brace_depth = 1 if stop_at_template_brace else 0
+        can_start_regex = True
+        regex_prefix_keywords = {
+            "await",
+            "case",
+            "delete",
+            "do",
+            "else",
+            "in",
+            "instanceof",
+            "new",
+            "of",
+            "return",
+            "throw",
+            "typeof",
+            "void",
+            "yield",
+        }
         while index < len(javascript_code):
             char = javascript_code[index]
+            if char.isspace():
+                index += 1
+                continue
             if char in "'\"":
                 quote_start = index
                 quote = char
@@ -823,6 +843,7 @@ def _mask_javascript_literals_and_comments(javascript_code: str) -> str:
                     index += 1
                 if javascript_code[quote_start:index] in ('"react"', "'react'"):
                     masked[quote_start:index] = javascript_code[quote_start:index]
+                can_start_regex = False
                 continue
             if char == "`":
                 masked[index] = " "
@@ -845,6 +866,7 @@ def _mask_javascript_literals_and_comments(javascript_code: str) -> str:
                         if char not in "\r\n":
                             masked[index] = " "
                         index += 1
+                can_start_regex = False
                 continue
             if javascript_code.startswith("//", index):
                 while (
@@ -853,6 +875,34 @@ def _mask_javascript_literals_and_comments(javascript_code: str) -> str:
                 ):
                     masked[index] = " "
                     index += 1
+                continue
+            if char == "/" and can_start_regex:
+                regex_start = index
+                index += 1
+                in_character_class = False
+                while index < len(javascript_code):
+                    char = javascript_code[index]
+                    if char in "\r\n":
+                        break
+                    if char == "\\":
+                        index += 2
+                        continue
+                    if char == "[":
+                        in_character_class = True
+                    elif char == "]":
+                        in_character_class = False
+                    elif char == "/" and not in_character_class:
+                        index += 1
+                        while index < len(javascript_code) and (
+                            javascript_code[index].isalpha()
+                        ):
+                            index += 1
+                        break
+                    index += 1
+                for mask_index in range(regex_start, index):
+                    if javascript_code[mask_index] not in "\r\n":
+                        masked[mask_index] = " "
+                can_start_regex = False
                 continue
             if javascript_code.startswith("/*", index):
                 masked[index : index + 2] = "  "
@@ -867,6 +917,25 @@ def _mask_javascript_literals_and_comments(javascript_code: str) -> str:
                     masked[index : index + 2] = "  "
                     index += 2
                 continue
+            if char.isalpha() or char in "_$":
+                token_start = index
+                index += 1
+                while index < len(javascript_code) and (
+                    javascript_code[index].isalnum() or javascript_code[index] in "_$"
+                ):
+                    index += 1
+                can_start_regex = (
+                    javascript_code[token_start:index] in regex_prefix_keywords
+                )
+                continue
+            if char.isdigit():
+                index += 1
+                while index < len(javascript_code) and (
+                    javascript_code[index].isalnum() or javascript_code[index] in "._"
+                ):
+                    index += 1
+                can_start_regex = False
+                continue
             if stop_at_template_brace:
                 if char == "{":
                     brace_depth += 1
@@ -874,6 +943,9 @@ def _mask_javascript_literals_and_comments(javascript_code: str) -> str:
                     brace_depth -= 1
                     if brace_depth == 0:
                         return index + 1
+            can_start_regex = char in "([{,:;?=+-*%!~&|^<>"
+            if char == "/":
+                can_start_regex = True
             index += 1
         return index
 
@@ -964,18 +1036,34 @@ def _rewrite_legacy_state_context_reads(javascript_code: str) -> str:
     if not matches:
         return javascript_code
 
-    rewritten = []
-    last_end = 0
-    for start, end, context_start, context_end in matches:
-        rewritten.extend((
-            javascript_code[last_end:start],
-            "useLegacyStateContext(" + javascript_code[context_start:context_end] + ")",
-        ))
-        last_end = end
-    rewritten.append(javascript_code[last_end:])
+    def rewrite_region(start: int, end: int) -> str:
+        region_matches = [
+            match for match in matches if start <= match[0] and match[1] <= end
+        ]
+        outer_matches = [
+            match
+            for match in region_matches
+            if not any(
+                other != match and other[0] <= match[0] and match[1] <= other[1]
+                for other in region_matches
+            )
+        ]
+        rewritten = []
+        last_end = start
+        for match_start, match_end, context_start, context_end in outer_matches:
+            rewritten.extend((
+                javascript_code[last_end:match_start],
+                "useLegacyStateContext("
+                + rewrite_region(context_start, context_end)
+                + ")",
+            ))
+            last_end = match_end
+        rewritten.append(javascript_code[last_end:end])
+        return "".join(rewritten)
+
     return (
         f'import {{ useLegacyStateContext }} from "$/{constants.Dirs.UTILS}/context-registry";\n'
-        + "".join(rewritten)
+        + rewrite_region(0, len(javascript_code))
     )
 
 

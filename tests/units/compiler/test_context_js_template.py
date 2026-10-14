@@ -299,14 +299,18 @@ const updatedLegacyContext = registry.useLegacyStateContext(
 registry.registerApp({
   initialState: {
     ...mod.initialState,
+    reflex___state____state__sub: { value: 2, added: 9 },
     reflex___state____state__new: { value: 4 },
   },
 });
 const hmrBeforeSync = registry.useStateContext("reflex___state____state__new");
 let hmrNotifications = 0;
 react.subscriptions[5](() => hmrNotifications++);
+let existingStateNotifications = 0;
+react.subscriptions[1](() => existingStateNotifications++);
 store.syncInitialState(registry.app.initialState);
 const hmrAfterSync = registry.useStateContext("reflex___state____state__new");
+const existingStateAfterSync = registry.useStateContext("reflex___state____state__sub");
 store.dispatchers["reflex___state____state__new"]({ value: 5 });
 const hmrUpdated = registry.useStateContext("reflex___state____state__new");
 process.stdout.write(JSON.stringify({
@@ -318,7 +322,9 @@ process.stdout.write(JSON.stringify({
   hmrBeforeSync,
   hmrAfterSync,
   hmrUpdated,
+  existingStateAfterSync,
   hmrNotifications,
+  existingStateNotifications,
   legacyContextMatches: mod.StateContexts.reflex___state____state__sub.stateName ===
     "reflex___state____state__sub",
   legacyNotifications,
@@ -346,12 +352,14 @@ process.stdout.write(JSON.stringify({
         "hmrBeforeSync": {"value": 4},
         "hmrAfterSync": {"value": 4},
         "hmrUpdated": {"value": 5},
+        "existingStateAfterSync": {"value": 3, "added": 9},
         "hmrNotifications": 2,
+        "existingStateNotifications": 1,
         "legacyContextMatches": True,
-        "legacyNotifications": 1,
+        "legacyNotifications": 2,
         "noOpIdentityPreserved": True,
         "notificationsAfterNoOps": 0,
         "firstIdentityPreserved": True,
         "firstNotifications": 0,
-        "secondNotifications": 1,
+        "secondNotifications": 2,
     }
