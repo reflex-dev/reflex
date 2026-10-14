@@ -318,9 +318,14 @@ let hmrNotifications = 0;
 subscribeVia("reflex___state____state__new", () => hmrNotifications++);
 let existingStateNotifications = 0;
 subscribeVia("reflex___state____state__sub", () => existingStateNotifications++);
-store.addSubstates(registry.app.initialState);
+store.mergeInitialState(registry.app.initialState);
 const hmrAfterSync = registry.useStateContext("reflex___state____state__new");
 const existingStateAfterSync = registry.useStateContext("reflex___state____state__sub");
+// A second sync with the same initial state, as on mount, changes nothing.
+const subBeforeRepeat = store.getSnapshot("reflex___state____state__sub");
+store.mergeInitialState(registry.app.initialState);
+const repeatIdentityPreserved =
+  store.getSnapshot("reflex___state____state__sub") === subBeforeRepeat;
 store.dispatchers["reflex___state____state__new"]({ value: 5 });
 const hmrUpdated = registry.useStateContext("reflex___state____state__new");
 process.stdout.write(JSON.stringify({
@@ -333,6 +338,7 @@ process.stdout.write(JSON.stringify({
   existingStateAfterSync,
   hmrNotifications,
   existingStateNotifications,
+  repeatIdentityPreserved,
   noOpIdentityPreserved,
   notificationsAfterNoOps,
   listNotifications,
@@ -356,13 +362,14 @@ process.stdout.write(JSON.stringify({
         "hmrBeforeSync": {"value": 4},
         "hmrAfterSync": {"value": 4},
         "hmrUpdated": {"value": 5},
-        "existingStateAfterSync": {"value": 3},
+        "existingStateAfterSync": {"value": 3, "added": 9},
         "hmrNotifications": 2,
-        "existingStateNotifications": 0,
+        "existingStateNotifications": 1,
+        "repeatIdentityPreserved": True,
         "noOpIdentityPreserved": True,
         "listNotifications": 0,
         "notificationsAfterNoOps": 0,
         "firstIdentityPreserved": True,
         "firstNotifications": 0,
-        "secondNotifications": 1,
+        "secondNotifications": 2,
     }

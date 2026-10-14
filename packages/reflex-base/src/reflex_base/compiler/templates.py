@@ -531,11 +531,19 @@ function createStateStore(initialState) {{
   const dispatchers = {{}};
   const notify = (substateName) =>
     listeners.get(substateName)?.forEach((listener) => listener());
-  // Hot reload adds the substates of new state classes here; new fields of
-  // existing substates arrive with the hydrate delta.
-  const addSubstates = (nextInitialState) => {{
+  // Hot reload passes the recompiled initial state: new substates are added,
+  // and existing substates gain new fields at their defaults while keeping
+  // their live values.
+  const mergeInitialState = (nextInitialState) => {{
     for (const [substateName, value] of Object.entries(nextInitialState)) {{
-      if (Object.hasOwn(state, substateName)) continue;
+      const liveState = state[substateName];
+      if (liveState !== undefined) {{
+        if (Object.keys(value).some((key) => !Object.hasOwn(liveState, key))) {{
+          state[substateName] = {{ ...value, ...liveState }};
+          notify(substateName);
+        }}
+        continue;
+      }}
       state[substateName] = value;
       dispatchers[substateName] = (delta) => {{
         const currentState = state[substateName];
@@ -547,11 +555,11 @@ function createStateStore(initialState) {{
       notify(substateName);
     }}
   }};
-  addSubstates(initialState);
+  mergeInitialState(initialState);
 
   return {{
     dispatchers,
-    addSubstates,
+    mergeInitialState,
     getSnapshot: (substateName) => state[substateName],
     subscribe: (substateName, listener) => {{
       let substateListeners = listeners.get(substateName);
@@ -575,7 +583,7 @@ function StateStoreProviders({{ children, store }}) {{
 
 function ClientStateProvider({{ children }}) {{
   const [store] = useState(() => createStateStore(initialState));
-  useEffect(() => store.addSubstates(initialState), [store, initialState]);
+  useEffect(() => store.mergeInitialState(initialState), [store, initialState]);
   return createElement(StateStoreProviders, {{ children, store }});
 }}
 
