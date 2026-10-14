@@ -86,6 +86,20 @@ from reflex.utils import prerequisites
             'import React from "react"; React.useContext(StateContexts.state)',
             "useLegacyStateContext(StateContexts.state)",
         ),
+        (
+            (
+                'import { useContext } from "react"; /* path/to */ '
+                "const value = useContext(StateContexts.state);"
+            ),
+            "useLegacyStateContext(StateContexts.state)",
+        ),
+        (
+            (
+                'import { useContext } from "react"; '
+                "const ratio = obj.return / count; useContext(StateContexts.foo)"
+            ),
+            "useLegacyStateContext(StateContexts.foo)",
+        ),
     ],
 )
 def test_legacy_state_context_reads_use_shared_store(
@@ -119,6 +133,18 @@ def test_legacy_state_context_rewrite_preserves_strings_and_comments() -> None:
     assert '"useContext(StateContexts.text)"' in rewritten
     assert "// useContext(StateContexts.comment)" in rewritten
     assert "useLegacyStateContext(StateContexts.active)" in rewritten
+
+
+def test_legacy_state_context_rewrite_handles_many_independent_reads() -> None:
+    """Rewrite many independent reads without repeatedly scanning all matches."""
+    reads = "; ".join(
+        f"useContext(StateContexts.state_{index})" for index in range(256)
+    )
+    source = f'import {{ useContext }} from "react"; {reads}'
+
+    rewritten = compiler._rewrite_legacy_state_context_reads(source)
+
+    assert rewritten.count("useLegacyStateContext(StateContexts.state_") == 256
 
 
 @pytest.mark.parametrize("content", ["", '["index",'])

@@ -801,6 +801,7 @@ def _mask_javascript_literals_and_comments(javascript_code: str) -> str:
     def mask_code(index: int, stop_at_template_brace: bool = False) -> int:
         brace_depth = 1 if stop_at_template_brace else 0
         can_start_regex = True
+        member_access = False
         regex_prefix_keywords = {
             "await",
             "case",
@@ -876,6 +877,19 @@ def _mask_javascript_literals_and_comments(javascript_code: str) -> str:
                     masked[index] = " "
                     index += 1
                 continue
+            if javascript_code.startswith("/*", index):
+                masked[index : index + 2] = "  "
+                index += 2
+                while index < len(javascript_code) and not javascript_code.startswith(
+                    "*/", index
+                ):
+                    if javascript_code[index] not in "\r\n":
+                        masked[index] = " "
+                    index += 1
+                if index < len(javascript_code):
+                    masked[index : index + 2] = "  "
+                    index += 2
+                continue
             if char == "/" and can_start_regex:
                 regex_start = index
                 index += 1
@@ -903,19 +917,7 @@ def _mask_javascript_literals_and_comments(javascript_code: str) -> str:
                     if javascript_code[mask_index] not in "\r\n":
                         masked[mask_index] = " "
                 can_start_regex = False
-                continue
-            if javascript_code.startswith("/*", index):
-                masked[index : index + 2] = "  "
-                index += 2
-                while index < len(javascript_code) and not javascript_code.startswith(
-                    "*/", index
-                ):
-                    if javascript_code[index] not in "\r\n":
-                        masked[index] = " "
-                    index += 1
-                if index < len(javascript_code):
-                    masked[index : index + 2] = "  "
-                    index += 2
+                member_access = False
                 continue
             if char.isalpha() or char in "_$":
                 token_start = index
@@ -924,9 +926,10 @@ def _mask_javascript_literals_and_comments(javascript_code: str) -> str:
                     javascript_code[index].isalnum() or javascript_code[index] in "_$"
                 ):
                     index += 1
-                can_start_regex = (
+                can_start_regex = not member_access and (
                     javascript_code[token_start:index] in regex_prefix_keywords
                 )
+                member_access = False
                 continue
             if char.isdigit():
                 index += 1
@@ -935,6 +938,7 @@ def _mask_javascript_literals_and_comments(javascript_code: str) -> str:
                 ):
                     index += 1
                 can_start_regex = False
+                member_access = False
                 continue
             if stop_at_template_brace:
                 if char == "{":
@@ -943,6 +947,7 @@ def _mask_javascript_literals_and_comments(javascript_code: str) -> str:
                     brace_depth -= 1
                     if brace_depth == 0:
                         return index + 1
+            member_access = char == "."
             can_start_regex = char in "([{,:;?=+-*%!~&|^<>"
             if char == "/":
                 can_start_regex = True
@@ -1036,25 +1041,36 @@ def _rewrite_legacy_state_context_reads(javascript_code: str) -> str:
     if not matches:
         return javascript_code
 
-    def rewrite_region(start: int, end: int) -> str:
-        region_matches = [
-            match for match in matches if start <= match[0] and match[1] <= end
-        ]
-        outer_matches = [
-            match
-            for match in region_matches
-            if not any(
-                other != match and other[0] <= match[0] and match[1] <= other[1]
-                for other in region_matches
-            )
-        ]
+    ordered_matches = sorted(matches, key=lambda match: (match[0], -match[1]))
+    children: dict[tuple[int, int, int, int], list[tuple[int, int, int, int]]] = {
+        match: [] for match in ordered_matches
+    }
+    root_matches = []
+    nesting: list[tuple[int, int, int, int]] = []
+    for match in ordered_matches:
+        while nesting and not (
+            nesting[-1][0] < match[0] and match[1] <= nesting[-1][1]
+        ):
+            nesting.pop()
+        if nesting:
+            children[nesting[-1]].append(match)
+        else:
+            root_matches.append(match)
+        nesting.append(match)
+
+    def rewrite_region(
+        start: int,
+        end: int,
+        region_matches: list[tuple[int, int, int, int]],
+    ) -> str:
         rewritten = []
         last_end = start
-        for match_start, match_end, context_start, context_end in outer_matches:
+        for match in region_matches:
+            match_start, match_end, context_start, context_end = match
             rewritten.extend((
                 javascript_code[last_end:match_start],
                 "useLegacyStateContext("
-                + rewrite_region(context_start, context_end)
+                + rewrite_region(context_start, context_end, children[match])
                 + ")",
             ))
             last_end = match_end
@@ -1063,7 +1079,7 @@ def _rewrite_legacy_state_context_reads(javascript_code: str) -> str:
 
     return (
         f'import {{ useLegacyStateContext }} from "$/{constants.Dirs.UTILS}/context-registry";\n'
-        + rewrite_region(0, len(javascript_code))
+        + rewrite_region(0, len(javascript_code), root_matches)
     )
 
 
