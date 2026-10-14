@@ -1,0 +1,60 @@
+@@HEADER@@
+name: Deploy development application
+
+on:
+  schedule:
+    - cron: "@@DEV_SCHEDULE@@"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: app-development
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  prepare:
+    if: github.ref == 'refs/heads/@@MAIN_BRANCH@@'
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.source.outputs.version }}
+      ref: ${{ steps.source.outputs.ref }}
+      source-revision: ${{ steps.source.outputs.source_revision }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          submodules: recursive
+      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+@@UV_SETUP_WITH@@
+      - id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: @@CLI@@ app-dev
+
+  build:
+    needs: prepare
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/@@BUILD_WORKFLOW@@
+    with:
+      ref: ${{ needs.prepare.outputs.ref }}
+      version: ${{ needs.prepare.outputs.version }}
+      source-revision: ${{ needs.prepare.outputs.source-revision }}
+    secrets: inherit
+
+  deploy:
+    needs: [prepare, build]
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/@@DEPLOY_WORKFLOW@@
+    with:
+      ref: ${{ needs.prepare.outputs.ref }}
+      version: ${{ needs.prepare.outputs.version }}
+      environment: "@@DEV_ENVIRONMENT@@"
+    secrets: inherit

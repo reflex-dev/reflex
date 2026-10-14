@@ -1,0 +1,54 @@
+@@HEADER@@
+name: Dispatch release
+
+on:
+  workflow_dispatch:
+    inputs:
+      revision:
+        description: "Optional source submodule SHA, branch or tag (empty uses configured source-ref)"
+        required: false
+        type: string
+      reason:
+        description: "Why this deployment is being released"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dispatch-app-release
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  materialize:
+    if: github.ref == 'refs/heads/@@MAIN_BRANCH@@'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    steps:
+      # Resolve main after entering the dispatch queue, so version allocation
+      # includes every release PR that has merged while this run was waiting.
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: "@@MAIN_BRANCH@@"
+          fetch-depth: 0
+          persist-credentials: false
+          submodules: recursive
+      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+@@UV_SETUP_WITH@@
+      - name: Pin source and materialize changelog
+        id: materialize
+        env:
+          TARGET_REVISION: ${{ inputs.revision }}
+          DEPLOY_REASON: ${{ inputs.reason }}
+          GH_TOKEN: ${{ github.token }}
+        run: @@CLI@@ app-materialize
+      - name: Open release PR
+        env:
+          VERSION: ${{ steps.materialize.outputs.version }}
+          GH_TOKEN: ${{ github.token }}
+        run: @@CLI@@ app-open-pr
