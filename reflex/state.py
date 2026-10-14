@@ -90,6 +90,7 @@ from reflex.istate.delta import (
     Delta,
     DeltaMapping,
     _resolve_delta,
+    _send_fields_only,
     build_delta,
     clean_state,
     resolve_delta,
@@ -2439,10 +2440,12 @@ class State(BaseState):
         storage reset, the browser-provided client storage values and the
         state snapshot under one state lock avoids separate load/persist
         cycles of the state tree. The snapshot does not pass through
-        ``get_delta`` and may not write browser storage, so this event's own
-        delta carries the browser-provided values again, as
+        ``get_delta`` and may not write browser storage, so a second delta
+        carries the browser-provided values again, as
         ``update_vars_internal``'s does: ``get_delta`` overrides see them
-        there, and the browser stores what they return. A page with on_load
+        there, and the browser stores what they return. That delta holds only
+        those values, because the snapshot already sent the computed vars
+        derived from them. A page with on_load
         handlers then gets ``on_load_internal``, which only locks its leaf
         substate.
 
@@ -2478,11 +2481,19 @@ class State(BaseState):
             await ctx.emit_delta(delta=delta)
             # Follow-up corrections must be allowed to write browser storage.
             self.dirty_vars.discard(constants.CompileVars.IS_HYDRATED)
-        # The browser's values only: the reset defaults stay clean, so they are
-        # not written back to the browser.
-        for var_state, var_name in applied:
-            var_state.dirty_vars.add(var_name)
-            var_state._mark_dirty((var_name,))
+            if applied:
+                # Pass the browser's values through get_delta overrides. The
+                # snapshot already sent their dependents, computed from them.
+                for var_state, var_name in applied:
+                    var_state.dirty_vars.add(var_name)
+                    var_state._mark_ancestors_dirty()
+                token = _send_fields_only.set(True)
+                try:
+                    delta = await self._get_resolved_delta()
+                finally:
+                    _send_fields_only.reset(token)
+                    self._clean()
+                await ctx.emit_delta(delta=delta)
         if not RegistrationContext.get().app.get_load_events(self.rx_router_url.path):
             self.is_hydrated = True
             return None
