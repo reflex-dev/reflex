@@ -1,0 +1,1 @@
+Expose `FormData` on the form namespace as `rx.form.FormData`. The `rx.form` stub now declares the namespace as a class, so `rx.form.FormData[str, str]` works in type annotations; calls such as `rx.form(...)` and `rx.form.root(...)` type the same as before.

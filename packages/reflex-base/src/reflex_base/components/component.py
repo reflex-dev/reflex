@@ -524,6 +524,10 @@ class BaseComponent(metaclass=BaseComponentMeta):
 class ComponentNamespace(SimpleNamespace):
     """A namespace to manage components with subcomponents."""
 
+    # Stub the namespace as a class whose constructor is ``__call__``, so type
+    # expressions can reach its attributes (e.g. ``rx.form.FormData``).
+    _stub_as_class: ClassVar[bool] = False
+
     def __hash__(self) -> int:  # pyright: ignore [reportIncompatibleVariableOverride]
         """Get the hash of the namespace.
 
