@@ -54,6 +54,7 @@ async function setup({
     clearTimeout: (fn) => timers.delete(fn),
   });
   window.setTimeout = context.setTimeout;
+  window.clearTimeout = context.clearTimeout;
 
   function io(url, opts) {
     const handlers = new Map();
@@ -74,6 +75,7 @@ async function setup({
       on(name, handler) {
         handlers.set(name, handler);
       },
+      emit() {},
       connect() {
         // A ready transport can deliver these synchronously on namespace connect.
         for (const name of [

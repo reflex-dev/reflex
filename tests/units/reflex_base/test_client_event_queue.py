@@ -13,6 +13,7 @@ import pytest
     [
         "client_event_queue.mjs",
         "client_session.mjs",
+        "client_upload.mjs",
         "client_state_updates.mjs",
         "state_string_helpers.mjs",
     ],

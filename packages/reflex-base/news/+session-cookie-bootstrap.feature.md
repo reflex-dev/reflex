@@ -1,1 +1,1 @@
-Establish browser sessions over the WebSocket while hydration begins, then persist them through HTTP-only cookies with automatic refresh. Browser storage is isolated for each backend application.
+Establish browser sessions over the WebSocket while hydration begins, then persist them through HTTP-only cookies with automatic refresh. Browser storage is isolated for each backend application. Idle tabs renew their session cookies automatically; transient cookie-exchange failures retry without blocking WebSocket events, and queued uploads remain cancellable.

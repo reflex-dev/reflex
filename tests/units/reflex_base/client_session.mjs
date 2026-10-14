@@ -41,6 +41,7 @@ async function browserSession({
 } = {}) {
   const callbacks = new Map();
   const timeouts = new Map();
+  const delays = new Map();
   const errors = [];
   const connections = [];
   const warmups = [];
@@ -55,9 +56,10 @@ async function browserSession({
     sessionStorage,
     addEventListener() {},
     removeEventListener() {},
-    setTimeout(callback) {
+    setTimeout(callback, delay) {
       const id = Symbol();
       timeouts.set(id, callback);
+      delays.set(id, delay);
       return id;
     },
     clearTimeout: (id) => timeouts.delete(id),
@@ -75,7 +77,12 @@ async function browserSession({
     },
   };
   const runtime = await createQueueRuntime(source, {
-    uploadFiles: (...args) => uploads.push(args),
+    uploadFiles: async (...args) => {
+      try {
+        await args[10]?.();
+        uploads.push(args);
+      } catch {}
+    },
     browser: {
       window,
       document: {
@@ -124,6 +131,7 @@ async function browserSession({
     socket,
     callbacks,
     timeouts,
+    delays,
     connections,
     warmups,
     requests,
@@ -307,11 +315,15 @@ test("refresh and duplicate-tab updates preserve a socket with matching identity
   await tab.accept("first-tab");
   await tab.callbacks.get("new_token")("duplicated-tab");
   await tab.callbacks.get("session_refresh")();
+  assert.equal(tab.emitted.at(-1)[0], "session_refresh");
+  await tab.callbacks.get("session_token")("renewed-credential");
   assert.equal(
     tab.requests[0][1].headers["Reflex-Client-Token"],
     "duplicated-tab",
   );
-  assert.deepEqual(JSON.parse(tab.requests[0][1].body), {});
+  assert.deepEqual(JSON.parse(tab.requests[0][1].body), {
+    session_token: "renewed-credential",
+  });
   assert.deepEqual(tab.connections, [""]);
 });
 
@@ -406,21 +418,112 @@ test("uploads wait for the cookie while following WebSocket events drain", async
   assert.equal(tab.uploads.length, 1);
 });
 
-test("a rejected initial cookie exchange also rejects credentialed HTTP readiness", async () => {
+test("failed initial exchange holds HTTP readiness until recovery or disconnect", async () => {
   const tab = await browserSession({
     fetch: async () => ({ ok: false, status: 403 }),
   });
   await tab.connect();
   await (await tab.accept("first-tab", "credential")).exchange;
-  await assert.rejects(
-    tab.runtime.waitForSession(),
-    /Session request failed: 403/,
-  );
-  await tab.runtime.applyRestEvent({
-    name: "upload",
-    handler: "uploadFiles",
-    payload: { files: [] },
+  let ready = false;
+  const pending = tab.runtime.waitForSession().then(() => {
+    ready = true;
   });
+  pending.catch(() => {});
+  await tick();
+  assert.equal(ready, false);
+  await tab.runtime.applyRestEvent(
+    { name: "upload", handler: "uploadFiles", payload: { files: [] } },
+    tab.socket.current,
+  );
   await tick();
   assert.equal(tab.uploads.length, 0);
+  tab.socket.current.disconnect();
+  await assert.rejects(pending, /Session connection closed/);
+  await tick();
+  assert.equal(tab.uploads.length, 0);
+});
+
+test("idle sessions schedule renewal without an application event", async () => {
+  const tab = await browserSession({
+    fetch: async () => ({
+      ok: true,
+      json: async () => ({
+        client_token: "bound-tab",
+        expires_in: 100,
+        refresh_in: 20,
+      }),
+    }),
+  });
+  await tab.connect();
+  await (await tab.accept("bound-tab", "credential")).exchange;
+  const timer = [...tab.timeouts.keys()].find(
+    (id) => tab.delays.get(id) === 20000,
+  );
+  assert.ok(timer, "renewal uses the server's configured refresh interval");
+  tab.timeouts.get(timer)();
+  await tick();
+  assert.equal(tab.emitted.at(-1)[0], "session_refresh");
+  await tab.callbacks.get("session_token")("renewed-credential");
+  assert.equal(
+    JSON.parse(tab.requests.at(-1)[1].body).session_token,
+    "renewed-credential",
+  );
+  tab.socket.current.disconnect();
+  assert.equal(tab.timeouts.size, 0, "disconnect clears renewal timers");
+});
+
+test("transient exchange failure retries and recovers HTTP readiness on the live socket", async () => {
+  let fail = true;
+  const tab = await browserSession({
+    fetch: async () =>
+      fail
+        ? { ok: false, status: 503 }
+        : {
+            ok: true,
+            json: async () => ({ client_token: "bound-tab", expires_in: 100 }),
+          },
+  });
+  await tab.connect();
+  await (await tab.accept("bound-tab", "credential")).exchange;
+  let ready = false;
+  const readiness = tab.runtime.waitForSession().then(() => {
+    ready = true;
+  });
+  // Observe rejection so a failing regression does not leak an unhandled promise.
+  readiness.catch(() => {});
+  await tick();
+  assert.equal(ready, false);
+  fail = false;
+  for (const callback of [...tab.timeouts.values()]) callback();
+  await tick();
+  assert.equal(tab.emitted.at(-1)?.[0], "session_refresh");
+  await tab.callbacks.get("session_token")("fresh-credential");
+  await readiness;
+  assert.equal(ready, true);
+  await tab.runtime.waitForSession();
+  assert.deepEqual(tab.connections, [""]);
+});
+
+test("an exchange completing after disconnect cannot replace a newer connection's token", async () => {
+  let finish;
+  const tab = await browserSession({
+    fetch: () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  });
+  await tab.connect();
+  const { exchange } = await tab.accept("first-tab", "credential");
+  const ready = tab.runtime.waitForSession();
+  ready.catch(() => {});
+  tab.socket.current.disconnect();
+  await assert.rejects(ready, /Session connection closed/);
+  await tab.callbacks.get("new_token")("next-tab");
+  finish({
+    ok: true,
+    json: async () => ({ client_token: "stale-tab", expires_in: 100 }),
+  });
+  await exchange;
+  assert.equal(tab.runtime.getToken(), "next-tab");
+  assert.equal(tab.timeouts.size, 0);
 });

@@ -45,7 +45,7 @@ async function createConnection(
   };
   const body = element("body");
   const socket = {
-    connected: true,
+    connected: false,
     io: { opts: {}, encoder: {}, decoder: {} },
     on: (name, handler) => handlers.set(name, handler),
     emit: (name, value) => sent.push({ name, value }),
@@ -72,6 +72,7 @@ async function createConnection(
             reload: () => reloads.push(true),
           },
           sessionStorage,
+          clearTimeout() {},
           addEventListener() {},
           removeEventListener() {},
         },
