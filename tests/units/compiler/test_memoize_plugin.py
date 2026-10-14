@@ -2177,6 +2177,7 @@ def test_form_memo_preserves_control_refs(form_factory) -> None:
     ]
     assert len(forms) == 1
     form_hooks = "\n".join(forms[0].add_hooks())
+    assert "getFormData($form, " in form_hooks
     for field_id in ("plain_field", "debounced_field", "unset_field"):
         assert f'getRefValue(refs["ref_{field_id}"])' in form_hooks
     assert 'getRefValue(refs["ref_label"])' not in form_hooks
