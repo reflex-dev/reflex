@@ -133,8 +133,8 @@ class Item:
     id: int
 
 
-class ProxyTestState(rx.State):
-    """Test state with a list field."""
+class ProxyTestState(BaseState):
+    """Isolated state tree with a list field for proxy tests."""
 
     items: list[Item] = []
 
