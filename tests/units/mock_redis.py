@@ -123,6 +123,15 @@ def mock_redis() -> Redis:
             return 1
         return 0
 
+    async def mock_smembers(key: KeyT) -> set[EncodableT]:  # noqa: RUF029
+        _expire_keys()
+        keyset = keys.get(_key_bytes(key))
+        if keyset is None:
+            return set()
+        if not isinstance(keyset, set):
+            raise TypeError(WRONGTYPE_MESSAGE)
+        return set(keyset)
+
     async def mock_scard(key: KeyT) -> int:  # noqa: RUF029
         _expire_keys()
         keyset = keys.get(_key_bytes(key))
@@ -176,6 +185,12 @@ def mock_redis() -> Redis:
         def get(self, key: KeyT):
             self.results.append(redis_mock.get(key=key))
 
+        def mget(self, keys: list[KeyT]):
+            self.results.append(redis_mock.mget(keys))
+
+        def smembers(self, key: KeyT):
+            self.results.append(redis_mock.smembers(key=key))
+
         def sadd(self, key: KeyT, value: EncodableT):
             self.results.append(redis_mock.sadd(key=key, value=value))
 
@@ -183,7 +198,7 @@ def mock_redis() -> Redis:
             self.results.append(redis_mock.pexpire(key=key, px=px, xx=xx))
 
         async def execute(self):
-            results = await asyncio.gather(*self.results)
+            results = [await result for result in self.results]
             self.results = []
             return results
 
@@ -211,12 +226,15 @@ def mock_redis() -> Redis:
         if script != _FENCED_SAVE_SCRIPT:
             msg = "mock_redis only emulates the state manager's fenced save script."
             raise NotImplementedError(msg)
-        lock_key, *state_keys = keys_and_args[:numkeys]
+        lock_key, manifest_key, *state_keys = keys_and_args[:numkeys]
         lock_id, expiration, *payloads = keys_and_args[numkeys:]
         if await redis_mock.get(lock_key) != lock_id:
             return None
         for key, payload in zip(state_keys, payloads, strict=True):
             await redis_mock.set(key, payload, ex=int(expiration))
+            await redis_mock.sadd(manifest_key, key)
+        if state_keys:
+            await redis_mock.pexpire(manifest_key, int(expiration) * 1000)
         return await redis_mock.pttl(lock_key)
 
     async def pttl(key: KeyT) -> int:  # noqa: RUF029
@@ -297,6 +315,7 @@ def mock_redis() -> Redis:
     redis_mock.sadd = mock_sadd
     redis_mock.srem = mock_srem
     redis_mock.scard = mock_scard
+    redis_mock.smembers = mock_smembers
     redis_mock.pexpire = mock_pexpire
     redis_mock.pipeline = pipeline
     redis_mock.eval = mock_eval
