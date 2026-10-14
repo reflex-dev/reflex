@@ -397,9 +397,8 @@ class AppHarness:
         with chdir(self.app_path):
             config = get_config()
             print("Polling for servers...")  # for pytest diagnosis #noqa: T201
-            config.api_url = "http://{}:{}".format(
-                *self._poll_for_servers(timeout=30).getsockname(),
-            )
+            # Match the dev frontend's hostname so browser cookies are same-site.
+            config.api_url = f"http://localhost:{self._poll_for_servers(timeout=30).getsockname()[1]}"
             print("Building frontend...")  # for pytest diagnosis #noqa: T201
             reflex.utils.build.setup_frontend(self.app_path)
 
@@ -923,7 +922,12 @@ class AppHarnessProd(AppHarness):
         ) + config.prepend_frontend_path("/")
         config.deploy_url = self.frontend_url
 
-    def _start_backend(self):
+    def _start_backend(self, port: int = 0):
+        """Start a production backend with its worker settings on the requested port.
+
+        Args:
+            port: Backend port, or zero to choose an available port.
+        """
         if self.app_asgi is None:
             msg = "App was not initialized."
             raise RuntimeError(msg)
@@ -933,7 +937,7 @@ class AppHarnessProd(AppHarness):
             uvicorn.Config(
                 app=self.app_asgi,
                 host="127.0.0.1",
-                port=0,
+                port=port,
                 workers=reflex.utils.processes.get_num_workers(),
             ),
         )

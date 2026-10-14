@@ -2,10 +2,14 @@
 
 import asyncio
 import json
+import urllib.request
+from email.message import Message
 from types import SimpleNamespace
+from unittest.mock import MagicMock, Mock
 
 import pytest
 
+from tests.benchmarks.support import socket_client
 from tests.benchmarks.support.apps import lifecycle_app_source
 from tests.benchmarks.support.diagnostics import capture_async_diagnostics
 from tests.benchmarks.support.pipeline_trace import PipelineTrace, StageEvent
@@ -16,6 +20,43 @@ from tests.benchmarks.support.report import (
     percentile,
 )
 from tests.benchmarks.support.socket_client import run_clients
+
+
+def test_socket_session_bootstrap_keeps_credentials_out_of_measurements(monkeypatch):
+    """Acquire a server-issued token and cookie without exposing the cookie in reports.
+
+    Args:
+        monkeypatch: Pytest patch fixture.
+    """
+    response = MagicMock()
+    response.read.return_value = json.dumps({"client_token": "bound-client"}).encode()
+    response.__enter__.return_value = response
+    headers = Message()
+    headers.add_header("Set-Cookie", "session=signed-secret; Path=/; HttpOnly; Secure")
+    response.headers = headers
+    open_request = Mock(return_value=response)
+    monkeypatch.setattr(urllib.request, "urlopen", open_request)
+
+    session = socket_client.create_session("http://localhost:8000/prefix")
+
+    request = open_request.call_args.args[0]
+    assert request.full_url == "http://localhost:8000/prefix/_reflex/session"
+    assert request.get_method() == "POST"
+    assert request.get_header("Content-type") == "application/json"
+    assert session.token == "bound-client"
+    assert session.cookie == "session=signed-secret"
+    assert "signed-secret" not in repr(session)
+
+
+def test_socket_client_reconnects_with_the_bound_token_and_cookie():
+    """Reconnections preserve server state by reusing both session credentials."""
+    client = Mock()
+    session = socket_client.ClientSession(token="bound-client", cookie="session=signed")
+
+    socket_client._connect(client, "http://localhost:8000", session, "/_event", 10)
+
+    assert client.connect.call_args.args[0].endswith("?token=bound-client")
+    assert client.connect.call_args.kwargs["headers"]["Cookie"] == "session=signed"
 
 
 def test_percentile_interpolates_and_validates():
