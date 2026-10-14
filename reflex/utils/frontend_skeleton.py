@@ -19,6 +19,8 @@ from reflex.utils.registry import get_npm_registry
 
 logger = logging.getLogger(__name__)
 
+_DEV_DEPENDENCIES_KEY = "devDependencies"
+
 
 def initialize_gitignore(
     gitignore_file: Path = constants.GitIgnore.FILE,
@@ -371,8 +373,8 @@ def sync_root_package_json_to_web() -> bool:
     existing_package_json = _read_package_json_object(output_path)
     rendered_package_json = json.loads(rendered)
     for package_json in (existing_package_json, rendered_package_json):
-        if package_json.get("devDependencies") == {}:
-            package_json.pop("devDependencies")
+        if package_json.get(_DEV_DEPENDENCIES_KEY) == {}:
+            package_json.pop(_DEV_DEPENDENCIES_KEY)
     if existing_package_json == rendered_package_json:
         return False
 

@@ -94,7 +94,12 @@ def _patch_unsupported_node(monkeypatch) -> None:
 def test_npm_empty_dev_dependencies_preserves_frontend_install_cache(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
-    """An npm manifest omitting empty devDependencies must not invalidate installs."""
+    """An npm manifest omitting empty devDependencies must not invalidate installs.
+
+    Args:
+        tmp_path: The temporary app directory.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
     monkeypatch.chdir(tmp_path)
     web_dir = tmp_path / constants.Dirs.WEB
     web_dir.mkdir()

@@ -70,7 +70,11 @@ def test_sync_root_package_json_ignores_formatting(
 def test_sync_root_package_json_ignores_empty_dev_dependencies(
     package_json_path: Path,
 ):
-    """An absent and empty devDependencies field are equivalent for npm."""
+    """An absent and empty devDependencies field are equivalent for npm.
+
+    Args:
+        package_json_path: The rendered package.json path.
+    """
     package_json = json.loads(package_json_path.read_text())
     package_json.pop("devDependencies", None)
     package_json_path.write_text(json.dumps(package_json, indent=2))
