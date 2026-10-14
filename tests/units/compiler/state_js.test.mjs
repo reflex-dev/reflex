@@ -22,6 +22,7 @@ async function setup({
   eventUrl = "ws://localhost:8000/_event",
   oversizedPayload,
   oversizedReconnectPayload,
+  transport = "websocket",
 } = {}) {
   const sockets = [];
   const microtasks = [];
@@ -29,6 +30,7 @@ async function setup({
   const firstHydrates = [];
   const updates = [];
   const encodedInputs = [];
+  const consoleErrors = [];
   let connectErrors = [];
   const window = new EventTarget();
   window.location = new URL("http://localhost:3000/page?query=value");
@@ -42,7 +44,10 @@ async function setup({
   document.visibilityState = hidden ? "hidden" : "visible";
   let dispose;
   const context = vm.createContext({
-    console,
+    console: {
+      ...console,
+      error: (...args) => consoleErrors.push(args),
+    },
     URL,
     URLSearchParams,
     TextEncoder: class extends TextEncoder {
@@ -191,12 +196,13 @@ async function setup({
     socket,
     updates,
     encodedInputs,
+    consoleErrors,
     get connectErrors() {
       return connectErrors;
     },
     dispose,
     flush: () => microtasks.splice(0).forEach((fn) => fn()),
-    connect: (transports = ["websocket"]) =>
+    connect: (transports = [transport]) =>
       module.namespace.connect(
         socket,
         { child: (delta) => updates.push(delta.count) },
@@ -212,7 +218,7 @@ async function setup({
   };
 }
 
-test("reject an oversized UTF-8 hydration auth payload before connecting", async () => {
+test("reject an oversized polling hydration packet before connecting", async () => {
   const payload = {
     vars: { large: "é".repeat(500_001), undefinedValue: undefined },
   };
@@ -222,25 +228,63 @@ test("reject an oversized UTF-8 hydration auth payload before connecting", async
   };
   const sizingApp = await setup({
     ...options,
+    transport: "polling",
     maxHttpBufferSize: Number.MAX_SAFE_INTEGER,
   });
   sizingApp.flush();
-  await sizingApp.connect();
+  await sizingApp.connect(["polling"]);
   const packet = sizingApp.encodedInputs[0];
   const maxHttpBufferSize = new TextEncoder().encode(packet).byteLength - 1;
 
-  const app = await setup({ ...options, maxHttpBufferSize });
+  const app = await setup({
+    ...options,
+    transport: "polling",
+    maxHttpBufferSize,
+  });
   app.flush();
-  await app.connect();
+  await app.connect(["polling"]);
 
   assert.equal(app.socket.current, null);
   assert.equal(app.sockets[0].namespaceConnects, 0);
   assert.equal(app.connectErrors.length, 1);
-  assert.match(app.connectErrors[0].message, /exceeds.*message limit/i);
+  assert.match(app.connectErrors[0].message, /exceeds.*limit/i);
   assert.match(app.connectErrors[0].message, /browser storage/i);
+  assert.match(app.connectErrors[0].message, /bytes/);
   assert.equal(app.encodedInputs[0], packet);
-  assert.match(packet, /^40\/api\/v1\/_event,/);
+  assert.match(packet, /^40\{/);
   assert.match(packet, /"undefinedValue":null/);
+  assert.equal(app.consoleErrors.length, 1);
+});
+
+test("measure websocket hydration limits in code points, not UTF-8 bytes", async () => {
+  const payload = { vars: { large: "é".repeat(600_000) } };
+  const websocket = await setup({ oversizedPayload: payload });
+  websocket.flush();
+  await websocket.connect();
+  assert.equal(websocket.connectErrors.length, 0);
+  assert.equal(websocket.socket.current.namespaceConnects, 1);
+
+  const polling = await setup({
+    oversizedPayload: payload,
+    transport: "polling",
+  });
+  polling.flush();
+  await polling.connect(["polling"]);
+  assert.equal(polling.socket.current, null);
+  assert.match(polling.connectErrors[0].message, /bytes/);
+});
+
+test("an oversized initial hydration is logged once and not rebuilt per event", async () => {
+  const app = await setup({
+    oversizedPayload: { vars: { large: "x".repeat(1_000_001) } },
+  });
+  app.flush();
+  await app.connect();
+  await app.connect();
+
+  assert.deepEqual(app.firstHydrates, [true]);
+  assert.equal(app.connectErrors.length, 1);
+  assert.equal(app.consoleErrors.length, 1);
 });
 
 test("do not retry an oversized full hydration on reconnect", async () => {
@@ -257,8 +301,9 @@ test("do not retry an oversized full hydration on reconnect", async () => {
   socket.reconnect();
 
   assert.equal(socket.namespaceConnects, 1);
+  assert.deepEqual(app.firstHydrates, [true, false]);
   assert.equal(app.connectErrors.length, 1);
-  assert.match(app.connectErrors[0].message, /exceeds.*message limit/i);
+  assert.match(app.connectErrors[0].message, /exceeds.*limit/i);
 });
 
 test("warm the transport without hydrating, then reuse it with every handler attached", async () => {

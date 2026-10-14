@@ -69,7 +69,10 @@ const MAX_SENT_STORAGE_VALUES = 256;
 // (vars of different state keys may share one).
 let localStorageWrites = 0;
 const lastLocalStorageWrites = {};
-let lastRejectedAuthPayload;
+let hydrationPayloadRejected = false;
+
+// Keep in sync with reflex_components_core.core.banner.
+const ERROR_TYPE_HYDRATION_PAYLOAD_TOO_LARGE = "hydration_payload_too_large";
 
 // Mirrors the data router's location so applyEvent can populate router_data
 // with the in-widget URL. In embed mode the host page's window.location is
@@ -824,6 +827,12 @@ export const connect = async (
   navigate,
   params,
 ) => {
+  // An oversized initial hydration cannot recover without changing browser
+  // storage and reloading. Avoid rebuilding and reserializing it on each event.
+  if (hydrationPayloadRejected) {
+    return;
+  }
+
   // Socket already allocated, just reconnect it if needed.
   if (socket.current) {
     if (!socket.current.connected) {
@@ -841,32 +850,35 @@ export const connect = async (
   // an extra round trip for the connect acknowledgement. The key is read by
   // the backend as CompileVars.CONNECT_AUTH_EVENT.
   const bootAuth = (first) => {
+    if (hydrationPayloadRejected) {
+      return null;
+    }
     const boot_event = withRouterData(app.initialEvents(first)[0], params);
     // Instrumentation may add trace data, so measure the final auth payload.
     window.__reflex_otel?.onEventSend?.(boot_event);
     const auth = { event: boot_event };
     const maxSize = env.MAX_HTTP_BUFFER_SIZE;
-    const authPacket = `40${endpoint.pathname},${JSON.stringify(
-      auth,
-      (key, value) => (value === undefined ? null : value),
+    // This app uses Socket.IO's default namespace; endpoint.pathname is the
+    // Engine.IO transport path and is not part of the CONNECT packet.
+    const authPacket = `40${JSON.stringify(auth, (key, value) =>
+      value === undefined ? null : value,
     )}`;
-    const size = new TextEncoder().encode(authPacket).byteLength;
+    // Engine.IO's ASGI WebSocket path checks Python string length (code points),
+    // while polling checks the request body's byte length.
+    const size =
+      transports[0] === "websocket"
+        ? Array.from(authPacket).length
+        : new TextEncoder().encode(authPacket).byteLength;
     if (typeof maxSize === "number" && size > maxSize) {
-      if (
-        lastRejectedAuthPayload?.setter !== setConnectErrors ||
-        lastRejectedAuthPayload.size !== size
-      ) {
-        setConnectErrors((errors) => [
-          ...errors.slice(-9),
-          new Error(
-            `Hydration payload (${size} bytes) exceeds the WebSocket message limit (${maxSize} bytes). Reduce browser storage data and reload.`,
-          ),
-        ]);
-        lastRejectedAuthPayload = { setter: setConnectErrors, size };
-      }
+      const error = new Error(
+        `Hydration payload (${size} ${transports[0] === "websocket" ? "characters" : "bytes"}) exceeds the ${transports[0] === "websocket" ? "WebSocket message" : "polling request"} limit (${maxSize}). Reduce browser storage data and reload.`,
+      );
+      error.code = ERROR_TYPE_HYDRATION_PAYLOAD_TOO_LARGE;
+      console.error(error.message);
+      hydrationPayloadRejected = true;
+      setConnectErrors((errors) => [...errors.slice(-9), error]);
       return null;
     }
-    lastRejectedAuthPayload = null;
     recordSentStorageValues(boot_event);
     return auth;
   };
