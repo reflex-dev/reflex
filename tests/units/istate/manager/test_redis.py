@@ -7,9 +7,9 @@ import os
 import time
 import uuid
 from collections import Counter
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Awaitable
 from types import ModuleType
-from typing import Any
+from typing import Any, cast
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -128,9 +128,12 @@ async def test_get_state_reports_missing_redis_substates():
     )
     persisted_state = RedisTestState(foo="persisted")
     for state_cls in state_classes[1:]:
-        await redis.sadd(
-            token._state_manifest_key(),
-            token._state_key(state_cls),
+        await cast(
+            Awaitable[int],
+            redis.sadd(
+                token._state_manifest_key(),
+                token._state_key(state_cls),
+            ),
         )
     redis.mget = AsyncMock(
         return_value=[
