@@ -529,24 +529,16 @@ function createStateStore() {{
   const state = {{ ...initialState }};
   const listeners = new Map();
   const dispatchers = {{}};
+  let syncedInitialState = initialState;
   const registerSubstate = (substateName, initialValue) => {{
-    if (!listeners.has(substateName)) {{
-      listeners.set(substateName, new Set());
-    }}
     if (!Object.hasOwn(state, substateName)) {{
       state[substateName] = initialValue;
     }}
     if (!Object.hasOwn(dispatchers, substateName)) {{
       dispatchers[substateName] = (delta) => {{
         const currentState = state[substateName];
-        if (
-          Object.keys(delta).every((key) =>
-            Object.is(currentState[key], delta[key]),
-          )
-        ) {{
-          return;
-        }}
         const nextState = applyDelta(currentState, delta);
+        if (nextState === currentState) return;
         state[substateName] = nextState;
         listeners.get(substateName)?.forEach((listener) => listener());
       }};
@@ -559,6 +551,8 @@ function createStateStore() {{
   return {{
     dispatchers,
     syncInitialState: (nextInitialState) => {{
+      if (nextInitialState === syncedInitialState) return;
+      syncedInitialState = nextInitialState;
       Object.entries(nextInitialState).forEach(([substateName, value]) => {{
         const isNewSubstate = !Object.hasOwn(state, substateName);
         registerSubstate(substateName, value);
@@ -601,11 +595,16 @@ function ClientStateProvider({{ children }}) {{
   return createElement(StateStoreProviders, {{ children, store }});
 }}
 
+// The server renders once and never applies a delta, so it only reads the
+// initial state.
+const serverStateStore = {{
+  dispatchers: {{}},
+  getSnapshot: (substateName) => initialState[substateName],
+  subscribe: () => () => {{}},
+}};
+
 function ServerStateProvider({{ children }}) {{
-  return createElement(
-    StateStoreProviders,
-    {{ children, store: createStateStore() }},
-  );
+  return createElement(StateStoreProviders, {{ children, store: serverStateStore }});
 }}
 
 export const StateProvider =

@@ -6,8 +6,8 @@
 // nothing that can change and is never re-executed.
 import {
   createContext,
-  useCallback,
   useContext,
+  useMemo,
   useSyncExternalStore,
 } from "react";
 
@@ -36,12 +36,11 @@ StateStoreContext.displayName = "StateStoreContext";
  */
 export function useStateContext(name) {
   const store = useContext(StateStoreContext);
-  const subscribe = useCallback(
-    (listener) => store.subscribe(name, listener),
-    [store, name],
-  );
-  const getSnapshot = useCallback(
-    () => store.getSnapshot(name) ?? app.initialState?.[name],
+  const [subscribe, getSnapshot] = useMemo(
+    () => [
+      (listener) => store.subscribe(name, listener),
+      () => store.getSnapshot(name) ?? app.initialState?.[name],
+    ],
     [store, name],
   );
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);

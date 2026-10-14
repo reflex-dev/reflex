@@ -195,6 +195,7 @@ def test_client_state_store_notifies_only_substate_subscribers(tmp_path: Path):
         initial_state={
             "reflex___state____state": {"value": 1},
             "reflex___state____state__sub": {"value": 2},
+            "reflex___state____state__list": {"items": ["a"]},
         },
         state_name="reflex___state____state",
     ).replace("function ClientStateProvider", "export function ClientStateProvider")
@@ -202,13 +203,9 @@ def test_client_state_store_notifies_only_substate_subscribers(tmp_path: Path):
 let hookIndex = 0;
 let hookStates = [];
 const contextValues = new Map();
-export const subscriptions = [];
 export const useContext = (context) => contextValues.get(context);
 export const useCallback = (fn) => fn;
-export const useSyncExternalStore = (subscribe, getSnapshot) => {
-  subscriptions.push(subscribe);
-  return getSnapshot();
-};
+export const useSyncExternalStore = (subscribe, getSnapshot) => getSnapshot();
 export const useMemo = (fn) => fn();
 export const useState = (initial) => {
   const index = hookIndex++;
@@ -233,7 +230,17 @@ export const createElement = (type, props, ...children) => ({
 export const setContextValue = (context, value) => contextValues.set(context, value);
 """
     state_stub = """
-export const applyDelta = (state, delta) => ({ ...state, ...delta });
+// Shares structure like the real applyDelta: equal values keep the old object.
+export const applyDelta = (state, delta) => {
+  let out;
+  for (const key in delta) {
+    if (JSON.stringify(state[key]) !== JSON.stringify(delta[key])) {
+      out ??= { ...state };
+      out[key] = delta[key];
+    }
+  }
+  return out ?? state;
+};
 export const ReflexEvent = () => ({});
 export const hydrateClientStorage = () => ({});
 export const useEventLoop = () => [];
@@ -278,10 +285,13 @@ const first = registry.useStateContext("reflex___state____state");
 const second = registry.useStateContext("reflex___state____state__sub");
 let firstNotifications = 0;
 let secondNotifications = 0;
-react.subscriptions[0](() => firstNotifications++);
-react.subscriptions[1](() => secondNotifications++);
+let listNotifications = 0;
+store.subscribe("reflex___state____state", () => firstNotifications++);
+store.subscribe("reflex___state____state__sub", () => secondNotifications++);
+store.subscribe("reflex___state____state__list", () => listNotifications++);
 store.dispatchers["reflex___state____state__sub"]({ value: 2 });
 store.dispatchers["reflex___state____state__sub"]({});
+store.dispatchers["reflex___state____state__list"]({ items: ["a"] });
 const noOpIdentityPreserved =
   store.getSnapshot("reflex___state____state__sub") === second;
 const notificationsAfterNoOps = secondNotifications;
@@ -296,9 +306,9 @@ registry.registerApp({
 });
 const hmrBeforeSync = registry.useStateContext("reflex___state____state__new");
 let hmrNotifications = 0;
-react.subscriptions[3](() => hmrNotifications++);
+store.subscribe("reflex___state____state__new", () => hmrNotifications++);
 let existingStateNotifications = 0;
-react.subscriptions[1](() => existingStateNotifications++);
+store.subscribe("reflex___state____state__sub", () => existingStateNotifications++);
 store.syncInitialState(registry.app.initialState);
 const hmrAfterSync = registry.useStateContext("reflex___state____state__new");
 const existingStateAfterSync = registry.useStateContext("reflex___state____state__sub");
@@ -316,6 +326,7 @@ process.stdout.write(JSON.stringify({
   existingStateNotifications,
   noOpIdentityPreserved,
   notificationsAfterNoOps,
+  listNotifications,
   firstIdentityPreserved: store.getSnapshot("reflex___state____state") === first,
   firstNotifications,
   secondNotifications,
@@ -340,6 +351,7 @@ process.stdout.write(JSON.stringify({
         "hmrNotifications": 2,
         "existingStateNotifications": 1,
         "noOpIdentityPreserved": True,
+        "listNotifications": 0,
         "notificationsAfterNoOps": 0,
         "firstIdentityPreserved": True,
         "firstNotifications": 0,
