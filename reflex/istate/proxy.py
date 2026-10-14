@@ -85,6 +85,42 @@ _DATACLASS_CLASS_ATTRS = (
 )
 
 
+def _mark_recreated_cross_state_dependencies(
+    root_state: BaseState, recreated_states: Sequence[BaseState]
+) -> None:
+    """Invalidate dependents in recreated states when their sources were not reset.
+
+    Args:
+        root_state: The loaded root state tree.
+        recreated_states: States rebuilt by the current state-manager operation.
+    """
+    recreated_names = {state.get_full_name() for state in recreated_states}
+    if not recreated_names:
+        return
+
+    states_by_name = {}
+    pending = [root_state]
+    while pending:
+        state = pending.pop()
+        states_by_name[state.get_full_name()] = state
+        pending.extend(state.substates.values())
+
+    for source_state in states_by_name.values():
+        for dependent_vars in source_state._var_dependencies.values():
+            for target_name, computed_var_name in dependent_vars:
+                if target_name not in recreated_names:
+                    continue
+                target_state = states_by_name.get(target_name)
+                if target_state is None or computed_var_name in target_state.dirty_vars:
+                    continue
+                computed_var = target_state.computed_vars.get(computed_var_name)
+                if computed_var is None:
+                    continue
+                computed_var.mark_dirty(instance=target_state)
+                target_state.dirty_vars.add(computed_var_name)
+                target_state._mark_dirty((computed_var_name,))
+
+
 def _dataclass_proxy_namespace(wrapped_cls: type) -> dict[str, Any]:
     """Collect the dataclass metadata to define a wrapped type's proxy class with.
 
@@ -279,6 +315,7 @@ class StateProxy(wrapt.ObjectProxy):
                 state._was_touched = True
                 state.dirty_vars.update(state.base_vars)
                 state._mark_dirty(recreated_fields)
+            _mark_recreated_cross_state_dependencies(mutable_state, recreated_states)
             refreshed_state = mutable_state.get_substate(self._self_substate_path)
             self._self_mutable = True
             self._self_entered_context = True

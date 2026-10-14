@@ -353,7 +353,7 @@ def _track_state_recreation() -> Iterator[list["BaseState"]]:
 
 
 @contextlib.contextmanager
-def _without_state_recreation_tracking() -> Iterator[None]:
+def _no_state_recreation_tracking() -> Iterator[None]:
     """Temporarily prevent child tasks from inheriting state tracking."""
     tracker_token = _STATE_RECREATION_TRACKER.set(None)
     try:

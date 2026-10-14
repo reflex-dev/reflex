@@ -28,8 +28,8 @@ from reflex.istate.manager import (
     StateManager,
     StateModificationContext,
     _default_token_expiration,
+    _no_state_recreation_tracking,
     _report_state_recreation,
-    _without_state_recreation_tracking,
 )
 from reflex.istate.manager.token import TOKEN_TYPE, BaseStateToken, StateToken
 from reflex.state import BaseState
@@ -801,7 +801,7 @@ class StateManagerRedis(StateManager):
                 lock_key not in self._local_leases
                 and await self._n_lock_contenders(self._lock_key(token)) == 0
             ):
-                with _without_state_recreation_tracking():
+                with _no_state_recreation_tracking():
                     self._local_leases[lock_key] = task = asyncio.create_task(
                         lease_breaker(),
                         name=f"reflex_lease_breaker|{lock_key}|{lock_id.decode()}",
@@ -912,7 +912,7 @@ class StateManagerRedis(StateManager):
 
     def _ensure_lock_task(self) -> None:
         """Ensure the lock updates subscriber task is running."""
-        with _without_state_recreation_tracking():
+        with _no_state_recreation_tracking():
             ensure_task(
                 owner=self,
                 task_attribute="_lock_task",
