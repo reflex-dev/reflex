@@ -104,8 +104,6 @@ async def test_get_state_does_not_dirty_persisted_states_on_reload():
 
     state = await manager.get_state(token)
     state.foo = "persisted"
-    for substate in manager._get_populated_states(state).values():
-        substate._was_touched = True
     await manager.set_state(token, state)
     with _track_state_recreation() as recreated_states:
         reloaded_state = await manager.get_state(token)
@@ -129,6 +127,10 @@ async def test_get_state_reports_missing_redis_substates():
         key=lambda cls: cls.get_full_name(),
     )
     persisted_state = RedisTestState(foo="persisted")
+    await redis.sadd(
+        token._state_manifest_key(),
+        *(token._state_key(cls) for cls in state_classes[1:]),
+    )
     redis.mget = AsyncMock(
         return_value=[
             persisted_state._serialize() if cls is RedisTestState else None
@@ -1233,7 +1235,9 @@ async def test_set_state_writes_the_touched_states_in_one_fenced_save(
     await state_manager_redis.set_state(token, state, lock_id=lock_id)
 
     assert not calls
-    assert saved_keys == [(lock_key, token._state_key(TreeFirst))]
+    assert saved_keys == [
+        (lock_key, token._state_manifest_key(), token._state_key(TreeFirst))
+    ]
     assert await _stored_tree_states(state_manager_redis, token) == {TreeFirst}
     await redis.delete(lock_key)
 
