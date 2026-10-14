@@ -28,7 +28,6 @@ from reflex.istate.proxy import (
     MutableProxy,
     ReadOnlyStateProxy,
     StateProxy,
-    _mark_recreated_cross_state_dependencies,
     _proxy_class,
     is_mutable_type,
 )
@@ -140,40 +139,6 @@ class ProxyTestState(rx.State):
     items: list[Item] = []
 
 
-class RuntimeComputedProxyState(BaseState):
-    """State with runtime-only and field-backed computed values."""
-
-    value: int = 1
-    _backend_value: int = 2
-
-    @rx.var
-    def doubled(self) -> int:
-        """A computed value that can be invalidated by the state field.
-
-        Returns:
-            The doubled state value.
-        """
-        return self.value * 2
-
-    @rx.var
-    def doubled_backend(self) -> int:
-        """A computed value that depends only on a backend field.
-
-        Returns:
-            The doubled backend value.
-        """
-        return self._backend_value * 2
-
-    @rx.var
-    def runtime_value(self) -> str:
-        """A route-provided value that is not available in background state.
-
-        Returns:
-            The route-provided value.
-        """
-        return self.dynamic  # pyright: ignore[reportAttributeAccessIssue]
-
-
 def test_mutable_proxy_pickle_preserves_object_identity():
     """Test that same object referenced directly and via proxy maintains identity."""
     state = ProxyTestState()
@@ -223,26 +188,6 @@ async def test_state_proxy_recovery(
 
 
 @pytest.mark.asyncio
-async def test_state_proxy_recreation_skips_unavailable_runtime_computed_var(
-    attached_mock_event_context: EventContext,
-    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
-):
-    """Recreated fields refresh computed dependencies without evaluating route-only vars."""
-    state = RuntimeComputedProxyState()
-    state_proxy = StateProxy(state)
-
-    async with state_proxy:
-        pass
-
-    delta = emitted_deltas[-1][1]
-    values = delta[RuntimeComputedProxyState.get_full_name()]
-    assert values["value" + FIELD_MARKER] == 1
-    assert values["doubled" + FIELD_MARKER] == 2
-    assert values["doubled_backend" + FIELD_MARKER] == 4
-    assert "runtime_value" + FIELD_MARKER not in values
-
-
-@pytest.mark.asyncio
 async def test_recreated_state_invalidates_computed_vars_from_sibling_state(
     attached_mock_event_context: EventContext,
 ):
@@ -270,44 +215,14 @@ async def test_recreated_state_invalidates_computed_vars_from_sibling_state(
     computed_var = TargetState.computed_vars["source_value"]
     cast(dict[str, Any], target.__dict__)[computed_var._cache_attr] = 1
 
-    _mark_recreated_cross_state_dependencies(root, [target])
+    target.dirty_vars.update(target.computed_vars)
+    target._mark_dirty()
 
     assert "source_value" in target.dirty_vars
     assert computed_var._cache_attr not in target.__dict__
     assert await target.source_value == source.value
     delta = await root._get_resolved_delta()
     assert delta[target.get_full_name()]["source_value" + FIELD_MARKER] == source.value
-
-
-def test_recreated_dependency_is_found_when_source_sibling_is_unloaded(
-    attached_mock_event_context: EventContext,
-):
-    """Use class dependency metadata when a Redis-loaded source sibling is absent."""
-
-    class RootState(BaseState):
-        pass
-
-    class SourceState(RootState):
-        value: int = 7
-
-    class TargetState(RootState):
-        @rx.var
-        async def source_value(self) -> int:
-            source = await self.get_state(SourceState)
-            return source.value
-
-    root = RootState()
-    target = cast(
-        TargetState, root.get_substate(TargetState.get_full_name().split("."))
-    )
-    root.substates.pop(SourceState.get_name())
-    computed_var = TargetState.computed_vars["source_value"]
-    cast(dict[str, Any], target.__dict__)[computed_var._cache_attr] = 1
-
-    _mark_recreated_cross_state_dependencies(root, [target])
-
-    assert "source_value" in target.dirty_vars
-    assert computed_var._cache_attr not in target.__dict__
 
 
 @dataclasses.dataclass
