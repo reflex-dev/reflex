@@ -1167,6 +1167,22 @@ def test_supervise_output_forwards_sigterm(tmp_path):
         assert proc.wait(timeout=10) == 128 + signal.SIGTERM
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="SIGINT is POSIX-only")
+def test_supervise_output_forwards_pid_targeted_sigint(tmp_path):
+    """A PID-targeted interrupt reaches the supervised command."""
+    script = tmp_path / "sigint.py"
+    script.write_text(_SIGTERM_SCRIPT)
+    with subprocess.Popen(
+        [sys.executable, str(script)],
+        stdout=subprocess.PIPE,
+        env={**os.environ, "REFLEX_LOG_JSON": "true"},
+    ) as proc:
+        assert proc.stdout is not None
+        assert json.loads(proc.stdout.readline())["message"] == "ready"
+        proc.send_signal(signal.SIGINT)
+        assert proc.wait(timeout=10) == 128 + signal.SIGINT
+
+
 def test_output_pump_survives_a_gone_consumer():
     """The reader keeps draining the child when its consumer closed the stream."""
     child_read, child_write = os.pipe()
