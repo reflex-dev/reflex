@@ -1591,7 +1591,6 @@ def test_retrieval():
     ("javascript_code", "expected"),
     [
         ("const state = useStateContext('state')", True),
-        ("const state = useContext(StateContexts.state)", True),
         ("const state = useContext(ThemeContext)", False),
     ],
 )

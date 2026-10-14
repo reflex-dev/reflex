@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, Literal
 from reflex_base import constants
 from reflex_base.constants import Hooks
 from reflex_base.utils import memo_paths
-from reflex_base.utils.format import format_state_name, json_dumps
+from reflex_base.utils.format import json_dumps
 from reflex_base.vars.base import VarData
 
 if TYPE_CHECKING:
@@ -338,12 +338,6 @@ def context_template(
     initial_state = initial_state or {}
     if initial_state_json is None:
         initial_state_json = json_dumps(initial_state)
-    # Context objects come from the static registry so they survive hot
-    # updates of this module; only the lookup table is generated here.
-    state_contexts_str = "".join([
-        f'{format_state_name(state_name)}: getStateContext("{state_name}"),'
-        for state_name in initial_state
-    ])
     state_str = (
         rf"""
 export const state_name = "{state_name}"
@@ -440,7 +434,7 @@ if (typeof window !== "undefined") {
 
     return rf"""import {"React, " if disable_react_owner_stacks else ""}{{ useContext, useMemo, useState, createElement, useEffect }} from "react"
 import {{ applyDelta, ReflexEvent, hydrateClientStorage, useEventLoop, refs }} from "$/utils/state"
-import {{ ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext, StateStoreContext, getStateContext, useStateContext, registerApp, eventLoop }} from "$/utils/context-registry"
+import {{ ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext, StateStoreContext, registerApp, eventLoop }} from "$/utils/context-registry"
 import {{ jsx }} from "@emotion/react";
 {disable_owner_stacks_str}
 export {{ ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext, StateStoreContext }};
@@ -448,7 +442,6 @@ export const initialState = {initial_state_json}
 export const initialStateHashes = {"[]" if not initial_state_hashes else json_dumps(initial_state_hashes)}
 
 export const defaultColorMode = {default_color_mode}
-export const StateContexts = {{{state_contexts_str}}};
 export const clientStorage = {"{}" if client_storage is None else json.dumps(client_storage)}
 
 {state_str}

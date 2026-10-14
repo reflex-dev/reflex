@@ -21,30 +21,12 @@ export const UploadFilesContext = createContext(null);
 export const DispatchContext = createContext(null);
 export const EventLoopContext = createContext(null);
 export const StateStoreContext = createContext(null);
-const stateContexts = new Map();
 
 ColorModeContext.displayName = "ColorModeContext";
 UploadFilesContext.displayName = "UploadFilesContext";
 DispatchContext.displayName = "DispatchContext";
 EventLoopContext.displayName = "EventLoopContext";
 StateStoreContext.displayName = "StateStoreContext";
-
-/**
- * Return the stable legacy context for a named Python state.
- *
- * @param {string} name - The dotted Python state name.
- * @returns {React.Context} The named state's context object.
- */
-export function getStateContext(name) {
-  let context = stateContexts.get(name);
-  if (context === undefined) {
-    context = createContext(null);
-    context.displayName = `StateContext(${name})`;
-    context.stateName = name;
-    stateContexts.set(name, context);
-  }
-  return context;
-}
 
 /**
  * Subscribe a component to one Python substate in the shared store.
@@ -63,16 +45,6 @@ export function useStateContext(name) {
     [store, name],
   );
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
-}
-
-/**
- * Read a state through a legacy StateContexts entry using the shared store.
- *
- * @param {React.Context} context - The named state's stable context handle.
- * @returns {object} The current state value.
- */
-export function useLegacyStateContext(context) {
-  return useStateContext(context.stateName);
 }
 
 // Values the generated context module registers each time it executes. The

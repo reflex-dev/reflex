@@ -1,0 +1,1 @@
+`$/utils/context` no longer exports `StateContexts`. Custom hooks that read state with `useContext(StateContexts.<name>)` must use `useStateContext("<full state name>")` from `$/utils/context-registry`, for example `useStateContext(MyState.get_full_name())`.

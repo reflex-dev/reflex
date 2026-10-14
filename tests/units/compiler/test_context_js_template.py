@@ -56,7 +56,6 @@ export const DispatchContext = {};
 export const EventLoopContext = {};
 export const StateStoreContext = { name: "StateStoreContext" };
 StateStoreContext.Provider = StateStoreContext;
-export const getStateContext = () => ({});
 export const useStateContext = () => ({});
 export const registerApp = () => {};
 export const eventLoop = {};
@@ -277,15 +276,10 @@ const store = storeElement.props.value;
 react.setContextValue(registry.StateStoreContext, store);
 const first = registry.useStateContext("reflex___state____state");
 const second = registry.useStateContext("reflex___state____state__sub");
-const legacyContext = registry.useLegacyStateContext(
-  mod.StateContexts.reflex___state____state__sub,
-);
 let firstNotifications = 0;
 let secondNotifications = 0;
-let legacyNotifications = 0;
 react.subscriptions[0](() => firstNotifications++);
 react.subscriptions[1](() => secondNotifications++);
-react.subscriptions[2](() => legacyNotifications++);
 store.dispatchers["reflex___state____state__sub"]({ value: 2 });
 store.dispatchers["reflex___state____state__sub"]({});
 const noOpIdentityPreserved =
@@ -293,9 +287,6 @@ const noOpIdentityPreserved =
 const notificationsAfterNoOps = secondNotifications;
 store.dispatchers["reflex___state____state__sub"]({ value: 3 });
 const updated = registry.useStateContext("reflex___state____state__sub");
-const updatedLegacyContext = registry.useLegacyStateContext(
-  mod.StateContexts.reflex___state____state__sub,
-);
 registry.registerApp({
   initialState: {
     ...mod.initialState,
@@ -305,7 +296,7 @@ registry.registerApp({
 });
 const hmrBeforeSync = registry.useStateContext("reflex___state____state__new");
 let hmrNotifications = 0;
-react.subscriptions[5](() => hmrNotifications++);
+react.subscriptions[3](() => hmrNotifications++);
 let existingStateNotifications = 0;
 react.subscriptions[1](() => existingStateNotifications++);
 store.syncInitialState(registry.app.initialState);
@@ -317,17 +308,12 @@ process.stdout.write(JSON.stringify({
   first,
   second,
   updated,
-  legacyContext,
-  updatedLegacyContext,
   hmrBeforeSync,
   hmrAfterSync,
   hmrUpdated,
   existingStateAfterSync,
   hmrNotifications,
   existingStateNotifications,
-  legacyContextMatches: mod.StateContexts.reflex___state____state__sub.stateName ===
-    "reflex___state____state__sub",
-  legacyNotifications,
   noOpIdentityPreserved,
   notificationsAfterNoOps,
   firstIdentityPreserved: store.getSnapshot("reflex___state____state") === first,
@@ -347,16 +333,12 @@ process.stdout.write(JSON.stringify({
         "first": {"value": 1},
         "second": {"value": 2},
         "updated": {"value": 3},
-        "legacyContext": {"value": 2},
-        "updatedLegacyContext": {"value": 3},
         "hmrBeforeSync": {"value": 4},
         "hmrAfterSync": {"value": 4},
         "hmrUpdated": {"value": 5},
         "existingStateAfterSync": {"value": 3, "added": 9},
         "hmrNotifications": 2,
         "existingStateNotifications": 1,
-        "legacyContextMatches": True,
-        "legacyNotifications": 2,
         "noOpIdentityPreserved": True,
         "notificationsAfterNoOps": 0,
         "firstIdentityPreserved": True,
