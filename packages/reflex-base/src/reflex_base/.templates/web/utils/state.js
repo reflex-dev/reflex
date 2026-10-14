@@ -1380,7 +1380,10 @@ export const useEventLoop = (
     window.onerror = function (msg, url, lineNo, columnNo, error) {
       addEvents([
         ReflexEvent(`${app.exception_state_name}.handle_frontend_exception`, {
-          info: error.name + ": " + error.message + "\n" + error.stack,
+          // Some error events (e.g. a ResizeObserver loop) have no Error object.
+          info: error
+            ? error.name + ": " + error.message + "\n" + error.stack
+            : msg + "\n    at " + url + ":" + lineNo + ":" + columnNo,
           component_stack: "",
         }),
       ]);
