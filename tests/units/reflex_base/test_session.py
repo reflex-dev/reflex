@@ -9,6 +9,7 @@ from dataclasses import FrozenInstanceError
 from unittest.mock import patch
 
 import pytest
+from reflex_base import constants
 from reflex_base.config import Config
 from reflex_base.environment import environment
 from reflex_base.session import (
@@ -119,7 +120,9 @@ def test_decode_rejects_invalid_claims(manager, field, value):
         field: The claim to replace.
         value: The invalid claim value.
     """
-    claims = {"v": 1, "sid": "a" * 32, "iat": 1000, "exp": 1100}
+    claims = {"v": 1, "aud": "test", "sid": "a" * 32, "iat": 1000, "exp": 1100}
+    header = {"alg": "HS256", "kid": next(iter(manager._keys))}
+    assert manager.decode(_signed_token(header, claims)) is not None
     claims[field] = value
     header = {"alg": "HS256", "kid": next(iter(manager._keys))}
     assert manager.decode(_signed_token(header, claims)) is None
@@ -143,7 +146,7 @@ def test_decode_rejects_wrong_algorithm_or_key(manager, header):
         manager: The session codec fixture.
         header: The invalid JWT header.
     """
-    claims = {"v": 1, "sid": "a" * 32, "iat": 1000, "exp": 1100}
+    claims = {"v": 1, "aud": "test", "sid": "a" * 32, "iat": 1000, "exp": 1100}
     assert manager.decode(_signed_token(header, claims)) is None
 
 
@@ -154,7 +157,7 @@ def test_decode_rejects_bad_signature_and_nonobject_claims(manager):
         manager: The session codec fixture.
     """
     header = {"alg": "HS256", "kid": next(iter(manager._keys))}
-    claims = {"v": 1, "sid": "a" * 32, "iat": 1000, "exp": 1100}
+    claims = {"v": 1, "aud": "test", "sid": "a" * 32, "iat": 1000, "exp": 1100}
     assert manager.decode(_signed_token(header, claims, OTHER_SECRET)) is None
     assert manager.decode(_signed_token(header, [])) is None
 
@@ -273,6 +276,26 @@ def test_secrets_load_lazily_and_cookies_are_app_specific(monkeypatch):
         assert first.cookie_name == SessionTokenManager("first").cookie_name
 
 
+def test_sessions_cannot_cross_apps_sharing_signing_keys(manager):
+    """A valid signature must not authorize credentials issued for another app."""
+    other = SessionTokenManager("other", secrets=(SECRET,))
+    credential = manager.encode(manager.create())
+    assert manager.decode(credential) is not None
+    assert other.decode(credential) is None
+
+
+@pytest.mark.parametrize("audience", [None, "other", ["test"], 1])
+def test_decode_rejects_missing_or_invalid_audience(manager, audience):
+    """Require the issuing app's exact signed audience, including its type."""
+    claims = {"v": 1, "aud": "test", "sid": "a" * 32, "iat": 1000, "exp": 1100}
+    if audience is None:
+        del claims["aud"]
+    else:
+        claims["aud"] = audience
+    header = {"alg": "HS256", "kid": next(iter(manager._keys))}
+    assert manager.decode(_signed_token(header, claims)) is None
+
+
 def test_unknown_signing_key_warns_once(manager, caplog):
     """Different instance secrets produce one diagnostic without credentials.
 
@@ -331,7 +354,8 @@ def test_persisted_secret_is_atomic_private_and_reused(tmp_path, monkeypatch):
     assert len(results[0][0]) == 32
     assert _load_secrets() == results[0]
     path = tmp_path / ".web" / "backend" / "session_secret"
-    assert path.stat().st_mode & 0o777 == 0o600
+    if not constants.IS_WINDOWS:
+        assert path.stat().st_mode & 0o777 == 0o600
     assert list(path.parent.iterdir()) == [path]
 
 

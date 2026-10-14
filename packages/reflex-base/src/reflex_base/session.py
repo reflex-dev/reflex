@@ -179,14 +179,14 @@ class SessionTokenManager:
     def __init__(
         self,
         app_name: str,
-        ttl: int = 7 * 24 * 60 * 60,
+        ttl: int = 7 * 24 * 60 * 60,  # Seven days, in seconds.
         refresh_interval: int | None = None,
         secrets: tuple[bytes, ...] | None = None,
     ) -> None:
         """Configure the codec without reading secrets until first use.
 
         Args:
-            app_name: Stable app name used to isolate its cookie.
+            app_name: Stable app name used to isolate its cookie and signed audience.
             ttl: Session lifetime in seconds.
             refresh_interval: Age in seconds to refresh, defaulting to half the TTL.
             secrets: Optional explicit key ring, primarily for isolated tests.
@@ -201,6 +201,7 @@ class SessionTokenManager:
                 "Session TTL must be positive and refresh interval between zero and TTL"
             )
             raise ValueError(msg)
+        self._audience = app_name
         self.ttl = ttl
         self.refresh_interval = (
             ttl / 2 if refresh_interval is None else refresh_interval
@@ -251,6 +252,7 @@ class SessionTokenManager:
             json.dumps(
                 {
                     "v": 1,
+                    "aud": self._audience,
                     "sid": session._sid,
                     "iat": session.issued_at,
                     "exp": session.expires_at,
@@ -302,6 +304,7 @@ class SessionTokenManager:
             if (
                 type(claims.get("v")) is not int
                 or claims["v"] != 1
+                or claims.get("aud") != self._audience
                 or not isinstance(sid, str)
                 or not _SID.fullmatch(sid)
                 or type(issued_at) is not int

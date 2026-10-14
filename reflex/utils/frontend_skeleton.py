@@ -474,7 +474,9 @@ def initialize_web_directory():
                             path_ops.rm(backend_file)
                 else:
                     path_ops.rm(item)
-        shutil.copytree(constants.Templates.Dirs.WEB_TEMPLATE, web_dir, dirs_exist_ok=True)
+        shutil.copytree(
+            constants.Templates.Dirs.WEB_TEMPLATE, web_dir, dirs_exist_ok=True
+        )
 
     logger.debug("Restoring lockfiles.")
     sync_root_lockfiles_to_web()

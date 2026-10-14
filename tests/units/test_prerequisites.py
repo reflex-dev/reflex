@@ -592,7 +592,8 @@ def test_initialize_web_directory_preserves_session_secret(tmp_path, monkeypatch
 
     assert secret.read_text() == "persistent-secret"
     assert secret.stat().st_ino == inode
-    assert secret.stat().st_mode & 0o777 == 0o600
+    if not constants.IS_WINDOWS:
+        assert secret.stat().st_mode & 0o777 == 0o600
     assert not (backend_dir / "stale-marker").exists()
     assert not (web_dir / "stale-file").exists()
     assert (web_dir / "new-file").read_text() == "new"
