@@ -65,28 +65,3 @@ jobs:
         working-directory: examples/playground
         run: uv run --no-sync --project ../.. reflex compile
 
-  # The oldest release the benchmarks are backfilled to, from PyPI.
-  playground-0_8_23:
-    name: playground-0.8.23
-    timeout-minutes: 20
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/setup_build_env
-        with:
-          python-version: "3.12"
-      # The venv goes first on PATH, like an activated venv: reflex 0.8.23 runs
-      # tools such as granian by name.
-      - name: Install reflex 0.8.23 into a fresh venv
-        run: |
-          uv venv --python 3.12 "$RUNNER_TEMP/reflex-0.8.23"
-          uv pip install --python "$RUNNER_TEMP/reflex-0.8.23/bin/python" "reflex==0.8.23" "plotly>=6.0,<7.0"
-          echo "$RUNNER_TEMP/reflex-0.8.23/bin" >> "$GITHUB_PATH"
-      - name: Show the reflex under test
-        working-directory: examples/playground
-        run: reflex --version
-      - name: Compile the playground
-        working-directory: examples/playground
-        run: reflex compile

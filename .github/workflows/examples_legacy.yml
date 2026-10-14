@@ -1,0 +1,59 @@
+name: examples-legacy
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.id || github.sha }}
+  cancel-in-progress: true
+
+# The playground against the oldest release the benchmarks are backfilled to.
+# Changes to reflex itself cannot affect that release, so only the playground,
+# reflex-bench and the locked environment trigger it.
+on:
+  pull_request:
+    paths:
+      - "examples/playground/**"
+      - "packages/reflex-bench/**"
+      - ".github/legacy/reflex-0.8.23/**"
+      - ".github/workflows/examples_legacy.yml"
+  push:
+    branches: ["main"]
+    paths:
+      - "examples/playground/**"
+      - "packages/reflex-bench/**"
+      - ".github/legacy/reflex-0.8.23/**"
+      - ".github/workflows/examples_legacy.yml"
+
+env:
+  REFLEX_TELEMETRY_ENABLED: false
+  REFLEX_CHECK_LATEST_VERSION: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  playground-0_8_23:
+    name: playground-0.8.23
+    timeout-minutes: 20
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup_build_env
+        with:
+          python-version: "3.12"
+      # The lock keeps a new release of a transitive dependency from breaking
+      # this job. The venv goes first on PATH, like an activated venv: reflex
+      # 0.8.23 runs tools such as granian by name.
+      - name: Install the locked reflex 0.8.23 environment
+        run: |
+          uv sync --locked --project .github/legacy/reflex-0.8.23
+          echo "$GITHUB_WORKSPACE/.github/legacy/reflex-0.8.23/.venv/bin" >> "$GITHUB_PATH"
+      - name: Show the reflex under test
+        working-directory: examples/playground
+        run: reflex --version
+      - name: Compile the playground
+        working-directory: examples/playground
+        run: reflex compile
