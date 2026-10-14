@@ -14,6 +14,7 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 import pytest_asyncio
+from redis.asyncio import Redis
 from reflex_base.utils.exceptions import EnvironmentVarValueError
 
 from reflex.istate.manager.redis import (
@@ -534,16 +535,20 @@ async def test_oplock_contention_no_lease(
     state_manager_redis._debug_enabled = True
     state_manager_redis._oplock_enabled = True
 
-    state_manager_2 = await _subscribed(
-        StateManagerRedis(redis=state_manager_redis.redis)
-    )
+    shared_redis = state_manager_redis.redis
+    redis_2 = shared_redis
+    redis_3 = shared_redis
+    if isinstance(shared_redis, Redis) and hasattr(shared_redis, "connection_pool"):
+        connection_kwargs = shared_redis.connection_pool.connection_kwargs
+        redis_2 = Redis(**connection_kwargs)
+        redis_3 = Redis(**connection_kwargs)
+
+    state_manager_2 = await _subscribed(StateManagerRedis(redis=redis_2))
 
     state_manager_2._debug_enabled = True
     state_manager_2._oplock_enabled = True
 
-    state_manager_3 = await _subscribed(
-        StateManagerRedis(redis=state_manager_redis.redis)
-    )
+    state_manager_3 = await _subscribed(StateManagerRedis(redis=redis_3))
     state_manager_3._debug_enabled = True
     state_manager_3._oplock_enabled = True
 
@@ -616,6 +621,7 @@ async def test_oplock_contention_no_lease(
     )
     assert isinstance(final_state, root_state)
     assert final_state.count == 3
+    await state_manager_2.close()
 
     # There should be three lock acquisitions
     lock_events = len([
