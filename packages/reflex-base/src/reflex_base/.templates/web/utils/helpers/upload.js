@@ -14,6 +14,7 @@ import { parseJson } from "$/utils/helpers/json";
  * @param refs The refs object to store the abort controller in.
  * @param getBackendURL Function to get the backend URL.
  * @param getToken Function to get the Reflex token.
+ * @param waitForSession Wait for the session cookie before starting HTTP traffic.
  *
  * @returns The response from posting to the UPLOADURL endpoint.
  */
@@ -28,6 +29,7 @@ export const uploadFiles = async (
   refs,
   getBackendURL,
   getToken,
+  waitForSession,
 ) => {
   files = files ?? [];
 
@@ -35,6 +37,29 @@ export const uploadFiles = async (
 
   if (refs[upload_ref_name]) {
     console.log("Upload already in progress for ", upload_id);
+    return false;
+  }
+
+  const controller = new AbortController();
+  refs[upload_ref_name] = controller;
+  if (waitForSession) {
+    let abortWaiting;
+    const cancelled = new Promise((resolve) => {
+      abortWaiting = resolve;
+      controller.signal.addEventListener("abort", abortWaiting, { once: true });
+    });
+    try {
+      await Promise.race([waitForSession(), cancelled]);
+    } catch (error) {
+      console.log("Upload session error:", error.message);
+      delete refs[upload_ref_name];
+      return false;
+    } finally {
+      controller.signal.removeEventListener("abort", abortWaiting);
+    }
+  }
+  if (controller.signal.aborted || !socket.connected) {
+    delete refs[upload_ref_name];
     return false;
   }
 
@@ -73,7 +98,6 @@ export const uploadFiles = async (
     });
   };
 
-  const controller = new AbortController();
   const formdata = new FormData();
 
   // Bound handler args are sent as a JSON form field that must precede the
@@ -89,7 +113,6 @@ export const uploadFiles = async (
   });
 
   // Send the file to the server.
-  refs[upload_ref_name] = controller;
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -154,6 +177,7 @@ export const uploadFiles = async (
 
     // Configure and send request
     xhr.open("POST", getBackendURL(env.UPLOAD));
+    xhr.withCredentials = true;
     xhr.setRequestHeader("Reflex-Client-Token", getToken());
     xhr.setRequestHeader("Reflex-Event-Handler", handler);
     // Instrumentation hook (installed by reflex-otel): may add trace headers.
