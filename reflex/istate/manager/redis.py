@@ -372,8 +372,7 @@ class StateManagerRedis(StateManager):
             pipeline.smembers(token._state_manifest_key())
             redis_states, manifest_keys = await pipeline.execute()
             persisted_state_keys = {
-                key.decode() if isinstance(key, bytes) else key
-                for key in manifest_keys
+                key.decode() if isinstance(key, bytes) else key for key in manifest_keys
             }
             untracked_keys = [
                 key
