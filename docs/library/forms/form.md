@@ -161,7 +161,7 @@ def form_example():
 ```md alert info
 # Form data is keyed by `name`.
 
-Only controls with a `name` are included in the form data; the `id` attribute does not add a field. Following standard HTML form behavior, controls like `rx.switch`, `rx.radio_group`, and `rx.checkbox` are only included when their values are set (e.g., if the checkbox is checked, the switch is toggled, or a radio option is selected), so read them with `form_data.get(...)`, or declare them as `bool` fields of a [TypedDict](#validating-form-data-with-a-typeddict).
+Only controls with a `name` are included in the form data; the `id` attribute does not add a field. Compiling a form warns about each value-bearing control with a static `id` but no `name`, so give each submitted control a `name`. Following standard HTML form behavior, controls like `rx.switch`, `rx.radio_group`, and `rx.checkbox` are only included when their values are set (e.g., if the checkbox is checked, the switch is toggled, or a radio option is selected), so read them with `form_data.get(...)`, or declare them as `bool` fields of a [TypedDict](#validating-form-data-with-a-typeddict).
 ```
 
 ```md video https://youtube.com/embed/ITOZkzjtjUA?start=5287&end=6040

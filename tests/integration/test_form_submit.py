@@ -62,6 +62,8 @@ def FormSubmitName(
                     rx.input(name="name_input"),
                     rx.input(name="empty_input"),
                     rx.input(id="id_only_input", default_value="unsubmitted"),
+                    # An id equal to a submitted name does not replace its value.
+                    rx.input(id="name_input", default_value="id_override"),
                     rx.el.input(type="hidden", name="tag", value="a"),
                     rx.el.input(type="hidden", name="tag", value="b"),
                     # Its File makes Socket.IO send the event as a binary packet.
