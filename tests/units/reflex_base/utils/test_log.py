@@ -1183,6 +1183,54 @@ def test_supervise_output_forwards_pid_targeted_sigint(tmp_path):
         assert proc.wait(timeout=10) == 128 + signal.SIGINT
 
 
+_SIGINT_CLEANUP_SCRIPT = """
+import signal
+import sys
+import time
+from pathlib import Path
+
+from reflex_base.utils import log
+
+if not log.is_output_supervised():
+    sys.exit(log.supervise_output([sys.executable, __file__, sys.argv[1]]))
+
+signal_count = 0
+
+def handle_sigint(*_):
+    global signal_count
+    signal_count += 1
+
+signal.signal(signal.SIGINT, handle_sigint)
+print("ready", flush=True)
+while signal_count == 0:
+    time.sleep(0.01)
+time.sleep(0.25)
+Path(sys.argv[1]).write_text(str(signal_count))
+"""
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="SIGINT is POSIX-only")
+def test_supervise_output_does_not_double_forward_terminal_sigint(tmp_path):
+    """A terminal interrupt reaches the child once and allows cleanup to finish."""
+    script = tmp_path / "sigint_cleanup.py"
+    marker = tmp_path / "cleanup-count"
+    script.write_text(_SIGINT_CLEANUP_SCRIPT)
+    with subprocess.Popen(
+        [sys.executable, str(script), str(marker)],
+        stdout=subprocess.PIPE,
+        env={**os.environ, "REFLEX_LOG_JSON": "true"},
+        start_new_session=True,
+    ) as proc:
+        assert proc.stdout is not None
+        assert json.loads(proc.stdout.readline())["message"] == "ready"
+        killpg = getattr(os, "killpg", None)
+        assert callable(killpg)
+        killpg(proc.pid, signal.SIGINT)
+        assert proc.wait(timeout=10) == 0
+
+    assert marker.read_text() == "1"
+
+
 def test_output_pump_survives_a_gone_consumer():
     """The reader keeps draining the child when its consumer closed the stream."""
     child_read, child_write = os.pipe()

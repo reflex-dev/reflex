@@ -507,7 +507,13 @@ def supervise_output(args: list[str]) -> int:
     # blocked on it waits for that read on Windows.
     out_read, out_write = os.pipe()
     err_read, err_write = os.pipe()
-    proc = subprocess.Popen(args, stdout=out_write, stderr=err_write, env=env)
+    proc = subprocess.Popen(
+        args,
+        stdout=out_write,
+        stderr=err_write,
+        env=env,
+        start_new_session=os.name == "posix",
+    )
     os.close(out_write)
     os.close(err_write)
     pumps = [
@@ -522,9 +528,10 @@ def supervise_output(args: list[str]) -> int:
             returncode = proc.wait()
             break
         except KeyboardInterrupt:
-            # A PID-targeted SIGINT reaches only the supervisor on POSIX.
+            # Keep terminal SIGINT from reaching the child before we forward it.
             if os.name == "posix" and proc.poll() is None:
-                proc.send_signal(signal.SIGINT)
+                with contextlib.suppress(ProcessLookupError):
+                    os.killpg(proc.pid, signal.SIGINT)
             continue
     wall_deadline = time.monotonic() + _DRAIN_WALL_SECONDS
     snapshots = [pump.writing_snapshot() for pump in pumps]
