@@ -3,18 +3,19 @@
 A delta whose substate has no dispatch function in the compiled frontend means
 the frontend and backend disagree about the state tree. The frontend reports it
 back over the ``client_error`` socket event so the failure is visible in the
-backend logs instead of being dropped silently, then stops sending events —
-the mismatch is fatal until the developer rebuilds the frontend or fixes
-``api_url``.
+backend logs instead of being dropped silently, skips that substate, and keeps
+processing events.
 """
 
 from __future__ import annotations
 
+import dataclasses
 from collections.abc import Generator
 
 import pytest
 from playwright.sync_api import Page, expect
 
+from reflex.state import StateUpdate
 from reflex.testing import AppHarness
 
 # Substate name with no dispatch function in the compiled frontend.
@@ -120,13 +121,10 @@ def test_unprocessable_delta_is_reported_to_backend(
     assert "rebuild" in report.lower()
 
 
-def test_unprocessable_delta_is_fatal_without_reload(
+def test_unprocessable_delta_does_not_stop_events(
     client_error_app: AppHarness, page: Page, monkeypatch: pytest.MonkeyPatch
 ):
-    """A mismatch is reported exactly once and does not reload the page.
-
-    Recovery (rebuild or api_url fix) is the developer's decision, so the
-    frontend must not reload on its own or keep re-reporting.
+    """A mismatch is reported without reloading the page or blocking events.
 
     Args:
         client_error_app: Running AppHarness instance.
@@ -156,9 +154,44 @@ def test_unprocessable_delta_is_fatal_without_reload(
         == "navigate"
     )
 
-    # The mismatch is fatal: further clicks send no events and add no reports.
-    page.click("#break-btn")
     page.click("#bump-btn")
-    page.wait_for_timeout(500)
-    expect(page.locator("#counter")).to_have_text("0")
-    assert len(reports) == 1
+    expect(page.locator("#counter")).to_have_text("1")
+
+
+def test_unknown_substate_in_hydrate_delta(
+    client_error_app: AppHarness, page: Page, monkeypatch: pytest.MonkeyPatch
+):
+    """The page hydrates when the hydrate delta names an unknown substate.
+
+    Args:
+        client_error_app: Running AppHarness instance.
+        page: Playwright page fixture.
+        monkeypatch: pytest fixture for patching outgoing updates.
+    """
+    assert client_error_app.frontend_url is not None
+    assert client_error_app.app_instance is not None
+    namespace = client_error_app.app_instance.event_namespace
+    assert namespace is not None
+    emit_update = namespace.emit_update
+    reports: list[str] = []
+    monkeypatch.setattr(
+        client_error_app.app_instance,
+        "frontend_exception_handler",
+        lambda exc: reports.append(str(exc)),
+    )
+
+    async def emit_with_unknown_substate(update: StateUpdate, token: str) -> None:
+        """Add an unknown substate to every outgoing update.
+
+        Args:
+            update: The outgoing state update.
+            token: The client token.
+        """
+        delta = {GHOST_SUBSTATE: {"value": 1}, **update.delta}
+        await emit_update(dataclasses.replace(update, delta=delta), token)
+
+    monkeypatch.setattr(namespace, "emit_update", emit_with_unknown_substate)
+    page.goto(client_error_app.frontend_url)
+    expect(page.locator("#token")).not_to_have_value("")
+    assert AppHarness._poll_for(lambda: reports)
+    assert GHOST_SUBSTATE in reports[0]

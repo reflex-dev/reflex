@@ -2464,8 +2464,8 @@ class EventNamespace(AsyncNamespace):
         if error_type == constants.ClientErrorType.DISPATCH_MISSING:
             substate = format.sanitize_client_log_value(data.get("substate", ""))
             report = (
-                f"[SID: {sid}] State update failed: "
-                f"no dispatch function for substate(s) '{substate}'. "
+                f"[SID: {sid}] Skipped state update for unknown substate(s) "
+                f"'{substate}': no dispatch function registered. "
                 "This indicates a frontend/backend state mismatch. "
                 "Rebuild the frontend or check that api_url points to the matching backend."
             )
