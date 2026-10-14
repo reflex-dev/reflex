@@ -769,6 +769,7 @@ def test_format_state(input, output):
         ("input-1", "ref_input_1"),
         ("input_1", "ref_input_1"),
         ("a long test?1! name", "ref_a_long_test_1_name"),
+        (f"zone-{Var(_js_expr='item')}", "ref_zone_item"),
     ],
 )
 def test_format_ref(input, output):

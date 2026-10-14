@@ -648,8 +648,21 @@ def format_state_name(state_name: str) -> str:
     return state_name.replace(".", "__")
 
 
+# The marker Var.__format__ puts before a Var's expression in an f-string.
+_VAR_MARKER = re.compile(
+    re.escape(constants.REFLEX_VAR_OPENING_TAG)
+    + ".*?"
+    + re.escape(constants.REFLEX_VAR_CLOSING_TAG),
+    flags=re.DOTALL,
+)
+
+
 def format_ref(ref: str) -> str:
     """Format a ref.
+
+    A Var formatted into an f-string leaves a marker holding its hash, which
+    changes from one run to the next; the marker is dropped so the ref name
+    is the same in every build.
 
     Args:
         ref: The ref to format.
@@ -657,6 +670,7 @@ def format_ref(ref: str) -> str:
     Returns:
         The formatted ref.
     """
+    ref = _VAR_MARKER.sub("", ref)
     # Replace all non-word characters with underscores.
     clean_ref = re.sub(r"[^\w]+", "_", ref)
     return f"ref_{clean_ref}"
