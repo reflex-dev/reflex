@@ -28,6 +28,10 @@ class ReflexRuntimeError(ReflexError, RuntimeError):
     """Custom RuntimeError for Reflex."""
 
 
+class SessionAuthorizationError(ReflexError, PermissionError):
+    """Raised when a browser session does not own the requested client state."""
+
+
 class UploadTypeError(ReflexError, TypeError):
     """Custom TypeError for upload related errors."""
 

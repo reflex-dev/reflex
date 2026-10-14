@@ -32,6 +32,20 @@ sa = pytest.importorskip("sqlalchemy")
 sqlmodel = pytest.importorskip("sqlmodel")
 
 
+@pytest.mark.parametrize("model_first", [False, True])
+def test_database_session_survives_app_import(model_first: bool):
+    """Loading browser session transports must not shadow the public DB helper.
+
+    Args:
+        model_first: Whether to resolve the database helper before the App import.
+    """
+    script = "import reflex as rx\n"
+    if model_first:
+        script += "assert callable(rx.session)\n"
+    script += "from reflex.app import App\nfrom reflex.model import session\nassert rx.session is session\n"
+    subprocess.run([sys.executable, "-c", script], check=True, capture_output=True)
+
+
 @pytest.mark.parametrize("version", ["0.0.45", "0.0.47"])
 def test_db_extra_accepts_utc_sqlmodel(version: str):
     """The database extra must accept versions used to generate UTC migrations.
