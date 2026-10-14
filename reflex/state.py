@@ -2501,7 +2501,13 @@ class State(BaseState):
                     for state_name, changes in state_delta.items():
                         correction_delta.setdefault(state_name, {}).update(changes)
             changed_vars = []
+            mutated_storage_vars = {(id(state), name) for state, name in mutated_vars}
             for var_state, var_name in applied:
+                # An override may call super().get_delta() and then assign a
+                # correction. Its returned delta still contains the value from
+                # before that assignment; the captured write is authoritative.
+                if (id(var_state), var_name) in mutated_storage_vars:
+                    continue
                 key = var_name + FIELD_MARKER
                 subdelta = correction_delta.get(var_state.get_full_name(), {})
                 browser_value = var_state.get_value(var_name)

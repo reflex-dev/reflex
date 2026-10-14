@@ -2204,6 +2204,62 @@ async def test_hydrate_reconciles_json_distinct_storage_values(
         assert storage_state.value is True
 
 
+@pytest.mark.parametrize(
+    "processor_state_manager", ["in_process", "redis"], indirect=True
+)
+async def test_hydrate_preserves_storage_assignment_after_get_delta_super(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+):
+    """Do not restore an old delta value over a storage assignment in an override.
+
+    Args:
+        wired_app: The app wired to the state manager.
+        real_base_state_processor: The event processor.
+        emitted_deltas: Captured deltas.
+        token: The client token.
+    """
+    get_delta_calls = 0
+    reconciled = False
+
+    class StorageState(State):
+        value: str = rx.LocalStorage("")
+
+        @_override_base_method
+        def get_delta(self) -> Delta:
+            nonlocal get_delta_calls, reconciled
+            delta = super().get_delta()
+            get_delta_calls += 1
+            if get_delta_calls == 1 and not reconciled and self.value == "stale":
+                self.value = "fresh"
+                reconciled = True
+            return delta
+
+    wired_app.add_page(lambda: rx.text(StorageState.value), route="/")
+    wired_app._compile_page("index")
+    boot_name = Event.from_event_type(State.hydrate_and_load())[0].name  # pyright: ignore[reportCallIssue]
+    payload = {"vars": {f"{StorageState.get_full_name()}.value{FIELD_MARKER}": "stale"}}
+
+    async with real_base_state_processor as processor:
+        await (
+            await processor.enqueue(token, _boot_event(boot_name, payload))
+        ).wait_all()
+
+    value_key = "value" + FIELD_MARKER
+    storage_deltas = [
+        delta[StorageState.get_full_name()][value_key]
+        for _, delta in emitted_deltas
+        if value_key in delta.get(StorageState.get_full_name(), {})
+    ]
+    assert reconciled
+    assert storage_deltas[-1] == "fresh"
+    async with _read_back(real_base_state_processor, token) as root:
+        storage_state = await root.get_state(StorageState)
+        assert storage_state.value == "fresh"
+
+
 async def test_hydrate_probes_nested_storage_states_once(
     wired_app: App,
     real_base_state_processor: BaseStateEventProcessor,
