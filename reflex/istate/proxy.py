@@ -105,8 +105,12 @@ def _mark_recreated_cross_state_dependencies(
         states_by_name[state.get_full_name()] = state
         pending.extend(state.substates.values())
 
-    for source_state in states_by_name.values():
-        for dependent_vars in source_state._var_dependencies.values():
+    state_classes = [type(root_state)]
+    for state_cls in state_classes:
+        state_classes.extend(state_cls.get_substates())
+
+    for source_state_cls in state_classes:
+        for dependent_vars in source_state_cls._var_dependencies.values():
             for target_name, computed_var_name in dependent_vars:
                 if target_name not in recreated_names:
                     continue
