@@ -522,7 +522,9 @@ def supervise_output(args: list[str]) -> int:
             returncode = proc.wait()
             break
         except KeyboardInterrupt:
-            # The child gets the same interrupt and shuts down on its own.
+            # A PID-targeted SIGINT reaches only the supervisor.
+            if proc.poll() is None:
+                proc.send_signal(signal.SIGINT)
             continue
     wall_deadline = time.monotonic() + _DRAIN_WALL_SECONDS
     snapshots = [pump.writing_snapshot() for pump in pumps]
