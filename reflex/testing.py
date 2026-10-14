@@ -922,7 +922,12 @@ class AppHarnessProd(AppHarness):
         ) + config.prepend_frontend_path("/")
         config.deploy_url = self.frontend_url
 
-    def _start_backend(self):
+    def _start_backend(self, port: int = 0):
+        """Start a production backend with its worker settings on the requested port.
+
+        Args:
+            port: Backend port, or zero to choose an available port.
+        """
         if self.app_asgi is None:
             msg = "App was not initialized."
             raise RuntimeError(msg)
@@ -932,7 +937,7 @@ class AppHarnessProd(AppHarness):
             uvicorn.Config(
                 app=self.app_asgi,
                 host="127.0.0.1",
-                port=0,
+                port=port,
                 workers=reflex.utils.processes.get_num_workers(),
             ),
         )

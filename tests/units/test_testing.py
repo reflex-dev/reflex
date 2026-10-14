@@ -15,13 +15,32 @@ import reflex.constants
 import reflex.reflex as reflex_cli
 import reflex.testing as reflex_testing
 import reflex.utils.prerequisites
-from reflex.testing import AppHarness
+from reflex.testing import AppHarness, AppHarnessProd
 from reflex.utils.exec import should_prerender_routes
 
 
 def test_testing_module_does_not_import_uvicorn_at_module_load():
     """Importing reflex.testing does not require the AppHarness backend runtime."""
     assert "uvicorn" not in reflex_testing.__dict__
+
+
+def test_prod_backend_restart_preserves_settings(tmp_path, monkeypatch, mocker):
+    """Rebinding a production backend preserves workers and compile suppression."""
+    monkeypatch.setenv("REFLEX_SKIP_COMPILE", "false")
+    harness = AppHarnessProd.create(root=tmp_path)
+    harness.app_asgi = mock.AsyncMock()
+    uvicorn = mocker.patch("reflex.testing._get_uvicorn").return_value
+    thread = mocker.patch("reflex.testing.threading.Thread").return_value
+    mocker.patch("reflex.utils.processes.get_num_workers", return_value=3)
+    harness._start_backend(port=8123)
+    uvicorn.Config.assert_called_once_with(
+        app=harness.app_asgi,
+        host="127.0.0.1",
+        port=8123,
+        workers=3,
+    )
+    assert environment.REFLEX_SKIP_COMPILE.get()
+    thread.start.assert_called_once()
 
 
 @pytest.mark.skip("Slow test that makes network requests.")

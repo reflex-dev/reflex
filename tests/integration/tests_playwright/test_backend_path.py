@@ -9,7 +9,6 @@ prefixed case for both dev and prod modes via ``app_harness_env``.
 from __future__ import annotations
 
 import json
-import time
 from collections.abc import Generator
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -67,6 +66,7 @@ def BackendPathApp():
                 id="upload-btn",
             ),
             rx.text(BPState.uploaded, id="uploaded"),
+            rx.button("cancel", on_click=rx.cancel_upload("files"), id="cancel-btn"),
             rx.el.a(
                 "download",
                 href=rx.get_upload_url("hello.txt"),
@@ -297,8 +297,65 @@ def test_session_upload(backend_path_app: AppHarness, page: Page):
     expect(page.locator("#uploaded")).to_have_text("session upload")
 
 
+@pytest.mark.parametrize("cancel", [False, True])
+def test_upload_waits_through_failed_exchange(
+    backend_path_app: AppHarness, page: Page, cancel: bool
+):
+    """A transient exchange retries while events run and waiting uploads can cancel.
+
+    Args:
+        backend_path_app: The running app.
+        page: The browser page.
+        cancel: Whether to cancel the upload before session recovery.
+    """
+    assert backend_path_app.frontend_url is not None
+    held: list[Route] = []
+    uploads = []
+
+    def exchange(route: Route):
+        """Hold the first exchange and allow its retries."""
+        if not held:
+            held.append(route)
+        else:
+            route.continue_()
+
+    page.route("**/_reflex/session", exchange)
+    page.on(
+        "request",
+        lambda request: (
+            uploads.append(request) if request.url.endswith("/_upload") else None
+        ),
+    )
+    page.goto(backend_path_app.frontend_url)
+    expect(page.locator("#token")).not_to_have_value("")
+    page.locator('input[type="file"]').set_input_files({
+        "name": "retry.txt",
+        "mimeType": "text/plain",
+        "buffer": b"recovered upload",
+    })
+    page.click("#upload-btn")
+    page.click("#bump-btn")
+    expect(page.locator("#counter")).to_have_text("1")
+    assert not uploads
+    if cancel:
+        page.click("#cancel-btn")
+    with page.expect_response(
+        lambda response: (
+            response.url.endswith("/_reflex/session") and response.status == 200
+        )
+    ):
+        held[0].fulfill(status=503, content_type="application/json", body="{}")
+    page.click("#bump-btn")
+    expect(page.locator("#counter")).to_have_text("2")
+    if cancel:
+        assert not uploads
+        expect(page.locator("#uploaded")).to_have_text("")
+        page.click("#upload-btn")
+    expect(page.locator("#uploaded")).to_have_text("recovered upload")
+
+
 def test_session_refresh(backend_path_app: AppHarness, page: Page):
-    """An active socket renews its cookie without replacing its client token.
+    """An idle socket renews its cookie without replacing its client token.
 
     Args:
         backend_path_app: The running app.
@@ -319,11 +376,12 @@ def test_session_refresh(backend_path_app: AppHarness, page: Page):
         )
         session = manager.decode(before.get("value", ""))
         assert session is not None
-        # Wait for the configured refresh age while keeping the browser responsive.
-        page.wait_for_timeout(max(0, session.issued_at + 1.1 - time.time()) * 1000)
+        # The browser timer renews an idle session without an application event.
         with page.expect_response(lambda r: r.url.endswith("/_reflex/session")):
-            page.click("#bump-btn")
-        expect(page.locator("#counter")).to_have_text("1")
+            page.wait_for_function(
+                "Object.values(localStorage).some(value => Number(value) > Date.now())"
+            )
+        expect(page.locator("#counter")).to_have_text("0")
         after = next(
             c for c in page.context.cookies() if "reflex_session_" in c.get("name", "")
         )
@@ -333,7 +391,7 @@ def test_session_refresh(backend_path_app: AppHarness, page: Page):
         assert renewed.expires_at > session.expires_at
         page.reload()
         expect(page.locator("#token")).to_have_value(token)
-        expect(page.locator("#counter")).to_have_text("1")
+        expect(page.locator("#counter")).to_have_text("0")
 
 
 def test_session_backend_restart(backend_path_app: AppHarness, page: Page):
@@ -357,8 +415,7 @@ def test_session_backend_restart(backend_path_app: AppHarness, page: Page):
     backend_path_app.backend.should_exit = True
     backend_path_app.backend_thread.join(timeout=10)
     assert not backend_path_app.backend_thread.is_alive()
-    # The base harness supports binding the original port in both build modes.
-    AppHarness._start_backend(backend_path_app, port=port)
+    backend_path_app._start_backend(port=port)
     backend_path_app._poll_for_servers(timeout=10)
     page.click("#bump-btn")
     expect(page.locator("#counter")).to_have_text("2", timeout=15000)

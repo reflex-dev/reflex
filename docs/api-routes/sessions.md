@@ -18,7 +18,7 @@ Set `REFLEX_SESSION_TOKEN_MODE` in the backend environment:
 | --- | --- |
 | `warn` (default) | Issues sessions and warns about unauthorized state access, while allowing it for compatibility. |
 | `enforce` | Requires session ownership for event contexts and uploads. A socket presenting an unbound client token receives a new token and fresh state. |
-| `off` | Disables ownership enforcement and retains legacy WebSocket token handling. |
+| `off` | Disables ownership enforcement. Fresh tabs receive a client token; existing legacy tokens remain usable. |
 
 Use `enforce` after updating your frontend, integration clients, and
 reflex-enterprise. Legacy tokens are not bound to a session on first use: doing
@@ -32,11 +32,14 @@ will lose state on reconnect under `enforce`.
 The WebSocket connects first. If it has no valid session cookie, the backend
 issues a session and a bound tab token in-band. Hydration and `on_load` can run
 while the frontend exchanges that credential at `POST /_reflex/session` in the
-background. Uploads wait for this exchange to finish. The credential is never
+background. Uploads wait for this exchange to finish and remain cancellable
+while waiting. Transient exchange failures retry with backoff while ordinary
+WebSocket events continue; waiting HTTP requests resume when the cookie is ready.
+Disconnecting cancels the pending exchange. The credential is never
 stored in localStorage or sessionStorage.
 
 The endpoint also supports a JSON POST with no credential to create a session
-for a non-browser client. It returns `token_type`, `expires_in`, and
+for a non-browser client. It returns `token_type`, `expires_in`, `refresh_in`, and
 `client_token`, and sets the cookie. Pass an existing `Reflex-Client-Token`
 header to retain an owned tab token. The endpoint honors `backend_path`.
 Reflex-enterprise's bearer issuer at `/_reflex/auth/token` is unchanged.
@@ -48,8 +51,10 @@ server's replacement token. Storage keys are scoped to the backend URL.
 
 `session_token_ttl` in `rx.Config` defaults to seven days.
 `session_token_refresh_interval` defaults to half that lifetime. HTTP responses
-refresh an existing session after that age; active WebSockets ask the browser
-to refresh in the background. A socket retains its validated session for its
+refresh an existing session after that age. Browser timers renew idle sessions;
+returning to a visible tab also requests renewal over its authenticated socket,
+so a suspended timer does not require a new session while that socket survives.
+A socket retains its validated session for its
 connected lifetime. Cookie expiry is checked on subsequent HTTP requests and
 reconnections. Refresh retains the session ID and existing tab bindings.
 
@@ -59,6 +64,8 @@ Cookies use `Secure; HttpOnly; SameSite=None; Partitioned; Path=/`, no Domain,
 and an app-specific `__Host-` name. Set `api_url` to the public backend URL,
 including when TLS terminates at a reverse proxy. Cookies are not scoped by
 port, so applications sharing a host must have distinct `app_name` values.
+The signed audience also binds each credential to `app_name`, so one app cannot
+accept another app's session even when they share a signing key.
 
 Installing an in-band credential requires a trusted Origin. Reflex trusts
 `deploy_url`, `api_url`, explicit `cors_allowed_origins`, and the development
@@ -87,7 +94,8 @@ your deployment's secret manager or environment. Never put it in `rxconfig.py`.
 If you load it from a local `.env`, add that file to `.gitignore`.
 
 Without the variable, Reflex creates a 256-bit secret in
-`.web/backend/session_secret`, readable only by its owner. Workers on one host
+`.web/backend/session_secret`, created with owner-only permissions on POSIX.
+On Windows, access follows the working directory's inherited ACLs. Workers on one host
 share it, and it survives hot reload, `reflex init`, and upgrades. Exported
 bundles exclude it. Production logs a warning when the generated key is used.
 All replicas and replacement deployments must receive the same environment
@@ -106,8 +114,8 @@ non-secret `id`, `issued_at`, `expires_at`, and `authorizes(client_token)`.
 It does not imply that the client is logged in.
 
 `app.modify_state`, event enqueueing, and chained events inherit the ambient
-session. HTTP routes receive the requesting session, and framework WebSocket events
-receive the socket's session. Explicit `session_token=None` means anonymous
+session. HTTP and custom WebSocket routes receive the requesting session, and
+framework WebSocket events receive the socket's session. Explicit `session_token=None` means anonymous
 access. A handler cannot modify another session's state under `enforce`.
 
 Lifespan work starts with `SessionToken.SYSTEM`. For intentional trusted
