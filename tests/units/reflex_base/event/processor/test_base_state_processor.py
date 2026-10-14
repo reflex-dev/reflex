@@ -1,6 +1,7 @@
 """Tests for BaseStateEventProcessor, specifically the _rehydrate path."""
 
 import asyncio
+import collections
 import contextlib
 import dataclasses
 import gc
@@ -2245,6 +2246,89 @@ async def test_hydrate_passes_client_storage_through_get_delta(
     ]
     assert any(subdelta.get(key) == "fresh" for subdelta in persisted)
     assert not any("unset" + FIELD_MARKER in subdelta for subdelta in persisted)
+
+
+@pytest.mark.parametrize(
+    "processor_state_manager", ["in_process", "redis"], indirect=True
+)
+async def test_hydrate_computes_client_storage_dependents_once(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+):
+    """Computed vars depending on browser storage are evaluated once per hydrate.
+
+    The snapshot already computes them from the browser's values, so passing
+    those values through get_delta again must not recompute them.
+
+    Args:
+        wired_app: The app wired to the state manager.
+        real_base_state_processor: The event processor.
+        emitted_deltas: Captured deltas.
+        token: The client token.
+    """
+    calls: collections.Counter[str] = collections.Counter()
+
+    class StorageState(State):
+        value: str = rx.LocalStorage("")
+
+        @rx.var(cache=True)
+        def upper(self) -> str:
+            calls["upper"] += 1
+            return self.value.upper()
+
+        @rx.var(cache=False)
+        def length(self) -> int:
+            calls["length"] += 1
+            return len(self.value)
+
+    class DependentState(State):
+        @rx.var(cache=True)
+        async def copy(self) -> str:
+            calls["copy"] += 1
+            return (await self.get_state(StorageState)).value
+
+    wired_app.add_page(
+        lambda: rx.text(StorageState.upper, StorageState.length, DependentState.copy),
+        route="/",
+    )
+    wired_app._compile_page("index")
+    boot_name = Event.from_event_type(State.hydrate_and_load())[0].name  # pyright: ignore[reportCallIssue]
+    payload = {"vars": {f"{StorageState.get_full_name()}.value{FIELD_MARKER}": "abc"}}
+
+    async def hydrate(payload: dict[str, Any]) -> collections.Counter[str]:
+        """Hydrate and count the computed var evaluations.
+
+        Args:
+            payload: The boot event payload.
+
+        Returns:
+            The evaluations per computed var.
+        """
+        calls.clear()
+        async with real_base_state_processor as processor:
+            await (
+                await processor.enqueue(token, _boot_event(boot_name, payload))
+            ).wait_all()
+        return calls.copy()
+
+    without_storage = await hydrate({})
+    with_storage = await hydrate(payload)
+
+    assert with_storage["upper"] == 1
+    assert with_storage["copy"] == 1
+    assert with_storage["length"] == without_storage["length"]
+    sent = {
+        key: value
+        for _, delta in emitted_deltas
+        for key, value in {
+            **delta.get(StorageState.get_full_name(), {}),
+            **delta.get(DependentState.get_full_name(), {}),
+        }.items()
+    }
+    assert sent["upper" + FIELD_MARKER] == "ABC"
+    assert sent["copy" + FIELD_MARKER] == "abc"
 
 
 @pytest.mark.parametrize(
