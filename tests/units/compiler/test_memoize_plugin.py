@@ -1682,6 +1682,7 @@ def test_local_client_state_keeps_sibling_components_in_page_scope() -> None:
     ctx, page_ctx = _compile_single_page(page)
     page_output = page_ctx.output_code or ""
 
+    assert page_ctx.memoize_shared_scope_split_ids is not None
     assert ctx.memoize_wrappers, (
         "Unrelated reactive components should retain auto-memoization when "
         "page-local client state is shared."
@@ -1691,6 +1692,30 @@ def test_local_client_state_keeps_sibling_components_in_page_scope() -> None:
         'const [local_sibling, setLocal_sibling] = useState("initial")' in page_output
     )
     assert 'setLocal_sibling("changed")' in page_output
+
+
+def test_reused_local_client_state_reader_stays_in_page_scope() -> None:
+    """A reused reader across a foreach boundary counts as two appearances."""
+    from reflex.experimental.client_state import ClientStateVar
+
+    local = ClientStateVar.create("reused_reader", default="initial", global_ref=False)
+    reader = rx.text(local.value)
+
+    def page() -> Component:
+        return rx.box(
+            reader,
+            rx.foreach(
+                ["item"],
+                lambda _item: rx.box(
+                    reader,
+                    rx.el.button("set", on_click=local.set_value("changed")),
+                ),
+            ),
+        )
+
+    _ctx, page_ctx = _compile_single_page(page)
+
+    assert page_ctx.memoize_shared_scope_counts[local._id_name] == 3
 
 
 def test_debounce_input_memo_renders_react_debounce_wrapper() -> None:

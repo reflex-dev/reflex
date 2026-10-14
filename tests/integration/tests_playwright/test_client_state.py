@@ -32,6 +32,7 @@ def ClientStateApp():
 
     shared = rx._x.client_state(default="initial")
     local = rx._x.client_state(default="local-initial", global_ref=False)
+    reused_local_reader = rx.text(local.value, id="reused-local-reader")
     backend_default = rx._x.client_state(default=ClientStateAppState.default_text)
 
     def index():
@@ -59,6 +60,22 @@ def ClientStateApp():
                 "set local",
                 on_click=local.set_value("local-clicked"),
                 id="local-setter",
+            ),
+        )
+
+    def local_reused_reader():
+        return rx.box(
+            reused_local_reader,
+            rx.foreach(
+                ["item"],
+                lambda _item: rx.box(
+                    reused_local_reader,
+                    rx.button(
+                        "set local",
+                        on_click=local.set_value("local-clicked"),
+                        id="reused-local-setter",
+                    ),
+                ),
             ),
         )
 
@@ -93,6 +110,7 @@ def ClientStateApp():
     app.add_page(index)
     app.add_page(siblings)
     app.add_page(local_siblings, route="/local-siblings")
+    app.add_page(local_reused_reader, route="/local-reused-reader")
     app.add_page(backend_default_page, route="/backend-default")
     app.add_page(push_before_mount, route="/push-before-mount")
 
@@ -187,6 +205,22 @@ def test_local_sibling_setter_updates_reader(
     expect(page.locator("#local-reader")).to_have_text("local-initial")
     page.click("#local-setter")
     expect(page.locator("#local-reader")).to_have_text("local-clicked")
+    assert errors == []
+
+
+def test_reused_local_reader_updates_across_foreach_boundary(
+    client_state_app: AppHarness, page: Page
+) -> None:
+    """A local reader reused inside and outside foreach follows its setter."""
+    assert client_state_app.frontend_url is not None
+    errors = _collect_page_errors(page)
+    page.goto(client_state_app.frontend_url.removesuffix("/") + "/local-reused-reader")
+
+    readers = page.locator("#reused-local-reader")
+    expect(readers).to_have_count(2)
+    expect(readers).to_have_text(["local-initial", "local-initial"])
+    page.click("#reused-local-setter")
+    expect(readers).to_have_text(["local-clicked", "local-clicked"])
     assert errors == []
 
 
