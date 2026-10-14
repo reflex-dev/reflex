@@ -129,16 +129,19 @@ class OplockFound(Exception):  # noqa: N818
     """Indicates that an opportunistic lock was found."""
 
 
-# KEYS: the lock key, then the state keys. ARGV: the lock id, the state
-# expiration in seconds, then the serialized states in KEYS order. Writes only
-# while the lock is held by ARGV[1], and returns the lock's remaining PTTL, or
-# nil when the lock changed hands or expired and nothing was written.
+# KEYS: the lock key, the state manifest key, then the state keys.
+# ARGV: the lock id, the state expiration in seconds, then serialized states
+# in KEYS order. The manifest tracks which per-state keys have been persisted.
 _FENCED_SAVE_SCRIPT = """
 if redis.call('GET', KEYS[1]) ~= ARGV[1] then
     return nil
 end
-for i = 2, #KEYS do
-    redis.call('SET', KEYS[i], ARGV[i + 1], 'EX', ARGV[2])
+for i = 3, #KEYS do
+    redis.call('SET', KEYS[i], ARGV[i], 'EX', ARGV[2])
+    redis.call('SADD', KEYS[2], KEYS[i])
+end
+if #KEYS > 2 then
+    redis.call('PEXPIRE', KEYS[2], tonumber(ARGV[2]) * 1000)
 end
 return redis.call('PTTL', KEYS[1])
 """
@@ -359,18 +362,26 @@ class StateManagerRedis(StateManager):
             key=lambda x: x.get_full_name(),
         )
 
-        # Read the tree atomically with one command instead of a transaction
-        # containing a GET for each state. An already populated tree needs no IO.
-        redis_states = (
-            await self.redis.mget([
-                token._state_key(state_cls) for state_cls in required_state_classes
-            ])
-            if required_state_classes
-            else []
-        )
+        # Read state values and their persisted-key manifest in one round trip.
+        state_keys = [
+            token._state_key(state_cls) for state_cls in required_state_classes
+        ]
+        if required_state_classes:
+            pipeline = self.redis.pipeline(transaction=False)
+            pipeline.mget(state_keys)
+            pipeline.smembers(token._state_manifest_key())
+            redis_states, manifest_keys = await pipeline.execute()
+            persisted_state_keys = {
+                key.decode() if isinstance(key, bytes) else key
+                for key in manifest_keys
+            }
+        else:
+            redis_states = []
+            persisted_state_keys = set()
 
-        for state_cls, redis_state in zip(
+        for state_cls, state_key, redis_state in zip(
             required_state_classes,
+            state_keys,
             redis_states,
             strict=True,
         ):
@@ -381,12 +392,13 @@ class StateManagerRedis(StateManager):
                 with contextlib.suppress(StateSchemaMismatchError):
                     state = BaseState._deserialize(data=redis_state)
             if state is None:
-                # Key didn't exist or schema mismatch so create a new instance for this token.
+                # A missing never-persisted state has no stale client value to reset.
                 state = state_cls(
                     init_substates=False,
                     _reflex_internal_init=True,
                 )
-                _report_state_recreation(state)
+                if redis_state is not None or state_key in persisted_state_keys:
+                    _report_state_recreation(state)
             state_full_name = state.get_full_name()
             flat_state_tree[state_full_name] = state
             if state.get_parent_state() is not None:
@@ -441,11 +453,18 @@ class StateManagerRedis(StateManager):
             pickle_state = token.serialize(state)
             writes = [(str(token), pickle_state)] if pickle_state else []
 
+        manifest_key = (
+            token._state_manifest_key()
+            if isinstance(token, BaseStateToken)
+            else f"{token.lock_key}_reflex_state_manifest"
+        )
         if lock_id is None:
             if writes:
                 pipeline = self.redis.pipeline(transaction=False)
                 for key, pickle_state in writes:
                     pipeline.set(key, pickle_state, ex=self.token_expiration)
+                    pipeline.sadd(manifest_key, key)
+                pipeline.pexpire(manifest_key, self.token_expiration * 1000)
                 await pipeline.execute()
             return
 
@@ -463,8 +482,9 @@ class StateManagerRedis(StateManager):
         fenced_save = cast("Callable[..., Awaitable[int | None]]", self.redis.eval)
         pttl = await fenced_save(
             _FENCED_SAVE_SCRIPT,
-            1 + len(writes),
+            2 + len(writes),
             lock_key,
+            manifest_key,
             *(key for key, _ in writes),
             lock_id,
             self.token_expiration,
