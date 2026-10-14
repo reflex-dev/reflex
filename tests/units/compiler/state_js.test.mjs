@@ -258,7 +258,9 @@ test("reject an oversized polling hydration packet before connecting", async () 
 });
 
 test("measure websocket hydration limits in code points, not UTF-8 bytes", async () => {
-  const payload = { vars: { large: "é".repeat(600_000) } };
+  const payload = {
+    vars: { large: String.fromCodePoint(0x1f600).repeat(600_000) },
+  };
   const websocket = await setup({ oversizedPayload: payload });
   websocket.flush();
   await websocket.connect();

@@ -865,10 +865,15 @@ export const connect = async (
     )}`;
     // Engine.IO's ASGI WebSocket path checks Python string length (code points),
     // while polling checks the request body's byte length.
-    const size =
-      transports[0] === "websocket"
-        ? Array.from(authPacket).length
-        : new TextEncoder().encode(authPacket).byteLength;
+    let size;
+    if (transports[0] === "websocket") {
+      size = 0;
+      for (const _ of authPacket) {
+        size++;
+      }
+    } else {
+      size = new TextEncoder().encode(authPacket).byteLength;
+    }
     if (typeof maxSize === "number" && size > maxSize) {
       const error = new Error(
         `Hydration payload (${size} ${transports[0] === "websocket" ? "characters" : "bytes"}) exceeds the ${transports[0] === "websocket" ? "WebSocket message" : "polling request"} limit (${maxSize}). Reduce browser storage data and reload.`,
