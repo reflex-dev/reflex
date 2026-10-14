@@ -254,6 +254,7 @@ test("reject an oversized polling hydration packet before connecting", async () 
   assert.match(packet, /^40\{/);
   assert.match(packet, /"undefinedValue":null/);
   assert.equal(app.consoleErrors.length, 1);
+  assert.equal(app.consoleErrors[0][0], app.connectErrors[0].message);
 });
 
 test("measure websocket hydration limits in code points, not UTF-8 bytes", async () => {
