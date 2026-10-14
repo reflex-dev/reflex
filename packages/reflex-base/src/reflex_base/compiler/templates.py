@@ -525,49 +525,33 @@ export function EventLoopProvider({{ children }}) {{
 
 // Dispatch updates happen outside render; useSyncExternalStore keeps reads
 // consistent while notifying only consumers of the changed substate.
-function createStateStore() {{
-  const state = {{ ...initialState }};
+function createStateStore(initialState) {{
+  const state = {{}};
   const listeners = new Map();
   const dispatchers = {{}};
-  let syncedInitialState = initialState;
-  const registerSubstate = (substateName, initialValue) => {{
-    if (!Object.hasOwn(state, substateName)) {{
-      state[substateName] = initialValue;
-    }}
-    if (!Object.hasOwn(dispatchers, substateName)) {{
+  const notify = (substateName) =>
+    listeners.get(substateName)?.forEach((listener) => listener());
+  // Hot reload adds the substates of new state classes here; new fields of
+  // existing substates arrive with the hydrate delta.
+  const addSubstates = (nextInitialState) => {{
+    for (const [substateName, value] of Object.entries(nextInitialState)) {{
+      if (Object.hasOwn(state, substateName)) continue;
+      state[substateName] = value;
       dispatchers[substateName] = (delta) => {{
         const currentState = state[substateName];
         const nextState = applyDelta(currentState, delta);
         if (nextState === currentState) return;
         state[substateName] = nextState;
-        listeners.get(substateName)?.forEach((listener) => listener());
+        notify(substateName);
       }};
+      notify(substateName);
     }}
   }};
-  Object.entries(state).forEach(([substateName, value]) =>
-    registerSubstate(substateName, value),
-  );
+  addSubstates(initialState);
 
   return {{
     dispatchers,
-    syncInitialState: (nextInitialState) => {{
-      if (nextInitialState === syncedInitialState) return;
-      syncedInitialState = nextInitialState;
-      Object.entries(nextInitialState).forEach(([substateName, value]) => {{
-        const isNewSubstate = !Object.hasOwn(state, substateName);
-        registerSubstate(substateName, value);
-        const currentState = state[substateName];
-        const addedFields = Object.fromEntries(
-          Object.entries(value).filter(([key]) => !Object.hasOwn(currentState, key)),
-        );
-        if (Object.keys(addedFields).length > 0) {{
-          state[substateName] = {{ ...currentState, ...addedFields }};
-        }}
-        if (isNewSubstate || Object.keys(addedFields).length > 0) {{
-          listeners.get(substateName)?.forEach((listener) => listener());
-        }}
-      }});
-    }},
+    addSubstates,
     getSnapshot: (substateName) => state[substateName],
     subscribe: (substateName, listener) => {{
       let substateListeners = listeners.get(substateName);
@@ -590,8 +574,8 @@ function StateStoreProviders({{ children, store }}) {{
 }}
 
 function ClientStateProvider({{ children }}) {{
-  const [store] = useState(createStateStore);
-  useEffect(() => store.syncInitialState(initialState), [store, initialState]);
+  const [store] = useState(() => createStateStore(initialState));
+  useEffect(() => store.addSubstates(initialState), [store, initialState]);
   return createElement(StateStoreProviders, {{ children, store }});
 }}
 

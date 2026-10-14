@@ -318,7 +318,7 @@ let hmrNotifications = 0;
 subscribeVia("reflex___state____state__new", () => hmrNotifications++);
 let existingStateNotifications = 0;
 subscribeVia("reflex___state____state__sub", () => existingStateNotifications++);
-store.syncInitialState(registry.app.initialState);
+store.addSubstates(registry.app.initialState);
 const hmrAfterSync = registry.useStateContext("reflex___state____state__new");
 const existingStateAfterSync = registry.useStateContext("reflex___state____state__sub");
 store.dispatchers["reflex___state____state__new"]({ value: 5 });
@@ -356,13 +356,13 @@ process.stdout.write(JSON.stringify({
         "hmrBeforeSync": {"value": 4},
         "hmrAfterSync": {"value": 4},
         "hmrUpdated": {"value": 5},
-        "existingStateAfterSync": {"value": 3, "added": 9},
+        "existingStateAfterSync": {"value": 3},
         "hmrNotifications": 2,
-        "existingStateNotifications": 1,
+        "existingStateNotifications": 0,
         "noOpIdentityPreserved": True,
         "listNotifications": 0,
         "notificationsAfterNoOps": 0,
         "firstIdentityPreserved": True,
         "firstNotifications": 0,
-        "secondNotifications": 2,
+        "secondNotifications": 1,
     }
