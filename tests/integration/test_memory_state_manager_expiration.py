@@ -218,7 +218,7 @@ def test_background_task_refreshes_recreated_state_tree(
     token_input = AppHarness.poll_for_or_raise_timeout(
         lambda: driver.find_element(By.ID, "token")
     )
-    token = token_input.get_attribute("value")
+    token = memory_expiration_app.poll_for_value(token_input)
     assert token is not None
     counter = AppHarness.poll_for_or_raise_timeout(
         lambda: driver.find_element(By.ID, "counter")
