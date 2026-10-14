@@ -2331,6 +2331,69 @@ async def test_hydrate_computes_client_storage_dependents_once(
     assert sent["copy" + FIELD_MARKER] == "abc"
 
 
+async def test_hydrate_cleans_client_storage_when_get_delta_raises(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+):
+    """A get_delta override raising on browser storage leaves no dirty fields behind.
+
+    Args:
+        wired_app: The app wired to the state manager.
+        real_base_state_processor: The event processor.
+        emitted_deltas: Captured deltas.
+        token: The client token.
+    """
+    key = "value" + FIELD_MARKER
+    seen: list[str] = []
+    handled: list[Exception] = []
+
+    class StorageState(State):
+        value: str = rx.LocalStorage("")
+
+        @_override_base_method
+        def get_delta(self) -> Delta:
+            """Raise the first time the browser's value passes through.
+
+            Returns:
+                The delta.
+
+            Raises:
+                RuntimeError: On the first browser value.
+            """
+            delta = super().get_delta()
+            if (value := delta.get(self.get_full_name(), {}).get(key)) is not None:
+                seen.append(value)
+                if len(seen) == 1:
+                    msg = "boom"
+                    raise RuntimeError(msg)
+            return delta
+
+        @event
+        def noop(self):
+            """Change nothing."""
+
+    real_base_state_processor.backend_exception_handler = handled.append
+    wired_app.add_page(lambda: rx.text(StorageState.value), route="/")
+    wired_app._compile_page("index")
+    boot_name = Event.from_event_type(State.hydrate_and_load())[0].name  # pyright: ignore[reportCallIssue]
+    payload = {"vars": {f"{StorageState.get_full_name()}.{key}": "abc"}}
+
+    async with real_base_state_processor as processor:
+        await processor.enqueue(token, _boot_event(boot_name, payload))
+        await processor.join(5)
+        emitted_deltas.clear()
+        await _send(processor, token, Event.from_event_type(StorageState.noop())[0])
+
+    assert [type(ex) for ex in handled] == [RuntimeError]
+    assert seen == ["abc"]
+    assert not any(
+        key in delta.get(StorageState.get_full_name(), {})
+        for _, delta in emitted_deltas
+    )
+
+
 @pytest.mark.parametrize(
     "processor_state_manager", ["in_process", "redis"], indirect=True
 )

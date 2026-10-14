@@ -2492,7 +2492,7 @@ class State(BaseState):
                     delta = await self._get_resolved_delta()
                 finally:
                     _send_fields_only.reset(token)
-                self._clean()
+                    self._clean()
                 await ctx.emit_delta(delta=delta)
         if not RegistrationContext.get().app.get_load_events(self.rx_router_url.path):
             self.is_hydrated = True
