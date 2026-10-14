@@ -1,8 +1,9 @@
 name: Changed paths
 description: >-
-  Evaluate an on.paths/on.paths-ignore style filter against a pull request's
-  changed files, for a workflow whose trigger-level filter was removed so that
-  its checks keep reporting to the branch rules.
+  Evaluate an on.paths/on.paths-ignore style filter against the files a pull
+  request or push changes, for a workflow whose trigger-level filter was
+  removed so that its checks keep reporting to the branch rules, or whose jobs
+  need different filters.
 
 inputs:
   paths:
@@ -31,28 +32,44 @@ runs:
       env:
         GH_TOKEN: ${{ github.token }}
         REPO: ${{ github.repository }}
+        EVENT_NAME: ${{ github.event_name }}
         PR_NUMBER: ${{ github.event.pull_request.number }}
+        BEFORE: ${{ github.event.before }}
+        AFTER: ${{ github.event.after }}
         FILTER_PATHS: ${{ inputs.paths }}
         FILTER_PATHS_IGNORE: ${{ inputs.paths-ignore }}
       run: |
         set -euo pipefail
-        # Only pull_request runs gate a merge, so only their trigger gave up its
-        # path filter. Every other event still filters at the trigger and has
-        # nothing left to evaluate here.
-        if [ -z "${PR_NUMBER:-}" ]; then
-          echo "changed=true" >> "$GITHUB_OUTPUT"
-          exit 0
-        fi
-        # The whole pull request diff, which is what the trigger filtered on --
-        # not the last push, which would skip jobs a later commit still needs.
         # Only the two name fields travel: each entry's `patch` can be the
         # file's entire diff. The evaluator is stdlib-only and this job manages
         # no environment, so it runs on the runner's python3 instead of paying
         # for a uv install.
-        changed=$(
-          gh api --paginate "repos/$REPO/pulls/$PR_NUMBER/files" \
-            --jq '.[] | {filename, previous_filename} | tojson' |
-            python3 "$GITHUB_WORKSPACE/scripts/changed_paths.py"
-        )
+        names='{filename, previous_filename} | tojson'
+        evaluate="$GITHUB_WORKSPACE/scripts/changed_paths.py"
+        if [ "$EVENT_NAME" = pull_request ]; then
+          # The whole pull request diff, which is what the trigger filtered on --
+          # not the last push, which would skip jobs a later commit still needs.
+          changed=$(
+            gh api --paginate "repos/$REPO/pulls/$PR_NUMBER/files" --jq ".[] | $names" |
+              python3 "$evaluate"
+          )
+        elif [ "$EVENT_NAME" = push ] && [ -n "${BEFORE//0/}" ]; then
+          # A force push can leave the previous commit unreachable, so the
+          # compare fails: run rather than fail the gate on main.
+          if ! files=$(gh api "repos/$REPO/compare/$BEFORE...$AFTER" --jq "(.files // [])[] | $names"); then
+            echo "::notice::Cannot compare $BEFORE...$AFTER; running every job"
+            changed=true
+          # The compare API lists at most 300 files, so a list that long may be
+          # truncated: run rather than skip on the files it leaves out.
+          elif [ "$(grep -c . <<<"$files" || true)" -ge 300 ]; then
+            changed=true
+          else
+            changed=$(python3 "$evaluate" <<<"$files")
+          fi
+        else
+          # A push that creates a branch has no previous commit to compare
+          # against, and every other event (workflow_dispatch, schedule) runs.
+          changed=true
+        fi
         echo "changed=$changed"
         echo "changed=$changed" >> "$GITHUB_OUTPUT"

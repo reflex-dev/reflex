@@ -7,8 +7,6 @@ concurrency:
 on:
   push:
     branches: ["main"]
-    paths-ignore:
-      - "**/*.md"
   pull_request:
     branches: ["main"]
 
@@ -35,11 +33,21 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
+      # test_workflow_gates.py tests every workflow, action and ruleset, so
+      # changes to any of them run the unit tests.
       - uses: ./.github/actions/changed_paths
         id: filter
         with:
           paths-ignore: |
             **/*.md
+            docs/**
+            docker-example/**
+            .github/**
+            .devcontainer/**
+            .claude/**
+            !.github/workflows/**
+            !.github/actions/**
+            !.github/rulesets/**
 
   unit-tests:
     needs: changes
@@ -130,7 +138,8 @@ jobs:
 
   unit-tests-macos:
     timeout-minutes: 30
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: changes
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.changes.outputs.run == 'true'
     strategy:
       fail-fast: false
       matrix:
