@@ -54,6 +54,20 @@ from reflex.utils import prerequisites
             "useLegacyStateContext(StateContexts[stateName])",
         ),
         (
+            (
+                'import { useContext } from "react"; '
+                "useContext(StateContexts[names[index]])"
+            ),
+            "useLegacyStateContext(StateContexts[names[index]])",
+        ),
+        (
+            (
+                'import { useContext } from "react"; '
+                "const label = `${useContext(StateContexts[names[index]])}`;"
+            ),
+            "useLegacyStateContext(StateContexts[names[index]])",
+        ),
+        (
             'import React from "react"; React.useContext(StateContexts.state)',
             "useLegacyStateContext(StateContexts.state)",
         ),

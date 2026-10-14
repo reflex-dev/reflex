@@ -534,13 +534,17 @@ export function EventLoopProvider({{ children }}) {{
 // consistent while notifying only consumers of the changed substate.
 function createStateStore() {{
   const state = {{ ...initialState }};
-  const listeners = new Map(
-    Object.keys(state).map((substateName) => [substateName, new Set()]),
-  );
-  const dispatchers = Object.fromEntries(
-    Object.keys(state).map((substateName) => [
-      substateName,
-      (delta) => {{
+  const listeners = new Map();
+  const dispatchers = {{}};
+  const registerSubstate = (substateName, initialValue) => {{
+    if (!listeners.has(substateName)) {{
+      listeners.set(substateName, new Set());
+    }}
+    if (!Object.hasOwn(state, substateName)) {{
+      state[substateName] = initialValue;
+    }}
+    if (!Object.hasOwn(dispatchers, substateName)) {{
+      dispatchers[substateName] = (delta) => {{
         const currentState = state[substateName];
         if (
           Object.keys(delta).every((key) =>
@@ -552,12 +556,24 @@ function createStateStore() {{
         const nextState = applyDelta(currentState, delta);
         state[substateName] = nextState;
         listeners.get(substateName)?.forEach((listener) => listener());
-      }},
-    ]),
+      }};
+    }}
+  }};
+  Object.entries(state).forEach(([substateName, value]) =>
+    registerSubstate(substateName, value),
   );
 
   return {{
     dispatchers,
+    syncInitialState: (nextInitialState) => {{
+      Object.entries(nextInitialState).forEach(([substateName, value]) => {{
+        const isNewSubstate = !Object.hasOwn(state, substateName);
+        registerSubstate(substateName, value);
+        if (isNewSubstate) {{
+          listeners.get(substateName)?.forEach((listener) => listener());
+        }}
+      }});
+    }},
     getSnapshot: (substateName) => state[substateName],
     subscribe: (substateName, listener) => {{
       let substateListeners = listeners.get(substateName);
@@ -581,6 +597,7 @@ function StateStoreProviders({{ children, store }}) {{
 
 function ClientStateProvider({{ children }}) {{
   const [store] = useState(createStateStore);
+  useEffect(() => store.syncInitialState(initialState), [store, initialState]);
   return createElement(StateStoreProviders, {{ children, store }});
 }}
 

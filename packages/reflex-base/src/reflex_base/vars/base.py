@@ -644,7 +644,9 @@ class VarData:
                 f"const {state_var_name} = useStateContext({json.dumps(state_name)})": None
             },
             imports={
-                "$/utils/context-registry": [ImportVar(tag="useStateContext")],
+                f"$/{constants.Dirs.UTILS}/context-registry": [
+                    ImportVar(tag="useStateContext")
+                ],
             },
             # State Vars read the shared store/``EventLoopContext``, so the
             # providers must enclose every component that uses them.

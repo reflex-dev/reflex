@@ -58,7 +58,10 @@ export function useStateContext(name) {
     (listener) => store.subscribe(name, listener),
     [store, name],
   );
-  const getSnapshot = useCallback(() => store.getSnapshot(name), [store, name]);
+  const getSnapshot = useCallback(
+    () => store.getSnapshot(name) ?? app.initialState?.[name],
+    [store, name],
+  );
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
 

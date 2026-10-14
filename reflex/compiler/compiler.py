@@ -797,50 +797,87 @@ def _mask_javascript_literals_and_comments(javascript_code: str) -> str:
         Source with literals and comments masked at their original offsets.
     """
     masked = list(javascript_code)
-    index = 0
-    quote: str | None = None
-    quote_start = 0
-    while index < len(javascript_code):
-        char = javascript_code[index]
-        if quote is not None:
-            if char not in "\r\n":
-                masked[index] = " "
-            if char == "\\":
+
+    def mask_code(index: int, stop_at_template_brace: bool = False) -> int:
+        brace_depth = 1 if stop_at_template_brace else 0
+        while index < len(javascript_code):
+            char = javascript_code[index]
+            if char in "'\"":
+                quote_start = index
+                quote = char
                 index += 1
-                if (
+                while index < len(javascript_code):
+                    char = javascript_code[index]
+                    if char not in "\r\n":
+                        masked[index] = " "
+                    if char == "\\":
+                        index += 1
+                        if (
+                            index < len(javascript_code)
+                            and javascript_code[index] not in "\r\n"
+                        ):
+                            masked[index] = " "
+                    elif char == quote:
+                        index += 1
+                        break
+                    index += 1
+                if javascript_code[quote_start:index] in ('"react"', "'react'"):
+                    masked[quote_start:index] = javascript_code[quote_start:index]
+                continue
+            if char == "`":
+                masked[index] = " "
+                index += 1
+                while index < len(javascript_code):
+                    char = javascript_code[index]
+                    if char == "\\":
+                        masked[index] = " "
+                        index += 1
+                        if index < len(javascript_code):
+                            masked[index] = " "
+                            index += 1
+                    elif javascript_code.startswith("${", index):
+                        index = mask_code(index + 2, stop_at_template_brace=True)
+                    elif char == "`":
+                        masked[index] = " "
+                        index += 1
+                        break
+                    else:
+                        if char not in "\r\n":
+                            masked[index] = " "
+                        index += 1
+                continue
+            if javascript_code.startswith("//", index):
+                while (
                     index < len(javascript_code)
                     and javascript_code[index] not in "\r\n"
                 ):
                     masked[index] = " "
-            elif char == quote:
-                if javascript_code[quote_start : index + 1] in ('"react"', "'react'"):
-                    masked[quote_start : index + 1] = javascript_code[
-                        quote_start : index + 1
-                    ]
-                quote = None
-        elif char in "'\"`":
-            quote = char
-            quote_start = index
-            masked[index] = " "
-        elif javascript_code.startswith("//", index):
-            while index < len(javascript_code) and javascript_code[index] not in "\r\n":
-                masked[index] = " "
-                index += 1
-            continue
-        elif javascript_code.startswith("/*", index):
-            masked[index : index + 2] = "  "
-            index += 2
-            while index < len(javascript_code) and not javascript_code.startswith(
-                "*/", index
-            ):
-                if javascript_code[index] not in "\r\n":
-                    masked[index] = " "
-                index += 1
-            if index < len(javascript_code):
+                    index += 1
+                continue
+            if javascript_code.startswith("/*", index):
                 masked[index : index + 2] = "  "
                 index += 2
-            continue
-        index += 1
+                while index < len(javascript_code) and not javascript_code.startswith(
+                    "*/", index
+                ):
+                    if javascript_code[index] not in "\r\n":
+                        masked[index] = " "
+                    index += 1
+                if index < len(javascript_code):
+                    masked[index : index + 2] = "  "
+                    index += 2
+                continue
+            if stop_at_template_brace:
+                if char == "{":
+                    brace_depth += 1
+                elif char == "}":
+                    brace_depth -= 1
+                    if brace_depth == 0:
+                        return index + 1
+            index += 1
+        return index
+
+    mask_code(0)
     return "".join(masked)
 
 
@@ -884,19 +921,52 @@ def _rewrite_legacy_state_context_reads(javascript_code: str) -> str:
     )
     if not callees:
         return javascript_code
-    pattern = re.compile(
-        rf"(?:{'|'.join(callees)})\s*\(\s*"
-        rf"(?P<context>StateContexts\s*(?:\.\s*[\w$]+|\[\s*[^\[\]]+\s*\]))\s*\)"
+    call_pattern = re.compile(
+        rf"(?:{'|'.join(callees)})\s*\(\s*(?P<context>StateContexts)\b"
     )
-    matches = list(pattern.finditer(code_mask))
+    matches: list[tuple[int, int, int, int]] = []
+    for call_match in call_pattern.finditer(code_mask):
+        context_start, context_end = call_match.span("context")
+        index = context_end
+        while index < len(code_mask) and code_mask[index].isspace():
+            index += 1
+        if index < len(code_mask) and code_mask[index] == ".":
+            index += 1
+            while index < len(code_mask) and code_mask[index].isspace():
+                index += 1
+            property_match = re.match(r"[\w$]+", code_mask[index:])
+            if property_match is None:
+                continue
+            index += property_match.end()
+        elif index < len(code_mask) and code_mask[index] == "[":
+            bracket_depth = 1
+            index += 1
+            expression_start = index
+            while index < len(code_mask) and bracket_depth:
+                if code_mask[index] == "[":
+                    bracket_depth += 1
+                elif code_mask[index] == "]":
+                    bracket_depth -= 1
+                index += 1
+            if (
+                bracket_depth
+                or not javascript_code[expression_start : index - 1].strip()
+            ):
+                continue
+        else:
+            continue
+
+        context_end = index
+        while index < len(code_mask) and code_mask[index].isspace():
+            index += 1
+        if index < len(code_mask) and code_mask[index] == ")":
+            matches.append((call_match.start(), index + 1, context_start, context_end))
     if not matches:
         return javascript_code
 
     rewritten = []
     last_end = 0
-    for match in matches:
-        start, end = match.span()
-        context_start, context_end = match.span("context")
+    for start, end, context_start, context_end in matches:
         rewritten.extend((
             javascript_code[last_end:start],
             "useLegacyStateContext(" + javascript_code[context_start:context_end] + ")",
@@ -904,7 +974,7 @@ def _rewrite_legacy_state_context_reads(javascript_code: str) -> str:
         last_end = end
     rewritten.append(javascript_code[last_end:])
     return (
-        'import { useLegacyStateContext } from "$/utils/context-registry";\n'
+        f'import {{ useLegacyStateContext }} from "$/{constants.Dirs.UTILS}/context-registry";\n'
         + "".join(rewritten)
     )
 
