@@ -503,36 +503,66 @@ def supervise_output(args: list[str]) -> int:
         _SUPERVISED_ENV_VAR: str(os.getpid()),
         "PYTHONIOENCODING": f"utf-8:{errors}" if errors else "utf-8",
     }
-    # Raw pipes that only the readers close: closing a pipe while a reader is
-    # blocked on it waits for that read on Windows.
-    out_read, out_write = os.pipe()
-    err_read, err_write = os.pipe()
-    proc = subprocess.Popen(
-        args,
-        stdout=out_write,
-        stderr=err_write,
-        env=env,
-        start_new_session=os.name == "posix",
-    )
-    os.close(out_write)
-    os.close(err_write)
-    pumps = [
-        _OutputPump(out_read, 1, "info", "stdout"),
-        _OutputPump(err_read, 2, "warning", "stderr"),
-    ]
-    for pump in pumps:
-        pump.start()
-    signal.signal(signal.SIGTERM, lambda *_: proc.terminate())
-    while True:
-        try:
-            returncode = proc.wait()
-            break
-        except KeyboardInterrupt:
-            # Keep terminal SIGINT from reaching the child before we forward it.
-            if os.name == "posix" and proc.poll() is None:
-                with contextlib.suppress(ProcessLookupError):
-                    os.killpg(proc.pid, signal.SIGINT)
-            continue
+    proc: subprocess.Popen[bytes] | None = None
+    pending_signals: list[int] = []
+
+    def forward_signal(signum: int, _frame: object) -> None:
+        """Forward shutdown signals, queueing them until the child exists."""
+        if proc is None:
+            pending_signals.append(signum)
+        elif proc.poll() is None:
+            with contextlib.suppress(ProcessLookupError):
+                killpg = getattr(os, "killpg", None)
+                if callable(killpg):
+                    killpg(proc.pid, signum)
+
+    previous_handlers: list[tuple[int, signal.Handlers]] = []
+    if os.name == "posix":
+        forwarded_signals = [signal.SIGINT, signal.SIGTERM]
+        sighup = getattr(signal, "SIGHUP", None)
+        if sighup is not None:
+            forwarded_signals.append(sighup)
+        previous_handlers.extend(
+            (signum, signal.signal(signum, forward_signal))
+            for signum in forwarded_signals
+        )
+
+    try:
+        # Raw pipes that only the readers close: closing a pipe while a reader
+        # is blocked on it waits for that read on Windows.
+        out_read, out_write = os.pipe()
+        err_read, err_write = os.pipe()
+        proc = subprocess.Popen(
+            args,
+            stdout=out_write,
+            stderr=err_write,
+            env=env,
+            start_new_session=os.name == "posix",
+        )
+        os.close(out_write)
+        os.close(err_write)
+        pumps = [
+            _OutputPump(out_read, 1, "info", "stdout"),
+            _OutputPump(err_read, 2, "warning", "stderr"),
+        ]
+        for pump in pumps:
+            pump.start()
+        if os.name != "posix":
+            signal.signal(signal.SIGTERM, lambda *_: proc.terminate())
+        for signum in pending_signals:
+            forward_signal(signum, None)
+        pending_signals.clear()
+        while True:
+            try:
+                returncode = proc.wait()
+                break
+            except KeyboardInterrupt:
+                # On Windows the child shares the console process group.
+                if os.name == "posix":
+                    raise
+    finally:
+        for signum, handler in previous_handlers:
+            signal.signal(signum, handler)
     wall_deadline = time.monotonic() + _DRAIN_WALL_SECONDS
     snapshots = [pump.writing_snapshot() for pump in pumps]
     for pump, (exited_at, writing_at_exit) in zip(pumps, snapshots, strict=True):
