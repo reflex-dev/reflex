@@ -702,6 +702,35 @@ def test_compile_contexts_theme_appearance_overrides_config(mocker: MockerFixtur
     assert 'export const defaultColorMode = "dark"' in code
 
 
+def test_compile_contexts_embeds_frontend_state_schema():
+    """The context module carries the hash of the state tree it was compiled for.
+
+    The frontend sends it on every socket connect, and the backend computes
+    the same function over its own tree, so the two values drift only when
+    the trees do.
+    """
+
+    # A root of its own: compiling rx.State would instantiate every state other
+    # test modules registered in this process.
+    class SchemaContextRoot(BaseState):
+        value: int = 0
+
+    class SchemaContextChild(SchemaContextRoot):
+        name: str = ""
+
+    _, code = compiler.compile_contexts(SchemaContextRoot, None)
+
+    schema = SchemaContextRoot._to_frontend_schema()
+    assert f'export const stateSchema = "{schema}"' in code
+    start = code.index("registerApp({")
+    assert "stateSchema," in code[start : code.index("});", start)]
+    assert SchemaContextChild.get_full_name() in code
+
+    # Without state there is nothing to compare, and nothing to connect with.
+    _, code = compiler.compile_contexts(None, None)
+    assert "export const stateSchema = null" in code
+
+
 @pytest.mark.parametrize(
     ("theme", "config_mode", "expected"),
     [
