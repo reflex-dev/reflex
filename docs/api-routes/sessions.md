@@ -47,7 +47,8 @@ Reflex-enterprise's bearer issuer at `/_reflex/auth/token` is unchanged.
 Fresh browser tabs coordinate initial cookie creation with Web Locks. Browsers
 without Web Locks cannot guarantee that simultaneous first connections share
 one session; if a competing cookie wins, the affected tab reconnects with the
-server's replacement token. Storage keys are scoped to the backend URL.
+server's replacement token. Waiting HTTP requests remain queued until that
+replacement connection is accepted. Storage keys are scoped to the backend URL.
 
 `session_token_ttl` in `rx.Config` defaults to seven days.
 `session_token_refresh_interval` defaults to half that lifetime. HTTP responses
