@@ -88,7 +88,7 @@ from reflex.istate.manager.redis import StateManagerRedis
 from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
 from reflex.model import Model
-from reflex.session import SessionMiddleware
+from reflex.session_middleware import SessionMiddleware
 from reflex.state import (
     BaseState,
     OnLoadInternalState,

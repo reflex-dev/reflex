@@ -17,7 +17,7 @@ from starlette.responses import JSONResponse
 from starlette.routing import Route
 from starlette.testclient import TestClient
 
-from reflex.session import (
+from reflex.session_middleware import (
     SessionMiddleware,
     session_authorization_error,
     session_endpoint,

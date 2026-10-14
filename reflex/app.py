@@ -90,7 +90,7 @@ from reflex.route import (
     replace_brackets_with_keywords,
     verify_route_validity,
 )
-from reflex.session import (
+from reflex.session_middleware import (
     SessionMiddleware,
     session_authorization_error,
     session_endpoint,
