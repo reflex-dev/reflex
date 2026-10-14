@@ -173,6 +173,45 @@ def test_compile_app_worker_flushes_telemetry_on_failure(mocker):
     flush.assert_called_once_with()
 
 
+@pytest.mark.parametrize(
+    ("running_mode", "launcher"),
+    [
+        (constants.RunningMode.BACKEND_ONLY, "run_backend_prod"),
+        (constants.RunningMode.FRONTEND_ONLY, "run_frontend_prod"),
+    ],
+)
+def test_run_prod_sends_telemetry_synchronously(
+    mocker, running_mode: constants.RunningMode, launcher: str
+):
+    """The run-prod event is delivered on the calling thread, before the server.
+
+    The server forks its workers from this process, so the event must not be
+    queued on the telemetry thread pool. Going through ``_process_event`` keeps
+    the one-time alias migration, which a backend-only run has no other event
+    to ride on.
+    """
+    from reflex.utils import build, exec, processes, telemetry
+
+    config = mocker.patch.object(reflex, "get_config").return_value
+    mocker.patch.object(reflex, "_compile_app")
+    mocker.patch.object(reflex, "_skip_compile")
+    mocker.patch.object(build, "setup_frontend_prod")
+    mocker.patch.object(processes, "atexit_handler")
+    mocker.patch("atexit.register")
+    mocker.patch.object(exec, "notify_app_running")
+    mocker.patch.object(exec, "notify_frontend")
+    queued = mocker.patch.object(telemetry, "send")
+    calls = mocker.Mock()
+    calls.attach_mock(mocker.patch.object(telemetry, "_process_event"), "send")
+    calls.attach_mock(mocker.patch.object(exec, launcher), "serve")
+
+    reflex._run_prod(running_mode, 8000, "127.0.0.1")
+
+    queued.assert_not_called()
+    calls.send.assert_called_once_with("run-prod", config.telemetry_enabled)
+    assert [name for name, _args, _kwargs in calls.mock_calls] == ["send", "serve"]
+
+
 def test_cloud_commands_registered():
     """The hosting CLI commands import, resolve, and dispatch only on demand."""
     probe = """
