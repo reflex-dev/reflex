@@ -233,8 +233,8 @@ def build_delta(state: BaseState) -> Delta:
     """
     delta = {}
 
-    delta_vars = state.dirty_vars & state._frontend_var_names
     if _send_fields_only.get():
+        delta_vars = state.dirty_vars & state._frontend_var_names
         delta_vars.difference_update(state.computed_vars)
     else:
         state._mark_dirty_computed_vars()
