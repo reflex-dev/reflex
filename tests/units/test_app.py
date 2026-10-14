@@ -4607,6 +4607,7 @@ async def test_client_error_dispatch_missing_reports_actionable_error(
     assert len(frontend_errors) == 1
     message = frontend_errors[0]
     assert "reflex___state____state.my___state____my_state" in message
+    assert "skipped" in message.lower()
     assert "rebuild" in message.lower()
 
 
@@ -5097,6 +5098,116 @@ async def test_on_connect_processes_boot_event_from_auth(
     assert modify_state.call_count == 2
     assert state.router_data[constants.RouteVar.SESSION_ID] == "new_sid"
     assert state.router_data[constants.RouteVar.CLIENT_TOKEN] == "abc"
+
+
+def _schema_checking_namespace(
+    event_namespace: EventNamespace, backend_schema: str
+) -> tuple[AsyncMock, AsyncMock]:
+    """Prepare an event namespace for on_connect with a known backend schema.
+
+    Args:
+        event_namespace: The event namespace.
+        backend_schema: The frontend schema hash the backend's state tree has.
+
+    Returns:
+        The mocks installed as the namespace's ``on_event`` and ``emit``.
+    """
+    event_namespace._token_manager = Mock()
+    event_namespace._token_manager.link_token_to_sid = AsyncMock(return_value=None)
+    on_event = event_namespace.on_event = AsyncMock()
+    emit = event_namespace.emit = AsyncMock()
+    cast(Any, event_namespace.app)._state = Mock(
+        _to_frontend_schema=Mock(return_value=backend_schema)
+    )
+    return on_event, emit
+
+
+@pytest.mark.asyncio
+async def test_on_connect_reports_state_schema_mismatch(
+    event_namespace: EventNamespace, caplog: pytest.LogCaptureFixture
+):
+    """A frontend compiled for another state tree is told once, and still hydrates.
+
+    Args:
+        event_namespace: The event namespace.
+        caplog: pytest fixture capturing backend log records.
+    """
+    on_event, emit = _schema_checking_namespace(event_namespace, "backend-schema")
+    boot_event = {"name": "state.hydrate_and_load", "payload": {}, "router_data": {}}
+
+    with caplog.at_level(logging.WARNING, logger="reflex"):
+        await event_namespace.on_connect(
+            "new_sid",
+            {"QUERY_STRING": "token=abc"},
+            {"event": boot_event, "state_schema": "frontend-schema"},
+        )
+
+    emit.assert_awaited_once_with(
+        "state_mismatch",
+        {"backend": "backend-schema", "reload_cooldown_ms": 10_000},
+        to="new_sid",
+    )
+    on_event.assert_awaited_once_with("new_sid", boot_event)
+    app_warnings = [
+        r.getMessage()
+        for r in caplog.records
+        if r.name == "reflex.app" and r.levelno == logging.WARNING
+    ]
+    assert len(app_warnings) == 1
+    assert "frontend-schema" in app_warnings[0]
+    assert "backend-schema" in app_warnings[0]
+    assert "new_sid" in app_warnings[0]
+
+    # The client-supplied hash is sanitized and bounded before it is logged.
+    caplog.clear()
+    await event_namespace.on_connect(
+        "new_sid",
+        {"QUERY_STRING": "token=abc"},
+        {"event": boot_event, "state_schema": "x\nforged line [bold]" + "y" * 500},
+    )
+    (message,) = [
+        r.getMessage()
+        for r in caplog.records
+        if r.name == "reflex.app" and r.levelno == logging.WARNING
+    ]
+    assert "forged" in message
+    assert "\n" not in message
+    assert "\\[bold]" in message
+    assert "(truncated)" in message
+    assert len(message) < 400
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "auth",
+    [
+        pytest.param(
+            {"event": {"name": "state.hydrate_and_load"}, "state_schema": "same"},
+            id="matching",
+        ),
+        pytest.param({"event": {"name": "state.hydrate_and_load"}}, id="old-frontend"),
+        pytest.param(None, id="no-auth"),
+    ],
+)
+async def test_on_connect_sends_no_mismatch_without_one(
+    event_namespace: EventNamespace, auth: dict[str, Any] | None
+):
+    """A matching or missing frontend schema sends nothing to the client.
+
+    Args:
+        event_namespace: The event namespace.
+        auth: The CONNECT auth payload.
+    """
+    on_event, emit = _schema_checking_namespace(event_namespace, "same")
+    state = Mock(router_data={})
+    event_namespace.app.state_manager.modify_state = Mock(
+        return_value=AsyncMock(__aenter__=AsyncMock(return_value=state))
+    )
+
+    await event_namespace.on_connect("new_sid", {"QUERY_STRING": "token=abc"}, auth)
+
+    emit.assert_not_awaited()
+    assert on_event.await_count == (1 if auth else 0)
 
 
 @pytest.mark.asyncio
