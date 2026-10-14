@@ -565,8 +565,9 @@ def _run_prod(running_mode: constants.RunningMode, port: int, host: str):
 
     _skip_compile()
 
-    # Post a telemetry event.
-    telemetry.send("run-prod")
+    # Post a telemetry event. Sent synchronously: on Linux the backend forks its
+    # workers from this process, which must hold no telemetry thread by then.
+    telemetry._process_event("run-prod", config.telemetry_enabled)
 
     # Display custom message when there is a keyboard interrupt.
     atexit.register(processes.atexit_handler)

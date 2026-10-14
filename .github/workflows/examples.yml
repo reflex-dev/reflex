@@ -78,11 +78,13 @@ jobs:
         with:
           python-version: "3.12"
       # The venv goes first on PATH, like an activated venv: reflex 0.8.23 runs
-      # tools such as granian by name.
+      # tools such as granian by name. reflex 0.8.23 imports
+      # sqlalchemy.ext.asyncio at startup, and SQLAlchemy 2.1 only installs
+      # greenlet with its asyncio extra.
       - name: Install reflex 0.8.23 into a fresh venv
         run: |
           uv venv --python 3.12 "$RUNNER_TEMP/reflex-0.8.23"
-          uv pip install --python "$RUNNER_TEMP/reflex-0.8.23/bin/python" "reflex==0.8.23" "plotly>=6.0,<7.0" greenlet
+          uv pip install --python "$RUNNER_TEMP/reflex-0.8.23/bin/python" "reflex==0.8.23" "plotly>=6.0,<7.0" "greenlet"
           echo "$RUNNER_TEMP/reflex-0.8.23/bin" >> "$GITHUB_PATH"
       - name: Show the reflex under test
         working-directory: examples/playground
