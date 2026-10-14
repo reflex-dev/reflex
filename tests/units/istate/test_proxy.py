@@ -233,9 +233,10 @@ async def test_recreated_state_invalidates_computed_vars_from_sibling_state(
         pass
 
     assert computed_var._cache_attr not in target.__dict__
-    assert emitted_deltas[0][1][target.get_full_name()][
-        "source_value" + FIELD_MARKER
-    ] == source.value
+    assert (
+        emitted_deltas[0][1][target.get_full_name()]["source_value" + FIELD_MARKER]
+        == source.value
+    )
     assert not target._was_touched
 
 
