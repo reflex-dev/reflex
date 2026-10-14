@@ -33,10 +33,10 @@ import subprocess
 import sys
 import threading
 import time
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 from pathlib import Path
 from types import FrameType, ModuleType
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from rich.console import Console
 from rich.errors import MarkupError
@@ -516,14 +516,19 @@ def supervise_output(args: list[str]) -> int:
                 if callable(killpg):
                     killpg(proc.pid, signum)
 
-    previous_handlers: list[tuple[int, signal.Handlers]] = []
+    previous_handlers: list[
+        tuple[
+            int,
+            int | signal.Handlers | Callable[[int, FrameType | None], Any] | None,
+        ]
+    ] = []
     if os.name == "posix":
         forwarded_signals = [signal.SIGINT, signal.SIGTERM]
         sighup = getattr(signal, "SIGHUP", None)
         if sighup is not None:
             forwarded_signals.append(sighup)
         previous_handlers.extend(
-            (signum, signal.signal(signum, forward_signal))
+            (int(signum), signal.signal(signum, forward_signal))
             for signum in forwarded_signals
         )
 
