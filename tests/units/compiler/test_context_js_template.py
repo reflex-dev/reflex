@@ -205,7 +205,11 @@ let hookStates = [];
 const contextValues = new Map();
 export const useContext = (context) => contextValues.get(context);
 export const useCallback = (fn) => fn;
-export const useSyncExternalStore = (subscribe, getSnapshot) => getSnapshot();
+export let lastSubscribe;
+export const useSyncExternalStore = (subscribe, getSnapshot) => {
+  lastSubscribe = subscribe;
+  return getSnapshot();
+};
 export const useMemo = (fn) => fn();
 export const useState = (initial) => {
   const index = hookIndex++;
@@ -286,9 +290,14 @@ const second = registry.useStateContext("reflex___state____state__sub");
 let firstNotifications = 0;
 let secondNotifications = 0;
 let listNotifications = 0;
-store.subscribe("reflex___state____state", () => firstNotifications++);
-store.subscribe("reflex___state____state__sub", () => secondNotifications++);
-store.subscribe("reflex___state____state__list", () => listNotifications++);
+// Subscribe through the hook so the test covers the substate it subscribes to.
+const subscribeVia = (name, listener) => {
+  registry.useStateContext(name);
+  return react.lastSubscribe(listener);
+};
+subscribeVia("reflex___state____state", () => firstNotifications++);
+subscribeVia("reflex___state____state__sub", () => secondNotifications++);
+subscribeVia("reflex___state____state__list", () => listNotifications++);
 store.dispatchers["reflex___state____state__sub"]({ value: 2 });
 store.dispatchers["reflex___state____state__sub"]({});
 store.dispatchers["reflex___state____state__list"]({ items: ["a"] });
@@ -306,9 +315,9 @@ registry.registerApp({
 });
 const hmrBeforeSync = registry.useStateContext("reflex___state____state__new");
 let hmrNotifications = 0;
-store.subscribe("reflex___state____state__new", () => hmrNotifications++);
+subscribeVia("reflex___state____state__new", () => hmrNotifications++);
 let existingStateNotifications = 0;
-store.subscribe("reflex___state____state__sub", () => existingStateNotifications++);
+subscribeVia("reflex___state____state__sub", () => existingStateNotifications++);
 store.syncInitialState(registry.app.initialState);
 const hmrAfterSync = registry.useStateContext("reflex___state____state__new");
 const existingStateAfterSync = registry.useStateContext("reflex___state____state__sub");
