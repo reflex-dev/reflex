@@ -5,181 +5,210 @@ meta_description: Horizontal scaling for Reflex apps, durable jobs, regional sta
 
 # Scaling Reflex Apps
 
-Scale Reflex horizontally: run many small, replaceable instances of the same application. Keep interactive events quick, move long-running work to independent workers, and keep session state close to the region serving the user.
+Scale the interactive backend by adding small, replaceable replicas behind a load balancer. Keep UI events quick and give long-running jobs their own workers and durable storage.
 
-This guide describes an architecture for self-hosted Reflex applications. Choose instance sizes, replica counts, and operational settings from production-mode load tests on the supported Reflex version. Managed hosting may expose different controls.
+This guide uses a report-export application to explain the boundaries: a user requests a report, leaves the page, and later retrieves the result through any healthy backend. Choose capacity and recovery settings from production-mode tests of your exact versions. Managed hosting may expose different controls.
 
-## Prefer horizontal scaling
+## Reference production architecture
 
-Horizontal scaling adds application instances behind a load balancer. It provides capacity in small increments and lets an instance be replaced or removed without making it the permanent owner of a user’s work. Each replica runs the same application code and uses the shared services for its region.
+This is an illustrative deployment, not a list of required components. Start with the request path and stores your app needs. Add read replicas for lag-tolerant read load, a separate cache for expensive repeatable reads, and a queue when jobs must outlive a backend. The optional Sentinel panel requires a separately implemented and validated integration.
 
-Vertical scaling gives an existing instance more CPU or memory. It can help a resource-heavy process, but it has a machine-size ceiling and does not remove a single-instance failure risk. Use it selectively when measurements justify it; prefer horizontal growth for the interactive backend.
+```python exec
+import reflex as rx
+```
 
-### Design for small replaceable instances
+```python eval
+rx.el.figure(
+    rx.el.div(
+        rx.image(
+            src=rx.asset("hosting/scaling-architecture.svg"),
+            alt="Production architecture: browser and frontend, load balancer, backend replicas, databases, separate Redis roles, optional Sentinel integration, queue and workers. Text description follows.",
+            width="100%",
+            min_width="760px",
+            height="auto",
+        ),
+        overflow_x="auto",
+        width="100%",
+        tab_index=0,
+        role="region",
+        custom_attrs={
+            "aria-label": "Production architecture; scroll horizontally on narrow screens"
+        },
+    ),
+    rx.el.figcaption(
+        rx.el.a(
+            "Open architecture diagram at full size",
+            href=rx.asset("hosting/scaling-architecture.svg"),
+            target="_blank",
+            rel="noopener noreferrer",
+            text_decoration="underline",
+        ),
+    ),
+    width="100%",
+    margin_y="1.5em",
+)
+```
 
-- Serve the frontend independently, such as a static frontend through a CDN, and place the Python backends behind a WebSocket-capable load balancer.
-- Share one region-local session Redis service across the backend replicas in that region. Store durable records, files, and jobs outside individual processes and local disks.
-- Set process counts deliberately. Increasing replicas should not accidentally multiply an oversized worker pool and exhaust database or Redis connections.
-- Scale down gracefully: stop routing new connections to a retiring instance, drain work that can finish quickly, and test reconnects to another healthy instance.
+### Architecture text alternative
 
-For a small backend instance, one server process can be a useful starting point for measurement. This is a per-instance command; the deployment platform controls the number of replicas:
+The labeled arrows distinguish traffic types. On narrow screens, scroll the diagram or open it at full size.
+
+- **Request/response:** browser ↔ static frontend/CDN for assets; browser frontend ↔ load balancer ↔ one healthy backend replica for events and state updates over WebSockets. Backends share the same application build.
+- **Application data:** backend replicas ↔ regional Redis session state; optional application cache uses a separate Redis service. Backends and workers write durable records to the primary database. Only lag-tolerant reads go to read replicas; read-after-write and other freshness-critical reads use the primary.
+- **Asynchronous jobs:** backend → durable job record/outbox → task queue → independent workers. Workers save status and results in shared storage; any authorized backend can read them. The job lifecycle below explains confirmation, retry and acknowledgement boundaries.
+- **Replication:** primary database → read replica databases; Redis primary → Redis replica. These arrows copy data, not application requests. Asynchronous replication can lag and can lose recent writes on failover.
+- **Sentinel monitoring/failover:** optional Sentinel instances monitor the Redis primary/replica and coordinate promotion. A validated Sentinel-aware integration discovers the current primary; application data still goes to Redis, never to a Sentinel control port. This is not native Reflex Sentinel support.
+
+## Serve requests with replaceable backends
+
+Host the exported frontend independently, for example on a CDN. Configure its API URL for the WebSocket-capable load balancer in front of the Python backends. Each region's replicas share that region's session Redis; durable records, files and jobs live outside individual processes and local disks.
+
+Start with deliberate process counts so adding replicas does not multiply oversized database or Redis connection pools. One Granian process per small instance is a measurement starting point:
 
 ```bash
-REFLEX_USE_GRANIAN=true GRANIAN_WORKERS=1 reflex run --env prod \
+GRANIAN_WORKERS=1 reflex run --env prod \
     --backend-only --backend-port 8000
 ```
 
-Configure the exported frontend’s API URL for the load-balanced backend. One process is an example, not a universal sizing rule. See the [self-hosting guide](/docs/hosting/self-hosting/) for production commands and networking.
+This command assumes Granian. If the environment also includes Uvicorn and Gunicorn, set `REFLEX_USE_GRANIAN=true` explicitly. The deployment platform controls replica count. See [self-hosting](/docs/hosting/self-hosting/) for production commands and networking.
 
-## Pin versions and plan state-store upgrades
+More replicas do not shorten one oversized event or remove contention within one session. Paginate results, keep session state small, and measure handler duration separately from state acquisition. Use async database/API clients in [background events](/docs/events/background-events/), holding the state lock only briefly to update UI state. For unavoidable blocking I/O, use `await rx.run_in_thread(...)` from a background event; use process workers or a process executor for CPU-heavy Python work. See [performance and execution](/docs/advanced-onboarding/performance-and-execution/).
 
-Use the same application code, dependency lockfile, and compatible state schema on every replica sharing a state store. This guide's source checks are pinned to [Reflex revision d02ba5409579e24e67401f9dd6eb2fc4d3ef5e1b](https://github.com/reflex-dev/reflex/tree/d02ba5409579e24e67401f9dd6eb2fc4d3ef5e1b). They establish implementation and dependency constraints, not a load-test or failover certification for every release.
+## Let jobs outlive a backend
 
-| Deployment | Verified constraint | Deployment action |
-| --- | --- | --- |
-| Reflex 0.9 and 0.10 together | Reflex 0.9 and 0.10 cannot share a state store. 0.10 can load 0.9 state; 0.9 discards 0.10 state. | Do not use a mixed-version rolling deployment against the same Redis store or disk state directory. Upgrade all instances together, or use separate stores and accept session reset at cutover. |
-| Rollback from 0.10 to 0.9 | Sessions saved by 0.10 reset when they reach 0.9. | Use a fresh state store, or clear only the app's dedicated state store as part of an approved rollback procedure. Keep durable records outside session state. |
-| `reflex-otel==0.1.0` | Its release manifest declares Python >=3.10 and `reflex-base >=0.9.11`. | This is a release-specific dependency floor, not a guarantee for every 0.9 deployment. Pin the compatible framework, SDK, and exporter, and test the features used by that release. |
-| `reflex-otel==0.2.0` and the reviewed source | Python >=3.11 and `reflex-base >=0.10.0`. Both instrumentor releases declare `opentelemetry-api >=1.30.0,<2.0` and instrumentation/ASGI instrumentation >=0.49b0,<1.0. | Resolve and pin the exact instrumentor, SDK, exporter, and compatible framework versions in your lockfile. Verify backend and optional browser export together before rollout. Do not install 0.2.0 against 0.9. |
+A report export may take minutes. The UI needs a job ID and progress, while the worker needs to finish even if the accepting backend is scaled down. Use an independent queue/worker system such as [Taskiq](https://taskiq-python.github.io/guide/architecture-overview.html) or [Celery](https://docs.celeryq.dev/en/stable/userguide/tasks.html) for that requirement. Reflex background events run inside a backend and end with that process.
 
-The table records constraints from [self-hosting](https://github.com/reflex-dev/reflex/blob/d02ba5409579e24e67401f9dd6eb2fc4d3ef5e1b/docs/hosting/self-hosting.md), the [0.1.0 instrumentor manifest](https://github.com/reflex-dev/reflex/blob/3d47357ac158c51a0c131ec48c41232830bd9031/packages/reflex-otel/pyproject.toml), and the [0.2.0 instrumentor manifest](https://github.com/reflex-dev/reflex/blob/40ffab8124ba257053c395309c87f1c818b4e0a2/packages/reflex-otel/pyproject.toml). For another release, recheck those files at that exact tag or commit. Record the resolved Python, Reflex, reflex-base, reflex-otel, Redis client/server, broker, and result-store versions with your load and recovery test results. A dependency lower bound is not evidence that an arbitrary combination has been tested.
-
-## Keep interactive events quick
-
-An event should validate the request, perform bounded work, update a small amount of UI state, and return. Paginate large result sets, separate unrelated views into their own state classes, and avoid blocking I/O or long computation while holding a state lock.
-
-Adding replicas will not shorten one oversized event or remove contention within one session. Measure handler duration and state acquisition separately, then address the work responsible. The [performance and execution guide](/docs/advanced-onboarding/performance-and-execution/) explains these boundaries.
-
-## Run long work in independent workers
-
-Send long-running work to a queue system such as Taskiq or Celery, with workers deployed separately from the Reflex backend. Design the handoff so the backend that accepts a job can be removed after durable acceptance. Another backend must still be able to find the job, show its progress, and retrieve its result; verify this behavior with the selected broker, workers, and result store.
-
-Reflex background events run inside an application backend. They can keep short-lived UI work responsive, but they do not give a job an independent lifetime. Use an external worker whenever the task must survive removal of its originating backend. See [background event lifecycle](/docs/events/background-events/).
-
-### Hand off jobs durably
-
-Consider a report export. The UI needs confirmation that the job was accepted; it should not need its original backend to stay alive until the report finishes.
-
-1. **Accept the request.** Check authorization and validate inputs. Create a durable job record with a stable job ID, owner or tenant, input reference, and initial status.
-2. **Persist the handoff.** Record the enqueue intent reliably. For example, write the job and an outbox entry in one database transaction. A dispatcher publishes the outbox entry to the broker and marks it delivered only after broker confirmation, retrying with the same job ID. A crash after publication can cause duplicate delivery, so the consumer must be idempotent. Monitor and retry pending outbox records so recorded work is not silently left unqueued.
-3. **Return to the UI.** Keep the job ID and a short status in session state, then return from the event. Do not wait for the worker’s result inside the event.
-4. **Process independently.** The worker receives the job ID, loads authorized inputs from shared storage, and executes the task. It must not depend on the original backend’s memory, local files, or WebSocket.
-5. **Persist progress and results.** Write completion, failure, and result references to shared durable storage. Store large outputs in shared object storage.
-6. **Read from any backend.** After checking access, the backend handling the next request reads the job record by ID. Use bounded polling or a notification that triggers a fresh read. Reopening the app should recover outstanding jobs from durable records.
-
-An illustrative record makes the ownership boundary explicit:
-
-```text
-job_id: stable identifier
-owner_id: authenticated user or tenant
-input_ref: shared data or object reference
-status: queued | running | succeeded | failed
-result_ref: shared output reference when complete
+```python eval
+rx.el.figure(
+    rx.el.div(
+        rx.image(
+            src=rx.asset("hosting/scaling-job-lifecycle.svg"),
+            alt="Job lifecycle: commit a job and outbox, confirm queue publication, process idempotently, save results before acknowledgement, and recover through bounded retries. Text description follows.",
+            width="100%",
+            min_width="760px",
+            height="auto",
+        ),
+        overflow_x="auto",
+        width="100%",
+        tab_index=0,
+        role="region",
+        custom_attrs={
+            "aria-label": "Job lifecycle; scroll horizontally on narrow screens"
+        },
+    ),
+    rx.el.figcaption(
+        rx.el.a(
+            "Open job lifecycle diagram at full size",
+            href=rx.asset("hosting/scaling-job-lifecycle.svg"),
+            target="_blank",
+            rel="noopener noreferrer",
+            text_decoration="underline",
+        ),
+    ),
+    width="100%",
+    margin_y="1.5em",
+)
 ```
 
-### Configure recovery rather than assuming it
+### Job lifecycle text alternative
 
-A queue library alone does not guarantee durability. Choose a broker and result store with the required persistence, configure acknowledgements and redelivery, and test worker crashes. Use a tenant-scoped idempotency key with a database uniqueness constraint for repeated submissions, and idempotent or transactional worker effects so redelivery does not duplicate side effects. Persist the outcome before acknowledging success. If an external effect cannot be committed atomically with the outcome, use that service's idempotency support or a reconciliation procedure; there is no general exactly-once guarantee. Bound retries, add timeouts, and make permanently failed jobs visible.
+1. **Accept and record.** Authorize the request, validate inputs, and commit a job record and enqueue intent together, such as an outbox entry in the same database transaction. Store a stable job ID, owner/tenant, input reference and status. A tenant-scoped idempotency key with a uniqueness constraint handles repeated submissions.
+2. **Return and dispatch.** Return the job ID after the transaction commits. A dispatcher publishes pending outbox entries, marks them delivered only after broker confirmation, and retries with the same job ID. Monitor pending entries: an accepted record does not itself prove the broker received it.
+3. **Process independently.** Workers load authorized inputs from shared storage. They must not need the original backend's memory, local files or WebSocket. A crash after publication can cause duplicate delivery, so worker effects must be idempotent or transactionally deduplicated by job ID.
+4. **Save, then acknowledge.** Persist progress, completion/failure and result references in shared durable storage before acknowledging success to the broker. Keep large outputs in object storage. For external effects that cannot commit atomically with the outcome, use the service's idempotency support or reconciliation; there is no general exactly-once guarantee.
+5. **Recover and read.** Configure broker acknowledgements and redelivery, timeouts and bounded retries. Expose permanent failures. Any healthy backend can authorize access and read the job by ID; reopening the app can recover outstanding jobs from durable records.
 
-Celery acknowledgement timing and worker-loss behavior affect whether work is redelivered. Taskiq likewise needs a suitable broker and an actual result backend or application job store. Specify result retention, backups, and expiry independently of broker delivery; keep the authoritative job status in the application store if broker results expire sooner than users need them. Avoid process-local queues and in-memory-only results for work that must survive scale-down. Scale workers by backlog and oldest-job age independently of app replicas.
+A queue library alone does not guarantee durability. Select broker persistence and worker-loss behavior, then test them. Taskiq needs an actual result backend or application job store; Celery acknowledgement and worker-loss settings affect redelivery. Define result retention, backups and expiry independently of queue delivery. Avoid process-local queues and in-memory-only results for jobs that must survive scale-down. Scale workers by backlog and oldest-job age, independently of backend replicas.
 
-References: [Celery task semantics](https://docs.celeryq.dev/en/stable/userguide/tasks.html), [Taskiq architecture](https://taskiq-python.github.io/guide/architecture-overview.html), and [Celery worker shutdown](https://docs.celeryq.dev/en/stable/userguide/workers.html).
+## Keep regional state and durable data separate
 
-## Keep session state local to each region
+Keep frequent session-state access close to the backends: each region uses its own Redis session store, and active sessions are routed consistently to that region. Business records, preferences and jobs belong in stores with explicit write ownership, consistency, replication and recovery policies.
 
-For a multi-region application, use region-local Redis for Reflex session state. Put more persistent or cross-region data in a database or a separately designed global Redis service. Frequent session-state access stays close to the backend, while important records remain independent of a UI session.
+Moving a user to another region may create a fresh UI session. Rebuild useful state from durable records rather than promising transfer of regional Redis state. For example, after an export starts in Region A, a backend in Region B can authorize the user and read its job/result without the original session. A globally reachable Redis endpoint alone does not make data durable; review its [persistence and recovery tradeoffs](https://redis.io/docs/latest/operate/oss_and_stack/management/persistence/).
 
-- **Regional sessions:** each region’s backends share that region’s session Redis. Route an active session consistently to its region; individual backend instances remain replaceable.
-- **Persistent records:** business data, preferences, and jobs belong in a store available to the regions that need them. Define consistency, write ownership, replication, residency, and recovery expectations.
-- **Global Redis:** configure persistence, replication, expiry, and recovery for the items it holds. A globally reachable endpoint alone does not guarantee durability.
-- **Regional failover:** moving a user to another region may create a fresh UI session. Reconstruct useful state from persistent records, including outstanding jobs. Do not promise seamless transfer of region-local session state.
+### Use the primary for writes and fresh reads
 
-For example, a user starts an export in Region A and reconnects in Region B. The independent worker continues. Region B checks authorization and reads the durable job and result without needing the original backend or Region A’s session Redis.
+Read replicas are useful when nearby, read-only copies reduce latency or primary load. Make routing explicit in the data-access layer:
 
-See [Redis persistence and recovery tradeoffs](https://redis.io/docs/latest/operate/oss_and_stack/management/persistence/).
+| Operation | Destination |
+| --- | --- |
+| Writes, migrations, locking reads and read-write transactions | Current primary; keep each transaction on its owning connection. |
+| Read-after-write or other freshness-critical reads | Primary unless a replica is verified to have caught up. Confirm a newly submitted job here. |
+| Read-only queries that tolerate replication lag | Healthy read replica; a locking `SELECT` is not eligible. |
+| Replica unavailable or too far behind | Another healthy replica or bounded primary fallback, with capacity protection. |
 
-### Redis Sentinel availability versus Redis Cluster sharding
+Test lag and outages before relying on regional routing. Never send writes to a replica outside a controlled promotion process. See [PostgreSQL replication tradeoffs](https://www.postgresql.org/docs/current/high-availability.html).
 
-Redis Sentinel monitors non-clustered Redis and coordinates promotion of a replica when the primary fails; it does not shard data. Redis Cluster partitions data across shards and requires a cluster-aware client. Horizontal application scaling and Redis sharding are separate decisions: adding backend instances does not itself require Cluster.
+### Add a separate cache only for a measured need
 
-**No built-in Sentinel adapter has been verified for the Reflex source reviewed here.** The Redis factory accepts `redis://`, `rediss://`, and `unix://` URLs and creates ordinary synchronous or asynchronous Redis clients. It does not construct a Sentinel client, discover a primary through Sentinel, or construct a Redis Cluster client. Do not point `REFLEX_REDIS_URL` at a Sentinel control port or invent a Sentinel URL scheme. Redis Cluster is not a supported session-state configuration in this reviewed client path.
+For example, cache an expensive, repeatable lookup when bounded staleness is acceptable. Use a separate Redis service so cache churn, eviction and refill bursts do not compete with Reflex session state. Key prefixes or logical database numbers on one server do not isolate resources or failures.
 
-A provider may expose a stable ordinary Redis primary endpoint backed by its own failover system. That is a provider-specific deployment choice, not native Sentinel integration. Validate that endpoint's primary switching, connection recovery, state locks, and persistence with your exact Reflex and Redis client versions before relying on it. A custom Sentinel adapter needs its own implementation and integration tests before it can be documented as supported.
+`REFLEX_REDIS_URL` configures Reflex state. Application caching uses your own client/configuration, with bounded TTLs, reused clients and limits on cache-miss database work. Keep cache clients outside serialized session state. No cache is required by this architecture.
 
-Sentinel's Redis replication is asynchronous, so failover can lose recent acknowledged writes. Define recovery behavior and capacity on the remaining nodes. Persistent business records and jobs need their own durability guarantees. See [Redis Sentinel requirements](https://redis.io/docs/latest/operate/oss_and_stack/management/sentinel/) and [Redis Cluster specification](https://redis.io/docs/latest/operate/oss_and_stack/reference/cluster-spec/).
+### Sentinel is an optional integration, not a Reflex setting
 
-### Separate caching from session state
+**Reflex's built-in Redis configuration does not support connecting directly through Sentinel.** In the reviewed source, the factory creates ordinary Redis clients from `redis://`, `rediss://` or `unix://` URLs. It does not discover a primary through Sentinel or construct a Redis Cluster client. Do not point `REFLEX_REDIS_URL` at a Sentinel control port or invent a Sentinel URL scheme. Redis Cluster is not supported by this session-state client path.
 
-Use separate Redis services for application caching and Reflex session state. Reflex reads `REFLEX_REDIS_URL` for state. Application cache code can read a separate variable such as `APP_CACHE_REDIS_URL`; that second name is an application convention, not another built-in Reflex cache setting.
+The diagram's optional Sentinel panel illustrates a deployment you must implement and validate separately. It needs a Sentinel-aware proxy/endpoint or custom integration that connects application traffic to the current Redis primary. A provider's stable ordinary Redis endpoint may handle failover internally; that does not make Reflex Sentinel-aware. Test primary switching, connection recovery, state locks and persistence with your exact versions before relying on either approach.
 
-Different key prefixes or logical database numbers on one server do not isolate resource usage or failure.
+Sentinel monitors non-clustered Redis and promotes replicas; it does not shard data. The illustration uses three Sentinel instances in independent failure domains and an example failure-detection quorum of two. Failover also requires majority authorization. Redis replication is asynchronous, so failover can lose recent acknowledged writes. Durable business records and jobs need their own recovery guarantees. See [Redis Sentinel requirements](https://redis.io/docs/latest/operate/oss_and_stack/management/sentinel/).
 
-```bash
-# Illustrative ordinary regional endpoints, not Sentinel setup.
-REFLEX_REDIS_URL=rediss://state.eu.example:6379/0
-APP_CACHE_REDIS_URL=rediss://cache.eu.example:6379/0
-```
+## Keep builds and state versions compatible
 
-Supply real endpoints and credentials through deployment configuration. Use bounded cache TTLs, reuse clients, and prevent cache misses from causing unlimited database work. Keep cache clients outside serialized session state.
+Use `uv` or another locking package manager to freeze dependencies across builds. Replicas sharing a state store must run compatible application code and state schemas.
 
-## Route database queries explicitly
+- Compatible framework upgrades can preserve saved state; plan for session reset on downgrade/rollback and read the release notes for migration instructions.
+- Changing stored field names/types makes saved state incompatible. Changing defaults or method bodies does not change the current saved-state schema.
+- Rebuild and deploy the frontend alongside changes to fields, computed-variable definitions or handler names. Frontend compatibility checks and saved-state compatibility checks are distinct.
 
-For a globally distributed app, consider a read-only database replica in each region that hosts Reflex backends. Eligible reads can stay local, reducing cross-region latency and read load on the primary. Make routing an explicit policy in the data-access layer that covers every query.
+**0.9 → 0.10 migration:** Reflex 0.9 and 0.10 cannot share a state store. 0.10 can load compatible 0.9 state; 0.9 discards 0.10 state. Do not roll mixed versions against the same Redis store or disk state directory. Upgrade all instances together, or use separate stores and accept session reset at cutover. Use a fresh dedicated state store for rollback; keep durable records outside session state. See [self-hosting compatibility guidance](/docs/hosting/self-hosting/).
 
-- **Primary:** route writes, migrations, locking reads, and read-write transactions to the current primary. Keep the operations in a transaction on its owning connection.
-- **Regional replicas:** route read-only queries that tolerate replication lag to a healthy nearby replica. A `SELECT` that locks rows or participates in a write transaction is not an eligible replica read.
-- **Consistency exceptions:** use the primary for read-after-write and freshness-critical reads unless the replica is verified to have caught up. For example, read a newly created job from the primary when immediately confirming submission.
-- **Failures:** monitor lag and health. Use another healthy replica or a bounded fallback to the primary, with capacity protection. Never send writes to a replica outside a controlled promotion or failover process.
+## Use telemetry to choose the next change
 
-Test delayed replication, replica unavailability, and primary failover. Confirm that routing preserves transaction consistency and does not turn a regional outage into unlimited load on the primary. See [PostgreSQL replication tradeoffs](https://www.postgresql.org/docs/current/high-availability.html).
+Enable the optional `reflex-otel` instrumentor with a compatible SDK/exporter and verify data reaches the collector. Trace points and metrics remain inactive until configured. Start with the question you need to answer:
 
-## Use OpenTelemetry to locate bottlenecks
+| Question | Measure and act |
+| --- | --- |
+| Is one handler slow, or is it waiting for state? | Compare event spans/`reflex.event.duration` with `reflex.state.acquire.duration`; shorten the handler or its lock-held work. |
+| Are connections or payloads driving load? | Correlate `reflex.websocket.connections` and `reflex.websocket.message.size` with latency and replica count; reduce unnecessary events/payloads. |
+| Is the report waiting or computing? | Measure queue wait and worker execution separately; increase worker capacity only when that is the bottleneck. |
 
-Use Reflex's built-in OpenTelemetry trace points and metrics for a compatible release. They remain inactive until the optional `reflex-otel` package is enabled and an SDK/exporter is configured. The reviewed `reflex-otel` source requires Python >=3.11 and `reflex-base >=0.10.0`; it is not a universal add-on for 0.9 deployments. Pin the framework, instrumentor, OpenTelemetry SDK, and exporter together using the version table above, and verify that telemetry reaches the collector.
+Use service, region, deployment version and database role to locate the slow boundary. Database queries, queue publication and external workers need their own instrumentation; propagate trace context through the broker. Reflex does not automatically create those external spans. Verify one event-to-worker-to-database trace, set sampling/redaction rules, and keep sensitive payloads and high-cardinality job IDs out of metric labels. See [Reflex OpenTelemetry](/docs/api-reference/observability/) and [context propagation](https://opentelemetry.io/docs/languages/python/propagation/).
 
-- **Event latency:** use event-handler spans and `reflex.event.duration` to identify slow handlers and failures. Use `reflex.state.acquire.duration` to distinguish state-acquisition waits from the rest of event execution.
-- **Connection and payload load:** correlate `reflex.websocket.connections` and `reflex.websocket.message.size` with instance count and event latency. The instrumentor also provides ASGI request and connection tracing.
-- **Browser visibility:** optional browser instrumentation connects frontend interactions to backend event traces.
+### Pin the telemetry combination
 
-See the [Reflex OpenTelemetry guide](/docs/api-reference/observability/) for the instrumentation scope and setup.
+| Instrumentor release | Declared dependency floors |
+| --- | --- |
+| `reflex-otel==0.1.0` | Python >=3.10; `reflex-base >=0.9.11`. |
+| `reflex-otel==0.2.0` and the reviewed source | Python >=3.11; `reflex-base >=0.10.0`. Do not install 0.2.0 against 0.9. |
 
-Database queries, queue publication, and external Taskiq/Celery workers need their own compatible instrumentation or application spans. Propagate trace context through the broker and restore it in the worker so enqueueing, execution, and database work can be correlated. Measure queue wait separately from execution; Reflex’s instrumentor does not automatically supply these external spans.
+Both releases declare `opentelemetry-api >=1.30.0,<2.0` and instrumentation/ASGI instrumentation >=0.49b0,<1.0. These are dependency constraints, not certification of arbitrary SDK/exporter combinations. Lock the exact framework, instrumentor, SDK and exporter; verify backend and optional browser export together.
 
-Identify service, region, deployment version, and database role in telemetry. Follow a slow event or job to determine whether time is spent acquiring state, crossing regions, querying a database, or waiting for worker capacity. Verify a representative end-to-end trace, choose sampling and redaction rules, and avoid sensitive payloads and high-cardinality job IDs in metric labels. See [OpenTelemetry context propagation](https://opentelemetry.io/docs/languages/python/propagation/).
+Source checks use [Reflex d02ba540](https://github.com/reflex-dev/reflex/tree/d02ba5409579e24e67401f9dd6eb2fc4d3ef5e1b), the [0.1.0 manifest](https://github.com/reflex-dev/reflex/blob/3d47357ac158c51a0c131ec48c41232830bd9031/packages/reflex-otel/pyproject.toml), and the [0.2.0 manifest](https://github.com/reflex-dev/reflex/blob/40ffab8124ba257053c395309c87f1c818b4e0a2/packages/reflex-otel/pyproject.toml). Recheck another release at its exact tag/commit, and record resolved Python, Reflex, reflex-base, reflex-otel, Redis client/server, broker and result-store versions with test results.
 
-## Validate scale down as well as scale out
+## Validate recovery under load
 
-Load-test realistic sessions and events in production mode. Record the Reflex version, instance size, process and replica counts, event rate, payload sizes, p50/p95 latency, error rate, and backend, database, and Redis resources. Measure queue delay and job completion separately from interactive latency.
+When scaling down, stop routing new connections to retiring backends, drain bounded work, and test reconnects to another healthy replica. Allow time for worker drain and recovery separately. There is no universal sessions-per-instance figure.
 
-- Add replicas under load and verify latency and errors stay within target. Watch for a downstream database or Redis bottleneck.
-- Remove the backend that accepted a long job. Reconnect through another replica and confirm the job continues and its result remains accessible.
-- Restart a worker mid-job. Verify the configured recovery behavior and that retries do not duplicate effects. Test worker drain separately from app scale-down.
-- Repeat a submission and interrupt enqueueing. Verify idempotency and that accepted work is not silently lost between the job store and broker.
-- Fail over the tested regional Redis endpoint or explicitly validated custom Sentinel integration. Measure recovery and exercise active sessions, locks, and reconnects; an unverified adapter is not a supported failover setup.
-- Move a user to another region. Verify session-reset behavior, authorization, and retrieval of persistent records and jobs.
-- Delay or disable a database replica. Verify freshness-sensitive reads, transaction routing, and bounded primary fallback.
-- Follow an event-to-worker-to-database trace and check that missing telemetry does not hide a bottleneck.
+Here are example validation tasks for the components you choose to deploy. Run realistic sessions in production mode and record p50/p95 latency, errors, resource use, event rate, payload sizes, instance/process counts, queue delay and job completion:
 
-Scale backends using resource pressure, event latency, connection load, and errors. Scale workers using queue backlog and oldest-job age. Allow enough time for the chosen drain and recovery policies. There is no universal sessions-per-instance figure.
+- Add backends under load; check whether the database or Redis becomes the bottleneck.
+- Remove the backend that accepted a report; reconnect elsewhere and retrieve the job/result.
+- Restart a worker mid-job; verify redelivery/retry behavior and absence of duplicate side effects.
+- Repeat a submission and interrupt queue publication; verify idempotency and recovery of pending outbox entries.
+- Fail over the tested Redis endpoint or validated Sentinel integration; exercise locks, active sessions and reconnects. An unvalidated integration is not a supported failover setup.
+- Move a user between regions; verify session reset, authorization and recovery of durable jobs.
+- Delay or disable a read replica; verify primary routing for fresh reads and bounded fallback.
 
-## Diagnose Redis spikes before resizing
+### Turn Redis spikes into an action
 
-Record the affected region and endpoint, time window, deployment changes, active sessions, and event rate. Compare state and cache services separately. Start with provider metrics and bounded read-only diagnostics using approved operator access:
+Compare session Redis and cache separately over the affected time window. Use provider metrics or bounded diagnostics such as `INFO memory`, `INFO clients`, `INFO commandstats` and `SLOWLOG GET 20` through authorized operator access.
 
-```text
-INFO memory
-INFO stats
-INFO clients
-INFO commandstats
-INFO keyspace
-SLOWLOG GET 20
-```
+| Signal | Next action |
+| --- | --- |
+| Memory, key count or evictions growing | Reduce per-session datasets/history; bound cache TTLs and monitor state eviction. |
+| CPU/commands rise with event or polling rate | Reduce duplicate events/polling and limit cache refill concurrency before adding more clients. |
+| Connections rise after scaling | Check process counts, pool limits, client reuse and reconnect backoff. |
+| Latency tracks long-held state locks | Move slow work to the background/worker path; increasing timeouts does not add throughput. |
 
-- **Memory growth:** compare key counts, state sizes, expirations, and evictions. Look for full datasets copied into each session, unbounded histories, and cache entries without useful TTLs.
-- **CPU and commands:** correlate event frequency, polling, serialization, and refill bursts. Reduce unnecessary work before adding instances that repeat it.
-- **Connections:** check replica and process counts, pool sizes, client reuse, and retry or reconnect bursts. More app instances also mean more connections.
-- **Latency and locks:** inspect slow I/O and lock-held time. Move long work to the external worker path; increasing a timeout does not add throughput.
-
-`SLOWLOG` measures server execution, excludes network latency, and can expose private arguments. Redact before sharing. Alert on state eviction and memory pressure. A `noeviction` policy prevents eviction but rejects new writes at the limit.
-
-References: [Redis INFO](https://redis.io/docs/latest/commands/info/), [slow log](https://redis.io/docs/latest/commands/slowlog-get/), and [eviction policies](https://redis.io/docs/latest/develop/reference/eviction/).
+`SLOWLOG` excludes network latency and may expose private arguments; redact before sharing. A `noeviction` policy rejects new writes at the memory limit. See [Redis diagnostics](https://redis.io/docs/latest/commands/info/) and [eviction policies](https://redis.io/docs/latest/develop/reference/eviction/).
