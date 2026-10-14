@@ -277,6 +277,11 @@ def _init(
         reflex_build_redirect()
         return
 
+    # For an existing app, validate the configured app name rather than the
+    # name of the directory that happens to contain it.
+    if not name and constants.Config.FILE.exists():
+        name = get_config().app_name
+
     # Validate the app name.
     app_name = prerequisites.validate_app_name(name)
     console.rule(f"[bold]Initializing {app_name}")

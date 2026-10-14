@@ -46,10 +46,6 @@ const cookies = new Cookies();
 // Dictionary holding component references.
 export const refs = {};
 
-// Set when the backend sends a delta the frontend cannot process. A mismatch
-// between frontend and backend state definitions is fatal (#6019): no further
-// events are sent until the frontend is rebuilt/reloaded.
-let backend_state_mismatch = false;
 // Array holding pending events to be processed.
 const event_queue = [];
 
@@ -777,14 +773,6 @@ export const processEvent = async (socket, navigate, params) => {
     return;
   }
 
-  // A backend/frontend state mismatch is fatal; do not send further events.
-  // Drop pending events too: callers drain the queue in while-loops that
-  // would otherwise spin forever on an early return.
-  if (backend_state_mismatch) {
-    event_queue.length = 0;
-    return;
-  }
-
   // Only proceed if we're not already processing an event.
   if (event_queue.length === 0) {
     return;
@@ -843,7 +831,6 @@ export const connect = async (
 
   // Get backend URL object from the endpoint.
   const endpoint = getBackendURL(EVENTURL);
-  const on_hydrated_queue = [];
 
   // The hydrate event rides in the socket.io CONNECT packet, so the backend
   // starts loading state as soon as the namespace connects instead of after
@@ -983,9 +970,13 @@ export const connect = async (
     socket.current.disconnect();
   };
 
+  // Unknown substates already reported on this connection.
+  const reported_missing_substates = new Set();
+
   // Once the socket is open, hydrate the page.
   socket.current.on("connect", async () => {
     socket.current.wait_connect = false;
+    reported_missing_substates.clear();
     setConnectErrors([]);
     window.__reflex_otel?.onSocketConnect?.();
     window.addEventListener("pagehide", pagehideHandler);
@@ -1034,58 +1025,60 @@ export const connect = async (
     });
   };
 
-  // On each received message, queue the updates and events.
-  socket.current.on("event", (update) => {
-    if (backend_state_mismatch) {
-      // A fatal state mismatch was already detected; drop further updates.
+  // Warn about unknown substates and surface them in the backend terminal
+  // logs, once per substate per connection.
+  const reportUnknownSubstates = (substates) => {
+    const unreported = substates.filter(
+      (substate) => !reported_missing_substates.has(substate),
+    );
+    if (unreported.length === 0) {
       return;
     }
-    // Validate the whole delta before dispatching anything, so a bad substate
-    // does not result in a partially applied state update. Walk the delta once
-    // and only allocate when a substate is actually missing.
-    let missing_substates;
-    for (const substate in update.delta) {
+    for (const substate of unreported) {
+      reported_missing_substates.add(substate);
+    }
+    const errorMsg = `Skipping state update for unknown substate(s): no dispatch function for "${unreported.join(
+      '", "',
+    )}". Try refreshing the page or clearing your browser cache. This usually indicates a mismatch between frontend and backend state definitions. If you are the developer of this app, rebuild the frontend and check that api_url is correct.`;
+    console.warn(errorMsg);
+    socket.current.emit(CLIENT_ERROR_EVENT, {
+      message: errorMsg,
+      substate: unreported.join(", "),
+      error_type: ERROR_TYPE_DISPATCH_MISSING,
+    });
+  };
+
+  // Drop and report substates without a dispatch function. Only a mismatched
+  // delta is copied; the received update is not mutated.
+  const withoutUnknownSubstates = (delta) => {
+    let unknown;
+    for (const substate in delta) {
       if (typeof dispatch[substate] !== "function") {
-        (missing_substates ??= []).push(substate);
+        unknown ??= [];
+        unknown.push(substate);
       }
     }
-    if (missing_substates !== undefined) {
-      const errorMsg = `Cannot process state update: no dispatch function for substate(s) "${missing_substates.join(
-        '", "',
-      )}". Try refreshing the page or clearing your browser cache. This error usually indicates a mismatch between frontend and backend state definitions. If you are the developer of this app, rebuild the frontend and check that api_url is correct.`;
-      console.error(errorMsg);
-      // Surface the error in the backend terminal logs.
-      socket.current.emit(CLIENT_ERROR_EVENT, {
-        message: errorMsg,
-        substate: missing_substates.join(", "),
-        error_type: ERROR_TYPE_DISPATCH_MISSING,
-      });
-      backend_state_mismatch = true;
-      return;
+    if (unknown === undefined) {
+      return delta;
     }
+    reportUnknownSubstates(unknown);
+    const known = { ...delta };
+    for (const substate of unknown) {
+      delete known[substate];
+    }
+    return known;
+  };
+
+  // On each received message, queue the updates and events.
+  socket.current.on("event", (update) => {
+    // Skip unknown substates in both reducer and client-storage updates.
+    const delta = withoutUnknownSubstates(update.delta);
     try {
-      if (update.delta) {
-        for (const substate in update.delta) {
-          dispatch[substate](update.delta[substate]);
-          // handle events waiting for `is_hydrated`
-          if (
-            substate === app.state_name &&
-            update.delta[substate]?.is_hydrated_rx_state_
-          ) {
-            // Deliberately not awaited: the rest of the delta and the client
-            // storage below must be applied before this handler yields, or a
-            // later update can interleave and apply its delta first.
-            queueEvents(
-              on_hydrated_queue,
-              socket,
-              false,
-              navigate,
-              params,
-            ).catch(reportStateUpdateError);
-            on_hydrated_queue.length = 0;
-          }
+      if (delta) {
+        for (const substate in delta) {
+          dispatch[substate](delta[substate]);
         }
-        applyClientStorageDelta(client_storage, update.delta);
+        applyClientStorageDelta(client_storage, delta);
       }
       if (update.events && update.events.length > 0) {
         queueEvents(update.events, socket, false, navigate, params).catch(
@@ -1659,6 +1652,58 @@ export const pyRstrip = (s, chars) => {
  */
 export const pyStrip = (s, chars) =>
   chars == null ? s.trim() : pyRstrip(pyLstrip(s, chars), chars);
+
+const SURROGATE_RE = /[\uD800-\uDFFF]/;
+
+/***
+ * Python-semantics code points of a string, skipping the copy when possible.
+ * A string without surrogates has one code unit per code point, so it is
+ * returned as-is and its native length/at/slice already match Python.
+ * @param {string?} s The string; null/undefined counts as "".
+ * @returns {string | string[]} The string itself, or its code points.
+ */
+const codePoints = (s) => {
+  s ??= "";
+  return SURROGATE_RE.test(s) ? Array.from(s) : s;
+};
+
+/***
+ * Python-semantics len(s): count code points, not UTF-16 code units.
+ * @param {string?} s The string.
+ * @returns {number} The number of code points.
+ */
+export const pyStrLength = (s) => codePoints(s).length;
+
+/***
+ * Python-semantics s[i]: index by code point.
+ * @param {string?} s The string.
+ * @param {number} i The index; negative counts from the end.
+ * @returns {string | undefined} The code point, or undefined out of range.
+ */
+export const pyStrAt = (s, i) => codePoints(s).at(i);
+
+/***
+ * Python-semantics s[start:stop]: slice by code point.
+ * @param {string?} s The string.
+ * @param {number?} start The start index; null/undefined slices from the start.
+ * @param {number?} stop The stop index; null/undefined slices to the end.
+ * @returns {string} The sliced string.
+ */
+export const pyStrSlice = (s, start, stop) => {
+  const chars = codePoints(s);
+  const slice = chars.slice(start ?? 0, stop ?? chars.length);
+  return typeof slice === "string" ? slice : slice.join("");
+};
+
+/***
+ * Python-semantics list(s): split a string into code points.
+ * @param {string?} s The string.
+ * @returns {string[]} The code points.
+ */
+export const pyStrChars = (s) => {
+  const chars = codePoints(s);
+  return typeof chars === "string" ? chars.split("") : chars;
+};
 
 /***
  * Python-semantics flat map: map each element through fn and concatenate the
