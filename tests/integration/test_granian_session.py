@@ -61,9 +61,10 @@ async def test_granian_session_roundtrip(
 
         return gated
 
+    base_states = BaseState.__subclasses__()
     with RegistrationContext.ensure_context().fork() as registry:
 
-        class CounterState(BaseState):
+        class CounterState(rx.State):
             """State served without a frontend build."""
 
             count: int = 0
@@ -171,3 +172,6 @@ async def test_granian_session_roundtrip(
             await client.disconnect()
             server.stop()
             await asyncio.wait_for(server_task, 10)
+
+    # A later integration app must still satisfy production's base-state rules.
+    assert BaseState.__subclasses__() == base_states
