@@ -313,6 +313,7 @@ def context_template(
     initial_state_json: str | None = None,
     initial_state_hashes: list[str] | None = None,
     state_name: str | None = None,
+    state_schema: str | None = None,
     client_storage: dict[str, dict[str, dict[str, Any]]] | None = None,
     disable_react_owner_stacks: bool = False,
 ):
@@ -325,6 +326,10 @@ def context_template(
             state name order, sent with the first hydrate so the backend can
             skip vars still at their default.
         state_name: The name of the state.
+        state_schema: Hash of the state tree (names, frontend vars, event
+            handlers) this frontend is compiled for, sent on every socket
+            connect so the backend can detect a frontend built for another
+            version of the app.
         client_storage: The client storage for the context.
         is_dev_mode: Whether the app is in development mode.
         default_color_mode: The default color mode for the context.
@@ -452,6 +457,7 @@ import {{ jsx }} from "@emotion/react";
 export {{ ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext }};
 export const initialState = {initial_state_json}
 export const initialStateHashes = {"[]" if not initial_state_hashes else json_dumps(initial_state_hashes)}
+export const stateSchema = {json.dumps(state_schema)}
 
 export const defaultColorMode = {default_color_mode}
 export const StateContexts = {{{state_contexts_str}}};
@@ -467,6 +473,7 @@ registerApp({{
   initialState,
   clientStorage,
   state_name,
+  stateSchema,
   exception_state_name,
   onLoadInternalEvent,
   initialEvents,
