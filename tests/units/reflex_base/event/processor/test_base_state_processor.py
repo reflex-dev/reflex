@@ -1703,13 +1703,15 @@ async def test_hydrate_and_load_single_lock_cycle(
         )
         await future.wait_all()
 
-    # Snapshot (not hydrated, browser cookie applied), the on_load chain,
+    # Snapshot (not hydrated, browser cookie applied), the browser cookie
+    # through get_delta (as update_vars_internal sends it), the on_load chain,
     # hydrated.
     snapshot = emitted_deltas[0][1]
     assert snapshot[state_name][hydrated_key] is False
     assert snapshot[CookieState.get_full_name()]["flavor" + FIELD_MARKER] == "chocolate"
     assert snapshot[CookieState.get_full_name()]["loads" + FIELD_MARKER] == 0
     assert [d for _, d in emitted_deltas[1:]] == [
+        {CookieState.get_full_name(): {"flavor" + FIELD_MARKER: "chocolate"}},
         {state_name: {hydrated_key: False}},
         {CookieState.get_full_name(): {"loads" + FIELD_MARKER: 1}},
         {state_name: {hydrated_key: True}},
@@ -2011,7 +2013,7 @@ async def test_hydrate_delivers_computed_var_mutations(
 @pytest.mark.parametrize(
     "processor_state_manager", ["in_process", "redis"], indirect=True
 )
-async def test_hydrate_computes_storage_dependents_once(
+async def test_hydrate_passes_client_storage_through_get_delta(
     wired_app: App,
     real_base_state_processor: BaseStateEventProcessor,
     emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
@@ -2020,10 +2022,12 @@ async def test_hydrate_computes_storage_dependents_once(
     with_hashes: bool,
     client_value: str,
 ):
-    """Hydration does not run a second get_delta pass for client storage.
+    """A get_delta override reconciles browser storage without redundant recomputation.
 
-    A browser-provided value is included in the initial snapshot, without a
-    second delta that reevaluates dependent computed vars.
+    Overrides reconcile client storage there (reflex-enterprise checks its
+    OIDC token hash), so the boot values must reach them as
+    update_vars_internal's did, in a delta the browser may persist, without
+    writing back the defaults of values the browser does not hold.
 
     Args:
         wired_app: The app wired to the state manager.
@@ -2032,7 +2036,7 @@ async def test_hydrate_computes_storage_dependents_once(
         token: The client token.
         with_load: Whether the page has an on-load handler.
         with_hashes: Whether this is the first boot or a reconnect.
-        client_value: The browser-provided value.
+        client_value: The browser-provided value to reconcile.
     """
     key = "token_hash" + FIELD_MARKER
     seen: list[str] = []
@@ -2041,18 +2045,22 @@ async def test_hydrate_computes_storage_dependents_once(
     class ReconcileState(State):
         token_hash: str = rx.LocalStorage("")
         unset: str = rx.Cookie("unset-default")
+        status: str = "initial"
 
         @_override_base_method
         def get_delta(self) -> Delta:
-            """Record the token hash if the override is called.
+            """Record the token hash passing through and replace a stale one.
 
             Returns:
-                The parent delta.
+                The delta, with a stale token hash reconciled.
             """
             delta = super().get_delta()
             subdelta = delta.get(self.get_full_name(), {})
             if (value := subdelta.get(key)) is not None:
                 seen.append(value)
+                if value == "stale":
+                    subdelta[key] = "fresh"
+                    self.status = "reconciled"
             return delta
 
         @event
@@ -2068,15 +2076,26 @@ async def test_hydrate_computes_storage_dependents_once(
             computed_values.append(storage_state.token_hash)
             return storage_state.token_hash
 
+        @rx.var(cache=True, auto_deps=False)
+        async def status_copy(self) -> str:
+            storage_state = await self.get_state(ReconcileState)
+            return storage_state.status
+
     DependentState.computed_vars["token_hash_copy"].add_dependency(
         DependentState,
         ReconcileState.token_hash,  # pyright: ignore[reportArgumentType]
     )
+    DependentState.computed_vars["status_copy"].add_dependency(
+        DependentState,
+        ReconcileState.status,  # pyright: ignore[reportArgumentType]
+    )
+
     wired_app.add_page(
         lambda: rx.text(
             ReconcileState.token_hash,
             ReconcileState.unset,
             DependentState.token_hash_copy,
+            DependentState.status_copy,
         ),
         route="/",
         on_load=ReconcileState.load if with_load else None,
@@ -2094,34 +2113,44 @@ async def test_hydrate_computes_storage_dependents_once(
             await processor.enqueue(token, _boot_event(boot_name, payload))
         ).wait_all()
 
-    assert seen == []
+    assert seen == (["stale", "fresh"] if client_value == "stale" else ["fresh"])
     hydrated_key = CompileVars.IS_HYDRATED + FIELD_MARKER
-    snapshot = emitted_deltas[0][1]
-    assert snapshot[State.get_full_name()][hydrated_key] is False
-    assert snapshot[name][key] == client_value
+    assert emitted_deltas[0][1][State.get_full_name()][hydrated_key] is False
     persisted = [
         delta[name]
         for _, delta in emitted_deltas[1:]
         if name in delta
         and delta.get(State.get_full_name(), {}).get(hydrated_key) is not False
     ]
-    assert not any(subdelta.get(key) == "fresh" for subdelta in persisted)
+    assert any(subdelta.get(key) == "fresh" for subdelta in persisted)
     assert not any("unset" + FIELD_MARKER in subdelta for subdelta in persisted)
     dependent_key = "token_hash_copy" + FIELD_MARKER
-    assert snapshot[DependentState.get_full_name()][dependent_key] == client_value
-    assert computed_values == [client_value]
+    assert any(
+        delta.get(DependentState.get_full_name(), {}).get(dependent_key) == "fresh"
+        for _, delta in emitted_deltas
+    )
+    assert computed_values == (
+        ["stale", "fresh"] if client_value == "stale" else ["fresh"]
+    )
+    status_key = "status_copy" + FIELD_MARKER
+    if client_value == "stale":
+        assert any(
+            delta.get(DependentState.get_full_name(), {}).get(status_key)
+            == "reconciled"
+            for _, delta in emitted_deltas
+        )
 
 
 @pytest.mark.parametrize(
     "processor_state_manager", ["in_process", "redis"], indirect=True
 )
-async def test_hydrate_preserves_json_distinct_storage_values(
+async def test_hydrate_reconciles_json_distinct_storage_values(
     wired_app: App,
     real_base_state_processor: BaseStateEventProcessor,
     emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
     token: str,
 ):
-    """Hydration does not pass client storage through get_delta overrides.
+    """Hydration treats JSON-distinct values as changes even when Python equates them.
 
     Args:
         wired_app: The app wired to the state manager.
@@ -2166,25 +2195,25 @@ async def test_hydrate_preserves_json_distinct_storage_values(
         ).wait_all()
 
     value_type_key = "value_type" + FIELD_MARKER
-    assert (
-        emitted_deltas[0][1][StorageState.get_full_name()]["value" + FIELD_MARKER] == 1
+    assert any(
+        delta.get(DependentState.get_full_name(), {}).get(value_type_key) == "bool"
+        for _, delta in emitted_deltas
     )
-    assert emitted_deltas[0][1][DependentState.get_full_name()][value_type_key] == "int"
     async with _read_back(real_base_state_processor, token) as root:
         storage_state = await root.get_state(StorageState)
-        assert storage_state.value == 1
+        assert storage_state.value is True
 
 
 @pytest.mark.parametrize(
     "processor_state_manager", ["in_process", "redis"], indirect=True
 )
-async def test_hydrate_does_not_reconcile_storage_after_snapshot(
+async def test_hydrate_preserves_storage_assignment_after_get_delta_super(
     wired_app: App,
     real_base_state_processor: BaseStateEventProcessor,
     emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
     token: str,
 ):
-    """Hydration does not invoke a storage reconciliation override after snapshotting.
+    """Do not restore an old delta value over a storage assignment in an override.
 
     Args:
         wired_app: The app wired to the state manager.
@@ -2224,11 +2253,11 @@ async def test_hydrate_does_not_reconcile_storage_after_snapshot(
         for _, delta in emitted_deltas
         if value_key in delta.get(StorageState.get_full_name(), {})
     ]
-    assert not reconciled
-    assert storage_deltas[-1] == "stale"
+    assert reconciled
+    assert storage_deltas[-1] == "fresh"
     async with _read_back(real_base_state_processor, token) as root:
         storage_state = await root.get_state(StorageState)
-        assert storage_state.value == "stale"
+        assert storage_state.value == "fresh"
 
 
 async def test_hydrate_probes_nested_storage_states_once(
@@ -2236,7 +2265,7 @@ async def test_hydrate_probes_nested_storage_states_once(
     real_base_state_processor: BaseStateEventProcessor,
     token: str,
 ):
-    """Hydration does not probe child get_delta overrides after the snapshot.
+    """A parent probe already visits child states that also own storage vars.
 
     Args:
         wired_app: The app wired to the state manager.
@@ -2280,7 +2309,7 @@ async def test_hydrate_probes_nested_storage_states_once(
             await processor.enqueue(token, _boot_event(boot_name, payload))
         ).wait_all()
 
-    assert child_storage_probes == 0
+    assert child_storage_probes == 1
 
 
 async def test_hydrate_correction_skips_unrelated_uncached_computed_vars(
@@ -2289,7 +2318,7 @@ async def test_hydrate_correction_skips_unrelated_uncached_computed_vars(
     emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
     token: str,
 ):
-    """Hydration does not run an extra correction pass for stale storage.
+    """A stale storage correction does not reevaluate unrelated state branches.
 
     Args:
         wired_app: The app wired to the state manager.
@@ -2349,10 +2378,10 @@ async def test_hydrate_correction_skips_unrelated_uncached_computed_vars(
     stale_computations = await hydrate("stale")
 
     assert stale_computations == fresh_computations
-    assert not any(
+    assert any(
         delta.get(StorageState.get_full_name(), {}).get("value" + FIELD_MARKER)
         == "fresh"
-        for _, delta in emitted_deltas[1:]
+        for _, delta in emitted_deltas
     )
 
 
