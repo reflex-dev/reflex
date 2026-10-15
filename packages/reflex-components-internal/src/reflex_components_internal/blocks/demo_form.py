@@ -8,7 +8,7 @@ based on company size.
 from typing import Any
 
 import reflex as rx
-from reflex.event import EventType
+from reflex.event import EventType, event_sequence
 from reflex.experimental.client_state import ClientStateVar
 from reflex.vars.base import get_unique_variable_name
 from reflex_components_internal.blocks.telemetry.posthog import (
@@ -315,9 +315,7 @@ def _demo_form(
     """
     prefix = id_prefix or get_unique_variable_name()
     email_id = f"{prefix}_user_email"
-    extra_on_submit = (
-        on_submit if isinstance(on_submit, list) else [on_submit] if on_submit else []
-    )
+    extra_on_submit = event_sequence(on_submit) if on_submit is not None else []
     fields = (
         rx.el.div(
             input_field("First name", "John", "first_name", "text", True),
