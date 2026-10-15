@@ -37,7 +37,7 @@ import time
 from collections.abc import Generator
 from pathlib import Path
 from types import FrameType, ModuleType
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from rich.console import Console
 from rich.errors import MarkupError
@@ -416,32 +416,30 @@ def _truncate_json_record(record: bytes, max_bytes: int) -> bytes:
         payload = {}
     if not isinstance(payload, dict):
         payload = {}
-    original_message = str(payload.get("message", ""))
-    bounded = {
-        "timestamp": str(payload.get("timestamp", ""))[:64],
-        "level": str(payload.get("level", "info"))[:16],
-        "logger": str(payload.get("logger", "reflex"))[:64],
-        "message": "",
-        "truncated": True,
-    }
     marker = "...[truncated]"
 
-    def encode(message: str) -> bytes:
-        bounded["message"] = message
-        return json.dumps(bounded).encode() + b"\n"
+    def truncate_strings(value: Any, max_chars: int) -> Any:
+        if isinstance(value, str):
+            return value if len(value) <= max_chars else value[:max_chars] + marker
+        if isinstance(value, dict):
+            return {
+                key: truncate_strings(item, max_chars) for key, item in value.items()
+            }
+        if isinstance(value, list):
+            return [truncate_strings(item, max_chars) for item in value]
+        return value
 
-    low = 0
-    high = min(len(original_message), max_bytes)
-    while low < high:
-        middle = (low + high + 1) // 2
-        if len(encode(original_message[:middle] + marker)) <= max_bytes:
-            low = middle
-        else:
-            high = middle - 1
-    result = encode(original_message[:low] + marker)
-    if len(result) > max_bytes:
-        return b'{"level":"warning","message":"[record truncated]","truncated":true}\n'
-    return result
+    payload["truncated"] = True
+    max_chars = max_bytes
+    while True:
+        result = json.dumps(truncate_strings(payload, max_chars)).encode() + b"\n"
+        if len(result) <= max_bytes:
+            return result
+        if max_chars == 0:
+            break
+        max_chars = max(0, min(max_chars - 1, max_chars * max_bytes // len(result)))
+
+    return b'{"level":"warning","message":"[record truncated]","truncated":true}\n'
 
 
 class _OutputPump(threading.Thread):

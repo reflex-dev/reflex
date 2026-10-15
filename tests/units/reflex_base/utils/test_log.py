@@ -7,6 +7,7 @@ import os
 import signal
 import subprocess
 import sys
+import threading
 import time
 from pathlib import Path
 from unittest import mock
@@ -1279,6 +1280,7 @@ if not log.is_output_supervised():
 Path("child.pid").write_text(str(os.getpid()))
 print("ready", flush=True)
 print("oversized " + "x" * 100000, flush=True)
+Path("oversized-written").write_text("done")
 time.sleep(30)
 """
 
@@ -1296,12 +1298,26 @@ def test_supervise_output_truncates_oversized_records_as_valid_json(tmp_path):
         env={**os.environ, "REFLEX_LOG_JSON": "true"},
         start_new_session=True,
     ) as proc:
+        output_reader: threading.Thread | None = None
         try:
             assert proc.stdout is not None
             assert json.loads(proc.stdout.readline())["message"] == "ready"
+            output_chunks: list[bytes] = []
+            stdout = proc.stdout
+            output_reader = threading.Thread(
+                target=lambda: output_chunks.append(stdout.read()), daemon=True
+            )
+            output_reader.start()
+            marker = tmp_path / "oversized-written"
+            deadline = time.monotonic() + 3
+            while not marker.exists() and time.monotonic() < deadline:
+                time.sleep(0.01)
+            assert marker.exists()
             proc.send_signal(signal.SIGTERM)
             assert proc.wait(timeout=3) == 128 + signal.SIGTERM
-            output = proc.stdout.read()
+            output_reader.join(timeout=3)
+            assert not output_reader.is_alive()
+            output = b"".join(output_chunks)
             [line] = output.splitlines()
             [record] = [json.loads(line)]
             assert record["message"].startswith("oversized ")
@@ -1309,6 +1325,31 @@ def test_supervise_output_truncates_oversized_records_as_valid_json(tmp_path):
             assert len(line) + 1 <= os.fpathconf(proc.stdout.fileno(), "PC_PIPE_BUF")
         finally:
             _kill_output_test_processes(proc, tmp_path)
+            if output_reader is not None:
+                output_reader.join(timeout=3)
+
+
+def test_truncate_json_record_preserves_exception_and_extra_fields():
+    """Oversized JSON keeps bounded traceback and custom fields."""
+    record = json.dumps(
+        {
+            "timestamp": "2026-10-15T00:00:00+00:00",
+            "level": "error",
+            "logger": "test",
+            "message": "message " + "m" * 500,
+            "exception": "Traceback (most recent call last):\n" + "frame\n" * 500,
+            "request_id": "request-" + "r" * 500,
+        }
+    ).encode() + b"\n"
+
+    bounded = log._truncate_json_record(record, 256)
+    [decoded] = [json.loads(bounded)]
+
+    assert len(bounded) <= 256
+    assert decoded["truncated"] is True
+    assert decoded["exception"].startswith("Traceback (")
+    assert decoded["request_id"].startswith("request-")
+    assert decoded["message"].startswith("message ")
 
 
 _SIGTERM_DURING_DRAIN_SCRIPT = """
