@@ -7,6 +7,7 @@ components:
   - rx.select.item
   - rx.select.label
   - rx.select.separator
+meta_description: "Build custom dropdown select menus in Python with Reflex. The low-level rx.select API lets you compose triggers, content, groups, and items for full control over dropdown behavior and styling."
 ---
 
 ```python exec

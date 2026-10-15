@@ -1,6 +1,7 @@
 ---
 components:
   - rx.code
+meta_description: "Display inline code snippets in Python with Reflex. The rx.code component renders monospaced code text with syntax-friendly styling and multiple variants, all in pure Python."
 ---
 
 ```python exec
