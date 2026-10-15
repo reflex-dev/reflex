@@ -147,7 +147,7 @@ with RegistrationContext(), patch('reflex.compiler.compiler.get_config', return_
     bundle_library('quality-lazy-fixture')
     print(compile_app_root(rx.el.div('Quality'))[1])
 `], {cwd: root, encoding: "utf8"});
-  const setup = new Function("window", "React", "emotion_react", "utils_context", "utils_state", "loadFixture",
+  const setup = new Function("window", "React", "emotion_react", "utils_context", "utils_context_registry", "utils_state", "loadFixture",
     rootCode.replace(/^import .*$/gm, "")
       .replace(/^export default function/gm, "function")
       .replace(/^export /gm, "")
@@ -165,7 +165,7 @@ with RegistrationContext(), patch('reflex.compiler.compiler.get_config', return_
   try {
     let calls = 0;
     globalThis.window = {};
-    setup(window, react, {}, {}, {}, async () => {calls++; return {value: 42};});
+    setup(window, react, {}, {}, {}, {}, async () => {calls++; return {value: 42};});
     assert.equal(calls, 0);
     assert.equal(window.__reflex.react, react);
     assert.equal(window.__reflex["quality-lazy-fixture"], undefined);
@@ -179,7 +179,7 @@ with RegistrationContext(), patch('reflex.compiler.compiler.get_config', return_
 
     let attempts = 0;
     globalThis.window = {};
-    setup(window, react, {}, {}, {}, async () => {
+    setup(window, react, {}, {}, {}, {}, async () => {
       if (++attempts === 1) throw new Error("Temporary download failure");
       return {value: 43};
     });
