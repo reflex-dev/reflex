@@ -70,3 +70,23 @@ def test_plugin_wires_version_specific_tasks(plugin, module, packages):
     ]
     assert [p.rsplit("@", 1)[0] + "@" for p in version_packages] == packages
     assert len({p.rsplit("@", 1)[1] for p in version_packages}) == 1
+
+
+@pytest.mark.parametrize("module", [tailwind_v3, tailwind_v4])
+@pytest.mark.parametrize(
+    "name",
+    [
+        "Constants",
+        "TailwindConfig",
+        "TailwindPlugin",
+        "add_tailwind_to_css_file",
+        "add_tailwind_to_postcss_config",
+        "compile_config",
+        "compile_root_style",
+        "tailwind_config_js_template",
+    ],
+)
+def test_version_modules_keep_their_public_names(module, name):
+    """Names importable from the version modules before sharing stay importable."""
+    assert name in module.__all__
+    assert getattr(module, name) is not None

@@ -4,21 +4,26 @@ import dataclasses
 from typing import ClassVar
 
 from reflex_base.plugins.shared_tailwind import (
+    TailwindConfig,
     TailwindConstants,
     TailwindPlugin,
     _index_of_element_that_has,
     add_tailwind_to_css_file,
     compile_config,
     compile_root_style_with,
+    tailwind_config_js_template,
 )
 
 __all__ = [
     "Constants",
+    "TailwindConfig",
+    "TailwindPlugin",
     "TailwindV4Plugin",
     "add_tailwind_to_css_file",
     "add_tailwind_to_postcss_config",
     "compile_config",
     "compile_root_style",
+    "tailwind_config_js_template",
 ]
 
 # Held at 4.3.0: 4.3.1+ reworked source-file scanning
