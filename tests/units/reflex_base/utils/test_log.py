@@ -1113,6 +1113,53 @@ def test_supervise_output_bounds_shutdown_for_a_stalled_consumer(tmp_path, strea
                     os.kill(int(pid_file.read_text()), signal.SIGTERM)
 
 
+_INTERRUPTED_OUTPUT_SCRIPT = """
+import sys
+
+from reflex_base.utils import log
+
+log._DRAIN_WALL_SECONDS = 0.5
+if not log.is_output_supervised():
+    sys.exit(log.supervise_output([sys.executable, __file__]))
+for i in range(10000):
+    print(f"line {i:05d} " + "x" * 1000, flush=True)
+"""
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX-only signal handling")
+def test_supervise_output_bounds_interrupted_blocked_write_at_record_boundary(tmp_path):
+    """Repeated Ctrl-C cannot hang shutdown or leave a partial JSON line."""
+    script = tmp_path / "interrupted_output.py"
+    script.write_text(_INTERRUPTED_OUTPUT_SCRIPT)
+    with subprocess.Popen(
+        [sys.executable, str(script)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        env={**os.environ, "REFLEX_LOG_JSON": "true"},
+        start_new_session=True,
+    ) as proc:
+        assert proc.stdout is not None
+        first_line = proc.stdout.readline()
+        assert json.loads(first_line)["message"].startswith("line 00000 ")
+
+        started = time.monotonic()
+        proc.send_signal(signal.SIGINT)
+        time.sleep(0.1)
+        with contextlib.suppress(ProcessLookupError):
+            proc.send_signal(signal.SIGINT)
+        assert proc.wait(timeout=3) == 128 + signal.SIGINT
+        remaining = proc.stdout.read()
+        assert proc.stderr is not None
+        stderr = proc.stderr.read()
+
+    assert time.monotonic() - started < 2
+    assert b"Aborted!" not in first_line + remaining + stderr
+    records = [json.loads(line) for line in (first_line + remaining).splitlines()]
+    assert records
+    assert all(record["message"].startswith("line ") for record in records)
+    assert all(json.loads(line) for line in stderr.splitlines())
+
+
 _LINGERING_SCRIPT = """
 import subprocess
 import sys
