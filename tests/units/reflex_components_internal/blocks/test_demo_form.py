@@ -1,6 +1,7 @@
 """Tests for the demo form block."""
 
 import re
+from typing import cast
 
 from reflex_base.vars.sequence import LiteralStringVar
 from reflex_components_internal.blocks.demo_form import demo_form, demo_form_dialog
@@ -35,6 +36,42 @@ def test_demo_form_dialog_renders_given_trigger() -> None:
 
     assert "Dialog.Trigger" in rendered
     assert TRIGGER_LABEL in rendered
+
+
+def test_demo_form_dialog_keeps_header_and_submit_outside_scrolling_fields() -> None:
+    """Only the fields scroll, while the header and submit stay in the popup."""
+    portal = next(
+        child for child in demo_form_dialog().children if child.tag == "Dialog.Portal"
+    )
+    popup = next(child for child in portal.children if child.tag == "Dialog.Popup")
+    classes = str(cast(rx.Component, popup).class_name)
+
+    assert "max-h-[calc(100dvh-2rem)]" in classes
+    assert "overflow-hidden" in classes
+    header, form_fragment = popup.children
+    form = form_fragment.children[0]
+    fields, footer = form.children
+
+    assert "Book a Demo" in str(header)
+    assert "shrink-0" in str(cast(rx.Component, header).class_name)
+    assert form.tag == "form"
+    assert "min-h-0" in str(cast(rx.Component, form).class_name)
+    assert "overflow-y-auto" in str(cast(rx.Component, fields).class_name)
+    assert "overscroll-contain" in str(cast(rx.Component, fields).class_name)
+    assert 'name:"email"' in str(fields)
+    assert 'type:"submit"' not in str(fields)
+    assert 'type:"submit"' in str(footer)
+    assert "shrink-0" in str(cast(rx.Component, footer).class_name)
+
+
+def test_demo_form_standalone_retains_its_layout() -> None:
+    """Embedding the form keeps its padding overrides and inline submit button."""
+    form = demo_form(class_name="p-0").children[0]
+
+    assert "p-0" in str(cast(rx.Component, form).class_name)
+    assert 'type:"submit"' in str(form.children[-1])
+    assert "overflow-hidden" not in str(cast(rx.Component, form).class_name)
+    assert "grid-cols-2" in str(cast(rx.Component, form.children[0]).class_name)
 
 
 def test_demo_form_asks_for_an_optional_phone_number() -> None:
