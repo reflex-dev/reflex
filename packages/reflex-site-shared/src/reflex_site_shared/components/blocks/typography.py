@@ -5,7 +5,7 @@ from urllib.parse import urlsplit
 
 import reflex as rx
 
-DOCS_BODY_CLASS = "font-[450] text-foreground mb-4 leading-7"
+DOCS_BODY_CLASS = "docs-prose font-[450] text-foreground mb-4 leading-7"
 DOCS_LINK_STYLE = {
     "font_size": "inherit",
     "font_weight": "inherit",
@@ -65,7 +65,7 @@ def text_comp_2(text: rx.Var[str]) -> rx.Component:
     """
     return rx.text(
         text,
-        class_name="font-[450] text-foreground max-w-[80%] mb-10 leading-7",
+        class_name="docs-prose font-[450] text-foreground max-w-[80%] mb-10 leading-7",
     )
 
 
