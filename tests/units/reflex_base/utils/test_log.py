@@ -11,6 +11,7 @@ import time
 from pathlib import Path
 from unittest import mock
 
+import psutil
 import pytest
 from reflex_base.constants import LogLevel
 from reflex_base.utils import console, log
@@ -1208,37 +1209,201 @@ def test_supervise_output_decodes_utf8_and_splits_progress(tmp_path):
 
 
 _CHATTY_LINGERING_SCRIPT = """
+import atexit
+import faulthandler
+import json
+import os
 import subprocess
 import sys
+import time
+from pathlib import Path
+
+role = "command" if os.environ.get("REFLEX_OUTPUT_SUPERVISED") else "supervisor"
+# Keep diagnostics off the output pipes, including during interpreter shutdown.
+diagnostics = open(f"{role}.log", "w", encoding="utf-8", buffering=1)
+
+
+def record(event, **fields):
+    '''Record a lifecycle event without writing to the supervised pipes.
+
+    Args:
+        event: The lifecycle checkpoint.
+        fields: Additional diagnostic fields.
+    '''
+    diagnostics.write(json.dumps({"time": time.monotonic(), "event": event, **fields}) + "\\n")
+
+
+record("started", pid=os.getpid(), ppid=os.getppid(), python=sys.version, executable=sys.executable)
+atexit.register(record, "atexit")
+faulthandler.dump_traceback_later(10, repeat=True, file=diagnostics)
 
 from reflex_base.utils import log
 
 if not log.is_output_supervised():
-    sys.exit(log.supervise_output([sys.executable, __file__]))
+    original_wait = subprocess.Popen.wait
+    original_drain = log._OutputPump.drain
+
+    def wait(self, *args, **kwargs):
+        '''Record when waiting for the direct child begins and ends.
+
+        Args:
+            self: The child process.
+            args: Positional wait arguments.
+            kwargs: Keyword wait arguments.
+
+        Returns:
+            The child exit code.
+        '''
+        record("wait-start", child_pid=self.pid)
+        try:
+            return original_wait(self, *args, **kwargs)
+        finally:
+            record("wait-end", child_pid=self.pid, returncode=self.returncode)
+
+    def snapshot(pump):
+        '''Read pump state without taking a potentially stalled worker's lock.
+
+        Args:
+            pump: The output worker.
+
+        Returns:
+            The worker's approximate state at this checkpoint.
+        '''
+        return {
+            "name": pump.name,
+            "alive": pump.is_alive(),
+            "ident": pump.ident,
+            "native_id": pump.native_id,
+            "idle_since": pump.idle_since,
+            "write_state": pump._write_state,
+        }
+
+    def drain(self, exited_at, writing_at_exit, wall_deadline):
+        '''Record drain budgets and state without changing the drain loop.
+
+        Args:
+            self: The output worker.
+            exited_at: The child exit snapshot time.
+            writing_at_exit: The cumulative write duration at child exit.
+            wall_deadline: The shutdown deadline.
+        '''
+        record("drain-start", pump=snapshot(self), exited_at=exited_at,
+               writing_at_exit=writing_at_exit, wall_deadline=wall_deadline)
+        try:
+            original_drain(self, exited_at, writing_at_exit, wall_deadline)
+        finally:
+            record("drain-end", pump=snapshot(self))
+
+    subprocess.Popen.wait = wait
+    log._OutputPump.drain = drain
+    record("supervise-start", active_budget=log._DRAIN_MAX_SECONDS,
+           idle_budget=log._DRAIN_IDLE_SECONDS, wall_budget=log._DRAIN_WALL_SECONDS)
+    returncode = log.supervise_output([sys.executable, __file__])
+    record("supervise-return", returncode=returncode)
+    sys.exit(returncode)
 chatter = subprocess.Popen([
     sys.executable,
     "-c",
     "import time\\nfor _ in range(600):\\n    print('tick', flush=True)\\n    time.sleep(0.05)",
 ])
+Path("descendant.pid").write_text(str(chatter.pid))
+record("descendant-started", child_pid=chatter.pid)
 print(chatter.pid)
+record("command-return")
 """
 
 
-def test_supervise_output_does_not_wait_for_a_chatty_descendant(tmp_path):
+def _output_supervisor_process_tree(pid: int) -> list[dict]:
+    """Describe a slow supervisor and its descendants, including Windows launchers.
+
+    Args:
+        pid: The supervisor process ID.
+
+    Returns:
+        Process details or errors for processes that exited during inspection.
+    """
+    try:
+        parent = psutil.Process(pid)
+        processes = [parent, *parent.children(recursive=True)]
+    except (psutil.Error, OSError) as error:
+        return [{"pid": pid, "error": str(error)}]
+    result = []
+    for process in processes:
+        try:
+            result.append(
+                process.as_dict(
+                    attrs=["pid", "ppid", "name", "status", "cmdline", "num_threads"]
+                )
+            )
+        except (psutil.Error, OSError) as error:
+            result.append({"pid": process.pid, "error": str(error)})
+    return result
+
+
+def test_supervise_output_does_not_wait_for_a_chatty_descendant(tmp_path, request):
     """A descendant that keeps writing after the command exits does not block exit."""
+    script = tmp_path / "script.py"
+    script.write_text(_CHATTY_LINGERING_SCRIPT)
+    observations = []
+    stdout = stderr = b""
     start = time.monotonic()
-    result = _run_script(tmp_path, _CHATTY_LINGERING_SCRIPT)
-    elapsed = time.monotonic() - start
-    # The descendant can print before the command prints its PID.
-    [pid] = [
-        int(record["message"])
-        for record in map(json.loads, result.stdout.splitlines())
-        if record["message"].isdigit()
-    ]
-    with contextlib.suppress(OSError):
-        os.kill(pid, signal.SIGTERM)
-    assert result.returncode == 0, result.stderr
-    assert elapsed < 15
+    proc = subprocess.Popen(
+        [sys.executable, str(script)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        env={**os.environ, "REFLEX_LOG_JSON": "true"},
+        cwd=tmp_path,
+    )
+    try:
+        while True:
+            try:
+                # Keep draining both pipes as before, but observe process exit
+                # independently of EOF on the captured output.
+                stdout, stderr = proc.communicate(timeout=1)
+                break
+            except subprocess.TimeoutExpired as error:
+                stdout = error.output or stdout
+                stderr = error.stderr or stderr
+                now = time.monotonic()
+                observation = {"time": now, "returncode": proc.poll()}
+                if now - start >= 10:
+                    observation["processes"] = _output_supervisor_process_tree(proc.pid)
+                observations.append(observation)
+                if now - start >= 60:
+                    raise subprocess.TimeoutExpired(proc.args, 60) from None
+        elapsed = time.monotonic() - start
+        observations.append({
+            "time": time.monotonic(),
+            "event": "communicate-return",
+            "elapsed": elapsed,
+        })
+        assert proc.returncode == 0, stderr
+        assert elapsed < 15
+    finally:
+        # The PID file also permits cleanup when captured output is unavailable.
+        pid_file = tmp_path / "descendant.pid"
+        if pid_file.exists():
+            with contextlib.suppress(OSError):
+                os.kill(int(pid_file.read_text()), signal.SIGTERM)
+        if proc.poll() is None:
+            proc.kill()
+        with contextlib.suppress(subprocess.TimeoutExpired):
+            stdout, stderr = proc.communicate(timeout=5)
+        sections = ["parent observations:\n" + json.dumps(observations, indent=2)]
+        for role in ("supervisor", "command"):
+            path = tmp_path / f"{role}.log"
+            sections.append(
+                f"{role}:\n" + (path.read_text() if path.exists() else "missing")
+            )
+        lines = stdout.splitlines()
+        sections.extend([
+            f"stdout: {len(lines)} lines; first 2 and last 5:\n"
+            + b"\n".join(lines[:2] + lines[-5:]).decode("utf-8", "replace"),
+            "stderr:\n" + stderr.decode("utf-8", "replace"),
+        ])
+        request.node.add_report_section(
+            "call", "supervisor diagnostics", "\n\n".join(sections)
+        )
 
 
 _CHILD_ENV_SCRIPT = """
