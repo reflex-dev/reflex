@@ -5,14 +5,20 @@ from collections.abc import Generator
 import pytest
 from playwright.sync_api import Page, expect
 
-from reflex.testing import AppHarness, AppHarnessProd
+from reflex.testing import AppHarness
 
 
 def DemoFormApp():
     """Render the shared sales dialog with a trigger."""
+    from importlib import reload
+
     from reflex_components_internal.blocks.demo_form import demo_form_dialog
+    from reflex_components_internal.components.icons import others
 
     import reflex as rx
+
+    # AppHarness clears memo registrations but leaves package modules cached.
+    reload(others)
 
     def index():
         """Return the sales dialog.
@@ -28,17 +34,19 @@ def DemoFormApp():
 
 @pytest.fixture(scope="module")
 def demo_form_app(
+    app_harness_env: type[AppHarness],
     tmp_path_factory: pytest.TempPathFactory,
 ) -> Generator[AppHarness, None, None]:
-    """Run the sales dialog app in production mode.
+    """Run the sales dialog app in dev and production modes.
 
     Args:
+        app_harness_env: Harness class for the current environment.
         tmp_path_factory: Temporary directory factory.
 
     Yields:
         The running app harness.
     """
-    with AppHarnessProd.create(
+    with app_harness_env.create(
         root=tmp_path_factory.mktemp("demo_form"), app_source=DemoFormApp
     ) as harness:
         yield harness
