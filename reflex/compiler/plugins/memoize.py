@@ -43,6 +43,8 @@ from reflex_components_core.base.bare import Bare
 from reflex_components_core.core.cond import Cond
 from reflex_components_core.core.match import Match
 
+_EMPTY_SHARED_SCOPE_COUNTS: dict[str, int] = {}
+
 
 def _subtree_has_reactive_data(
     component: Component, _cache: dict[int, bool] | None = None
@@ -145,6 +147,23 @@ def _subtree_requires_shared_scope(
         _visiting.remove(component_id)
 
 
+def _merge_shared_scope_counts(
+    counts: dict[str, int] | None, descendant_counts: dict[str, int]
+) -> dict[str, int] | None:
+    """Merge a descendant's scope counts without allocating for empty subtrees.
+
+    Returns:
+        The merged counts, or ``None`` if both subtrees are empty.
+    """
+    if not descendant_counts:
+        return counts
+    if counts is None:
+        counts = {}
+    for key, count in descendant_counts.items():
+        counts[key] = counts.get(key, 0) + count
+    return counts
+
+
 def _collect_subtree_shared_scope_counts(
     component: Component,
     subtree_counts: dict[int, dict[str, int]],
@@ -169,29 +188,24 @@ def _collect_subtree_shared_scope_counts(
         return subtree_counts[component_id]
 
     visiting.add(component_id)
-    counts: dict[str, int] = {}
-
-    def merge_descendant(descendant: BaseComponent) -> bool:
-        if not isinstance(descendant, Component):
-            return True
-        descendant_counts = _collect_subtree_shared_scope_counts(
-            descendant, subtree_counts, visiting, style
-        )
-        if descendant_counts is None:
-            return False
-        for key, count in descendant_counts.items():
-            counts[key] = counts.get(key, 0) + count
-        return True
+    counts: dict[str, int] | None = None
 
     try:
         local_scope_keys: set[str] = set()
-        embedded_components: list[BaseComponent] = []
         for var in component._get_vars(include_children=False):
             var_data = var._get_all_var_data()
             if var_data is None:
                 continue
             local_scope_keys.update(var_data.shared_scope_keys)
-            embedded_components.extend(var_data.components)
+            for embedded in var_data.components:
+                if not isinstance(embedded, Component):
+                    continue
+                descendant_counts = _collect_subtree_shared_scope_counts(
+                    embedded, subtree_counts, visiting, style
+                )
+                if descendant_counts is None:
+                    return None
+                counts = _merge_shared_scope_counts(counts, descendant_counts)
         if (
             style is not None
             and (component_style := component._get_component_style(style)) is not None
@@ -199,23 +213,35 @@ def _collect_subtree_shared_scope_counts(
         ):
             local_scope_keys.update(var_data.shared_scope_keys)
 
-        for embedded in embedded_components:
-            if not merge_descendant(embedded):
-                return None
-
         for child in component.children:
-            if not merge_descendant(child):
+            if not isinstance(child, Component):
+                continue
+            descendant_counts = _collect_subtree_shared_scope_counts(
+                child, subtree_counts, visiting, style
+            )
+            if descendant_counts is None:
                 return None
+            counts = _merge_shared_scope_counts(counts, descendant_counts)
         for prop_component in component._get_components_in_props():
-            if not merge_descendant(prop_component):
+            if not isinstance(prop_component, Component):
+                continue
+            descendant_counts = _collect_subtree_shared_scope_counts(
+                prop_component, subtree_counts, visiting, style
+            )
+            if descendant_counts is None:
                 return None
-        for key in local_scope_keys:
-            counts[key] = counts.get(key, 0) + 1
+            counts = _merge_shared_scope_counts(counts, descendant_counts)
+        if local_scope_keys:
+            if counts is None:
+                counts = {}
+            for key in local_scope_keys:
+                counts[key] = counts.get(key, 0) + 1
     finally:
         visiting.remove(component_id)
 
-    subtree_counts[component_id] = counts
-    return counts
+    result = counts if counts is not None else _EMPTY_SHARED_SCOPE_COUNTS
+    subtree_counts[component_id] = result
+    return result
 
 
 def _subtree_splits_shared_scope(
@@ -455,30 +481,31 @@ class MemoizeStatefulPlugin(Plugin):
             return None
         root = page_context.root_component
         if comp is root or page_context._owned.get(id(root)) is comp:
-            subtree_counts: dict[int, dict[str, int]] = {}
-            root_counts = _collect_subtree_shared_scope_counts(
-                comp, subtree_counts, set(), self.style
-            )
-            if root_counts is None:
-                # Preserve the cycle-safe fallback for unusual component graphs.
-                scope_counts: dict[str, int] = {}
-                _subtree_requires_shared_scope(comp, scope_counts, self.style)
-                page_context.memoize_shared_scope_split_ids = None
+            scope_counts: dict[str, int] = {}
+            _subtree_requires_shared_scope(comp, scope_counts, self.style)
+            if any(count > 1 for count in scope_counts.values()):
+                subtree_counts: dict[int, dict[str, int]] = {}
+                root_counts = _collect_subtree_shared_scope_counts(
+                    comp, subtree_counts, set(), self.style
+                )
+                if root_counts is None:
+                    # Preserve the cycle-safe fallback for unusual component graphs.
+                    page_context.memoize_shared_scope_split_ids = None
+                else:
+                    page_context.memoize_shared_scope_split_ids = {
+                        component_id
+                        for component_id, counts in subtree_counts.items()
+                        if any(
+                            0 < counts.get(key, 0) < count
+                            for key, count in scope_counts.items()
+                            if count > 1
+                        )
+                    }
             else:
-                scope_counts = root_counts
                 page_context.memoize_shared_scope_split_ids = set()
             page_context.memoize_shared_scope_counts = {
                 key: count for key, count in scope_counts.items() if count > 1
             }
-            if root_counts is not None:
-                page_context.memoize_shared_scope_split_ids = {
-                    component_id
-                    for component_id, counts in subtree_counts.items()
-                    if any(
-                        0 < counts.get(key, 0) < count
-                        for key, count in page_context.memoize_shared_scope_counts.items()
-                    )
-                }
         if page_context.memoize_suppressor_stack:
             return None
         strategy = get_memoization_strategy(comp)
