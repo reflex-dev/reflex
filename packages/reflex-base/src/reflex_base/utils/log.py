@@ -521,7 +521,7 @@ def supervise_output(args: list[str]) -> int:
         pump.start()
     shutdown_requested_at: float | None = None
 
-    def request_shutdown(signum: int, _frame):
+    def request_shutdown(signum: int, _frame: FrameType | None):
         """Forward shutdown signals and start the bounded-shutdown clock."""
         nonlocal shutdown_requested_at
         if shutdown_requested_at is None:
