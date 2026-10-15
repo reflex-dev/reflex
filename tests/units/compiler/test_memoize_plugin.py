@@ -1748,6 +1748,23 @@ def test_styled_local_client_state_subtree_uses_original_split_id() -> None:
     )
 
 
+def test_app_style_local_client_state_is_in_shared_scope_prepass() -> None:
+    """Vars added by app-level styles participate in shared-scope detection."""
+    from reflex.experimental.client_state import ClientStateVar
+
+    local = ClientStateVar.create("styled_scope", default="initial", global_ref=False)
+    styled = rx.auto_scroll()
+    root = rx.box(rx.text(local.value), styled)
+    page_ctx = PageContext(name="test", route="/", root_component=root)
+    plugin = MemoizeStatefulPlugin(style={rx.auto_scroll: {"color": local.value}})
+
+    plugin.enter_component(root, page_context=page_ctx, compile_context=None)
+
+    assert page_ctx.memoize_shared_scope_counts[local._id_name] == 2
+    assert page_ctx.memoize_shared_scope_split_ids is not None
+    assert id(styled) in page_ctx.memoize_shared_scope_split_ids
+
+
 def test_debounce_input_memo_renders_react_debounce_wrapper() -> None:
     """``rx.input(value=..., on_change=..., debounce_timeout=N)`` memoizes via DebounceInput.
 

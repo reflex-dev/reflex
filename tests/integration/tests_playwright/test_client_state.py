@@ -119,7 +119,7 @@ def ClientStateApp():
             rx.text(ClientStateAppState.router.session.client_token, id="token"),
         )
 
-    app = rx.App(style={rx.auto_scroll: {"padding": "1em"}})
+    app = rx.App(style={rx.auto_scroll: {"padding": "1em", "color": local.value}})
     app.add_page(index)
     app.add_page(siblings)
     app.add_page(local_siblings, route="/local-siblings")
