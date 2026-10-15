@@ -69,6 +69,26 @@ _pending_delta_records: ContextVar[list[_DeltaRecord] | None] = ContextVar(
 )
 
 
+_deferred_delta_records: ContextVar[list[_DeltaRecord] | None] = ContextVar(
+    "_deferred_delta_records", default=None
+)
+
+
+@contextlib.contextmanager
+def _defer_delta_recording() -> Iterator[list[_DeltaRecord]]:
+    """Collect delivery records until several deltas have been merged.
+
+    Yields:
+        Records to commit against the final outgoing delta.
+    """
+    pending: list[_DeltaRecord] = []
+    token = _deferred_delta_records.set(pending)
+    try:
+        yield pending
+    finally:
+        _deferred_delta_records.reset(token)
+
+
 @contextlib.contextmanager
 def _suppress_delta_recording() -> Iterator[None]:
     """Stop delta values built in this block from counting as sent to the client.
@@ -314,7 +334,11 @@ async def resolve_delta(state: BaseState) -> Delta:
     finally:
         _pending_delta_records.reset(records_token)
     if pending:
-        _commit_delta_records(pending, delta)
+        deferred = _deferred_delta_records.get()
+        if deferred is None:
+            _commit_delta_records(pending, delta)
+        else:
+            deferred.extend(pending)
     return delta
 
 

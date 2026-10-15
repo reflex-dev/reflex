@@ -89,6 +89,8 @@ from reflex.istate.data import (
 from reflex.istate.delta import (
     Delta,
     DeltaMapping,
+    _commit_delta_records,
+    _defer_delta_recording,
     _resolve_delta,
     _send_fields_only,
     build_delta,
@@ -2482,17 +2484,7 @@ class State(BaseState):
             # Follow-up corrections must be allowed to write browser storage.
             self.dirty_vars.discard(constants.CompileVars.IS_HYDRATED)
             if applied:
-                # Pass the browser's values through get_delta overrides. The
-                # snapshot already sent their dependents, computed from them.
-                for var_state, var_name in applied:
-                    var_state.dirty_vars.add(var_name)
-                    var_state._mark_ancestors_dirty()
-                token = _send_fields_only.set(True)
-                try:
-                    delta = await self._get_resolved_delta()
-                finally:
-                    _send_fields_only.reset(token)
-                    self._clean()
+                delta = await _get_client_storage_delta(self, applied)
                 await ctx.emit_delta(delta=delta)
         if not RegistrationContext.get().app.get_load_events(self.rx_router_url.path):
             self.is_hydrated = True
@@ -2502,6 +2494,100 @@ class State(BaseState):
         # page's unfinished on_load chain was already cancelled when this
         # event was enqueued (see BaseStateEventProcessor._supersede_previous).
         return [OnLoadInternalState.on_load_internal]
+
+
+def _dirty_states(state: BaseState) -> Iterator[BaseState]:
+    """Yield a state and its dirty descendants.
+
+    Args:
+        state: The root of the dirty traversal.
+
+    Yields:
+        States whose dirty fields may need delivery or cleanup.
+    """
+    yield state
+    for name in state.dirty_substates | state._always_dirty_substates:
+        yield from _dirty_states(state.substates[name])
+
+
+async def _get_client_storage_delta(
+    root: BaseState, applied: list[tuple[BaseState, str]]
+) -> Delta:
+    """Replay browser storage without discarding real override mutations.
+
+    Args:
+        root: The hydrated root state.
+        applied: Browser storage fields applied by this hydration.
+
+    Returns:
+        Override-filtered storage and any newly invalidated dependent values.
+    """
+    # Snapshot computed values were already delivered. Preserve their cleanup
+    # marks without letting them masquerade as mutations during the replay.
+    saved = [(state, state.dirty_vars) for state in _dirty_states(root)]
+    try:
+        replay = []
+        for state, dirty_vars in saved:
+            state.dirty_vars = dirty_vars.intersection(
+                state._frontend_var_names
+            ).difference(state.computed_vars)
+            replay.extend((state, name) for name in state.dirty_vars)
+        replay.extend(applied)
+        before = {
+            (state, name): _serialize_var(state.get_value(name))
+            for state, name in replay
+        }
+        for state, name in applied:
+            state.dirty_vars.add(name)
+            state._mark_ancestors_dirty()
+        with _defer_delta_recording() as records:
+            token = _send_fields_only.set(True)
+            try:
+                delta = await root._get_resolved_delta()
+            finally:
+                _send_fields_only.reset(token)
+            # Only discard synthetic replay marks. A returned delta may deliberately
+            # rewrite or withhold a field without changing its backend value.
+            for (state, name), value in before.items():
+                if _serialize_var(state.get_value(name)) == value:
+                    state.dirty_vars.discard(name)
+            # Fields-only traversal never evaluates computed vars. An override can
+            # still insert a placeholder for one, invalidating its previous record.
+            for state in _dirty_states(root):
+                subdelta = delta.get(state.get_full_name(), {})
+                for name in state._always_dirty_computed_vars:
+                    if name + FIELD_MARKER in subdelta:
+                        attr = state.computed_vars[name]._last_delta_key_attr
+                        if hasattr(state, attr):
+                            delattr(state, attr)
+                            state._was_touched = True
+            if any(state.dirty_vars for state in _dirty_states(root)):
+                # The replay's output remains authoritative, even when an override
+                # rewrote or withheld a field while also making a real assignment.
+                replay_keys: dict[str, set[str]] = {}
+                for field in before:
+                    state, name = field
+                    replay_keys.setdefault(state.get_full_name(), set()).add(
+                        name + FIELD_MARKER
+                    )
+                for name, changes in (await root._get_resolved_delta()).items():
+                    if name in replay_keys and name not in delta:
+                        continue
+                    subdelta = delta.setdefault(name, {})
+                    for key, value in changes.items():
+                        if key not in replay_keys.get(name, ()):
+                            subdelta.setdefault(key, value)
+            _commit_delta_records(records, delta)
+            return delta
+    finally:
+        # SharedState captures its fanout dirtiness in _clean: keep a single
+        # cleanup point and include fields consumed by either replay pass.
+        for state, dirty_vars in saved:
+            state.dirty_vars.update(dirty_vars)
+        for state, name in applied:
+            state.dirty_vars.add(name)
+            state._mark_ancestors_dirty()
+        root._clean()
 
 
 T = TypeVar("T", bound=BaseState)
