@@ -292,12 +292,33 @@ def demo_form(
     Returns:
         A Reflex form component with all demo form fields
     """
+    return _demo_form(id_prefix=id_prefix, on_submit=on_submit, **props)
+
+
+def _demo_form(
+    id_prefix: str = "",
+    on_submit: EventType[dict[str, Any]] | None = None,
+    *,
+    in_dialog: bool = False,
+    **props,
+) -> rx.Component:
+    """Build the shared form with an optional scrolling dialog body.
+
+    Args:
+        id_prefix: Prefix for element IDs, generated when empty.
+        on_submit: Additional submit handlers.
+        in_dialog: Whether to separate scrolling fields from a fixed footer.
+        **props: Additional form properties.
+
+    Returns:
+        The form wrapped in a fragment.
+    """
     prefix = id_prefix or get_unique_variable_name()
     email_id = f"{prefix}_user_email"
     extra_on_submit = (
         on_submit if isinstance(on_submit, list) else [on_submit] if on_submit else []
     )
-    form = rx.el.form(
+    fields = (
         rx.el.div(
             input_field("First name", "John", "first_name", "text", True),
             input_field("Last name", "Smith", "last_name", "text", True),
@@ -367,13 +388,27 @@ def demo_form(
                 class_name="text-destructive-10 text-sm font-medium px-2 py-1 rounded-md bg-destructive-3 border border-destructive-4",
             ),
         ),
-        button(
-            "Submit",
-            type="submit",
-            class_name="w-full",
+    )
+    submit = button("Submit", type="submit", class_name="w-full")
+    form = rx.el.form(
+        *(
+            (
+                rx.el.div(
+                    *fields,
+                    class_name="flex min-h-0 flex-col lg:gap-6 gap-2 overflow-y-auto overscroll-contain p-6 pt-2",
+                ),
+                rx.el.div(
+                    submit,
+                    class_name="shrink-0 border-t border-secondary-a4 bg-secondary-1 px-6 py-4",
+                ),
+            )
+            if in_dialog
+            else (*fields, submit)
         ),
         class_name=cn(
-            "@container flex flex-col lg:gap-6 gap-2 p-6",
+            "@container flex min-h-0 flex-1 flex-col overflow-hidden"
+            if in_dialog
+            else "@container flex flex-col lg:gap-6 gap-2 p-6",
             props.pop("class_name", ""),
         ),
         on_submit=[
@@ -413,29 +448,27 @@ def demo_form_dialog(
             dialog.backdrop(),
             dialog.popup(
                 rx.el.div(
-                    rx.el.div(
-                        rx.el.h1(
-                            "Book a Demo",
-                            class_name="text-xl font-bold text-secondary-12",
-                        ),
-                        dialog.close(
-                            render_=button(
-                                hi("Cancel01Icon"),
-                                variant="ghost",
-                                size="icon-sm",
-                                class_name="text-secondary-11",
-                            ),
-                        ),
-                        class_name="flex flex-row justify-between items-center gap-1 px-6 pt-4 -mb-4",
+                    rx.el.h1(
+                        "Book a Demo",
+                        class_name="text-xl font-bold text-secondary-12",
                     ),
-                    demo_form(
-                        id_prefix=id_prefix,
-                        on_submit=on_submit,
-                        class_name="w-full max-w-md",
+                    dialog.close(
+                        render_=button(
+                            hi("Cancel01Icon"),
+                            variant="ghost",
+                            size="icon-sm",
+                            class_name="text-secondary-11",
+                        ),
                     ),
-                    class_name="relative isolate overflow-hidden -m-px w-full max-w-md",
+                    class_name="flex shrink-0 flex-row justify-between items-center gap-1 px-6 pt-4",
                 ),
-                class_name="h-fit mt-1 overflow-hidden w-full max-w-md",
+                _demo_form(
+                    id_prefix=id_prefix,
+                    on_submit=on_submit,
+                    in_dialog=True,
+                    class_name="w-full max-w-md",
+                ),
+                class_name="flex flex-col h-fit max-h-[calc(100dvh-2rem)] mt-0 overflow-hidden w-full max-w-md",
             ),
         ),
         open=demo_form_open_cs.value,

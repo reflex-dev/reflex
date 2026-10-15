@@ -1,6 +1,7 @@
 """Tests for the demo form block."""
 
 import re
+from typing import cast
 
 from reflex_base.vars.sequence import LiteralStringVar
 from reflex_components_internal.blocks.demo_form import demo_form, demo_form_dialog
@@ -35,6 +36,16 @@ def test_demo_form_dialog_renders_given_trigger() -> None:
 
     assert "Dialog.Trigger" in rendered
     assert TRIGGER_LABEL in rendered
+
+
+def test_demo_form_standalone_retains_its_layout() -> None:
+    """Embedding the form keeps its padding overrides and inline submit button."""
+    form = demo_form(class_name="p-0").children[0]
+
+    assert "p-0" in str(cast(rx.Component, form).class_name)
+    assert 'type:"submit"' in str(form.children[-1])
+    assert "overflow-hidden" not in str(cast(rx.Component, form).class_name)
+    assert "grid-cols-2" in str(cast(rx.Component, form.children[0]).class_name)
 
 
 def test_demo_form_asks_for_an_optional_phone_number() -> None:
