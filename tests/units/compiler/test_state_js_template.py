@@ -220,37 +220,6 @@ assert.equal(sent.payload.form_data.__reflex_form_data__[1][1], file);
 assert.equal(event.payload.form_data, formData);
 const plain = {name: 'state.other', payload: {count: 1}};
 assert.equal(encodeFormDataArgs(plain), plain);
-// Values read from id refs replace the form's entries of the same name.
-const withRefs = getFormData(
-  [['tag', 'a'], ['agree', 'on'], ['tag', 'b']],
-  {agree: true, unset: null},
-);
-assert.deepEqual({...withRefs}, {tag: 'b', agree: true, unset: null});
-assert.deepEqual(
-  encodeFormDataArgs({name: 'state.submit', payload: {form_data: withRefs}})
-    .payload.form_data.__reflex_form_data__,
-  [['tag', 'a'], ['agree', true], ['tag', 'b'], ['unset', null]],
-);
-// A replaced value keeps its place, as when spreading the refs over the form's
-// entries.
-const ordered = getFormData([['title', 'typed'], ['note', 'n']], {title: 'ref'});
-assert.deepEqual(Object.keys(ordered), ['title', 'note']);
-assert.deepEqual(
-  encodeFormDataArgs({name: 'state.submit', payload: {form_data: ordered}})
-    .payload.form_data.__reflex_form_data__,
-  [['title', 'ref'], ['note', 'n']],
-);
-// A name submitted more than once, like a checkbox group with an id, keeps
-// its values instead of taking the ref's single value.
-const group = getFormData(
-  [['colors', 'red'], ['colors', 'blue']],
-  {colors: 'red'},
-);
-assert.deepEqual(
-  encodeFormDataArgs({name: 'state.submit', payload: {form_data: group}})
-    .payload.form_data.__reflex_form_data__,
-  [['colors', 'red'], ['colors', 'blue']],
-);
 """,
         ],
         check=True,

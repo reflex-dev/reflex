@@ -1,0 +1,1 @@
+Form `on_submit` now builds `form_data` only from each control's `name`, as deprecated in 0.10.1: a control's `id` no longer adds a field. Give every submitted control a `name`, e.g. `rx.input(id="email", name="email")`. `reflex` now requires `reflex-components-core` 0.10.1 or newer, which builds form data this way.
