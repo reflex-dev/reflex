@@ -1,6 +1,7 @@
 """rx.match."""
 
 import textwrap
+from collections.abc import Iterator
 from typing import Any, cast
 
 from reflex_base.components.component import BaseComponent, Component, field
@@ -309,6 +310,28 @@ class Match(Component):
             The dictionary for template of component.
         """
         return dict(self._render())
+
+    def _get_vars(
+        self, include_children: bool = False, ignore_ids: set[int] | None = None
+    ) -> Iterator[Var]:
+        """Walk all Vars used in this component, including the case conditions.
+
+        The case conditions live in ``match_cases``, which is not a JavaScript
+        property, so they are yielded here to count toward memoization and to
+        emit the hooks they need.
+
+        Args:
+            include_children: Whether to include Vars from children.
+            ignore_ids: The ids to ignore.
+
+        Yields:
+            Each Var referenced by the component, plus the case conditions.
+        """
+        yield from super()._get_vars(
+            include_children=include_children, ignore_ids=ignore_ids
+        )
+        for conditions, _ in self.match_cases:
+            yield from conditions
 
     def add_imports(self) -> ImportDict:
         """Add imports for the Match component.

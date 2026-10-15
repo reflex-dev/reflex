@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import contextlib
+import functools
 import hashlib
 import importlib.util
 import json
@@ -14,7 +15,7 @@ import socket
 import subprocess
 import sys
 import threading
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 from typing import Any, NamedTuple, TypedDict
 
@@ -34,6 +35,8 @@ logger = logging.getLogger(__name__)
 
 # For uvicorn windows bug fix (#2335)
 frontend_process = None
+_frontend_process_lock = threading.Lock()
+_frontend_shutting_down = False
 
 DEV_BACKEND_RELOAD_MARKER = ".reflex_dev_backend_started"
 
@@ -295,7 +298,10 @@ def run_process_and_launch_url(
                 **kwargs,
             )
             global frontend_process
-            frontend_process = process
+            with _frontend_process_lock:
+                frontend_process = process
+                if _frontend_shutting_down and process.poll() is None:
+                    process.terminate()
         if process.stdout:
             for line in processes.stream_logs("Starting frontend", process):
                 new_content, new_hash = get_package_json_and_hash(json_file_path)
@@ -357,8 +363,59 @@ def notify_app_running():
     console.rule("[bold green]App Running")
 
 
-def get_frontend_mount():
+def _match_routable_page(router: Callable[[str], str | None], path: str) -> str | None:
+    """Match a path against the app routes, excluding paths the frontend renders as 404.
+
+    The compiler registers a synthetic ``404`` page, so a literal ``/404``
+    request would otherwise count as routable and lose its 404 status. The
+    router also aliases ``/index`` to the index page, which the frontend does
+    not route, so only the bare root path counts as the index page.
+
+    Args:
+        router: The app route matcher.
+        path: The request path.
+
+    Returns:
+        The matching route, or None when the path matches no route, only the
+        404 page, or the index page through its ``/index`` alias.
+    """
+    route = router(path)
+    if route == constants.Page404.SLUG or (
+        route == constants.PageNames.INDEX_ROUTE and path.strip("/")
+    ):
+        return None
+    return route
+
+
+def get_routes_manifest_router() -> Callable[[str], str | None] | None:
+    """Build a route matcher from the routes manifest written at compile time.
+
+    Returns:
+        A route matcher, or None when no manifest exists or it is not valid JSON.
+    """
+    from reflex.route import get_router
+
+    manifest = get_web_dir() / constants.Dirs.ROUTES_MANIFEST
+    try:
+        routes = json.loads(manifest.read_text())
+    except OSError:
+        return None
+    except ValueError as err:
+        logger.warning(
+            f"Ignoring invalid routes manifest {manifest} ({err}); dynamic routes "
+            "without a prerendered file will be served with status 404."
+        )
+        return None
+    return get_router(routes)
+
+
+def get_frontend_mount(router: Callable[[str], str | None] | None = None):
     """Get a Starlette Mount for the compiled frontend static files.
+
+    Args:
+        router: Optional route matcher (e.g. ``app.router``) used to serve
+            routable SPA paths with status 200 instead of 404. When None, a
+            matcher is built from the compiled routes manifest if present.
 
     Returns:
         A Mount serving the compiled frontend static files.
@@ -369,6 +426,13 @@ def get_frontend_mount():
     from reflex.utils.precompressed_staticfiles import PrecompressedStaticFiles
 
     config = get_config()
+
+    if router is None:
+        router = get_routes_manifest_router()
+    if router is not None:
+        # The mount strips the frontend path, and the router matches paths
+        # relative to it, so mount-relative request paths match as-is.
+        router = functools.partial(_match_routable_page, router)
 
     static_dir = (
         prerequisites.get_web_dir()
@@ -382,6 +446,7 @@ def get_frontend_mount():
             directory=static_dir,
             html=True,
             encodings=config.frontend_compression_formats,
+            router=router,
         ),
         name="frontend",
     )
@@ -488,7 +553,8 @@ def get_app_instance_from_file() -> str:
     Returns:
         The app module for the backend.
     """
-    return f"{get_app_file()}:{constants.CompileVars.APP}"
+    get_app_file()
+    return get_app_instance()
 
 
 def run_backend(
@@ -771,10 +837,15 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
             with self._socket_lock:
                 if not self._shared_socket_is_open():
                     return
-                # Granian's SocketHolder does not own the descriptor, so
-                # closing the socket object is what frees the port. The closed
-                # object stays in place for granian to detach on shutdown.
-                self._sso.close()
+                # The socket object and granian's SocketHolder wrap the same
+                # handle, which must be closed exactly once: by dropping the
+                # holder on Windows, and by the socket object elsewhere, where
+                # the holder never closes it. The released object stays in
+                # place for granian to detach on shutdown.
+                if constants.IS_WINDOWS:
+                    self._sso.detach()
+                else:
+                    self._sso.close()
                 self._shd = self._sfd = None
 
         def _release_socket_unless_served(self, wrk: Any, spawn_count: int):
@@ -817,8 +888,16 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
             granian_watcher = wrk._watcher
 
             def watcher():
-                granian_watcher()
+                wrk.inner.join()
                 self._release_socket_unless_served(wrk, spawn_count)
+                # A worker process exits 0 from its own SIGINT/SIGTERM handler,
+                # possibly before the supervisor, blocked in the reloader, has
+                # handled the same signal: give it a moment to catch up before
+                # reporting the exit as unexpected. Thread workers have no exit
+                # code and keep granian's handling.
+                exitcode = getattr(wrk.inner, "exitcode", None)
+                if exitcode != 0 or not self.main_loop_interrupt.wait(1):
+                    granian_watcher()
 
             wrk._watcher = watcher
             return wrk
@@ -949,6 +1028,55 @@ def run_uvicorn_backend_prod(
     )
 
 
+def _backend_start_method() -> str | None:
+    """Resolve the multiprocessing start method for production backend workers.
+
+    Returns:
+        The start method to force, or None to keep the interpreter default.
+    """
+    if (method := environment.REFLEX_BACKEND_START_METHOD.get()) is not None:
+        return method
+    import multiprocessing
+
+    # Python defaults to fork (<3.14) or forkserver (3.14+) on Linux and to
+    # spawn elsewhere; only where fork is already the platform norm do we rely
+    # on it so workers can share the supervisor's pages.
+    if multiprocessing.get_start_method() in ("fork", "forkserver"):
+        return "fork"
+    return None
+
+
+def _preload_for_fork(app_target: str | None) -> bool:
+    """Import the app in the supervisor so forked workers share its pages.
+
+    Args:
+        app_target: The ASGI app target; None means the reflex app, which is
+            imported here. Any other target lives in an already-loaded module.
+
+    Returns:
+        Whether forking is safe; False when a telemetry thread is still alive.
+    """
+    import gc
+
+    from reflex_base.utils import serializers
+
+    from reflex.utils import prerequisites, telemetry
+
+    if app_target is None:
+        prerequisites.get_app()
+    serializers._prepare_serializers_for_fork()
+    # Forking while the telemetry thread may hold a lock can deadlock the child.
+    # Nothing in the supervisor sends telemetry after this point, so no thread
+    # exists at any later fork either (e.g. a worker respawn).
+    if not telemetry._shutdown_executor():
+        return False
+    # Freezing keeps worker GC passes from writing to the preloaded objects'
+    # headers, which would copy-on-write the shared pages private again.
+    gc.collect()
+    gc.freeze()
+    return True
+
+
 def run_granian_backend_prod(
     host: str, port: int, loglevel: LogLevel, app_target: str | None = None
 ):
@@ -960,11 +1088,21 @@ def run_granian_backend_prod(
         loglevel: The log level.
         app_target: The ASGI app target to run. Defaults to the reflex app instance.
     """
+    import multiprocessing
+
     from granian.constants import Interfaces
     from granian.log import LogLevels
     from granian.server import Server as Granian
 
     logger.debug("Using Granian for backend")
+
+    if (start_method := _backend_start_method()) is not None:
+        # Set before the preload so the app's import-time multiprocessing
+        # objects use the requested context.
+        multiprocessing.set_start_method(start_method, force=True)
+        if start_method == "fork" and not _preload_for_fork(app_target):
+            logger.debug("A telemetry send is still running; spawning workers.")
+            multiprocessing.set_start_method("spawn", force=True)
 
     granian_app = Granian(
         target=app_target or get_app_instance_from_file(),

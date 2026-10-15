@@ -233,7 +233,7 @@ def test_create_token_json_output(mocker: MockFixture):
     client.api.auth.tokens.create.return_value = CreatedToken(
         token="tok-1",
         name="ci",
-        expires_at=datetime.datetime(2025, 3, 1, tzinfo=datetime.timezone.utc),
+        expires_at=datetime.datetime(2025, 3, 1, tzinfo=datetime.UTC),
     )
     mocker.patch(
         "reflex_cli.utils.hosting.get_authenticated_client", return_value=client

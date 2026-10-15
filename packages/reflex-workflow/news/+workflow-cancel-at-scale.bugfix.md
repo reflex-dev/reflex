@@ -1,0 +1,1 @@
+`cancel()` over a large backlog no longer fails once the rows it matches would exceed a statement's parameter limit. It picks and stops them in one statement now, which is also one round trip rather than two.

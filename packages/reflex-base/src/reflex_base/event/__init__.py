@@ -9,7 +9,7 @@ import types
 import warnings
 from base64 import b64encode
 from collections.abc import Callable, Mapping, Sequence
-from functools import lru_cache, partial
+from functools import cached_property, lru_cache, partial
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -18,6 +18,7 @@ from typing import (
     Literal,
     NoReturn,
     Protocol,
+    Self,
     TypeVar,
     Union,
     get_args,
@@ -27,7 +28,6 @@ from typing import (
 )
 
 from typing_extensions import (
-    Self,
     TypeAliasType,
     TypedDict,
     TypeVarTuple,
@@ -50,12 +50,15 @@ from reflex_base.utils.types import (
     ArgsSpec,
     GenericType,
     Unset,
+    is_optional,
     safe_issubclass,
     typehint_issubclass,
+    value_inside_optional,
 )
 from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var, _owner_state
 from reflex_base.vars.function import (
+    ENCODE_URI_COMPONENT,
     ArgsFunctionOperation,
     ArgsFunctionOperationBuilder,
     BuilderFunctionVar,
@@ -70,6 +73,8 @@ from reflex_base.vars.object import ObjectVar
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
+    from reflex_components_core.core._upload import UploadChunkIterator, UploadFile
+
     from reflex.state import BaseState
 
     BASE_STATE = TypeVar("BASE_STATE", bound=BaseState)
@@ -610,16 +615,27 @@ class EventHandler(EventActionsMixin):
         """
         return Annotated[cls, args_spec]
 
-    @property
+    @cached_property
     def is_background(self) -> bool:
         """Whether the event handler is a background task.
+
+        Read on the first access, so the function has to be marked before then.
 
         Returns:
             True if the event handler is marked as a background task.
         """
         return getattr(self.fn, BACKGROUND_TASK_MARKER, False)
 
-    @property
+    @cached_property
+    def _is_coroutine_function(self) -> bool:
+        """Whether the handler function is a coroutine function.
+
+        Returns:
+            True if calling the handler function returns a coroutine.
+        """
+        return inspect.iscoroutinefunction(self.fn)
+
+    @cached_property
     def supersedes(self) -> bool:
         """Whether a newer invocation supersedes an older one.
 
@@ -635,6 +651,7 @@ class EventHandler(EventActionsMixin):
         Cancellation is cooperative: a handler that never yields to the event
         loop runs to completion, and only its not-yet-started chained events
         are skipped.
+        Read on the first access, so the function has to be marked before then.
 
         Returns:
             True if the event handler is marked as superseding.
@@ -737,7 +754,7 @@ class EventHandler(EventActionsMixin):
             try:
                 payload.append((Var(_js_expr=fn_arg), LiteralVar.create(arg)))
             except TypeError as e:
-                msg = f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."
+                msg = f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg!r} of type {type(arg)}."
                 raise EventHandlerTypeError(msg) from e
 
         if upload_event_spec is not None:
@@ -860,7 +877,7 @@ class EventSpec(EventActionsMixin):
             for arg in args:
                 values.append(LiteralVar.create(value=arg))  # noqa: PERF401, RUF100
         except TypeError as e:
-            msg = f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."
+            msg = f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg!r} of type {type(arg)}."
             raise EventHandlerTypeError(msg) from e
         new_payload = tuple(zip(fn_args, values, strict=False))
         return self.with_args(self.args + new_payload)
@@ -1022,7 +1039,7 @@ class EventChain(EventActionsMixin):
                     # Call the lambda to get the event chain.
                     events.extend(call_event_fn(v, args_spec, key=key))
                 else:
-                    msg = f"Invalid event: {v}"
+                    msg = f"Invalid event: {v!s}"
                     raise ValueError(msg)
 
         # If the input is a callable, create an event chain.
@@ -1031,7 +1048,7 @@ class EventChain(EventActionsMixin):
 
         # Otherwise, raise an error.
         else:
-            msg = f"Invalid event chain: {value}"
+            msg = f"Invalid event chain: {value!s}"
             raise ValueError(msg)
 
         # Add args to the event specs if necessary.
@@ -1430,7 +1447,7 @@ class FileUpload:
                     on_upload_progress, self.on_upload_progress_args_spec
                 )
             else:
-                msg = f"{on_upload_progress} is not a valid event handler."
+                msg = f"{on_upload_progress!s} is not a valid event handler."
                 raise ValueError(msg)
             if isinstance(events, Var):
                 msg = f"{on_upload_progress} cannot return a var {events}."
@@ -1852,10 +1869,13 @@ def download(
             )
 
             # If it's a data: URI, use it as is, otherwise convert the Var to JSON in a data: URI.
+            # The JSON is percent-encoded: a raw `#` would end the URL there and
+            # `%XX` sequences would be decoded, corrupting the downloaded file.
             url = cond(
                 is_data_url,
                 data.to(str),
-                f"data:{mime_type}," + data.to_string(),
+                f"data:{mime_type},"
+                + ENCODE_URI_COMPONENT.call(data.to_string()).to(str),
             )
         elif isinstance(data, bytes):
             if mime_type is None:
@@ -2078,16 +2098,32 @@ def _check_event_args_subclass_of_callback(
             type_match_found.setdefault(arg, False)
             callback_param_type = callback_param_name_to_type[arg]
 
+            provided_type = args_types_without_vars[i]
             try:
-                compare_result = typehint_issubclass(
-                    args_types_without_vars[i], callback_param_type
-                ) or _is_on_submit_mapping_event_arg_compatible_with_typed_dict(
-                    args_types_without_vars[i], callback_param_type, key
-                )
+                if isinstance(provided_type, TypeVar):
+                    # A generic spec arg takes on the callback's type within its
+                    # bound, or as one of its constraints; an optional callback
+                    # type accepts what its non-None type does.
+                    admitted_type = (
+                        value_inside_optional(callback_param_type)
+                        if is_optional(callback_param_type)
+                        else callback_param_type
+                    )
+                    compare_result = any(
+                        typehint_issubclass(admitted_type, admitted)
+                        for admitted in provided_type.__constraints__
+                        or (provided_type.__bound__ or Any,)
+                    )
+                else:
+                    compare_result = typehint_issubclass(
+                        provided_type, callback_param_type
+                    ) or _is_on_submit_mapping_event_arg_compatible_with_typed_dict(
+                        provided_type, callback_param_type, key
+                    )
             except TypeError as te:
                 callback_name_context = f" of {callback_name}" if callback_name else ""
                 key_context = f" for {key}" if key else ""
-                msg = f"Could not compare types {args_types_without_vars[i]} and {callback_param_type} for argument {arg}{callback_name_context}{key_context}."
+                msg = f"Could not compare types {provided_type} and {callback_param_type} for argument {arg}{callback_name_context}{key_context}."
                 raise TypeError(msg) from te
 
             if compare_result:
@@ -2099,13 +2135,16 @@ def _check_event_args_subclass_of_callback(
             )
             delayed_exceptions.append(
                 EventHandlerArgTypeMismatchError(
-                    f"Event handler {key} expects {args_types_without_vars[i]} for argument {arg} but got {callback_param_type}{as_annotated_in} instead."
+                    f"Event handler {key} expects {provided_type} for argument {arg} but got {callback_param_type}{as_annotated_in} instead."
                 )
             )
 
         if all(type_match_found.values()):
             delayed_exceptions.clear()
-            if event_spec_index:
+            # A generic spec matches the callback's own types, so it is not a fallback.
+            if event_spec_index and not any(
+                isinstance(arg, TypeVar) for arg in args_types_without_vars
+            ):
                 args = get_args(provided_event_types[0])
 
                 args_types_without_vars = [
@@ -2478,7 +2517,7 @@ def call_event_fn(
             if isinstance(e, VarOperationCall):
                 hint = " Hint: use `fn.partial(...)` instead of calling the FunctionVar directly."
             msg = (
-                f"Invalid event chain for {key}: {fn} -> {e}: A lambda inside an EventChain "
+                f"Invalid event chain for {key}: {fn} -> {e!s}: A lambda inside an EventChain "
                 "list must return `EventSpec | EventHandler | EventChain | EventVar | FunctionVar` "
                 "or a heterogeneous sequence of these types. "
                 f"Got: {type(e)}.{hint}"
@@ -2828,7 +2867,7 @@ V4 = TypeVar("V4")
 V5 = TypeVar("V5")
 
 
-class EventCallback(Generic[Unpack[P]], EventActionsMixin):
+class EventCallback(Generic[*P], EventActionsMixin):
     """A descriptor that wraps a function to be used as an event."""
 
     if TYPE_CHECKING:
@@ -2848,37 +2887,114 @@ class EventCallback(Generic[Unpack[P]], EventActionsMixin):
 
     @overload
     def __call__(
-        self: "EventCallback[Unpack[Q]]",
-    ) -> "EventCallback[Unpack[Q]]": ...
+        self: "EventCallback[*Q]",
+    ) -> "EventCallback[*Q]": ...
+
+    # Handlers of up to four arguments get an overload per arity instead of a `self`
+    # that leaves the rest to `Unpack[Q]`, which ty does not bind to the receiver
+    # (astral-sh/ty#4657). This mitigates that ty bug. The `Unpack[Q]` overloads only
+    # cover longer handlers, so that each receiver matches one overload per number of
+    # values, and a wrong value is reported as such rather than as no overload matching.
+    @overload
+    def __call__(
+        self: "EventCallback[V]", value: V | Var[V]
+    ) -> "EventCallback[()]": ...
+
+    # An upload spec stands in for the files, or the chunks, that reflex uploads to the
+    # handler. Only as the handler's sole argument: bound args next to it aren't typed.
+    @overload
+    def __call__(
+        self: "EventCallback[list[UploadFile]]", value: FileUpload
+    ) -> "EventCallback[()]": ...
 
     @overload
     def __call__(
-        self: "EventCallback[V, Unpack[Q]]", value: V | Var[V]
-    ) -> "EventCallback[Unpack[Q]]": ...
+        self: "EventCallback[UploadChunkIterator]", value: UploadFilesChunk
+    ) -> "EventCallback[()]": ...
 
     @overload
     def __call__(
-        self: "EventCallback[V, V2, Unpack[Q]]",
-        value: V | Var[V],
-        value2: V2 | Var[V2],
-    ) -> "EventCallback[Unpack[Q]]": ...
+        self: "EventCallback[V, V2]", value: V | Var[V]
+    ) -> "EventCallback[V2]": ...
 
     @overload
     def __call__(
-        self: "EventCallback[V, V2, V3, Unpack[Q]]",
+        self: "EventCallback[V, V2]", value: V | Var[V], value2: V2 | Var[V2]
+    ) -> "EventCallback[()]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3]", value: V | Var[V]
+    ) -> "EventCallback[V2, V3]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3]", value: V | Var[V], value2: V2 | Var[V2]
+    ) -> "EventCallback[V3]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3]",
         value: V | Var[V],
         value2: V2 | Var[V2],
         value3: V3 | Var[V3],
-    ) -> "EventCallback[Unpack[Q]]": ...
+    ) -> "EventCallback[()]": ...
 
     @overload
     def __call__(
-        self: "EventCallback[V, V2, V3, V4, Unpack[Q]]",
+        self: "EventCallback[V, V2, V3, V4]", value: V | Var[V]
+    ) -> "EventCallback[V2, V3, V4]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3, V4]", value: V | Var[V], value2: V2 | Var[V2]
+    ) -> "EventCallback[V3, V4]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3, V4]",
+        value: V | Var[V],
+        value2: V2 | Var[V2],
+        value3: V3 | Var[V3],
+    ) -> "EventCallback[V4]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3, V4]",
         value: V | Var[V],
         value2: V2 | Var[V2],
         value3: V3 | Var[V3],
         value4: V4 | Var[V4],
-    ) -> "EventCallback[Unpack[Q]]": ...
+    ) -> "EventCallback[()]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3, V4, V5, *Q]", value: V | Var[V]
+    ) -> "EventCallback[V2, V3, V4, V5, *Q]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3, V4, V5, *Q]",
+        value: V | Var[V],
+        value2: V2 | Var[V2],
+    ) -> "EventCallback[V3, V4, V5, *Q]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3, V4, V5, *Q]",
+        value: V | Var[V],
+        value2: V2 | Var[V2],
+        value3: V3 | Var[V3],
+    ) -> "EventCallback[V4, V5, *Q]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3, V4, V5, *Q]",
+        value: V | Var[V],
+        value2: V2 | Var[V2],
+        value3: V3 | Var[V3],
+        value4: V4 | Var[V4],
+    ) -> "EventCallback[V5, *Q]": ...
 
     def __call__(self, *values) -> "EventCallback":  # pyright: ignore [reportInconsistentOverload]
         """Call the function with the values.
@@ -2893,8 +3009,8 @@ class EventCallback(Generic[Unpack[P]], EventActionsMixin):
 
     @overload
     def __get__(
-        self: "EventCallback[Unpack[P]]", instance: None, owner: Any
-    ) -> "EventCallback[Unpack[P]]": ...
+        self: "EventCallback[*P]", instance: None, owner: Any
+    ) -> "EventCallback[*P]": ...
 
     @overload
     def __get__(self, instance: Any, owner: Any) -> "Callable[[Unpack[P]]]": ...
@@ -2915,7 +3031,7 @@ class EventCallback(Generic[Unpack[P]], EventActionsMixin):
         return partial(self.func, instance)
 
 
-class LambdaEventCallback(Protocol[Unpack[P]]):
+class LambdaEventCallback(Protocol[*P]):
     """A protocol for a lambda event callback."""
 
     __code__: types.CodeType
@@ -2953,7 +3069,7 @@ ARGS = TypeVarTuple("ARGS")
 
 LAMBDA_OR_STATE = TypeAliasType(
     "LAMBDA_OR_STATE",
-    LambdaEventCallback[Unpack[ARGS]] | EventCallback[Unpack[ARGS]],
+    LambdaEventCallback[*ARGS] | EventCallback[*ARGS],
     type_params=(ARGS,),
 )
 
@@ -2965,13 +3081,13 @@ BASIC_EVENT_TYPES = TypeAliasType(
 
 IndividualEventType = TypeAliasType(
     "IndividualEventType",
-    LAMBDA_OR_STATE[Unpack[ARGS]] | BASIC_EVENT_TYPES,
+    LAMBDA_OR_STATE[*ARGS] | BASIC_EVENT_TYPES,
     type_params=(ARGS,),
 )
 
 EventType = TypeAliasType(
     "EventType",
-    ItemOrList[LAMBDA_OR_STATE[Unpack[ARGS]] | BASIC_EVENT_TYPES],
+    ItemOrList[LAMBDA_OR_STATE[*ARGS] | BASIC_EVENT_TYPES],
     type_params=(ARGS,),
 )
 
@@ -3054,9 +3170,7 @@ class EventNamespace:
         throttle: int | None = None,
         debounce: int | None = None,
         temporal: bool | None = None,
-    ) -> (
-        "Callable[[Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[Unpack[P]]]"
-    ): ...
+    ) -> "Callable[[Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[*P]]": ...
 
     @overload
     def __new__(
@@ -3070,7 +3184,7 @@ class EventNamespace:
         throttle: int | None = None,
         debounce: int | None = None,
         temporal: bool | None = None,
-    ) -> EventCallback[Unpack[P]]: ...
+    ) -> EventCallback[*P]: ...
 
     def __new__(
         cls,
@@ -3083,7 +3197,7 @@ class EventNamespace:
         throttle: int | None = None,
         debounce: int | None = None,
         temporal: bool | None = None,
-    ) -> "EventCallback[Unpack[P]] | Callable[[Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[Unpack[P]]]":
+    ) -> "EventCallback[*P] | Callable[[Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[*P]]":
         """Wrap a function to be used as an event.
 
         Args:
@@ -3136,7 +3250,7 @@ class EventNamespace:
 
         def wrapper(
             func: "Callable[[BASE_STATE, Unpack[P]], T]",
-        ) -> EventCallback[Unpack[P]]:
+        ) -> EventCallback[*P]:
             if background is True:
                 if not inspect.iscoroutinefunction(
                     func

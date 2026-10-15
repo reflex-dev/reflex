@@ -1,10 +1,13 @@
 """Tests for development backend launchers in ``reflex.utils.exec``."""
 
 import builtins
+import gc
+import logging
 import multiprocessing
 import os
 import socket
 import sys
+import threading
 import time
 from http.client import HTTPConnection
 from multiprocessing.queues import Queue
@@ -18,6 +21,8 @@ from reflex_base.environment import environment
 from reflex_base.utils import serializers
 
 from reflex.utils import exec as exec_utils
+from reflex.utils import prerequisites, telemetry
+from reflex.utils.precompressed_staticfiles import PrecompressedStaticFiles
 
 DEV_BACKEND_RELOAD_ENV_NAME = environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.name
 
@@ -290,7 +295,7 @@ def test_run_granian_backend_binds_listen_socket_in_supervisor(
         with socket.create_connection(listener.getsockname(), timeout=1):
             pass
     finally:
-        listener.close()
+        server._close_shared_socket()  # pyright: ignore[reportAttributeAccessIssue]
 
 
 @pytest.mark.skipif(sys.platform != "linux", reason="Granian uses this path on Linux")
@@ -394,6 +399,290 @@ def test_arbitrate_ssr_env_var_wins(monkeypatch: pytest.MonkeyPatch):
     assert exec_utils.arbitrate_ssr(True) is False
 
 
+def _fake_granian_prod(
+    mocker: MockerFixture, calls: list[str], telemetry_stopped: bool = True
+):
+    """Patch granian and the prod launcher's collaborators, recording call order."""
+    granian_server = pytest.importorskip("granian.server")
+
+    class FakeGranian:
+        def __init__(self, *_args, **_kwargs):
+            pass
+
+        def startup(self, *_args):
+            calls.append("workers")
+
+        def serve(self):
+            calls.append("serve")
+            self.startup(None, None)
+
+    mocker.patch.object(granian_server, "Server", FakeGranian)
+    mocker.patch.object(
+        exec_utils, "get_app_instance_from_file", return_value="app:app"
+    )
+    mocker.patch.object(exec_utils, "_get_backend_workers", return_value=1)
+    mocker.patch.object(
+        multiprocessing,
+        "set_start_method",
+        side_effect=lambda method, force=False: calls.append(f"start:{method}"),
+    )
+    mocker.patch.object(
+        prerequisites, "get_app", side_effect=lambda: calls.append("preload")
+    )
+    mocker.patch.object(
+        serializers,
+        "_prepare_serializers_for_fork",
+        side_effect=lambda: calls.append("serializers"),
+    )
+    mocker.patch.object(
+        telemetry,
+        "_shutdown_executor",
+        side_effect=lambda: calls.append("drain") or telemetry_stopped,
+    )
+    mocker.patch.object(gc, "freeze", side_effect=lambda: calls.append("freeze"))
+
+
+def test_run_granian_backend_prod_preloads_app_before_forking(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """With fork, the app is imported, telemetry drained and the heap frozen first."""
+    monkeypatch.setenv(environment.REFLEX_BACKEND_START_METHOD.name, "fork")
+    calls: list[str] = []
+    _fake_granian_prod(mocker, calls)
+
+    exec_utils.run_granian_backend_prod(
+        host="0.0.0.0", port=8000, loglevel=exec_utils.LogLevel.INFO
+    )
+
+    assert calls == [
+        "start:fork",
+        "preload",
+        "serializers",
+        "drain",
+        "freeze",
+        "serve",
+        "workers",
+    ]
+
+
+def test_run_granian_backend_prod_spawns_when_telemetry_is_stuck(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """A telemetry thread that outlives the drain makes forking unsafe.
+
+    The app is still imported under the requested start method, so anything it
+    creates at import time uses the same context as before the fallback.
+    """
+    monkeypatch.setenv(environment.REFLEX_BACKEND_START_METHOD.name, "fork")
+    calls: list[str] = []
+    _fake_granian_prod(mocker, calls, telemetry_stopped=False)
+
+    exec_utils.run_granian_backend_prod(
+        host="0.0.0.0", port=8000, loglevel=exec_utils.LogLevel.INFO
+    )
+
+    assert calls == [
+        "start:fork",
+        "preload",
+        "serializers",
+        "drain",
+        "start:spawn",
+        "serve",
+        "workers",
+    ]
+
+
+def test_run_granian_backend_prod_spawn_skips_preload(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """Spawned workers re-import the app, so the supervisor does not load it."""
+    monkeypatch.setenv(environment.REFLEX_BACKEND_START_METHOD.name, "spawn")
+    calls: list[str] = []
+    _fake_granian_prod(mocker, calls)
+
+    exec_utils.run_granian_backend_prod(
+        host="0.0.0.0", port=8000, loglevel=exec_utils.LogLevel.INFO
+    )
+
+    assert calls == ["start:spawn", "serve", "workers"]
+
+
+def test_run_granian_backend_prod_custom_target_only_freezes(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """A non-reflex target lives in an already-imported module."""
+    monkeypatch.setenv(environment.REFLEX_BACKEND_START_METHOD.name, "fork")
+    calls: list[str] = []
+    _fake_granian_prod(mocker, calls)
+
+    exec_utils.run_granian_backend_prod(
+        host="0.0.0.0",
+        port=8000,
+        loglevel=exec_utils.LogLevel.INFO,
+        app_target="reflex.utils.exec:_frontend_prod_app",
+    )
+
+    assert calls == ["start:fork", "serializers", "drain", "freeze", "serve", "workers"]
+
+
+@pytest.mark.parametrize(
+    ("default_method", "expected"),
+    [("fork", "fork"), ("forkserver", "fork"), ("spawn", None)],
+)
+def test_backend_start_method_follows_platform_default(
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    default_method: str,
+    expected: str | None,
+):
+    """Fork is forced only where the interpreter already defaults to forking."""
+    monkeypatch.delenv(environment.REFLEX_BACKEND_START_METHOD.name, raising=False)
+    mocker.patch.object(
+        multiprocessing, "get_start_method", return_value=default_method
+    )
+
+    assert exec_utils._backend_start_method() == expected
+
+
+def test_get_routes_manifest_router_missing_manifest(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+):
+    """Return None without warning when no routes manifest has been written."""
+    monkeypatch.setenv(environment.REFLEX_WEB_WORKDIR.name, str(tmp_path))
+    with caplog.at_level(logging.WARNING, logger=exec_utils.logger.name):
+        assert exec_utils.get_routes_manifest_router() is None
+    assert not caplog.records
+
+
+def test_get_routes_manifest_router_invalid_manifest(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+):
+    """Warn and return None when the routes manifest is not valid JSON."""
+    monkeypatch.setenv(environment.REFLEX_WEB_WORKDIR.name, str(tmp_path))
+    manifest = tmp_path / "routes.json"
+    manifest.write_text("not valid json{")
+    with caplog.at_level(logging.WARNING, logger=exec_utils.logger.name):
+        assert exec_utils.get_routes_manifest_router() is None
+    assert f"Ignoring invalid routes manifest {manifest}" in caplog.text
+
+
+def test_get_routes_manifest_router_matches_dynamic_routes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """Build a matcher from the manifest that resolves dynamic routes."""
+    monkeypatch.setenv(environment.REFLEX_WEB_WORKDIR.name, str(tmp_path))
+    (tmp_path / "routes.json").write_text(
+        '["index", "articles/[id]", "posts/[[...splat]]", "404"]'
+    )
+
+    router = exec_utils.get_routes_manifest_router()
+
+    assert router is not None
+    assert router("/") == "index"
+    assert router("/articles/7") == "articles/[id]"
+    assert router("/posts/a/b") == "posts/[[...splat]]"
+    assert router("/definitely-not-a-page") is None
+
+
+def test_get_frontend_mount_builds_router_from_manifest(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """The frontend mount picks up the routes manifest when no router is given."""
+    monkeypatch.setenv(environment.REFLEX_WEB_WORKDIR.name, str(tmp_path))
+    (tmp_path / "build" / "client").mkdir(parents=True)
+    (tmp_path / "routes.json").write_text('["index", "articles/[id]"]')
+
+    mount = exec_utils.get_frontend_mount()
+
+    static_files = mount.app
+    assert isinstance(static_files, PrecompressedStaticFiles)
+    router = static_files._router
+    assert router is not None
+    assert router("/articles/7") == "articles/[id]"
+    assert router("/missing") is None
+
+
+def test_get_frontend_mount_router_respects_frontend_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """The mount-relative path is matched with the frontend path restored."""
+    from reflex_base.config import get_config
+
+    monkeypatch.setenv(environment.REFLEX_WEB_WORKDIR.name, str(tmp_path))
+    monkeypatch.setattr(get_config(), "frontend_path", "/sub")
+    (tmp_path / "build" / "client" / "sub").mkdir(parents=True)
+    (tmp_path / "routes.json").write_text('["index", "articles/[id]"]')
+
+    mount = exec_utils.get_frontend_mount()
+
+    static_files = mount.app
+    assert isinstance(static_files, PrecompressedStaticFiles)
+    router = static_files._router
+    assert router is not None
+    assert router("/articles/7") == "articles/[id]"
+    assert router("/") == "index"
+    assert router("/missing") is None
+
+
+def test_get_frontend_mount_router_excludes_synthetic_404_route(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """A literal /404 request stays a 404 despite the compiled 404 page route."""
+    monkeypatch.setenv(environment.REFLEX_WEB_WORKDIR.name, str(tmp_path))
+    (tmp_path / "build" / "client").mkdir(parents=True)
+    (tmp_path / "routes.json").write_text('["index", "articles/[id]", "404"]')
+
+    mount = exec_utils.get_frontend_mount()
+
+    static_files = mount.app
+    assert isinstance(static_files, PrecompressedStaticFiles)
+    router = static_files._router
+    assert router is not None
+    assert router("/404") is None
+    assert router("/404/") is None
+    assert router("/articles/7") == "articles/[id]"
+
+
+def test_get_frontend_mount_explicit_router_excludes_synthetic_404_route(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """An explicitly passed app router is also filtered for the 404 page route."""
+    from reflex.route import get_router
+
+    monkeypatch.setenv(environment.REFLEX_WEB_WORKDIR.name, str(tmp_path))
+    (tmp_path / "build" / "client").mkdir(parents=True)
+
+    mount = exec_utils.get_frontend_mount(
+        router=get_router(["index", "articles/[id]", "404"])
+    )
+
+    static_files = mount.app
+    assert isinstance(static_files, PrecompressedStaticFiles)
+    router = static_files._router
+    assert router is not None
+    assert router("/404") is None
+    assert router("/articles/7") == "articles/[id]"
+
+
+@pytest.mark.parametrize("path", ["/index", "/index/", "index"])
+def test_get_frontend_mount_router_excludes_index_alias(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, path: str
+):
+    """``/index`` keeps its 404 status since the frontend renders it as the 404 page."""
+    monkeypatch.setenv(environment.REFLEX_WEB_WORKDIR.name, str(tmp_path))
+    (tmp_path / "build" / "client").mkdir(parents=True)
+    (tmp_path / "routes.json").write_text('["index", "articles/[id]"]')
+
+    mount = exec_utils.get_frontend_mount()
+
+    static_files = mount.app
+    assert isinstance(static_files, PrecompressedStaticFiles)
+    router = static_files._router
+    assert router is not None
+    assert router(path) is None
+    assert router("/") == "index"
+
+
 @pytest.mark.parametrize("json_mode", [False, True])
 def test_run_granian_backend_json_logs_in_json_mode(
     tmp_path: Path,
@@ -455,6 +744,7 @@ def test_run_granian_backend_prod_json_logs_in_json_mode(
         exec_utils, "get_app_instance_from_file", return_value="app:app"
     )
     mocker.patch.object(exec_utils, "_get_backend_workers", return_value=1)
+    mocker.patch.object(exec_utils, "_backend_start_method", return_value=None)
     granian_server = pytest.importorskip("granian.server")
     options: dict[str, object] = {}
 
@@ -537,13 +827,22 @@ def _dev_granian_supervisor(mocker: MockerFixture, tmp_path: Path, port: int):
     granian_server = pytest.importorskip("granian.server")
     servers: list[Any] = []
 
+    class FakeInner:
+        exitcode = None
+
+        def join(self):
+            """Return at once: the fake worker is never running."""
+
     class FakeWorker:
         def __init__(self):
             self.interrupt_by_parent = False
             self.alive = True
+            self.inner = FakeInner()
+            self.granian_watched = False
 
         def _watcher(self):
-            """Stand in for granian's watcher body, which joins the process."""
+            """Stand in for granian's watcher body, which logs an unexpected exit."""
+            self.granian_watched = True
 
         def is_alive(self):
             return self.alive
@@ -555,6 +854,7 @@ def _dev_granian_supervisor(mocker: MockerFixture, tmp_path: Path, port: int):
             self.backlog = 16
             self.wrks = []
             self.shutdowns = []
+            self.main_loop_interrupt = threading.Event()
             self._ssp = self._shd = self._sfd = None
             self._sso: Any = None
             servers.append(self)
@@ -611,8 +911,7 @@ def test_run_granian_backend_releases_socket_when_worker_dies(
 
         assert _port_is_bindable(port)
     finally:
-        if server._sso is not None:
-            server._sso.close()
+        server._close_shared_socket()
 
 
 def test_run_granian_backend_keeps_socket_across_worker_restart(
@@ -630,8 +929,37 @@ def test_run_granian_backend_keeps_socket_across_worker_restart(
 
         assert not _port_is_bindable(port)
     finally:
-        if server._sso is not None:
-            server._sso.close()
+        server._close_shared_socket()
+
+
+def test_run_granian_backend_reports_only_unclean_worker_exits(
+    tmp_path: Path, mocker: MockerFixture
+):
+    """Only a worker exiting 0 while the supervisor is signalled skips granian's report."""
+    port = _free_port()
+    server = _dev_granian_supervisor(mocker, tmp_path, port)
+    try:
+        server._init_shared_socket()
+        stopped = _spawn_supervisor_worker(server)
+        stopped.inner.exitcode = 0
+        stopped.alive = False
+        server.main_loop_interrupt.set()
+        stopped._watcher()
+        assert not stopped.granian_watched
+        assert _port_is_bindable(port)
+
+        mocker.patch.object(server.main_loop_interrupt, "wait", return_value=False)
+        exited = _spawn_supervisor_worker(server)
+        exited.inner.exitcode = 0
+        exited._watcher()
+        assert exited.granian_watched
+
+        crashed = _spawn_supervisor_worker(server)
+        crashed.inner.exitcode = -1
+        crashed._watcher()
+        assert crashed.granian_watched
+    finally:
+        server._close_shared_socket()
 
 
 def test_run_granian_backend_rebinds_socket_for_the_next_worker(
@@ -652,8 +980,7 @@ def test_run_granian_backend_rebinds_socket_for_the_next_worker(
         assert not _port_is_bindable(port)
         assert server._sso.get_inheritable()
     finally:
-        if server._sso is not None:
-            server._sso.close()
+        server._close_shared_socket()
 
 
 def test_run_granian_backend_releases_socket_on_shutdown(
@@ -669,8 +996,40 @@ def test_run_granian_backend_releases_socket_on_shutdown(
         assert _port_is_bindable(port)
         assert server.shutdowns == [0]
     finally:
-        if server._sso is not None:
-            server._sso.close()
+        server._close_shared_socket()
+
+
+def test_run_granian_backend_closes_released_socket_once(
+    tmp_path: Path, mocker: MockerFixture
+):
+    """Releasing the socket closes its handle through exactly one owner.
+
+    The socket object and granian's SocketHolder wrap the same handle, and only
+    the Windows holder closes it when dropped. Closing it through both lets the
+    second close hit whichever socket has reused the handle by then.
+    """
+    port = _free_port()
+    server = _dev_granian_supervisor(mocker, tmp_path, port)
+    server._init_shared_socket()
+    # Outliving the release shows which of the two owners closes the handle.
+    holder = server._shd
+    try:
+        server._close_shared_socket()
+
+        assert server._shd is None
+        assert not server._shared_socket_is_open()
+        if exec_utils.constants.IS_WINDOWS:
+            assert not _port_is_bindable(port)
+        else:
+            assert _port_is_bindable(port)
+        # Takes over the handle if the socket object freed it.
+        later = socket.socket()
+    finally:
+        del holder
+    with later:
+        # Raises if dropping the holder closed the reused handle again.
+        later.bind(("127.0.0.1", 0))
+    assert _port_is_bindable(port)
 
 
 def _wait_for_refused_connection(port: int, timeout: float = 20) -> bool:

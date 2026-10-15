@@ -1,5 +1,6 @@
 """Tests for EventContext."""
 
+import dataclasses
 from unittest import mock
 
 from reflex_base.event.context import EventContext
@@ -17,6 +18,21 @@ def test_fork_creates_child(mock_root_event_context: EventContext):
     assert child.txid != mock_root_event_context.txid
     assert child.state_manager is mock_root_event_context.state_manager
     assert child.enqueue_impl is mock_root_event_context.enqueue_impl
+
+
+def test_fork_without_txid_has_no_parent(mock_root_event_context: EventContext):
+    """A context without a txid (an event processor's root) belongs to no event.
+
+    Its forks are top-level events, so they name no parent event.
+
+    Args:
+        mock_root_event_context: The root event context fixture.
+    """
+    root = dataclasses.replace(mock_root_event_context, txid="")
+    child = root.fork(token="child-tok")
+    assert child.parent_txid is None
+    assert child.txid
+    assert child.fork().parent_txid == child.txid
 
 
 def test_fork_inherits_token(mock_root_event_context: EventContext):

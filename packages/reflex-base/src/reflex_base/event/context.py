@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 import functools
-import uuid
+import os
 from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any, Protocol
 
@@ -29,6 +29,15 @@ def get_name(cls: type | Callable) -> str:
     module = cls.__module__.replace(".", "___")
     qualname = getattr(cls, "__qualname__", cls.__name__).replace(".", "___")
     return to_snake_case(f"{module}___{qualname}")
+
+
+def _new_txid() -> str:
+    """Generate a transaction id.
+
+    Returns:
+        12 random hex digits, the same 48 random bits as ``uuid4().hex[:12]``.
+    """
+    return os.urandom(6).hex()
 
 
 class EnqueueProtocol(Protocol):
@@ -87,9 +96,11 @@ class EventContext(BaseContext):
     # Function responsible for enqueuing an event handler to be executed.
     enqueue_impl: EnqueueProtocol = dataclasses.field(repr=False)
 
-    # Each event is associated with a top-level transaction id.
-    txid: str = dataclasses.field(default_factory=lambda: uuid.uuid4().hex[:12])
-    # The txid of another EventContext that enqueued this context's event.
+    # Each event is associated with a top-level transaction id. Empty for a
+    # context that belongs to no event, like an event processor's root context.
+    txid: str = dataclasses.field(default_factory=_new_txid)
+    # The txid of another EventContext that enqueued this context's event, or
+    # None for a top-level event.
     parent_txid: str | None = None
 
     emit_delta_impl: EmitDeltaProtocol | None = dataclasses.field(
@@ -108,23 +119,27 @@ class EventContext(BaseContext):
     # event a handler yields resolves against the view that produced it.
     router_data: dict[str, Any] = dataclasses.field(default_factory=dict, repr=False)
 
-    def fork(self, token: str | None = None) -> EventContext:
+    def fork(
+        self, token: str | None = None, router_data: dict[str, Any] | None = None
+    ) -> EventContext:
         """Return a new EventContext with the specified fields replaced.
 
         Args:
             token: The client token for the new context.
+            router_data: The routing data for the new context, inherited from this context if empty.
 
         Returns:
             A new EventContext with the specified fields replaced.
         """
         return type(self)(
             token=token or self.token,
-            parent_txid=self.txid,
+            # Forks of a context without a txid are top-level events.
+            parent_txid=self.txid or None,
             state_manager=self.state_manager,
             enqueue_impl=self.enqueue_impl,
             emit_delta_impl=self.emit_delta_impl,
             emit_event_impl=self.emit_event_impl,
-            router_data=self.router_data,
+            router_data=router_data or self.router_data,
             otel_context=otel.capture_context(),
         )
 

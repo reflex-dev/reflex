@@ -41,6 +41,9 @@ class Hosting(SimpleNamespace):
     # How long to wait between retry attempts
     AUTH_RETRY_SLEEP_DURATION = 5
 
+    # Tiers (lowercased) whose deploys may hide the "Built with Reflex" badge
+    PAID_TIERS = frozenset(("pro", "team", "enterprise"))
+
     # Aliases for compatibility with previous versions of Reflex
     CP_BACKEND_URL = HOSTING_SERVICE
     CP_WEB_URL = HOSTING_SERVICE_UI

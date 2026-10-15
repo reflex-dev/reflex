@@ -32,12 +32,22 @@ DIRECTLY_REQUIRED = {"pre-commit", "changelog"}
 # branch protection this ruleset replaces. No gate can cover another app's check,
 # so each is required by name and pinned to the app that posts it.
 THIRD_PARTY = {"Greptile Review": 867647, "cubic · AI code reviewer": 1082092}
-# Workflows that deliberately block no merge, so they stay out of the ruleset. One
-# keeps the trigger-level path filter that would deadlock a required check; the
+# Workflows that deliberately block no merge, so they stay out of the ruleset.
+# Three keep the trigger-level path filter that would deadlock a required check
+# (docs_whitelist, and the reflex-bench playground's examples and size_budgets);
+# macro_benchmarks runs only on pull requests labeled run-benchmarks, on a
+# runner whose monthly minutes can run out, so it reports on almost none; the
 # other two are disabled in the repository's Actions settings, where they never
 # run at all -- which no test here can see, so disabling a workflow means moving
 # it here by hand.
-ADVISORY = {"docs_whitelist.yml", "check_node_latest.yml", "dependency-review.yml"}
+ADVISORY = {
+    "docs_whitelist.yml",
+    "check_node_latest.yml",
+    "dependency-review.yml",
+    "examples.yml",
+    "size_budgets.yml",
+    "macro_benchmarks.yml",
+}
 
 
 def workflow_triggers(doc: dict) -> dict:

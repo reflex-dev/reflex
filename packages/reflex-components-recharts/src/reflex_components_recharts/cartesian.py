@@ -10,6 +10,7 @@ from reflex_base.constants import EventTriggers
 from reflex_base.constants.colors import Color
 from reflex_base.event import EventHandler, no_args_event_spec
 from reflex_base.vars.base import LiteralVar, Var
+from reflex_base.vars.function import FunctionVar
 from reflex_base.vars.sequence import LiteralStringVar
 
 from .recharts import (
@@ -31,6 +32,14 @@ from .recharts import (
     LiteralShape,
     LiteralTextAnchor,
     Recharts,
+)
+
+_TICK_FORMATTER_DYNAMIC_VAR_ERROR = (
+    "tick_formatter must be a JavaScript function, not a "
+    "dynamic string Var. Use FunctionStringVar.create() instead."
+)
+_TICK_FORMATTER_TYPE_ERROR = (
+    "tick_formatter must be a FunctionVar or JavaScript function expression."
 )
 
 
@@ -115,9 +124,10 @@ class Axis(Recharts):
 
     tick_size: Var[int] = field(doc="The length of tick line. Default: 6")
 
-    tick_formatter: Var[str] = field(
+    tick_formatter: str | LiteralStringVar | FunctionVar = field(
         doc="A JS function expression that formats the tick value shown in the "
-        'axis, e.g. tick_formatter="(value) => value.toFixed(2)".'
+        'axis, e.g. tick_formatter="(value) => value.toFixed(2)". '
+        "A FunctionVar can also be passed. Dynamic Vars are not supported."
     )
 
     min_tick_gap: Var[int] = field(
@@ -129,7 +139,7 @@ class Axis(Recharts):
         """Create an Axis component.
 
         A ``tick_formatter`` string is emitted as a JS function expression
-        rather than a quoted string.
+        rather than a quoted string. A ``FunctionVar`` can also be passed.
 
         Args:
             *children: The children of the component.
@@ -137,12 +147,24 @@ class Axis(Recharts):
 
         Returns:
             The Axis component.
+
+        Raises:
+            TypeError: If ``tick_formatter`` is a dynamic string Var or another
+                value that is not a literal JavaScript function or ``FunctionVar``.
         """
         tick_formatter = props.get("tick_formatter")
         if isinstance(tick_formatter, LiteralStringVar):
             tick_formatter = tick_formatter._var_value
         if isinstance(tick_formatter, str):
             props["tick_formatter"] = Var(_js_expr=tick_formatter)
+        elif isinstance(tick_formatter, Var) and not isinstance(
+            tick_formatter, FunctionVar
+        ):
+            if tick_formatter._var_type is str:
+                raise TypeError(_TICK_FORMATTER_DYNAMIC_VAR_ERROR)
+            raise TypeError(_TICK_FORMATTER_TYPE_ERROR)
+        elif tick_formatter is not None and not isinstance(tick_formatter, FunctionVar):
+            raise TypeError(_TICK_FORMATTER_TYPE_ERROR)
         return super().create(*children, **props)
 
     stroke: Var[str | Color] = field(

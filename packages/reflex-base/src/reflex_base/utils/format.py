@@ -718,20 +718,43 @@ def _get_serialize() -> Callable[[Any], Any]:
     return _serialize
 
 
-def json_dumps(obj: Any, **kwargs) -> str:
+@lru_cache
+def _get_json_encoder(separators: tuple[str, str] | None) -> json.JSONEncoder:
+    """Get the JSON encoder that serializes values with the Reflex serializers.
+
+    ``json.dumps`` builds a new encoder on every call when given any option, which
+    dominates the cost of small payloads. Encoders keep no state between calls, so
+    one is shared per set of separators.
+
+    Args:
+        separators: The item and key separators, or None for the default ones.
+
+    Returns:
+        The shared encoder.
+    """
+    return json.JSONEncoder(
+        ensure_ascii=False, default=_get_serialize(), separators=separators
+    )
+
+
+def json_dumps(obj: Any, separators: tuple[str, str] | None = None, **kwargs) -> str:
     """Takes an object and returns a jsonified string.
 
     Args:
         obj: The object to be serialized.
+        separators: The item and key separators, as for json.dumps.
         kwargs: Additional keyword arguments to pass to json.dumps.
 
     Returns:
         A string
     """
+    if not kwargs and (separators is None or isinstance(separators, tuple)):
+        return _get_json_encoder(separators).encode(obj)
+
     kwargs.setdefault("ensure_ascii", False)
     kwargs.setdefault("default", _get_serialize())
 
-    return json.dumps(obj, **kwargs)
+    return json.dumps(obj, separators=separators, **kwargs)
 
 
 def collect_form_dict_names(form_dict: dict[str, Any]) -> dict[str, Any]:

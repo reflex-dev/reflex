@@ -74,6 +74,11 @@ def _llms_txt_directive() -> rx.Component:
 # Create the app.
 app = rxe.App(
     style=styles.BASE_STYLE,
+    stylesheets=[
+        "/docs-theme.css",
+        "/docs-header-theme.css",
+        "/docs-overlays-theme.css",
+    ],
     app_wraps={},
     theme=rx.theme(
         _llms_txt_directive(),
@@ -244,6 +249,10 @@ redirects.extend([
     ("/hosting/adding-members/", "/hosting/project-members/"),
     ("/hosting/projects/", "/hosting/project-members/"),
     ("/authentication/authentication-overview/", "/enterprise/auth/overview/"),
+    ("/custom-components/", "/wrapping-react/overview/"),
+    ("/custom-components/overview/", "/wrapping-react/overview/"),
+    ("/custom-components/command-reference/", "/wrapping-react/overview/"),
+    ("/custom-components/prerequisites-for-publishing/", "/wrapping-react/overview/"),
 ])
 
 

@@ -32,7 +32,6 @@ from reflex_docs.whitelist import _check_whitelisted_path
 from .apiref import pages as apiref_pages
 from .cloud import pages as cloud_pages
 from .cloud_cliref import pages as cloud_cliref_pages
-from .custom_components import custom_components
 from .library import library
 from .recipes_overview import overview
 
@@ -182,8 +181,6 @@ manual_titles = {
     "docs/ai_builder/apis.md": "APIs",
     "docs/ai_builder/urls.md": "URLs",
     "docs/database/overview.md": "Database Overview",
-    "docs/custom-components/overview.md": "Custom Components Overview",
-    "docs/custom-components/command-reference.md": "Custom Component CLI Reference",
     "docs/api-routes/overview.md": "API Routes Overview",
     "docs/client_storage/overview.md": "Client Storage Overview",
     "docs/state_structure/overview.md": "State Structure Overview",
@@ -383,7 +380,7 @@ CHANGELOG_VIRTUAL_PREFIX = "docs/changelog/"
 
 
 def handle_changelog_doc(doc: str, actual_path: str, resolved: ResolvedDoc):
-    """Handle docs/changelog/** docs — package changelogs pulled from outside the docs tree.
+    """Handle the package changelogs pulled in from outside the docs tree.
 
     Changelog markdown ships without a meaningful top-level heading, so the
     canonical page title is normalized in and the table of contents is limited
@@ -462,7 +459,7 @@ def get_component_docgen(virtual_doc: str, actual_path: str, title: str):
     if virtual_doc.startswith("docs/library"):
         return handle_library_doc(virtual_doc, actual_path, title, resolved)
 
-    if virtual_doc.startswith(CHANGELOG_VIRTUAL_PREFIX):
+    if virtual_doc in changelog_virtual_docs:
         return handle_changelog_doc(virtual_doc, actual_path, resolved)
 
     # Read the markdown once and reuse it for both the rendered body and the
@@ -506,14 +503,17 @@ def get_component_docgen(virtual_doc: str, actual_path: str, title: str):
 # at the repo root (CHANGELOG.md and packages/*/CHANGELOG.md) and the
 # reflex-enterprise one inside the installed distribution. Reach up and pull
 # them in as regular docs under docs/changelog/, with the main reflex
-# changelog served at the section index.
+# changelog served at the section index. Other docs under docs/changelog/,
+# like the upgrade guides, are ordinary pages.
 changelog_packages: dict[str, str] = {}  # package name → route
+changelog_virtual_docs: set[str] = set()
 for _package, _changelog_path in discover_changelogs(_docs_dir.parent).items():
     _virtual = (
         f"{CHANGELOG_VIRTUAL_PREFIX}index.md"
         if _package == "reflex"
         else f"{CHANGELOG_VIRTUAL_PREFIX}{_package}.md"
     )
+    changelog_virtual_docs.add(_virtual)
     all_docs[_virtual] = str(_changelog_path)
     manual_titles[_virtual] = changelog_page_title(_package)
     changelog_packages[_package] = doc_route_from_path(_virtual)
@@ -539,7 +539,6 @@ for _virtual, _actual in all_docs.items():
 
 doc_routes = [
     library,
-    custom_components,
     overview,
     *components_previews_pages,
     *apiref_pages,

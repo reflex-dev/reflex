@@ -4,14 +4,22 @@ import datetime
 import json
 import logging
 import uuid
+from pathlib import Path
 from unittest.mock import MagicMock, mock_open
+from urllib.parse import parse_qs, urlsplit
 
 import click
 import pytest
 from pytest_mock import MockerFixture, MockFixture
 from reflex_base.utils.log import SUCCESS
+from reflex_build_sdk import (
+    APIConnectionError,
+    APIResponseValidationError,
+    APITimeoutError,
+)
 from reflex_build_sdk.types import DeploymentReport, GcpConnection, GcpStatus
 from reflex_cli import constants
+from reflex_cli.utils import hosting
 from reflex_cli.utils.exceptions import TokenAccessDeniedError, TokenValidationError
 from reflex_cli.utils.hosting import (
     _WATCH_UNREACHABLE_GRACE,
@@ -46,9 +54,115 @@ from reflex_cli.utils.hosting import (
     watch_deployment_status,
 )
 
+from tests.units.reflex_build_sdk.conftest import MockAPI, MockTransport, reply
 from tests.units.reflex_cli.sdk import api_error, fake_client
 
 _client = fake_client
+
+
+def test_upload_client_uses_sdk_default_transport(mocker: MockerFixture):
+    """The upload client's retry wrapper preserves SDK transport selection.
+
+    Args:
+        mocker: The pytest-mock fixture.
+    """
+    transport = MagicMock()
+    default_transport = mocker.patch(
+        "reflex_cli.utils.hosting.default_transport",
+        return_value=transport,
+        create=True,
+    )
+
+    with hosting.upload_client(_client()):
+        default_transport.assert_called_once_with()
+        transport.close.assert_not_called()
+
+    transport.close.assert_called_once_with()
+
+
+@pytest.mark.parametrize("base_path", ["", "/proxy", "/nested/proxy/"])
+@pytest.mark.parametrize("refusal_code", ["app_busy", "app_scaling"])
+def test_upload_client_retries_submission_without_uploading_again(
+    mocker: MockerFixture, tmp_path: Path, base_path: str, refusal_code: str
+):
+    """Scaling retries reuse the uploaded build and close their HTTP transport.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        tmp_path: The directory for the build archives.
+        base_path: The backend URL's optional path prefix.
+        refusal_code: The server's legacy or dedicated scaling refusal code.
+    """
+    mocker.patch.object(
+        constants.Hosting, "HOSTING_SERVICE", f"https://build.example{base_path}"
+    )
+    deployments_path = f"{base_path.rstrip('/')}/api/v1/deployments"
+    mock_api = MockAPI()
+    transport = MockTransport(mock_api)
+    mocker.patch("reflex_cli.utils.hosting.default_transport", return_value=transport)
+    sleep = mocker.patch("time.sleep")
+    client = _client()
+    client.api.token = "test-token"
+    deployment_id = str(uuid.UUID(int=41))
+    archives = [tmp_path / name for name in ("backend.zip", "frontend.zip")]
+    for archive in archives:
+        archive.write_bytes(b"build")
+        mock_api.add("PUT", f"/{archive.name}", reply(200))
+    mock_api.add(
+        "POST",
+        f"{deployments_path}/reserve",
+        reply(
+            200,
+            json={
+                "deployment_id": deployment_id,
+                "backend": {
+                    "url": "https://storage.example/backend.zip",
+                    "headers": {},
+                },
+                "frontend": {
+                    "url": "https://storage.example/frontend.zip",
+                    "headers": {},
+                },
+                "expires_in": 1800,
+            },
+        ),
+    )
+    mock_api.add(
+        "POST",
+        deployments_path,
+        reply(
+            409,
+            headers={"x-reflex-error-code": refusal_code},
+            json={
+                "detail": (
+                    "the app is currently being scaled; wait for the scale to finish, then deploy again"
+                    if refusal_code == "app_busy"
+                    else "Scaling is underway. Please retry later."
+                )
+            },
+        ),
+        reply(201, json=deployment_id),
+    )
+
+    with hosting.upload_client(client) as uploader:
+        result = uploader.deployments.create(
+            uuid.UUID(int=51), backend=archives[0], frontend=archives[1]
+        )
+
+    assert str(result) == deployment_id
+    paths = [urlsplit(request.url).path for request in mock_api.requests]
+    assert paths.count(f"{deployments_path}/reserve") == 1
+    assert paths.count("/backend.zip") == paths.count("/frontend.zip") == 1
+    submits = mock_api.requests[-2:]
+    assert paths[-2:] == [deployments_path] * 2
+    assert [request.method for request in submits] == ["POST"] * 2
+    assert submits[0].url == submits[1].url
+    assert submits[0].headers["X-Request-ID"] == submits[1].headers["X-Request-ID"]
+    assert submits[0].content == submits[1].content
+    assert isinstance(submits[0].content, bytes)
+    assert parse_qs(submits[0].content.decode())["stored_build_id"] == [deployment_id]
+    sleep.assert_called_once_with(15)
+    assert mock_api.closed
 
 
 @pytest.mark.parametrize(
@@ -152,11 +266,52 @@ def test_delete_token_from_config(config_content: str, expected: dict):
     assert json.loads(constants.Hosting.HOSTING_JSON.read_text()) == expected
 
 
-def test_delete_token_from_config_without_a_config_file():
-    """Deleting when no config exists is a no-op rather than an error."""
+@pytest.mark.parametrize(
+    "stored_token, token, removed",
+    [
+        ("old_token", "old_token", True),
+        ("new_token", "old_token", False),
+        ("new_token", "", False),
+        ("", "", True),
+        (None, "old_token", False),
+    ],
+)
+def test_delete_token_from_config_only_removes_matching_token(
+    stored_token: str | None, token: str, removed: bool
+):
+    """Conditional deletion preserves a different token and unrelated settings.
+
+    Args:
+        stored_token: The token stored in the config, or None if absent.
+        token: The token expected to be removed.
+        removed: Whether the stored token should be removed.
+    """
+    config = {"project": "p1"}
+    if stored_token is not None:
+        config["access_token"] = stored_token
+    original = json.dumps(config, indent=2)
+    constants.Hosting.HOSTING_JSON.write_text(original)
+
+    delete_token_from_config(token)
+
+    if removed:
+        assert json.loads(constants.Hosting.HOSTING_JSON.read_text()) == {
+            "project": "p1"
+        }
+    else:
+        assert constants.Hosting.HOSTING_JSON.read_text() == original
+
+
+@pytest.mark.parametrize("token", [None, "old_token"])
+def test_delete_token_from_config_without_a_config_file(token: str | None):
+    """Deleting when no config exists is a no-op rather than an error.
+
+    Args:
+        token: The optional token expected to be removed.
+    """
     assert not constants.Hosting.HOSTING_JSON.exists()
 
-    delete_token_from_config()
+    delete_token_from_config(token)
 
     assert not constants.Hosting.HOSTING_JSON.exists()
 
@@ -344,7 +499,50 @@ def test_authenticated_token_found_but_invalid(mocker: MockFixture):
     delete_token = mocker.patch("reflex_cli.utils.hosting.delete_token_from_config")
 
     assert authenticated_token() == ("", {})
-    delete_token.assert_called_once()
+    delete_token.assert_called_once_with("bad_token")
+
+
+@pytest.mark.parametrize("interactive", [True, False])
+def test_validation_failure_preserves_a_replacement_token(
+    mocker: MockFixture, interactive: bool
+):
+    """A token saved during validation survives rejection of the previous token.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        interactive: Whether to use the interactive validation helper.
+    """
+    save_token_to_config("old_token")
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_existing_access_token_with_source",
+        return_value=("old_token", TokenSource.CONFIG),
+    )
+
+    def replace_token_and_reject(access_token: str, api=None):
+        """Simulate a concurrent login before the validation response arrives.
+
+        Args:
+            access_token: The token being validated.
+            api: The optional client used for validation.
+
+        Raises:
+            TokenAccessDeniedError: When the old token is rejected.
+        """
+        assert access_token == "old_token"
+        save_token_to_config("new_token")
+        msg = "access denied"
+        raise TokenAccessDeniedError(msg, request_id="req-1")
+
+    mocker.patch(
+        "reflex_cli.utils.hosting._validate", side_effect=replace_token_and_reject
+    )
+
+    if interactive:
+        assert validate_token_with_retries("old_token") == {}
+    else:
+        with pytest.raises(click.exceptions.Exit):
+            get_authenticated_client(token=None, interactive=False)
+    assert stored_access_token() == "new_token"
 
 
 def test_authenticated_token_found_but_validation_fails(mocker: MockFixture):
@@ -370,7 +568,10 @@ def test_authenticate_without_token_in_non_interactive_mode(mocker: MockerFixtur
     Args:
         mocker: Pytest mocker fixture.
     """
-    mocker.patch("reflex_cli.utils.hosting.get_existing_access_token", return_value="")
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_existing_access_token_with_source",
+        return_value=("", TokenSource.NONE),
+    )
     with pytest.raises(click.exceptions.Exit):
         get_authenticated_client(token=None, interactive=False)
 
@@ -382,15 +583,127 @@ def test_authenticate_with_env_token_in_non_interactive_mode(mocker: MockerFixtu
         mocker: Pytest mocker fixture.
     """
     mocker.patch(
-        "reflex_cli.utils.hosting.get_existing_access_token", return_value="env_token"
+        "reflex_cli.utils.hosting.get_existing_access_token_with_source",
+        return_value=("env_token", TokenSource.ENVIRONMENT),
     )
     client = _client()
-    get_auth_client = mocker.patch(
-        "reflex_cli.utils.hosting.get_authentication_client", return_value=client
+    new_client = mocker.patch(
+        "reflex_cli.utils.hosting.new_client", return_value=client.api
+    )
+    validate = mocker.patch(
+        "reflex_cli.utils.hosting._validate", return_value=client.me
+    )
+    browser = mocker.patch("reflex_cli.utils.hosting._authenticate_on_browser")
+
+    result = get_authenticated_client(token=None, interactive=False)
+
+    assert result.api is client.api
+    assert result.me is client.me
+    new_client.assert_called_once_with("env_token")
+    validate.assert_called_once_with("env_token", client.api)
+    browser.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ("token", "source"),
+    [
+        (None, TokenSource.ENVIRONMENT),
+        ("bogus-token", TokenSource.OPTION),
+    ],
+)
+def test_rejected_token_in_non_interactive_mode_does_not_prompt(
+    mocker: MockerFixture,
+    caplog: pytest.LogCaptureFixture,
+    token: str | None,
+    source: TokenSource,
+):
+    """A rejected token fails straight away instead of starting a browser login.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        caplog: Pytest log capture fixture.
+        token: The token passed with --token, if any.
+        source: Where the rejected token came from.
+    """
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_existing_access_token_with_source",
+        return_value=("bogus-token", TokenSource.ENVIRONMENT),
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting._validate",
+        side_effect=TokenAccessDeniedError("access denied", request_id="req-1"),
+    )
+    browser = mocker.patch(
+        "reflex_cli.utils.hosting._authenticate_on_browser", return_value=("", None)
     )
 
-    assert get_authenticated_client(token=None, interactive=False) is client
-    get_auth_client.assert_called_once_with(None)
+    with pytest.raises(click.exceptions.Exit) as exc_info:
+        get_authenticated_client(token=token, interactive=False)
+
+    assert exc_info.value.exit_code == 1
+    browser.assert_not_called()
+    errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
+    assert len(errors) == 1
+    assert errors[0].startswith(
+        f"The access token from the {source.value} was rejected: access denied (auth request id: req-1)"
+    )
+    assert "reflex login" in errors[0]
+
+
+def test_rejected_config_token_in_non_interactive_mode_is_removed(
+    mocker: MockerFixture,
+):
+    """A saved token the control plane refuses is dropped from the config.
+
+    Args:
+        mocker: Pytest mocker fixture.
+    """
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_existing_access_token_with_source",
+        return_value=("stale-token", TokenSource.CONFIG),
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting._validate",
+        side_effect=TokenAccessDeniedError("access denied", request_id="req-1"),
+    )
+    delete = mocker.patch("reflex_cli.utils.hosting.delete_token_from_config")
+
+    with pytest.raises(click.exceptions.Exit):
+        get_authenticated_client(token=None, interactive=False)
+
+    delete.assert_called_once_with("stale-token")
+
+
+def test_unvalidated_token_in_non_interactive_mode_is_not_called_rejected(
+    mocker: MockerFixture, caplog: pytest.LogCaptureFixture
+):
+    """A timeout or server error fails without calling the token rejected.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        caplog: Pytest log capture fixture.
+    """
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_existing_access_token_with_source",
+        return_value=("saved-token", TokenSource.CONFIG),
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting._validate",
+        side_effect=TokenValidationError("server error", request_id="req-2"),
+    )
+    delete = mocker.patch("reflex_cli.utils.hosting.delete_token_from_config")
+    browser = mocker.patch("reflex_cli.utils.hosting._authenticate_on_browser")
+
+    with pytest.raises(click.exceptions.Exit) as exc_info:
+        get_authenticated_client(token=None, interactive=False)
+
+    assert exc_info.value.exit_code == 1
+    delete.assert_not_called()
+    browser.assert_not_called()
+    errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
+    assert errors == [
+        "Unable to validate the access token from the config file: server error (auth request id: req-2). Please try again later."
+    ]
 
 
 def test_scale_arguments_are_pure_when_type_is_unspecified():
@@ -628,6 +941,122 @@ def test_set_instance_bounds_error(status_code: int, detail: str):
     assert detail in result
 
 
+def test_set_instance_bounds_preserves_scaling_refusal():
+    """The deploy retry receives the typed refusal, including its request id."""
+    client = _client()
+    error = api_error(
+        409,
+        "the app is being scaled; change instance bounds after it finishes",
+        code="instance_bounds_scale_conflict",
+        method="POST",
+        path="apps/app-1/instance_bounds",
+    )
+    client.api.apps.set_instance_bounds.side_effect = error
+
+    with pytest.raises(type(error)) as raised:
+        set_instance_bounds("app-1", client, min_instances=2)
+
+    assert raised.value is error
+    client.api.apps.set_instance_bounds.assert_called_once()
+
+
+@pytest.mark.parametrize("status_code", [500, 502, 503, 504])
+def test_set_instance_bounds_preserves_server_errors(
+    status_code: int, caplog: pytest.LogCaptureFixture
+):
+    """A server error cannot confirm whether the bounds write took effect.
+
+    Args:
+        status_code: The server error returned after the write.
+        caplog: The captured log messages.
+    """
+    client = _client()
+    error = api_error(
+        status_code,
+        "unavailable",
+        method="POST",
+        path="apps/app-1/instance_bounds",
+    )
+    client.api.apps.set_instance_bounds.side_effect = error
+
+    with pytest.raises(type(error)) as raised:
+        set_instance_bounds("app-1", client, min_instances=2)
+
+    assert raised.value is error
+    client.api.apps.set_instance_bounds.assert_called_once()
+    assert any(
+        record.levelno == logging.WARNING
+        and "may or may not have been applied" in record.getMessage()
+        for record in caplog.records
+    )
+
+
+@pytest.mark.parametrize("error_type", [APIConnectionError, APITimeoutError])
+def test_set_instance_bounds_preserves_uncertain_outcomes(
+    error_type: type[APIConnectionError],
+):
+    """A write without a usable answer must reach the deploy's uncertainty guard.
+
+    Args:
+        error_type: The SDK failure that leaves the write's result unknown.
+    """
+    client = _client()
+    response = api_error(200, "invalid response").response
+    error = error_type("lost response", request=response.request)
+    client.api.apps.set_instance_bounds.side_effect = error
+
+    with pytest.raises(error_type) as raised:
+        set_instance_bounds("app-1", client, min_instances=2)
+
+    assert raised.value is error
+    client.api.apps.set_instance_bounds.assert_called_once()
+
+
+@pytest.mark.parametrize("during_write", [False, True])
+def test_set_instance_bounds_warns_about_undecodable_success(
+    during_write: bool, caplog: pytest.LogCaptureFixture
+):
+    """An undecodable write response still carries the server's success status.
+
+    Args:
+        during_write: Whether decoding failed after the write or preliminary read.
+        caplog: The captured log messages.
+    """
+    client = _client()
+    client.api.apps.get.return_value.name = "my-app"
+    response = api_error(
+        200,
+        "invalid response",
+        method="POST" if during_write else "GET",
+        path="apps/app-1/instance_bounds" if during_write else "apps/app-1",
+    ).response
+    error = APIResponseValidationError("invalid response", response=response)
+    operation = (
+        client.api.apps.set_instance_bounds if during_write else client.api.apps.get
+    )
+    operation.side_effect = error
+
+    with pytest.raises(APIResponseValidationError) as raised:
+        set_instance_bounds("app-1", client, min_instances=2)
+
+    assert raised.value is error
+    assert client.api.apps.set_instance_bounds.call_count == int(during_write)
+    warnings = [
+        record.getMessage()
+        for record in caplog.records
+        if record.levelno == logging.WARNING
+    ]
+    if during_write:
+        assert len(warnings) == 1
+        assert "server reported success" in warnings[0]
+        assert "response could not be decoded" in warnings[0]
+        assert "bounds may have changed" in warnings[0]
+        assert "my-app" in warnings[0]
+        assert "may or may not have been applied" not in warnings[0]
+    else:
+        assert not warnings
+
+
 def test_validate_token_names_the_product_it_logs_in_through(
     mocker: MockerFixture,
 ):
@@ -738,7 +1167,7 @@ def test_deployment_status_failed(status: str, failed: bool):
 def test_as_json_document_renders_ids_and_timestamps_as_strings():
     """A document keeps the shape it had when response bodies were printed."""
     connection = _connection("prod", 1)
-    when = datetime.datetime(2026, 7, 1, tzinfo=datetime.timezone.utc)
+    when = datetime.datetime(2026, 7, 1, tzinfo=datetime.UTC)
 
     assert as_json_document(connection) == {
         "id": str(uuid.UUID(int=1)),
@@ -904,6 +1333,22 @@ def test_get_selected_project_normalizes_empty_to_none(
     [
         ("abc-uuid", "abc-uuid"),
         ("  abc-uuid  ", "abc-uuid"),
+        (
+            "abcdefab-1234-4567-89ab-abcdefabcdef",
+            "abcdefab-1234-4567-89ab-abcdefabcdef",
+        ),
+        (
+            "ABCDEFAB-1234-4567-89AB-ABCDEFABCDEF",
+            "abcdefab-1234-4567-89ab-abcdefabcdef",
+        ),
+        (
+            "abcdefab1234456789ababcdefabcdef",
+            "abcdefab-1234-4567-89ab-abcdefabcdef",
+        ),
+        (
+            "  ABCDEFAB1234456789ABABCDEFABCDEF  ",
+            "abcdefab-1234-4567-89ab-abcdefabcdef",
+        ),
         ("", None),
         ("   ", None),
         (None, None),
@@ -913,6 +1358,12 @@ def test_get_selected_project_normalizes_empty_to_none(
     ],
 )
 def test_normalize_project_id(value: object, expected: str | None):
+    """Canonicalize UUIDs while preserving other IDs and missing-value handling.
+
+    Args:
+        value: The raw project ID.
+        expected: The normalized project ID.
+    """
     assert normalize_project_id(value) == expected
 
 
@@ -1187,7 +1638,7 @@ def test_as_json_document_keeps_the_keys_the_api_sent():
         pause_reason=None,
         reflex_version="1.2.3",
         python_version="3.12",
-        created_at=datetime.datetime(2026, 7, 1, tzinfo=datetime.timezone.utc),
+        created_at=datetime.datetime(2026, 7, 1, tzinfo=datetime.UTC),
         regions=[],
         vm_type_name="c1m1",
         vm_type_cpu=1.0,

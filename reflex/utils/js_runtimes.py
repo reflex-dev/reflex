@@ -112,6 +112,20 @@ def _persisted_lockfile_implies_npm() -> bool:
     ).exists()
 
 
+@functools.cache
+def _log_implicit_npm_notice(root_dir: Path) -> None:
+    """Say once per lock directory why npm is preferred without REFLEX_USE_NPM.
+
+    Args:
+        root_dir: The ``reflex.lock/`` directory holding the npm lockfile.
+    """
+    logger.info(
+        f"Preferring npm because {root_dir.name}/ has {constants.Node.LOCKFILE_PATH} "
+        f"and no {constants.Bun.LOCKFILE_PATH}. "
+        "Run once with REFLEX_USE_NPM=0 to switch this project back to bun."
+    )
+
+
 def prefer_npm_over_bun() -> bool:
     """Check if npm should be preferred over bun.
 
@@ -129,7 +143,10 @@ def prefer_npm_over_bun() -> bool:
     explicit = environment.REFLEX_USE_NPM.getenv()
     if explicit is not None:
         return explicit
-    return _persisted_lockfile_implies_npm()
+    if _persisted_lockfile_implies_npm():
+        _log_implicit_npm_notice(Path.cwd() / constants.Bun.ROOT_LOCKFILE_DIR)
+        return True
+    return False
 
 
 def get_nodejs_compatible_package_managers(
@@ -619,7 +636,7 @@ def _frontend_packages_cache_payload(
 
     Args:
         packages: Custom packages requested by the caller.
-        development_dependencies: Development packages requested by plugins.
+        development_dependencies: Development packages requested by plugins and config.
         frozen_lockfile: Whether bun should enforce the existing lockfile.
         install_package_managers: The package manager paths in priority order.
 
@@ -667,7 +684,7 @@ def _install_frontend_packages(
     Args:
         packages: Custom packages requested by the caller (from
             ``Config.frontend_packages`` and inferred component imports).
-        development_dependencies: Development packages requested by plugins.
+        development_dependencies: Development packages requested by plugins and config.
         frozen_lockfile: Whether bun should enforce the existing lockfile.
         install_package_managers: The package manager paths in priority
             order (primary plus fallbacks).
@@ -816,6 +833,12 @@ def install_frontend_packages(packages: set[str], config: Config):
     _require_supported_node_for_npm(_is_npm(install_package_managers[0]))
     packages = set(packages)
     development_dependencies: set[str] = set()
+    if config.react_compiler:
+        development_dependencies.update(
+            _pinned_args_from_constants(
+                constants.PackageJson.REACT_COMPILER_DEV_DEPENDENCIES
+            )
+        )
     for plugin in config.plugins:
         development_dependencies.update(plugin.get_frontend_development_dependencies())
         packages.update(plugin.get_frontend_dependencies())

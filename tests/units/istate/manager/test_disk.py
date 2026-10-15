@@ -171,6 +171,49 @@ async def test_set_state_persists_untouched_base_state(
 
 
 @pytest.mark.asyncio
+async def test_set_state_for_substate_builds_tokens_for_written_states_only(
+    tmp_path, monkeypatch
+):
+    """Writing a tree derives a token only for the states that are written.
+
+    Args:
+        tmp_path: A temporary directory.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
+
+    class DiskTreeParent(BaseState):
+        value: int = 0
+
+    class DiskTreeFirst(DiskTreeParent):
+        value_first: int = 0
+
+    class DiskTreeSecond(DiskTreeParent):
+        value_second: int = 0
+
+    state_manager = StateManagerDisk(_write_debounce_seconds=0)
+    token = BaseStateToken(ident="client", cls=DiskTreeParent)
+    state = await state_manager.get_state(token)
+    assert isinstance(state, DiskTreeParent)
+    assert len(state.substates) == 2
+    state.substates[DiskTreeFirst.get_name()].value_first = 1  # pyright: ignore [reportAttributeAccessIssue]
+
+    written: list[type[BaseState]] = []
+    with_cls = BaseStateToken.with_cls
+
+    def recording_with_cls(self, cls):
+        written.append(cls)
+        return with_cls(self, cls)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(BaseStateToken, "with_cls", recording_with_cls)
+        await state_manager.set_state_for_substate(token, state)
+
+    assert written == [DiskTreeFirst]
+    await state_manager.close()
+
+
+@pytest.mark.asyncio
 async def test_load_state_logs_warning_for_corrupted_file(
     tmp_path, monkeypatch, caplog
 ):
@@ -185,17 +228,13 @@ async def test_load_state_logs_warning_for_corrupted_file(
     state_manager = StateManagerDisk(_write_debounce_seconds=0)
     token = StateToken(ident="client", cls=dict)
 
-    # Write a corrupted pickle file directly to the states directory.
     corrupted_content = b"not a valid pickle file"
     token_path = state_manager.token_path(token)
     token_path.parent.mkdir(parents=True, exist_ok=True)
     token_path.write_bytes(corrupted_content)
 
-    # load_state should return None and log a warning.
-    result = await state_manager.load_state(token)
-    assert result is None
+    assert await state_manager.load_state(token) is None
 
-    # Verify that a warning was logged.
     warning_logs = disk_warning_logs(caplog)
     assert len(warning_logs) == 1
     assert "Failed to load state" in warning_logs[0].message
@@ -219,12 +258,7 @@ async def test_load_state_returns_none_for_missing_file(tmp_path, monkeypatch, c
     state_manager = StateManagerDisk(_write_debounce_seconds=0)
     token = StateToken(ident="nonexistent_client", cls=dict)
 
-    # load_state should return None without logging a warning.
-    result = await state_manager.load_state(token)
-    assert result is None
-
-    # Verify that no warning was logged.
-    warning_logs = disk_warning_logs(caplog)
-    assert len(warning_logs) == 0
+    assert await state_manager.load_state(token) is None
+    assert not disk_warning_logs(caplog)
 
     await state_manager.close()

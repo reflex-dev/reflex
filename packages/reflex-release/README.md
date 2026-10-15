@@ -153,8 +153,8 @@ post-release-workflow = "docs_publish.yml"
 
 # How the Dispatch release form asks which packages to release: one checkbox
 # per package ("checkboxes"), a comma-separated field ("text"), or "auto" —
-# checkboxes while they fit under GitHub's twenty-input workflow_dispatch limit,
-# free text beyond it. Default: "auto".
+# checkboxes while they fit under GitHub's twenty-five-input workflow_dispatch
+# limit, free text beyond it. Default: "auto".
 dispatch-package-inputs = "auto"
 ```
 
@@ -179,44 +179,75 @@ you called it) and the directory name under `packages/` for the rest.
 
 ### Lockstep packages
 
-Packages that must always release together at the same version — typically
-because one pins the other exactly — form a lockstep group:
+Packages that release at one version — typically because one pins the other
+exactly — form a lockstep group:
 
 ```toml
 [[tool.reflex-release.lockstep]]
 members = ["mypkg", "mypkg-base"]
-# Members that publish only after every other member is uploaded and tagged.
+# Members that publish only after the others are uploaded and tagged.
 publish-last = ["mypkg"]
-# Rewrite each publish-last member's requirement on its siblings to
+# Rewrite each publish-last member's requirement on the others to
 # "== <version>" before building.
 pin-exact = true
 ```
 
-This gives you, for free:
+Without `publish-last`, the members only ever release together: they share one
+*Dispatch release* checkbox, selecting one selects all, their next version
+comes from the highest baseline among them, and an unsatisfiable dependency
+pin in one holds back the whole group.
 
-- selecting one member in *Dispatch release* selects the whole group, and all
-  members are planned at one version (the highest baseline among them);
-- `release_from_changelog` publishes `publish-last` members only after the rest
-  of the batch succeeded — never shipping a wheel whose exact pin does not
-  exist on PyPI yet;
-- a member with nothing to report still gets its section, holding towncrier's
-  "No significant changes." placeholder — nobody hand-writes a changelog entry
-  just to satisfy the invariant, and a member does not even need a `news/`
-  directory;
-- detection **fails closed** if one member's changelog is bumped without the
-  other's (re-dispatching a release fixes it, materializing the whole group).
+With `publish-last`, each member gets its own checkbox and the group is
+directional:
+
+- an early member (`mypkg-base`) releases on its own, from its own baseline;
+- a `publish-last` member (`mypkg`) advances from its own baseline and needs
+  every early member tagged at the new version. One already tagged there is
+  reused — after base publishes `1.2.0a2`, `mypkg` at `1.2.0a1` continues to
+  `1.2.0a2` on that release even if base has moved on since. Otherwise the
+  early member is planned at the same version, unless its changelog is already
+  past it, which stops the plan;
+- `release_from_changelog` publishes `publish-last` members after the rest of
+  the batch, and `prepare-publish` refuses to build one until every early
+  member's tag exists, so a manual publish dispatch cannot run ahead either;
+- `publish-last` members do not need each other; each pins the early members
+  only.
+
+This is what dependency-first phases rest on: publish base, wait for its tag,
+then the packages that need it, and the dependent last. Each phase lifts its
+`.dev` floors to the versions tagged by the phases before it.
+
+In either kind of group, a member dragged in by its sibling still gets its
+changelog section, holding towncrier's "No significant changes." placeholder,
+and detection **fails closed** if a member's changelog is bumped without the
+siblings it needs being tagged or in the same batch.
 
 `pin-exact` rewrites the requirement in the publishing package's
-`pyproject.toml` at build time only; it is never committed.
+`pyproject.toml` at build time only; it is never committed. The pinned version
+must satisfy the requirement as declared — planning and the build both check,
+so a floor raised past the sibling version a release would reuse stops it
+before anything is materialized.
 
 ### Dependency pins across a release
 
 A package that depends on a sibling it is waiting for pins the unreleased
-version — `widget-core >= 0.2.0.dev1` — so the workspace resolves while the
-sibling is still unpublished. That pin cannot be published: `*.dev` versions
-never reach PyPI, so the metadata would be uninstallable. `check-dev-pins`
-rejects it at build time, which means someone has to remember to lift it once
-the sibling is out.
+version — `widget-core >= 0.1.4.dev0` — so the workspace resolves while the
+sibling is still unpublished. Floor it at the `.dev0` of the version the
+sibling's branch is working towards, which with
+[`bump = true`](#tag-derived-versions) is what every commit after the sibling's
+newest tag builds as: `>= 0.1.4.dev0` after `widget-core-v0.1.3`, and
+`>= 0.1.3.post2.dev0` after `widget-core-v0.1.3.post1`. That floor excludes
+every release up to the sibling's newest tag on the branch, none of which has
+the change, and every later commit of the branch meets it. It cannot tell
+releases made on another line apart: `0.2.0` from `main` satisfies a floor
+written on a `0.1` hotfix branch without containing the hotfix. And a post
+release of the sibling cut after the floor was written leaves the branch
+building `0.1.3.post2.devN`, below `>= 0.1.4.dev0`; re-floor it at that post
+release, which contains the change.
+
+The pin cannot be published: `*.dev` versions never reach PyPI, so the metadata
+would be uninstallable. `check-dev-pins` rejects it at build time, which means
+someone has to remember to lift it once the sibling is out.
 
 Materialization does it instead. When *Dispatch release* plans a release, each
 selected package's published dependencies are checked for a floor the release
@@ -226,6 +257,7 @@ satisfies the whole requirement**:
 | Floor | Materializing a prerelease | Materializing a final version |
 | --- | --- | --- |
 | `>= 0.2.0.dev1` | earliest published `0.2.0a1`, `0.2.0`, … | earliest published *final* `0.2.0`, … |
+| `>= 0.1.3.post2.dev0` | earliest published `0.1.3.post2`, `0.1.4a1`, … | earliest published *final* `0.1.3.post2`, `0.1.4`, … |
 | `>= 0.2.0a1` | left alone — an alpha may ship it | lifted to the earliest published final |
 | `>= 0.2.0` | left alone | left alone |
 
@@ -265,9 +297,9 @@ the lock.
 
 A floor nothing published satisfies has nowhere to go, and the package is
 **held back** rather than materialized into a version that could never be
-published — auto-selected packages are dropped from the batch (a lockstep group
-whole, since its members only release together) and listed in the run summary;
-an explicitly selected one fails the dispatch. Release the depended-on package
+published — auto-selected packages are dropped from the batch, together with
+the lockstep partners that need them, and listed in the run summary; an
+explicitly selected one fails the dispatch. Release the depended-on package
 first and the next release lifts the pin by itself.
 
 Two things are deliberately left alone: a floor on a lockstep sibling that
@@ -316,22 +348,22 @@ news/                          # fragments for the root package
 packages/widget-core/news/     # fragments for packages/widget-core
 ```
 
-A fragment is a markdown file named `<pr-number>.<type>.md` holding one or two
-sentences written for someone reading release notes:
+A fragment is a markdown file named `+<slug>.<type>.md` (an orphan fragment)
+or `<pr-number>.<type>.md`, holding one or two sentences written for someone
+reading release notes:
 
 ```bash
-uvx reflex-release create 1234.feature.md                        # root package
-uvx reflex-release create --package widget-core 1234.bugfix.md   # sub-package
+uvx reflex-release create +new-widget.feature.md                      # root package
+uvx reflex-release create --package widget-core +fix-crash.bugfix.md  # sub-package
 ```
 
-Before you know the PR number, use an orphan fragment (`+something.feature.md`).
-Renaming it once the PR exists is nice but optional: when the release
-materializes the changelog, every orphan fragment left over is renamed after the
-pull request whose commit added it — read out of that commit's subject, which
-GitHub writes as `Merge pull request #N ...` or `... (#N)` — so its entry gets
-the usual link. A fragment whose commit
-landed outside a pull request keeps its orphan name and its entry gets no link,
-with a warning in the job log. CI requires a fragment for every package whose
+The PR number is optional, and there is no need to rename an orphan fragment
+once the PR exists: when the release materializes the changelog, every orphan
+fragment left over is renamed after the pull request whose commit added it —
+read out of that commit's subject, which GitHub writes as
+`Merge pull request #N ...` or `... (#N)` — so its entry gets the usual link. A
+fragment whose commit landed outside a pull request keeps its orphan name and
+its entry gets no link, with a warning in the job log. CI requires a fragment for every package whose
 source the PR touches; the `skip-changelog` label waives that for changes that
 genuinely are not user-facing.
 
@@ -370,6 +402,7 @@ source = "uv-dynamic-versioning"
 
 [tool.uv-dynamic-versioning]
 fallback-version = "0.0.0dev0"
+bump = true
 ```
 
 ```toml
@@ -377,7 +410,17 @@ fallback-version = "0.0.0dev0"
 [tool.uv-dynamic-versioning]
 pattern-prefix = "widget-core-"
 fallback-version = "0.0.0dev0"
+bump = true
 ```
+
+`bump = true` numbers every commit after a tag as a development release of the
+*next* version: `1.2.4.dev5` after `v1.2.3`, and `1.2.3.post2.dev5` after a
+`release-post` tag `v1.2.3.post1`. Without it, the commits after a post release
+derive `1.2.3.post1.dev5` — a development release *of* the published
+`1.2.3.post1`, which sorts below it — so no
+[dependency floor](#dependency-pins-across-a-release) can both exclude the post
+release and be met by a build of the branch it was tagged on. The tagged commit
+itself (distance zero) builds as exactly the tag either way.
 
 Any backend works as long as the tag prefixes match; `hatch-vcs` and
 `setuptools-scm` need their `tag_regex`/`git_describe_command` pointed at the
@@ -596,17 +639,18 @@ review-sensitive field.
 ## Cutting a release
 
 Run **Dispatch release** from the Actions tab. Each package gets its own
-checkbox, generated from your configuration; a lockstep group gets a single
-checkbox covering all its members, since they only ever release together.
-Selecting nothing auto-selects: packages with pending news fragments, or — for
-`release-from-prerelease` — packages whose changelog is topped by an alpha.
+checkbox, generated from your configuration; a lockstep group without
+`publish-last` gets a single checkbox covering all its members, since they only
+ever release together. Selecting nothing auto-selects: packages with pending
+news fragments, or — for `release-from-prerelease` — packages whose changelog is
+topped by an alpha.
 
 Because the checkboxes are generated, **adding or removing a package changes
 `dispatch_release.yml`** — run `reflex-release sync` and commit it with the new
-package. The pull-request drift check catches it if you forget. Past twenty
-packages (GitHub's `workflow_dispatch` input limit, one of which the release
-action takes) the form falls back to a comma-separated text field; see
-`dispatch-package-inputs`.
+package. The pull-request drift check catches it if you forget. Past
+twenty-four packages or lockstep groups (GitHub's `workflow_dispatch` takes
+twenty-five inputs, one of which the release action uses) the form falls back
+to a comma-separated text field; see `dispatch-package-inputs`.
 
 | Action | Result |
 | --- | --- |

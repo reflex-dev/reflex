@@ -1,6 +1,9 @@
 import json
-from collections.abc import Callable
-from typing import Any, cast
+import logging
+import shutil
+import subprocess
+from collections.abc import Callable, Mapping
+from typing import Any, TypeVar, cast
 
 import pytest
 from reflex_base.constants import LogLevel
@@ -13,6 +16,7 @@ from reflex_base.event import (
     EventHandler,
     EventSpec,
     LambdaEventCallback,
+    _check_event_args_subclass_of_callback,
     call_event_handler,
     event,
     fix_events,
@@ -23,8 +27,10 @@ from reflex_base.registry import RegistrationContext
 from reflex_base.utils import format, log
 from reflex_base.utils.exceptions import (
     EventHandlerArgTypeMismatchError,
+    EventHandlerTypeError,
     EventHandlerValueError,
 )
+from reflex_base.utils.form import FormData
 from reflex_base.vars.base import Field, LiteralVar, Var, field
 from rich.console import Console
 from typing_extensions import TypeAliasType
@@ -253,6 +259,65 @@ def test_state_event_handler_type_hints_are_stable_after_class_patch():
 
     call_event_handler(handler(), args_spec)
     assert handler.prevent_default._type_hints is handler._type_hints
+
+
+def test_backend_var_event_arg_reports_repr():
+    """A backend var passed as an event arg reports its repr, not a format error."""
+
+    class S(BaseState):
+        _secret: int = 42
+
+        @event
+        def on_event(self, value: int):
+            pass
+
+    with pytest.raises(EventHandlerTypeError, match=r"Got Field\(default=42"):
+        S.on_event(S._secret)
+    with pytest.raises(EventHandlerTypeError, match=r"Got Field\(default=42"):
+        cast(EventSpec, S.on_event()).add_args(S._secret)  # pyright: ignore[reportArgumentType]
+
+
+class BackendTriggerState(BaseState):
+    """A state with a backend var, for event trigger misuse tests."""
+
+    _secret: int = 42
+
+    @event
+    def on_upload(self, files: list[rx.UploadFile]):
+        """Receive uploaded files.
+
+        Args:
+            files: The uploaded files.
+        """
+
+
+@pytest.mark.parametrize(
+    ("value", "match"),
+    [
+        (BackendTriggerState._secret, r"Invalid event chain: Field\(default=42"),
+        ([BackendTriggerState._secret], r"Invalid event: Field\(default=42"),
+        (lambda: BackendTriggerState._secret, r"-> Field\(default=42"),
+    ],
+)
+def test_backend_var_event_trigger_reports_repr(value: Any, match: str):
+    """Binding a backend var as an event trigger reports its repr, not a format error.
+
+    Args:
+        value: The misused event trigger value.
+        match: The expected error message pattern.
+    """
+    with pytest.raises(ValueError, match=match):
+        EventChain.create(value=value, args_spec=lambda: ())
+
+
+def test_backend_var_upload_progress_reports_repr():
+    """A backend var passed as on_upload_progress reports its repr."""
+    upload = rx.upload_files(
+        upload_id="u",
+        on_upload_progress=BackendTriggerState._secret,  # pyright: ignore[reportArgumentType]
+    )
+    with pytest.raises(ValueError, match=r"^Field\(default=42.* is not a valid"):
+        upload.as_event_spec(handler=cast(EventHandler, BackendTriggerState.on_upload))
 
 
 def test_state_event_handler_caches_unresolved_type_hints():
@@ -620,6 +685,49 @@ def test_remove_local_storage():
         format.format_event(spec)
         == 'ReflexEvent("_remove_local_storage", {key:"testkey"})'
     )
+
+
+def _download_var_data_url() -> Var:
+    """Build the data: URL an ``rx.download`` of a list-typed Var produces.
+
+    Returns:
+        The ``url`` argument of the download event.
+    """
+    data = Var(_js_expr="data", _var_type=list[dict[str, str]]).guess_type()
+    return rx.download(data=data, filename="data.json").args[0][1]
+
+
+def test_download_var_data_is_percent_encoded():
+    """A Var passed as download data is percent-encoded into its data: URL."""
+    assert str(_download_var_data_url()) == (
+        '(pyAnd(((typeof(data))?.valueOf?.() === "string"?.valueOf?.()), '
+        '() => (data.startsWith("data:"))) ? data : '
+        '("data:text/plain,"+(encodeURIComponent((JSON.stringify(data))))))'
+    )
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is unavailable")
+def test_download_var_data_url_keeps_hash_and_percent():
+    """The downloaded bytes are exactly the JSON, even with ``#`` or ``%`` in it.
+
+    Unencoded, a ``#`` ends the data: URL there (the rest of the file is lost)
+    and ``%XX`` sequences are percent-decoded.
+    """
+    rows = [{"address": "12 Main St #4", "note": "100%25 sure"}]
+    script = (
+        "const pyAnd = (a, b) => (a ? b() : a);\n"
+        f"const data = {json.dumps(rows)};\n"
+        f"fetch({_download_var_data_url()!s})"
+        ".then((r) => r.text()).then((t) => process.stdout.write(t));\n"
+    )
+    result = subprocess.run(
+        ["node", "-e", script],
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=30,
+    )
+    assert result.stdout == json.dumps(rows, separators=(",", ":"))
 
 
 def test_event_actions():
@@ -1487,3 +1595,49 @@ def test_event_chain_create_shares_chains_bound_from_one_handler():
         EventChain.create([ChainState.handler], args_spec=args_spec, key="on_click")
         is not chain
     )
+
+
+_BOUNDED_SPEC_ARG = TypeVar("_BOUNDED_SPEC_ARG", bound=Mapping[str, Any])
+_CONSTRAINED_SPEC_ARG = TypeVar("_CONSTRAINED_SPEC_ARG", int, str)
+
+
+@pytest.mark.parametrize(
+    ("spec_arg", "annotation", "accepted"),
+    [
+        (_BOUNDED_SPEC_ARG, dict[str, str], True),
+        (_BOUNDED_SPEC_ARG, list[str], False),
+        (_BOUNDED_SPEC_ARG, FormData[str, str] | None, True),
+        (_BOUNDED_SPEC_ARG, list[str] | None, False),
+        (_CONSTRAINED_SPEC_ARG, int, True),
+        (_CONSTRAINED_SPEC_ARG, str, True),
+        (_CONSTRAINED_SPEC_ARG, float, False),
+    ],
+)
+def test_generic_event_spec_arg_admits_callback_types(spec_arg, annotation, accepted):
+    """A TypeVar spec arg accepts callback types within its bound or constraints."""
+
+    def check():
+        _check_event_args_subclass_of_callback(
+            ["value"], [tuple[Var[spec_arg]]], {"value": annotation}
+        )
+
+    if accepted:
+        check()
+    else:
+        with pytest.raises(EventHandlerArgTypeMismatchError):
+            check()
+
+
+@pytest.mark.parametrize(
+    ("fallback_spec_arg", "warns"),
+    [(_BOUNDED_SPEC_ARG, False), (dict[str, str], True)],
+)
+def test_generic_event_spec_fallback_is_not_reported(fallback_spec_arg, warns, caplog):
+    """Matching a later generic spec is not reported as a mismatch with the first spec."""
+    with caplog.at_level(logging.WARNING):
+        _check_event_args_subclass_of_callback(
+            ["value"],
+            [tuple[Var[str]], tuple[Var[fallback_spec_arg]]],
+            {"value": dict[str, str]},
+        )
+    assert ("intentionally ignored" in caplog.text) is warns
