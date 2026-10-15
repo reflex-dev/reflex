@@ -524,9 +524,10 @@ def supervise_output(args: list[str]) -> int:
     ] = []
     if os.name == "posix":
         forwarded_signals = [signal.SIGINT, signal.SIGTERM]
-        sighup = getattr(signal, "SIGHUP", None)
-        if sighup is not None:
-            forwarded_signals.append(sighup)
+        for signal_name in ("SIGHUP", "SIGQUIT"):
+            signum = getattr(signal, signal_name, None)
+            if signum is not None:
+                forwarded_signals.append(signum)
         previous_handlers.extend(
             (int(signum), signal.signal(signum, forward_signal))
             for signum in forwarded_signals

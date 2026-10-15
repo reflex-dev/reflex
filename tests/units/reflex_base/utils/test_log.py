@@ -1213,7 +1213,8 @@ if not log.is_output_supervised():
 
 signal_count = 0
 mode, marker, ready = sys.argv[1:]
-signal_number = getattr(signal, "SIGHUP") if mode == "hangup" else signal.SIGINT
+signal_name = {"hangup": "SIGHUP", "quit": "SIGQUIT"}.get(mode, "SIGINT")
+signal_number = getattr(signal, signal_name, signal.SIGINT)
 
 def handle_shutdown(*_):
     global signal_count
@@ -1292,6 +1293,31 @@ def test_supervise_output_forwards_terminal_sighup(tmp_path):
         assert callable(killpg)
         assert sighup is not None
         killpg(proc.pid, sighup)
+        assert proc.wait(timeout=10) == 0
+
+    assert marker.read_text() == "1"
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="SIGQUIT is POSIX-only")
+def test_supervise_output_forwards_terminal_sigquit(tmp_path):
+    """A terminal quit reaches the child and waits for its cleanup."""
+    script = tmp_path / "sigint_cleanup.py"
+    marker = tmp_path / "cleanup-count"
+    ready = tmp_path / "ready"
+    script.write_text(_SIGINT_CLEANUP_SCRIPT)
+    with subprocess.Popen(
+        [sys.executable, str(script), "quit", str(marker), str(ready)],
+        stdout=subprocess.PIPE,
+        env={**os.environ, "REFLEX_LOG_JSON": "true"},
+        start_new_session=True,
+    ) as proc:
+        assert proc.stdout is not None
+        assert json.loads(proc.stdout.readline())["message"] == "ready"
+        killpg = getattr(os, "killpg", None)
+        sigquit = getattr(signal, "SIGQUIT", None)
+        assert callable(killpg)
+        assert sigquit is not None
+        killpg(proc.pid, sigquit)
         assert proc.wait(timeout=10) == 0
 
     assert marker.read_text() == "1"
