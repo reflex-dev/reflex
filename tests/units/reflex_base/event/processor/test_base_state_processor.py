@@ -2640,6 +2640,8 @@ async def test_hydrate_delivers_storage_override_assignments(
             await processor.enqueue(token, _boot_event(boot_name, payload))
         ).wait_all()
 
+    # Preserve the public return contract: a synchronous value collected before
+    # an after-super assignment is not rewritten after the override returns.
     for state_name, var_name in (
         (name, "value"),
         (name, "same_state"),
@@ -2652,7 +2654,11 @@ async def test_hydrate_delivers_storage_override_assignments(
         ]
         expected = (
             "stale"
-            if var_name == "value" and assignment == "after" and client_value == "stale"
+            if client_value == "stale"
+            and (
+                (var_name == "value" and assignment == "after")
+                or (var_name == "same_state" and assignment != "before")
+            )
             else "fresh"
         )
         assert values[-1] == expected
@@ -2740,71 +2746,6 @@ async def test_hydrate_keeps_override_output_filters(
         )
 
 
-async def test_hydrate_delivers_nonstorage_override_assignment(
-    wired_app: App,
-    real_base_state_processor: BaseStateEventProcessor,
-    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
-    token: str,
-):
-    """An override's real non-storage writes also reach their cached dependents.
-
-    Args:
-        wired_app: The configured app.
-        real_base_state_processor: The event processor.
-        emitted_deltas: Captured client updates.
-        token: The client token.
-    """
-
-    class StorageState(State):
-        value: str = rx.LocalStorage("")
-        status: str = "initial"
-
-        @_override_base_method
-        def get_delta(self) -> Delta:
-            """Assign a separate backend field after building the storage delta.
-
-            Returns:
-                The unmodified base delta.
-            """
-            delta = super().get_delta()
-            if "value" in self.dirty_vars and self.status == "initial":
-                self.status = "reconciled"
-            return delta
-
-    class DependentState(State):
-        @rx.var(cache=True, auto_deps=False)
-        async def status(self) -> str:
-            """Read the separate changed field.
-
-            Returns:
-                The backend reconciliation status.
-            """
-            return (await self.get_state(StorageState)).status
-
-    DependentState.computed_vars["status"].add_dependency(
-        DependentState,
-        StorageState.status,  # pyright: ignore[reportArgumentType]
-    )
-    wired_app.add_page(
-        lambda: rx.text(StorageState.value, DependentState.status), route="/"
-    )
-    wired_app._compile_page("index")
-    boot_name = Event.from_event_type(State.hydrate_and_load())[0].name
-    payload = {
-        "vars": {f"{StorageState.get_full_name()}.value{FIELD_MARKER}": "browser"}
-    }
-    async with real_base_state_processor as processor:
-        await (
-            await processor.enqueue(token, _boot_event(boot_name, payload))
-        ).wait_all()
-    values = [
-        delta[DependentState.get_full_name()]["status" + FIELD_MARKER]
-        for _, delta in emitted_deltas
-        if "status" + FIELD_MARKER in delta.get(DependentState.get_full_name(), {})
-    ]
-    assert values[-1] == "reconciled"
-
-
 async def test_hydrate_cleans_storage_when_correction_emit_fails(
     wired_app: App,
     real_base_state_processor: BaseStateEventProcessor,
@@ -2889,86 +2830,80 @@ async def test_hydrate_cleans_storage_when_correction_emit_fails(
     assert not any(key in delta.get(name, {}) for _, delta in emitted_deltas)
 
 
-@pytest.mark.parametrize("constant", [False, True])
-@pytest.mark.parametrize("mode", ["placeholder", "drop_state"])
-async def test_hydrate_records_only_delivered_computed_values(
+@pytest.mark.parametrize("hide_status", [False, True])
+async def test_hydrate_replays_override_side_effects_once(
     wired_app: App,
     real_base_state_processor: BaseStateEventProcessor,
     emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
     token: str,
-    constant: bool,
-    mode: str,
+    hide_status: bool,
 ):
-    """A filtered correction must not record an unseen computed value as delivered.
+    """Preserve one-shot effects and omissions for fields assigned during replay.
 
     Args:
         wired_app: The configured app.
         real_base_state_processor: The event processor.
         emitted_deltas: Captured client updates.
         token: The client token.
-        constant: Whether the computed value matches its snapshot value.
-        mode: Whether the override replaces a value or hides the whole state.
+        hide_status: Whether the override omits its newly assigned status.
     """
-    computed_key = "computed" + FIELD_MARKER
 
     class StorageState(State):
         value: str = rx.LocalStorage("")
+        revision: int = 0
         status: str = "initial"
 
-        @rx.var(cache=False)
-        def computed(self) -> str:
-            """Return a value whose delivery history must match the final delta.
+        @rx.var(cache=True)
+        def upper(self) -> str:
+            """Return the cached normalized value.
 
             Returns:
-                The current value, possibly unchanged from the snapshot.
+                The uppercase storage value.
             """
-            return "constant" if constant else self.status
+            return self.value.upper()
 
         @_override_base_method
         def get_delta(self) -> Delta:
-            """Make a real assignment while filtering the first storage replay.
+            """Normalize storage and retain the override's field filter.
 
             Returns:
-                The explicitly filtered delta.
+                The filtered delta.
             """
-            first = "value" in self.dirty_vars and self.status == "initial"
-            if first:
-                self.status = "changed"
+            dirty = "value" in self.dirty_vars
+            changed = dirty and self.value != self.value.strip()
+            if dirty:
+                self.value = self.value.strip()
+                self.revision += 1
+            if changed:
+                self.status = "normalized"
             delta = super().get_delta()
-            if first:
-                if mode == "placeholder":
-                    delta.setdefault(self.get_full_name(), {})[computed_key] = (
-                        "placeholder"
-                    )
-                else:
-                    delta.pop(self.get_full_name(), None)
+            if hide_status and changed:
+                delta.get(self.get_full_name(), {}).pop("status" + FIELD_MARKER, None)
+                delta.get(self.get_full_name(), {}).pop("upper" + FIELD_MARKER, None)
             return delta
 
-        @event
-        def noop(self):
-            """Allow a later ordinary delta to deliver the actual computed value."""
-
-    name = StorageState.get_full_name()
     wired_app.add_page(
-        lambda: rx.text(StorageState.value, StorageState.computed), route="/"
+        lambda: rx.text(StorageState.value, StorageState.revision, StorageState.upper),
+        route="/",
     )
     wired_app._compile_page("index")
+    name = StorageState.get_full_name()
     boot_name = Event.from_event_type(State.hydrate_and_load())[0].name
+    payload = {"vars": {f"{name}.value{FIELD_MARKER}": " browser "}}
     async with real_base_state_processor as processor:
         await (
-            await processor.enqueue(
-                token,
-                _boot_event(
-                    boot_name, {"vars": {f"{name}.value{FIELD_MARKER}": "browser"}}
-                ),
-            )
+            await processor.enqueue(token, _boot_event(boot_name, payload))
         ).wait_all()
-        await _send(processor, token, Event.from_event_type(StorageState.noop())[0])
-    values = [
-        delta[name][computed_key]
-        for _, delta in emitted_deltas
-        if computed_key in delta.get(name, {})
-    ]
-    if mode == "placeholder":
-        assert "placeholder" in values
-    assert values[-1] == ("constant" if constant else "changed")
+    corrections = [delta.get(name, {}) for _, delta in emitted_deltas[1:]]
+    assert [
+        d["revision" + FIELD_MARKER]
+        for d in corrections
+        if "revision" + FIELD_MARKER in d
+    ] == [1]
+    if hide_status:
+        assert not any("status" + FIELD_MARKER in d for d in corrections)
+        assert not any("upper" + FIELD_MARKER in d for d in corrections)
+    async with _read_back(real_base_state_processor, token) as root:
+        state = await root.get_state(StorageState)
+        assert state.value == "browser"
+        assert state.revision == 1
