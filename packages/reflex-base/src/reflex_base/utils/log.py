@@ -431,8 +431,11 @@ class _OutputPump(threading.Thread):
             started = time.monotonic()
             self._write_state = (elapsed, started)
         # Keep reading when the consumer is gone: a full pipe blocks the child.
+        # Write records separately so a shutdown cutoff never drops the tail of
+        # a batch containing several otherwise complete JSON lines.
         with contextlib.suppress(OSError):
-            _write_all(self.write_fd, data)
+            for record in data.splitlines(keepends=True):
+                _write_all(self.write_fd, record)
         with self._write_lock:
             self._write_state = (elapsed + time.monotonic() - started, None)
 
@@ -516,18 +519,61 @@ def supervise_output(args: list[str]) -> int:
     ]
     for pump in pumps:
         pump.start()
-    signal.signal(signal.SIGTERM, lambda *_: proc.terminate())
-    while True:
+    shutdown_requested_at: float | None = None
+
+    def request_shutdown(signum: int, _frame):
+        """Forward shutdown signals and start the bounded-shutdown clock."""
+        nonlocal shutdown_requested_at
+        if shutdown_requested_at is None:
+            shutdown_requested_at = time.monotonic()
         try:
-            returncode = proc.wait()
-            break
-        except KeyboardInterrupt:
-            # The child gets the same interrupt and shuts down on its own.
-            continue
-    wall_deadline = time.monotonic() + _DRAIN_WALL_SECONDS
+            if signum == signal.SIGINT and os.name == "posix":
+                proc.send_signal(signum)
+            else:
+                proc.terminate()
+        except OSError:
+            pass
+
+    previous_handlers = {
+        signal.SIGTERM: signal.signal(signal.SIGTERM, request_shutdown)
+    }
+    if os.name == "posix":
+        previous_handlers[signal.SIGINT] = signal.signal(
+            signal.SIGINT, request_shutdown
+        )
+    try:
+        while True:
+            try:
+                returncode = proc.wait(timeout=0.05)
+                break
+            except subprocess.TimeoutExpired:
+                if (
+                    shutdown_requested_at is not None
+                    and time.monotonic() - shutdown_requested_at >= _DRAIN_WALL_SECONDS
+                ):
+                    proc.kill()
+                    returncode = proc.wait()
+                    break
+            except KeyboardInterrupt:
+                # Windows delivers Ctrl-C as KeyboardInterrupt instead of a
+                # signal callback; keep repeated interrupts on the same clock.
+                if shutdown_requested_at is None:
+                    shutdown_requested_at = time.monotonic()
+    finally:
+        for signum, handler in previous_handlers.items():
+            signal.signal(signum, handler)
+    wall_deadline = (
+        shutdown_requested_at if shutdown_requested_at is not None else time.monotonic()
+    ) + _DRAIN_WALL_SECONDS
     snapshots = [pump.writing_snapshot() for pump in pumps]
     for pump, (exited_at, writing_at_exit) in zip(pumps, snapshots, strict=True):
-        pump.drain(exited_at, writing_at_exit, wall_deadline)
+        while pump.is_alive():
+            try:
+                pump.drain(exited_at, writing_at_exit, wall_deadline)
+                break
+            except KeyboardInterrupt:
+                # A second Ctrl-C must not bypass the JSON drain deadline.
+                continue
     # A child killed by a signal reports -signum; shells report 128 + signum.
     return returncode if returncode >= 0 else 128 - returncode
 
