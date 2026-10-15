@@ -5,11 +5,10 @@ sends data to PostHog and Slack, and redirects users to appropriate Cal.com link
 based on company size.
 """
 
-from collections.abc import Sequence
 from typing import Any
 
 import reflex as rx
-from reflex.event import EventType
+from reflex.event import EventType, event_sequence
 from reflex.experimental.client_state import ClientStateVar
 from reflex.vars.base import get_unique_variable_name
 from reflex_components_internal.blocks.telemetry.posthog import (
@@ -295,13 +294,7 @@ def demo_form(
     """
     prefix = id_prefix or get_unique_variable_name()
     email_id = f"{prefix}_user_email"
-    extra_on_submit = (
-        list(on_submit)
-        if isinstance(on_submit, Sequence)
-        else [on_submit]
-        if on_submit
-        else []
-    )
+    extra_on_submit = event_sequence(on_submit) if on_submit is not None else []
     form = rx.el.form(
         rx.el.div(
             input_field("First name", "John", "first_name", "text", True),

@@ -20,6 +20,7 @@ from reflex_base.event import (
     _check_event_args_subclass_of_callback,
     call_event_handler,
     event,
+    event_sequence,
     fix_events,
     on_submit_event,
     on_submit_string_event,
@@ -1692,3 +1693,23 @@ def test_generic_event_spec_fallback_is_not_reported(fallback_spec_arg, warns, c
             {"value": dict[str, str]},
         )
     assert ("intentionally ignored" in caplog.text) is warns
+
+
+def test_event_sequence():
+    """A single event is wrapped in a list, and a non-string sequence is kept."""
+
+    def handler():
+        pass
+
+    spec = EventSpec(handler=EventHandler(fn=handler))
+    events = [spec, spec]
+    events_tuple = (spec, spec)
+    events_user_list = UserList(events)
+
+    assert event_sequence(spec) == [spec]
+    assert event_sequence(handler) == [handler]
+    assert event_sequence(events) is events
+    assert event_sequence(events_tuple) is events_tuple
+    assert event_sequence(events_user_list) is events_user_list
+    assert event_sequence("abc") == ["abc"]
+    assert event_sequence(b"ab") == [b"ab"]

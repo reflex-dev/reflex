@@ -128,7 +128,7 @@ class Event:
 
         # Fix the events created by the handler.
         out = []
-        for e in _event_sequence(events):
+        for e in event_sequence(events):
             if callable(e) and getattr(e, "__name__", "") == "<lambda>":
                 # A lambda was returned, assume the user wants to call it with no args.
                 e = e()
@@ -2395,11 +2395,12 @@ def check_fn_match_arg_spec(
         raise EventFnArgMismatchError(msg)
 
 
-def _event_sequence(events: Any) -> Sequence[Any]:
+def event_sequence(events: Any) -> Sequence[Any]:
     """Get events as a sequence, wrapping a single event-like value in a list.
 
-    The single event kinds come first: they are the common case, and cheaper to
-    check than the Sequence ABC.
+    A str or bytes value counts as a single value. The single event kinds are
+    checked first: they are the common case, and cheaper to check than the
+    Sequence ABC.
 
     Args:
         events: A single event-like value or a sequence of them.
@@ -2508,7 +2509,7 @@ def call_event_fn(
 
     # Convert any event specs to event specs.
     events = []
-    for e in _event_sequence(out):
+    for e in event_sequence(out):
         if isinstance(e, EventHandler):
             # An un-called EventHandler gets all of the args of the event trigger.
             e = call_event_handler(e, arg_spec, key=key)
@@ -2596,7 +2597,7 @@ def fix_events(
 
     # Fix the events created by the handler.
     out = []
-    for e in _event_sequence(events):
+    for e in event_sequence(events):
         if callable(e) and getattr(e, "__name__", "") == "<lambda>":
             # A lambda was returned, assume the user wants to call it with no args.
             e = e()
@@ -3160,6 +3161,7 @@ class EventNamespace:
     upload_files_chunk = upload_files_chunk
     stop_propagation = stop_propagation
     prevent_default = prevent_default
+    event_sequence = staticmethod(event_sequence)
 
     # Private/Internal Functions
     resolve_upload_handler_param = staticmethod(resolve_upload_handler_param)

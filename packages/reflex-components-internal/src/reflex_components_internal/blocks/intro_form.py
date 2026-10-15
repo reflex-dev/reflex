@@ -3,11 +3,10 @@
 This module provides a comprehensive intro form that validates company emails.
 """
 
-from collections.abc import Sequence
 from typing import Any
 
 import reflex as rx
-from reflex.event import EventType, IndividualEventType
+from reflex.event import EventType, event_sequence
 from reflex.experimental.client_state import ClientStateVar
 from reflex.vars.base import get_unique_variable_name
 from reflex_components_internal.blocks.telemetry.posthog import (
@@ -293,13 +292,7 @@ def intro_form(
     prefix = id_prefix or get_unique_variable_name()
     email_id = f"{prefix}_user_email"
 
-    extra: list[IndividualEventType[dict[str, Any]]] = (
-        list(on_submit)
-        if isinstance(on_submit, Sequence)
-        else [on_submit]
-        if on_submit
-        else []
-    )
+    extra = event_sequence(on_submit) if on_submit is not None else []
 
     form = rx.el.form(
         rx.el.div(
