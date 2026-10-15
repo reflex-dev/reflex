@@ -664,8 +664,10 @@ def supervise_output(args: list[str]) -> int:
         ) + _DRAIN_WALL_SECONDS
         snapshots = [pump.writing_snapshot() for pump in pumps]
         for pump, (exited_at, writing_at_exit) in zip(pumps, snapshots, strict=True):
-            while pump.is_alive():
+            while True:
                 try:
+                    if not pump.is_alive():
+                        break
                     pump.drain(exited_at, writing_at_exit, wall_deadline)
                     break
                 except KeyboardInterrupt:

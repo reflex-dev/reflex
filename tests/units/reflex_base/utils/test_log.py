@@ -1179,6 +1179,37 @@ def test_supervise_output_bounds_interrupted_blocked_write_at_record_boundary(tm
     assert all(json.loads(line) for line in stderr.splitlines())
 
 
+_PUMP_DRAIN_INTERRUPT_SCRIPT = """
+import sys
+
+from reflex_base.utils import log
+
+if not log.is_output_supervised():
+    original_is_alive = log._OutputPump.is_alive
+    interrupted = False
+
+    def interrupt_once(pump):
+        global interrupted
+        if pump.name == "reflex-output-stdout" and not interrupted:
+            interrupted = True
+            raise KeyboardInterrupt
+        return original_is_alive(pump)
+
+    log._OutputPump.is_alive = interrupt_once
+    sys.exit(log.supervise_output([sys.executable, __file__]))
+print("completed", flush=True)
+"""
+
+
+def test_supervise_output_handles_interrupt_during_pump_liveness_check(tmp_path):
+    """A Ctrl-C during pump liveness checking cannot skip the bounded drain."""
+    result = _run_script(tmp_path, _PUMP_DRAIN_INTERRUPT_SCRIPT)
+
+    assert result.returncode == 0, result.stderr
+    [record] = [json.loads(line) for line in result.stdout.splitlines()]
+    assert record["message"] == "completed"
+
+
 _GROUP_INTERRUPT_SCRIPT = """
 import os
 import signal
