@@ -1114,16 +1114,31 @@ def test_supervise_output_bounds_shutdown_for_a_stalled_consumer(tmp_path, strea
 
 
 _INTERRUPTED_OUTPUT_SCRIPT = """
+import os
 import sys
+from pathlib import Path
 
 from reflex_base.utils import log
 
 log._DRAIN_WALL_SECONDS = 0.5
 if not log.is_output_supervised():
     sys.exit(log.supervise_output([sys.executable, __file__]))
+Path("child.pid").write_text(str(os.getpid()))
 for i in range(10000):
     print(f"line {i:05d} " + "x" * 1000, flush=True)
 """
+
+
+def _kill_output_test_processes(proc: subprocess.Popen, tmp_path: Path):
+    """Kill and reap the supervisor and any isolated child process group."""
+    if proc.poll() is None:
+        with contextlib.suppress(ProcessLookupError):
+            os.killpg(proc.pid, signal.SIGKILL)
+        proc.wait(timeout=5)
+    child_pid_file = tmp_path / "child.pid"
+    if child_pid_file.exists():
+        with contextlib.suppress(OSError, ValueError):
+            os.killpg(int(child_pid_file.read_text()), signal.SIGKILL)
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="POSIX-only signal handling")
@@ -1135,22 +1150,26 @@ def test_supervise_output_bounds_interrupted_blocked_write_at_record_boundary(tm
         [sys.executable, str(script)],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
+        cwd=tmp_path,
         env={**os.environ, "REFLEX_LOG_JSON": "true"},
         start_new_session=True,
     ) as proc:
-        assert proc.stdout is not None
-        first_line = proc.stdout.readline()
-        assert json.loads(first_line)["message"].startswith("line 00000 ")
+        try:
+            assert proc.stdout is not None
+            first_line = proc.stdout.readline()
+            assert json.loads(first_line)["message"].startswith("line 00000 ")
 
-        started = time.monotonic()
-        proc.send_signal(signal.SIGINT)
-        time.sleep(0.1)
-        with contextlib.suppress(ProcessLookupError):
+            started = time.monotonic()
             proc.send_signal(signal.SIGINT)
-        assert proc.wait(timeout=3) == 128 + signal.SIGINT
-        remaining = proc.stdout.read()
-        assert proc.stderr is not None
-        stderr = proc.stderr.read()
+            time.sleep(0.1)
+            with contextlib.suppress(ProcessLookupError):
+                proc.send_signal(signal.SIGINT)
+            assert proc.wait(timeout=3) == 128 + signal.SIGINT
+            remaining = proc.stdout.read()
+            assert proc.stderr is not None
+            stderr = proc.stderr.read()
+        finally:
+            _kill_output_test_processes(proc, tmp_path)
 
     assert time.monotonic() - started < 2
     assert b"Aborted!" not in first_line + remaining + stderr
@@ -1158,6 +1177,172 @@ def test_supervise_output_bounds_interrupted_blocked_write_at_record_boundary(tm
     assert records
     assert all(record["message"].startswith("line ") for record in records)
     assert all(json.loads(line) for line in stderr.splitlines())
+
+
+_GROUP_INTERRUPT_SCRIPT = """
+import os
+import signal
+import sys
+import threading
+import time
+from pathlib import Path
+
+from reflex_base.utils import log
+
+if not log.is_output_supervised():
+    sys.exit(log.supervise_output([sys.executable, __file__]))
+Path("child.pid").write_text(str(os.getpid()))
+signal_count = 0
+received = threading.Event()
+def handle_sigint(_signum, _frame):
+    global signal_count
+    signal_count += 1
+    received.set()
+signal.signal(signal.SIGINT, handle_sigint)
+print("ready", flush=True)
+received.wait(timeout=3)
+time.sleep(0.25)
+print(f"signals={signal_count}", flush=True)
+"""
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX-only signal handling")
+def test_supervise_output_forwards_terminal_sigint_once(tmp_path):
+    """A terminal SIGINT reaches the child once while it performs cleanup."""
+    script = tmp_path / "group_interrupt.py"
+    script.write_text(_GROUP_INTERRUPT_SCRIPT)
+    with subprocess.Popen(
+        [sys.executable, str(script)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        cwd=tmp_path,
+        env={**os.environ, "REFLEX_LOG_JSON": "true"},
+        start_new_session=True,
+    ) as proc:
+        try:
+            assert proc.stdout is not None
+            assert json.loads(proc.stdout.readline())["message"] == "ready"
+            os.killpg(proc.pid, signal.SIGINT)
+            time.sleep(0.1)
+            os.killpg(proc.pid, signal.SIGINT)
+            assert proc.wait(timeout=3) == 0
+            output = proc.stdout.read()
+            messages = [json.loads(line)["message"] for line in output.splitlines()]
+            assert "signals=1" in messages
+        finally:
+            _kill_output_test_processes(proc, tmp_path)
+
+
+_OVERSIZED_OUTPUT_SCRIPT = """
+import os
+import signal
+import sys
+import time
+from pathlib import Path
+
+from reflex_base.utils import log
+
+log._DRAIN_WALL_SECONDS = 0.5
+if not log.is_output_supervised():
+    sys.exit(log.supervise_output([sys.executable, __file__]))
+Path("child.pid").write_text(str(os.getpid()))
+print("ready", flush=True)
+print("oversized " + "x" * 100000, flush=True)
+time.sleep(30)
+"""
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX-only pipe behavior")
+def test_supervise_output_truncates_oversized_records_as_valid_json(tmp_path):
+    """A line above PIPE_BUF is shortened to one atomic, valid JSON record."""
+    script = tmp_path / "oversized_output.py"
+    script.write_text(_OVERSIZED_OUTPUT_SCRIPT)
+    with subprocess.Popen(
+        [sys.executable, str(script)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        cwd=tmp_path,
+        env={**os.environ, "REFLEX_LOG_JSON": "true"},
+        start_new_session=True,
+    ) as proc:
+        try:
+            assert proc.stdout is not None
+            assert json.loads(proc.stdout.readline())["message"] == "ready"
+            proc.send_signal(signal.SIGTERM)
+            assert proc.wait(timeout=3) == 128 + signal.SIGTERM
+            output = proc.stdout.read()
+            [line] = output.splitlines()
+            [record] = [json.loads(line)]
+            assert record["message"].startswith("oversized ")
+            assert record["truncated"] is True
+            assert len(line) + 1 <= os.fpathconf(proc.stdout.fileno(), "PC_PIPE_BUF")
+        finally:
+            _kill_output_test_processes(proc, tmp_path)
+
+
+_SIGTERM_DURING_DRAIN_SCRIPT = """
+import signal
+import sys
+import time
+from pathlib import Path
+
+from reflex_base.utils import log
+
+log._DRAIN_WALL_SECONDS = 2
+if not log.is_output_supervised():
+    sys.exit(log.supervise_output([sys.executable, __file__]))
+def handle_sigterm(_signum, _frame):
+    print("filler " + "x" * 500, flush=True)
+    print("oversized " + "x" * 100000, flush=True)
+    Path("child-finished").write_text("done")
+    raise SystemExit(0)
+signal.signal(signal.SIGTERM, handle_sigterm)
+print("ready", flush=True)
+time.sleep(30)
+"""
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="Linux pipe sizing required")
+def test_supervise_output_keeps_sigterm_handler_during_blocked_drain(tmp_path):
+    """A second SIGTERM cannot interrupt an in-progress bounded JSON drain."""
+    import fcntl
+
+    script = tmp_path / "sigterm_during_drain.py"
+    script.write_text(_SIGTERM_DURING_DRAIN_SCRIPT)
+    with subprocess.Popen(
+        [sys.executable, str(script)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        cwd=tmp_path,
+        env={**os.environ, "REFLEX_LOG_JSON": "true"},
+        start_new_session=True,
+    ) as proc:
+        try:
+            assert proc.stdout is not None
+            fcntl.fcntl(proc.stdout.fileno(), fcntl.F_SETPIPE_SZ, 4096)
+            assert json.loads(proc.stdout.readline())["message"] == "ready"
+            started = time.monotonic()
+            proc.send_signal(signal.SIGTERM)
+            marker = tmp_path / "child-finished"
+            deadline = time.monotonic() + 1
+            while not marker.exists() and time.monotonic() < deadline:
+                time.sleep(0.01)
+            assert marker.exists()
+            time.sleep(0.1)
+            proc.send_signal(signal.SIGTERM)
+            time.sleep(0.1)
+            assert proc.poll() is None
+            assert proc.wait(timeout=3) == 0
+            output = proc.stdout.read()
+        finally:
+            _kill_output_test_processes(proc, tmp_path)
+
+    assert time.monotonic() - started >= 1.5
+    records = [json.loads(line) for line in output.splitlines()]
+    assert records
+    assert all(
+        record["message"].startswith(("filler ", "oversized ")) for record in records
+    )
 
 
 _LINGERING_SCRIPT = """
