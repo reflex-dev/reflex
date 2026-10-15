@@ -3013,7 +3013,16 @@ class EventCallback(Generic[*P], EventActionsMixin):
     ) -> "EventCallback[*P]": ...
 
     @overload
-    def __get__(self, instance: Any, owner: Any) -> "Callable[[Unpack[P]]]": ...
+    def __get__(
+        self: "EventCallback[*P]", instance: "BaseState", owner: Any
+    ) -> "Callable[[Unpack[P]], Any]": ...
+
+    # Only a state binds its handlers. Anywhere else, e.g. in a component or
+    # dataclass field, a stored callback reads back as the callback itself.
+    @overload
+    def __get__(
+        self: "EventCallback[*P]", instance: object, owner: Any
+    ) -> "EventCallback[*P]": ...
 
     def __get__(self, instance: Any, owner: Any) -> Callable:
         """Get the function with the instance bound to it.
