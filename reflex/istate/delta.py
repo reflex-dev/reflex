@@ -42,6 +42,12 @@ _record_delta_values: ContextVar[bool] = ContextVar(
 )
 
 
+# True while a delta is built for dirty fields whose computed dependents the
+# client already holds current, so the traversal neither invalidates nor
+# evaluates any computed var.
+_send_fields_only: ContextVar[bool] = ContextVar("_send_fields_only", default=False)
+
+
 class _DeltaRecord(NamedTuple):
     """An uncached var value that counts as sent once the delta delivers it."""
 
@@ -227,8 +233,12 @@ def build_delta(state: BaseState) -> Delta:
     """
     delta = {}
 
-    state._mark_dirty_computed_vars()
-    delta_vars = state.dirty_vars & state._frontend_var_names
+    if _send_fields_only.get():
+        delta_vars = state.dirty_vars & state._frontend_var_names
+        delta_vars.difference_update(state.computed_vars)
+    else:
+        state._mark_dirty_computed_vars()
+        delta_vars = state.dirty_vars & state._frontend_var_names
 
     always_dirty_computed_vars = state._always_dirty_computed_vars
     # Where to leave the values this traversal sends, for whoever delivers
