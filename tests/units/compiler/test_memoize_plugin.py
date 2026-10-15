@@ -1718,6 +1718,33 @@ def test_reused_local_client_state_reader_stays_in_page_scope() -> None:
     assert page_ctx.memoize_shared_scope_counts[local._id_name] == 3
 
 
+def test_shared_scope_prepass_caches_reused_component_subtrees(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The shared-scope prepass counts reused occurrences without rescanning nodes."""
+    from reflex.experimental.client_state import ClientStateVar
+
+    local = ClientStateVar.create("cached_scope", default="initial", global_ref=False)
+    reader = rx.text(local.value)
+    root = rx.box(reader, reader)
+    page_ctx = PageContext(name="test", route="/", root_component=root)
+    plugin = MemoizeStatefulPlugin()
+
+    def unexpected_uncached_walk(*_args: Any, **_kwargs: Any) -> None:
+        pytest.fail("Acyclic shared-scope scans should use cached counts")
+
+    monkeypatch.setattr(
+        memoize_plugin, "_subtree_requires_shared_scope", unexpected_uncached_walk
+    )
+
+    plugin.enter_component(root, page_context=page_ctx, compile_context=None)
+
+    assert page_ctx.memoize_shared_scope_counts[local._id_name] == 2
+    assert page_ctx.memoize_shared_scope_split_ids is not None
+    assert id(reader) in page_ctx.memoize_shared_scope_split_ids
+    assert id(root) not in page_ctx.memoize_shared_scope_split_ids
+
+
 def test_styled_local_client_state_subtree_uses_original_split_id() -> None:
     """A page-owned style clone retains the prepass shared-scope decision."""
     from reflex.experimental.client_state import ClientStateVar

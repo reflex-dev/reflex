@@ -481,17 +481,18 @@ class MemoizeStatefulPlugin(Plugin):
             return None
         root = page_context.root_component
         if comp is root or page_context._owned.get(id(root)) is comp:
-            scope_counts: dict[str, int] = {}
-            _subtree_requires_shared_scope(comp, scope_counts, self.style)
-            if any(count > 1 for count in scope_counts.values()):
-                subtree_counts: dict[int, dict[str, int]] = {}
-                root_counts = _collect_subtree_shared_scope_counts(
-                    comp, subtree_counts, set(), self.style
-                )
-                if root_counts is None:
-                    # Preserve the cycle-safe fallback for unusual component graphs.
-                    page_context.memoize_shared_scope_split_ids = None
-                else:
+            subtree_counts: dict[int, dict[str, int]] = {}
+            root_counts = _collect_subtree_shared_scope_counts(
+                comp, subtree_counts, set(), self.style
+            )
+            if root_counts is None:
+                # Preserve the cycle-safe fallback for unusual component graphs.
+                scope_counts: dict[str, int] = {}
+                _subtree_requires_shared_scope(comp, scope_counts, self.style)
+                page_context.memoize_shared_scope_split_ids = None
+            else:
+                scope_counts = root_counts
+                if any(count > 1 for count in scope_counts.values()):
                     page_context.memoize_shared_scope_split_ids = {
                         component_id
                         for component_id, counts in subtree_counts.items()
@@ -501,8 +502,8 @@ class MemoizeStatefulPlugin(Plugin):
                             if count > 1
                         )
                     }
-            else:
-                page_context.memoize_shared_scope_split_ids = set()
+                else:
+                    page_context.memoize_shared_scope_split_ids = set()
             page_context.memoize_shared_scope_counts = {
                 key: count for key, count in scope_counts.items() if count > 1
             }
