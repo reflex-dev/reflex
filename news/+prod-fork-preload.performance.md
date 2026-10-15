@@ -1,0 +1,1 @@
+Production backend workers on Linux are now forked from a supervisor that has already imported the app, so they share its memory instead of each importing the app again, which cuts memory use and startup time. Set `REFLEX_BACKEND_START_METHOD=spawn` for apps that are not fork-safe.
