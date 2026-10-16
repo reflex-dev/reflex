@@ -89,8 +89,8 @@ from reflex.istate.data import (
 from reflex.istate.delta import (
     Delta,
     DeltaMapping,
+    _replay_client_storage,
     _resolve_delta,
-    _send_fields_only,
     build_delta,
     clean_state,
     resolve_delta,
@@ -2443,9 +2443,9 @@ class State(BaseState):
         ``get_delta`` and may not write browser storage, so a second delta
         carries the browser-provided values again, as
         ``update_vars_internal``'s does: ``get_delta`` overrides see them
-        there, and the browser stores what they return. That delta holds only
-        those values, because the snapshot already sent the computed vars
-        derived from them. A page with on_load
+        there, and the browser stores what they return. Cached dependents are
+        included without invalidating their snapshot caches; real assignments
+        in an override invalidate those caches normally. A page with on_load
         handlers then gets ``on_load_internal``, which only locks its leaf
         substate.
 
@@ -2482,17 +2482,7 @@ class State(BaseState):
             # Follow-up corrections must be allowed to write browser storage.
             self.dirty_vars.discard(constants.CompileVars.IS_HYDRATED)
             if applied:
-                # Pass the browser's values through get_delta overrides. The
-                # snapshot already sent their dependents, computed from them.
-                for var_state, var_name in applied:
-                    var_state.dirty_vars.add(var_name)
-                    var_state._mark_ancestors_dirty()
-                token = _send_fields_only.set(True)
-                try:
-                    delta = await self._get_resolved_delta()
-                finally:
-                    _send_fields_only.reset(token)
-                    self._clean()
+                delta = await _get_client_storage_delta(self, applied)
                 await ctx.emit_delta(delta=delta)
         if not RegistrationContext.get().app.get_load_events(self.rx_router_url.path):
             self.is_hydrated = True
@@ -2502,6 +2492,45 @@ class State(BaseState):
         # page's unfinished on_load chain was already cancelled when this
         # event was enqueued (see BaseStateEventProcessor._supersede_previous).
         return [OnLoadInternalState.on_load_internal]
+
+
+async def _get_client_storage_delta(
+    root: BaseState, applied: list[tuple[BaseState, str]]
+) -> Delta:
+    """Replay browser storage without discarding real override mutations.
+
+    Args:
+        root: The hydrated root state.
+        applied: Browser storage fields applied by this hydration.
+
+    Returns:
+        Override-filtered storage and cached dependent values.
+    """
+    # Include cached storage dependents in the one public traversal, even when
+    # their branch is visited before the override changes the storage value.
+    # Mark delivery only: unchanged caches still hold the snapshot's values.
+    pending = list(applied)
+    seen: set[tuple[str, str]] = set()
+    while pending:
+        state, name = pending.pop()
+        for dependent in state._var_dependencies.get(name, ()):
+            if dependent in seen:
+                continue
+            seen.add(dependent)
+            state_name, cvar_name = dependent
+            target = root.get_substate(state_name.split("."))
+            target.dirty_vars.add(cvar_name)
+            target._mark_ancestors_dirty()
+            pending.append((target, cvar_name))
+    for state, name in applied:
+        state.dirty_vars.add(name)
+        state._mark_ancestors_dirty()
+    token = _replay_client_storage.set(True)
+    try:
+        return await root._get_resolved_delta()
+    finally:
+        _replay_client_storage.reset(token)
+        root._clean()
 
 
 T = TypeVar("T", bound=BaseState)
