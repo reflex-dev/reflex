@@ -143,6 +143,16 @@ this, use the `--no-zip` parameter. This provides the frontend in the
 `.web/build/client/` directory and the backend can be found in the root directory of
 the project.
 
+Production exports that share a `.web` directory wait for one another from
+compilation through ZIP creation, on macOS, Linux, and Windows. Backend-only
+exports also wait while archiving an existing `.web/backend` directory, but do
+not create `.web` when it is absent. Production and preview startup hold the
+same lock while compiling and building and release it before serving. The lock
+file `.web/.reflex-build.lock` stays in place between commands; do not remove it
+while a command is running. Initialization, development hot reload, and other
+tools writing to `.web` are outside this lock, so avoid running them during an
+export.
+
 The export also writes a pre-compressed `.gz` copy of the compressible text
 assets (JS, CSS, HTML, JSON, SVG, and similar), so configure the static host
 to serve those directly where it supports it. Set the
