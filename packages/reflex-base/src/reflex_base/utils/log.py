@@ -29,6 +29,7 @@ import os
 import re
 import shutil
 import signal
+import stat
 import subprocess
 import sys
 import threading
@@ -36,7 +37,7 @@ import time
 from collections.abc import Generator
 from pathlib import Path
 from types import FrameType, ModuleType
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from rich.console import Console
 from rich.errors import MarkupError
@@ -374,6 +375,73 @@ def _write_all(fd: int, data: bytes):
         view = view[os.write(fd, view) :]
 
 
+def _pipe_atomic_write_limit(fd: int) -> int | None:
+    """Return the atomic-write limit when ``fd`` targets a pipe.
+
+    Args:
+        fd: The output file descriptor.
+
+    Returns:
+        The pipe's atomic-write limit, or None for non-pipe outputs.
+    """
+    if os.name != "posix":
+        return None
+    try:
+        if not stat.S_ISFIFO(os.fstat(fd).st_mode):
+            return None
+    except OSError:
+        return None
+    try:
+        return os.fpathconf(fd, "PC_PIPE_BUF")
+    except (AttributeError, OSError, ValueError):
+        return 512
+
+
+def _truncate_json_record(record: bytes, max_bytes: int) -> bytes:
+    """Truncate an oversized JSON line while keeping it valid JSON.
+
+    Args:
+        record: A JSON record, optionally ending in a newline.
+        max_bytes: Maximum encoded size including the newline.
+
+    Returns:
+        The original record if it fits, otherwise a shortened valid record.
+    """
+    if len(record) <= max_bytes:
+        return record
+    content = record.removesuffix(b"\n")
+    try:
+        payload = json.loads(content)
+    except (UnicodeDecodeError, ValueError):
+        payload = {}
+    if not isinstance(payload, dict):
+        payload = {}
+    marker = "...[truncated]"
+
+    def truncate_strings(value: Any, max_chars: int) -> Any:
+        if isinstance(value, str):
+            return value if len(value) <= max_chars else value[:max_chars] + marker
+        if isinstance(value, dict):
+            return {
+                key: truncate_strings(item, max_chars) for key, item in value.items()
+            }
+        if isinstance(value, list):
+            return [truncate_strings(item, max_chars) for item in value]
+        return value
+
+    payload["truncated"] = True
+    max_chars = max_bytes
+    while True:
+        result = json.dumps(truncate_strings(payload, max_chars)).encode() + b"\n"
+        if len(result) <= max_bytes:
+            return result
+        if max_chars == 0:
+            break
+        max_chars = max(0, min(max_chars - 1, max_chars * max_bytes // len(result)))
+
+    return b'{"level":"warning","message":"[record truncated]","truncated":true}\n'
+
+
 class _OutputPump(threading.Thread):
     """Reader thread that turns one child output pipe into JSON lines."""
 
@@ -391,6 +459,7 @@ class _OutputPump(threading.Thread):
         self.write_fd = write_fd
         self.level = level
         self.logger_name = name
+        self._atomic_write_limit = _pipe_atomic_write_limit(write_fd)
         # When the reader started waiting for data; None while it works.
         self.idle_since: float | None = None
         # Cumulative write time and the start of any ongoing write.
@@ -431,8 +500,13 @@ class _OutputPump(threading.Thread):
             started = time.monotonic()
             self._write_state = (elapsed, started)
         # Keep reading when the consumer is gone: a full pipe blocks the child.
+        # Write records separately so a shutdown cutoff never drops the tail of
+        # a batch containing several otherwise complete JSON lines.
         with contextlib.suppress(OSError):
-            _write_all(self.write_fd, data)
+            for record in data.splitlines(keepends=True):
+                if self._atomic_write_limit is not None:
+                    record = _truncate_json_record(record, self._atomic_write_limit)
+                _write_all(self.write_fd, record)
         with self._write_lock:
             self._write_state = (elapsed + time.monotonic() - started, None)
 
@@ -503,33 +577,105 @@ def supervise_output(args: list[str]) -> int:
         _SUPERVISED_ENV_VAR: str(os.getpid()),
         "PYTHONIOENCODING": f"utf-8:{errors}" if errors else "utf-8",
     }
-    # Raw pipes that only the readers close: closing a pipe while a reader is
-    # blocked on it waits for that read on Windows.
-    out_read, out_write = os.pipe()
-    err_read, err_write = os.pipe()
-    proc = subprocess.Popen(args, stdout=out_write, stderr=err_write, env=env)
-    os.close(out_write)
-    os.close(err_write)
-    pumps = [
-        _OutputPump(out_read, 1, "info", "stdout"),
-        _OutputPump(err_read, 2, "warning", "stderr"),
-    ]
-    for pump in pumps:
-        pump.start()
-    signal.signal(signal.SIGTERM, lambda *_: proc.terminate())
-    while True:
+    proc: subprocess.Popen | None = None
+    shutdown_requested_at: float | None = None
+    shutdown_signal: int | None = None
+    shutdown_forwarded = False
+
+    def forward_shutdown(signum: int):
+        """Forward the first shutdown signal to the supervised process group."""
+        nonlocal shutdown_forwarded
+        if proc is None:
+            return
         try:
-            returncode = proc.wait()
-            break
-        except KeyboardInterrupt:
-            # The child gets the same interrupt and shuts down on its own.
-            continue
-    wall_deadline = time.monotonic() + _DRAIN_WALL_SECONDS
-    snapshots = [pump.writing_snapshot() for pump in pumps]
-    for pump, (exited_at, writing_at_exit) in zip(pumps, snapshots, strict=True):
-        pump.drain(exited_at, writing_at_exit, wall_deadline)
-    # A child killed by a signal reports -signum; shells report 128 + signum.
-    return returncode if returncode >= 0 else 128 - returncode
+            if os.name == "posix":
+                os.killpg(proc.pid, signum)
+            else:
+                proc.terminate()
+        except OSError:
+            pass
+        shutdown_forwarded = True
+
+    def request_shutdown(signum: int, _frame: FrameType | None):
+        """Start bounded shutdown and forward only its first signal."""
+        nonlocal shutdown_requested_at, shutdown_signal
+        if shutdown_requested_at is not None:
+            return
+        shutdown_requested_at = time.monotonic()
+        shutdown_signal = signum
+        forward_shutdown(signum)
+
+    previous_handlers = {
+        signal.SIGTERM: signal.signal(signal.SIGTERM, request_shutdown)
+    }
+    if os.name == "posix":
+        previous_handlers[signal.SIGINT] = signal.signal(
+            signal.SIGINT, request_shutdown
+        )
+    try:
+        # Isolate the command so a terminal Ctrl-C reaches the supervisor but
+        # not the child group; the handler forwards it exactly once.
+        out_read, out_write = os.pipe()
+        err_read, err_write = os.pipe()
+        proc = subprocess.Popen(
+            args,
+            stdout=out_write,
+            stderr=err_write,
+            env=env,
+            start_new_session=os.name == "posix",
+        )
+        os.close(out_write)
+        os.close(err_write)
+        if shutdown_signal is not None and not shutdown_forwarded:
+            forward_shutdown(shutdown_signal)
+        pumps = [
+            _OutputPump(out_read, 1, "info", "stdout"),
+            _OutputPump(err_read, 2, "warning", "stderr"),
+        ]
+        for pump in pumps:
+            pump.start()
+        while True:
+            try:
+                returncode = proc.wait(timeout=0.05)
+                break
+            except subprocess.TimeoutExpired:
+                if (
+                    shutdown_requested_at is not None
+                    and time.monotonic() - shutdown_requested_at >= _DRAIN_WALL_SECONDS
+                ):
+                    if os.name == "posix":
+                        with contextlib.suppress(ProcessLookupError):
+                            os.killpg(proc.pid, signal.SIGKILL)
+                    else:
+                        proc.kill()
+                    returncode = proc.wait()
+                    break
+            except KeyboardInterrupt:
+                # Windows delivers Ctrl-C as KeyboardInterrupt instead of a
+                # signal callback; keep repeated interrupts on the same clock.
+                if shutdown_requested_at is None:
+                    shutdown_requested_at = time.monotonic()
+        wall_deadline = (
+            shutdown_requested_at
+            if shutdown_requested_at is not None
+            else time.monotonic()
+        ) + _DRAIN_WALL_SECONDS
+        snapshots = [pump.writing_snapshot() for pump in pumps]
+        for pump, (exited_at, writing_at_exit) in zip(pumps, snapshots, strict=True):
+            while True:
+                try:
+                    if not pump.is_alive():
+                        break
+                    pump.drain(exited_at, writing_at_exit, wall_deadline)
+                    break
+                except KeyboardInterrupt:
+                    # A second Ctrl-C must not bypass the JSON drain deadline.
+                    continue
+        # A child killed by a signal reports -signum; shells report 128 + signum.
+        return returncode if returncode >= 0 else 128 - returncode
+    finally:
+        for signum, handler in previous_handlers.items():
+            signal.signal(signum, handler)
 
 
 class JsonHandler(logging.Handler):
