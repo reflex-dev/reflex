@@ -2200,9 +2200,15 @@ def test_from_state_hook_subscribes_to_the_field():
     assert VarData.from_state("s").hooks == ('const s = useStateContext("s")',)
 
 
-def test_var_set_state_subscribes_to_the_whole_substate():
-    """The expression may read any key, so the whole-substate hook must be present."""
-    var = Var(_js_expr="value", _var_type=str)._var_set_state("s")
+@pytest.mark.parametrize("js_expr", ["value", "items_rx_state_[0]"])
+def test_var_set_state_subscribes_to_the_whole_substate(js_expr: str):
+    """The expression may read any key, so its only hook reads the whole substate.
+
+    Args:
+        js_expr: The expression read from the state.
+    """
+    var = Var(_js_expr=js_expr, _var_type=str)._var_set_state("s")
     var_data = var._get_all_var_data()
     assert var_data is not None
-    assert 'const s = useStateContext("s")' in var_data.hooks
+    assert var_data.hooks == ('const s = useStateContext("s")',)
+    assert var_data.field_dependencies == {"s": (js_expr,)}

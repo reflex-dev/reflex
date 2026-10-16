@@ -1386,11 +1386,14 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         return StateOperation.create(  # pyright: ignore [reportReturnType]
             formatted_state_name,
             self,
-            # The expression can read any key of the substate, so the plain
-            # from_state hook subscribes the component to the whole substate.
+            # The expression can read any key of the substate, so its hook
+            # subscribes to the whole substate rather than a named field.
             _var_data=VarData.merge(
-                VarData.from_state(state, self._js_expr),
                 VarData.from_state(state),
+                VarData(
+                    state=state if isinstance(state, str) else state.get_full_name(),
+                    field_name=self._js_expr,
+                ),
                 self._var_data,
             ),
         ).guess_type()
