@@ -267,6 +267,11 @@ class StateProxy(wrapt.ObjectProxy):
                 token=self._self_substate_token, event=self._self_event
             )
             mutable_state = await self._self_actx.__aenter__()
+            self._self_mutable = True
+            self._self_entered_context = True
+            super().__setattr__(
+                "__wrapped__", mutable_state.get_substate(self._self_substate_path)
+            )
             from reflex.state import State
 
             if type(mutable_state) is State and not mutable_state.router_data:
@@ -279,11 +284,6 @@ class StateProxy(wrapt.ObjectProxy):
                         ctx.router_data, {}
                     )
                 await BaseStateEventProcessor._rehydrate(mutable_state)
-            self._self_mutable = True
-            self._self_entered_context = True
-            super().__setattr__(
-                "__wrapped__", mutable_state.get_substate(self._self_substate_path)
-            )
         except (Exception, asyncio.CancelledError):
             # Restore the proxy to a consistent state since __aexit__ will not be called when __aenter__ raises.
             await self.__aexit__(*sys.exc_info())
