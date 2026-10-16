@@ -106,7 +106,9 @@ storage var keeps its storage name and options only with a storage value as its
 default, such as `rx.LocalStorage("dark", name="theme")`. Given a plain string,
 a var annotated `str` becomes an ordinary var, and one annotated with a storage
 type, such as `rx.LocalStorage`, stays in browser storage under the default key
-and options.
+and options. A `default_factory` cannot declare browser storage: the app fails
+to compile when a storage var has a factory, or when a factory returns a storage
+value. See [Browser Storage](/docs/api-reference/browser-storage/).
 
 An inherited var belongs to the state that declared it, so changing its field
 also changes the default for every state that inherits it. Each generated

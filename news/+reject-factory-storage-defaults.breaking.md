@@ -1,0 +1,1 @@
+Browser storage vars (`rx.Cookie`, `rx.LocalStorage`, `rx.SessionStorage`) must be declared with a storage value as the default or with a storage type annotation. A `default_factory` on a storage var, or one returning a storage value, now fails at compile time instead of being silently ignored or treated as an ordinary var.

@@ -18,6 +18,7 @@ from reflex.compiler.utils import compile_state, create_document_root
 from reflex.compiler.utils import write_file as compiler_write_file
 from reflex.constants.state import FIELD_MARKER
 from reflex.state import State, state_snapshot_hashes
+from reflex.utils.exceptions import VarTypeError
 from reflex.utils.path_ops import write_file
 from reflex.vars.base import computed_var
 
@@ -232,37 +233,112 @@ def test_compile_state_hashes_dict_with_mixed_key_types(
     assert len(state_snapshot_hashes(compiled)) == len(compiled) + 1
 
 
-def test_compile_client_storage_honors_default_factories(
+@pytest.mark.parametrize(
+    "annotation",
+    [rx.Cookie, rx.LocalStorage, rx.SessionStorage],
+    ids=lambda t: t.__name__,
+)
+def test_compile_client_storage_rejects_factory_on_storage_annotation(
+    annotation: type,
     forked_registration_context: RegistrationContext,
 ):
-    """Factory-backed browser storage fields compile with the options they produce.
+    """A browser storage var annotated with a storage type takes no default_factory.
+
+    Args:
+        annotation: The browser storage type the var is annotated with.
+        forked_registration_context: Keeps the test's state out of other tests.
+    """
+    # Built with type() so the annotation is the parametrized storage type.
+    StorageState = type(
+        "StorageState",
+        (State,),
+        {
+            "__module__": __name__,
+            "__qualname__": "test_rejects_factory_on_storage_annotation.<locals>.StorageState",
+            "__annotations__": {"value": annotation},
+            "value": rx.field(default_factory=lambda: annotation("new", name="key")),
+        },
+    )
+
+    with pytest.raises(VarTypeError, match=r"\.value' cannot use a default_factory"):
+        utils.compile_client_storage(StorageState)
+
+
+def test_compile_client_storage_rejects_factory_on_set_default(
+    forked_registration_context: RegistrationContext,
+):
+    """set_default with a default_factory is rejected on a browser storage var.
 
     Args:
         forked_registration_context: Keeps the test's state out of other tests.
     """
 
     class StorageState(State):
-        cookie: rx.Field[rx.Cookie] = rx.field(
-            default_factory=lambda: rx.Cookie("new", name="cookie-key", max_age=60)
-        )
-        local: rx.Field[rx.LocalStorage] = rx.field(
-            default_factory=lambda: rx.LocalStorage("new", name="local-key", sync=True)
-        )
-        session: rx.Field[rx.SessionStorage] = rx.field(
-            default_factory=lambda: rx.SessionStorage("new", name="session-key")
+        value: rx.LocalStorage = rx.LocalStorage("declared", name="storage-key")
+
+    StorageState.__fields__["value"].set_default(
+        default_factory=lambda: rx.LocalStorage("new", name="storage-key")
+    )
+    with pytest.raises(VarTypeError, match=r"\.value' cannot use a default_factory"):
+        utils.compile_client_storage(StorageState)
+
+
+def test_compile_client_storage_rejects_factory_producing_storage(
+    forked_registration_context: RegistrationContext,
+):
+    """A plain-annotated var whose default_factory produces browser storage is rejected.
+
+    Args:
+        forked_registration_context: Keeps the test's state out of other tests.
+    """
+
+    class StorageState(State):
+        theme: rx.Field[str] = rx.field(
+            default_factory=lambda: rx.LocalStorage("light", name="theme")
         )
 
-    compiled = utils.compile_client_storage(StorageState)
-    name = StorageState.get_full_name()
-    cookie = compiled[constants.COOKIES][f"{name}.cookie{FIELD_MARKER}"]
-    assert (cookie["name"], cookie["maxAge"]) == ("cookie-key", 60)
-    assert compiled[constants.LOCAL_STORAGE][f"{name}.local{FIELD_MARKER}"] == {
-        "name": "local-key",
-        "sync": True,
+    class OptionalStorageState(State):
+        theme: rx.Field[str | None] = rx.field(
+            default_factory=lambda: rx.LocalStorage("light", name="theme")
+        )
+
+    with pytest.raises(VarTypeError, match=r"\.theme' cannot use a default_factory"):
+        utils.compile_client_storage(StorageState)
+    with pytest.raises(VarTypeError, match=r"\.theme' cannot use a default_factory"):
+        utils.compile_client_storage(OptionalStorageState)
+
+
+def test_compile_client_storage_skips_plain_factories(
+    forked_registration_context: RegistrationContext,
+):
+    """A default_factory producing a plain value compiles as an ordinary var.
+
+    Args:
+        forked_registration_context: Keeps the test's state out of other tests.
+    """
+    calls = []
+
+    def make_text() -> str:
+        """Record the call and return a plain default.
+
+        Returns:
+            The default text.
+        """
+        calls.append(1)
+        return "plain"
+
+    class PlainState(State):
+        text: rx.Field[str] = rx.field(default_factory=make_text)
+        items: rx.Field[list[str]] = rx.field(default_factory=list)
+        local: str = rx.LocalStorage("declared", name="local-key")
+
+    compiled = utils.compile_client_storage(PlainState)
+    name = PlainState.get_full_name()
+    assert compiled[constants.LOCAL_STORAGE] == {
+        f"{name}.local{FIELD_MARKER}": {"name": "local-key", "sync": False}
     }
-    assert compiled[constants.SESSION_STORAGE][f"{name}.session{FIELD_MARKER}"] == {
-        "name": "session-key"
-    }
+    assert compiled[constants.COOKIES] == compiled[constants.SESSION_STORAGE] == {}
+    assert calls == [1]
 
 
 def test_document_root_allows_static_id_on_head_script():

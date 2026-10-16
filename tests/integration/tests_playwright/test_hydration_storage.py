@@ -61,9 +61,6 @@ def HydrationStorageApp():
         local: str = rx.LocalStorage("declared", name="assigned-local")
         session: str = rx.SessionStorage("declared", name="assigned-session")
         cookie: str = rx.Cookie("declared", name="assigned-cookie")
-        factory: rx.Field[str] = rx.field(
-            default_factory=lambda: rx.LocalStorage("declared", name="assigned-factory")
-        )
 
         @rx.event
         def change(self):
@@ -71,7 +68,6 @@ def HydrationStorageApp():
             self.local = "changed"
             self.session = "changed"
             self.cookie = "changed"
-            self.factory = "changed"
 
     fields = AssignedStorageState.__fields__
     fields["local"].set_default(rx.LocalStorage("assigned", name="assigned-local"))
@@ -79,8 +75,6 @@ def HydrationStorageApp():
         rx.SessionStorage("assigned", name="assigned-session")
     )
     fields["cookie"].set_default(rx.Cookie("assigned", name="assigned-cookie"))
-    # A storage value as the default replaces the declared factory.
-    fields["factory"].set_default(rx.LocalStorage("assigned", name="assigned-factory"))
 
     class PreferenceState(rx.ComponentState):
         pref: str = rx.LocalStorage("declared", name="assigned-pref")
@@ -202,7 +196,6 @@ def HydrationStorageApp():
             rx.text(AssignedStorageState.local, id="assigned-local"),
             rx.text(AssignedStorageState.session, id="assigned-session"),
             rx.text(AssignedStorageState.cookie, id="assigned-cookie"),
-            rx.text(AssignedStorageState.factory, id="assigned-factory"),
             rx.button("Change", on_click=AssignedStorageState.change, id="change"),
             PreferenceState.create(initial="assigned"),
             rx.text(rx.cond(rx.State.is_hydrated, "true", "false"), id="hydrated"),
@@ -298,7 +291,7 @@ def test_hydration_reconciles_storage_in_get_delta(
 
 
 # The browser storage vars of the assigned page, by element id suffix.
-VARS = ("local", "session", "cookie", "factory", "pref")
+VARS = ("local", "session", "cookie", "pref")
 
 
 def test_assigned_storage_default_persists(
@@ -323,7 +316,6 @@ def test_assigned_storage_default_persists(
         localStorage.getItem('assigned-local') === 'changed' &&
         sessionStorage.getItem('assigned-session') === 'changed' &&
         localStorage.getItem('assigned-pref') === 'changed' &&
-        localStorage.getItem('assigned-factory') === 'changed' &&
         document.cookie.split('; ').includes('assigned-cookie=changed')
     """)
 
