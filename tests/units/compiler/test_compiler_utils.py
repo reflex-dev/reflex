@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from copy import deepcopy
+from typing import TypedDict
 
 import pytest
 from reflex_base import constants
@@ -308,6 +309,12 @@ def test_compile_client_storage_rejects_factory_producing_storage(
         utils.compile_client_storage(OptionalStorageState)
 
 
+class Node(TypedDict):
+    """A typed dict default, which issubclass refuses to check."""
+
+    name: str
+
+
 def test_compile_client_storage_skips_plain_factories(
     forked_registration_context: RegistrationContext,
 ):
@@ -330,6 +337,8 @@ def test_compile_client_storage_skips_plain_factories(
     class PlainState(State):
         text: rx.Field[str] = rx.field(default_factory=make_text)
         items: rx.Field[list[str]] = rx.field(default_factory=list)
+        # issubclass against a TypedDict raises, so the check must not ask it.
+        node: rx.Field[Node] = rx.field(default_factory=lambda: Node(name="root"))
         local: str = rx.LocalStorage("declared", name="local-key")
 
     compiled = utils.compile_client_storage(PlainState)

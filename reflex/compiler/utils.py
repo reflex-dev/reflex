@@ -362,7 +362,7 @@ def _accepts_str(type_: Any) -> bool:
         return True
     if types.is_union(type_):
         return any(_accepts_str(arg) for arg in get_args(type_))
-    return isinstance(type_, type) and issubclass(str, type_)
+    return types.safe_issubclass(str, type_)
 
 
 def _raise_factory_storage(field: Field, storage_type: type) -> None:
