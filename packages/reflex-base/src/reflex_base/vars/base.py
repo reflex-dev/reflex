@@ -46,7 +46,7 @@ from reflex_base import constants
 from reflex_base.constants.compiler import Hooks
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import _on_env_var_set, environment
-from reflex_base.utils import exceptions, imports, serializers, types
+from reflex_base.utils import console, exceptions, imports, serializers, types
 from reflex_base.utils.compat import MISSING_TYPE, annotations_from_namespace
 from reflex_base.utils.decorator import once
 from reflex_base.utils.exceptions import (
@@ -344,9 +344,6 @@ class VarData:
     # Dependencies of the var
     deps: tuple[Var, ...] = dataclasses.field(default_factory=tuple)
 
-    # Position of the hook in the component
-    position: Hooks.HookPosition | None = None
-
     # Components that are part of this var
     components: tuple[BaseComponent, ...] = dataclasses.field(default_factory=tuple)
 
@@ -378,7 +375,8 @@ class VarData:
             imports: Imports needed to render this var.
             hooks: Hooks that need to be present in the component to render this var.
             deps: Dependencies of the var for useCallback.
-            position: Position of the hook in the component.
+            position: Deprecated and ignored: hooks render in the order they
+                are declared and merged.
             components: Components that are part of this var.
             app_wraps: App-level wrapper components this var requires when used.
             field_dependencies: Every state field this var is built from,
@@ -387,6 +385,14 @@ class VarData:
                 single field. Keyword-only in practice: it trails the older
                 parameters so positional callers of those are unaffected.
         """
+        if position is not None:
+            console.deprecate(
+                feature_name="VarData(position=...)",
+                reason="Hooks render in the order they are declared and merged. "
+                "Remove the position argument.",
+                deprecation_version="0.10.1",
+                removal_version="1.0",
+            )
         if isinstance(hooks, str):
             hooks = [hooks]
         if not isinstance(hooks, dict):
@@ -402,7 +408,6 @@ class VarData:
         object.__setattr__(self, "imports", immutable_imports)
         object.__setattr__(self, "hooks", tuple(hooks or {}))
         object.__setattr__(self, "deps", tuple(deps or []))
-        object.__setattr__(self, "position", position or None)
         object.__setattr__(self, "components", tuple(components or []))
         object.__setattr__(self, "app_wraps", tuple(app_wraps or []))
 
@@ -418,7 +423,6 @@ class VarData:
                 object.__setattr__(self, "imports", merged_var_data.imports)
                 object.__setattr__(self, "hooks", merged_var_data.hooks)
                 object.__setattr__(self, "deps", merged_var_data.deps)
-                object.__setattr__(self, "position", merged_var_data.position)
                 object.__setattr__(self, "components", merged_var_data.components)
                 object.__setattr__(self, "app_wraps", merged_var_data.app_wraps)
 
@@ -508,21 +512,6 @@ class VarData:
             }.values()
         )
 
-        positions = list(
-            dict.fromkeys(
-                var_data.position
-                for var_data in all_var_datas
-                if var_data.position is not None
-            )
-        )
-        if positions:
-            if len(positions) > 1:
-                msg = f"Cannot merge var data with different positions: {positions}"
-                raise exceptions.ReflexError(msg)
-            position = positions[0]
-        else:
-            position = None
-
         components = tuple(
             component for var_data in all_var_datas for component in var_data.components
         )
@@ -536,7 +525,6 @@ class VarData:
             imports=imports_,
             hooks=hooks,
             deps=deps,
-            position=position,
             components=components,
             app_wraps=tuple(
                 (priority, wrapper) for (priority, _tag), wrapper in app_wraps.items()
@@ -554,7 +542,6 @@ class VarData:
             or self.imports
             or self.hooks
             or self.deps
-            or self.position
             or self.components
             or self.app_wraps
         )
@@ -582,7 +569,6 @@ class VarData:
             self.imports,
             self.hooks,
             tuple(dep._hash_key() for dep in self.deps),
-            self.position,
             tuple(id(component) for component in self.components),
             frozenset(
                 (priority, component.tag or type(component).__name__)

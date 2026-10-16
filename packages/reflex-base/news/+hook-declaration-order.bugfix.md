@@ -1,0 +1,1 @@
+Component hooks render in the order they are declared and merged, so a hook always comes after the hooks it reads. Before, a component whose prop and `add_hooks` Var read the same state could render a hook before the state declaration it reads and fail with a `ReferenceError`.
