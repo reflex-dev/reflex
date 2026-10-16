@@ -492,6 +492,102 @@ async def test_background_event_does_not_discard_concurrent_foreground_write(
     )
 
 
+def _expire_token(state_manager: StateManager, token: str) -> None:
+    """Drop every state stored for a token, as its expiration would.
+
+    Args:
+        state_manager: The memory or redis state manager holding the token.
+        token: The client token to expire.
+    """
+    if isinstance(state_manager, StateManagerMemory):
+        state_manager._purge_token(BaseStateToken(ident=token, cls=State))
+        return
+    assert isinstance(state_manager, StateManagerRedis)
+    keys = state_manager.redis._internals["keys"]  # pyright: ignore[reportAttributeAccessIssue]
+    for key in [key for key in keys if key.startswith(token.encode())]:
+        del keys[key]
+
+
+@pytest.mark.parametrize(
+    "processor_state_manager", ["in_process", "redis"], indirect=True
+)
+async def test_background_task_rehydrates_state_tree_expired_while_unlocked(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+):
+    """A background task re-entering an expired tree sends the full recreated state.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: List to capture emitted deltas.
+        token: The client token.
+    """
+    waiting = asyncio.Event()
+    release = asyncio.Event()
+
+    class ExpiryState(State):
+        value: int = 0
+
+        @event(background=True)
+        async def bg(self):
+            waiting.set()
+            await release.wait()
+            async with self:
+                self.value = 100
+
+    class ExpiryChildState(ExpiryState):
+        child: int = 0
+
+        @event
+        def set_child(self):
+            self.child = 13
+
+    router_data = {
+        RouteVar.PATH: "/post/[pid]",
+        RouteVar.ORIGIN: "/post/abc",
+        RouteVar.QUERY: {"pid": "abc"},
+        RouteVar.CLIENT_TOKEN: token,
+    }
+
+    set_child, bg = (
+        Event.from_event_type(spec, router_data=router_data)[0]
+        for spec in (ExpiryChildState.set_child(), ExpiryState.bg())
+    )
+    assert real_base_state_processor._root_context is not None
+    state_manager = real_base_state_processor._root_context.state_manager
+    if isinstance(state_manager, StateManagerRedis):
+        # Oplock keeps the tree cached in the process, so deleting keys does not expire it.
+        state_manager._oplock_enabled = False
+    async with real_base_state_processor as processor:
+        await (await processor.enqueue(token, set_child))
+        await processor.enqueue(token, bg)
+        await asyncio.wait_for(waiting.wait(), timeout=2)
+        _expire_token(state_manager, token)
+        emitted_deltas.clear()
+        release.set()
+        await processor.join(5)
+
+    root_name = State.get_full_name()
+    child_name = ExpiryChildState.get_full_name()
+    is_hydrated_key = CompileVars.IS_HYDRATED + FIELD_MARKER
+    snapshots = [d for _, d in emitted_deltas if child_name in d]
+    assert snapshots, f"The expired child state was never resent: {emitted_deltas}"
+    snapshot = snapshots[0]
+    # Not hydrated, so the browser does not overwrite its client storage.
+    assert snapshot[root_name][is_hydrated_key] is False
+    assert snapshot[child_name]["child" + FIELD_MARKER] == 0
+    page = snapshot[root_name][constants.ROUTER_PAGE + FIELD_MARKER]
+    assert page.raw_path == "/post/abc"
+    session = snapshot[root_name][constants.ROUTER_SESSION + FIELD_MARKER]
+    assert session.client_token == token
+    assert emitted_deltas[-1][1][ExpiryState.get_full_name()] == {
+        "value" + FIELD_MARKER: 100
+    }
+
+
 async def test_background_yield_inside_context_flushes_delta_before_event(
     wired_app: App,
     real_base_state_processor: BaseStateEventProcessor,
