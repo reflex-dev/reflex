@@ -2,7 +2,6 @@
 import io from "socket.io-client";
 import { mergician } from "mergician";
 import env from "$/env.json";
-import reflexEnvironment from "$/reflex.json";
 import Cookies from "universal-cookie";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -189,7 +188,7 @@ const createSocket = (endpoint, transports, token) =>
   io(endpoint.href, {
     path: endpoint.pathname,
     transports,
-    protocols: [reflexEnvironment.version],
+    protocols: [env.REFLEX_VERSION],
     autoUnref: false,
     autoConnect: false,
     query: { token },
