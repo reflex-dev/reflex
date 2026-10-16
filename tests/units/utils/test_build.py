@@ -11,6 +11,7 @@ import pytest
 import reflex_base
 from pytest_mock import MockerFixture
 from reflex_base import constants
+from reflex_base.constants import POLLING_MAX_HTTP_BUFFER_SIZE
 
 from reflex.plugins import EmbedPlugin, Plugin
 from reflex.utils import build, path_ops
@@ -292,7 +293,10 @@ def test_build_preserves_prerendered_pages_when_assets_collide(
 
 
 def _patch_env_json(
-    mocker: MockerFixture, tmp_path: Path, plugins: list[Plugin] | None = None
+    mocker: MockerFixture,
+    tmp_path: Path,
+    plugins: list[Plugin] | None = None,
+    max_http_buffer_size: int = POLLING_MAX_HTTP_BUFFER_SIZE,
 ):
     web_dir = tmp_path / ".web"
     web_dir.mkdir()
@@ -302,6 +306,10 @@ def _patch_env_json(
     config.plugins = plugins or []
     mocker.patch("reflex.utils.build.get_config", return_value=config)
     mocker.patch("reflex.utils.build.is_in_app_harness", return_value=False)
+    mocker.patch.dict(
+        "os.environ",
+        {"REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE": str(max_http_buffer_size)},
+    )
     return web_dir
 
 
@@ -318,6 +326,7 @@ def test_set_env_json_merges_plugin_contributions(
     env = json.loads((web_dir / "env.json").read_text())
     assert env["MOUNT_TARGET"] == "#reflex-root"
     assert env["TRANSPORT"] == "websocket"
+    assert env["MAX_HTTP_BUFFER_SIZE"] == POLLING_MAX_HTTP_BUFFER_SIZE
 
 
 def test_set_env_json_omits_plugin_keys_when_plugin_absent(
@@ -331,6 +340,21 @@ def test_set_env_json_omits_plugin_keys_when_plugin_absent(
     env = json.loads((web_dir / "env.json").read_text())
     assert "MOUNT_TARGET" not in env
     assert env["TRANSPORT"] == "websocket"
+
+
+def test_set_env_json_includes_configured_socket_message_limit(
+    tmp_path: Path, mocker: MockerFixture
+):
+    """The browser receives the socket message limit configured for the app."""
+    max_http_buffer_size = 2_000_000
+    web_dir = _patch_env_json(
+        mocker, tmp_path, max_http_buffer_size=max_http_buffer_size
+    )
+
+    build.set_env_json()
+
+    env = json.loads((web_dir / "env.json").read_text())
+    assert env["MAX_HTTP_BUFFER_SIZE"] == max_http_buffer_size
 
 
 def test_set_env_json_later_plugin_wins(tmp_path: Path, mocker: MockerFixture):

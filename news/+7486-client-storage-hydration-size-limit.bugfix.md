@@ -1,0 +1,1 @@
+Prevent oversized client-storage hydration messages from causing repeated Socket.IO reconnects. When overriding `REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE`, use the same value while building the frontend and running the backend.

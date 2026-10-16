@@ -49,6 +49,11 @@ has_too_many_connection_errors = Var(
     _js_expr="(connectErrors.length >= 2)", _var_data=connect_error_var_data
 ).to(BooleanVar)
 
+has_hydration_payload_error = Var(
+    _js_expr="connectErrors.some((error) => error.code === 'hydration_payload_too_large')",
+    _var_data=connect_error_var_data,
+).to(BooleanVar)
+
 
 class WebsocketTargetURL(Var):
     """A component that renders the websocket target URL."""
@@ -115,9 +120,14 @@ class ConnectionToaster(Fragment):
             backend_is_down_toast_var = Var(
                 f"toast?.error({backend_is_not_responding!s}, {{...toast_props, description: '', onDismiss: () => setUserDismissed(true)}},)"
             )
+            hydration_payload_error_toast_var = Var(
+                f"toast?.error({connection_error!s}, {{...toast_props, description: '', onDismiss: () => setUserDismissed(true)}},)"
+            )
             toast_var = Var(
                 f"""
-if (waitedForBackend) {{
+if ({has_hydration_payload_error!s}) {{
+    {hydration_payload_error_toast_var!s}
+}} else if (waitedForBackend) {{
     {backend_is_down_toast_var!s}
 }} else {{
     {backend_is_loading_toast_var!s};
@@ -159,7 +169,7 @@ setTimeout(() => {{
                 Var(
                     _js_expr=f"""
 () => {{
-    if ({has_too_many_connection_errors!s}) {{
+    if ({has_too_many_connection_errors!s} || {has_hydration_payload_error!s}) {{
         if (!userDismissed) {{
             {toast_var!s}
         }}

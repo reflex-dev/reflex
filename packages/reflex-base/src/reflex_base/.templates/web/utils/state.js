@@ -74,6 +74,10 @@ const MAX_SENT_STORAGE_VALUES = 256;
 // (vars of different state keys may share one).
 let localStorageWrites = 0;
 const lastLocalStorageWrites = {};
+let hydrationPayloadRejected = false;
+
+// Keep in sync with reflex_components_core.core.banner.
+const ERROR_TYPE_HYDRATION_PAYLOAD_TOO_LARGE = "hydration_payload_too_large";
 
 // Mirrors the data router's location so applyEvent can populate router_data
 // with the in-widget URL. In embed mode the host page's window.location is
@@ -890,6 +894,12 @@ export const connect = async (
   navigate,
   params,
 ) => {
+  // An oversized initial hydration cannot recover without changing browser
+  // storage and reloading. Avoid rebuilding and reserializing it on each event.
+  if (hydrationPayloadRejected) {
+    return;
+  }
+
   // Socket already allocated, just reconnect it if needed.
   if (socket.current) {
     if (!socket.current.connected) {
@@ -908,12 +918,49 @@ export const connect = async (
   // the state schema goes along on every (re)connect, since a reconnect can
   // land on another backend version.
   const bootAuth = (first) => {
+    if (hydrationPayloadRejected) {
+      return null;
+    }
     const boot_event = withRouterData(app.initialEvents(first)[0], params);
-    recordSentStorageValues(boot_event);
-    // Instrumentation hook (installed by reflex-otel): may add a traceparent.
+    // Instrumentation may add trace data, so measure the final auth payload.
     window.__reflex_otel?.onEventSend?.(boot_event);
-    return { event: boot_event, state_schema: app.stateSchema };
+    const auth = { event: boot_event, state_schema: app.stateSchema };
+    const maxSize = env.MAX_HTTP_BUFFER_SIZE;
+    // This app uses Socket.IO's default namespace; endpoint.pathname is the
+    // Engine.IO transport path and is not part of the CONNECT packet.
+    const authPacket = `40${JSON.stringify(auth, (key, value) =>
+      value === undefined ? null : value,
+    )}`;
+    // Engine.IO's ASGI WebSocket path checks Python string length (code points),
+    // while polling checks the request body's byte length.
+    let size;
+    if (transports[0] === "websocket") {
+      size = 0;
+      for (const _ of authPacket) {
+        size++;
+      }
+    } else {
+      size = new TextEncoder().encode(authPacket).byteLength;
+    }
+    if (typeof maxSize === "number" && size > maxSize) {
+      const error = new Error(
+        `Hydration payload (${size} ${transports[0] === "websocket" ? "characters" : "bytes"}) exceeds the ${transports[0] === "websocket" ? "WebSocket message" : "polling request"} limit (${maxSize}). Reduce browser storage data and reload.`,
+      );
+      error.code = ERROR_TYPE_HYDRATION_PAYLOAD_TOO_LARGE;
+      console.error(error.message);
+      hydrationPayloadRejected = true;
+      setConnectErrors((errors) => [...errors.slice(-9), error]);
+      return null;
+    }
+    recordSentStorageValues(boot_event);
+    return auth;
   };
+
+  const initialAuth = bootAuth(true);
+  if (!initialAuth) {
+    discardWarmSocket();
+    return;
+  }
 
   // Create the socket. A new session's token is saved here, once the app has
   // mounted, even when a transport warmed up with it earlier.
@@ -933,7 +980,7 @@ export const connect = async (
     warmSocket ?? createSocket(endpoint, transports, session_token);
   warmSocket = null;
   cancelWarmup();
-  socket.current.auth = bootAuth(true);
+  socket.current.auth = initialAuth;
   socket.current.wait_connect = !socket.current.connected;
   // Ensure undefined fields in events are sent as null instead of removed
   socket.current.io.encoder.replacer = (k, v) => (v === undefined ? null : v);
@@ -954,7 +1001,12 @@ export const connect = async (
       socket.current.wait_connect = true;
       socket.current.io.opts.query = { token: getToken() }; // Update token for reconnect.
       // A reconnect rehydrates in full: the reducers no longer hold the defaults.
-      socket.current.auth = bootAuth(false);
+      const auth = bootAuth(false);
+      if (!auth) {
+        socket.current.wait_connect = false;
+        return;
+      }
+      socket.current.auth = auth;
       socket.current.connect();
     }
   };
