@@ -18,6 +18,57 @@ if TYPE_CHECKING:
     from reflex_base.components.component import Component
 
 
+_STATE_HOOK = re.compile(
+    r'const (\w+) = useStateContext\(("[^"]*")(?:, (\[[^\]]*\]))?\)'
+)
+
+
+def _merge_state_hooks(
+    hooks: dict[str, VarData | None],
+) -> dict[str, VarData | None]:
+    """Merge the field subscriptions to one state into a single hook.
+
+    A hook without a field list reads the whole substate, so it wins over the
+    field lists for the same state.
+
+    Args:
+        hooks: The hooks of one component.
+
+    Returns:
+        The hooks with one ``useStateContext`` call per state.
+    """
+    fields_by_name: dict[str, dict[str, None] | None] = {}
+    state_hooks = 0
+    for hook in hooks:
+        if "useStateContext(" not in hook or not (match := _STATE_HOOK.fullmatch(hook)):
+            continue
+        state_hooks += 1
+        var_name, _, field_list = match.groups()
+        fields = fields_by_name.get(var_name, {})
+        if fields is not None and field_list is not None:
+            fields.update(dict.fromkeys(json.loads(field_list)))
+            fields_by_name[var_name] = fields
+        else:
+            fields_by_name[var_name] = None
+    if state_hooks == len(fields_by_name):
+        return hooks
+    merged = {}
+    for hook, data in hooks.items():
+        match = _STATE_HOOK.fullmatch(hook) if "useStateContext(" in hook else None
+        if match is None:
+            merged[hook] = data
+            continue
+        var_name, state_name, _ = match.groups()
+        if var_name not in fields_by_name:
+            continue
+        fields = fields_by_name.pop(var_name)
+        args = (
+            state_name if fields is None else f"{state_name}, {json.dumps([*fields])}"
+        )
+        merged[f"const {var_name} = useStateContext({args})"] = data
+    return merged
+
+
 def _sort_hooks(
     hooks: dict[str, VarData | None],
 ) -> tuple[list[str], list[str], list[str]]:
@@ -29,6 +80,7 @@ def _sort_hooks(
     Returns:
         The sorted hooks.
     """
+    hooks = _merge_state_hooks(hooks)
     internal_hooks = []
     pre_trigger_hooks = []
     post_trigger_hooks = []

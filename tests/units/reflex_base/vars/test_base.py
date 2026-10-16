@@ -22,6 +22,7 @@ from unittest import mock
 import pytest
 from reflex_base import constants
 from reflex_base.constants import RouteArgType
+from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import _load_dotenv_from_files, environment
 from reflex_base.utils import serializers
 from reflex_base.utils.exceptions import (
@@ -2189,3 +2190,19 @@ def test_new_default_for_inherited_private_field_stays_a_field():
         assert child_field.default == 2
         assert isinstance(vars(child)["__counter__"], Field)
         assert child().__counter__ == 2
+
+
+def test_from_state_hook_subscribes_to_the_field():
+    """A state field's hook names the field, so its readers skip other changes."""
+    assert VarData.from_state("s", "a").hooks == (
+        f'const s = useStateContext("s", ["a{FIELD_MARKER}"])',
+    )
+    assert VarData.from_state("s").hooks == ('const s = useStateContext("s")',)
+
+
+def test_var_set_state_subscribes_to_the_whole_substate():
+    """The expression may read any key, so the whole-substate hook must be present."""
+    var = Var(_js_expr="value", _var_type=str)._var_set_state("s")
+    var_data = var._get_all_var_data()
+    assert var_data is not None
+    assert 'const s = useStateContext("s")' in var_data.hooks

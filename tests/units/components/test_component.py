@@ -2171,7 +2171,7 @@ def test_add_style_embedded_vars(test_state: type[TestState]):
     page._add_style_recursive(Style())
 
     assert (
-        f'const {test_state.get_name()} = useStateContext("{test_state.get_full_name()}")'
+        f'const {test_state.get_name()} = useStateContext("{test_state.get_full_name()}", ["num{FIELD_MARKER}"])'
         in page._get_all_hooks_internal()
     )
     assert any(
