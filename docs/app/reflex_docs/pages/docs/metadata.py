@@ -92,7 +92,11 @@ def docs_metadata(path: str, title: str, description: str | None) -> tuple[str, 
         parent for parent in reversed(parents) if parent.lower() != title.lower()
     ]
     route = path.strip("/")
-    is_component_page = route.startswith("library/") and route.count("/") >= 2
+    is_component_page = (
+        route.startswith("library/") 
+        and route.count("/") >= 2
+        and not route.startswith("library/html/")
+    )
     if is_component_page:
         component_name = route.split("/")[-1].rstrip("/")
         subject = f"rx.{component_name}: Python {title} Component"
