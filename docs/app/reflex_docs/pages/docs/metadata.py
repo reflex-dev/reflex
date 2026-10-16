@@ -4,7 +4,7 @@ GENERIC_DESCRIPTION_TEMPLATE = "{subject}: documentation, examples, and referenc
 
 # Summaries for generated catalogs, reference pages, and pages without usable prose.
 PAGE_DESCRIPTIONS = {
-    "library": "Browse Reflex UI components for forms, layouts, data display, charts, and media, with Python examples and prop references.",
+    "library": "Build web UIs in pure Python with Reflex's component library. Includes 100+ ready-to-use UI components — forms, tables, data grids, charts, layouts, and media — with full Python integration, no JavaScript required.",
     "recipes": "Find reusable Reflex recipes for page layouts, content, and authentication, with examples you can adapt for your Python app.",
     "api-reference/app": "Configure rx.App, register pages, and customize application behavior with the App class attributes and methods reference.",
     "api-reference/component": "Explore the Component API for creating Reflex UI elements, managing props, and customizing component rendering and behavior.",
@@ -91,8 +91,17 @@ def docs_metadata(path: str, title: str, description: str | None) -> tuple[str, 
     context = [
         parent for parent in reversed(parents) if parent.lower() != title.lower()
     ]
-    subject = " · ".join([title, *context])
     route = path.strip("/")
+    is_component_page = (
+        route.startswith("library/") 
+        and route.count("/") >= 2
+        and not route.startswith("library/html/")
+    )
+    if is_component_page:
+        component_name = route.split("/")[-1].rstrip("/")
+        subject = f"rx.{component_name}: Python {title} Component"
+    else:
+        subject = " · ".join([title, *context])
     if route == "changelog" or route.startswith("changelog/"):
         package = route.removeprefix("changelog/") if "/" in route else "reflex"
         fallback = f"Read {package} release notes, including new features, bug fixes, and breaking changes, before upgrading your project."
@@ -101,4 +110,4 @@ def docs_metadata(path: str, title: str, description: str | None) -> tuple[str, 
     summary = (
         description or fallback or GENERIC_DESCRIPTION_TEMPLATE.format(subject=subject)
     )
-    return f"{subject} · Reflex Docs", truncate_meta_description(summary)
+    return f"{subject} · Reflex", truncate_meta_description(summary)

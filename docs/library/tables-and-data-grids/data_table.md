@@ -13,11 +13,13 @@ import reflex as rx
 Reflex's data table component (`rx.data_table`) is a great way to display static data — such as a pandas DataFrame — as an interactive table in pure Python.
 You can pass a pandas dataframe to the data prop to create the table, with built-in search, sorting, and pagination.
 
+If you want to [add, edit or remove data](/docs/library/tables-and-data-grids/table/) in your app or deal with anything but static data then the [`rx.table`](/docs/library/tables-and-data-grids/table/) might be a better fit for your use case.
+
+## Basic Example
+
 In this example we will read data from a csv file, convert it to a pandas dataframe and display it in a data_table.
 
 We will also add a search, pagination, sorting to the data_table to make it more accessible.
-
-If you want to [add, edit or remove data](/docs/library/tables-and-data-grids/table/) in your app or deal with anything but static data then the [`rx.table`](/docs/library/tables-and-data-grids/table/) might be a better fit for your use case.
 
 ```python demo box
 rx.data_table(
@@ -40,33 +42,109 @@ rx.data_table(
 )
 ```
 
+## Using pandas DataFrames
+
+The data_table component works seamlessly with pandas DataFrames. Pass the DataFrame directly to the `data` prop and the column names are extracted automatically.
+
 ```python
 import pandas as pd
+import reflex as rx
 
 nba_data = pd.read_csv("data/nba.csv")
-...
-rx.data_table(
-    data=nba_data[["Name", "Height", "Age"]],
-    pagination=True,
-    search=True,
-    sort=True,
-)
+
+def index():
+    return rx.data_table(
+        data=nba_data[["Name", "Height", "Age"]],
+        pagination=True,
+        search=True,
+        sort=True,
+    )
 ```
 
 📊 **Dataset source:** [nba.csv](https://media.geeksforgeeks.org/wp-content/uploads/nba.csv)
 
-The example below shows how to create a data table from from a list.
+## Sorting
+
+Enable sorting by setting `sort=True`. Users can click column headers to sort ascending or descending. Sorting works on all data types including numbers, strings, and dates.
 
 ```python
-class State(rx.State):
-    data: List = [["Lionel", "Messi", "PSG"], ["Christiano", "Ronaldo", "Al-Nasir"]]
-    columns: List[str] = ["First Name", "Last Name"]
+rx.data_table(
+    data=nba_data[["Name", "Team", "Salary"]],
+    sort=True,
+)
+```
 
+You can also programmatically control the default sort order in your state:
+
+```python
+class TableState(rx.State):
+    data: pd.DataFrame = pd.read_csv("data/nba.csv")
+    
+    @rx.var
+    def sorted_data(self) -> pd.DataFrame:
+        return self.data.sort_values("Name")
 
 def index():
     return rx.data_table(
-        data=State.data,
-        columns=State.columns,
+        data=TableState.sorted_data,
+        sort=True,
+    )
+```
+
+## Pagination
+
+Enable pagination by setting `pagination=True`. This automatically splits large datasets into pages and adds navigation controls. By default, the table shows 10 rows per page.
+
+```python
+rx.data_table(
+    data=nba_data,
+    pagination=True,
+)
+```
+
+Users can change the page size from the pagination controls at the bottom of the table. The available options are 10, 25, 50, and 100 rows per page.
+
+## Search
+
+Enable search by setting `search=True`. The search box filters rows across all columns in real time as the user types.
+
+```python
+rx.data_table(
+    data=nba_data,
+    search=True,
+)
+```
+
+Search is case-insensitive and matches partial strings. When combined with pagination, search results are automatically paginated.
+
+## Complete Example with State
+
+The example below shows how to create a data table from a list in state. This pattern is useful when you want to dynamically update the table data based on user actions or external data sources.
+
+```python
+from typing import List
+import reflex as rx
+
+class TableState(rx.State):
+    data: List[List[str]] = [
+        ["Lionel", "Messi", "PSG"], 
+        ["Christiano", "Ronaldo", "Al-Nasir"],
+        ["Neymar", "Jr", "Al-Hilal"],
+        ["Kylian", "Mbappe", "PSG"],
+    ]
+    columns: List[str] = ["First Name", "Last Name", "Team"]
+    
+    @rx.event
+    def add_player(self, first: str, last: str, team: str):
+        self.data.append([first, last, team])
+
+def index():
+    return rx.data_table(
+        data=TableState.data,
+        columns=TableState.columns,
+        pagination=True,
+        search=True,
+        sort=True,
     )
 ```
 
@@ -74,6 +152,7 @@ def index():
 
 Explore the other ways to work with tabular data in Reflex, all in pure Python:
 
-- [Table](/docs/library/tables-and-data-grids/table/)
-- [Data Editor](/docs/library/tables-and-data-grids/data-editor/)
-- [Tables and Data Grids](/docs/library/tables-and-data-grids/)
+- [Table](/docs/library/tables-and-data-grids/table/) — Composable semantic table for custom layouts
+- [Data Editor](/docs/library/tables-and-data-grids/data-editor/) — Spreadsheet-style editable data grid
+- [Tables and Data Grids](/docs/library/tables-and-data-grids/) — Overview of all table components
+- [AG Grid](/docs/enterprise/ag-grid/) — Enterprise data grid with advanced features

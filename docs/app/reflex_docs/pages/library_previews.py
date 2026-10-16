@@ -129,6 +129,40 @@ def get_component_list(component_type: str = "core"):
         raise ValueError(f"Unknown component type: {component_type}")
 
 
+def render_component_grid(component_category: str, component_list: dict, prefix: str = "") -> rx.Component:
+    """Render the component card grid for a category.
+    
+    Args:
+        component_category: The category name to render cards for.
+        component_list: Dict mapping category names to component lists.
+        prefix: URL prefix for component links.
+    
+    Returns:
+        A grid of component cards.
+    """
+    from reflex_docs.templates.docpage.sidebar.sidebar_items import (
+        get_component_link,
+    )
+    
+    return rx.el.div(
+        *[
+            component_card(
+                name=component[0],
+                link=get_component_link(
+                    component_category,
+                    component,
+                    prefix.strip("/") + "/" if prefix.strip("/") else "",
+                ),
+                section=component_category,
+            )
+            for component in get_components_for_category(
+                component_category, component_list[component_category]
+            )
+        ],
+        class_name="gap-5 grid min-w-0 grid-cols-1 md:grid-cols-2 xl:grid-cols-3",
+    )
+
+
 def create_previews(
     path: str,
     description: str,
@@ -151,7 +185,7 @@ def create_previews(
 
         component_list = get_component_list(type)
         if component_category == "State":
-            return rx.box(
+            return rx.el.div(
                 h1_comp(text="State"),
                 render_markdown(
                     "Reflex state connects your components to application data. "
@@ -175,31 +209,99 @@ def create_previews(
                 ),
                 class_name="docs-library flex min-w-0 flex-col w-full mb-10",
             )
-        return rx.box(
-            rx.box(
+        if component_category == "Tables-And-Data-Grids":
+            return rx.el.div(
+                h1_comp(text=get_display_name(component_category)),
+                text_comp_2(
+                    text=description,
+                ),
+                rx.el.h2(
+                    "Which table component should I use?",
+                    class_name="mt-8 font-heading text-2xl font-normal leading-8 tracking-[-0.02em] text-foreground",
+                ),
+                rx.el.ul(
+                    rx.el.li(
+                        rx.el.strong("rx.table", class_name="font-semibold text-foreground"),
+                        " — Composable semantic table for custom layouts. Build headers, rows, and cells with full styling control. Best for small datasets or when you need complete control over the table structure.",
+                        class_name="mt-3 text-sm leading-6 text-muted-foreground",
+                    ),
+                    rx.el.li(
+                        rx.el.strong("rx.data_table", class_name="font-semibold text-foreground"),
+                        " — Drop in a pandas DataFrame and get instant search, sort, and pagination. Perfect for displaying static data from CSV files or database queries. Read-only by default.",
+                        class_name="mt-3 text-sm leading-6 text-muted-foreground",
+                    ),
+                    rx.el.li(
+                        rx.el.strong("rx.data_editor", class_name="font-semibold text-foreground"),
+                        " — Spreadsheet-like editing with cell selection and inline updates. Use this when users need to edit data directly in the grid, like in an admin panel or data entry form.",
+                        class_name="mt-3 text-sm leading-6 text-muted-foreground",
+                    ),
+                    rx.el.li(
+                        rx.el.strong("AG Grid", class_name="font-semibold text-foreground"),
+                        " (enterprise) — The most powerful option. Includes advanced filtering, column pivoting, row grouping, master-detail, tree data, and Excel export. See the ",
+                        rx.el.a(
+                            "AG Grid docs",
+                            href="/docs/enterprise/ag-grid/",
+                            class_name="docs-text-link underline underline-offset-4",
+                        ),
+                        " to get started.",
+                        class_name="mt-3 text-sm leading-6 text-muted-foreground",
+                    ),
+                    class_name="mt-4 mb-8 list-none space-y-0 p-0",
+                ),
+                render_component_grid(component_category, component_list, prefix),
+                class_name="docs-library flex min-w-0 flex-col h-full mb-10",
+            )
+        if component_category in ["Charts", "Other-Charts"]:
+            return rx.el.div(
+                h1_comp(text=get_display_name(component_category)),
+                text_comp_2(
+                    text=description,
+                ),
+                rx.el.h2(
+                    "Choosing a charting library",
+                    class_name="mt-8 font-heading text-2xl font-normal leading-8 tracking-[-0.02em] text-foreground",
+                ),
+                rx.el.ul(
+                    rx.el.li(
+                        rx.el.strong("Recharts", class_name="font-semibold text-foreground"),
+                        " (built-in) — Declarative React charts with a simple API. Best for standard business charts like bar, line, area, and pie. Works great for dashboards and reports. All Recharts components are included in Reflex.",
+                        class_name="mt-3 text-sm leading-6 text-muted-foreground",
+                    ),
+                    rx.el.li(
+                        rx.el.strong("Plotly", class_name="font-semibold text-foreground"),
+                        " (rx.plotly) — Interactive scientific charts with zoom, pan, and hover. Supports 3D plots, contours, and statistical charts. Use this when you need publication-quality figures or complex scientific visualizations.",
+                        class_name="mt-3 text-sm leading-6 text-muted-foreground",
+                    ),
+                    rx.el.li(
+                        rx.el.strong("Matplotlib", class_name="font-semibold text-foreground"),
+                        " (pyplot) — Render any matplotlib.pyplot figure in your web app. Best when you already have matplotlib code from notebooks or scripts. Supports all matplotlib chart types but outputs static images.",
+                        class_name="mt-3 text-sm leading-6 text-muted-foreground",
+                    ),
+                    rx.el.li(
+                        rx.el.strong("AG Charts", class_name="font-semibold text-foreground"),
+                        " (enterprise) — High-performance enterprise charts with smooth animations and advanced features. See the ",
+                        rx.el.a(
+                            "AG Charts docs",
+                            href="/docs/enterprise/ag-chart/",
+                            class_name="docs-text-link underline underline-offset-4",
+                        ),
+                        " for examples.",
+                        class_name="mt-3 text-sm leading-6 text-muted-foreground",
+                    ),
+                    class_name="mt-4 mb-8 list-none space-y-0 p-0",
+                ),
+                render_component_grid(component_category, component_list, prefix),
+                class_name="docs-library flex min-w-0 flex-col h-full mb-10",
+            )
+        return rx.el.div(
+            rx.el.div(
                 h1_comp(text=get_display_name(component_category)),
                 text_comp_2(
                     text=description,
                 ),
                 class_name="flex flex-col w-full",
             ),
-            rx.box(
-                *[
-                    component_card(
-                        name=component[0],
-                        link=get_component_link(
-                            component_category,
-                            component,
-                            prefix.strip("/") + "/" if prefix.strip("/") else "",
-                        ),
-                        section=component_category,
-                    )
-                    for component in get_components_for_category(
-                        component_category, component_list[component_category]
-                    )
-                ],
-                class_name="gap-5 grid min-w-0 grid-cols-1 md:grid-cols-2 xl:grid-cols-3",
-            ),
+            render_component_grid(component_category, component_list, prefix),
             class_name="docs-library flex min-w-0 flex-col h-full mb-10",
         )
 
@@ -259,7 +361,7 @@ core_components_dict = {
     },
     "tables_and_data_grids": {
         "path": "tables-and-data-grids",
-        "description": "Build tables and data grids in Python with Reflex. Includes a composable table, a searchable and sortable data table for pandas DataFrames, and an editable data grid — perfect for dashboards and data apps, all in pure Python.",
+        "description": "Build tables and data grids in Python with Reflex. Use rx.table for simple semantic tables, rx.data_table for searchable pandas DataFrames, rx.data_editor for spreadsheet-style editing, or the enterprise AG Grid component for advanced features like filtering, pivoting, and cell selection. All in pure Python.",
         "component_category": "Tables-And-Data-Grids",
     },
     "typography": {
