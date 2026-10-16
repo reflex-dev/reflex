@@ -1,1 +1,0 @@
-An annotation that names an undefined symbol on a state var, such as `list[Item]` under `from __future__ import annotations`, raises a `NameError` naming the symbol again instead of an unrelated `TypeError` or `AttributeError`, with or without a default value.

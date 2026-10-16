@@ -1151,8 +1151,7 @@ def is_dataframe(value: type) -> bool:
     """
     if is_generic_alias(value) or value == Any:
         return False
-    # An annotation that could not be resolved is a ForwardRef, which has no name.
-    return getattr(value, "__name__", None) == "DataFrame"
+    return value.__name__ == "DataFrame"
 
 
 def is_valid_var_type(type_: type) -> bool:
@@ -1477,7 +1476,10 @@ def typehint_issubclass(
 
 
 def resolve_annotations(
-    raw_annotations: Mapping[str, type[Any]], module_name: str | None
+    raw_annotations: Mapping[str, type[Any]],
+    module_name: str | None,
+    *,
+    strict: bool = False,
 ) -> dict[str, type[Any]]:
     """Partially taken from typing.get_type_hints.
 
@@ -1486,9 +1488,14 @@ def resolve_annotations(
     Args:
         raw_annotations: The raw annotations to resolve.
         module_name: The name of the module.
+        strict: Whether an annotation naming an undefined symbol raises,
+            unless it is a ClassVar.
 
     Returns:
         The resolved annotations.
+
+    Raises:
+        NameError: If strict and an annotation names an undefined symbol.
     """
     module = sys.modules.get(module_name, None) if module_name is not None else None
 
@@ -1506,8 +1513,8 @@ def resolve_annotations(
             else:
                 value = _eval_type(value, base_globals, None)
         except NameError:
-            # this is ok, it can be fixed with update_forward_refs
-            pass
+            if strict and not is_classvar(value):
+                raise
         annotations[name] = value
     return annotations
 

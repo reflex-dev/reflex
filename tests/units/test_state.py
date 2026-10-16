@@ -7082,16 +7082,18 @@ _NO_DEFAULT = object()
 
 
 @pytest.mark.parametrize(
-    ("annotation", "default"),
+    ("name", "annotation", "default"),
     [
-        ("list[MissingItem]", []),
-        ("dict[str, MissingItem]", {}),
-        ("MissingItem | None", None),
-        ("list[MissingItem]", _NO_DEFAULT),
-        ("dict[str, MissingItem]", _NO_DEFAULT),
-        ("MissingItem | None", _NO_DEFAULT),
-        ("MissingItem", _NO_DEFAULT),
-        ("MissingItem", None),
+        ("items", "list[MissingItem]", []),
+        ("items", "dict[str, MissingItem]", {}),
+        ("items", "MissingItem | None", None),
+        ("items", "list[MissingItem]", _NO_DEFAULT),
+        ("items", "dict[str, MissingItem]", _NO_DEFAULT),
+        ("items", "MissingItem | None", _NO_DEFAULT),
+        ("items", "MissingItem", _NO_DEFAULT),
+        ("items", "MissingItem", None),
+        ("items", list[ForwardRef("MissingItem")], []),
+        ("_items", "list[MissingItem]", []),
     ],
     ids=[
         "list",
@@ -7102,41 +7104,44 @@ _NO_DEFAULT = object()
         "optional-no-default",
         "bare-no-default",
         "bare-none-default",
+        "nested-forward-ref",
+        "backend",
     ],
 )
 def test_var_annotation_with_undefined_name_raises_name_error(
-    annotation: str, default: Any
+    name: str, annotation: Any, default: Any
 ) -> None:
     """An annotation naming an undefined symbol raises a NameError naming it.
 
     With postponed annotations the unresolved annotation used to reach var
     typing as a ForwardRef and fail with an unrelated TypeError or
-    AttributeError, whether or not the var has a default.
+    AttributeError, whether or not the var has a default. On Python 3.14 an
+    annotation is evaluated lazily, and an undefined name inside a generic
+    stays a nested ForwardRef.
 
     Args:
+        name: The name of the var.
         annotation: The annotation, which names a symbol that does not exist.
         default: The default value of the var, or _NO_DEFAULT for none.
     """
     namespace: dict[str, Any] = {
         "__module__": __name__,
-        "__annotations__": {"items": annotation},
+        "__annotations__": {name: annotation},
     }
     if default is not _NO_DEFAULT:
-        namespace["items"] = default
+        namespace[name] = default
 
     with pytest.raises(NameError, match="MissingItem"):
         type("UndefinedNameState", (BaseState,), namespace)
 
 
-def test_var_annotation_with_nested_forward_ref_is_left_alone() -> None:
-    """A ForwardRef inside a generic is not an unresolved annotation."""
-
+def test_classvar_annotation_with_undefined_name_is_allowed() -> None:
+    """A ClassVar naming an undefined symbol is not a var, so it is not resolved."""
     namespace = {
         "__module__": __name__,
-        "__annotations__": {"items": list[ForwardRef("MissingItem")]},  # pyright: ignore[reportArgumentType]
-        "items": [],
+        "__annotations__": {"cache": "ClassVar[MissingItem]"},
     }
 
-    state = type("NestedForwardRefState", (BaseState,), namespace)
+    state = type("UndefinedClassVarState", (BaseState,), namespace)
 
-    assert "items" in state.get_fields()
+    assert "cache" not in state.get_fields()

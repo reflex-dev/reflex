@@ -4634,6 +4634,7 @@ def _annotated_fields(
     namespace: Mapping[str, Any],
     lookup_order: Sequence[type],
     private: tuple[str, ...],
+    strict: bool = False,
 ) -> dict[str, Field]:
     """Get the fields a class namespace declares by annotation.
 
@@ -4641,6 +4642,7 @@ def _annotated_fields(
         namespace: The class namespace.
         lookup_order: The bases of the class in method resolution order.
         private: The prefixes of names that are fields only when declared as such.
+        strict: Whether an annotation naming an undefined symbol raises.
 
     Returns:
         The fields by name.
@@ -4648,7 +4650,7 @@ def _annotated_fields(
     slots = _slot_names(namespace)
     fields = {}
     for key, annotation in types.resolve_annotations(
-        annotations_from_namespace(namespace), namespace["__module__"]
+        annotations_from_namespace(namespace), namespace["__module__"], strict=strict
     ).items():
         if types.is_classvar(annotation) or key in slots:
             continue
@@ -4893,7 +4895,7 @@ class BaseStateMeta(ABCMeta):
                 )
         private = _private_prefixes(name)
         own_fields = _unannotated_fields(namespace, private) | _annotated_fields(
-            namespace, lookup_order, private
+            namespace, lookup_order, private, strict=True
         )
         annotations = annotations_from_namespace(namespace)
         for key, value in namespace.items():
