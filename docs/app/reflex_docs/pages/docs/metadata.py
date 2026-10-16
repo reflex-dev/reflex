@@ -94,7 +94,8 @@ def docs_metadata(path: str, title: str, description: str | None) -> tuple[str, 
     route = path.strip("/")
     is_component_page = route.startswith("library/") and route.count("/") >= 2
     if is_component_page:
-        subject = f"rx.{title.lower()}: Python {title} Component"
+        component_name = route.split("/")[-1].rstrip("/")
+        subject = f"rx.{component_name}: Python {title} Component"
     else:
         subject = " · ".join([title, *context])
     if route == "changelog" or route.startswith("changelog/"):

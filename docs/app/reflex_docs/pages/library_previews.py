@@ -129,6 +129,40 @@ def get_component_list(component_type: str = "core"):
         raise ValueError(f"Unknown component type: {component_type}")
 
 
+def render_component_grid(component_category: str, component_list: dict, prefix: str = "") -> rx.Component:
+    """Render the component card grid for a category.
+    
+    Args:
+        component_category: The category name to render cards for.
+        component_list: Dict mapping category names to component lists.
+        prefix: URL prefix for component links.
+    
+    Returns:
+        A grid of component cards.
+    """
+    from reflex_docs.templates.docpage.sidebar.sidebar_items import (
+        get_component_link,
+    )
+    
+    return rx.el.div(
+        *[
+            component_card(
+                name=component[0],
+                link=get_component_link(
+                    component_category,
+                    component,
+                    prefix.strip("/") + "/" if prefix.strip("/") else "",
+                ),
+                section=component_category,
+            )
+            for component in get_components_for_category(
+                component_category, component_list[component_category]
+            )
+        ],
+        class_name="gap-5 grid min-w-0 grid-cols-1 md:grid-cols-2 xl:grid-cols-3",
+    )
+
+
 def create_previews(
     path: str,
     description: str,
@@ -151,7 +185,7 @@ def create_previews(
 
         component_list = get_component_list(type)
         if component_category == "State":
-            return rx.box(
+            return rx.el.div(
                 h1_comp(text="State"),
                 render_markdown(
                     "Reflex state connects your components to application data. "
@@ -175,8 +209,8 @@ def create_previews(
                 ),
                 class_name="docs-library flex min-w-0 flex-col w-full mb-10",
             )
-        if component_category == "Tables And Data Grids":
-            return rx.box(
+        if component_category == "Tables-And-Data-Grids":
+            return rx.el.div(
                 h1_comp(text=get_display_name(component_category)),
                 text_comp_2(
                     text=description,
@@ -214,27 +248,11 @@ def create_previews(
                     ),
                     class_name="mt-4 mb-8 list-none space-y-0 p-0",
                 ),
-                rx.box(
-                    *[
-                        component_card(
-                            name=component[0],
-                            link=get_component_link(
-                                component_category,
-                                component,
-                                prefix.strip("/") + "/" if prefix.strip("/") else "",
-                            ),
-                            section=component_category,
-                        )
-                        for component in get_components_for_category(
-                            component_category, component_list[component_category]
-                        )
-                    ],
-                    class_name="gap-5 grid min-w-0 grid-cols-1 md:grid-cols-2 xl:grid-cols-3",
-                ),
+                render_component_grid(component_category, component_list, prefix),
                 class_name="docs-library flex min-w-0 flex-col h-full mb-10",
             )
-        if component_category in ["Charts", "Other Charts"]:
-            return rx.box(
+        if component_category in ["Charts", "Other-Charts"]:
+            return rx.el.div(
                 h1_comp(text=get_display_name(component_category)),
                 text_comp_2(
                     text=description,
@@ -272,50 +290,18 @@ def create_previews(
                     ),
                     class_name="mt-4 mb-8 list-none space-y-0 p-0",
                 ),
-                rx.box(
-                    *[
-                        component_card(
-                            name=component[0],
-                            link=get_component_link(
-                                component_category,
-                                component,
-                                prefix.strip("/") + "/" if prefix.strip("/") else "",
-                            ),
-                            section=component_category,
-                        )
-                        for component in get_components_for_category(
-                            component_category, component_list[component_category]
-                        )
-                    ],
-                    class_name="gap-5 grid min-w-0 grid-cols-1 md:grid-cols-2 xl:grid-cols-3",
-                ),
+                render_component_grid(component_category, component_list, prefix),
                 class_name="docs-library flex min-w-0 flex-col h-full mb-10",
             )
-        return rx.box(
-            rx.box(
+        return rx.el.div(
+            rx.el.div(
                 h1_comp(text=get_display_name(component_category)),
                 text_comp_2(
                     text=description,
                 ),
                 class_name="flex flex-col w-full",
             ),
-            rx.box(
-                *[
-                    component_card(
-                        name=component[0],
-                        link=get_component_link(
-                            component_category,
-                            component,
-                            prefix.strip("/") + "/" if prefix.strip("/") else "",
-                        ),
-                        section=component_category,
-                    )
-                    for component in get_components_for_category(
-                        component_category, component_list[component_category]
-                    )
-                ],
-                class_name="gap-5 grid min-w-0 grid-cols-1 md:grid-cols-2 xl:grid-cols-3",
-            ),
+            render_component_grid(component_category, component_list, prefix),
             class_name="docs-library flex min-w-0 flex-col h-full mb-10",
         )
 
@@ -331,7 +317,7 @@ core_components_dict = {
     "data-display": {
         "path": "data-display",
         "description": "Tools to show information clearly. These include ways to highlight important details, show user pictures, display lists, indicate progress, and organize data neatly.",
-        "component_category": "Data Display",
+        "component_category": "Data-Display",
     },
     "disclosure": {
         "path": "disclosure",
@@ -341,7 +327,7 @@ core_components_dict = {
     "dynamic_rendering": {
         "path": "dynamic-rendering",
         "description": "Components that help with dynamic rendering, such as conditional rendering and dynamic components. These are useful for creating responsive and interactive user interfaces.",
-        "component_category": "Dynamic Rendering",
+        "component_category": "Dynamic-Rendering",
     },
     "forms": {
         "path": "forms",
@@ -376,7 +362,7 @@ core_components_dict = {
     "tables_and_data_grids": {
         "path": "tables-and-data-grids",
         "description": "Build tables and data grids in Python with Reflex. Use rx.table for simple semantic tables, rx.data_table for searchable pandas DataFrames, rx.data_editor for spreadsheet-style editing, or the enterprise AG Grid component for advanced features like filtering, pivoting, and cell selection. All in pure Python.",
-        "component_category": "Tables And Data Grids",
+        "component_category": "Tables-And-Data-Grids",
     },
     "typography": {
         "path": "typography",
@@ -415,7 +401,7 @@ graphing_components_dict = {
     "other-charts": {
         "path": "other-charts",
         "description": "Additional Python charting options in Reflex, including Plotly and Matplotlib (pyplot). Render interactive Plotly Express figures and any Matplotlib plot in your web app — all in pure Python.",
-        "component_category": "Other Charts",
+        "component_category": "Other-Charts",
     },
 }
 

@@ -180,7 +180,7 @@ def library():
                 class_name="mt-6 font-heading text-lg font-normal leading-6 tracking-[-0.02em] text-foreground",
             ),
             text_comp_2(
-                text="No. All core components are included when you install Reflex. For enterprise components like AG Grid and AG Charts, install the separate reflex-ag-grid package.",
+                text="No. All core components are included when you install Reflex. For enterprise components like AG Grid and AG Charts, install the reflex-enterprise package.",
             ),
             class_name="mb-8",
         ),
