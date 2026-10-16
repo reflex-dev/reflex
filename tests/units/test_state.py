@@ -7135,13 +7135,34 @@ def test_var_annotation_with_undefined_name_raises_name_error(
         type("UndefinedNameState", (BaseState,), namespace)
 
 
-def test_classvar_annotation_with_undefined_name_is_allowed() -> None:
-    """A ClassVar naming an undefined symbol is not a var, so it is not resolved."""
-    namespace = {
+@pytest.mark.parametrize(
+    ("name", "annotation", "value"),
+    [
+        ("cache", "ClassVar[MissingItem]", _NO_DEFAULT),
+        ("__client", "MissingItem | None", None),
+        ("total", "MissingItem", property(lambda self: 0)),
+    ],
+    ids=["classvar", "private", "descriptor"],
+)
+def test_non_var_annotation_with_undefined_name_is_allowed(
+    name: str, annotation: str, value: Any
+) -> None:
+    """An annotation that declares no var is not resolved, so its symbol may be undefined.
+
+    A symbol imported only under TYPE_CHECKING is undefined at runtime.
+
+    Args:
+        name: The name of the attribute.
+        annotation: The annotation, which names a symbol that does not exist.
+        value: The value of the attribute, or _NO_DEFAULT for none.
+    """
+    namespace: dict[str, Any] = {
         "__module__": __name__,
-        "__annotations__": {"cache": "ClassVar[MissingItem]"},
+        "__annotations__": {name: annotation},
     }
+    if value is not _NO_DEFAULT:
+        namespace[name] = value
 
-    state = type("UndefinedClassVarState", (BaseState,), namespace)
+    state = type("UndefinedNonVarState", (BaseState,), namespace)
 
-    assert "cache" not in state.get_fields()
+    assert name not in state.get_fields()

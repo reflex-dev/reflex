@@ -1475,11 +1475,37 @@ def typehint_issubclass(
     )
 
 
+def _resolve_annotation(
+    value: Any, base_globals: dict[str, Any] | None, *, strict: bool = False
+) -> Any:
+    """Resolve a string or ForwardRef annotation into a type object if possible.
+
+    Args:
+        value: The raw annotation to resolve.
+        base_globals: The globals of the module declaring the annotation.
+        strict: Whether an annotation naming an undefined symbol raises,
+            unless it is a ClassVar.
+
+    Returns:
+        The resolved annotation, or the unresolved ForwardRef.
+
+    Raises:
+        NameError: If strict and the annotation names an undefined symbol.
+    """
+    if isinstance(value, str):
+        value = ForwardRef(value, is_argument=False, is_class=True)
+    try:
+        if sys.version_info >= (3, 13):
+            return _eval_type(value, base_globals, None, type_params=())
+        return _eval_type(value, base_globals, None)
+    except NameError:
+        if strict and not is_classvar(value):
+            raise
+        return value
+
+
 def resolve_annotations(
-    raw_annotations: Mapping[str, type[Any]],
-    module_name: str | None,
-    *,
-    strict: bool = False,
+    raw_annotations: Mapping[str, type[Any]], module_name: str | None
 ) -> dict[str, type[Any]]:
     """Partially taken from typing.get_type_hints.
 
@@ -1488,14 +1514,9 @@ def resolve_annotations(
     Args:
         raw_annotations: The raw annotations to resolve.
         module_name: The name of the module.
-        strict: Whether an annotation naming an undefined symbol raises,
-            unless it is a ClassVar.
 
     Returns:
         The resolved annotations.
-
-    Raises:
-        NameError: If strict and an annotation names an undefined symbol.
     """
     module = sys.modules.get(module_name, None) if module_name is not None else None
 
@@ -1503,20 +1524,10 @@ def resolve_annotations(
         module.__dict__ if module is not None else None
     )
 
-    annotations = {}
-    for name, value in raw_annotations.items():
-        if isinstance(value, str):
-            value = ForwardRef(value, is_argument=False, is_class=True)
-        try:
-            if sys.version_info >= (3, 13):
-                value = _eval_type(value, base_globals, None, type_params=())
-            else:
-                value = _eval_type(value, base_globals, None)
-        except NameError:
-            if strict and not is_classvar(value):
-                raise
-        annotations[name] = value
-    return annotations
+    return {
+        name: _resolve_annotation(value, base_globals)
+        for name, value in raw_annotations.items()
+    }
 
 
 TYPES_THAT_HAS_DEFAULT_VALUE = (int, float, tuple, list, set, dict, str)

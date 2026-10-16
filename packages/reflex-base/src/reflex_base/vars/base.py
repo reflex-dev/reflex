@@ -14,6 +14,7 @@ import json
 import logging
 import re
 import string
+import sys
 import warnings
 from abc import ABCMeta
 from collections.abc import Callable, Coroutine, Iterable, Mapping, Sequence
@@ -4648,11 +4649,10 @@ def _annotated_fields(
         The fields by name.
     """
     slots = _slot_names(namespace)
+    base_globals = getattr(sys.modules.get(namespace["__module__"]), "__dict__", None)
     fields = {}
-    for key, annotation in types.resolve_annotations(
-        annotations_from_namespace(namespace), namespace["__module__"], strict=strict
-    ).items():
-        if types.is_classvar(annotation) or key in slots:
+    for key, annotation in annotations_from_namespace(namespace).items():
+        if key in slots:
             continue
         value = namespace.get(key, MISSING)
         inherited = _inherited_value(lookup_order, key)
@@ -4676,6 +4676,11 @@ def _annotated_fields(
             if isinstance(declared, Field) or not callable(declared):
                 # Declared by a mixin or plain base: its default applies here.
                 value = declared
+        # Only a field's annotation is resolved, so a symbol imported only for
+        # type checking may annotate any other attribute.
+        annotation = types._resolve_annotation(annotation, base_globals, strict=strict)
+        if types.is_classvar(annotation):
+            continue
         if value is MISSING:
             fields[key] = Field(annotated_type=annotation)
         elif isinstance(value, Field):
