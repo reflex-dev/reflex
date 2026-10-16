@@ -558,6 +558,9 @@ async def test_background_task_rehydrates_state_tree_expired_while_unlocked(
     )
     assert real_base_state_processor._root_context is not None
     state_manager = real_base_state_processor._root_context.state_manager
+    if isinstance(state_manager, StateManagerRedis):
+        # Oplock keeps the tree cached in the process, so deleting keys does not expire it.
+        state_manager._oplock_enabled = False
     async with real_base_state_processor as processor:
         await (await processor.enqueue(token, set_child))
         await processor.enqueue(token, bg)
