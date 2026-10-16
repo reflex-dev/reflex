@@ -1,0 +1,1 @@
+Add a scaling guide with production architecture and job lifecycle diagrams, covering horizontal backends, state-store version compatibility, durable jobs, regional data routing, telemetry, and Redis recovery checks.
