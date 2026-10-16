@@ -267,6 +267,18 @@ class StateProxy(wrapt.ObjectProxy):
                 token=self._self_substate_token, event=self._self_event
             )
             mutable_state = await self._self_actx.__aenter__()
+            from reflex.state import State
+
+            if type(mutable_state) is State and not mutable_state.router_data:
+                # The tree expired while the lock was released: restore it the
+                # way a foreground event does, so the client drops stale values.
+                from reflex_base.event.processor import BaseStateEventProcessor
+
+                if ctx.router_data:
+                    mutable_state.router_data = mutable_state._update_router_vars(
+                        ctx.router_data, {}
+                    )
+                await BaseStateEventProcessor._rehydrate(mutable_state)
             self._self_mutable = True
             self._self_entered_context = True
             super().__setattr__(
