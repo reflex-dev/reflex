@@ -579,6 +579,24 @@ def test_format_prop(prop: Var, formatted: str):
 
 
 @pytest.mark.parametrize(
+    ("prop", "formatted"),
+    [
+        ({"a": 1}, '{{"a": 1}}'),
+        ({"nested": {"b": [1, 2]}}, '{{"nested": {"b": [1, 2]}}}'),
+        ({}, "{{}}"),
+    ],
+)
+def test_format_prop_raw_dict(prop: dict, formatted: str):
+    """Test that a raw dict prop is JSON-dumped and wrapped in braces.
+
+    Args:
+        prop: The dict prop to test.
+        formatted: The expected formatted value.
+    """
+    assert format.format_prop(prop) == formatted
+
+
+@pytest.mark.parametrize(
     ("single_props", "key_value_props", "output"),
     [
         (

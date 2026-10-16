@@ -385,7 +385,6 @@ def format_prop(
     """
     # import here to avoid circular import.
     from reflex_base.event import EventChain
-    from reflex_base.utils import serializers
     from reflex_base.vars import Var
 
     try:
@@ -403,13 +402,8 @@ def format_prop(
                 return prop
             return json_dumps(prop)
 
-        # For dictionaries, convert any properties to strings.
-        if isinstance(prop, dict):
-            prop = serializers.serialize_dict(prop)  # pyright: ignore [reportAttributeAccessIssue]
-
-        else:
-            # Dump the prop as JSON.
-            prop = json_dumps(prop)
+        # Dump the prop as JSON.
+        prop = json_dumps(prop)
     except exceptions.InvalidStylePropError:
         raise
     except TypeError as e:
