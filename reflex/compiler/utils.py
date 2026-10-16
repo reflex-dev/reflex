@@ -340,29 +340,30 @@ def _compile_client_storage_field(
             continue
         return field_type, cs_obj.options()
     if (
-        field.default is MISSING
+        not field._backend
+        and field.default is MISSING
         and field.default_factory is not None
-        and _accepts_str(field.outer_type_)
+        and _may_hold_str(field.outer_type_)
         and isinstance(produced := field.default_factory(), ClientStorageBase)
     ):
         _raise_factory_storage(field, type(produced))
     return None, None
 
 
-def _accepts_str(type_: Any) -> bool:
+def _may_hold_str(type_: Any) -> bool:
     """Whether a value of the type can be a browser storage value, a str subclass.
 
     Args:
         type_: The field's annotated type.
 
     Returns:
-        Whether the type accepts a str.
+        Whether the type accepts a str or a str subclass.
     """
     if type_ is Any:
         return True
     if types.is_union(type_):
-        return any(_accepts_str(arg) for arg in get_args(type_))
-    return types.safe_issubclass(str, type_)
+        return any(_may_hold_str(arg) for arg in get_args(type_))
+    return types.safe_issubclass(str, type_) or types.safe_issubclass(type_, str)
 
 
 def _raise_factory_storage(field: Field, storage_type: type) -> None:

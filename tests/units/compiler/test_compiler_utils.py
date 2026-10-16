@@ -303,10 +303,16 @@ def test_compile_client_storage_rejects_factory_producing_storage(
             default_factory=lambda: rx.LocalStorage("light", name="theme")
         )
 
-    with pytest.raises(VarTypeError, match=r"\.theme' cannot use a default_factory"):
-        utils.compile_client_storage(StorageState)
-    with pytest.raises(VarTypeError, match=r"\.theme' cannot use a default_factory"):
-        utils.compile_client_storage(OptionalStorageState)
+    class OptionalAnnotatedStorageState(State):
+        theme: rx.Field[rx.LocalStorage | None] = rx.field(
+            default_factory=lambda: rx.LocalStorage("light", name="theme")
+        )
+
+    for state in (StorageState, OptionalStorageState, OptionalAnnotatedStorageState):
+        with pytest.raises(
+            VarTypeError, match=r"\.theme' cannot use a default_factory"
+        ):
+            utils.compile_client_storage(state)
 
 
 class Node(TypedDict):
@@ -334,8 +340,18 @@ def test_compile_client_storage_skips_plain_factories(
         calls.append(1)
         return "plain"
 
+    def missing_at_compile() -> str:
+        """Fail: a backend factory is never called while compiling.
+
+        Raises:
+            RuntimeError: Always.
+        """
+        msg = "only available at runtime"
+        raise RuntimeError(msg)
+
     class PlainState(State):
         text: rx.Field[str] = rx.field(default_factory=make_text)
+        _token: rx.Field[str] = rx.field(default_factory=missing_at_compile)
         items: rx.Field[list[str]] = rx.field(default_factory=list)
         # issubclass against a TypedDict raises, so the check must not ask it.
         node: rx.Field[Node] = rx.field(default_factory=lambda: Node(name="root"))
