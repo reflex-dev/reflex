@@ -216,6 +216,41 @@ def get_sidebar_items_backend():
     return items
 
 
+def get_sidebar_items_workflows():
+    from reflex_docs.pages.docs import workflows
+    from reflex_docs.templates.docpage.sidebar.state import SideBarSection
+
+    return [
+        SideBarSection(
+            names="Workflows Overview",
+            alt_name_for_next_prev="",
+            link=workflows.overview.path,
+        ),
+        create_item("Tutorial", children=[workflows.tutorial]),
+        create_item(
+            "Building Workflows",
+            children=[
+                workflows.defining_workflows,
+                workflows.steps,
+                workflows.runs,
+                workflows.events,
+                workflows.schedules,
+                workflows.fan_out,
+                workflows.concurrency,
+            ],
+        ),
+        create_item(
+            "Running Workflows",
+            children=[
+                workflows.workers,
+                workflows.inspecting_runs,
+            ],
+        ),
+        create_item("How It Works", children=[workflows.how_it_works]),
+        create_item("API Reference", children=[workflows.reference]),
+    ]
+
+
 def get_sidebar_items_hosting():
     from reflex_docs.pages.docs import hosting
 
@@ -280,5 +315,6 @@ def get_sidebar_items_hosting_cli_ref():
 learn = get_sidebar_items_learn()
 frontend = get_sidebar_items_frontend()
 backend = get_sidebar_items_backend()
+workflows = get_sidebar_items_workflows()
 hosting = get_sidebar_items_hosting()
 cli_ref = get_sidebar_items_hosting_cli_ref()
