@@ -34,6 +34,17 @@ cannot be passed as a keyword argument — the keyword arguments (`name`,
 `max_age`, `sync`, etc.) only configure the storage behavior.
 ```
 
+```md alert info
+# Declare browser storage as a default value or a storage annotation.
+
+A var is stored in the browser when its default is a storage value, such as
+`theme: str = rx.LocalStorage("light", name="theme")`, or when it is annotated
+with a storage type, such as `theme: rx.LocalStorage = "light"`. The storage key
+and options must be known when the app compiles, so a `default_factory` cannot
+provide them: `rx.field(default_factory=lambda: rx.LocalStorage(...))` fails to
+compile, whichever way the var is annotated.
+```
+
 ```md alert warning
 # **The default value of a Cookie is never set in the browser!**
 
