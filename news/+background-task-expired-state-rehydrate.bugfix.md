@@ -1,1 +1,1 @@
-A background task that finishes after its session expired now rehydrates the page, so the browser no longer keeps stale values from the expired session.
+A background task that re-enters an expired session now rehydrates the loaded state tree, so the browser no longer shows stale values for those states.
