@@ -12,6 +12,7 @@ from reflex_base import constants
 from reflex_base.constants.state import FIELD_MARKER
 
 import reflex as rx
+from reflex.istate import shared as shared_module
 from reflex.istate.data import RouterData, SessionData
 from reflex.istate.shared import (
     SharedStateBaseInternal,
@@ -324,8 +325,6 @@ async def test_linked_state_patch_skips_unrelated_computed_value_keys(
     monkeypatch: pytest.MonkeyPatch,
 ):
     """Only router-dependent computed values need a cache comparison key."""
-    from reflex.istate import shared as shared_module
-
     private_tree = _LinkedStatePatchRouterRoot()
     linked_tree = _LinkedStatePatchRouterRoot()
     shared_state_name = _LinkedStatePatchRouterShared.get_name()
