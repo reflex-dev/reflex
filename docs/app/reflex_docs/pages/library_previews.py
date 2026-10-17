@@ -55,6 +55,16 @@ def get_preview_asset(name: str, section: str) -> tuple[str, str]:
 
 
 def component_card(name: str, link: str, section: str) -> rx.Component:
+    """Link a component preview to its reference without obscuring the artwork.
+
+    Args:
+        name: Component name used to select its preview and visible label.
+        link: Canonical component reference URL.
+        section: Library category containing the preview.
+
+    Returns:
+        A single focusable card with a decorative preview and readable label.
+    """
     preview_section, preview_name = get_preview_asset(name, section)
 
     def preview_src(mode: str) -> str:
@@ -71,33 +81,40 @@ def component_card(name: str, link: str, section: str) -> rx.Component:
             return rx.asset(path)
         return f"{REFLEX_ASSETS_CDN}{path}"
 
-    return rx.link(
-        rx.box(
+    return rx.el.a(
+        rx.el.div(
             rx.image(
                 src=preview_src("light"),
                 loading="lazy",
-                alt=f"Image preview of {name}",
+                alt="",
                 style={"filter": "grayscale(1)"},
                 class_name="object-contain object-center h-full w-full dark:hidden",
             ),
             rx.image(
                 src=preview_src("dark"),
                 loading="lazy",
-                alt=f"Image preview of {name}",
-                style={"filter": "grayscale(1) brightness(1.8)"},
+                alt="",
+                style={"filter": "grayscale(1)"},
                 class_name="object-contain object-center h-full w-full dark:block hidden",
             ),
-            rx.box(
-                rx.text(
-                    get_display_name(name),
-                    class_name="truncate font-base text-foreground",
-                ),
-                rx.icon("chevron-right", size=14, class_name="!text-subtle-foreground"),
-                class_name="bottom-0 absolute flex flex-row justify-between w-full px-4 py-2 items-center",
+            aria_hidden=True,
+            class_name="aspect-[320/232] w-full overflow-hidden border-b border-border-subtle bg-muted",
+        ),
+        rx.el.div(
+            rx.el.span(
+                get_display_name(name),
+                class_name="min-w-0 font-heading text-lg font-normal leading-6 tracking-[-0.02em] text-foreground",
             ),
-            class_name="aspect-[320/232] rounded-xl border overflow-hidden relative box-border shadow-large bg-muted hover:bg-accent transition-bg border-border",
+            rx.icon(
+                "arrow-up-right",
+                size=16,
+                aria_hidden=True,
+                class_name="shrink-0 text-muted-foreground",
+            ),
+            class_name="flex min-h-16 items-center justify-between gap-3 px-5 py-4",
         ),
         href=link,
+        class_name="docs-library-card group flex min-w-0 flex-col overflow-hidden rounded-[20px] border border-border-subtle bg-background no-underline transition-colors hover:border-border-strong hover:bg-subtle motion-reduce:transition-none focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-ring",
     )
 
 
@@ -156,7 +173,7 @@ def create_previews(
                     "and [rendering iterables](/docs/components/rendering-iterables/) "
                     "to make your interface respond to state changes."
                 ),
-                class_name="flex flex-col w-full mb-10",
+                class_name="docs-library flex min-w-0 flex-col w-full mb-10",
             )
         return rx.box(
             rx.box(
@@ -181,9 +198,9 @@ def create_previews(
                         component_category, component_list[component_category]
                     )
                 ],
-                class_name="gap-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3",
+                class_name="gap-5 grid min-w-0 grid-cols-1 md:grid-cols-2 xl:grid-cols-3",
             ),
-            class_name="flex flex-col h-full mb-10",
+            class_name="docs-library flex min-w-0 flex-col h-full mb-10",
         )
 
     return page
