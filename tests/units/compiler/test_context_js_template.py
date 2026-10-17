@@ -7,7 +7,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
-from reflex_base.compiler.templates import context_template
+from reflex_base.compiler.templates import InternalEventNames, context_template
 
 requires_node = pytest.mark.skipif(shutil.which("node") is None, reason="node missing")
 
@@ -103,7 +103,6 @@ def _event_loop_provider_body() -> str:
         is_dev_mode=False,
         default_color_mode="light",
         initial_state={"state": {}},
-        state_name="state",
     )
     start = rendered.index("export function EventLoopProvider")
     end = rendered.index("function createStateStore", start)
@@ -156,7 +155,6 @@ def test_server_state_provider_depth_is_constant_for_many_substates(tmp_path: Pa
         is_dev_mode=True,
         default_color_mode='"light"',
         initial_state={name: {"n": i} for i, name in enumerate(names)},
-        state_name=names[0],
     )
     for specifier, source in _STUB_MODULES.items():
         stub = tmp_path / (specifier.replace("/", "_").replace("$", "") + ".mjs")
@@ -197,7 +195,13 @@ def test_client_state_store_notifies_only_substate_subscribers(tmp_path: Path):
             "reflex___state____state__sub": {"value": 2},
             "reflex___state____state__list": {"items": ["a"]},
         },
-        state_name="reflex___state____state",
+        internal_events=InternalEventNames(
+            main_state_name="reflex___state____state",
+            hydrate_and_load="reflex___state____state.hydrate_and_load",
+            on_load_internal="reflex___state____state.on_load.on_load_internal",
+            update_vars_internal="reflex___state____state.update.update_vars_internal",
+            handle_frontend_exception="reflex___state____state.exc.handle_frontend_exception",
+        ),
     ).replace("function ClientStateProvider", "export function ClientStateProvider")
     react_stub = """
 let hookIndex = 0;
