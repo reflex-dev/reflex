@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import sys
 from types import SimpleNamespace
 
 import pytest
@@ -15,7 +16,13 @@ from tests.benchmarks.support.report import (
     PerformanceReport,
     percentile,
 )
-from tests.benchmarks.support.socket_client import run_clients
+
+# The benchmark socket client speaks the wire protocols through reflex-bench,
+# which is Linux-only like its own tests. Imported anywhere else, it would also
+# make coverage count that whole untested package, so it is imported in tests.
+linux_only = pytest.mark.skipif(
+    sys.platform != "linux", reason="the benchmark socket client builds on reflex-bench"
+)
 
 
 def test_percentile_interpolates_and_validates():
@@ -140,9 +147,12 @@ def test_pipeline_trace_preserves_repeated_stage_pairs():
     }
 
 
+@linux_only
 @pytest.mark.asyncio
 async def test_run_clients_leaves_default_executor_usable():
     """The load helper does not close the event loop's default executor."""
+    from tests.benchmarks.support.socket_client import run_clients
+
     results = await run_clients(
         2,
         lambda index, executor: asyncio.get_running_loop().run_in_executor(
@@ -324,6 +334,7 @@ def test_baseline_server_startup_failure_surfaces_thread_exception(monkeypatch):
         pass
 
 
+@linux_only
 @pytest.mark.parametrize(("timeout", "interval"), [(None, 1.0), ("100ms", 0.05)])
 def test_idle_clients_answer_pings_within_the_ping_timeout(
     monkeypatch: pytest.MonkeyPatch, timeout: str | None, interval: float
