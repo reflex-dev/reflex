@@ -419,6 +419,20 @@ class ReflexChannel extends LocalEmitter {
   }
 
   /**
+   * Report a queued message dropped for being over the backend's limit.
+   * @param frame The serialized frame.
+   * @param limit The limit in bytes.
+   */
+  _dropOversized(frame, limit) {
+    this._emitLocal("error", {
+      code: "message_too_large",
+      message:
+        `A queued channel message is ${frameByteLength(frame)} bytes, ` +
+        `over the ${limit} the backend accepts; it was dropped.`,
+    });
+  }
+
+  /**
    * Report that this deployment cannot carry channels at all.
    * @param reason Why channels are unavailable.
    */
@@ -449,12 +463,7 @@ class ReflexChannel extends LocalEmitter {
         // limit to check it against; now there is one, and sending it anyway
         // would cost the app its websocket.
         if (limit && exceedsMessageLimit(frame, limit)) {
-          this._emitLocal("error", {
-            code: "message_too_large",
-            message:
-              `A queued channel message is ${frameByteLength(frame)} bytes, ` +
-              `over the ${limit} the backend accepts; it was dropped.`,
-          });
+          this._dropOversized(frame, limit);
           continue;
         }
         // The transport re-queues it if its socket closed mid-flush.
@@ -519,6 +528,37 @@ export const disableChannels = (reason) => {
   for (const channel of channels.values()) {
     channel._detach(reason);
     channel._unsupported(reason);
+  }
+};
+
+/**
+ * The error reported for an event message over the backend's limit.
+ * @param name The event name.
+ * @param frame The serialized frame.
+ * @param limit The limit in bytes.
+ * @returns The error.
+ */
+const oversizedEventError = (name, frame, limit) =>
+  new Error(
+    `Message "${name}" is ${frameByteLength(frame)} bytes, over the ${limit} ` +
+      "the backend accepts (REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE); it was not sent.",
+  );
+
+/**
+ * Report a frame from the transport's queue dropped for being over the
+ * backend's limit: to its channel, or as an error for an event.
+ * @param frame The serialized text or binary frame.
+ * @param limit The limit in bytes.
+ */
+const dropOversizedFrame = (frame, limit) => {
+  const [event, data, channel] =
+    typeof frame === "string"
+      ? parseJsonLenient(frame, [])
+      : (decodeChannelFrame(frame) ?? []);
+  if (channel === undefined) {
+    report(oversizedEventError(data?.name ?? event, frame, limit));
+  } else {
+    channels.get(channel)?._dropOversized(frame, limit);
   }
 };
 
@@ -772,13 +812,7 @@ export class ReflexWebSocket extends LocalEmitter {
     if (limit && exceedsMessageLimit(frame, limit)) {
       // The backend closes the connection over an oversized frame, losing
       // every update in flight with it; drop this one message instead.
-      report(
-        new Error(
-          `Message "${data?.name ?? event}" is ${frameByteLength(frame)} bytes, ` +
-            `over the ${limit} the backend accepts ` +
-            "(REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE); it was not sent.",
-        ),
-      );
+      report(oversizedEventError(data?.name ?? event, frame, limit));
       return;
     }
     this._send(frame);
@@ -865,7 +899,14 @@ export class ReflexWebSocket extends LocalEmitter {
       }
       const queue = this._sendQueue;
       this._sendQueue = [];
+      const limit = this._maxMessageSize;
       for (const frame of queue) {
+        // Queued before this backend's limit was known: an oversized frame
+        // would cost the connection and every frame flushed after it.
+        if (limit && exceedsMessageLimit(frame, limit)) {
+          dropOversizedFrame(frame, limit);
+          continue;
+        }
         this._ws.send(frame);
       }
       this._emitLocal("connect");

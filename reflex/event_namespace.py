@@ -963,8 +963,15 @@ class WebsocketEventNamespace(BaseEventNamespace):
             if buffers
             else _dumps([event, data, channel])
         )
+        linked = self._token_manager.sid_to_token
         for sid in sids:
-            self._deliver(sid, payload, event)
+            if sid in linked:
+                self._deliver(sid, payload, event)
+            elif (connection := self._connections.get(sid)) is not None:
+                # Its token moved to another socket, which drops the link but
+                # not the connection. Close it, as its next frame would; the
+                # teardown forgets its channel sessions.
+                connection.close(1008)
 
     async def _send_channel_error(
         self, sid: str, channel: str, code: str, message: str

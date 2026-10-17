@@ -330,3 +330,45 @@ test("an oversized event is dropped instead of costing the socket", async () => 
   app.transport.emit("event", { small: true });
   assert.equal(socket.sent.length, before + 1);
 });
+
+test("an event queued before the handshake is checked against the limit it brings", async () => {
+  const app = await setup();
+  app.transport.connect();
+  const socket = app.sockets.at(-1);
+  socket.open();
+  // Emitted before the backend has said what it accepts.
+  app.transport.emit("event", { name: "state.big", blob: "x".repeat(200) });
+  app.transport.emit("event", { small: true });
+  socket.receive(["_handshake", { ...HANDSHAKE[1], max_message_size: 100 }]);
+  assert.deepEqual(socket.sent.slice(1), [["event", { small: true }]]);
+  assert.equal(app.reported.length, 1);
+  assert.match(
+    app.reported[0].message,
+    /"state\.big" is \d+ bytes, over the 100/,
+  );
+});
+
+test("a channel message queued on a closing socket is checked against the next backend's limit", async () => {
+  const app = await setup();
+  let socket = connectTransport(app);
+  const channel = app.getChannel("big");
+  const errors = [];
+  channel.on("error", (error) => errors.push(error));
+  socket.receive(["_opened", null, "big"]);
+  // The socket is closing, but the browser has not reported the close yet.
+  socket.readyState = 2;
+  channel.emit("push", { blob: "x".repeat(200) });
+  socket.readyState = 3;
+  socket.onclose({ code: 1006, reason: "" });
+
+  // The reconnect lands on a backend that accepts less.
+  socket = connectTransport(app, { max_message_size: 100 });
+  assert.deepEqual(
+    socket.sent.map((frame) => frame[0]),
+    ["_connect", "_open"],
+  );
+  assert.deepEqual(
+    errors.map((error) => error.code),
+    ["message_too_large"],
+  );
+});

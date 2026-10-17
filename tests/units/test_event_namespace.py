@@ -10,6 +10,7 @@ import re
 import shutil
 import subprocess
 import sys
+from collections.abc import Awaitable, Callable
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -46,6 +47,7 @@ from reflex.event_namespace import (
     decode_channel_frame,
     encode_channel_frame,
 )
+from reflex.utils.token_manager import SocketRecord
 
 from .conftest import active_tracer, metric_points
 
@@ -1721,6 +1723,7 @@ async def test_a_room_broadcast_serializes_one_frame_for_every_member(
     monkeypatch.setattr(event_namespace, "encode_channel_frame", counting_encode)
     monkeypatch.setattr(namespace, "_deliver", record)
     for sid in ("sid1", "sid2", "sid3"):
+        namespace._token_manager.sid_to_token[sid] = "tok"
         channel.open_session(sid, "tok", namespace._send_channel_message).join("fig:1")
 
     await channel.send_to_room("fig:1", "frame", {"seq": 1}, [b"\x00" * 32])
@@ -1730,6 +1733,66 @@ async def test_a_room_broadcast_serializes_one_frame_for_every_member(
     assert {to for to, _ in sent} == {"sid1", "sid2", "sid3"}
     # The same buffer reached all three, rather than a copy each.
     assert sent[0][1] is sent[1][1] is sent[2][1]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "send",
+    [
+        pytest.param(
+            lambda channel, session: channel.send_to_room("all", "news"), id="room"
+        ),
+        pytest.param(
+            lambda channel, session: channel.send_to_token("tok1", "news"), id="token"
+        ),
+        pytest.param(lambda channel, session: session.send("news"), id="session"),
+    ],
+)
+async def test_a_session_whose_token_moved_is_closed_instead_of_sent_to(
+    namespace: WebsocketEventNamespace,
+    mock_app: Mock,
+    send: Callable[[Channel, ChannelSession], Awaitable[Any]],
+):
+    """Channel messages stop at a socket whose token another instance claimed.
+
+    The claim drops this socket's token link but not the connection, so until
+    the socket sent another frame, its channel sessions kept receiving room
+    broadcasts, token sends and session sends.
+    """
+    opened = asyncio.Event()
+
+    class RoomChannel(RecordingChannel):
+        name = "probe"
+
+        async def on_open(self, session: ChannelSession) -> None:
+            """Join a room and signal the open."""
+            await super().on_open(session)
+            session.join("all")
+            opened.set()
+
+    channel = RoomChannel()
+    mock_app._channels = {"probe": channel}
+    websocket = FakeWebSocket()
+    _open_session(websocket)
+    websocket._incoming.put_nowait(json.dumps([OPEN_MESSAGE, None, "probe"]))
+    serving = asyncio.create_task(namespace.handle_websocket(websocket))  # pyright: ignore[reportArgumentType]
+    await asyncio.wait_for(opened.wait(), 1)
+    # What RedisTokenManager does on adopting another instance's record.
+    sid = namespace.token_to_sid["tok1"]
+    namespace._token_manager.token_to_socket["tok1"] = SocketRecord(
+        instance_id="other-instance", sid="other-sid"
+    )
+    del namespace._token_manager.sid_to_token[sid]
+
+    await send(channel, channel.opened[0])
+    await _drain_tasks()
+
+    assert "news" not in [frame[0] for frame in channel_frames(websocket)]
+    await asyncio.wait_for(serving, 1)
+    assert websocket.close_code == 1008
+    # The teardown forgot the stale session and its rooms.
+    assert channel.closed == channel.opened
+    assert channel._rooms == {}
 
 
 @pytest.mark.asyncio
