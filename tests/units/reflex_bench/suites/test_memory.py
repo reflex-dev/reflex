@@ -785,7 +785,8 @@ def test_a_leaking_server_fails_the_leak_gate(tmp_path: Path, fakes: Fakes):
     entry = run(tmp_path, "memory.leak", events=1000, warmup_events=0)
     assert entry["status"] == "failed"
     error = entry["error"]
-    assert error.startswith("LeakDetected: memory grows by 2")
+    assert error.startswith("LeakDetected: memory grows by ")
+    assert " B per event (95 % CI" in error
     assert "in the second half after" in error
     probe, measured = fakes.plans
     assert (probe.mode, probe.duration_s, probe.sessions) == ("closed", 5.0, 10)

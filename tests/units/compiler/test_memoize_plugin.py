@@ -1666,6 +1666,132 @@ def test_client_state_setter_only_sibling_memo_initializes_state() -> None:
     assert "refs['_client_state_setSibling'] = " in button_memo
 
 
+def test_local_client_state_keeps_sibling_components_in_page_scope() -> None:
+    """Local client-state readers and setters must share their React scope."""
+    from reflex.experimental.client_state import ClientStateVar
+
+    local = ClientStateVar.create("local_sibling", default="initial", global_ref=False)
+
+    def page() -> Component:
+        return rx.box(
+            rx.text(local.value),
+            rx.el.button("set", on_click=local.set_value("changed")),
+            rx.text(SpecialFormMemoState.value, id="unrelated-reactive"),
+        )
+
+    ctx, page_ctx = _compile_single_page(page)
+    page_output = page_ctx.output_code or ""
+
+    assert page_ctx.memoize_shared_scope_split_ids is not None
+    assert ctx.memoize_wrappers, (
+        "Unrelated reactive components should retain auto-memoization when "
+        "page-local client state is shared."
+    )
+    assert "local_sibling" not in _compile_memo_module_text(ctx)
+    assert (
+        'const [local_sibling, setLocal_sibling] = useState("initial")' in page_output
+    )
+    assert 'setLocal_sibling("changed")' in page_output
+
+
+def test_reused_local_client_state_reader_stays_in_page_scope() -> None:
+    """A reused reader across a foreach boundary counts as two appearances."""
+    from reflex.experimental.client_state import ClientStateVar
+
+    local = ClientStateVar.create("reused_reader", default="initial", global_ref=False)
+    reader = rx.text(local.value)
+
+    def page() -> Component:
+        return rx.box(
+            reader,
+            rx.foreach(
+                ["item"],
+                lambda _item: rx.box(
+                    reader,
+                    rx.el.button("set", on_click=local.set_value("changed")),
+                ),
+            ),
+        )
+
+    _ctx, page_ctx = _compile_single_page(page)
+
+    assert page_ctx.memoize_shared_scope_counts[local._id_name] == 3
+
+
+def test_shared_scope_prepass_caches_reused_component_subtrees(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The shared-scope prepass counts reused occurrences without rescanning nodes."""
+    from reflex.experimental.client_state import ClientStateVar
+
+    local = ClientStateVar.create("cached_scope", default="initial", global_ref=False)
+    reader = rx.text(local.value)
+    root = rx.box(reader, reader)
+    page_ctx = PageContext(name="test", route="/", root_component=root)
+    plugin = MemoizeStatefulPlugin()
+
+    def unexpected_uncached_walk(*_args: Any, **_kwargs: Any) -> None:
+        pytest.fail("Acyclic shared-scope scans should use cached counts")
+
+    monkeypatch.setattr(
+        memoize_plugin, "_subtree_requires_shared_scope", unexpected_uncached_walk
+    )
+
+    plugin.enter_component(root, page_context=page_ctx, compile_context=None)
+
+    assert page_ctx.memoize_shared_scope_counts[local._id_name] == 2
+    assert page_ctx.memoize_shared_scope_split_ids is not None
+    assert id(reader) in page_ctx.memoize_shared_scope_split_ids
+    assert id(root) not in page_ctx.memoize_shared_scope_split_ids
+
+
+def test_styled_local_client_state_subtree_uses_original_split_id() -> None:
+    """A page-owned style clone retains the prepass shared-scope decision."""
+    from reflex.experimental.client_state import ClientStateVar
+
+    local = ClientStateVar.create("styled_reader", default="initial", global_ref=False)
+    styled = rx.auto_scroll(
+        rx.text(local.value),
+        rx.el.button("set", on_click=local.set_value("changed")),
+    )
+    root = rx.box(rx.text(local.value), styled)
+    page_ctx = PageContext(name="test", route="/", root_component=root)
+    plugin = MemoizeStatefulPlugin()
+
+    plugin.enter_component(root, page_context=page_ctx, compile_context=None)
+    styled_clone = page_ctx.own(styled)
+
+    assert page_ctx.memoize_shared_scope_split_ids is not None
+    assert id(styled) in page_ctx.memoize_shared_scope_split_ids
+    assert id(styled_clone) not in page_ctx.memoize_shared_scope_split_ids
+    assert page_ctx._owned_original_ids[id(styled_clone)] == id(styled)
+    assert (
+        plugin.enter_component(
+            styled_clone,
+            page_context=page_ctx,
+            compile_context=None,
+        )
+        is None
+    )
+
+
+def test_app_style_local_client_state_is_in_shared_scope_prepass() -> None:
+    """Vars added by app-level styles participate in shared-scope detection."""
+    from reflex.experimental.client_state import ClientStateVar
+
+    local = ClientStateVar.create("styled_scope", default="initial", global_ref=False)
+    styled = rx.auto_scroll()
+    root = rx.box(rx.text(local.value), styled)
+    page_ctx = PageContext(name="test", route="/", root_component=root)
+    plugin = MemoizeStatefulPlugin(style={rx.auto_scroll: {"color": local.value}})
+
+    plugin.enter_component(root, page_context=page_ctx, compile_context=None)
+
+    assert page_ctx.memoize_shared_scope_counts[local._id_name] == 2
+    assert page_ctx.memoize_shared_scope_split_ids is not None
+    assert id(styled) in page_ctx.memoize_shared_scope_split_ids
+
+
 def test_debounce_input_memo_renders_react_debounce_wrapper() -> None:
     """``rx.input(value=..., on_change=..., debounce_timeout=N)`` memoizes via DebounceInput.
 
