@@ -42,9 +42,16 @@ def _workflow_preview(icon: rx.Component, labels: tuple[str, ...]) -> rx.Compone
             rx.el.div(
                 *[
                     rx.el.div(
-                        ui.icon(symbol, size=16, class_name="text-[var(--ai-accent)]"),
-                        rx.el.span(label, class_name="text-sm text-foreground"),
-                        class_name="flex items-center gap-3 rounded-sm bg-[var(--ai-tint)] px-4 py-3",
+                        ui.icon(
+                            symbol,
+                            size=16,
+                            class_name="shrink-0 text-muted-foreground",
+                        ),
+                        rx.el.span(
+                            label,
+                            class_name="min-w-0 text-sm font-normal leading-6 text-foreground",
+                        ),
+                        class_name="flex min-w-0 items-center gap-3 rounded-lg bg-muted px-4 py-3",
                     )
                     for symbol, label in zip(
                         ("Message01Icon", "Layout02Icon", "Layers01Icon"),
@@ -57,7 +64,7 @@ def _workflow_preview(icon: rx.Component, labels: tuple[str, ...]) -> rx.Compone
             class_name="w-full max-w-xs overflow-hidden rounded-xl border border-border bg-background",
         ),
         aria_hidden=True,
-        class_name="docs-workflow-preview flex items-center justify-center p-7 sm:p-9",
+        class_name="docs-ai-workflow-preview flex items-center justify-center bg-muted p-6 sm:p-8",
     )
 
 
@@ -77,25 +84,26 @@ def _workflow_card(
             rx.el.div(
                 rx.el.h2(
                     title,
-                    class_name="text-2xl font-book tracking-tight text-foreground",
+                    class_name="font-heading text-2xl font-normal leading-8 tracking-[-0.025em] text-foreground",
                 ),
                 rx.el.span(
                     "Recommended",
-                    class_name="rounded-full bg-foreground px-2.5 py-1 text-xs font-book leading-4 text-background",
+                    class_name="rounded-full bg-primary px-2.5 py-1 text-xs font-normal leading-4 text-primary-foreground",
                 )
                 if recommended
                 else rx.fragment(),
                 class_name="flex flex-wrap items-center gap-x-3 gap-y-2",
             ),
             rx.el.p(
-                description, class_name="mt-3 text-base leading-7 text-muted-foreground"
+                description,
+                class_name="mt-3 text-sm font-normal leading-6 text-muted-foreground",
             ),
             rx.el.div(
                 action,
                 ui.icon("ArrowRight01Icon", size=16, aria_hidden=True),
-                class_name="mt-auto flex items-center gap-2 pt-7 text-sm font-book text-foreground",
+                class_name="mt-auto flex items-center gap-2 pt-7 text-sm font-normal text-foreground",
             ),
-            class_name="flex flex-1 flex-col border-t border-border bg-background p-6 sm:p-8",
+            class_name="flex flex-1 flex-col border-t border-border-subtle bg-background p-6 sm:p-7",
         ),
         href=href,
         aria_label=title,
@@ -103,7 +111,7 @@ def _workflow_card(
         if recommended
         else None,
         custom_attrs={"data-tone": tone},
-        class_name="docs-ai-workflow-card docs-ai-card flex min-w-0 flex-col overflow-hidden rounded-panel border border-border shadow-small dark:shadow-none transition-colors hover:border-border-strong focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
+        class_name="docs-ai-workflow-card flex min-w-0 flex-col overflow-hidden rounded-[20px] border border-border-subtle bg-background transition-colors hover:border-border-strong motion-reduce:transition-none focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-ring",
     )
 
 

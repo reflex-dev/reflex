@@ -1,1 +1,0 @@
-The `BackendVarFormatError` raised when a backend var is formatted into a string now names the fix: read its default with `State._var.default_value()`, declare a constant shared by all sessions as `ClassVar[...]`, or use a regular state var for a value the UI shows and updates.
