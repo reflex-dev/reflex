@@ -428,6 +428,18 @@ def test_add_page_set_route_nested(app: App, index_page: ComponentCallable):
     assert app._unevaluated_pages.keys() == {route}
 
 
+def test_add_page_on_load_tuple(app: App, index_page: ComponentCallable):
+    """A tuple of on_load events registers each event, like a list of them.
+
+    Args:
+        app: The app to test.
+        index_page: The index page.
+    """
+    events = (rx.console_log("a"), rx.console_log("b"))
+    app.add_page(index_page, route="test", on_load=events)
+    assert app._load_events["test"] == list(events)
+
+
 def test_apply_decorated_pages_uses_app_context(
     forked_registration_context: RegistrationContext,
     app: App,
@@ -2995,7 +3007,7 @@ def test_stateful_app_wrap_is_memoized(
     ).read_text()
     app_wrap_fn = root_contents[root_contents.index("function AppWrap") :]
     # No state hooks may remain in the AppWrap function body.
-    assert "useContext(StateContexts" not in app_wrap_fn
+    assert "useStateContext(" not in app_wrap_fn
     # The route children still flow through the (memoized) wrap chain, which
     # renders inside the state provider.
     assert "jsx(StateProvider" in app_wrap_fn
@@ -3004,7 +3016,7 @@ def test_stateful_app_wrap_is_memoized(
     # The extracted memo module carries the state hook instead.
     memo_dir = web_dir / constants.Dirs.COMPONENTS_PATH
     assert any(
-        "useContext(StateContexts" in memo_file.read_text()
+        "useStateContext(" in memo_file.read_text()
         for memo_file in memo_dir.glob(f"*{constants.Ext.JSX}")
     )
 
