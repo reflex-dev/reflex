@@ -48,15 +48,15 @@ def component_grid():
                 rx.el.a(
                     rx.el.h2(
                         get_display_name(category),
-                        class_name="m-0 text-base font-medium leading-6",
+                        class_name="m-0 font-heading text-lg font-normal leading-6 tracking-[-0.02em]",
                     ),
                     rx.icon(
                         "chevron-right",
                         aria_hidden=True,
-                        class_name="size-3.5 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100",
+                        class_name="size-3.5 shrink-0 text-muted-foreground",
                     ),
                     href=f"/library/{prefix.strip('/') + '/' if prefix.strip('/') else ''}{category.lower()}/",
-                    class_name="group flex min-h-8 w-fit items-center gap-2 self-start text-foreground no-underline transition-colors hover:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
+                    class_name="group flex min-h-10 w-fit items-center gap-2 self-start text-foreground no-underline transition-colors hover:text-muted-foreground motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
                 ),
                 rx.el.ul(
                     *[
@@ -68,7 +68,7 @@ def component_grid():
                                     clist=c,
                                     prefix=prefix,
                                 ),
-                                class_name="inline-flex min-h-8 items-center text-sm font-book leading-6 text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+                                class_name="inline-flex min-h-10 items-center text-sm font-normal leading-6 text-muted-foreground no-underline transition-colors hover:text-foreground motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
                             ),
                         )
                         for c in get_components_for_category(
@@ -77,7 +77,7 @@ def component_grid():
                     ],
                     class_name="m-0 grid w-full min-w-0 max-w-[48rem] list-none grid-cols-1 gap-x-4 gap-y-1 p-0 sm:grid-cols-2 xl:grid-cols-3",
                 ),
-                class_name="grid grid-cols-1 gap-3 border-b border-border py-6 md:grid-cols-[12rem_minmax(0,1fr)] md:gap-6",
+                class_name="grid min-w-0 grid-cols-1 gap-3 border-b border-border-subtle py-6 md:grid-cols-[12rem_minmax(0,1fr)] md:gap-6",
             )
             for category in components
         ]
@@ -138,5 +138,5 @@ def library():
             ".",
             class_name="mt-8 text-sm leading-6 text-muted-foreground",
         ),
-        class_name="flex flex-col h-full mb-12",
+        class_name="docs-library-index flex min-w-0 flex-col h-full mb-12",
     )

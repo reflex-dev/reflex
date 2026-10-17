@@ -13,11 +13,12 @@ import urllib.parse
 import uuid
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Mapping, MutableMapping, Sequence
+from datetime import timedelta
 from typing import TYPE_CHECKING, Any
 
 from reflex_base import constants, otel
 from reflex_base.config import get_config
-from reflex_base.environment import environment
+from reflex_base.environment import auto_reload_cooldown, environment
 from reflex_base.event import _EVENT_FIELDS, Event
 from starlette.websockets import WebSocket, WebSocketDisconnect
 from typing_extensions import Buffer
@@ -127,8 +128,8 @@ def build_static_router_data(sid: str, asgi_scope: Mapping[str, Any]) -> dict[st
     }
 
 
-def connect_boot_event(auth: Any) -> Any:
-    """Get the boot event a session's connect carries.
+def connect_auth(auth: Any) -> tuple[Any, Any]:
+    """Get the boot event and frontend state schema a session's connect carries.
 
     The frontend sends its hydrate event with the connect, so the backend
     processes it without waiting for the connect acknowledgement round trip.
@@ -137,12 +138,13 @@ def connect_boot_event(auth: Any) -> Any:
         auth: The connect payload.
 
     Returns:
-        The boot event, or None if the connect carries none.
+        The boot event and the state schema hash, each None if not carried.
     """
+    if not isinstance(auth, dict):
+        return None, None
     return (
-        auth.get(constants.CompileVars.CONNECT_AUTH_EVENT)
-        if isinstance(auth, dict)
-        else None
+        auth.get(constants.CompileVars.CONNECT_AUTH_EVENT),
+        auth.get(constants.CompileVars.CONNECT_AUTH_STATE_SCHEMA),
     )
 
 
@@ -560,6 +562,7 @@ class BaseEventNamespace(ABC):
         sid: str,
         query_string: str,
         subprotocol: str | None,
+        frontend_schema: Any = None,
         *,
         update_state: bool = True,
     ) -> None:
@@ -569,6 +572,8 @@ class BaseEventNamespace(ABC):
             sid: The session id.
             query_string: The raw query string of the connection request.
             subprotocol: The websocket subprotocol offered by the client.
+            frontend_schema: The state schema hash the frontend was compiled
+                for; None from a frontend too old to send one.
             update_state: Whether to record the new sid and token on the state;
                 see link_token_to_sid.
         """
@@ -591,6 +596,30 @@ class BaseEventNamespace(ABC):
             logger.warning(
                 f"Frontend version {format.sanitize_client_log_value(subprotocol)} "
                 f"for session {sid} does not match the backend version {constants.Reflex.VERSION}."
+            )
+        # A frontend compiled for another state tree is told so before it
+        # hydrates. The backend hash is cached on the state class.
+        if (
+            frontend_schema is not None
+            and self.app._state is not None
+            and frontend_schema
+            != (backend_schema := self.app._state._to_frontend_schema())
+        ):
+            logger.warning(
+                "Frontend state schema "
+                f"{format.sanitize_client_log_value(frontend_schema, max_length=64)} "
+                f"for session {sid} does not match the backend state schema "
+                f"{backend_schema}: the frontend was built for another version of "
+                "the app and is told to reload."
+            )
+            await self.emit(
+                str(constants.SocketEvent.STATE_MISMATCH),
+                {
+                    "backend": backend_schema,
+                    "reload_cooldown_ms": auto_reload_cooldown()
+                    // timedelta(milliseconds=1),
+                },
+                to=sid,
             )
 
     def handle_disconnect(self, sid: str) -> asyncio.Task | None:
@@ -806,8 +835,8 @@ class BaseEventNamespace(ABC):
         if error_type == constants.ClientErrorType.DISPATCH_MISSING:
             substate = format.sanitize_client_log_value(data.get("substate", ""))
             report = (
-                f"[SID: {sid}] State update failed: "
-                f"no dispatch function for substate(s) '{substate}'. "
+                f"[SID: {sid}] Skipped state update for unknown substate(s) "
+                f"'{substate}': no dispatch function registered. "
                 "This indicates a frontend/backend state mismatch. "
                 "Rebuild the frontend or check that api_url points to the matching backend."
             )
@@ -1365,9 +1394,6 @@ class WebsocketEventNamespace(BaseEventNamespace):
         )
         if connect_frame is None:
             return
-        boot_event = connect_boot_event(
-            connect_frame[1] if len(connect_frame) > 1 else None
-        )
         connection = _Connection(websocket)
         self._connections[sid] = connection
         heartbeat_task = asyncio.create_task(
@@ -1381,7 +1407,7 @@ class WebsocketEventNamespace(BaseEventNamespace):
                 await self._serve_session(
                     sid,
                     connection,
-                    boot_event,
+                    connect_frame[1] if len(connect_frame) > 1 else None,
                     subprotocols[0] if subprotocols else None,
                     ping_interval,
                     ping_timeout,
@@ -1439,7 +1465,7 @@ class WebsocketEventNamespace(BaseEventNamespace):
         self,
         sid: str,
         connection: _Connection,
-        boot_event: Any,
+        auth: Any,
         subprotocol: str | None,
         ping_interval: float,
         ping_timeout: float,
@@ -1450,17 +1476,19 @@ class WebsocketEventNamespace(BaseEventNamespace):
         Args:
             sid: The session id.
             connection: The client connection.
-            boot_event: The boot event its connect frame carried, if any.
+            auth: The payload its connect frame carried, if any.
             subprotocol: The websocket subprotocol offered by the client.
             ping_interval: Seconds between heartbeat pings.
             ping_timeout: Seconds past the interval a client may stay silent.
             max_message_size: The message size limit in bytes.
         """
         websocket = connection.websocket
+        boot_event, frontend_schema = connect_auth(auth)
         await self.handle_connect(
             sid,
             websocket.scope.get("query_string", b"").decode(),
             subprotocol,
+            frontend_schema,
             update_state=boot_event is None,
         )
         if sid not in self._token_manager.sid_to_token:

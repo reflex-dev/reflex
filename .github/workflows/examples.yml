@@ -6,28 +6,24 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.id || github.sha }}
   cancel-in-progress: true
 
+# Only changes to the examples or to what drives them as benchmark fixtures run
+# this workflow; changes to reflex itself are covered by the other test suites.
 on:
   pull_request:
     paths:
       - "examples/**"
+      - "packages/reflex-bench/**"
       - "scripts/hash_examples.py"
+      - ".github/legacy/reflex-0.8.23/**"
       - ".github/workflows/examples.yml"
-      - ".github/actions/setup_build_env/**"
-      - "reflex/**"
-      - "packages/**"
-      - "pyproject.toml"
-      - "uv.lock"
   push:
     branches: ["main"]
     paths:
       - "examples/**"
+      - "packages/reflex-bench/**"
       - "scripts/hash_examples.py"
+      - ".github/legacy/reflex-0.8.23/**"
       - ".github/workflows/examples.yml"
-      - ".github/actions/setup_build_env/**"
-      - "reflex/**"
-      - "packages/**"
-      - "pyproject.toml"
-      - "uv.lock"
 
 env:
   REFLEX_TELEMETRY_ENABLED: false
@@ -65,7 +61,8 @@ jobs:
         working-directory: examples/playground
         run: uv run --no-sync --project ../.. reflex compile
 
-  # The oldest release the benchmarks are backfilled to, from PyPI.
+  # The oldest release the benchmarks are backfilled to, from a locked
+  # environment so a new release of a transitive dependency cannot break it.
   playground-0_8_23:
     name: playground-0.8.23
     timeout-minutes: 20
@@ -79,11 +76,10 @@ jobs:
           python-version: "3.12"
       # The venv goes first on PATH, like an activated venv: reflex 0.8.23 runs
       # tools such as granian by name.
-      - name: Install reflex 0.8.23 into a fresh venv
+      - name: Install the locked reflex 0.8.23 environment
         run: |
-          uv venv --python 3.12 "$RUNNER_TEMP/reflex-0.8.23"
-          uv pip install --python "$RUNNER_TEMP/reflex-0.8.23/bin/python" "reflex==0.8.23" "plotly>=6.0,<7.0"
-          echo "$RUNNER_TEMP/reflex-0.8.23/bin" >> "$GITHUB_PATH"
+          uv sync --locked --project .github/legacy/reflex-0.8.23
+          echo "$GITHUB_WORKSPACE/.github/legacy/reflex-0.8.23/.venv/bin" >> "$GITHUB_PATH"
       - name: Show the reflex under test
         working-directory: examples/playground
         run: reflex --version

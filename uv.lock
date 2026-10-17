@@ -3608,6 +3608,7 @@ uvicorn = [
 
 [package.dev-dependencies]
 bench = [
+    { name = "plotly" },
     { name = "reflex-bench" },
 ]
 dev = [
@@ -3707,7 +3708,10 @@ requires-dist = [
 provides-extras = ["db", "pydantic", "socketio", "testing", "uvicorn"]
 
 [package.metadata.requires-dev]
-bench = [{ name = "reflex-bench", editable = "packages/reflex-bench" }]
+bench = [
+    { name = "plotly", specifier = ">=6.0,<7.0" },
+    { name = "reflex-bench", editable = "packages/reflex-bench" },
+]
 dev = [
     { name = "alembic" },
     { name = "asynctest" },

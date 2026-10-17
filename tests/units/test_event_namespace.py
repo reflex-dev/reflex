@@ -234,6 +234,43 @@ async def test_boot_event_is_the_sessions_first_event(
 
 
 @pytest.mark.asyncio
+async def test_state_schema_mismatch_is_reported_before_the_handshake(
+    namespace: WebsocketEventNamespace, mock_app: Mock
+):
+    """A frontend compiled for another state tree is told so before it hydrates.
+
+    The session still hydrates; a frontend built for the backend's state tree
+    is told nothing.
+    """
+    mock_app._state = Mock(_to_frontend_schema=Mock(return_value="backend-schema"))
+    boot_event = {"name": "state.hydrate_and_load", "payload": {}, "router_data": {}}
+    websocket = FakeWebSocket()
+    websocket.feed(
+        [CONNECT_MESSAGE, {"event": boot_event, "state_schema": "frontend-schema"}],
+        connect=False,
+    )
+    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
+    await _drain_tasks()
+
+    assert websocket.sent[0] == [
+        "state_mismatch",
+        {"backend": "backend-schema", "reload_cooldown_ms": 10_000},
+    ]
+    assert websocket.sent[1][0] == HANDSHAKE_MESSAGE
+    mock_app.event_processor.enqueue.assert_awaited_once()
+
+    websocket = FakeWebSocket()
+    websocket.feed(
+        [CONNECT_MESSAGE, {"event": boot_event, "state_schema": "backend-schema"}],
+        connect=False,
+    )
+    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
+    await _drain_tasks()
+
+    assert [frame[0] for frame in websocket.sent] == [HANDSHAKE_MESSAGE]
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("frames", "close_code"),
     [

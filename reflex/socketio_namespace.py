@@ -14,7 +14,7 @@ from reflex_base.utils.types import ASGIApp, Message, Receive, Scope, Send
 from socketio import ASGIApp as EngineIOApp
 from socketio import AsyncNamespace, AsyncServer
 
-from reflex.event_namespace import BaseEventNamespace, connect_boot_event, utf8_size
+from reflex.event_namespace import BaseEventNamespace, connect_auth, utf8_size
 from reflex.utils import exceptions, format
 
 if TYPE_CHECKING:
@@ -92,7 +92,8 @@ class EventNamespace(AsyncNamespace, BaseEventNamespace):
         Args:
             sid: The Socket.IO session id.
             environ: The request information, including HTTP headers.
-            auth: The payload of the CONNECT packet, carrying the boot event.
+            auth: The payload of the CONNECT packet, carrying the boot event
+                and the frontend state schema.
 
         Returns:
             False to refuse a session that linked no token or whose boot event
@@ -100,11 +101,12 @@ class EventNamespace(AsyncNamespace, BaseEventNamespace):
         """
         if (scope := environ.get("asgi.scope")) is not None:
             self._scopes[sid] = scope
-        boot_event = connect_boot_event(auth)
+        boot_event, frontend_schema = connect_auth(auth)
         await self.handle_connect(
             sid,
             environ.get("QUERY_STRING", ""),
             environ.get("HTTP_SEC_WEBSOCKET_PROTOCOL"),
+            frontend_schema,
             update_state=boot_event is None,
         )
         if sid not in self.sid_to_token:

@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+from typing import Any
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -117,6 +118,93 @@ async def test_connect_processes_boot_event_from_auth(
     assert modify_state.call_count == 2
     assert state.router_data[constants.RouteVar.SESSION_ID] == "sid3"
     assert state.router_data[constants.RouteVar.CLIENT_TOKEN] == "tok3"
+
+
+@pytest.mark.asyncio
+async def test_connect_reports_state_schema_mismatch(
+    namespace: EventNamespace, mock_app: Mock, caplog: pytest.LogCaptureFixture
+):
+    """A frontend compiled for another state tree is told once, and still hydrates."""
+    mock_app._state = Mock(_to_frontend_schema=Mock(return_value="backend-schema"))
+    emit = namespace.emit = AsyncMock()
+    boot_event = {"name": "state.hydrate_and_load", "payload": {}, "router_data": {}}
+
+    def warnings() -> list[str]:
+        return [
+            r.getMessage()
+            for r in caplog.records
+            if r.name == "reflex.event_namespace" and r.levelno == logging.WARNING
+        ]
+
+    with caplog.at_level(logging.WARNING, logger="reflex.event_namespace"):
+        await namespace.on_connect(
+            "sid1",
+            {"QUERY_STRING": "token=tok1", "asgi.scope": {"headers": []}},
+            {"event": boot_event, "state_schema": "frontend-schema"},
+        )
+
+        emit.assert_awaited_once_with(
+            "state_mismatch",
+            {"backend": "backend-schema", "reload_cooldown_ms": 10_000},
+            to="sid1",
+        )
+        token, event = mock_app.event_processor.enqueue.await_args.args
+        assert (token, event.name) == ("tok1", "state.hydrate_and_load")
+        (message,) = warnings()
+        assert "frontend-schema" in message
+        assert "backend-schema" in message
+        assert "sid1" in message
+
+        # The client-supplied hash is sanitized and bounded before it is logged.
+        caplog.clear()
+        await namespace.on_connect(
+            "sid2",
+            {"QUERY_STRING": "token=tok2", "asgi.scope": {"headers": []}},
+            {"event": boot_event, "state_schema": "x\nforged line [bold]" + "y" * 500},
+        )
+
+    (message,) = warnings()
+    assert "forged" in message
+    assert "\n" not in message
+    assert "\\[bold]" in message
+    assert "(truncated)" in message
+    assert len(message) < 400
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "auth",
+    [
+        pytest.param(
+            {
+                "event": {"name": "state.hydrate_and_load", "payload": {}},
+                "state_schema": "same",
+            },
+            id="matching",
+        ),
+        pytest.param(
+            {"event": {"name": "state.hydrate_and_load", "payload": {}}},
+            id="old-frontend",
+        ),
+        pytest.param(None, id="no-auth"),
+    ],
+)
+async def test_connect_sends_no_mismatch_without_one(
+    namespace: EventNamespace, mock_app: Mock, auth: dict[str, Any] | None
+):
+    """A matching or missing frontend schema sends nothing to the client."""
+    mock_app._state = Mock(_to_frontend_schema=Mock(return_value="same"))
+    mock_app.state_manager.modify_state = Mock(
+        return_value=AsyncMock(__aenter__=AsyncMock(return_value=Mock(router_data={})))
+    )
+    emit = namespace.emit = AsyncMock()
+
+    await namespace.on_connect(
+        "sid1", {"QUERY_STRING": "token=tok1", "asgi.scope": {"headers": []}}, auth
+    )
+
+    emit.assert_not_awaited()
+    assert mock_app.event_processor.enqueue.await_count == (1 if auth else 0)
 
 
 @pytest.mark.asyncio

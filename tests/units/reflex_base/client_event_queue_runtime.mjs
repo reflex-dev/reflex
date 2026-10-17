@@ -3,7 +3,7 @@ import { SourceTextModule, SyntheticModule } from "node:vm";
 /** Evaluate the complete frontend module with isolated dependency stubs. */
 export async function createQueueRuntime(
   source,
-  { uploadFiles, throttle } = {},
+  { uploadFiles, throttle, dependencies: dependencyOverrides } = {},
 ) {
   const unused = () => {
     throw new Error("Unexpected frontend dependency in queue test");
@@ -61,17 +61,10 @@ export async function createQueueRuntime(
       parseJsonLenient: unused,
       undefinedToNull: unused,
     },
+    ...dependencyOverrides,
   };
-  // Let Node parse the unchanged module; only expose private state to tests.
-  const module = new SourceTextModule(
-    `import { window, document, localStorage, sessionStorage } from "test:browser";
-${source}
-export { event_queue };
-export function setMismatch(value) { backend_state_mismatch = value; }
-`,
-  );
   const linked = new Map();
-  await module.link((specifier) => {
+  const link = (specifier) => {
     if (!linked.has(specifier)) {
       const exports = dependencies[specifier];
       if (!exports)
@@ -86,7 +79,29 @@ export function setMismatch(value) { backend_state_mismatch = value; }
       );
     }
     return linked.get(specifier);
-  });
+  };
+  // Let Node parse the unchanged module; only expose private state to tests.
+  const module = new SourceTextModule(
+    `import { window, document, localStorage, sessionStorage } from "test:browser";
+${source}
+export { event_queue };
+`,
+    {
+      // The socket.io client is imported on demand.
+      async importModuleDynamically(specifier) {
+        const imported = link(specifier);
+        // Newer Node versions create synthetic modules already linked.
+        if (imported.status === "unlinked") {
+          await imported.link(link);
+        }
+        if (imported.status === "linked") {
+          await imported.evaluate();
+        }
+        return imported;
+      },
+    },
+  );
+  await module.link(link);
   await module.evaluate();
   return module.namespace;
 }
