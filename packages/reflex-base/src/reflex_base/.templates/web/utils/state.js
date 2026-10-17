@@ -23,6 +23,7 @@ const EVENTURL = env.EVENT;
 // Socket event names (must match reflex_base/constants/event.py SocketEvent)
 const CLIENT_ERROR_EVENT = "client_error";
 const STATE_MISMATCH_EVENT = "state_mismatch";
+const SCHEME_MISMATCH_EVENT = "scheme_mismatch";
 
 // sessionStorage key with the time of the last automatic reload (must match
 // LAST_RELOADED_KEY in reflex/state.py: the reload on a frontend error and the
@@ -35,6 +36,11 @@ const NEW_VERSION_BANNER_ID = "reflex-new-version-banner";
 // Client error types (must match reflex_base/constants/event.py ClientErrorType)
 const ERROR_TYPE_DISPATCH_MISSING = "dispatch_function_missing";
 const ERROR_TYPE_STATE_UPDATE = "state_update_processing_error";
+
+// Shown in the connection UI when the backend cannot understand this bundle:
+// the only action available to the viewer is a reload.
+const OUTDATED_PAGE_MESSAGE =
+  "This page is out of date and can no longer talk to the server. Reload the page to load the current version.";
 
 // These hostnames indicate that the backend and frontend are reachable via the same domain.
 const SAME_DOMAIN_HOSTNAMES = ["localhost", "0.0.0.0", "::", "0:0:0:0:0:0:0:0"];
@@ -55,14 +61,15 @@ const cookies = new Cookies();
 // Dictionary holding component references.
 export const refs = {};
 
+// Set when the backend resolves wire names with another minification scheme
+// than this bundle was built against. Fatal: no further events are sent or
+// applied until the page is reloaded.
+let backend_scheme_mismatch = false;
 // Array holding pending events to be processed.
 const event_queue = [];
 
-// The event that sends browser storage values to the backend.
-const UPDATE_VARS_INTERNAL =
-  "reflex___state____update_vars_internal_state.update_vars_internal";
 // A frontend event naming one synced localStorage var, turned into an
-// UPDATE_VARS_INTERNAL event when it is sent: see syncLocalStorageEvent.
+// update_vars_internal event when it is sent: see syncLocalStorageEvent.
 const SYNC_LOCAL_STORAGE = "_sync_local_storage";
 
 // Synced localStorage values sent to the backend and not yet echoed back, by
@@ -167,6 +174,20 @@ export const getBackendURL = (url_str) => {
 };
 
 /**
+ * Build the query the backend reads on connect.
+ *
+ * Used for reconnects too: a field dropped here reaches the backend as empty
+ * on every later connection, so the call sites must not drift apart.
+ *
+ * @param token The session token the backend links the connection to.
+ * @returns The socket handshake query.
+ */
+const handshakeQuery = (token = getToken()) => ({
+  token,
+  scheme: app.schemeDigest ?? "",
+});
+
+/**
  * Check if the backend is disabled.
  *
  * @returns True if the backend is disabled, false otherwise.
@@ -192,7 +213,7 @@ const createSocket = (endpoint, transports, token) =>
     protocols: [reflexEnvironment.version],
     autoUnref: false,
     autoConnect: false,
-    query: { token },
+    query: handshakeQuery(token),
     reconnection: false,
   });
 
@@ -260,10 +281,12 @@ export const isStateful = () => {
   if (event_queue.length === 0) {
     return false;
   }
+  // State events are `<full state name>.<handler>`; the trailing dot keeps a
+  // frontend-only event from matching a short (minified) root state name.
   return event_queue.some(
     (event) =>
       typeof event?.name === "string" &&
-      (event.name.startsWith("reflex___state") ||
+      (event.name.startsWith(app.main_state_name + ".") ||
         event.name === SYNC_LOCAL_STORAGE),
   );
 };
@@ -463,7 +486,7 @@ function urlFrom(string) {
  */
 const syncLocalStorageEvent = ({ key, state_keys }) => {
   const value = localStorage.getItem(key);
-  return ReflexEvent(`${app.state_name}.${UPDATE_VARS_INTERNAL}`, {
+  return ReflexEvent(app.update_vars_internal, {
     vars: Object.fromEntries(state_keys.map((state_key) => [state_key, value])),
   });
 };
@@ -780,6 +803,14 @@ export const processEvent = async (socket, navigate, params) => {
     return;
   }
 
+  // A scheme mismatch is fatal; do not send further events. Drop pending
+  // events too: callers drain the queue in while-loops that would otherwise
+  // spin forever on an early return.
+  if (backend_scheme_mismatch) {
+    event_queue.length = 0;
+    return;
+  }
+
   // Only proceed if we're not already processing an event.
   if (event_queue.length === 0) {
     return;
@@ -946,13 +977,17 @@ export const connect = async (
   };
   // Set up a reconnect helper function
   socket.current.reconnect = () => {
+    if (backend_scheme_mismatch) {
+      // Reconnecting cannot resolve a scheme mismatch.
+      return;
+    }
     if (
       socket.current &&
       !socket.current.connected &&
       !socket.current.wait_connect
     ) {
       socket.current.wait_connect = true;
-      socket.current.io.opts.query = { token: getToken() }; // Update token for reconnect.
+      socket.current.io.opts.query = handshakeQuery(); // Refresh token/scheme.
       // A reconnect rehydrates in full: the reducers no longer hold the defaults.
       socket.current.auth = bootAuth(false);
       socket.current.connect();
@@ -1006,7 +1041,15 @@ export const connect = async (
   socket.current.on("connect", async () => {
     socket.current.wait_connect = false;
     reported_missing_substates.clear();
-    setConnectErrors([]);
+    // A fatal mismatch is emitted from the server's connect handler, so it is
+    // buffered and replayed before this runs; clearing it here would discard
+    // the only notice the viewer gets. It also outlives a reconnect, since
+    // reconnecting cannot change what the names mean.
+    setConnectErrors((connectErrors) =>
+      connectErrors.length > 0 && connectErrors[connectErrors.length - 1].fatal
+        ? connectErrors
+        : [],
+    );
     window.__reflex_otel?.onSocketConnect?.();
     window.addEventListener("pagehide", pagehideHandler);
     window.addEventListener("beforeunload", disconnectTrigger);
@@ -1054,6 +1097,31 @@ export const connect = async (
     });
   };
 
+  // A mismatch is terminal: no event will ever be answered again. Push it onto
+  // connectErrors as well, or the page sits dead with the reason only in the
+  // console, where no end user will look.
+  const fatalMismatch = (developerMessage) => {
+    backend_scheme_mismatch = true;
+    event_queue.length = 0;
+    console.error(developerMessage);
+    setConnectErrors((connectErrors) => [
+      ...connectErrors.slice(-9),
+      Object.assign(new Error(OUTDATED_PAGE_MESSAGE), { fatal: true }),
+    ]);
+    // A dead tab must not hold a live server connection; "io client
+    // disconnect" keeps the reconnect helpers out of it.
+    socket.current?.disconnect();
+  };
+
+  // The backend resolves wire names with its own copy of the minification
+  // scheme. If it disagrees with the one this bundle was built against, every
+  // name we send is meaningless to it, so stop before the first event.
+  socket.current.on(SCHEME_MISMATCH_EVENT, (detail) => {
+    fatalMismatch(
+      `Cannot talk to the backend: it resolves state and event names with a different minification scheme (frontend "${detail?.frontend ?? ""}", backend "${detail?.backend ?? ""}"). If you are the developer of this app, rebuild the frontend against the same minify.json the backend is running.`,
+    );
+  });
+
   // Warn about unknown substates and surface them in the backend terminal
   // logs, once per substate per connection.
   const reportUnknownSubstates = (substates) => {
@@ -1100,6 +1168,10 @@ export const connect = async (
 
   // On each received message, queue the updates and events.
   socket.current.on("event", (update) => {
+    if (backend_scheme_mismatch) {
+      // Its names mean something else in this bundle.
+      return;
+    }
     // Skip unknown substates in both reducer and client-storage updates.
     const delta = withoutUnknownSubstates(update.delta);
     try {
@@ -1263,8 +1335,8 @@ const recordSentStorageValues = (event) => {
   const vars = event.payload?.vars;
   if (
     vars === undefined ||
-    (event.name !== `${app.state_name}.hydrate_and_load` &&
-      event.name !== `${app.state_name}.${UPDATE_VARS_INTERNAL}`)
+    (event.name !== app.hydrate_and_load &&
+      event.name !== app.update_vars_internal)
   ) {
     return;
   }
@@ -1307,8 +1379,8 @@ const applyClientStorageDelta = (client_storage, delta) => {
   if (unqualified_states.length === 1) {
     const main_state = delta[unqualified_states[0]];
     if (
-      main_state.is_hydrated_rx_state_ !== undefined &&
-      !main_state.is_hydrated_rx_state_
+      main_state[app.is_hydrated_key] !== undefined &&
+      !main_state[app.is_hydrated_key]
     ) {
       // skip if the state is not hydrated yet, since all client storage
       // values are sent in the hydrate event
@@ -1459,33 +1531,39 @@ export const useEventLoop = (
       return;
     }
 
+    // A stateless app exports no handler name, and an event without one
+    // reaches nothing on the backend.
+    const reportException = (info) => {
+      if (app.handle_frontend_exception) {
+        addEvents([
+          ReflexEvent(app.handle_frontend_exception, {
+            info,
+            component_stack: "",
+          }),
+        ]);
+      }
+    };
+
     window.onerror = function (msg, url, lineNo, columnNo, error) {
-      addEvents([
-        ReflexEvent(`${app.exception_state_name}.handle_frontend_exception`, {
-          // Some error events (e.g. a ResizeObserver loop) have no Error object.
-          info: error
-            ? error.name + ": " + error.message + "\n" + error.stack
-            : msg + "\n    at " + url + ":" + lineNo + ":" + columnNo,
-          component_stack: "",
-        }),
-      ]);
+      // Some error events (e.g. a ResizeObserver loop) have no Error object.
+      reportException(
+        error
+          ? error.name + ": " + error.message + "\n" + error.stack
+          : msg + "\n    at " + url + ":" + lineNo + ":" + columnNo,
+      );
       return false;
     };
 
     //NOTE: Only works in Chrome v49+
     //https://github.com/mknichel/javascript-errors?tab=readme-ov-file#promise-rejection-events
     window.onunhandledrejection = function (event) {
-      addEvents([
-        ReflexEvent(`${app.exception_state_name}.handle_frontend_exception`, {
-          info:
-            event.reason?.name +
-            ": " +
-            event.reason?.message +
-            "\n" +
-            event.reason?.stack,
-          component_stack: "",
-        }),
-      ]);
+      reportException(
+        event.reason?.name +
+          ": " +
+          event.reason?.message +
+          "\n" +
+          event.reason?.stack,
+      );
       return false;
     };
   }, []);
@@ -1586,9 +1664,9 @@ export const useEventLoop = (
     }
 
     // Equivalent to routeChangeStart - runs when navigation begins
-    const main_state_dispatch = dispatch["reflex___state____state"];
+    const main_state_dispatch = dispatch[app.main_state_name];
     if (main_state_dispatch !== undefined) {
-      main_state_dispatch({ is_hydrated_rx_state_: false });
+      main_state_dispatch({ [app.is_hydrated_key]: false });
     }
 
     // Equivalent to routeChangeComplete - runs after navigation completes
@@ -1720,7 +1798,11 @@ export const pyStrLength = (s) => codePoints(s).length;
  * @param {number} i The index; negative counts from the end.
  * @returns {string | undefined} The code point, or undefined out of range.
  */
-export const pyStrAt = (s, i) => codePoints(s).at(i);
+export const pyStrAt = (s, i) => {
+  const chars = codePoints(s);
+  // Indexed rather than with `.at`, which older browsers lack.
+  return chars[i < 0 ? chars.length + i : i];
+};
 
 /***
  * Python-semantics s[start:stop]: slice by code point.

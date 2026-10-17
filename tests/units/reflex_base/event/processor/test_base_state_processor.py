@@ -23,6 +23,8 @@ from reflex_base.environment import environment
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor
 from reflex_base.event.processor.base_state_processor import (
+    _connect_supersedes,
+    _hydrate_event_names,
     _prepare_event_payload,
     _transform_event_payload,
 )
@@ -52,6 +54,7 @@ from reflex.state import (
 from reflex.utils import types as reflex_types
 from tests.units.conftest import metric_points
 from tests.units.mock_redis import mock_redis
+from tests.units.name_resolvers import stub_resolver, temporary_resolver
 
 # Class-level registries on State that registering a substate, or installing a
 # dynamic route arg, writes into with no removal path.
@@ -476,7 +479,7 @@ async def test_background_event_does_not_discard_concurrent_foreground_write(
         # The uncached computed var registered BgRaceState as an always-dirty
         # substate on the shared State class; later tests' state trees don't
         # contain it and would KeyError in get_delta (see reload_state_module).
-        State._always_dirty_substates.discard(BgRaceState.get_name())
+        State._always_dirty_substates.discard(BgRaceState)
 
     state_name = BgRaceState.get_full_name()
     victim_key = "victim" + FIELD_MARKER
@@ -613,7 +616,7 @@ async def test_background_event_without_context_still_flushes_a_delta(
             )
             await processor.join(5)
     finally:
-        State._always_dirty_substates.discard(NoContextBgState.get_name())
+        State._always_dirty_substates.discard(NoContextBgState)
 
     state_name = NoContextBgState.get_full_name()
     beat_key = "beat" + FIELD_MARKER
@@ -771,7 +774,7 @@ async def test_background_event_raising_without_context_still_flushes_a_delta(
             )
             await processor.join(5)
     finally:
-        State._always_dirty_substates.discard(RaisingBgState.get_name())
+        State._always_dirty_substates.discard(RaisingBgState)
 
     state_name = RaisingBgState.get_full_name()
     beat_key = "beat" + FIELD_MARKER
@@ -840,7 +843,7 @@ async def test_background_flush_failure_does_not_mask_handler_exception(
             ):
                 await processor.join(5)
     finally:
-        State._always_dirty_substates.discard(MaskingBgState.get_name())
+        State._always_dirty_substates.discard(MaskingBgState)
 
     assert [type(ex) for ex in handled] == [RuntimeError], (
         f"the flush failure masked the handler's exception: {handled}"
@@ -2569,3 +2572,14 @@ async def test_reconnect_cancels_stale_on_load_without_load_events(
     async with _read_back(real_base_state_processor, token) as root:
         assert (await root.get_state(SlowLoadState)).seen != "stale-finished"
         assert (await root.get_state(State)).is_hydrated is True
+
+
+def test_connect_event_names_follow_a_resolver_installed_later():
+    """The (re)connect events are recognized under the names the frontend sends."""
+    default = (_connect_supersedes(), _hydrate_event_names())
+    with temporary_resolver(stub_resolver(handler_prefix="h_")):
+        boot, on_load = _connect_supersedes()
+        assert boot.endswith(".h_hydrate_and_load")
+        assert on_load.endswith(".h_on_load_internal")
+        assert _hydrate_event_names() == (f"{State.get_name()}.h_hydrate", boot)
+    assert (_connect_supersedes(), _hydrate_event_names()) == default
