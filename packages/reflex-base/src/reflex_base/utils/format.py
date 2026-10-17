@@ -14,6 +14,7 @@ from rich.markup import escape as escape_markup
 
 from reflex_base import constants
 from reflex_base.utils import exceptions
+from reflex_base.utils.types import is_non_string_sequence
 
 if TYPE_CHECKING:
     from reflex_base.components.component import ComponentStyle
@@ -570,7 +571,7 @@ def format_queue_events(
         arg_def = "()"
 
     payloads = []
-    if not isinstance(events, list):
+    if not is_non_string_sequence(events):
         events = [events]
 
     # Process each event/spec/lambda (similar to Component._create_event_chain).

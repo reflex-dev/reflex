@@ -447,7 +447,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             rx.table.body(*rows),
             variant="surface",
             size="1",
-            class_name="w-full border border-border-subtle mb-4",
+            class_name="docs-markdown-table w-full border border-border-subtle mb-4",
         )
 
     def transform_table_row(self, row: TableRow) -> rx.Component:
@@ -695,6 +695,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             margin_bottom="16px",
             margin_top="16px",
             width="100%",
+            class_name="docs-callout",
         )
 
     def _render_tutorial_intro(self, block: DirectiveBlock) -> rx.Component:

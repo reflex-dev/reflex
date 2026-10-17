@@ -40,7 +40,7 @@ from typing import get_origin as get_origin_og
 from typing import get_type_hints as get_type_hints_og
 
 import typing_extensions
-from typing_extensions import TypeAliasType, TypeVarTuple
+from typing_extensions import TypeAliasType, TypeIs, TypeVarTuple
 from typing_extensions import override as override
 
 from reflex_base import constants
@@ -570,6 +570,25 @@ def is_none(cls: GenericType) -> bool:
         Whether the class is None.
     """
     return cls is type(None) or cls is None
+
+
+def is_non_string_sequence(value: object) -> TypeIs[Sequence[Any]]:
+    """Check if a value is a sequence other than a str or bytes, e.g. a list of events.
+
+    Separate list and tuple checks come first: they are the common case, and
+    cheaper than the Sequence ABC check.
+
+    Args:
+        value: The value to check.
+
+    Returns:
+        Whether the value is a sequence and not a str or bytes.
+    """
+    return (
+        isinstance(value, list)  # noqa: SIM101 - a lone list check is the fastest
+        or isinstance(value, tuple)
+        or (isinstance(value, Sequence) and not isinstance(value, (str, bytes)))
+    )
 
 
 def is_union(cls: GenericType) -> bool:

@@ -32,6 +32,7 @@ def _default_bundled_libraries() -> list[str]:
         "react",
         "@emotion/react",
         f"$/{constants.Dirs.CONTEXTS_PATH}",
+        f"$/{constants.Dirs.UTILS}/context-registry",
         f"$/{constants.Dirs.STATE_PATH}",
     ]
 
