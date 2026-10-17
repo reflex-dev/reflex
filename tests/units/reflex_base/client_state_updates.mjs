@@ -28,11 +28,13 @@ const element = (tag) => ({
 async function createConnection(
   t,
   dispatch = {},
-  { isDevMode = false, lastReload } = {},
+  { isDevMode = false, lastReload, socketio = false } = {},
 ) {
   const warn = t.mock.method(console, "warn", () => {});
   const handlers = new Map();
   const sent = [];
+  // The kind of each transport the runtime created.
+  const created = [];
   const saved = new Map();
   const reloads = [];
   const session = new Map([["token", "test-token"]]);
@@ -85,8 +87,24 @@ async function createConnection(
         localStorage: { setItem: (key, value) => saved.set(key, value) },
         sessionStorage,
       },
-      "socket.io-client": { default: () => socket },
-      "$/env.json": { default: { EVENT: "http://backend/_event" } },
+      "$/utils/helpers/websocket": {
+        // Called with `new`: a constructor returning an object yields that object.
+        ReflexWebSocket: function () {
+          created.push("websocket");
+          return socket;
+        },
+        disableChannels() {},
+        getChannel() {},
+      },
+      "socket.io-client": {
+        default: () => {
+          created.push("socketio");
+          return socket;
+        },
+      },
+      "$/env.json": {
+        default: { EVENT: "http://backend/_event", SOCKETIO: socketio },
+      },
       "$/utils/context-registry": { app, eventLoop: {} },
     },
   });
@@ -102,6 +120,7 @@ async function createConnection(
     navigate,
     params,
   );
+  assert.deepEqual(created, [socketio ? "socketio" : "websocket"]);
   return {
     sent,
     saved,
@@ -128,105 +147,133 @@ async function createConnection(
   };
 }
 
-test("an unknown substate does not block known state or events", async (t) => {
-  const applied = [];
-  const c = await createConnection(t, {
-    known: (value) => applied.push(value),
-  });
-  const callback = { name: "test.callback", payload: {} };
-  c.receive({
-    delta: Object.freeze({ unknown: { value: "u" }, known: { value: "k" } }),
-    events: [callback],
-  });
-  assert.deepEqual(applied, [{ value: "k" }]);
-  assert.deepEqual([...c.saved], [["known.value", "k"]]);
-  assert.ok(c.sent.some((event) => event.value === callback));
-  assert.deepEqual(
-    c.reports().map((event) => event.value.substate),
-    ["unknown"],
-  );
-});
+/**
+ * Register a test once per transport.
+ * @param name The test name.
+ * @param fn The test body, given a `connect` that opens a connection over the
+ *   transport.
+ */
+const transportTest = (name, fn) => {
+  for (const socketio of [false, true]) {
+    test(`${name} (${socketio ? "socket.io" : "websocket"})`, (t) =>
+      fn((dispatch, options) =>
+        createConnection(t, dispatch, { ...options, socketio }),
+      ));
+  }
+};
 
-test("an unknown substate is reported once per connection", async (t) => {
-  const c = await createConnection(t);
-  const update = { delta: { unknown: {} } };
-  c.receive(update);
-  c.receive(update);
-  assert.equal(c.reports().length, 1);
-  await c.reconnect();
-  c.receive(update);
-  assert.equal(c.reports().length, 2);
-});
+transportTest(
+  "an unknown substate does not block known state or events",
+  async (connect) => {
+    const applied = [];
+    const c = await connect({
+      known: (value) => applied.push(value),
+    });
+    const callback = { name: "test.callback", payload: {} };
+    c.receive({
+      delta: Object.freeze({ unknown: { value: "u" }, known: { value: "k" } }),
+      events: [callback],
+    });
+    assert.deepEqual(applied, [{ value: "k" }]);
+    assert.deepEqual([...c.saved], [["known.value", "k"]]);
+    assert.ok(c.sent.some((event) => event.value === callback));
+    assert.deepEqual(
+      c.reports().map((event) => event.value.substate),
+      ["unknown"],
+    );
+  },
+);
 
-test("the state schema rides in the CONNECT auth on connect and reconnect", async (t) => {
-  const c = await createConnection(t);
-  assert.equal(c.socket.auth.state_schema, FRONTEND_SCHEMA);
-  assert.equal(c.socket.auth.event.name, "test.hydrate");
-  assert.deepEqual(c.socket.auth.event.payload.hashes, []);
+transportTest(
+  "an unknown substate is reported once per connection",
+  async (connect) => {
+    const c = await connect();
+    const update = { delta: { unknown: {} } };
+    c.receive(update);
+    c.receive(update);
+    assert.equal(c.reports().length, 1);
+    await c.reconnect();
+    c.receive(update);
+    assert.equal(c.reports().length, 2);
+  },
+);
 
-  c.reconnectSocket();
-  assert.equal(c.socket.connected, true);
-  assert.equal(c.socket.auth.state_schema, FRONTEND_SCHEMA);
-  assert.equal(c.socket.auth.event.payload.hashes, undefined);
-});
+transportTest(
+  "the state schema rides in the connect auth on connect and reconnect",
+  async (connect) => {
+    const c = await connect();
+    assert.equal(c.socket.auth.state_schema, FRONTEND_SCHEMA);
+    assert.equal(c.socket.auth.event.name, "test.hydrate");
+    assert.deepEqual(c.socket.auth.event.payload.hashes, []);
 
-test("a mismatch in prod reloads once per cooldown, then shows a banner", async (t) => {
-  const c = await createConnection(t);
-  c.mismatch();
-  assert.equal(c.reloads.length, 1);
-  assert.ok(Date.now() - Number(c.session.get(LAST_RELOADED_KEY)) < 1000);
-  assert.equal(c.banner(), undefined);
+    c.reconnectSocket();
+    assert.equal(c.socket.connected, true);
+    assert.equal(c.socket.auth.state_schema, FRONTEND_SCHEMA);
+    assert.equal(c.socket.auth.event.payload.hashes, undefined);
+  },
+);
 
-  // The reload landed on the same skew (a cached bundle, or several backend
-  // versions behind one load balancer): no loop, a banner instead.
-  c.mismatch();
-  c.mismatch();
-  assert.equal(c.reloads.length, 1);
-  const banner = c.banner();
-  assert.ok(banner);
-  assert.equal(banner.attributes.role, "alert");
-  assert.match(banner.children[0], /new version/i);
-  assert.equal(c.warn.mock.callCount(), 2);
-  const button = banner.children.find((node) => node.tag === "button");
-  assert.equal(button.textContent, "Reload");
+transportTest(
+  "a mismatch in prod reloads once per cooldown, then shows a banner",
+  async (connect) => {
+    const c = await connect();
+    c.mismatch();
+    assert.equal(c.reloads.length, 1);
+    assert.ok(Date.now() - Number(c.session.get(LAST_RELOADED_KEY)) < 1000);
+    assert.equal(c.banner(), undefined);
 
-  // The button reloads and restarts the cooldown.
-  c.session.set(LAST_RELOADED_KEY, "1");
-  button.onclick();
-  assert.equal(c.reloads.length, 2);
-  assert.ok(Date.now() - Number(c.session.get(LAST_RELOADED_KEY)) < 1000);
+    // The reload landed on the same skew (a cached bundle, or several backend
+    // versions behind one load balancer): no loop, a banner instead.
+    c.mismatch();
+    c.mismatch();
+    assert.equal(c.reloads.length, 1);
+    const banner = c.banner();
+    assert.ok(banner);
+    assert.equal(banner.attributes.role, "alert");
+    assert.match(banner.children[0], /new version/i);
+    assert.equal(c.warn.mock.callCount(), 2);
+    const button = banner.children.find((node) => node.tag === "button");
+    assert.equal(button.textContent, "Reload");
 
-  // Detection alone does not stop events: the page keeps working as it can.
-  await c.enqueue([{ name: "test.event", payload: { id: 1 } }]);
-  assert.deepEqual(c.sent.at(-1).value.payload, { id: 1 });
-});
+    // The button reloads and restarts the cooldown.
+    c.session.set(LAST_RELOADED_KEY, "1");
+    button.onclick();
+    assert.equal(c.reloads.length, 2);
+    assert.ok(Date.now() - Number(c.session.get(LAST_RELOADED_KEY)) < 1000);
 
-test("a reload inside the cooldown window is skipped, outside it is taken", async (t) => {
-  const recent = await createConnection(
-    t,
-    {},
-    {
-      lastReload: Date.now() - 1000,
-    },
-  );
-  recent.mismatch(10000);
-  assert.equal(recent.reloads.length, 0);
-  assert.ok(recent.banner());
+    // Detection alone does not stop events: the page keeps working as it can.
+    await c.enqueue([{ name: "test.event", payload: { id: 1 } }]);
+    assert.deepEqual(c.sent.at(-1).value.payload, { id: 1 });
+  },
+);
 
-  const stale = await createConnection(
-    t,
-    {},
-    {
-      lastReload: Date.now() - 20000,
-    },
-  );
-  stale.mismatch(10000);
-  assert.equal(stale.reloads.length, 1);
-  assert.equal(stale.banner(), undefined);
-});
+transportTest(
+  "a reload inside the cooldown window is skipped, outside it is taken",
+  async (connect) => {
+    const recent = await connect(
+      {},
+      {
+        lastReload: Date.now() - 1000,
+      },
+    );
+    recent.mismatch(10000);
+    assert.equal(recent.reloads.length, 0);
+    assert.ok(recent.banner());
 
-test("a mismatch in dev only warns", async (t) => {
-  const c = await createConnection(t, {}, { isDevMode: true });
+    const stale = await connect(
+      {},
+      {
+        lastReload: Date.now() - 20000,
+      },
+    );
+    stale.mismatch(10000);
+    assert.equal(stale.reloads.length, 1);
+    assert.equal(stale.banner(), undefined);
+  },
+);
+
+transportTest("a mismatch in dev only warns", async (connect) => {
+  const c = await connect({}, { isDevMode: true });
   c.mismatch();
   c.mismatch();
   assert.equal(c.warn.mock.callCount(), 2);

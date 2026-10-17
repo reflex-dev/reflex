@@ -16,17 +16,15 @@ import tempfile
 import threading
 import unittest.mock
 import uuid
-from collections.abc import AsyncGenerator, Generator
+from collections.abc import Generator
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import nullcontext as does_not_raise
 from importlib.util import find_spec
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 from unittest.mock import AsyncMock, Mock
 
 import pytest
-import pytest_asyncio
-import reflex_base
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
@@ -64,11 +62,7 @@ from reflex._upload import upload
 from reflex.app import (
     App,
     ComponentCallable,
-    EventNamespace,
     _ContextMiddleware,
-    _decode_asgi_headers,
-    _sio_dumps,
-    _sio_loads,
     default_overlay_component,
 )
 from reflex.compiler.compiler import (
@@ -97,7 +91,7 @@ from reflex.utils import build
 from reflex.utils import exec as exec_utils
 from reflex.utils.token_manager import RedisTokenManager, SocketRecord
 
-from .conftest import active_tracer, chdir, metric_points
+from .conftest import chdir
 from .states import GenState
 from .states.upload import (
     ChildFileUploadState,
@@ -4453,25 +4447,6 @@ def test_call_marks_later_dev_backend_worker_as_hot_reload(
     assert compile_mock.call_args.kwargs["trigger"] == "hot_reload"
 
 
-def test_decode_asgi_headers():
-    """_decode_asgi_headers decodes raw ASGI header pairs into a str dict."""
-    assert _decode_asgi_headers([]) == {}
-    assert _decode_asgi_headers([
-        (b"host", b"example.com"),
-        (b"x-forwarded-for", b"10.0.0.1, 10.0.0.2"),
-    ]) == {
-        "host": "example.com",
-        "x-forwarded-for": "10.0.0.1, 10.0.0.2",
-    }
-    # Later duplicates win, matching dict comprehension semantics.
-    assert _decode_asgi_headers([
-        (b"cookie", b"a=1"),
-        (b"cookie", b"b=2"),
-    ]) == {"cookie": "b=2"}
-    # Names and values are decoded as UTF-8.
-    assert _decode_asgi_headers([(b"x-name", "café".encode())]) == {"x-name": "café"}
-
-
 def test_call_ignores_stale_marker_without_dev_backend_reload(
     compilable_app: tuple[App, Path],
     mocker: MockerFixture,
@@ -4541,500 +4516,6 @@ def test_compile_registers_plugin_routes(
     assert app._plugin_routes_registered
 
 
-@pytest.fixture
-def event_namespace() -> EventNamespace:
-    """An EventNamespace with a mock app and one linked client session.
-
-    Returns:
-        The event namespace.
-    """
-    namespace = EventNamespace(namespace="/_event", app=Mock())
-    namespace.sid_to_token["known_sid"] = "some_token"
-    return namespace
-
-
-@pytest.fixture
-def frontend_errors(event_namespace: EventNamespace) -> list[str]:
-    """Capture exceptions routed to the app's frontend exception handler.
-
-    Args:
-        event_namespace: The event namespace.
-
-    Returns:
-        The captured exception messages.
-    """
-    errors: list[str] = []
-    event_namespace.app.frontend_exception_handler = lambda exc: errors.append(str(exc))
-    return errors
-
-
-@pytest.fixture
-def client_error_console() -> Generator[dict[str, list[str]], None, None]:
-    """Capture messages logged through the app's logger, keyed by level.
-
-    Yields:
-        Captured messages keyed by log level.
-    """
-    captured: dict[str, list[str]] = {"error": [], "warn": [], "debug": []}
-    level_keys = {
-        logging.ERROR: "error",
-        logging.WARNING: "warn",
-        logging.DEBUG: "debug",
-    }
-
-    class _CaptureHandler(logging.Handler):
-        def emit(self, record: logging.LogRecord):
-            key = level_keys.get(record.levelno)
-            if key is not None:
-                captured[key].append(record.getMessage())
-
-    app_logger = logging.getLogger("reflex.app")
-    handler = _CaptureHandler(level=logging.DEBUG)
-    previous_level = app_logger.level
-    app_logger.addHandler(handler)
-    app_logger.setLevel(logging.DEBUG)
-    yield captured
-    app_logger.removeHandler(handler)
-    app_logger.setLevel(previous_level)
-
-
-@pytest.mark.asyncio
-async def test_client_error_dispatch_missing_reports_actionable_error(
-    event_namespace: EventNamespace, frontend_errors: list[str]
-):
-    """A dispatch_function_missing error reports the substate and remediation steps.
-
-    Args:
-        event_namespace: The event namespace.
-        frontend_errors: Captured frontend exception handler messages.
-    """
-    await event_namespace.on_client_error(
-        "known_sid",
-        {
-            "error_type": constants.ClientErrorType.DISPATCH_MISSING,
-            "message": "Cannot process state update",
-            "substate": "reflex___state____state.my___state____my_state",
-        },
-    )
-    assert len(frontend_errors) == 1
-    message = frontend_errors[0]
-    assert "reflex___state____state.my___state____my_state" in message
-    assert "skipped" in message.lower()
-    assert "rebuild" in message.lower()
-
-
-@pytest.mark.asyncio
-async def test_client_error_generic_reports_type_and_message(
-    event_namespace: EventNamespace, frontend_errors: list[str]
-):
-    """A generic client error reports the error type and message.
-
-    Args:
-        event_namespace: The event namespace.
-        frontend_errors: Captured frontend exception handler messages.
-    """
-    await event_namespace.on_client_error(
-        "known_sid",
-        {
-            "error_type": constants.ClientErrorType.STATE_UPDATE,
-            "message": "boom",
-        },
-    )
-    assert len(frontend_errors) == 1
-    message = frontend_errors[0]
-    assert constants.ClientErrorType.STATE_UPDATE in message
-    assert "boom" in message
-
-
-@pytest.mark.asyncio
-@pytest.mark.parametrize("payload", ["not a dict", None, ["list"], 42])
-async def test_client_error_malformed_payload_is_ignored(
-    event_namespace: EventNamespace,
-    frontend_errors: list[str],
-    payload: Any,
-):
-    """Non-dict payloads are dropped without raising or reporting errors.
-
-    Args:
-        event_namespace: The event namespace.
-        frontend_errors: Captured frontend exception handler messages.
-        payload: The malformed payload to send.
-    """
-    await event_namespace.on_client_error("known_sid", payload)
-    assert not frontend_errors
-
-
-@pytest.mark.asyncio
-@pytest.mark.parametrize("sid", ["known_sid", "unknown_sid"])
-async def test_client_error_no_argument_emit_is_ignored(
-    event_namespace: EventNamespace,
-    frontend_errors: list[str],
-    client_error_console: dict[str, list[str]],
-    sid: str,
-):
-    """A payload-less client_error emit is dropped like any malformed payload.
-
-    python-socketio dispatches ``emit("client_error")`` without a payload as
-    ``on_client_error(sid)``, so a missing ``data`` argument must not raise a
-    TypeError before the anti-abuse guards run.
-
-    Args:
-        event_namespace: The event namespace.
-        frontend_errors: Captured frontend exception handler messages.
-        client_error_console: Captured console messages.
-        sid: The Socket.IO session id to report from.
-    """
-    await event_namespace.on_client_error(sid)
-    assert not frontend_errors
-    assert not client_error_console["error"]
-    assert not client_error_console["warn"]
-
-
-@pytest.mark.asyncio
-async def test_client_error_unknown_sid_does_not_report_error(
-    event_namespace: EventNamespace,
-    frontend_errors: list[str],
-    client_error_console: dict[str, list[str]],
-):
-    """Errors from sockets without a linked token are not reported.
-
-    Args:
-        event_namespace: The event namespace.
-        frontend_errors: Captured frontend exception handler messages.
-        client_error_console: Captured console messages.
-    """
-    await event_namespace.on_client_error(
-        "unknown_sid",
-        {
-            "error_type": constants.ClientErrorType.STATE_UPDATE,
-            "message": "spam from unauthenticated socket",
-        },
-    )
-    assert not frontend_errors
-    assert not client_error_console["error"]
-
-
-@pytest.mark.asyncio
-async def test_client_error_values_are_sanitized_and_truncated(
-    event_namespace: EventNamespace, frontend_errors: list[str]
-):
-    """Control characters are stripped and long messages truncated before reporting.
-
-    Args:
-        event_namespace: The event namespace.
-        frontend_errors: Captured frontend exception handler messages.
-    """
-    evil = "\x1b[31mINJECT\x1b[0m\nFAKE LOG LINE\t" + "A" * 5000
-    await event_namespace.on_client_error(
-        "known_sid",
-        {"error_type": "custom_type", "message": evil},
-    )
-    assert len(frontend_errors) == 1
-    message = frontend_errors[0]
-    assert "\x1b" not in message
-    assert "\n" not in message
-    assert "\t" not in message
-    assert len(message) < 700
-
-
-@pytest.mark.asyncio
-async def test_client_error_reporting_is_rate_limited_per_sid(
-    event_namespace: EventNamespace, frontend_errors: list[str]
-):
-    """A single session cannot flood the backend logs with error reports.
-
-    Args:
-        event_namespace: The event namespace.
-        frontend_errors: Captured frontend exception handler messages.
-    """
-    for _ in range(20):
-        await event_namespace.on_client_error(
-            "known_sid",
-            {"error_type": "custom_type", "message": "spam"},
-        )
-    assert len(frontend_errors) == EventNamespace._MAX_CLIENT_ERRORS_PER_SID
-    # Disconnecting removes the counter so the mapping cannot grow unboundedly.
-    task = event_namespace.on_disconnect("known_sid")
-    if task is not None:
-        await task
-    assert "known_sid" not in event_namespace._client_error_counts
-
-
-@pytest.mark.asyncio
-async def test_client_error_reporting_bounded_across_reconnects(
-    event_namespace: EventNamespace,
-    frontend_errors: list[str],
-    client_error_console: dict[str, list[str]],
-):
-    """Reconnecting with fresh SIDs does not grant an unlimited report budget.
-
-    Args:
-        event_namespace: The event namespace.
-        frontend_errors: Captured frontend exception handler messages.
-        client_error_console: Captured console messages.
-    """
-    for reconnect in range(50):
-        sid = f"sid_{reconnect}"
-        event_namespace.sid_to_token[sid] = f"token_{reconnect}"
-        for _ in range(5):
-            await event_namespace.on_client_error(
-                sid, {"error_type": "custom_type", "message": "spam"}
-            )
-    assert len(frontend_errors) == EventNamespace._MAX_CLIENT_ERRORS_PER_WINDOW
-    # Suppression is not silent: one warning is logged when the cap trips, so
-    # a flooding client cannot invisibly starve reports from other sessions.
-    assert (
-        len([
-            msg for msg in client_error_console["warn"] if "suppressing" in msg.lower()
-        ])
-        == 1
-    )
-    # Once the window elapses, errors are reported again (not silenced forever).
-    event_namespace._client_error_window_start -= (
-        EventNamespace._CLIENT_ERROR_WINDOW_SECONDS + 1
-    )
-    event_namespace.sid_to_token["sid_fresh"] = "token_fresh"
-    await event_namespace.on_client_error(
-        "sid_fresh", {"error_type": "custom_type", "message": "after window"}
-    )
-    assert len(frontend_errors) == EventNamespace._MAX_CLIENT_ERRORS_PER_WINDOW + 1
-
-
-def test_client_error_event_name_matches_handler():
-    """python-socketio dispatches events to on_<event> methods by naming
-    convention; this pins the handler to SocketEvent.CLIENT_ERROR.
-    """
-    assert (
-        f"on_{constants.SocketEvent.CLIENT_ERROR}"
-        == EventNamespace.on_client_error.__name__
-    )
-
-
-def test_client_error_constants_match_frontend():
-    """The socket event and error types are duplicated as literals in state.js.
-
-    Nothing at runtime keeps the two definitions in sync, so pin them here.
-    """
-    state_js = (
-        Path(reflex_base.__file__).parent / ".templates/web/utils/state.js"
-    ).read_text()
-    assert (
-        f'const CLIENT_ERROR_EVENT = "{constants.SocketEvent.CLIENT_ERROR}"' in state_js
-    )
-    assert (
-        f'const ERROR_TYPE_DISPATCH_MISSING = "{constants.ClientErrorType.DISPATCH_MISSING}"'
-        in state_js
-    )
-    assert (
-        f'const ERROR_TYPE_STATE_UPDATE = "{constants.ClientErrorType.STATE_UPDATE}"'
-        in state_js
-    )
-
-
-@pytest_asyncio.fixture
-async def event_namespace_with_processor_mock() -> AsyncGenerator[EventNamespace, None]:
-    """An EventNamespace whose app has a mocked event processor.
-
-    Yields:
-        The EventNamespace instance.
-    """
-    app = App()
-    app._event_processor = Mock(enqueue=AsyncMock())
-    event_namespace = EventNamespace("/event", app)
-    yield event_namespace
-    # The token manager is backed by redis when one is configured; drop the
-    # tokens these tests link so they do not show up in another test's
-    # enumeration of the shared instance. Awaited rather than run in a fresh
-    # loop via asyncio.run: the redis client is bound to the test's loop.
-    await event_namespace._token_manager.disconnect_all()
-
-
-def _connect_environ(token: str) -> dict[str, Any]:
-    return {
-        "QUERY_STRING": f"token={token}",
-        "asgi.scope": {
-            "headers": [
-                (b"origin", b"http://localhost:3000"),
-                (b"user-agent", b"test-agent"),
-            ],
-            "client": ("127.0.0.1", 1234),
-        },
-    }
-
-
-def _client_event_payload() -> dict[str, Any]:
-    return {
-        "name": "state.hydrate",
-        "router_data": {"pathname": "/", "query": {}, "asPath": "/"},
-        "payload": {},
-    }
-
-
-@pytest.mark.asyncio
-async def test_on_event_uses_connect_time_router_data(
-    token: str,
-    event_namespace_with_processor_mock: EventNamespace,
-):
-    """on_event merges the connection-scoped router_data gathered at connect.
-
-    Headers, client IP, and session id are computed once in on_connect; the
-    per-event path must not re-read the connection environ at all.
-
-    Args:
-        token: A token.
-        event_namespace_with_processor_mock: The event namespace fixture.
-    """
-    event_namespace = event_namespace_with_processor_mock
-    await event_namespace.on_connect("sid1", _connect_environ(token))
-    assert "sid1" in event_namespace._static_router_data
-
-    # The per-event path must not re-read the connection environ.
-    event_namespace.app.sio = Mock(
-        get_environ=Mock(side_effect=AssertionError("environ must not be consulted"))
-    )
-    await event_namespace.on_event("sid1", _client_event_payload())
-
-    enqueue_mock = cast(AsyncMock, event_namespace.app.event_processor.enqueue)
-    enqueue_mock.assert_called_once()
-    enqueued_token, event = enqueue_mock.call_args[0]
-    assert enqueued_token == token
-    assert event.router_data[constants.RouteVar.CLIENT_TOKEN] == token
-    assert event.router_data[constants.RouteVar.SESSION_ID] == "sid1"
-    assert event.router_data[constants.RouteVar.CLIENT_IP] == "127.0.0.1"
-    assert event.router_data[constants.RouteVar.HEADERS] == {
-        "origin": "http://localhost:3000",
-        "user-agent": "test-agent",
-        "asgi-scope-client": "127.0.0.1",
-    }
-    assert event.router_data[constants.RouteVar.PATH] == "/404"
-    assert event.router_data[constants.RouteVar.QUERY] == {}
-
-    # Disconnect drops the cached connection data.
-    event_namespace.on_disconnect("sid1")
-    assert "sid1" not in event_namespace._static_router_data
-
-
-@pytest.mark.asyncio
-async def test_link_token_to_sid_records_the_connecting_identity(
-    token: str,
-    event_namespace_with_processor_mock: EventNamespace,
-    mocker: MockerFixture,
-):
-    """The session var carries the token the state was loaded under.
-
-    Duplicate-token handling hands back a fresh token, and the state is loaded
-    under it. Leaving `rx_router_session.client_token` empty until the first event
-    would let anything reading it in between -- a background task, a
-    shared-state link -- address the wrong state tree.
-
-    Args:
-        token: A token.
-        event_namespace_with_processor_mock: The event namespace fixture.
-        mocker: pytest-mock fixture.
-    """
-    event_namespace = event_namespace_with_processor_mock
-    state = Mock()
-    state.router_data = {}
-    mocker.patch.object(
-        event_namespace.app.state_manager,
-        "modify_state",
-        Mock(return_value=AsyncMock(__aenter__=AsyncMock(return_value=state))),
-    )
-
-    # No duplicate: the connecting token is recorded.
-    await event_namespace.link_token_to_sid("sid1", token)
-    assert state.router_data[constants.RouteVar.CLIENT_TOKEN] == token
-    assert state.rx_router_session.client_token == token
-    assert state.rx_router_session.session_id == "sid1"
-
-    # Duplicate: the *new* token is recorded, not the one the client sent.
-    # The duplicate branch emits the replacement token to the client, which
-    # needs a server the bare namespace does not have.
-    event_namespace.emit = AsyncMock()  # pyright: ignore[reportAttributeAccessIssue]
-    new_token = "a-fresh-token"
-    mocker.patch.object(
-        event_namespace._token_manager,
-        "link_token_to_sid",
-        AsyncMock(return_value=new_token),
-    )
-    await event_namespace.link_token_to_sid("sid2", token)
-    assert state.router_data[constants.RouteVar.CLIENT_TOKEN] == new_token
-    assert state.rx_router_session.client_token == new_token
-    assert state.rx_router_session.session_id == "sid2"
-
-
-@pytest.mark.asyncio
-async def test_on_event_does_not_share_the_cached_headers(
-    token: str,
-    event_namespace_with_processor_mock: EventNamespace,
-):
-    """Each event gets its own headers mapping, not the cached one.
-
-    The headers reach `state.router_data`, a plain mutable dict, so sharing
-    the cached mapping would let a handler mutating it corrupt the connection
-    cache for every later event on the socket.
-
-    Args:
-        token: A token.
-        event_namespace_with_processor_mock: The event namespace fixture.
-    """
-    event_namespace = event_namespace_with_processor_mock
-    await event_namespace.on_connect("sid1", _connect_environ(token))
-    cached_headers = event_namespace._static_router_data["sid1"][
-        constants.RouteVar.HEADERS
-    ]
-
-    await event_namespace.on_event("sid1", _client_event_payload())
-    enqueue_mock = cast(AsyncMock, event_namespace.app.event_processor.enqueue)
-    _, event = enqueue_mock.call_args[0]
-    event_headers = event.router_data[constants.RouteVar.HEADERS]
-
-    assert event_headers == cached_headers
-    assert event_headers is not cached_headers
-    # Mutating what the handler sees must not reach the connection cache.
-    event_headers["user-agent"] = "mutated"
-    assert cached_headers["user-agent"] == "test-agent"
-
-    enqueue_mock.reset_mock()
-    await event_namespace.on_event("sid1", _client_event_payload())
-    _, next_event = enqueue_mock.call_args[0]
-    assert (
-        next_event.router_data[constants.RouteVar.HEADERS]["user-agent"] == "test-agent"
-    )
-
-
-@pytest.mark.asyncio
-async def test_on_event_falls_back_to_environ_without_connect(
-    token: str,
-    event_namespace_with_processor_mock: EventNamespace,
-):
-    """on_event computes and caches the static router_data if connect was missed.
-
-    Args:
-        token: A token.
-        event_namespace_with_processor_mock: The event namespace fixture.
-    """
-    event_namespace = event_namespace_with_processor_mock
-    await event_namespace._token_manager.link_token_to_sid(token, "sid1")
-    event_namespace.app.sio = Mock(
-        get_environ=Mock(return_value=_connect_environ(token))
-    )
-
-    await event_namespace.on_event("sid1", _client_event_payload())
-    await event_namespace.on_event("sid1", _client_event_payload())
-
-    # The environ is only consulted once; the result is cached for the sid.
-    event_namespace.app.sio.get_environ.assert_called_once()
-    enqueue_mock = cast(AsyncMock, event_namespace.app.event_processor.enqueue)
-    assert enqueue_mock.call_count == 2
-    for call in enqueue_mock.call_args_list:
-        _, event = call[0]
-        assert event.router_data[constants.RouteVar.SESSION_ID] == "sid1"
-        assert (
-            event.router_data[constants.RouteVar.HEADERS]["user-agent"] == "test-agent"
-        )
-
-
 @pytest.mark.parametrize("compile_raises", [False, True])
 def test_compile_releases_memo_naming_caches(
     mocker: MockerFixture, compile_raises: bool
@@ -5070,184 +4551,6 @@ def test_compile_releases_memo_naming_caches(
     assert not _hash_str_encodings
 
 
-@pytest.mark.asyncio
-async def test_on_connect_processes_boot_event_from_auth(
-    event_namespace: EventNamespace,
-):
-    """The hydrate event carried in the socket.io CONNECT packet is processed on connect.
-
-    As the connection's first event it records the new sid and token on the
-    state, so the connect does not load and save the state tree for that
-    first; a connect without a boot event still does.
-
-    Args:
-        event_namespace: The event namespace.
-    """
-    event_namespace._token_manager = Mock()
-    event_namespace._token_manager.link_token_to_sid = AsyncMock(return_value=None)
-    event_namespace.on_event = AsyncMock()
-    state = Mock(router_data={})
-    modify_state = event_namespace.app.state_manager.modify_state = Mock(
-        return_value=AsyncMock(__aenter__=AsyncMock(return_value=state))
-    )
-    boot_event = {"name": "state.hydrate_and_load", "payload": {}, "router_data": {}}
-
-    await event_namespace.on_connect(
-        "new_sid", {"QUERY_STRING": "token=abc"}, {"event": boot_event}
-    )
-    event_namespace._token_manager.link_token_to_sid.assert_awaited_once_with(
-        "abc", "new_sid"
-    )
-    event_namespace.on_event.assert_awaited_once_with("new_sid", boot_event)
-    modify_state.assert_not_called()
-
-    # Without a boot event (or without auth at all) nothing is processed, and
-    # the connect records the new sid and token on the state itself.
-    event_namespace.on_event.reset_mock()
-    await event_namespace.on_connect("new_sid", {"QUERY_STRING": "token=abc"}, None)
-    await event_namespace.on_connect("new_sid", {"QUERY_STRING": "token=abc"})
-    event_namespace.on_event.assert_not_awaited()
-    assert modify_state.call_count == 2
-    assert state.router_data[constants.RouteVar.SESSION_ID] == "new_sid"
-    assert state.router_data[constants.RouteVar.CLIENT_TOKEN] == "abc"
-
-
-def _schema_checking_namespace(
-    event_namespace: EventNamespace, backend_schema: str
-) -> tuple[AsyncMock, AsyncMock]:
-    """Prepare an event namespace for on_connect with a known backend schema.
-
-    Args:
-        event_namespace: The event namespace.
-        backend_schema: The frontend schema hash the backend's state tree has.
-
-    Returns:
-        The mocks installed as the namespace's ``on_event`` and ``emit``.
-    """
-    event_namespace._token_manager = Mock()
-    event_namespace._token_manager.link_token_to_sid = AsyncMock(return_value=None)
-    on_event = event_namespace.on_event = AsyncMock()
-    emit = event_namespace.emit = AsyncMock()
-    cast(Any, event_namespace.app)._state = Mock(
-        _to_frontend_schema=Mock(return_value=backend_schema)
-    )
-    return on_event, emit
-
-
-@pytest.mark.asyncio
-async def test_on_connect_reports_state_schema_mismatch(
-    event_namespace: EventNamespace, caplog: pytest.LogCaptureFixture
-):
-    """A frontend compiled for another state tree is told once, and still hydrates.
-
-    Args:
-        event_namespace: The event namespace.
-        caplog: pytest fixture capturing backend log records.
-    """
-    on_event, emit = _schema_checking_namespace(event_namespace, "backend-schema")
-    boot_event = {"name": "state.hydrate_and_load", "payload": {}, "router_data": {}}
-
-    with caplog.at_level(logging.WARNING, logger="reflex"):
-        await event_namespace.on_connect(
-            "new_sid",
-            {"QUERY_STRING": "token=abc"},
-            {"event": boot_event, "state_schema": "frontend-schema"},
-        )
-
-    emit.assert_awaited_once_with(
-        "state_mismatch",
-        {"backend": "backend-schema", "reload_cooldown_ms": 10_000},
-        to="new_sid",
-    )
-    on_event.assert_awaited_once_with("new_sid", boot_event)
-    app_warnings = [
-        r.getMessage()
-        for r in caplog.records
-        if r.name == "reflex.app" and r.levelno == logging.WARNING
-    ]
-    assert len(app_warnings) == 1
-    assert "frontend-schema" in app_warnings[0]
-    assert "backend-schema" in app_warnings[0]
-    assert "new_sid" in app_warnings[0]
-
-    # The client-supplied hash is sanitized and bounded before it is logged.
-    caplog.clear()
-    await event_namespace.on_connect(
-        "new_sid",
-        {"QUERY_STRING": "token=abc"},
-        {"event": boot_event, "state_schema": "x\nforged line [bold]" + "y" * 500},
-    )
-    (message,) = [
-        r.getMessage()
-        for r in caplog.records
-        if r.name == "reflex.app" and r.levelno == logging.WARNING
-    ]
-    assert "forged" in message
-    assert "\n" not in message
-    assert "\\[bold]" in message
-    assert "(truncated)" in message
-    assert len(message) < 400
-
-
-@pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "auth",
-    [
-        pytest.param(
-            {"event": {"name": "state.hydrate_and_load"}, "state_schema": "same"},
-            id="matching",
-        ),
-        pytest.param({"event": {"name": "state.hydrate_and_load"}}, id="old-frontend"),
-        pytest.param(None, id="no-auth"),
-    ],
-)
-async def test_on_connect_sends_no_mismatch_without_one(
-    event_namespace: EventNamespace, auth: dict[str, Any] | None
-):
-    """A matching or missing frontend schema sends nothing to the client.
-
-    Args:
-        event_namespace: The event namespace.
-        auth: The CONNECT auth payload.
-    """
-    on_event, emit = _schema_checking_namespace(event_namespace, "same")
-    state = Mock(router_data={})
-    event_namespace.app.state_manager.modify_state = Mock(
-        return_value=AsyncMock(__aenter__=AsyncMock(return_value=state))
-    )
-
-    await event_namespace.on_connect("new_sid", {"QUERY_STRING": "token=abc"}, auth)
-
-    emit.assert_not_awaited()
-    assert on_event.await_count == (1 if auth else 0)
-
-
-@pytest.mark.asyncio
-async def test_on_connect_unlinks_token_when_boot_event_fails(
-    event_namespace: EventNamespace,
-):
-    """A boot event that fails to process drops the sid/token link before refusing the connect.
-
-    Args:
-        event_namespace: The event namespace.
-    """
-    event_namespace._token_manager = Mock()
-    event_namespace._token_manager.link_token_to_sid = AsyncMock(return_value=None)
-    event_namespace._token_manager.disconnect_token = AsyncMock()
-    event_namespace._token_manager.sid_to_token = {"new_sid": "abc"}
-    event_namespace.on_event = AsyncMock(side_effect=ValueError("bad boot event"))
-
-    with pytest.raises(ValueError, match="bad boot event"):
-        await event_namespace.on_connect(
-            "new_sid", {"QUERY_STRING": "token=abc"}, {"event": {"name": "x"}}
-        )
-    event_namespace._token_manager.disconnect_token.assert_awaited_once_with(
-        "abc", "new_sid"
-    )
-    # The connection-scoped router data cached for the refused sid goes too.
-    assert "new_sid" not in event_namespace._static_router_data
-
-
 def test_call_app_wraps_with_otel_asgi_middleware():
     """The app's ASGI callable is wrapped when instrumentation installs a middleware."""
     app = App()
@@ -5259,54 +4562,6 @@ def test_call_app_wraps_with_otel_asgi_middleware():
     finally:
         otel.disable()
     assert wrapped == [api]
-
-
-def test_sio_json_records_message_sizes(otel_metrics):
-    """Socket.IO packet serialization records UTF-8 sizes in both directions."""
-    data = _sio_dumps({"a": "é"}, separators=(",", ":"))
-    assert data == '{"a":"é"}'
-    assert _sio_loads(data) == {"a": "é"}
-    assert _sio_loads(data.encode()) == {"a": "é"}
-    # ASCII payloads take the fast path that sizes without encoding a copy.
-    ascii_data = _sio_dumps({"b": "x"}, separators=(",", ":"))
-    assert _sio_loads(ascii_data) == {"b": "x"}
-    points = {
-        p.attributes[otel.ATTR_NETWORK_IO_DIRECTION]: p.sum
-        for p in metric_points(otel_metrics, otel.METRIC_WEBSOCKET_MESSAGE_SIZE)
-    }
-    size = len(data.encode())
-    assert size == len(data) + 1
-    assert points == {
-        "transmit": size + len(ascii_data),
-        "receive": 2 * size + len(ascii_data),
-    }
-
-
-@pytest.mark.asyncio
-async def test_on_event_uses_frontend_traceparent(otel_exporter):
-    """A traceparent in the event payload becomes the parent of the event span."""
-    mock_app = unittest.mock.Mock()
-    mock_app.router.return_value = "/"
-    mock_app.sio.get_environ.return_value = {
-        "asgi.scope": {"headers": [], "client": ("127.0.0.1", 1)}
-    }
-    seen: list = []
-
-    async def enqueue(token, event):
-        await asyncio.sleep(0)
-        seen.append(trace.get_current_span().get_span_context())
-
-    mock_app.event_processor.enqueue = enqueue
-    ns = EventNamespace(namespace="/", app=mock_app)
-    ns._token_manager.sid_to_token["sid"] = "tok"
-
-    traceparent = "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
-    with active_tracer().start_as_current_span("websocket"):
-        await ns.on_event("sid", {"name": "state.h", "traceparent": traceparent})
-        await ns.on_event("sid", {"name": "state.h"})
-    remote, fresh = seen
-    assert f"{remote.trace_id:032x}" == "0af7651916cd43dd8448eb211c80319c"
-    assert not fresh.is_valid
 
 
 @pytest.mark.asyncio
@@ -5408,24 +4663,6 @@ async def test_upload_handler_span_joins_the_request_trace(
     assert f"{request_parent.span_id:016x}" == "b7ad6b7169203331"
     assert f"{handler_context.trace_id:032x}" == "0af7651916cd43dd8448eb211c80319c"
     assert handler_parent.span_id == request_context.span_id
-
-
-@pytest.mark.asyncio
-async def test_connect_disconnect_counts_connections(otel_metrics):
-    """Connect and disconnect adjust the open connection gauge."""
-    mock_app = unittest.mock.Mock()
-    mock_app._state = None
-    ns = EventNamespace(namespace="/", app=mock_app)
-    ns.emit = unittest.mock.AsyncMock()
-    await ns.on_connect("sid1", {"QUERY_STRING": "token=t1"})
-    await ns.on_connect("sid2", {"QUERY_STRING": "token=t2"})
-    task = ns.on_disconnect("sid1")
-    if task is not None:
-        await task
-    (point,) = metric_points(otel_metrics, otel.METRIC_WEBSOCKET_CONNECTIONS)
-    assert point.value == 1
-    # Release t2 so a shared token store (redis) does not leak into other tests.
-    await ns._token_manager.disconnect_all()
 
 
 def test_compile_installs_browser_plugin(
@@ -5661,3 +4898,74 @@ def test_write_stateful_pages_marker_concurrent_readers_see_valid_json(
         for future in readers:
             future.result()
     assert json.loads(marker.read_text()) == routes
+
+
+class _ProbeChannel(rx.channels.Channel):
+    """A channel that ignores everything, for registration tests."""
+
+    name = "probe"
+
+    async def on_message(self, session, event, data, buffers) -> None:
+        """Ignore inbound messages."""
+        return
+
+
+def test_register_channel_serves_the_channel():
+    """A registered channel is reachable by name for the transport."""
+    app = App(enable_state=True)
+    channel = _ProbeChannel()
+
+    app.register_channel(channel)
+
+    assert app._channels == {"probe": channel}
+
+
+def test_register_channel_rejects_a_duplicate_name():
+    """Two channels cannot claim the same name."""
+    app = App(enable_state=True)
+    app.register_channel(_ProbeChannel())
+
+    with pytest.raises(RuntimeError, match="already registered"):
+        app.register_channel(_ProbeChannel())
+
+
+@pytest.mark.parametrize("state", [None, State])
+def test_register_channel_skips_without_the_event_websocket(
+    state: type[State] | None, caplog: pytest.LogCaptureFixture
+):
+    """Without state there is no transport, whatever `_state` was passed.
+
+    A supplied `_state` does not set one up on its own: `enable_state=False`
+    skips the setup that creates the event namespace and its route. A package
+    registering its channel from a plugin cannot know that, so the app warns
+    and keeps serving rather than failing to start.
+    """
+    with RegistrationContext.get().fork():
+        app = App(_state=state, enable_state=False)
+    assert app.event_namespace is None
+
+    with caplog.at_level(logging.WARNING):
+        app.register_channel(_ProbeChannel())
+
+    assert app._channels == {}
+    assert "needs the event websocket" in caplog.text
+
+
+def test_register_channel_skips_without_the_websocket_transport(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+):
+    """Channels are a plain-WebSocket feature; Socket.IO cannot carry them.
+
+    The namespace's capability is patched rather than a Socket.IO app built:
+    that would need the optional python-socketio package, which this check
+    has nothing to do with.
+    """
+    app = App(enable_state=True)
+    assert app.event_namespace is not None
+    monkeypatch.setattr(app.event_namespace, "supports_channels", False)
+
+    with caplog.at_level(logging.WARNING):
+        app.register_channel(_ProbeChannel())
+
+    assert app._channels == {}
+    assert "requires the plain WebSocket transport" in caplog.text

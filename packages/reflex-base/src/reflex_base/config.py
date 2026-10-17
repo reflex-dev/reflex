@@ -192,7 +192,7 @@ class BaseConfig:
         hydrate_fallback: Function returning the component shown while the page is hydrating (React Router's HydrateFallback), used when App.hydrate_fallback is not set. Formatted such that `from path_0.path_1... import path[-1]`, and calling it with no arguments would work. For example, "my_app.components.loading".
         plugins: List of plugins to use in the app.
         disable_plugins: List of plugin types to disable in the app.
-        transport: The transport method for client-server communication.
+        transport: The transport for client-server communication: "websocket" (plain WebSocket, default), or "socketio"/"polling" (Socket.IO; requires the reflex[socketio] extra).
     """
 
     app_name: str
@@ -280,7 +280,7 @@ class BaseConfig:
 
     disable_plugins: list[type[Plugin]] = dataclasses.field(default_factory=list)
 
-    transport: Literal["websocket", "polling"] = "websocket"
+    transport: Literal["websocket", "socketio", "polling"] = "websocket"
 
     # Whether to skip plugin checks.
     _skip_plugins_checks: bool = dataclasses.field(default=False, repr=False)
@@ -387,6 +387,8 @@ class Config(BaseConfig):
             setattr(self, key, env_value)
 
         self._normalize_frontend_compression_formats()
+
+        self._normalize_cors_allowed_origins()
 
         # Normalize route prefixes to ensure they start with a slash.
         self._normalize_paths()
@@ -580,6 +582,18 @@ class Config(BaseConfig):
                     f"reflex.Config.disable_plugins should contain Plugin subclasses, but got {entry!r}.",
                 )
         self.disable_plugins = normalized
+
+    def _normalize_cors_allowed_origins(self):
+        """Read a plain-string cors_allowed_origins as its environment variable is read.
+
+        Left a string, membership in it is a substring test, so every origin
+        check would accept any origin the configured one contains.
+        """
+        if isinstance(self.cors_allowed_origins, str):
+            field = self.__dataclass_fields__["cors_allowed_origins"]
+            self.cors_allowed_origins = interpret_env_var_value(
+                self.cors_allowed_origins, field.type, field.name
+            )
 
     def _normalize_frontend_compression_formats(self):
         """Normalize and validate configured frontend compression formats.
