@@ -4300,25 +4300,40 @@ class Field(Generic[FIELD_TYPE]):
         owner: Any,
     ) -> ArrayVar[SEQUENCE_TYPE]: ...
 
+    # The bounds of these type variables admit `None` (for computed vars of an
+    # optional object). Matched against `Field[X | None]`, a `self` union of
+    # `Field[T]` and `Field[T | None]` lets a checker solve `T` to `X | None`, so
+    # the optional overload comes first, on its own.
     @overload
     def __get__(
-        self: Field[MAPPING_TYPE] | Field[MAPPING_TYPE | None],
-        instance: None,
-        owner: Any,
+        self: Field[MAPPING_TYPE | None], instance: None, owner: Any
     ) -> ObjectVar[MAPPING_TYPE]: ...
 
     @overload
     def __get__(
-        self: Field[SQLA_TYPE] | Field[SQLA_TYPE | None], instance: None, owner: Any
+        self: Field[MAPPING_TYPE], instance: None, owner: Any
+    ) -> ObjectVar[MAPPING_TYPE]: ...
+
+    @overload
+    def __get__(
+        self: Field[SQLA_TYPE | None], instance: None, owner: Any
+    ) -> ObjectVar[SQLA_TYPE]: ...
+
+    @overload
+    def __get__(
+        self: Field[SQLA_TYPE], instance: None, owner: Any
     ) -> ObjectVar[SQLA_TYPE]: ...
 
     if TYPE_CHECKING:
 
         @overload
         def __get__(
-            self: Field[DATACLASS_TYPE] | Field[DATACLASS_TYPE | None],
-            instance: None,
-            owner: Any,
+            self: Field[DATACLASS_TYPE | None], instance: None, owner: Any
+        ) -> ObjectVar[DATACLASS_TYPE]: ...
+
+        @overload
+        def __get__(
+            self: Field[DATACLASS_TYPE], instance: None, owner: Any
         ) -> ObjectVar[DATACLASS_TYPE]: ...
 
     @overload
