@@ -9,12 +9,14 @@ import signal
 import subprocess
 import sys
 import time
+from types import SimpleNamespace
 
 import click
 import click.testing
 import psutil
 import pytest
 from pytest_mock import MockerFixture
+from reflex_base import constants
 
 from reflex import reflex
 from reflex.testing import DEFAULT_TIMEOUT
@@ -169,6 +171,45 @@ def test_compile_app_worker_flushes_telemetry_on_failure(mocker):
         reflex._compile_app_worker(app_task, (), {})
 
     flush.assert_called_once_with()
+
+
+@pytest.mark.parametrize(
+    ("running_mode", "launcher"),
+    [
+        (constants.RunningMode.BACKEND_ONLY, "run_backend_prod"),
+        (constants.RunningMode.FRONTEND_ONLY, "run_frontend_prod"),
+    ],
+)
+def test_run_prod_sends_telemetry_synchronously(
+    mocker, running_mode: constants.RunningMode, launcher: str
+):
+    """The run-prod event is delivered on the calling thread, before the server.
+
+    The server forks its workers from this process, so the event must not be
+    queued on the telemetry thread pool. Going through ``_process_event`` keeps
+    the one-time alias migration, which a backend-only run has no other event
+    to ride on.
+    """
+    from reflex.utils import build, exec, processes, telemetry
+
+    config = mocker.patch.object(reflex, "get_config").return_value
+    mocker.patch.object(reflex, "_compile_app")
+    mocker.patch.object(reflex, "_skip_compile")
+    mocker.patch.object(build, "setup_frontend_prod")
+    mocker.patch.object(processes, "atexit_handler")
+    mocker.patch("atexit.register")
+    mocker.patch.object(exec, "notify_app_running")
+    mocker.patch.object(exec, "notify_frontend")
+    queued = mocker.patch.object(telemetry, "send")
+    calls = mocker.Mock()
+    calls.attach_mock(mocker.patch.object(telemetry, "_process_event"), "send")
+    calls.attach_mock(mocker.patch.object(exec, launcher), "serve")
+
+    reflex._run_prod(running_mode, 8000, "127.0.0.1")
+
+    queued.assert_not_called()
+    calls.send.assert_called_once_with("run-prod", config.telemetry_enabled)
+    assert [name for name, _args, _kwargs in calls.mock_calls] == ["send", "serve"]
 
 
 def test_cloud_commands_registered():
@@ -518,6 +559,66 @@ def test_init_records_version_check_after_frontend_setup(
     reflex._init("demo")
 
     assert events == ["frontend", "version"]
+
+
+@pytest.fixture
+def init_in_reflex_dir(tmp_path, monkeypatch: pytest.MonkeyPatch) -> list[str]:
+    """Run `_init` from a directory named `reflex` with the setup steps stubbed.
+
+    Args:
+        tmp_path: Pytest temporary directory.
+        monkeypatch: Pytest monkeypatch fixture.
+
+    Returns:
+        The app names passed to `initialize_app`.
+    """
+    initialized: list[str] = []
+    app_dir = tmp_path / "reflex"
+    app_dir.mkdir()
+    monkeypatch.chdir(app_dir)
+    for target in (
+        "reflex.utils.exec.output_system_info",
+        "reflex.utils.prerequisites.initialize_reflex_user_directory",
+        "reflex.utils.prerequisites.ensure_reflex_installation_id",
+        "reflex.utils.prerequisites.initialize_frontend_dependencies",
+        "reflex.utils.frontend_skeleton.initialize_gitignore",
+        "reflex.utils.frontend_skeleton.initialize_agents_md",
+    ):
+        monkeypatch.setattr(target, lambda: None)
+    monkeypatch.setattr(
+        "reflex.utils.prerequisites.check_latest_package_version", lambda package: None
+    )
+    monkeypatch.setattr(
+        "reflex.utils.templates.initialize_app",
+        lambda app_name, template: initialized.append(app_name),
+    )
+    monkeypatch.setattr(
+        "reflex.utils.frontend_skeleton.initialize_requirements_txt", lambda: False
+    )
+    return initialized
+
+
+def test_init_existing_app_in_reflex_dir(
+    init_in_reflex_dir: list[str], monkeypatch: pytest.MonkeyPatch
+):
+    """Reinitializing an existing app validates its app_name, not its directory."""
+    constants.Config.FILE.write_text("")
+    monkeypatch.setattr(
+        reflex, "get_config", lambda: SimpleNamespace(app_name="fooapp")
+    )
+
+    result = click.testing.CliRunner().invoke(reflex.init, [])
+
+    assert result.exit_code == 0
+    assert init_in_reflex_dir == ["fooapp"]
+
+
+def test_init_new_app_in_reflex_dir(init_in_reflex_dir: list[str]):
+    """A new app still cannot be created in a directory named reflex."""
+    result = click.testing.CliRunner().invoke(reflex.init, [])
+
+    assert result.exit_code == 1
+    assert init_in_reflex_dir == []
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="POSIX signals")

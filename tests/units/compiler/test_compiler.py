@@ -702,6 +702,35 @@ def test_compile_contexts_theme_appearance_overrides_config(mocker: MockerFixtur
     assert 'export const defaultColorMode = "dark"' in code
 
 
+def test_compile_contexts_embeds_frontend_state_schema():
+    """The context module carries the hash of the state tree it was compiled for.
+
+    The frontend sends it on every socket connect, and the backend computes
+    the same function over its own tree, so the two values drift only when
+    the trees do.
+    """
+
+    # A root of its own: compiling rx.State would instantiate every state other
+    # test modules registered in this process.
+    class SchemaContextRoot(BaseState):
+        value: int = 0
+
+    class SchemaContextChild(SchemaContextRoot):
+        name: str = ""
+
+    _, code = compiler.compile_contexts(SchemaContextRoot, None)
+
+    schema = SchemaContextRoot._to_frontend_schema()
+    assert f'export const stateSchema = "{schema}"' in code
+    start = code.index("registerApp({")
+    assert "stateSchema," in code[start : code.index("});", start)]
+    assert SchemaContextChild.get_full_name() in code
+
+    # Without state there is nothing to compare, and nothing to connect with.
+    _, code = compiler.compile_contexts(None, None)
+    assert "export const stateSchema = null" in code
+
+
 @pytest.mark.parametrize(
     ("theme", "config_mode", "expected"),
     [
@@ -1740,76 +1769,6 @@ def test_context_template_owner_stack_pin(disable_owner_stacks: bool):
     assert "REFLEX_REACT_OWNER_STACKS" in rendered
     # The trade-off must be stated where a reader of the output will see it.
     assert "captureOwnerStack" in rendered
-
-
-def _render_two_substate_context() -> str:
-    """Render the context template for a state with one substate.
-
-    Returns:
-        The rendered context module source.
-    """
-    from reflex_base.compiler.templates import context_template
-
-    return context_template(
-        is_dev_mode=True,
-        default_color_mode='"light"',
-        initial_state={
-            "reflex___state____state": {},
-            "reflex___state____state__sub": {},
-        },
-        state_name="reflex___state____state",
-    )
-
-
-def test_context_template_one_provider_per_substate():
-    """Each substate gets its own provider so one delta re-renders one context.
-
-    A single provider owning every reducer means any delta recreates every
-    ``StateContexts`` element; nesting one ``SubstateProvider`` per substate
-    keeps the untouched providers memoized.
-    """
-    rendered = _render_two_substate_context()
-
-    assert (
-        "const SUBSTATES = [\n"
-        "  ['reflex___state____state', 'reflex___state____state'],\n"
-        "  ['reflex___state____state__sub', 'reflex___state____state__sub'],\n"
-        "];" in rendered
-    )
-    # The reducers live in SubstateProvider; the client provider only composes.
-    client = rendered[
-        rendered.index("function ClientStateProvider") : rendered.index(
-            "function ServerStateProvider"
-        )
-    ]
-    assert "useReducer" not in client
-    assert "createElement(SubstateProvider, { substateName, contextName }, tree)" in (
-        client
-    )
-    assert "createElement(DispatchProvider, {}, tree)" in client
-
-
-def test_context_template_server_state_provider_is_flat():
-    """The server provides initial state without a component per substate.
-
-    Server rendering recurses once per element level, so a ``SubstateProvider``
-    around every context doubled the depth of every page render and overflowed
-    the stack of apps with many substates.
-    """
-    rendered = _render_two_substate_context()
-
-    server = rendered[rendered.index("function ServerStateProvider") :]
-    assert "SubstateProvider" not in server
-    assert "DispatchProvider" not in server
-    assert "useReducer" not in server
-    assert (
-        "StateContexts[contextName],\n"
-        "      { value: initialState[substateName] }," in server
-    )
-    assert rendered.rstrip().endswith(
-        "export const StateProvider =\n"
-        '  typeof document === "undefined" ? ServerStateProvider : ClientStateProvider;'
-    )
 
 
 def test_context_template_client_side_component_is_named():

@@ -150,3 +150,17 @@ def test_cloud_overview_exposes_markdown_and_toc():
     assert len(toc) >= 4
     assert markdown == CLOUD_OVERVIEW_MARKDOWN
     assert "Deploy your first app" in str(body)
+
+
+def test_generated_preview_keeps_wide_components_scrollable():
+    """The preview retains its example width inside a local scroll container."""
+    from reflex_docs.pages.docs.component import component_docs
+
+    rendered = component_docs(
+        (type(rx.button()), "rx.button"),
+        {"Button": 'lambda **props: rx.button("Wide preview", width="400px", **props)'},
+    )
+    playground = rendered.children[2].children[0]
+    preview = playground.children[0]
+    assert "overflow-x-auto" in str(preview.class_name)
+    assert "400px" in str(preview.children[0])

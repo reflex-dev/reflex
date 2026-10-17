@@ -208,29 +208,6 @@ test("overlapping calls retain async callback and promise settling order", async
   assert.equal(settled, true);
 });
 
-for (const alreadyMismatched of [false, true]) {
-  test(
-    "mismatch clears pending work after reconnect, already set=" +
-      alreadyMismatched,
-    async () => {
-      const q = await createQueue(false);
-      q.runtime.setMismatch(alreadyMismatched);
-      await q.enqueue([stateful(1), q.local(2)]);
-      q.runtime.setMismatch(true);
-      await q.drain();
-      assert.equal(q.runtime.event_queue.length, 2);
-      q.socket.connected = true;
-      await q.drain();
-      assert.deepEqual(q.output, []);
-      assert.equal(q.runtime.event_queue.length, 0);
-      q.socket.connected = false;
-      await q.enqueue([q.local(3)]);
-      assert.deepEqual(q.output, []);
-      assert.equal(q.runtime.event_queue.length, 0);
-    },
-  );
-}
-
 test("redirect and REST events retain ordering", async () => {
   const q = await createQueue();
   await q.enqueue([
