@@ -41,7 +41,7 @@ from reflex_components_core.el.elements.sectioning import Body
 
 from reflex.istate.delta import _resolve_delta
 from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
-from reflex.state import BaseState
+from reflex.state import BaseState, cache_initial_snapshot
 from reflex.utils import path_ops
 from reflex.utils.exec import is_prod_mode
 from reflex.utils.prerequisites import get_web_dir
@@ -230,16 +230,16 @@ def compile_state(state: type[BaseState]) -> dict:
     try:
         _ = asyncio.get_running_loop()
     except RuntimeError:
-        pass
+        # Normally the compile runs before any event loop starts, we asyncio.run is available for calling.
+        resolved_initial_state = asyncio.run(_resolve_delta(initial_state))
     else:
         with concurrent.futures.ThreadPoolExecutor() as pool:
             resolved_initial_state = pool.submit(
                 asyncio.run, _resolve_delta(initial_state)
             ).result()
-            return _sorted_keys(resolved_initial_state)
-
-    # Normally the compile runs before any event loop starts, we asyncio.run is available for calling.
-    return _sorted_keys(asyncio.run(_resolve_delta(initial_state)))
+    # A backend in this process diffs first hydrates against these exact values.
+    cache_initial_snapshot(state, resolved_initial_state)
+    return _sorted_keys(resolved_initial_state)
 
 
 def _compile_initial_state(
@@ -326,7 +326,11 @@ def _compile_client_storage_field(
         if isinstance(field.default, field_type):
             cs_obj = field.default
         elif isinstance(field.type_, type) and issubclass(field.type_, field_type):
-            cs_obj = field.type_()
+            # A factory-backed field carries its options in what it produces.
+            produced = (
+                field.default_factory() if field.default_factory is not None else None
+            )
+            cs_obj = produced if isinstance(produced, field_type) else field.type_()
         else:
             continue
         return field_type, cs_obj.options()
@@ -530,7 +534,7 @@ def compile_experimental_component_memo(
             )
             render._imports_cache = analysis.imports
         # Strings returned by the root's ``add_hooks`` can reference symbols
-        # (``refs``, ``StateContexts``, etc.) that normally reach this module
+        # (``refs``, ``EventLoopContext``, etc.) that normally reach this module
         # through descendants' ``_get_hooks_imports`` / ``_get_imports``. JS
         # imports are side-effect-free and dedup cleanly, so pulling the
         # whole subtree's imports here is safe even when some go unused.

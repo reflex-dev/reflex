@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import builtins
 import contextlib
-import sys
 from collections.abc import Awaitable, Callable, Generator
 from functools import partial
 from typing import Any
@@ -14,8 +12,6 @@ from starlette.requests import ClientDisconnect
 from starlette.responses import StreamingResponse
 
 from reflex_base.utils.types import Receive, Scope, Send
-
-_BASE_EXCEPTION_GROUP = getattr(builtins, "BaseExceptionGroup", None)
 
 
 def _parse_asgi_spec_version(scope: Scope) -> tuple[int, ...]:
@@ -42,16 +38,11 @@ def _collapse_excgroups() -> Generator[None, None, None]:
         yield
     except BaseException as exc:
         collapsed_exc = exc
-        if sys.version_info >= (3, 11) and _BASE_EXCEPTION_GROUP is not None:
-            while isinstance(collapsed_exc, _BASE_EXCEPTION_GROUP):
-                nested_exceptions = getattr(collapsed_exc, "exceptions", None)
-                if (
-                    not isinstance(nested_exceptions, tuple)
-                    or len(nested_exceptions) != 1
-                    or not isinstance(nested_exceptions[0], BaseException)
-                ):
-                    break
-                collapsed_exc = nested_exceptions[0]
+        while isinstance(collapsed_exc, BaseExceptionGroup):
+            nested_exceptions = collapsed_exc.exceptions
+            if len(nested_exceptions) != 1:
+                break
+            collapsed_exc = nested_exceptions[0]
         if collapsed_exc is exc:
             raise
     if collapsed_exc is not None:

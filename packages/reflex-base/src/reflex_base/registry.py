@@ -11,9 +11,7 @@ from __future__ import annotations
 import dataclasses
 import logging
 from collections.abc import Callable, Iterable
-from typing import TYPE_CHECKING, Any, Protocol, TypeVar, runtime_checkable
-
-from typing_extensions import Self
+from typing import TYPE_CHECKING, Any, Protocol, Self, TypeVar, runtime_checkable
 
 from reflex_base.context.base import BaseContext
 from reflex_base.utils.exceptions import ReflexRuntimeError, StateValueError
@@ -128,6 +126,7 @@ def _default_bundled_libraries() -> list[str]:
         "react",
         "@emotion/react",
         f"$/{constants.Dirs.CONTEXTS_PATH}",
+        f"$/{constants.Dirs.UTILS}/context-registry",
         f"$/{constants.Dirs.STATE_PATH}",
     ]
 
@@ -498,6 +497,7 @@ class RegistrationContext(BaseContext):
         for cls in self.base_states.values():
             cls.get_name.cache_clear()
             cls.get_full_name.cache_clear()
+            cls._get_substate_path.cache_clear()
             cls.get_class_substate.cache_clear()
         self.refresh_keys()
 

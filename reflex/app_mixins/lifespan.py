@@ -27,6 +27,9 @@ if TYPE_CHECKING:
 
 _LifespanTaskT = TypeVar("_LifespanTaskT", bound="Callable | asyncio.Task")
 
+# Seconds shutdown waits for cancelled lifespan tasks to finish their cleanup.
+_LIFESPAN_TASK_CANCEL_TIMEOUT = 5
+
 
 def _get_task_name(task: asyncio.Task | Callable) -> str:
     """Get a display name for a lifespan task.
@@ -40,6 +43,27 @@ def _get_task_name(task: asyncio.Task | Callable) -> str:
     if isinstance(task, asyncio.Task):
         return task.get_name()
     return task.__name__  # pyright: ignore[reportAttributeAccessIssue]
+
+
+def _report_task_result(task: asyncio.Task) -> None:
+    """Re-raise the outcome of a finished lifespan task so the event loop reports it.
+
+    Args:
+        task: The finished lifespan task.
+    """
+    task.result()
+
+
+def _log_cleanup_error(task: asyncio.Task) -> None:
+    """Log an error a lifespan task raised while handling its cleanup cancellation.
+
+    Args:
+        task: The finished lifespan task.
+    """
+    if not task.cancelled() and (exc := task.exception()) is not None:
+        logger.error(
+            f"Lifespan task {task.get_name()} failed during cleanup.", exc_info=exc
+        )
 
 
 @dataclasses.dataclass
@@ -117,7 +141,7 @@ class LifespanMixin(AppMixin):
                                 t_,
                                 name=f"reflex_lifespan_task|{task_name}|{time.time()}",
                             )
-                            task_.add_done_callback(lambda t: t.result())
+                            task_.add_done_callback(_report_task_result)
                             running_tasks.append(task_)
                             logger.debug(run_msg.format(type="coroutine"))
                         else:
@@ -125,8 +149,23 @@ class LifespanMixin(AppMixin):
                 yield
         finally:
             for task in running_tasks:
+                # A task that ended before cleanup was reported by its callback.
+                if task.done():
+                    continue
                 logger.debug(f"Canceling lifespan task: {task}")
+                # Cancellation by cleanup is expected, so it is not reported.
+                task.remove_done_callback(_report_task_result)
+                task.add_done_callback(_log_cleanup_error)
                 task.cancel(msg="lifespan_cleanup")
+            if cancelled := [task for task in running_tasks if not task.done()]:
+                _, pending = await asyncio.wait(
+                    cancelled, timeout=_LIFESPAN_TASK_CANCEL_TIMEOUT
+                )
+                for task in pending:
+                    logger.warning(
+                        f"Lifespan task {task.get_name()} did not stop within "
+                        f"{_LIFESPAN_TASK_CANCEL_TIMEOUT} seconds of cancellation."
+                    )
         # Disassociate sid / token pairings so they can be reconnected properly.
         try:
             event_namespace = self.event_namespace  # pyright: ignore[reportAttributeAccessIssue]

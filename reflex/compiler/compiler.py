@@ -6,7 +6,6 @@ import collections
 import dataclasses
 import json
 import logging
-import sys
 from collections.abc import Callable, Iterable, Sequence
 from inspect import getmodule
 from pathlib import Path
@@ -32,7 +31,6 @@ from reflex_base.config import get_config
 from reflex_base.constants.compiler import PageNames, ResetStylesheet
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import environment
-from reflex_base.event import get_hydrate_event_name
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext, Plugin
 from reflex_base.registry import (
     RegistrationContext,
@@ -65,6 +63,7 @@ from reflex.state import (
     State,
     UpdateVarsInternalState,
     code_uses_state_contexts,
+    state_snapshot_hashes,
 )
 from reflex.utils import console, frontend_skeleton, path_ops, prerequisites
 from reflex.utils.exec import get_compile_context, is_prod_mode
@@ -275,7 +274,7 @@ def _internal_event_names() -> templates.InternalEventNames:
     """
     return templates.InternalEventNames(
         main_state_name=State.get_name(),
-        hydrate=get_hydrate_event_name(),
+        hydrate_and_load=_event_name(State, constants.CompileVars.HYDRATE_AND_LOAD),
         on_load_internal=_event_name(OnLoadInternalState, "on_load_internal"),
         update_vars_internal=_event_name(
             UpdateVarsInternalState, "update_vars_internal"
@@ -316,14 +315,16 @@ def _compile_contexts(
         templates.context_template(
             initial_state=initial_state,
             initial_state_json=initial_state_json,
+            initial_state_hashes=state_snapshot_hashes(initial_state),
             internal_events=_internal_event_names(),
+            state_schema=state._to_frontend_schema(),
             client_storage=utils.compile_client_storage(state),
             is_dev_mode=not is_prod_mode(),
             default_color_mode=default_color_mode,
             disable_react_owner_stacks=disable_react_owner_stacks,
             scheme_digest=scheme_digest(),
         )
-        if state
+        if state and initial_state is not None
         else templates.context_template(
             is_dev_mode=not is_prod_mode(),
             default_color_mode=default_color_mode,
@@ -1138,8 +1139,7 @@ def compile_unevaluated_page(
         )
 
     except Exception as e:
-        if sys.version_info >= (3, 11):
-            e.add_note(f"Happened while evaluating page {route!r}")
+        e.add_note(f"Happened while evaluating page {route!r}")
         raise
     else:
         return component
@@ -1284,7 +1284,7 @@ def _register_plugin_routes(app: App, plugins: Sequence[Plugin]) -> None:
 def _read_stateful_pages_marker() -> list[str] | None:
     """Read the routes that create state classes from a previous compile.
 
-    A missing marker or one truncated by an older writer requires full page
+    A missing marker or one corrupted by an older writer requires full page
     evaluation. New writers replace the marker atomically.
 
     Returns:
@@ -1292,8 +1292,10 @@ def _read_stateful_pages_marker() -> list[str] | None:
     """
     marker = prerequisites.get_backend_dir() / constants.Dirs.STATEFUL_PAGES
     try:
-        return json.loads(marker.read_text())
-    except (FileNotFoundError, json.JSONDecodeError):
+        return json.loads(marker.read_bytes())
+    except (FileNotFoundError, ValueError):
+        # ValueError covers both JSONDecodeError and the UnicodeDecodeError of a
+        # marker that is not valid UTF-8.
         return None
     except PermissionError:
         if constants.IS_WINDOWS:

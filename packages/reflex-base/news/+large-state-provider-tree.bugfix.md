@@ -1,0 +1,1 @@
+Fix a blank page with `Maximum call stack size exceeded` in apps with thousands of state classes. State is now read from one shared store, so the React provider tree no longer grows with the number of states.

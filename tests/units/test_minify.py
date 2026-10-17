@@ -956,7 +956,7 @@ def test_framework_event_names_reach_registered_handlers(tmp_path):
             ),
         },
         events={
-            "reflex.state.State": {"hydrate": "a"},
+            "reflex.state.State": {"hydrate": "a", "hydrate_and_load": "b"},
             "reflex.state.State.FrontendEventExceptionState": {
                 "handle_frontend_exception": "a"
             },
@@ -978,21 +978,22 @@ def test_framework_event_names_reach_registered_handlers(tmp_path):
 
             names = _internal_event_names()
             assert names.main_state_name == "a", names
-            assert names.hydrate == "a.a", names
+            assert names.hydrate_and_load == "a.b", names
 
             handlers = RegistrationContext.ensure_context().event_handlers
             for wire_name in (
-                names.hydrate,
+                names.hydrate_and_load,
                 names.on_load_internal,
                 names.update_vars_internal,
                 names.handle_frontend_exception,
             ):
                 assert wire_name in handlers, (wire_name, sorted(handlers))
 
-            # The middleware compares against this; it must agree with the
-            # name the compiler just told the frontend to send.
+            # The legacy hydrate event, which the middleware compares against,
+            # is renamed the same way.
             root = State(_reflex_internal_init=True)
-            assert get_hydrate_event(root) == names.hydrate
+            assert get_hydrate_event(root) == "a.a"
+            assert "a.a" in handlers
 
             # Nothing was renamed after its Vars captured the old name.
             assert RegistrationContext.ensure_context().find_unbound_states() == []

@@ -74,6 +74,11 @@ def _llms_txt_directive() -> rx.Component:
 # Create the app.
 app = rxe.App(
     style=styles.BASE_STYLE,
+    stylesheets=[
+        "/docs-theme.css",
+        "/docs-header-theme.css",
+        "/docs-overlays-theme.css",
+    ],
     app_wraps={},
     theme=rx.theme(
         _llms_txt_directive(),

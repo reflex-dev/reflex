@@ -254,8 +254,9 @@ State Tree (minify.json loaded)
 `-- State -> "a"
     |-- Event Handlers:
     |   |-- hydrate -> "a"
-    |   |-- set_is_hydrated -> "b"
-    |   `-- setvar -> "c"
+    |   |-- hydrate_and_load -> "b"
+    |   |-- set_is_hydrated -> "c"
+    |   `-- setvar -> "d"
     |-- CartState -> "b"
     |   `-- Event Handlers:
     |       |-- add_item -> "a"

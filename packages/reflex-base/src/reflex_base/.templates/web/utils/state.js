@@ -22,14 +22,23 @@ const EVENTURL = env.EVENT;
 
 // Socket event names (must match reflex_base/constants/event.py SocketEvent)
 const CLIENT_ERROR_EVENT = "client_error";
+const STATE_MISMATCH_EVENT = "state_mismatch";
+const SCHEME_MISMATCH_EVENT = "scheme_mismatch";
+
+// sessionStorage key with the time of the last automatic reload (must match
+// LAST_RELOADED_KEY in reflex/state.py: the reload on a frontend error and the
+// reload on a state mismatch share one cooldown, so neither can loop).
+const LAST_RELOADED_KEY = "reflex_last_reloaded_on_error";
+
+// The id of the banner offering a reload when one already happened recently.
+const NEW_VERSION_BANNER_ID = "reflex-new-version-banner";
 
 // Client error types (must match reflex_base/constants/event.py ClientErrorType)
 const ERROR_TYPE_DISPATCH_MISSING = "dispatch_function_missing";
 const ERROR_TYPE_STATE_UPDATE = "state_update_processing_error";
-const SCHEME_MISMATCH_EVENT = "scheme_mismatch";
 
-// Shown in the connection UI for any fatal frontend/backend mismatch. The
-// cause differs; the only action available to the viewer does not.
+// Shown in the connection UI when the backend cannot understand this bundle:
+// the only action available to the viewer is a reload.
 const OUTDATED_PAGE_MESSAGE =
   "This page is out of date and can no longer talk to the server. Reload the page to load the current version.";
 
@@ -38,6 +47,10 @@ const SAME_DOMAIN_HOSTNAMES = ["localhost", "0.0.0.0", "::", "0:0:0:0:0:0:0:0"];
 
 // Global variable to hold the token.
 let token;
+
+// A token generated for the transport warmed up before the app mounted. It is
+// saved to the session storage by getToken, once the mounted app connects.
+let unsavedToken;
 
 // Key for the token in the session storage.
 const TOKEN_KEY = "token";
@@ -48,12 +61,26 @@ const cookies = new Cookies();
 // Dictionary holding component references.
 export const refs = {};
 
-// Set when the backend sends a delta the frontend cannot process. A mismatch
-// between frontend and backend state definitions is fatal (#6019): no further
-// events are sent until the frontend is rebuilt/reloaded.
-let backend_state_mismatch = false;
+// Set when the backend resolves wire names with another minification scheme
+// than this bundle was built against. Fatal: no further events are sent or
+// applied until the page is reloaded.
+let backend_scheme_mismatch = false;
 // Array holding pending events to be processed.
 const event_queue = [];
+
+// A frontend event naming one synced localStorage var, turned into an
+// update_vars_internal event when it is sent: see syncLocalStorageEvent.
+const SYNC_LOCAL_STORAGE = "_sync_local_storage";
+
+// Synced localStorage values sent to the backend and not yet echoed back, by
+// state key, oldest first, with this tab's localStorage write count at the send.
+const sentStorageValues = {};
+// Bounds a key whose echoes a get_delta override changes, so they never match.
+const MAX_SENT_STORAGE_VALUES = 256;
+// This tab's localStorage write count, and its last write by storage name
+// (vars of different state keys may share one).
+let localStorageWrites = 0;
+const lastLocalStorageWrites = {};
 
 // Mirrors the data router's location so applyEvent can populate router_data
 // with the in-widget URL. In embed mode the host page's window.location is
@@ -97,12 +124,24 @@ export const getToken = () => {
   }
   if (typeof window !== "undefined") {
     if (!window.sessionStorage.getItem(TOKEN_KEY)) {
-      window.sessionStorage.setItem(TOKEN_KEY, generateUUID());
+      window.sessionStorage.setItem(TOKEN_KEY, unsavedToken ?? generateUUID());
     }
     token = window.sessionStorage.getItem(TOKEN_KEY);
   }
   return token;
 };
+
+/**
+ * Get the token for the current session without saving a new one.
+ *
+ * A new token only reaches the session storage when the mounted app
+ * connects, so anything waiting for it there sees the rendered page.
+ * @returns The saved token, or a new one that getToken saves later.
+ */
+const peekToken = () =>
+  token ||
+  window.sessionStorage.getItem(TOKEN_KEY) ||
+  (unsavedToken ??= generateUUID());
 
 /**
  * Get the URL for the backend server
@@ -138,12 +177,13 @@ export const getBackendURL = (url_str) => {
  * Build the query the backend reads on connect.
  *
  * Used for reconnects too: a field dropped here reaches the backend as empty
- * on every later connection, so the two call sites must not drift apart.
+ * on every later connection, so the call sites must not drift apart.
  *
+ * @param token The session token the backend links the connection to.
  * @returns The socket handshake query.
  */
-const handshakeQuery = () => ({
-  token: getToken(),
+const handshakeQuery = (token = getToken()) => ({
+  token,
   scheme: app.schemeDigest ?? "",
 });
 
@@ -160,6 +200,79 @@ export const isBackendDisabled = () => {
 };
 
 /**
+ * Create a socket without starting its namespace or hydration events.
+ * @param endpoint The backend URL.
+ * @param transports The configured transports.
+ * @param token The session token the backend links the connection to.
+ * @returns The disconnected socket.
+ */
+const createSocket = (endpoint, transports, token) =>
+  io(endpoint.href, {
+    path: endpoint.pathname,
+    transports,
+    protocols: [reflexEnvironment.version],
+    autoUnref: false,
+    autoConnect: false,
+    query: handshakeQuery(token),
+    reconnection: false,
+  });
+
+let warmSocket = null;
+let cancelWarmup = () => {};
+let socketStarted = false;
+
+/** Close an unclaimed transport and remove its cleanup handlers. */
+const discardWarmSocket = () => {
+  const socket = warmSocket;
+  warmSocket = null;
+  cancelWarmup();
+  socket?.disconnect();
+};
+
+// Start only the transport while React is still preparing to mount. The
+// namespace stays disconnected until connect() installs all its handlers.
+// Defer past module evaluation because context.js imports this module too.
+if (typeof window !== "undefined") {
+  queueMicrotask(() => {
+    if (
+      socketStarted ||
+      Object.keys(app.initialState ?? {}).length <= 1 ||
+      isBackendDisabled() ||
+      document.visibilityState === "hidden"
+    ) {
+      return;
+    }
+    try {
+      warmSocket = createSocket(
+        getBackendURL(EVENTURL),
+        [env.TRANSPORT],
+        peekToken(),
+      );
+    } catch {
+      // Speculative setup may fail (for example, blocked session storage).
+      // The normal connection path will report failures when the app mounts.
+      return;
+    }
+    const timeout = setTimeout(discardWarmSocket, 10000);
+    window.addEventListener("pagehide", discardWarmSocket);
+    cancelWarmup = () => {
+      clearTimeout(timeout);
+      window.removeEventListener("pagehide", discardWarmSocket);
+    };
+    warmSocket.io.open((error) => {
+      if (error) discardWarmSocket();
+    });
+  });
+}
+
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    socketStarted = true;
+    discardWarmSocket();
+  });
+}
+
+/**
  * Determine if any event in the event queue is stateful.
  *
  * @returns True if there's any event that requires state and False if none of them do.
@@ -173,7 +286,8 @@ export const isStateful = () => {
   return event_queue.some(
     (event) =>
       typeof event?.name === "string" &&
-      event.name.startsWith(app.main_state_name + "."),
+      (event.name.startsWith(app.main_state_name + ".") ||
+        event.name === SYNC_LOCAL_STORAGE),
   );
 };
 
@@ -200,12 +314,114 @@ const normalizeEvents = (events) => {
 };
 
 /**
+ * Whether a value is a plain object (not an array, Date or class instance).
+ * @param value The value to check.
+ * @returns True if the value is a plain object.
+ */
+const isPlainObject = (value) => {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+  const proto = Object.getPrototypeOf(value);
+  return proto === Object.prototype || proto === null;
+};
+
+/**
+ * Structurally share the parts of next that deep-equal prev.
+ *
+ * Plain objects and arrays whose contents are unchanged keep the identity of
+ * the previous value, so memoized components and caches keyed on identity
+ * still hit. Any other value is taken from next as is.
+ * @param prev The previous value.
+ * @param next The new value.
+ * @returns prev if deep-equal to next, otherwise next with unchanged parts shared from prev.
+ */
+const replaceEqualDeep = (prev, next) => {
+  // Object.is, unlike ===, tells -0 from 0 and treats NaN as equal to itself.
+  if (Object.is(prev, next)) {
+    return prev;
+  }
+  if (Array.isArray(prev) && Array.isArray(next)) {
+    // Allocate only once an element differs; until then prev is the result.
+    let out;
+    for (let i = 0; i < next.length; i++) {
+      const value = replaceEqualDeep(prev[i], next[i]);
+      if (out === undefined && !Object.is(value, prev[i])) {
+        out = prev.slice(0, i);
+      }
+      out?.push(value);
+    }
+    if (out !== undefined) {
+      return out;
+    }
+    return prev.length === next.length ? prev : prev.slice(0, next.length);
+  }
+  if (isPlainObject(prev) && isPlainObject(next)) {
+    const keys = Object.keys(next);
+    let out;
+    // Spreading next keeps a JSON "__proto__" key an own data property, so the
+    // assignments below never hit the prototype setter.
+    const copyPrefix = (end) => {
+      out = { ...next };
+      for (let j = 0; j < end; j++) {
+        out[keys[j]] = prev[keys[j]];
+      }
+    };
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i];
+      if (!Object.hasOwn(prev, key)) {
+        if (out === undefined) {
+          copyPrefix(i);
+        }
+        continue;
+      }
+      const value = replaceEqualDeep(prev[key], next[key]);
+      if (out === undefined && !Object.is(value, prev[key])) {
+        copyPrefix(i);
+      }
+      if (out !== undefined) {
+        out[key] = value;
+      }
+    }
+    if (out !== undefined) {
+      return out;
+    }
+    // Mappings render in key order, so prev is only reused with the same keys
+    // in the same order.
+    const prevKeys = Object.keys(prev);
+    if (
+      prevKeys.length === keys.length &&
+      prevKeys.every((key, i) => key === keys[i])
+    ) {
+      return prev;
+    }
+    // Keys were removed or reordered; every remaining value is unchanged.
+    copyPrefix(keys.length);
+    return out;
+  }
+  return next;
+};
+
+/**
  * Apply a delta to the state.
+ *
+ * Unchanged values keep their previous identity, and a delta that changes
+ * nothing returns the same state object so useReducer skips the render.
  * @param state The state to apply the delta to.
  * @param delta The delta to apply.
+ * @returns The new state, or state itself if nothing changed.
  */
 export const applyDelta = (state, delta) => {
-  return { ...state, ...delta };
+  let out;
+  for (const key in delta) {
+    const own = Object.hasOwn(state, key);
+    const value = own ? replaceEqualDeep(state[key], delta[key]) : delta[key];
+    if (!own || !Object.is(value, state[key])) {
+      out ??= { ...state };
+      out[key] = value;
+    }
+  }
+  return out ?? state;
 };
 
 /**
@@ -259,6 +475,21 @@ function urlFrom(string) {
   }
   return undefined;
 }
+
+/**
+ * Build the update_vars_internal event for a synced localStorage var.
+ *
+ * The value is read when the event is sent, so it and the write count recorded
+ * with it come from the same moment.
+ * @param payload The storage name and the state keys of the vars that use it.
+ * @returns The update_vars_internal event.
+ */
+const syncLocalStorageEvent = ({ key, state_keys }) => {
+  const value = localStorage.getItem(key);
+  return ReflexEvent(app.update_vars_internal, {
+    vars: Object.fromEntries(state_keys.map((state_key) => [state_key, value])),
+  });
+};
 
 /**
  * Handle frontend event or send the event to the backend via Websocket.
@@ -443,7 +674,28 @@ export const applyEvent = async (event, socket, navigate, params) => {
     return;
   }
 
-  // Update token and router data (if missing).
+  // Send the event to the server.
+  if (socket) {
+    const routed_event = withRouterData(
+      event.name == SYNC_LOCAL_STORAGE
+        ? syncLocalStorageEvent(event.payload)
+        : event,
+      params,
+    );
+    recordSentStorageValues(routed_event);
+    // Instrumentation hook (installed by reflex-otel): may add a traceparent.
+    window.__reflex_otel?.onEventSend?.(routed_event);
+    socket.emit("event", encodeFormDataArgs(routed_event));
+  }
+};
+
+/**
+ * Fill in the event's router data from the current location, if missing.
+ * @param event The event to send.
+ * @param params The params object from useParams
+ * @returns The same event, with router_data populated.
+ */
+const withRouterData = (event, params) => {
   if (
     event.router_data === undefined ||
     Object.keys(event.router_data).length === 0
@@ -471,13 +723,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
       event.router_data.query = query;
     }
   }
-
-  // Send the event to the server.
-  if (socket) {
-    // Instrumentation hook (installed by reflex-otel): may add a traceparent.
-    window.__reflex_otel?.onEventSend?.(event);
-    socket.emit("event", event);
-  }
+  return event;
 };
 
 /**
@@ -557,10 +803,10 @@ export const processEvent = async (socket, navigate, params) => {
     return;
   }
 
-  // A backend/frontend state mismatch is fatal; do not send further events.
-  // Drop pending events too: callers drain the queue in while-loops that
-  // would otherwise spin forever on an early return.
-  if (backend_state_mismatch) {
+  // A scheme mismatch is fatal; do not send further events. Drop pending
+  // events too: callers drain the queue in while-loops that would otherwise
+  // spin forever on an early return.
+  if (backend_scheme_mismatch) {
     event_queue.length = 0;
     return;
   }
@@ -586,6 +832,74 @@ export const processEvent = async (socket, navigate, params) => {
       await processEvent(socket, navigate, params);
     }
   }
+};
+
+/**
+ * Reload the page for a new version of the app, restarting the reload cooldown.
+ */
+const reloadForNewVersion = () => {
+  window.sessionStorage.setItem(LAST_RELOADED_KEY, Date.now().toString());
+  window.location.reload();
+};
+
+/**
+ * Show a banner saying a new version is available, with a reload button.
+ *
+ * Plain DOM rather than a React component: it must show whatever the app
+ * renders, and stay up while the page keeps working as well as it can.
+ */
+const showNewVersionBanner = () => {
+  if (document.getElementById(NEW_VERSION_BANNER_ID)) {
+    return;
+  }
+  const banner = document.createElement("div");
+  banner.id = NEW_VERSION_BANNER_ID;
+  banner.setAttribute("role", "alert");
+  banner.style.cssText =
+    "position:fixed;top:0;left:0;right:0;z-index:2147483647;display:flex;" +
+    "justify-content:center;align-items:center;gap:1rem;padding:0.5rem 1rem;" +
+    "background:#1c2024;color:#fff;font:1rem system-ui,sans-serif;";
+  banner.append("A new version of this app is available.");
+  const button = document.createElement("button");
+  button.textContent = "Reload";
+  button.style.cssText =
+    "padding:0.25rem 0.75rem;border:1px solid #fff;border-radius:4px;" +
+    "background:transparent;color:inherit;font:inherit;cursor:pointer;";
+  button.onclick = reloadForNewVersion;
+  banner.append(button);
+  document.body.append(banner);
+};
+
+/**
+ * Handle the backend reporting that this bundle was compiled for another
+ * state tree than the one it runs (sent on connect, see EventNamespace.on_connect).
+ *
+ * In prod the page reloads once per cooldown window. A mismatch inside the
+ * window means the reload landed on the same skew (a cached bundle, or several
+ * backend versions behind one load balancer), so a banner with a reload button
+ * shows instead and the page never loops. In dev a backend hot reload can
+ * reconnect before Vite serves the rebuilt bundle, so it only warns.
+ * @param info The backend's state schema hash and the reload cooldown in ms.
+ */
+const handleStateMismatch = (info) => {
+  const message =
+    "This page was built for another version of the app than the backend it " +
+    `connected to (state schema ${app.stateSchema}, backend ${info.backend}).`;
+  if (app.isDevMode) {
+    console.warn(
+      message +
+        " Reload the page if it stays out of date once the frontend rebuilds.",
+    );
+    return;
+  }
+  const last_reload =
+    parseInt(window.sessionStorage.getItem(LAST_RELOADED_KEY)) || 0;
+  if (Date.now() - last_reload > info.reload_cooldown_ms) {
+    reloadForNewVersion();
+    return;
+  }
+  console.warn(message + " Reload the page to get the new version.");
+  showNewVersionBanner();
 };
 
 /**
@@ -617,17 +931,40 @@ export const connect = async (
 
   // Get backend URL object from the endpoint.
   const endpoint = getBackendURL(EVENTURL);
-  const on_hydrated_queue = [];
 
-  // Create the socket.
-  socket.current = io(endpoint.href, {
-    path: endpoint["pathname"],
-    transports: transports,
-    protocols: [reflexEnvironment.version],
-    autoUnref: false,
-    query: handshakeQuery(),
-    reconnection: false, // Reconnection will be handled manually.
-  });
+  // The hydrate event rides in the socket.io CONNECT packet, so the backend
+  // starts loading state as soon as the namespace connects instead of after
+  // an extra round trip for the connect acknowledgement. The keys are read by
+  // the backend as CompileVars.CONNECT_AUTH_EVENT and CONNECT_AUTH_STATE_SCHEMA;
+  // the state schema goes along on every (re)connect, since a reconnect can
+  // land on another backend version.
+  const bootAuth = (first) => {
+    const boot_event = withRouterData(app.initialEvents(first)[0], params);
+    recordSentStorageValues(boot_event);
+    // Instrumentation hook (installed by reflex-otel): may add a traceparent.
+    window.__reflex_otel?.onEventSend?.(boot_event);
+    return { event: boot_event, state_schema: app.stateSchema };
+  };
+
+  // Create the socket. A new session's token is saved here, once the app has
+  // mounted, even when a transport warmed up with it earlier.
+  socketStarted = true;
+  const session_token = getToken();
+  if (
+    warmSocket &&
+    (warmSocket.io.opts.query.token !== session_token ||
+      warmSocket.io.opts.transports.length !== transports.length ||
+      transports.some(
+        (transport, i) => transport !== warmSocket.io.opts.transports[i],
+      ))
+  ) {
+    discardWarmSocket();
+  }
+  socket.current =
+    warmSocket ?? createSocket(endpoint, transports, session_token);
+  warmSocket = null;
+  cancelWarmup();
+  socket.current.auth = bootAuth(true);
   socket.current.wait_connect = !socket.current.connected;
   // Ensure undefined fields in events are sent as null instead of removed
   socket.current.io.encoder.replacer = (k, v) => (v === undefined ? null : v);
@@ -640,8 +977,8 @@ export const connect = async (
   };
   // Set up a reconnect helper function
   socket.current.reconnect = () => {
-    if (backend_state_mismatch) {
-      // Reconnecting cannot resolve a scheme or state mismatch.
+    if (backend_scheme_mismatch) {
+      // Reconnecting cannot resolve a scheme mismatch.
       return;
     }
     if (
@@ -650,8 +987,9 @@ export const connect = async (
       !socket.current.wait_connect
     ) {
       socket.current.wait_connect = true;
-      socket.current.rehydrate = true;
       socket.current.io.opts.query = handshakeQuery(); // Refresh token/scheme.
+      // A reconnect rehydrates in full: the reducers no longer hold the defaults.
+      socket.current.auth = bootAuth(false);
       socket.current.connect();
     }
   };
@@ -696,9 +1034,13 @@ export const connect = async (
     socket.current.disconnect();
   };
 
+  // Unknown substates already reported on this connection.
+  const reported_missing_substates = new Set();
+
   // Once the socket is open, hydrate the page.
   socket.current.on("connect", async () => {
     socket.current.wait_connect = false;
+    reported_missing_substates.clear();
     // A fatal mismatch is emitted from the server's connect handler, so it is
     // buffered and replayed before this runs; clearing it here would discard
     // the only notice the viewer gets. It also outlives a reconnect, since
@@ -711,10 +1053,6 @@ export const connect = async (
     window.__reflex_otel?.onSocketConnect?.();
     window.addEventListener("pagehide", pagehideHandler);
     window.addEventListener("beforeunload", disconnectTrigger);
-    if (socket.current.rehydrate) {
-      socket.current.rehydrate = false;
-      queueEvents(app.initialEvents(), socket, true, navigate, params);
-    }
     // Drain any initial events from the queue.
     while (event_queue.length > 0) {
       await processEvent(socket.current, navigate, params);
@@ -763,16 +1101,15 @@ export const connect = async (
   // connectErrors as well, or the page sits dead with the reason only in the
   // console, where no end user will look.
   const fatalMismatch = (developerMessage) => {
-    backend_state_mismatch = true;
+    backend_scheme_mismatch = true;
     event_queue.length = 0;
     console.error(developerMessage);
     setConnectErrors((connectErrors) => [
       ...connectErrors.slice(-9),
       Object.assign(new Error(OUTDATED_PAGE_MESSAGE), { fatal: true }),
     ]);
-    // A dead tab must not hold a live server connection. Engine.IO flushes its
-    // write buffer (any client_error just emitted) before closing the transport,
-    // and "io client disconnect" keeps the reconnect helpers out of it.
+    // A dead tab must not hold a live server connection; "io client
+    // disconnect" keeps the reconnect helpers out of it.
     socket.current?.disconnect();
   };
 
@@ -785,57 +1122,64 @@ export const connect = async (
     );
   });
 
-  // On each received message, queue the updates and events.
-  socket.current.on("event", (update) => {
-    if (backend_state_mismatch) {
-      // A fatal state mismatch was already detected; drop further updates.
+  // Warn about unknown substates and surface them in the backend terminal
+  // logs, once per substate per connection.
+  const reportUnknownSubstates = (substates) => {
+    const unreported = substates.filter(
+      (substate) => !reported_missing_substates.has(substate),
+    );
+    if (unreported.length === 0) {
       return;
     }
-    // Validate the whole delta before dispatching anything, so a bad substate
-    // does not result in a partially applied state update. Walk the delta once
-    // and only allocate when a substate is actually missing.
-    let missing_substates;
-    for (const substate in update.delta) {
+    for (const substate of unreported) {
+      reported_missing_substates.add(substate);
+    }
+    const errorMsg = `Skipping state update for unknown substate(s): no dispatch function for "${unreported.join(
+      '", "',
+    )}". Try refreshing the page or clearing your browser cache. This usually indicates a mismatch between frontend and backend state definitions. If you are the developer of this app, rebuild the frontend and check that api_url is correct.`;
+    console.warn(errorMsg);
+    socket.current.emit(CLIENT_ERROR_EVENT, {
+      message: errorMsg,
+      substate: unreported.join(", "),
+      error_type: ERROR_TYPE_DISPATCH_MISSING,
+    });
+  };
+
+  // Drop and report substates without a dispatch function. Only a mismatched
+  // delta is copied; the received update is not mutated.
+  const withoutUnknownSubstates = (delta) => {
+    let unknown;
+    for (const substate in delta) {
       if (typeof dispatch[substate] !== "function") {
-        (missing_substates ??= []).push(substate);
+        unknown ??= [];
+        unknown.push(substate);
       }
     }
-    if (missing_substates !== undefined) {
-      const errorMsg = `Cannot process state update: no dispatch function for substate(s) "${missing_substates.join(
-        '", "',
-      )}". Try refreshing the page or clearing your browser cache. This error usually indicates a mismatch between frontend and backend state definitions. If you are the developer of this app, rebuild the frontend and check that api_url is correct.`;
-      // Surface the error in the backend terminal logs.
-      socket.current.emit(CLIENT_ERROR_EVENT, {
-        message: errorMsg,
-        substate: missing_substates.join(", "),
-        error_type: ERROR_TYPE_DISPATCH_MISSING,
-      });
-      fatalMismatch(errorMsg);
+    if (unknown === undefined) {
+      return delta;
+    }
+    reportUnknownSubstates(unknown);
+    const known = { ...delta };
+    for (const substate of unknown) {
+      delete known[substate];
+    }
+    return known;
+  };
+
+  // On each received message, queue the updates and events.
+  socket.current.on("event", (update) => {
+    if (backend_scheme_mismatch) {
+      // Its names mean something else in this bundle.
       return;
     }
+    // Skip unknown substates in both reducer and client-storage updates.
+    const delta = withoutUnknownSubstates(update.delta);
     try {
-      if (update.delta) {
-        for (const substate in update.delta) {
-          dispatch[substate](update.delta[substate]);
-          // handle events waiting for `is_hydrated`
-          if (
-            substate === app.main_state_name &&
-            update.delta[substate]?.is_hydrated_rx_state_
-          ) {
-            // Deliberately not awaited: the rest of the delta and the client
-            // storage below must be applied before this handler yields, or a
-            // later update can interleave and apply its delta first.
-            queueEvents(
-              on_hydrated_queue,
-              socket,
-              false,
-              navigate,
-              params,
-            ).catch(reportStateUpdateError);
-            on_hydrated_queue.length = 0;
-          }
+      if (delta) {
+        for (const substate in delta) {
+          dispatch[substate](delta[substate]);
         }
-        applyClientStorageDelta(client_storage, update.delta);
+        applyClientStorageDelta(client_storage, delta);
       }
       if (update.events && update.events.length > 0) {
         queueEvents(update.events, socket, false, navigate, params).catch(
@@ -850,8 +1194,10 @@ export const connect = async (
     token = new_token;
     window.sessionStorage.setItem(TOKEN_KEY, new_token);
   });
+  socket.current.on(STATE_MISMATCH_EVENT, handleStateMismatch);
 
   document.addEventListener("visibilitychange", checkVisibility);
+  socket.current.connect();
 };
 
 /**
@@ -979,6 +1325,48 @@ export const hydrateClientStorage = (client_storage) => {
 };
 
 /**
+ * Remember the synced localStorage values an event sends, to recognise their echoes.
+ *
+ * Only synced vars: the tab sends another tab's newer value only for those.
+ * @param event The event about to be sent.
+ */
+const recordSentStorageValues = (event) => {
+  // ReflexEvent leaves out an empty payload.
+  const vars = event.payload?.vars;
+  if (
+    vars === undefined ||
+    (event.name !== app.hydrate_and_load &&
+      event.name !== app.update_vars_internal)
+  ) {
+    return;
+  }
+  const local_storage = app.clientStorage.local_storage;
+  for (const [state_key, value] of Object.entries(vars)) {
+    if (!local_storage?.[state_key]?.sync) {
+      continue;
+    }
+    const sent = (sentStorageValues[state_key] ??= []);
+    sent.push({ value, writes: localStorageWrites });
+    if (sent.length > MAX_SENT_STORAGE_VALUES) {
+      sent.shift();
+    }
+  }
+};
+
+/**
+ * Take the sent value that a backend value echoes, and the older ones with it.
+ * @param state_key The state key of the browser storage var.
+ * @param value The value the backend sent for it.
+ * @returns The sent value's entry, or undefined if the value is no echo.
+ */
+const takeEcho = (state_key, value) => {
+  const sent = sentStorageValues[state_key];
+  const index = sent?.findIndex((entry) => entry.value === value) ?? -1;
+  // Older values were echoed already, or changed by an override on the way.
+  return index === -1 ? undefined : sent.splice(0, index + 1)[index];
+};
+
+/**
  * Update client storage values based on backend state delta.
  * @param client_storage The client storage object from context.js
  * @param delta The state update from the backend
@@ -1003,28 +1391,41 @@ const applyClientStorageDelta = (client_storage, delta) => {
   for (const substate in delta) {
     for (const key in delta[substate]) {
       const state_key = `${substate}.${key}`;
+      const value = delta[substate][key];
       if (client_storage.cookies && state_key in client_storage.cookies) {
         const cookie_options = { ...client_storage.cookies[state_key] };
         const cookie_name = cookie_options.name || state_key;
         delete cookie_options.name; // name is not a valid cookie option
-        cookies.set(cookie_name, delta[substate][key], cookie_options);
+        cookies.set(cookie_name, value, cookie_options);
       } else if (
         client_storage.local_storage &&
         state_key in client_storage.local_storage &&
         typeof window !== "undefined"
       ) {
-        const options = client_storage.local_storage[state_key];
-        localStorage.setItem(options.name || state_key, delta[substate][key]);
+        const name = client_storage.local_storage[state_key].name || state_key;
+        const echo = takeEcho(state_key, value);
+        const last = lastLocalStorageWrites[name];
+        // Write an echo only over this tab's own later write, which the backend
+        // applied before the echoed event. Otherwise storage holds the sent
+        // value or another tab's newer one.
+        if (
+          !echo ||
+          (last?.writes > echo.writes &&
+            localStorage.getItem(name) === last.value)
+        ) {
+          localStorage.setItem(name, value);
+          lastLocalStorageWrites[name] = {
+            value,
+            writes: ++localStorageWrites,
+          };
+        }
       } else if (
         client_storage.session_storage &&
         state_key in client_storage.session_storage &&
         typeof window !== "undefined"
       ) {
         const session_options = client_storage.session_storage[state_key];
-        sessionStorage.setItem(
-          session_options.name || state_key,
-          delta[substate][key],
-        );
+        sessionStorage.setItem(session_options.name || state_key, value);
       }
     }
   }
@@ -1124,14 +1525,6 @@ export const useEventLoop = (
     );
   }, []);
 
-  const sentHydrate = useRef(false); // Avoid double-hydrate due to React strict-mode
-  useEffect(() => {
-    if (!sentHydrate.current) {
-      queueEvents(initial_events(), socket, true, navigate, params);
-      sentHydrate.current = true;
-    }
-  }, []);
-
   // Handle frontend errors and send them to the backend via websocket.
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -1152,7 +1545,12 @@ export const useEventLoop = (
     };
 
     window.onerror = function (msg, url, lineNo, columnNo, error) {
-      reportException(error.name + ": " + error.message + "\n" + error.stack);
+      // Some error events (e.g. a ResizeObserver loop) have no Error object.
+      reportException(
+        error
+          ? error.name + ": " + error.message + "\n" + error.stack
+          : msg + "\n    at " + url + ":" + lineNo + ":" + columnNo,
+      );
       return false;
     };
 
@@ -1204,27 +1602,35 @@ export const useEventLoop = (
 
   // localStorage event handling
   useEffect(() => {
-    const storage_to_state_map = {};
+    // A Map, so a storage name like "constructor" is not an inherited property.
+    const storage_to_state_map = new Map();
 
     if (client_storage.local_storage && typeof window !== "undefined") {
       for (const state_key in client_storage.local_storage) {
         const options = client_storage.local_storage[state_key];
         if (options.sync) {
           const local_storage_value_key = options.name || state_key;
-          storage_to_state_map[local_storage_value_key] = state_key;
+          // Several vars can share one storage name; sync all of them.
+          const state_keys = storage_to_state_map.get(local_storage_value_key);
+          if (state_keys) {
+            state_keys.push(state_key);
+          } else {
+            storage_to_state_map.set(local_storage_value_key, [state_key]);
+          }
         }
       }
     }
 
     // e is StorageEvent
     const handleStorage = (e) => {
-      if (storage_to_state_map[e.key]) {
-        const vars = {};
-        vars[storage_to_state_map[e.key]] = e.newValue;
-        const event = ReflexEvent(app.update_vars_internal, {
-          vars: vars,
-        });
-        addEvents([event], e);
+      const state_keys = storage_to_state_map.get(e.key);
+      // Session storage changes in same-origin frames raise storage events too.
+      if (state_keys && e.storageArea === localStorage) {
+        // The value is read when the event is sent: see syncLocalStorageEvent.
+        addEvents(
+          [ReflexEvent(SYNC_LOCAL_STORAGE, { key: e.key, state_keys })],
+          e,
+        );
       }
     };
 
@@ -1364,6 +1770,62 @@ export const pyRstrip = (s, chars) => {
  */
 export const pyStrip = (s, chars) =>
   chars == null ? s.trim() : pyRstrip(pyLstrip(s, chars), chars);
+
+const SURROGATE_RE = /[\uD800-\uDFFF]/;
+
+/***
+ * Python-semantics code points of a string, skipping the copy when possible.
+ * A string without surrogates has one code unit per code point, so it is
+ * returned as-is and its native length/at/slice already match Python.
+ * @param {string?} s The string; null/undefined counts as "".
+ * @returns {string | string[]} The string itself, or its code points.
+ */
+const codePoints = (s) => {
+  s ??= "";
+  return SURROGATE_RE.test(s) ? Array.from(s) : s;
+};
+
+/***
+ * Python-semantics len(s): count code points, not UTF-16 code units.
+ * @param {string?} s The string.
+ * @returns {number} The number of code points.
+ */
+export const pyStrLength = (s) => codePoints(s).length;
+
+/***
+ * Python-semantics s[i]: index by code point.
+ * @param {string?} s The string.
+ * @param {number} i The index; negative counts from the end.
+ * @returns {string | undefined} The code point, or undefined out of range.
+ */
+export const pyStrAt = (s, i) => {
+  const chars = codePoints(s);
+  // Indexed rather than with `.at`, which older browsers lack.
+  return chars[i < 0 ? chars.length + i : i];
+};
+
+/***
+ * Python-semantics s[start:stop]: slice by code point.
+ * @param {string?} s The string.
+ * @param {number?} start The start index; null/undefined slices from the start.
+ * @param {number?} stop The stop index; null/undefined slices to the end.
+ * @returns {string} The sliced string.
+ */
+export const pyStrSlice = (s, start, stop) => {
+  const chars = codePoints(s);
+  const slice = chars.slice(start ?? 0, stop ?? chars.length);
+  return typeof slice === "string" ? slice : slice.join("");
+};
+
+/***
+ * Python-semantics list(s): split a string into code points.
+ * @param {string?} s The string.
+ * @returns {string[]} The code points.
+ */
+export const pyStrChars = (s) => {
+  const chars = codePoints(s);
+  return typeof chars === "string" ? chars.split("") : chars;
+};
 
 /***
  * Python-semantics flat map: map each element through fn and concatenate the
@@ -1554,7 +2016,7 @@ export const mergeSlotProps = (injectedProps, ownProps, refProp) => {
  */
 export const getRefValue = (ref) => {
   if (!ref || !ref.current) {
-    return;
+    return null;
   }
   if (ref.current.type == "checkbox") {
     return ref.current.checked; // chakra
@@ -1569,10 +2031,10 @@ export const getRefValue = (ref) => {
   } else {
     //querySelector(":checked") is needed to get value from radio_group
     return (
-      ref.current.value ||
+      ref.current.value ??
       (ref.current.querySelector &&
-        ref.current.querySelector(":checked") &&
-        ref.current.querySelector(":checked")?.value)
+        ref.current.querySelector(":checked")?.value) ??
+      null
     );
   }
 };
@@ -1608,4 +2070,60 @@ export const spreadArraysOrObjects = (first, second) => {
   } else {
     throw new Error("Both parameters must be either arrays or objects.");
   }
+};
+
+// Wire key wrapping a form's ordered [name, value] entries; must match
+// FORM_DATA_ENTRIES_KEY in reflex_base.utils.form.
+const FORM_DATA_ENTRIES_KEY = "__reflex_form_data__";
+const formDataEntries = Symbol("formDataEntries");
+
+/**
+ * Collect the fields of a submitted form.
+ * @param form The form element.
+ * @param refValues Values read from the refs of controls with an id, keyed by
+ * the id. Each replaces the form's own entry of the same name, unless the form
+ * submitted that name more than once.
+ * @returns An object mapping each field name to its last value, which also
+ * carries every entry so repeated names reach the backend.
+ */
+export const getFormData = (form, refValues = {}) => {
+  const formEntries = [...new FormData(form).entries()];
+  const counts = new Map();
+  for (const [name] of formEntries) {
+    counts.set(name, (counts.get(name) ?? 0) + 1);
+  }
+  const refEntries = Object.entries(refValues).filter(
+    ([name]) => !(counts.get(name) > 1),
+  );
+  // Replace submitted values in place, then add the refs the form did not
+  // submit, as spreading the refs over the form's entries would.
+  const replaced = new Map(refEntries);
+  const entries = formEntries.map(([name, value]) => [
+    name,
+    replaced.has(name) ? replaced.get(name) : value,
+  ]);
+  entries.push(...refEntries.filter(([name]) => !counts.has(name)));
+  return Object.defineProperty(Object.fromEntries(entries), formDataEntries, {
+    value: entries,
+  });
+};
+
+/**
+ * Wrap the form data among an event's arguments as its ordered entries.
+ *
+ * Done before the event reaches Socket.IO: its binary attachment handling (a
+ * form with a file input) copies objects without their symbol-keyed entries.
+ * @param event The event to send.
+ * @returns The event, copied with wrapped entries when it carries form data.
+ */
+export const encodeFormDataArgs = (event) => {
+  let payload;
+  for (const [name, value] of Object.entries(event.payload ?? {})) {
+    const entries = value?.[formDataEntries];
+    if (entries) {
+      payload ??= { ...event.payload };
+      payload[name] = { [FORM_DATA_ENTRIES_KEY]: entries };
+    }
+  }
+  return payload ? { ...event, payload } : event;
 };
