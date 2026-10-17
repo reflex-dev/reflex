@@ -2,7 +2,7 @@
 // frame is a JSON array `[event_name, payload]`. Mirrors the socket.io-client
 // surface that state.js and upload.js rely on: connected, connect(),
 // disconnect(), emit(), on(), auth, io.opts.query, and _callbacks.
-import { parseJson } from "$/utils/helpers/json";
+import { parseJsonLenient, undefinedToNull } from "$/utils/helpers/json";
 
 // Protocol-level message names (must match reflex/event_namespace.py).
 const CONNECT_MESSAGE = "_connect";
@@ -59,29 +59,6 @@ const isReservedEvent = (event) =>
 const report = (error) => (globalThis.reportError ?? console.error)(error);
 
 /**
- * JSON.stringify replacer that sends undefined fields as null instead of
- * removing them. Also assigned as the socket.io encoder replacer.
- * @param _k The key being serialized.
- * @param v The value being serialized.
- * @returns The value to serialize.
- */
-export const undefinedToNull = (_k, v) => (v === undefined ? null : v);
-
-/**
- * Parse JSON, tolerating bare non-finite float tokens.
- * @param text The text to parse.
- * @param fallback The value to return if the text is unparsable.
- * @returns The parsed value, or the fallback.
- */
-export const parseJsonLenient = (text, fallback) => {
-  try {
-    return parseJson(text);
-  } catch {
-    return fallback;
-  }
-};
-
-/**
  * Serialize one channel message: binary when it carries attachments.
  * @param event The message name.
  * @param data The JSON metadata.
@@ -103,14 +80,24 @@ const isChannelMessage = (message) =>
   Array.isArray(message) && message.length > 2;
 
 /**
- * Whether a serialized frame carries a channel message.
+ * Parse a serialized frame back into its message.
  * @param frame The serialized text or binary frame.
- * @returns True for a binary frame, or a text frame naming a channel.
+ * @returns The parsed message, or undefined if malformed.
  */
-const isChannelFrame = (frame) =>
-  // Only channel messages carry attachments, so only they go out binary.
-  typeof frame !== "string" ||
-  isChannelMessage(parseJsonLenient(frame, undefined));
+const decodeFrame = (frame) =>
+  typeof frame === "string"
+    ? parseJsonLenient(frame, undefined)
+    : decodeChannelFrame(frame);
+
+/**
+ * The size a serialized frame occupies on the wire.
+ * @param frame The serialized text or binary frame.
+ * @returns The size in bytes.
+ */
+const frameByteLength = (frame) =>
+  typeof frame === "string"
+    ? TEXT_ENCODER.encode(frame).byteLength
+    : frame.byteLength;
 
 /**
  * Whether a serialized frame is over the backend's inbound message limit.
@@ -119,31 +106,34 @@ const isChannelFrame = (frame) =>
  * limit counts UTF-8 bytes, and UTF-8 is 1-4 bytes per character, so a text
  * frame is only measured exactly when the cheap bounds cannot settle it.
  * @param frame The serialized text or binary frame.
- * @param limit The limit in bytes.
+ * @param limit The limit in bytes; falsy while it is unknown.
  * @returns Whether the frame exceeds it.
  */
 const exceedsMessageLimit = (frame, limit) => {
-  if (typeof frame !== "string") {
-    return frame.byteLength > limit;
-  }
-  if (frame.length > limit) {
-    return true;
-  }
-  if (frame.length * 4 <= limit) {
+  if (!limit) {
     return false;
   }
-  return TEXT_ENCODER.encode(frame).byteLength > limit;
+  if (typeof frame === "string") {
+    if (frame.length > limit) {
+      return true;
+    }
+    if (frame.length * 4 <= limit) {
+      return false;
+    }
+  }
+  return frameByteLength(frame) > limit;
 };
 
 /**
- * The size a serialized frame occupies on the wire, for diagnostics.
- * @param frame The serialized text or binary frame.
- * @returns The size in bytes.
+ * Describe a frame over the backend's inbound message limit.
+ * @param subject What the frame carries, starting the sentence.
+ * @param frame The serialized frame.
+ * @param limit The limit in bytes.
+ * @returns The description, for the caller to finish with the consequence.
  */
-const frameByteLength = (frame) =>
-  typeof frame === "string"
-    ? TEXT_ENCODER.encode(frame).byteLength
-    : frame.byteLength;
+const oversizedMessage = (subject, frame, limit) =>
+  `${subject} is ${frameByteLength(frame)} bytes, over the ${limit} the ` +
+  "backend accepts (REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE)";
 
 /**
  * Serialize an outgoing frame.
@@ -378,11 +368,9 @@ class ReflexChannel extends LocalEmitter {
     // time the channel opens.
     const frame = channelFrame(event, data, this.name, buffers);
     const limit = this._transport?._maxMessageSize;
-    if (limit && exceedsMessageLimit(frame, limit)) {
+    if (exceedsMessageLimit(frame, limit)) {
       throw new Error(
-        `Channel message "${event}" is ${frameByteLength(frame)} bytes, over ` +
-          `the ${limit} the backend accepts ` +
-          "(REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE).",
+        oversizedMessage(`Channel message "${event}"`, frame, limit) + ".",
       );
     }
     if (this.connected && this._transport) {
@@ -403,7 +391,7 @@ class ReflexChannel extends LocalEmitter {
    */
   _attach(transport) {
     this._transport = transport;
-    transport.emitChannel(this.name, OPEN_MESSAGE, null, []);
+    transport._send(stringifyFrame([OPEN_MESSAGE, null, this.name]));
   }
 
   /**
@@ -427,8 +415,8 @@ class ReflexChannel extends LocalEmitter {
     this._emitLocal("error", {
       code: "message_too_large",
       message:
-        `A queued channel message is ${frameByteLength(frame)} bytes, ` +
-        `over the ${limit} the backend accepts; it was dropped.`,
+        oversizedMessage("A queued channel message", frame, limit) +
+        "; it was dropped.",
     });
   }
 
@@ -457,18 +445,7 @@ class ReflexChannel extends LocalEmitter {
       this.connected = true;
       const queued = this._queue;
       this._queue = [];
-      const limit = this._transport._maxMessageSize;
-      for (const frame of queued) {
-        // A message emitted before the channel opened was queued without a
-        // limit to check it against; now there is one, and sending it anyway
-        // would cost the app its websocket.
-        if (limit && exceedsMessageLimit(frame, limit)) {
-          this._dropOversized(frame, limit);
-          continue;
-        }
-        // The transport re-queues it if its socket closed mid-flush.
-        this._transport._send(frame);
-      }
+      flushFrames(this._transport, queued);
       this._emitLocal("connect");
       return;
     }
@@ -540,25 +517,39 @@ export const disableChannels = (reason) => {
  */
 const oversizedEventError = (name, frame, limit) =>
   new Error(
-    `Message "${name}" is ${frameByteLength(frame)} bytes, over the ${limit} ` +
-      "the backend accepts (REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE); it was not sent.",
+    oversizedMessage(`Message "${name}"`, frame, limit) + "; it was not sent.",
   );
 
 /**
- * Report a frame from the transport's queue dropped for being over the
- * backend's limit: to its channel, or as an error for an event.
+ * Report a queued frame dropped for being over the backend's limit: to its
+ * channel, or as an error for an event.
  * @param frame The serialized text or binary frame.
  * @param limit The limit in bytes.
  */
 const dropOversizedFrame = (frame, limit) => {
-  const [event, data, channel] =
-    typeof frame === "string"
-      ? parseJsonLenient(frame, [])
-      : (decodeChannelFrame(frame) ?? []);
+  const [event, data, channel] = decodeFrame(frame) ?? [];
   if (channel === undefined) {
     report(oversizedEventError(data?.name ?? event, frame, limit));
   } else {
     channels.get(channel)?._dropOversized(frame, limit);
+  }
+};
+
+/**
+ * Send frames queued before the backend's limit was known, dropping any over
+ * it, which would cost the app its websocket and every frame flushed after it.
+ * @param transport The connected transport.
+ * @param frames The serialized frames, oldest first.
+ */
+const flushFrames = (transport, frames) => {
+  const limit = transport._maxMessageSize;
+  for (const frame of frames) {
+    if (exceedsMessageLimit(frame, limit)) {
+      dropOversizedFrame(frame, limit);
+    } else {
+      // The transport re-queues it if its socket closed mid-flush.
+      transport._send(frame);
+    }
   }
 };
 
@@ -627,7 +618,10 @@ export class ReflexWebSocket extends LocalEmitter {
       typeof addEventListener === "function" &&
       this._url.hostname !== "localhost"
     ) {
-      this._offlineListener = () => this._onOffline();
+      this._offlineListener = () =>
+        this._dropConnection("transport close", {
+          description: "network connection lost",
+        });
       addEventListener("offline", this._offlineListener, false);
     }
   }
@@ -672,7 +666,7 @@ export class ReflexWebSocket extends LocalEmitter {
       // Dialed ahead by open().
       this._sendConnect();
     }
-    this._clearConnectTimer();
+    clearTimeout(this._connectTimer);
     this._connectTimer = setTimeout(() => {
       if (this._ws === ws && !this.connected) {
         ws.close();
@@ -726,22 +720,13 @@ export class ReflexWebSocket extends LocalEmitter {
         // A newer connection or an explicit disconnect() superseded this one.
         return;
       }
-      this._clearConnectTimer();
-      this._clearWatchdog();
-      const wasConnected = this.connected;
-      this.connected = false;
-      detachChannels(this, "transport close");
-      if (!wasConnected) {
+      const details = { code: event.code, reason: event.reason };
+      if (!this._settleClose("transport close", details)) {
         // Never handshaked: this was a failed connection attempt.
         this._emitLocal(
           "connect_error",
           new Error("websocket connection failed"),
         );
-      } else {
-        this._emitLocal("disconnect", "transport close", {
-          code: event.code,
-          reason: event.reason,
-        });
       }
     };
   }
@@ -761,44 +746,44 @@ export class ReflexWebSocket extends LocalEmitter {
   }
 
   /**
-   * Report the disconnect immediately when the browser goes offline.
-   */
-  _onOffline() {
-    if (this.connected) {
-      this._teardown("transport close", {
-        description: "network connection lost",
-      });
-    }
-  }
-
-  /**
    * Tear down the current connection, reporting the disconnect synchronously
    * (onclose may never fire during page unload or while offline).
    * @param reason The disconnect reason to report.
    * @param details The disconnect details to report.
    */
   _teardown(reason, details) {
-    this._clearConnectTimer();
-    this._clearWatchdog();
     const ws = this._ws;
     if (!ws) {
       return;
     }
     // Detach so the onclose handler does not double-report.
     this._ws = null;
-    const wasConnected = this.connected;
-    this.connected = false;
     if (ws.readyState <= WebSocket.OPEN) {
       ws.onclose = null;
       ws.onmessage = null;
       ws.close(1000);
     }
+    this._settleClose(reason, details);
+  }
+
+  /**
+   * Settle the transport's state once its socket is gone, then report it.
+   * @param reason The disconnect reason to report.
+   * @param details The disconnect details to report.
+   * @returns Whether a session was open, so a disconnect was reported.
+   */
+  _settleClose(reason, details) {
+    clearTimeout(this._connectTimer);
+    clearTimeout(this._watchdogTimer);
+    const wasConnected = this.connected;
+    this.connected = false;
     // Report only once the transport's own state is settled: the handlers
     // run application code.
     detachChannels(this, reason);
     if (wasConnected) {
       this._emitLocal("disconnect", reason, details);
     }
+    return wasConnected;
   }
 
   /**
@@ -809,24 +794,13 @@ export class ReflexWebSocket extends LocalEmitter {
   emit(event, data) {
     const frame = stringifyFrame([event, data]);
     const limit = this._maxMessageSize;
-    if (limit && exceedsMessageLimit(frame, limit)) {
+    if (exceedsMessageLimit(frame, limit)) {
       // The backend closes the connection over an oversized frame, losing
       // every update in flight with it; drop this one message instead.
       report(oversizedEventError(data?.name ?? event, frame, limit));
       return;
     }
     this._send(frame);
-  }
-
-  /**
-   * Send a channel message to the backend, buffering while disconnected.
-   * @param channel The channel name.
-   * @param event The message name.
-   * @param data The JSON metadata.
-   * @param buffers Binary attachments (ArrayBuffers or typed arrays).
-   */
-  emitChannel(channel, event, data, buffers) {
-    this._send(channelFrame(event, data, channel, buffers));
   }
 
   /**
@@ -874,7 +848,7 @@ export class ReflexWebSocket extends LocalEmitter {
       // Application-level liveness confirmed; adopt the server's heartbeat
       // settings (sent in seconds, converted to ms) for the connection
       // watchdog.
-      this._clearConnectTimer();
+      clearTimeout(this._connectTimer);
       this._watchdogMs = (payload.ping_interval + payload.ping_timeout) * 1000;
       this._resetWatchdog();
       this.connected = true;
@@ -894,21 +868,12 @@ export class ReflexWebSocket extends LocalEmitter {
         // backend that closes the socket over it, costing the app its state
         // updates too.
         this._sendQueue = this._sendQueue.filter(
-          (frame) => !isChannelFrame(frame),
+          (frame) => !isChannelMessage(decodeFrame(frame)),
         );
       }
-      const queue = this._sendQueue;
+      const queued = this._sendQueue;
       this._sendQueue = [];
-      const limit = this._maxMessageSize;
-      for (const frame of queue) {
-        // Queued before this backend's limit was known: an oversized frame
-        // would cost the connection and every frame flushed after it.
-        if (limit && exceedsMessageLimit(frame, limit)) {
-          dropOversizedFrame(frame, limit);
-          continue;
-        }
-        this._ws.send(frame);
-      }
+      flushFrames(this, queued);
       this._emitLocal("connect");
       return;
     }
@@ -923,13 +888,14 @@ export class ReflexWebSocket extends LocalEmitter {
    * Drop the socket as a transport failure, which the event loop reconnects
    * from -- unlike disconnect(), which reports an intentional close.
    * @param reason The disconnect reason to report.
+   * @param details The disconnect details to report.
    */
-  _dropConnection(reason) {
+  _dropConnection(reason, details) {
     if (this.connected) {
       // Reported now rather than from onclose: on a dead link the browser
       // fires that only when its closing handshake times out, up to a minute
       // later, and the transport would claim to be connected until then.
-      this._teardown(reason, undefined);
+      this._teardown(reason, details);
     }
   }
 
@@ -938,30 +904,10 @@ export class ReflexWebSocket extends LocalEmitter {
    * included) arrives within the server's ping interval + timeout.
    */
   _resetWatchdog() {
-    this._clearWatchdog();
+    clearTimeout(this._watchdogTimer);
     this._watchdogTimer = setTimeout(
       () => this._dropConnection("ping timeout"),
       this._watchdogMs,
     );
-  }
-
-  /**
-   * Cancel the dead-connection watchdog.
-   */
-  _clearWatchdog() {
-    if (this._watchdogTimer) {
-      clearTimeout(this._watchdogTimer);
-      this._watchdogTimer = null;
-    }
-  }
-
-  /**
-   * Cancel the connect timeout.
-   */
-  _clearConnectTimer() {
-    if (this._connectTimer) {
-      clearTimeout(this._connectTimer);
-      this._connectTimer = null;
-    }
   }
 }

@@ -95,8 +95,6 @@ async function createConnection(
         },
         disableChannels() {},
         getChannel() {},
-        parseJsonLenient() {},
-        undefinedToNull() {},
       },
       "socket.io-client": {
         default: () => {

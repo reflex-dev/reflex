@@ -12,14 +12,13 @@ import {
 } from "react-router";
 import { app, eventLoop } from "$/utils/context-registry";
 import debounce from "$/utils/helpers/debounce";
+import { parseJsonLenient, undefinedToNull } from "$/utils/helpers/json";
 import throttle from "$/utils/helpers/throttle";
 import { uploadFiles } from "$/utils/helpers/upload";
 import {
   ReflexWebSocket,
   disableChannels,
   getChannel,
-  parseJsonLenient,
-  undefinedToNull,
 } from "$/utils/helpers/websocket";
 
 // Re-exported so components can reach a side channel through the module they
@@ -44,6 +43,9 @@ const NEW_VERSION_BANNER_ID = "reflex-new-version-banner";
 // Client error types (must match reflex_base/constants/event.py ClientErrorType)
 const ERROR_TYPE_DISPATCH_MISSING = "dispatch_function_missing";
 const ERROR_TYPE_STATE_UPDATE = "state_update_processing_error";
+
+// Connection errors kept for display, oldest dropped first.
+const MAX_CONNECT_ERRORS = 10;
 
 // These hostnames indicate that the backend and frontend are reachable via the same domain.
 const SAME_DOMAIN_HOSTNAMES = ["localhost", "0.0.0.0", "::", "0:0:0:0:0:0:0:0"];
@@ -199,18 +201,37 @@ const createSocket = (endpoint, token) =>
     protocols: [reflexEnvironment.version],
   });
 
+/**
+ * Close a transport for good and remove its handlers.
+ * @param socket The transport.
+ */
+const disposeSocket = (socket) => {
+  socket.disconnect();
+  // Also releases the plain WebSocket transport's offline listener.
+  socket.off();
+};
+
 let warmSocket = null;
 let cancelWarmup = () => {};
 let socketStarted = false;
 
-/** Close an unclaimed transport and remove its cleanup handlers. */
-const discardWarmSocket = () => {
+/**
+ * Claim the warmed-up transport, cancelling its cleanup.
+ * @returns The warm transport, or null if there is none.
+ */
+const takeWarmSocket = () => {
   const socket = warmSocket;
   warmSocket = null;
   cancelWarmup();
-  socket?.disconnect();
-  // Also releases the transport's offline listener.
-  socket?.off();
+  return socket;
+};
+
+/** Close an unclaimed transport and remove its cleanup handlers. */
+const discardWarmSocket = () => {
+  const socket = takeWarmSocket();
+  if (socket !== null) {
+    disposeSocket(socket);
+  }
 };
 
 // Dial the plain WebSocket transport while React is still preparing to mount.
@@ -875,6 +896,17 @@ const handleStateMismatch = (info) => {
 };
 
 /**
+ * Append a connection error, keeping only the most recent ones.
+ * @param connectErrors The errors so far.
+ * @param error The new error.
+ * @returns The updated errors.
+ */
+const addConnectError = (connectErrors, error) => [
+  ...connectErrors.slice(1 - MAX_CONNECT_ERRORS),
+  error,
+];
+
+/**
  * Connect to a websocket and set the handlers.
  * @param socket The socket object to connect.
  * @param dispatch The function to queue state update
@@ -932,17 +964,13 @@ export const connect = async (
   socketStarted = true;
   try {
     const session_token = getToken();
-    if (
-      warmSocket &&
-      (env.SOCKETIO || warmSocket.io.opts.query.token !== session_token)
-    ) {
+    if (warmSocket && warmSocket.io.opts.query.token !== session_token) {
       discardWarmSocket();
     }
     if (!env.SOCKETIO) {
       // Default transport: plain WebSocket speaking the Reflex event protocol.
-      socket.current = warmSocket ?? createSocket(endpoint, session_token);
-      warmSocket = null;
-      cancelWarmup();
+      socket.current =
+        takeWarmSocket() ?? createSocket(endpoint, session_token);
     } else {
       // Socket.IO, over the engine.io transports given; the client library
       // is only loaded when this transport is configured.
@@ -975,7 +1003,7 @@ export const connect = async (
     // event, which reconnects, which fails again without end -- as a client
     // chunk the browser failed to load does on every retry.
     console.error("Failed to create the event socket:", error);
-    setConnectErrors((connectErrors) => [...connectErrors.slice(-9), error]);
+    setConnectErrors((connectErrors) => addConnectError(connectErrors, error));
     return;
   } finally {
     socket.connecting = false;
@@ -1058,7 +1086,7 @@ export const connect = async (
     socket.current.wait_connect = false;
     let n_connect_errors = 0;
     setConnectErrors((connectErrors) => {
-      const new_errors = [...connectErrors.slice(-9), error];
+      const new_errors = addConnectError(connectErrors, error);
       n_connect_errors = new_errors.length;
       return new_errors;
     });
@@ -1550,8 +1578,7 @@ export const useEventLoop = (
         socket.visibilityHandler = null;
       }
       if (socket.current) {
-        socket.current.disconnect();
-        socket.current.off();
+        disposeSocket(socket.current);
         socket.current = null;
       }
     };

@@ -3,19 +3,23 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import vm from "node:vm";
 
-const source = await readFile(
-  new URL(
-    "../../../packages/reflex-base/src/reflex_base/.templates/web/utils/helpers/websocket.js",
-    import.meta.url,
-  ),
-  "utf8",
+const helpers = new URL(
+  "../../../packages/reflex-base/src/reflex_base/.templates/web/utils/helpers/",
+  import.meta.url,
 );
+const source = await readFile(new URL("websocket.js", helpers), "utf8");
+const jsonSource = await readFile(new URL("json.js", helpers), "utf8");
 
 /** Evaluate the actual transport module against a scripted browser WebSocket. */
-async function setup({ throwOnConstruct = false, closeLater = false } = {}) {
+async function setup({
+  throwOnConstruct = false,
+  closeLater = false,
+  url = "http://localhost:8000/_event",
+} = {}) {
   const sockets = [];
   const timers = new Map();
   const reported = [];
+  const listeners = new Map();
 
   class WebSocket {
     static CONNECTING = 0;
@@ -80,23 +84,20 @@ async function setup({ throwOnConstruct = false, closeLater = false } = {}) {
       return fn;
     },
     clearTimeout: (fn) => timers.delete(fn),
+    addEventListener: (name, fn) => listeners.set(name, fn),
+    removeEventListener: (name, fn) =>
+      listeners.get(name) === fn && listeners.delete(name),
   });
   const module = new vm.SourceTextModule(source, { context });
-  await module.link(
-    () =>
-      new vm.SyntheticModule(
-        ["parseJson"],
-        function () {
-          this.setExport("parseJson", JSON.parse);
-        },
-        { context },
-      ),
-  );
+  await module.link((specifier) => {
+    assert.equal(specifier, "$/utils/helpers/json");
+    return new vm.SourceTextModule(jsonSource, { context });
+  });
   await module.evaluate();
-  const transport = new module.namespace.ReflexWebSocket(
-    "http://localhost:8000/_event",
-    { query: { token: "tok" }, protocols: ["version"] },
-  );
+  const transport = new module.namespace.ReflexWebSocket(url, {
+    query: { token: "tok" },
+    protocols: ["version"],
+  });
   const events = [];
   for (const name of ["connect", "connect_error", "disconnect", "event"]) {
     transport.on(name, (...args) => events.push([name, ...args]));
@@ -107,6 +108,7 @@ async function setup({ throwOnConstruct = false, closeLater = false } = {}) {
     timers,
     events,
     reported,
+    listeners,
     getChannel: module.namespace.getChannel,
     decodeChannelFrame: module.namespace.decodeChannelFrame,
   };
@@ -261,6 +263,23 @@ test("the ping watchdog reports a dead link at once", async () => {
   assert.equal(channel.connected, false);
 });
 
+test("going offline reports the disconnect at once", async () => {
+  // Localhost keeps working offline, so only a remote backend is watched.
+  const app = await setup({
+    url: "https://example.com/_event",
+    closeLater: true,
+  });
+  connectTransport(app);
+  app.listeners.get("offline")();
+  assert.equal(app.transport.connected, false);
+  const [name, reason, details] = app.events.at(-1);
+  assert.deepEqual([name, reason], ["disconnect", "transport close"]);
+  assert.equal(details.description, "network connection lost");
+  // Disposing of the transport releases the listener.
+  app.transport.off();
+  assert.equal(app.listeners.size, 0);
+});
+
 test("a channel opened twice reports connect once", async () => {
   const app = await setup();
   const socket = connectTransport(app);
@@ -289,9 +308,20 @@ test("a socket constructor that throws becomes a connect error", async () => {
 
 test("a channel refuses names and attachments the backend cannot take", async () => {
   const app = await setup();
-  connectTransport(app);
+  const socket = connectTransport(app);
   const channel = app.getChannel("strict");
-  for (const name of [undefined, 42, "", "_open", "_custom", "connect"]) {
+  socket.receive(["_opened", null, "strict"]);
+  const before = socket.sent.length;
+  for (const name of [
+    undefined,
+    42,
+    "",
+    "_open",
+    "_custom",
+    "connect",
+    "disconnect",
+    "error",
+  ]) {
     assert.throws(() => channel.emit(name, null));
   }
   for (const buffers of [
@@ -307,6 +337,9 @@ test("a channel refuses names and attachments the backend cannot take", async ()
   for (const name of [undefined, "has space", "x".repeat(65)]) {
     assert.throws(() => app.getChannel(name), { name: "TypeError" });
   }
+  // Nothing refused was sent or queued behind the message that is valid.
+  channel.emit("push", null);
+  assert.deepEqual(socket.sent.slice(before), [["push", null, "strict"]]);
 });
 
 test("shared buffers are sent whole", async () => {
@@ -371,4 +404,96 @@ test("a channel message queued on a closing socket is checked against the next b
     errors.map((error) => error.code),
     ["message_too_large"],
   );
+});
+
+test("a channel message over the backend's limit is refused, measured in UTF-8 bytes", async () => {
+  const app = await setup();
+  const socket = connectTransport(app, { max_message_size: 1024 });
+  const channel = app.getChannel("sized");
+  socket.receive(["_opened", null, "sized"]);
+  const before = socket.sent.length;
+  assert.throws(
+    () => channel.emit("push", { blob: "x".repeat(5000) }),
+    /"push" is \d+ bytes, over the 1024 the backend accepts \(REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE\)\.$/,
+  );
+  // 400 characters, 1200 UTF-8 bytes: only a byte-accurate check catches it.
+  assert.throws(
+    () => channel.emit("push", "\u20ac".repeat(400)),
+    (error) => {
+      const bytes = Number(/is (\d+) bytes/.exec(error.message)[1]);
+      return bytes > 1024 && bytes < 4 * 400;
+    },
+  );
+  channel.emit("push", { small: true });
+  assert.deepEqual(socket.sent.slice(before), [
+    ["push", { small: true }, "sized"],
+  ]);
+});
+
+test("a channel message emitted before any limit was known is checked when the channel opens", async () => {
+  const app = await setup();
+  const channel = app.getChannel("early");
+  const errors = [];
+  channel.on("error", (error) => errors.push(error));
+  // No transport yet, so no limit to check against.
+  channel.emit("push", { blob: "y".repeat(5000) });
+  channel.emit("push", { small: true });
+  const socket = connectTransport(app, { max_message_size: 1024 });
+  socket.receive(["_opened", null, "early"]);
+  assert.deepEqual(socket.sent.slice(1), [
+    ["_open", null, "early"],
+    ["push", { small: true }, "early"],
+  ]);
+  assert.equal(errors.length, 1);
+  assert.equal(errors[0].code, "message_too_large");
+  assert.match(
+    errors[0].message,
+    /^A queued channel message is \d+ bytes, over the 1024 the backend accepts \(REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE\); it was dropped\.$/,
+  );
+});
+
+test("channel frames still queued are dropped on a backend without channels", async () => {
+  const app = await setup();
+  let socket = connectTransport(app);
+  const channel = app.getChannel("probe");
+  const errors = [];
+  channel.on("error", (error) => errors.push(error.code));
+  socket.receive(["_opened", null, "probe"]);
+  // The socket is closing, but the browser has not reported the close yet, so
+  // these frames queue on the transport.
+  socket.readyState = socket.constructor.CLOSING;
+  app.transport.emit("event", { name: "state.event" });
+  channel.emit("push", { n: 1 });
+  channel.emit("frame", { n: 2 }, [new Uint8Array([1, 2, 3])]);
+  socket.readyState = socket.constructor.CLOSED;
+  socket.onclose({ code: 1006, reason: "" });
+
+  // The reconnect lands on a backend that closes the socket over either.
+  socket = connectTransport(app, { protocol: 1 });
+  assert.deepEqual(socket.sent.slice(1), [["event", { name: "state.event" }]]);
+  assert.equal(app.transport._sendQueue.length, 0);
+  assert.deepEqual(errors, ["channels_unsupported"]);
+});
+
+test("an _opened from a transport the channel has left changes nothing", async () => {
+  const app = await setup();
+  const old = connectTransport(app);
+  const channel = app.getChannel("moved");
+  let connects = 0;
+  channel.on("connect", () => connects++);
+  old.close();
+  channel.emit("push", { n: 1 });
+  // A straggler answering the open the closed socket carried.
+  old.receive(["_opened", null, "moved"]);
+  assert.equal(channel.connected, false);
+  assert.equal(connects, 0);
+
+  // The queued message is owed to the transport the channel attaches to next.
+  const socket = connectTransport(app);
+  socket.receive(["_opened", null, "moved"]);
+  assert.equal(connects, 1);
+  assert.deepEqual(socket.sent.slice(1), [
+    ["_open", null, "moved"],
+    ["push", { n: 1 }, "moved"],
+  ]);
 });

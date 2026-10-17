@@ -38,11 +38,12 @@ def ChannelApp():
       // Drop the socket the way the transport's own watchdog does on a dead
       // connection, so the test exercises the supported reconnect path.
       window.__probe.drop = () => probeChannel._transport._dropConnection("test");
-      // Drop and emit in the same tick: the socket is CLOSING but the channel
-      // still reports connected, so the frame queues on the transport rather
-      // than on the channel.
+      // Close the socket and emit in the same tick: it is CLOSING, but its
+      // close is not reported yet, so the channel still reports connected
+      // and the frame queues on the transport rather than on the channel.
+      // (A drop detaches the channel at once, queueing on the channel.)
       window.__probe.dropThenEmit = (n) => {
-        probeChannel._transport._dropConnection("test");
+        probeChannel._transport._ws.close();
         probeChannel.emit("push", { n }, [new Uint8Array([1, 2, 3, 4])]);
       };
       // Emit while down, then mutate what was passed: the queued message must

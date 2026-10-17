@@ -118,8 +118,6 @@ async function setup({
       ReflexWebSocket,
       disableChannels() {},
       getChannel() {},
-      parseJsonLenient() {},
-      undefinedToNull() {},
     },
     mergician: { mergician() {} },
     "$/env.json": {
@@ -160,7 +158,7 @@ async function setup({
       },
       eventLoop: { addEvents() {}, connectErrors: [] },
     },
-    "$/utils/helpers/json": { parseJson: JSON.parse },
+    "$/utils/helpers/json": { parseJsonLenient() {}, undefinedToNull() {} },
     "$/utils/helpers/debounce": { default() {} },
     "$/utils/helpers/throttle": { default() {} },
     "$/utils/helpers/upload": { uploadFiles() {} },

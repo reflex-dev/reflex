@@ -50,6 +50,10 @@ export async function createQueueRuntime(
       eventLoop: { addEvents: unused },
     },
     "$/utils/helpers/debounce": { default: unused },
+    "$/utils/helpers/json": {
+      parseJsonLenient: unused,
+      undefinedToNull: unused,
+    },
     "$/utils/helpers/throttle": { default: throttle ?? unused },
     "$/utils/helpers/upload": {
       uploadFiles: uploadFiles ?? unused,
@@ -58,8 +62,6 @@ export async function createQueueRuntime(
       ReflexWebSocket: unused,
       disableChannels: unused,
       getChannel: unused,
-      parseJsonLenient: unused,
-      undefinedToNull: unused,
     },
     ...dependencyOverrides,
   };
