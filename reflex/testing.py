@@ -193,6 +193,15 @@ class _EmbeddedServer:
         """
         return (self.host, self.port)
 
+    @property
+    def url(self) -> str:
+        """The http URL the server serves on.
+
+        Returns:
+            The URL, without a trailing slash.
+        """
+        return f"http://{self.host}:{self.port}"
+
     def wait_started(self, timeout: float | None = None) -> None:
         """Block until the server serves, after the app's lifespan startup.
 
@@ -598,6 +607,8 @@ class AppHarness:
         if self.app_asgi is None:
             msg = "App was not initialized."
             raise RuntimeError(msg)
+        # Granian serves it, so it advertises the frame size Granian receives.
+        reflex.utils.exec._cap_message_size_for_granian()
         self.backend = _EmbeddedServer(self.app_asgi, port=port)
         self.backend.shutdown = self._get_backend_shutdown_handler()
 
@@ -620,9 +631,7 @@ class AppHarness:
         with chdir(self.app_path):
             config = get_config()
             print("Polling for servers...")  # for pytest diagnosis #noqa: T201
-            config.api_url = "http://{}:{}".format(
-                *self._poll_for_servers(timeout=30).getsockname(),
-            )
+            config.api_url = self._poll_for_servers(timeout=30).url
             print("Building frontend...")  # for pytest diagnosis #noqa: T201
             reflex.utils.build.setup_frontend(self.app_path)
 
@@ -1072,9 +1081,7 @@ class AppHarnessProd(AppHarness):
         with chdir(self.app_path):
             config = get_config()
             print("Polling for servers...")  # for pytest diagnosis #noqa: T201
-            config.api_url = "http://{}:{}".format(
-                *self._poll_for_servers(timeout=30).getsockname(),
-            )
+            config.api_url = self._poll_for_servers(timeout=30).url
             print("Building frontend...")  # for pytest diagnosis #noqa: T201
 
             get_config().loglevel = reflex.constants.LogLevel.INFO
@@ -1106,31 +1113,12 @@ class AppHarnessProd(AppHarness):
             raise RuntimeError(msg)
         self.frontend_server.wait_started(DEFAULT_TIMEOUT)
         config = get_config()
-        self.frontend_url = "http://{}:{}".format(
-            *self.frontend_server.getsockname()
-        ) + config.prepend_frontend_path("/")
+        self.frontend_url = self.frontend_server.url + config.prepend_frontend_path("/")
         config.deploy_url = self.frontend_url
 
-    def _start_backend(self):
-        if self.app_asgi is None:
-            msg = "App was not initialized."
-            raise RuntimeError(msg)
+    def _start_backend(self, port: int = 0):
         environment.REFLEX_SKIP_COMPILE.set(True)
-        self.backend = _EmbeddedServer(self.app_asgi)
-        self.backend.shutdown = self._get_backend_shutdown_handler()
-
-        def _run_backend(context: contextvars.Context) -> None:
-            if self.backend is not None:
-                context.run(self.backend.run)
-
-        print(  # noqa: T201
-            "Creating backend in a new thread..."
-        )
-        self.backend_thread = threading.Thread(
-            target=_run_backend, args=(contextvars.copy_context(),)
-        )
-        self.backend_thread.start()
-        print("Backend started.")  # for pytest diagnosis #noqa: T201
+        super()._start_backend(port)
 
     def _poll_for_servers(self, timeout: TimeoutType = None) -> _EmbeddedServer:
         try:

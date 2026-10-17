@@ -10,7 +10,7 @@ import re
 import shutil
 import subprocess
 import sys
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Iterable
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -18,7 +18,7 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 from opentelemetry import trace
-from reflex_base import otel
+from reflex_base import constants, otel
 from reflex_base.config import get_config
 from reflex_base.registry import RegistrationContext
 from starlette.routing import WebSocketRoute
@@ -130,7 +130,7 @@ class FakeWebSocket:
             return {"type": "websocket.receive", "bytes": item}
         return {"type": "websocket.receive", "text": item}
 
-    def feed(self, *frames: Any, connect: bool = True):
+    def feed(self, *frames: Any, connect: bool = True, disconnect: bool = True):
         """Queue incoming frames (lists are JSON-encoded) and a disconnect.
 
         The session's connect frame goes first unless ``connect`` is False.
@@ -139,41 +139,49 @@ class FakeWebSocket:
             self._incoming.put_nowait(
                 frame if isinstance(frame, (str, bytes)) else json.dumps(frame)
             )
-        self._incoming.put_nowait(_DISCONNECT)
+        if disconnect:
+            self._incoming.put_nowait(_DISCONNECT)
 
 
 @pytest.fixture
-def mock_app() -> Mock:
-    """A mock app for the event namespace.
-
-    Returns:
-        The mock app.
-    """
-    app = Mock()
-    app._state = None
-    app._channels = {}
-    app.router = Mock(return_value=None)
-    app.event_processor.enqueue = AsyncMock()
-    return app
-
-
-@pytest.fixture
-def namespace(mock_app: Mock, mocker) -> WebsocketEventNamespace:
-    """A websocket event namespace with a mock app and a local token manager.
-
-    Redis is disabled so token linking cannot leak into a shared Redis.
+def namespace(namespace_app: Mock) -> WebsocketEventNamespace:
+    """A namespace serving the mock app.
 
     Returns:
         The namespace.
     """
-    mocker.patch("reflex.utils.prerequisites.check_redis_used", return_value=False)
-    return WebsocketEventNamespace("/_event", mock_app)
+    return WebsocketEventNamespace("/_event", namespace_app)
 
 
 async def _drain_tasks():
     """Let pending disconnect-cleanup tasks run to completion."""
     for _ in range(3):
         await asyncio.sleep(0)
+
+
+async def serve(
+    namespace: WebsocketEventNamespace,
+    *frames: Any,
+    connect: bool = True,
+    websocket: FakeWebSocket | None = None,
+) -> FakeWebSocket:
+    """Serve one session that sends the given frames and hangs up, then clean up.
+
+    Args:
+        namespace: The namespace serving it.
+        *frames: The frames the client sends, after its connect frame unless
+            ``connect`` is False.
+        connect: Whether the client opens with a connect frame.
+        websocket: The fake websocket to serve; a new one if None.
+
+    Returns:
+        The websocket, recording what the server sent.
+    """
+    websocket = websocket or FakeWebSocket()
+    websocket.feed(*frames, connect=connect)
+    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
+    await _drain_tasks()
+    return websocket
 
 
 @pytest.mark.asyncio
@@ -200,7 +208,10 @@ async def test_handshake_and_token_link(namespace: WebsocketEventNamespace):
 
 @pytest.mark.asyncio
 async def test_boot_event_is_the_sessions_first_event(
-    namespace: WebsocketEventNamespace, mock_app: Mock
+    namespace: WebsocketEventNamespace,
+    namespace_app: Mock,
+    linked_state: Mock,
+    boot_event: dict[str, Any],
 ):
     """The boot event in the connect frame is processed right after the handshake.
 
@@ -208,66 +219,55 @@ async def test_boot_event_is_the_sessions_first_event(
     state, so the connect does not load and save the state tree for that; a
     connect without a boot event still does.
     """
-    mock_app._state = Mock()
-    modify_state = mock_app.state_manager.modify_state = Mock(
-        return_value=AsyncMock(__aenter__=AsyncMock(return_value=Mock(router_data={})))
-    )
-    boot_event = {"name": "state.hydrate_and_load", "payload": {}, "router_data": {}}
+    modify_state = namespace_app.state_manager.modify_state
     click = {"name": "state.on_click", "payload": {}, "router_data": {}}
-    websocket = FakeWebSocket()
-    websocket.feed(
-        [CONNECT_MESSAGE, {"event": boot_event}], ["event", click], connect=False
+    websocket = await serve(
+        namespace,
+        [CONNECT_MESSAGE, {"event": boot_event}],
+        ["event", click],
+        connect=False,
     )
-    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
-    await _drain_tasks()
 
     assert websocket.sent[0][0] == HANDSHAKE_MESSAGE
     assert [
-        call.args[1].name for call in mock_app.event_processor.enqueue.await_args_list
+        call.args[1].name
+        for call in namespace_app.event_processor.enqueue.await_args_list
     ] == ["state.hydrate_and_load", "state.on_click"]
     modify_state.assert_not_called()
 
-    websocket = FakeWebSocket()
-    websocket.feed()
-    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
-    await _drain_tasks()
+    websocket = await serve(namespace)
 
     modify_state.assert_called_once()
 
 
 @pytest.mark.asyncio
 async def test_state_schema_mismatch_is_reported_before_the_handshake(
-    namespace: WebsocketEventNamespace, mock_app: Mock
+    namespace: WebsocketEventNamespace, namespace_app: Mock, boot_event: dict[str, Any]
 ):
     """A frontend compiled for another state tree is told so before it hydrates.
 
     The session still hydrates; a frontend built for the backend's state tree
     is told nothing.
     """
-    mock_app._state = Mock(_to_frontend_schema=Mock(return_value="backend-schema"))
-    boot_event = {"name": "state.hydrate_and_load", "payload": {}, "router_data": {}}
-    websocket = FakeWebSocket()
-    websocket.feed(
+    namespace_app._state = Mock(_to_frontend_schema=Mock(return_value="backend-schema"))
+    websocket = await serve(
+        namespace,
         [CONNECT_MESSAGE, {"event": boot_event, "state_schema": "frontend-schema"}],
         connect=False,
     )
-    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
-    await _drain_tasks()
 
     assert websocket.sent[0] == [
         "state_mismatch",
         {"backend": "backend-schema", "reload_cooldown_ms": 10_000},
     ]
     assert websocket.sent[1][0] == HANDSHAKE_MESSAGE
-    mock_app.event_processor.enqueue.assert_awaited_once()
+    namespace_app.event_processor.enqueue.assert_awaited_once()
 
-    websocket = FakeWebSocket()
-    websocket.feed(
+    websocket = await serve(
+        namespace,
         [CONNECT_MESSAGE, {"event": boot_event, "state_schema": "backend-schema"}],
         connect=False,
     )
-    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
-    await _drain_tasks()
 
     assert [frame[0] for frame in websocket.sent] == [HANDSHAKE_MESSAGE]
 
@@ -290,10 +290,7 @@ async def test_session_opens_only_with_a_connect_frame(
     close_code: int | None,
 ):
     """A socket whose first frame is no connect frame never links a token."""
-    websocket = FakeWebSocket()
-    websocket.feed(*frames, connect=False)
-    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
-    await _drain_tasks()
+    websocket = await serve(namespace, *frames, connect=False)
 
     assert websocket.close_code == close_code
     assert websocket.sent == []
@@ -326,10 +323,7 @@ async def test_oversized_integer_closes_with_protocol_error(
 @pytest.mark.asyncio
 async def test_frames_are_serialized_compactly(namespace: WebsocketEventNamespace):
     """Frames carry no separator whitespace, like the Socket.IO packets they replace."""
-    websocket = FakeWebSocket()
-    websocket.feed(["ping"], [OPEN_MESSAGE, None, "nope"])
-    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
-    await _drain_tasks()
+    websocket = await serve(namespace, ["ping"], [OPEN_MESSAGE, None, "nope"])
 
     assert len(websocket.raw_sent) == 3
     for text in websocket.raw_sent:
@@ -366,43 +360,44 @@ async def test_oversize_connect_frame_closes_connection(
 
 @pytest.mark.asyncio
 async def test_undeserializable_boot_event_closes_connection(
-    namespace: WebsocketEventNamespace, mock_app: Mock
+    namespace: WebsocketEventNamespace, namespace_app: Mock
 ):
     """A boot event that fails deserialization ends the session it opened.
 
     The handshake queued for it is dropped with the session, so the client
     sees a failed connect and retries with backoff.
     """
-    websocket = FakeWebSocket()
-    websocket.feed(
-        [CONNECT_MESSAGE, {"event": "not an event"}], ["ping"], connect=False
+    websocket = await serve(
+        namespace, [CONNECT_MESSAGE, {"event": "not an event"}], ["ping"], connect=False
     )
-    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
-    await _drain_tasks()
 
     assert websocket.close_code == 1002
     assert websocket.sent == []
-    mock_app.event_processor.enqueue.assert_not_awaited()
+    namespace_app.event_processor.enqueue.assert_not_awaited()
     assert "tok1" not in namespace.token_to_sid
 
 
 @pytest.mark.asyncio
-async def test_boot_event_handler_error_keeps_connection(
+async def test_boot_event_handler_error_ends_the_session(
     namespace: WebsocketEventNamespace,
-    mock_app: Mock,
+    namespace_app: Mock,
     caplog: pytest.LogCaptureFixture,
+    boot_event: dict[str, Any],
 ):
-    """A server-side failure on the boot event is logged and the session survives."""
-    mock_app.event_processor.enqueue.side_effect = RuntimeError("server bug")
-    boot_event = {"name": "state.hydrate_and_load", "payload": {}, "router_data": {}}
-    websocket = FakeWebSocket()
-    websocket.feed([CONNECT_MESSAGE, {"event": boot_event}], ["ping"], connect=False)
-    with caplog.at_level(logging.ERROR, logger="reflex.event_namespace"):
-        await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
-    await _drain_tasks()
+    """A server-side failure on the boot event is logged and ends the session.
 
-    assert websocket.close_code is None
-    assert ["ping", "pong"] in websocket.sent
+    Kept open, the session would leave the client waiting for a hydrate that
+    never comes; closed, the client reconnects and retries, as on Socket.IO.
+    """
+    namespace_app.event_processor.enqueue.side_effect = RuntimeError("server bug")
+    with caplog.at_level(logging.ERROR, logger="reflex.event_namespace"):
+        websocket = await serve(
+            namespace, [CONNECT_MESSAGE, {"event": boot_event}], ["ping"], connect=False
+        )
+
+    assert websocket.close_code == 1011
+    assert ["ping", "pong"] not in websocket.sent
+    assert "tok1" not in namespace.token_to_sid
     assert any(
         "Error handling the boot event" in record.getMessage()
         for record in caplog.records
@@ -448,15 +443,6 @@ class StalledWebSocket(FakeWebSocket):
         await asyncio.Event().wait()
 
 
-def _open_session(websocket: FakeWebSocket) -> None:
-    """Queue a connect frame and nothing after it, so the session stays open.
-
-    Args:
-        websocket: The fake websocket.
-    """
-    websocket._incoming.put_nowait(json.dumps(CONNECT_FRAME))
-
-
 @pytest.mark.asyncio
 async def test_a_silent_client_is_closed_by_its_own_session(
     namespace: WebsocketEventNamespace, monkeypatch: pytest.MonkeyPatch
@@ -469,7 +455,7 @@ async def test_a_silent_client_is_closed_by_its_own_session(
     monkeypatch.setenv("REFLEX_SOCKET_INTERVAL", "20ms")
     monkeypatch.setenv("REFLEX_SOCKET_TIMEOUT", "20ms")
     websocket = ReceiveBoundWebSocket()
-    _open_session(websocket)
+    websocket.feed(disconnect=False)
 
     await asyncio.wait_for(namespace.handle_websocket(websocket), 2)  # pyright: ignore[reportArgumentType]
     await _drain_tasks()
@@ -498,7 +484,7 @@ async def test_a_client_that_stops_reading_does_not_block_senders(
 
     monkeypatch.setattr(namespace, "handle_connect", connect_and_signal)
     websocket = StalledWebSocket()
-    _open_session(websocket)
+    websocket.feed(disconnect=False)
     session = asyncio.create_task(namespace.handle_websocket(websocket))  # pyright: ignore[reportArgumentType]
     await asyncio.wait_for(linked.wait(), 1)
     sid = namespace.token_to_sid["tok1"]
@@ -521,7 +507,7 @@ async def test_a_stalled_client_still_times_out(
     monkeypatch.setenv("REFLEX_SOCKET_INTERVAL", "20ms")
     monkeypatch.setenv("REFLEX_SOCKET_TIMEOUT", "20ms")
     websocket = StalledWebSocket()
-    _open_session(websocket)
+    websocket.feed(disconnect=False)
 
     await asyncio.wait_for(namespace.handle_websocket(websocket), 2)  # pyright: ignore[reportArgumentType]
     await _drain_tasks()
@@ -530,18 +516,25 @@ async def test_a_stalled_client_still_times_out(
 
 
 @pytest.mark.asyncio
-async def test_event_is_enqueued(namespace: WebsocketEventNamespace, mock_app: Mock):
+async def test_event_is_enqueued(
+    namespace: WebsocketEventNamespace, namespace_app: Mock
+):
     """An incoming event frame reaches the app's event processor."""
-    websocket = FakeWebSocket()
-    websocket.feed([
-        "event",
-        {"token": "tok1", "name": "state.on_click", "payload": {}, "router_data": {}},
-    ])
-    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
-    await _drain_tasks()
+    await serve(
+        namespace,
+        [
+            "event",
+            {
+                "token": "tok1",
+                "name": "state.on_click",
+                "payload": {},
+                "router_data": {},
+            },
+        ],
+    )
 
-    mock_app.event_processor.enqueue.assert_awaited_once()
-    token, event = mock_app.event_processor.enqueue.await_args.args
+    namespace_app.event_processor.enqueue.assert_awaited_once()
+    token, event = namespace_app.event_processor.enqueue.await_args.args
     assert token == "tok1"
     assert event.name == "state.on_click"
     assert event.router_data["headers"]["host"] == "localhost"
@@ -551,25 +544,21 @@ async def test_event_is_enqueued(namespace: WebsocketEventNamespace, mock_app: M
 @pytest.mark.asyncio
 async def test_ping_pong(namespace: WebsocketEventNamespace):
     """An application-level ping event gets a pong reply."""
-    websocket = FakeWebSocket()
-    websocket.feed(["ping"], [PONG_MESSAGE])
-    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
-    await _drain_tasks()
+    websocket = await serve(namespace, ["ping"], [PONG_MESSAGE])
 
     assert ["ping", "pong"] in websocket.sent
 
 
 @pytest.mark.asyncio
 async def test_client_error_reaches_exception_handler(
-    namespace: WebsocketEventNamespace, mock_app: Mock
+    namespace: WebsocketEventNamespace, namespace_app: Mock
 ):
     """A client_error frame is routed to the frontend exception handler."""
     errors: list[str] = []
-    mock_app.frontend_exception_handler = lambda exc: errors.append(str(exc))
-    websocket = FakeWebSocket()
-    websocket.feed(["client_error", {"error_type": "boom", "message": "it broke"}])
-    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
-    await _drain_tasks()
+    namespace_app.frontend_exception_handler = lambda exc: errors.append(str(exc))
+    await serve(
+        namespace, ["client_error", {"error_type": "boom", "message": "it broke"}]
+    )
 
     assert len(errors) == 1
     assert "it broke" in errors[0]
@@ -581,10 +570,7 @@ async def test_malformed_frame_closes_connection(
     namespace: WebsocketEventNamespace, frame: str
 ):
     """A malformed frame closes the connection with 1002 (protocol error)."""
-    websocket = FakeWebSocket()
-    websocket.feed(frame, ["ping"])
-    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
-    await _drain_tasks()
+    websocket = await serve(namespace, frame, ["ping"])
 
     assert websocket.close_code == 1002
     # Nothing after the malformed frame is processed.
@@ -609,20 +595,17 @@ async def test_malformed_frame_closes_connection(
 )
 async def test_undeserializable_event_closes_connection(
     namespace: WebsocketEventNamespace,
-    mock_app: Mock,
+    namespace_app: Mock,
     payload: object,
     caplog: pytest.LogCaptureFixture,
 ):
     """An event frame that fails deserialization closes with 1002 and no warning."""
-    websocket = FakeWebSocket()
-    websocket.feed(["event", payload], ["ping"])
     with caplog.at_level(logging.DEBUG, logger="reflex.event_namespace"):
-        await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
-    await _drain_tasks()
+        websocket = await serve(namespace, ["event", payload], ["ping"])
 
     assert websocket.close_code == 1002
     assert ["ping", "pong"] not in websocket.sent
-    mock_app.event_processor.enqueue.assert_not_awaited()
+    namespace_app.event_processor.enqueue.assert_not_awaited()
     # Client-controlled input must not write above debug level.
     assert all(record.levelno <= logging.DEBUG for record in caplog.records)
 
@@ -630,19 +613,17 @@ async def test_undeserializable_event_closes_connection(
 @pytest.mark.asyncio
 async def test_handler_error_keeps_connection(
     namespace: WebsocketEventNamespace,
-    mock_app: Mock,
+    namespace_app: Mock,
     caplog: pytest.LogCaptureFixture,
 ):
     """A server-side handler failure is logged and the connection survives."""
-    mock_app.event_processor.enqueue.side_effect = RuntimeError("server bug")
-    websocket = FakeWebSocket()
-    websocket.feed(
-        ["event", {"name": "state.on_click", "payload": {}, "router_data": {}}],
-        ["ping"],
-    )
+    namespace_app.event_processor.enqueue.side_effect = RuntimeError("server bug")
     with caplog.at_level(logging.ERROR, logger="reflex.event_namespace"):
-        await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
-    await _drain_tasks()
+        websocket = await serve(
+            namespace,
+            ["event", {"name": "state.on_click", "payload": {}, "router_data": {}}],
+            ["ping"],
+        )
 
     assert websocket.close_code is None
     assert ["ping", "pong"] in websocket.sent
@@ -663,11 +644,12 @@ async def test_tokenless_connection_rejected(
     the session is rejected anyway, so warning would only let anonymous
     connects flood the logs.
     """
-    websocket = FakeWebSocket(query_string=b"", subprotocols=["0.0.1"])
-    websocket.feed(["ping"])
     with caplog.at_level(logging.DEBUG, logger="reflex.event_namespace"):
-        await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
-    await _drain_tasks()
+        websocket = await serve(
+            namespace,
+            ["ping"],
+            websocket=FakeWebSocket(query_string=b"", subprotocols=["0.0.1"]),
+        )
 
     assert websocket.close_code == 1008
     # A refused session is never acknowledged.
@@ -680,11 +662,8 @@ async def test_version_mismatch_warns_for_linked_session(
     namespace: WebsocketEventNamespace, caplog: pytest.LogCaptureFixture
 ):
     """A linked session with a stale frontend gets one sanitized warning."""
-    websocket = FakeWebSocket(subprotocols=["0.0.1\x1b[31m"])
-    websocket.feed()
     with caplog.at_level(logging.WARNING, logger="reflex.event_namespace"):
-        await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
-    await _drain_tasks()
+        await serve(namespace, websocket=FakeWebSocket(subprotocols=["0.0.1\x1b[31m"]))
 
     warnings = [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
     assert len(warnings) == 1
@@ -699,10 +678,7 @@ async def test_oversize_message_closes_connection(
 ):
     """A frame over the size limit closes the connection with 1009."""
     monkeypatch.setenv("REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE", "20")
-    websocket = FakeWebSocket()
-    websocket.feed(["event", {"payload": "x" * 100}])
-    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
-    await _drain_tasks()
+    websocket = await serve(namespace, ["event", {"payload": "x" * 100}])
 
     assert websocket.close_code == 1009
 
@@ -716,10 +692,7 @@ async def test_oversize_multibyte_message_closes_connection(
     # 15 characters (under the limit) but 29 UTF-8 bytes (over it).
     frame = '["x","€€€€€€€"]'
     assert len(frame) <= 25 < len(frame.encode("utf-8"))
-    websocket = FakeWebSocket()
-    websocket.feed(frame)
-    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
-    await _drain_tasks()
+    websocket = await serve(namespace, frame)
 
     assert websocket.close_code == 1009
 
@@ -732,10 +705,7 @@ async def test_multibyte_message_within_limit_is_processed(
     # 12 characters, 14 bytes: over limit/4 (triggers the exact byte count)
     # but within the limit itself.
     monkeypatch.setenv("REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE", "14")
-    websocket = FakeWebSocket()
-    websocket.feed('["ping","€"]')
-    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
-    await _drain_tasks()
+    websocket = await serve(namespace, '["ping","€"]')
 
     assert websocket.close_code is None
     assert ["ping", "pong"] in websocket.sent
@@ -744,10 +714,7 @@ async def test_multibyte_message_within_limit_is_processed(
 @pytest.mark.asyncio
 async def test_binary_frame_closes_connection(namespace: WebsocketEventNamespace):
     """A binary frame closes the connection with 1003 (unsupported data)."""
-    websocket = FakeWebSocket()
-    websocket.feed(b"\x00\x01")
-    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
-    await _drain_tasks()
+    websocket = await serve(namespace, b"\x00\x01")
 
     assert websocket.close_code == 1003
 
@@ -777,10 +744,9 @@ async def test_allowed_origin_is_accepted(namespace: WebsocketEventNamespace, mo
     mocker.patch.object(
         get_config(), "cors_allowed_origins", ("https://allowed.example",)
     )
-    websocket = FakeWebSocket(origin="https://allowed.example")
-    websocket.feed()
-    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
-    await _drain_tasks()
+    websocket = await serve(
+        namespace, websocket=FakeWebSocket(origin="https://allowed.example")
+    )
 
     assert websocket.accepted
 
@@ -823,10 +789,7 @@ async def test_websocket_records_connections_and_message_sizes(
     namespace: WebsocketEventNamespace, otel_metrics
 ):
     """A session adjusts the connection gauge and sizes frames in both directions."""
-    websocket = FakeWebSocket()
-    websocket.feed(["ping"])
-    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
-    await _drain_tasks()
+    await serve(namespace, ["ping"])
 
     (connections,) = metric_points(otel_metrics, otel.METRIC_WEBSOCKET_CONNECTIONS)
     # Connect and disconnect both happened, so the gauge is back at zero.
@@ -843,7 +806,7 @@ async def test_websocket_records_connections_and_message_sizes(
 
 @pytest.mark.asyncio
 async def test_websocket_event_uses_frontend_traceparent(
-    namespace: WebsocketEventNamespace, mock_app: Mock, otel_exporter
+    namespace: WebsocketEventNamespace, namespace_app: Mock, otel_exporter
 ):
     """A traceparent in the event payload becomes the parent of the event span."""
     seen: list = []
@@ -852,16 +815,14 @@ async def test_websocket_event_uses_frontend_traceparent(
         await asyncio.sleep(0)
         seen.append(trace.get_current_span().get_span_context())
 
-    mock_app.event_processor.enqueue = enqueue
+    namespace_app.event_processor.enqueue = enqueue
     traceparent = "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
-    websocket = FakeWebSocket()
-    websocket.feed(
-        ["event", {"name": "state.h", "traceparent": traceparent}],
-        ["event", {"name": "state.h"}],
-    )
     with active_tracer().start_as_current_span("websocket"):
-        await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
-    await _drain_tasks()
+        await serve(
+            namespace,
+            ["event", {"name": "state.h", "traceparent": traceparent}],
+            ["event", {"name": "state.h"}],
+        )
 
     remote, fresh = seen
     assert f"{remote.trace_id:032x}" == "0af7651916cd43dd8448eb211c80319c"
@@ -1138,6 +1099,18 @@ class RecordingChannel(Channel):
         self.closed.append(session)
 
 
+@pytest.fixture
+def probe_channel(namespace_app: Mock) -> RecordingChannel:
+    """A recording channel the mock app serves as "probe".
+
+    Returns:
+        The channel.
+    """
+    channel = RecordingChannel()
+    namespace_app._channels = {"probe": channel}
+    return channel
+
+
 def channel_frames(websocket: FakeWebSocket, channel: str = "probe") -> list[Any]:
     """Text frames the server sent on a channel.
 
@@ -1207,34 +1180,30 @@ def test_channel_frame_rejects_too_many_attachments():
 
 @pytest.mark.asyncio
 async def test_channel_open_and_message(
-    namespace: WebsocketEventNamespace, mock_app: Mock
+    namespace: WebsocketEventNamespace,
+    namespace_app: Mock,
+    probe_channel: RecordingChannel,
 ):
     """Opening a channel answers _opened and routes messages to the channel."""
-    channel = RecordingChannel()
-    mock_app._channels = {"probe": channel}
-    websocket = FakeWebSocket()
-    websocket.feed([OPEN_MESSAGE, None, "probe"], ["sub", {"fig": "f1"}, "probe"])
-    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
-    await _drain_tasks()
+    websocket = await serve(
+        namespace, [OPEN_MESSAGE, None, "probe"], ["sub", {"fig": "f1"}, "probe"]
+    )
 
     assert channel_frames(websocket)[0] == [OPENED_MESSAGE, None, "probe"]
-    assert [session.client_token for session in channel.opened] == ["tok1"]
-    assert channel.messages == [("sub", {"fig": "f1"}, [])]
+    assert [session.client_token for session in probe_channel.opened] == ["tok1"]
+    assert probe_channel.messages == [("sub", {"fig": "f1"}, [])]
     assert ["echo", {"fig": "f1"}, "probe"] in websocket.sent
     # The disconnect closed the session again.
-    assert channel.closed == channel.opened
+    assert probe_channel.closed == probe_channel.opened
 
 
 @pytest.mark.asyncio
 async def test_channel_unknown_name_reports_error(
-    namespace: WebsocketEventNamespace, mock_app: Mock
+    namespace: WebsocketEventNamespace, namespace_app: Mock
 ):
     """Opening a channel the backend does not serve answers _error."""
-    mock_app._channels = {}
-    websocket = FakeWebSocket()
-    websocket.feed([OPEN_MESSAGE, None, "nope"])
-    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
-    await _drain_tasks()
+    namespace_app._channels = {}
+    websocket = await serve(namespace, [OPEN_MESSAGE, None, "nope"])
 
     error = channel_frames(websocket, "nope")[0]
     assert error[0] == CHANNEL_ERROR_MESSAGE
@@ -1243,55 +1212,48 @@ async def test_channel_unknown_name_reports_error(
 
 @pytest.mark.asyncio
 async def test_channel_message_before_open_reports_error(
-    namespace: WebsocketEventNamespace, mock_app: Mock
+    namespace: WebsocketEventNamespace,
+    namespace_app: Mock,
+    probe_channel: RecordingChannel,
 ):
     """A message for an unopened channel answers _error and is not dispatched."""
-    channel = RecordingChannel()
-    mock_app._channels = {"probe": channel}
-    websocket = FakeWebSocket()
-    websocket.feed(["sub", {}, "probe"])
-    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
-    await _drain_tasks()
+    websocket = await serve(namespace, ["sub", {}, "probe"])
 
     assert channel_frames(websocket)[0][1]["code"] == "channel_not_open"
-    assert channel.messages == []
+    assert probe_channel.messages == []
 
 
 @pytest.mark.asyncio
 async def test_channel_close_ends_the_session(
-    namespace: WebsocketEventNamespace, mock_app: Mock
+    namespace: WebsocketEventNamespace,
+    namespace_app: Mock,
+    probe_channel: RecordingChannel,
 ):
     """A _close frame runs on_close and stops dispatching to the channel."""
-    channel = RecordingChannel()
-    mock_app._channels = {"probe": channel}
-    websocket = FakeWebSocket()
-    websocket.feed(
+    websocket = await serve(
+        namespace,
         [OPEN_MESSAGE, None, "probe"],
         [CLOSE_MESSAGE, None, "probe"],
         ["sub", {}, "probe"],
     )
-    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
-    await _drain_tasks()
 
-    assert len(channel.closed) == 1
-    assert channel.messages == []
+    assert len(probe_channel.closed) == 1
+    assert probe_channel.messages == []
     assert channel_frames(websocket)[-1][1]["code"] == "channel_not_open"
 
 
 @pytest.mark.asyncio
 async def test_channel_binary_message_round_trip(
-    namespace: WebsocketEventNamespace, mock_app: Mock
+    namespace: WebsocketEventNamespace, namespace_app: Mock
 ):
     """A binary frame reaches a channel that accepts binary, and echoes back."""
     channel = RecordingChannel(accepts_binary=True)
-    mock_app._channels = {"probe": channel}
-    websocket = FakeWebSocket()
-    websocket.feed(
+    namespace_app._channels = {"probe": channel}
+    websocket = await serve(
+        namespace,
         [OPEN_MESSAGE, None, "probe"],
         encode_channel_frame("push", {"n": 2}, "probe", [b"\x00\x01", b"\x02"]),
     )
-    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
-    await _drain_tasks()
 
     assert channel.messages == [("push", {"n": 2}, [b"\x00\x01", b"\x02"])]
     echoed = [frame for frame in websocket.sent if isinstance(frame, bytes)]
@@ -1305,28 +1267,26 @@ async def test_channel_binary_message_round_trip(
 
 @pytest.mark.asyncio
 async def test_channel_binary_rejected_when_not_accepted(
-    namespace: WebsocketEventNamespace, mock_app: Mock
+    namespace: WebsocketEventNamespace,
+    namespace_app: Mock,
+    probe_channel: RecordingChannel,
 ):
     """Binary attachments to a text-only channel answer _error."""
-    channel = RecordingChannel(accepts_binary=False)
-    mock_app._channels = {"probe": channel}
-    websocket = FakeWebSocket()
-    websocket.feed(
+    websocket = await serve(
+        namespace,
         [OPEN_MESSAGE, None, "probe"],
         encode_channel_frame("push", None, "probe", [b"\x00"]),
     )
-    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
-    await _drain_tasks()
 
     assert channel_frames(websocket)[-1][1]["code"] == "binary_not_accepted"
-    assert channel.messages == []
+    assert probe_channel.messages == []
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("binary", [False, True])
 @pytest.mark.parametrize("event", [*sorted(RESERVED_EVENTS), "_opened", "_error"])
 async def test_channel_reserved_inbound_name_is_rejected(
-    namespace: WebsocketEventNamespace, mock_app: Mock, event: str, binary: bool
+    namespace: WebsocketEventNamespace, namespace_app: Mock, event: str, binary: bool
 ):
     """A client may not send a message under a reserved name, on either frame kind.
 
@@ -1334,16 +1294,14 @@ async def test_channel_reserved_inbound_name_is_rejected(
     send the channel API refuses, so the name never reaches it.
     """
     channel = RecordingChannel(accepts_binary=True)
-    mock_app._channels = {"probe": channel}
-    websocket = FakeWebSocket()
-    websocket.feed(
+    namespace_app._channels = {"probe": channel}
+    websocket = await serve(
+        namespace,
         [OPEN_MESSAGE, None, "probe"],
         encode_channel_frame(event, {"fig": "f1"}, "probe", [b"\x00"])
         if binary
         else [event, {"fig": "f1"}, "probe"],
     )
-    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
-    await _drain_tasks()
 
     assert channel.messages == []
     assert channel_frames(websocket)[-1][1]["code"] == "reserved_event"
@@ -1352,36 +1310,35 @@ async def test_channel_reserved_inbound_name_is_rejected(
 
 @pytest.mark.asyncio
 async def test_malformed_binary_frame_closes_connection(
-    namespace: WebsocketEventNamespace, mock_app: Mock
+    namespace: WebsocketEventNamespace,
+    namespace_app: Mock,
+    probe_channel: RecordingChannel,
 ):
     """A binary frame that is not a channel frame closes the connection."""
-    mock_app._channels = {"probe": RecordingChannel()}
-    websocket = FakeWebSocket()
-    websocket.feed(b"\xff\xff\xff\xff not a frame")
-    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
-    await _drain_tasks()
+    websocket = await serve(namespace, b"\xff\xff\xff\xff not a frame")
 
     assert websocket.close_code == 1002
 
 
 @pytest.mark.asyncio
 async def test_oversize_binary_frame_closes_connection(
-    namespace: WebsocketEventNamespace, mock_app: Mock, monkeypatch: pytest.MonkeyPatch
+    namespace: WebsocketEventNamespace,
+    namespace_app: Mock,
+    monkeypatch: pytest.MonkeyPatch,
+    probe_channel: RecordingChannel,
 ):
     """A binary frame over the size limit closes the connection with 1009."""
-    mock_app._channels = {"probe": RecordingChannel()}
     monkeypatch.setenv("REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE", "16")
-    websocket = FakeWebSocket()
-    websocket.feed(encode_channel_frame("push", None, "probe", [b"\x00" * 64]))
-    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
-    await _drain_tasks()
+    websocket = await serve(
+        namespace, encode_channel_frame("push", None, "probe", [b"\x00" * 64])
+    )
 
     assert websocket.close_code == 1009
 
 
 @pytest.mark.asyncio
 async def test_channel_handler_error_keeps_connection(
-    namespace: WebsocketEventNamespace, mock_app: Mock, caplog
+    namespace: WebsocketEventNamespace, namespace_app: Mock, caplog
 ):
     """A channel handler raising is logged without dropping the connection."""
 
@@ -1392,7 +1349,7 @@ async def test_channel_handler_error_keeps_connection(
             msg = "handler failed"
             raise RuntimeError(msg)
 
-    mock_app._channels = {"boom": BoomChannel()}
+    namespace_app._channels = {"boom": BoomChannel()}
     websocket = FakeWebSocket()
     with caplog.at_level(logging.ERROR):
         websocket.feed([OPEN_MESSAGE, None, "boom"], ["go", None, "boom"], ["ping"])
@@ -1409,10 +1366,7 @@ async def test_channel_frame_with_non_string_name_closes_connection(
     namespace: WebsocketEventNamespace,
 ):
     """A frame whose channel element is not a string closes the connection."""
-    websocket = FakeWebSocket()
-    websocket.feed(["sub", None, 42])
-    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
-    await _drain_tasks()
+    websocket = await serve(namespace, ["sub", None, 42])
 
     assert websocket.close_code == 1002
 
@@ -1541,7 +1495,7 @@ console.log(JSON.stringify({{
 
 @pytest.mark.asyncio
 async def test_repeated_channel_open_reuses_the_session(
-    namespace: WebsocketEventNamespace, mock_app: Mock
+    namespace: WebsocketEventNamespace, namespace_app: Mock
 ):
     """Opening an already-open channel answers again without a second session.
 
@@ -1558,11 +1512,10 @@ async def test_repeated_channel_open_reuses_the_session(
             session.join("all")
 
     channel = RoomChannel()
-    mock_app._channels = {"probe": channel}
-    websocket = FakeWebSocket()
-    websocket.feed([OPEN_MESSAGE, None, "probe"], [OPEN_MESSAGE, None, "probe"])
-    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
-    await _drain_tasks()
+    namespace_app._channels = {"probe": channel}
+    websocket = await serve(
+        namespace, [OPEN_MESSAGE, None, "probe"], [OPEN_MESSAGE, None, "probe"]
+    )
 
     assert len(channel.opened) == 1
     assert [frame[0] for frame in channel_frames(websocket)] == [
@@ -1576,7 +1529,7 @@ async def test_repeated_channel_open_reuses_the_session(
 
 @pytest.mark.asyncio
 async def test_interrupted_teardown_still_unlinks_the_token(
-    namespace: WebsocketEventNamespace, mock_app: Mock
+    namespace: WebsocketEventNamespace, namespace_app: Mock
 ):
     """Token cleanup starts before any teardown await can be interrupted.
 
@@ -1592,7 +1545,7 @@ async def test_interrupted_teardown_still_unlinks_the_token(
             """Fail the way a cancelled cleanup await would."""
             raise asyncio.CancelledError
 
-    mock_app._channels = {"probe": StallingChannel()}
+    namespace_app._channels = {"probe": StallingChannel()}
     websocket = FakeWebSocket()
     websocket.feed([OPEN_MESSAGE, None, "probe"])
     with pytest.raises(asyncio.CancelledError):
@@ -1604,7 +1557,7 @@ async def test_interrupted_teardown_still_unlinks_the_token(
 
 @pytest.mark.asyncio
 async def test_interrupted_open_leaves_no_session_behind(
-    namespace: WebsocketEventNamespace, mock_app: Mock
+    namespace: WebsocketEventNamespace, namespace_app: Mock
 ):
     """A session interrupted inside on_open is still cleaned up on disconnect.
 
@@ -1621,7 +1574,7 @@ async def test_interrupted_open_leaves_no_session_behind(
             raise asyncio.CancelledError
 
     channel = InterruptedChannel()
-    mock_app._channels = {"probe": channel}
+    namespace_app._channels = {"probe": channel}
     websocket = FakeWebSocket()
     websocket.feed([OPEN_MESSAGE, None, "probe"])
     with pytest.raises(asyncio.CancelledError):
@@ -1634,17 +1587,14 @@ async def test_interrupted_open_leaves_no_session_behind(
 
 @pytest.mark.asyncio
 async def test_disconnect_marks_the_session_closed(
-    namespace: WebsocketEventNamespace, mock_app: Mock
+    namespace: WebsocketEventNamespace,
+    namespace_app: Mock,
+    probe_channel: RecordingChannel,
 ):
     """The session a channel holds reports the disconnect to its handlers."""
-    channel = RecordingChannel()
-    mock_app._channels = {"probe": channel}
-    websocket = FakeWebSocket()
-    websocket.feed([OPEN_MESSAGE, None, "probe"])
-    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
-    await _drain_tasks()
+    await serve(namespace, [OPEN_MESSAGE, None, "probe"])
 
-    assert [session.open for session in channel.opened] == [False]
+    assert [session.open for session in probe_channel.opened] == [False]
 
 
 @pytest.mark.asyncio
@@ -1658,10 +1608,7 @@ async def test_deeply_nested_frame_closes_connection(
     traceback rather than a protocol close.
     """
     depth = sys.getrecursionlimit() * 200
-    websocket = FakeWebSocket()
-    websocket.feed("[" * depth + "]" * depth)
-    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
-    await _drain_tasks()
+    websocket = await serve(namespace, "[" * depth + "]" * depth)
 
     assert websocket.close_code == 1002
 
@@ -1707,7 +1654,7 @@ async def test_a_room_broadcast_serializes_one_frame_for_every_member(
 ):
     """Fan-out costs one encode and one buffer, not one per recipient."""
     channel = RecordingChannel(accepts_binary=True)
-    sent: list[tuple[str | None, Any]] = []
+    sent: list[tuple[str, Any]] = []
     encodes = 0
     real_encode = event_namespace.encode_channel_frame
 
@@ -1716,9 +1663,9 @@ async def test_a_room_broadcast_serializes_one_frame_for_every_member(
         encodes += 1
         return real_encode(*args)
 
-    def record(to: str | None, payload: Any, label: str) -> None:
+    def record(sids: Iterable[str], payload: Any, label: str) -> None:
         # Stands in for queueing the frame on each client's connection.
-        sent.append((to, payload))
+        sent.extend((sid, payload) for sid in sids)
 
     monkeypatch.setattr(event_namespace, "encode_channel_frame", counting_encode)
     monkeypatch.setattr(namespace, "_deliver", record)
@@ -1750,7 +1697,7 @@ async def test_a_room_broadcast_serializes_one_frame_for_every_member(
 )
 async def test_a_session_whose_token_moved_is_closed_instead_of_sent_to(
     namespace: WebsocketEventNamespace,
-    mock_app: Mock,
+    namespace_app: Mock,
     send: Callable[[Channel, ChannelSession], Awaitable[Any]],
 ):
     """Channel messages stop at a socket whose token another instance claimed.
@@ -1771,10 +1718,9 @@ async def test_a_session_whose_token_moved_is_closed_instead_of_sent_to(
             opened.set()
 
     channel = RoomChannel()
-    mock_app._channels = {"probe": channel}
+    namespace_app._channels = {"probe": channel}
     websocket = FakeWebSocket()
-    _open_session(websocket)
-    websocket._incoming.put_nowait(json.dumps([OPEN_MESSAGE, None, "probe"]))
+    websocket.feed([OPEN_MESSAGE, None, "probe"], disconnect=False)
     serving = asyncio.create_task(namespace.handle_websocket(websocket))  # pyright: ignore[reportArgumentType]
     await asyncio.wait_for(opened.wait(), 1)
     # What RedisTokenManager does on adopting another instance's record.
@@ -1818,7 +1764,7 @@ async def test_closing_a_connection_the_heartbeat_already_closed_is_not_an_error
 
 @pytest.mark.asyncio
 async def test_handler_error_counters_do_not_outlive_their_sessions(
-    namespace: WebsocketEventNamespace, mock_app: Mock
+    namespace: WebsocketEventNamespace, namespace_app: Mock
 ):
     """Per-session error counters are dropped when the session goes away.
 
@@ -1847,7 +1793,7 @@ async def test_handler_error_counters_do_not_outlive_their_sessions(
             message = "boom"
             raise RuntimeError(message)
 
-    mock_app._channels = {"probe": FailingChannel()}
+    namespace_app._channels = {"probe": FailingChannel()}
     for index in range(3):
         websocket = FakeWebSocket(query_string=f"token=tok{index}".encode())
         websocket.feed([OPEN_MESSAGE, None, "probe"])
@@ -1873,191 +1819,9 @@ def test_client_limits_match_the_protocol():
     )
 
 
-@pytest.mark.skipif(not NODE, reason="Requires node to run the client")
-def test_client_refuses_frames_the_backend_would_close_over(tmp_path: Path):
-    """The client enforces the size limit itself, whenever it learns of it.
-
-    The backend answers an oversized frame by closing the connection, taking
-    the app's state updates with it, so every path that can produce one has to
-    be stopped on the client: emitting while open, emitting before the channel
-    opens (checked again when the limit arrives), and multibyte text, whose
-    UTF-8 size is what the backend measures.
-    """
-    report = _run_client_script(
-        tmp_path,
-        f"""
-import {{ getChannel }} from {CLIENT_MODULE};
-
-const result = {{ sent: 0, errors: [] }};
-const transport = {{ _maxMessageSize: 1024, _send: () => {{ result.sent += 1; }} }};
-
-const open = getChannel("open");
-open._transport = transport;
-open.connected = true;
-try {{
-    open.emit("push", {{ blob: "x".repeat(5000) }});
-}} catch (error) {{
-    result.tooBig = error.message;
-}}
-try {{
-    // 400 characters, 1200 UTF-8 bytes: only a byte-accurate check catches it.
-    // An escape rather than the character itself, so this script stays ASCII
-    // whatever encoding the test's locale writes it in.
-    open.emit("push", "\\u20ac".repeat(400));
-}} catch (error) {{
-    result.multibyte = error.message;
-}}
-open.emit("push", {{ small: true }});
-
-// Emitted with no transport, so with no limit to check against yet.
-const queued = getChannel("queued");
-queued.on("error", (error) => result.errors.push(error.code));
-queued.emit("push", {{ blob: "y".repeat(5000) }});
-queued._transport = transport;
-queued._receive("_opened", null, []);
-
-console.log(JSON.stringify(result));
-""",
-    )
-
-    assert "1024" in report["tooBig"]
-    # 400 characters: a length check would have passed it, a byte check does not.
-    multibyte = re.search(r"is (\d+) bytes", report["multibyte"])
-    assert multibyte is not None, report["multibyte"]
-    assert 1024 < int(multibyte.group(1)) < 4 * 400
-    assert report["errors"] == ["message_too_large"]
-    # Only the message that fits was ever handed to the transport.
-    assert report["sent"] == 1
-
-
-@pytest.mark.skipif(not NODE, reason="Requires node to run the client")
-def test_client_refuses_to_emit_reserved_message_names(tmp_path: Path):
-    """The handle's own lifecycle names cannot be put on the wire.
-
-    Emitting one is a consumer confusing `channel.on("connect")` with a
-    message, and the backend answers it with an error; throwing reports the
-    mistake where it was made.
-    """
-    report = _run_client_script(
-        tmp_path,
-        f"""
-import {{ getChannel }} from {CLIENT_MODULE};
-
-const result = {{ sent: 0, refused: [] }};
-const channel = getChannel("probe");
-channel._transport = {{ _maxMessageSize: 0, _send: () => {{ result.sent += 1; }} }};
-channel.connected = true;
-for (const name of {json.dumps(sorted(RESERVED_EVENTS))}) {{
-    try {{
-        channel.emit(name, {{ fig: "f1" }});
-    }} catch (error) {{
-        result.refused.push(name);
-    }}
-}}
-channel.emit("push", {{ fig: "f1" }});
-
-console.log(JSON.stringify(result));
-""",
-    )
-
-    assert report["refused"] == sorted(RESERVED_EVENTS)
-    # Only the message under a usable name reached the transport, and nothing
-    # was queued behind it either.
-    assert report["sent"] == 1
-
-
-@pytest.mark.skipif(not NODE, reason="Requires node to run the client")
-def test_client_drops_queued_channel_frames_on_a_backend_without_channels(
-    tmp_path: Path,
-):
-    """A downgraded backend must not receive the channel frames still queued.
-
-    A frame the transport queued for a channel (its socket closed mid-flush)
-    outlives the connection it was meant for. Handing it to a backend that
-    predates channels answers with a close, taking the state updates queued
-    behind it down too.
-    """
-    report = _run_client_script(
-        tmp_path,
-        f"""
-import {{ ReflexWebSocket, encodeChannelFrame }} from {CLIENT_MODULE};
-
-// Built without dialing: only the handshake path is under test.
-const sent = [];
-const transport = Object.create(ReflexWebSocket.prototype);
-transport._callbacks = {{}};
-transport._connectTimer = null;
-transport._watchdogTimer = null;
-transport.connected = false;
-transport._ws = {{ send: (frame) => sent.push(frame), readyState: 1 }};
-transport._sendQueue = [
-    JSON.stringify(["state_event", {{ token: "t" }}]),
-    JSON.stringify(["push", {{ n: 1 }}, "probe"]),
-    encodeChannelFrame("frame", {{ n: 2 }}, "probe", [new Uint8Array([1, 2, 3])]),
-];
-
-transport._onMessage(
-    JSON.stringify([
-        "_handshake",
-        {{ ping_interval: 25, ping_timeout: 120, protocol: 1 }},
-    ]),
-);
-transport._clearWatchdog();
-
-console.log(
-    JSON.stringify({{
-        flushed: sent.map((frame) =>
-            typeof frame === "string" ? frame : "binary"
-        ),
-        queued: transport._sendQueue.length,
-    }}),
-);
-""",
-    )
-
-    # The app's own event still goes out; neither channel frame does.
-    assert report["flushed"] == ['["state_event",{"token":"t"}]']
-    assert report["queued"] == 0
-
-
-@pytest.mark.skipif(not NODE, reason="Requires node to run the client")
-def test_client_ignores_an_opened_for_a_channel_that_moved_on(tmp_path: Path):
-    """An _opened from a transport the channel has left changes nothing.
-
-    Flushing against the transport it names would mean reaching for one the
-    channel no longer holds; the queue is owed to whichever transport it
-    attaches to next.
-    """
-    report = _run_client_script(
-        tmp_path,
-        f"""
-import {{ getChannel }} from {CLIENT_MODULE};
-
-const sent = [];
-const channel = getChannel("probe");
-channel.emit("push", {{ n: 1 }});
-// Detached: the transport that this _opened answers is gone.
-channel._receive("_opened", null, []);
-const afterStale = {{ connected: channel.connected, queued: channel._queue.length }};
-
-channel._transport = {{ _maxMessageSize: null, _send: (f) => sent.push(f) }};
-channel._receive("_opened", null, []);
-
-console.log(
-    JSON.stringify({{ afterStale, connected: channel.connected, sent: sent.length }}),
-);
-""",
-    )
-
-    assert report["afterStale"] == {"connected": False, "queued": 1}
-    # The message survives for the transport the channel does attach to.
-    assert report["connected"] is True
-    assert report["sent"] == 1
-
-
 @pytest.mark.asyncio
 async def test_large_metadata_is_bounded_only_by_the_message_limit(
-    namespace: WebsocketEventNamespace, mock_app: Mock
+    namespace: WebsocketEventNamespace, namespace_app: Mock
 ):
     """Metadata is limited by the frame size, not by a second hidden cap.
 
@@ -2068,7 +1832,7 @@ async def test_large_metadata_is_bounded_only_by_the_message_limit(
     because that is where such a frame would be turned into a close.
     """
     channel = RecordingChannel(accepts_binary=True)
-    mock_app._channels = {"probe": channel}
+    namespace_app._channels = {"probe": channel}
     # Far past any header-shaped cap, far under the 1 MB message limit.
     metadata = {"spec": "x" * (128 * 1024)}
     websocket = FakeWebSocket()
@@ -2094,7 +1858,7 @@ async def test_large_metadata_is_bounded_only_by_the_message_limit(
     ],
 )
 async def test_frames_from_a_session_whose_token_went_away_close_it(
-    namespace: WebsocketEventNamespace, mock_app: Mock, caplog, frame: Any
+    namespace: WebsocketEventNamespace, namespace_app: Mock, caplog, frame: Any
 ):
     """A session that loses its token mid-connection is closed, whatever it sends.
 
@@ -2106,7 +1870,7 @@ async def test_frames_from_a_session_whose_token_went_away_close_it(
     frame, it would be a log flood and an injection vector both.
     """
     channel = RecordingChannel(accepts_binary=True)
-    mock_app._channels = {"probe": channel}
+    namespace_app._channels = {"probe": channel}
     if frame is None:
         frame = encode_channel_frame(
             "push", {"x": "\n[fake] log line"}, "probe", [b"!"]
@@ -2140,7 +1904,7 @@ async def test_frames_from_a_session_whose_token_went_away_close_it(
     # The channel was open and serving when its token went away.
     assert len(channel.opened) == 1
     assert websocket.close_code == 1008
-    mock_app.event_processor.enqueue.assert_not_awaited()
+    namespace_app.event_processor.enqueue.assert_not_awaited()
     assert channel.messages == []
     # Nothing the client sent reached the log, at any level.
     assert "[fake] log line" not in caplog.text
@@ -2150,7 +1914,7 @@ async def test_frames_from_a_session_whose_token_went_away_close_it(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("hook", ["on_open", "on_message", "on_close"])
 async def test_a_failing_channel_hook_cannot_flood_the_logs(
-    namespace: WebsocketEventNamespace, mock_app: Mock, caplog, hook: str
+    namespace: WebsocketEventNamespace, namespace_app: Mock, caplog, hook: str
 ):
     """Tracebacks from any handler a client keeps breaking are budgeted.
 
@@ -2177,7 +1941,7 @@ async def test_a_failing_channel_hook_cannot_flood_the_logs(
             if hook == "on_close":
                 raise KeyError(session.sid)
 
-    mock_app._channels = {"boom": BoomChannel()}
+    namespace_app._channels = {"boom": BoomChannel()}
     attempts = namespace._MAX_CLIENT_ERRORS_PER_SID * 4
     # Reopening is what a client does after a failed open, and open/close is
     # the only way to reach on_close repeatedly.
@@ -2227,3 +1991,55 @@ def test_decode_asgi_headers():
         (b"x-raw", b"\xfe"),
         ("x-café".encode(), "café".encode()),
     ]) == {"x-ÿ": "a", "x-raw": "þ", "x-café": "café"}
+
+
+@pytest.mark.asyncio
+async def test_link_token_to_sid_records_the_connecting_identity(
+    namespace: WebsocketEventNamespace,
+    linked_state: Mock,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """The session var carries the token the state was loaded under.
+
+    Duplicate-token handling hands back a fresh token, and the state is loaded
+    under it. Leaving `rx_router_session.client_token` empty until the first
+    event would let anything reading it in between -- a background task, a
+    shared-state link -- address the wrong state tree.
+    """
+    state = linked_state
+
+    # No duplicate: the connecting token is recorded.
+    await namespace.link_token_to_sid("sid1", "tok1")
+    assert state.router_data[constants.RouteVar.CLIENT_TOKEN] == "tok1"
+    assert state.rx_router_session.client_token == "tok1"
+    assert state.rx_router_session.session_id == "sid1"
+
+    # Duplicate: the *new* token is recorded, not the one the client sent.
+    monkeypatch.setattr(
+        namespace._token_manager,
+        "link_token_to_sid",
+        AsyncMock(return_value="a-fresh-token"),
+    )
+    await namespace.link_token_to_sid("sid2", "tok1")
+    assert state.router_data[constants.RouteVar.CLIENT_TOKEN] == "a-fresh-token"
+    assert state.rx_router_session.client_token == "a-fresh-token"
+    assert state.rx_router_session.session_id == "sid2"
+
+
+def test_client_error_constants_match_frontend():
+    """The socket event and error types are duplicated as literals in state.js.
+
+    Nothing at runtime keeps the two definitions in sync, so pin them here.
+    """
+    state_js = (WEB_TEMPLATE_ROOT / "utils/state.js").read_text()
+    assert (
+        f'const CLIENT_ERROR_EVENT = "{constants.SocketEvent.CLIENT_ERROR}"' in state_js
+    )
+    assert (
+        f'const ERROR_TYPE_DISPATCH_MISSING = "{constants.ClientErrorType.DISPATCH_MISSING}"'
+        in state_js
+    )
+    assert (
+        f'const ERROR_TYPE_STATE_UPDATE = "{constants.ClientErrorType.STATE_UPDATE}"'
+        in state_js
+    )

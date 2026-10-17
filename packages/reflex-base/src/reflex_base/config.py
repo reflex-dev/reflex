@@ -584,17 +584,16 @@ class Config(BaseConfig):
         self.disable_plugins = normalized
 
     def _normalize_cors_allowed_origins(self):
-        """Read a plain-string cors_allowed_origins as a comma-separated list.
+        """Read a plain-string cors_allowed_origins as its environment variable is read.
 
         Left a string, membership in it is a substring test, so every origin
         check would accept any origin the configured one contains.
         """
         if isinstance(self.cors_allowed_origins, str):
-            self.cors_allowed_origins = [
-                origin.strip()
-                for origin in self.cors_allowed_origins.split(",")
-                if origin.strip()
-            ]
+            field = self.__dataclass_fields__["cors_allowed_origins"]
+            self.cors_allowed_origins = interpret_env_var_value(
+                self.cors_allowed_origins, field.type, field.name
+            )
 
     def _normalize_frontend_compression_formats(self):
         """Normalize and validate configured frontend compression formats.

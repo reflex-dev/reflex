@@ -3,19 +3,24 @@
 from __future__ import annotations
 
 import json
-import logging
-from collections.abc import MutableMapping
+from collections.abc import Awaitable, MutableMapping
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
 
 from reflex_base import otel
-from reflex_base.environment import environment
 from reflex_base.utils.types import ASGIApp, Message, Receive, Scope, Send
 from socketio import ASGIApp as EngineIOApp
 from socketio import AsyncNamespace, AsyncServer
 
-from reflex.event_namespace import BaseEventNamespace, connect_auth, utf8_size
-from reflex.utils import exceptions, format
+from reflex.event_namespace import (
+    _CLIENT_ERROR,
+    _EVENT,
+    _PING,
+    BaseEventNamespace,
+    _dumps,
+    _socket_policy,
+    utf8_size,
+)
 
 if TYPE_CHECKING:
     import asyncio
@@ -24,23 +29,21 @@ if TYPE_CHECKING:
 
     from reflex.app import App
 
-logger = logging.getLogger(__name__)
-
 
 def _sio_dumps(obj: Any, **kwargs: Any) -> str:
     """Serialize an outgoing Socket.IO packet, recording its size when telemetry is on.
 
-    Uses Reflex's dumps, which emits the non-finite float tokens the frontend
-    revives.
+    Serialized like a plain transport frame: compact, with the non-finite
+    float tokens the frontend revives, and valid UTF-8.
 
     Args:
         obj: The packet payload.
-        **kwargs: Options forwarded to the JSON encoder.
+        **kwargs: Encoder options; socket.io only asks for compact separators.
 
     Returns:
         The JSON string.
     """
-    data = format.json_dumps(obj, **kwargs)
+    data = _dumps(obj)
     if otel.enabled:
         otel.record_message_size(utf8_size(data), "transmit")
     return data
@@ -101,35 +104,24 @@ class EventNamespace(AsyncNamespace, BaseEventNamespace):
         """
         if (scope := environ.get("asgi.scope")) is not None:
             self._scopes[sid] = scope
-        boot_event, frontend_schema = connect_auth(auth)
-        await self.handle_connect(
+        linked, boot_event = await self._open_session(
             sid,
+            auth,
             environ.get("QUERY_STRING", ""),
             environ.get("HTTP_SEC_WEBSOCKET_PROTOCOL"),
-            frontend_schema,
-            update_state=boot_event is None,
         )
-        if sid not in self.sid_to_token:
-            # Not a Reflex client: nothing it sends can be served. Socket.IO
-            # runs no disconnect handler for a refused connect, so undo this
-            # one here.
-            self.on_disconnect(sid)
-            return False
-        if boot_event is not None:
-            try:
-                # Not through on_event: a failure here refuses the connect
-                # rather than disconnecting a session not yet acknowledged.
-                await self.handle_event(sid, boot_event, self._scope(sid))
-            except Exception as exc:
-                # Refused rather than raised: Socket.IO would keep a raising
-                # connect registered yet unanswered, and the client would wait
-                # for a hydrate that never comes instead of retrying.
-                self._log_handler_failure(
-                    sid, f"Error handling the boot event for session {sid}.", exc
-                )
-                self.on_disconnect(sid)
-                return False
-        return None
+        # A failed boot event refuses the connect rather than raising, which
+        # would keep the connect registered yet unanswered, or disconnecting,
+        # which would acknowledge a session that never hydrated.
+        if linked and (
+            boot_event is None
+            or await self._handle_boot_event(sid, boot_event, self._scope(sid)) is None
+        ):
+            return None
+        # Socket.IO runs no disconnect handler for a refused connect, so undo
+        # this one here.
+        self.on_disconnect(sid)
+        return False
 
     def on_disconnect(self, sid: str) -> asyncio.Task | None:
         """Event for when the websocket disconnects.
@@ -150,14 +142,30 @@ class EventNamespace(AsyncNamespace, BaseEventNamespace):
             sid: The Socket.IO session id.
             data: The event data.
         """
+        # Inline rather than through _run_handler, which costs a coroutine
+        # frame: this runs for every event.
         try:
             await self.handle_event(sid, data, self._scope(sid))
-        except exceptions.EventDeserializationError:
-            # Client-controlled input a Reflex client never sends; end the
-            # session, as the plain transport does, rather than log a
-            # traceback per frame.
-            logger.debug(f"Disconnecting session {sid}: undeserializable event.")
-            await self.disconnect(sid)
+        except Exception as exc:
+            if self._handler_failed(sid, f"socket event {_EVENT!r}", exc):
+                await self.disconnect(sid)
+
+    async def _run_handler(self, sid: str, event: str, handler: Awaitable[None]):
+        """Await a socket event handler under the shared failure policy.
+
+        Raising into python-socketio would log a traceback per frame, outside
+        the budget that bounds client-triggered error logs.
+
+        Args:
+            sid: The Socket.IO session id.
+            event: The socket event name, for the log.
+            handler: The handler's coroutine.
+        """
+        try:
+            await handler
+        except Exception as exc:
+            if self._handler_failed(sid, f"socket event {event!r}", exc):
+                await self.disconnect(sid)
 
     def _scope(self, sid: str) -> MutableMapping[str, Any]:
         """Get the ASGI scope of a session's connection.
@@ -193,7 +201,7 @@ class EventNamespace(AsyncNamespace, BaseEventNamespace):
         Args:
             sid: The Socket.IO session id.
         """
-        await self.handle_ping(sid)
+        await self._run_handler(sid, _PING, self.handle_ping(sid))
 
     async def on_client_error(self, sid: str, data: Any = None):
         """Handle errors reported by the frontend.
@@ -205,7 +213,7 @@ class EventNamespace(AsyncNamespace, BaseEventNamespace):
                 ``on_client_error(sid)``; the malformed-payload guard then
                 drops it without raising.
         """
-        await self.handle_client_error(sid, data)
+        await self._run_handler(sid, _CLIENT_ERROR, self.handle_client_error(sid, data))
 
 
 class _HeaderMiddleware:
@@ -267,24 +275,20 @@ def create_socketio_app(app: App, config: Config) -> ASGIApp:
         RuntimeError: If a custom ``sio`` server does not use asgi mode.
     """
     if not app.sio:
+        polling = config.transport == "polling"
+        policy = _socket_policy()
         app.sio = AsyncServer(
             async_mode="asgi",
-            cors_allowed_origins=(
-                (
-                    "*"
-                    if config.cors_allowed_origins == ("*",)
-                    else list(config.cors_allowed_origins)
-                )
-                if config.transport != "polling"
-                else []
-            ),
-            cors_credentials=config.transport != "polling",
-            max_http_buffer_size=environment.REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE.get(),
-            ping_interval=environment.REFLEX_SOCKET_INTERVAL.get().total_seconds(),
-            ping_timeout=environment.REFLEX_SOCKET_TIMEOUT.get().total_seconds(),
+            # An empty list disables CORS handling; engineio reads "*" among
+            # the origins as allowing any.
+            cors_allowed_origins=[] if polling else list(config.cors_allowed_origins),
+            cors_credentials=not polling,
+            max_http_buffer_size=policy.max_message_size,
+            ping_interval=policy.ping_interval,
+            ping_timeout=policy.ping_timeout,
             json=_SOCKET_JSON_CODEC,
             allow_upgrades=False,
-            transports=["polling" if config.transport == "polling" else "websocket"],
+            transports=["polling" if polling else "websocket"],
             # Handlers here only parse and enqueue (or emit a pong), so run
             # them inline on the socket's receive loop instead of paying a
             # task creation and a loop hop per incoming message.

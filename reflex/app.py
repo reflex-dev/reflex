@@ -561,7 +561,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 "the default)."
             )
             return
-        if get_config().transport != "websocket":
+        if not self.event_namespace.supports_channels:
             logger.warning(
                 f"Channel {name!r} is not served: it requires the plain WebSocket "
                 "transport; remove the transport setting in rxconfig.py or set "
@@ -685,10 +685,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 # its own.
                 event_namespace_class = sys.modules[__name__].EventNamespace
             except ImportError as ex:
-                msg = (
-                    f"transport={config.transport!r} requires the python-socketio "
-                    "package. Install it with: pip install 'reflex[socketio]'"
-                )
+                msg = f"transport={config.transport!r} requires {_SOCKETIO_PACKAGE}."
                 raise RuntimeError(msg) from ex
 
             socket_app = create_socketio_app(self, config)
@@ -2061,6 +2058,12 @@ async def health(_request: Request) -> JSONResponse:
     return JSONResponse(content=health_status, status_code=status_code)
 
 
+# What the Socket.IO transport needs installed.
+_SOCKETIO_PACKAGE = (
+    "the optional python-socketio package; install it with: "
+    "pip install 'reflex[socketio]'"
+)
+
 # Socket.IO names this module exported before python-socketio became optional:
 # name -> (module, attribute).
 _SOCKETIO_EXPORTS = {
@@ -2092,9 +2095,6 @@ def __getattr__(name: str) -> Any:
         module = importlib.import_module(module_name)
     except ImportError as ex:
         # An AttributeError, so hasattr() and getattr() with a default work.
-        msg = (
-            f"{__name__}.{name} needs the optional python-socketio package; "
-            "install it with: pip install 'reflex[socketio]'"
-        )
+        msg = f"{__name__}.{name} needs {_SOCKETIO_PACKAGE}."
         raise AttributeError(msg) from ex
     return getattr(module, attribute)

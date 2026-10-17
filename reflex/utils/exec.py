@@ -512,7 +512,6 @@ def _warn_user_about_uvicorn():
     logger.warning(
         "Using Uvicorn for backend as it is installed. This behavior will change in 0.8.0 to use Granian by default."
     )
-    _warn_about_uvicorn_websockets()
 
 
 def should_use_granian():

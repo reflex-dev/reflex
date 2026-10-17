@@ -14,7 +14,7 @@ import uuid
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Mapping, MutableMapping, Sequence
 from datetime import timedelta
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar, NamedTuple
 
 from reflex_base import constants, otel
 from reflex_base.config import get_config
@@ -150,6 +150,59 @@ def connect_auth(auth: Any) -> tuple[Any, Any]:
         auth.get(constants.CompileVars.CONNECT_AUTH_EVENT),
         auth.get(constants.CompileVars.CONNECT_AUTH_STATE_SCHEMA),
     )
+
+
+class _SocketPolicy(NamedTuple):
+    """The event socket's heartbeat and message size settings."""
+
+    # Seconds between heartbeat pings.
+    ping_interval: float
+
+    # Seconds past the interval a client may stay silent.
+    ping_timeout: float
+
+    # The message size limit in bytes.
+    max_message_size: int
+
+    @property
+    def silence_limit(self) -> float:
+        """Seconds a client may stay silent before its session ends.
+
+        Returns:
+            The ping interval plus the ping timeout.
+        """
+        return self.ping_interval + self.ping_timeout
+
+
+def _socket_policy() -> _SocketPolicy:
+    """Read the event socket's settings, per connection.
+
+    Returns:
+        The settings currently configured.
+    """
+    return _SocketPolicy(
+        environment.REFLEX_SOCKET_INTERVAL.get().total_seconds(),
+        environment.REFLEX_SOCKET_TIMEOUT.get().total_seconds(),
+        environment.REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE.get(),
+    )
+
+
+def _closing(sid: str, reason: str, code: int) -> int:
+    """Log why a session is closing, at debug level.
+
+    Every reason is client-driven, so logging louder would let a hostile
+    client flood the logs.
+
+    Args:
+        sid: The session id.
+        reason: Why the session closes.
+        code: The websocket close code.
+
+    Returns:
+        The close code, to close the session with.
+    """
+    logger.debug("Closing session %s: %s.", sid, reason)
+    return code
 
 
 def _dumps(obj: Any) -> str:
@@ -482,6 +535,9 @@ class BaseEventNamespace(ABC):
     # The application object.
     app: App
 
+    # Whether the transport carries channels (reflex.channels).
+    supports_channels: ClassVar[bool] = False
+
     # Maximum error-level log entries a single session may produce, per kind
     # of client-triggered error, before further ones from it are dropped.
     _MAX_CLIENT_ERRORS_PER_SID = 5
@@ -626,6 +682,74 @@ class BaseEventNamespace(ABC):
                 to=sid,
             )
 
+    async def _open_session(
+        self, sid: str, auth: Any, query_string: str, subprotocol: str | None
+    ) -> tuple[bool, Any]:
+        """Link a connecting session, reading the boot event its connect carries.
+
+        Args:
+            sid: The session id.
+            auth: The connect payload.
+            query_string: The raw query string of the connection request.
+            subprotocol: The websocket subprotocol offered by the client.
+
+        Returns:
+            Whether the session linked a token, and its boot event if any.
+        """
+        boot_event, frontend_schema = connect_auth(auth)
+        await self.handle_connect(
+            sid,
+            query_string,
+            subprotocol,
+            frontend_schema,
+            update_state=boot_event is None,
+        )
+        return sid in self._token_manager.sid_to_token, boot_event
+
+    async def _handle_boot_event(
+        self, sid: str, boot_event: Any, scope: MutableMapping[str, Any]
+    ) -> int | None:
+        """Dispatch the boot event of a connect as the session's first event.
+
+        A session whose boot event failed is ended: kept open, it would leave
+        the client waiting for a hydrate that never comes instead of retrying.
+
+        Args:
+            sid: The session id.
+            boot_event: The boot event.
+            scope: The ASGI scope of the client connection.
+
+        Returns:
+            None once dispatched, else the close code to end the session with.
+        """
+        try:
+            await self.handle_event(sid, boot_event, scope)
+        except Exception as exc:
+            return self._handler_failed(sid, "the boot event", exc) or 1011
+        return None
+
+    def _handler_failed(self, sid: str, what: str, error: Exception) -> int | None:
+        """Apply the failure policy to a handler that raised.
+
+        Undeserializable input is client-controlled and a Reflex client never
+        sends it, so it ends the session quietly; anything else is a
+        server-side bug, logged within the session's error budget.
+
+        Args:
+            sid: The session id.
+            what: What was being handled, for the log.
+            error: The exception the handler raised.
+
+        Returns:
+            The close code the session must end with, or None to keep it.
+        """
+        if isinstance(error, exceptions.EventDeserializationError):
+            return _closing(sid, f"{what} did not deserialize", 1002)
+        self._log_handler_failure(
+            sid, f"Error handling {what} for session {sid}.", error
+        )
+        return None
+
     def handle_disconnect(self, sid: str) -> asyncio.Task | None:
         """Handle a client session disconnecting.
 
@@ -699,8 +823,8 @@ class BaseEventNamespace(ABC):
         Raises:
             EventDeserializationError: If the event data is malformed.
         """
-        # Determine the token for this SID
-        if (token := self.sid_to_token.get(sid)) is None:
+        # Determine the token for this SID, without the property's call.
+        if (token := self._token_manager.sid_to_token.get(sid)) is None:
             # The mapping is dropped when a token moves to another socket or
             # its record goes stale, so a live connection can reach this and
             # keep sending. Log it per frame at debug, without the
@@ -892,6 +1016,8 @@ class WebsocketEventNamespace(BaseEventNamespace):
     Frames are JSON arrays ``[event_name, payload]``.
     """
 
+    supports_channels = True
+
     def __init__(self, namespace: str, app: App):
         """Initialize the websocket event namespace.
 
@@ -904,23 +1030,25 @@ class WebsocketEventNamespace(BaseEventNamespace):
         # Open channel sessions per connection, by session id and channel name.
         self._channel_sessions: dict[str, dict[str, ChannelSession]] = {}
 
-    def _deliver(self, to: str | None, payload: str | bytes, label: str) -> None:
-        """Queue one serialized frame for a connected client session.
+    def _deliver(self, sids: Iterable[str], payload: str | bytes, label: str) -> None:
+        """Queue one serialized frame for connected client sessions.
 
         Args:
-            to: The session id to send to.
+            sids: The session ids to send to.
             payload: The serialized text or binary frame.
             label: The message name, for diagnostics.
         """
-        connection = self._connections.get(to) if to is not None else None
-        if connection is None:
-            # Routine race: the client disconnected while an event was still
-            # being processed, so its remaining updates have nowhere to go.
-            logger.debug(f"Attempted to emit {label!r} to unknown session {to!r}.")
-            return
-        if otel.enabled:
-            otel.record_message_size(utf8_size(payload), "transmit")
-        connection.send(payload)
+        size = utf8_size(payload) if otel.enabled else 0
+        for sid in sids:
+            if (connection := self._connections.get(sid)) is None:
+                # Routine race: the client disconnected while an event was
+                # still being processed, so its remaining updates have nowhere
+                # to go.
+                logger.debug(f"Attempted to emit {label!r} to unknown session {sid!r}.")
+                continue
+            if otel.enabled:
+                otel.record_message_size(size, "transmit")
+            connection.send(payload)
 
     async def emit(self, event: str, data: Any = None, to: str | None = None) -> None:
         """Emit an event to a connected client session, or to all of them.
@@ -928,15 +1056,12 @@ class WebsocketEventNamespace(BaseEventNamespace):
         Args:
             event: The event name.
             data: The event payload.
-            to: The session id to emit to; every connected session if None.
+            to: The session id to emit to; every connected session if None,
+                like Socket.IO's emit without a recipient.
         """
-        payload = _dumps([event, data])
-        if to is not None:
-            self._deliver(to, payload, event)
-            return
-        # Like Socket.IO's emit without a recipient: a broadcast.
-        for sid in self._connections:
-            self._deliver(sid, payload, event)
+        self._deliver(
+            self._connections if to is None else (to,), _dumps([event, data]), event
+        )
 
     async def _send_channel_message(
         self,
@@ -964,14 +1089,16 @@ class WebsocketEventNamespace(BaseEventNamespace):
             else _dumps([event, data, channel])
         )
         linked = self._token_manager.sid_to_token
+        recipients = []
         for sid in sids:
             if sid in linked:
-                self._deliver(sid, payload, event)
+                recipients.append(sid)
             elif (connection := self._connections.get(sid)) is not None:
                 # Its token moved to another socket, which drops the link but
                 # not the connection. Close it, as its next frame would; the
                 # teardown forgets its channel sessions.
                 connection.close(1008)
+        self._deliver(recipients, payload, event)
 
     async def _send_channel_error(
         self, sid: str, channel: str, code: str, message: str
@@ -1185,8 +1312,7 @@ class WebsocketEventNamespace(BaseEventNamespace):
         except ValueError:
             # A Reflex client never sends malformed frames; close instead of
             # logging per frame.
-            logger.debug(f"Closing session {sid}: malformed binary frame.")
-            return 1002
+            return _closing(sid, "malformed binary frame", 1002)
         await self._handle_channel_message(sid, channel_name, event, data, buffers)
         return None
 
@@ -1223,8 +1349,7 @@ class WebsocketEventNamespace(BaseEventNamespace):
             The close code the session must end with, or None to dispatch it.
         """
         if exceeds_message_limit(payload, max_size):
-            logger.debug(f"Closing session {sid}: message over {max_size} bytes.")
-            return 1009
+            return _closing(sid, f"message over {max_size} bytes", 1009)
         if otel.enabled:
             otel.record_message_size(utf8_size(payload), "receive")
         return None
@@ -1271,14 +1396,12 @@ class WebsocketEventNamespace(BaseEventNamespace):
             # A Reflex client never sends malformed frames; close instead of
             # logging per frame, which a hostile client could use to flood
             # the logs.
-            logger.debug(f"Closing session {sid}: malformed frame.")
-            return 1002
+            return _closing(sid, "malformed frame", 1002)
         event = message[0]
         data = message[1] if len(message) > 1 else None
         if len(message) > 2:
             if not isinstance(message[2], str):
-                logger.debug(f"Closing session {sid}: malformed channel frame.")
-                return 1002
+                return _closing(sid, "malformed channel frame", 1002)
             await self._handle_channel_message(sid, message[2], event, data, [])
             return None
         try:
@@ -1297,17 +1420,8 @@ class WebsocketEventNamespace(BaseEventNamespace):
                 logger.debug(
                     f"Ignoring unknown socket event {event!r} from session {sid}."
                 )
-        except exceptions.EventDeserializationError:
-            # Client-controlled input a Reflex client never sends; close
-            # instead of logging per frame.
-            logger.debug(f"Closing session {sid}: undeserializable event.")
-            return 1002
         except Exception as exc:
-            # A failing handler is a server-side bug: log it loudly; the
-            # connection survives.
-            self._log_handler_failure(
-                sid, f"Error handling socket event {event!r} for session {sid}.", exc
-            )
+            return self._handler_failed(sid, f"socket event {event!r}", exc)
         return None
 
     async def _receive_connect(
@@ -1327,8 +1441,9 @@ class WebsocketEventNamespace(BaseEventNamespace):
         try:
             received = await asyncio.wait_for(websocket.receive(), timeout)
         except TimeoutError:
-            logger.debug(f"Closing session {sid}: no connect frame.")
-            await self._close_quietly(websocket, 1008)
+            await self._close_quietly(
+                websocket, _closing(sid, "no connect frame", 1008)
+            )
             return None
         if received["type"] == "websocket.disconnect":
             return None
@@ -1340,33 +1455,9 @@ class WebsocketEventNamespace(BaseEventNamespace):
             if isinstance(message, list) and message and message[0] == CONNECT_MESSAGE:
                 return message
         # A Reflex client opens every session with a connect frame.
-        logger.debug(f"Closing session {sid}: expected a connect frame.")
-        await self._close_quietly(websocket, 1002)
-        return None
-
-    async def _handle_boot_event(
-        self, sid: str, boot_event: Any, scope: MutableMapping[str, Any]
-    ) -> int | None:
-        """Dispatch the boot event of a connect frame as the session's first event.
-
-        Args:
-            sid: The session id.
-            boot_event: The boot event.
-            scope: The ASGI scope of the client connection.
-
-        Returns:
-            The websocket close code the session must end with, or None to
-            keep serving it.
-        """
-        try:
-            await self.handle_event(sid, boot_event, scope)
-        except exceptions.EventDeserializationError:
-            logger.debug(f"Closing session {sid}: undeserializable boot event.")
-            return 1002
-        except Exception as exc:
-            self._log_handler_failure(
-                sid, f"Error handling the boot event for session {sid}.", exc
-            )
+        await self._close_quietly(
+            websocket, _closing(sid, "expected a connect frame", 1002)
+        )
         return None
 
     async def handle_websocket(self, websocket: WebSocket) -> None:
@@ -1391,21 +1482,19 @@ class WebsocketEventNamespace(BaseEventNamespace):
         await websocket.accept(subprotocol=subprotocols[0] if subprotocols else None)
 
         sid = str(uuid.uuid4())
-        ping_interval = environment.REFLEX_SOCKET_INTERVAL.get().total_seconds()
-        ping_timeout = environment.REFLEX_SOCKET_TIMEOUT.get().total_seconds()
-        max_message_size = environment.REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE.get()
+        policy = _socket_policy()
         # The client sends its connect frame on open, without waiting for the
         # handshake, so the boot event it carries saves that round trip. A
         # socket that never sends one ends within the heartbeat window.
         connect_frame = await self._receive_connect(
-            sid, websocket, ping_interval + ping_timeout, max_message_size
+            sid, websocket, policy.silence_limit, policy.max_message_size
         )
         if connect_frame is None:
             return
         connection = _Connection(websocket)
         self._connections[sid] = connection
         heartbeat_task = asyncio.create_task(
-            self._heartbeat(connection, ping_interval, ping_timeout),
+            self._heartbeat(connection, policy),
             name=f"reflex_heartbeat|{sid}",
         )
         lifetime = asyncio.timeout(None)
@@ -1417,9 +1506,7 @@ class WebsocketEventNamespace(BaseEventNamespace):
                     connection,
                     connect_frame[1] if len(connect_frame) > 1 else None,
                     subprotocols[0] if subprotocols else None,
-                    ping_interval,
-                    ping_timeout,
-                    max_message_size,
+                    policy,
                 )
         except TimeoutError:
             # The lifetime firing is how connection.close() ends the loop.
@@ -1449,22 +1536,16 @@ class WebsocketEventNamespace(BaseEventNamespace):
                 await self._close_quietly(websocket, connection.close_code)
 
     @staticmethod
-    async def _heartbeat(
-        connection: _Connection, ping_interval: float, ping_timeout: float
-    ) -> None:
+    async def _heartbeat(connection: _Connection, policy: _SocketPolicy) -> None:
         """Ping a session's client, closing the session once it stops answering.
 
         Args:
             connection: The client connection.
-            ping_interval: Seconds between pings.
-            ping_timeout: Seconds past the interval a client may stay silent.
+            policy: The socket's heartbeat settings.
         """
         while True:
-            await asyncio.sleep(ping_interval)
-            if (
-                time.monotonic() - connection.last_received
-                > ping_interval + ping_timeout
-            ):
+            await asyncio.sleep(policy.ping_interval)
+            if time.monotonic() - connection.last_received > policy.silence_limit:
                 connection.close(1001)
                 return
             connection.send(_PING_FRAME)
@@ -1475,9 +1556,7 @@ class WebsocketEventNamespace(BaseEventNamespace):
         connection: _Connection,
         auth: Any,
         subprotocol: str | None,
-        ping_interval: float,
-        ping_timeout: float,
-        max_message_size: int,
+        policy: _SocketPolicy,
     ) -> None:
         """Open a session and dispatch its frames until it ends.
 
@@ -1486,20 +1565,13 @@ class WebsocketEventNamespace(BaseEventNamespace):
             connection: The client connection.
             auth: The payload its connect frame carried, if any.
             subprotocol: The websocket subprotocol offered by the client.
-            ping_interval: Seconds between heartbeat pings.
-            ping_timeout: Seconds past the interval a client may stay silent.
-            max_message_size: The message size limit in bytes.
+            policy: The socket's heartbeat and message size settings.
         """
         websocket = connection.websocket
-        boot_event, frontend_schema = connect_auth(auth)
-        await self.handle_connect(
-            sid,
-            websocket.scope.get("query_string", b"").decode(),
-            subprotocol,
-            frontend_schema,
-            update_state=boot_event is None,
+        linked, boot_event = await self._open_session(
+            sid, auth, websocket.scope.get("query_string", b"").decode(), subprotocol
         )
-        if sid not in self._token_manager.sid_to_token:
+        if not linked:
             # No token was linked; not a Reflex client.
             connection.close(1008)
             return
@@ -1509,12 +1581,12 @@ class WebsocketEventNamespace(BaseEventNamespace):
             _dumps([
                 HANDSHAKE_MESSAGE,
                 {
-                    "ping_interval": ping_interval,
-                    "ping_timeout": ping_timeout,
+                    "ping_interval": policy.ping_interval,
+                    "ping_timeout": policy.ping_timeout,
                     "protocol": PROTOCOL_VERSION,
                     # So a client can refuse an oversized frame itself
                     # rather than lose the connection to one.
-                    "max_message_size": max_message_size,
+                    "max_message_size": policy.max_message_size,
                 },
             ])
         )
@@ -1540,21 +1612,19 @@ class WebsocketEventNamespace(BaseEventNamespace):
                 # channel messages, which would otherwise keep invoking
                 # handlers under a token that has moved on -- and a reconnect
                 # is how it gets a working session back.
-                logger.debug(f"Closing session {sid}: its token is gone.")
-                connection.close(1008)
+                connection.close(_closing(sid, "its token is gone", 1008))
                 return
             text = received.get("text")
             if text is not None:
                 close_code = await self._handle_frame(
-                    sid, text, websocket.scope, max_message_size
+                    sid, text, websocket.scope, policy.max_message_size
                 )
             elif (frame := received.get("bytes")) is not None and self.app._channels:
                 close_code = await self._handle_binary_frame(
-                    sid, frame, max_message_size
+                    sid, frame, policy.max_message_size
                 )
             else:
                 # Binary frame with no channel to carry it.
-                logger.debug(f"Closing session {sid}: received a binary frame.")
-                close_code = 1003
+                close_code = _closing(sid, "received a binary frame", 1003)
             if close_code is not None:
                 connection.close(close_code)

@@ -25,7 +25,7 @@ import dataclasses
 import re
 from abc import ABC, abstractmethod
 from collections.abc import Awaitable, Callable, Sequence
-from typing import Any, ClassVar
+from typing import Any, ClassVar, TypeVar
 
 from typing_extensions import Buffer
 
@@ -91,6 +91,25 @@ def _validate_message(event: str, buffers: Sequence[Buffer]) -> None:
             f"over the {MAX_MESSAGE_BUFFERS} a frame may hold."
         )
         raise ValueError(msg)
+
+
+_K = TypeVar("_K")
+_V = TypeVar("_V")
+
+
+def _discard(index: dict[_K, set[_V]], key: _K, member: _V) -> None:
+    """Remove a member from an index of sets, dropping the key once it is empty.
+
+    Args:
+        index: The index.
+        key: The key whose set holds the member.
+        member: The member to remove.
+    """
+    members = index.get(key)
+    if members is not None:
+        members.discard(member)
+        if not members:
+            del index[key]
 
 
 def validate_channel_name(name: Any) -> None:
@@ -175,11 +194,7 @@ class ChannelSession:
             room: The room name.
         """
         self._rooms.discard(room)
-        members = self.channel._rooms.get(room)
-        if members is not None:
-            members.discard(self)
-            if not members:
-                del self.channel._rooms[room]
+        _discard(self.channel._rooms, room, self)
 
 
 class Channel(ABC):
@@ -263,17 +278,7 @@ class Channel(ABC):
                 frame may hold. Raised before anything is sent, so a fan-out
                 fails whole rather than reaching some clients.
         """
-        _validate_message(event, buffers)
-        members = self._rooms.get(room)
-        if not members:
-            return
-        # Every session of a channel is opened by the app's one transport, so
-        # any member can carry the frame for all of them -- serialized once
-        # rather than once per recipient. The recipients are collected first:
-        # a send can close a session and mutate the room.
-        await next(iter(members))._send(
-            [session.sid for session in members], self.name, event, data, buffers
-        )
+        await self._fan_out(self._rooms.get(room), event, data, buffers)
 
     async def send_to_token(
         self,
@@ -299,10 +304,35 @@ class Channel(ABC):
                 frame may hold. Raised before anything is sent, so a fan-out
                 fails whole rather than reaching some clients.
         """
+        return await self._fan_out(
+            self._sessions.get(client_token), event, data, buffers
+        )
+
+    async def _fan_out(
+        self,
+        sessions: set[ChannelSession] | None,
+        event: str,
+        data: Any,
+        buffers: Sequence[Buffer],
+    ) -> bool:
+        """Send one message to a group of sessions, validated before any is sent.
+
+        Args:
+            sessions: The recipients, if any.
+            event: The message name.
+            data: The JSON-serializable metadata.
+            buffers: Binary attachments delivered alongside the metadata.
+
+        Returns:
+            Whether a session received the message.
+        """
         _validate_message(event, buffers)
-        sessions = self._sessions.get(client_token)
         if not sessions:
             return False
+        # Every session of a channel is opened by the app's one transport, so
+        # any member can carry the frame for all of them -- serialized once
+        # rather than once per recipient. The recipients are collected first:
+        # a send can close a session and mutate the group.
         await next(iter(sessions))._send(
             [session.sid for session in sessions], self.name, event, data, buffers
         )
@@ -341,8 +371,4 @@ class Channel(ABC):
         session.open = False
         for room in tuple(session._rooms):
             session.leave(room)
-        sessions = self._sessions.get(session.client_token)
-        if sessions is not None:
-            sessions.discard(session)
-            if not sessions:
-                del self._sessions[session.client_token]
+        _discard(self._sessions, session.client_token, session)
