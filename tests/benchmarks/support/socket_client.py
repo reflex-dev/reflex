@@ -3,7 +3,7 @@
 It speaks the plain WebSocket protocol of Reflex's default transport, and the
 Socket.IO packets of a backend that refuses that endpoint (``transport="socketio"``
 apps and the python-socketio baseline server), so both sides of a comparison
-pay the same client cost.
+pay the same client cost. The protocol is detected once per backend.
 """
 
 from __future__ import annotations
@@ -14,26 +14,28 @@ import contextlib
 import dataclasses
 import functools
 import json
+import threading
 import time
 from collections.abc import Callable, Mapping
 from typing import Any
 
 from reflex_bench.drivers.events import (
     CODECS,
-    CONNECT,
-    DISCONNECTED,
     HANDSHAKE,
     PING,
-    REFUSED,
-    SIO_CONNECT_FRAME,
     Codec,
+    detect_protocol,
+    end_reason,
 )
-from websockets.exceptions import ConnectionClosed, InvalidStatus
+from websockets.exceptions import ConnectionClosed
 from websockets.sync.client import ClientConnection, connect
 
 # Silence window that marks the connection quiescent while draining the extra
 # deltas the first event on a fresh token emits (hydrate + on_load_internal).
 _PRIME_DRAIN_TIMEOUT = 0.5
+
+_codecs: dict[str, Codec] = {}
+_codecs_lock = threading.Lock()
 
 
 @dataclasses.dataclass(frozen=True)
@@ -101,17 +103,20 @@ class EventClient:
                 continue
             if args[0] == PING:
                 self._ws.send(codec.pong)
-            elif args[0] in {REFUSED, DISCONNECTED}:
-                msg = f"the server ended the session: {message!r}"
-                raise ConnectionError(msg)
+            elif (reason := end_reason(args, message)) is not None:
+                raise ConnectionError(reason)
             elif name is None or args[0] == name:
                 return args
 
-    def poll(self) -> None:
-        """Handle the frames that already arrived, answering pings."""
+    def drain(self, quiet_s: float) -> None:
+        """Consume frames until the socket is quiet, answering pings.
+
+        Args:
+            quiet_s: Seconds of silence that end the drain.
+        """
         with contextlib.suppress(TimeoutError):
             while True:
-                self.receive(0)
+                self.receive(quiet_s)
 
     def close(self) -> None:
         """Leave the session and close the websocket."""
@@ -121,19 +126,35 @@ class EventClient:
         self._ws.close()
 
 
-def _open(url: str, token: str, codec: Codec, timeout: float) -> ClientConnection:
-    """Open the websocket of a session.
+def _codec(url: str) -> Codec:
+    """Find the protocol of a backend's event websocket, detecting it once per backend.
+
+    Args:
+        url: Backend URL.
+
+    Returns:
+        Its codec.
+    """
+    # Concurrent clients wait for one detection instead of each running one.
+    with _codecs_lock:
+        if (codec := _codecs.get(url)) is None:
+            codec = _codecs[url] = CODECS[asyncio.run(detect_protocol(url))]
+        return codec
+
+
+def _connect(url: str, token: str, codec: Codec, timeout: float) -> EventClient:
+    """Connect a client the way the Reflex frontend does, without a boot event.
 
     Args:
         url: Backend URL.
         token: Reflex client token.
-        codec: The protocol.
-        timeout: Maximum connection wait.
+        codec: The backend's protocol.
+        timeout: Maximum wait for the connection and its handshake.
 
     Returns:
-        The websocket.
+        The connected client.
     """
-    return connect(
+    ws = connect(
         codec.url(url, token),
         additional_headers={"Origin": url},
         compression=None,
@@ -143,34 +164,9 @@ def _open(url: str, token: str, codec: Codec, timeout: float) -> ClientConnectio
         close_timeout=1,
         max_size=None,
     )
-
-
-def _connect(url: str, token: str, timeout: float) -> EventClient:
-    """Connect a client the way the Reflex frontend does, without a boot event.
-
-    A backend that refuses the plain protocol's endpoint gets Socket.IO.
-
-    Args:
-        url: Backend URL.
-        token: Reflex client token.
-        timeout: Maximum wait for the connection and its handshake.
-
-    Returns:
-        The connected client.
-    """
-    codec = CODECS["websocket"]
-    try:
-        ws = _open(url, token, codec, timeout)
-    except InvalidStatus:
-        codec = CODECS["socketio"]
-        ws = _open(url, token, codec, timeout)
     client = EventClient(ws, codec)
     try:
-        ws.send(
-            SIO_CONNECT_FRAME
-            if codec.protocol == "socketio"
-            else codec.emit(CONNECT, {})
-        )
+        ws.send(codec.join)
         client.receive(timeout, HANDSHAKE)
     except BaseException:
         ws.close()
@@ -189,18 +185,6 @@ def _payload_size(response: Any) -> int:
     """
     payload = response[1] if len(response) > 1 else None
     return len(json.dumps(payload, separators=(",", ":"), default=str))
-
-
-def _drain(client: EventClient, timeout: float) -> None:
-    """Consume buffered responses until the socket is quiet for ``timeout``.
-
-    Args:
-        client: Event websocket client.
-        timeout: Silence window that marks the connection quiescent.
-    """
-    with contextlib.suppress(TimeoutError):
-        while True:
-            client.receive(timeout)
 
 
 def _prime(
@@ -224,7 +208,7 @@ def _prime(
         timeout: Maximum wait bounding the drain silence window.
     """
     client.emit(event_name, dict(payload))
-    _drain(client, min(timeout, _PRIME_DRAIN_TIMEOUT))
+    client.drain(min(timeout, _PRIME_DRAIN_TIMEOUT))
 
 
 async def run_socket_client(
@@ -298,7 +282,7 @@ def _run_socket_client_sync(
     errors: list[str] = []
 
     try:
-        client = _connect(url, token, timeout)
+        client = _connect(url, token, _codec(url), timeout)
         _prime(client, event_name, payload, timeout)
         for _ in range(events):
             started = time.perf_counter_ns()
@@ -387,8 +371,10 @@ def _run_reconnect_client_sync(
     errors: list[str] = []
 
     try:
+        # Outside the clock: the first client of a backend runs the detection.
+        codec = _codec(url)
         started = time.perf_counter_ns()
-        client = _connect(url, token, timeout)
+        client = _connect(url, token, codec, timeout)
         connect_ms = (time.perf_counter_ns() - started) / 1_000_000
         started = time.perf_counter_ns()
         client.emit(event_name, dict(payload))

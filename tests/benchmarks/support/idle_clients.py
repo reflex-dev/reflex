@@ -17,7 +17,7 @@ import threading
 from reflex_base.environment import environment
 from websockets.exceptions import ConnectionClosed
 
-from tests.benchmarks.support.socket_client import EventClient, _connect
+from tests.benchmarks.support.socket_client import EventClient, _codec, _connect
 
 
 def _keepalive_interval() -> float:
@@ -44,7 +44,7 @@ def _keep_alive(clients: list[EventClient], stop: threading.Event) -> None:
         for client in clients:
             # A session the server ended stays ended; keep the others alive.
             with contextlib.suppress(ConnectionClosed, ConnectionError):
-                client.poll()
+                client.drain(0)
 
 
 def main() -> int:
@@ -57,8 +57,9 @@ def main() -> int:
     payload = json.loads(payload_json)
     clients: list[EventClient] = []
     try:
+        codec = _codec(url)
         for index in range(int(count)):
-            client = _connect(url, f"{token_prefix}-{index}", timeout=10)
+            client = _connect(url, f"{token_prefix}-{index}", codec, timeout=10)
             clients.append(client)
             client.emit("event", payload)
             client.receive(10, "event")

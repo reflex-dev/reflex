@@ -41,7 +41,6 @@ the ``delta`` series, so a change to it never compares against old numbers.
 from __future__ import annotations
 
 import asyncio
-import contextlib
 import dataclasses
 import hashlib
 import json
@@ -53,27 +52,25 @@ from pathlib import Path
 from typing import Any, Protocol, TypeVar
 
 from websockets.asyncio.client import connect
-from websockets.exceptions import ConnectionClosed
 
 from reflex_bench.context import Context
 from reflex_bench.drivers.app_process import AppProcess, run_cli
 from reflex_bench.drivers.events import (
     CODECS,
-    DISCONNECTED,
     EVENT,
     HANDSHAKE,
-    HYDRATED_VAR,
     MAX_FRAME_BYTES,
     ON_LOAD_EVENT,
     OPENED,
     PING,
-    REFUSED,
-    ROOT_STATE,
     Codec,
     Endpoint,
     EventShape,
     ProtocolError,
+    end_reason,
     event_loop,
+    is_hydrated,
+    leave,
     resolve_codec,
     seq_payload,
 )
@@ -268,12 +265,8 @@ class WireSession:
             elif name == "reload":
                 msg = "the server asked the page to reload"
                 raise ProtocolError(msg)
-            elif name == DISCONNECTED:
-                msg = f"the server disconnected the session ({message!r})"
-                raise ProtocolError(msg)
-            elif name == REFUSED:
-                msg = f"the server refused the namespace: {args[1]}"
-                raise ProtocolError(msg)
+            elif (reason := end_reason(args, message)) is not None:
+                raise ProtocolError(reason)
             return message, size, args
 
     @staticmethod
@@ -329,8 +322,7 @@ class WireSession:
                 for name in codec.load_events:
                     await self._send(self._event(name, {}))
                 continue
-            delta = self._delta(args, sizes)
-            if delta.get(ROOT_STATE, {}).get(HYDRATED_VAR) is True:
+            if is_hydrated(self._delta(args, sizes)):
                 break
         return Hydration(
             sent_bytes=self.sent_bytes - sent0,
@@ -391,10 +383,7 @@ class WireSession:
         self.pathname = pathname
         self.query = query
         request = await self._send(self._event(ON_LOAD_EVENT, {}))
-        return await self._reply(
-            request,
-            lambda delta: delta.get(ROOT_STATE, {}).get(HYDRATED_VAR) is True,
-        )
+        return await self._reply(request, is_hydrated)
 
     async def _reply(
         self, request: int, done: Callable[[dict[str, Any]], bool]
@@ -463,9 +452,7 @@ def measure(endpoint: Endpoint, work: Callable[[WireSession], Awaitable[_T]]) ->
                 msg = f"the session did not finish within {WIRE_TIMEOUT_S:g} s"
                 raise TimeoutError(msg) from None
             finally:
-                if codec.leave is not None:
-                    with contextlib.suppress(ConnectionClosed):
-                        await ws.send(codec.leave)
+                await leave(ws, codec)
 
     loop = event_loop()
     try:

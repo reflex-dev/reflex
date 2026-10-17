@@ -256,6 +256,10 @@ class Codec(ABC):
     greets: ClassVar[bool]
     # The hydration events to send once the server acknowledged the connect.
     load_events: ClassVar[tuple[str, ...]]
+    # The frame that opens a session without hydrating it.
+    join: ClassVar[str]
+    # The server's keepalive.
+    ping: ClassVar[str]
     # The answer to a ping.
     pong: ClassVar[str]
     # The frame that leaves the session before the websocket closes, if any.
@@ -344,6 +348,8 @@ class WebsocketCodec(Codec):
     protocol = "websocket"
     greets = False
     load_events = ()
+    join = json.dumps([CONNECT, {}], separators=_COMPACT)
+    ping = json.dumps([PING])
     pong = json.dumps([PONG])
     leave = None
 
@@ -407,6 +413,8 @@ class SocketIOCodec(Codec):
     protocol = "socketio"
     greets = True
     load_events = (HYDRATE_EVENT, ON_LOAD_EVENT)
+    join = SIO_CONNECT_FRAME
+    ping = SIO_PING
     pong = SIO_PONG
     leave = SIO_DISCONNECT_FRAME
 
@@ -475,12 +483,55 @@ class SocketIOCodec(Codec):
         Returns:
             ``40/_event,``.
         """
-        return SIO_CONNECT_FRAME
+        return self.join
 
 
 CODECS: dict[WireProtocol, Codec] = {
     codec.protocol: codec for codec in (WebsocketCodec(), SocketIOCodec())
 }
+
+
+def end_reason(args: list[Any], frame: str | bytes) -> str | None:
+    """Tell why a message ends the session, if it does.
+
+    Args:
+        args: The message.
+        frame: Its raw frame.
+
+    Returns:
+        Why the server refused or disconnected the session, or ``None``.
+    """
+    name = args[0]
+    if name == REFUSED:
+        return f"the server refused {NAMESPACE}: {args[1]}"
+    if name == DISCONNECTED:
+        return f"the server disconnected the session ({frame!r})"
+    return None
+
+
+async def leave(ws: ClientConnection, codec: Codec) -> None:
+    """Leave a session before its websocket closes, on a protocol that has a leave frame.
+
+    Args:
+        ws: The websocket.
+        codec: Its protocol.
+    """
+    if codec.leave is not None:
+        with contextlib.suppress(ConnectionClosed):
+            await ws.send(codec.leave)
+
+
+def is_hydrated(delta: Mapping[str, Any]) -> bool:
+    """Tell whether a delta completes a hydration.
+
+    Args:
+        delta: The delta.
+
+    Returns:
+        Whether it sets the root state's ``is_hydrated``.
+    """
+    root = delta.get(ROOT_STATE)
+    return root is not None and root.get(HYDRATED_VAR) is True
 
 
 async def detect_protocol(backend_url: str) -> WireProtocol:
@@ -874,7 +925,7 @@ class _Frames:
             The frame.
         """
         payload = json.dumps(
-            {**self._payload(seq), **self._client}, separators=(",", ":")
+            {**self._payload(seq), **self._client}, separators=_COMPACT
         )
         return f"{self._head}{payload}{self._tail}"
 
@@ -1007,11 +1058,10 @@ class _Session:
                 break
             if name == PING:
                 await ws.send(codec.pong)
-            elif name == REFUSED:
-                msg = f"the server refused {NAMESPACE}: {args[1]}"
-                raise ProtocolError(msg)
             elif name in CONTROL:
-                msg = f"unexpected frame in the handshake: {message[:40]!r}"
+                msg = end_reason(args, message) or (
+                    f"unexpected frame in the handshake: {message[:40]!r}"
+                )
                 raise ProtocolError(msg)
             else:
                 # Events of the connect come first, e.g. a new token.
@@ -1047,14 +1097,17 @@ class _Session:
             async for message in ws:
                 now = time.perf_counter_ns()
                 args = parse(message)
-                name = None if args is None else args[0]
+                if args is None:
+                    self._fail(f"unexpected frame: {message[:40]!r}")
+                    return
+                name = args[0]
                 if name == PING:
                     await ws.send(codec.pong)
-                elif name == DISCONNECTED:
-                    self._fail(f"the server disconnected the session ({message!r})")
-                    return
-                elif args is None or name in CONTROL:
-                    self._fail(f"unexpected frame: {message[:40]!r}")
+                elif name in CONTROL:
+                    self._fail(
+                        end_reason(args, message)
+                        or f"unexpected frame: {message[:40]!r}"
+                    )
                     return
                 else:
                     self._on_emit(args, message, now)
@@ -1103,11 +1156,7 @@ class _Session:
                 and self.link.delta_key in delta
             ):
                 self._linked.set()
-            if (
-                not self._hydrated.is_set()
-                and (root := delta.get(ROOT_STATE))
-                and root.get(HYDRATED_VAR) is True
-            ):
+            if not self._hydrated.is_set() and is_hydrated(delta):
                 self._hydrated.set()
         elif name == "new_token":
             # The token was in use by another session; reflex hands out a new one.
@@ -1265,9 +1314,8 @@ class _Session:
         ws, codec = self.ws, self.codec
         if ws is not None:
             assert codec is not None
-            if self.error is None and codec.leave is not None:
-                with contextlib.suppress(ConnectionClosed):
-                    await ws.send(codec.leave)
+            if self.error is None:
+                await leave(ws, codec)
             await ws.close()
         if self._reader is not None:
             self._reader.cancel()
@@ -1696,6 +1744,120 @@ async def wait_readable(conn: Connection) -> None:
         loop.remove_reader(fd)
 
 
+def spawn_process(
+    target: Callable[..., None], *args: Any, name: str
+) -> tuple[BaseProcess, Connection]:
+    """Start a daemon process with a pipe to it.
+
+    It is spawned, not forked: the harness runs hooks on threads.
+
+    Args:
+        target: The process's function; the child's end of the pipe is its
+            last argument.
+        *args: Its other arguments.
+        name: The process's name.
+
+    Returns:
+        The started process and the parent's end of the pipe.
+    """
+    context = multiprocessing.get_context("spawn")
+    conn, child = context.Pipe()
+    proc = context.Process(target=target, args=(*args, child), name=name, daemon=True)
+    proc.start()
+    # Only the process holds the child's end now, so its exit closes the pipe.
+    child.close()
+    return proc, conn
+
+
+def stop_processes(procs: Sequence[BaseProcess]) -> None:
+    """Terminate started processes together, killing each one that does not exit in time.
+
+    Args:
+        procs: The processes.
+    """
+    for proc in procs:
+        if proc.is_alive():
+            proc.terminate()
+    for proc in procs:
+        proc.join(KILL_GRACE_S)
+        if proc.is_alive():
+            proc.kill()
+            proc.join(KILL_GRACE_S)
+
+
+def _ready_timeout(sessions: int) -> float:
+    """Bound the wait for a process to prime its sessions.
+
+    Args:
+        sessions: The process's sessions.
+
+    Returns:
+        Seconds: a margin plus the prime timeout per batch of
+        ``PRIME_CONCURRENCY`` sessions.
+    """
+    return READY_MARGIN_S + -(-sessions // PRIME_CONCURRENCY) * PRIME_TIMEOUT_S
+
+
+def _check_started(errors: Sequence[str], sessions: int) -> None:
+    """Fail when sessions could not start.
+
+    Args:
+        errors: Why sessions failed to prime.
+        sessions: How many were to start.
+
+    Raises:
+        LoadError: With how many failed and the first reason.
+    """
+    if errors:
+        msg = f"{len(errors)} of {sessions} sessions could not start; {errors[0]}"
+        raise LoadError(msg)
+
+
+def _report(conn: Connection, proc: BaseProcess, who: str) -> Any:
+    """Receive a process's next report.
+
+    Args:
+        conn: The pipe to it, readable or closed.
+        proc: The process.
+        who: The process as messages name it, e.g. ``generator process 0``.
+
+    Returns:
+        The report's value.
+
+    Raises:
+        LoadError: When the process exited or reports a failure.
+    """
+    try:
+        kind, value = conn.recv()
+    except (EOFError, OSError):
+        msg = f"{who} exited with code {proc.exitcode}"
+        raise LoadError(msg) from None
+    if kind == "error":
+        msg = f"{who} failed:\n{value}"
+        raise LoadError(msg)
+    return value
+
+
+def _serve(
+    conn: Connection, sessions: int, main: Callable[[], Awaitable[None]]
+) -> None:
+    """Run a spawned process's work on a fresh loop, reporting a failure to the parent.
+
+    Args:
+        conn: The pipe to the parent.
+        sessions: The sessions the work opens.
+        main: Starts the work, which reports its results itself.
+    """
+    # The parent decides when to stop, also on Ctrl-C.
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+    try:
+        raise_fd_limit(sessions)
+        event_loop().run_until_complete(main())
+    except BaseException:
+        with contextlib.suppress(OSError):
+            conn.send(("error", traceback.format_exc()))
+
+
 async def _handshake(conn: Connection, errors: list[str]) -> int | None:
     """Report the primed sessions to the parent and wait for the start.
 
@@ -1728,28 +1890,29 @@ async def _handshake(conn: Connection, errors: list[str]) -> int | None:
     return value
 
 
-def _worker(plan: LoadPlan, indices: Sequence[int], conn: Connection) -> None:
-    """Run one generator process: its sessions, on its CPUs, reporting over a pipe.
+async def _load(plan: LoadPlan, indices: Sequence[int], conn: Connection) -> None:
+    """Run a generator process's sessions on its CPUs and send the parent what they measured.
 
     Args:
         plan: The load plan.
         indices: The sessions of this process.
         conn: The pipe to the parent.
     """
-    # The parent decides when to stop, also on Ctrl-C.
-    signal.signal(signal.SIGINT, signal.SIG_IGN)
-    try:
-        if plan.cpus is not None and hasattr(os, "sched_setaffinity"):
-            os.sched_setaffinity(0, plan.cpus)
-        raise_fd_limit(len(indices))
-        loop = event_loop()
-        shard = loop.run_until_complete(
-            _run_sessions(plan, indices, lambda errors: _handshake(conn, errors))
-        )
-        conn.send(("result", shard))
-    except BaseException:
-        with contextlib.suppress(OSError):
-            conn.send(("error", traceback.format_exc()))
+    if plan.cpus is not None and hasattr(os, "sched_setaffinity"):
+        os.sched_setaffinity(0, plan.cpus)
+    shard = await _run_sessions(plan, indices, lambda errors: _handshake(conn, errors))
+    conn.send(("result", shard))
+
+
+def _worker(plan: LoadPlan, indices: Sequence[int], conn: Connection) -> None:
+    """Run one generator process, reporting over a pipe.
+
+    Args:
+        plan: The load plan.
+        indices: The sessions of this process.
+        conn: The pipe to the parent.
+    """
+    _serve(conn, len(indices), lambda: _load(plan, indices, conn))
 
 
 class LoadRunner:
@@ -1775,8 +1938,6 @@ class LoadRunner:
     def run(self, on_window: Callable[[str], None] | None = None) -> LoadResult:
         """Start the processes, prime every session, run the schedule and merge the results.
 
-        Processes are spawned, not forked: the harness runs hooks on threads.
-
         Args:
             on_window: Called with ``"start"`` and ``"end"`` on this thread when
                 the measured window starts and ends, e.g. to read the server's
@@ -1790,30 +1951,25 @@ class LoadRunner:
                 out, or the runner was stopped.
         """
         plan = self.plan
-        context = multiprocessing.get_context("spawn")
         try:
             with self._lock:
                 if self._stopped:
                     msg = "the load was stopped before it started"
                     raise LoadError(msg)
                 for index in range(plan.processes):
-                    conn, child = context.Pipe()
-                    self._conns.append(conn)
-                    proc = context.Process(
-                        target=_worker,
-                        args=(plan, range(index, plan.sessions, plan.processes), child),
+                    proc, conn = spawn_process(
+                        _worker,
+                        plan,
+                        range(index, plan.sessions, plan.processes),
                         name=f"reflex-bench-load-{index}",
-                        daemon=True,
                     )
-                    proc.start()
-                    child.close()
                     self._procs.append(proc)
+                    self._conns.append(conn)
             per_process = -(-plan.sessions // plan.processes)
-            batches = -(-per_process // PRIME_CONCURRENCY)
-            ready = self._collect("ready", READY_MARGIN_S + batches * PRIME_TIMEOUT_S)
-            if errors := [error for errors in ready for error in errors]:
-                msg = f"{len(errors)} of {plan.sessions} sessions could not start; {errors[0]}"
-                raise LoadError(msg)
+            ready = self._collect("ready", _ready_timeout(per_process))
+            _check_started(
+                [error for errors in ready for error in errors], plan.sessions
+            )
             t0 = time.perf_counter_ns() + int(START_DELAY_S * 1e9)
             for conn in self._conns:
                 conn.send(("go", t0))
@@ -1885,18 +2041,9 @@ class LoadRunner:
                 msg = f"generator processes sent no {kind} within {timeout:g} s"
                 raise LoadError(msg)
             for index, conn in pending:
-                if conn not in ready and self._procs[index].sentinel not in ready:
-                    continue
-                try:
-                    got, value = conn.recv()
-                except (EOFError, OSError):
-                    code = self._procs[index].exitcode
-                    msg = f"generator process {index} exited with code {code}"
-                    raise LoadError(msg) from None
-                if got == "error":
-                    msg = f"generator process {index} failed:\n{value}"
-                    raise LoadError(msg)
-                values[index] = value
+                proc = self._procs[index]
+                if conn in ready or proc.sentinel in ready:
+                    values[index] = _report(conn, proc, f"generator process {index}")
         return [values[index] for index in range(len(self._conns))]
 
     def stop(self) -> None:
@@ -1906,14 +2053,7 @@ class LoadRunner:
         """
         with self._lock:
             self._stopped = True
-            for proc in self._procs:
-                if proc.is_alive():
-                    proc.terminate()
-            for proc in self._procs:
-                proc.join(KILL_GRACE_S)
-                if proc.is_alive():
-                    proc.kill()
-                    proc.join(KILL_GRACE_S)
+            stop_processes(self._procs)
 
 
 def run_load(
@@ -1955,14 +2095,7 @@ def _hold_worker(endpoint: Endpoint, count: int, conn: Connection) -> None:
         count: How many.
         conn: The pipe to the parent.
     """
-    # The parent decides when to stop, also on Ctrl-C.
-    signal.signal(signal.SIGINT, signal.SIG_IGN)
-    try:
-        raise_fd_limit(count)
-        event_loop().run_until_complete(_hold(endpoint, count, conn))
-    except BaseException:
-        with contextlib.suppress(OSError):
-            conn.send(("error", traceback.format_exc()))
+    _serve(conn, count, lambda: _hold(endpoint, count, conn))
 
 
 class SessionHold:
@@ -1998,21 +2131,13 @@ class SessionHold:
         Raises:
             LoadError: When the hold was killed before it started.
         """
-        context = multiprocessing.get_context("spawn")
         with self._lock:
             if self._stopped:
                 msg = "the hold was stopped before it started"
                 raise LoadError(msg)
-            conn, child = context.Pipe()
-            self._conn = conn
-            proc = self._proc = context.Process(
-                target=_hold_worker,
-                args=(self.endpoint, self.count, child),
-                name="reflex-bench-hold",
-                daemon=True,
+            self._proc, self._conn = spawn_process(
+                _hold_worker, self.endpoint, self.count, name="reflex-bench-hold"
             )
-            proc.start()
-            child.close()
         return self
 
     def ready(self) -> None:
@@ -2022,11 +2147,8 @@ class SessionHold:
             LoadError: When sessions could not start, with how many, or the
                 process failed, timed out or was killed.
         """
-        batches = -(-self.count // PRIME_CONCURRENCY)
-        errors = self._receive("ready", READY_MARGIN_S + batches * PRIME_TIMEOUT_S)
-        if errors:
-            msg = f"{len(errors)} of {self.count} sessions could not start; {errors[0]}"
-            raise LoadError(msg)
+        errors = self._receive("ready", _ready_timeout(self.count))
+        _check_started(errors, self.count)
 
     def close(self) -> list[str]:
         """Leave every session and close its websocket, then end the process.
@@ -2074,15 +2196,7 @@ class SessionHold:
         if not ready:
             msg = f"the hold sent no {kind} report within {timeout:g} s"
             raise LoadError(msg)
-        try:
-            got, value = conn.recv()
-        except (EOFError, OSError):
-            msg = f"the hold's process exited with code {proc.exitcode}"
-            raise LoadError(msg) from None
-        if got == "error":
-            msg = f"the hold's process failed:\n{value}"
-            raise LoadError(msg)
-        return value
+        return _report(conn, proc, "the hold's process")
 
     def kill(self) -> None:
         """Terminate the process, killing it if it does not exit.
@@ -2092,14 +2206,8 @@ class SessionHold:
         with self._lock:
             self._stopped = True
             proc = self._proc
-        if proc is None:
-            return
-        if proc.is_alive():
-            proc.terminate()
-        proc.join(KILL_GRACE_S)
-        if proc.is_alive():
-            proc.kill()
-            proc.join(KILL_GRACE_S)
+        if proc is not None:
+            stop_processes([proc])
 
 
 def hold_sessions(endpoint: Endpoint, count: int) -> SessionHold:

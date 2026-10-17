@@ -49,15 +49,17 @@ from reflex_bench.suites.events import SEQ_VAR
 from websockets.exceptions import ConnectionClosedError
 from websockets.frames import Close
 
-from tests.units.reflex_bench.drivers.test_events import serving
-from tests.units.reflex_bench.factories import make_subject
-from tests.units.reflex_bench.suites.test_events import STATES
+from tests.units.reflex_bench.factories import (
+    SOCKETIO,
+    STATES,
+    WEBSOCKET,
+    make_subject,
+    serving,
+)
 
 BENCH_STATE = STATES.bench
 SHAPES = {name: shape_of(STATES) for name, shape_of in events_suite.SHAPES.items()}
 PLAYGROUND_STATE = "reflex___state____state.playground___state____playground_state"
-WEBSOCKET = CODECS["websocket"]
-SOCKETIO = CODECS["socketio"]
 HANDSHAKE_FRAME = (
     '["_handshake",{"ping_interval":25.0,"ping_timeout":120.0,"protocol":2,'
     '"max_message_size":10000000}]'
@@ -93,18 +95,21 @@ class FakeTransport:
     def __init__(
         self,
         script: Callable[[str], Sequence[Reply]],
+        codec: Codec = WEBSOCKET,
         greeting: Sequence[Reply] = (),
     ) -> None:
         """Queue the server's greeting.
 
         Args:
             script: Maps a sent frame to the frames it triggers.
-            greeting: The frames waiting before anything is sent, e.g. the
-                engine.io open of Socket.IO; none by default.
+            codec: The protocol; one that greets opens with an engine.io open.
+            greeting: More frames waiting before anything is sent.
         """
         self.script = script
         self.sent: list[str] = []
-        self.inbox: collections.deque[Reply] = collections.deque(greeting)
+        self.inbox: collections.deque[Reply] = collections.deque(
+            [OPEN, *greeting] if codec.greets else greeting
+        )
 
     async def send(self, message: str) -> None:
         """Record a frame and queue what the script answers.
@@ -262,7 +267,7 @@ def test_hydration_counts_every_frame_until_hydrated():
 
 def test_a_socketio_hydration_joins_then_sends_the_hydration_events():
     script = playground_script(new_token="tok-2", codec=SOCKETIO)
-    ws = FakeTransport(script, greeting=[OPEN])
+    ws = FakeTransport(script, SOCKETIO)
     session = wire.WireSession(ws, "tok-1", codec=SOCKETIO)
     hydration = run(session.hydrate())
     hydrate = SOCKETIO.event_frame(HYDRATE_EVENT, {}, token="tok-2", pathname="/")
@@ -291,8 +296,7 @@ def test_a_ping_during_hydration_is_answered_and_not_counted(
     protocol: WireProtocol, ping: str, pong: str, sent_frames: int, received_frames: int
 ):
     codec = CODECS[protocol]
-    greeting = [OPEN, ping] if codec.greets else [ping]
-    ws = FakeTransport(playground_script(codec=codec), greeting=greeting)
+    ws = FakeTransport(playground_script(codec=codec), codec, greeting=[ping])
     hydration = run(wire.WireSession(ws, "tok", codec=codec).hydrate())
     assert ws.sent[1] == pong
     # Keepalives are timing, not payload: neither the ping nor the pong counts.
@@ -324,7 +328,7 @@ def test_a_frame_that_ends_the_session_fails_the_hydration(
         args = codec.parse(message)
         return frames if args is not None and args[0] in {CONNECT, HANDSHAKE} else []
 
-    ws = FakeTransport(script, greeting=[OPEN] if codec.greets else ())
+    ws = FakeTransport(script, codec)
     with pytest.raises((ProtocolError, ConnectionClosedError), match=match):
         run(wire.WireSession(ws, "tok", codec=codec).hydrate())
 
@@ -467,10 +471,7 @@ def test_a_disconnect_while_waiting_for_the_reply_fails(
 ):
     codec = CODECS[protocol]
     simple = SHAPES["simple"].name
-    ws = FakeTransport(
-        playground_script(replies={simple: [end]}, codec=codec),
-        greeting=[OPEN] if codec.greets else (),
-    )
+    ws = FakeTransport(playground_script(replies={simple: [end]}, codec=codec), codec)
 
     async def exchange() -> wire.Exchange:
         session = wire.WireSession(ws, "tok", codec=codec)
@@ -502,47 +503,42 @@ def connecting(
     async def connect(url: str, **kwargs: Any) -> AsyncIterator[FakeTransport]:
         urls.append(url)
         headers.append(kwargs["additional_headers"])
-        greeting = [OPEN] if codec.greets else []
-        transports.append(
-            ws := FakeTransport(playground_script(codec=codec), greeting=greeting)
-        )
+        transports.append(ws := FakeTransport(playground_script(codec=codec), codec))
         yield ws
 
     monkeypatch.setattr(wire, "connect", connect)
     yield transports, urls, headers
 
 
-def test_measure_connects_hydrates_and_closes(monkeypatch: pytest.MonkeyPatch):
-    with connecting(monkeypatch, WEBSOCKET) as (transports, urls, headers):
+@pytest.mark.parametrize(
+    ("protocol", "url", "received_frames"),
+    [
+        ("websocket", "ws://localhost:8000/_event?token=", 3),
+        ("socketio", "ws://localhost:8000/_event/?EIO=4&transport=websocket&token=", 4),
+    ],
+)
+def test_measure_connects_hydrates_and_leaves(
+    monkeypatch: pytest.MonkeyPatch,
+    protocol: WireProtocol,
+    url: str,
+    received_frames: int,
+):
+    codec = CODECS[protocol]
+    with connecting(monkeypatch, codec) as (transports, urls, headers):
         hydration = wire.measure(
-            Endpoint("http://localhost:8000", "/page", protocol="websocket"),
+            Endpoint("http://localhost:8000", "/page", protocol=protocol),
             wire.WireSession.hydrate,
         )
     (ws,) = transports
-    assert urls[0].startswith("ws://localhost:8000/_event?token=")
+    assert urls[0].startswith(url)
     # A browser sends the page's origin; the router's page host comes from it.
     assert headers == [{"Origin": "http://localhost:8000"}]
-    assert hydration.received_frames == 3
-    # The plain protocol leaves by closing the websocket: the connect is all it sent.
-    (connect,) = ws.sent
-    assert '"pathname":"/page"' in connect
-
-
-def test_measure_joins_and_leaves_the_socketio_namespace(
-    monkeypatch: pytest.MonkeyPatch,
-):
-    with connecting(monkeypatch, SOCKETIO) as (transports, urls, _headers):
-        hydration = wire.measure(
-            Endpoint("http://localhost:8000", "/page", protocol="socketio"),
-            wire.WireSession.hydrate,
-        )
-    (ws,) = transports
-    assert urls[0].startswith(
-        "ws://localhost:8000/_event/?EIO=4&transport=websocket&token="
+    assert hydration.received_frames == received_frames
+    assert '"pathname":"/page"' in ws.sent[hydration.sent_frames - 1]
+    # Only the leave follows the hydration; the plain protocol leaves by closing.
+    assert ws.sent[hydration.sent_frames :] == (
+        [] if codec.leave is None else [codec.leave]
     )
-    assert hydration.received_frames == 4
-    assert ws.sent[-1] == SIO_DISCONNECT_FRAME
-    assert '"pathname":"/page"' in ws.sent[1]
 
 
 @pytest.mark.parametrize(

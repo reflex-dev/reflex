@@ -11,16 +11,16 @@ through :class:`~reflex_bench.drivers.events.LoadRunner`.
 from __future__ import annotations
 
 import asyncio
-import contextlib
 import dataclasses
 import json
 import multiprocessing
 import threading
 import time
-from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Any, cast
 
 import pytest
+from reflex_base.constants import CompileVars, SocketEvent
 from reflex_bench.drivers import events
 from reflex_bench.drivers.app_process import free_ports
 from reflex_bench.drivers.echo_server import EchoServer
@@ -38,21 +38,25 @@ from reflex_bench.drivers.events import (
     open_sessions,
     run_load,
 )
+from reflex_bench.suites.events import CLIENT_VAR, SEQ_VAR
 from websockets.asyncio.server import ServerConnection
 
-from tests.units.reflex_bench.factories import make_load_result
+from reflex import event_namespace
+from tests.units.reflex_bench.factories import (
+    PROTOCOLS,
+    SOCKETIO,
+    WEBSOCKET,
+    make_load_result,
+    serving,
+)
 
 STATE = "reflex___state____state.playground___state____bench_state"
-SEQ_VAR = "last_seq_rx_state_"
 SHAPE = EventShape(
     name=f"{STATE}.set_seq",
     payload=events.seq_payload,
     delta_key=STATE,
     seq_var=SEQ_VAR,
 )
-WEBSOCKET = CODECS["websocket"]
-SOCKETIO = CODECS["socketio"]
-PROTOCOLS = pytest.mark.parametrize("protocol", ["websocket", "socketio"])
 # The hydration events of a session, by protocol.
 HYDRATION = {
     "websocket": [events.HYDRATE_AND_LOAD_EVENT],
@@ -67,39 +71,6 @@ OLD_REPLY = (
     f'42/_event,["event",{{"delta":{{"{STATE}":{{"{SEQ_VAR}":7}}}},'
     '"events":[],"final":true}]'
 )
-
-
-@contextlib.contextmanager
-def serving(server: EchoServer) -> Iterator[str]:
-    """Run an echo server on a thread with its own event loop.
-
-    Args:
-        server: The server.
-
-    Yields:
-        Its base URL, like the backend URL of a started app.
-    """
-    loop = asyncio.new_event_loop()
-    ready = threading.Event()
-    port: list[int] = []
-    done: list[asyncio.Future[None]] = []
-
-    async def main() -> None:
-        done.append(loop.create_future())
-        async with server.serve("127.0.0.1", 0) as bound:
-            port.append(bound)
-            ready.set()
-            await done[0]
-
-    thread = threading.Thread(target=loop.run_until_complete, args=(main(),))
-    thread.start()
-    assert ready.wait(10)
-    try:
-        yield f"http://127.0.0.1:{port[0]}"
-    finally:
-        loop.call_soon_threadsafe(done[0].set_result, None)
-        thread.join(10)
-        loop.close()
 
 
 def plan(url: str, **overrides: Any) -> LoadPlan:
@@ -165,8 +136,8 @@ class Scripted(EchoServer):
         Args:
             ws: The connection.
         """
-        if self.codec.protocol == "socketio":
-            await ws.send(events.SIO_DISCONNECT_FRAME)
+        if (leave := self.codec.leave) is not None:
+            await ws.send(leave)
         else:
             await ws.close(1008)
 
@@ -199,6 +170,18 @@ class Scripted(EchoServer):
             Whether to answer it now.
         """
         return True
+
+
+def test_the_plain_protocol_is_copied_from_reflex():
+    # reflex_bench drives releases without reflex.event_namespace, so it keeps a copy.
+    assert (events.CONNECT, events.HANDSHAKE, events.PING, events.PONG) == (
+        event_namespace.CONNECT_MESSAGE,
+        event_namespace.HANDSHAKE_MESSAGE,
+        event_namespace.PING_MESSAGE,
+        event_namespace.PONG_MESSAGE,
+    )
+    assert events.EVENT == SocketEvent.EVENT
+    assert events.BOOT_KEY == CompileVars.CONNECT_AUTH_EVENT
 
 
 def test_event_urls():
@@ -282,8 +265,23 @@ def test_both_codecs_decode_to_the_plain_protocols_messages():
         assert WEBSOCKET.parse(frame) is None
     assert SOCKETIO.parse("6") is None
     assert SOCKETIO.parse("42/_event,nope") is None
+    assert (WEBSOCKET.join, SOCKETIO.join) == ('["_connect",{}]', "40/_event,")
+    assert (WEBSOCKET.ping, SOCKETIO.ping) == ('["_ping"]', "2")
     assert (WEBSOCKET.pong, SOCKETIO.pong) == ('["_pong"]', "3")
     assert (WEBSOCKET.leave, SOCKETIO.leave) == (None, "41/_event,")
+
+
+def test_only_a_refusal_or_a_disconnect_ends_a_session():
+    refused = SOCKETIO.parse('44/_event,{"message":"no"}')
+    assert refused is not None
+    assert (
+        events.end_reason(refused, "") == 'the server refused /_event: {"message":"no"}'
+    )
+    assert events.end_reason([events.DISCONNECTED], "1") == (
+        "the server disconnected the session ('1')"
+    )
+    for message in ([events.PING], ["event", {}], ["new_token", "t"]):
+        assert events.end_reason(message, "") is None
 
 
 @pytest.mark.parametrize(
@@ -694,7 +692,6 @@ def test_closed_loop_reports_service_time_only():
 
 
 BOARD = "reflex___state____state.playground___state____board_state"
-CLIENT_VAR = "last_client_rx_state_"
 LINK = LinkEvent(name=f"{BOARD}.join", payload={"token": "board-1"}, delta_key=BOARD)
 BOARD_SHAPE = EventShape(
     name=f"{BOARD}.set_seq_shared",
@@ -1004,7 +1001,7 @@ def test_run_load_merges_spawned_processes(monkeypatch: pytest.MonkeyPatch):
         result = LoadRunner(load).run(
             on_window=lambda edge: windows.append((edge, time.perf_counter_ns()))
         )
-    assert contexts == ["spawn"]
+    assert contexts == ["spawn", "spawn"]
     assert result.processes == 2
     assert result.sessions == 4
     # Without warmup, the server saw exactly the measured events of both processes.
@@ -1051,14 +1048,10 @@ def test_stop_kills_the_generator_processes():
 def test_a_generator_process_ends_when_its_parent_goes_away():
     # However the harness exits, the closed pipe ends the generator's run.
     with serving(Scripted()) as url:
-        context = multiprocessing.get_context("spawn")
-        conn, child = context.Pipe()
         load = plan(url, sessions=1, rate=20.0, duration_s=60.0)
-        proc = context.Process(
-            target=events._worker, args=(load, range(1), child), daemon=True
+        proc, conn = events.spawn_process(
+            events._worker, load, range(1), name="reflex-bench-test"
         )
-        proc.start()
-        child.close()
         assert conn.poll(30)
         assert conn.recv() == ("ready", [])
         conn.send(("go", time.perf_counter_ns()))
@@ -1287,13 +1280,8 @@ def test_close_reports_sessions_lost_while_held():
 
 
 def test_kill_ends_a_hold_that_is_still_priming():
-    class NeverPrimed(Holding):
-        """Ignores the events that complete the hydration, so no session finishes priming."""
-
-        async def on_event(self, ws, event):
-            """Answer everything but those."""
-            if event["name"] not in HYDRATING:
-                await super().on_event(ws, event)
+    class NeverPrimed(NeverHydrated, Holding):
+        """A holding server where no session finishes priming."""
 
     with serving(NeverPrimed()) as url:
         hold = events.hold_sessions(Endpoint(url), 2)

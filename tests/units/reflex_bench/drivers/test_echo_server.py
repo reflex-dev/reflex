@@ -1,19 +1,108 @@
 """Tests for reflex_bench.drivers.echo_server.
 
 The echo server's answers are exercised by the generator's tests; these check
-the process that the calibration runs it in.
+its handshake against reflex's and the process that the calibration runs it in.
 """
 
 from __future__ import annotations
 
+import asyncio
+import json
+from typing import Any, cast
+from unittest.mock import AsyncMock, Mock
+
 import psutil
 import pytest
-from reflex_bench.drivers import events
-from reflex_bench.drivers.echo_server import EchoProcess
+from reflex_bench.drivers import echo_server, events
+from reflex_bench.drivers.echo_server import EchoProcess, EchoServer
 from reflex_bench.drivers.events import Endpoint, EventShape, LoadPlan, run_load
+from reflex_bench.suites.events import SEQ_VAR
+from starlette.websockets import WebSocket
+from websockets.asyncio.server import ServerConnection
+
+from reflex import event_namespace
+from reflex.utils import prerequisites
+from tests.units.reflex_bench.factories import WEBSOCKET
 
 STATE = "reflex___state____state.playground___state____bench_state"
-SEQ_VAR = "last_seq_rx_state_"
+
+
+class _Socket:
+    """Just enough of a starlette websocket for reflex to open a plain session."""
+
+    def __init__(self) -> None:
+        """Queue a connect frame without a boot event, then the disconnect."""
+        self.scope = {"type": "websocket", "query_string": b"token=tok", "headers": []}
+        self.headers: dict[str, str] = {}
+        self.sent: list[Any] = []
+        self._received = [
+            {"type": "websocket.receive", "text": WEBSOCKET.join},
+            {"type": "websocket.disconnect", "code": 1000},
+        ]
+
+    async def accept(self, subprotocol: str | None = None) -> None:
+        """Accept the connection.
+
+        Args:
+            subprotocol: The chosen subprotocol.
+        """
+
+    async def send_text(self, text: str) -> None:
+        """Record a frame.
+
+        Args:
+            text: The frame.
+        """
+        self.sent.append(json.loads(text))
+
+    async def receive(self) -> dict[str, Any]:
+        """Take the next queued message once the writer ran, as the network lets it.
+
+        Returns:
+            The ASGI message.
+        """
+        await asyncio.sleep(0)
+        return self._received.pop(0)
+
+    async def close(self, code: int = 1000) -> None:
+        """Close the connection.
+
+        Args:
+            code: The close code.
+        """
+
+
+class _Sent(list[str]):
+    """A server connection that records what is sent on it."""
+
+    async def send(self, frame: str) -> None:
+        """Record a frame.
+
+        Args:
+            frame: The frame.
+        """
+        self.append(frame)
+
+
+def test_the_handshake_is_copied_from_reflex(monkeypatch: pytest.MonkeyPatch):
+    # reflex_bench drives releases without reflex.event_namespace, so it keeps a copy.
+    monkeypatch.setattr(prerequisites, "check_redis_used", lambda: False)
+    app = Mock(_state=None, _channels={}, router=Mock(return_value=None))
+    app.event_processor.enqueue = AsyncMock()
+    namespace = event_namespace.WebsocketEventNamespace(events.NAMESPACE, app)
+    socket = _Socket()
+    asyncio.run(namespace.handle_websocket(cast(WebSocket, socket)))
+    reflex_name, reflex_settings = socket.sent[0]
+    sent = _Sent()
+    server = EchoServer(delta_key=STATE, seq_var=SEQ_VAR)
+    asyncio.run(server.on_connect(cast(ServerConnection, sent), "sid"))
+    (frame,) = sent
+    message = WEBSOCKET.parse(frame)
+    assert message is not None
+    name, settings = message
+    assert name == reflex_name == events.HANDSHAKE
+    assert set(settings) == set(reflex_settings)
+    assert echo_server.PROTOCOL_VERSION == event_namespace.PROTOCOL_VERSION
 
 
 def test_echo_process_answers_a_load_and_stops():

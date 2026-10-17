@@ -29,13 +29,13 @@ from reflex_bench.suites import events as events_suite
 from reflex_bench.suites import memory
 
 from tests.units.reflex_bench.factories import (
+    STATES,
     fake_proc,
     fake_rollup,
     make_context,
     make_load_result,
     make_subject,
 )
-from tests.units.reflex_bench.suites.test_events import STATES
 
 MIB = 1024**2
 APP_PID = 1001

@@ -15,7 +15,6 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import json
-import multiprocessing
 import os
 import urllib.parse
 import uuid
@@ -39,16 +38,15 @@ from reflex_bench.drivers.events import (
     HYDRATE_AND_LOAD_EVENT,
     HYDRATE_EVENT,
     HYDRATED_VAR,
-    KILL_GRACE_S,
     MAX_FRAME_BYTES,
     ON_LOAD_EVENT,
-    PING,
     ROOT_STATE,
-    SIO_CONNECT_FRAME,
     SIO_OPEN_PREFIX,
-    SIO_PING,
     WireProtocol,
     event_loop,
+    spawn_process,
+    stop_processes,
+    wait_readable,
 )
 
 # The plain protocol's version, announced in its handshake.
@@ -171,7 +169,7 @@ class EchoServer:
         Args:
             ws: The connection.
         """
-        ping = SIO_PING if self.codec.protocol == "socketio" else self.codec.emit(PING)
+        ping = self.codec.ping
         with contextlib.suppress(ConnectionClosed):
             while True:
                 await asyncio.sleep(self.ping_interval_s)
@@ -180,15 +178,19 @@ class EchoServer:
     async def on_connect(self, ws: ServerConnection, sid: str) -> None:
         """Acknowledge the connect.
 
+        A protocol that greets announced the heartbeat in its greeting, so its
+        ack carries the session id only, as python-socketio's does.
+
         Args:
             ws: The connection.
             sid: The session id.
         """
-        if self.codec.protocol == "socketio":
-            await ws.send(SIO_CONNECT_FRAME + json.dumps({"sid": sid}))
+        codec = self.codec
+        if codec.greets:
+            await ws.send(codec.join + json.dumps({"sid": sid}))
             return
         await ws.send(
-            self.codec.emit(
+            codec.emit(
                 HANDSHAKE,
                 {
                     "ping_interval": self.ping_interval_s,
@@ -229,15 +231,15 @@ class EchoServer:
 
 
 def _serve_process(
-    conn: Connection, delta_key: str, seq_var: str, cpus: Sequence[int] | None
+    delta_key: str, seq_var: str, cpus: Sequence[int] | None, conn: Connection
 ) -> None:
     """Run an echo server in this process until the parent closes the pipe or terminates it.
 
     Args:
-        conn: Receives the bound port; closing its other end stops the server.
         delta_key: The state whose delta echoes the sequence number.
         seq_var: The var that echoes it.
         cpus: The CPUs to run on (Linux), or ``None``.
+        conn: Receives the bound port; closing its other end stops the server.
     """
     if cpus is not None and hasattr(os, "sched_setaffinity"):
         os.sched_setaffinity(0, cpus)
@@ -248,9 +250,7 @@ def _serve_process(
             conn.send(port)
             # The parent holds the pipe open while it needs the server, and
             # its end closes however the parent exits.
-            parent_gone = asyncio.Event()
-            asyncio.get_running_loop().add_reader(conn.fileno(), parent_gone.set)
-            await parent_gone.wait()
+            await wait_readable(conn)
 
     event_loop().run_until_complete(main())
 
@@ -284,17 +284,10 @@ class EchoProcess:
         Raises:
             RuntimeError: When it does not listen in time.
         """
-        context = multiprocessing.get_context("spawn")
-        conn, child = context.Pipe()
-        proc = self._proc = context.Process(
-            target=_serve_process,
-            args=(child, *self._args),
-            name="reflex-bench-echo",
-            daemon=True,
+        proc, conn = spawn_process(
+            _serve_process, *self._args, name="reflex-bench-echo"
         )
-        proc.start()
-        child.close()
-        self._conn = conn
+        self._proc, self._conn = proc, conn
         try:
             port = conn.recv() if conn.poll(timeout) else None
         except (EOFError, OSError):
@@ -322,13 +315,7 @@ class EchoProcess:
 
     def stop(self) -> None:
         """Stop the server; safe to call again."""
-        proc, conn = self._proc, self._conn
-        if conn is not None:
-            conn.close()
-        if proc is None:
-            return
-        proc.terminate()
-        proc.join(KILL_GRACE_S)
-        if proc.is_alive():
-            proc.kill()
-            proc.join(KILL_GRACE_S)
+        if self._conn is not None:
+            self._conn.close()
+        if self._proc is not None:
+            stop_processes([self._proc])
