@@ -38,7 +38,6 @@ from reflex_bench.drivers.events import (
     HYDRATE_AND_LOAD_EVENT,
     HYDRATE_EVENT,
     HYDRATED_VAR,
-    MAX_FRAME_BYTES,
     ON_LOAD_EVENT,
     ROOT_STATE,
     SIO_OPEN_PREFIX,
@@ -51,6 +50,8 @@ from reflex_bench.drivers.events import (
 
 # The plain protocol's version, announced in its handshake.
 PROTOCOL_VERSION = 2
+# Reflex's default message size limit, announced by either protocol.
+MAX_MESSAGE_BYTES = 1_000_000
 
 
 class EchoServer:
@@ -71,8 +72,8 @@ class EchoServer:
             delta_key: The state whose delta echoes the sequence number.
             seq_var: The var that echoes it.
             protocol: The protocol to speak.
-            ping_interval_s: Seconds between pings.
-            ping_timeout_s: The ping timeout announced in the handshake.
+            ping_interval_s: Seconds between pings, by default reflex's.
+            ping_timeout_s: The ping timeout announced, by default reflex's.
         """
         self.delta_key = delta_key
         self.seq_var = seq_var
@@ -137,7 +138,7 @@ class EchoServer:
                     "upgrades": [],
                     "pingInterval": int(self.ping_interval_s * 1000),
                     "pingTimeout": int(self.ping_timeout_s * 1000),
-                    "maxPayload": 1_000_000,
+                    "maxPayload": MAX_MESSAGE_BYTES,
                 })
             )
         pinger = asyncio.create_task(self._ping(ws))
@@ -196,7 +197,7 @@ class EchoServer:
                     "ping_interval": self.ping_interval_s,
                     "ping_timeout": self.ping_timeout_s,
                     "protocol": PROTOCOL_VERSION,
-                    "max_message_size": MAX_FRAME_BYTES,
+                    "max_message_size": MAX_MESSAGE_BYTES,
                 },
             )
         )

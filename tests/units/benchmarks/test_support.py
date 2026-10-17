@@ -2,7 +2,9 @@
 
 import asyncio
 import json
+import socket
 import sys
+import time
 from types import SimpleNamespace
 
 import pytest
@@ -162,6 +164,21 @@ async def test_run_clients_leaves_default_executor_usable():
 
     assert results == [0, 1]
     assert await asyncio.to_thread(lambda: "still-usable") == "still-usable"
+
+
+@linux_only
+@pytest.mark.asyncio
+async def test_reconnect_client_detects_the_protocol_within_its_timeout():
+    """Detecting a hung backend's protocol is bounded by the client's timeout."""
+    from tests.benchmarks.support.socket_client import run_reconnect_client
+
+    # The listener never answers the upgrade.
+    with socket.create_server(("127.0.0.1", 0)) as listener:
+        url = f"http://127.0.0.1:{listener.getsockname()[1]}"
+        started = time.monotonic()
+        result = await run_reconnect_client(url, "token", {}, timeout=0.1)
+    assert result.errors == ("response_timeout",)
+    assert time.monotonic() - started < 5
 
 
 class _FakeRedis:

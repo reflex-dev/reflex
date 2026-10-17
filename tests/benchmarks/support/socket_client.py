@@ -126,11 +126,12 @@ class EventClient:
         self._ws.close()
 
 
-def _codec(url: str) -> Codec:
+def _codec(url: str, timeout: float) -> Codec:
     """Find the protocol of a backend's event websocket, detecting it once per backend.
 
     Args:
         url: Backend URL.
+        timeout: Maximum wait for the detection's connection.
 
     Returns:
         Its codec.
@@ -138,7 +139,7 @@ def _codec(url: str) -> Codec:
     # Concurrent clients wait for one detection instead of each running one.
     with _codecs_lock:
         if (codec := _codecs.get(url)) is None:
-            codec = _codecs[url] = CODECS[asyncio.run(detect_protocol(url))]
+            codec = _codecs[url] = CODECS[asyncio.run(detect_protocol(url, timeout))]
         return codec
 
 
@@ -282,7 +283,7 @@ def _run_socket_client_sync(
     errors: list[str] = []
 
     try:
-        client = _connect(url, token, _codec(url), timeout)
+        client = _connect(url, token, _codec(url, timeout), timeout)
         _prime(client, event_name, payload, timeout)
         for _ in range(events):
             started = time.perf_counter_ns()
@@ -372,7 +373,7 @@ def _run_reconnect_client_sync(
 
     try:
         # Outside the clock: the first client of a backend runs the detection.
-        codec = _codec(url)
+        codec = _codec(url, timeout)
         started = time.perf_counter_ns()
         client = _connect(url, token, codec, timeout)
         connect_ms = (time.perf_counter_ns() - started) / 1_000_000

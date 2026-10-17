@@ -57,7 +57,7 @@ def main() -> int:
     payload = json.loads(payload_json)
     clients: list[EventClient] = []
     try:
-        codec = _codec(url)
+        codec = _codec(url, timeout=10)
         for index in range(int(count)):
             client = _connect(url, f"{token_prefix}-{index}", codec, timeout=10)
             clients.append(client)

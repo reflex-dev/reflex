@@ -14,6 +14,7 @@ import asyncio
 import dataclasses
 import json
 import multiprocessing
+import socket
 import threading
 import time
 from collections.abc import AsyncIterator, Awaitable, Callable
@@ -311,6 +312,16 @@ def test_a_named_protocol_is_not_detected():
     assert asyncio.run(events.resolve_codec(endpoint)) is SOCKETIO
     with pytest.raises(OSError):
         asyncio.run(events.detect_protocol(endpoint.backend_url))
+
+
+def test_detection_gives_up_at_its_timeout():
+    # The listener never answers the upgrade, as a hung backend does.
+    with socket.create_server(("127.0.0.1", 0)) as listener:
+        url = f"http://127.0.0.1:{listener.getsockname()[1]}"
+        started = time.monotonic()
+        with pytest.raises(TimeoutError):
+            asyncio.run(events.detect_protocol(url, 0.1))
+    assert time.monotonic() - started < 5
 
 
 def test_a_refused_namespace_fails_the_session():

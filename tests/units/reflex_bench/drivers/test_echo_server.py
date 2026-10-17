@@ -13,7 +13,8 @@ from unittest.mock import AsyncMock, Mock
 
 import psutil
 import pytest
-from reflex_bench.drivers import echo_server, events
+from reflex_base.environment import environment
+from reflex_bench.drivers import events
 from reflex_bench.drivers.echo_server import EchoProcess, EchoServer
 from reflex_bench.drivers.events import Endpoint, EventShape, LoadPlan, run_load
 from reflex_bench.suites.events import SEQ_VAR
@@ -85,7 +86,14 @@ class _Sent(list[str]):
 
 
 def test_the_handshake_is_copied_from_reflex(monkeypatch: pytest.MonkeyPatch):
-    # reflex_bench drives releases without reflex.event_namespace, so it keeps a copy.
+    # reflex_bench drives releases without reflex.event_namespace, so it keeps a
+    # copy of the handshake a default-configured app sends.
+    for var in (
+        environment.REFLEX_SOCKET_INTERVAL,
+        environment.REFLEX_SOCKET_TIMEOUT,
+        environment.REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE,
+    ):
+        monkeypatch.delenv(var.name, raising=False)
     monkeypatch.setattr(prerequisites, "check_redis_used", lambda: False)
     app = Mock(_state=None, _channels={}, router=Mock(return_value=None))
     app.event_processor.enqueue = AsyncMock()
@@ -101,8 +109,7 @@ def test_the_handshake_is_copied_from_reflex(monkeypatch: pytest.MonkeyPatch):
     assert message is not None
     name, settings = message
     assert name == reflex_name == events.HANDSHAKE
-    assert set(settings) == set(reflex_settings)
-    assert echo_server.PROTOCOL_VERSION == event_namespace.PROTOCOL_VERSION
+    assert settings == reflex_settings
 
 
 def test_echo_process_answers_a_load_and_stops():

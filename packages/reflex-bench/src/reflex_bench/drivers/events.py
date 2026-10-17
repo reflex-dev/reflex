@@ -534,7 +534,9 @@ def is_hydrated(delta: Mapping[str, Any]) -> bool:
     return root is not None and root.get(HYDRATED_VAR) is True
 
 
-async def detect_protocol(backend_url: str) -> WireProtocol:
+async def detect_protocol(
+    backend_url: str, timeout: float = PRIME_TIMEOUT_S
+) -> WireProtocol:
     """Find the protocol of a backend's event websocket.
 
     The plain protocol's endpoint accepts the websocket before the client
@@ -543,6 +545,7 @@ async def detect_protocol(backend_url: str) -> WireProtocol:
 
     Args:
         backend_url: The backend's URL, e.g. ``http://localhost:8000``.
+        timeout: Seconds to wait for the websocket to open.
 
     Returns:
         ``websocket`` or ``socketio``.
@@ -551,7 +554,7 @@ async def detect_protocol(backend_url: str) -> WireProtocol:
         async with connect(
             CODECS["websocket"].url(backend_url, str(uuid.uuid4())),
             proxy=None,
-            open_timeout=PRIME_TIMEOUT_S,
+            open_timeout=timeout,
             ping_interval=None,
             close_timeout=1,
         ):
