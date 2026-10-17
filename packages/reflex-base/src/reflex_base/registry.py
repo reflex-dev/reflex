@@ -380,10 +380,25 @@ class RegistrationContext(BaseContext):
 
         Returns:
             The registered event handler.
+
+        Raises:
+            StateValueError: If another handler of the same state already
+                resolves to the same name.
         """
         from reflex.utils.format import format_event_handler
 
         full_name = format_event_handler(handler)
+        existing = self.event_handlers.get(full_name)
+        # An entry of another class is replaced, as on a module reload.
+        if existing is not None and existing.handler.state is handler.state:
+            existing_name = existing.handler.fn.__qualname__.rpartition(".")[2]
+            name = handler.fn.__qualname__.rpartition(".")[2]
+            if existing_name != name:
+                msg = (
+                    f"Event handlers '{existing_name}' and '{name}' both resolve to "
+                    f"'{full_name}'. Run 'reflex minify sync' to give each its own id."
+                )
+                raise StateValueError(msg)
         self.event_handlers[full_name] = RegisteredEventHandler(
             handler=handler, states=states
         )
@@ -536,11 +551,14 @@ class RegistrationContext(BaseContext):
         new_base_states = _rekey(
             self.base_states.values(), lambda c: c.get_full_name(), "state class"
         )
+        # Walk the live tree: a module reload drops a retired state from it but
+        # leaves the class in base_states.
         new_substates: dict[str, set[type[BaseState]]] = {}
-        for cls in new_base_states.values():
-            parent = cls.get_parent_state()
-            if parent is not None:
-                new_substates.setdefault(parent.get_full_name(), set()).add(cls)
+        for substates in self.base_state_substates.values():
+            for cls in substates:
+                parent = cls.get_parent_state()
+                if parent is not None:
+                    new_substates.setdefault(parent.get_full_name(), set()).add(cls)
         new_handlers = _rekey(
             self.event_handlers.values(),
             lambda r: format_event_handler(r.handler),
