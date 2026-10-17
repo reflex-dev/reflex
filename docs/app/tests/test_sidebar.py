@@ -44,6 +44,23 @@ def test_cross_reference_excluded_from_prev_next_chain():
     assert next_ is not None and next_.link == "/enterprise/auth/secure-by-default/"
 
 
+def test_upgrade_guide_leads_the_changelog_section():
+    """The 0.10 upgrade guide sits in an Upgrading accordion atop the Changelog section."""
+    from reflex_docs.templates.docpage.sidebar.sidebar_items.learn import learn
+    from reflex_docs.templates.docpage.sidebar.sidebar_items.reference import (
+        changelog_items,
+    )
+
+    upgrading = changelog_items[0]
+    assert upgrading.names == "Upgrading"
+    assert [child.names for child in upgrading.children] == ["Upgrading to 0.10"]
+    assert upgrading.children[0].link == "/changelog/upgrading/upgrading-to-0-10/"
+    assert changelog_items[1].link == "/changelog/"
+
+    getting_started = next(item for item in learn if item.names == "Getting Started")
+    assert all("Upgrading" not in child.names for child in getting_started.children)
+
+
 @pytest.mark.parametrize("active", [False, True])
 def test_single_page_group_is_a_direct_link(active):
     """Single-page groups navigate directly and announce the selected page."""

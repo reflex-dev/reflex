@@ -1183,7 +1183,7 @@ def test_framework_names_reach_registered_handlers(temp_minify_json, monkeypatch
             ),
         },
         events={
-            "reflex.state.State": {"hydrate": "a"},
+            "reflex.state.State": {"hydrate": "a", "hydrate_and_load": "b"},
             "reflex.state.State.FrontendEventExceptionState": {
                 "handle_frontend_exception": "a"
             },
@@ -1197,21 +1197,22 @@ def test_framework_names_reach_registered_handlers(temp_minify_json, monkeypatch
     names = _internal_names()
     assert names.main_state_name == "a"
     assert names.is_hydrated_key == "h"
-    assert names.hydrate == "a.a"
+    assert names.hydrate_and_load == "a.b"
 
     handlers = RegistrationContext.get().event_handlers
     for wire_name in (
-        names.hydrate,
+        names.hydrate_and_load,
         names.on_load_internal,
         names.update_vars_internal,
         names.handle_frontend_exception,
     ):
         assert wire_name in handlers, (wire_name, sorted(handlers))
 
-    # The middleware compares against this; it must agree with the name the
-    # compiler just told the frontend to send.
+    # The legacy hydrate event, which the middleware compares against, is
+    # renamed the same way.
     root = State(_reflex_internal_init=True, init_substates=False)  # pyright: ignore [reportCallIssue]
-    assert get_hydrate_event(root) == names.hydrate
+    assert get_hydrate_event(root) == "a.a"
+    assert "a.a" in handlers
 
     # The Var the frontend reads names the context and key the compiler emits.
     assert str(State.is_hydrated) == "$rx_a.h"

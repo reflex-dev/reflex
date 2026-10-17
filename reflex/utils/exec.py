@@ -35,6 +35,8 @@ logger = logging.getLogger(__name__)
 
 # For uvicorn windows bug fix (#2335)
 frontend_process = None
+_frontend_process_lock = threading.Lock()
+_frontend_shutting_down = False
 
 DEV_BACKEND_RELOAD_MARKER = ".reflex_dev_backend_started"
 
@@ -296,7 +298,10 @@ def run_process_and_launch_url(
                 **kwargs,
             )
             global frontend_process
-            frontend_process = process
+            with _frontend_process_lock:
+                frontend_process = process
+                if _frontend_shutting_down and process.poll() is None:
+                    process.terminate()
         if process.stdout:
             for line in processes.stream_logs("Starting frontend", process):
                 new_content, new_hash = get_package_json_and_hash(json_file_path)
@@ -548,7 +553,8 @@ def get_app_instance_from_file() -> str:
     Returns:
         The app module for the backend.
     """
-    return f"{get_app_file()}:{constants.CompileVars.APP}"
+    get_app_file()
+    return get_app_instance()
 
 
 def run_backend(
@@ -882,8 +888,16 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
             granian_watcher = wrk._watcher
 
             def watcher():
-                granian_watcher()
+                wrk.inner.join()
                 self._release_socket_unless_served(wrk, spawn_count)
+                # A worker process exits 0 from its own SIGINT/SIGTERM handler,
+                # possibly before the supervisor, blocked in the reloader, has
+                # handled the same signal: give it a moment to catch up before
+                # reporting the exit as unexpected. Thread workers have no exit
+                # code and keep granian's handling.
+                exitcode = getattr(wrk.inner, "exitcode", None)
+                if exitcode != 0 or not self.main_loop_interrupt.wait(1):
+                    granian_watcher()
 
             wrk._watcher = watcher
             return wrk
@@ -1014,6 +1028,55 @@ def run_uvicorn_backend_prod(
     )
 
 
+def _backend_start_method() -> str | None:
+    """Resolve the multiprocessing start method for production backend workers.
+
+    Returns:
+        The start method to force, or None to keep the interpreter default.
+    """
+    if (method := environment.REFLEX_BACKEND_START_METHOD.get()) is not None:
+        return method
+    import multiprocessing
+
+    # Python defaults to fork (<3.14) or forkserver (3.14+) on Linux and to
+    # spawn elsewhere; only where fork is already the platform norm do we rely
+    # on it so workers can share the supervisor's pages.
+    if multiprocessing.get_start_method() in ("fork", "forkserver"):
+        return "fork"
+    return None
+
+
+def _preload_for_fork(app_target: str | None) -> bool:
+    """Import the app in the supervisor so forked workers share its pages.
+
+    Args:
+        app_target: The ASGI app target; None means the reflex app, which is
+            imported here. Any other target lives in an already-loaded module.
+
+    Returns:
+        Whether forking is safe; False when a telemetry thread is still alive.
+    """
+    import gc
+
+    from reflex_base.utils import serializers
+
+    from reflex.utils import prerequisites, telemetry
+
+    if app_target is None:
+        prerequisites.get_app()
+    serializers._prepare_serializers_for_fork()
+    # Forking while the telemetry thread may hold a lock can deadlock the child.
+    # Nothing in the supervisor sends telemetry after this point, so no thread
+    # exists at any later fork either (e.g. a worker respawn).
+    if not telemetry._shutdown_executor():
+        return False
+    # Freezing keeps worker GC passes from writing to the preloaded objects'
+    # headers, which would copy-on-write the shared pages private again.
+    gc.collect()
+    gc.freeze()
+    return True
+
+
 def run_granian_backend_prod(
     host: str, port: int, loglevel: LogLevel, app_target: str | None = None
 ):
@@ -1025,11 +1088,21 @@ def run_granian_backend_prod(
         loglevel: The log level.
         app_target: The ASGI app target to run. Defaults to the reflex app instance.
     """
+    import multiprocessing
+
     from granian.constants import Interfaces
     from granian.log import LogLevels
     from granian.server import Server as Granian
 
     logger.debug("Using Granian for backend")
+
+    if (start_method := _backend_start_method()) is not None:
+        # Set before the preload so the app's import-time multiprocessing
+        # objects use the requested context.
+        multiprocessing.set_start_method(start_method, force=True)
+        if start_method == "fork" and not _preload_for_fork(app_target):
+            logger.debug("A telemetry send is still running; spawning workers.")
+            multiprocessing.set_start_method("spawn", force=True)
 
     granian_app = Granian(
         target=app_target or get_app_instance_from_file(),

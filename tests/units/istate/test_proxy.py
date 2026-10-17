@@ -2,9 +2,11 @@
 
 import asyncio
 import dataclasses
+import gc
 import pickle
 import subprocess
 import sys
+import weakref
 from asyncio import CancelledError
 from collections.abc import Mapping
 from contextlib import asynccontextmanager
@@ -25,6 +27,7 @@ from reflex.istate.proxy import (
     MutableProxy,
     ReadOnlyStateProxy,
     StateProxy,
+    _proxy_class,
     is_mutable_type,
 )
 from reflex.state import BaseState
@@ -1157,6 +1160,25 @@ def test_dataclass_proxy_class_omits_absent_metadata() -> None:
 
     assert not hasattr(UnmatchableModel, "__match_args__")
     assert not hasattr(proxy_cls, "__match_args__")
+
+
+def test_proxy_class_caches_only_dataclass_proxy_classes() -> None:
+    """The class generated for a dataclass is reused per base, and other types stay collectable."""
+    assert _proxy_class(MutableProxy, TaggedModel) is _proxy_class(
+        MutableProxy, TaggedModel
+    )
+    immutable_cls = _proxy_class(ImmutableMutableProxy, TaggedModel)
+    assert issubclass(immutable_cls, ImmutableMutableProxy)
+    assert immutable_cls is _proxy_class(ImmutableMutableProxy, TaggedModel)
+
+    class RuntimeList(list):
+        pass
+
+    assert _proxy_class(MutableProxy, RuntimeList) is MutableProxy
+    runtime_list = weakref.ref(RuntimeList)
+    del RuntimeList
+    gc.collect()
+    assert runtime_list() is None
 
 
 def test_dataclass_proxy_class_copies_no_behavior() -> None:

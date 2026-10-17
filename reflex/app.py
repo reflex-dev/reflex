@@ -28,6 +28,7 @@ from collections.abc import (
     Sequence,
 )
 from contextvars import Token
+from datetime import timedelta
 from pathlib import Path
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, overload
@@ -51,7 +52,14 @@ from reflex_base.registry import RegistrationContext, scheme_digest
 from reflex_base.telemetry_context import CompileTrigger, TelemetryContext
 from reflex_base.utils import memo_paths
 from reflex_base.utils.imports import ImportVar
-from reflex_base.utils.types import ASGIApp, Message, Receive, Scope, Send
+from reflex_base.utils.types import (
+    ASGIApp,
+    Message,
+    Receive,
+    Scope,
+    Send,
+    is_non_string_sequence,
+)
 from reflex_base.vars.dep_tracking import is_dependency
 from reflex_components_core.base.error_boundary import ErrorBoundary
 from reflex_components_core.base.fragment import Fragment
@@ -1159,7 +1167,11 @@ class App(MiddlewareMixin, LifespanMixin):
             state.setup_dynamic_args(prepared.route_args)
 
         self._load_events[page.route] = (
-            (page.on_load if isinstance(page.on_load, list) else [page.on_load])
+            (
+                list(page.on_load)
+                if is_non_string_sequence(page.on_load)
+                else [page.on_load]
+            )
             if page.on_load is not None
             else []
         )
@@ -2157,12 +2169,15 @@ class EventNamespace(AsyncNamespace):
         # For backward compatibility, expose the underlying dict
         return self._token_manager.sid_to_token
 
-    async def on_connect(self, sid: str, environ: dict):
+    async def on_connect(self, sid: str, environ: dict, auth: Any = None):
         """Event for when the websocket is connected.
 
         Args:
             sid: The Socket.IO session id.
             environ: The request information, including HTTP headers.
+            auth: The payload of the socket.io CONNECT packet. The frontend
+                puts its hydrate event here so it is processed without waiting
+                for the connect acknowledgement round trip.
         """
         if isinstance(self._token_manager, RedisTokenManager):
             # Make sure this instance is watching for updates from other instances.
@@ -2186,9 +2201,42 @@ class EventNamespace(AsyncNamespace):
             # real -- but wrong -- handler here.
             self._scheme_mismatch_sids.add(sid)
 
+        boot_event = frontend_schema = None
+        if isinstance(auth, dict):
+            boot_event = auth.get(constants.CompileVars.CONNECT_AUTH_EVENT)
+            frontend_schema = auth.get(constants.CompileVars.CONNECT_AUTH_STATE_SCHEMA)
+        # A frontend compiled for another state tree is told so before it
+        # hydrates; an older frontend sends no hash and is left alone. The
+        # backend hash is cached on the state class, so this is one lookup.
+        if (
+            frontend_schema is not None
+            and self.app._state is not None
+            and frontend_schema
+            != (backend_schema := self.app._state._to_frontend_schema())
+        ):
+            logger.warning(
+                "Frontend state schema "
+                f"{format.sanitize_client_log_value(frontend_schema, max_length=64)} "
+                f"for session {sid} does not match the backend state schema "
+                f"{backend_schema}: the frontend was built for another version of "
+                "the app and is told to reload."
+            )
+            await self.emit(
+                str(constants.SocketEvent.STATE_MISMATCH),
+                {
+                    "backend": backend_schema,
+                    "reload_cooldown_ms": auto_reload_cooldown()
+                    // timedelta(milliseconds=1),
+                },
+                to=sid,
+            )
         token_list = query_params.get("token", [])
         if token_list:
-            await self.link_token_to_sid(sid, token_list[0])
+            # The boot event is the connection's first event: processing it
+            # records the new sid and token on the state under the state lock.
+            await self.link_token_to_sid(
+                sid, token_list[0], update_state=boot_event is None
+            )
         else:
             logger.warning(f"No token provided in connection for session {sid}")
 
@@ -2210,6 +2258,18 @@ class EventNamespace(AsyncNamespace):
                 {"frontend": client_scheme, "backend": server_scheme},
                 to=sid,
             )
+
+        if boot_event is not None:
+            try:
+                await self.on_event(sid, boot_event)
+            except Exception:
+                # A refused connect never reaches on_disconnect, so drop the
+                # token link and connection data made above before the error
+                # refuses the connect.
+                self._static_router_data.pop(sid, None)
+                if (linked_token := self.sid_to_token.get(sid)) is not None:
+                    await self._token_manager.disconnect_token(linked_token, sid)
+                raise
 
     def _build_static_router_data(self, sid: str, environ: dict) -> dict[str, Any]:
         """Build the connection-scoped router_data entries for a socket.
@@ -2474,8 +2534,8 @@ class EventNamespace(AsyncNamespace):
         if error_type == constants.ClientErrorType.DISPATCH_MISSING:
             substate = format.sanitize_client_log_value(data.get("substate", ""))
             report = (
-                f"[SID: {sid}] State update failed: "
-                f"no dispatch function for substate(s) '{substate}'. "
+                f"[SID: {sid}] Skipped state update for unknown substate(s) "
+                f"'{substate}': no dispatch function registered. "
                 "This indicates a frontend/backend state mismatch. "
                 "Rebuild the frontend or check that api_url points to the matching backend."
             )
@@ -2488,12 +2548,18 @@ class EventNamespace(AsyncNamespace):
         # handlers (e.g. error trackers) receive client errors too.
         self.app.frontend_exception_handler(Exception(report))
 
-    async def link_token_to_sid(self, sid: str, token: str):
+    async def link_token_to_sid(
+        self, sid: str, token: str, *, update_state: bool = True
+    ):
         """Link a token to a session id.
 
         Args:
             sid: The Socket.IO session id.
             token: The client token.
+            update_state: Whether to record the new sid and token on the state
+                now. The connect skips it when the CONNECT packet carries the
+                boot event, which records them as the connection's first event
+                without an extra load and save of the whole state tree.
         """
         # Use TokenManager for duplicate detection and Redis support
         new_token = await self._token_manager.link_token_to_sid(token, sid)
@@ -2503,7 +2569,7 @@ class EventNamespace(AsyncNamespace):
             await self.emit("new_token", new_token, to=sid)
 
         # Update client state to apply new sid/token for running background tasks.
-        if self.app._state is not None:
+        if update_state and self.app._state is not None:
             async with self.app.state_manager.modify_state(
                 BaseStateToken(ident=new_token or token, cls=self.app._state)
             ) as state:

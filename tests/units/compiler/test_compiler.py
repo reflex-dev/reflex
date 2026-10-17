@@ -42,11 +42,19 @@ def test_read_stateful_pages_marker_recovers_legacy_corruption(
     assert compiler._read_stateful_pages_marker() is None
 
 
+def test_read_stateful_pages_marker_recovers_undecodable_marker(tmp_path, mocker):
+    """A marker that is not valid UTF-8 requests full page evaluation."""
+    mocker.patch("reflex.utils.prerequisites.get_backend_dir", return_value=tmp_path)
+    # No BOM: json.loads() would decode a UTF-16 one and raise JSONDecodeError.
+    (tmp_path / constants.Dirs.STATEFUL_PAGES).write_bytes(b"\xff garbage")
+    assert compiler._read_stateful_pages_marker() is None
+
+
 @pytest.mark.parametrize("windows", [False, True])
 def test_read_stateful_pages_marker_sharing_violation(mocker, windows):
     """An unavailable Windows marker requests evaluation without hiding POSIX errors."""
     mocker.patch.object(constants, "IS_WINDOWS", windows)
-    mocker.patch.object(Path, "read_text", side_effect=PermissionError)
+    mocker.patch.object(Path, "read_bytes", side_effect=PermissionError)
     if windows:
         assert compiler._read_stateful_pages_marker() is None
     else:
@@ -692,6 +700,35 @@ def test_compile_contexts_theme_appearance_overrides_config(mocker: MockerFixtur
     _, code = compiler.compile_contexts(None, rx.theme(appearance="dark"))
 
     assert 'export const defaultColorMode = "dark"' in code
+
+
+def test_compile_contexts_embeds_frontend_state_schema():
+    """The context module carries the hash of the state tree it was compiled for.
+
+    The frontend sends it on every socket connect, and the backend computes
+    the same function over its own tree, so the two values drift only when
+    the trees do.
+    """
+
+    # A root of its own: compiling rx.State would instantiate every state other
+    # test modules registered in this process.
+    class SchemaContextRoot(BaseState):
+        value: int = 0
+
+    class SchemaContextChild(SchemaContextRoot):
+        name: str = ""
+
+    _, code = compiler.compile_contexts(SchemaContextRoot, None)
+
+    schema = SchemaContextRoot._to_frontend_schema()
+    assert f'export const stateSchema = "{schema}"' in code
+    start = code.index("registerApp({")
+    assert "stateSchema," in code[start : code.index("});", start)]
+    assert SchemaContextChild.get_full_name() in code
+
+    # Without state there is nothing to compare, and nothing to connect with.
+    _, code = compiler.compile_contexts(None, None)
+    assert "export const stateSchema = null" in code
 
 
 @pytest.mark.parametrize(
@@ -1745,22 +1782,24 @@ def test_context_template_renders_internal_names():
         internal_names=InternalNames(
             main_state_name="reflex___state____state",
             is_hydrated_key="h",
-            hydrate="reflex___state____state.g",
+            hydrate_and_load="reflex___state____state.g",
             on_load_internal="reflex___state____state.a.b",
             update_vars_internal="reflex___state____state.c.d",
             handle_frontend_exception="reflex___state____state.e.f",
         ),
     )
-    assert "ReflexEvent('reflex___state____state.g')" in rendered
+    assert "ReflexEvent('reflex___state____state.g', payload)" in rendered
     assert "ReflexEvent('reflex___state____state.a.b')" in rendered
     assert "'reflex___state____state.c.d'" in rendered
     assert 'handle_frontend_exception = "reflex___state____state.e.f"' in rendered
     assert 'is_hydrated_key = "h"' in rendered
+    assert 'hydrate_and_load = "reflex___state____state.g"' in rendered
     # The static runtime reads the names through the registry.
     registered = rendered[rendered.index("registerApp({") :]
     for name in (
         "main_state_name",
         "is_hydrated_key",
+        "hydrate_and_load",
         "update_vars_internal",
         "handle_frontend_exception",
     ):
@@ -1784,75 +1823,6 @@ def test_context_template_carries_the_scheme_digest():
     # The static runtime reads it through the registry to send it on connect.
     registered = rendered[rendered.index("registerApp({") :]
     assert "  schemeDigest,\n" in registered
-
-
-def _render_two_substate_context() -> str:
-    """Render the context template for a state with one substate.
-
-    Returns:
-        The rendered context module source.
-    """
-    from reflex_base.compiler.templates import context_template
-
-    return context_template(
-        is_dev_mode=True,
-        default_color_mode='"light"',
-        initial_state={
-            "reflex___state____state": {},
-            "reflex___state____state__sub": {},
-        },
-    )
-
-
-def test_context_template_one_provider_per_substate():
-    """Each substate gets its own provider so one delta re-renders one context.
-
-    A single provider owning every reducer means any delta recreates every
-    ``StateContexts`` element; nesting one ``SubstateProvider`` per substate
-    keeps the untouched providers memoized.
-    """
-    rendered = _render_two_substate_context()
-
-    assert (
-        "const SUBSTATES = [\n"
-        "  ['reflex___state____state', 'reflex___state____state'],\n"
-        "  ['reflex___state____state__sub', 'reflex___state____state__sub'],\n"
-        "];" in rendered
-    )
-    # The reducers live in SubstateProvider; the client provider only composes.
-    client = rendered[
-        rendered.index("function ClientStateProvider") : rendered.index(
-            "function ServerStateProvider"
-        )
-    ]
-    assert "useReducer" not in client
-    assert "createElement(SubstateProvider, { substateName, contextName }, tree)" in (
-        client
-    )
-    assert "createElement(DispatchProvider, {}, tree)" in client
-
-
-def test_context_template_server_state_provider_is_flat():
-    """The server provides initial state without a component per substate.
-
-    Server rendering recurses once per element level, so a ``SubstateProvider``
-    around every context doubled the depth of every page render and overflowed
-    the stack of apps with many substates.
-    """
-    rendered = _render_two_substate_context()
-
-    server = rendered[rendered.index("function ServerStateProvider") :]
-    assert "SubstateProvider" not in server
-    assert "DispatchProvider" not in server
-    assert "useReducer" not in server
-    assert (
-        "StateContexts[contextName],\n"
-        "      { value: initialState[substateName] }," in server
-    )
-    assert rendered.rstrip().endswith(
-        "export const StateProvider =\n"
-        '  typeof document === "undefined" ? ServerStateProvider : ClientStateProvider;'
-    )
 
 
 def test_context_template_client_side_component_is_named():

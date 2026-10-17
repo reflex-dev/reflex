@@ -54,6 +54,9 @@ class SocketEvent(SimpleNamespace):
     EVENT = "event"
     CLIENT_ERROR = "client_error"
     SCHEME_MISMATCH = "scheme_mismatch"
+    # Sent on connect when the frontend was compiled for another state tree
+    # (must match STATE_MISMATCH_EVENT in .templates/web/utils/state.js).
+    STATE_MISMATCH = "state_mismatch"
 
     def __str__(self) -> str:
         """Get the string representation of the event name.

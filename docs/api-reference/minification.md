@@ -302,8 +302,9 @@ State Tree (minify.json loaded)
 `-- State -> "a"
     |-- Event Handlers:
     |   |-- hydrate -> "a"
-    |   |-- set_is_hydrated -> "b"
-    |   `-- setvar -> "c"
+    |   |-- hydrate_and_load -> "b"
+    |   |-- set_is_hydrated -> "c"
+    |   `-- setvar -> "d"
     |-- Vars:
     |   |-- is_hydrated -> "a"
     |   `-- ...

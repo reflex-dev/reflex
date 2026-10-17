@@ -12,6 +12,25 @@ STATE_JS_TEMPLATE = (
 )
 
 
+def test_socket_startup_lifecycle() -> None:
+    """Execute the frontend startup and reconnect tests against the real template."""
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("Node.js is required for the frontend runtime tests")
+    result = subprocess.run(
+        [
+            node,
+            "--experimental-vm-modules",
+            str(Path(__file__).with_name("state_js.test.mjs")),
+        ],
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
 def test_state_js_does_not_register_deprecated_unload_listener() -> None:
     """The template must not register the deprecated `unload` event listener.
 
@@ -70,7 +89,7 @@ def test_state_js_reads_the_hydrated_flag_by_its_wire_key() -> None:
     content = STATE_JS_TEMPLATE.read_text()
 
     assert "_rx_state_" not in content, "state.js hardcodes a state var key."
-    assert content.count("app.is_hydrated_key") == 4
+    assert content.count("app.is_hydrated_key") == 3
 
 
 def test_state_js_disconnects_on_fatal_mismatch() -> None:
@@ -92,7 +111,7 @@ def test_state_js_disconnects_on_fatal_mismatch() -> None:
 def test_state_js_reconnect_helper_respects_fatal_mismatch() -> None:
     """Every reconnect path must funnel through the mismatch-aware helper.
 
-    `socket.current.reconnect()` short-circuits on `backend_state_mismatch`, so
+    `socket.current.reconnect()` short-circuits on `backend_scheme_mismatch`, so
     disconnecting on a fatal mismatch cannot start a reconnect loop.
     """
     content = STATE_JS_TEMPLATE.read_text()
@@ -100,13 +119,58 @@ def test_state_js_reconnect_helper_respects_fatal_mismatch() -> None:
     reconnect_helper = content.split("socket.current.reconnect = () => {", 1)[-1].split(
         "\n  };", 1
     )[0]
-    assert "if (backend_state_mismatch)" in reconnect_helper, (
+    assert "if (backend_scheme_mismatch)" in reconnect_helper, (
         "the reconnect helper must not reconnect after a fatal mismatch."
     )
     # Counting every spelling, `socket.current?.connect()` included, so a
     # direct call cannot slip past the guard by writing itself differently.
-    assert reconnect_helper.count(".connect(") == content.count(".connect(") == 1, (
+    # The only other call is the first connect of a new socket, made once its
+    # handlers are installed.
+    first_connect = (
+        'document.addEventListener("visibilitychange", checkVisibility);\n'
+        "  socket.current.connect();\n};"
+    )
+    assert reconnect_helper.count(".connect(") == 1, (
         "socket reconnection should only happen inside the reconnect helper."
+    )
+    assert content.count(".connect(") == 2
+    assert first_connect in content
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node missing")
+def test_get_ref_value_preserves_empty_and_unset_controls() -> None:
+    """Form fields retain falsy values and serialize unset refs as null."""
+    content = STATE_JS_TEMPLATE.read_text()
+    helper = content[
+        content.index("export const getRefValue =") : content.index(
+            "export const getRefValues ="
+        )
+    ]
+    subprocess.run(
+        [
+            "node",
+            "--input-type=module",
+            "--eval",
+            helper
+            + """
+import assert from 'node:assert/strict';
+for (const value of ['', 0, false, 'filled']) {
+  const result = getRefValue({current: {value}});
+  assert.equal(result, value);
+}
+for (const ref of [undefined, {current: null},
+                   {current: {querySelector: () => null}}]) {
+  assert.equal(JSON.stringify({field: getRefValue(ref)}), '{"field":null}');
+}
+assert.equal(getRefValue({current: {
+  querySelector: () => ({value: 'selected'})
+}}), 'selected');
+assert.equal(getRefValue({current: {type: 'checkbox', checked: false}}), false);
+""",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
     )
 
 
@@ -177,6 +241,191 @@ assert.equal(seen[1], null);
 assert.equal(
   mergeSlotProps({id: 's'}, {inputRef: ownRef}, 'inputRef').inputRef, ownRef);
 assert.ok(!('ref' in mergeSlotProps({ref: null}, {inputRef: ownRef}, 'inputRef')));
+""",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node missing")
+def test_form_data_args_are_wrapped_before_emit() -> None:
+    """Form data reads as a plain object but is sent as its ordered entries."""
+    content = STATE_JS_TEMPLATE.read_text()
+    start = content.index("const FORM_DATA_ENTRIES_KEY =")
+    end = (
+        content.index("\n};\n", content.index("export const encodeFormDataArgs =")) + 4
+    )
+    subprocess.run(
+        [
+            "node",
+            "--input-type=module",
+            "--eval",
+            """
+// The test form stands in for an HTMLFormElement: an array of its entries.
+globalThis.FormData = class {
+  constructor(form) { this.form = form; }
+  entries() { return this.form.values(); }
+};
+"""
+            + content[start:end]
+            + """
+import assert from 'node:assert/strict';
+const file = {name: 'upload.txt'};
+const formData = getFormData([['tag', 'a'], ['file', file], ['tag', 'b']]);
+assert.deepEqual(Object.keys(formData), ['tag', 'file']);
+assert.equal(formData.tag, 'b');
+const event = {name: 'state.submit', payload: {form_data: formData, count: 1}};
+const sent = encodeFormDataArgs(event);
+// The wrapped entries are plain own properties, so they survive Socket.IO
+// copying the payload to extract binary attachments.
+const copied = JSON.parse(JSON.stringify({...sent.payload}));
+assert.deepEqual(copied, {
+  form_data: {__reflex_form_data__: [['tag', 'a'], ['file', {name: 'upload.txt'}], ['tag', 'b']]},
+  count: 1,
+});
+assert.equal(sent.payload.form_data.__reflex_form_data__[1][1], file);
+// The event itself is left as it was.
+assert.equal(event.payload.form_data, formData);
+const plain = {name: 'state.other', payload: {count: 1}};
+assert.equal(encodeFormDataArgs(plain), plain);
+// Values read from id refs replace the form's entries of the same name.
+const withRefs = getFormData(
+  [['tag', 'a'], ['agree', 'on'], ['tag', 'b']],
+  {agree: true, unset: null},
+);
+assert.deepEqual({...withRefs}, {tag: 'b', agree: true, unset: null});
+assert.deepEqual(
+  encodeFormDataArgs({name: 'state.submit', payload: {form_data: withRefs}})
+    .payload.form_data.__reflex_form_data__,
+  [['tag', 'a'], ['agree', true], ['tag', 'b'], ['unset', null]],
+);
+// A replaced value keeps its place, as when spreading the refs over the form's
+// entries.
+const ordered = getFormData([['title', 'typed'], ['note', 'n']], {title: 'ref'});
+assert.deepEqual(Object.keys(ordered), ['title', 'note']);
+assert.deepEqual(
+  encodeFormDataArgs({name: 'state.submit', payload: {form_data: ordered}})
+    .payload.form_data.__reflex_form_data__,
+  [['title', 'ref'], ['note', 'n']],
+);
+// A name submitted more than once, like a checkbox group with an id, keeps
+// its values instead of taking the ref's single value.
+const group = getFormData(
+  [['colors', 'red'], ['colors', 'blue']],
+  {colors: 'red'},
+);
+assert.deepEqual(
+  encodeFormDataArgs({name: 'state.submit', payload: {form_data: group}})
+    .payload.form_data.__reflex_form_data__,
+  [['colors', 'red'], ['colors', 'blue']],
+);
+""",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+
+def test_state_js_keeps_ref_value_exports_for_older_form_components() -> None:
+    """Published reflex-components-core forms import these helpers from state.js."""
+    content = STATE_JS_TEMPLATE.read_text()
+    assert "export const getRefValue =" in content
+    assert "export const getRefValues =" in content
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node missing")
+def test_apply_delta_shares_unchanged_values() -> None:
+    """Deltas keep the identity of unchanged plain objects and arrays."""
+    content = STATE_JS_TEMPLATE.read_text()
+    helpers = content[
+        content.index("const isPlainObject =") : content.index(
+            "export const evalReactComponent ="
+        )
+    ]
+    assert "export const applyDelta" in helpers
+    subprocess.run(
+        [
+            "node",
+            "--input-type=module",
+            "--eval",
+            helpers
+            + """
+import assert from 'node:assert/strict';
+const parse = (v) => JSON.parse(JSON.stringify(v));
+const rows = [{id: 1, tags: ['a']}, {id: 2, tags: ['b']}, {id: 3, tags: []}];
+const state = {rows, kpi: {a: 1, b: {c: 2}}, n: 1, s: 'x', none: null};
+
+// A delta equal to the current state returns the same state object.
+assert.equal(applyDelta(state, parse(state)), state);
+assert.equal(applyDelta(state, {}), state);
+
+// One changed row: siblings keep their identity, the changed row does not.
+const delta = parse({rows, kpi: state.kpi});
+delta.rows[1].tags = ['c'];
+const next = applyDelta(state, delta);
+assert.notEqual(next, state);
+assert.equal(next.kpi, state.kpi);
+assert.notEqual(next.rows, rows);
+assert.equal(next.rows[0], rows[0]);
+assert.equal(next.rows[2], rows[2]);
+assert.notEqual(next.rows[1], rows[1]);
+assert.deepEqual(next.rows[1], {id: 2, tags: ['c']});
+assert.deepEqual(rows[1], {id: 2, tags: ['b']});
+assert.equal(next.n, 1);
+
+// Length changes share the common prefix without mutating the old array.
+const grown = applyDelta(state, {rows: parse([...rows, {id: 4, tags: []}])}).rows;
+assert.equal(grown.length, 4);
+assert.equal(grown[2], rows[2]);
+const shrunk = applyDelta(state, {rows: parse(rows.slice(0, 2))}).rows;
+assert.deepEqual(shrunk, rows.slice(0, 2));
+assert.equal(shrunk[1], rows[1]);
+assert.equal(rows.length, 3);
+
+// Added, removed and renamed keys produce a new object with shared values.
+const added = applyDelta(state, {kpi: parse({...state.kpi, d: 3})}).kpi;
+assert.deepEqual(added, {a: 1, b: {c: 2}, d: 3});
+assert.equal(added.b, state.kpi.b);
+const removed = applyDelta(state, {kpi: parse({b: state.kpi.b})}).kpi;
+assert.deepEqual(removed, {b: {c: 2}});
+assert.equal(removed.b, state.kpi.b);
+const undef = {kpi: {a: undefined}};
+assert.deepEqual(applyDelta(undef, {kpi: {b: undefined}}).kpi, {b: undefined});
+
+// Reordering a mapping without changing its values takes the new key order.
+const ordered = {d: {a: 1, b: {c: 2}}};
+const reordered = applyDelta(ordered, {d: JSON.parse('{"b": {"c": 2}, "a": 1}')}).d;
+assert.deepEqual(Object.keys(reordered), ['b', 'a']);
+assert.equal(reordered.b, ordered.d.b);
+
+// Values compare with Object.is: python's -0.0 replaces 0, while a repeated
+// NaN (revived by parseJson) is unchanged.
+const zeros = {z: 0, a: [0], o: {v: 0}};
+const negated = applyDelta(zeros, JSON.parse('{"z": -0.0, "a": [-0.0], "o": {"v": -0.0}}'));
+assert.deepEqual(negated, {z: -0, a: [-0], o: {v: -0}});
+const nans = {x: NaN, a: [NaN], o: {v: NaN}};
+assert.equal(applyDelta(nans, {x: NaN, a: [NaN], o: {v: NaN}}), nans);
+
+// Type changes and non-plain values are replaced as before.
+assert.deepEqual(applyDelta(state, {kpi: [1]}).kpi, [1]);
+assert.equal(applyDelta(state, {none: {}}).none.constructor, Object);
+const date = new Date(0);
+const withDate = {d: new Date(0)};
+assert.equal(applyDelta(withDate, {d: date}).d, date);
+
+// A "__proto__" key from JSON stays an own data property.
+const proto = applyDelta({o: {}}, {o: JSON.parse('{"__proto__": {"x": 1}}')}).o;
+assert.equal(Object.getPrototypeOf(proto), Object.prototype);
+assert.deepEqual(Object.getOwnPropertyDescriptor(proto, '__proto__').value, {x: 1});
+const protoState = {o: JSON.parse('{"__proto__": {"x": 1}, "y": [1]}')};
+const protoNext = applyDelta(protoState, {o: JSON.parse('{"__proto__": {"x": 1}, "y": [2]}')}).o;
+assert.equal(Object.getPrototypeOf(protoNext), Object.prototype);
+assert.equal(Object.getOwnPropertyDescriptor(protoNext, '__proto__').value,
+  Object.getOwnPropertyDescriptor(protoState.o, '__proto__').value);
+assert.deepEqual(protoNext.y, [2]);
 """,
         ],
         check=True,

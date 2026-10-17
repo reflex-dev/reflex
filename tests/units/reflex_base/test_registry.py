@@ -458,7 +458,7 @@ def test_resolver_installed_later_renames_existing_vars(
             var_data = var._get_all_var_data()
             assert var_data is not None
             assert var_data.hooks == (
-                f"const {prefix} = useContext(StateContexts.{context})",
+                f'const {prefix} = useStateContext("{LateRenamedState.get_full_name()}")',
             )
             # Dependency tracking keys on the name that never changes.
             assert var_data.state == LateRenamedState._get_default_full_name()
