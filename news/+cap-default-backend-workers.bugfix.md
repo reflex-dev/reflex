@@ -1,0 +1,1 @@
+Cap the automatically selected number of Redis-backed backend workers at eight. Set `GRANIAN_WORKERS` to override the default.

@@ -50,8 +50,11 @@ from reflex_base.utils.types import (
     ArgsSpec,
     GenericType,
     Unset,
+    is_non_string_sequence,
+    is_optional,
     safe_issubclass,
     typehint_issubclass,
+    value_inside_optional,
 )
 from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var, _owner_state
@@ -71,6 +74,8 @@ from reflex_base.vars.object import ObjectVar
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
+    from reflex_components_core.core._upload import UploadChunkIterator, UploadFile
+
     from reflex.state import BaseState
 
     BASE_STATE = TypeVar("BASE_STATE", bound=BaseState)
@@ -104,7 +109,7 @@ class Event:
     @classmethod
     def from_event_type(
         cls,
-        events: "IndividualEventType | list[IndividualEventType] | None",
+        events: "IndividualEventType | Sequence[IndividualEventType] | None",
         *,
         router_data: dict[str, Any] | None = None,
     ) -> "list[Event]":
@@ -121,13 +126,9 @@ class Event:
         if events is None:
             return []
 
-        # If the handler returns a single event, wrap it in a list.
-        if not isinstance(events, list):
-            events = [events]
-
         # Fix the events created by the handler.
         out = []
-        for e in events:
+        for e in event_sequence(events):
             if callable(e) and getattr(e, "__name__", "") == "<lambda>":
                 # A lambda was returned, assume the user wants to call it with no args.
                 e = e()
@@ -1021,7 +1022,7 @@ class EventChain(EventActionsMixin):
         events: list[EventSpec | EventVar | FunctionVar] = []
 
         # If the input is a list of event handlers, create an event chain.
-        if isinstance(value, list):
+        if is_non_string_sequence(value):
             for v in value:
                 if isinstance(v, (EventHandler, EventSpec)):
                     # Call the event handler to get the event.
@@ -2094,16 +2095,32 @@ def _check_event_args_subclass_of_callback(
             type_match_found.setdefault(arg, False)
             callback_param_type = callback_param_name_to_type[arg]
 
+            provided_type = args_types_without_vars[i]
             try:
-                compare_result = typehint_issubclass(
-                    args_types_without_vars[i], callback_param_type
-                ) or _is_on_submit_mapping_event_arg_compatible_with_typed_dict(
-                    args_types_without_vars[i], callback_param_type, key
-                )
+                if isinstance(provided_type, TypeVar):
+                    # A generic spec arg takes on the callback's type within its
+                    # bound, or as one of its constraints; an optional callback
+                    # type accepts what its non-None type does.
+                    admitted_type = (
+                        value_inside_optional(callback_param_type)
+                        if is_optional(callback_param_type)
+                        else callback_param_type
+                    )
+                    compare_result = any(
+                        typehint_issubclass(admitted_type, admitted)
+                        for admitted in provided_type.__constraints__
+                        or (provided_type.__bound__ or Any,)
+                    )
+                else:
+                    compare_result = typehint_issubclass(
+                        provided_type, callback_param_type
+                    ) or _is_on_submit_mapping_event_arg_compatible_with_typed_dict(
+                        provided_type, callback_param_type, key
+                    )
             except TypeError as te:
                 callback_name_context = f" of {callback_name}" if callback_name else ""
                 key_context = f" for {key}" if key else ""
-                msg = f"Could not compare types {args_types_without_vars[i]} and {callback_param_type} for argument {arg}{callback_name_context}{key_context}."
+                msg = f"Could not compare types {provided_type} and {callback_param_type} for argument {arg}{callback_name_context}{key_context}."
                 raise TypeError(msg) from te
 
             if compare_result:
@@ -2115,13 +2132,16 @@ def _check_event_args_subclass_of_callback(
             )
             delayed_exceptions.append(
                 EventHandlerArgTypeMismatchError(
-                    f"Event handler {key} expects {args_types_without_vars[i]} for argument {arg} but got {callback_param_type}{as_annotated_in} instead."
+                    f"Event handler {key} expects {provided_type} for argument {arg} but got {callback_param_type}{as_annotated_in} instead."
                 )
             )
 
         if all(type_match_found.values()):
             delayed_exceptions.clear()
-            if event_spec_index:
+            # A generic spec matches the callback's own types, so it is not a fallback.
+            if event_spec_index and not any(
+                isinstance(arg, TypeVar) for arg in args_types_without_vars
+            ):
                 args = get_args(provided_event_types[0])
 
                 args_types_without_vars = [
@@ -2375,6 +2395,28 @@ def check_fn_match_arg_spec(
         raise EventFnArgMismatchError(msg)
 
 
+def event_sequence(events: Any) -> Sequence[Any]:
+    """Get events as a sequence, wrapping a single event-like value in a list.
+
+    A str or bytes value counts as a single value. The single event kinds are
+    checked first: they are the common case, and cheaper to check than the
+    Sequence ABC.
+
+    Args:
+        events: A single event-like value or a sequence of them.
+
+    Returns:
+        The events as a sequence.
+    """
+    if (
+        isinstance(events, (Event, EventSpec))
+        or callable(events)
+        or not is_non_string_sequence(events)
+    ):
+        return [events]
+    return events
+
+
 def call_event_fn(
     fn: Callable,
     arg_spec: ArgsSpec | Sequence[ArgsSpec],
@@ -2411,10 +2453,6 @@ def call_event_fn(
 
     # Call the function with the parsed args.
     out = fn(*[*parsed_args][:number_of_fn_args])
-
-    # Normalize common heterogeneous event collections into individual events
-    # while keeping other scalar values for validation below.
-    out = list(out) if isinstance(out, (list, tuple)) else [out]
 
     def _dispatch_mixed_event_var(event_like_var: Var) -> FunctionVar:
         """Wrap a mixed event-like Var into a callable frontend dispatcher.
@@ -2471,7 +2509,7 @@ def call_event_fn(
 
     # Convert any event specs to event specs.
     events = []
-    for e in out:
+    for e in event_sequence(out):
         if isinstance(e, EventHandler):
             # An un-called EventHandler gets all of the args of the event trigger.
             e = call_event_handler(e, arg_spec, key=key)
@@ -2526,7 +2564,7 @@ def get_handler_args(
 
 
 def fix_events(
-    events: list[EventSpec | EventHandler] | None,
+    events: Sequence[EventSpec | EventHandler] | None,
     token: str | None = None,
     router_data: dict[str, Any] | None = None,
 ) -> list[Event]:
@@ -2557,13 +2595,9 @@ def fix_events(
     if events is None:
         return []
 
-    # If the handler returns a single event, wrap it in a list.
-    if not isinstance(events, list):
-        events = [events]
-
     # Fix the events created by the handler.
     out = []
-    for e in events:
+    for e in event_sequence(events):
         if callable(e) and getattr(e, "__name__", "") == "<lambda>":
             # A lambda was returned, assume the user wants to call it with no args.
             e = e()
@@ -2877,6 +2911,18 @@ class EventCallback(Generic[*P], EventActionsMixin):
         self: "EventCallback[V]", value: V | Var[V]
     ) -> "EventCallback[()]": ...
 
+    # An upload spec stands in for the files, or the chunks, that reflex uploads to the
+    # handler. Only as the handler's sole argument: bound args next to it aren't typed.
+    @overload
+    def __call__(
+        self: "EventCallback[list[UploadFile]]", value: FileUpload
+    ) -> "EventCallback[()]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[UploadChunkIterator]", value: UploadFilesChunk
+    ) -> "EventCallback[()]": ...
+
     @overload
     def __call__(
         self: "EventCallback[V, V2]", value: V | Var[V]
@@ -2978,7 +3024,16 @@ class EventCallback(Generic[*P], EventActionsMixin):
     ) -> "EventCallback[*P]": ...
 
     @overload
-    def __get__(self, instance: Any, owner: Any) -> "Callable[[Unpack[P]]]": ...
+    def __get__(
+        self: "EventCallback[*P]", instance: "BaseState", owner: Any
+    ) -> "Callable[[Unpack[P]], Any]": ...
+
+    # Only a state binds its handlers. Anywhere else, e.g. in a component or
+    # dataclass field, a stored callback reads back as the callback itself.
+    @overload
+    def __get__(
+        self: "EventCallback[*P]", instance: object, owner: Any
+    ) -> "EventCallback[*P]": ...
 
     def __get__(self, instance: Any, owner: Any) -> Callable:
         """Get the function with the instance bound to it.
@@ -3038,7 +3093,10 @@ LAMBDA_OR_STATE = TypeAliasType(
     type_params=(ARGS,),
 )
 
-ItemOrList = V | list[V]
+
+# A Sequence rather than a list: lists are invariant, so a `list[EventSpec]`
+# variable would not count as a list of every kind of event.
+ItemOrList = V | Sequence[V]
 
 BASIC_EVENT_TYPES = TypeAliasType(
     "BASIC_EVENT_TYPES", EventSpec | EventHandler | Var[Any], type_params=()
@@ -3112,6 +3170,7 @@ class EventNamespace:
     upload_files_chunk = upload_files_chunk
     stop_propagation = stop_propagation
     prevent_default = prevent_default
+    event_sequence = staticmethod(event_sequence)
 
     # Private/Internal Functions
     resolve_upload_handler_param = staticmethod(resolve_upload_handler_param)
