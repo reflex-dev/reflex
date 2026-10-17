@@ -19,6 +19,7 @@ from reflex.istate.manager import (
     StateModificationContext,
     _default_token_expiration,
     _release_state_tree,
+    _report_state_recreation,
 )
 from reflex.istate.manager.token import TOKEN_TYPE, BaseStateToken, StateToken
 from reflex.state import BaseState
@@ -186,6 +187,8 @@ class StateManagerDisk(StateManager):
             instance.parent_state = state
 
             await self.populate_substates(token, instance, root_state)
+            if instance is fresh_instance:
+                _report_state_recreation(instance)
 
     @override
     async def get_state(
@@ -216,6 +219,7 @@ class StateManagerDisk(StateManager):
             fresh_root_state = root_state_cls(_reflex_internal_init=True)
             if root_state is None:
                 root_state = fresh_root_state
+                _report_state_recreation(root_state)
             elif not isinstance(root_state, BaseState):
                 msg = "Deserialized state is not an instance of BaseState, cannot populate substates."
                 raise TypeError(msg)

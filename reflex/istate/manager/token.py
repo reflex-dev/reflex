@@ -162,6 +162,14 @@ class BaseStateToken(StateToken["BaseState"]):
         """
         return f"{self.ident}_{cls.get_full_name()}"
 
+    def _state_manifest_key(self) -> str:
+        """Get the Redis key recording state keys previously persisted for this token.
+
+        Returns:
+            The Redis key for this token's persisted-state manifest.
+        """
+        return f"{self.ident}_reflex_state_manifest"
+
     def __str__(self) -> str:
         """The key used in the underlying StateManager store.
 

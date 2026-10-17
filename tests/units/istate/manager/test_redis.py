@@ -7,15 +7,16 @@ import os
 import time
 import uuid
 from collections import Counter
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Awaitable
 from types import ModuleType
-from typing import Any
+from typing import Any, cast
 from unittest.mock import AsyncMock, Mock
 
 import pytest
 import pytest_asyncio
 from reflex_base.utils.exceptions import EnvironmentVarValueError
 
+from reflex.istate.manager import _track_state_recreation
 from reflex.istate.manager.redis import (
     StateManagerRedis,
     _default_lock_expiration,
@@ -66,8 +67,8 @@ class RedisAppObjectState(BaseState):
 
 
 @pytest.mark.asyncio
-async def test_get_state_reads_tree_in_one_command():
-    """Read persisted and missing states together, preserving their tree positions."""
+async def test_get_state_reads_tree_in_one_round_trip():
+    """Read persisted and missing states together in one round trip."""
     redis = mock_redis()
     manager = StateManagerRedis(redis=redis)
     token = BaseStateToken(ident="batched-read", cls=RedisTestState)
@@ -91,6 +92,65 @@ async def test_get_state_reads_tree_in_one_command():
     assert set(state.substates) == {SubState1.get_name(), SubState2.get_name()}
     assert all(child.parent_state is state for child in state.substates.values())
     redis.mget.assert_awaited_once_with([str(token.with_cls(cls)) for cls in classes])
+    await manager.close()
+
+
+@pytest.mark.asyncio
+async def test_get_state_does_not_dirty_persisted_states_on_reload():
+    """Only recreated Redis states need defaults sent to the frontend."""
+    redis = mock_redis()
+    manager = StateManagerRedis(redis=redis)
+    token = BaseStateToken(ident="persisted-read", cls=RedisTestState)
+
+    state = await manager.get_state(token)
+    state.foo = "persisted"
+    await manager.set_state(token, state)
+    with _track_state_recreation() as recreated_states:
+        reloaded_state = await manager.get_state(token)
+
+    assert isinstance(reloaded_state, RedisTestState)
+    assert reloaded_state.foo == "persisted"
+    assert not recreated_states
+    assert not reloaded_state.dirty_vars
+    assert all(not child.dirty_vars for child in reloaded_state.substates.values())
+    await manager.close()
+
+
+@pytest.mark.asyncio
+async def test_get_state_reports_missing_redis_substates():
+    """Missing Redis state keys are reported without reporting persisted states."""
+    redis = mock_redis()
+    manager = StateManagerRedis(redis=redis)
+    token = BaseStateToken(ident="missing-substate", cls=RedisTestState)
+    state_classes = sorted(
+        manager._get_required_state_classes(RedisTestState, subclasses=True),
+        key=lambda cls: cls.get_full_name(),
+    )
+    persisted_state = RedisTestState(foo="persisted")
+    for state_cls in state_classes[1:]:
+        await cast(
+            Awaitable[int],
+            redis.sadd(
+                token._state_manifest_key(),
+                token._state_key(state_cls),
+            ),
+        )
+    redis.mget = AsyncMock(
+        return_value=[
+            persisted_state._serialize() if cls is RedisTestState else None
+            for cls in state_classes
+        ]
+    )
+
+    with _track_state_recreation() as recreated_states:
+        state = await manager.get_state(token)
+
+    assert isinstance(state, RedisTestState)
+    assert state.foo == "persisted"
+    assert {type(recreated).__name__ for recreated in recreated_states} == {
+        "SubState1",
+        "SubState2",
+    }
     await manager.close()
 
 
@@ -1179,7 +1239,9 @@ async def test_set_state_writes_the_touched_states_in_one_fenced_save(
     await state_manager_redis.set_state(token, state, lock_id=lock_id)
 
     assert not calls
-    assert saved_keys == [(lock_key, token._state_key(TreeFirst))]
+    assert saved_keys == [
+        (lock_key, token._state_manifest_key(), token._state_key(TreeFirst))
+    ]
     assert await _stored_tree_states(state_manager_redis, token) == {TreeFirst}
     await redis.delete(lock_key)
 

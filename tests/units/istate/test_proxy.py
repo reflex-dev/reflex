@@ -11,7 +11,7 @@ from asyncio import CancelledError
 from collections.abc import Mapping
 from contextlib import asynccontextmanager
 from operator import attrgetter
-from typing import Any, ClassVar
+from typing import Any, ClassVar, cast
 
 import pytest
 from reflex_base.constants.state import FIELD_MARKER
@@ -21,6 +21,7 @@ from reflex_base.utils.exceptions import ImmutableStateError
 import reflex as rx
 from reflex.istate.data import HeaderData, PageData, RouterData
 from reflex.istate.manager import StateManager
+from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import (
     ImmutableMutableProxy,
@@ -132,8 +133,8 @@ class Item:
     id: int
 
 
-class ProxyTestState(rx.State):
-    """Test state with a list field."""
+class ProxyTestState(BaseState):
+    """Isolated state tree with a list field for proxy tests."""
 
     items: list[Item] = []
 
@@ -184,6 +185,65 @@ async def test_state_proxy_recovery(
     # After the exception, we should be able to enter the context again without issues
     async with state_proxy:
         pass
+
+
+@pytest.mark.asyncio
+async def test_recreated_state_invalidates_computed_vars_from_sibling_state(
+    attached_mock_event_context: EventContext,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+):
+    """StateProxy recreation refreshes a cross-state computed var cache."""
+
+    class RootState(BaseState):
+        pass
+
+    class SourceState(RootState):
+        value: int = 7
+
+    class TargetState(RootState):
+        @rx.var
+        async def source_value(self) -> int:
+            source = await self.get_state(SourceState)
+            return source.value
+
+    state_manager = StateManagerMemory(token_expiration=60)
+    original_state_manager = attached_mock_event_context.state_manager
+    object.__setattr__(attached_mock_event_context, "state_manager", state_manager)
+    state_token = BaseStateToken(
+        ident=attached_mock_event_context.token,
+        cls=TargetState,
+    )
+    try:
+        async with state_manager.modify_state(state_token) as root:
+            source = cast(
+                SourceState, root.get_substate(SourceState.get_full_name().split("."))
+            )
+            target = cast(
+                TargetState, root.get_substate(TargetState.get_full_name().split("."))
+            )
+            source.value = 1
+            computed_var = TargetState.computed_vars["source_value"]
+            cast(dict[str, Any], target.__dict__)[computed_var._cache_attr] = 1
+
+        state_proxy = StateProxy(target)
+        state_manager._purge_token(state_token)
+        async with state_proxy:
+            pass
+
+        recreated_target = state_proxy.__wrapped__
+        assert recreated_target.__dict__[computed_var._cache_attr] == 7
+        assert (
+            emitted_deltas[0][1][recreated_target.get_full_name()][
+                "source_value" + FIELD_MARKER
+            ]
+            == 7
+        )
+        assert not recreated_target._was_touched
+    finally:
+        await state_manager.close()
+        object.__setattr__(
+            attached_mock_event_context, "state_manager", original_state_manager
+        )
 
 
 @dataclasses.dataclass
@@ -607,6 +667,36 @@ async def test_immutable_mutable_proxy_async_context_manager(
         assert isinstance(state, MutableProxyState)
         assert state.data["a"] == [1, 2, 3, 5]
         assert state.data["b"] == [2, 4]
+
+
+@pytest.mark.asyncio
+async def test_state_proxy_does_not_emit_delta_for_reloaded_unchanged_state(
+    token: str,
+    attached_mock_event_context: EventContext,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A freshly deserialized but unchanged state must not send a full delta."""
+    state_manager = attached_mock_event_context.state_manager
+    state_token = BaseStateToken(ident=token, cls=ProxyTestState)
+
+    async with state_manager.modify_state(state_token) as state:
+        state._clean()
+        state_proxy = StateProxy(state)
+
+    original_modify_state = state_manager.modify_state
+
+    @asynccontextmanager
+    async def reload_state(token: BaseStateToken, **context: Any):
+        async with original_modify_state(token, **context) as state:
+            yield token.deserialize(data=token.serialize(state))
+
+    monkeypatch.setattr(state_manager, "modify_state", reload_state)
+
+    async with state_proxy:
+        pass
+
+    assert not emitted_deltas
 
 
 @pytest.mark.asyncio

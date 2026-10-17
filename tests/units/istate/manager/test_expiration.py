@@ -9,6 +9,7 @@ from collections.abc import AsyncGenerator, Callable
 import pytest
 import pytest_asyncio
 
+from reflex.istate.manager import _STATE_RECREATION_TRACKER, _track_state_recreation
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.token import BaseStateToken
@@ -59,6 +60,30 @@ async def state_manager_memory() -> AsyncGenerator[StateManagerMemory]:
     state_manager = StateManagerMemory(token_expiration=1)
     yield state_manager
     await state_manager.close()
+
+
+@pytest.mark.asyncio
+async def test_expiration_task_does_not_inherit_recreation_tracker(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """The long-lived expiry task must not retain tracked state instances."""
+    state_manager = StateManagerMemory(token_expiration=60)
+    tracker_values: list[object] = []
+
+    async def capture_tracker() -> None:
+        await asyncio.sleep(0)
+        tracker_values.append(_STATE_RECREATION_TRACKER.get())
+
+    monkeypatch.setattr(state_manager, "_expire_states", capture_tracker)
+    with _track_state_recreation():
+        state_manager._ensure_expiration_task()
+
+    expiration_task = state_manager._expiration_task
+    assert expiration_task is not None
+    await expiration_task
+    await state_manager.close()
+
+    assert tracker_values == [None]
 
 
 @pytest.mark.asyncio
@@ -181,6 +206,34 @@ async def test_disk_state_manager_set_state_refreshes_expiration(
     await state_manager_disk.set_state(state_token, state)
 
     assert state_manager_disk._token_last_touched[token][0] > touched_at
+
+
+@pytest.mark.asyncio
+async def test_disk_state_manager_reports_recreated_states(
+    state_manager_disk: StateManagerDisk,
+    token: str,
+):
+    """Missing persisted states should be reported for a background refresh."""
+    state_token = BaseStateToken(ident=token, cls=ExpiringChildState)
+
+    with _track_state_recreation() as recreated_states:
+        root = await state_manager_disk.get_state(state_token)
+    child = await root.get_state(ExpiringChildState)
+
+    assert recreated_states == [root, child]
+    assert not root.dirty_vars
+    assert not child.dirty_vars
+
+    root.value = 7
+    await state_manager_disk.set_state(state_token, root)
+    state_manager_disk._purge_token(state_token)
+
+    with _track_state_recreation() as recreated_states:
+        reloaded = await state_manager_disk.get_state(state_token)
+    reloaded_child = await reloaded.get_state(ExpiringChildState)
+
+    assert getattr(reloaded, "value", None) == 7
+    assert recreated_states == [reloaded_child]
 
 
 @pytest.mark.asyncio

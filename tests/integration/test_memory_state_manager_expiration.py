@@ -13,6 +13,8 @@ from reflex.testing import AppHarness
 
 def MemoryExpirationApp():
     """Reflex app that exposes state expiration through a simple counter UI."""
+    import asyncio
+
     import reflex as rx
 
     class State(rx.State):
@@ -22,9 +24,36 @@ def MemoryExpirationApp():
         def increment(self):
             self.counter += 1
 
+        @rx.event(background=True)
+        async def delayed_update(self):
+            await asyncio.sleep(2)
+            async with self:
+                self.counter = 100
+
+    class ChildState(State):
+        child_counter: int = 0
+
+        @rx.event
+        def set_values(self):
+            self.counter = 11
+            self.child_counter = 13
+
+    class CounterComponent(rx.ComponentState):
+        value: int = 0
+
+        @rx.event
+        def set_value(self):
+            self.value = 17
+
+        @classmethod
+        def get_component(cls):
+            return rx.vstack(
+                rx.text(cls.value, id="component-counter"),
+                rx.button("Set component", id="set-component", on_click=cls.set_value),
+            )
+
     app = rx.App()
 
-    @app.add_page
     def index():
         return rx.vstack(
             rx.input(
@@ -33,8 +62,27 @@ def MemoryExpirationApp():
                 is_read_only=True,
             ),
             rx.text(State.counter, id="counter"),
+            rx.text(ChildState.child_counter, id="child-counter"),
             rx.button("Increment", id="increment", on_click=State.increment),
+            rx.button("Set values", id="set-values", on_click=ChildState.set_values),
+            rx.button(
+                "Delayed update",
+                id="delayed-update",
+                on_click=State.delayed_update,
+            ),
         )
+
+    app.add_page(index)
+
+    def background_page():
+        """Render the background expiry case with a component substate.
+
+        Returns:
+            The page with state and component counters.
+        """
+        return rx.vstack(index(), CounterComponent.create())
+
+    app.add_page(background_page, route="/background")
 
 
 @pytest.fixture
@@ -157,3 +205,38 @@ def test_memory_state_manager_delays_expiration_after_use_end_to_end(
     increment.click()
     AppHarness.expect(lambda: counter.text == "1")
     assert token_input.get_attribute("value") == token
+
+
+def test_background_task_refreshes_recreated_state_tree(
+    memory_expiration_app: AppHarness,
+    driver: WebDriver,
+):
+    """A delayed background update must reset expired child and component state."""
+    frontend_url = memory_expiration_app.frontend_url
+    assert frontend_url is not None
+    driver.get(frontend_url.removesuffix("/") + "/background")
+    token_input = AppHarness.poll_for_or_raise_timeout(
+        lambda: driver.find_element(By.ID, "token")
+    )
+    token = memory_expiration_app.poll_for_value(token_input)
+    assert token is not None
+    counter = AppHarness.poll_for_or_raise_timeout(
+        lambda: driver.find_element(By.ID, "counter")
+    )
+    child_counter = AppHarness.poll_for_or_raise_timeout(
+        lambda: driver.find_element(By.ID, "child-counter")
+    )
+    component_counter = AppHarness.poll_for_or_raise_timeout(
+        lambda: driver.find_element(By.ID, "component-counter")
+    )
+    driver.find_element(By.ID, "set-values").click()
+    AppHarness.expect(lambda: counter.text == "11")
+    AppHarness.expect(lambda: child_counter.text == "13")
+    driver.find_element(By.ID, "set-component").click()
+    AppHarness.expect(lambda: component_counter.text == "17")
+
+    driver.find_element(By.ID, "delayed-update").click()
+    AppHarness.expect(lambda: counter.text == "100", timeout=10)
+    AppHarness.expect(lambda: child_counter.text == "0", timeout=10)
+    AppHarness.expect(lambda: component_counter.text == "0", timeout=10)
+    AppHarness.expect(lambda: token_input.get_attribute("value") == token)

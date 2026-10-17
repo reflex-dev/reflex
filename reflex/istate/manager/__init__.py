@@ -5,7 +5,8 @@ import dataclasses
 import logging
 import sys
 from abc import ABC, abstractmethod
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Iterator
+from contextvars import ContextVar
 from types import TracebackType
 from typing import TYPE_CHECKING, Generic, TypedDict, overload
 
@@ -19,6 +20,9 @@ from reflex.istate.manager.token import TOKEN_TYPE, StateToken
 from reflex.utils import console, prerequisites
 
 logger = logging.getLogger(__name__)
+_STATE_RECREATION_TRACKER: ContextVar[list["BaseState"] | None] = ContextVar(
+    "state_recreation_tracker", default=None
+)
 
 if TYPE_CHECKING:
     from reflex.state import BaseState
@@ -331,6 +335,56 @@ class _ModifyStateWithLinks(Generic[TOKEN_TYPE]):
                     return True
                 raise
         return await self._state_context.__aexit__(exc_type, exc, tb) or suppressed
+
+
+@contextlib.contextmanager
+def _track_state_recreation() -> Iterator[list["BaseState"]]:
+    """Track state instances recreated inside the current async context.
+
+    Yields:
+        The state instances reported as recreated before the context exits.
+    """
+    recreated_states: list[BaseState] = []
+    tracker_token = _STATE_RECREATION_TRACKER.set(recreated_states)
+    try:
+        yield recreated_states
+    finally:
+        _STATE_RECREATION_TRACKER.reset(tracker_token)
+
+
+@contextlib.contextmanager
+def _no_state_recreation_tracking() -> Iterator[None]:
+    """Temporarily prevent child tasks from inheriting state tracking."""
+    tracker_token = _STATE_RECREATION_TRACKER.set(None)
+    try:
+        yield
+    finally:
+        _STATE_RECREATION_TRACKER.reset(tracker_token)
+
+
+def _report_state_recreation(state: "BaseState") -> None:
+    """Report a state recreated during a tracked modification context.
+
+    Args:
+        state: The newly recreated state.
+    """
+    if (recreated_states := _STATE_RECREATION_TRACKER.get()) is not None:
+        recreated_states.append(state)
+
+
+def _report_state_tree_recreation(state: "BaseState") -> None:
+    """Report every state in a newly recreated tree.
+
+    Args:
+        state: The root of the recreated state tree.
+    """
+    if (recreated_states := _STATE_RECREATION_TRACKER.get()) is None:
+        return
+    pending = [state]
+    while pending:
+        current = pending.pop()
+        recreated_states.append(current)
+        pending.extend(current.substates.values())
 
 
 def _release_state_tree(state: "BaseState"):

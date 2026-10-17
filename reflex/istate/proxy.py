@@ -211,6 +211,7 @@ class StateProxy(wrapt.ObjectProxy):
         self._self_actx_lock = asyncio.Lock()
         self._self_actx_lock_holder = None
         self._self_parent_state_proxy = parent_state_proxy
+        self._self_recreated_states: list[BaseState] = []
         # Whether `async with self` was ever entered; a background handler that
         # never did emitted no delta, so the processor flushes once for it.
         self._self_entered_context = False
@@ -266,12 +267,29 @@ class StateProxy(wrapt.ObjectProxy):
             self._self_actx = ctx.state_manager.modify_state_with_links(
                 token=self._self_substate_token, event=self._self_event
             )
-            mutable_state = await self._self_actx.__aenter__()
+            from reflex.istate.manager import _track_state_recreation
+
+            with _track_state_recreation() as recreated_states:
+                mutable_state = await self._self_actx.__aenter__()
+            self._self_recreated_states = recreated_states
+            from reflex.state import State
+
+            for state in recreated_states:
+                state_cls = type(state)
+                if state_cls is not State:
+                    state.dirty_vars.update(
+                        name
+                        for name, field in state_cls.get_fields().items()
+                        if field._owner is state_cls
+                    )
+                state.dirty_vars.update(state.computed_vars)
+                for computed_var in state.computed_vars.values():
+                    computed_var.mark_dirty(instance=state)
+                state._mark_dirty()
+            refreshed_state = mutable_state.get_substate(self._self_substate_path)
             self._self_mutable = True
             self._self_entered_context = True
-            super().__setattr__(
-                "__wrapped__", mutable_state.get_substate(self._self_substate_path)
-            )
+            super().__setattr__("__wrapped__", refreshed_state)
         except (Exception, asyncio.CancelledError):
             # Restore the proxy to a consistent state since __aexit__ will not be called when __aenter__ raises.
             await self.__aexit__(*sys.exc_info())
@@ -292,7 +310,15 @@ class StateProxy(wrapt.ObjectProxy):
         try:
             if self._self_mutable and self._self_actx is not None:
                 root_state = self.__wrapped__._get_root_state()
-                delta = await root_state._get_resolved_delta()
+                touched_states = [
+                    (state, state._was_touched) for state in self._self_recreated_states
+                ]
+                try:
+                    delta = await root_state._get_resolved_delta()
+                finally:
+                    for state, was_touched in touched_states:
+                        state._was_touched = was_touched
+                    self._self_recreated_states.clear()
                 root_state._clean()
                 # When the frontend vars are modified emit the delta to the frontend.
                 if delta:
