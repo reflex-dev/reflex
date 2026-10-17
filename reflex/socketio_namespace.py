@@ -119,7 +119,7 @@ class EventNamespace(AsyncNamespace, BaseEventNamespace):
             try:
                 # Not through on_event: a failure here refuses the connect
                 # rather than disconnecting a session not yet acknowledged.
-                await self._dispatch_event(sid, boot_event)
+                await self.handle_event(sid, boot_event, self._scope(sid))
             except Exception as exc:
                 # Refused rather than raised: Socket.IO would keep a raising
                 # connect registered yet unanswered, and the client would wait
@@ -151,7 +151,7 @@ class EventNamespace(AsyncNamespace, BaseEventNamespace):
             data: The event data.
         """
         try:
-            await self._dispatch_event(sid, data)
+            await self.handle_event(sid, data, self._scope(sid))
         except exceptions.EventDeserializationError:
             # Client-controlled input a Reflex client never sends; end the
             # session, as the plain transport does, rather than log a
@@ -159,29 +159,33 @@ class EventNamespace(AsyncNamespace, BaseEventNamespace):
             logger.debug(f"Disconnecting session {sid}: undeserializable event.")
             await self.disconnect(sid)
 
-    async def _dispatch_event(self, sid: str, data: Any) -> None:
-        """Hand one front-end event to the event processor.
+    def _scope(self, sid: str) -> MutableMapping[str, Any]:
+        """Get the ASGI scope of a session's connection.
+
+        A plain function, not a coroutine: it runs for every event.
 
         Args:
             sid: The Socket.IO session id.
-            data: The event data.
+
+        Returns:
+            The ASGI scope.
 
         Raises:
             RuntimeError: If the Socket.IO is badly initialized.
         """
-        scope = self._scopes.get(sid)
-        if scope is None:
-            # The connection was not seen by on_connect (e.g. the namespace
-            # was registered after the socket connected); ask the server.
-            if self.app.sio is None:
-                msg = "Socket.IO is not initialized."
-                raise RuntimeError(msg)
-            environ = self.app.sio.get_environ(sid, self.namespace)
-            if environ is None:
-                msg = "Socket.IO environ is not initialized."
-                raise RuntimeError(msg)
-            scope = self._scopes[sid] = environ["asgi.scope"]
-        await self.handle_event(sid, data, scope)
+        if (scope := self._scopes.get(sid)) is not None:
+            return scope
+        # The connection was not seen by on_connect (e.g. the namespace was
+        # registered after the socket connected); ask the server.
+        if self.app.sio is None:
+            msg = "Socket.IO is not initialized."
+            raise RuntimeError(msg)
+        environ = self.app.sio.get_environ(sid, self.namespace)
+        if environ is None:
+            msg = "Socket.IO environ is not initialized."
+            raise RuntimeError(msg)
+        scope = self._scopes[sid] = environ["asgi.scope"]
+        return scope
 
     async def on_ping(self, sid: str):
         """Event for testing the API endpoint.

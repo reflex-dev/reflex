@@ -600,6 +600,8 @@ async def test_malformed_frame_closes_connection(
         42,
         {"name": 123, "payload": {}, "router_data": {}},
         {"name": "x", "payload": "nope", "router_data": {}},
+        {"name": "x", "payload": {}, "router_data": []},
+        {"name": "x", "payload": {}, "router_data": "nope"},
         {"name": "x", "payload": {}, "router_data": {"query": "not-a-dict"}},
     ],
 )
@@ -2155,3 +2157,10 @@ def test_decode_asgi_headers():
     ]) == {"cookie": "b=2"}
     # Names and values are decoded as UTF-8.
     assert _decode_asgi_headers([(b"x-name", "café".encode())]) == {"x-name": "café"}
+    # Octets that are not UTF-8, in a name or a value, decode as Latin-1; the
+    # other headers still decode as UTF-8.
+    assert _decode_asgi_headers([
+        (b"x-\xff", b"a"),
+        (b"x-raw", b"\xfe"),
+        ("x-café".encode(), "café".encode()),
+    ]) == {"x-ÿ": "a", "x-raw": "þ", "x-café": "café"}
