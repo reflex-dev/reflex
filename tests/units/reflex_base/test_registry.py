@@ -588,6 +588,64 @@ def test_chain_of_resolvers():
         assert State.get_name() == "from_first"
 
 
+def test_handlers_resolving_to_one_name_raise(
+    clean_registration_context: RegistrationContext,
+):
+    """A handler resolved onto another handler's name in its state is rejected.
+
+    Registering both under one name would let an event for one run the other.
+
+    Args:
+        clean_registration_context: A fresh, empty registration context.
+    """
+
+    class FooToA:
+        def resolve_state_name(self, state_cls):
+            return None
+
+        def resolve_handler_name(self, state_cls, handler_name):
+            return "a" if handler_name == "foo" else None
+
+        def resolve_var_name(self, state_cls, var_name):
+            return None
+
+        def digest(self):
+            return ""
+
+    with (
+        temporary_resolver(FooToA()),
+        pytest.raises(StateValueError, match="'foo' and 'a'"),
+    ):
+
+        class CollidingHandlers(BaseState):
+            def foo(self):
+                pass
+
+            def a(self):
+                pass
+
+
+def test_refresh_keys_keeps_reloaded_substates_out(
+    clean_registration_context: RegistrationContext,
+):
+    """Re-keying keeps a substate that a module reload removed out of the tree.
+
+    Args:
+        clean_registration_context: A fresh, empty registration context.
+    """
+    from reflex.state import reload_state_module
+
+    class ReloadedParent(BaseState):
+        pass
+
+    class ReloadedChild(ReloadedParent):
+        pass
+
+    reload_state_module(ReloadedChild._get_source_module(), ReloadedParent)
+    clean_registration_context.refresh_keys()
+    assert ReloadedChild not in clean_registration_context.get_substates(ReloadedParent)
+
+
 def test_reset_compile_caches_empties_per_compile_maps(
     clean_registration_context: RegistrationContext,
 ):
