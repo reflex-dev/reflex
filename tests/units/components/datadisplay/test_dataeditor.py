@@ -4,7 +4,10 @@ from pathlib import Path
 from typing import cast
 
 import reflex_base
+from reflex_base.vars import Var
 from reflex_components_dataeditor.dataeditor import DataEditor
+
+from reflex.state import BaseState
 
 
 def test_dataeditor():
@@ -84,4 +87,81 @@ console.log(JSON.stringify([
             "readonly": False,
             "allowOverlay": True,
         },
+    ]
+
+
+def _columns_prop(editor_render: dict) -> str:
+    props = editor_render["children"][0]["props"]
+    return next(p for p in props if p.startswith("columns:"))
+
+
+_REACTIVE_EXPR = (
+    "(state.columns).map((col) => "
+    '({ type: "str", id: (col.title ?? "").toLowerCase(), ...col }))'
+)
+
+
+def test_dataeditor_literal_columns_default_type():
+    editor = DataEditor.create(
+        columns=[{"title": "Name"}, {"title": "Age", "type": "int"}]
+    ).render()
+    prop = _columns_prop(editor)
+    assert '["type"] : "str"' in prop, prop
+    assert '["id"] : "name"' in prop, prop
+    # An explicit type is kept.
+    assert '["type"] : "int"' in prop, prop
+
+
+def test_dataeditor_reactive_columns_default_type():
+    # Reactive (Var) columns skip literal formatting, so the documented
+    # defaults are applied in JS at render time. See issue #7596.
+    editor = DataEditor.create(columns=Var(_js_expr="state.columns")).render()
+    assert _columns_prop(editor) == f"columns:{_REACTIVE_EXPR}"
+
+
+def test_dataeditor_reactive_columns_preserve_var_data():
+    class EditorState(BaseState):
+        columns: list[dict[str, str]] = [{"title": "Name"}]
+
+    wrapper = DataEditor.create(columns=EditorState.columns)
+    editor = cast(DataEditor, wrapper.children[0])
+    # The wrapped expression must keep the original var's data (state dep).
+    assert editor.columns._var_data == EditorState.columns._var_data
+    prop = _columns_prop(wrapper.render())
+    assert (
+        '.map((col) => ({ type: "str", id: (col.title ?? "").toLowerCase(), ...col }))'
+        in prop
+    )
+
+
+def test_dataeditor_reactive_columns_default_id_supports_dict_rows():
+    # Dict rows are keyed by column id; the JS-side id default keeps them
+    # working for reactive columns that omit id. See issue #7596.
+    editor = DataEditor.create(
+        columns=Var(_js_expr="state.columns"),
+        data=[{"name": "Alice"}],
+    ).render()
+    assert 'id: (col.title ?? "").toLowerCase()' in _columns_prop(editor)
+
+
+def test_dataeditor_reactive_columns_js_semantics():
+    test_script = """
+const cols = [{ title: "Name" }, { title: "Age", type: "int" }].map(
+  (col) => ({ type: "str", id: (col.title ?? "").toLowerCase(), ...col })
+);
+const row = { name: "Alice" };
+console.log(JSON.stringify([cols, row[cols[0].id]]));
+"""
+    result = subprocess.run(
+        ["node", "--input-type=module", "--eval", test_script],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert json.loads(result.stdout) == [
+        [
+            {"type": "str", "id": "name", "title": "Name"},
+            {"type": "int", "id": "age", "title": "Age"},
+        ],
+        "Alice",
     ]
