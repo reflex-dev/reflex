@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-import copy
 import dataclasses
 import datetime
 from typing import Any
 
 from reflex_base.components.component import (
-    BaseComponent,
     Component,
     MemoizationLeaf,
     NoSSRComponent,
@@ -61,23 +59,6 @@ class MomentProvider(Component):
     element: Var[str] = field(doc="The default HTML element for descendant components.")
     timezone: Var[str] = field(doc="The default timezone for descendant components.")
 
-    @classmethod
-    def create(cls, *children, **props) -> MomentProvider:
-        """Create a provider whose implicit Moment locales inherit its context.
-
-        Args:
-            *children: The components rendered inside the provider.
-            **props: The provider props.
-
-        Returns:
-            The provider with implicit child locales unset for React inheritance.
-        """
-        provider = super().create(*children, **props)
-        provider.children = [
-            _inherit_provider_locale(child) for child in provider.children
-        ]
-        return provider
-
     def add_imports(self) -> ImportDict:
         """Import the provider and modules required by its defaults.
 
@@ -95,20 +76,6 @@ class MomentProvider(Component):
             imports["moment-timezone@0.6.5"] = ""
 
         return imports
-
-
-def _inherit_provider_locale(component: BaseComponent) -> BaseComponent:
-    """Clone a child tree and let implicit Moment locales inherit the provider."""
-    if not isinstance(component, Component):
-        return component
-    child = copy.copy(component)
-    if isinstance(child, Moment) and "locale" not in vars(child):
-        child.locale = None
-    child.children = [
-        _inherit_provider_locale(nested) if isinstance(nested, Component) else nested
-        for nested in component.children
-    ]
-    return child
 
 
 class Moment(NoSSRComponent, MemoizationLeaf):
@@ -231,7 +198,6 @@ class Moment(NoSSRComponent, MemoizationLeaf):
     tz: Var[str] = field(doc="Display the date in the given timezone.")
 
     locale: Var[str] = field(
-        default=Var.create("en"),
         doc="The locale for this component. Defaults to the nearest MomentProvider locale or English.",
     )
 
@@ -270,7 +236,7 @@ class Moment(NoSSRComponent, MemoizationLeaf):
         Returns:
             The import dict for the component.
         """
-        imports = {}
+        imports = {"moment@2.31.0": ImportVar(tag="moment", is_default=True)}
 
         if isinstance(self.locale, LiteralVar):
             # English is built into Moment and has no separate locale module.
@@ -286,3 +252,11 @@ class Moment(NoSSRComponent, MemoizationLeaf):
             imports["moment-duration-format@2.3.2"] = ImportVar(tag=None)
 
         return imports
+
+    def add_custom_code(self) -> list[str]:
+        """Set Moment's global fallback locale after locale modules are loaded.
+
+        Returns:
+            Module-level code that keeps unprovided Moment instances in English.
+        """
+        return ['moment.locale("en");']

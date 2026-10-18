@@ -6,30 +6,12 @@ from reflex_base.vars.base import Var
 from reflex_components_moment.moment import Moment, MomentProvider
 
 
-def test_default_locale_is_english_outside_provider():
-    """Moments outside providers keep an explicit English fallback."""
+def test_default_locale_is_inherited_or_english_fallback():
+    """Omitted locales inherit provider context and fall back to English."""
     moment = Moment.create("2024-03-14")
-    assert 'locale:"en"' in moment.render()["props"]
+    assert not any(prop.startswith("locale:") for prop in moment.render()["props"])
     assert "moment/locale/en" not in moment.add_imports().values()
-
-
-def test_implicit_child_locale_is_inherited_from_provider():
-    """Provider construction leaves implicit child locales to React context."""
-    original = Moment.create("2024-03-14")
-    provider = MomentProvider.create(original, locale="fr")
-    child = provider.children[0]
-
-    assert not any(prop.startswith("locale:") for prop in child.render()["props"])
-    assert 'locale:"en"' in original.render()["props"]
-
-
-def test_explicit_child_locale_overrides_provider():
-    """An explicitly configured child locale takes precedence over the provider."""
-    provider = MomentProvider.create(
-        Moment.create("2024-03-14", locale="en"), locale="fr"
-    )
-
-    assert 'locale:"en"' in provider.children[0].render()["props"]
+    assert moment.add_custom_code() == ['moment.locale("en");']
 
 
 def test_explicit_english_locale_is_preserved():
@@ -39,11 +21,22 @@ def test_explicit_english_locale_is_preserved():
     assert "moment/locale/en" not in moment.add_imports().values()
 
 
+def test_explicit_child_locale_overrides_provider():
+    """An explicit child locale remains a per-instance provider override."""
+    provider = MomentProvider.create(
+        Moment.create("2024-03-14", locale="en"), locale="fr"
+    )
+
+    assert 'locale:"en"' in provider.children[0].render()["props"]
+
+
 def test_literal_locale_import_is_preserved():
     """A component that requests French still imports and renders that locale."""
     moment = Moment.create("2024-03-14", locale="fr")
     assert 'locale:"fr"' in moment.render()["props"]
-    assert moment.add_imports()[""] == "moment/locale/fr"
+    imports = moment.add_imports()
+    assert imports[""] == "moment/locale/fr"
+    assert imports["moment@2.31.0"] == ImportVar(tag="moment", is_default=True)
 
 
 def test_reactive_locale_imports_all_locales():
