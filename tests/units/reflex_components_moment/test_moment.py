@@ -6,14 +6,21 @@ from reflex_base.vars.base import Var
 from reflex_components_moment.moment import Moment, MomentProvider
 
 
-@pytest.mark.parametrize("props", [{}, {"locale": None}, {"locale": "en"}])
-def test_default_locale_is_explicit_english(props):
-    """Omitted and English locales do not inherit another component's locale.
+@pytest.mark.parametrize("props", [{}, {"locale": None}])
+def test_default_locale_is_inherited(props):
+    """Omitted locales inherit from a provider and use Moment's default otherwise.
 
     Args:
-        props: The omitted or explicitly English locale configuration.
+        props: The omitted or unset locale configuration.
     """
     moment = Moment.create("2024-03-14", **props)
+    assert "locale:" not in moment.render()["props"]
+    assert "moment/locale/en" not in moment.add_imports().values()
+
+
+def test_explicit_english_locale_is_preserved():
+    """An explicit English locale overrides a provider locale."""
+    moment = Moment.create("2024-03-14", locale="en")
     assert 'locale:"en"' in moment.render()["props"]
     assert "moment/locale/en" not in moment.add_imports().values()
 
@@ -103,5 +110,18 @@ def test_moment_provider_exports_named_component_and_shared_props():
     assert 'format:"D MMM YYYY"' in props
     assert 'timezone:"America/Los_Angeles"' in props
     assert provider.add_imports() == {
-        "react-moment@2.0.2": ImportVar(tag="MomentProvider")
+        "react-moment@2.0.2": ImportVar(tag="MomentProvider"),
+        "": "moment/locale/fr",
+        "moment-timezone@0.6.5": "",
+    }
+
+
+def test_moment_provider_reactive_locale_imports_all_locales():
+    """A reactive provider locale includes the available locale modules."""
+    locale = Var(_js_expr="selectedLocale", _var_type=str)
+    provider = MomentProvider.create(Moment.create("2024-03-14"), locale=locale)
+
+    assert provider.add_imports() == {
+        "react-moment@2.0.2": ImportVar(tag="MomentProvider"),
+        "": "moment/min/locales",
     }

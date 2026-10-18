@@ -226,12 +226,13 @@ instead. Shared defaults are configured with `rx.moment_provider`, not a
 `settings` prop on `rx.moment`:
 
 ```python demo exec
-rx.moment_provider(
-    rx.moment("2024-03-14"),
-    locale="fr",
-    format="D MMM YYYY",
-    timezone="Europe/Paris",
-)
+def moment_provider_example():
+    return rx.moment_provider(
+        rx.moment("2024-03-14"),
+        locale="fr",
+        format="D MMM YYYY",
+        timezone="Europe/Paris",
+    )
 ```
 
 Connect an event handler with the `on_change` prop:

@@ -60,8 +60,18 @@ class MomentProvider(Component):
     timezone: Var[str] = field(doc="The default timezone for descendant components.")
 
     def add_imports(self) -> ImportDict:
-        """Import the named provider export from react-moment."""
-        return {"react-moment@2.0.2": ImportVar(tag="MomentProvider")}
+        """Import the provider and any modules required by its defaults."""
+        imports: ImportDict = {"react-moment@2.0.2": ImportVar(tag="MomentProvider")}
+
+        if isinstance(self.locale, LiteralVar):
+            if self.locale._var_value != "en":
+                imports[""] = f"moment/locale/{self.locale._var_value}"
+        elif self.locale is not None:
+            imports[""] = "moment/min/locales"
+        if self.timezone is not None:
+            imports["moment-timezone@0.6.5"] = ""
+
+        return imports
 
 
 class Moment(NoSSRComponent, MemoizationLeaf):
@@ -184,8 +194,7 @@ class Moment(NoSSRComponent, MemoizationLeaf):
     tz: Var[str] = field(doc="Display the date in the given timezone.")
 
     locale: Var[str] = field(
-        default=Var.create("en"),
-        doc="The locale for this component. Defaults to English independently of other Moment components.",
+        doc="The locale for this component. Defaults to the nearest MomentProvider locale or Moment's English default.",
     )
 
     on_change: EventHandler[passthrough_event_spec(str)] = field(
