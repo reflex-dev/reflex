@@ -6,16 +6,30 @@ from reflex_base.vars.base import Var
 from reflex_components_moment.moment import Moment, MomentProvider
 
 
-@pytest.mark.parametrize("props", [{}, {"locale": None}])
-def test_default_locale_is_inherited(props):
-    """Omitted locales inherit from a provider and use Moment's default otherwise.
-
-    Args:
-        props: The omitted or unset locale configuration.
-    """
-    moment = Moment.create("2024-03-14", **props)
-    assert "locale:" not in moment.render()["props"]
+def test_default_locale_is_english_outside_provider():
+    """Moments outside providers keep an explicit English fallback."""
+    moment = Moment.create("2024-03-14")
+    assert 'locale:"en"' in moment.render()["props"]
     assert "moment/locale/en" not in moment.add_imports().values()
+
+
+def test_implicit_child_locale_is_inherited_from_provider():
+    """Provider construction leaves implicit child locales to React context."""
+    original = Moment.create("2024-03-14")
+    provider = MomentProvider.create(original, locale="fr")
+    child = provider.children[0]
+
+    assert not any(prop.startswith("locale:") for prop in child.render()["props"])
+    assert 'locale:"en"' in original.render()["props"]
+
+
+def test_explicit_child_locale_overrides_provider():
+    """An explicitly configured child locale takes precedence over the provider."""
+    provider = MomentProvider.create(
+        Moment.create("2024-03-14", locale="en"), locale="fr"
+    )
+
+    assert 'locale:"en"' in provider.children[0].render()["props"]
 
 
 def test_explicit_english_locale_is_preserved():
