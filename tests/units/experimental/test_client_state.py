@@ -17,6 +17,8 @@ from reflex.state import BaseState
         "is-open",
         "has space",
         "1value",
+        "\u200cvalue",
+        "\u200dvalue",
         "class",
         "await",
         "eval",
@@ -24,6 +26,8 @@ from reflex.state import BaseState
         "refs",
         "useId",
         "useState",
+        "Array",
+        "Object",
     ],
 )
 def test_client_state_var_rejects_invalid_javascript_identifiers(var_name: str) -> None:
@@ -32,7 +36,18 @@ def test_client_state_var_rejects_invalid_javascript_identifiers(var_name: str) 
         ClientStateVar.create(var_name)
 
 
-@pytest.mark.parametrize("var_name", ["value", "$value", "value$", "_value", "café"])
+@pytest.mark.parametrize(
+    "var_name",
+    [
+        "value",
+        "$value",
+        "value$",
+        "_value",
+        "café",
+        "value\u200cname",
+        "value\u200dname",
+    ],
+)
 def test_client_state_var_accepts_valid_javascript_identifiers(var_name: str) -> None:
     """Accept ordinary and Unicode JavaScript state bindings."""
     assert isinstance(ClientStateVar.create(var_name), ClientStateVar)

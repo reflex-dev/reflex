@@ -21,61 +21,61 @@ _refs_import = {
     f"$/{constants.Dirs.STATE_PATH}": [ImportVar(tag="refs")],
 }
 
-_JS_RESERVED_BINDINGS = frozenset(
-    {
-        "arguments",
-        "await",
-        "break",
-        "case",
-        "catch",
-        "class",
-        "const",
-        "continue",
-        "debugger",
-        "default",
-        "delete",
-        "do",
-        "else",
-        "enum",
-        "eval",
-        "export",
-        "extends",
-        "false",
-        "finally",
-        "for",
-        "function",
-        "if",
-        "implements",
-        "import",
-        "in",
-        "instanceof",
-        "interface",
-        "let",
-        "new",
-        "null",
-        "package",
-        "private",
-        "protected",
-        "public",
-        "return",
-        "static",
-        "super",
-        "switch",
-        "this",
-        "throw",
-        "true",
-        "try",
-        "typeof",
-        "var",
-        "void",
-        "while",
-        "with",
-        "yield",
-        "refs",
-        "useId",
-        "useState",
-    }
-)
+_JS_RESERVED_BINDINGS = frozenset({
+    "arguments",
+    "await",
+    "break",
+    "case",
+    "catch",
+    "class",
+    "const",
+    "continue",
+    "debugger",
+    "default",
+    "delete",
+    "do",
+    "else",
+    "enum",
+    "eval",
+    "export",
+    "extends",
+    "false",
+    "finally",
+    "for",
+    "function",
+    "if",
+    "implements",
+    "import",
+    "in",
+    "instanceof",
+    "interface",
+    "let",
+    "new",
+    "null",
+    "package",
+    "private",
+    "protected",
+    "public",
+    "return",
+    "static",
+    "super",
+    "switch",
+    "this",
+    "throw",
+    "true",
+    "try",
+    "typeof",
+    "var",
+    "void",
+    "while",
+    "with",
+    "yield",
+    "refs",
+    "useId",
+    "useState",
+    "Array",
+    "Object",
+})
 
 
 def _is_valid_client_state_var_name(var_name: str) -> bool:
@@ -84,9 +84,13 @@ def _is_valid_client_state_var_name(var_name: str) -> bool:
     Returns:
         Whether the name is a valid binding that does not conflict with generated code.
     """
-    return (
-        var_name.replace("$", "_").isidentifier()
-        and var_name not in _JS_RESERVED_BINDINGS
+    if not var_name or var_name in _JS_RESERVED_BINDINGS:
+        return False
+    if var_name[0] not in {"$", "_"} and not var_name[0].isidentifier():
+        return False
+    return all(
+        char in {"$", "\u200c", "\u200d"} or ("a" + char).isidentifier()
+        for char in var_name[1:]
     )
 
 
