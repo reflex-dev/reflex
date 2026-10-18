@@ -512,6 +512,7 @@ class MemoizeStatefulPlugin(Plugin):
         strategy = get_memoization_strategy(comp)
         if strategy is not MemoizationStrategy.SNAPSHOT:
             return None
+        snapshot_boundary = is_snapshot_boundary(comp)
         if _subtree_splits_shared_scope(
             comp,
             page_context.memoize_shared_scope_counts,
@@ -519,8 +520,9 @@ class MemoizeStatefulPlugin(Plugin):
             page_context._owned_original_ids.get(id(comp)),
             self.style,
         ):
+            if snapshot_boundary:
+                page_context.memoize_suppressor_stack.append(id(comp))
             return None
-        snapshot_boundary = is_snapshot_boundary(comp)
 
         if not _should_memoize(comp):
             # Boundary not worth wrapping — still suppress descendants so

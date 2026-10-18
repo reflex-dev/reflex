@@ -17,10 +17,15 @@ def ClientStateApp():
     class ClientStateAppState(rx.State):
         show: bool = False
         default_text: str = "from backend"
+        selected_item: str = ""
 
         @rx.event
         def reveal(self):
             self.show = True
+
+        @rx.event
+        def select_item(self, item: str):
+            self.selected_item = item
 
         @rx.event
         def push_value(self):
@@ -79,6 +84,23 @@ def ClientStateApp():
             ),
         )
 
+    def local_loop_item():
+        return rx.box(
+            rx.text(local.value, id="loop-outside-reader"),
+            rx.foreach(
+                ["alpha"],
+                lambda item: rx.box(
+                    rx.text(local.value, id="loop-inside-reader"),
+                    rx.el.button(
+                        item,
+                        on_click=ClientStateAppState.select_item(item),
+                        id="loop-item-button",
+                    ),
+                ),
+            ),
+            rx.text(ClientStateAppState.selected_item, id="selected-item"),
+        )
+
     def local_styled_reader():
         return rx.box(
             rx.text(local.value, id="styled-outside-reader"),
@@ -124,6 +146,7 @@ def ClientStateApp():
     app.add_page(siblings)
     app.add_page(local_siblings, route="/local-siblings")
     app.add_page(local_reused_reader, route="/local-reused-reader")
+    app.add_page(local_loop_item, route="/local-loop-item")
     app.add_page(local_styled_reader, route="/local-styled-reader")
     app.add_page(backend_default_page, route="/backend-default")
     app.add_page(push_before_mount, route="/push-before-mount")
@@ -235,6 +258,21 @@ def test_reused_local_reader_updates_across_foreach_boundary(
     expect(readers).to_have_text(["local-initial", "local-initial"])
     page.click("#reused-local-setter")
     expect(readers).to_have_text(["local-clicked", "local-clicked"])
+    assert errors == []
+
+
+def test_loop_item_callback_stays_in_foreach_scope(
+    client_state_app: AppHarness, page: Page
+) -> None:
+    """A shared local-state reader must not detach a loop-item callback."""
+    assert client_state_app.frontend_url is not None
+    errors = _collect_page_errors(page)
+    page.goto(client_state_app.frontend_url.removesuffix("/") + "/local-loop-item")
+
+    expect(page.locator("#loop-outside-reader")).to_have_text("local-initial")
+    expect(page.locator("#loop-inside-reader")).to_have_text("local-initial")
+    page.click("#loop-item-button")
+    expect(page.locator("#selected-item")).to_have_text("alpha")
     assert errors == []
 
 

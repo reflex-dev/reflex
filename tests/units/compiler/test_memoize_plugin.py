@@ -128,6 +128,11 @@ class SpecialFormMemoState(BaseState):
     flag: Field[bool] = field(default=True)
     value: Field[str] = field(default="a")
 
+    @rx.event
+    def select_item(self, item: str):
+        """Store the selected loop item."""
+        self.value = item
+
 
 class MemoTriggerState(BaseState):
     @rx.event
@@ -1716,6 +1721,36 @@ def test_reused_local_client_state_reader_stays_in_page_scope() -> None:
     _ctx, page_ctx = _compile_single_page(page)
 
     assert page_ctx.memoize_shared_scope_counts[local._id_name] == 3
+
+
+def test_shared_scope_foreach_does_not_memoize_item_callback() -> None:
+    """A skipped foreach boundary must keep callbacks with loop vars inline."""
+    from reflex.experimental.client_state import ClientStateVar
+
+    local = ClientStateVar.create("loop_scope", default="initial", global_ref=False)
+
+    def page() -> Component:
+        return rx.box(
+            rx.text(local.value),
+            rx.foreach(
+                ["item"],
+                lambda item: rx.box(
+                    rx.text(local.value),
+                    rx.el.button(
+                        item,
+                        on_click=SpecialFormMemoState.select_item(item),
+                    ),
+                ),
+            ),
+        )
+
+    ctx, _page_ctx = _compile_single_page(page)
+
+    assert not any(
+        isinstance(definition, MemoComponentDefinition)
+        and definition.component.tag == "button"
+        for definition in ctx.auto_memo_components.values()
+    )
 
 
 def test_shared_scope_prepass_caches_reused_component_subtrees(
