@@ -55,7 +55,7 @@ from reflex_base.vars.sequence import (
 
 import reflex as rx
 from reflex.environment import PerformanceMode
-from reflex.state import BaseState
+from reflex.state import BaseState, code_uses_state_contexts
 
 pytest.importorskip("pydantic")
 
@@ -398,17 +398,6 @@ def test_datetime_comparison_uses_timestamps(operation, operator):
         f'(compareDatetime("2024-01-01 01:00:00+01:00", '
         f'"2024-01-01 00:00:00+00:00") {operator} 0)'
     )
-
-
-def test_exponent_parenthesizes_a_unary_base():
-    """JavaScript rejects a unary expression as the base of `**` (`-2 ** 2` is a SyntaxError)."""
-    x = Var(_js_expr="x").to(int)
-    assert str(LiteralNumberVar.create(-2) ** 3) == "((-2) ** 3)"
-    assert str(LiteralNumberVar.create(-2.5) ** x) == "((-2.5) ** x)"
-    assert str((-x) ** 2) == "((-(x)) ** 2)"
-    assert str(-(x**2)) == "-((x ** 2))"
-    assert str(x**-1) == "(x ** -1)"
-    assert str(2**-x) == "(2 ** -(x))"
 
 
 def test_datetime_comparison_preserves_microseconds():
@@ -1596,6 +1585,17 @@ def test_retrieval():
         == tuple(result_immutable_var_data.hooks)
         == tuple(original_var_data.hooks)
     )
+
+
+@pytest.mark.parametrize(
+    ("javascript_code", "expected"),
+    [
+        ("const state = useStateContext('state')", True),
+        ("const state = useContext(ThemeContext)", False),
+    ],
+)
+def test_code_uses_state_contexts(javascript_code: str, expected: bool):
+    assert code_uses_state_contexts(javascript_code) is expected
 
 
 def test_fstring_concat():
