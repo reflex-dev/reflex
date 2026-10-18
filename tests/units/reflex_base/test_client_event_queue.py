@@ -1,4 +1,4 @@
-"""Execute behavioral regressions against the actual frontend event queue."""
+"""Execute behavioral regressions against the actual frontend runtime."""
 
 import shutil
 import subprocess
@@ -7,11 +7,20 @@ from pathlib import Path
 import pytest
 
 
-def _run_state_js_test(script: str) -> None:
-    """Run a Node test script against the frontend state module.
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is unavailable")
+@pytest.mark.parametrize(
+    "script",
+    [
+        "client_event_queue.mjs",
+        "client_state_updates.mjs",
+        "state_string_helpers.mjs",
+    ],
+)
+def test_client_runtime(script: str) -> None:
+    """Verify queue processing, incoming state updates, and string helpers.
 
     Args:
-        script: The test script name, relative to this directory.
+        script: Runtime regression script to execute.
     """
     tests = Path(__file__).parent
     source = (
@@ -31,15 +40,3 @@ def _run_state_js_test(script: str) -> None:
         timeout=30,
     )
     assert result.returncode == 0, result.stdout + result.stderr
-
-
-@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is unavailable")
-def test_client_event_queue() -> None:
-    """Verify queue behavior and prepend/connected dispatch processing cost."""
-    _run_state_js_test("client_event_queue.mjs")
-
-
-@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is unavailable")
-def test_state_string_helpers() -> None:
-    """Verify the code-point string helpers match Python str semantics."""
-    _run_state_js_test("state_string_helpers.mjs")

@@ -1,0 +1,291 @@
+/* Docs-only brand layer. Shared package consumers retain their own theme.
+   Editorial selectors deliberately exclude live component examples. */
+/* Match marketing with variable WOFF2 subsets bundled from Fontsource. */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(@fontsource-variable/geist/files/geist-latin-ext-wght-normal.woff2) format('woff2-variations');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(@fontsource-variable/geist/files/geist-latin-wght-normal.woff2) format('woff2-variations');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(@fontsource-variable/inter/files/inter-latin-ext-wght-normal.woff2) format('woff2-variations');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(@fontsource-variable/inter/files/inter-latin-wght-normal.woff2) format('woff2-variations');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+  --font-instrument-sans: Inter, Arial, sans-serif;
+  --font-sans: Inter, Arial, sans-serif;
+  --font-heading: Geist, Inter, Arial, sans-serif;
+  --font-weight-book: 400;
+  --font-weight-normal: 400;
+  --radius-card: 20px;
+  --radius-panel: 24px;
+}
+
+:root, .light, .light-theme {
+  --background: #fdfcfc;
+  --foreground: #000;
+  --card: #fff;
+  --card-foreground: #000;
+  --primary: #000;
+  --primary-foreground: #fff;
+  --primary-hover: #2b2b2b;
+  --muted: #f5f3f1;
+  --muted-foreground: #69645e;
+  --subtle: #f9f8f7;
+  --subtle-foreground: #777169;
+  --accent: #f5f3f1;
+  --accent-hover: #ebe8e4;
+  --inset: #ebe8e4;
+  --border: #e5e2de;
+  --border-subtle: #efeeec;
+  --border-strong: #cbc5bf;
+  --ring: #5c52b4;
+}
+
+.dark, .dark-theme {
+  --background: #151413;
+  --foreground: #f5f3f1;
+  --card: #1d1c1a;
+  --card-foreground: #f5f3f1;
+  --primary: #f5f3f1;
+  --primary-foreground: #151413;
+  --primary-hover: #ded9d2;
+  --muted: #22211f;
+  --muted-foreground: #b7b1a9;
+  --subtle: #1b1a18;
+  --subtle-foreground: #a39d95;
+  --accent: #292724;
+  --accent-hover: #35322e;
+  --inset: #35322e;
+  --border: #393631;
+  --border-subtle: #2c2a27;
+  --border-strong: #5c5750;
+  --ring: #afa5f4;
+}
+
+.font-heading { font-family: var(--font-heading); }
+
+/* Article shell: quieter navigation, a comfortable line length, useful TOC. */
+.docs-reading-layout { max-width: 1536px; }
+.docs-reading-layout .docs-sidebar { width: 272px; }
+.docs-sidebar::before { background: var(--background); }
+.docs-sidebar #sidebar-container > div { padding-left: 16px; padding-right: 20px; }
+.docs-sidebar p,
+.docs-sidebar h3,
+.docs-sidebar summary { font-weight: 400; }
+.docs-sidebar h2 {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: .025em;
+  text-transform: none;
+}
+.docs-sidebar a:where(:not([aria-current='page'], [aria-current='true'])) p {
+  color: var(--muted-foreground);
+}
+.docs-sidebar a:hover p { color: var(--foreground); }
+.docs-sidebar a[aria-current='page'] p { font-weight: 500; }
+.docs-sidebar a:focus-visible,
+.docs-sidebar summary:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+.docs-reading-column { max-width: 896px; padding-inline: 48px; }
+.docs-reading-column .docs-prose {
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.85;
+  letter-spacing: -.006em;
+}
+.docs-reading-column .docs-heading {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--font-heading);
+  font-weight: 400;
+  letter-spacing: -.035em;
+  line-height: 1.18;
+}
+.docs-reading-column h1.docs-heading {
+  font-size: clamp(34px, 3vw, 44px);
+  font-weight: 300;
+  margin-top: 8px;
+  margin-bottom: 12px;
+}
+.docs-reading-column h2.docs-heading { font-size: 30px; margin-top: 48px; }
+.docs-reading-column h3.docs-heading { font-size: 23px; margin-top: 32px; }
+.docs-reading-column h4.docs-heading { font-size: 17px; font-weight: 500; }
+.docs-article .code-block {
+  border-color: var(--border);
+}
+.docs-reading-column .docs-page-navigation {
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 32px;
+  margin-bottom: 24px;
+}
+.docs-page-navigation > a {
+  gap: 2px;
+  padding: 10px 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--background);
+  transition: background-color 160ms ease, border-color 160ms ease;
+}
+.docs-page-navigation > a > span:first-child {
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+}
+.docs-page-navigation > a > span:first-child svg { width: 14px; height: 14px; }
+.docs-page-navigation > a > span:last-child {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+.docs-page-navigation > a:hover {
+  background: var(--muted);
+  border-color: var(--border-strong);
+}
+.docs-reading-layout .docs-toc { width: 220px; padding-right: 24px; }
+.docs-toc p, .docs-toc a { font-size: 12px; font-weight: 400; line-height: 1.65; }
+.docs-toc p { font-weight: 500; }
+.docs-toc #toc-navigation { gap: 4px; }
+
+.docs-landing footer > div { max-width: 1176px; padding-inline: 32px; }
+.docs-landing footer { border-top: 1px solid var(--border-subtle); }
+
+@media (min-width: 1280px) {
+  .docs-reading-layout .docs-toc { display: block; }
+}
+@media (max-width: 1279px) {
+  .docs-reading-column { padding-inline: 32px; }
+}
+@media (max-width: 1023px) {
+  .docs-reading-column { max-width: 800px; padding-inline: 24px; }
+  .docs-reading-column .docs-breadcrumb { margin-bottom: 28px; }
+}
+@media (max-width: 639px) {
+  .docs-reading-column { padding-inline: 20px; }
+  .docs-reading-column .docs-prose { font-size: 15px; }
+  .docs-reading-column h2.docs-heading { font-size: 26px; }
+  .docs-page-navigation > a { padding: 10px 12px; }
+  .docs-reading-column .docs-page-navigation { gap: 8px; }
+  .docs-landing footer > div { padding-inline: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .docs-page-navigation > a { transition: none; }
+}
+
+/* Documentation surfaces only: never select controls inside live examples. */
+.docs-demo-header { align-items: center; gap: 12px; margin-bottom: 12px; }
+.docs-demo-header > a { margin: 0; font-family: var(--font-sans); font-weight: 400; font-size: 13px; }
+.docs-article .doc-demo-tab-card {
+  border-radius: var(--radius-card);
+  border-color: var(--border);
+  background: var(--muted);
+}
+.docs-article .docs-demo-preview { border-radius: var(--radius-card); }
+.docs-article :is(.docs-demo-preview, .docs-api-preview) {
+  align-items: safe center;
+}
+.docs-article .docs-callout { border-radius: 16px; }
+.docs-article .docs-callout > div { font-weight: 400; }
+.docs-markdown-table { border-radius: 16px; overflow-x: auto; }
+.docs-markdown-table table { background: var(--background); border: 0; }
+.docs-markdown-table thead { background: var(--muted); }
+.docs-markdown-table :is(th, td) { font-size: 13px; line-height: 1.7; padding: 12px 16px; }
+.docs-markdown-table th { font-weight: 500; color: var(--foreground); }
+.docs-markdown-table td { font-weight: 400; }
+.docs-markdown-table tbody tr:last-child { border-bottom: 0; }
+.docs-article .code-style { border-color: var(--border); }
+
+/* Existing tab and code utilities use !important; keep overrides in their layer. */
+@layer utilities {
+  .docs-article .doc-demo-tab-list {
+    width: fit-content;
+    flex-shrink: 0;
+    margin: 0;
+    gap: 2px !important;
+    padding: 3px !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 999px;
+    background: var(--muted) !important;
+  }
+  html .docs-article .doc-demo-tab {
+    border: 0 !important;
+    border-radius: 999px !important;
+    margin: 0;
+    padding: 7px 12px !important;
+    min-height: 32px;
+    font-family: var(--font-sans);
+    font-size: 13px !important;
+    font-weight: 400 !important;
+    background: transparent !important;
+    color: var(--muted-foreground) !important;
+  }
+  html .docs-article .doc-demo-tab[data-state='active'] {
+    background: var(--card) !important;
+    color: var(--foreground) !important;
+    box-shadow: 0 1px 3px rgb(0 0 0 / .06) !important;
+  }
+  html .docs-article .doc-demo-tab:hover { color: var(--foreground) !important; }
+  html .docs-article .doc-demo-tab:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  .docs-article .code-block:not(.doc-demo-tab-card .code-block) { border-radius: 16px !important; }
+  .docs-article .code-block button {
+    font-family: var(--font-sans) !important;
+    font-weight: 400 !important;
+    border-radius: 999px !important;
+    background: var(--muted) !important;
+  }
+  .docs-article .code-block button:focus-visible {
+    outline: 2px solid var(--ring) !important;
+    outline-offset: 2px;
+  }
+  @media (hover: none) {
+    .docs-article .code-block button { opacity: 1 !important; pointer-events: auto; }
+    .docs-article .code-block:has(button) { padding-top: 48px !important; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .docs-article .doc-demo-tab, .docs-article .code-block button { transition: none !important; }
+  }
+}
+
+.docs-breadcrumb :is(a, span) { font-weight: 400; }
+.docs-article .docs-table { box-shadow: none; border-radius: 16px; }
+
+.docs-markdown-table { box-shadow: none; }
+.docs-markdown-table :is(th, td) { box-shadow: none; border-bottom: 1px solid var(--border-subtle); }
+.docs-markdown-table th { background: var(--muted); }
+.docs-markdown-table tbody tr { background: var(--background); }
+.docs-markdown-table tbody tr:last-child td { border-bottom: 0; }
