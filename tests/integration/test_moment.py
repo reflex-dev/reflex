@@ -18,6 +18,8 @@ def MomentApp():
     class State(rx.State):
         """State used to wait for the browser connection before asserting output."""
 
+        locale: str = "fr"
+
     @app.add_page
     def index():
         return rx.vstack(
@@ -49,6 +51,12 @@ def MomentApp():
                 format="dddd D MMMM YYYY",
                 locale="fr",
                 id="moment-french",
+            ),
+            rx.moment(
+                "2024-03-14T15:09:26",
+                format="dddd D MMMM YYYY",
+                locale=State.locale,
+                id="moment-reactive-locale",
             ),
             rx.link("Plain page", href="/plain", id="plain-link"),
         )
@@ -132,6 +140,12 @@ def test_moment_locales_are_isolated(driver: WebDriver) -> None:
     )
     AppHarness.expect(
         lambda: driver.find_element(By.ID, "moment-french").text == "jeudi 14 mars 2024"
+    )
+    AppHarness.expect(
+        lambda: (
+            driver.find_element(By.ID, "moment-reactive-locale").text
+            == "jeudi 14 mars 2024"
+        )
     )
     driver.find_element(By.ID, "plain-link").click()
     AppHarness.expect(
