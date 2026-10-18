@@ -862,7 +862,7 @@ def _get_pydantic_fields(cls: GenericType) -> dict[str, Any]:
         The model's fields, or an empty dictionary for other classes.
     """
     fields = getattr(cls, "model_fields", None)
-    return fields if fields is not None else getattr(cls, "__fields__", {})
+    return fields if isinstance(fields, dict) else getattr(cls, "__fields__", {})
 
 
 def get_field_type(cls: GenericType, field_name: str) -> GenericType | None:

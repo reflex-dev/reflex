@@ -20,7 +20,6 @@ from typing import (
     runtime_checkable,
 )
 
-import pydantic
 import pytest
 import typing_extensions
 from reflex_base.utils.types import (
@@ -63,7 +62,7 @@ def base_model(request: pytest.FixtureRequest) -> type:
     """
     if request.param == "pydantic.v1" and sys.version_info >= (3, 14):
         pytest.skip("Pydantic v1 does not support Python 3.14 or newer.")
-    return importlib.import_module(request.param).BaseModel
+    return pytest.importorskip(request.param).BaseModel
 
 
 @pytest.mark.parametrize("getter", [get_field_type, get_attribute_access_type])
@@ -84,7 +83,7 @@ def test_pydantic_field_types_without_deprecation(
         labels: list[str] = []
 
     with warnings.catch_warnings():
-        warnings.simplefilter("error", pydantic.warnings.PydanticDeprecatedSince20)
+        warnings.simplefilter("error", DeprecationWarning)
         assert getter(Item, field_name) == expected
 
 
@@ -98,20 +97,52 @@ def test_pydantic_property_type_without_deprecation(base_model):
             return "item"
 
     with warnings.catch_warnings():
-        warnings.simplefilter("error", pydantic.warnings.PydanticDeprecatedSince20)
+        warnings.simplefilter("error", DeprecationWarning)
         assert get_attribute_access_type(Item, "label") is str
 
 
 @pytest.mark.parametrize("getter", [get_field_type, get_attribute_access_type])
 def test_empty_pydantic_model_without_deprecation(getter):
     """An empty v2 field mapping must not fall back to deprecated attributes."""
+    pydantic = pytest.importorskip("pydantic")
 
     class Item(pydantic.BaseModel):
         pass
 
     with warnings.catch_warnings():
-        warnings.simplefilter("error", pydantic.warnings.PydanticDeprecatedSince20)
+        warnings.simplefilter("error", DeprecationWarning)
         assert getter(Item, "missing") is None
+
+
+@pytest.mark.parametrize("getter", [get_field_type, get_attribute_access_type])
+def test_field_types_with_unrelated_model_fields_method(getter):
+    """Ignore ordinary methods that share the Pydantic metadata name."""
+
+    class Item:
+        count: int
+
+        def model_fields(self):
+            """An unrelated method."""
+
+    assert getter(Item, "count") is int
+    assert getter(Item, "missing") is None
+
+
+@pytest.mark.parametrize("getter", [get_field_type, get_attribute_access_type])
+def test_legacy_pydantic_field_types_with_model_fields_method(getter):
+    """Keep v1 metadata when a model has an unrelated model_fields method."""
+    if sys.version_info >= (3, 14):
+        pytest.skip("Pydantic v1 does not support Python 3.14 or newer.")
+    base_model = pytest.importorskip("pydantic.v1").BaseModel
+
+    class Item(base_model):
+        count: int
+
+        def model_fields(self):
+            """An unrelated method."""
+
+    assert getter(Item, "count") is int
+    assert getter(Item, "missing") is None
 
 
 def test_types_import_keeps_optional_orm_lazy():
