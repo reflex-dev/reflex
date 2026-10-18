@@ -32,6 +32,21 @@ class MomentDelta:
     milliseconds: int | None = dataclasses.field(default=None)
 
 
+def _locale_timezone_imports(
+    locale: Var[str] | None, timezone: Var[str] | None
+) -> ImportDict:
+    """Return the locale and timezone imports required by Moment props."""
+    imports: ImportDict = {}
+    if isinstance(locale, LiteralVar):
+        if locale._var_value != "en":
+            imports[""] = f"moment/locale/{locale._var_value}"
+    elif locale is not None:
+        imports[""] = "moment/min/locales"
+    if timezone is not None:
+        imports["moment-timezone@0.6.5"] = ""
+    return imports
+
+
 class MomentProvider(Component):
     """Provide shared defaults and timer pooling for descendant Moment components."""
 
@@ -66,15 +81,7 @@ class MomentProvider(Component):
             Imports for the provider, locale, and timezone modules.
         """
         imports: ImportDict = {"react-moment@2.0.2": ImportVar(tag="MomentProvider")}
-
-        if isinstance(self.locale, LiteralVar):
-            if self.locale._var_value != "en":
-                imports[""] = f"moment/locale/{self.locale._var_value}"
-        elif self.locale is not None:
-            imports[""] = "moment/min/locales"
-        if self.timezone is not None:
-            imports["moment-timezone@0.6.5"] = ""
-
+        imports.update(_locale_timezone_imports(self.locale, self.timezone))
         return imports
 
 
@@ -236,18 +243,10 @@ class Moment(NoSSRComponent, MemoizationLeaf):
         Returns:
             The import dict for the component.
         """
-        imports = {"moment@2.31.0": ImportVar(tag="moment", is_default=True)}
-
-        if isinstance(self.locale, LiteralVar):
-            # English is built into Moment and has no separate locale module.
-            if self.locale._var_value != "en":
-                imports[""] = f"moment/locale/{self.locale._var_value}"
-        elif self.locale is not None:
-            # If the user is using a variable for the locale, we can't know the
-            # value at compile time so import all locales available.
-            imports[""] = "moment/min/locales"
-        if self.tz is not None:
-            imports["moment-timezone@0.6.5"] = ""
+        imports: ImportDict = {
+            "moment@2.31.0": ImportVar(tag="moment", is_default=True)
+        }
+        imports.update(_locale_timezone_imports(self.locale, self.tz))
         if self.duration is not None or self.duration_from_now is not None:
             imports["moment-duration-format@2.3.2"] = ImportVar(tag=None)
 
