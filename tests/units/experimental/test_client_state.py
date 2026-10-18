@@ -10,6 +10,34 @@ from reflex.experimental.client_state import ClientStateVar, NoValue
 from reflex.state import BaseState
 
 
+@pytest.mark.parametrize(
+    "var_name",
+    [
+        "",
+        "is-open",
+        "has space",
+        "1value",
+        "class",
+        "await",
+        "eval",
+        "arguments",
+        "refs",
+        "useId",
+        "useState",
+    ],
+)
+def test_client_state_var_rejects_invalid_javascript_identifiers(var_name: str) -> None:
+    """Reject names that cannot be used for a JavaScript state binding."""
+    with pytest.raises(ValueError, match="valid JavaScript identifier"):
+        ClientStateVar.create(var_name)
+
+
+@pytest.mark.parametrize("var_name", ["value", "$value", "value$", "_value", "café"])
+def test_client_state_var_accepts_valid_javascript_identifiers(var_name: str) -> None:
+    """Accept ordinary and Unicode JavaScript state bindings."""
+    assert isinstance(ClientStateVar.create(var_name), ClientStateVar)
+
+
 @pytest.mark.parametrize("use_set_property", [True, False])
 def test_global_setter_carries_client_state_hooks(use_set_property: bool) -> None:
     """A global setter Var must carry the hooks that initialize the client state.

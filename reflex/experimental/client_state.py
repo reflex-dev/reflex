@@ -21,6 +21,74 @@ _refs_import = {
     f"$/{constants.Dirs.STATE_PATH}": [ImportVar(tag="refs")],
 }
 
+_JS_RESERVED_BINDINGS = frozenset(
+    {
+        "arguments",
+        "await",
+        "break",
+        "case",
+        "catch",
+        "class",
+        "const",
+        "continue",
+        "debugger",
+        "default",
+        "delete",
+        "do",
+        "else",
+        "enum",
+        "eval",
+        "export",
+        "extends",
+        "false",
+        "finally",
+        "for",
+        "function",
+        "if",
+        "implements",
+        "import",
+        "in",
+        "instanceof",
+        "interface",
+        "let",
+        "new",
+        "null",
+        "package",
+        "private",
+        "protected",
+        "public",
+        "return",
+        "static",
+        "super",
+        "switch",
+        "this",
+        "throw",
+        "true",
+        "try",
+        "typeof",
+        "var",
+        "void",
+        "while",
+        "with",
+        "yield",
+        "refs",
+        "useId",
+        "useState",
+    }
+)
+
+
+def _is_valid_client_state_var_name(var_name: str) -> bool:
+    """Check whether a name can be used as a JavaScript binding.
+
+    Returns:
+        Whether the name is a valid binding that does not conflict with generated code.
+    """
+    return (
+        var_name.replace("$", "_").isidentifier()
+        and var_name not in _JS_RESERVED_BINDINGS
+    )
+
 
 def _client_state_key(var_name: str) -> str:
     """Get the key of a ClientStateVar's slot in the global ``refs`` object.
@@ -129,12 +197,19 @@ class ClientStateVar(Var):
 
         Raises:
             ValueError: If the var_name is not a string.
+            ValueError: If the var_name is not a valid JavaScript identifier.
         """
         if var_name is None:
             var_name = get_unique_variable_name()
         id_name = "id_" + get_unique_variable_name()
         if not isinstance(var_name, str):
             msg = "var_name must be a string."
+            raise ValueError(msg)
+        if not _is_valid_client_state_var_name(var_name):
+            msg = (
+                "var_name must be a valid JavaScript identifier and must not shadow "
+                "reserved or Reflex bindings."
+            )
             raise ValueError(msg)
         if default is NoValue:
             default_var = Var(_js_expr="")
