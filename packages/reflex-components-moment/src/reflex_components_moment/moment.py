@@ -4,8 +4,14 @@ from __future__ import annotations
 
 import dataclasses
 import datetime
+from typing import Any
 
-from reflex_base.components.component import MemoizationLeaf, NoSSRComponent, field
+from reflex_base.components.component import (
+    Component,
+    MemoizationLeaf,
+    NoSSRComponent,
+    field,
+)
 from reflex_base.event import EventHandler, passthrough_event_spec
 from reflex_base.utils.imports import ImportDict, ImportVar
 from reflex_base.vars.base import LiteralVar, Var
@@ -26,11 +32,44 @@ class MomentDelta:
     milliseconds: int | None = dataclasses.field(default=None)
 
 
+class MomentProvider(Component):
+    """Provide shared defaults and timer pooling for descendant Moment components."""
+
+    tag: str | None = "MomentProvider"
+    library: str | None = "react-moment@2.0.2"
+    lib_dependencies: list[str] = ["moment@2.31.0"]
+
+    pool: Var[bool] = field(doc="Use one timer for all descendant Moment components.")
+    interval: Var[int] = field(doc="The interval in milliseconds for the pooled timer.")
+    moment: Var[Any] = field(
+        doc="The moment.js instance used by descendant components."
+    )
+    locale: Var[str] = field(doc="The default locale for descendant Moment components.")
+    local: Var[bool] = field(doc="Display descendant dates in local time by default.")
+    format: Var[str] = field(doc="The default date format for descendants.")
+    parse: Var[str | list[str]] = field(
+        doc="The default date parse format for descendants."
+    )
+    filters: Var[list[Var[Any]]] = field(
+        doc="JavaScript content filters applied to descendant Moment components."
+    )
+    renderers: Var[list[Var[Any]]] = field(
+        doc="JavaScript content renderers tried for descendant Moment components."
+    )
+    element: Var[str] = field(doc="The default HTML element for descendant components.")
+    timezone: Var[str] = field(doc="The default timezone for descendant components.")
+
+    def add_imports(self) -> ImportDict:
+        """Import the named provider export from react-moment."""
+        return {"react-moment@2.0.2": ImportVar(tag="MomentProvider")}
+
+
 class Moment(NoSSRComponent, MemoizationLeaf):
     """The Moment component."""
 
     tag: str | None = "Moment"
     is_default = True
+    _rename_props = {"from_": "from"}
     library: str | None = "react-moment@2.0.2"
     lib_dependencies: list[str] = ["moment@2.31.0"]
 
@@ -48,6 +87,40 @@ class Moment(NoSSRComponent, MemoizationLeaf):
 
     parse: Var[str | list[str]] = field(
         doc=" Use the parse attribute to tell moment how to parse the given date when non-standard. Accepts a single format string or a list of formats to try."
+    )
+
+    utc: Var[bool] = field(doc="Parses and displays the date in UTC.")
+
+    calendar: Var[bool | dict[str, str]] = field(
+        doc="Displays the date using Moment's calendar format, optionally with custom calendar strings."
+    )
+
+    from_: Var[
+        str | datetime.datetime | datetime.date | datetime.time | datetime.timedelta
+    ] = field(doc="Displays the interval from this date to the component's date.")
+
+    to: Var[
+        str | datetime.datetime | datetime.date | datetime.time | datetime.timedelta
+    ] = field(doc="Displays the interval from the component's date to this date.")
+
+    ago: Var[bool] = field(
+        doc='Omits the "ago" or "in" suffix from relative-time output.'
+    )
+
+    element: Var[str] = field(
+        doc="The HTML element used to render the formatted date (defaults to time)."
+    )
+
+    fallback: Var[str | int] = field(
+        doc="Content to render when the date input is invalid."
+    )
+
+    filters: Var[list[Var[Any]]] = field(
+        doc="JavaScript functions applied in order to the rendered content."
+    )
+
+    renderers: Var[list[Var[Any]]] = field(
+        doc="JavaScript renderer functions tried before the built-in output modes."
     )
 
     add: Var[MomentDelta] = field(
@@ -118,6 +191,31 @@ class Moment(NoSSRComponent, MemoizationLeaf):
     on_change: EventHandler[passthrough_event_spec(str)] = field(
         doc="Fires when the component mounts and when the date changes, including when interval is 0. React Strict Mode can invoke the mount event twice in development."
     )
+
+    @classmethod
+    def create(cls, *children, **props) -> Moment:
+        """Create a Moment component.
+
+        Args:
+            *children: The date value to render.
+            **props: The props passed to the component.
+
+        Returns:
+            The Moment component.
+
+        Raises:
+            TypeError: If a removed or unsupported configuration prop is used.
+        """
+        if "filter" in props:
+            msg = "The `filter` prop was removed in react-moment 2.x; use `filters` instead."
+            raise TypeError(msg)
+        if "form_at" in props:
+            msg = "`form_at` is not a react-moment prop; use `format` to format the date or `from_` to show a relative interval."
+            raise TypeError(msg)
+        if "settings" in props:
+            msg = "`settings` is not a react-moment 2.x prop; use rx.moment_provider(...) with shared defaults or set props on each Moment."
+            raise TypeError(msg)
+        return super().create(*children, **props)
 
     def add_imports(self) -> ImportDict:
         """Add the imports for the Moment component.
