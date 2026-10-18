@@ -526,7 +526,17 @@ class DataEditor(NoSSRComponent):
 
             props["rows"] = data.length() if isinstance(data, ArrayVar) else len(data)
 
-        if not isinstance(columns, Var) and len(columns):
+        if isinstance(columns, Var):
+            # Reactive columns skip the literal formatting above, so apply the
+            # documented default column type when rendering (#7596). An
+            # explicit per-column type still wins via the spread order.
+            props["columns"] = columns._replace(
+                _js_expr=(
+                    f'({columns!s}).map((col) => ({{ type: "str", '
+                    f'id: (col.title ?? "").toLowerCase(), ...col }}))'
+                )
+            )
+        elif len(columns):
             if types.is_dataframe(type(data)) or (
                 isinstance(data, Var) and types.is_dataframe(data._var_type)
             ):
