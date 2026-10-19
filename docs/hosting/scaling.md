@@ -165,13 +165,11 @@ class ReportState(rx.State):
             generation = self._generation
             if not identity[0]:
                 return
-            if submit and not self._request_key:
-                self._request_key = uuid4().hex
             request_key, job_id = self._request_key, self.job_id
 
         job, error = None, ""
         try:
-            if submit:
+            if submit and request_key:
                 job = await accept_report(identity[0], request_key, "monthly-sales")
             else:
                 job = await read_report(identity[0], job_id, request_key)
@@ -190,6 +188,8 @@ class ReportState(rx.State):
                 self.status = job.status if job else ""
                 if job:
                     self._request_key = job.request_key
+                elif submit and not request_key:
+                    self.error = "Choose New report to start a report."
 
 
 def report_panel():
@@ -202,7 +202,7 @@ def report_panel():
     )
 ```
 
-Retries within the same authenticated session keep the request key; **New report** deliberately creates a new logical request and key. Run `ReportState.sync_report` on page load and after authentication changes to recover from durable records before deliberately submitting a new request. A key held only in lost session state cannot deduplicate a new key. For multiple outstanding jobs, provide an authorized list/selection view instead of a latest-job lookup.
+Choose **New report**, then **Submit / retry** to start a report. Only **New report** creates a new request key. Without a selected key, **Submit / retry** only recovers an existing job; if none exists, it prompts you to choose **New report**. Recovered jobs keep their original key for retries. Run `ReportState.sync_report` on page load and after authentication changes to recover from durable records. A key held only in lost session state cannot deduplicate a new key. For multiple outstanding jobs, provide an authorized list/selection view instead of a latest-job lookup.
 
 These adapters and the worker must implement the lifecycle above; a background event alone does not make the job durable.
 

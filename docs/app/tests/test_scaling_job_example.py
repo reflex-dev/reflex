@@ -16,6 +16,7 @@ from reflex.compiler.compiler import compile_page
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import StateProxy
+from reflex.istate.shared import SharedState, SharedStateBaseInternal
 from reflex_base.event.context import EventContext
 from reflex_base.registry import RegistrationContext
 
@@ -97,7 +98,10 @@ def example(monkeypatch):
     blocks = re.findall(r"^```python\n(.*?)^```", source, re.MULTILINE | re.DOTALL)
     matches = [block for block in blocks if "class ReportState(rx.State):" in block]
     assert len(matches) == 1
-    with RegistrationContext(_config=rx.Config(app_name="scaling_example_test")):
+    with RegistrationContext.get().fork() as context:
+        context._set_config(rx.Config(app_name="scaling_example_test"))
+        if SharedStateBaseInternal.get_full_name() not in context.base_states:
+            RegistrationContext.register_base_state(SharedStateBaseInternal)
         auth = ModuleType("report_app.auth")
         monkeypatch.setitem(sys.modules, auth.__name__, auth)
         exec(
@@ -150,13 +154,95 @@ async def session(example, owner="alice"):
         await manager.close()
 
 
+async def start_report(example, state):
+    """Follow the explicit New report, then Submit UI flow."""
+    async with state:
+        await example.module.ReportState.new_report.fn(state)
+    await example.module.ReportState.sync_report.fn(state, True)
+
+
+@run_async
+async def test_session_survives_shared_state_in_another_context(example):
+    """A prior shared-state demo must not break this isolated app's state locks."""
+    with RegistrationContext.get().fork():
+
+        class PriorSharedState(SharedState):
+            """Model a shared-state demo evaluated in a separate app context."""
+
+            value: int = 0
+
+    async with session(example) as state:
+        await start_report(example, state)
+        assert state.job_id and state.status == "queued"
+
+
+@run_async
+@pytest.mark.parametrize("next_owner", ["alice", "bob"])
+@pytest.mark.parametrize("lost_response", [False, True])
+async def test_direct_submit_after_login_recovers_without_accepting_a_new_job(
+    example, next_owner, lost_response
+):
+    """Submit after an authentication change recovers even a lost acceptance."""
+    async with session(example) as state:
+        example.service.lose_response = lost_response
+        await start_report(example, state)
+        expected = example.service.jobs[("alice", state._request_key)]
+        if next_owner == "bob":
+            async with session(example, "bob") as other:
+                await start_report(example, other)
+                expected = example.service.jobs[("bob", other._request_key)]
+        example.service.lose_response = False
+        before = len(example.service.outbox)
+        async with state:
+            auth = await state.get_state(example.auth)
+            auth._owner_id = next_owner
+            auth._session_revision += 2
+            state.job_id = state.status = state.error = ""
+        await example.module.ReportState.sync_report.fn(state, True)
+        assert example.service.calls[-1] == ("read", next_owner, "", "")
+        assert (
+            state.job_id == expected.id and state._request_key == expected.request_key
+        )
+        assert len(example.service.jobs) == len(example.service.outbox) == before
+        await example.module.ReportState.sync_report.fn(state, True)
+        assert len(example.service.jobs) == len(example.service.outbox) == before
+
+
+@run_async
+@pytest.mark.parametrize("existing_report", [False, True])
+async def test_fresh_state_submit_requires_explicit_new_or_recovers_existing(
+    example, existing_report
+):
+    """Without a selected key, Submit never starts an unrequested new report."""
+    expected = None
+    if existing_report:
+        async with session(example) as previous:
+            await start_report(example, previous)
+            expected = example.service.jobs[("alice", previous._request_key)]
+    before = len(example.service.outbox)
+    async with session(example) as state:
+        await example.module.ReportState.sync_report.fn(state, True)
+        assert example.service.calls[-1] == ("read", "alice", "", "")
+        assert len(example.service.jobs) == len(example.service.outbox) == before
+        if expected:
+            assert state.job_id == expected.id
+            assert state._request_key == expected.request_key and not state.error
+        else:
+            assert not state.job_id and not state._request_key
+            assert state.error == "Choose New report to start a report."
+        await example.module.ReportState.sync_report.fn(state, True)
+        assert len(example.service.jobs) == len(example.service.outbox) == before
+        await start_report(example, state)
+        assert len(example.service.jobs) == len(example.service.outbox) == before + 1
+
+
 @run_async
 @pytest.mark.parametrize("lost_response", [False, True])
 async def test_retries_reuse_the_request_key_and_committed_job(example, lost_response):
     """A repeated submission, including lost acknowledgement, keeps one job."""
     async with session(example) as state:
         example.service.lose_response = lost_response
-        await example.module.ReportState.sync_report.fn(state, True)
+        await start_report(example, state)
         request_key = state._request_key
         example.service.lose_response = False
         await example.module.ReportState.sync_report.fn(state, True)
@@ -175,7 +261,7 @@ async def test_failed_accept_does_not_claim_an_accepted_job(example):
     """A failed acceptance leaves a retryable key without a job ID/status."""
     example.service.fail_accept = True
     async with session(example) as state:
-        await example.module.ReportState.sync_report.fn(state, True)
+        await start_report(example, state)
         assert state._request_key and state.error
         assert not state.job_id and not state.status
         assert not example.service.jobs and not example.service.outbox
@@ -185,7 +271,7 @@ async def test_failed_accept_does_not_claim_an_accepted_job(example):
 async def test_status_read_uses_owner_and_selected_job_id(example):
     """Possessing another owner's job ID does not return its status."""
     async with session(example) as alice:
-        await example.module.ReportState.sync_report.fn(alice, True)
+        await start_report(example, alice)
         job_id = alice.job_id
         await example.module.ReportState.sync_report.fn(alice)
         assert example.service.calls[-1] == (
@@ -211,6 +297,8 @@ async def test_stale_service_response_does_not_update_the_ui(
 ):
     """Responses cannot overwrite a changed authentication or selection."""
     async with session(example) as state:
+        async with state:
+            await example.module.ReportState.new_report.fn(state)
         if operation == "read":
             await example.module.ReportState.sync_report.fn(state, True)
         example.service.pause = "accept" if operation == "submit" else "read"
@@ -235,7 +323,7 @@ async def test_stale_service_response_does_not_update_the_ui(
 async def test_fresh_state_recovers_job_and_retry_key(example):
     """A new session uses an authorized durable lookup, not old UI state."""
     async with session(example) as original:
-        await example.module.ReportState.sync_report.fn(original, True)
+        await start_report(example, original)
         job_id, request_key = original.job_id, original._request_key
     async with session(example) as fresh:
         assert not fresh.job_id and not fresh._request_key
@@ -254,9 +342,9 @@ async def test_authentication_change_recovers_without_previous_session_selectors
 ):
     """An account switch or relogin cannot reuse the old report selection."""
     async with session(example) as state:
-        await example.module.ReportState.sync_report.fn(state, True)
+        await start_report(example, state)
         async with session(example, next_owner) as other:
-            await example.module.ReportState.sync_report.fn(other, True)
+            await start_report(example, other)
             latest_id, latest_key = other.job_id, other._request_key
         async with state:
             auth = await state.get_state(example.auth)
@@ -284,11 +372,11 @@ async def test_authentication_change_recovers_without_previous_session_selectors
 async def test_new_report_binds_identity_before_first_refresh(example, account_change):
     """An explicit new selection survives initial or post-login recovery."""
     async with session(example, "bob") as previous:
-        await example.module.ReportState.sync_report.fn(previous, True)
+        await start_report(example, previous)
         older_id = previous.job_id
     async with session(example, "alice" if account_change else "bob") as state:
         if account_change:
-            await example.module.ReportState.sync_report.fn(state, True)
+            await start_report(example, state)
         async with state:
             if account_change:
                 auth = await state.get_state(example.auth)
@@ -307,7 +395,7 @@ async def test_new_report_binds_identity_before_first_refresh(example, account_c
 async def test_logout_clears_selection_without_calling_job_services(example):
     """Signed-out refresh removes private selectors as well as visible fields."""
     async with session(example) as state:
-        await example.module.ReportState.sync_report.fn(state, True)
+        await start_report(example, state)
         calls = len(example.service.calls)
         async with state:
             auth = await state.get_state(example.auth)
@@ -327,7 +415,7 @@ async def test_refresh_does_not_replace_a_new_request_with_an_older_job(
 ):
     """Refresh keeps a new request's key even before its acceptance returns."""
     async with session(example) as state:
-        await example.module.ReportState.sync_report.fn(state, True)
+        await start_report(example, state)
         old_job = state.job_id
         async with state:
             await example.module.ReportState.new_report.fn(state)
