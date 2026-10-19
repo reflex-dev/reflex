@@ -1,6 +1,7 @@
 """Browser regressions for imported docs features; set REFLEX_DOCS_PREVIEW_URL."""
 
 import os
+import re
 from urllib.parse import quote
 
 import pytest
@@ -14,14 +15,15 @@ pytestmark = pytest.mark.skipif(
 
 @pytest.mark.parametrize("width", [390, 768, 1440])
 def test_docs_reading_typography_is_consistent(page: Page, width: int):
-    """Prose, inline links, and reference headings share the reading styles."""
+    """Editorial type is consistent without overriding live-example headings."""
     page.set_viewport_size({"width": width, "height": 1000})
     page.goto(f"{PREVIEW_URL}/docs/getting-started/introduction/")
     paragraph = (
         page.locator("p").filter(has_text="State holds the app's mutable data").first
     )
-    expect(paragraph).to_have_css("font-weight", "450")
-    expect(paragraph).to_have_css("color", "rgb(24, 24, 24)")
+    expect(paragraph).to_have_css("font-family", re.compile(r"^Inter(?:,|$)"))
+    expect(paragraph).to_have_css("font-weight", "400")
+    expect(paragraph).to_have_css("color", "rgb(0, 0, 0)")
     link = paragraph.locator("a").first
     for property_name in ("font-size", "font-weight", "line-height", "letter-spacing"):
         expected = link.evaluate(
@@ -29,10 +31,18 @@ def test_docs_reading_typography_is_consistent(page: Page, width: int):
             property_name,
         )
         expect(link).to_have_css(property_name, expected)
-    heading_size = "32px" if width >= 1024 else "24px"
-    expect(page.get_by_role("heading", name="Goals", exact=True)).to_have_css(
-        "font-size", heading_size
+    heading_size = "30px" if width >= 640 else "26px"
+    heading = page.get_by_role("heading", name="Goals", exact=True)
+    expect(heading).to_have_css("font-size", heading_size)
+    expect(heading).to_have_css("font-family", re.compile(r"^Geist(?:,|$)"))
+    expect(heading).to_have_css("font-weight", "400")
+    live_heading = (
+        page
+        .get_by_role("button", name="Increment", exact=True)
+        .locator("..")
+        .get_by_role("heading")
     )
+    expect(live_heading).to_have_css("font-weight", "700")
     page.goto(f"{PREVIEW_URL}/docs/api-reference/app/")
     expect(page.get_by_role("heading", name="Fields", exact=True)).to_have_css(
         "font-size", heading_size
@@ -40,20 +50,20 @@ def test_docs_reading_typography_is_consistent(page: Page, width: int):
 
 
 def test_sidebar_labels_match_reading_text_color(page: Page):
-    """Navigation labels share the body foreground while section captions recede."""
+    """Section labels use foreground while inactive links and captions recede."""
     page.set_viewport_size({"width": 1440, "height": 1000})
     page.goto(f"{PREVIEW_URL}/docs/getting-started/introduction/")
     expect(
         page.get_by_role("link", name="Navigate to Components").locator("h3")
-    ).to_have_css("color", "rgb(24, 24, 24)")
+    ).to_have_css("color", "rgb(0, 0, 0)")
     expect(page.locator("summary").filter(has_text="Getting Started")).to_have_css(
-        "color", "rgb(24, 24, 24)"
+        "color", "rgb(0, 0, 0)"
     )
     expect(
         page.get_by_role("link", name="Installation", exact=True).locator("p")
-    ).to_have_css("color", "rgb(24, 24, 24)")
+    ).to_have_css("color", "rgb(105, 100, 94)")
     expect(page.get_by_role("heading", name="Onboarding", exact=True)).to_have_css(
-        "color", "rgb(89, 89, 89)"
+        "color", "rgb(105, 100, 94)"
     )
 
 
@@ -247,7 +257,7 @@ def test_single_page_sidebar_links_keep_neutral_hover_color(page: Page):
     for label in ("Databases", "Webhooks", "Files"):
         link = sidebar.get_by_role("link", name=label, exact=True)
         link.hover()
-        expect(link.locator("p")).to_have_css("color", "rgb(24, 24, 24)")
+        expect(link.locator("p")).to_have_css("color", "rgb(0, 0, 0)")
 
 
 @pytest.mark.parametrize("width", [390, 1440])
@@ -262,15 +272,15 @@ def test_single_page_sidebar_link_has_selected_background(page: Page, width: int
         sidebar = page.locator("#sidebar-container")
     selected = sidebar.get_by_role("link", name="Webhooks", exact=True)
     expect(selected).to_have_attribute("aria-current", "page")
-    expect(selected).to_have_css("background-color", "rgb(246, 246, 246)")
-    expect(selected.locator("p")).to_have_css("color", "rgb(24, 24, 24)")
+    expect(selected).to_have_css("background-color", "rgb(245, 243, 241)")
+    expect(selected.locator("p")).to_have_css("color", "rgb(0, 0, 0)")
     inactive = sidebar.get_by_role("link", name="Files", exact=True)
     expect(inactive).to_have_css("background-color", "rgba(0, 0, 0, 0)")
     inactive.click()
     if width < 1024:
         page.get_by_role("button", name="Open documentation navigation").click()
     expect(sidebar.get_by_role("link", name="Files", exact=True)).to_have_css(
-        "background-color", "rgb(246, 246, 246)"
+        "background-color", "rgb(245, 243, 241)"
     )
     expect(sidebar.get_by_role("link", name="Webhooks", exact=True)).to_have_css(
         "background-color", "rgba(0, 0, 0, 0)"

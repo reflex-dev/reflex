@@ -13,7 +13,16 @@ from collections.abc import Callable, Sequence
 from importlib import import_module
 from importlib.util import find_spec
 from types import MethodType
-from typing import TYPE_CHECKING, Any, Literal, NoReturn, SupportsIndex, TypeVar, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Literal,
+    NoReturn,
+    Self,
+    SupportsIndex,
+    TypeVar,
+    cast,
+)
 
 import wrapt
 from reflex_base import constants
@@ -31,7 +40,6 @@ from reflex_base.utils.types import (
     is_mutable_type,
 )
 from reflex_base.vars.base import Field
-from typing_extensions import Self
 
 from reflex.istate.manager.token import BaseStateToken
 
@@ -264,6 +272,16 @@ class StateProxy(wrapt.ObjectProxy):
             super().__setattr__(
                 "__wrapped__", mutable_state.get_substate(self._self_substate_path)
             )
+            from reflex.state import State
+
+            if type(mutable_state) is State and not mutable_state.router_data:
+                # The tree expired while the lock was released: rehydrate it, so
+                # the client drops stale values. The task's route may be a page
+                # the client left, so the tree stays routeless and the client's
+                # next event loads its current page.
+                from reflex_base.event.processor import BaseStateEventProcessor
+
+                await BaseStateEventProcessor._rehydrate(mutable_state)
         except (Exception, asyncio.CancelledError):
             # Restore the proxy to a consistent state since __aexit__ will not be called when __aenter__ raises.
             await self.__aexit__(*sys.exc_info())

@@ -326,7 +326,11 @@ def _compile_client_storage_field(
         if isinstance(field.default, field_type):
             cs_obj = field.default
         elif isinstance(field.type_, type) and issubclass(field.type_, field_type):
-            cs_obj = field.type_()
+            # A factory-backed field carries its options in what it produces.
+            produced = (
+                field.default_factory() if field.default_factory is not None else None
+            )
+            cs_obj = produced if isinstance(produced, field_type) else field.type_()
         else:
             continue
         return field_type, cs_obj.options()
@@ -524,7 +528,7 @@ def compile_experimental_component_memo(
             )
             render._imports_cache = analysis.imports
         # Strings returned by the root's ``add_hooks`` can reference symbols
-        # (``refs``, ``StateContexts``, etc.) that normally reach this module
+        # (``refs``, ``EventLoopContext``, etc.) that normally reach this module
         # through descendants' ``_get_hooks_imports`` / ``_get_imports``. JS
         # imports are side-effect-free and dedup cleanly, so pulling the
         # whole subtree's imports here is safe even when some go unused.
