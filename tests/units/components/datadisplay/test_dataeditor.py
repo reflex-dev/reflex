@@ -219,7 +219,7 @@ def test_dataeditor_literal_columns_reject_dataframe():
 def test_dataeditor_get_cell_content_is_not_configurable(caplog):
     editor = _create(get_cell_content="mine")
 
-    assert str(_set_prop(editor, "get_cell_content")) != "mine"
+    assert re.fullmatch(r"getData_\w+", str(_set_prop(editor, "get_cell_content")))
     assert "get_cell_content is not user configurable" in caplog.text
 
 
@@ -294,11 +294,21 @@ def test_dataeditor_reactive_columns():
     assert _react_imports(editor) == {"useMemo", "useCallback"}
 
 
+def test_dataeditor_hooks_depend_on_vars_inside_literals():
+    """A memo prop or loop var inside a literal has no var data but can change."""
+    value = Var(_js_expr="value")
+
+    editor = _create(columns=["Name"], data=[[value]])
+
+    (hook,) = [hook for hook in _hooks(editor) if "useCallback" in hook]
+    assert hook.endswith(", [value])")
+
+
 def test_dataeditor_hooks_depend_on_the_vars_behind_derived_props():
     """Derived columns and data render to a fresh value on every evaluation.
 
-    The hooks depend on the state vars they are built from instead, and not on
-    the predicate, which is a constant.
+    The hooks depend on the state vars they read instead, and not on the
+    predicate, which reads nothing but its parameter.
     """
 
     class TableState(BaseState):
@@ -309,7 +319,7 @@ def test_dataeditor_hooks_depend_on_the_vars_behind_derived_props():
         columns=cast(ArrayVar, TableState.columns).filter(
             lambda col: col["title"].to(str).startswith("r")
         ),
-        data=cast(ArrayVar, TableState.data).filter(lambda row: row[0] != "0"),
+        data=cast(ArrayVar, TableState.data)[1:],
     )
     columns = _prop(editor, "columns")
 

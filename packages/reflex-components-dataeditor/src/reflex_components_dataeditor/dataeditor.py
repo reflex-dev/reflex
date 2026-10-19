@@ -16,7 +16,7 @@ from reflex_base.utils.imports import ImportDict, ImportVar
 from reflex_base.utils.serializers import serializer
 from reflex_base.vars import get_leaf_vars, get_unique_variable_name
 from reflex_base.vars.base import LiteralVar, Var, VarData
-from reflex_base.vars.function import FunctionStringVar, FunctionVar
+from reflex_base.vars.function import FunctionStringVar
 from reflex_base.vars.sequence import ArrayVar
 
 logger = logging.getLogger(__name__)
@@ -214,10 +214,9 @@ def _hook_deps(*hook_vars: Var) -> str:
     """Render the dependency array of a React hook closing over the given vars.
 
     A derived var such as ``state.columns.filter(...)`` renders to a fresh value
-    on every evaluation, so each var is taken apart into the leaf vars it is
-    built from. A literal or function carrying no var data is a constant
-    expression and is left out: listing it would hand the hook a fresh
-    dependency on every render.
+    on every evaluation, so the array lists the vars each one reads instead: the
+    state fields, loop vars and memo props behind it, down to those inside a
+    literal or a predicate, and none of the constants.
 
     Args:
         *hook_vars: The vars the hook reads.
@@ -225,15 +224,7 @@ def _hook_deps(*hook_vars: Var) -> str:
     Returns:
         The dependency array as JavaScript.
     """
-    deps = {
-        str(dep): None
-        for var in hook_vars
-        for dep in get_leaf_vars(var)
-        if not (
-            isinstance(dep, (LiteralVar, FunctionVar))
-            and dep._get_all_var_data() is None
-        )
-    }
+    deps = {str(dep): None for var in hook_vars for dep in get_leaf_vars(var)}
     return f"[{', '.join(deps)}]"
 
 
