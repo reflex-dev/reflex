@@ -138,6 +138,23 @@ def test_get_router_splat_catchall(path: str, expected: str | None):
 @pytest.mark.parametrize(
     ("path", "expected"),
     [
+        ("/About", "about"),
+        ("/ABOUT/", "about"),
+        ("/Posts/42", "posts/[id]"),
+        ("/team", "Team"),
+        ("/", "index"),
+    ],
+)
+def test_get_router_ignores_case(path: str, expected: str):
+    # React Router renders a page for any casing of its path, so the backend
+    # must resolve the same route to run its on_load events.
+    router = get_router(["index", "about", "posts/[id]", "Team"])
+    assert router(path) == expected
+
+
+@pytest.mark.parametrize(
+    ("path", "expected"),
+    [
         ("/apple", "apple"),
         ("/app", "app"),
         ("/", "index"),
