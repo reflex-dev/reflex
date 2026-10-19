@@ -43,6 +43,7 @@ from typing import (
 from typing_extensions import dataclass_transform, override
 
 from reflex_base import constants
+from reflex_base.constants.colors import Color
 from reflex_base.constants.compiler import Hooks
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import _on_env_var_set, environment
@@ -85,7 +86,6 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from reflex.state import BaseState
     from reflex_base.components.component import BaseComponent
-    from reflex_base.constants.colors import Color
 
     from .color import LiteralColorVar
     from .number import BooleanVar, LiteralBooleanVar, LiteralNumberVar, NumberVar
@@ -3556,46 +3556,64 @@ class CustomVarOperation(CachedVarOperation, Var[T]):
         )
 
 
-_CONSTANT_TYPES = (str, int, float, bool, type(None))
+# Literal values that render to the same constant on every evaluation.
+_CONSTANT_TYPES = (
+    str,
+    int,
+    float,
+    bool,
+    type(None),
+    range,
+    datetime.date,
+    datetime.time,
+    datetime.timedelta,
+)
+
+# The fields every var has; an operation's operands are in the others.
+_VAR_FIELDS = frozenset(field.name for field in dataclasses.fields(Var))
 
 
-def _vars_in(value: Any) -> Iterator[Var]:
-    """Yield the vars a value holds, alone or inside tuples, lists and mappings.
+def _items_in(value: Any) -> Iterator[Any]:
+    """Yield the items a value holds, flattening tuples, lists and mappings.
 
     Args:
         value: The value to look into.
 
     Yields:
-        Each var in the value, in order.
+        Each item, a var or a raw value, in order.
     """
-    if isinstance(value, Var):
-        yield value
-    elif isinstance(value, (tuple, list)):
+    if isinstance(value, (tuple, list)):
         for item in value:
-            yield from _vars_in(item)
+            yield from _items_in(item)
     elif isinstance(value, Mapping):
         for key, item in value.items():
-            yield from _vars_in(key)
-            yield from _vars_in(item)
+            yield from _items_in(key)
+            yield from _items_in(item)
+    else:
+        yield value
 
 
-def _operands(var: Var) -> list[Var] | None:
-    """Get the vars a var reads, or None when it is a leaf.
+def _operands(var: Var) -> list[Any] | None:
+    """Get the values a var reads, or None when it is a leaf.
 
     A cast reads the var it wraps and a ``CustomVarOperation`` its operands. A
-    literal container reads the vars it holds and a scalar literal nothing;
-    any other literal value, an event, a color or a component, stays whole. So
-    does a state field access, since its field is no expression on its own,
-    and a function, whose body ``get_leaf_vars`` reads minus its parameters.
-    Every other cached operation keeps the vars it reads in its fields, alone
-    or in a tuple: an array slice, an object item, a string concatenation, a
-    function call.
+    literal container reads what it holds, a color its parts, a scalar nothing;
+    any other literal value, an event or a component, stays whole as a leaf,
+    since what it reads is not known. So does a state field access, since its
+    field is no expression on its own, and a function, whose body
+    ``get_leaf_vars`` reads minus its parameters. Every other cached operation
+    reads what its own fields hold: an array slice, an object item, a string
+    concatenation, a function call.
+
+    The values come back as they are stored. A raw one, such as the arguments
+    of a call or the items of a container, is rendered through
+    ``LiteralVar.create``, which the caller mirrors to see what it reads.
 
     Args:
         var: The var to look into.
 
     Returns:
-        The vars read, in order, or None for a leaf.
+        The values read, vars or raw, in order; None for a leaf.
     """
     # function.py imports this module.
     from reflex_base.vars.function import FunctionVar
@@ -3606,17 +3624,20 @@ def _operands(var: Var) -> list[Var] | None:
         return [arg for _, arg in var._args]
     if isinstance(var, LiteralVar):
         value = var._var_value
+        if isinstance(value, Color):
+            return [value.color, value.shade, value.alpha]
         if isinstance(value, (tuple, list, Mapping)):
-            return list(_vars_in(value))
+            return list(_items_in(value))
         return [] if isinstance(value, _CONSTANT_TYPES) else None
     if isinstance(var, (FunctionVar, StateOperation)) or not isinstance(
         var, CachedVarOperation
     ):
         return None
     return [
-        operand
+        item
         for field in dataclasses.fields(var)
-        for operand in _vars_in(getattr(var, field.name))
+        if field.name not in _VAR_FIELDS
+        for item in _items_in(getattr(var, field.name))
     ]
 
 
@@ -3647,10 +3668,12 @@ def get_leaf_vars(var: Var) -> Sequence[Var]:
     renders to a fresh value every time it is evaluated, so a React hook reading
     one has to depend on the vars it reads instead. This unwraps an operation
     into its operands, a cast into the var it wraps and a literal container into
-    the vars it holds, recursively; a plain literal is a constant and yields
-    nothing. A function yields what its body reads other than its own
-    parameters, so a predicate closing over nothing yields nothing and one
-    closing over a loop var yields that var.
+    the vars it holds, recursively, converting a raw value the way the renderer
+    does; a plain literal is a constant and yields nothing. A function yields
+    what its body reads other than its own parameters, so a predicate closing
+    over nothing yields nothing and one closing over a loop var yields that var.
+    A body holding a literal that cannot be taken apart may read the parameters
+    inside it, so such a function stays whole.
 
     Args:
         var: The var to take apart.
@@ -3674,8 +3697,12 @@ def get_leaf_vars(var: Var) -> Sequence[Var]:
             and not isinstance(current, LiteralVar)
             and isinstance(current._return_expr, Var)
         ):
+            body_leaves = get_leaf_vars(current._return_expr)
+            if any(isinstance(leaf, LiteralVar) for leaf in body_leaves):
+                leaves.setdefault(current._hash_key(), current)
+                continue
             parameters = _parameter_names(current._args)
-            for leaf in get_leaf_vars(current._return_expr):
+            for leaf in body_leaves:
                 if leaf._js_expr not in parameters:
                     leaves.setdefault(leaf._hash_key(), leaf)
             continue
@@ -3683,7 +3710,7 @@ def get_leaf_vars(var: Var) -> Sequence[Var]:
         if operands is None:
             leaves.setdefault(current._hash_key(), current)
         else:
-            stack.extend(reversed(operands))
+            stack.extend(LiteralVar.create(operand) for operand in reversed(operands))
     return list(leaves.values())
 
 

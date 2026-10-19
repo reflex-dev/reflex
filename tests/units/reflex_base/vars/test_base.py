@@ -64,6 +64,7 @@ from reflex_base.vars.function import (
     ArgsFunctionOperation,
     ArgsFunctionOperationBuilder,
     FunctionStringVar,
+    FunctionVar,
     VarOperationCall,
 )
 from reflex_base.vars.number import NumberVar
@@ -78,6 +79,7 @@ from reflex_base.vars.sequence import (
 )
 from typing_extensions import TypeAliasType, TypeVarTuple
 
+import reflex as rx
 from reflex.istate.proxy import MutableProxy
 from reflex.state import BaseState, State, _override_base_method
 
@@ -2230,23 +2232,31 @@ def test_get_leaf_vars_returns_a_leaf_alone() -> None:
 
 
 def test_get_leaf_vars_dissolves_literals() -> None:
-    """A scalar literal reads nothing and a container the vars it holds.
+    """A constant literal reads nothing; a container or a color what it holds.
 
-    Any other literal value stays whole, since what it reads is not known.
+    A raw item is converted the way the renderer does, so an f-string with a
+    var inside a list still reads that var. Any other literal value stays
+    whole, since what it reads is not known.
     """
     a = Var(_js_expr="state.a")
     b = Var(_js_expr="state.b")
 
     assert _js(get_leaf_vars(LiteralVar.create(1))) == []
     assert _js(get_leaf_vars(LiteralVar.create("text"))) == []
+    assert _js(get_leaf_vars(LiteralVar.create(range(3)))) == []
+    assert _js(get_leaf_vars(LiteralVar.create(datetime.datetime(2020, 1, 1)))) == []
     assert _js(get_leaf_vars(LiteralVar.create([1, a, [b]]))) == ["state.a", "state.b"]
     assert _js(get_leaf_vars(LiteralVar.create({"k": a, b: 2}))) == [
         "state.a",
         "state.b",
     ]
-    color = LiteralVar.create(Color("red", shade=b.to(int)))
-    (same,) = get_leaf_vars(color)
-    assert same is color
+    assert _js(get_leaf_vars(LiteralVar.create([f"{a}-x"]))) == ["state.a"]
+    assert _js(get_leaf_vars(LiteralVar.create(Color("red", shade=b.to(int))))) == [
+        "state.b"
+    ]
+    event = LiteralVar.create(rx.console_log(a))
+    (same,) = get_leaf_vars(event)
+    assert same is event
 
 
 def test_get_leaf_vars_unwraps_operations_and_casts() -> None:
@@ -2274,8 +2284,29 @@ def test_get_leaf_vars_reads_through_a_function_body() -> None:
     rest = Var(_js_expr="rest").to(list[str])
     spread = ArgsFunctionOperation.create((), rest[0] + outer, rest="rest")
     assert _js(get_leaf_vars(spread)) == ["outer"]
+    colored = items.map(lambda item: Color(outer, shade=item.to(int)))
+    assert _js(get_leaf_vars(colored)) == ["state.items", "outer"]
     # A named function is a leaf.
     assert _js(get_leaf_vars(FunctionStringVar.create("fn"))) == ["fn"]
+
+
+def test_get_leaf_vars_keeps_a_function_with_an_opaque_body_whole() -> None:
+    """A literal kept whole may read the parameters; the function stays whole."""
+    items = Var(_js_expr="state.items").to(list[str])
+
+    array, function = get_leaf_vars(items.map(lambda item: rx.console_log(item)))
+
+    assert str(array) == "state.items"
+    assert isinstance(function, FunctionVar)
+
+
+def test_get_leaf_vars_converts_raw_operands() -> None:
+    """A raw operand is rendered through LiteralVar.create, so it is read that way."""
+    a = Var(_js_expr="state.a")
+    n = Var(_js_expr="state.n").to(int)
+
+    call = FunctionStringVar.create("fn").call(Color("red", shade=n), [a, 1], f"{a}")
+    assert _js(get_leaf_vars(call)) == ["fn", "state.n", "state.a"]
 
 
 def test_get_leaf_vars_unwraps_operations_with_their_own_fields() -> None:
@@ -2297,7 +2328,7 @@ def test_get_leaf_vars_sorts_every_cached_operation() -> None:
     """Each cached operation is sorted on purpose.
 
     A new operation class has to be added here after deciding whether every
-    var it holds in a field is one it reads, so the generic unwrapping applies,
+    value it holds in a field is one it reads, so the generic unwrapping applies,
     or whether it needs its own branch or is a leaf.
     """
 
@@ -2318,16 +2349,16 @@ def test_get_leaf_vars_sorts_every_cached_operation() -> None:
         ObjectItemOperation,
         ConcatVarOperation,
         VarOperationCall,
-        # Literal containers read the vars they hold.
+        # Literals read what their value holds, or nothing for a constant.
         LiteralArrayVar,
         LiteralObjectVar,
+        LiteralColorVar,
+        LiteralRangeVar,
         # Functions read their body minus their parameters.
         ArgsFunctionOperation,
         ArgsFunctionOperationBuilder,
         # Leaves: a state field access, and literals of other values.
         StateOperation,
-        LiteralColorVar,
-        LiteralRangeVar,
         LiteralComponentVar,
         LiteralEventVar,
         LiteralEventChainVar,
