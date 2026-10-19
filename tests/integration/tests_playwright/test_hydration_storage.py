@@ -20,7 +20,22 @@ def HydrationStorageApp():
         local: str = rx.LocalStorage("local-default", name="hydrate-local")
         session: str = rx.SessionStorage("session-default", name="hydrate-session")
         cookie: str = rx.Cookie("cookie-default", name="hydrate-cookie")
+        annotated_local: rx.Field[rx.LocalStorage] = rx.field(
+            rx.LocalStorage("light", name="hydrate-annotated-local", sync=True)
+        )
+        annotated_session: rx.SessionStorage | None = rx.SessionStorage(
+            "light", name="hydrate-annotated-session"
+        )
+        annotated_cookie: rx.Cookie = rx.Cookie(
+            "light", name="hydrate-annotated-cookie"
+        )
         nonce: rx.Field[str] = rx.field(default_factory=lambda: uuid.uuid4().hex)
+
+        @rx.event
+        def change_annotated(self):
+            """Assign plain strings to storage-annotated vars."""
+            for name in ("annotated_local", "annotated_session", "annotated_cookie"):
+                setattr(self, name, "changed")
 
         @rx.var
         def checked(self) -> str:
@@ -188,6 +203,19 @@ def HydrationStorageApp():
         """
         return rx.box(
             rx.text(StorageState.checked, id="checked"),
+            rx.text(
+                StorageState.annotated_local,
+                "|",
+                StorageState.annotated_session,
+                "|",
+                StorageState.annotated_cookie,
+                id="annotated",
+            ),
+            rx.button(
+                "Change annotated",
+                on_click=StorageState.change_annotated,
+                id="change-annotated",
+            ),
             rx.text(rx.cond(rx.State.is_hydrated, "true", "false"), id="hydrated"),
             rx.text(ReconcileState.token_hash, id="token-hash"),
         )
@@ -295,6 +323,39 @@ def test_hydration_reconciles_storage_in_get_delta(
     expect(page.locator("#hydrated")).to_have_text("true")
     expect(page.locator("#token-hash")).to_have_text("fresh")
     page.wait_for_function("localStorage.getItem('hydrate-token-hash') === 'fresh'")
+
+
+def test_storage_annotations_hydrate_and_persist(
+    hydration_storage_app: AppHarness, page: Page
+):
+    """Storage-annotated vars accept browser strings without logging type errors.
+
+    Args:
+        hydration_storage_app: The running app.
+        page: A fresh browser page.
+    """
+    assert hydration_storage_app.frontend_url is not None
+    page.goto(hydration_storage_app.frontend_url)
+    expect(page.locator("#hydrated")).to_have_text("true")
+    expect(page.locator("#annotated")).to_have_text("light|light|light")
+    page.evaluate("""() => {
+        localStorage.setItem('hydrate-annotated-local', 'saved');
+        sessionStorage.setItem('hydrate-annotated-session', 'saved');
+        document.cookie = 'hydrate-annotated-cookie=saved; path=/';
+    }""")
+
+    page.reload()
+    expect(page.locator("#hydrated")).to_have_text("true")
+    expect(page.locator("#annotated")).to_have_text("saved|saved|saved")
+    page.locator("#change-annotated").click()
+    page.wait_for_function("""() =>
+        localStorage.getItem('hydrate-annotated-local') === 'changed' &&
+        sessionStorage.getItem('hydrate-annotated-session') === 'changed' &&
+        document.cookie.split('; ').includes('hydrate-annotated-cookie=changed')
+    """)
+    page.reload()
+    expect(page.locator("#hydrated")).to_have_text("true")
+    expect(page.locator("#annotated")).to_have_text("changed|changed|changed")
 
 
 # The browser storage vars of the assigned page, by element id suffix.

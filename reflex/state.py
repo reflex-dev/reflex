@@ -1303,7 +1303,13 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
                 f'Found var "{prop._js_expr}" with type {prop._var_type}.'
             )
             raise VarTypeError(msg)
-        cls.__fields__[name]._var = prop
+        field = cls.__fields__[name]
+        field._var = prop
+        if types.safe_issubclass(field.type_, ClientStorageBase) or any(
+            issubclass(member, ClientStorageBase) for member in field._plain_types
+        ):
+            # Storage annotations configure persistence; browser values are strings.
+            field._plain_types |= {str}
         if cls.is_user_defined() and get_state_auto_setters() is True:
             cls._create_setter(name, prop)
         cls._set_default_value(name, prop)
