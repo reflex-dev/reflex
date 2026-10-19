@@ -129,7 +129,9 @@ class DynamicIcon(LucideIconComponent):
         Returns:
             The named dynamic module import.
         """
-        return dataclasses.replace(super().import_var, package_path="/dynamic.mjs")
+        return dataclasses.replace(
+            super().import_var, is_default=False, package_path="/dynamic.mjs"
+        )
 
 
 LUCIDE_ICON_LIST = [

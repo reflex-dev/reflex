@@ -106,7 +106,11 @@ def DynamicComponents():
             """
             return rx.hstack(
                 rx.icon("apple", id="dynamic-icon"),
-                rx.icon(DynamicComponentsState.icon_name, id="dynamic-named-icon"),
+                rx.icon(
+                    DynamicComponentsState.icon_name,
+                    id="dynamic-named-icon",
+                    is_default=True,
+                ),
             )
 
         @rx.var
@@ -195,11 +199,10 @@ def driver(dynamic_components: AppHarness):
     """
     driver = dynamic_components.frontend()
     try:
-        token_input = AppHarness.poll_for_or_raise_timeout(
-            lambda: driver.find_element(By.ID, "token")
-        )
         # wait for the backend connection to send the token
-        token = dynamic_components.poll_for_value(token_input)
+        token = AppHarness.poll_for_or_raise_timeout(
+            lambda: driver.find_element(By.ID, "token").get_attribute("value")
+        )
         assert token is not None
 
         yield driver

@@ -129,11 +129,22 @@ def test_static_icon_import_var(tag: str, expected: ImportVar):
     assert Icon.create(tag).import_var == expected
 
 
-def test_dynamic_icon_import_var():
-    """Expose the named dynamic module import through the component API."""
-    assert DynamicIcon.create(name=Var("icon_name").to(str)).import_var == ImportVar(
-        "DynamicIcon", package_path="/dynamic.mjs"
+@pytest.mark.parametrize("is_default", [False, True])
+@pytest.mark.parametrize("reactive", [False, True])
+def test_dynamic_icon_import_var(is_default: bool, reactive: bool):
+    """Expose the named dynamic module import through the component API.
+
+    Args:
+        is_default: Whether the caller requests a default import.
+        reactive: Whether to construct the icon through the reactive factory.
+    """
+    name = Var("icon_name").to(str)
+    icon = (
+        Icon.create(name, is_default=is_default)
+        if reactive
+        else DynamicIcon.create(name=name, is_default=is_default)
     )
+    assert icon.import_var == ImportVar("DynamicIcon", package_path="/dynamic.mjs")
 
 
 @pytest.mark.parametrize("reactive", [False, True])
@@ -150,7 +161,10 @@ def test_icon_keeps_var_imports(reactive: bool):
         _var_data=VarData(imports={LUCIDE_LIBRARY: [required]}),
     )
     icon = Icon.create(Var("icon_name").to(str) if reactive else "apple", size=size)
-    first = icon._get_imports()
+    first = {
+        library: list(import_vars)
+        for library, import_vars in icon._get_imports().items()
+    }
     assert required in first[LUCIDE_LIBRARY]
     assert icon.import_var in first[LUCIDE_LIBRARY]
     assert icon._get_imports() == first
