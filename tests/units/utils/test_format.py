@@ -584,6 +584,7 @@ def test_format_prop(prop: Var, formatted: str):
         ({"a": 1}, '{{"a": 1}}'),
         ({"nested": {"b": [1, 2]}}, '{{"nested": {"b": [1, 2]}}}'),
         ({}, "{{}}"),
+        ({"d": datetime.date(2026, 1, 2)}, '{{"d": "2026-01-02"}}'),
     ],
 )
 def test_format_prop_raw_dict(prop: dict, formatted: str):
