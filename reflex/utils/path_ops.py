@@ -16,6 +16,7 @@ import sys
 import unicodedata
 from collections.abc import Iterator
 from pathlib import Path
+from typing import IO, Literal
 
 from reflex_base.config import get_config
 from reflex_base.environment import environment
@@ -26,7 +27,7 @@ else:
     import fcntl
 
 logger = logging.getLogger(__name__)
-_JSON_LOCKS_DIR = "locks/json"
+_LOCKS_DIR = "locks"
 
 # Shorthand for join.
 join = os.linesep.join
@@ -254,11 +255,11 @@ def get_bun_path() -> Path | None:
     return bun_path.absolute() if bun_path else None
 
 
-def _json_file_lock_path(file_path: Path) -> Path:
-    """Get the stable lock path for a JSON file.
+def _file_lock_path(file_path: Path) -> Path:
+    """Get the stable lock path for a file or directory.
 
     Args:
-        file_path: The normalized path of the JSON file.
+        file_path: The normalized path to lock.
 
     Returns:
         A path in Reflex's per-user data directory keyed by the target path.
@@ -269,19 +270,19 @@ def _json_file_lock_path(file_path: Path) -> Path:
         # volume is case-insensitive and Unicode-normalizing.
         normalized_path = unicodedata.normalize("NFC", normalized_path).casefold()
     target_digest = hashlib.sha256(os.fsencode(normalized_path)).hexdigest()
-    lock_directory = environment.REFLEX_DIR.get().expanduser() / _JSON_LOCKS_DIR
+    lock_directory = environment.REFLEX_DIR.get().expanduser() / _LOCKS_DIR
     return lock_directory / f"{target_digest}.lock"
 
 
 @contextlib.contextmanager
-def json_file_lock(file_path: str | Path) -> Iterator[Path]:
-    """Lock a JSON file across processes, or proceed unlocked if unavailable.
+def file_lock(file_path: str | Path) -> Iterator[Path]:
+    """Lock a file or directory across processes, or proceed unlocked if unavailable.
 
     The lock lives outside the target directory so frontend cleanup can use it
     while replacing that directory. This context manager is not reentrant.
 
     Args:
-        file_path: The path of the JSON file.
+        file_path: The path to lock.
 
     Yields:
         The resolved target path. Callers must still write atomically because
@@ -291,7 +292,7 @@ def json_file_lock(file_path: str | Path) -> Iterator[Path]:
     lock_fd = None
     try:
         try:
-            lock_path = _json_file_lock_path(file_path)
+            lock_path = _file_lock_path(file_path)
             lock_path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
             lock_fd = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o600)
             if sys.platform == "win32":
@@ -316,12 +317,16 @@ def json_file_lock(file_path: str | Path) -> Iterator[Path]:
             os.close(lock_fd)
 
 
-def _write_json_file(file_path: Path, value: dict[str, object]) -> None:
-    """Atomically replace a JSON file with a complete document.
+@contextlib.contextmanager
+def atomic_write(file_path: Path, mode: Literal["w", "wb"] = "w") -> Iterator[IO]:
+    """Atomically replace a file with the contents written in the body.
 
     Args:
-        file_path: The destination JSON file.
-        value: The complete JSON object to write.
+        file_path: The destination file.
+        mode: ``"w"`` for UTF-8 text or ``"wb"`` for bytes.
+
+    Yields:
+        The staging file. The target keeps its old contents until the body exits.
     """
     open_flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY | getattr(os, "O_BINARY", 0)
     temp_path = file_path.with_name(f".{file_path.name}.{secrets.token_hex(8)}.tmp")
@@ -331,10 +336,10 @@ def _write_json_file(file_path: Path, value: dict[str, object]) -> None:
     try:
         if file_path.exists():
             shutil.copymode(file_path, temp_path)
-        temp_file = os.fdopen(temp_fd, "w", encoding="utf-8")
+        temp_file = os.fdopen(temp_fd, mode, encoding=None if "b" in mode else "utf-8")
         temp_fd = -1
         with temp_file:
-            json.dump(value, temp_file, ensure_ascii=False)
+            yield temp_file
             temp_file.flush()
             os.fsync(temp_file.fileno())
         temp_path.replace(file_path)
@@ -347,6 +352,17 @@ def _write_json_file(file_path: Path, value: dict[str, object]) -> None:
         raise
 
 
+def _write_json_file(file_path: Path, value: dict[str, object]) -> None:
+    """Atomically replace a JSON file with a complete document.
+
+    Args:
+        file_path: The destination JSON file.
+        value: The complete JSON object to write.
+    """
+    with atomic_write(file_path) as json_file:
+        json.dump(value, json_file, ensure_ascii=False)
+
+
 def update_json_file(file_path: str | Path, update_dict: dict[str, object]) -> None:
     """Update the contents of a json file.
 
@@ -354,7 +370,7 @@ def update_json_file(file_path: str | Path, update_dict: dict[str, object]) -> N
         file_path: the path to the JSON file.
         update_dict: object to update json.
     """
-    with json_file_lock(file_path) as fp:
+    with file_lock(file_path) as fp:
         fp.parent.mkdir(parents=True, exist_ok=True)
         # An absent or empty file represents an empty JSON object.
         json_object: dict[str, object] = {}

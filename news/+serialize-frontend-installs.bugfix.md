@@ -1,1 +1,1 @@
-Serialize frontend dependency installation per app and atomically persist package-manager files so concurrent Reflex commands cannot corrupt or duplicate an install.
+Serialize frontend dependency installs and `.web` initialization per app, and atomically persist package-manager files, so concurrent Reflex commands in one app no longer corrupt or duplicate an install.

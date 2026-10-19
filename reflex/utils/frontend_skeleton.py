@@ -325,43 +325,11 @@ def _copy_if_exists(src: Path, dest: Path, prune: bool = True) -> bool:
         return False
 
     changed = dest.exists()
-    mode = dest.stat().st_mode if changed else src.stat().st_mode
+    path_ops.mkdir(dest.parent)
     logger.debug(f"Copying {src} to {dest}")
-    _write_bytes_atomic(dest, contents, mode=mode)
+    with path_ops.atomic_write(dest, "wb") as dest_file:
+        dest_file.write(contents)
     return changed
-
-
-def _write_bytes_atomic(path: Path, contents: bytes, mode: int | None = None) -> None:
-    """Atomically replace a file with complete new contents.
-
-    Args:
-        path: Destination path to replace. Existing symlinks are followed so
-            their link objects remain intact.
-        contents: Bytes to write before committing the replacement.
-        mode: File mode to apply. Existing target permissions are preserved by
-            default; a new generated file uses the process umask.
-    """
-    import contextlib
-
-    if path.is_symlink():
-        path = path.resolve()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    if mode is None and path.exists():
-        mode = path.stat().st_mode
-    temporary_path = path.with_name(f".{path.name}.{uuid.uuid4().hex}.tmp")
-    created = False
-    try:
-        with temporary_path.open("xb") as temporary_file:
-            created = True
-            temporary_file.write(contents)
-        if mode is not None:
-            temporary_path.chmod(mode & 0o7777)
-        temporary_path.replace(path)
-    except BaseException:
-        if created:
-            with contextlib.suppress(OSError):
-                temporary_path.unlink(missing_ok=True)
-        raise
 
 
 def sync_root_lockfile_to_web(filename: str, prune: bool = True) -> bool:
@@ -407,7 +375,8 @@ def sync_root_package_json_to_web() -> bool:
 
     changed = output_path.exists()
     path_ops.mkdir(output_path.parent)
-    _write_bytes_atomic(output_path, rendered.encode())
+    with path_ops.atomic_write(output_path) as output_file:
+        output_file.write(rendered)
     return changed
 
 
@@ -482,22 +451,20 @@ def _read_persisted_package_json() -> dict:
 
 def initialize_web_directory():
     """Initialize the web directory on reflex init."""
-    from reflex.utils.frontend_lock import frontend_project_lock
-
-    with frontend_project_lock():
+    with path_ops.file_lock(get_web_dir()):
         _initialize_web_directory()
 
 
 def _initialize_web_directory():
-    """Initialize the web directory while its project lock is held."""
+    """Initialize the web directory while its lock is held."""
     logger.info("Initializing the web directory.")
 
     web_dir = get_web_dir()
     # Keep JSON writers out of their same-directory staging window while the
     # frontend tree is removed and recreated.
     with (
-        path_ops.json_file_lock(web_dir / constants.Reflex.JSON),
-        path_ops.json_file_lock(web_dir / constants.Dirs.ENV_JSON),
+        path_ops.file_lock(web_dir / constants.Reflex.JSON),
+        path_ops.file_lock(web_dir / constants.Dirs.ENV_JSON),
     ):
         # Reuse the hash if one is already created, so we don't over-write it when running reflex init
         project_hash = get_project_hash()
@@ -645,14 +612,16 @@ def update_package_json_overrides() -> bool:
 
     package_json["overrides"] = {**overrides, **constants.PackageJson.OVERRIDES}
     logger.debug(f"Applying framework overrides to {package_json_path}")
-    _write_bytes_atomic(package_json_path, json.dumps(package_json).encode())
+    with path_ops.atomic_write(package_json_path) as package_json_file:
+        json.dump(package_json, package_json_file)
     return True
 
 
 def initialize_package_json():
     """Render and write in .web the package.json file."""
     output_path = get_web_dir() / constants.PackageJson.PATH
-    _write_bytes_atomic(output_path, _compile_package_json().encode())
+    with path_ops.atomic_write(output_path) as output_file:
+        output_file.write(_compile_package_json())
 
 
 def _compile_vite_config(config: Config):

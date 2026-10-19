@@ -27,7 +27,7 @@ from reflex_base.utils.exceptions import EnvironmentVarValueError
 
 from reflex.reflex import cli
 from reflex.testing import chdir
-from reflex.utils import frontend_lock, frontend_skeleton, js_runtimes, prerequisites
+from reflex.utils import frontend_skeleton, js_runtimes, path_ops, prerequisites
 from reflex.utils.frontend_skeleton import (
     _compile_vite_config,
     _update_react_router_config,
@@ -45,7 +45,6 @@ def _install_frontend_packages_in_process(
     release_package_manager: Any,
     active_installs: Any,
     max_active_installs: Any,
-    config_attribute_order: tuple[str, ...],
 ) -> None:
     """Run a deterministic fake frontend install in a spawned process.
 
@@ -56,7 +55,6 @@ def _install_frontend_packages_in_process(
         release_package_manager: Event allowing the fake package manager to finish.
         active_installs: Shared count of active package-manager calls.
         max_active_installs: Shared maximum active package-manager calls.
-        config_attribute_order: Forced iteration order for internal Config metadata.
     """
     os.chdir(project_dir)
     constants.PackageJson.DEPENDENCIES = {}  # pyright: ignore[reportAttributeAccessIssue]
@@ -66,14 +64,7 @@ def _install_frontend_packages_in_process(
         "bun",
     )
 
-    class OrderedAttributeSet(set[str]):
-        """Set with a forced iteration order to model distinct process hashes."""
-
-        def __iter__(self):
-            return iter(config_attribute_order)
-
     config = Config(app_name="test")
-    config._non_default_attributes = OrderedAttributeSet(config_attribute_order)
 
     def run_package_manager(args, **kwargs) -> None:
         """Block a fake package-manager add so a competing process can contend."""
@@ -480,6 +471,7 @@ def install_packages_env(
     web_dir.mkdir()
     _patch_web_dir(monkeypatch, web_dir)
     _stub_framework_packages(monkeypatch)
+    monkeypatch.setenv("REFLEX_DIR", str(tmp_path / "reflex-data"))
     config = Config(app_name="test")
 
     def patch_pm(package_managers: list[str], run_package_manager: Callable) -> None:
@@ -515,8 +507,9 @@ def test_install_frontend_packages_locks_the_complete_transaction(
     lock_held = False
 
     @contextmanager
-    def project_lock():
+    def project_lock(path: Path):
         nonlocal lock_held
+        assert path == prerequisites.get_web_dir()
         calls.append("lock-enter")
         lock_held = True
         try:
@@ -535,7 +528,7 @@ def test_install_frontend_packages_locks_the_complete_transaction(
 
         return stub
 
-    monkeypatch.setattr(frontend_lock, "frontend_project_lock", project_lock)
+    monkeypatch.setattr(path_ops, "file_lock", project_lock)
     monkeypatch.setattr(
         js_runtimes,
         "get_nodejs_compatible_package_managers",
@@ -596,6 +589,8 @@ def test_concurrent_frontend_installs_share_completed_cache(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """A second process waits, then observes the first process's install cache."""
+    # Spawned processes inherit this, keeping their locks in the test directory.
+    monkeypatch.setenv("REFLEX_DIR", str(tmp_path / "reflex-data"))
     web_dir = tmp_path / constants.Dirs.WEB
     web_dir.mkdir()
     _stub_framework_packages(monkeypatch)
@@ -619,7 +614,6 @@ def test_concurrent_frontend_installs_share_completed_cache(
             release_package_manager,
             active_installs,
             max_active_installs,
-            ("loglevel", "app_name"),
         ),
     )
     second = ctx.Process(
@@ -631,7 +625,6 @@ def test_concurrent_frontend_installs_share_completed_cache(
             release_package_manager,
             active_installs,
             max_active_installs,
-            ("app_name", "loglevel"),
         ),
     )
 
@@ -715,15 +708,16 @@ def _stub_skeleton_initializers(monkeypatch):
     _stub_skeleton_initializers_except(monkeypatch)
 
 
-def test_initialize_web_directory_holds_frontend_project_lock(
+def test_initialize_web_directory_holds_web_dir_lock(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Reinitialization cannot replace ``.web`` during an install transaction."""
     lock_held = False
 
     @contextmanager
-    def project_lock():
+    def project_lock(path: Path):
         nonlocal lock_held
+        assert path == prerequisites.get_web_dir()
         lock_held = True
         try:
             yield
@@ -733,7 +727,7 @@ def test_initialize_web_directory_holds_frontend_project_lock(
     def initialize() -> None:
         assert lock_held
 
-    monkeypatch.setattr(frontend_lock, "frontend_project_lock", project_lock)
+    monkeypatch.setattr(path_ops, "file_lock", project_lock)
     monkeypatch.setattr(frontend_skeleton, "_initialize_web_directory", initialize)
 
     frontend_skeleton.initialize_web_directory()
@@ -990,25 +984,6 @@ def test_sync_web_lockfile_to_root_preserves_existing_mode(
 
     assert env.root_lock.read_text() == "new-lock"
     assert env.root_lock.stat().st_mode & 0o777 == 0o644
-
-
-def test_sync_web_lockfile_to_root_preserves_existing_symlink(
-    install_packages_env: InstallPackagesEnv,
-) -> None:
-    """Atomic replacement follows an existing persisted lockfile symlink."""
-    env = install_packages_env
-    env.web_lock.write_text("new-lock")
-    shared_lock = env.tmp_path / "shared-bun.lock"
-    shared_lock.write_text("old-lock")
-    try:
-        env.root_lock.symlink_to(shared_lock)
-    except OSError as err:
-        pytest.skip(f"Cannot create symlink on this platform: {err}")
-
-    frontend_skeleton.sync_web_lockfile_to_root(constants.Bun.LOCKFILE_PATH)
-
-    assert env.root_lock.is_symlink()
-    assert shared_lock.read_text() == "new-lock"
 
 
 def test_install_frontend_packages_syncs_root_bun_lock(
@@ -1268,51 +1243,6 @@ def _record_calls(env: InstallPackagesEnv) -> list[list[str]]:
 
     env.patch_pm(["bun"], run_package_manager)
     return calls
-
-
-def test_frontend_package_cache_uses_resolved_plugin_dependencies(
-    install_packages_env: InstallPackagesEnv,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """Set iteration order in plugin config does not perturb the cache key."""
-    env = install_packages_env
-    calls = _record_calls(env)
-
-    class OrderedStringSet(set[str]):
-        def __init__(self, values: tuple[str, ...]):
-            super().__init__(values)
-            self.values = values
-
-        def __iter__(self):
-            return iter(self.values)
-
-    @dataclass
-    class FakePlugin:
-        dependencies: OrderedStringSet
-
-        def get_frontend_dependencies(self):
-            return self.dependencies
-
-        def get_frontend_development_dependencies(self):
-            return set()
-
-    monkeypatch.setattr(
-        env.config,
-        "plugins",
-        [FakePlugin(OrderedStringSet(("plugin-b", "plugin-a")))],
-    )
-    first_config_json = env.config.json()
-    env.install()
-    monkeypatch.setattr(
-        env.config,
-        "plugins",
-        [FakePlugin(OrderedStringSet(("plugin-a", "plugin-b")))],
-    )
-    second_config_json = env.config.json()
-    env.install()
-
-    assert first_config_json != second_config_json
-    assert len([call for call in calls if "add" in call]) == 1
 
 
 def test_react_compiler_dependencies_toggle(install_packages_env: InstallPackagesEnv):

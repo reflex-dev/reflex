@@ -1,5 +1,6 @@
 """Tests for reflex.utils.js_runtimes install gating."""
 
+import contextlib
 from pathlib import Path
 from unittest import mock
 
@@ -46,6 +47,9 @@ def install_mocks(monkeypatch):
         js_runtimes.frontend_skeleton,
         "sync_web_lockfiles_to_root",
         lambda: calls["sync_to_root"].append(1),
+    )
+    monkeypatch.setattr(
+        js_runtimes.path_ops, "file_lock", lambda path: contextlib.nullcontext()
     )
     return calls
 
