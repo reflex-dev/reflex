@@ -25,6 +25,8 @@ from reflex.utils.exec import frontend_env
 logger = logging.getLogger(__name__)
 
 _CACHE_DIR = "reflex.build-cache"
+_INPUT_KEY = "input"
+_OUTPUT_KEY = "output"
 _GENERATED_ROOT_ENTRIES = {
     _CACHE_DIR,
     constants.Dirs.BUILD_DIR,
@@ -338,12 +340,12 @@ class _FrontendBuildCache:
         Returns:
             Whether Vite can be skipped.
         """
-        snapshot = self.current / "build"
+        snapshot = self.current / constants.Dirs.BUILD_DIR
         try:
             if self.current.is_symlink() or snapshot.is_symlink():
                 return False
             metadata = json.loads((self.current / "metadata.json").read_text())
-            if metadata != {"input": self.key, "output": _tree_digest(snapshot)}:
+            if metadata != {_INPUT_KEY: self.key, _OUTPUT_KEY: _tree_digest(snapshot)}:
                 return False
             _remove_cache_entry(self.web_dir / constants.Dirs.BUILD_DIR)
             shutil.copytree(snapshot, self.web_dir / constants.Dirs.BUILD_DIR)
@@ -359,14 +361,15 @@ class _FrontendBuildCache:
             self.pending = Path(tempfile.mkdtemp(prefix="pending-", dir=self.directory))
             source = self.web_dir / constants.Dirs.BUILD_DIR
             output_digest = _tree_digest(source)
-            shutil.copytree(source, self.pending / "build")
-            if _tree_digest(self.pending / "build") != output_digest:
+            snapshot = self.pending / constants.Dirs.BUILD_DIR
+            shutil.copytree(source, snapshot)
+            if _tree_digest(snapshot) != output_digest:
                 self.close()
                 return
             (self.pending / "metadata.json").write_text(
                 json.dumps({
-                    "input": self.key,
-                    "output": output_digest,
+                    _INPUT_KEY: self.key,
+                    _OUTPUT_KEY: output_digest,
                 })
             )
         except (OSError, ValueError):
