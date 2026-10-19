@@ -17,9 +17,7 @@ If you want to [add, edit or remove data](/docs/library/tables-and-data-grids/ta
 
 ## Basic Example
 
-In this example we will read data from a csv file, convert it to a pandas dataframe and display it in a data_table.
-
-We will also add a search, pagination, sorting to the data_table to make it more accessible.
+The data_table component displays tabular data with optional search, sorting, and pagination features.
 
 ```python demo box
 rx.data_table(
@@ -101,8 +99,6 @@ rx.data_table(
     pagination=True,
 )
 ```
-
-Users can change the page size from the pagination controls at the bottom of the table. The available options are 10, 25, 50, and 100 rows per page.
 
 ## Search
 

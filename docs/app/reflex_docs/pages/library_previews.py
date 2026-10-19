@@ -179,10 +179,6 @@ def create_previews(
         description=meta_description,
     )
     def page() -> rx.Component:
-        from reflex_docs.templates.docpage.sidebar.sidebar_items import (
-            get_component_link,
-        )
-
         component_list = get_component_list(type)
         if component_category == "State":
             return rx.el.div(
@@ -227,7 +223,7 @@ def create_previews(
                     ),
                     rx.el.li(
                         rx.el.strong("rx.data_table", class_name="font-semibold text-foreground"),
-                        " — Drop in a pandas DataFrame and get instant search, sort, and pagination. Perfect for displaying static data from CSV files or database queries. Read-only by default.",
+                        " — Drop in a pandas DataFrame and enable search, sort, and pagination with `search=True`, `sort=True`, and `pagination=True`. Perfect for displaying static data from CSV files or database queries. Read-only by default.",
                         class_name="mt-3 text-sm leading-6 text-muted-foreground",
                     ),
                     rx.el.li(

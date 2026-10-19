@@ -98,8 +98,21 @@ def docs_metadata(path: str, title: str, description: str | None) -> tuple[str, 
         and not route.startswith("library/html/")
     )
     if is_component_page:
-        component_name = route.split("/")[-1].rstrip("/")
-        subject = f"rx.{component_name}: Python {title} Component"
+        component_name = None
+        route_key = f"/{route}".rstrip("/")
+        try:
+            from reflex_docs.pages.docs import _frontmatter_for, doc_markdown_sources
+            if route_key in doc_markdown_sources:
+                fm = _frontmatter_for(doc_markdown_sources[route_key])
+                if fm and fm.components and len(fm.components) > 0:
+                    component_name = fm.components[0]
+        except (ImportError, KeyError):
+            pass
+        
+        if not component_name:
+            component_name = f"rx.{route.split('/')[-1].rstrip('/')}"
+        
+        subject = f"{component_name}: Python {title} Component"
     else:
         subject = " · ".join([title, *context])
     if route == "changelog" or route.startswith("changelog/"):

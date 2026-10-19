@@ -82,7 +82,7 @@ def test_library_component_title_preserves_underscores():
     """Component page titles preserve underscores in component names."""
     from reflex_docs.pages.docs.metadata import docs_metadata
 
-    title, desc = docs_metadata("library/tables-and-data-grids/data_table/", "Data Table", None)
+    title, _ = docs_metadata("library/tables-and-data-grids/data_table/", "Data Table", None)
     assert "rx.data_table" in title, "Component name should preserve underscores"
     assert "rx.data table" not in title, "Component name should not have spaces"
     assert title == "rx.data_table: Python Data Table Component · Reflex"
@@ -92,7 +92,7 @@ def test_library_component_title_preserves_hyphens():
     """Component page titles preserve hyphens in component names."""
     from reflex_docs.pages.docs.metadata import docs_metadata
 
-    title, desc = docs_metadata("library/forms/select-ll/", "Select (Low Level)", None)
+    title, _ = docs_metadata("library/forms/select-ll/", "Select (Low Level)", None)
     assert "rx.select-ll" in title, "Component name should preserve hyphens"
     assert title == "rx.select-ll: Python Select (Low Level) Component · Reflex"
 
@@ -101,7 +101,7 @@ def test_library_category_title_uses_display_name():
     """Category pages use the display name, not component format."""
     from reflex_docs.pages.docs.metadata import docs_metadata
 
-    title, desc = docs_metadata("library/tables-and-data-grids/", "Tables And Data Grids", None)
+    title, _ = docs_metadata("library/tables-and-data-grids/", "Tables And Data Grids", None)
     assert "rx." not in title, "Category pages should not have rx. prefix"
     assert title == "Tables And Data Grids · Library · Reflex"
 
@@ -119,7 +119,7 @@ def test_non_library_title_unchanged():
     """Non-library pages maintain breadcrumb-style titles."""
     from reflex_docs.pages.docs.metadata import docs_metadata
 
-    title, desc = docs_metadata("state/overview/", "State Overview", None)
+    title, _ = docs_metadata("state/overview/", "State Overview", None)
     assert "rx." not in title, "Non-library pages should not have rx. prefix"
     assert title == "State Overview · State · Reflex"
 
@@ -128,6 +128,6 @@ def test_html_collection_pages_not_component_format():
     """HTML element collection pages use breadcrumb format, not component format."""
     from reflex_docs.pages.docs.metadata import docs_metadata
 
-    title, desc = docs_metadata("library/html/text/", "HTML Text Elements", None)
+    title, _ = docs_metadata("library/html/text/", "HTML Text Elements", None)
     assert "rx." not in title, "HTML collection pages should not have rx. prefix"
     assert title == "HTML Text Elements · HTML · Library · Reflex"

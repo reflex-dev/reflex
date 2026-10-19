@@ -166,7 +166,7 @@ def library():
                 class_name="mt-6 font-heading text-lg font-normal leading-6 tracking-[-0.02em] text-foreground",
             ),
             text_comp_2(
-                text="Yes. Reflex's core components are built on Radix UI primitives, which follow WAI-ARIA standards. They include keyboard navigation, focus management, and screen reader support out of the box.",
+                text="Yes. Many of Reflex's core components are built on Radix UI primitives, which follow WAI-ARIA standards. They include keyboard navigation, focus management, and screen reader support out of the box.",
             ),
             rx.el.h3(
                 "Can I wrap my own React components?",

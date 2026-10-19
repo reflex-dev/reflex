@@ -30,7 +30,7 @@ Matplotlib is the most widely used plotting library in Python, with millions of 
 - **Data science dashboards** — Turn notebook prototypes into shareable web apps with interactive controls
 - **Scientific reports** — Display publication-quality figures with LaTeX labels and custom styling
 - **Machine learning monitoring** — Plot training metrics, confusion matrices, and feature distributions
-- **Financial analysis** — Render time series, candlestick charts, and portfolio performance
+- **Financial analysis** — Render time series and portfolio performance charts
 - **Engineering tools** — Visualize simulation results, sensor data, and system performance
 
 For declarative business charts like bar, line, and pie charts, consider using Reflex's built-in [Recharts components](/docs/library/graphing/charts/) instead. For interactive 3D plots and scientific visualizations, see the [Plotly component](/docs/library/graphing/other-charts/plotly/).

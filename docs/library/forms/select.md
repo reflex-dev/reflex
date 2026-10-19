@@ -1,7 +1,7 @@
 ---
 components:
   - rx.select
-meta_description: "Build dropdown select menus in Python with Reflex. The high-level rx.select component creates dropdowns from a list, with state binding and form integration."
+meta_description: "Build dropdown select menus in Python with Reflex. rx.select creates dropdowns from a list, with state binding and form integration."
 
 HighLevelSelect: |
   lambda **props: rx.select(["apple", "grape", "pear"], default_value="pear", **props)
