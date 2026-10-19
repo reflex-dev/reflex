@@ -243,6 +243,15 @@ def test_dynamic_components(driver, dynamic_components: AppHarness):
             lambda icon_id=icon_id: driver.find_element(By.ID, icon_id)
         )
 
+    bundled = driver.execute_script("return Object.keys(window.__reflex)")
+    assert "lucide-react" not in bundled
+    assert {
+        "lucide-react/dist/esm/icons/apple.mjs",
+        "lucide-react/dist/esm/icons/banana.mjs",
+        "lucide-react/dist/esm/icons/tag.mjs",
+        "lucide-react/dynamic.mjs",
+    } <= set(bundled)
+
     count = AppHarness.poll_for_or_raise_timeout(
         lambda: driver.find_element(By.ID, "count")
     )
@@ -265,6 +274,9 @@ def test_dynamic_components(driver, dynamic_components: AppHarness):
     driver.find_element(By.ID, "activate").click()
     AppHarness.poll_for_or_raise_timeout(
         lambda: driver.find_element(By.ID, "delayed-icon")
+    )
+    assert "lucide-react" not in driver.execute_script(
+        "return Object.keys(window.__reflex)"
     )
     driver.find_element(By.ID, "delayed-increment").click()
     AppHarness.expect(lambda: driver.find_element(By.ID, "delayed-count").text == "1")
