@@ -4456,8 +4456,9 @@ def test_decode_asgi_headers():
         (b"cookie", b"a=1"),
         (b"cookie", b"b=2"),
     ]) == {"cookie": "b=2"}
-    # Names and values are decoded as UTF-8.
+    # Valid UTF-8 values are preserved, with Latin-1 fallback for other bytes.
     assert _decode_asgi_headers([(b"x-name", "café".encode())]) == {"x-name": "café"}
+    assert _decode_asgi_headers([(b"x-name", b"caf\xe9")]) == {"x-name": "café"}
 
 
 def test_call_ignores_stale_marker_without_dev_backend_reload(
@@ -5098,6 +5099,36 @@ async def test_on_connect_processes_boot_event_from_auth(
     assert modify_state.call_count == 2
     assert state.router_data[constants.RouteVar.SESSION_ID] == "new_sid"
     assert state.router_data[constants.RouteVar.CLIENT_TOKEN] == "abc"
+
+
+@pytest.mark.asyncio
+async def test_on_connect_accepts_non_utf8_header_value(
+    event_namespace: EventNamespace,
+):
+    """A non-UTF-8 request header value does not abort websocket connect.
+
+    Args:
+        event_namespace: The event namespace.
+    """
+    event_namespace._token_manager = Mock()
+    event_namespace._token_manager.link_token_to_sid = AsyncMock(return_value=None)
+    event_namespace.on_event = AsyncMock()
+
+    await event_namespace.on_connect(
+        "new_sid",
+        {
+            "QUERY_STRING": "token=abc",
+            "asgi.scope": {"headers": [(b"x-name", b"caf\xe9")]},
+        },
+        {"event": {"name": "state.hydrate_and_load", "payload": {}}},
+    )
+
+    assert (
+        event_namespace._static_router_data["new_sid"][constants.RouteVar.HEADERS][
+            "x-name"
+        ]
+        == "café"
+    )
 
 
 def _schema_checking_namespace(

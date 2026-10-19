@@ -2084,13 +2084,23 @@ def _sio_loads(data: str | bytes, **kwargs: Any) -> Any:
 def _decode_asgi_headers(headers: Iterable[tuple[bytes, bytes]]) -> dict[str, str]:
     """Decode raw ASGI scope header pairs into a str-keyed dict.
 
+    Header values that are not valid UTF-8 are decoded as Latin-1.
+
     Args:
         headers: Raw (name, value) byte pairs from the ASGI scope.
 
     Returns:
         A dict mapping decoded header names to decoded values.
     """
-    return {k.decode("utf-8"): v.decode("utf-8") for (k, v) in headers}
+    decoded: dict[str, str] = {}
+    for raw_name, raw_value in headers:
+        name = raw_name.decode("utf-8")
+        try:
+            value = raw_value.decode("utf-8")
+        except UnicodeDecodeError:
+            value = raw_value.decode("latin-1")
+        decoded[name] = value
+    return decoded
 
 
 class EventNamespace(AsyncNamespace):
