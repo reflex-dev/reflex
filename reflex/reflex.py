@@ -277,6 +277,11 @@ def _init(
         reflex_build_redirect()
         return
 
+    # For an existing app, validate the configured app name rather than the
+    # name of the directory that happens to contain it.
+    if not name and constants.Config.FILE.exists():
+        name = get_config().app_name
+
     # Validate the app name.
     app_name = prerequisites.validate_app_name(name)
     console.rule(f"[bold]Initializing {app_name}")
@@ -560,8 +565,9 @@ def _run_prod(running_mode: constants.RunningMode, port: int, host: str):
 
     _skip_compile()
 
-    # Post a telemetry event.
-    telemetry.send("run-prod")
+    # Post a telemetry event. Sent synchronously: on Linux the backend forks its
+    # workers from this process, which must hold no telemetry thread by then.
+    telemetry._process_event("run-prod", config.telemetry_enabled)
 
     # Display custom message when there is a keyboard interrupt.
     atexit.register(processes.atexit_handler)

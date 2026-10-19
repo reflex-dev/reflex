@@ -18,6 +18,8 @@ async function setup({
   disabled = false,
   hidden = false,
   storedToken = "original-token",
+  clientStorage = {},
+  react = { useCallback() {}, useEffect() {}, useRef() {}, useState() {} },
 } = {}) {
   const sockets = [];
   const microtasks = [];
@@ -31,6 +33,12 @@ async function setup({
     getItem: (key) => storage.get(key),
     setItem: (key, value) => storage.set(key, value),
   };
+  const localStorage = {
+    items: new Map(),
+    getItem(key) {
+      return this.items.get(key) ?? null;
+    },
+  };
   const document = new EventTarget();
   document.cookie = disabled ? "backend-enabled=false" : "";
   document.visibilityState = hidden ? "hidden" : "visible";
@@ -40,6 +48,7 @@ async function setup({
     URL,
     URLSearchParams,
     performance,
+    localStorage,
     ...(browser ? { window, document } : {}),
     queueMicrotask: (fn) => microtasks.push(fn),
     setTimeout: (fn, ms) => {
@@ -102,12 +111,12 @@ async function setup({
     },
     "$/reflex.json": { default: { version: "test" } },
     "universal-cookie": { default: class {} },
-    react: { useCallback() {}, useEffect() {}, useRef() {}, useState() {} },
+    react,
     "react-router": {
-      useLocation() {},
-      useNavigate() {},
-      useSearchParams() {},
-      useParams() {},
+      useLocation: () => ({ pathname: "/", search: "", hash: "" }),
+      useNavigate: () => () => {},
+      useSearchParams: () => [new URLSearchParams()],
+      useParams: () => ({}),
     },
     "$/utils/context-registry": {
       app: {
@@ -126,6 +135,7 @@ async function setup({
         initialState: stateful ? { root: {}, child: {} } : {},
         onLoadInternalEvent() {},
         state_name: "root",
+        clientStorage,
         exception_state_name: "exception",
       },
       eventLoop: { addEvents() {}, connectErrors: [] },
@@ -163,8 +173,10 @@ async function setup({
     timers,
     firstHydrates,
     window,
+    localStorage,
     socket,
     updates,
+    module,
     dispose,
     flush: () => microtasks.splice(0).forEach((fn) => fn()),
     connect: (transports = ["websocket"]) =>
@@ -310,3 +322,148 @@ for (const config of [
     assert.equal(app.timers.size, 0);
   });
 }
+
+/** Run `useEventLoop` once with minimal hooks, keeping the effects it registers. */
+async function mountEventLoop(clientStorage = {}) {
+  const effects = [];
+  const sent = [];
+  const emitted = {
+    connected: true,
+    emit: (name, payload) => sent.push(payload),
+  };
+  let refs = 0;
+  const harness = await setup({
+    clientStorage,
+    react: {
+      useCallback: (fn) => fn,
+      useEffect: (fn) => effects.push(fn),
+      // The first ref is the socket; hand it a connected stand-in.
+      useRef: (initial) => ({ current: refs++ === 0 ? emitted : initial }),
+      useState: (initial) => [initial, () => {}],
+    },
+  });
+  harness.module.namespace.useEventLoop(
+    () => {},
+    () => [],
+    clientStorage,
+  );
+  return { harness, effects, sent };
+}
+
+test("window.onerror reports an error event that carries no Error object", async () => {
+  const { harness, effects, sent } = await mountEventLoop();
+  // Only the frontend-error effect touches `window.onerror`.
+  for (const effect of effects) effect();
+  assert.equal(typeof harness.window.onerror, "function");
+
+  // The benign ResizeObserver notification: a message, but `error` is null.
+  const message =
+    "ResizeObserver loop completed with undelivered notifications.";
+  assert.doesNotThrow(() =>
+    harness.window.onerror(
+      message,
+      "http://localhost:3000/app.js",
+      12,
+      34,
+      null,
+    ),
+  );
+  await new Promise((resolve) => setImmediate(resolve));
+
+  const event = sent.find(
+    (e) => e.name === "exception.handle_frontend_exception",
+  );
+  assert.ok(
+    event,
+    `expected a frontend exception event, got ${JSON.stringify(sent)}`,
+  );
+  assert.equal(
+    event.payload.info,
+    message + "\n    at http://localhost:3000/app.js:12:34",
+  );
+  assert.equal(event.payload.component_stack, "");
+});
+
+test("window.onerror preserves the original Error message", async () => {
+  const { harness, effects, sent } = await mountEventLoop();
+  for (const effect of effects) effect();
+  const error = new TypeError("same old message");
+  error.stack = "TypeError: same old message\n    at app.js:1:2";
+  assert.equal(
+    harness.window.onerror("ignored", "ignored.js", 9, 8, error),
+    false,
+  );
+  await new Promise((resolve) => setImmediate(resolve));
+  const event = sent.find(
+    (e) => e.name === "exception.handle_frontend_exception",
+  );
+  assert.ok(event);
+  assert.equal(
+    event.payload.info,
+    error.name + ": " + error.message + "\n" + error.stack,
+  );
+  assert.equal(event.payload.component_stack, "");
+});
+
+test("a storage event syncs every synced var that shares the storage name", async () => {
+  const clientStorage = {
+    local_storage: {
+      first: { name: "shared", sync: true },
+      second: { name: "shared", sync: true },
+      other: { name: "other", sync: true },
+      unsynced: { name: "shared" },
+    },
+  };
+  const { harness, effects, sent } = await mountEventLoop(clientStorage);
+  for (const effect of effects) effect();
+  harness.localStorage.items.set("shared", "stored");
+
+  const event = new Event("storage");
+  event.key = "shared";
+  event.storageArea = harness.localStorage;
+  harness.window.dispatchEvent(event);
+  await new Promise((resolve) => setImmediate(resolve));
+
+  const updates = sent.filter((e) => e.name.endsWith("update_vars_internal"));
+  assert.equal(updates.length, 1, JSON.stringify(sent));
+  // The vars come from the vm's realm, so compare their serialised form.
+  assert.equal(
+    JSON.stringify(updates[0].payload.vars),
+    JSON.stringify({ first: "stored", second: "stored" }),
+  );
+});
+
+test("storage names that are Object.prototype properties sync like any other", async () => {
+  const clientStorage = {
+    local_storage: {
+      first: { name: "constructor", sync: true },
+      second: { name: "constructor", sync: true },
+      third: { name: "__proto__", sync: true },
+    },
+  };
+  const { harness, effects, sent } = await mountEventLoop(clientStorage);
+  assert.doesNotThrow(() => {
+    for (const effect of effects) effect();
+  });
+  harness.localStorage.items.set("constructor", "stored");
+
+  for (const key of ["constructor", "toString", "__proto__"]) {
+    const event = new Event("storage");
+    event.key = key;
+    event.storageArea = harness.localStorage;
+    harness.window.dispatchEvent(event);
+  }
+  await new Promise((resolve) => setImmediate(resolve));
+
+  // Only the names a var declared are synced, and a name's vars all are.
+  const updates = sent.filter((e) => e.name.endsWith("update_vars_internal"));
+  assert.equal(updates.length, 2, JSON.stringify(sent));
+  assert.equal(
+    JSON.stringify(updates[0].payload.vars),
+    JSON.stringify({ first: "stored", second: "stored" }),
+  );
+  assert.equal(
+    JSON.stringify(updates[1].payload.vars),
+    JSON.stringify({ third: null }),
+  );
+});

@@ -28,6 +28,7 @@ from collections.abc import (
     Sequence,
 )
 from contextvars import Token
+from datetime import timedelta
 from pathlib import Path
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, overload
@@ -51,7 +52,14 @@ from reflex_base.registry import RegistrationContext
 from reflex_base.telemetry_context import CompileTrigger, TelemetryContext
 from reflex_base.utils import memo_paths
 from reflex_base.utils.imports import ImportVar
-from reflex_base.utils.types import ASGIApp, Message, Receive, Scope, Send
+from reflex_base.utils.types import (
+    ASGIApp,
+    Message,
+    Receive,
+    Scope,
+    Send,
+    is_non_string_sequence,
+)
 from reflex_base.vars.dep_tracking import is_dependency
 from reflex_components_core.base.error_boundary import ErrorBoundary
 from reflex_components_core.base.fragment import Fragment
@@ -1159,7 +1167,11 @@ class App(MiddlewareMixin, LifespanMixin):
             state.setup_dynamic_args(prepared.route_args)
 
         self._load_events[page.route] = (
-            (page.on_load if isinstance(page.on_load, list) else [page.on_load])
+            (
+                list(page.on_load)
+                if is_non_string_sequence(page.on_load)
+                else [page.on_load]
+            )
             if page.on_load is not None
             else []
         )
@@ -2167,11 +2179,35 @@ class EventNamespace(AsyncNamespace):
         if isinstance(self._token_manager, RedisTokenManager):
             # Make sure this instance is watching for updates from other instances.
             self._token_manager.ensure_lost_and_found_task(self.emit_update)
-        boot_event = (
-            auth.get(constants.CompileVars.CONNECT_AUTH_EVENT)
-            if isinstance(auth, dict)
-            else None
-        )
+        boot_event = frontend_schema = None
+        if isinstance(auth, dict):
+            boot_event = auth.get(constants.CompileVars.CONNECT_AUTH_EVENT)
+            frontend_schema = auth.get(constants.CompileVars.CONNECT_AUTH_STATE_SCHEMA)
+        # A frontend compiled for another state tree is told so before it
+        # hydrates; an older frontend sends no hash and is left alone. The
+        # backend hash is cached on the state class, so this is one lookup.
+        if (
+            frontend_schema is not None
+            and self.app._state is not None
+            and frontend_schema
+            != (backend_schema := self.app._state._to_frontend_schema())
+        ):
+            logger.warning(
+                "Frontend state schema "
+                f"{format.sanitize_client_log_value(frontend_schema, max_length=64)} "
+                f"for session {sid} does not match the backend state schema "
+                f"{backend_schema}: the frontend was built for another version of "
+                "the app and is told to reload."
+            )
+            await self.emit(
+                str(constants.SocketEvent.STATE_MISMATCH),
+                {
+                    "backend": backend_schema,
+                    "reload_cooldown_ms": auto_reload_cooldown()
+                    // timedelta(milliseconds=1),
+                },
+                to=sid,
+            )
         query_params = urllib.parse.parse_qs(environ.get("QUERY_STRING", ""))
         token_list = query_params.get("token", [])
         if token_list:
@@ -2464,8 +2500,8 @@ class EventNamespace(AsyncNamespace):
         if error_type == constants.ClientErrorType.DISPATCH_MISSING:
             substate = format.sanitize_client_log_value(data.get("substate", ""))
             report = (
-                f"[SID: {sid}] State update failed: "
-                f"no dispatch function for substate(s) '{substate}'. "
+                f"[SID: {sid}] Skipped state update for unknown substate(s) "
+                f"'{substate}': no dispatch function registered. "
                 "This indicates a frontend/backend state mismatch. "
                 "Rebuild the frontend or check that api_url points to the matching backend."
             )

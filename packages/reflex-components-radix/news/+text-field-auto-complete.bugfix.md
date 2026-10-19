@@ -1,0 +1,1 @@
+`rx.input`'s `auto_complete` now takes the HTML autocomplete value, such as `"off"` or `"email"`, which used to raise a `TypeError`. A bool still works and now becomes `"on"` or `"off"`; before, React dropped it and browser autocomplete stayed on.
