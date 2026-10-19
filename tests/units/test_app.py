@@ -4457,8 +4457,8 @@ def test_decode_asgi_headers():
         (b"cookie", b"b=2"),
     ]) == {"cookie": "b=2"}
     # Valid UTF-8 values are preserved, with Latin-1 fallback for other bytes.
-    assert _decode_asgi_headers([(b"x-name", "café".encode())]) == {"x-name": "café"}
-    assert _decode_asgi_headers([(b"x-name", b"caf\xe9")]) == {"x-name": "café"}
+    assert _decode_asgi_headers([(b"x-name", "é".encode())]) == {"x-name": "é"}
+    assert _decode_asgi_headers([(b"x-name", b"\xe9")]) == {"x-name": "é"}
 
 
 def test_call_ignores_stale_marker_without_dev_backend_reload(
@@ -5118,7 +5118,7 @@ async def test_on_connect_accepts_non_utf8_header_value(
         "new_sid",
         {
             "QUERY_STRING": "token=abc",
-            "asgi.scope": {"headers": [(b"x-name", b"caf\xe9")]},
+            "asgi.scope": {"headers": [(b"x-name", b"\xe9")]},
         },
         {"event": {"name": "state.hydrate_and_load", "payload": {}}},
     )
@@ -5127,7 +5127,7 @@ async def test_on_connect_accepts_non_utf8_header_value(
         event_namespace._static_router_data["new_sid"][constants.RouteVar.HEADERS][
             "x-name"
         ]
-        == "café"
+        == "é"
     )
 
 
