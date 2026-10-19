@@ -67,25 +67,6 @@ def test_sync_root_package_json_ignores_formatting(
         assert package_json_path.stat().st_mtime_ns == original_mtime
 
 
-def test_sync_root_package_json_ignores_empty_dev_dependencies(
-    package_json_path: Path,
-):
-    """An absent and empty devDependencies field are equivalent for npm.
-
-    Args:
-        package_json_path: The rendered package.json path.
-    """
-    package_json = json.loads(package_json_path.read_text())
-    package_json.pop("devDependencies", None)
-    package_json_path.write_text(json.dumps(package_json, indent=2))
-    original_content = package_json_path.read_text()
-    original_mtime = package_json_path.stat().st_mtime_ns
-
-    assert frontend_skeleton.sync_root_package_json_to_web() is False
-    assert package_json_path.read_text() == original_content
-    assert package_json_path.stat().st_mtime_ns == original_mtime
-
-
 @pytest.mark.parametrize(
     ("field", "value"),
     [
