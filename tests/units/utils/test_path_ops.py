@@ -219,16 +219,25 @@ def test_file_lock_retries_only_windows_contention(
     expected_attempts: int,
 ):
     """Retry Windows contention timeouts but retain the unavailable-lock fallback."""
-    locking = Mock(side_effect=[OSError(error_number, "lock unavailable")] * 2 + [None])
+    locking = Mock(
+        side_effect=[OSError(error_number, "lock unavailable")] * 2 + [None, None]
+    )
     monkeypatch.setattr(path_ops, "sys", SimpleNamespace(platform="win32"))
     monkeypatch.setattr(
         path_ops,
         "msvcrt",
-        SimpleNamespace(locking=locking, LK_LOCK=1),
+        SimpleNamespace(locking=locking, LK_LOCK=1, LK_UNLCK=0),
         raising=False,
     )
 
     with path_ops.file_lock(tmp_path / "reflex.json"):
+        assert locking.call_count == expected_attempts
+
+    # Only a lock that was taken is released before the descriptor closes.
+    if error_number == errno.EDEADLK:
+        assert locking.call_count == expected_attempts + 1
+        assert locking.call_args.args[1:] == (0, 1)
+    else:
         assert locking.call_count == expected_attempts
 
 
@@ -689,11 +698,107 @@ def test_file_lock_releases_after_body_error(tmp_path: Path):
     target = tmp_path / "reflex.json"
     with pytest.raises(OSError, match="body error"), path_ops.file_lock(target):
         _assert_json_lock_held(target)
+        assert target.resolve() in path_ops._held_locks.paths
         msg = "body error"
         raise OSError(msg)
 
+    assert path_ops._held_locks.paths == set()
     path_ops.update_json_file(target, {"after_error": True})
     assert json.loads(target.read_text(encoding="utf-8")) == {"after_error": True}
+
+
+def _acquire_file_lock_in_process(path, attempted, entered) -> None:
+    """Acquire a lock from an independent interpreter.
+
+    Args:
+        path: The path to lock.
+        attempted: Event set before attempting acquisition.
+        entered: Event set after acquisition.
+    """
+    attempted.set()
+    with path_ops.file_lock(path):
+        entered.set()
+
+
+def test_file_lock_serializes_processes_and_reenters_in_thread(tmp_path: Path):
+    """Another process waits on a held directory lock; nested calls reenter it."""
+    context = multiprocessing.get_context("spawn")
+    attempted, entered = context.Event(), context.Event()
+    child = context.Process(
+        target=_acquire_file_lock_in_process, args=(tmp_path, attempted, entered)
+    )
+    try:
+        with path_ops.file_lock(tmp_path), path_ops.file_lock(tmp_path / "."):
+            child.start()
+            assert attempted.wait(15)
+            assert not entered.wait(0.3)
+        assert entered.wait(15)
+    finally:
+        if child.pid is not None:
+            _join_process(child)
+    assert child.exitcode == 0
+
+
+def test_file_lock_other_thread_waits(tmp_path: Path):
+    """Reentrancy is per thread: another thread waits for the lock."""
+    attempted, entered = threading.Event(), threading.Event()
+
+    def acquire() -> None:
+        attempted.set()
+        with path_ops.file_lock(tmp_path):
+            entered.set()
+
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        with path_ops.file_lock(tmp_path):
+            waiter = executor.submit(acquire)
+            assert attempted.wait(5)
+            assert not entered.wait(0.3)
+        waiter.result(timeout=5)
+    assert entered.is_set()
+
+
+@pytest.mark.skipif(os.name == "nt", reason="Requires fork and flock")
+def test_forked_child_does_not_inherit_lock_ownership(tmp_path: Path):
+    """A forked child must wait for its parent instead of reentering its lock."""
+    context = multiprocessing.get_context("fork")
+    attempted, entered = context.Event(), context.Event()
+
+    def acquire_in_child() -> None:
+        attempted.set()
+        with path_ops.file_lock(tmp_path):
+            entered.set()
+
+    child = context.Process(target=acquire_in_child)
+    try:
+        with path_ops.file_lock(tmp_path):
+            child.start()
+            assert attempted.wait(10)
+            assert not entered.wait(0.3)
+        assert entered.wait(10)
+    finally:
+        if child.pid is not None:
+            _join_process(child)
+    assert child.exitcode == 0
+
+
+@pytest.mark.skipif(os.name == "nt", reason="Requires raw fork")
+def test_forked_child_can_leave_inherited_lock_context(tmp_path: Path):
+    """A child leaving its parent's context must not touch closed descriptors."""
+    pid = None
+    child_status = 0
+    try:
+        with path_ops.file_lock(tmp_path):
+            pid = os.fork()
+    except OSError:
+        if pid != 0:
+            raise
+        child_status = 1
+    finally:
+        if pid == 0:
+            os._exit(child_status)
+    assert pid is not None
+    _, status = os.waitpid(pid, 0)
+    assert os.waitstatus_to_exitcode(status) == 0
 
 
 def test_file_lock_sidecar_persists_with_private_permissions(tmp_path: Path):
