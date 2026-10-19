@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, Literal
 from reflex_base import constants
 from reflex_base.constants import Hooks
 from reflex_base.utils import memo_paths
-from reflex_base.utils.format import format_state_name, json_dumps
+from reflex_base.utils.format import json_dumps
 from reflex_base.vars.base import VarData
 
 if TYPE_CHECKING:
@@ -343,13 +343,6 @@ def context_template(
     initial_state = initial_state or {}
     if initial_state_json is None:
         initial_state_json = json_dumps(initial_state)
-    # Context objects come from the static registry so they survive hot
-    # updates of this module; only the lookup table is generated here.
-    state_contexts_str = "".join([
-        f'{format_state_name(state_name)}: getStateContext("{state_name}"),'
-        for state_name in initial_state
-    ])
-
     state_str = (
         rf"""
 export const state_name = "{state_name}"
@@ -416,11 +409,6 @@ export const initialEvents = () => []
 """
     )
 
-    substates_str = "".join(
-        f"\n  ['{state_name}', '{format_state_name(state_name)}'],"
-        for state_name in initial_state
-    )
-
     disable_owner_stacks_str = (
         r"""
 // Disable React dev-build owner-stack capture: the per-element Error()
@@ -449,18 +437,17 @@ if (typeof window !== "undefined") {
         else ""
     )
 
-    return rf"""import {"React, " if disable_react_owner_stacks else ""}{{ useContext, useMemo, useReducer, useRef, useState, createElement, useEffect, useLayoutEffect }} from "react"
+    return rf"""import {"React, " if disable_react_owner_stacks else ""}{{ useContext, useMemo, useState, createElement, useEffect }} from "react"
 import {{ applyDelta, ReflexEvent, hydrateClientStorage, useEventLoop, refs }} from "$/utils/state"
-import {{ ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext, getStateContext, registerApp, eventLoop }} from "$/utils/context-registry"
+import {{ ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext, StateStoreContext, registerApp, eventLoop }} from "$/utils/context-registry"
 import {{ jsx }} from "@emotion/react";
 {disable_owner_stacks_str}
-export {{ ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext }};
+export {{ ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext, StateStoreContext }};
 export const initialState = {initial_state_json}
 export const initialStateHashes = {"[]" if not initial_state_hashes else json_dumps(initial_state_hashes)}
 export const stateSchema = {json.dumps(state_schema)}
 
 export const defaultColorMode = {default_color_mode}
-export const StateContexts = {{{state_contexts_str}}};
 export const clientStorage = {"{}" if client_storage is None else json.dumps(client_storage)}
 
 {state_str}
@@ -543,78 +530,80 @@ export function EventLoopProvider({{ children }}) {{
   );
 }}
 
-// ``useLayoutEffect`` warns when rendered on the server, where no effect runs
-// at all, so fall back to ``useEffect`` there.
-const useIsomorphicLayoutEffect =
-  typeof document !== "undefined" ? useLayoutEffect : useEffect;
-
-// Holds the mutable substate -> dispatch registry that ``SubstateProvider``
-// writes into and ``EventLoopProvider`` reads. The registry object identity is
-// stable for the lifetime of the tree, so neither adding a dispatcher nor
-// updating a substate re-renders the consumers of ``DispatchContext``.
-const DispatchProvider = ({{ children }}) => {{
-  const dispatchers = useRef({{}});
-  return useMemo(
-    () =>
-      createElement(DispatchContext, {{ value: dispatchers.current }}, children),
-    [children],
-  );
-}};
-
-// One provider per substate: each owns its own reducer, so a delta for one
-// substate only re-renders its provider instead of recreating every provider.
-const SubstateProvider = ({{ children, substateName, contextName }}) => {{
-  const dispatchers = useContext(DispatchContext);
-  const [state, dispatchSubstate] = useReducer(
-    applyDelta,
-    initialState[substateName],
-  );
-  // A layout effect, not a passive one: layout effects for the whole commit
-  // run before any passive effect, so every dispatcher is registered before
-  // ``EventLoopProvider`` (mounted below this provider) connects the socket.
-  // A delta naming an unregistered substate is skipped with a warning.
-  useIsomorphicLayoutEffect(() => {{
-    dispatchers[substateName] = dispatchSubstate;
-    return () => {{
-      delete dispatchers[substateName];
-    }};
-  }}, [dispatchers, dispatchSubstate, substateName]);
-  return useMemo(
-    () => createElement(StateContexts[contextName], {{ value: state }}, children),
-    [children, state, contextName],
-  );
-}};
-
-// ``[substateName, contextName]`` for every substate, outermost first.
-const SUBSTATES = [{substates_str}
-];
-
-function ClientStateProvider({{ children }}) {{
-  return useMemo(() => {{
-    let tree = children;
-    for (let i = SUBSTATES.length - 1; i >= 0; i--) {{
-      const [substateName, contextName] = SUBSTATES[i];
-      tree = createElement(SubstateProvider, {{ substateName, contextName }}, tree);
+// Dispatch updates happen outside render; useSyncExternalStore keeps reads
+// consistent while notifying only consumers of the changed substate.
+function createStateStore(initialState) {{
+  const state = {{}};
+  const listeners = new Map();
+  const dispatchers = {{}};
+  const notify = (substateName) =>
+    listeners.get(substateName)?.forEach((listener) => listener());
+  // Hot reload passes the recompiled initial state: new substates are added,
+  // and existing substates gain new fields at their defaults while keeping
+  // their live values.
+  const mergeInitialState = (nextInitialState) => {{
+    for (const [substateName, value] of Object.entries(nextInitialState)) {{
+      const liveState = state[substateName];
+      if (liveState !== undefined) {{
+        if (Object.keys(value).some((key) => !Object.hasOwn(liveState, key))) {{
+          state[substateName] = {{ ...value, ...liveState }};
+          notify(substateName);
+        }}
+        continue;
+      }}
+      state[substateName] = value;
+      dispatchers[substateName] = (delta) => {{
+        const currentState = state[substateName];
+        const nextState = applyDelta(currentState, delta);
+        if (nextState === currentState) return;
+        state[substateName] = nextState;
+        notify(substateName);
+      }};
+      notify(substateName);
     }}
-    return createElement(DispatchProvider, {{}}, tree);
-  }}, [children]);
+  }};
+  mergeInitialState(initialState);
+
+  return {{
+    dispatchers,
+    mergeInitialState,
+    getSnapshot: (substateName) => state[substateName],
+    subscribe: (substateName, listener) => {{
+      let substateListeners = listeners.get(substateName);
+      if (!substateListeners) {{
+        substateListeners = new Set();
+        listeners.set(substateName, substateListeners);
+      }}
+      substateListeners.add(listener);
+      return () => substateListeners.delete(listener);
+    }},
+  }};
 }}
 
-// The server renders once and never applies a delta, so it provides the
-// initial state through bare context providers. ``SubstateProvider`` would add
-// a second render level per substate, and the server renderer recurses once per
-// level, so with many substates rendering a page can exhaust the stack.
+function StateStoreProviders({{ children, store }}) {{
+  return createElement(
+    StateStoreContext,
+    {{ value: store }},
+    createElement(DispatchContext, {{ value: store.dispatchers }}, children),
+  );
+}}
+
+function ClientStateProvider({{ children }}) {{
+  const [store] = useState(() => createStateStore(initialState));
+  useEffect(() => store.mergeInitialState(initialState), [store, initialState]);
+  return createElement(StateStoreProviders, {{ children, store }});
+}}
+
+// The server renders once and never applies a delta, so it only reads the
+// initial state.
+const serverStateStore = {{
+  dispatchers: {{}},
+  getSnapshot: (substateName) => initialState[substateName],
+  subscribe: () => () => {{}},
+}};
+
 function ServerStateProvider({{ children }}) {{
-  let tree = children;
-  for (let i = SUBSTATES.length - 1; i >= 0; i--) {{
-    const [substateName, contextName] = SUBSTATES[i];
-    tree = createElement(
-      StateContexts[contextName],
-      {{ value: initialState[substateName] }},
-      tree,
-    );
-  }}
-  return createElement(DispatchContext, {{ value: {{}} }}, tree);
+  return createElement(StateStoreProviders, {{ children, store: serverStateStore }});
 }}
 
 export const StateProvider =
