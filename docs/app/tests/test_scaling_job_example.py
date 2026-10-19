@@ -4,6 +4,7 @@ import asyncio
 import re
 import sys
 from contextlib import asynccontextmanager
+from functools import wraps
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
 from unittest.mock import AsyncMock
@@ -19,6 +20,17 @@ from reflex_base.event.context import EventContext
 from reflex_base.registry import RegistrationContext
 
 GUIDE = Path(__file__).resolve().parents[2] / "hosting/scaling.md"
+
+
+def run_async(test):
+    """Run an async case with core pytest, preserving fixture/parameter discovery."""
+
+    @wraps(test)
+    def run(*args, **kwargs):
+        """Execute one case in its own event loop."""
+        return asyncio.run(test(*args, **kwargs))
+
+    return run
 
 
 class ReportServiceError(Exception):
@@ -138,7 +150,7 @@ async def session(example, owner="alice"):
         await manager.close()
 
 
-@pytest.mark.asyncio
+@run_async
 @pytest.mark.parametrize("lost_response", [False, True])
 async def test_retries_reuse_the_request_key_and_committed_job(example, lost_response):
     """A repeated submission, including lost acknowledgement, keeps one job."""
@@ -153,12 +165,12 @@ async def test_retries_reuse_the_request_key_and_committed_job(example, lost_res
         assert state.job_id == example.service.outbox[0]
         assert state.status == "queued" and not state.error
         async with state:
-            example.module.ReportState.new_report.fn(state)
+            await example.module.ReportState.new_report.fn(state)
         assert state._request_key != request_key
         assert not state.job_id and not state.status
 
 
-@pytest.mark.asyncio
+@run_async
 async def test_failed_accept_does_not_claim_an_accepted_job(example):
     """A failed acceptance leaves a retryable key without a job ID/status."""
     example.service.fail_accept = True
@@ -169,7 +181,7 @@ async def test_failed_accept_does_not_claim_an_accepted_job(example):
         assert not example.service.jobs and not example.service.outbox
 
 
-@pytest.mark.asyncio
+@run_async
 async def test_status_read_uses_owner_and_selected_job_id(example):
     """Possessing another owner's job ID does not return its status."""
     async with session(example) as alice:
@@ -183,6 +195,7 @@ async def test_status_read_uses_owner_and_selected_job_id(example):
             alice._request_key,
         )
     async with session(example, "bob") as bob:
+        await example.module.ReportState.sync_report.fn(bob)
         async with bob:
             bob.job_id = job_id
         await example.module.ReportState.sync_report.fn(bob)
@@ -190,7 +203,7 @@ async def test_status_read_uses_owner_and_selected_job_id(example):
         assert not bob.job_id and not bob.status
 
 
-@pytest.mark.asyncio
+@run_async
 @pytest.mark.parametrize("operation", ["submit", "read"])
 @pytest.mark.parametrize("change", ["logout", "same_owner_relogin", "selection"])
 async def test_stale_service_response_does_not_update_the_ui(
@@ -207,7 +220,7 @@ async def test_stale_service_response_does_not_update_the_ui(
         await asyncio.wait_for(example.service.started.wait(), 2)
         async with state:
             if change == "selection":
-                example.module.ReportState.new_report.fn(state)
+                await example.module.ReportState.new_report.fn(state)
             else:
                 auth = await state.get_state(example.auth)
                 auth._session_revision += 1
@@ -218,7 +231,7 @@ async def test_stale_service_response_does_not_update_the_ui(
         assert not state.job_id and not state.status and not state.error
 
 
-@pytest.mark.asyncio
+@run_async
 async def test_fresh_state_recovers_job_and_retry_key(example):
     """A new session uses an authorized durable lookup, not old UI state."""
     async with session(example) as original:
@@ -233,7 +246,81 @@ async def test_fresh_state_recovers_job_and_retry_key(example):
         assert len(example.service.jobs) == len(example.service.outbox) == 1
 
 
-@pytest.mark.asyncio
+@run_async
+@pytest.mark.parametrize("next_owner", ["alice", "bob"])
+@pytest.mark.parametrize("clear_ui", [False, True])
+async def test_authentication_change_recovers_without_previous_session_selectors(
+    example, next_owner, clear_ui
+):
+    """An account switch or relogin cannot reuse the old report selection."""
+    async with session(example) as state:
+        await example.module.ReportState.sync_report.fn(state, True)
+        async with session(example, next_owner) as other:
+            await example.module.ReportState.sync_report.fn(other, True)
+            latest_id, latest_key = other.job_id, other._request_key
+        async with state:
+            auth = await state.get_state(example.auth)
+            auth._owner_id = next_owner
+            auth._session_revision += 2  # Logout and login between report events.
+            state.error = "Previous session error"
+            if clear_ui:
+                state.job_id = state.status = state.error = ""
+        example.service.pause = "read"
+        task = asyncio.create_task(example.module.ReportState.sync_report.fn(state))
+        await asyncio.wait_for(example.service.started.wait(), 2)
+        assert not state.job_id and not state.status and not state.error
+        assert not state._request_key
+        example.service.release.set()
+        await asyncio.wait_for(task, 2)
+        assert example.service.calls[-1] == ("read", next_owner, "", "")
+        assert state.job_id == latest_id and state._request_key == latest_key
+        assert state.status == "queued" and not state.error
+        await example.module.ReportState.sync_report.fn(state, True)
+        assert len(example.service.jobs) == len(example.service.outbox) == 2
+
+
+@run_async
+@pytest.mark.parametrize("account_change", [False, True])
+async def test_new_report_binds_identity_before_first_refresh(example, account_change):
+    """An explicit new selection survives initial or post-login recovery."""
+    async with session(example, "bob") as previous:
+        await example.module.ReportState.sync_report.fn(previous, True)
+        older_id = previous.job_id
+    async with session(example, "alice" if account_change else "bob") as state:
+        if account_change:
+            await example.module.ReportState.sync_report.fn(state, True)
+        async with state:
+            if account_change:
+                auth = await state.get_state(example.auth)
+                auth._owner_id = "bob"
+                auth._session_revision += 2
+            await example.module.ReportState.new_report.fn(state)
+        new_key = state._request_key
+        await example.module.ReportState.sync_report.fn(state)
+        assert example.service.calls[-1] == ("read", "bob", "", new_key)
+        assert state._request_key == new_key and not state.job_id
+        await example.module.ReportState.sync_report.fn(state, True)
+        assert state._request_key == new_key and state.job_id != older_id
+
+
+@run_async
+async def test_logout_clears_selection_without_calling_job_services(example):
+    """Signed-out refresh removes private selectors as well as visible fields."""
+    async with session(example) as state:
+        await example.module.ReportState.sync_report.fn(state, True)
+        calls = len(example.service.calls)
+        async with state:
+            auth = await state.get_state(example.auth)
+            auth._owner_id = ""
+            auth._session_revision += 1
+            state.error = "Previous session error"
+        await example.module.ReportState.sync_report.fn(state)
+        assert not state.job_id and not state.status and not state.error
+        assert not state._request_key
+        assert len(example.service.calls) == calls
+
+
+@run_async
 @pytest.mark.parametrize("pending_submit", [False, True])
 async def test_refresh_does_not_replace_a_new_request_with_an_older_job(
     example, pending_submit
@@ -243,7 +330,7 @@ async def test_refresh_does_not_replace_a_new_request_with_an_older_job(
         await example.module.ReportState.sync_report.fn(state, True)
         old_job = state.job_id
         async with state:
-            example.module.ReportState.new_report.fn(state)
+            await example.module.ReportState.new_report.fn(state)
         new_key = state._request_key
         task = None
         if pending_submit:
@@ -265,7 +352,7 @@ async def test_refresh_does_not_replace_a_new_request_with_an_older_job(
         assert len(example.service.jobs) == len(example.service.outbox) == 2
 
 
-@pytest.mark.asyncio
+@run_async
 async def test_signed_out_state_does_not_call_job_services(example):
     """An absent trusted identity prevents both reads and submissions."""
     async with session(example, "") as state:

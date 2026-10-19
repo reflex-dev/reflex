@@ -122,7 +122,7 @@ A queue library alone does not guarantee durability. Select broker persistence a
 
 ### Connect a report job to Reflex state
 
-The handler below awaits an application service outside the state lock, then applies its result only if the signed-in session and selected request are still current. `report_app.auth.AuthState` is your own authentication state, not a Reflex API: its backend-only `_owner_id` comes from verified authentication, and `_session_revision` changes on every login/logout, including signing back in as the same owner. Your logout handler also clears the report UI.
+The handler below awaits an application service outside the state lock, then applies its result only if the signed-in session and selected request are still current. `report_app.auth.AuthState` is your own authentication state, not a Reflex API: its backend-only `_owner_id` comes from verified authentication, and `_session_revision` changes on every login/logout, including signing back in as the same owner. Report selection is bound to that identity and cleared when it changes. Your logout handler also clears the visible report UI immediately.
 
 Supply asynchronous `report_app.reports` adapters backed by your database and broker:
 
@@ -142,10 +142,13 @@ class ReportState(rx.State):
     status: str = ""
     error: str = ""
     _request_key: str = ""
+    _identity: tuple[str, int] = ("", 0)
     _generation: int = 0
 
     @rx.event
-    def new_report(self):
+    async def new_report(self):
+        auth = await self.get_state(AuthState)
+        self._identity = (auth._owner_id, auth._session_revision)
         self._request_key = uuid4().hex
         self._generation += 1
         self.job_id = self.status = self.error = ""
@@ -155,10 +158,12 @@ class ReportState(rx.State):
         async with self:
             auth = await self.get_state(AuthState)
             identity = (auth._owner_id, auth._session_revision)
+            if identity != self._identity or not identity[0]:
+                self._identity = identity
+                self.job_id = self.status = self.error = self._request_key = ""
             self._generation += 1
             generation = self._generation
             if not identity[0]:
-                self.job_id = self.status = ""
                 return
             if submit and not self._request_key:
                 self._request_key = uuid4().hex
@@ -197,7 +202,7 @@ def report_panel():
     )
 ```
 
-Retries keep the same request key; **New report** deliberately creates a new logical request and key. After authentication, run `ReportState.sync_report` on page load to recover a job in a fresh session. If a session is lost before acceptance reaches the UI, recover from durable records before deliberately submitting a new request; a key held only in lost session state cannot deduplicate a new key. For multiple outstanding jobs, provide an authorized list/selection view instead of a latest-job lookup.
+Retries within the same authenticated session keep the request key; **New report** deliberately creates a new logical request and key. Run `ReportState.sync_report` on page load and after authentication changes to recover from durable records before deliberately submitting a new request. A key held only in lost session state cannot deduplicate a new key. For multiple outstanding jobs, provide an authorized list/selection view instead of a latest-job lookup.
 
 These adapters and the worker must implement the lifecycle above; a background event alone does not make the job durable.
 
