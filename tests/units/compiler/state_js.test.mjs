@@ -19,6 +19,7 @@ async function setup({
   hidden = false,
   storedToken = "original-token",
   clientStorage = {},
+  dropConnect = false,
   react = { useCallback() {}, useEffect() {}, useRef() {}, useState() {} },
 } = {}) {
   const sockets = [];
@@ -26,6 +27,8 @@ async function setup({
   const timers = new Map();
   const firstHydrates = [];
   const updates = [];
+  let connectErrors = [];
+  const errorUpdates = [];
   const window = new EventTarget();
   window.location = new URL("http://localhost:3000/page?query=value");
   const storage = new Map(storedToken ? [["token", storedToken]] : []);
@@ -62,6 +65,7 @@ async function setup({
   function io(url, opts) {
     const handlers = new Map();
     const socket = {
+      handlers,
       connected: false,
       namespaceConnects: 0,
       disconnects: 0,
@@ -90,6 +94,11 @@ async function setup({
           assert.ok(handlers.has(name), `missing handler: ${name}`);
         }
         this.namespaceConnects++;
+        if (dropConnect) {
+          // The server closes the transport before acknowledging the CONNECT.
+          handlers.get("disconnect")("transport close");
+          return;
+        }
         this.connected = true;
         handlers.get("connect")();
         handlers.get("new_token")("assigned-token");
@@ -176,6 +185,14 @@ async function setup({
     localStorage,
     socket,
     updates,
+    get connectErrors() {
+      // Like React with pending work, apply queued updaters only on render.
+      for (const update of errorUpdates.splice(0)) {
+        connectErrors =
+          typeof update === "function" ? update(connectErrors) : update;
+      }
+      return connectErrors;
+    },
     module,
     dispose,
     flush: () => microtasks.splice(0).forEach((fn) => fn()),
@@ -184,7 +201,7 @@ async function setup({
         socket,
         { child: (delta) => updates.push(delta.count) },
         transports,
-        () => {},
+        (update) => errorUpdates.push(update),
         {},
         () => {},
         { current: {} },
@@ -250,6 +267,35 @@ test("reconnect uses the assigned token and requests a full hydrate", async () =
   assert.equal(app.socket.current.io.opts.query.token, "assigned-token");
   assert.deepEqual(app.firstHydrates, [true, false]);
   assert.equal(app.socket.current.namespaceConnects, 2);
+});
+
+test("a transport closed before the namespace connects backs off with an error", async () => {
+  const app = await setup({ dropConnect: true });
+  app.flush();
+  await app.connect();
+  const socket = app.socket.current;
+  assert.equal(socket.namespaceConnects, 1);
+  assert.equal(app.connectErrors.length, 1);
+  assert.deepEqual([...app.timers.values()], [200]);
+
+  const [retry] = app.timers.keys();
+  app.timers.clear();
+  retry();
+  assert.equal(socket.namespaceConnects, 2);
+  assert.equal(app.connectErrors.length, 2);
+  assert.deepEqual([...app.timers.values()], [400]);
+});
+
+test("a dropped connection reconnects at once", async () => {
+  const app = await setup();
+  app.flush();
+  await app.connect();
+  const socket = app.socket.current;
+  socket.connected = false;
+  socket.handlers.get("disconnect")("transport close");
+  assert.equal(socket.namespaceConnects, 2);
+  assert.equal(app.connectErrors.length, 0);
+  assert.equal(app.timers.size, 0);
 });
 
 for (const reason of ["error", "timeout", "pagehide", "hot reload"]) {

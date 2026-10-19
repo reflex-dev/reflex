@@ -651,3 +651,52 @@ def test_synced_storage_event_while_disconnected_sends_current_value(
     expect(page.locator("#sync-value")).to_have_text("fresh")
     assert not any("update_vars_internal" in m and '"stale"' in m for m in socket.sent)
     assert page.evaluate("localStorage.getItem('hydrate-sync')") == "fresh"
+
+
+@pytest.mark.parametrize("limit", ["server", "proxy"])
+def test_refused_hydration_retries_with_backoff(
+    hydration_storage_app: AppHarness, page: Page, limit: str
+):
+    """A CONNECT packet dropped for its size is retried with backoff and reported.
+
+    Args:
+        hydration_storage_app: The running app.
+        page: A fresh browser page.
+        limit: Whether the server limit or a smaller proxy limit drops the packet.
+    """
+    assert hydration_storage_app.frontend_url is not None
+    opens: list[str] = []
+    page.on("websocket", lambda ws: opens.append(ws.url))
+    if limit == "proxy":
+
+        def proxy(route: WebSocketRoute):
+            """Close the transport on a large frame, like a proxy with its own limit.
+
+            Args:
+                route: The intercepted websocket.
+            """
+            server = route.connect_to_server()
+            route.on_message(
+                lambda m: route.close() if len(m) > 100_000 else server.send(m)
+            )
+            server.on_message(route.send)
+
+        page.route_web_socket(re.compile(r".*/_event"), proxy)
+    page.goto(hydration_storage_app.frontend_url)
+    expect(page.locator("#hydrated")).to_have_text("true")
+
+    size = 1_100_000 if limit == "server" else 200_000
+    page.evaluate("n => localStorage.setItem('hydrate-local', 'x'.repeat(n))", size)
+    opens.clear()
+    page.reload()
+    expect(page.get_by_text("Cannot connect to server")).to_be_visible()
+    page.wait_for_timeout(3000)
+    # The backoff allows about six attempts in three seconds; an immediate
+    # reconnect makes hundreds.
+    event_opens = [url for url in opens if "/_event" in url]
+    assert len(event_opens) < 10, event_opens
+    expect(page.locator("#hydrated")).to_have_text("false")
+
+    page.evaluate("localStorage.removeItem('hydrate-local')")
+    page.reload()
+    expect(page.locator("#hydrated")).to_have_text("true")
