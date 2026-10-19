@@ -782,7 +782,9 @@ class StringVar(Var[STRING_TYPE], python_types=str):
             The string slice operation.
         """
         if isinstance(i, slice):
-            return self.split()[i].join()
+            if i.step is None:
+                return string_slice_operation(self, i.start, i.stop)
+            return string_codepoints_operation(self)[i].join()
         if not isinstance(i, (int, NumberVar)) or (
             isinstance(i, NumberVar) and i._is_strict_float()
         ):
@@ -795,7 +797,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         Returns:
             The string length operation.
         """
-        return self.split().length()
+        return string_length_operation(self)
 
     def lower(self) -> StringVar:
         """Convert the string to lowercase.
@@ -1148,6 +1150,22 @@ _PY_RSTRIP_IMPORT: ImportDict = {
     f"$/{Dirs.STATE_PATH}": [ImportVar(tag="pyRstrip")],
 }
 
+_PY_STR_CHARS_IMPORT: ImportDict = {
+    f"$/{Dirs.STATE_PATH}": [ImportVar(tag="pyStrChars")],
+}
+
+_PY_STR_LENGTH_IMPORT: ImportDict = {
+    f"$/{Dirs.STATE_PATH}": [ImportVar(tag="pyStrLength")],
+}
+
+_PY_STR_AT_IMPORT: ImportDict = {
+    f"$/{Dirs.STATE_PATH}": [ImportVar(tag="pyStrAt")],
+}
+
+_PY_STR_SLICE_IMPORT: ImportDict = {
+    f"$/{Dirs.STATE_PATH}": [ImportVar(tag="pyStrSlice")],
+}
+
 
 @var_operation
 def string_strip_operation(
@@ -1285,6 +1303,40 @@ def string_ends_with_operation(
 
 
 @var_operation
+def string_codepoints_operation(string: StringVar[Any]):
+    """Convert a string to an array of Unicode code points.
+
+    Args:
+        string: The string to convert.
+
+    Returns:
+        The string's Unicode code points as an array.
+    """
+    return var_operation_return(
+        js_expression=f"pyStrChars({string!s})",
+        var_type=list[str],
+        var_data=VarData(imports=_PY_STR_CHARS_IMPORT),
+    )
+
+
+@var_operation
+def string_length_operation(string: StringVar[Any]):
+    """Get the number of Unicode code points in a string.
+
+    Args:
+        string: The string.
+
+    Returns:
+        The number of code points.
+    """
+    return var_operation_return(
+        js_expression=f"pyStrLength({string!s})",
+        var_type=int,
+        var_data=VarData(imports=_PY_STR_LENGTH_IMPORT),
+    )
+
+
+@var_operation
 def string_item_operation(string: StringVar[Any], index: NumberVar | int):
     """Get an item from a string.
 
@@ -1296,7 +1348,32 @@ def string_item_operation(string: StringVar[Any], index: NumberVar | int):
         The item from the string.
     """
     return var_operation_return(
-        js_expression=f"{string!s}?.at?.({index!s})", var_type=str
+        js_expression=f"pyStrAt({string!s}, {index!s})",
+        var_type=str,
+        var_data=VarData(imports=_PY_STR_AT_IMPORT),
+    )
+
+
+@var_operation
+def string_slice_operation(
+    string: StringVar[Any],
+    start: NumberVar | int | None,
+    stop: NumberVar | int | None,
+):
+    """Slice a string by Unicode code points.
+
+    Args:
+        string: The string.
+        start: The start index, or None to slice from the start.
+        stop: The stop index, or None to slice to the end.
+
+    Returns:
+        The sliced string.
+    """
+    return var_operation_return(
+        js_expression=f"pyStrSlice({string!s}, {start!s}, {stop!s})",
+        var_type=str,
+        var_data=VarData(imports=_PY_STR_SLICE_IMPORT),
     )
 
 

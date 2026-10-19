@@ -387,6 +387,46 @@ def test_dynamic_component_bundled_subpath_import_forms(
             assert 'from "https://cdn.jsdelivr.net/npm/test-library@1.0.0/+esm"' in code
 
 
+@pytest.mark.parametrize("is_default", [False, True])
+def test_dynamic_component_unbundled_subpath_falls_back_to_cdn_subpath(
+    is_default: bool,
+):
+    """Send an unbundled subpath import to the CDN url of that subpath.
+
+    Args:
+        is_default: Whether the subpath binding is a default import.
+    """
+    test_library = "test-library@1.0.0"
+
+    class UnbundledSubpathComponent(rx.Component):
+        """A component importing from a module below an unbundled package root."""
+
+        library = test_library
+        tag = "RootComponent"
+
+        def add_imports(self) -> ParsedImportDict:
+            """Import a binding from a module below the package root.
+
+            Returns:
+                The requested versioned subpath import.
+            """
+            return {
+                test_library: [
+                    ImportVar("Widget", is_default=is_default, package_path="/deep.mjs")
+                ]
+            }
+
+    with RegistrationContext():
+        code = serializers.serialize(UnbundledSubpathComponent.create())
+
+    assert isinstance(code, str)
+    # `/+esm` has to end the path; jsdelivr answers 404 for anything after it.
+    assert "/+esm/deep.mjs" not in code
+    assert (
+        'from "https://cdn.jsdelivr.net/npm/test-library@1.0.0/deep.mjs/+esm"' in code
+    )
+
+
 def test_dynamic_component_codegen_wires_event_handlers() -> None:
     """Dynamic component codegen should preserve backend event handlers."""
     state = State(_reflex_internal_init=True)  # pyright: ignore[reportCallIssue]

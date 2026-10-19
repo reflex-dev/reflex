@@ -4,14 +4,22 @@ import datetime
 import json
 import logging
 import uuid
+from pathlib import Path
 from unittest.mock import MagicMock, mock_open
+from urllib.parse import parse_qs, urlsplit
 
 import click
 import pytest
 from pytest_mock import MockerFixture, MockFixture
 from reflex_base.utils.log import SUCCESS
+from reflex_build_sdk import (
+    APIConnectionError,
+    APIResponseValidationError,
+    APITimeoutError,
+)
 from reflex_build_sdk.types import DeploymentReport, GcpConnection, GcpStatus
 from reflex_cli import constants
+from reflex_cli.utils import hosting
 from reflex_cli.utils.exceptions import TokenAccessDeniedError, TokenValidationError
 from reflex_cli.utils.hosting import (
     _WATCH_UNREACHABLE_GRACE,
@@ -46,9 +54,115 @@ from reflex_cli.utils.hosting import (
     watch_deployment_status,
 )
 
+from tests.units.reflex_build_sdk.conftest import MockAPI, MockTransport, reply
 from tests.units.reflex_cli.sdk import api_error, fake_client
 
 _client = fake_client
+
+
+def test_upload_client_uses_sdk_default_transport(mocker: MockerFixture):
+    """The upload client's retry wrapper preserves SDK transport selection.
+
+    Args:
+        mocker: The pytest-mock fixture.
+    """
+    transport = MagicMock()
+    default_transport = mocker.patch(
+        "reflex_cli.utils.hosting.default_transport",
+        return_value=transport,
+        create=True,
+    )
+
+    with hosting.upload_client(_client()):
+        default_transport.assert_called_once_with()
+        transport.close.assert_not_called()
+
+    transport.close.assert_called_once_with()
+
+
+@pytest.mark.parametrize("base_path", ["", "/proxy", "/nested/proxy/"])
+@pytest.mark.parametrize("refusal_code", ["app_busy", "app_scaling"])
+def test_upload_client_retries_submission_without_uploading_again(
+    mocker: MockerFixture, tmp_path: Path, base_path: str, refusal_code: str
+):
+    """Scaling retries reuse the uploaded build and close their HTTP transport.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        tmp_path: The directory for the build archives.
+        base_path: The backend URL's optional path prefix.
+        refusal_code: The server's legacy or dedicated scaling refusal code.
+    """
+    mocker.patch.object(
+        constants.Hosting, "HOSTING_SERVICE", f"https://build.example{base_path}"
+    )
+    deployments_path = f"{base_path.rstrip('/')}/api/v1/deployments"
+    mock_api = MockAPI()
+    transport = MockTransport(mock_api)
+    mocker.patch("reflex_cli.utils.hosting.default_transport", return_value=transport)
+    sleep = mocker.patch("time.sleep")
+    client = _client()
+    client.api.token = "test-token"
+    deployment_id = str(uuid.UUID(int=41))
+    archives = [tmp_path / name for name in ("backend.zip", "frontend.zip")]
+    for archive in archives:
+        archive.write_bytes(b"build")
+        mock_api.add("PUT", f"/{archive.name}", reply(200))
+    mock_api.add(
+        "POST",
+        f"{deployments_path}/reserve",
+        reply(
+            200,
+            json={
+                "deployment_id": deployment_id,
+                "backend": {
+                    "url": "https://storage.example/backend.zip",
+                    "headers": {},
+                },
+                "frontend": {
+                    "url": "https://storage.example/frontend.zip",
+                    "headers": {},
+                },
+                "expires_in": 1800,
+            },
+        ),
+    )
+    mock_api.add(
+        "POST",
+        deployments_path,
+        reply(
+            409,
+            headers={"x-reflex-error-code": refusal_code},
+            json={
+                "detail": (
+                    "the app is currently being scaled; wait for the scale to finish, then deploy again"
+                    if refusal_code == "app_busy"
+                    else "Scaling is underway. Please retry later."
+                )
+            },
+        ),
+        reply(201, json=deployment_id),
+    )
+
+    with hosting.upload_client(client) as uploader:
+        result = uploader.deployments.create(
+            uuid.UUID(int=51), backend=archives[0], frontend=archives[1]
+        )
+
+    assert str(result) == deployment_id
+    paths = [urlsplit(request.url).path for request in mock_api.requests]
+    assert paths.count(f"{deployments_path}/reserve") == 1
+    assert paths.count("/backend.zip") == paths.count("/frontend.zip") == 1
+    submits = mock_api.requests[-2:]
+    assert paths[-2:] == [deployments_path] * 2
+    assert [request.method for request in submits] == ["POST"] * 2
+    assert submits[0].url == submits[1].url
+    assert submits[0].headers["X-Request-ID"] == submits[1].headers["X-Request-ID"]
+    assert submits[0].content == submits[1].content
+    assert isinstance(submits[0].content, bytes)
+    assert parse_qs(submits[0].content.decode())["stored_build_id"] == [deployment_id]
+    sleep.assert_called_once_with(15)
+    assert mock_api.closed
 
 
 @pytest.mark.parametrize(
@@ -529,9 +643,11 @@ def test_rejected_token_in_non_interactive_mode_does_not_prompt(
     assert exc_info.value.exit_code == 1
     browser.assert_not_called()
     errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
-    assert errors == [
+    assert len(errors) == 1
+    assert errors[0].startswith(
         f"The access token from the {source.value} was rejected: access denied (auth request id: req-1)"
-    ]
+    )
+    assert "reflex login" in errors[0]
 
 
 def test_rejected_config_token_in_non_interactive_mode_is_removed(
@@ -586,7 +702,7 @@ def test_unvalidated_token_in_non_interactive_mode_is_not_called_rejected(
     browser.assert_not_called()
     errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
     assert errors == [
-        "Unable to validate the access token from the config file: server error (auth request id: req-2)"
+        "Unable to validate the access token from the config file: server error (auth request id: req-2). Please try again later."
     ]
 
 
@@ -825,6 +941,122 @@ def test_set_instance_bounds_error(status_code: int, detail: str):
     assert detail in result
 
 
+def test_set_instance_bounds_preserves_scaling_refusal():
+    """The deploy retry receives the typed refusal, including its request id."""
+    client = _client()
+    error = api_error(
+        409,
+        "the app is being scaled; change instance bounds after it finishes",
+        code="instance_bounds_scale_conflict",
+        method="POST",
+        path="apps/app-1/instance_bounds",
+    )
+    client.api.apps.set_instance_bounds.side_effect = error
+
+    with pytest.raises(type(error)) as raised:
+        set_instance_bounds("app-1", client, min_instances=2)
+
+    assert raised.value is error
+    client.api.apps.set_instance_bounds.assert_called_once()
+
+
+@pytest.mark.parametrize("status_code", [500, 502, 503, 504])
+def test_set_instance_bounds_preserves_server_errors(
+    status_code: int, caplog: pytest.LogCaptureFixture
+):
+    """A server error cannot confirm whether the bounds write took effect.
+
+    Args:
+        status_code: The server error returned after the write.
+        caplog: The captured log messages.
+    """
+    client = _client()
+    error = api_error(
+        status_code,
+        "unavailable",
+        method="POST",
+        path="apps/app-1/instance_bounds",
+    )
+    client.api.apps.set_instance_bounds.side_effect = error
+
+    with pytest.raises(type(error)) as raised:
+        set_instance_bounds("app-1", client, min_instances=2)
+
+    assert raised.value is error
+    client.api.apps.set_instance_bounds.assert_called_once()
+    assert any(
+        record.levelno == logging.WARNING
+        and "may or may not have been applied" in record.getMessage()
+        for record in caplog.records
+    )
+
+
+@pytest.mark.parametrize("error_type", [APIConnectionError, APITimeoutError])
+def test_set_instance_bounds_preserves_uncertain_outcomes(
+    error_type: type[APIConnectionError],
+):
+    """A write without a usable answer must reach the deploy's uncertainty guard.
+
+    Args:
+        error_type: The SDK failure that leaves the write's result unknown.
+    """
+    client = _client()
+    response = api_error(200, "invalid response").response
+    error = error_type("lost response", request=response.request)
+    client.api.apps.set_instance_bounds.side_effect = error
+
+    with pytest.raises(error_type) as raised:
+        set_instance_bounds("app-1", client, min_instances=2)
+
+    assert raised.value is error
+    client.api.apps.set_instance_bounds.assert_called_once()
+
+
+@pytest.mark.parametrize("during_write", [False, True])
+def test_set_instance_bounds_warns_about_undecodable_success(
+    during_write: bool, caplog: pytest.LogCaptureFixture
+):
+    """An undecodable write response still carries the server's success status.
+
+    Args:
+        during_write: Whether decoding failed after the write or preliminary read.
+        caplog: The captured log messages.
+    """
+    client = _client()
+    client.api.apps.get.return_value.name = "my-app"
+    response = api_error(
+        200,
+        "invalid response",
+        method="POST" if during_write else "GET",
+        path="apps/app-1/instance_bounds" if during_write else "apps/app-1",
+    ).response
+    error = APIResponseValidationError("invalid response", response=response)
+    operation = (
+        client.api.apps.set_instance_bounds if during_write else client.api.apps.get
+    )
+    operation.side_effect = error
+
+    with pytest.raises(APIResponseValidationError) as raised:
+        set_instance_bounds("app-1", client, min_instances=2)
+
+    assert raised.value is error
+    assert client.api.apps.set_instance_bounds.call_count == int(during_write)
+    warnings = [
+        record.getMessage()
+        for record in caplog.records
+        if record.levelno == logging.WARNING
+    ]
+    if during_write:
+        assert len(warnings) == 1
+        assert "server reported success" in warnings[0]
+        assert "response could not be decoded" in warnings[0]
+        assert "bounds may have changed" in warnings[0]
+        assert "my-app" in warnings[0]
+        assert "may or may not have been applied" not in warnings[0]
+    else:
+        assert not warnings
+
+
 def test_validate_token_names_the_product_it_logs_in_through(
     mocker: MockerFixture,
 ):
@@ -888,6 +1120,149 @@ def test_validate_token_with_retries_access_denied_reports_request_id(
     errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
     assert errors
     assert get_auth_request_id() in errors[-1]
+
+
+@pytest.mark.parametrize(
+    ("status_code", "retryable"),
+    [
+        (400, False),
+        (404, False),
+        (422, False),
+        (408, True),
+        (429, True),
+        (500, True),
+        (503, True),
+    ],
+)
+def test_validate_reports_the_status_of_a_refused_request(
+    status_code: int, retryable: bool
+):
+    """A refused validation request reports its status and whether to retry.
+
+    Args:
+        status_code: The status the API answered with.
+        retryable: Whether trying again later may help.
+    """
+    client = _client()
+    client.api.auth.me.side_effect = api_error(
+        status_code, "Malformed authentication request"
+    )
+
+    with pytest.raises(TokenValidationError) as exc_info:
+        hosting._validate("fictional-token", client.api)
+
+    assert not isinstance(exc_info.value, TokenAccessDeniedError)
+    assert str(exc_info.value) == f"HTTP {status_code}"
+    assert exc_info.value.retryable is retryable
+
+
+@pytest.mark.parametrize("status_code", [401, 403])
+def test_validate_does_not_call_a_rejected_token_retryable(status_code: int):
+    """A token the control plane refused is not worth trying again.
+
+    Args:
+        status_code: The status the API answered with.
+    """
+    client = _client()
+    client.api.auth.me.side_effect = api_error(status_code, "denied")
+
+    with pytest.raises(TokenAccessDeniedError) as exc_info:
+        hosting._validate("fictional-token", client.api)
+
+    assert exc_info.value.retryable is False
+    assert isinstance(exc_info.value, TokenValidationError)
+
+
+def test_token_access_denied_error_is_never_retryable():
+    """The error is not retryable however it is built."""
+    assert TokenAccessDeniedError("access denied").retryable is False
+    assert TokenAccessDeniedError("access denied", "req-1").retryable is False
+    assert TokenValidationError("server error").retryable is True
+
+
+@pytest.mark.parametrize("error", [APIConnectionError, APITimeoutError])
+def test_validate_retries_connection_failures(error: type[APIConnectionError]):
+    """A request that never got an answer is worth trying again.
+
+    Args:
+        error: The connection failure the SDK raises.
+    """
+    client = _client()
+    client.api.auth.me.side_effect = error("no answer", request=MagicMock())
+
+    with pytest.raises(TokenValidationError) as exc_info:
+        hosting._validate("fictional-token", client.api)
+
+    assert exc_info.value.retryable is True
+
+
+@pytest.mark.parametrize(
+    "detail",
+    [
+        "Invalid token fictional-token-abc123",
+        "Authorization: Bearer fictional-token-abc123 was malformed",
+        "fictional%2Dtoken%2Dabc123",
+        "fictional\\u002dtoken\\u002dabc123",
+        "fictional-\ntoken-abc123",
+        "Basic ZmljdGlvbmFsOnBhc3M= api_key=other-credential-xyz password=hunter2",
+        "x" * 5000,
+    ],
+)
+def test_validate_does_not_surface_the_api_detail(
+    caplog: pytest.LogCaptureFixture, detail: str
+):
+    """The API's explanation, which may echo the request, is never shown or logged.
+
+    Args:
+        caplog: Pytest log capture fixture.
+        detail: An explanation that echoes what the request carried.
+    """
+    caplog.set_level(logging.DEBUG)
+    client = _client()
+    client.api.auth.me.side_effect = api_error(400, detail)
+
+    with pytest.raises(TokenValidationError) as exc_info:
+        hosting._validate("fictional-token-abc123", client.api)
+
+    assert str(exc_info.value) == "HTTP 400"
+    for record in caplog.records:
+        message = record.getMessage()
+        assert detail[:20] not in message
+        assert "abc123" not in message
+        assert "other-credential-xyz" not in message
+        assert "hunter2" not in message
+
+
+@pytest.mark.parametrize(
+    ("status_code", "advises_retry"), [(400, False), (429, True), (503, True)]
+)
+def test_non_interactive_validation_failure_advises_retry_only_when_it_may_help(
+    mocker: MockerFixture,
+    caplog: pytest.LogCaptureFixture,
+    status_code: int,
+    advises_retry: bool,
+):
+    """Only a failure worth trying again is told to try again later.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        caplog: Pytest log capture fixture.
+        status_code: The status the API answered with.
+        advises_retry: Whether the report suggests trying again.
+    """
+    client = _client()
+    client.api.auth.me.side_effect = api_error(status_code, "Malformed request")
+    mocker.patch("reflex_cli.utils.hosting.new_client", return_value=client.api)
+    delete = mocker.patch("reflex_cli.utils.hosting.delete_token_from_config")
+
+    with pytest.raises(click.exceptions.Exit):
+        get_authenticated_client(token="fictional-token", interactive=False)
+
+    delete.assert_not_called()
+    errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
+    assert len(errors) == 1
+    assert f"HTTP {status_code} (auth request id:" in errors[0]
+    assert ("Please try again later." in errors[0]) is advises_retry
 
 
 def test_validate_token_failure_carries_request_id_on_exception(

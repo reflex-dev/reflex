@@ -44,8 +44,8 @@ Production mode compiles the app, builds an optimized static frontend, and
 serves it together with the backend (event websocket, `/ping`, `/_upload`)
 from a single server on port `3000`. Pass `--frontend-port` or
 `--backend-port` to listen on a different port. When redis is configured,
-the server runs `2 * cpu_count + 1` worker processes; set `GRANIAN_WORKERS`
-to override this.
+the server runs up to 8 backend workers by default (`2 * cpu_count + 1`, capped at 8).
+When using Granian, set `GRANIAN_WORKERS` to override the default, including to use more workers.
 
 The frontend and backend can also run as separate processes, for example to
 serve the frontend from a CDN and scale the backend independently. The
@@ -60,6 +60,13 @@ REFLEX_API_URL=http://localhost:8000 reflex run --env prod --frontend-only --fro
 Alternatively, put a reverse proxy in front of both processes and route the
 backend routes (`/_event`, `/ping`, `/_upload`, `/_health`) to the backend
 port, as the `Caddyfile`s in the container examples below do.
+
+Instances of Reflex 0.9 and 0.10 cannot share a state store, whether Redis or
+the disk state manager's directory. A 0.10 instance loads state saved by 0.9,
+but a 0.9 instance discards state saved by 0.10, so a rolling deploy that runs
+both versions, or a rollback to 0.9 against the same store, resets the sessions
+that reach the older instance. Upgrade every instance of an app together, and
+clear the store (or point the app at a fresh one) when rolling back.
 
 ```md alert warning
 # Reverse Proxy and Websockets
