@@ -172,7 +172,7 @@ It also verifies snapshot file contents before restoring them. Use it on a local
 macOS or Linux filesystem that reports file modification and change timestamps
 reliably; the cache is bypassed on Windows and when links lead outside tracked inputs.
 
-Generated build output, `.react-router`, the build lock, the dependency-install cache marker, and
+Generated build output, `.react-router`, the dependency-install cache marker, and
 the top-level `node_modules/.vite`, `.vite-temp`, and `.cache` directories are
 excluded from the input fingerprint. The private `last_reflex_run_datetime`,
 `last_version_check_datetime`, and `last_version_check_attempt_datetime` fields in

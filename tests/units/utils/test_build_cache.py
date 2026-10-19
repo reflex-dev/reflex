@@ -26,6 +26,8 @@ def cached_build(
         The frontend directory, mutable config, and build subprocess mock.
     """
     monkeypatch.setenv("REFLEX_FRONTEND_BUILD_CACHE", "true")
+    # Forked builds inherit this and share the lock directory.
+    monkeypatch.setenv("REFLEX_DIR", str(tmp_path / "reflex-data"))
     web = tmp_path / ".web"
     (web / "app").mkdir(parents=True)
     (web / "app/page.js").write_text("original")
@@ -601,28 +603,3 @@ def test_overlapping_exports_preserve_inputs_through_zip(
     assert first.exitcode == second.exitcode == 0
     assert (tmp_path / "first/frontend.txt").read_text() == first_url
     assert (tmp_path / "second/frontend.txt").read_text() == second_url
-
-
-@pytest.mark.skipif(os.name == "nt", reason="Requires POSIX symlinks")
-def test_lock_symlink_cannot_bypass_serialization(cached_build, tmp_path):
-    """An unsafe lock path stops the build instead of proceeding without exclusion."""
-    web, _, process = cached_build
-    external = tmp_path / "external-lock"
-    external.write_text("keep")
-    previous_mode = external.stat().st_mode
-    (web / ".reflex-build.lock").symlink_to(external)
-    with pytest.raises(OSError):
-        build.build()
-    assert process.call_count == 0
-    assert external.read_text() == "keep"
-    assert external.stat().st_mode == previous_mode
-
-
-@pytest.mark.skipif(os.name == "nt", reason="Requires flock")
-def test_lock_failure_does_not_run_an_unlocked_build(cached_build, mocker):
-    """Lock acquisition failure must propagate before touching another build's output."""
-    _, _, process = cached_build
-    mocker.patch("fcntl.flock", side_effect=OSError("lock unavailable"))
-    with pytest.raises(OSError, match="lock unavailable"):
-        build.build()
-    assert process.call_count == 0

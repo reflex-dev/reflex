@@ -19,7 +19,7 @@ from reflex_base.constants.base import Javascript
 from reflex_base.environment import environment
 from typing_extensions import Buffer
 
-from reflex.utils import build_lock, path_ops
+from reflex.utils import path_ops
 from reflex.utils.exec import frontend_env
 
 logger = logging.getLogger(__name__)
@@ -27,7 +27,6 @@ logger = logging.getLogger(__name__)
 _CACHE_DIR = "reflex.build-cache"
 _GENERATED_ROOT_ENTRIES = {
     _CACHE_DIR,
-    build_lock.LOCK_FILE,
     constants.Dirs.BUILD_DIR,
     ".react-router",
     "reflex.install_frontend_packages.cached",
@@ -411,7 +410,7 @@ def frontend_build_cache(
     Yields:
         A cache handle, or None when disabled or local inputs cannot be tracked.
     """
-    with build_lock.frontend_build_lock(web_dir):
+    with path_ops.file_lock(web_dir):
         web_dir = web_dir.resolve()
         directory = web_dir / _CACHE_DIR
         enabled = (
