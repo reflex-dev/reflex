@@ -45,7 +45,6 @@ from .config import (
     RequirementsTxt,
     UvLock,
 )
-from .custom_components import CustomComponents
 from .event import ClientErrorType, Endpoint, EventTriggers, SocketEvent
 from .installer import Bun, Node, PackageJson
 from .route import (
@@ -87,7 +86,6 @@ __all__ = [
     "CompileVars",
     "ComponentName",
     "Config",
-    "CustomComponents",
     "DefaultPage",
     "DefaultPorts",
     "Dirs",

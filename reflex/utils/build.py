@@ -5,13 +5,13 @@ from __future__ import annotations
 import logging
 import os
 import zipfile
-from pathlib import Path, PosixPath
+from pathlib import Path, PurePosixPath
 
 from reflex_base import constants
 from reflex_base.config import get_config
 
 from reflex.utils import console, js_runtimes, path_ops, prerequisites, processes
-from reflex.utils.exec import is_in_app_harness
+from reflex.utils.exec import frontend_env, is_in_app_harness
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +32,41 @@ def set_env_json():
         str(prerequisites.get_web_dir() / constants.Dirs.ENV_JSON),
         env,
     )
+
+
+def _zip_compress_type(component_name: constants.ComponentName, file: Path) -> int:
+    """Select compression suitable for one archive entry.
+
+    Args:
+        component_name: The archive being created.
+        file: The source file being archived.
+
+    Returns:
+        The ZIP compression type for the file.
+    """
+    if component_name == constants.ComponentName.FRONTEND and file.suffix in {
+        ".gz",
+        ".br",
+        ".zst",
+    }:
+        return zipfile.ZIP_STORED
+    return zipfile.ZIP_DEFLATED
+
+
+def _is_excluded_archive_path(
+    path: Path, excluded_file_ids: set[tuple[int, int]]
+) -> bool:
+    """Check whether an archive path has an excluded file identity.
+
+    Args:
+        path: The path being considered for the archive.
+        excluded_file_ids: Device and inode pairs that must be excluded.
+
+    Returns:
+        Whether the path refers to an excluded file or directory.
+    """
+    stat = path.stat()
+    return (stat.st_dev, stat.st_ino) in excluded_file_ids
 
 
 def _zip(
@@ -62,6 +97,12 @@ def _zip(
     root_directory = Path(root_directory).resolve()
     directory_names_to_exclude = directory_names_to_exclude or set()
     files_to_exclude = files_to_exclude or set()
+    excluded_file_ids = set()
+    for excluded_file in files_to_exclude:
+        if excluded_file.exists():
+            stat = excluded_file.stat()
+            excluded_file_ids.add((stat.st_dev, stat.st_ino))
+
     files_to_zip: list[Path] = []
     # Traverse the root directory in a top-down manner. In this traversal order,
     # we can modify the dirs list in-place to remove directories we don't want to include.
@@ -74,10 +115,11 @@ def _zip(
             subdirectory_name
             for subdirectory_name in subdirectories_names
             if subdirectory_name not in directory_names_to_exclude
-            and not any(
-                (directory_path / subdirectory_name).samefile(exclude)
-                for exclude in files_to_exclude
-                if exclude.exists()
+            and (
+                not excluded_file_ids
+                or not _is_excluded_archive_path(
+                    directory_path / subdirectory_name, excluded_file_ids
+                )
             )
             and not subdirectory_name.startswith(".")
             and (
@@ -95,10 +137,9 @@ def _zip(
         files_to_zip += [
             directory_path / subfile_name
             for subfile_name in subfiles_names
-            if not any(
-                (directory_path / subfile_name).samefile(excluded_file)
-                for excluded_file in files_to_exclude
-                if excluded_file.exists()
+            if not excluded_file_ids
+            or not _is_excluded_archive_path(
+                directory_path / subfile_name, excluded_file_ids
             )
         ]
     if globs_to_include:
@@ -118,7 +159,11 @@ def _zip(
         for file in files_to_zip:
             logger.debug(f"{target}: {file}", extra={"progress": progress})
             progress.advance(task)
-            zipf.write(file, Path(file).relative_to(root_directory))
+            zipf.write(
+                file,
+                file.relative_to(root_directory),
+                compress_type=_zip_compress_type(component_name, file),
+            )
 
 
 def zip_app(
@@ -228,6 +273,24 @@ def _compress_static_output(directory: Path, formats: tuple[str, ...]) -> None:
         raise SystemExit(1)
 
 
+def _merge_static_output(source: Path, destination: Path) -> None:
+    """Move assets into a route tree without overwriting prerendered pages.
+
+    Args:
+        source: An asset file or directory emitted outside the frontend prefix.
+        destination: Its location in the final static output.
+    """
+    if source.is_dir() and destination.is_dir():
+        for child in source.iterdir():
+            _merge_static_output(child, destination / child.name)
+        source.rmdir()
+    elif destination.exists():
+        # In particular, the root SPA shell must not replace the rendered index.
+        path_ops.rm(source)
+    else:
+        source.rename(destination)
+
+
 def build():
     """Build the app for deployment.
 
@@ -255,10 +318,7 @@ def build():
         ],
         cwd=wdir,
         shell=constants.IS_WINDOWS,
-        env={
-            **os.environ,
-            "NO_COLOR": "1",
-        },
+        env=frontend_env(os.environ),
     )
     processes.show_progress("Creating Production Build", process, checkpoints)
     process.wait()
@@ -282,22 +342,22 @@ def build():
     if spa_fallback.exists():
         path_ops.cp(spa_fallback, static_dir / "404.html")
 
+    if frontend_path := config.frontend_path.strip("/"):
+        # Create a subdirectory that matches the configured frontend_path.
+        frontend_path = PurePosixPath(frontend_path)
+        first_part = frontend_path.parts[0]
+        prefix_dir = static_dir / frontend_path
+        # Prerendering emits this directory; with prerendering off nothing does.
+        path_ops.mkdir(prefix_dir)
+        for child in list(static_dir.iterdir()):
+            if child.is_dir() and child.name == first_part:
+                continue
+            _merge_static_output(child, prefix_dir / child.name)
+
     _compress_static_output(
         static_dir,
         tuple(config.frontend_compression_formats),
     )
-
-    if frontend_path := config.frontend_path.strip("/"):
-        # Create a subdirectory that matches the configured frontend_path.
-        frontend_path = PosixPath(frontend_path)
-        first_part = frontend_path.parts[0]
-        for child in list(static_dir.iterdir()):
-            if child.is_dir() and child.name == first_part:
-                continue
-            path_ops.mv(
-                child,
-                static_dir / frontend_path / child.name,
-            )
 
 
 def setup_frontend(

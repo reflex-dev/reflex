@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 from collections.abc import Iterator, Mapping, Sequence
-from typing import Any
+from typing import Any, Self
 
 from reflex_base.event import EventChain
 from reflex_base.utils import format
@@ -20,6 +20,9 @@ def render_prop(value: Any) -> Any:
     Returns:
         The rendered value.
     """
+    if type(value) in (str, dict):
+        return value
+
     from reflex_base.components.component import BaseComponent
 
     if isinstance(value, BaseComponent):
@@ -32,8 +35,8 @@ def render_prop(value: Any) -> Any:
 
 
 @dataclasses.dataclass(frozen=True)
-class Tag:
-    """A React tag."""
+class CommonTag:
+    """The fields and render protocol shared by every tag."""
 
     # The name of the tag.
     name: str = ""
@@ -54,6 +57,20 @@ class Tag:
             The formatted props list.
         """
         return format.format_props(*self.special_props, **self.props)
+
+    def render(self, children: Sequence[Any] | None = None) -> dict[str, Any]:
+        """Render the tag into the dictionary consumed by the templates.
+
+        Args:
+            children: The already rendered children, or None to render the
+                tag's own children.
+
+        Returns:
+            The rendered tag dictionary.
+        """
+        if children is not None:
+            return dict(self.set(children=children))
+        return dict(self)
 
     def set(self, **kwargs: Any):
         """Return a new tag with the given fields set.
@@ -80,7 +97,7 @@ class Tag:
                 if rendered_value is not None:
                     yield field.name, rendered_value
 
-    def add_props(self, **kwargs: Any | None) -> Tag:
+    def add_props(self, **kwargs: Any | None) -> Self:
         """Return a new tag with the given props added.
 
         Args:
@@ -105,7 +122,7 @@ class Tag:
             },
         )
 
-    def remove_props(self, *args: str) -> Tag:
+    def remove_props(self, *args: str) -> Self:
         """Return a new tag with the given props removed.
 
         Args:
@@ -135,3 +152,27 @@ class Tag:
             Whether the prop is valid.
         """
         return prop is not None and not (isinstance(prop, dict) and len(prop) == 0)
+
+
+@dataclasses.dataclass(frozen=True)
+class Tag(CommonTag):
+    """A React tag."""
+
+    def render(self, children: Sequence[Any] | None = None) -> dict[str, Any]:
+        """Render the tag without going through the generic field protocol.
+
+        Args:
+            children: The already rendered children, or None to render the
+                tag's own children.
+
+        Returns:
+            The rendered tag dictionary.
+        """
+        rendered: dict[str, Any] = {}
+        if (name := render_prop(self.name)) is not None:
+            rendered["name"] = name
+        rendered["props"] = self.format_props()
+        rendered["children"] = (
+            children if children is not None else render_prop(self.children)
+        )
+        return rendered

@@ -5,14 +5,12 @@ from __future__ import annotations
 import logging
 import re
 from collections import defaultdict
-from contextlib import suppress
 from importlib.util import find_spec
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from reflex_base.config import get_config
 from reflex_base.environment import environment
 from reflex_base.utils import console
-from reflex_base.utils.serializers import serializer
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +18,9 @@ if TYPE_CHECKING:
     from typing import TypeVar
 
     import sqlalchemy
+    import sqlalchemy.ext.asyncio
     import sqlmodel
+    from sqlmodel.ext.asyncio.session import AsyncSession
 
     SQLModelOrSqlAlchemy = (
         type[sqlmodel.SQLModel] | type[sqlalchemy.orm.DeclarativeBase]
@@ -53,11 +53,21 @@ class _ClassThatErrorsOnInit:
     def __init__(self, *args, **kwargs):
         _print_db_not_available(*args, **kwargs)
 
+    def __init_subclass__(cls, **kwargs):
+        """Point at the db extra when a model is declared without it.
 
-if find_spec("sqlalchemy"):
+        Args:
+            **kwargs: Class keywords such as ``table=True``.
+
+        Raises:
+            ImportError: Always, with the ``pip install reflex[db]`` guidance.
+        """
+        _print_db_not_available(**kwargs)
+
+
+if TYPE_CHECKING or find_spec("sqlalchemy"):
     import sqlalchemy
     import sqlalchemy.exc
-    import sqlalchemy.ext.asyncio
     import sqlalchemy.orm
 
     _ENGINE: dict[str, sqlalchemy.engine.Engine] = {}
@@ -80,7 +90,7 @@ if find_spec("sqlalchemy"):
             "pool_size": environment.SQLALCHEMY_POOL_SIZE.get(),
             "max_overflow": environment.SQLALCHEMY_MAX_OVERFLOW.get(),
             "pool_recycle": environment.SQLALCHEMY_POOL_RECYCLE.get(),
-            "pool_timeout": environment.SQLALCHEMY_POOL_TIMEOUT.get(),
+            "pool_timeout": environment.SQLALCHEMY_POOL_TIMEOUT.get().total_seconds(),
         }
         conf = get_config()
         url = url or conf.db_url
@@ -158,6 +168,9 @@ if find_spec("sqlalchemy"):
         global _ASYNC_ENGINE
         if url in _ASYNC_ENGINE:
             return _ASYNC_ENGINE[url]
+
+        # Requires greenlet, which SQLAlchemy 2.1 only installs with the asyncio extra.
+        import sqlalchemy.ext.asyncio
 
         if not environment.ALEMBIC_CONFIG.get().exists():
             logger.warning(
@@ -267,7 +280,7 @@ else:
     sqla_session = _print_db_not_available
     ModelRegistry = _ClassThatErrorsOnInit  # pyright: ignore [reportAssignmentType]
 
-if find_spec("sqlalchemy") and find_spec("alembic"):
+if TYPE_CHECKING or (find_spec("sqlalchemy") and find_spec("alembic")):
     import alembic.autogenerate
     import alembic.command
     import alembic.config
@@ -411,10 +424,14 @@ if find_spec("sqlalchemy") and find_spec("alembic"):
             op: Any,
         ):
             # Carry the sqlmodel default as server_default so that newly added
-            # columns get the desired default value in existing rows.
+            # columns get the desired default value in existing rows. Only scalar
+            # defaults can be rendered as a SQL literal. Evaluate callable defaults
+            # once so non-nullable columns can be added to tables with existing rows.
             if op.column.default is not None and op.column.server_default is None:
+                default = op.column.default
+                value = default.arg(None) if default.is_callable else default.arg
                 op.column.server_default = sqlalchemy.DefaultClause(
-                    sqlalchemy.sql.expression.literal(op.column.default.arg),
+                    sqlalchemy.sql.expression.literal(value),
                 )
             return op
 
@@ -509,9 +526,11 @@ else:
     alembic_autogenerate = _print_db_not_available
     migrate = _print_db_not_available
 
-if find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic"):
+if TYPE_CHECKING or (
+    find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic")
+):
     import sqlmodel
-    from sqlmodel.ext.asyncio.session import AsyncSession
+    from reflex_base.utils.serializers import serialize_sqlmodel as serialize_sqlmodel
 
     _AsyncSessionLocal: dict[str | None, sqlalchemy.ext.asyncio.async_sessionmaker] = {}
 
@@ -536,29 +555,6 @@ if find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic"):
             )
 
         return {"db": status}
-
-    @serializer
-    def serialize_sqlmodel(m: sqlmodel.SQLModel) -> dict[str, Any]:
-        """Serialize a SQLModel object to a dictionary.
-
-        Args:
-            m: The SQLModel object to serialize.
-
-        Returns:
-            The serialized object as a dictionary.
-        """
-        base_fields = m.model_dump()
-        relationships = {}
-        # SQLModel relationships do not appear in __fields__, but should be included if present.
-        for name in m.__sqlmodel_relationships__:
-            with suppress(
-                sqlalchemy.orm.exc.DetachedInstanceError  # This happens when the relationship was never loaded and the session is closed.
-            ):
-                relationships[name] = getattr(m, name)
-        return {
-            **base_fields,
-            **relationships,
-        }
 
     def _warn_about_model_deprecation():
         console.deprecate(
@@ -707,6 +703,9 @@ if find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic"):
         """
         global _AsyncSessionLocal
         if url not in _AsyncSessionLocal:
+            import sqlalchemy.ext.asyncio
+            from sqlmodel.ext.asyncio.session import AsyncSession
+
             _AsyncSessionLocal[url] = sqlalchemy.ext.asyncio.async_sessionmaker(
                 bind=get_async_engine(url),
                 class_=AsyncSession,

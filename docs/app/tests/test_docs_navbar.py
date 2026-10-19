@@ -51,6 +51,20 @@ def _collect_links(component) -> list[tuple[str, str]]:
     return links
 
 
+def _walk_components(component):
+    """Yield a component and its descendants, including conditional branches.
+
+    Args:
+        component: The root component to walk.
+
+    Yields:
+        Each component in the tree.
+    """
+    yield component
+    for child in getattr(component, "children", ()):
+        yield from _walk_components(child)
+
+
 def test_internal_menu_items_use_router_links(navbar):
     """In-app navbar links must compile to React Router links.
 
@@ -74,7 +88,7 @@ def test_external_menu_items_use_plain_anchors(navbar):
 
 def test_navigation_menu_routes_in_app_destinations(navbar):
     """Every in-app navbar destination compiles to a router link."""
-    from reflex_docs.pages.docs import ai_builder, getting_started, hosting
+    from reflex_docs.pages.docs import getting_started, hosting
 
     router_targets = {
         dest
@@ -84,7 +98,7 @@ def test_navigation_menu_routes_in_app_destinations(navbar):
 
     for path in (
         "/",
-        ai_builder.overview.best_practices.path,
+        "/ai/",
         getting_started.introduction.path,
         hosting.deploy_quick_start.path,
     ):
@@ -112,7 +126,17 @@ def test_external_links_bypass_the_router(navbar):
     from reflex_site_shared.constants import GITHUB_URL, REFLEX_URL
 
     assert _collect_links(navbar.github_button()) == [("anchor", GITHUB_URL)]
-    assert _collect_links(navbar.logo()) == [("anchor", REFLEX_URL)]
+    assert _collect_links(navbar.logo())[0] == ("anchor", REFLEX_URL)
+
+
+def test_docs_logo_returns_to_docs_overview(navbar):
+    """The Reflex wordmark is a raw anchor; the Docs wordmark routes in-app."""
+    from reflex_site_shared.constants import REFLEX_URL
+
+    assert _collect_links(navbar.logo()) == [
+        ("anchor", REFLEX_URL),
+        ("router", "/"),
+    ]
 
 
 def test_reflex_el_a_and_elements_a_are_not_interchangeable():
@@ -124,3 +148,113 @@ def test_reflex_el_a_and_elements_a_are_not_interchangeable():
     """
     assert _collect_links(rx.el.a(href="/x/")) == [("router", "/x/")]
     assert _collect_links(rx.el.elements.a(href="/x/")) == [("anchor", "/x/")]
+
+
+def test_ai_overview_is_in_the_ai_navbar_section(navbar):
+    """The AI landing route remains selected when the router strips its slash."""
+    rendered = str(navbar.menu_item("Build with AI", "/ai/", "ai"))
+    assert '=== "/ai"' in rendered
+    framework = str(
+        navbar.menu_item("Framework", "/getting-started/introduction/", "framework")
+    )
+    assert '=== "/ai"' in framework
+
+
+def test_desktop_and_mobile_demo_actions_link_to_marketing(navbar):
+    """Both navbar layouts navigate to the booking page outside the docs mount."""
+    links = _collect_links(navbar.navigation_menu())
+    assert links.count(("anchor", "https://reflex.dev/demo/")) == 2
+    assert ("router", "/demo/") not in links
+
+
+def test_section_links_hover_with_text_only(navbar):
+    """Keep section navigation free of button hover backgrounds."""
+    item = navbar.menu_item("Framework", "/getting-started/introduction/", "framework")
+    link = item.children[0]
+    assert all(child.tag != "GradientButton" for child in link.children)
+    assert "hover:text-foreground" in str(link.class_name)
+    assert "hover:bg-" not in str(link.class_name)
+
+
+def test_logo_has_accessible_name_and_keyboard_focus(navbar):
+    """The docs home link must be named and visible during keyboard navigation."""
+    for link, label in zip(
+        navbar.logo().children, ("Reflex home", "Docs overview"), strict=True
+    ):
+        assert label in str(link)
+        assert "focus-visible:outline-ring" in str(link.class_name)
+
+
+def test_navigation_switches_to_mobile_before_links_overflow(navbar):
+    """Keep desktop links and the mobile menu mutually exclusive below 1280px."""
+    menu = navbar.navigation_menu()
+    sections, actions = menu.children[:2]
+    assert "hidden xl:flex" in str(sections.class_name)
+    assert "xl:flex hidden" in str(actions.children[0].class_name)
+    assert "xl:hidden flex" in str(actions.children[-1].class_name)
+
+
+def test_mobile_menu_preserves_primary_docs_destinations(navbar):
+    """Mobile readers can reach every top-level docs section."""
+    from reflex_docs.components.docpage.navbar.buttons.sidebar import (
+        navbar_sidebar_button,
+    )
+
+    links = _collect_links(navbar_sidebar_button())
+    for path in (
+        "/docs/",
+        "/docs/ai/",
+        "/docs/getting-started/introduction/",
+        "/docs/hosting/deploy-quick-start/",
+        "/docs/xy/",
+    ):
+        assert ("anchor", path) in links
+
+
+def test_docs_announcement_preserves_link_and_dismissal(navbar):
+    """The branded announcement remains an accessible, dismissible external link."""
+    from reflex_docs.views.docs_announcement_banner import docs_announcement_banner
+
+    banner = docs_announcement_banner()
+    assert _collect_links(banner) == [
+        ("anchor", "https://reflex.dev/blog/xy-in-reflex-build/")
+    ]
+    region = next(
+        component
+        for component in _walk_components(banner)
+        if "data-announcement" in getattr(component, "custom_attrs", {})
+    )
+    artwork, link, dismiss = region.children
+    assert artwork.custom_attrs["aria-hidden"] is True
+    assert "Latest announcement" in str(region.custom_attrs["aria-label"])
+    assert str(link.target) == '"_blank"'
+    assert "noopener noreferrer" in str(link.rel)
+    assert "opens in a new tab" in str(link.custom_attrs["aria-label"])
+    assert "Dismiss announcement" in str(dismiss.custom_attrs["aria-label"])
+    assert "hide_banner" in str(dismiss.event_triggers["on_click"])
+
+
+def test_mobile_navigation_retains_native_disclosure(navbar):
+    """Styling must preserve native summary activation and a named navigation area."""
+    menu = navbar.navbar_sidebar_button()
+    assert menu.tag == "details"
+    assert menu.children[0].tag == "summary"
+    assert "Toggle navigation menu" in str(menu.children[0])
+    assert str(menu.children[1].role) == '"navigation"'
+    assert "Documentation navigation" in str(menu.children[1])
+
+
+def test_docs_sidebar_drawer_has_a_title_and_keyboard_close(navbar):
+    """Mobile sidebar readers need a named dialog and a focusable close control."""
+    from reflex_site_shared.views.sidebar import docs_sidebar_drawer
+
+    drawer = docs_sidebar_drawer(rx.text("Guides"), rx.el.button("Open guides"))
+    nodes = list(_walk_components(drawer))
+    titles = [node for node in nodes if node.tag == "Drawer.Title"]
+    assert len(titles) == 1
+    assert "Documentation navigation" in str(titles[0])
+    close = next(node for node in nodes if node.tag == "Drawer.Close")
+    assert close.children[0].tag == "button"
+    assert (
+        close.children[0].custom_attrs["aria-label"] == "Close documentation navigation"
+    )

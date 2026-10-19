@@ -189,7 +189,7 @@ column_defs = [
 ]
 ```
 
-Enterprise filters may require loading their modules explicitly via the `enterprise_modules` prop — for example `SetFilterModule` for `agSetColumnFilter`, `MultiFilterModule` for `agMultiColumnFilter`, and `FiltersToolPanelModule` for the filter tool panel (shown with `side_bar=True`). See [Functionality you need is not available/working in Reflex](#functionality-you-need-is-not-availableworking-in-reflex) below.
+Enterprise filters may require loading their modules explicitly via the `enterprise_modules` prop — for example `SetFilterModule` for `agSetColumnFilter`, `MultiFilterModule` for `agMultiColumnFilter`, and `FiltersToolPanelModule` for the filter tool panel (shown with `side_bar=True`). See [Functionality you need is not available/working in Reflex](#functionality-you-need-is-not-available/working-in-reflex) below.
 
 ## Row Sorting
 
@@ -772,3 +772,7 @@ def ag_grid_api_argument():
 The react code for the `get_data_as_csv` method of the AG Grid API is `getDataAsCsv = (params?: CsvExportParams) => string  |  undefined;`. Here the function returns a `string` (or undefined).
 
 In Reflex to handle this returned value it is necessary to pass a `callback` as an argument to the `get_data_as_csv` method that will get the returned value. In this example the `handle_get_data` event handler is passed as the callback. This event handler will be called with the returned value from the `get_data_as_csv` method.
+
+## Migration notes
+
+The upcoming reflex-enterprise 0.9.7 release upgrades AG Grid to 36.2.0. Read the [migration guide for reflex-enterprise 0.9.7](/docs/enterprise/ag-grid/upgrading-to-36-2/) for changes to custom CSS, overlays, column definitions, and integrated charts.

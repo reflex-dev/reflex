@@ -1,24 +1,16 @@
 import reflex as rx
 
 from reflex_docs.pages.docs import hosting as hosting_page
-from reflex_docs.pages.docs_landing.views.link_item import faded_borders, link_item
+from reflex_docs.pages.docs_landing.views.layout import SECTION, section_heading
+from reflex_docs.pages.docs_landing.views.link_item import link_item
 
 
 def hosting_section() -> rx.Component:
     return rx.el.section(
-        rx.el.div(
-            rx.el.h2(
-                "Cloud",
-                class_name="text-secondary-12 text-3xl font-[575]",
-            ),
-            rx.el.p(
-                "Learn how to host your applications with Reflex Hosting.",
-                class_name="text-secondary-11 text-sm font-[475]",
-            ),
-            class_name="flex flex-col gap-4",
+        section_heading(
+            "Cloud", "Learn how to host your applications with Reflex Hosting."
         ),
         rx.el.div(
-            faded_borders(),
             link_item(
                 "CloudServerIcon",
                 "Deployment",
@@ -45,7 +37,7 @@ def hosting_section() -> rx.Component:
                 hosting_page.deploy_quick_start.path,
                 has_padding_left=True,
             ),
-            class_name="grid grid-cols-1 lg:grid-cols-2 border-t border-secondary-4 relative",
+            class_name="grid grid-cols-1 gap-4 lg:grid-cols-2",
         ),
-        class_name="flex flex-col gap-10 max-lg:text-center relative max-w-(--landing-layout-max-width) mx-auto w-full justify-start max-xl:px-6 lg:mb-24 overflow-hidden",
+        class_name=f"{SECTION} border-t border-border-subtle",
     )

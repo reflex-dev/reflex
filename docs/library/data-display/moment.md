@@ -173,6 +173,18 @@ rx.vstack(
 )
 ```
 
+### Locales
+
+Each `rx.moment` defaults to English. Set `locale` on a component to render it
+in another language; other components and pages keep their own locale.
+
+```python demo
+rx.vstack(
+    rx.moment(MomentState.date_now, format="dddd D MMMM YYYY"),
+    rx.moment(MomentState.date_now, format="dddd D MMMM YYYY", locale="fr"),
+)
+```
+
 ### Timezones
 
 You can also set dates to display in a specific timezone:
@@ -195,7 +207,14 @@ If you want to update the date every second, you can use the `interval` prop.
 rx.moment(interval=1000, format="HH:mm:ss")
 ```
 
-Even better, you can actually link an event handler to the `on_change` prop that will be called every time the date is updated:
+The `on_change` event fires when the component mounts and whenever the date is updated.
+Starting with `reflex-components-moment` 0.9.4, this includes static dates and
+`interval=0`: disabling periodic updates does not suppress the initial event.
+It fires again when the component remounts, such as after a reload or route navigation.
+React Strict Mode can invoke the mount event twice in development, so handlers with
+side effects should account for repeated calls.
+
+Connect an event handler with the `on_change` prop:
 
 ```python demo exec
 class MomentLiveState(rx.State):

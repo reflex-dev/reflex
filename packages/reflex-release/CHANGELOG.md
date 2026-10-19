@@ -1,3 +1,29 @@
+## v0.2.0 (2026-10-08)
+
+### Breaking Changes
+
+- Require Python 3.11 or newer; Python 3.10 is no longer supported. ([#7449](https://github.com/reflex-dev/reflex/issues/7449))
+
+### Features
+
+- Let the early members of a `publish-last` lockstep group release on their own. A `publish-last` member reuses a sibling tag at its version when one exists, and its exact pins are checked against the declared requirement at plan time. ([#7464](https://github.com/reflex-dev/reflex/issues/7464))
+
+### Bug Fixes
+
+- Dispatch release forms keep their per-package checkboxes up to 24 packages, rather than falling back to a free-text field past 19. `workflow_dispatch` has accepted 25 inputs since December 2025. ([#7288](https://github.com/reflex-dev/reflex/issues/7288))
+
+
+## v0.1.1 (2026-09-11)
+
+### Bug Fixes
+
+- `create-release` now reads the GitHub release back from GitHub instead of trusting `gh`'s exit status, so the tag handed to a `post-release-workflow` is one that was verified: on the expected tag, published rather than drafted, flagged and titled as this run asked, and carrying the `SHA256SUMS` manifest at the size that was built. A re-run over a tag that already has a release verifies it the same way rather than treating any existing release as success — a missing or stale manifest is attached again (the one partial state a re-run can finish by itself), and a release that is drafted, flagged or titled differently stops the job for a human instead of being passed off as this version's release. A failed read is kept distinct from an absent release — a not-found is believed only once the repository itself reads back, so a rate-limited or unauthenticated read can no longer pass for a tag that has no release yet. ([#6927](https://github.com/reflex-dev/reflex/issues/6927))
+
+### Miscellaneous
+
+- Stop the gated publish job from warning about its (deliberately) empty workspace, and log the no-op lockstep pin without annotating the run. ([#6965](https://github.com/reflex-dev/reflex/issues/6965))
+
+
 ## v0.1.0 (2026-08-27)
 
 ### Features

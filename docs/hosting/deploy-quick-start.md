@@ -8,6 +8,8 @@ So far, we have been running our apps locally on our own machines.
 But what if we want to share our apps with the world? This is where
 the hosting service comes in.
 
+For hosting options and configuration guides, see the [Reflex Cloud overview](/docs/overview/).
+
 ## Quick Start
 
 Reflex’s hosting service makes it easy to deploy your apps without worrying about configuring the infrastructure.
@@ -64,7 +66,7 @@ The command is by default interactive. It asks you a few questions for informati
 
 That’s it! You should receive some feedback on the progress of your deployment and in a few minutes your app should be up. 🎉
 
-For detailed information about the deploy command and its options, see the [Deploy API Reference](/docs/hosting/deploy-quick-start/) and the [CLI Reference](https://reflex.dev/docs/api-reference/cli/).
+For detailed information about the deploy command and its options, see the [Deploy Command Reference](/docs/hosting/cli/deploy/) and the [CLI Reference](https://reflex.dev/docs/api-reference/cli/).
 
 
 ```md alert info

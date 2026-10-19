@@ -1,7 +1,7 @@
 """App-wrap components mounting the state and event-loop React providers.
 
 These wrap children in the ``StateProvider`` / ``EventLoopProvider`` JS
-functions emitted into ``utils/context.js`` by ``compile_contexts``. They are
+functions emitted into ``utils/context.jsx`` by ``compile_contexts``. They are
 attached to the VarData returned by :meth:`reflex_base.vars.base.VarData.from_state`
 so the compiler picks them up through the generic Var-driven app-wrap pipeline,
 rather than the JS Layout template hard-coding them around every app.

@@ -15,6 +15,8 @@ def create_item(route: Route, children=None):
         # Capitalize acronyms
         acronyms = {
             "Api": "API",
+            "Apis": "APIs",
+            "Urls": "URLs",
             "Cli": "CLI",
             "Ide": "IDE",
             "Mcp": "MCP",

@@ -14,7 +14,7 @@ import reflex as rx
 Composed charts in Reflex are built on [Recharts](https://recharts.org/), a React charting library, and created in pure Python. A `composed_chart` (also called a combo chart) is a higher-level component chart that is composed of multiple charts, where other charts are the children of the `composed_chart`. The charts are placed on top of each other in the order they are provided in the `composed_chart` function.
 
 ```md alert info
-# To learn more about individual charts, checkout: **[area_chart](/docs/library/graphing/charts/areachart)**, **[line_chart](/docs/library/graphing/charts/linechart)**, or **[bar_chart](/docs/library/graphing/charts/barchart)**.
+# To learn more about individual charts, checkout: **[area_chart](/docs/library/graphing/charts/areachart/)**, **[line_chart](/docs/library/graphing/charts/linechart/)**, or **[bar_chart](/docs/library/graphing/charts/barchart/)**.
 ```
 
 ```python demo graphing
@@ -94,6 +94,6 @@ def composed_dual_axis():
 
 Explore more chart types you can build with Reflex and Recharts in pure Python:
 
-- [Bar Chart](/docs/library/graphing/charts/barchart)
-- [Line Chart](/docs/library/graphing/charts/linechart)
-- [Area Chart](/docs/library/graphing/charts/areachart)
+- [Bar Chart](/docs/library/graphing/charts/barchart/)
+- [Line Chart](/docs/library/graphing/charts/linechart/)
+- [Area Chart](/docs/library/graphing/charts/areachart/)

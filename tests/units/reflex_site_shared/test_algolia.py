@@ -141,11 +141,11 @@ def test_algolia_search_matches_reference_card_style() -> None:
     assert 'placeholder="What are you searching for?"' in source
     assert "width: min(90vw, 720px);" in source
     assert "height: 34rem;" in source
-    assert "border: 1px solid var(--secondary-a4" in source
+    assert "border: 1px solid var(--border-subtle" in source
     assert "border-radius: 0.75rem;" in source
     assert '.ReflexSearch-hit[data-selected="true"]' in source
-    assert "background: var(--primary-2, #fbfaff);" in source
-    assert "border-color: var(--primary-7, #c9bfff);" in source
+    assert "background: var(--muted, #fbfaff);" in source
+    assert "border-color: var(--border-strong, #c9bfff);" in source
 
 
 def test_algolia_search_dialog_has_dark_mode_surface_contrast() -> None:
@@ -157,8 +157,8 @@ def test_algolia_search_dialog_has_dark_mode_surface_contrast() -> None:
         '.dark .ReflexSearch-dialog,\n  [data-theme="dark"] .ReflexSearch-dialog {',
         1,
     )[1].split("}", 1)[0]
-    assert "background: var(--secondary-4, #1e2025);" in dark_dialog_styles
-    assert "border-color: var(--secondary-7, #363c44);" in dark_dialog_styles
+    assert "background: var(--border-subtle, #1e2025);" in dark_dialog_styles
+    assert "border-color: var(--border-strong, #363c44);" in dark_dialog_styles
 
 
 def test_algolia_search_dialog_has_visible_dark_mode_separators() -> None:
@@ -174,8 +174,8 @@ def test_algolia_search_dialog_has_visible_dark_mode_separators() -> None:
     dark_footer_separator = source.split(".dark .ReflexSearch-footer,", 1)[1].split(
         "}", 1
     )[0]
-    assert "border-bottom-color: var(--secondary-7, #363c44);" in dark_input_separator
-    assert "border-top-color: var(--secondary-7, #363c44);" in dark_footer_separator
+    assert "border-bottom-color: var(--border-strong, #363c44);" in dark_input_separator
+    assert "border-top-color: var(--border-strong, #363c44);" in dark_footer_separator
 
 
 def test_algolia_search_input_uses_medium_typography() -> None:
@@ -457,19 +457,21 @@ def test_algolia_search_builds_result_breadcrumbs() -> None:
     assert "font-size: 1.125rem;" in source
 
 
-def test_algolia_navbar_button_matches_origin_main() -> None:
-    """Preserve the original navbar search trigger styling."""
+def test_algolia_navbar_button_matches_marketing_spacing() -> None:
+    """Match the compact marketing control height and search padding."""
     assets = dict(SharedSiteStylesPlugin().get_static_assets())
     source = assets[Path("public/components/AlgoliaSearch.tsx")]
 
-    assert "padding: 0.375rem 0.5rem;" in source
-    assert "0 1px 2px 0 rgba(0, 0, 0, 0.02)" in source
-    assert "0 1px 4px 0 rgba(0, 0, 0, 0.02)" in source
+    assert "padding: 0.375rem 0.75rem;" in source
+    assert "height: 2.25rem;" in source
+    assert "box-shadow: var(--shadow-small);" in source
+    assert "background: var(--card, #fff);" in source
+    assert "border: 1px solid var(--border);" in source
     assert "transition: none;" in source
     assert "width: 10rem;" in source
     assert "max-width: 10rem;" in source
     assert "padding: 0 0.25rem;" in source
-    assert "background: var(--secondary-3, #f0f0f3);" in source
+    assert "background: var(--accent, #f0f0f3);" in source
     assert "font-size: 0.8125rem;" in source
     assert "font-weight: 475;" in source
     assert "height: 1.25rem;" in source
@@ -481,9 +483,9 @@ def test_algolia_navbar_button_matches_origin_main() -> None:
         "}", 1
     )[0]
     assert "flex-shrink: 0;" in collapsed_icon
-    assert "height: 1.25rem;" in collapsed_icon
+    assert "height: 1rem;" in collapsed_icon
     assert "margin-right: 0;" in collapsed_icon
-    assert "width: 1.25rem;" in collapsed_icon
+    assert "width: 1rem;" in collapsed_icon
 
 
 def test_algolia_search_escape_matches_navbar_keycap_style() -> None:
@@ -495,9 +497,9 @@ def test_algolia_search_escape_matches_navbar_keycap_style() -> None:
     escape_styles = source.split(".ReflexSearch-escape {", 1)[1].split("}", 1)[0]
     assert "align-items: center;" in escape_styles
     assert "background: var(--c-white-1, #fff);" in escape_styles
-    assert "border: 1px solid var(--secondary-4, #e8e8e8);" in escape_styles
+    assert "border: 1px solid var(--border-subtle, #e8e8e8);" in escape_styles
     assert "border-radius: 0.375rem;" in escape_styles
-    assert "color: var(--secondary-11, #646464);" in escape_styles
+    assert "color: var(--muted-foreground, #646464);" in escape_styles
     assert "display: flex;" in escape_styles
     assert "flex-shrink: 0;" in escape_styles
     assert "font: 475 0.75rem/1rem" in escape_styles
@@ -616,3 +618,17 @@ def test_algolia_search_cleans_up_settled_and_aborted_requests() -> None:
     assert "error instanceof DOMException" not in catch
     assert "finally" in request
     assert "requestRef.current === controller" in request.split("finally", 1)[1]
+
+
+def test_search_trigger_is_a_capsule():
+    """Match the compact marketing action's height and rounded shape."""
+    from reflex_site_shared.plugins import SharedSiteStylesPlugin
+
+    source = next(
+        content
+        for path, content in SharedSiteStylesPlugin().get_static_assets()
+        if str(path).endswith("AlgoliaSearch.tsx")
+    )
+    trigger = source.split(".ReflexSearch-button {", 1)[1].split("}", 1)[0]
+    assert "border-radius: 9999px;" in trigger
+    assert "height: 2.25rem;" in trigger

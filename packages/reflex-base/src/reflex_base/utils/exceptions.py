@@ -51,7 +51,7 @@ class ChildrenTypeError(ComponentTypeError):
             child: The child that caused the error.
         """
         super().__init__(
-            f"Component {component} received child {child} of type {type(child)}. "
+            f"Component {component} received child {child!r} of type {type(child)}. "
             "Accepted types are other components, state vars, or primitive Python types (dict excluded)."
         )
 
@@ -74,6 +74,10 @@ class VarNameError(ReflexError, NameError):
 
 class VarTypeError(ReflexError, TypeError):
     """Custom TypeError for var related errors."""
+
+
+class BackendVarFormatError(VarTypeError):
+    """Raised when a field with no frontend var, such as a backend var, is formatted as a string."""
 
 
 class VarValueError(ReflexError, ValueError):
@@ -204,6 +208,10 @@ class ComputedVarShadowsStateVarError(ReflexError, NameError):
 
 class ComputedVarShadowsBaseVarsError(ReflexError, NameError):
     """Raised when a computed var shadows a base var."""
+
+
+class BaseVarShadowsInheritedVarError(ReflexError, NameError):
+    """Raised when a base var shadows a var inherited from a parent state."""
 
 
 class EventHandlerShadowsBuiltInStateMethodError(ReflexError, NameError):

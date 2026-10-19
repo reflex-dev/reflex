@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
+
 from reflex_base import constants
 from reflex_base.components.component import Component
 from reflex_base.constants import Dirs, Hooks, Imports
@@ -124,7 +126,7 @@ setTimeout(() => {{
     if ({has_too_many_connection_errors!s}) {{
         setWaitedForBackend(true);
     }}
-}}, {environment.REFLEX_BACKEND_COLD_START_TIMEOUT.get() * 1000});
+}}, {environment.REFLEX_BACKEND_COLD_START_TIMEOUT.get() // timedelta(milliseconds=1)});
 """
             )
         else:

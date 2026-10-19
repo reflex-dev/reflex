@@ -8,7 +8,7 @@ cell_style = {
     "font_size": "14px",
     "line_height": "1.5",
     "letter_spacing": "-0.0125em",
-    "color": "var(--secondary-11)",
+    "color": "var(--muted-foreground)",
 }
 
 
@@ -53,10 +53,6 @@ router_data = [
     {
         "name": "rx.State.router.headers.connection",
         "value": RouterState.router.headers.connection,
-    },
-    {
-        "name": "rx.State.router.headers.cookie",
-        "value": RouterState.router.headers.cookie,
     },
     {
         "name": "rx.State.router.headers.pragma",
@@ -107,7 +103,7 @@ about the current page, session, or state.
 The `self.router` attribute has several sub-attributes that provide various information:
 
 - `router.url`: the URL of the current page, parsed into its components (see [URL Attributes](#url-attributes) below).
-- `router.route_id`: the route pattern that matched the current request (e.g. `/posts/[id]`). For [dynamic pages](/docs/pages/dynamic-routing) this contains the slug rather than the actual value used to load the page.
+- `router.route_id`: the route pattern that matched the current request (e.g. `/posts/[id]`). For [dynamic pages](/docs/pages/dynamic-routing/) this contains the slug rather than the actual value used to load the page.
 
 - `router.session`: data about the current session
   - `client_token`: UUID associated with the current tab's token. Each tab has a unique token.
@@ -119,7 +115,7 @@ The `self.router` attribute has several sub-attributes that provide various info
   - `origin`: The origin of the request.
   - `upgrade`: The upgrade header for websocket connections.
   - `connection`: The connection header.
-  - `cookie`: The cookie header.
+  - `cookie`: The cookie header, available only on the server through `self.router.headers.cookie`.
   - `pragma`: The pragma header.
   - `cache_control`: The cache control header.
   - `user_agent`: The user agent string of the client.
@@ -128,7 +124,9 @@ The `self.router` attribute has several sub-attributes that provide various info
   - `sec_websocket_extensions`: The websocket extensions.
   - `accept_encoding`: The accepted encodings.
   - `accept_language`: The accepted languages.
-  - `raw_headers`: A mapping of all HTTP headers as a frozen dictionary. This provides access to any header that was sent with the request, not just the common ones listed above.
+  - `raw_headers`: A mapping of HTTP headers as a frozen dictionary. The server can access every header. Frontend serialization omits `Cookie`, `Authorization`, `Proxy-Authorization`, `Cf-Access-Jwt-Assertion`, `X-Auth-Request-Access-Token`, `X-Forwarded-Access-Token`, `X-Amzn-Oidc-Accesstoken`, `X-Amzn-Oidc-Data`, and `X-Goog-IAP-JWT-Assertion`, regardless of case.
+
+Request cookies, including `HttpOnly` cookies, are never included in frontend router headers. On-load events do not copy request router metadata to the frontend; chained backend handlers inherit routing through the server's event context. Using `State.router.headers.cookie` or `State.router.headers["cookie"]` in a component is deprecated and renders an empty string. Filtered keys in `State.router.headers.raw_headers`, including `["cookie"]`, are absent and indexed access evaluates to JavaScript `undefined`; use `.get("cookie", "")` for an empty string fallback. Use [rx.Cookie](/docs/client-storage/overview/) for cookies that need to be accessible to the frontend. Server-side access through `self.router.headers.cookie` is unchanged.
 
 ## URL Attributes
 
@@ -173,7 +171,7 @@ class State(rx.State):
         # ... load the appropriate data for that page ...
 ```
 
-For dynamic path segments such as `[id]` or `[[...splat]]`, see [Dynamic Routes](/docs/pages/dynamic-routing) — those values are exposed as state vars on the root state (e.g. `rx.State.id`, `rx.State.splat`), not through `router.url`.
+For dynamic path segments such as `[id]` or `[[...splat]]`, see [Dynamic Routes](/docs/pages/dynamic-routing/) — those values are exposed as state vars on the root state (e.g. `rx.State.id`, `rx.State.splat`), not through `router.url`.
 
 ## Migrating from `router.page`
 

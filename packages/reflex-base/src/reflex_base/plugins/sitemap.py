@@ -6,10 +6,8 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Literal, TypedDict
+from typing import TYPE_CHECKING, Literal, NotRequired, TypedDict
 from xml.etree.ElementTree import Element, SubElement, indent, tostring
-
-from typing_extensions import NotRequired
 
 from reflex_base import constants
 
@@ -98,7 +96,7 @@ def generate_xml(links: Sequence[SitemapLink]) -> str:
     Returns:
         A pretty-printed XML string representing the sitemap.
     """
-    urlset = Element("urlset", xmlns="https://www.sitemaps.org/schemas/sitemap/0.9")
+    urlset = Element("urlset", xmlns="http://www.sitemaps.org/schemas/sitemap/0.9")
 
     for link in links:
         url = SubElement(urlset, "url")
@@ -150,7 +148,8 @@ def generate_links_for_sitemap(
     """
     from reflex_base.config import get_config
 
-    deploy_url = get_config().deploy_url
+    app_config = get_config()
+    deploy_url = app_config.deploy_url
 
     links: list[SitemapLink] = []
 
@@ -191,8 +190,11 @@ def generate_links_for_sitemap(
 
         else:
             loc = page.route if page.route != "index" else "/"
-            if not loc.startswith("/"):
-                loc = "/" + loc
+            loc = (
+                f"/{app_config.frontend_path.strip('/')}/{loc.lstrip('/')}"
+                if app_config.frontend_path
+                else f"/{loc.lstrip('/')}"
+            )
             sitemap_link = configuration_with_loc(
                 config=sitemap_config,
                 deploy_url=deploy_url,

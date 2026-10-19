@@ -1,0 +1,6 @@
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://localhost:13000/
+Backend running at: http://0.0.0.0:18000
+Info: Reflex app stopped.

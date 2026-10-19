@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Any, ClassVar, Literal
 
 from reflex_base.components.component import ComponentNamespace, field
 from reflex_base.event import EventHandler, no_args_event_spec
+from reflex_base.utils.form import FormData as _FormData
 from reflex_base.vars.base import Var
 from reflex_components_core.core.debounce import DebounceInput
 from reflex_components_core.el.elements.forms import Form as HTMLForm
@@ -154,6 +155,19 @@ class FormMessage(FormComponent):
         """
         return {"font_size": "13px", "opacity": "0.8", "color": "white"}
 
+    def _exclude_props(self) -> list[str]:
+        """Exclude force_match when match is not set.
+
+        Radix only reads forceMatch together with match. Without match it passes
+        forceMatch through to the DOM element, and React logs an unknown prop.
+
+        Returns:
+            The props to exclude.
+        """
+        if self.match is None:
+            return [*super()._exclude_props(), "force_match"]
+        return super()._exclude_props()
+
 
 class FormValidityState(FormComponent):
     """A form validity state component."""
@@ -177,6 +191,9 @@ class Form(FormRoot):
 class FormNamespace(ComponentNamespace):
     """Form components."""
 
+    # Stubbed as a class so ``rx.form.FormData`` works in type annotations.
+    _stub_as_class: ClassVar[bool] = True
+
     root = staticmethod(FormRoot.create)
     control = staticmethod(FormControl.create)
     field = staticmethod(FormField.create)
@@ -184,6 +201,7 @@ class FormNamespace(ComponentNamespace):
     message = staticmethod(FormMessage.create)
     submit = staticmethod(FormSubmit.create)
     validity_state = staticmethod(FormValidityState.create)
+    FormData = _FormData
     __call__ = staticmethod(Form.create)
 
 

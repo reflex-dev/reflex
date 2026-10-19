@@ -5,6 +5,7 @@ from typing import Any, ClassVar, TypedDict
 
 import pytest
 from reflex_base.components.component import Component, field
+from reflex_base.components.tags import CommonTag, Tag
 from reflex_base.constants import EventTriggers
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import (
@@ -43,6 +44,33 @@ from reflex import (
 )
 from reflex.state import BaseState
 from reflex.utils import imports
+
+
+@pytest.mark.parametrize("name", ["div", "", None])
+def test_plain_tag_render_matches_tag_protocol(name, monkeypatch):
+    """Direct rendering preserves names, props, children, and render caching."""
+    tag = Tag(name=name).add_props(title="hello")
+    component = Component._create(children=[Bare.create("child")])
+    monkeypatch.setattr(component, "_render", lambda: tag)
+    expected = dict(tag.set(children=[child.render() for child in component.children]))
+    assert component.render() == expected
+    assert component.render() is component.render()
+    assert not tag.children
+
+
+def test_custom_tag_render_uses_subclass_protocol(monkeypatch):
+    """A custom tag renders through the generic field protocol."""
+
+    class ChildrenTag(CommonTag):
+        """A tag whose iteration depends on its child list."""
+
+        def __iter__(self):
+            """Yield a value derived from the child list."""
+            yield "child_count", len(self.children)
+
+    component = Component._create(children=[Bare.create("child")])
+    monkeypatch.setattr(component, "_render", lambda: ChildrenTag())
+    assert component.render() == {"child_count": 1}
 
 
 class TestState(BaseState):
@@ -753,6 +781,36 @@ def test_create_filters_none_props(test_component):
 def test_component_create_unallowed_types(children, test_component):
     with pytest.raises(ChildrenTypeError):
         test_component.create(*children)
+
+
+def test_component_create_backend_var_child(test_component):
+    """A backend var child reports its repr rather than formatting the field."""
+
+    class BackendChildState(BaseState):
+        _secret: int = 42
+
+    with pytest.raises(ChildrenTypeError, match=r"received child Field\(default=42"):
+        test_component.create(BackendChildState._secret)
+
+
+def test_component_create_backend_var_prop():
+    """A backend var passed to a typed prop reports its repr, not a format error."""
+
+    class BackendPropState(BaseState):
+        _size: str = "3"
+
+    with pytest.raises(TypeError, match=r"got value Field\(default='3'"):
+        rx.heading("x", size=BackendPropState._size)  # pyright: ignore[reportArgumentType]
+
+
+def test_component_create_backend_var_class_name():
+    """A backend var in a class_name list reports its repr, not a format error."""
+
+    class BackendClassNameState(BaseState):
+        _cls: str = "a"
+
+    with pytest.raises(TypeError, match=r"got value Field\(default='a'"):
+        rx.box(class_name=["b", BackendClassNameState._cls])
 
 
 @pytest.mark.parametrize(
@@ -2113,8 +2171,12 @@ def test_add_style_embedded_vars(test_state: type[TestState]):
     page._add_style_recursive(Style())
 
     assert (
-        f"const {test_state.get_name()} = useContext(StateContexts.{test_state.get_name()})"
+        f'const {test_state.get_name()} = useStateContext("{test_state.get_full_name()}")'
         in page._get_all_hooks_internal()
+    )
+    assert any(
+        import_var.tag == "useStateContext"
+        for import_var in page._get_all_imports()["$/utils/context-registry"]
     )
     assert "useText" in page._get_all_hooks_internal()
     assert "useParent" in page._get_all_hooks_internal()
@@ -2398,3 +2460,24 @@ def test_get_all_hooks_internal_does_not_mutate_hooks_cache():
     assert dict(parent._get_hooks_internal()) == parent_own_hooks
     # And repeated collection yields the same result.
     assert parent._get_all_hooks_internal() == combined
+
+
+def test_set_props_iteration_skips_unset_props_and_keeps_defaults():
+    """Only set props and class defaults are visited, in declaration order."""
+
+    class DefaultedProps(Component):
+        first: Var[str]
+        second: Var[str] = LiteralVar.create("second-default")
+        third: Var[str]
+
+    component = DefaultedProps._create(children=(), third="set")
+    assert [(prop, str(value)) for prop, value in component._iter_set_props()] == [
+        ("second", '"second-default"'),
+        ("third", '"set"'),
+    ]
+    assert [str(var) for var in component._get_vars()] == ['"second-default"', '"set"']
+    assert {prop: str(value) for prop, value in component._render().props.items()} == {
+        "second": '"second-default"',
+        "third": '"set"',
+    }
+    assert "first" not in vars(component)

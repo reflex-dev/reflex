@@ -1,66 +1,108 @@
+"""Editorial introduction to the documentation."""
+
 import reflex as rx
 import reflex_components_internal as ui
 from reflex_site_shared.components.marketing_button import button
-from reflex_site_shared.constants import REFLEX_ASSETS_CDN
 from reflex_site_shared.views.hosting_banner import HostingBannerState
 
-from reflex_docs.pages.docs import getting_started
+from reflex_docs.pages.docs import getting_started, hosting
+from reflex_docs.pages.docs.library import library
+from reflex_docs.pages.docs_landing.views.layout import CONTAINER, FOCUS
+
+
+def _guide(title: str, description: str, href: str) -> rx.Component:
+    """Render a compact navigation row in the hero's guide index.
+
+    Args:
+        title: Guide group name.
+        description: Short description of its contents.
+        href: Existing documentation destination.
+
+    Returns:
+        A native, keyboard-accessible navigation link.
+    """
+    return rx.el.a(
+        rx.el.div(
+            rx.el.span(title, class_name="text-base font-normal text-foreground"),
+            rx.el.span(
+                description,
+                class_name="mt-1 block text-sm leading-6 text-muted-foreground",
+            ),
+            class_name="min-w-0",
+        ),
+        ui.icon("ArrowUpRight01Icon", size=18, aria_hidden=True),
+        href=href,
+        class_name=f"flex items-center justify-between gap-6 rounded-xl px-4 py-5 transition-colors hover:bg-muted motion-reduce:transition-none {FOCUS}",
+    )
 
 
 def hero() -> rx.Component:
+    """Render the docs introduction using the marketing typography and actions."""
     return rx.el.section(
         rx.el.div(
-            rx.el.p(
-                "About Reflex",
-                class_name="text-sm font-[525] text-primary-10 dark:text-secondary-11",
-            ),
             rx.el.h1(
                 "Reflex Documentation",
-                class_name="text-secondary-12 lg:text-5xl text-3xl font-[575] lg:text-nowrap",
+                class_name="max-w-2xl font-heading text-4xl font-light leading-[1.04] tracking-[-0.045em] text-foreground text-balance sm:text-5xl lg:text-[64px]",
             ),
             rx.el.p(
-                "Get up and running with Reflex in minutes. A complete set ",
-                rx.el.br(class_name="max-lg:hidden"),
-                " of resources to build, deploy, and scale your application. ",
-                class_name="text-base text-secondary-11 font-[475]",
+                "Get up and running with Reflex in minutes. A complete set of resources "
+                "to build, deploy, and scale your application.",
+                class_name="max-w-xl text-base font-normal leading-7 text-muted-foreground sm:text-lg sm:leading-8",
             ),
-            rx.el.a(
-                button(
-                    "Get Started",
-                    ui.icon("ArrowRight01Icon"),
-                    variant="primary",
-                    size="md",
-                    native_button=False,
-                    class_name="w-fit",
+            rx.el.div(
+                rx.el.a(
+                    button(
+                        "Explore Framework",
+                        variant="primary",
+                        size="lg",
+                        class_name="!px-6 !font-normal",
+                        native_button=False,
+                    ),
+                    href=getting_started.introduction.path,
+                    class_name=f"rounded-full {FOCUS}",
                 ),
-                to=getting_started.introduction.path,
-            ),
-            class_name=ui.cn(
-                "flex flex-col gap-6 max-lg:text-center relative just-start lg:pb-24",
-                rx.cond(
-                    HostingBannerState.is_banner_visible,
-                    "lg:pt-[14.5rem] pt-[12.5rem]",
-                    "lg:pt-[10.5rem] pt-[7.5rem]",
+                rx.el.a(
+                    button(
+                        "Build with AI",
+                        variant="ghost",
+                        size="lg",
+                        class_name="!border-0 !bg-muted !px-6 !font-normal !text-foreground !shadow-none hover:!bg-accent-hover",
+                        native_button=False,
+                    ),
+                    href="/ai/",
+                    class_name=f"rounded-full {FOCUS}",
                 ),
+                class_name="mt-2 flex flex-wrap items-center gap-x-7 gap-y-3",
             ),
+            class_name="flex min-w-0 flex-col items-start gap-6",
         ),
-        rx.el.div(
-            rx.image(
-                alt="Squares Docs Logo",
-                custom_attrs={"fetchPriority": "high"},
-                src=f"{REFLEX_ASSETS_CDN}common/{rx.color_mode_cond('light', 'dark')}/squares_docs_logo_1.svg",
-                class_name="pointer-events-none h-auto w-auto lg:absolute max-lg:hidden",
+        rx.el.nav(
+            rx.el.p(
+                "Find your next step",
+                class_name="px-4 pb-2 text-sm text-muted-foreground",
             ),
-            class_name=ui.cn(
-                "flex",
-                rx.cond(
-                    HostingBannerState.is_banner_visible,
-                    "lg:pt-[8.5rem] pt-0",
-                    "lg:pt-[4.5rem] pt-0",
-                ),
+            _guide(
+                "Getting started",
+                "Learn the framework and build your first app.",
+                getting_started.introduction.path,
             ),
+            _guide(
+                "Component library",
+                "Find the UI components for your application.",
+                library.path,
+            ),
+            _guide(
+                "Deploy your app",
+                "Take your application from local to live.",
+                hosting.deploy_quick_start.path,
+            ),
+            aria_label="Documentation starting points",
+            class_name="min-w-0 border-t border-border-subtle pt-6 lg:border-t-0 lg:border-l lg:pl-8 lg:pt-0",
         ),
-        class_name=ui.cn(
-            "flex lg:flex-row flex-col max-w-(--landing-layout-max-width) mx-auto w-full max-lg:pb-10 max-xl:px-6",
-        ),
+        style={
+            "--docs-hero-header-height": rx.cond(
+                HostingBannerState.is_banner_visible, "6.5rem", "4rem"
+            )
+        },
+        class_name=f"docs-hero {CONTAINER} relative grid items-center gap-10 pb-12 sm:pb-16 lg:grid-cols-[1.45fr_1fr] lg:gap-16 lg:pb-20",
     )

@@ -579,6 +579,25 @@ def test_format_prop(prop: Var, formatted: str):
 
 
 @pytest.mark.parametrize(
+    ("prop", "formatted"),
+    [
+        ({"a": 1}, '{{"a": 1}}'),
+        ({"nested": {"b": [1, 2]}}, '{{"nested": {"b": [1, 2]}}}'),
+        ({}, "{{}}"),
+        ({"d": datetime.date(2026, 1, 2)}, '{{"d": "2026-01-02"}}'),
+    ],
+)
+def test_format_prop_raw_dict(prop: dict, formatted: str):
+    """Test that a raw dict prop is JSON-dumped and wrapped in braces.
+
+    Args:
+        prop: The dict prop to test.
+        formatted: The expected formatted value.
+    """
+    assert format.format_prop(prop) == formatted
+
+
+@pytest.mark.parametrize(
     ("single_props", "key_value_props", "output"),
     [
         (
@@ -657,9 +676,9 @@ def test_format_query_params(input, output):
     assert format.format_query_params(input) == output
 
 
-formatted_router = {
-    "route_id": "",
-    "url": {
+formatted_router_vars = {
+    "rx_router_route_id" + FIELD_MARKER: "",
+    "rx_router_url" + FIELD_MARKER: {
         "scheme": "",
         "netloc": "",
         "origin": "://",
@@ -669,13 +688,16 @@ formatted_router = {
         "fragment": "",
         "href": "",
     },
-    "session": {"client_token": "", "client_ip": "", "session_id": ""},
-    "headers": {
+    "rx_router_session" + FIELD_MARKER: {
+        "client_token": "",
+        "client_ip": "",
+        "session_id": "",
+    },
+    "rx_router_headers" + FIELD_MARKER: {
         "host": "",
         "origin": "",
         "upgrade": "",
         "connection": "",
-        "cookie": "",
         "pragma": "",
         "cache_control": "",
         "user_agent": "",
@@ -686,7 +708,7 @@ formatted_router = {
         "accept_language": "",
         "raw_headers": {},
     },
-    "page": {
+    "rx_router_page" + FIELD_MARKER: {
         "host": "",
         "path": "",
         "raw_path": "",
@@ -720,7 +742,7 @@ formatted_router = {
                     "obj" + FIELD_MARKER: {"prop1": 42, "prop2": "hello"},
                     "sum" + FIELD_MARKER: 3.15,
                     "upper" + FIELD_MARKER: "",
-                    "router" + FIELD_MARKER: formatted_router,
+                    **formatted_router_vars,
                     "asynctest" + FIELD_MARKER: 0,
                 },
                 ChildState.get_full_name(): {
@@ -742,7 +764,7 @@ formatted_router = {
                     "dt" + FIELD_MARKER: "1989-11-09 18:53:00+01:00",
                     "t" + FIELD_MARKER: "18:53:00+01:00",
                     "td" + FIELD_MARKER: "11 days, 0:11:00",
-                    "router" + FIELD_MARKER: formatted_router,
+                    **formatted_router_vars,
                 },
             },
         ),

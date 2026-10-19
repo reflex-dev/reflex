@@ -98,6 +98,7 @@ class StickyBadge(A):
             StickyLogo.create(),
             desktop_only(StickyLabel.create()),
             href=_badge_href(),
+            aria_label="Built with Reflex",
             target="_blank",
             width="auto",
             padding="0.375rem",

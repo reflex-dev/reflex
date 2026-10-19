@@ -79,7 +79,7 @@ def _acquire_project_file_lock(lock_fd: int) -> None:
                     msvcrt.LK_NBLCK,  # pyright: ignore[reportAttributeAccessIssue]
                     1,
                 )
-            except OSError as err:  # noqa: PERF203  # contention requires retrying
+            except OSError as err:  # contention requires retrying
                 if err.errno not in {errno.EACCES, errno.EAGAIN, errno.EDEADLK}:
                     raise
                 time.sleep(_WINDOWS_LOCK_RETRY_DELAY)

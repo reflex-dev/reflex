@@ -28,6 +28,7 @@ from .sequence import (
     LiteralStringVar,
     StringVar,
 )
+from .special import use_hook_var, use_id
 
 __all__ = [
     "EMPTY_VAR_INT",
@@ -66,6 +67,8 @@ __all__ = [
     "number",
     "object",
     "sequence",
+    "use_hook_var",
+    "use_id",
     "var_operation",
     "var_operation_return",
 ]

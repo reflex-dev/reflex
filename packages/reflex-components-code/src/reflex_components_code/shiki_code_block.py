@@ -423,10 +423,10 @@ class ShikiBaseTransformers:
 class ShikiJsTransformer(ShikiBaseTransformers):
     """A Wrapped shikijs transformer."""
 
-    library: str = "@shikijs/transformers@4.4.3"
+    library: str = "@shikijs/transformers@4.5.0"
     fns: list[FunctionStringVar] = dataclasses.field(
         default_factory=lambda: [
-            FunctionStringVar.create(fn) for fn in SHIKIJS_TRANSFORMER_FNS
+            FunctionStringVar.create(fn) for fn in sorted(SHIKIJS_TRANSFORMER_FNS)
         ]
     )
     style: Style | None = dataclasses.field(
@@ -513,29 +513,6 @@ class ShikiJsTransformer(ShikiBaseTransformers):
         })
     )
 
-    def __init__(self, **kwargs):
-        """Initialize the transformer.
-
-        Args:
-            kwargs: Kwargs to initialize the props.
-
-        """
-        fns = kwargs.pop("fns", None)
-        style = kwargs.pop("style", None)
-        if fns:
-            kwargs["fns"] = [
-                (
-                    FunctionStringVar.create(x)
-                    if not isinstance(x, FunctionStringVar)
-                    else x
-                )
-                for x in fns
-            ]
-
-        if style:
-            kwargs["style"] = Style(style)
-        super().__init__(**kwargs)
-
 
 class ShikiCodeBlock(Component, MarkdownComponentMap):
     """A Code block."""
@@ -546,7 +523,7 @@ class ShikiCodeBlock(Component, MarkdownComponentMap):
 
     alias = "ShikiCode"
 
-    lib_dependencies: list[str] = ["shiki@4.4.3"]
+    lib_dependencies: list[str] = ["shiki@4.5.0"]
 
     language: Var[LiteralCodeLanguage] = field(
         default=Var.create("python"), doc="The language to use."
@@ -785,6 +762,8 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
                 if copy_button is not None
                 else Button.create(
                     Icon.create(tag="copy", size=16, color=color("gray", 11)),
+                    aria_label="Copy code",
+                    type="button",
                     on_click=[
                         set_clipboard(cls._strip_transformer_triggers(code)),
                         copy_script(),

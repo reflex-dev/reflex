@@ -44,7 +44,7 @@ def get_code_style_rdx(color: str):  # type: ignore[reportArgumentType]
 
 cell_style = {
     **fonts.small,
-    "color": "var(--secondary-11)",
+    "color": "var(--muted-foreground)",
     "line_height": "1.5",
 }
 
@@ -57,7 +57,7 @@ DOC_BORDER_RADIUS = "6px"
 
 # The base application style.
 BASE_STYLE = {
-    "background_color": "var(--secondary-1)",
+    "background_color": "var(--background)",
     "::selection": {
         "background_color": rx.color("accent", 5, True),
     },

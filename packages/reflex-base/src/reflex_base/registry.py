@@ -3,20 +3,21 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import TYPE_CHECKING, Any
-
-from typing_extensions import Self
+from typing import TYPE_CHECKING, Any, Self
 
 from reflex_base.context.base import BaseContext
 from reflex_base.utils.exceptions import ReflexRuntimeError, StateValueError
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Sequence
 
     from reflex.app import App
     from reflex.state import BaseState
+    from reflex_base.components.memo import _MemoBodyAnalysis
     from reflex_base.config import Config
-    from reflex_base.event import EventHandler
+    from reflex_base.event import EventChain, EventHandler
+    from reflex_base.utils.types import ArgsSpec
+    from reflex_base.vars.base import Var
 
 
 def _default_bundled_libraries() -> list[str]:
@@ -31,6 +32,7 @@ def _default_bundled_libraries() -> list[str]:
         "react",
         "@emotion/react",
         f"$/{constants.Dirs.CONTEXTS_PATH}",
+        f"$/{constants.Dirs.UTILS}/context-registry",
         f"$/{constants.Dirs.STATE_PATH}",
     ]
 
@@ -68,7 +70,28 @@ class RegistrationContext(BaseContext):
         default_factory=_default_bundled_libraries,
         repr=False,
     )
+    _explicit_bundled_libraries: dict[str, None] = dataclasses.field(
+        default_factory=dict, repr=False
+    )
     _app: App | None = dataclasses.field(default=None, repr=False)
+    _memoized_event_triggers: dict[tuple[str, int], tuple[Any, Var]] = (
+        dataclasses.field(default_factory=dict, repr=False)
+    )
+    # (handler id, args_spec id, trigger key) -> the handler, spec and their
+    # bound chain. The referents keep the ids valid for the map's lifetime.
+    _bound_event_chains: dict[
+        tuple[int, int, str | None],
+        tuple[EventHandler, ArgsSpec | Sequence[ArgsSpec], EventChain],
+    ] = dataclasses.field(default_factory=dict, repr=False)
+    _memo_body_analyses: dict[str, _MemoBodyAnalysis] = dataclasses.field(
+        default_factory=dict, repr=False
+    )
+
+    def _reset_compile_caches(self) -> None:
+        """Drop the memo and event caches that only need to outlive one compile."""
+        self._memoized_event_triggers.clear()
+        self._bound_event_chains.clear()
+        self._memo_body_analyses.clear()
 
     @property
     def app(self) -> App:
@@ -140,6 +163,7 @@ class RegistrationContext(BaseContext):
             },
             decorated_pages=list(self.decorated_pages),
             bundled_libraries=list(self.bundled_libraries),
+            _explicit_bundled_libraries=dict(self._explicit_bundled_libraries),
         )
 
     def _set_config(self, config: Config) -> None:

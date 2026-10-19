@@ -7,7 +7,6 @@
 # to publicly accessible domain where app will be hosted
 services:
   app:
-    image: local/reflex-app
     environment:
       REFLEX_DB_URL: sqlite:///data/reflex.db
     build:
@@ -26,8 +25,13 @@ services:
     build:
       context: .
       dockerfile: Caddy.Dockerfile
+      # Build the app image first and expose it to Caddy.Dockerfile as `app`
+      # so the static frontend can be copied out of it.
+      additional_contexts:
+        app: service:app
     volumes:
-      - caddy-data:/root/.caddy
+      - caddy-data:/data
+      - caddy-config:/config
     restart: always
     depends_on:
       - app
@@ -39,3 +43,5 @@ volumes:
   upload-data:
   # TLS keys and certificates
   caddy-data:
+  # Caddy's copy of its own config
+  caddy-config:
