@@ -2107,8 +2107,8 @@ def _decode_asgi_headers(headers: Iterable[tuple[bytes, bytes]]) -> dict[str, st
     """
     decoded: dict[str, str] = {}
     for raw_name, raw_value in headers:
-        name = raw_name.decode("utf-8")
-        value = raw_value.decode("utf-8")
+        name = raw_name.decode()
+        value = raw_value.decode()
         if name in decoded:
             decoded[name] += ("; " if name == "cookie" else ", ") + value
         else:
