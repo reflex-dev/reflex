@@ -1,1 +1,1 @@
-Add `reflex_base.vars.get_leaf_vars`, which returns the leaf vars a var is built from by unwrapping var operations and casts, for example to list a derived var's state dependencies in a React hook's dependency array.
+Add `reflex_base.vars.get_leaf_vars`, which returns the vars a var reads by unwrapping var operations, casts, literal containers and function bodies, for example to list a derived var's dependencies in a React hook's dependency array.

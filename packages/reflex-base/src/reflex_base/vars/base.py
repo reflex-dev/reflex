@@ -16,7 +16,7 @@ import re
 import string
 import warnings
 from abc import ABCMeta
-from collections.abc import Callable, Coroutine, Iterable, Mapping, Sequence
+from collections.abc import Callable, Coroutine, Iterable, Iterator, Mapping, Sequence
 from dataclasses import MISSING
 from decimal import Decimal
 from types import CodeType, FunctionType
@@ -3556,14 +3556,101 @@ class CustomVarOperation(CachedVarOperation, Var[T]):
         )
 
 
-def get_leaf_vars(var: Var) -> Sequence[Var]:
-    """Collect the leaf vars a var is built from.
+_CONSTANT_TYPES = (str, int, float, bool, type(None))
 
-    A var operation such as ``state.items.filter(...)`` renders to a fresh value
-    every time it is evaluated, so a React hook reading one has to depend on the
-    vars the operation combines instead. This unwraps a ``CustomVarOperation``
-    into its operands and a cast into the var it wraps, recursively; any other
-    var, a literal or a function included, is a leaf.
+
+def _vars_in(value: Any) -> Iterator[Var]:
+    """Yield the vars a value holds, alone or inside tuples, lists and mappings.
+
+    Args:
+        value: The value to look into.
+
+    Yields:
+        Each var in the value, in order.
+    """
+    if isinstance(value, Var):
+        yield value
+    elif isinstance(value, (tuple, list)):
+        for item in value:
+            yield from _vars_in(item)
+    elif isinstance(value, Mapping):
+        for key, item in value.items():
+            yield from _vars_in(key)
+            yield from _vars_in(item)
+
+
+def _operands(var: Var) -> list[Var] | None:
+    """Get the vars a var reads, or None when it is a leaf.
+
+    A cast reads the var it wraps and a ``CustomVarOperation`` its operands. A
+    literal container reads the vars it holds and a scalar literal nothing;
+    any other literal value, an event, a color or a component, stays whole. So
+    does a state field access, since its field is no expression on its own,
+    and a function, whose body ``get_leaf_vars`` reads minus its parameters.
+    Every other cached operation keeps the vars it reads in its fields, alone
+    or in a tuple: an array slice, an object item, a string concatenation, a
+    function call.
+
+    Args:
+        var: The var to look into.
+
+    Returns:
+        The vars read, in order, or None for a leaf.
+    """
+    # function.py imports this module.
+    from reflex_base.vars.function import FunctionVar
+
+    if isinstance(var, ToOperation):
+        return [var._original]
+    if isinstance(var, CustomVarOperation):
+        return [arg for _, arg in var._args]
+    if isinstance(var, LiteralVar):
+        value = var._var_value
+        if isinstance(value, (tuple, list, Mapping)):
+            return list(_vars_in(value))
+        return [] if isinstance(value, _CONSTANT_TYPES) else None
+    if isinstance(var, (FunctionVar, StateOperation)) or not isinstance(
+        var, CachedVarOperation
+    ):
+        return None
+    return [
+        operand
+        for field in dataclasses.fields(var)
+        for operand in _vars_in(getattr(var, field.name))
+    ]
+
+
+def _parameter_names(args: Any) -> set[str]:
+    """Collect the names a function's parameters bind.
+
+    Args:
+        args: The function's ``FunctionArgs``.
+
+    Returns:
+        Every bound name, destructured fields and rest parameters included.
+    """
+    names = {args.rest} if args.rest else set()
+    for arg in args.args:
+        if isinstance(arg, str):
+            names.add(arg)
+        else:
+            names.update(arg.fields)
+            if arg.rest:
+                names.add(arg.rest)
+    return names
+
+
+def get_leaf_vars(var: Var) -> Sequence[Var]:
+    """Collect the leaf vars a var reads.
+
+    A var operation such as ``state.items.filter(...)`` or ``state.items[1:]``
+    renders to a fresh value every time it is evaluated, so a React hook reading
+    one has to depend on the vars it reads instead. This unwraps an operation
+    into its operands, a cast into the var it wraps and a literal container into
+    the vars it holds, recursively; a plain literal is a constant and yields
+    nothing. A function yields what its body reads other than its own
+    parameters, so a predicate closing over nothing yields nothing and one
+    closing over a loop var yields that var.
 
     Args:
         var: The var to take apart.
@@ -3572,17 +3659,32 @@ def get_leaf_vars(var: Var) -> Sequence[Var]:
         The leaves, in order of first appearance and without duplicates. A var
         that is no operation is its own only leaf.
     """
-    simple: dict[tuple[Any, ...], Var] = {}
+    # function.py imports this module.
+    from reflex_base.vars.function import (
+        ArgsFunctionOperation,
+        ArgsFunctionOperationBuilder,
+    )
+
+    leaves: dict[tuple[Any, ...], Var] = {}
     stack = [var]
     while stack:
         current = stack.pop()
-        if isinstance(current, CustomVarOperation):
-            stack.extend(arg for _, arg in reversed(current._args))
-        elif isinstance(current, ToOperation):
-            stack.append(current._original)
+        if (
+            isinstance(current, (ArgsFunctionOperation, ArgsFunctionOperationBuilder))
+            and not isinstance(current, LiteralVar)
+            and isinstance(current._return_expr, Var)
+        ):
+            parameters = _parameter_names(current._args)
+            for leaf in get_leaf_vars(current._return_expr):
+                if leaf._js_expr not in parameters:
+                    leaves.setdefault(leaf._hash_key(), leaf)
+            continue
+        operands = _operands(current)
+        if operands is None:
+            leaves.setdefault(current._hash_key(), current)
         else:
-            simple.setdefault(current._hash_key(), current)
-    return list(simple.values())
+            stack.extend(reversed(operands))
+    return list(leaves.values())
 
 
 class NoneVar(Var[None], python_types=type(None)):
