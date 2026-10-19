@@ -1199,7 +1199,7 @@ def patched_production_startup(mocker: MockerFixture) -> dict:
     return {
         "config": config.return_value,
         "mount_frontend": mount_frontend,
-        "lock": mocker.patch("reflex.utils.build_lock.frontend_build_lock"),
+        "lock": mocker.patch("reflex.utils.path_ops.file_lock"),
         "compile": mocker.patch("reflex.reflex._compile_app"),
         "setup": mocker.patch("reflex.utils.build.setup_frontend_prod"),
         "backend_prod": mocker.patch("reflex.utils.exec.run_backend_prod"),

@@ -12,7 +12,7 @@ import pytest
 from pytest_mock import MockerFixture
 from reflex_base import constants
 
-from reflex.utils import build_lock, export
+from reflex.utils import export, path_ops
 
 
 @pytest.fixture
@@ -23,9 +23,7 @@ def patched_export(mocker: MockerFixture) -> dict:
         Dict of patched mocks keyed by short name.
     """
     return {
-        "frontend_build_lock": mocker.patch(
-            "reflex.utils.build_lock.frontend_build_lock"
-        ),
+        "file_lock": mocker.patch("reflex.utils.path_ops.file_lock"),
         "get_compiled_app": mocker.patch(
             "reflex.utils.export.prerequisites.get_compiled_app"
         ),
@@ -149,7 +147,7 @@ def test_export_holds_frontend_lock_through_packaging(
     patched_export, frontend: bool, zipping: bool, phases: list[str]
 ):
     """Generated inputs and both archives belong to one locked export."""
-    lock = patched_export["frontend_build_lock"]
+    lock = patched_export["file_lock"]
     context = lock.return_value
 
     def require_lock(*args, **kwargs):
@@ -175,32 +173,21 @@ def test_export_holds_frontend_lock_through_packaging(
     assert config._set_persistent.call_count == 2
 
 
-@pytest.mark.parametrize(
-    ("workspace_exists", "backend", "zipping", "needs_lock"),
-    [
-        (False, True, True, False),
-        (True, True, True, True),
-        (True, False, True, False),
-        (True, True, False, False),
-    ],
-)
-def test_backend_only_export_locks_existing_workspace_for_packaging(
-    patched_export, tmp_path, mocker, workspace_exists, backend, zipping, needs_lock
+@pytest.mark.parametrize("workspace_exists", [False, True])
+def test_backend_only_export_locks_workspace_without_creating_it(
+    patched_export, tmp_path, mocker, workspace_exists
 ):
-    """Backend packaging locks existing generated files without creating a workspace."""
+    """Backend packaging waits for frontend work but never creates a workspace."""
     web = tmp_path / ".web"
     if workspace_exists:
         web.mkdir()
     mocker.patch.object(export.prerequisites, "get_web_dir", return_value=web)
 
-    export.export(frontend=False, backend=backend, zipping=zipping)
+    export.export(frontend=False)
 
-    lock = patched_export["frontend_build_lock"]
-    if needs_lock:
-        lock.assert_called_once_with(web)
-        lock.return_value.__exit__.assert_called_once_with(None, None, None)
-    else:
-        lock.assert_not_called()
+    lock = patched_export["file_lock"]
+    lock.assert_called_once_with(web)
+    lock.return_value.__exit__.assert_called_once_with(None, None, None)
     assert web.exists() == workspace_exists
 
 
@@ -224,8 +211,10 @@ def _export_backend_in_process(root: Path, attempted, finished):
         finished.set()
 
 
-def test_backend_archive_waits_for_frontend_compilation(tmp_path):
+def test_backend_archive_waits_for_frontend_compilation(tmp_path, monkeypatch):
     """Backend ZIPs wait for the compiler to publish its temporary stateful marker."""
+    # The spawned exporter inherits this and shares the lock directory.
+    monkeypatch.setenv("REFLEX_DIR", str(tmp_path / "reflex-data"))
     web = tmp_path / ".web"
     backend = web / constants.Dirs.BACKEND
     backend.mkdir(parents=True)
@@ -240,7 +229,7 @@ def test_backend_archive_waits_for_frontend_compilation(tmp_path):
         target=_export_backend_in_process, args=(tmp_path, attempted, finished)
     )
     try:
-        with build_lock.frontend_build_lock(web):
+        with path_ops.file_lock(web):
             child.start()
             assert attempted.wait(15)
             assert not finished.wait(0.5), "Backend ZIP raced with frontend compilation"
@@ -267,7 +256,7 @@ def test_export_releases_frontend_lock_before_failure_telemetry(
     patched_export, failing_target: str
 ):
     """A failed export releases shared files before reporting its failure."""
-    context = patched_export["frontend_build_lock"].return_value
+    context = patched_export["file_lock"].return_value
     error = RuntimeError("export failed")
     patched_export[failing_target].side_effect = error
 

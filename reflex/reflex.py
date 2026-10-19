@@ -514,19 +514,12 @@ def _run_preview(running_mode: constants.RunningMode, port: int, host: str):
     """
     import atexit
 
-    from reflex.utils import (
-        build,
-        build_lock,
-        exec,
-        prerequisites,
-        processes,
-        telemetry,
-    )
+    from reflex.utils import build, exec, path_ops, prerequisites, processes, telemetry
 
     config = get_config()
 
     with (
-        build_lock.frontend_build_lock(prerequisites.get_web_dir())
+        path_ops.file_lock(prerequisites.get_web_dir())
         if running_mode.has_frontend()
         else nullcontext()
     ):
@@ -565,19 +558,12 @@ def _run_preview(running_mode: constants.RunningMode, port: int, host: str):
 def _run_prod(running_mode: constants.RunningMode, port: int, host: str):
     import atexit
 
-    from reflex.utils import (
-        build,
-        build_lock,
-        exec,
-        prerequisites,
-        processes,
-        telemetry,
-    )
+    from reflex.utils import build, exec, path_ops, prerequisites, processes, telemetry
 
     config = get_config()
 
     with (
-        build_lock.frontend_build_lock(prerequisites.get_web_dir())
+        path_ops.file_lock(prerequisites.get_web_dir())
         if running_mode.has_frontend()
         else nullcontext()
     ):

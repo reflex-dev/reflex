@@ -3,7 +3,7 @@
 import logging
 import time
 from collections.abc import Iterator
-from contextlib import contextmanager, nullcontext
+from contextlib import contextmanager
 from pathlib import Path
 
 from reflex_base import constants
@@ -11,7 +11,7 @@ from reflex_base.config import get_config
 from reflex_base.environment import environment
 from reflex_base.utils import console
 
-from reflex.utils import build, build_lock, exec, prerequisites, telemetry
+from reflex.utils import build, exec, path_ops, prerequisites, telemetry
 
 logger = logging.getLogger(__name__)
 
@@ -63,12 +63,9 @@ def export(
             phase_durations[name] = time.monotonic() - t0
 
     try:
-        web_dir = prerequisites.get_web_dir()
-        with (
-            build_lock.frontend_build_lock(web_dir)
-            if frontend or (backend and zipping and web_dir.is_dir())
-            else nullcontext()
-        ):
+        # Backend archives include .web/backend, so every export waits for
+        # other production work in the same .web directory.
+        with path_ops.file_lock(prerequisites.get_web_dir()):
             # Set env mode in the environment.
             environment.REFLEX_ENV_MODE.set(env)
 

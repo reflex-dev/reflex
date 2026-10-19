@@ -145,12 +145,12 @@ the project.
 
 Production exports that share a `.web` directory wait for one another from
 compilation through ZIP creation, on macOS, Linux, and Windows. Backend-only
-exports also wait while archiving an existing `.web/backend` directory, but do
-not create `.web` when it is absent. Production and preview startup hold the
-same lock while compiling and building and release it before serving. The lock
-file `.web/.reflex-build.lock` stays in place between commands; do not remove it
-while a command is running. Initialization, development hot reload, and other
-tools writing to `.web` are outside this lock, so avoid running them during an
+exports wait too, since they archive `.web/backend`, but never create `.web`.
+Production and preview startup hold the same lock while compiling and building
+and release it before serving. The lock lives in Reflex's per-user data
+directory (`REFLEX_DIR`), not in `.web`, so commands coordinate only when they
+share that directory. Initialization, development hot reload, and other tools
+writing to `.web` are outside this lock, so avoid running them during an
 export.
 
 The export also writes a pre-compressed `.gz` copy of the compressible text
