@@ -24,7 +24,7 @@ APP_ID = "5f0c5e0e-8f6a-4d57-9a55-3c1c1d7b6a01"
 CONNECTIONS_PATH = f"/api/v1/apps/{APP_ID}/connections"
 PROVIDER_PATH = f"{CONNECTIONS_PATH}/openai"
 END_USER = "auth0|visitor-7"
-UTC = datetime.timezone.utc
+UTC = datetime.UTC
 NOON = datetime.datetime(2026, 9, 17, 12, tzinfo=UTC)
 
 

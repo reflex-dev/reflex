@@ -30,10 +30,7 @@ installed tree.
 """
 
 # /// script
-# requires-python = ">=3.10"
-# dependencies = [
-#     "tomli; python_version < '3.11'",
-# ]
+# requires-python = ">=3.11"
 # ///
 
 from __future__ import annotations
@@ -48,10 +45,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
 
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    import tomli as tomllib
+import tomllib
 
 REPO_ROOT = Path(__file__).parent.parent
 

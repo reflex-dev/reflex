@@ -61,7 +61,7 @@ agent_toolkit_resources()
 
 You do not need an API key to read Reflex documentation. Start by deciding how your assistant will work with Reflex:
 
-- For local app development, use Python 3.10 or newer and a project virtual environment.
+- For local app development, use Python 3.11 or newer and a project virtual environment.
 - For current documentation context, give the assistant Markdown docs or `llms.txt`.
 - For structured tool access, use the Reflex MCP integration.
 - For repeatable agent behavior, install Reflex Agent Skills.
@@ -138,7 +138,7 @@ Use these prompts to give your agent a strong starting point.
 ## New App
 
 ```text
-Create a new Reflex app. Use current Reflex documentation, set up a Python 3.10+ virtual environment, initialize the project, and validate it with reflex compile --dry before handing it back.
+Create a new Reflex app. Use current Reflex documentation, set up a Python 3.11+ virtual environment, initialize the project, and validate it with reflex compile --dry before handing it back.
 ```
 
 
