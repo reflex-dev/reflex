@@ -92,6 +92,11 @@ class DataEditorThemeBase:
     text_medium: str | None = None
 
 
+# Instance attribute carrying the hoisted reactive-columns declaration (const
+# name and JS expression) from create() to add_hooks().
+_HOISTED_COLUMNS_ATTR = "_hoisted_columns"
+
+
 @dataclasses.dataclass(init=False)
 class DataEditorTheme(DataEditorThemeBase):
     """The theme for the DataEditor component."""
@@ -485,15 +490,28 @@ class DataEditor(NoSSRComponent):
             data_callback = f"getData_{editor_id}"
             self.get_cell_content = Var(_js_expr=data_callback)
 
-        code = [f"function {data_callback}([col, row]){{"]
-
-        columns_path = str(self.columns)
         data_path = str(self.data)
-
-        code.extend([
-            f"    return formatDataEditorCells(col, row, {columns_path}, {data_path});",
-            "  }",
-        ])
+        hoisted_columns: tuple[str, str] | None = getattr(
+            self, _HOISTED_COLUMNS_ATTR, None
+        )
+        if hoisted_columns is not None:
+            # Reactive columns: the grid prop points at this same hoisted
+            # const (see create), so the expression evaluates once per render
+            # instead of once per cell. Glide calls the callback for every
+            # visible cell on every draw.
+            columns_var, columns_expr = hoisted_columns
+            code = [
+                f"const {columns_var} = {columns_expr};",
+                f"function {data_callback}([col, row]){{",
+                f"    return formatDataEditorCells(col, row, {columns_var}, {data_path});",
+                "  }",
+            ]
+        else:
+            code = [
+                f"function {data_callback}([col, row]){{",
+                f"    return formatDataEditorCells(col, row, {self.columns!s}, {data_path});",
+                "  }",
+            ]
 
         return ["\n".join(code)]
 
@@ -526,16 +544,23 @@ class DataEditor(NoSSRComponent):
 
             props["rows"] = data.length() if isinstance(data, ArrayVar) else len(data)
 
+        hoisted_columns: tuple[str, str] | None = None
         if isinstance(columns, Var):
-            # Reactive columns skip the literal formatting above, so apply the
-            # documented default column type when rendering (#7596). An
-            # explicit per-column type still wins via the spread order.
-            props["columns"] = columns._replace(
-                _js_expr=(
-                    f'({columns!s}).map((col) => ({{ type: "str", '
-                    f'id: (col.title ?? "").toLowerCase(), ...col }}))'
-                )
+            # Reactive (Var) columns skip the literal formatting in the elif
+            # below, so apply the documented default column type and id in JS
+            # when rendering (#7596). An explicit per-column type or id still
+            # wins via the spread order. The expression is declared once, in
+            # the component hook (see add_hooks), and both the grid prop and
+            # the per-cell callback reference that hoisted const, so the
+            # mapping runs once per render even though Glide calls the
+            # callback for every visible cell on every draw.
+            hoist_name = f"columns_{get_unique_variable_name()}"
+            hoist_expr = (
+                f'({columns!s}).map((col) => ({{ type: "str", '
+                f'id: (col.title ?? "").toLowerCase(), ...col }}))'
             )
+            hoisted_columns = (hoist_name, hoist_expr)
+            props["columns"] = columns._replace(_js_expr=hoist_name)
         elif len(columns):
             if types.is_dataframe(type(data)) or (
                 isinstance(data, Var) and types.is_dataframe(data._var_type)
@@ -583,6 +608,8 @@ class DataEditor(NoSSRComponent):
             )
 
         grid = super().create(*children, **props)
+        if hoisted_columns is not None:
+            setattr(grid, _HOISTED_COLUMNS_ATTR, hoisted_columns)
         return Div.create(
             grid,
             width=props.pop("width", "100%"),
