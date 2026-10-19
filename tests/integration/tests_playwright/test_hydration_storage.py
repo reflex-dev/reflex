@@ -1,5 +1,6 @@
 """Browser regressions for client-storage writes during hydration and assigned defaults."""
 
+import logging
 import re
 from collections.abc import Callable, Generator
 
@@ -326,14 +327,22 @@ def test_hydration_reconciles_storage_in_get_delta(
 
 
 def test_storage_annotations_hydrate_and_persist(
-    hydration_storage_app: AppHarness, page: Page
+    hydration_storage_app: AppHarness,
+    page: Page,
+    caplog: pytest.LogCaptureFixture,
+    request: pytest.FixtureRequest,
 ):
     """Storage-annotated vars accept browser strings without logging type errors.
 
     Args:
         hydration_storage_app: The running app.
         page: A fresh browser page.
+        caplog: Captured server log records.
+        request: The request used to remove the log handler after the test.
     """
+    field_logger = logging.getLogger("reflex_base.vars.base")
+    field_logger.addHandler(caplog.handler)
+    request.addfinalizer(lambda: field_logger.removeHandler(caplog.handler))
     assert hydration_storage_app.frontend_url is not None
     page.goto(hydration_storage_app.frontend_url)
     expect(page.locator("#hydrated")).to_have_text("true")
@@ -356,6 +365,11 @@ def test_storage_annotations_hydrate_and_persist(
     page.reload()
     expect(page.locator("#hydrated")).to_have_text("true")
     expect(page.locator("#annotated")).to_have_text("changed|changed|changed")
+    assert not [
+        record.getMessage()
+        for record in caplog.records
+        if record.name == field_logger.name and record.levelno >= logging.ERROR
+    ]
 
 
 # The browser storage vars of the assigned page, by element id suffix.
