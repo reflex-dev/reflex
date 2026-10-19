@@ -275,14 +275,12 @@ class StateProxy(wrapt.ObjectProxy):
             from reflex.state import State
 
             if type(mutable_state) is State and not mutable_state.router_data:
-                # The tree expired while the lock was released: restore it the
-                # way a foreground event does, so the client drops stale values.
+                # The tree expired while the lock was released: rehydrate it, so
+                # the client drops stale values. The task's route may be a page
+                # the client left, so the tree stays routeless and the client's
+                # next event loads its current page.
                 from reflex_base.event.processor import BaseStateEventProcessor
 
-                if ctx.router_data:
-                    mutable_state.router_data = mutable_state._update_router_vars(
-                        ctx.router_data, {}
-                    )
                 await BaseStateEventProcessor._rehydrate(mutable_state)
         except (Exception, asyncio.CancelledError):
             # Restore the proxy to a consistent state since __aexit__ will not be called when __aenter__ raises.

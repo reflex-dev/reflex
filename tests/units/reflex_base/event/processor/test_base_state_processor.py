@@ -579,13 +579,88 @@ async def test_background_task_rehydrates_state_tree_expired_while_unlocked(
     # Not hydrated, so the browser does not overwrite its client storage.
     assert snapshot[root_name][is_hydrated_key] is False
     assert snapshot[child_name]["child" + FIELD_MARKER] == 0
+    # Routeless: the client's next event sets its current page.
     page = snapshot[root_name][constants.ROUTER_PAGE + FIELD_MARKER]
-    assert page.raw_path == "/post/abc"
-    session = snapshot[root_name][constants.ROUTER_SESSION + FIELD_MARKER]
-    assert session.client_token == token
+    assert page.raw_path == ""
     assert emitted_deltas[-1][1][ExpiryState.get_full_name()] == {
         "value" + FIELD_MARKER: 100
     }
+
+
+@pytest.mark.parametrize(
+    "processor_state_manager", ["in_process", "redis"], indirect=True
+)
+async def test_background_rehydrate_does_not_load_the_route_the_client_left(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A tree that expires during a background task does not reload the task's old page.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    waiting = asyncio.Event()
+    release = asyncio.Event()
+
+    class LeftPageState(State):
+        loaded: list[str] = []
+
+        @event
+        def load_a(self):
+            self.loaded = [*self.loaded, "a"]
+
+        @event
+        def load_b(self):
+            self.loaded = [*self.loaded, "b"]
+
+        @event
+        def ping(self):
+            pass
+
+        @event(background=True)
+        async def bg(self):
+            waiting.set()
+            await release.wait()
+            async with self:
+                pass
+
+    wired_app.add_page(
+        lambda: rx.text("a"), route="/page-a", on_load=LeftPageState.load_a
+    )
+    wired_app.add_page(
+        lambda: rx.text("b"), route="/page-b", on_load=LeftPageState.load_b
+    )
+    assert real_base_state_processor._root_context is not None
+    state_manager = real_base_state_processor._root_context.state_manager
+    if isinstance(state_manager, StateManagerRedis):
+        # Oplock keeps the tree cached in the process, so deleting keys does not expire it.
+        state_manager._oplock_enabled = False
+
+    async with real_base_state_processor as processor:
+        await processor.enqueue(
+            token, _client_event(LeftPageState.bg(), _view("/page-a"))
+        )
+        await asyncio.wait_for(waiting.wait(), timeout=2)
+        # The client moves to /page-b, then the tree expires.
+        await _send(
+            processor, token, _client_event(LeftPageState.ping(), _view("/page-b"))
+        )
+        _expire_token(state_manager, token)
+        release.set()
+        await processor.join(5)
+        # The client's next event on /page-b.
+        await _send(
+            processor, token, _client_event(LeftPageState.ping(), _view("/page-b"))
+        )
+
+    async with _read_back(real_base_state_processor, token) as root:
+        assert (await root.get_state(LeftPageState)).loaded == ["b"], (
+            "the background rehydrate loaded the route the client had left"
+        )
+        assert root.router.url.path == "/page-b"
 
 
 async def test_background_yield_inside_context_flushes_delta_before_event(

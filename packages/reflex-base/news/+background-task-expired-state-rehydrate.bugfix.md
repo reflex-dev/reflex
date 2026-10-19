@@ -1,1 +1,1 @@
-A background task that re-enters an expired session runs the same rehydrate step as a foreground event. The browser drops stale values of the loaded states and keeps its route and browser storage.
+A background task that re-enters an expired session now rehydrates the loaded states. The browser drops their stale values and keeps its route and browser storage; its next event runs the current page's on_load.
