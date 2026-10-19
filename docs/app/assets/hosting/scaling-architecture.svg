@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1550" viewBox="0 0 800 1550" role="img" aria-labelledby="title description">
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1350" viewBox="0 0 800 1350" role="img" aria-labelledby="title description">
   <title id="title">Reference architecture for a scaled Reflex application</title>
-  <desc id="description">A browser loads a static frontend and exchanges events and updates through a WebSocket-capable load balancer with replaceable backend replicas. Backends use a primary database for writes and fresh reads, lagging read replicas only for eligible reads, regional Redis for session state, and an optional separate application cache. Choose one state Redis connection path: a direct ordinary Redis URL, or an optional independently validated Sentinel-aware endpoint or adapter. That integration discovers the primary through Sentinel control traffic and sends application data to Redis. Three example Sentinel instances monitor Redis with a quorum of two; a majority authorizes failover. Native Sentinel discovery is not verified in Reflex. A reliable job handoff publishes to a task broker. Independent workers persist outcomes in shared durable storage before acknowledging success. Queue persistence, recovery, result storage, and idempotency must be configured and tested.</desc>
+  <desc id="description">A browser loads a static frontend and exchanges events and updates through a WebSocket-capable load balancer with replaceable backend replicas. Backends use a primary database for writes and fresh reads, lagging read replicas only for eligible reads, regional Redis for session state, and an optional separate application cache. An ordinary Redis URL connects backends through a provider-managed failover endpoint to the regional Redis current primary. Redis replication to a replica is asynchronous. Endpoint switching, connection recovery and persistence depend on the selected provider and configuration; the endpoint alone does not prevent data loss. A reliable job handoff publishes to a task broker. Independent workers persist outcomes in shared durable storage before acknowledging success. Queue persistence, recovery, result storage, and idempotency must be configured and tested.</desc>
   <defs>
     <style>
       text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #172b4d; font-size: 16px; }
@@ -14,25 +14,21 @@
       .data { fill: none; stroke: #275d9d; stroke-width: 2; stroke-linejoin: round; }
       .async { fill: none; stroke: #7145a5; stroke-width: 2.5; stroke-linejoin: round; }
       .replication { fill: none; stroke: #15776e; stroke-width: 2; stroke-dasharray: 8 5; stroke-linejoin: round; }
-      .control { fill: none; stroke: #9a5d10; stroke-width: 2.5; stroke-dasharray: 2 6; stroke-linecap: round; stroke-linejoin: round; }
       .label { paint-order: stroke; stroke: #fff; stroke-width: 7px; stroke-linejoin: round; }
     </style>
     <marker id="data-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#275d9d"/></marker>
     <marker id="async-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#7145a5"/></marker>
     <marker id="replication-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#15776e"/></marker>
-    <marker id="control-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#9a5d10"/></marker>
   </defs>
-  <rect width="800" height="1550" rx="16" fill="#fff"/>
+  <rect width="800" height="1350" rx="16" fill="#fff"/>
   <text x="30" y="39" class="title">A production app, split by responsibility</text>
   <text x="30" y="67" class="muted">Illustrative topology. Add services only when the application needs them.</text>
   <path d="M30 98 H68" class="data" marker-start="url(#data-arrow)" marker-end="url(#data-arrow)"/>
   <text x="80" y="103" class="small">Request / response</text>
-  <path d="M255 98 H293" class="async" marker-end="url(#async-arrow)"/>
-  <text x="305" y="103" class="small">Async job</text>
-  <path d="M418 98 H456" class="replication" marker-end="url(#replication-arrow)"/>
-  <text x="468" y="103" class="small">Replication</text>
-  <path d="M596 98 H634" class="control" marker-end="url(#control-arrow)"/>
-  <text x="646" y="103" class="small">Control plane</text>
+  <path d="M310 98 H348" class="async" marker-end="url(#async-arrow)"/>
+  <text x="360" y="103" class="small">Async job</text>
+  <path d="M550 98 H588" class="replication" marker-end="url(#replication-arrow)"/>
+  <text x="600" y="103" class="small">Replication</text>
 
   <rect x="40" y="145" width="225" height="85" rx="10" class="blue-card"/>
   <text x="152" y="177" text-anchor="middle" class="heading">Browser</text>
@@ -61,44 +57,36 @@
   <path d="M265 355 H440" class="data" marker-start="url(#data-arrow)" marker-end="url(#data-arrow)"/>
   <text x="352" y="338" text-anchor="middle" class="small label">Route connections</text>
 
-  <path d="M600 420 V467 H150 V740" class="data" marker-start="url(#data-arrow)" marker-end="url(#data-arrow)"/>
-  <path d="M400 467 V740" class="data" marker-end="url(#data-arrow)"/>
-  <path d="M600 467 H680 V540" class="data" marker-end="url(#data-arrow)"/>
-  <path d="M680 505 H555 V700 H570 V740" class="data" marker-end="url(#data-arrow)"/>
+  <path d="M600 420 V467 H150 V540" class="data" marker-start="url(#data-arrow)" marker-end="url(#data-arrow)"/>
+  <path d="M400 467 V540" class="data" marker-end="url(#data-arrow)"/>
+  <path d="M600 467 H660 V540" class="data" marker-end="url(#data-arrow)"/>
   <circle cx="400" cy="467" r="3.5" fill="#275d9d"/>
   <circle cx="600" cy="467" r="3.5" fill="#275d9d"/>
-  <text x="150" y="710" text-anchor="middle" class="small label">Writes / fresh reads</text>
-  <text x="400" y="710" text-anchor="middle" class="small label">Lag-tolerant reads</text>
-  <text x="670" y="493" text-anchor="middle" class="small label">Choose one Redis path</text>
-  <text x="545" y="576" text-anchor="end" class="small label">Direct</text>
-  <text x="545" y="599" text-anchor="end" class="small label">ordinary</text>
-  <text x="545" y="622" text-anchor="end" class="small label">Redis URL</text>
-  <rect x="590" y="540" width="180" height="120" rx="10" fill="#fffbf0" stroke="#c99444" stroke-width="1.5" stroke-dasharray="6 4"/>
-  <text x="680" y="567" text-anchor="middle" class="small">Optional, validated</text>
-  <text x="680" y="593" text-anchor="middle" class="small">Sentinel-aware</text>
-  <text x="680" y="619" text-anchor="middle" class="small">endpoint / adapter</text>
-  <text x="680" y="645" text-anchor="middle" class="small">Separate integration</text>
-  <path d="M680 660 V740" class="data" marker-start="url(#data-arrow)" marker-end="url(#data-arrow)"/>
-  <text x="693" y="695" class="small label">State /</text>
-  <text x="693" y="717" class="small label">locks</text>
-  <path d="M590 640 H525 V1035" fill="none" stroke="#fff" stroke-width="7"/>
-  <path d="M590 640 H525 V1035" class="control" marker-start="url(#control-arrow)" marker-end="url(#control-arrow)"/>
-  <text x="540" y="740" transform="rotate(90 540 740)" class="small label">Discover current primary</text>
+  <text x="150" y="510" text-anchor="middle" class="small label">Writes / fresh reads</text>
+  <text x="400" y="510" text-anchor="middle" class="small label">Lag-tolerant reads</text>
+  <text x="660" y="510" text-anchor="middle" class="small label">Ordinary Redis URL</text>
+  <rect x="550" y="540" width="220" height="120" rx="10" class="card"/>
+  <text x="660" y="575" text-anchor="middle" class="heading">Provider-managed</text>
+  <text x="660" y="601" text-anchor="middle" class="heading">failover endpoint</text>
+  <text x="660" y="629" text-anchor="middle" class="small">Provider-specific behavior</text>
+  <path d="M660 660 V740" class="data" marker-start="url(#data-arrow)" marker-end="url(#data-arrow)"/>
+  <text x="679" y="695" class="small label">State /</text>
+  <text x="679" y="717" class="small label">locks</text>
 
-  <rect x="40" y="740" width="220" height="120" rx="10" class="card"/>
-  <text x="150" y="775" text-anchor="middle" class="heading">Primary database</text>
-  <text x="150" y="804" text-anchor="middle">Business records</text>
-  <text x="150" y="829" text-anchor="middle">Jobs + result references</text>
-  <rect x="290" y="740" width="220" height="120" rx="10" class="card"/>
-  <text x="400" y="775" text-anchor="middle" class="heading">Read replica DBs</text>
-  <text x="400" y="804" text-anchor="middle">Read-only routing</text>
-  <text x="400" y="829" text-anchor="middle">May lag behind primary</text>
-  <path d="M150 860 V910 H400 V860" class="replication" marker-end="url(#replication-arrow)"/>
-  <text x="275" y="937" text-anchor="middle" class="small">Asynchronous DB replication</text>
+  <rect x="40" y="540" width="220" height="120" rx="10" class="card"/>
+  <text x="150" y="575" text-anchor="middle" class="heading">Primary database</text>
+  <text x="150" y="604" text-anchor="middle">Business records</text>
+  <text x="150" y="629" text-anchor="middle">Jobs + result references</text>
+  <rect x="290" y="540" width="220" height="120" rx="10" class="card"/>
+  <text x="400" y="575" text-anchor="middle" class="heading">Read replica DBs</text>
+  <text x="400" y="604" text-anchor="middle">Read-only routing</text>
+  <text x="400" y="629" text-anchor="middle">May lag behind primary</text>
+  <path d="M150 660 V710 H400 V660" class="replication" marker-end="url(#replication-arrow)"/>
+  <text x="275" y="737" text-anchor="middle" class="small">Asynchronous DB replication</text>
 
   <rect x="550" y="740" width="220" height="120" rx="10" class="card"/>
   <text x="660" y="775" text-anchor="middle" class="heading">Regional state Redis</text>
-  <text x="660" y="804" text-anchor="middle">Primary data endpoint</text>
+  <text x="660" y="804" text-anchor="middle">Current primary</text>
   <text x="660" y="829" text-anchor="middle">Shared by this region</text>
   <rect x="550" y="935" width="220" height="60" rx="10" class="card"/>
   <text x="660" y="972" text-anchor="middle">State Redis replica</text>
@@ -106,43 +94,28 @@
   <text x="643" y="892" text-anchor="end" class="small label">Async</text>
   <text x="643" y="913" text-anchor="end" class="small label">replication</text>
 
-  <path d="M150 467 H17 V1048 H40" class="data" marker-end="url(#data-arrow)"/>
-  <rect x="40" y="1000" width="220" height="100" rx="10" class="card"/>
-  <text x="150" y="1034" text-anchor="middle" class="heading">Optional cache</text>
-  <text x="150" y="1061" text-anchor="middle">Separate Redis service</text>
-  <text x="150" y="1086" text-anchor="middle" class="small">Cache get / set + TTLs</text>
+  <path d="M150 467 H17 V848 H40" class="data" marker-end="url(#data-arrow)"/>
+  <rect x="40" y="800" width="220" height="100" rx="10" class="card"/>
+  <text x="150" y="834" text-anchor="middle" class="heading">Optional cache</text>
+  <text x="150" y="861" text-anchor="middle">Separate Redis service</text>
+  <text x="150" y="886" text-anchor="middle" class="small">Cache get / set + TTLs</text>
 
-  <rect x="290" y="1035" width="480" height="167" rx="12" fill="#fffbf0" stroke="#c99444" stroke-width="1.5" stroke-dasharray="6 4"/>
-  <text x="308" y="1065" class="heading">Optional Sentinel control plane</text>
-  <rect x="308" y="1080" width="126" height="34" rx="6" fill="#fff" stroke="#d4b27a"/>
-  <rect x="452" y="1080" width="126" height="34" rx="6" fill="#fff" stroke="#d4b27a"/>
-  <rect x="596" y="1080" width="126" height="34" rx="6" fill="#fff" stroke="#d4b27a"/>
-  <text x="371" y="1103" text-anchor="middle" class="small">Sentinel 1</text>
-  <text x="515" y="1103" text-anchor="middle" class="small">Sentinel 2</text>
-  <text x="659" y="1103" text-anchor="middle" class="small">Sentinel 3</text>
-  <text x="308" y="1141" class="small">Example quorum: 2 of 3; majority authorizes failover.</text>
-  <text x="308" y="1164" class="small">Requires validated Sentinel-aware integration.</text>
-  <text x="308" y="1187" class="small">No verified native Reflex Sentinel discovery.</text>
-  <path d="M748 1035 V1013 H737 V995" class="control" marker-end="url(#control-arrow)"/>
-  <path d="M748 1013 H783 V800 H770" class="control" marker-end="url(#control-arrow)"/>
-  <text x="660" y="1024" text-anchor="middle" class="small label">Monitor / coordinate failover</text>
-
-  <path d="M760 355 H793 V1255 H150 V1290" class="async" marker-end="url(#async-arrow)"/>
-  <text x="405" y="1243" text-anchor="middle" class="small label">Publish after reliable handoff (see job lifecycle)</text>
-  <rect x="40" y="1290" width="220" height="100" rx="10" class="purple-card"/>
-  <text x="150" y="1325" text-anchor="middle" class="heading">Task queue / broker</text>
-  <text x="150" y="1353" text-anchor="middle">Configure persistence</text>
-  <text x="150" y="1377" text-anchor="middle" class="small">and delivery / recovery</text>
-  <rect x="470" y="1290" width="290" height="100" rx="10" class="purple-card"/>
-  <text x="615" y="1325" text-anchor="middle" class="heading">Independent workers</text>
-  <text x="615" y="1353" text-anchor="middle">Idempotent task effects</text>
-  <text x="615" y="1377" text-anchor="middle" class="small">Shared inputs + result storage</text>
-  <path d="M260 1322 H470" class="async" marker-end="url(#async-arrow)"/>
-  <text x="365" y="1310" text-anchor="middle" class="small label">Deliver / redeliver</text>
-  <path d="M470 1370 H260" class="async" marker-end="url(#async-arrow)"/>
-  <text x="365" y="1358" text-anchor="middle" class="small label">Ack after persistence</text>
-  <path d="M615 1390 V1440 H29 V826 H40" class="data" marker-end="url(#data-arrow)"/>
-  <text x="380" y="1427" text-anchor="middle" class="small label">Persist outcomes in shared durable storage</text>
-  <text x="40" y="1482" class="muted">Storage persistence, replication lag, retries and failover need explicit policies.</text>
-  <text x="40" y="1507" class="muted">Validate recovery for the selected versions; this topology is not a guarantee.</text>
+  <path d="M760 355 H793 V1055 H150 V1090" class="async" marker-end="url(#async-arrow)"/>
+  <text x="405" y="1043" text-anchor="middle" class="small label">Publish after reliable handoff (see job lifecycle)</text>
+  <rect x="40" y="1090" width="220" height="100" rx="10" class="purple-card"/>
+  <text x="150" y="1125" text-anchor="middle" class="heading">Task queue / broker</text>
+  <text x="150" y="1153" text-anchor="middle">Configure persistence</text>
+  <text x="150" y="1177" text-anchor="middle" class="small">and delivery / recovery</text>
+  <rect x="470" y="1090" width="290" height="100" rx="10" class="purple-card"/>
+  <text x="615" y="1125" text-anchor="middle" class="heading">Independent workers</text>
+  <text x="615" y="1153" text-anchor="middle">Idempotent task effects</text>
+  <text x="615" y="1177" text-anchor="middle" class="small">Shared inputs + result storage</text>
+  <path d="M260 1122 H470" class="async" marker-end="url(#async-arrow)"/>
+  <text x="365" y="1110" text-anchor="middle" class="small label">Deliver / redeliver</text>
+  <path d="M470 1170 H260" class="async" marker-end="url(#async-arrow)"/>
+  <text x="365" y="1158" text-anchor="middle" class="small label">Ack after persistence</text>
+  <path d="M615 1190 V1240 H29 V626 H40" class="data" marker-end="url(#data-arrow)"/>
+  <text x="380" y="1227" text-anchor="middle" class="small label">Persist outcomes in shared durable storage</text>
+  <text x="40" y="1282" class="muted">Storage persistence, replication lag and job recovery depend on configuration.</text>
+  <text x="40" y="1307" class="muted">A provider endpoint alone does not guarantee recovery or prevent data loss.</text>
 </svg>

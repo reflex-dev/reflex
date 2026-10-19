@@ -1,6 +1,6 @@
 ---
 title: Scaling Reflex Apps
-meta_description: Horizontal scaling for Reflex apps, durable jobs, regional state, Redis Sentinel support limits, database read routing, OpenTelemetry compatibility, Redis spikes, and scale-down recovery.
+meta_description: Horizontal scaling for Reflex apps, durable jobs, regional state, Redis failover, database read routing, OpenTelemetry compatibility, Redis spikes, and scale-down recovery.
 ---
 
 # Scaling Reflex Apps
@@ -11,7 +11,7 @@ This guide uses a report-export application to explain the boundaries: a user re
 
 ## Reference production architecture
 
-This is an illustrative deployment, not a list of required components. Start with the request path and stores your app needs. Add read replicas for lag-tolerant read load, a separate cache for expensive repeatable reads, and a queue when jobs must outlive a backend. The optional Sentinel panel requires a separately implemented and validated integration.
+This is an illustrative deployment, not a list of required components. Start with the request path and stores your app needs. Add read replicas for lag-tolerant read load, a separate cache for expensive repeatable reads, and a queue when jobs must outlive a backend.
 
 ```python exec
 import reflex as rx
@@ -22,7 +22,7 @@ rx.el.figure(
     rx.el.div(
         rx.image(
             src=rx.asset("hosting/scaling-architecture.svg"),
-            alt="Production architecture: browser and frontend, load balancer, backend replicas, databases, separate Redis roles, optional Sentinel integration, queue and workers. Text description follows.",
+            alt="Production architecture: browser and frontend, load balancer, backend replicas, databases, separate Redis roles, provider-managed failover endpoint, queue and workers. Text description follows.",
             width="100%",
             min_width="760px",
             height="auto",
@@ -38,7 +38,7 @@ rx.el.figure(
     rx.el.figcaption(
         rx.el.a(
             "Open architecture diagram at full size",
-            href=rx.asset("hosting/scaling-architecture.svg"),
+            href="/hosting/scaling-architecture.svg",
             target="_blank",
             rel="noopener noreferrer",
             text_decoration="underline",
@@ -57,7 +57,7 @@ The labeled arrows distinguish traffic types. On narrow screens, scroll the diag
 - **Application data:** backend replicas ↔ regional Redis session state; optional application cache uses a separate Redis service. Backends and workers write durable records to the primary database. Only lag-tolerant reads go to read replicas; read-after-write and other freshness-critical reads use the primary.
 - **Asynchronous jobs:** backend → durable job record/outbox → task queue → independent workers. Workers save status and results in shared storage; any authorized backend can read them. The job lifecycle below explains confirmation, retry and acknowledgement boundaries.
 - **Replication:** primary database → read replica databases; Redis primary → Redis replica. These arrows copy data, not application requests. Asynchronous replication can lag and can lose recent writes on failover.
-- **Sentinel monitoring/failover:** optional Sentinel instances monitor the Redis primary/replica and coordinate promotion. A validated Sentinel-aware integration discovers the current primary; application data still goes to Redis, never to a Sentinel control port. This is not native Reflex Sentinel support.
+- **Redis failover:** backends use an ordinary Redis URL through a provider-managed failover endpoint, which routes application traffic to the current primary. Test connection recovery and the provider's persistence behavior during failover.
 
 ## Serve requests with replaceable backends
 
@@ -99,7 +99,7 @@ rx.el.figure(
     rx.el.figcaption(
         rx.el.a(
             "Open job lifecycle diagram at full size",
-            href=rx.asset("hosting/scaling-job-lifecycle.svg"),
+            href="/hosting/scaling-job-lifecycle.svg",
             target="_blank",
             rel="noopener noreferrer",
             text_decoration="underline",
@@ -119,6 +119,87 @@ rx.el.figure(
 5. **Recover and read.** Configure broker acknowledgements and redelivery, timeouts and bounded retries. Expose permanent failures. Any healthy backend can authorize access and read the job by ID; reopening the app can recover outstanding jobs from durable records.
 
 A queue library alone does not guarantee durability. Select broker persistence and worker-loss behavior, then test them. Taskiq needs an actual result backend or application job store; Celery acknowledgement and worker-loss settings affect redelivery. Define result retention, backups and expiry independently of queue delivery. Avoid process-local queues and in-memory-only results for jobs that must survive scale-down. Scale workers by backlog and oldest-job age, independently of backend replicas.
+
+### Connect a report job to Reflex state
+
+The handler below awaits an application service outside the state lock, then applies its result only if the signed-in session and selected request are still current. `report_app.auth.AuthState` is your own authentication state, not a Reflex API: its backend-only `_owner_id` comes from verified authentication, and `_session_revision` changes on every login/logout, including signing back in as the same owner. Your logout handler also clears the report UI.
+
+Supply asynchronous `report_app.reports` adapters backed by your database and broker:
+
+- `accept_report(owner, request_key, report)` validates access and inputs, atomically commits the job and outbox, and returns only after commit. Enforce `UNIQUE(owner, request_key)`: the same key and inputs return the existing job; the same key with different inputs is rejected.
+- `read_report(owner, job_id, request_key)` reads from the **primary**, filtering by owner and the selected job ID, or by owner and request key when no ID exists. Only when both are empty does it recover that owner's latest job for this report type. Return `None` for no match, without falling back to an older job for a selected key. Both adapters return a record with `id`, `status` and `request_key`; service failures raise your `ReportServiceError`.
+
+```python
+from uuid import uuid4
+
+import reflex as rx
+from report_app.auth import AuthState
+from report_app.reports import ReportServiceError, accept_report, read_report
+
+
+class ReportState(rx.State):
+    job_id: str = ""
+    status: str = ""
+    error: str = ""
+    _request_key: str = ""
+    _generation: int = 0
+
+    @rx.event
+    def new_report(self):
+        self._request_key = uuid4().hex
+        self._generation += 1
+        self.job_id = self.status = self.error = ""
+
+    @rx.event(background=True)
+    async def sync_report(self, submit: bool = False):
+        async with self:
+            auth = await self.get_state(AuthState)
+            identity = (auth._owner_id, auth._session_revision)
+            self._generation += 1
+            generation = self._generation
+            if not identity[0]:
+                self.job_id = self.status = ""
+                return
+            if submit and not self._request_key:
+                self._request_key = uuid4().hex
+            request_key, job_id = self._request_key, self.job_id
+
+        job, error = None, ""
+        try:
+            if submit:
+                job = await accept_report(identity[0], request_key, "monthly-sales")
+            else:
+                job = await read_report(identity[0], job_id, request_key)
+        except ReportServiceError:
+            error = "Request not confirmed. Retry or refresh before starting anew."
+
+        async with self:
+            auth = await self.get_state(AuthState)
+            if identity != (auth._owner_id, auth._session_revision):
+                return
+            if generation != self._generation:
+                return
+            self.error = error
+            if not error:
+                self.job_id = job.id if job else ""
+                self.status = job.status if job else ""
+                if job:
+                    self._request_key = job.request_key
+
+
+def report_panel():
+    return rx.vstack(
+        rx.button("New report", on_click=ReportState.new_report),
+        rx.button("Submit / retry", on_click=ReportState.sync_report(True)),
+        rx.button("Refresh / recover", on_click=ReportState.sync_report(False)),
+        rx.text(ReportState.job_id, ": ", ReportState.status),
+        rx.text(ReportState.error),
+    )
+```
+
+Retries keep the same request key; **New report** deliberately creates a new logical request and key. After authentication, run `ReportState.sync_report` on page load to recover a job in a fresh session. If a session is lost before acceptance reaches the UI, recover from durable records before deliberately submitting a new request; a key held only in lost session state cannot deduplicate a new key. For multiple outstanding jobs, provide an authorized list/selection view instead of a latest-job lookup.
+
+These adapters and the worker must implement the lifecycle above; a background event alone does not make the job durable.
 
 ## Keep regional state and durable data separate
 
@@ -145,23 +226,19 @@ For example, cache an expensive, repeatable lookup when bounded staleness is acc
 
 `REFLEX_REDIS_URL` configures Reflex state. Application caching uses your own client/configuration, with bounded TTLs, reused clients and limits on cache-miss database work. Keep cache clients outside serialized session state. No cache is required by this architecture.
 
-### Sentinel is an optional integration, not a Reflex setting
+### Use a failover endpoint
 
-**Reflex's built-in Redis configuration does not support connecting directly through Sentinel.** In the reviewed source, the factory creates ordinary Redis clients from `redis://`, `rediss://` or `unix://` URLs. It does not discover a primary through Sentinel or construct a Redis Cluster client. Do not point `REFLEX_REDIS_URL` at a Sentinel control port or invent a Sentinel URL scheme. Redis Cluster is not supported by this session-state client path.
-
-The diagram's optional Sentinel panel illustrates a deployment you must implement and validate separately. It needs a Sentinel-aware proxy/endpoint or custom integration that connects application traffic to the current Redis primary. A provider's stable ordinary Redis endpoint may handle failover internally; that does not make Reflex Sentinel-aware. Test primary switching, connection recovery, state locks and persistence with your exact versions before relying on either approach.
-
-Sentinel monitors non-clustered Redis and promotes replicas; it does not shard data. The illustration uses three Sentinel instances in independent failure domains and an example failure-detection quorum of two. Failover also requires majority authorization. Redis replication is asynchronous, so failover can lose recent acknowledged writes. Durable business records and jobs need their own recovery guarantees. See [Redis Sentinel requirements](https://redis.io/docs/latest/operate/oss_and_stack/management/sentinel/).
+Configure `REFLEX_REDIS_URL` with an ordinary Redis URL for a provider-managed endpoint that handles failover.
 
 ## Keep builds and state versions compatible
 
 Use `uv` or another locking package manager to freeze dependencies across builds. Replicas sharing a state store must run compatible application code and state schemas.
 
 - Compatible framework upgrades can preserve saved state; plan for session reset on downgrade/rollback and read the release notes for migration instructions.
-- Changing stored field names/types makes saved state incompatible. Changing defaults or method bodies does not change the current saved-state schema.
-- Rebuild and deploy the frontend alongside changes to fields, computed-variable definitions or handler names. Frontend compatibility checks and saved-state compatibility checks are distinct.
+- Changing stored base-variable names/types makes saved state incompatible. Changing defaults or method bodies does not change the saved-state schema hash.
+- Rebuild and deploy the frontend alongside changes to fields, frontend computed-variable names/types or handler names. The frontend compatibility hash includes frontend computed variables and handler names; the saved-state schema hash does not.
 
-**0.9 → 0.10 migration:** Reflex 0.9 and 0.10 cannot share a state store. 0.10 can load compatible 0.9 state; 0.9 discards 0.10 state. Do not roll mixed versions against the same Redis store or disk state directory. Upgrade all instances together, or use separate stores and accept session reset at cutover. Use a fresh dedicated state store for rollback; keep durable records outside session state. See [self-hosting compatibility guidance](/docs/hosting/self-hosting/).
+See [self-hosting compatibility guidance](/docs/hosting/self-hosting/) for release-specific migration constraints.
 
 ## Use telemetry to choose the next change
 
@@ -179,12 +256,9 @@ Use service, region, deployment version and database role to locate the slow bou
 
 | Instrumentor release | Declared dependency floors |
 | --- | --- |
-| `reflex-otel==0.1.0` | Python >=3.10; `reflex-base >=0.9.11`. |
-| `reflex-otel==0.2.0` and the reviewed source | Python >=3.11; `reflex-base >=0.10.0`. Do not install 0.2.0 against 0.9. |
+| `reflex-otel==0.2.0` | Python >=3.11; `reflex-base >=0.10.0`. |
 
-Both releases declare `opentelemetry-api >=1.30.0,<2.0` and instrumentation/ASGI instrumentation >=0.49b0,<1.0. These are dependency constraints, not certification of arbitrary SDK/exporter combinations. Lock the exact framework, instrumentor, SDK and exporter; verify backend and optional browser export together.
-
-Source checks use [Reflex d02ba540](https://github.com/reflex-dev/reflex/tree/d02ba5409579e24e67401f9dd6eb2fc4d3ef5e1b), the [0.1.0 manifest](https://github.com/reflex-dev/reflex/blob/3d47357ac158c51a0c131ec48c41232830bd9031/packages/reflex-otel/pyproject.toml), and the [0.2.0 manifest](https://github.com/reflex-dev/reflex/blob/40ffab8124ba257053c395309c87f1c818b4e0a2/packages/reflex-otel/pyproject.toml). Recheck another release at its exact tag/commit, and record resolved Python, Reflex, reflex-base, reflex-otel, Redis client/server, broker and result-store versions with test results.
+This release declares `opentelemetry-api >=1.30.0,<2.0` and instrumentation/ASGI instrumentation >=0.49b0,<1.0. These are dependency constraints, not certification of arbitrary SDK/exporter combinations. Lock the exact framework, instrumentor, SDK and exporter; verify backend and optional browser export together.
 
 ## Validate recovery under load
 
@@ -196,7 +270,7 @@ Here are example validation tasks for the components you choose to deploy. Run r
 - Remove the backend that accepted a report; reconnect elsewhere and retrieve the job/result.
 - Restart a worker mid-job; verify redelivery/retry behavior and absence of duplicate side effects.
 - Repeat a submission and interrupt queue publication; verify idempotency and recovery of pending outbox entries.
-- Fail over the tested Redis endpoint or validated Sentinel integration; exercise locks, active sessions and reconnects. An unvalidated integration is not a supported failover setup.
+- Fail over the provider-managed Redis endpoint; exercise locks, active sessions and reconnects, and check which writes survive under its persistence policy.
 - Move a user between regions; verify session reset, authorization and recovery of durable jobs.
 - Delay or disable a read replica; verify primary routing for fresh reads and bounded fallback.
 
