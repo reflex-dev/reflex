@@ -3556,6 +3556,35 @@ class CustomVarOperation(CachedVarOperation, Var[T]):
         )
 
 
+def get_leaf_vars(var: Var) -> Sequence[Var]:
+    """Collect the leaf vars a var is built from.
+
+    A var operation such as ``state.items.filter(...)`` renders to a fresh value
+    every time it is evaluated, so a React hook reading one has to depend on the
+    vars the operation combines instead. This unwraps a ``CustomVarOperation``
+    into its operands and a cast into the var it wraps, recursively; any other
+    var, a literal or a function included, is a leaf.
+
+    Args:
+        var: The var to take apart.
+
+    Returns:
+        The leaves, in order of first appearance and without duplicates. A var
+        that is no operation is its own only leaf.
+    """
+    simple: dict[tuple[Any, ...], Var] = {}
+    stack = [var]
+    while stack:
+        current = stack.pop()
+        if isinstance(current, CustomVarOperation):
+            stack.extend(arg for _, arg in reversed(current._args))
+        elif isinstance(current, ToOperation):
+            stack.append(current._original)
+        else:
+            simple.setdefault(current._hash_key(), current)
+    return list(simple.values())
+
+
 class NoneVar(Var[None], python_types=type(None)):
     """A var representing None."""
 

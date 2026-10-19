@@ -14,7 +14,7 @@ import traceback
 import typing
 import weakref
 from abc import ABC, abstractmethod
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from pathlib import Path
 from typing import Any, ClassVar, Literal, Self, TypeVar
 from unittest import mock
@@ -50,9 +50,11 @@ from reflex_base.vars.base import (
     cached_property_no_lock,
     computed_var,
     field,
+    get_leaf_vars,
     var_operation,
     var_operation_return,
 )
+from reflex_base.vars.function import FunctionVar
 from reflex_base.vars.number import NumberVar
 from reflex_base.vars.object import ObjectVar
 from reflex_base.vars.sequence import ArrayVar, StringVar
@@ -2189,3 +2191,43 @@ def test_new_default_for_inherited_private_field_stays_a_field():
         assert child_field.default == 2
         assert isinstance(vars(child)["__counter__"], Field)
         assert child().__counter__ == 2
+
+
+def _js(leaf_vars: Sequence[Var]) -> list[str]:
+    """Render vars to compare them, since ``Var.__eq__`` builds a var.
+
+    Args:
+        leaf_vars: The vars to render.
+
+    Returns:
+        The rendered vars.
+    """
+    return [str(var) for var in leaf_vars]
+
+
+def test_get_leaf_vars_returns_a_leaf_alone() -> None:
+    var = Var(_js_expr="state.a")
+    (same,) = get_leaf_vars(var)
+    assert same is var
+    assert _js(get_leaf_vars(LiteralVar.create(1))) == ["1"]
+
+
+def test_get_leaf_vars_unwraps_operations_and_casts() -> None:
+    """Operands come back in order, through nested operations and casts, once."""
+    a = Var(_js_expr="state.a").to(int)
+    b = Var(_js_expr="state.b").to(int)
+
+    assert _js(get_leaf_vars((a + 1) * b)) == ["state.a", "1", "state.b"]
+    assert _js(get_leaf_vars((a + b).to(str))) == ["state.a", "state.b"]
+    assert _js(get_leaf_vars(a + a)) == ["state.a"]
+
+
+def test_get_leaf_vars_keeps_a_function_whole() -> None:
+    """A function operand is a leaf: its body only reads its own parameters."""
+    items = Var(_js_expr="state.items").to(list[str])
+
+    array, predicate = get_leaf_vars(items.filter(lambda item: item == "r"))
+
+    assert str(array) == "state.items"
+    assert isinstance(predicate, FunctionVar)
+    assert '=== "r"' in str(predicate)
