@@ -213,20 +213,22 @@ def _export_backend_in_process(root: Path, attempted, finished):
 
 def test_backend_archive_waits_for_frontend_compilation(tmp_path, monkeypatch):
     """Backend ZIPs wait for the compiler to publish its temporary stateful marker."""
-    # The spawned exporter inherits this and shares the lock directory.
+    # The spawned exporter inherits this and shares the lock directory. It sits
+    # outside the archived app root: Windows refuses reads of a locked file.
     monkeypatch.setenv("REFLEX_DIR", str(tmp_path / "reflex-data"))
-    web = tmp_path / ".web"
+    root = tmp_path / "app"
+    web = root / ".web"
     backend = web / constants.Dirs.BACKEND
     backend.mkdir(parents=True)
     marker = backend / constants.Dirs.STATEFUL_PAGES
     marker.write_text('["old"]')
     temporary = marker.with_suffix(".tmp")
     temporary.write_text('["new"]')
-    (tmp_path / "app.py").write_text("# Backend source\n", newline="\r\n")
+    (root / "app.py").write_text("# Backend source\n", newline="\r\n")
     context = multiprocessing.get_context("spawn")
     attempted, finished = context.Event(), context.Event()
     child = context.Process(
-        target=_export_backend_in_process, args=(tmp_path, attempted, finished)
+        target=_export_backend_in_process, args=(root, attempted, finished)
     )
     try:
         with path_ops.file_lock(web):
@@ -243,10 +245,10 @@ def test_backend_archive_waits_for_frontend_compilation(tmp_path, monkeypatch):
                 child.join(5)
     assert child.exitcode == 0
 
-    with zipfile.ZipFile(tmp_path / constants.ComponentName.BACKEND.zip()) as archive:
-        assert archive.read(marker.relative_to(tmp_path).as_posix()) == b'["new"]'
-        assert temporary.relative_to(tmp_path).as_posix() not in archive.namelist()
-        assert archive.read("app.py") == (tmp_path / "app.py").read_bytes()
+    with zipfile.ZipFile(root / constants.ComponentName.BACKEND.zip()) as archive:
+        assert archive.read(marker.relative_to(root).as_posix()) == b'["new"]'
+        assert temporary.relative_to(root).as_posix() not in archive.namelist()
+        assert archive.read("app.py") == (root / "app.py").read_bytes()
 
 
 @pytest.mark.parametrize(
