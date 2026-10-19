@@ -982,6 +982,48 @@ async def test_chained_event_keeps_originating_router_data(
     assert (await state.get_state(RouterState)).seen == ["/item/abc|abc"]
 
 
+async def test_handler_chains_a_tuple_of_events(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A handler can return or yield its chained events as a tuple.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+
+    class TupleState(State):
+        log: list[str] = []
+
+        @event
+        def add(self, tag: str):
+            self.log = [*self.log, tag]
+
+        @event
+        def returns(self):
+            return TupleState.add("r1"), TupleState.add("r2")
+
+        @event
+        def yields(self):
+            yield TupleState.add("y1"), TupleState.add("y2")
+
+    async with real_base_state_processor as processor:
+        await processor.enqueue(token, Event.from_event_type(TupleState.returns())[0])
+        await processor.join(5)
+        await processor.enqueue(token, Event.from_event_type(TupleState.yields())[0])
+        await processor.join(5)
+
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    state = await root_ctx.state_manager.get_state(
+        BaseStateToken(ident=token, cls=State)
+    )
+    assert (await state.get_state(TupleState)).log == ["r1", "r2", "y1", "y2"]
+
+
 async def test_ensure_locked_returns_a_root_only_while_the_lock_is_held(
     wired_app: App,
     real_base_state_processor: BaseStateEventProcessor,

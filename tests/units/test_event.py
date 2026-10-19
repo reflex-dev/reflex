@@ -2,7 +2,8 @@ import json
 import logging
 import shutil
 import subprocess
-from collections.abc import Callable, Mapping
+from collections import UserList
+from collections.abc import Callable, Mapping, Sequence
 from typing import Any, TypeVar, cast
 
 import pytest
@@ -19,6 +20,7 @@ from reflex_base.event import (
     _check_event_args_subclass_of_callback,
     call_event_handler,
     event,
+    event_sequence,
     fix_events,
     on_submit_event,
     on_submit_string_event,
@@ -368,6 +370,28 @@ def test_fix_events(arg1, arg2):
     event = fix_events([event_spec])[0]
     assert event.name == fn_with_args.__qualname__
     assert event.payload == {"arg1": arg1, "arg2": arg2}
+
+
+def _handler_with_arg() -> EventHandler:
+    def fn_with_arg(arg):
+        pass
+
+    fn_with_arg.__qualname__ = "fn_with_arg"
+    return EventHandler(fn=fn_with_arg)
+
+
+def test_fix_events_accepts_a_tuple():
+    """A handler can return its events as a tuple as well as a list."""
+    handler = _handler_with_arg()
+    events = fix_events((handler(1), handler(2)))
+    assert [event.payload for event in events] == [{"arg": 1}, {"arg": 2}]
+
+
+def test_from_event_type_accepts_a_tuple():
+    """Events built from a tuple of event specs match those built from a list."""
+    handler = _handler_with_arg()
+    events = Event.from_event_type((handler(1), handler(2)))
+    assert [event.payload for event in events] == [{"arg": 1}, {"arg": 2}]
 
 
 class _ProxyPayloadState(BaseState):
@@ -1269,6 +1293,34 @@ def test_event_chain_create_lambda_rejects_non_union_callable_var():
         )
 
 
+def test_event_chain_create_accepts_a_tuple_of_events():
+    """A tuple of events binds into the same chain as a list of them."""
+    events = (_handler_with_arg()(1), rx.console_log("logged"))
+
+    from_tuple = EventChain.create(events, args_spec=lambda: ())
+    from_list = EventChain.create(list(events), args_spec=lambda: ())
+
+    assert str(LiteralVar.create(from_tuple)) == str(LiteralVar.create(from_list))
+
+
+@pytest.mark.parametrize("sequence_type", [tuple, UserList])
+def test_event_chain_create_lambda_returns_a_sequence_of_events(
+    sequence_type: Callable[[list[Any]], Sequence[Any]],
+):
+    """A lambda returning any sequence of events binds like one returning a list."""
+    events = [_handler_with_arg()(1), rx.console_log("logged")]
+
+    from_sequence = EventChain.create(
+        cast(LambdaEventCallback[()], lambda: sequence_type(events)),
+        args_spec=lambda: (),
+    )
+    from_list = EventChain.create(
+        cast(LambdaEventCallback[()], lambda: events), args_spec=lambda: ()
+    )
+
+    assert str(LiteralVar.create(from_sequence)) == str(LiteralVar.create(from_list))
+
+
 def test_event_chain_create_wraps_plain_function_var_kwargs():
     """FunctionVars should compose with chain-level kwargs instead of bypassing wrapping."""
     frontend_handler = rx.vars.FunctionStringVar.create(
@@ -1641,3 +1693,23 @@ def test_generic_event_spec_fallback_is_not_reported(fallback_spec_arg, warns, c
             {"value": dict[str, str]},
         )
     assert ("intentionally ignored" in caplog.text) is warns
+
+
+def test_event_sequence():
+    """A single event is wrapped in a list, and a non-string sequence is kept."""
+
+    def handler():
+        pass
+
+    spec = EventSpec(handler=EventHandler(fn=handler))
+    events = [spec, spec]
+    events_tuple = (spec, spec)
+    events_user_list = UserList(events)
+
+    assert event_sequence(spec) == [spec]
+    assert event_sequence(handler) == [handler]
+    assert event_sequence(events) is events
+    assert event_sequence(events_tuple) is events_tuple
+    assert event_sequence(events_user_list) is events_user_list
+    assert event_sequence("abc") == ["abc"]
+    assert event_sequence(b"ab") == [b"ab"]

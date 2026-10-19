@@ -1122,6 +1122,149 @@ def test_validate_token_with_retries_access_denied_reports_request_id(
     assert get_auth_request_id() in errors[-1]
 
 
+@pytest.mark.parametrize(
+    ("status_code", "retryable"),
+    [
+        (400, False),
+        (404, False),
+        (422, False),
+        (408, True),
+        (429, True),
+        (500, True),
+        (503, True),
+    ],
+)
+def test_validate_reports_the_status_of_a_refused_request(
+    status_code: int, retryable: bool
+):
+    """A refused validation request reports its status and whether to retry.
+
+    Args:
+        status_code: The status the API answered with.
+        retryable: Whether trying again later may help.
+    """
+    client = _client()
+    client.api.auth.me.side_effect = api_error(
+        status_code, "Malformed authentication request"
+    )
+
+    with pytest.raises(TokenValidationError) as exc_info:
+        hosting._validate("fictional-token", client.api)
+
+    assert not isinstance(exc_info.value, TokenAccessDeniedError)
+    assert str(exc_info.value) == f"HTTP {status_code}"
+    assert exc_info.value.retryable is retryable
+
+
+@pytest.mark.parametrize("status_code", [401, 403])
+def test_validate_does_not_call_a_rejected_token_retryable(status_code: int):
+    """A token the control plane refused is not worth trying again.
+
+    Args:
+        status_code: The status the API answered with.
+    """
+    client = _client()
+    client.api.auth.me.side_effect = api_error(status_code, "denied")
+
+    with pytest.raises(TokenAccessDeniedError) as exc_info:
+        hosting._validate("fictional-token", client.api)
+
+    assert exc_info.value.retryable is False
+    assert isinstance(exc_info.value, TokenValidationError)
+
+
+def test_token_access_denied_error_is_never_retryable():
+    """The error is not retryable however it is built."""
+    assert TokenAccessDeniedError("access denied").retryable is False
+    assert TokenAccessDeniedError("access denied", "req-1").retryable is False
+    assert TokenValidationError("server error").retryable is True
+
+
+@pytest.mark.parametrize("error", [APIConnectionError, APITimeoutError])
+def test_validate_retries_connection_failures(error: type[APIConnectionError]):
+    """A request that never got an answer is worth trying again.
+
+    Args:
+        error: The connection failure the SDK raises.
+    """
+    client = _client()
+    client.api.auth.me.side_effect = error("no answer", request=MagicMock())
+
+    with pytest.raises(TokenValidationError) as exc_info:
+        hosting._validate("fictional-token", client.api)
+
+    assert exc_info.value.retryable is True
+
+
+@pytest.mark.parametrize(
+    "detail",
+    [
+        "Invalid token fictional-token-abc123",
+        "Authorization: Bearer fictional-token-abc123 was malformed",
+        "fictional%2Dtoken%2Dabc123",
+        "fictional\\u002dtoken\\u002dabc123",
+        "fictional-\ntoken-abc123",
+        "Basic ZmljdGlvbmFsOnBhc3M= api_key=other-credential-xyz password=hunter2",
+        "x" * 5000,
+    ],
+)
+def test_validate_does_not_surface_the_api_detail(
+    caplog: pytest.LogCaptureFixture, detail: str
+):
+    """The API's explanation, which may echo the request, is never shown or logged.
+
+    Args:
+        caplog: Pytest log capture fixture.
+        detail: An explanation that echoes what the request carried.
+    """
+    caplog.set_level(logging.DEBUG)
+    client = _client()
+    client.api.auth.me.side_effect = api_error(400, detail)
+
+    with pytest.raises(TokenValidationError) as exc_info:
+        hosting._validate("fictional-token-abc123", client.api)
+
+    assert str(exc_info.value) == "HTTP 400"
+    for record in caplog.records:
+        message = record.getMessage()
+        assert detail[:20] not in message
+        assert "abc123" not in message
+        assert "other-credential-xyz" not in message
+        assert "hunter2" not in message
+
+
+@pytest.mark.parametrize(
+    ("status_code", "advises_retry"), [(400, False), (429, True), (503, True)]
+)
+def test_non_interactive_validation_failure_advises_retry_only_when_it_may_help(
+    mocker: MockerFixture,
+    caplog: pytest.LogCaptureFixture,
+    status_code: int,
+    advises_retry: bool,
+):
+    """Only a failure worth trying again is told to try again later.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        caplog: Pytest log capture fixture.
+        status_code: The status the API answered with.
+        advises_retry: Whether the report suggests trying again.
+    """
+    client = _client()
+    client.api.auth.me.side_effect = api_error(status_code, "Malformed request")
+    mocker.patch("reflex_cli.utils.hosting.new_client", return_value=client.api)
+    delete = mocker.patch("reflex_cli.utils.hosting.delete_token_from_config")
+
+    with pytest.raises(click.exceptions.Exit):
+        get_authenticated_client(token="fictional-token", interactive=False)
+
+    delete.assert_not_called()
+    errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
+    assert len(errors) == 1
+    assert f"HTTP {status_code} (auth request id:" in errors[0]
+    assert ("Please try again later." in errors[0]) is advises_retry
+
+
 def test_validate_token_failure_carries_request_id_on_exception(
     mocker: MockerFixture,
 ):
