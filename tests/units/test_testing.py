@@ -1,15 +1,24 @@
 """Unit tests for the included testing tools."""
 
+import asyncio
+import contextlib
+import socket
 import sys
+import threading
+import time
+from collections.abc import Callable, Iterator
 from types import ModuleType, SimpleNamespace
 from unittest import mock
 
+import httpx
 import pytest
 import reflex_base.config
 from reflex_base.components.memo import MEMOS
 from reflex_base.constants import IS_WINDOWS
 from reflex_base.environment import environment
 from reflex_base.registry import RegistrationContext
+from reflex_base.utils.types import ASGIApp
+from starlette.applications import Starlette
 
 import reflex.constants
 import reflex.reflex as reflex_cli
@@ -192,6 +201,213 @@ def test_app_harness_initialize_reloads_existing_imported_app(
     harness._initialize_app()
 
     harness_mocks.get_and_validate_app.assert_called_once_with(reload=True)
+
+
+def _asgi_app(on_startup: Callable[[], object] | None = None) -> ASGIApp:
+    """A minimal ASGI app with lifespan support that answers every request.
+
+    Args:
+        on_startup: called (in a worker thread) during lifespan startup.
+
+    Returns:
+        The ASGI app.
+    """
+
+    async def app(scope, receive, send):
+        if scope["type"] == "lifespan":
+            while (await receive())["type"] == "lifespan.startup":
+                if on_startup is not None:
+                    await asyncio.to_thread(on_startup)
+                await send({"type": "lifespan.startup.complete"})
+            await send({"type": "lifespan.shutdown.complete"})
+            return
+        await send({"type": "http.response.start", "status": 200, "headers": []})
+        await send({"type": "http.response.body", "body": b"embedded"})
+
+    return app
+
+
+@contextlib.contextmanager
+def _running(server: reflex_testing._EmbeddedServer) -> Iterator[threading.Thread]:
+    """Run the server in a thread, stopping it on exit.
+
+    Args:
+        server: the embedded server.
+
+    Yields:
+        The thread serving the app.
+    """
+    thread = threading.Thread(target=server.run)
+    thread.start()
+    try:
+        yield thread
+    finally:
+        server.should_exit = True
+        thread.join(timeout=15)
+        assert not thread.is_alive()
+
+
+def _assert_port_taken(host: str, port: int):
+    """Assert that no socket can bind the port, even one asking to share it.
+
+    Args:
+        host: the address of the port.
+        port: the port number.
+    """
+    with socket.socket() as thief:
+        thief.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        if reuse_port := getattr(socket, "SO_REUSEPORT", None):
+            thief.setsockopt(socket.SOL_SOCKET, reuse_port, 1)
+        with pytest.raises(OSError):
+            thief.bind((host, port))
+            thief.listen()
+
+
+def _assert_port_free(host: str, port: int):
+    """Assert that the port can be bound again.
+
+    Args:
+        host: the address of the port.
+        port: the port number.
+    """
+    with socket.socket() as rebind:
+        rebind.bind((host, port))
+
+
+def _harness_with_backend(
+    tmp_path, server: reflex_testing._EmbeddedServer
+) -> AppHarness:
+    """An AppHarness whose backend is the given server.
+
+    Args:
+        tmp_path: the app root.
+        server: the backend server.
+
+    Returns:
+        The harness.
+    """
+    harness = AppHarness.create(root=tmp_path, app_name="embedded_app")
+    harness.backend = server
+    return harness
+
+
+def test_embedded_server_owns_its_port():
+    """The server holds its port from construction on, so no other socket can share it."""
+    server = reflex_testing._EmbeddedServer(_asgi_app())
+    _assert_port_taken(server.host, server.port)
+    with _running(server):
+        server.wait_started(timeout=15)
+        _assert_port_taken(server.host, server.port)
+        assert httpx.get(f"http://{server.host}:{server.port}/").content == b"embedded"
+
+
+def test_poll_for_servers_waits_for_the_backend_itself(tmp_path):
+    """Readiness follows the app's startup, not a connectable port.
+
+    Args:
+        tmp_path: pytest tmp_path fixture
+    """
+    startup = threading.Event()
+    server = reflex_testing._EmbeddedServer(_asgi_app(on_startup=startup.wait))
+    harness = _harness_with_backend(tmp_path, server)
+    # Another listener on the port must not pass for the backend.
+    foreign = socket.socket()
+    with contextlib.suppress(OSError):
+        foreign.bind((server.host, server.port))
+        foreign.listen()
+    with foreign, _running(server):
+        try:
+            with pytest.raises(TimeoutError):
+                harness._poll_for_servers(timeout=0.5)
+        finally:
+            startup.set()
+        assert harness._poll_for_servers(timeout=15).getsockname() == (
+            server.host,
+            server.port,
+        )
+        assert httpx.get(f"http://{server.host}:{server.port}/").content == b"embedded"
+
+
+def test_embedded_server_refuses_a_taken_requested_port():
+    """A requested port that is in use fails loudly instead of moving."""
+    with socket.socket() as blocker:
+        blocker.bind(("127.0.0.1", 0))
+        blocker.listen()
+        port = blocker.getsockname()[1]
+        with pytest.raises(OSError):
+            reflex_testing._EmbeddedServer(_asgi_app(), port=port)
+    server = reflex_testing._EmbeddedServer(_asgi_app(), port=port)
+    assert server.getsockname() == ("127.0.0.1", port)
+    server.should_exit = True
+    server.run()
+
+
+def test_failed_backend_startup_logs_and_fails_fast(tmp_path, capsys):
+    """A failing lifespan startup is logged and fails readiness without the timeout.
+
+    Args:
+        tmp_path: pytest tmp_path fixture
+        capsys: pytest capsys fixture
+    """
+
+    @contextlib.asynccontextmanager
+    async def lifespan(app):
+        msg = "lifespan boom"
+        raise RuntimeError(msg)
+        yield
+
+    server = reflex_testing._EmbeddedServer(Starlette(lifespan=lifespan))
+    harness = _harness_with_backend(tmp_path, server)
+    with _running(server):
+        started = time.monotonic()
+        with pytest.raises(RuntimeError, match="stopped without serving"):
+            harness._poll_for_servers(timeout=10)
+        assert time.monotonic() - started < 5
+    out = capsys.readouterr().out
+    assert "ASGI lifespan startup failed" in out
+    assert "RuntimeError: lifespan boom" in out
+    # The socket is released although no worker ever served it.
+    _assert_port_free(server.host, server.port)
+
+
+def test_embedded_server_stop_releases_port():
+    """Stopping a serving server runs its shutdown hook and frees the port."""
+    shutdown = mock.AsyncMock()
+    server = reflex_testing._EmbeddedServer(_asgi_app())
+    server.shutdown = shutdown
+    with _running(server):
+        server.wait_started(timeout=15)
+    shutdown.assert_awaited_once()
+    _assert_port_free(server.host, server.port)
+
+
+def test_embedded_server_stopped_before_run_never_serves():
+    """A server stopped before it runs returns at once and releases its port."""
+    shutdown = mock.AsyncMock()
+    server = reflex_testing._EmbeddedServer(_asgi_app())
+    server.shutdown = shutdown
+    server.should_exit = True
+    server.run()
+    shutdown.assert_awaited_once()
+    with pytest.raises(RuntimeError, match="stopped without serving"):
+        server.wait_started(timeout=0)
+    _assert_port_free(server.host, server.port)
+
+
+def test_embedded_server_started_is_deprecated(monkeypatch):
+    """The uvicorn-style `started` flag still works, with a deprecation warning.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture
+    """
+    deprecate = mock.Mock()
+    monkeypatch.setattr(reflex_testing.console, "deprecate", deprecate)
+    server = reflex_testing._EmbeddedServer(_asgi_app())
+    assert server.started is False
+    with _running(server):
+        server.wait_started(timeout=15)
+        assert server.started is True
+    assert deprecate.call_args.kwargs["feature_name"] == "AppHarness.backend.started"
 
 
 def test_app_harness_frontend_env_has_development_condition(

@@ -1,14 +1,14 @@
-"""Benchmarks for per-event ASGI header decoding."""
+"""Benchmarks for ASGI header decoding."""
 
 import pytest
 from pytest_codspeed import BenchmarkFixture
 
-from reflex.app import _decode_asgi_headers
+from reflex.event_namespace import _decode_asgi_headers
 
 
 @pytest.mark.parametrize("count", [0, 4, 16, 64])
 def test_decode_event_headers(count: int, benchmark: BenchmarkFixture):
-    """Benchmark the header decoding used by ``EventNamespace.on_event``.
+    """Benchmark the header decoding behind a connection's router data.
 
     Args:
         count: Number of headers.

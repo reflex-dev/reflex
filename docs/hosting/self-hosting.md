@@ -58,8 +58,10 @@ REFLEX_API_URL=http://localhost:8000 reflex run --env prod --frontend-only --fro
 ```
 
 Alternatively, put a reverse proxy in front of both processes and route the
-backend routes (`/_event`, `/ping`, `/_upload`, `/_health`) to the backend
-port, as the `Caddyfile`s in the container examples below do.
+backend routes (`/_event` and `/_event/*`, `/ping`, `/_upload`, `/_health`) to
+the backend port, as the `Caddyfile`s in the container examples below do. The
+event websocket is dialed at `/_event/`; it must be proxied as a websocket
+upgrade.
 
 Instances of Reflex 0.9 and 0.10 cannot share a state store, whether Redis or
 the disk state manager's directory. A 0.10 instance loads state saved by 0.9,
