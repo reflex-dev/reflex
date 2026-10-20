@@ -628,6 +628,11 @@ def _reset_model_metadata() -> None:
 
 #: Name of the env var carrying the changed-path hint to a cold compile child.
 _CHANGED_ENV = "REFLEX_COMPILE_CHANGED"
+#: Name of the env var telling a cold compile child to predict dynamic state names.
+_PREDICT_ENV = "REFLEX_COMPILE_PREDICT_DYNAMIC_NAMES"
+#: Exit code of a compile child whose dynamic state name prediction failed; the
+#: daemon compiles again in a fresh child without prediction.
+_RETRY_EXIT_CODE = 3
 #: Lock file (under the backend dir) whose OS lock the daemon holds while a
 #: compile is in progress, so a backend reload worker can wait for the fresh
 #: stateful-pages marker.
@@ -811,7 +816,10 @@ def _prepare_fork_parent(roots: list[Path]) -> None:
 
 
 def _child_compile(
-    roots: list[Path], prerender_routes: bool, changed: set[Path] | None = None
+    roots: list[Path],
+    prerender_routes: bool,
+    changed: set[Path] | None = None,
+    predict: bool = False,
 ) -> None:
     """Reset first-party state, re-import the app fresh, and compile incrementally.
 
@@ -824,11 +832,14 @@ def _child_compile(
         changed: The paths the watcher reported for this reload, when known.
             Lets the incremental rebuild skip validating pages that depend on
             none of them.
+        predict: Whether to predict dynamic state names (see
+            ``disk_cache.set_dynamic_name_prediction``).
     """
     from reflex.compiler import disk_cache
     from reflex.utils import prerequisites
 
     disk_cache.set_changed_hint(changed)
+    disk_cache.set_dynamic_name_prediction(predict)
     # Timed in three steps so every hot reload reports where it spent its time
     # (resetting state vs re-importing first-party code vs compiling).
     t0 = time.perf_counter()
@@ -844,28 +855,29 @@ def _child_compile(
     )
 
 
-def _await_child(pid: int) -> bool:
+def _await_child(pid: int) -> int:
     """Reap a forked compile child, killing it if it exceeds the watchdog timeout.
 
     Args:
         pid: The forked child's pid.
 
     Returns:
-        True if it exited 0; False on failure, timeout, or signal (a
-        signal-killed child, such as Ctrl-C during shutdown, is a quiet False).
+        The child's exit code; 1 on timeout or a signal (a signal-killed
+        child, such as Ctrl-C during shutdown, is a quiet failure).
     """
     deadline = time.monotonic() + _COMPILE_TIMEOUT
     while True:
         done, status = os.waitpid(pid, os.WNOHANG)
         if done == pid:
-            return os.waitstatus_to_exitcode(status) == 0
+            code = os.waitstatus_to_exitcode(status)
+            return code if code >= 0 else 1
         if time.monotonic() > deadline:
             with contextlib.suppress(OSError):
                 os.kill(pid, signal.SIGKILL)
             with contextlib.suppress(OSError):
                 os.waitpid(pid, 0)
             logger.error("Compile child timed out; killed it, keeping last build.")
-            return False
+            return 1
         time.sleep(0.02)
 
 
@@ -942,8 +954,9 @@ def _compile_once(
 ) -> bool:
     """Run one incremental compile in an isolated child; report success.
 
-    Uses a copy-on-write ``fork()`` when safe (warm), else a fresh subprocess
-    (Windows, or when the warm parent is no longer single-threaded).
+    The first child predicts dynamic state names, re-evaluating only the
+    changed pages. When the prediction fails, a fresh child compiles again
+    without it, re-evaluating every page that defines such states.
 
     Args:
         roots: The resolved reload roots.
@@ -953,12 +966,57 @@ def _compile_once(
     Returns:
         True if the child compiled successfully, else False.
     """
+    code = _run_compile_child(roots, prerender_routes, changed, predict=True)
+    if code == _RETRY_EXIT_CODE:
+        code = _run_compile_child(roots, prerender_routes, changed, predict=False)
+    return code == 0
+
+
+def _log_failed_prediction(exc: Exception) -> None:
+    """Report why a compile child gives up its dynamic state name prediction.
+
+    Args:
+        exc: The failed prediction.
+    """
+    logger.info(
+        f"Compile cache: {exc}; compiling again, re-evaluating every page that "
+        "defines dynamic states"
+    )
+
+
+def _run_compile_child(
+    roots: list[Path],
+    prerender_routes: bool,
+    changed: set[Path] | None,
+    *,
+    predict: bool,
+) -> int:
+    """Compile in an isolated child process and return its exit code.
+
+    Uses a copy-on-write ``fork()`` when safe (warm), else a fresh subprocess
+    (Windows, or when the warm parent is no longer single-threaded).
+
+    Args:
+        roots: The resolved reload roots.
+        prerender_routes: Whether to prerender routes during compile.
+        changed: The paths the watcher reported for this reload, when known.
+        predict: Whether the child predicts dynamic state names.
+
+    Returns:
+        0 on success, ``_RETRY_EXIT_CODE`` when the prediction failed, else
+        a failure code.
+    """
+    from reflex.compiler import disk_cache
+
     if _can_fork():
         pid = os.fork()
         if pid == 0:  # child
             code = 0
             try:
-                _child_compile(roots, prerender_routes, changed)
+                _child_compile(roots, prerender_routes, changed, predict)
+            except disk_cache.DynamicStatePredictionError as exc:
+                _log_failed_prediction(exc)
+                code = _RETRY_EXIT_CODE
             except BaseException:  # report any failure, never crash the daemon
                 logger.exception("Hot reload compile failed.")
                 code = 1
@@ -970,6 +1028,8 @@ def _compile_once(
     env = {**os.environ}
     if changed is not None:
         env[_CHANGED_ENV] = "\n".join(sorted(str(p) for p in changed))
+    if predict:
+        env[_PREDICT_ENV] = "1"
     try:
         proc = subprocess.run(
             [sys.executable, "-m", "reflex.utils.compile_daemon", "--once"],
@@ -979,8 +1039,8 @@ def _compile_once(
         )
     except subprocess.TimeoutExpired:
         logger.error("Compile subprocess timed out; keeping the last good build.")
-        return False
-    return proc.returncode == 0
+        return 1
+    return proc.returncode
 
 
 def _serve() -> None:
@@ -1087,12 +1147,18 @@ def main(argv: list[str] | None = None) -> int:
             if changed_env is not None
             else None
         )
+        from reflex.compiler import disk_cache
+
         try:
             _child_compile(
                 _reload_roots(),
                 bool(os.environ.get("REFLEX_PRERENDER_ROUTES")),
                 changed,
+                bool(os.environ.get(_PREDICT_ENV)),
             )
+        except disk_cache.DynamicStatePredictionError as exc:
+            _log_failed_prediction(exc)
+            return _RETRY_EXIT_CODE
         except BaseException:  # report any failure, never crash
             logger.exception("Hot reload compile failed.")
             return 1

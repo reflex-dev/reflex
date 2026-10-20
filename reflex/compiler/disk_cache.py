@@ -49,7 +49,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 #: Bump when the manifest layout changes (old manifests are then ignored).
-_SCHEMA = 15
+_SCHEMA = 16
 #: Manifest filename under the web directory.
 _MANIFEST_FILE = "reflex_compile_cache.json"
 
@@ -67,6 +67,36 @@ def set_changed_hint(paths: Iterable[Path | str] | None) -> None:
     """
     global _changed_hint
     _changed_hint = None if paths is None else {str(Path(p).resolve()) for p in paths}
+
+
+#: Whether this compile predicts the ``reflex.istate.dynamic`` state names of
+#: the pages it does not re-evaluate, instead of re-evaluating every page that
+#: defines such states (see :func:`_with_dynamic_state_pages`). Only a caller
+#: that can discard this process and compile again sets it.
+_predict_dynamic_names = False
+
+
+def set_dynamic_name_prediction(enabled: bool) -> None:
+    """Predict dynamic state names in this process's compiles.
+
+    A failed prediction raises :class:`DynamicStatePredictionError`; the
+    caller then compiles again in a fresh process without prediction.
+
+    Args:
+        enabled: Whether to predict.
+    """
+    global _predict_dynamic_names
+    _predict_dynamic_names = enabled
+
+
+class DynamicStatePredictionError(Exception):
+    """A predicted rebuild cannot finish correctly in this process.
+
+    Either a re-evaluated page claimed other ``reflex.istate.dynamic`` names
+    than recorded, which shifts the names of pages that were not
+    re-evaluated, or a fallback would evaluate further pages out of page
+    order. Compile again in a fresh process without prediction.
+    """
 
 
 def _manifest_path() -> Path:
@@ -185,10 +215,8 @@ def _manifest_page_entry(
     Returns:
         The JSON-able manifest entry for the page.
     """
-    import reflex.istate.dynamic as istate_dynamic
     from reflex.utils.telemetry_accounting import _count_components
 
-    base_states = RegistrationContext.ensure_context().base_states
     return {
         "component_counts": _count_components([page_ctx.root_component]),
         "deps": page_cache.page_dependency_entries(
@@ -197,12 +225,9 @@ def _manifest_page_entry(
         "app_wrap_keys": _wrap_key_strs(page_ctx.app_wrap_components.keys()),
         "is_stateful": defined_states is not None,
         "state_slice": state_slice,
-        # Whether the page defined states in ``reflex.istate.dynamic``, whose
-        # names depend on evaluation order (see ``_with_dynamic_state_pages``).
-        "has_dynamic_states": any(
-            base_states[name].__module__ == istate_dynamic.__name__
-            for name in defined_states or ()
-        ),
+        # The ``reflex.istate.dynamic`` names the page's states took, whose
+        # suffixes depend on evaluation order (see ``_with_dynamic_state_pages``).
+        "dynamic_claims": _dynamic_claims(defined_states or ()),
         # Whether the page contributed auto memos: pages sharing a source
         # module share one memo output file, so a memo-contributing hit page
         # must be recompiled alongside a same-module miss (see
@@ -685,6 +710,73 @@ def _with_module_siblings(
     ]
 
 
+def _dynamic_claims(defined_states: Iterable[str]) -> list[list[str]]:
+    """The ``reflex.istate.dynamic`` names a page's states took, in order.
+
+    Each name is paired with what was requested: a local state's class name,
+    or the ``ComponentState`` a per-instance state was created from. A page
+    making the same claims as recorded took the names a full compile gives it.
+
+    Args:
+        defined_states: Full names of the states the page defined.
+
+    Returns:
+        ``[name, requested]`` pairs in definition order.
+    """
+    import reflex.istate.dynamic as istate_dynamic
+
+    base_states = RegistrationContext.ensure_context().base_states
+    claims = []
+    for full_name in defined_states:
+        cls = base_states[full_name]
+        if cls.__module__ != istate_dynamic.__name__:
+            continue
+        requested = cls.__dict__.get("__original_name__")
+        if requested is None:
+            origin = cls.__bases__[0]
+            requested = f"{origin.__module__}.{origin.__qualname__}"
+        claims.append([cls.__name__, requested])
+    return claims
+
+
+def _claim_recorded_dynamic_names(
+    manifest: dict[str, Any], miss_routes: set[str]
+) -> None:
+    """Reserve the dynamic state names of the pages that are not re-evaluated.
+
+    A local state takes the first free name for its class name, so with these
+    reserved a re-evaluated page takes the suffix it has in a full compile
+    whenever its own claims are unchanged.
+
+    Args:
+        manifest: The loaded manifest.
+        miss_routes: Routes re-evaluated in this rebuild.
+    """
+    import reflex.istate.dynamic as istate_dynamic
+
+    for route, entry in manifest["pages"].items():
+        if route in miss_routes:
+            continue
+        for name, _ in entry["dynamic_claims"]:
+            if not hasattr(istate_dynamic, name):
+                setattr(istate_dynamic, name, None)
+
+
+def _fall_back_after_evaluation(reason: str) -> None:
+    """Fall back after pages were evaluated, or fail a prediction.
+
+    Args:
+        reason: Why the rebuild falls back.
+
+    Raises:
+        DynamicStatePredictionError: While predicting dynamic state names,
+            where the fallback would evaluate pages out of page order.
+    """
+    if _predict_dynamic_names:
+        raise DynamicStatePredictionError(reason)
+    _log_fallback(reason)
+
+
 def _with_dynamic_state_pages(
     miss_pages: list[PageDefinition],
     pages: Sequence[PageDefinition],
@@ -695,7 +787,9 @@ def _with_dynamic_state_pages(
     States defined in ``reflex.istate.dynamic`` (function-local classes,
     ``ComponentState`` instances) take collision-suffixed names in evaluation
     order. Evaluating all of them in page order reproduces the names of a full
-    compile and of the backend, which evaluates every stateful page.
+    compile and of the backend, which evaluates every stateful page. This is
+    the exact rule; a compile that can retry in a fresh process predicts the
+    names instead (see :func:`set_dynamic_name_prediction`).
 
     Args:
         miss_pages: The pages to recompile.
@@ -711,8 +805,7 @@ def _with_dynamic_state_pages(
     return [
         page
         for page in pages
-        if page.route in miss_routes
-        or manifest["pages"][page.route]["has_dynamic_states"]
+        if page.route in miss_routes or manifest["pages"][page.route]["dynamic_claims"]
     ]
 
 
@@ -1114,7 +1207,8 @@ def try_incremental_rebuild(
             miss_pages, pages, manifest, dirty_memo_paths, stale_owner_routes
         )
         miss_pages = _with_module_siblings(miss_pages, pages, manifest)
-        miss_pages = _with_dynamic_state_pages(miss_pages, pages, manifest)
+        if not _predict_dynamic_names:
+            miss_pages = _with_dynamic_state_pages(miss_pages, pages, manifest)
         memo_note = (
             f"; rewriting {len(dirty_memo_paths)} memo file(s)"
             if dirty_memo_paths
@@ -1143,6 +1237,8 @@ def try_incremental_rebuild(
         # afterwards so post-evaluation closures (memo entries, page deps)
         # include the newly loaded modules.
         modules_before = set(page_cache._loaded_first_party_modules(resolved_root))
+        if _predict_dynamic_names:
+            _claim_recorded_dynamic_names(manifest, miss_routes)
 
         miss_ctx = CompileContext(
             app=app,
@@ -1177,18 +1273,27 @@ def try_incremental_rebuild(
                 or page_ctx.output_code is None
                 or page_ctx.output_path is None
             ):
-                _log_fallback(f"page {page.route!r} produced no output")
+                _fall_back_after_evaluation(f"page {page.route!r} produced no output")
                 return False
             entry = manifest["pages"][page.route]
             if (
                 _wrap_key_strs(page_ctx.app_wrap_components.keys())
                 != entry["app_wrap_keys"]
             ):
-                _log_fallback(f"page {page.route!r} changed its app-wrap set")
+                _fall_back_after_evaluation(
+                    f"page {page.route!r} changed its app-wrap set"
+                )
                 return miss_ctx
             if (page.route in miss_ctx.stateful_routes) != entry["is_stateful"]:
-                _log_fallback(f"page {page.route!r} changed statefulness")
+                _fall_back_after_evaluation(f"page {page.route!r} changed statefulness")
                 return miss_ctx
+            if _predict_dynamic_names and (
+                _dynamic_claims(miss_ctx.stateful_routes.get(page.route, ()))
+                != entry["dynamic_claims"]
+            ):
+                _fall_back_after_evaluation(
+                    f"page {page.route!r} changed its dynamic state names"
+                )
 
     # Write changed pages + their memo files; reuse everything else on disk.
     install_imports = _deserialize_imports(manifest["all_imports"])
@@ -1203,7 +1308,9 @@ def try_incremental_rebuild(
                 output_path = page_ctx.output_path
                 output_code = page_ctx.output_code
                 if output_path is None or output_code is None:
-                    _log_fallback(f"page {page.route!r} lost its output before write")
+                    _fall_back_after_evaluation(
+                        f"page {page.route!r} lost its output before write"
+                    )
                     return False
                 _save_incremental_output(output_path, output_code, outputs)
                 memo_contributions.update(page_ctx.memo_contributions)
@@ -1309,7 +1416,7 @@ def try_incremental_rebuild(
     if miss_ctx is not None and not _built_bundled_libraries().issuperset(
         RegistrationContext.ensure_context().bundled_libraries
     ):
-        _log_fallback("recompiled pages bundle new libraries")
+        _fall_back_after_evaluation("recompiled pages bundle new libraries")
         return miss_ctx
 
     # The assets copy is cheap, idempotent, and excluded from dependency

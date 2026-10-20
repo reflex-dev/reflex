@@ -522,13 +522,13 @@ def test_write_and_load_manifest(tmp_path, monkeypatch):
             "is_stateful",
             "state_slice",
             "has_memos",
-            "has_dynamic_states",
+            "dynamic_claims",
         }
         # these static pages register no new state and contribute no memos
         assert entry["is_stateful"] is False
         assert entry["state_slice"] is None
         assert entry["has_memos"] is False
-        assert entry["has_dynamic_states"] is False
+        assert entry["dynamic_claims"] == []
         # every dependency has a file-table entry: [sha256, mtime_ns, size]
         for dep in entry["deps"]:
             digest, mtime_ns, size = manifest["files"][dep]
@@ -1328,7 +1328,12 @@ def test_state_default_from_new_library_needs_a_full_compile(tmp_path, monkeypat
     assert isinstance(result, CompileContext)
 
 
+_COLLIDE = {"one": 0, "two": 0, "two_extra": False}
+
+
 def _page_collide_one() -> Component:
+    _COLLIDE["one"] += 1
+
     class CollideState(rx.State):
         one: int = 1
 
@@ -1336,9 +1341,17 @@ def _page_collide_one() -> Component:
 
 
 def _page_collide_two() -> Component:
+    _COLLIDE["two"] += 1
+
     class CollideState(rx.State):
         two: int = 2
 
+    def define_extra() -> None:
+        class CollideState(rx.State):
+            extra: int = 3
+
+    if _COLLIDE["two_extra"]:
+        define_extra()
     return rx.el.div(rx.el.p(CollideState.two), _footer())
 
 
@@ -1349,11 +1362,20 @@ def _unregister_collide_states() -> None:
             _unregister_state(cls)
 
 
-def test_incremental_rebuild_keeps_colliding_local_state_names(tmp_path, monkeypatch):
-    """A page whose local state took a collision suffix keeps it when it misses.
+def _rebuild_second_collide_page(
+    tmp_path, monkeypatch, *, predict: bool, two_extra: bool = False
+) -> tuple[Any, list[str], list[str]]:
+    """Compile two pages defining a same-named local state, then rebuild the second.
 
-    Local states are named in evaluation order, and the backend evaluates every
-    stateful page, so the second page's state stays ``CollideState_0`` there.
+    Args:
+        tmp_path: The project root.
+        monkeypatch: The pytest monkeypatch fixture.
+        predict: Whether the rebuild predicts dynamic state names.
+        two_extra: Whether the edited second page defines one more such state.
+
+    Returns:
+        The rebuild result, the second page's states before the edit, and its
+        recorded states after the rebuild.
     """
     web = _use_tmp_web_dir(tmp_path, monkeypatch)
     app = rx.App()
@@ -1372,20 +1394,66 @@ def test_incremental_rebuild_keeps_colliding_local_state_names(tmp_path, monkeyp
     manifest["pages"][pages[0].route]["has_memos"] = False
     manifest_path.write_text(json.dumps(manifest))
     _unregister_collide_states()
-
+    monkeypatch.setitem(_COLLIDE, "one", 0)
+    monkeypatch.setitem(_COLLIDE, "two", 0)
+    monkeypatch.setitem(_COLLIDE, "two_extra", two_extra)
+    monkeypatch.setattr(disk_cache, "_predict_dynamic_names", predict)
     try:
-        assert (
-            disk_cache.try_incremental_rebuild(
-                app, compiler_plugins=[], prerender_routes=False, root=tmp_path
-            )
-            is True
+        result = disk_cache.try_incremental_rebuild(
+            app, compiler_plugins=[], prerender_routes=False, root=tmp_path
         )
     finally:
         _unregister_collide_states()
+        import reflex.istate.dynamic as istate_dynamic
+
+        for name in [n for n in vars(istate_dynamic) if "CollideState" in n]:
+            delattr(istate_dynamic, name)
     refreshed = json.loads(manifest_path.read_text())
-    assert list(refreshed["pages"][pages[1].route]["state_slice"]["schema"]) == list(
-        two_states
+    return (
+        result,
+        list(two_states),
+        list(refreshed["pages"][pages[1].route]["state_slice"]["schema"]),
     )
+
+
+def test_incremental_rebuild_keeps_colliding_local_state_names(tmp_path, monkeypatch):
+    """A page whose local state took a collision suffix keeps it when it misses.
+
+    Local states are named in evaluation order, and the backend evaluates every
+    stateful page, so the second page's state stays ``CollideState_0`` there.
+    Without prediction every page defining such states is re-evaluated.
+    """
+    result, before, after = _rebuild_second_collide_page(
+        tmp_path, monkeypatch, predict=False
+    )
+    assert result is True
+    assert after == before
+    assert (_COLLIDE["one"], _COLLIDE["two"]) == (1, 1)
+
+
+def test_predicted_local_state_names_rebuild_only_the_changed_page(
+    tmp_path, monkeypatch
+):
+    """With prediction, a verified rebuild evaluates only the changed page."""
+    result, before, after = _rebuild_second_collide_page(
+        tmp_path, monkeypatch, predict=True
+    )
+    assert result is True
+    assert after == before
+    assert (_COLLIDE["one"], _COLLIDE["two"]) == (0, 1)
+
+
+def test_unverified_local_state_prediction_asks_for_a_fresh_compile(
+    tmp_path, monkeypatch
+):
+    """A page that claims different names than recorded fails the prediction.
+
+    The caller then compiles again in a fresh process without prediction.
+    """
+    with pytest.raises(disk_cache.DynamicStatePredictionError):
+        _rebuild_second_collide_page(
+            tmp_path, monkeypatch, predict=True, two_extra=True
+        )
 
 
 def test_incremental_rebuild_copies_assets(tmp_path, monkeypatch):

@@ -886,3 +886,36 @@ def test_daemon_entry_point_runs_the_canonical_module(tmp_path):
     assert result.stdout.split() == ["reflex.utils.compile_daemon", "True"], (
         result.stderr
     )
+
+
+def test_compile_once_retries_a_failed_prediction_exactly(monkeypatch):
+    """A failed state-name prediction compiles again in a fresh child, exactly."""
+    attempts = []
+
+    def run_child(roots, prerender_routes, changed, *, predict):
+        attempts.append(predict)
+        return compile_daemon._RETRY_EXIT_CODE if predict else 0
+
+    monkeypatch.setattr(compile_daemon, "_run_compile_child", run_child)
+    assert compile_daemon._compile_once([], False, None) is True
+    assert attempts == [True, False]
+
+
+@pytest.mark.skipif(not hasattr(os, "fork"), reason="requires os.fork (POSIX)")
+def test_failed_prediction_exits_the_child_with_the_retry_code(monkeypatch):
+    """The forked child reports a failed prediction distinctly from a failure."""
+    from reflex.compiler import disk_cache
+
+    def fail_prediction(roots, prerender_routes, changed, predict):
+        """Simulate a page claiming other state names than recorded.
+
+        Raises:
+            DynamicStatePredictionError: Always.
+        """
+        route = "/two"
+        raise disk_cache.DynamicStatePredictionError(route)
+
+    monkeypatch.setattr(compile_daemon, "_can_fork", lambda: True)
+    monkeypatch.setattr(compile_daemon, "_child_compile", fail_prediction)
+    code = compile_daemon._run_compile_child([], False, None, predict=True)
+    assert code == compile_daemon._RETRY_EXIT_CODE
