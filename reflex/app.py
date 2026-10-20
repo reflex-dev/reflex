@@ -1069,6 +1069,7 @@ class App(MiddlewareMixin, LifespanMixin):
             msg = "Route must be set if component is not a callable."
             raise exceptions.RouteValueError(msg)
 
+        default_404 = route == constants.Page404.SLUG and component is None
         if route == constants.Page404.SLUG:
             if component is None:
                 from reflex_components_core.el.elements import span
@@ -1087,7 +1088,10 @@ class App(MiddlewareMixin, LifespanMixin):
         # Check if the route given is valid
         verify_route_validity(route)
 
-        if isinstance(component, Callable):
+        if default_404:
+            # The framework's page, so no user module to mirror.
+            source_module = None
+        elif isinstance(component, Callable):
             source_module = memo_paths.capture_source_module(component)
         else:
             # The user passed a pre-built Component instance — fall back to

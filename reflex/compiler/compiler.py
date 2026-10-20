@@ -1504,10 +1504,13 @@ def compile_app(
     # manifest. Falls back to a full compile on any unsafe condition; pages the
     # attempt already compiled before falling back are adopted, not redone.
     evaluated: CompileContext | None = None
+    registrations: dict[str, str] | None = None
     if cache_on:
         from reflex.compiler import disk_cache, page_cache
 
         page_cache.enable_read_tracking()
+        # Taken before any page evaluates: evaluation mutates components.
+        registrations = disk_cache.registration_digests(app._unevaluated_pages.values())
         outputs: dict[Path, str] = {}
         rebuilt = disk_cache.try_incremental_rebuild(
             app,
@@ -1515,6 +1518,7 @@ def compile_app(
             prerender_routes=prerender_routes,
             use_rich=use_rich,
             outputs=outputs,
+            registrations=registrations,
         )
         if isinstance(rebuilt, CompileContext):
             evaluated = rebuilt
@@ -1797,6 +1801,7 @@ def compile_app(
             plugin_sources=plugin_sources,
             contexts_snapshot=contexts_snapshot,
             root_bundle_requests=root_bundle_requests,
+            registrations=registrations,
         )
 
     return True

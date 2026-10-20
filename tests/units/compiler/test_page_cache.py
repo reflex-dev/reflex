@@ -771,3 +771,67 @@ def test_import_time_reads_are_recorded_for_every_importer(
     finally:
         _forget_modules("review_shared_helper")
     assert [str(data) in reads for reads in page_reads] == [True, True]
+
+
+def test_entrypoint_digest_ignores_page_registrations_only(tmp_path):
+    """Formatting, comments and top-level add_page calls do not change it."""
+    entry = tmp_path / "entry_app.py"
+
+    def digest(source: str) -> str | None:
+        entry.write_text(source)
+        return page_cache.entrypoint_digest(str(entry))
+
+    base = digest(
+        "import reflex as rx\nfrom .pages import a, b\n\napp = rx.App()\n"
+        'app.add_page(a, route="/a")\n'
+    )
+    assert base is not None
+    assert (
+        digest(
+            "import reflex as rx\nfrom .pages import a, b\n\n# pages\napp = rx.App()\n"
+            'app.add_page(a, route="/a", title="A")\napp.add_page(b, route="/b")\n'
+        )
+        == base
+    )
+    assert (
+        digest(
+            "import reflex as rx\nfrom .pages import a, b\n\n"
+            'app = rx.App(theme=rx.theme(accent_color="red"))\n'
+            'app.add_page(a, route="/a")\n'
+        )
+        != base
+    )
+    assert digest("this is not python (") is None
+
+
+def test_entrypoint_digest_ignores_imports_used_only_to_register_pages(tmp_path):
+    """Importing a page only to register it is a registration; other imports count."""
+    entry = tmp_path / "entry_app.py"
+
+    def digest(source: str) -> str | None:
+        entry.write_text(source)
+        return page_cache.entrypoint_digest(str(entry))
+
+    base = digest(
+        "import reflex as rx\nfrom .themes import dark as theme\n"
+        "from .pages.a import a\n\napp = rx.App(theme=theme)\n"
+        'app.add_page(a, route="/a")\n'
+    )
+    assert (
+        digest(
+            "import reflex as rx\nfrom .themes import dark as theme\n"
+            "from .pages.a import a\nfrom .pages.b import b\n\n"
+            'app = rx.App(theme=theme)\napp.add_page(a, route="/a")\n'
+            'app.add_page(b, route="/b")\n'
+        )
+        == base
+    )
+    # The same App call with a theme imported from elsewhere is another app.
+    assert (
+        digest(
+            "import reflex as rx\nfrom .themes import light as theme\n"
+            "from .pages.a import a\n\napp = rx.App(theme=theme)\n"
+            'app.add_page(a, route="/a")\n'
+        )
+        != base
+    )

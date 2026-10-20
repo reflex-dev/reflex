@@ -8,6 +8,7 @@ set so only pages whose dependencies changed need to be recompiled.
 
 from __future__ import annotations
 
+import ast
 import builtins
 import contextlib
 import hashlib
@@ -488,6 +489,77 @@ def record_app_import(root: Path | None = None):
     finally:
         if success:
             _app_import_reads[root] = recorded
+
+
+def _is_page_registration(statement: ast.stmt) -> bool:
+    """Whether a top-level statement is an ``<app>.add_page(...)`` call.
+
+    Args:
+        statement: A module-level statement.
+
+    Returns:
+        True for an ``add_page`` call statement.
+    """
+    return (
+        isinstance(statement, ast.Expr)
+        and isinstance(statement.value, ast.Call)
+        and isinstance(statement.value.func, ast.Attribute)
+        and statement.value.func.attr == "add_page"
+    )
+
+
+def _loaded_names(nodes: Iterable[ast.AST]) -> set[str]:
+    """Collect the names the given syntax trees read.
+
+    Args:
+        nodes: The syntax trees.
+
+    Returns:
+        Every name loaded anywhere within them.
+    """
+    return {
+        node.id
+        for tree in nodes
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load)
+    }
+
+
+def entrypoint_digest(path: str) -> str | None:
+    """Digest the app entry module apart from its top-level page registrations.
+
+    Left out are top-level ``<app>.add_page(...)`` statements and the imported
+    names no other statement reads (a page imported only to be registered),
+    plus what the syntax tree never holds (comments, formatting).
+    Two versions with the same digest differ only in the pages they register,
+    which the compile cache compares page by page; any other edit can change
+    every page.
+
+    Args:
+        path: The entry module's file.
+
+    Returns:
+        The digest, or None when the file cannot be read or parsed.
+    """
+    try:
+        tree = ast.parse(Path(path).read_text(encoding="utf-8"))
+    except (OSError, SyntaxError, ValueError):
+        return None
+    others = [s for s in tree.body if not _is_page_registration(s)]
+    used = _loaded_names(others)
+    body: list[ast.stmt] = []
+    for statement in others:
+        if isinstance(statement, (ast.Import, ast.ImportFrom)):
+            statement.names = [
+                alias
+                for alias in statement.names
+                if (alias.asname or alias.name).partition(".")[0] in used
+            ]
+            if not statement.names:
+                continue
+        body.append(statement)
+    tree.body = body
+    return hashlib.sha256(ast.dump(tree).encode()).hexdigest()
 
 
 def _app_entrypoint_file(root: Path | None = None) -> Path | None:

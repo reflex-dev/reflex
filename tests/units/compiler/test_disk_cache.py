@@ -249,6 +249,7 @@ def _manifest(pages: dict[str, dict], root: Path | None = None, **overrides) -> 
         "all_imports": {},
         "pages": pages,
         "memo_files": {},
+        "entry": {"path": None, "digest": None},
         "wrap_table": {},
         "state_libraries": {},
         "app_root": {
@@ -288,29 +289,45 @@ def test_globals_mismatch_names_the_changed_input(tmp_path):
         root=tmp_path,
         globals_absent=[str(tmp_path / "rxconfig.py")],
     )
-    routes = {"/a", "/b"}
     assert (
-        disk_cache.globals_mismatch(
-            m, routes=routes, validator=_validator(m), root=tmp_path
-        )
-        is None
+        disk_cache.globals_mismatch(m, validator=_validator(m), root=tmp_path) is None
     )
-    # a changed route set -> named added/removed routes
-    reason = disk_cache.globals_mismatch(
-        m, routes={"/a", "/c"}, validator=_validator(m), root=tmp_path
-    )
-    assert reason is not None
-    assert "/c" in reason
-    assert "/b" in reason
     # a stale reflex version -> named versions
     reason = disk_cache.globals_mismatch(
         {**m, "reflex_version": "0.0.0-old"},
-        routes=routes,
         validator=_validator(m),
         root=tmp_path,
     )
     assert reason is not None
     assert "0.0.0-old" in reason
+
+
+def test_globals_mismatch_accepts_entrypoint_registration_edits(tmp_path):
+    """An entry module that only changed its add_page calls is not global."""
+    entry = tmp_path / "entry_app.py"
+    entry.write_text(
+        'import reflex as rx\napp = rx.App()\napp.add_page(a, route="/a")\n'
+    )
+    file_entry = page_cache.file_entry(str(entry))
+    assert file_entry is not None
+    m = _manifest(
+        {},
+        root=tmp_path,
+        files={str(entry): list(file_entry)},
+        globals={"reflex": page_cache._reflex_version(), f"app:{entry}": str(entry)},
+        entry={"path": str(entry), "digest": page_cache.entrypoint_digest(str(entry))},
+    )
+    entry.write_text(
+        'import reflex as rx\napp = rx.App()\napp.add_page(a, route="/a")\n'
+        'app.add_page(b, route="/b")\n'
+    )
+    assert (
+        disk_cache.globals_mismatch(m, validator=_validator(m), root=tmp_path) is None
+    )
+    entry.write_text("import reflex as rx\napp = rx.App(enable_state=False)\n")
+    reason = disk_cache.globals_mismatch(m, validator=_validator(m), root=tmp_path)
+    assert reason is not None
+    assert "entry_app.py" in reason
 
 
 def test_globals_mismatch_names_a_moved_project(tmp_path):
@@ -321,7 +338,7 @@ def test_globals_mismatch_names_a_moved_project(tmp_path):
     """
     m = _manifest({"/a": {}}, root=tmp_path / "original")
     reason = disk_cache.globals_mismatch(
-        m, routes={"/a"}, validator=_validator(m), root=tmp_path / "copy"
+        m, validator=_validator(m), root=tmp_path / "copy"
     )
     assert reason is not None
     assert "project root changed" in reason
@@ -336,15 +353,10 @@ def test_globals_mismatch_names_a_compile_mode_change(tmp_path, monkeypatch):
     monkeypatch.setenv("REFLEX_ENV_MODE", "dev")
     m = _manifest({"/a": {}}, root=tmp_path)
     assert (
-        disk_cache.globals_mismatch(
-            m, routes={"/a"}, validator=_validator(m), root=tmp_path
-        )
-        is None
+        disk_cache.globals_mismatch(m, validator=_validator(m), root=tmp_path) is None
     )
     monkeypatch.setenv("REFLEX_ENV_MODE", "prod")
-    reason = disk_cache.globals_mismatch(
-        m, routes={"/a"}, validator=_validator(m), root=tmp_path
-    )
+    reason = disk_cache.globals_mismatch(m, validator=_validator(m), root=tmp_path)
     assert reason is not None
     assert "dev -> prod" in reason
 
@@ -372,9 +384,7 @@ def test_globals_mismatch_validates_stored_inputs_only(tmp_path):
     )
 
     def mismatch() -> str | None:
-        return disk_cache.globals_mismatch(
-            m, routes={"/a"}, validator=_validator(m), root=tmp_path
-        )
+        return disk_cache.globals_mismatch(m, validator=_validator(m), root=tmp_path)
 
     # nothing on disk changed -> match, regardless of what a re-recorded
     # app-import read set would look like in this process
@@ -407,27 +417,37 @@ def test_partition_pages_detects_changed_source(tmp_path):
         _FakePage(route="/a", component=_page_a),
         _FakePage(route="/b", component=_page_b),
     ]
+    registrations = {page.route: "recorded" for page in pages}
     x, y = tmp_path / "x.py", tmp_path / "y.py"
     x.write_text("X = 1\n")
     y.write_text("Y = 1\n")
     # /a depends on x.py, /b depends on y.py (each recorded in the file table).
     m = _manifest(
-        {"/a": {"deps": [str(x)]}, "/b": {"deps": [str(y)]}},
+        {
+            page.route: {
+                "deps": [str(dep)],
+                "registration": "recorded",
+            }
+            for page, dep in zip(pages, (x, y), strict=True)
+        },
         files={
             str(x): page_cache.file_entry(str(x)),
             str(y): page_cache.file_entry(str(y)),
         },
     )
-    assert disk_cache.partition_pages(pages, m, _validator(m)) == []
+    assert (
+        disk_cache.partition_pages(pages, m, _validator(m), None, registrations) == []
+    )
     y.write_text("Y = 2\n")
-    miss = disk_cache.partition_pages(pages, m, _validator(m))
+    miss = disk_cache.partition_pages(pages, m, _validator(m), None, registrations)
     assert {p.route for p in miss} == {"/b"}
     # With the watcher's changed set, pages depending on none of the changed
     # paths are hits without touching the filesystem.
     assert (
-        disk_cache.partition_pages(pages, m, _validator(m), changed_hint={str(x)}) == []
+        disk_cache.partition_pages(pages, m, _validator(m), {str(x)}, registrations)
+        == []
     )
-    miss = disk_cache.partition_pages(pages, m, _validator(m), changed_hint={str(y)})
+    miss = disk_cache.partition_pages(pages, m, _validator(m), {str(y)}, registrations)
     assert {p.route for p in miss} == {"/b"}
 
 
@@ -530,6 +550,8 @@ def test_write_and_load_manifest(tmp_path, monkeypatch):
             "component_counts",
             "app_wraps",
             "bundle_requests",
+            "registration",
+            "memo_path",
             "is_stateful",
             "state_slice",
             "has_memos",
@@ -1449,6 +1471,45 @@ def test_state_default_from_new_library_rebuilds_the_app_root(tmp_path, monkeypa
     assert "recharts" in _app_root_file(web).read_text()
 
 
+def test_unchanged_component_default_reuses_the_contexts(tmp_path, monkeypatch):
+    """A recompiled page with the same component default keeps the contexts.
+
+    The recorded slice holds the default serialized the way the contexts file
+    holds it, whichever libraries were bundled when the slice was taken.
+    """
+    from reflex.compiler import compiler
+    from reflex.compiler import utils as compiler_utils
+
+    web = _use_tmp_web_dir(tmp_path, monkeypatch)
+    monkeypatch.setitem(_COMPONENT_DEFAULT, "recharts", True)
+    app = rx.App()
+    app.add_page(_page_component_default, route="/dyn")
+    pages = list(app._unevaluated_pages.values())
+    ctx = _compile(pages, app=app)
+    _stub_externals(app, monkeypatch)
+    disk_cache.write_manifest(ctx, pages, ctx.all_imports, root=tmp_path)
+    manifest_path = web / disk_cache._MANIFEST_FILE
+    manifest = json.loads(manifest_path.read_text())
+    _stale_dep(manifest, pages[0].route, str(tmp_path / "view.py"))
+    manifest_path.write_text(json.dumps(manifest))
+    _unregister_state(_FP_HOLDER.pop("_ComponentDefaultState"))
+    # A fresh process has not bundled the default's library yet.
+    compiler._reset_compile_registries([])
+    out_path = compiler_utils.resolve_path_of_web_dir(compiler_utils.get_context_path())
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text("// pre-existing contexts", encoding="utf-8")
+    try:
+        assert (
+            disk_cache.try_incremental_rebuild(
+                app, compiler_plugins=[], prerender_routes=False, root=tmp_path
+            )
+            is True
+        )
+    finally:
+        _unregister_state(_FP_HOLDER.pop("_ComponentDefaultState"))
+    assert out_path.read_text(encoding="utf-8") == "// pre-existing contexts"
+
+
 def _app_root_file(web: Path) -> Path:
     return web / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
 
@@ -1709,6 +1770,116 @@ def test_unverified_local_state_prediction_asks_for_a_fresh_compile(
         _rebuild_second_collide_page(
             tmp_path, monkeypatch, predict=True, two_extra=True
         )
+
+
+def _route_set_rebuild(tmp_path, monkeypatch, edit) -> tuple[Any, Any, Path]:
+    """Fully compile two pages, then rebuild after ``edit`` changes the app.
+
+    Args:
+        tmp_path: The project root.
+        monkeypatch: The pytest monkeypatch fixture.
+        edit: Changes the app's page registrations.
+
+    Returns:
+        The rebuild result, the app and the web directory.
+    """
+    web = _use_tmp_web_dir(tmp_path, monkeypatch)
+    app = rx.App()
+    app.add_page(_page_a, route="/a")
+    app.add_page(_page_c, route="/c")
+    pages = list(app._unevaluated_pages.values())
+    ctx = _compile(pages, app=app)
+    _stub_externals(app, monkeypatch)
+    for page_ctx in ctx.compiled_pages.values():
+        assert page_ctx.output_path is not None
+        Path(page_ctx.output_path).parent.mkdir(parents=True, exist_ok=True)
+        Path(page_ctx.output_path).write_text(page_ctx.output_code or "")
+    disk_cache.write_manifest(ctx, pages, ctx.all_imports, root=tmp_path)
+    edit(app)
+    evaluated: list[str] = []
+    original = disk_cache.CompileContext.compile
+
+    def recording_compile(self, *args, **kwargs):
+        evaluated.extend(page.route for page in self.pages)
+        return original(self, *args, **kwargs)
+
+    monkeypatch.setattr(disk_cache.CompileContext, "compile", recording_compile)
+    result = disk_cache.try_incremental_rebuild(
+        app, compiler_plugins=[], prerender_routes=False, root=tmp_path
+    )
+    return result, evaluated, web
+
+
+def test_added_page_rebuilds_incrementally(tmp_path, monkeypatch):
+    """A new route is a miss; the other pages keep their output."""
+    from reflex.compiler import utils as compiler_utils
+
+    result, evaluated, web = _route_set_rebuild(
+        tmp_path, monkeypatch, lambda app: app.add_page(_page_b, route="/b")
+    )
+    assert result is True
+    assert evaluated == ["b"]
+    assert Path(compiler_utils.get_page_path("b")).exists()
+    manifest = json.loads((web / disk_cache._MANIFEST_FILE).read_text())
+    assert set(manifest["pages"]) == {"a", "c", "b"}
+    assert "b" in json.loads((web / constants.Dirs.ROUTES_MANIFEST).read_text())
+
+
+def test_removed_page_rebuilds_incrementally(tmp_path, monkeypatch):
+    """A removed route loses its output and manifest entry, nothing else."""
+    from reflex.compiler import utils as compiler_utils
+
+    def remove_c(app):
+        del app._unevaluated_pages["c"]
+
+    result, evaluated, web = _route_set_rebuild(tmp_path, monkeypatch, remove_c)
+    assert result is True
+    assert evaluated == []
+    assert not Path(compiler_utils.get_page_path("c")).exists()
+    assert Path(compiler_utils.get_page_path("a")).exists()
+    manifest = json.loads((web / disk_cache._MANIFEST_FILE).read_text())
+    assert set(manifest["pages"]) == {"a"}
+
+
+def test_removed_stateful_page_leaves_the_contexts(tmp_path, monkeypatch):
+    """A removed page's states leave the contexts file."""
+    web = _use_tmp_web_dir(tmp_path, monkeypatch)
+    app = rx.App()
+    app.add_page(_page_a, route="/a")
+    app.add_page(_page_flip, route="/s")
+    pages = list(app._unevaluated_pages.values())
+    ctx = _compile(pages, app=app)
+    flip_states = ctx.stateful_routes[pages[1].route]
+    _stub_externals(app, monkeypatch)
+    disk_cache.write_manifest(ctx, pages, ctx.all_imports, root=tmp_path)
+    _unregister_state(_FP_HOLDER.pop("_FlipState"))
+    del app._unevaluated_pages[pages[1].route]
+    captured = _capture_contexts(monkeypatch)
+    assert (
+        disk_cache.try_incremental_rebuild(
+            app, compiler_plugins=[], prerender_routes=False, root=tmp_path
+        )
+        is True
+    )
+    [(initial, _, schema_entries)] = captured
+    assert not set(flip_states) & set(initial)
+    assert not set(flip_states) & set(schema_entries)
+    marker = json.loads((web / disk_cache._MANIFEST_FILE).read_text())
+    assert set(marker["pages"]) == {"a"}
+
+
+def test_changed_registration_recompiles_only_that_page(tmp_path, monkeypatch):
+    """A page whose registration changed (here its title) is a miss."""
+    import dataclasses
+
+    def retitle_c(app):
+        app._unevaluated_pages["c"] = dataclasses.replace(
+            app._unevaluated_pages["c"], title="Renamed"
+        )
+
+    result, evaluated, _ = _route_set_rebuild(tmp_path, monkeypatch, retitle_c)
+    assert result is True
+    assert evaluated == ["c"]
 
 
 def test_incremental_rebuild_copies_assets(tmp_path, monkeypatch):
@@ -2074,6 +2245,7 @@ def test_update_manifest_for_misses_keeps_complete_imports(tmp_path, monkeypatch
         memo_file_entries={},
         app_root_inputs=manifest["app_root"],
         state_libraries={},
+        registrations={"/a": "recorded"},
     )
 
     written = json.loads((web / disk_cache._MANIFEST_FILE).read_text())
@@ -2096,6 +2268,7 @@ def test_update_manifest_refreshes_imports_without_misses(tmp_path, monkeypatch)
         memo_file_entries={},
         app_root_inputs=manifest["app_root"],
         state_libraries={},
+        registrations={"/a": "recorded"},
     )
 
     written = json.loads((web / disk_cache._MANIFEST_FILE).read_text())

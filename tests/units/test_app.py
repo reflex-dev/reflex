@@ -381,6 +381,16 @@ def test_prepare_404_page_empty_string_metadata_uses_defaults():
     assert prepared.page.description == constants.Page404.DESCRIPTION
 
 
+def test_default_404_page_has_no_source_module():
+    """The framework's default 404 page belongs to no user module.
+
+    Otherwise its module comes from the call stack of whatever process
+    compiles the app, which differs between processes.
+    """
+    prepared = App()._prepare_page(route=constants.Page404.SLUG)
+    assert prepared.page._source_module is None
+
+
 def test_add_page_set_route(app: App, index_page: ComponentCallable):
     """Test adding a page to an app.
 
