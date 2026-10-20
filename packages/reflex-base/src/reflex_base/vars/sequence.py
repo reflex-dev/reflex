@@ -63,7 +63,7 @@ KEY_TYPE = TypeVar("KEY_TYPE")
 VALUE_TYPE = TypeVar("VALUE_TYPE")
 
 
-class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set)):
+class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set, frozenset)):
     """Base class for immutable array vars."""
 
     def join(self, sep: StringVar | str = "") -> StringVar:
