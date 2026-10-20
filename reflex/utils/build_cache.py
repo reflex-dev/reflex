@@ -411,15 +411,16 @@ def frontend_build_cache(
         )
         cache = None
         try:
-            if not lock.acquired:
+            if not enabled:
+                # A forced fresh build must not leave an older reusable snapshot,
+                # with or without the lock: losing one can never reuse bad output.
+                _remove_cache_entry(directory)
+            elif not lock.acquired:
                 # Restore, capture, publication and cleanup all assume that no
                 # other build is touching the workspace.
                 logger.debug(
                     "Frontend cache skipped: the workspace lock is unavailable."
                 )
-            elif not enabled:
-                # A forced fresh build must not leave an older reusable snapshot.
-                _remove_cache_entry(directory)
             elif not directory.is_symlink():
                 cache = _FrontendBuildCache(web_dir, command)
         except (OSError, ValueError):

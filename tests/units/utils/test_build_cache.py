@@ -163,6 +163,21 @@ def test_unavailable_lock_bypasses_cache(cached_build, monkeypatch, tmp_path: Pa
     )
 
 
+@pytest.mark.skipif(os.name == "nt", reason="Cache uses POSIX change timestamps")
+def test_disabled_cache_discards_snapshot_without_lock(
+    cached_build, monkeypatch, tmp_path: Path
+):
+    """Disabling the cache discards the snapshot even when the lock is unavailable."""
+    web, _, process = cached_build
+    build.build()
+    assert (web / "reflex.build-cache/current").is_dir()
+    monkeypatch.setenv("REFLEX_FRONTEND_BUILD_CACHE", "false")
+    monkeypatch.setenv("REFLEX_DIR", str(tmp_path / "runtime"))
+    build.build()
+    assert process.call_count == 2
+    assert not (web / "reflex.build-cache").exists()
+
+
 def test_disabled_cache_forces_and_refreshes_build(cached_build, monkeypatch):
     """Disabling the cache prevents an older snapshot from being reused later."""
     _, _, process = cached_build
