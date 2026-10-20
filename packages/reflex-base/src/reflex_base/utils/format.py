@@ -818,7 +818,7 @@ else:
 
         console.deprecate(
             feature_name="format_data_editor_column",
-            reason="rx.data_editor fills in its column defaults itself; nothing else needs this helper.",
+            reason="Upgrade reflex-components-dataeditor; rx.data_editor now fills in its column defaults itself.",
             deprecation_version="0.10.1",
             removal_version="1.0",
         )

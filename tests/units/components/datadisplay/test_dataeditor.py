@@ -1,6 +1,7 @@
 import json
 import re
 import subprocess
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any, cast
 
@@ -113,6 +114,14 @@ def _react_imports(editor: DataEditor) -> set[str]:
 
 
 def _text_cell(value: str) -> dict:
+    """Build the Glide text cell the helper renders for an editable value.
+
+    Args:
+        value: The cell value.
+
+    Returns:
+        The cell.
+    """
     return {
         "kind": "text",
         "data": value,
@@ -183,12 +192,14 @@ console.log(JSON.stringify([
 def test_dataeditor_literal_columns_defaults():
     """A literal column gets the default id, type and overlay icon.
 
-    An explicit value wins, and the column dicts passed in are not modified.
+    An explicit value wins, a column with an id needs no title, and the column
+    dicts passed in are not modified.
     """
     columns = [
         "Name",
         {"title": "Age", "type": "int"},
         {"title": "Birth", "id": "date"},
+        {"id": "city", "type": "str"},
     ]
     passed = [dict(col) if isinstance(col, dict) else col for col in columns]
 
@@ -197,14 +208,16 @@ def test_dataeditor_literal_columns_defaults():
     assert _prop(editor, "columns") == str(
         LiteralVar.create([
             {"title": "Name", "id": "name", "type": "str"},
-            {"id": "age", "type": "int", "overlayIcon": None, "title": "Age"},
-            {"id": "date", "type": "str", "overlayIcon": None, "title": "Birth"},
+            {"type": "int", "overlayIcon": None, "title": "Age", "id": "age"},
+            {"type": "str", "overlayIcon": None, "title": "Birth", "id": "date"},
+            {"type": "str", "overlayIcon": None, "id": "city"},
         ])
     )
     assert columns == passed
 
 
 def test_dataeditor_literal_columns_reject_unknown_type():
+    """A column is a title, a dict or a var."""
     with pytest.raises(ValueError, match="unexpected type"):
         DataEditor.create(columns=cast(Any, [1]))
 
@@ -217,6 +230,7 @@ def test_dataeditor_literal_columns_reject_dataframe():
 
 
 def test_dataeditor_get_cell_content_is_not_configurable(caplog):
+    """A user-provided cell callback is discarded with a warning."""
     editor = _create(get_cell_content="mine")
 
     assert re.fullmatch(r"getData_\w+", str(_set_prop(editor, "get_cell_content")))
@@ -245,6 +259,8 @@ def test_dataeditor_cell_content_callback():
 
 
 def test_dataeditor_cell_content_callback_depends_on_state_data():
+    """State-backed data is a dependency of the cell callback."""
+
     class DataState(BaseState):
         data: list[list[str]] = [["Alice"]]
 
@@ -329,6 +345,18 @@ def test_dataeditor_hooks_depend_on_the_vars_behind_derived_props():
     assert ".filter(" in memo_hook
     assert memo_hook.endswith(f", [{TableState.columns!s}])")
     assert callback_hook.endswith(f", [{columns}, {TableState.data!s}])")
+
+
+def test_dataeditor_reactive_columns_accept_titles():
+    """State-backed columns may be titles; the mapping makes them column dicts."""
+
+    class TitleState(BaseState):
+        titles: list[str] = ["Email"]
+
+    editor = _create(columns=TitleState.titles, data=[["alice@example.com"]])
+
+    assert re.fullmatch(r"columns_\w+", _prop(editor, "columns"))
+    assert _set_prop(editor, "columns")._var_type == Sequence[dict[str, Any]]
 
 
 def test_dataeditor_reactive_columns_literal_var_is_constant():

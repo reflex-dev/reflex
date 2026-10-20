@@ -203,7 +203,10 @@ def _format_column(col: str | dict[str, Any] | Var) -> dict[str, Any] | Var:
     if isinstance(col, str):
         return {"title": col, "id": col.lower(), "type": "str"}
     if isinstance(col, dict):
-        return {"id": col["title"].lower(), "type": "str", "overlayIcon": None, **col}
+        column = {"type": "str", "overlayIcon": None, **col}
+        if "id" not in column:
+            column["id"] = column["title"].lower()
+        return column
     if isinstance(col, Var):
         return col
     msg = f"unexpected type ({type(col).__name__}: {col}) for column header in data_editor"
@@ -244,7 +247,8 @@ def _with_column_defaults(columns: Var, editor_id: str) -> Var:
     name = f"columns_{editor_id}"
     return Var(
         _js_expr=name,
-        _var_type=columns._var_type,
+        # The mapping yields column dicts whatever the input holds, titles included.
+        _var_type=Sequence[dict[str, Any]],
         _var_data=VarData(
             hooks={
                 f"const {name} = useMemo(() => ({columns!s}).map({_COLUMN_DEFAULTS_JS}), "
