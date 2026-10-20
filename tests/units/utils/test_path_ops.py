@@ -979,3 +979,16 @@ def test_lock_is_released_when_its_holder_is_killed(tmp_path: Path):
         holder.wait()
     # Windows can release byte-range locks asynchronously after process exit.
     assert AppHarness._poll_for(lambda: not path_ops.is_locked(lock), timeout=5)
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX flock")
+def test_unsupported_file_locks_have_no_holder(tmp_path: Path, monkeypatch):
+    """A file system that cannot lock files reports no holder, not a held lock."""
+    path = tmp_path / "owner.lock"
+    path.touch()
+    monkeypatch.setattr(
+        fcntl, "flock", Mock(side_effect=OSError(errno.ENOLCK, "No locks available"))
+    )
+    assert path_ops.is_locked(path) is False
+    with pytest.raises(OSError, match="No locks available"):
+        path_ops.try_lock(path)

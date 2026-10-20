@@ -12,6 +12,7 @@ import ast
 import builtins
 import contextlib
 import dataclasses
+import functools
 import hashlib
 import importlib
 import importlib.util
@@ -20,11 +21,11 @@ import re
 import sys
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from contextvars import ContextVar
-from functools import lru_cache
 from importlib import metadata
 from pathlib import Path
 from typing import TYPE_CHECKING, TypeVar
 
+from reflex_base import constants
 from reflex_base.environment import environment
 
 if TYPE_CHECKING:
@@ -35,7 +36,15 @@ if TYPE_CHECKING:
 FileEntry = list
 
 #: Directories never worth hashing (build artifacts, deps, caches).
-_SKIP_DIRS = {".web", ".venv", "venv", "node_modules", "__pycache__", ".git", "assets"}
+_SKIP_DIRS = {
+    constants.Dirs.WEB,
+    ".venv",
+    "venv",
+    "node_modules",
+    "__pycache__",
+    ".git",
+    constants.Dirs.APP_ASSETS,
+}
 
 #: Genuinely-global files: a change here can affect every page's output, so it
 #: bumps ``global_epoch`` rather than any single page's dependency set.
@@ -56,6 +65,14 @@ STATE_CONTEXT_RE = re.compile(r"reflex___state[A-Za-z0-9_]+")
 
 
 def _sha(*parts: bytes | str) -> str:
+    """Digest parts with a separator, so their boundaries count.
+
+    Args:
+        parts: The text or bytes to digest.
+
+    Returns:
+        The hex digest.
+    """
     h = hashlib.sha256()
     for p in parts:
         h.update(p.encode() if isinstance(p, str) else p)
@@ -64,6 +81,11 @@ def _sha(*parts: bytes | str) -> str:
 
 
 def _reflex_version() -> str:
+    """Return the installed Reflex version.
+
+    Returns:
+        The version, or ``unknown`` when the package metadata is missing.
+    """
     try:
         return metadata.version("reflex")
     except Exception:
@@ -165,6 +187,11 @@ def _suspend_tracking():
 
 
 def _record_read(path: object) -> None:
+    """Add a first-party file read to the active read set, if any.
+
+    Args:
+        path: The path the code read.
+    """
     target = _active_reads.get()
     if target is None:
         return
@@ -339,15 +366,19 @@ def _record_imported_modules(
             target.update(_module_import_reads.get(submodule, ()))
 
 
-def _import_recording_reads(name: str, do_import: Callable[[], T]) -> T:
+def _import_recording_reads(
+    name: str, do_import: Callable[[], T], target: set[str]
+) -> T:
     """Run an import under a fresh read set kept as the module's import reads.
 
     A module executing afresh replaces its recorded reads; importing a loaded
-    module only adds the reads of submodules it loads for the first time.
+    module only adds the reads of submodules it loads for the first time. The
+    reads also go to ``target``, even when the import fails.
 
     Args:
         name: The absolute requested module name.
         do_import: Performs the import.
+        target: The active read set.
 
     Returns:
         The result of ``do_import``.
@@ -363,6 +394,7 @@ def _import_recording_reads(name: str, do_import: Callable[[], T]) -> T:
             _module_import_reads.pop(name, None)
         if reads:
             _module_import_reads.setdefault(name, set()).update(reads)
+            target.update(reads)
 
 
 def enable_read_tracking(root: Path | None = None) -> None:
@@ -380,6 +412,7 @@ def enable_read_tracking(root: Path | None = None) -> None:
     resolved_root = (root or Path.cwd()).resolve()
     if _recorder_root != resolved_root:
         _module_file_cache.clear()
+        _module_import_reads.clear()
     _recorder_root = resolved_root
 
     from reflex_base.plugins import compiler as _bc
@@ -431,7 +464,9 @@ def enable_read_tracking(root: Path | None = None) -> None:
             return orig_import(name, globals_, locals_, fromlist, level)
         absolute = _absolute_import_name(name, globals_, level)
         result = _import_recording_reads(
-            absolute, lambda: orig_import(name, globals_, locals_, fromlist, level)
+            absolute,
+            lambda: orig_import(name, globals_, locals_, fromlist, level),
+            target,
         )
         _record_imported_modules(absolute, result, target, fromlist)
         return result
@@ -441,7 +476,7 @@ def enable_read_tracking(root: Path | None = None) -> None:
             return orig_import_module(name, package)
         absolute = importlib.util.resolve_name(name, package) if package else name
         result = _import_recording_reads(
-            absolute, lambda: orig_import_module(name, package)
+            absolute, lambda: orig_import_module(name, package), target
         )
         _record_imported_modules(result.__name__, result, target)
         return result
@@ -541,8 +576,16 @@ _DYNAMIC_GLOBAL_NAMES = frozenset({
     "__import__",
 })
 
-#: Decorators that keep the function they wrap to themselves at import time.
-_INERT_DECORATORS = frozenset({"page", "memo", "cache", "lru_cache"})
+#: Decorators (``<module>.<name>``) that keep the function they wrap to
+#: themselves at import time.
+_INERT_DECORATORS = frozenset({
+    ("rx", "page"),
+    ("rx", "memo"),
+    ("reflex", "page"),
+    ("reflex", "memo"),
+    ("functools", "cache"),
+    ("functools", "lru_cache"),
+})
 
 
 def dep_file(dep: str) -> str:
@@ -586,8 +629,11 @@ def _is_inert_decorator(decorator: ast.expr) -> bool:
     """
     if isinstance(decorator, ast.Call):
         decorator = decorator.func
-    name = getattr(decorator, "attr", None) or getattr(decorator, "id", None)
-    return name in _INERT_DECORATORS
+    return (
+        isinstance(decorator, ast.Attribute)
+        and isinstance(decorator.value, ast.Name)
+        and (decorator.value.id, decorator.attr) in _INERT_DECORATORS
+    )
 
 
 def _module_part(statement: ast.stmt) -> _ModulePart:
@@ -748,12 +794,27 @@ def _slice_digest(parts: Sequence[_ModulePart], seeds: Iterable[str]) -> str:
     used = always.union(*(part.loads for name in closure for part in definitions[name]))
     if not used.isdisjoint(_DYNAMIC_GLOBAL_NAMES):
         closure = set(definitions)
+        used = always.union(
+            *(part.loads for group in definitions.values() for part in group)
+        )
     digest = hashlib.sha256()
     for part in parts:
         for text in _sliced_texts(part, used, closure):
             digest.update(text.encode())
             digest.update(b"\n")
     return digest.hexdigest()
+
+
+def _class_names(parts: Sequence[_ModulePart]) -> list[str]:
+    """Name a module's top-level classes.
+
+    Args:
+        parts: The module's parts.
+
+    Returns:
+        The class names.
+    """
+    return [part.name for part in parts if part.name is not None and part.is_class]
 
 
 def function_slice_digest(path: str, name: str) -> str | None:
@@ -773,8 +834,7 @@ def function_slice_digest(path: str, name: str) -> str | None:
     parts = _module_parts(path)
     if parts is None or not any(part.name == name for part in parts):
         return None
-    classes = [part.name for part in parts if part.name is not None and part.is_class]
-    return _slice_digest(parts, (name, *classes))
+    return _slice_digest(parts, (name, *_class_names(parts)))
 
 
 def entrypoint_digest(path: str) -> str | None:
@@ -782,7 +842,8 @@ def entrypoint_digest(path: str) -> str | None:
 
     Left out are top-level ``<app>.add_page(...)`` statements and the code only
     they read: page functions defined in the module (each page tracks its own
-    slice, see :func:`function_slice_digest`) and imported pages. So is what
+    slice, see :func:`function_slice_digest`) and imported pages. Class bodies
+    run at import, so every class counts. Also left out is what
     the syntax tree never holds (comments, formatting). Two versions with the
     same digest differ only in their pages, which the compile cache compares
     page by page; any other edit can change every page.
@@ -794,7 +855,9 @@ def entrypoint_digest(path: str) -> str | None:
         The digest, or None when the file cannot be read or parsed.
     """
     parts = _module_parts(path)
-    return None if parts is None else _slice_digest(parts, ())
+    if parts is None:
+        return None
+    return _slice_digest(parts, _class_names(parts))
 
 
 def _app_entrypoint_file(root: Path | None = None) -> Path | None:
@@ -908,6 +971,14 @@ def global_epoch(
 
 
 def _module_file(component: object) -> Path | None:
+    """Return the file of the module an object belongs to.
+
+    Args:
+        component: The object.
+
+    Returns:
+        The module file, or None.
+    """
     mod = sys.modules.get(getattr(component, "__module__", "") or "")
     file = getattr(mod, "__file__", None)
     return Path(file) if file else None
@@ -1000,6 +1071,14 @@ _import_graph_cache: dict[Path, dict[str, set[str]]] = {}
 
 
 def _resolve_module_file(name: str) -> str | None:
+    """Return the resolved file of a loaded module.
+
+    Args:
+        name: The dotted module name.
+
+    Returns:
+        The resolved file path, or None.
+    """
     mod = sys.modules.get(name)
     file = getattr(mod, "__file__", None)
     return str(Path(file).resolve()) if file else None
@@ -1026,7 +1105,7 @@ def _loaded_first_party_modules(root: Path) -> dict[str, str]:
     return file_to_mod
 
 
-@lru_cache(maxsize=8192)
+@functools.lru_cache(maxsize=8192)
 def _first_party_module_file(file: str, roots: tuple[Path, ...]) -> str | None:
     """Resolve a stable module filename once per set of reload roots.
 
@@ -1265,6 +1344,8 @@ def _component_source_files(component: object, root: Path) -> set[str]:
     Returns:
         The set of resolved defining file path strings under ``root``.
     """
+    while isinstance(component, functools.partial):
+        component = component.func
     out: set[str] = set()
     roots = first_party_roots(root)
     code = getattr(component, "__code__", None)
@@ -1464,6 +1545,14 @@ class FileValidator:
 
 
 def _subclasses(root_cls: type) -> list[type]:
+    """List a class and every subclass below it.
+
+    Args:
+        root_cls: The class to start from.
+
+    Returns:
+        The classes, each once.
+    """
     seen: set[type] = set()
     out: list[type] = []
     stack = [root_cls]

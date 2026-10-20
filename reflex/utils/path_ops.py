@@ -311,6 +311,15 @@ def _lock_descriptor(descriptor: int) -> None:
         fcntl.flock(descriptor, fcntl.LOCK_EX)
 
 
+#: The errors with which a non-blocking lock reports another holder.
+_LOCK_CONTENTION_ERRNOS = frozenset({
+    errno.EACCES,
+    errno.EAGAIN,
+    errno.EWOULDBLOCK,
+    errno.EDEADLK,
+})
+
+
 def _try_lock_descriptor(descriptor: int) -> bool:
     """Take the OS's exclusive lock on a lock file without waiting.
 
@@ -319,14 +328,19 @@ def _try_lock_descriptor(descriptor: int) -> bool:
 
     Returns:
         Whether the lock was taken.
+
+    Raises:
+        OSError: When the file system cannot lock files.
     """
     try:
         if sys.platform == "win32":
             msvcrt.locking(descriptor, msvcrt.LK_NBLCK, 1)
         else:
             fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
-    except OSError:
-        return False
+    except OSError as error:
+        if error.errno in _LOCK_CONTENTION_ERRNOS:
+            return False
+        raise
     return True
 
 
@@ -343,11 +357,18 @@ def try_lock(path: Path) -> int | None:
     Returns:
         The descriptor holding the lock (closing it releases the lock), or None
         when another holder has it.
+
+    Raises:
+        OSError: When the file system cannot lock files.
     """
     path.parent.mkdir(parents=True, exist_ok=True)
     descriptor = os.open(path, os.O_CREAT | os.O_RDWR, 0o644)
-    if _try_lock_descriptor(descriptor):
-        return descriptor
+    try:
+        if _try_lock_descriptor(descriptor):
+            return descriptor
+    except OSError:
+        os.close(descriptor)
+        raise
     os.close(descriptor)
     return None
 
@@ -359,16 +380,20 @@ def is_locked(path: Path) -> bool:
         path: The lock file.
 
     Returns:
-        True while a holder has the lock; False when it is free or the file
-        does not exist.
+        True while a holder has the lock; False when it is free, the file
+        does not exist, or the file system cannot lock files (so nothing can
+        hold it).
     """
     try:
         descriptor = os.open(path, os.O_RDWR)
     except FileNotFoundError:
         return False
     try:
-        if not _try_lock_descriptor(descriptor):
-            return True
+        try:
+            if not _try_lock_descriptor(descriptor):
+                return True
+        except OSError:
+            return False
         if sys.platform == "win32":
             msvcrt.locking(descriptor, msvcrt.LK_UNLCK, 1)
         return False

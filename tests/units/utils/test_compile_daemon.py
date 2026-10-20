@@ -1,6 +1,7 @@
 """Tests for the warm fork-per-compile dev compile daemon."""
 
 import contextlib
+import errno
 import os
 import sys
 from pathlib import Path
@@ -993,3 +994,82 @@ def test_cold_compile_without_a_safe_fork_compiles_in_process(
     monkeypatch.setattr(compile_daemon, "_single_threaded", lambda: single_threaded)
     monkeypatch.setattr(disk_cache, "_predict_dynamic_names", chosen)
     assert compile_daemon.compiled_in_predicting_child(lambda: True) is False
+
+
+@pytest.mark.parametrize("lock", ["held", "unsupported"])
+def test_daemon_without_its_lock_does_not_serve(tmp_path, monkeypatch, lock):
+    """Only the daemon holding the ownership lock compiles the project."""
+    from unittest.mock import Mock
+
+    from reflex.utils import path_ops
+
+    lock_path = tmp_path / "daemon.lock"
+    monkeypatch.setattr(compile_daemon, "_daemon_lock_path", lambda: lock_path)
+    monkeypatch.setattr(compile_daemon, "_LOCK_ACQUIRE_TIMEOUT", 0.05)
+    served: list[bool] = []
+    monkeypatch.setattr(compile_daemon, "_serve", lambda: served.append(True))
+    holder = path_ops.try_lock(lock_path) if lock == "held" else None
+    if lock == "unsupported":
+        monkeypatch.setattr(
+            path_ops, "try_lock", Mock(side_effect=OSError(errno.ENOLCK, "no locks"))
+        )
+    try:
+        assert compile_daemon.main([]) == 0
+    finally:
+        if holder is not None:
+            os.close(holder)
+    assert served == []
+
+
+def test_built_inputs_include_dependencies_the_compile_added(tmp_path, monkeypatch):
+    """Workers wait on an edit to a file the last compile started reading.
+
+    The file was not watched before that compile, which is no edit.
+    """
+    from reflex.utils import prerequisites
+
+    page, data = tmp_path / "page.py", tmp_path / "data.json"
+    page.write_text("TITLE = 'v1'\n")
+    data.write_text("{}")
+    known = {page}
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("REFLEX_COMPILE_DAEMON_PRECOMPILED", "1")
+    monkeypatch.setattr(compile_daemon, "_lock_path", lambda: tmp_path / "lock")
+    monkeypatch.setattr(compile_daemon, "_reload_roots", lambda: [tmp_path])
+    monkeypatch.setattr(compile_daemon, "_prepare_fork_parent", lambda roots: None)
+    monkeypatch.setattr(compile_daemon, "_unbuilt_changes", lambda state: set())
+    monkeypatch.setattr(prerequisites, "get_app", lambda **kwargs: None)
+    monkeypatch.setattr("reflex.utils.prerequisites.get_backend_dir", lambda: tmp_path)
+    monkeypatch.setattr(
+        compile_daemon._WatchState,
+        "build",
+        lambda *args: compile_daemon._WatchState(
+            [tmp_path], tmp_path, known=set(known)
+        ),
+    )
+    batches = iter([{page}, None])
+    monkeypatch.setattr(compile_daemon, "_next_changes", lambda *args: next(batches))
+
+    def compile_once(roots, prerender_routes, changed=None) -> bool:
+        """Compile a page that now reads ``data``.
+
+        Args:
+            roots: The reload roots.
+            prerender_routes: Whether to prerender routes.
+            changed: The changed-path hint.
+
+        Returns:
+            True.
+        """
+        compiles.append(changed)
+        known.add(data)
+        return True
+
+    compiles: list[set[Path] | None] = []
+    monkeypatch.setattr(compile_daemon, "_compile_once", compile_once)
+    compile_daemon._serve()
+    assert compiles == [{page}]
+    assert compile_daemon._built_inputs_current()
+    data.write_text('{"edited": true}')
+    os.utime(data, ns=(1, 1))
+    assert not compile_daemon._built_inputs_current()

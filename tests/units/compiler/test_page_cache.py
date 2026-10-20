@@ -989,3 +989,99 @@ def test_file_validator_compares_function_slices(tmp_path):
     assert not page_cache.FileValidator(files).unchanged([dep])
     assert page_cache.dep_file(dep) == str(module)
     assert page_cache.dep_file(str(module)) == str(module)
+
+
+def test_read_tracking_root_change_forgets_import_reads(tmp_path, monkeypatch):
+    """A cached module's import-time reads from one root never reach another."""
+    root_a = tmp_path / "app_a"
+    root_a.mkdir()
+    data = root_a / "data.json"
+    data.write_text("{}")
+    module_name = "root_change_import_reads"
+    _prepare_runtime_module(root_a, monkeypatch, module_name).write_text(
+        f"from pathlib import Path\nDATA = Path({str(data)!r}).read_text()\n"
+    )
+    page_cache.enable_read_tracking(root=root_a)
+    try:
+        with page_cache.record_reads() as reads_a:
+            importlib.import_module(module_name)
+        assert str(data.resolve()) in reads_a
+        page_cache.enable_read_tracking(root=tmp_path / "app_b")
+        with page_cache.record_reads() as reads_b:
+            importlib.import_module(module_name)
+    finally:
+        _forget_modules(module_name)
+    assert str(data.resolve()) not in reads_b
+
+
+def test_failed_import_keeps_its_reads(tmp_path, monkeypatch):
+    """A page that handles a failed import still depends on what it read."""
+    missing = tmp_path / "optional.json"
+    module_name = "optional_data_helper"
+    _prepare_runtime_module(tmp_path, monkeypatch, module_name).write_text(
+        f"from pathlib import Path\nDATA = Path({str(missing)!r}).read_text()\n"
+    )
+    page_cache.enable_read_tracking(root=tmp_path)
+    try:
+        with page_cache.record_reads() as reads, pytest.raises(FileNotFoundError):
+            importlib.import_module(module_name)
+    finally:
+        _forget_modules(module_name)
+    assert str(missing.resolve()) in reads
+
+
+def test_function_slice_digest_keeps_imports_of_code_reached_by_computed_name(
+    tmp_path,
+):
+    """With a computed global lookup, every definition's imports count too."""
+    module = tmp_path / "computed.py"
+    source = (
+        "from .widgets import card\n\n\n"
+        "def widget():\n    return card()\n\n\n"
+        'def page_a():\n    return globals()["widget"]()\n'
+    )
+    module.write_text(source)
+    before = page_cache.function_slice_digest(str(module), "page_a")
+    module.write_text(
+        source.replace("from .widgets import card", "from .other import card")
+    )
+    assert page_cache.function_slice_digest(str(module), "page_a") != before
+
+
+@pytest.mark.parametrize(
+    ("decorator", "inert"),
+    [
+        ("@rx.page(route='/x')", True),
+        ("@rx.memo", True),
+        ("@functools.cache", True),
+        ("@functools.lru_cache(maxsize=4)", True),
+        ("@registry.page", False),
+        ("@cache", False),
+    ],
+)
+def test_only_known_decorators_keep_a_function_out_of_other_slices(
+    tmp_path, decorator, inert
+):
+    """A decorator of unknown origin may register the function it wraps."""
+    module = tmp_path / "decorated.py"
+    source = (
+        f"{decorator}\ndef widget():\n    return 1\n\n\ndef page_a():\n    return 2\n"
+    )
+    module.write_text(source)
+    before = page_cache.function_slice_digest(str(module), "page_a")
+    module.write_text(source.replace("return 1", "return 3"))
+    after = page_cache.function_slice_digest(str(module), "page_a")
+    assert (after == before) is inert
+
+
+def test_entrypoint_digest_tracks_class_bodies(tmp_path):
+    """A class body runs at import, so it can configure the app."""
+    entry = tmp_path / "entry_app.py"
+    source = (
+        "import reflex as rx\n\n\nclass Settings(Base):\n    color = 'red'\n\n\n"
+        "app = rx.App()\n"
+    )
+    entry.write_text(source)
+    before = page_cache.entrypoint_digest(str(entry))
+    entry.write_text(source.replace("'red'", "'blue'"))
+    assert page_cache.entrypoint_digest(str(entry)) != before

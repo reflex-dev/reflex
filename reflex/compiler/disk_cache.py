@@ -19,6 +19,7 @@ from __future__ import annotations
 import base64
 import contextlib
 import dataclasses
+import functools
 import hashlib
 import json
 import logging
@@ -106,6 +107,11 @@ class DynamicStatePredictionError(Exception):
 
 
 def _manifest_path() -> Path:
+    """Return the manifest's path in the web directory.
+
+    Returns:
+        The manifest path.
+    """
     return prerequisites.get_web_dir() / _MANIFEST_FILE
 
 
@@ -348,6 +354,12 @@ def _stable_value(value: Any) -> Any:
             field.name: _stable_value(getattr(value, field.name))
             for field in dataclasses.fields(value)
         }
+    if isinstance(value, functools.partial):
+        return [
+            _stable_value(value.func),
+            _stable_value(value.args),
+            _stable_value(value.keywords),
+        ]
     if callable(value):
         # Which function, not its body: a page function's body is a recorded
         # dependency of the page, and load events only run on the backend.
@@ -1245,6 +1257,43 @@ class _ComponentStateNumbersPlugin(Plugin):
                 cls._per_component_state_instance_count = number
 
 
+def _route_dropping_a_shared_state(
+    manifest: dict[str, Any],
+    miss_routes: Iterable[str],
+    removed_entries: dict[str, dict[str, Any]],
+) -> str | None:
+    """Find a recompiled or removed page whose recorded module state is gone.
+
+    A page records the states its evaluation registered first. Another page
+    using the same module state recorded none, so when the first page stops
+    registering it, only a full compile keeps it. A local state belongs to
+    its page alone.
+
+    Args:
+        manifest: The loaded manifest (without the removed pages).
+        miss_routes: The recompiled routes.
+        removed_entries: The manifest entries of the removed routes.
+
+    Returns:
+        The first such route, or None.
+    """
+    import reflex.istate.dynamic as istate_dynamic
+
+    local_prefix = istate_dynamic.__name__.replace(".", "___") + "___"
+    live = RegistrationContext.ensure_context().base_states
+    entries = [(route, manifest["pages"].get(route)) for route in miss_routes]
+    entries.extend(removed_entries.items())
+    for route, entry in entries:
+        if entry is None or not entry["state_slice"]:
+            continue
+        for name in entry["state_slice"]["schema"]:
+            if name not in live and not name.rpartition(".")[2].startswith(
+                local_prefix
+            ):
+                return route
+    return None
+
+
 def _claim_recorded_dynamic_names(
     manifest: dict[str, Any], miss_routes: set[str]
 ) -> None:
@@ -1288,7 +1337,7 @@ def _with_dynamic_state_pages(
     pages: Sequence[PageDefinition],
     manifest: dict[str, Any],
     *,
-    removed: bool = False,
+    shifted: bool = False,
 ) -> list[PageDefinition]:
     """Expand a miss set with every page that defines dynamic-module states.
 
@@ -1303,12 +1352,13 @@ def _with_dynamic_state_pages(
         miss_pages: The pages to recompile.
         pages: All current page definitions (in compile order).
         manifest: The loaded manifest.
-        removed: Whether a removed page defined dynamic-module states.
+        shifted: Whether names may have shifted without a miss: a removed
+            page defined dynamic-module states, or such pages were reordered.
 
     Returns:
         The expanded miss list, in ``pages`` order.
     """
-    if not miss_pages and not removed:
+    if not miss_pages and not shifted:
         return miss_pages
     miss_routes = {page.route for page in miss_pages}
     return [
@@ -1316,6 +1366,65 @@ def _with_dynamic_state_pages(
         for page in pages
         if page.route in miss_routes or manifest["pages"][page.route]["dynamic_claims"]
     ]
+
+
+def _dynamic_page_order_changed(
+    manifest: dict[str, Any], pages: Sequence[PageDefinition]
+) -> bool:
+    """Whether the recorded pages defining dynamic states changed their order.
+
+    Their states take names in page order. The manifest lists pages in the
+    order of the compile that wrote it.
+
+    Args:
+        manifest: The loaded manifest (without the removed pages).
+        pages: All current page definitions (in compile order).
+
+    Returns:
+        True when those pages are in another order now.
+    """
+    recorded = manifest["pages"]
+    return [route for route, entry in recorded.items() if entry["dynamic_claims"]] != [
+        page.route
+        for page in pages
+        if (entry := recorded.get(page.route)) is not None and entry["dynamic_claims"]
+    ]
+
+
+def _expand_miss_pages(
+    miss_pages: list[PageDefinition],
+    pages: Sequence[PageDefinition],
+    manifest: dict[str, Any],
+    dirty_memo_paths: set[str],
+    stale_owner_routes: set[str],
+    *,
+    dynamic_names_shift: bool,
+) -> list[PageDefinition]:
+    """Add the pages a rebuild of ``miss_pages`` must evaluate too.
+
+    Module siblings come last: every page added before them may share a
+    memo file with hit pages of its module.
+
+    Args:
+        miss_pages: The new or changed pages.
+        pages: All current page definitions (in compile order).
+        manifest: The loaded manifest.
+        dirty_memo_paths: Memo output paths the rebuild rewrites.
+        stale_owner_routes: Owners of route-owned memo records that changed.
+        dynamic_names_shift: Whether dynamic state names may have shifted
+            without a miss (see :func:`_with_dynamic_state_pages`).
+
+    Returns:
+        The expanded miss list, in ``pages`` order.
+    """
+    miss_pages = _with_memo_contributing_pages(
+        miss_pages, pages, manifest, dirty_memo_paths, stale_owner_routes
+    )
+    if not _predict_dynamic_names:
+        miss_pages = _with_dynamic_state_pages(
+            miss_pages, pages, manifest, shifted=dynamic_names_shift
+        )
+    return _with_module_siblings(miss_pages, pages, manifest)
 
 
 def _changed_dependency_files(
@@ -1761,20 +1870,28 @@ def try_incremental_rebuild(
         and owner in routes
         and _memo_deps_changed(entry["deps"], validator, changed_hint)
     }
+    order_changed = _dynamic_page_order_changed(manifest, pages)
+    if order_changed and _predict_dynamic_names:
+        msg = "the order of the pages defining dynamic states changed"
+        raise DynamicStatePredictionError(msg)
     changed_files: set[str] = set()
-    if miss_pages or dirty_memo_paths or stale_owner_routes or removed_entries:
+    if (
+        miss_pages
+        or dirty_memo_paths
+        or stale_owner_routes
+        or removed_entries
+        or order_changed
+    ):
         changed_files = _changed_dependency_files(manifest, validator, changed_hint)
-        miss_pages = _with_memo_contributing_pages(
-            miss_pages, pages, manifest, dirty_memo_paths, stale_owner_routes
+        miss_pages = _expand_miss_pages(
+            miss_pages,
+            pages,
+            manifest,
+            dirty_memo_paths,
+            stale_owner_routes,
+            dynamic_names_shift=order_changed
+            or any(e["dynamic_claims"] for e in removed_entries.values()),
         )
-        miss_pages = _with_module_siblings(miss_pages, pages, manifest)
-        if not _predict_dynamic_names:
-            miss_pages = _with_dynamic_state_pages(
-                miss_pages,
-                pages,
-                manifest,
-                removed=any(e["dynamic_claims"] for e in removed_entries.values()),
-            )
         memo_note = (
             f"; rewriting {len(dirty_memo_paths)} memo file(s)"
             if dirty_memo_paths
@@ -1858,6 +1975,11 @@ def try_incremental_rebuild(
         _fall_back_after_evaluation(
             f"page {route!r} changed dynamic state names other pages share"
         )
+    if route := _route_dropping_a_shared_state(manifest, miss_routes, removed_entries):
+        _fall_back_after_evaluation(
+            f"page {route!r} no longer registers a state other pages may use"
+        )
+        return miss_ctx if miss_ctx is not None else False
 
     # Write changed pages + their memo files; reuse everything else on disk.
     install_imports = _deserialize_imports(manifest["all_imports"])
@@ -1997,10 +2119,15 @@ def try_incremental_rebuild(
                 if contexts_snapshot is None
                 else _with_hit_state_slices(contexts_snapshot, manifest, miss_routes)
             )
+            state_imports: ParsedImportDict = {}
             context_path, context_code = compiler.compile_contexts(
-                app._state, theme, contexts_snapshot=merged_snapshot
+                app._state,
+                theme,
+                contexts_snapshot=merged_snapshot,
+                component_imports=state_imports,
             )
             _save_incremental_output(context_path, context_code, outputs)
+            install_imports = merge_imports(install_imports, state_imports)
             if contexts_snapshot is not None and merged_snapshot is not None:
                 live_libraries = _state_libraries(contexts_snapshot[0])
                 state_libraries = {
@@ -2080,6 +2207,7 @@ def try_incremental_rebuild(
         app_root_inputs=app_root_inputs,
         state_libraries=state_libraries,
         registrations=registrations,
+        page_order=[page.route for page in pages],
         module_states=(
             _record_module_states(
                 live_module_states,
@@ -2184,7 +2312,11 @@ def _refresh_app_root(
     libraries = _reconstruct_libraries(
         bundle_base, page_requests, stored["root_requests"], state_libraries
     )
-    if merged == stored["wraps"] and libraries == stored["libraries"]:
+    # Wraps of one priority nest in insertion order, so the order counts.
+    if (
+        list(merged.items()) == list(stored["wraps"].items())
+        and libraries == stored["libraries"]
+    ):
         return None
     if not stored["reconstructible"]:
         msg = "the app root's bundled libraries cannot be rebuilt"
@@ -2264,6 +2396,7 @@ def _update_manifest_for_misses(
     state_libraries: dict[str, list[str]],
     registrations: dict[str, str],
     module_states: dict[str, list[str]],
+    page_order: Sequence[str] = (),
     route_set_changed: bool = False,
     validator: page_cache.FileValidator | None = None,
 ) -> None:
@@ -2289,6 +2422,7 @@ def _update_manifest_for_misses(
         state_libraries: The libraries each state's initial values request.
         registrations: Each route's registration digest.
         module_states: The import-time states and their source files.
+        page_order: The routes in compile order, which the manifest keeps.
         route_set_changed: Whether pages were added or removed.
         validator: The validator used for this rebuild, for its refreshed
             entries.
@@ -2334,8 +2468,15 @@ def _update_manifest_for_misses(
                     root=root,
                 )
             dirty = True
+        if page_order and list(manifest["pages"]) != list(page_order):
+            manifest["pages"] = {
+                route: manifest["pages"][route] for route in page_order
+            }
+            dirty = True
         if (
             manifest["app_root"] != app_root_inputs
+            # Dict equality ignores the wrap order, which the root keeps.
+            or list(manifest["app_root"]["wraps"]) != list(app_root_inputs["wraps"])
             or manifest["state_libraries"] != state_libraries
             or manifest["module_states"] != module_states
         ):

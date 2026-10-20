@@ -948,8 +948,25 @@ def test_page_becoming_stateful_rebuilds_incrementally(tmp_path, monkeypatch):
     assert refreshed["pages"][route_s]["is_stateful"] is True
 
 
-def test_page_dropping_its_states_rebuilds_contexts(tmp_path, monkeypatch):
-    """A page that stops defining states takes its slice out of the contexts."""
+def _drop_page_state(
+    tmp_path,
+    monkeypatch,
+    gone: str,
+    compile_contexts: Callable[..., Any] | None = None,
+    install: Callable[[Any], None] | None = None,
+) -> tuple[Any, list[Any], dict[str, Any]]:
+    """Rebuild a page that defined ``gone`` before an edit and no state after it.
+
+    Args:
+        tmp_path: The project root.
+        monkeypatch: The pytest monkeypatch fixture.
+        gone: The full name of the state the page stopped defining.
+        compile_contexts: Replaces ``compile_contexts`` after the capture.
+        install: Receives the imports whose packages the rebuild installs.
+
+    Returns:
+        The rebuild result, the captured contexts snapshots, and the manifest.
+    """
     web = _use_tmp_web_dir(tmp_path, monkeypatch)
     app = rx.App()
     app.add_page(_page_a, route="/a")
@@ -959,8 +976,6 @@ def test_page_dropping_its_states_rebuilds_contexts(tmp_path, monkeypatch):
     disk_cache.write_manifest(ctx, pages, ctx.all_imports, root=tmp_path)
     manifest_path = web / disk_cache._MANIFEST_FILE
     manifest = json.loads(manifest_path.read_text())
-    # Recorded before the edit that removed the page's state.
-    gone = "reflex___state____state.gone_state"
     manifest["pages"]["a"].update(
         is_stateful=True,
         state_slice={
@@ -972,17 +987,62 @@ def test_page_dropping_its_states_rebuilds_contexts(tmp_path, monkeypatch):
     _stale_dep(manifest, "a", str(tmp_path / "view.py"))
     manifest_path.write_text(json.dumps(manifest))
     captured = _capture_contexts(monkeypatch)
-    assert (
-        disk_cache.try_incremental_rebuild(
-            app, compiler_plugins=[], prerender_routes=False, root=tmp_path
+    if compile_contexts is not None:
+        monkeypatch.setattr(
+            "reflex.compiler.compiler.compile_contexts", compile_contexts
         )
-        is True
+    if install is not None:
+        monkeypatch.setattr(app, "_get_frontend_packages", install)
+    result = disk_cache.try_incremental_rebuild(
+        app, compiler_plugins=[], prerender_routes=False, root=tmp_path
     )
+    return result, captured, json.loads(manifest_path.read_text())
+
+
+#: A local state the page defined; no other page can use it.
+_GONE_LOCAL = "reflex___state____state.reflex___istate___dynamic____gone_state"
+
+
+def test_page_dropping_its_states_rebuilds_contexts(tmp_path, monkeypatch):
+    """A page that stops defining states takes its slice out of the contexts."""
+    result, captured, refreshed = _drop_page_state(tmp_path, monkeypatch, _GONE_LOCAL)
+    assert result is True
     [(initial, _, schema_entries)] = captured
-    assert gone not in initial
-    assert gone not in schema_entries
-    refreshed = json.loads(manifest_path.read_text())
+    assert _GONE_LOCAL not in initial
+    assert _GONE_LOCAL not in schema_entries
     assert refreshed["pages"]["a"]["is_stateful"] is False
+
+
+def test_page_dropping_a_shared_state_falls_back(tmp_path, monkeypatch):
+    """A module state the page stops importing may still serve unchanged pages.
+
+    Those pages recorded no slice for it, so only a full compile keeps it.
+    """
+    gone = "reflex___state____state.shared_module___shared_state"
+    result, captured, _ = _drop_page_state(tmp_path, monkeypatch, gone)
+    assert isinstance(result, CompileContext)
+    assert captured == []
+
+
+def test_contexts_rebuild_installs_the_packages_state_defaults_import(
+    tmp_path, monkeypatch
+):
+    """A component-valued state default can bring a package no page imports."""
+    from reflex.compiler import utils as compiler_utils
+
+    def compile_contexts(state, theme, *, contexts_snapshot, component_imports):
+        component_imports.setdefault("state-only-package", []).append(
+            ImportVar(tag="Widget")
+        )
+        return compiler_utils.get_context_path(), _CONTEXTS_STUB
+
+    installed: list[Any] = []
+    result, _, refreshed = _drop_page_state(
+        tmp_path, monkeypatch, _GONE_LOCAL, compile_contexts, installed.append
+    )
+    assert result is True
+    assert "state-only-package" in installed[-1]
+    assert "state-only-package" in refreshed["all_imports"]
 
 
 def test_incremental_rebuild_all_hits(tmp_path, monkeypatch):
@@ -1620,12 +1680,16 @@ def _page_state_provider() -> Component:
     return rx.el.div(rx.el.p(_fp_state("_ProviderState").value), _footer())
 
 
-def _root_rebuild(tmp_path, monkeypatch, **edit) -> tuple[Any, Path, str]:
+def _root_rebuild(
+    tmp_path, monkeypatch, *, reversed_wraps: list[str] | None = None, **edit
+) -> tuple[Any, Path, str]:
     """Fully compile a stateful page and a plain page, then edit the plain one.
 
     Args:
         tmp_path: The project root.
         monkeypatch: The pytest monkeypatch fixture.
+        reversed_wraps: When given, the app root's wraps are recorded in
+            reverse order, which is appended to it.
         edit: The ``_WRAP_EDIT`` flags the edit turns on.
 
     Returns:
@@ -1659,6 +1723,11 @@ def _root_rebuild(tmp_path, monkeypatch, **edit) -> tuple[Any, Path, str]:
         manifest_path = web / disk_cache._MANIFEST_FILE
         manifest = json.loads(manifest_path.read_text())
         assert manifest["app_root"]["reconstructible"]
+        if reversed_wraps is not None:
+            wraps = manifest["app_root"]["wraps"]
+            assert len(wraps) > 1
+            manifest["app_root"]["wraps"] = dict(reversed(wraps.items()))
+            reversed_wraps.extend(manifest["app_root"]["wraps"])
         _stale_dep(manifest, pages[1].route, str(tmp_path / "view.py"))
         manifest_path.write_text(json.dumps(manifest))
         # The daemon child starts without the states its pages define.
@@ -1680,6 +1749,15 @@ def test_page_gaining_a_provided_wrap_reuses_the_app_root(tmp_path, monkeypatch)
     result, root_file, before = _root_rebuild(tmp_path, monkeypatch, state=True)
     assert result is True
     assert root_file.read_text() == before
+
+
+def test_app_root_follows_the_order_of_its_wraps(tmp_path, monkeypatch):
+    """Wraps of one priority nest in the order pages first require them."""
+    recorded: list[str] = []
+    result, _, _ = _root_rebuild(tmp_path, monkeypatch, reversed_wraps=recorded)
+    assert result is True
+    manifest = json.loads((tmp_path / ".web" / disk_cache._MANIFEST_FILE).read_text())
+    assert list(manifest["app_root"]["wraps"]) == recorded[::-1]
 
 
 def test_page_bringing_a_new_wrap_rebuilds_only_the_app_root(tmp_path, monkeypatch):
@@ -2025,28 +2103,29 @@ def test_removed_page_rebuilds_incrementally(tmp_path, monkeypatch):
 
 
 def test_removed_stateful_page_leaves_the_contexts(tmp_path, monkeypatch):
-    """A removed page's states leave the contexts file."""
+    """A removed page's local states leave the contexts file."""
     web = _use_tmp_web_dir(tmp_path, monkeypatch)
     app = rx.App()
     app.add_page(_page_a, route="/a")
-    app.add_page(_page_flip, route="/s")
+    app.add_page(_page_collide_one, route="/s")
     pages = list(app._unevaluated_pages.values())
-    ctx = _compile(pages, app=app)
-    flip_states = ctx.stateful_routes[pages[1].route]
-    _stub_externals(app, monkeypatch)
-    disk_cache.write_manifest(ctx, pages, ctx.all_imports, root=tmp_path)
-    _unregister_state(_FP_HOLDER.pop("_FlipState"))
-    del app._unevaluated_pages[pages[1].route]
-    captured = _capture_contexts(monkeypatch)
-    assert (
-        disk_cache.try_incremental_rebuild(
+    try:
+        ctx = _compile(pages, app=app)
+        local_states = ctx.stateful_routes[pages[1].route]
+        _stub_externals(app, monkeypatch)
+        disk_cache.write_manifest(ctx, pages, ctx.all_imports, root=tmp_path)
+        _drop_dynamic_states("CollideState")
+        del app._unevaluated_pages[pages[1].route]
+        captured = _capture_contexts(monkeypatch)
+        result = disk_cache.try_incremental_rebuild(
             app, compiler_plugins=[], prerender_routes=False, root=tmp_path
         )
-        is True
-    )
+    finally:
+        _drop_dynamic_states("CollideState")
+    assert result is True
     [(initial, _, schema_entries)] = captured
-    assert not set(flip_states) & set(initial)
-    assert not set(flip_states) & set(schema_entries)
+    assert not set(local_states) & set(initial)
+    assert not set(local_states) & set(schema_entries)
     marker = json.loads((web / disk_cache._MANIFEST_FILE).read_text())
     assert set(marker["pages"]) == {"a"}
 
@@ -2552,3 +2631,101 @@ def test_incremental_rebuild_recompiles_only_the_edited_function(
         sys.modules.pop(module_name, None)
     assert result is True
     assert mod.CALLS == {"a": 1, "b": 0}
+
+
+def _labelled(label: str) -> Component:
+    return rx.el.p(label)
+
+
+def test_registration_digest_tracks_partial_arguments():
+    """A page bound with ``functools.partial`` changes with its arguments."""
+    import functools
+
+    def digest(label: str) -> str:
+        page = _FakePage(route="/p", component=functools.partial(_labelled, label))
+        return disk_cache.registration_digests([page])["/p"]
+
+    assert digest("old") == digest("old")
+    assert digest("old") != digest("new")
+
+
+def test_partial_page_depends_on_its_function_module(tmp_path, monkeypatch):
+    """A ``functools.partial`` page depends on its wrapped function's file."""
+    import functools
+    import importlib
+
+    module = tmp_path / "partial_view_module.py"
+    module.write_text("def view(label):\n    return label\n")
+    monkeypatch.syspath_prepend(str(tmp_path))
+    try:
+        view = importlib.import_module("partial_view_module").view
+        files = page_cache._component_source_files(
+            functools.partial(view, "x"), tmp_path.resolve()
+        )
+    finally:
+        sys.modules.pop("partial_view_module", None)
+    assert files == {str(module.resolve())}
+
+
+def test_dynamic_state_pages_bring_their_memo_siblings():
+    """A dynamic-state page pulled into a rebuild brings its memo siblings.
+
+    They share its module's memo file, which the rebuild rewrites.
+    """
+    pages = [
+        _FakePage("/a", _page_a, _source_module="first_module"),
+        _FakePage("/b", _page_b, _source_module="second_module"),
+        _FakePage("/c", _page_c, _source_module="second_module"),
+    ]
+
+    def entry(claims: list[list[str]], has_memos: bool) -> dict[str, Any]:
+        return {"dynamic_claims": claims, "has_memos": has_memos}
+
+    manifest = {
+        "pages": {
+            "/a": entry([], has_memos=False),
+            "/b": entry([["LocalState", "LocalState"]], has_memos=True),
+            "/c": entry([], has_memos=True),
+        }
+    }
+    misses = disk_cache._expand_miss_pages(
+        [pages[0]], pages, manifest, set(), set(), dynamic_names_shift=False
+    )
+    assert [page.route for page in misses] == ["/a", "/b", "/c"]
+
+
+@pytest.mark.parametrize("predict", [False, True])
+def test_reordering_dynamic_state_pages_reevaluates_them(
+    tmp_path, monkeypatch, predict
+):
+    """Dynamic state names follow page order, so a reorder renames them."""
+    web = _use_tmp_web_dir(tmp_path, monkeypatch)
+    app = rx.App()
+    app.add_page(_page_collide_one, route="/one")
+    app.add_page(_page_collide_two, route="/two")
+    pages = list(app._unevaluated_pages.values())
+    ctx = _compile(pages, app=app)
+    _stub_externals(app, monkeypatch)
+    disk_cache.write_manifest(ctx, pages, ctx.all_imports, root=tmp_path)
+    assert (web / disk_cache._MANIFEST_FILE).exists()
+    monkeypatch.setattr(
+        app, "_unevaluated_pages", dict(reversed(app._unevaluated_pages.items()))
+    )
+    _drop_dynamic_states("CollideState")
+    monkeypatch.setitem(_COLLIDE, "one", 0)
+    monkeypatch.setitem(_COLLIDE, "two", 0)
+    monkeypatch.setattr(disk_cache, "_predict_dynamic_names", predict)
+    try:
+        if predict:
+            with pytest.raises(disk_cache.DynamicStatePredictionError):
+                disk_cache.try_incremental_rebuild(
+                    app, compiler_plugins=[], prerender_routes=False, root=tmp_path
+                )
+            return
+        result = disk_cache.try_incremental_rebuild(
+            app, compiler_plugins=[], prerender_routes=False, root=tmp_path
+        )
+    finally:
+        _drop_dynamic_states("CollideState")
+    assert result is True
+    assert (_COLLIDE["one"], _COLLIDE["two"]) == (1, 1)

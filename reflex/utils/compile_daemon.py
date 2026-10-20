@@ -22,6 +22,7 @@ from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from reflex_base import constants
 from reflex_base.environment import environment
 from reflex_base.utils import log
 
@@ -45,7 +46,14 @@ _COMPILE_TIMEOUT = 300.0
 #: Source suffixes edited under the app roots that should trigger a recompile.
 _WATCH_SUFFIXES = (".py", ".md", ".mdx")
 #: Directories never worth walking while building the watch snapshot.
-_SKIP_DIRS = {".web", ".venv", "venv", "node_modules", "__pycache__", ".git"}
+_SKIP_DIRS = {
+    constants.Dirs.WEB,
+    ".venv",
+    "venv",
+    "node_modules",
+    "__pycache__",
+    ".git",
+}
 
 
 @contextlib.contextmanager
@@ -251,7 +259,7 @@ class _WatchState:
     @property
     def assets(self) -> Path | None:
         """The assets directory, when the project has one."""
-        assets = self.root / "assets"
+        assets = self.root / constants.Dirs.APP_ASSETS
         return assets if assets.is_dir() else None
 
     def targets(self) -> list[Path]:
@@ -652,12 +660,22 @@ _LOCK_ACQUIRE_TIMEOUT = 1.0
 
 
 def _lock_path() -> Path:
+    """Return the compile-in-progress lock file.
+
+    Returns:
+        The lock file under the backend dir.
+    """
     from reflex.utils import prerequisites
 
     return prerequisites.get_backend_dir() / _COMPILE_LOCK_FILE
 
 
 def _daemon_lock_path() -> Path:
+    """Return the daemon ownership lock file.
+
+    Returns:
+        The lock file under the backend dir.
+    """
     from reflex.utils import prerequisites
 
     return prerequisites.get_backend_dir() / _DAEMON_LOCK_FILE
@@ -1161,18 +1179,23 @@ def _serve() -> None:
         state.roots = roots = _reload_roots()
         with _compile_lock(root):
             ok = _compile_once(roots, prerender_routes, changed)
+            # Refresh what is watched from the new manifest so a newly
+            # referenced content file becomes watched.
+            state = _WatchState.build(roots, root)
+            state.checkpoint = _dependency_snapshot(state)
             # Also after a failure: workers must not wait on an edit that will
-            # not build; a fix is a newer edit.
-            _record_built_inputs(_known_snapshot(state, before))
+            # not build; a fix is a newer edit. An input edited during the
+            # compile keeps its earlier time, so workers wait for its compile.
+            _record_built_inputs(_known_snapshot(state, {**state.checkpoint, **before}))
         unapplied = set() if ok else changed
         if not ok:
             logger.error("Compile failed; keeping the last good build.")
-        # Refresh what is watched from the new manifest so a newly-referenced
-        # content file becomes watched, and catch up on edits made while the
-        # watcher was down for the compile.
-        state = _WatchState.build(roots, root)
-        state.checkpoint = _dependency_snapshot(state)
+        # Catch up on edits made while the watcher was down for the compile. An
+        # input the compile started to read was not watched before it; it
+        # changed only if it differs from what the compile recorded.
         pending = _missed_changes(before, state.checkpoint)
+        if appeared := (pending - before.keys()) & state.known:
+            pending -= appeared - _unbuilt_changes(state)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -1211,11 +1234,20 @@ def main(argv: list[str] | None = None) -> int:
     # Held for the process lifetime, so backend workers defer to this daemon
     # exactly while it lives (see ``daemon_active``). Forked compile children
     # share the lock; ``os.execv`` drops it and the new image retakes it.
-    if _acquire_lock(_daemon_lock_path()) is None:
+    try:
+        descriptor = _acquire_lock(_daemon_lock_path())
+    except OSError as exc:
         logger.warning(
-            "Another compile daemon owns this project's .web; backend workers "
-            "defer to it."
+            f"Compile daemon: this file system cannot lock files ({exc}); "
+            "backend workers compile instead."
         )
+        return 0
+    if descriptor is None:
+        logger.warning(
+            "Another compile daemon owns this project's .web; leaving the "
+            "compiles to it."
+        )
+        return 0
     try:
         _serve()
     except KeyboardInterrupt:
