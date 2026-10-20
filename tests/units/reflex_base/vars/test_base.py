@@ -2213,16 +2213,21 @@ def test_new_default_for_inherited_private_field_stays_a_field():
         assert child().__counter__ == 2
 
 
-def _js(leaf_vars: Sequence[Var]) -> list[str]:
-    """Render vars to compare them, since ``Var.__eq__`` builds a var.
+def _identical(leaves: Sequence[Var], *expected: Var) -> bool:
+    """Check that the leaves are exactly the given var objects, in order.
+
+    ``Var.__eq__`` builds a var, so lists of vars cannot be compared directly.
 
     Args:
-        leaf_vars: The vars to render.
+        leaves: The leaves returned.
+        *expected: The vars the compound var was built from.
 
     Returns:
-        The rendered vars.
+        Whether each leaf is the expected var object.
     """
-    return [str(var) for var in leaf_vars]
+    return len(leaves) == len(expected) and all(
+        leaf is var for leaf, var in zip(leaves, expected, strict=True)
+    )
 
 
 def test_get_leaf_vars_returns_a_leaf_alone() -> None:
@@ -2239,21 +2244,20 @@ def test_get_leaf_vars_dissolves_literals() -> None:
     whole, since what it reads is not known.
     """
     a = Var(_js_expr="state.a")
-    b = Var(_js_expr="state.b")
+    b = Var(_js_expr="state.b").to(int)
 
-    assert _js(get_leaf_vars(LiteralVar.create(1))) == []
-    assert _js(get_leaf_vars(LiteralVar.create("text"))) == []
-    assert _js(get_leaf_vars(LiteralVar.create(range(3)))) == []
-    assert _js(get_leaf_vars(LiteralVar.create(datetime.datetime(2020, 1, 1)))) == []
-    assert _js(get_leaf_vars(LiteralVar.create([1, a, [b]]))) == ["state.a", "state.b"]
-    assert _js(get_leaf_vars(LiteralVar.create({"k": a, b: 2}))) == [
-        "state.a",
-        "state.b",
-    ]
-    assert _js(get_leaf_vars(LiteralVar.create([f"{a}-x"]))) == ["state.a"]
-    assert _js(get_leaf_vars(LiteralVar.create(Color("red", shade=b.to(int))))) == [
-        "state.b"
-    ]
+    assert get_leaf_vars(LiteralVar.create(1)) == []
+    assert get_leaf_vars(LiteralVar.create("text")) == []
+    assert get_leaf_vars(LiteralVar.create(range(3))) == []
+    assert get_leaf_vars(LiteralVar.create(datetime.datetime(2020, 1, 1))) == []
+    assert _identical(get_leaf_vars(LiteralVar.create([1, a, [b]])), a, b)
+    assert _identical(get_leaf_vars(LiteralVar.create({"k": a, b: 2})), a, b)
+    assert _identical(get_leaf_vars(LiteralVar.create([f"{a}-x"])), a)
+    # A var that is the whole of a formatted string is decoded into a new object.
+    (decoded,) = get_leaf_vars(LiteralVar.create([f"{a}"]))
+    assert decoded is not a
+    assert decoded.equals(a)
+    assert _identical(get_leaf_vars(LiteralVar.create(Color("red", shade=b))), b)
     event = LiteralVar.create(rx.console_log(a))
     (same,) = get_leaf_vars(event)
     assert same is event
@@ -2264,9 +2268,11 @@ def test_get_leaf_vars_unwraps_operations_and_casts() -> None:
     a = Var(_js_expr="state.a").to(int)
     b = Var(_js_expr="state.b").to(int)
 
-    assert _js(get_leaf_vars((a + 1) * b)) == ["state.a", "state.b"]
-    assert _js(get_leaf_vars((a + b).to(str))) == ["state.a", "state.b"]
-    assert _js(get_leaf_vars(a + a)) == ["state.a"]
+    assert _identical(get_leaf_vars((a + 1) * b), a, b)
+    assert _identical(get_leaf_vars((a + b).to(str)), a, b)
+    assert _identical(get_leaf_vars(a + a), a)
+    # A cast of a leaf is the leaf, as the caller holds it.
+    assert _identical(get_leaf_vars(a), a)
 
 
 def test_get_leaf_vars_reads_through_a_function_body() -> None:
@@ -2274,20 +2280,20 @@ def test_get_leaf_vars_reads_through_a_function_body() -> None:
     items = Var(_js_expr="state.items").to(list[str])
     outer = Var(_js_expr="outer").to(str)
 
-    assert _js(get_leaf_vars(items.filter(lambda item: item == "r"))) == ["state.items"]
-    assert _js(get_leaf_vars(items.filter(lambda item: item == outer))) == [
-        "state.items",
-        "outer",
-    ]
+    assert _identical(get_leaf_vars(items.filter(lambda item: item == "r")), items)
+    assert _identical(
+        get_leaf_vars(items.filter(lambda item: item == outer)), items, outer
+    )
     nested = items.map(lambda item: items.filter(lambda other: other == item))
-    assert _js(get_leaf_vars(nested)) == ["state.items"]
+    assert _identical(get_leaf_vars(nested), items)
     rest = Var(_js_expr="rest").to(list[str])
     spread = ArgsFunctionOperation.create((), rest[0] + outer, rest="rest")
-    assert _js(get_leaf_vars(spread)) == ["outer"]
+    assert _identical(get_leaf_vars(spread), outer)
     colored = items.map(lambda item: Color(outer, shade=item.to(int)))
-    assert _js(get_leaf_vars(colored)) == ["state.items", "outer"]
+    assert _identical(get_leaf_vars(colored), items, outer)
     # A named function is a leaf.
-    assert _js(get_leaf_vars(FunctionStringVar.create("fn"))) == ["fn"]
+    fn = FunctionStringVar.create("fn")
+    assert _identical(get_leaf_vars(fn), fn)
 
 
 def test_get_leaf_vars_keeps_a_function_with_an_opaque_body_whole() -> None:
@@ -2304,9 +2310,10 @@ def test_get_leaf_vars_converts_raw_operands() -> None:
     """A raw operand is rendered through LiteralVar.create, so it is read that way."""
     a = Var(_js_expr="state.a")
     n = Var(_js_expr="state.n").to(int)
+    fn = FunctionStringVar.create("fn")
 
-    call = FunctionStringVar.create("fn").call(Color("red", shade=n), [a, 1], f"{a}")
-    assert _js(get_leaf_vars(call)) == ["fn", "state.n", "state.a"]
+    call = fn.call(Color("red", shade=n), [a, 1], f"{a}-x")
+    assert _identical(get_leaf_vars(call), fn, n, a)
 
 
 def test_get_leaf_vars_unwraps_operations_with_their_own_fields() -> None:
@@ -2315,13 +2322,13 @@ def test_get_leaf_vars_unwraps_operations_with_their_own_fields() -> None:
     n = Var(_js_expr="state.n").to(int)
     obj = Var(_js_expr="state.obj").to(dict[str, str])
     key = Var(_js_expr="state.key").to(str)
+    fn = FunctionStringVar.create("fn")
 
-    assert _js(get_leaf_vars(items[1:])) == ["state.items"]
-    assert _js(get_leaf_vars(items[n:][0])) == ["state.items", "state.n"]
-    assert _js(get_leaf_vars(obj[key])) == ["state.obj", "state.key"]
-    assert _js(get_leaf_vars(key + "-" + key.upper())) == ["state.key"]
-    call = FunctionStringVar.create("fn").call(n, items[0])
-    assert _js(get_leaf_vars(call)) == ["fn", "state.n", "state.items"]
+    assert _identical(get_leaf_vars(items[1:]), items)
+    assert _identical(get_leaf_vars(items[n:][0]), items, n)
+    assert _identical(get_leaf_vars(obj[key]), obj, key)
+    assert _identical(get_leaf_vars(key + "-" + key.upper()), key)
+    assert _identical(get_leaf_vars(fn.call(n, items[0])), fn, n, items)
 
 
 def test_get_leaf_vars_sorts_every_cached_operation() -> None:

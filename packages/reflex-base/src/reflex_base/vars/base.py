@@ -3596,8 +3596,8 @@ def _items_in(value: Any) -> Iterator[Any]:
 def _operands(var: Var) -> list[Any] | None:
     """Get the values a var reads, or None when it is a leaf.
 
-    A cast reads the var it wraps and a ``CustomVarOperation`` its operands. A
-    literal container reads what it holds, a color its parts, a scalar nothing;
+    A ``CustomVarOperation`` reads its operands. A literal container reads what
+    it holds, a color its parts, a scalar nothing;
     any other literal value, an event or a component, stays whole as a leaf,
     since what it reads is not known. So does a state field access, since its
     field is no expression on its own, and a function, whose body
@@ -3618,8 +3618,6 @@ def _operands(var: Var) -> list[Any] | None:
     # function.py imports this module.
     from reflex_base.vars.function import FunctionVar
 
-    if isinstance(var, ToOperation):
-        return [var._original]
     if isinstance(var, CustomVarOperation):
         return [arg for _, arg in var._args]
     if isinstance(var, LiteralVar):
@@ -3667,9 +3665,10 @@ def get_leaf_vars(var: Var) -> Sequence[Var]:
     A var operation such as ``state.items.filter(...)`` or ``state.items[1:]``
     renders to a fresh value every time it is evaluated, so a React hook reading
     one has to depend on the vars it reads instead. This unwraps an operation
-    into its operands, a cast into the var it wraps and a literal container into
-    the vars it holds, recursively, converting a raw value the way the renderer
-    does; a plain literal is a constant and yields nothing. A function yields
+    into its operands, a cast into the operation it wraps and a literal
+    container into the vars it holds, recursively, converting a raw value the
+    way the renderer does; a plain literal is a constant and yields nothing. A
+    leaf comes back as the caller holds it, cast included, and a function yields
     what its body reads other than its own parameters, so a predicate closing
     over nothing yields nothing and one closing over a loop var yields that var.
     A body holding a literal that cannot be taken apart may read the parameters
@@ -3692,6 +3691,15 @@ def get_leaf_vars(var: Var) -> Sequence[Var]:
     stack = [var]
     while stack:
         current = stack.pop()
+        if isinstance(current, ToOperation):
+            wrapped = current._original
+            while isinstance(wrapped, ToOperation):
+                wrapped = wrapped._original
+            if _operands(wrapped) is None:
+                leaves.setdefault(current._hash_key(), current)
+            else:
+                stack.append(wrapped)
+            continue
         if (
             isinstance(current, (ArgsFunctionOperation, ArgsFunctionOperationBuilder))
             and not isinstance(current, LiteralVar)
