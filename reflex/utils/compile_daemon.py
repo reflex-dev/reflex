@@ -946,6 +946,54 @@ def _can_fork() -> bool:
     return False
 
 
+def _single_threaded() -> bool:
+    """Whether this process runs one thread, so a ``fork()`` is safe.
+
+    Returns:
+        True if no other Python or OS thread is alive.
+    """
+    return threading.active_count() == 1 and (_os_thread_count() or 1) == 1
+
+
+def compiled_in_predicting_child(attempt: Callable[[], bool]) -> bool:
+    """Run a cold incremental compile in a forked child that predicts state names.
+
+    A failed prediction has already registered states under other names, so
+    it runs in a copy-on-write child. On any other outcome than a compile,
+    the caller compiles exactly in this process (which also reports errors).
+
+    Skipped where a caller already chose the mode, such as the daemon's
+    exact retry.
+
+    Args:
+        attempt: Runs the incremental compile; returns True when it compiled.
+
+    Returns:
+        True when the child compiled.
+    """
+    from reflex.compiler import disk_cache
+
+    if (
+        disk_cache._predict_dynamic_names is not None
+        or not hasattr(os, "fork")
+        or not _single_threaded()
+    ):
+        return False
+    pid = os.fork()
+    if pid == 0:  # child
+        code = 1
+        try:
+            disk_cache.set_dynamic_name_prediction(True)
+            code = 0 if attempt() else 2
+        except disk_cache.DynamicStatePredictionError as exc:
+            _log_failed_prediction(exc)
+        except BaseException:  # the caller's exact compile reports it
+            pass
+        finally:
+            os._exit(code)
+    return _await_child(pid) == 0
+
+
 def _compile_once(
     roots: list[Path], prerender_routes: bool, changed: set[Path] | None = None
 ) -> bool:

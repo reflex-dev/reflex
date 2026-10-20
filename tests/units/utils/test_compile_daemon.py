@@ -933,3 +933,63 @@ def test_failed_prediction_exits_the_child_with_the_retry_code(monkeypatch):
     monkeypatch.setattr(compile_daemon, "_child_compile", fail_prediction)
     code = compile_daemon._run_compile_child([], False, None, predict=True)
     assert code == compile_daemon._RETRY_EXIT_CODE
+
+
+@pytest.mark.skipif(not hasattr(os, "fork"), reason="requires os.fork (POSIX)")
+@pytest.mark.parametrize(
+    ("outcome", "compiled"),
+    [
+        ("ok", True),
+        ("fell back", False),
+        ("failed prediction", False),
+        ("error", False),
+    ],
+)
+def test_cold_compile_predicts_names_in_a_child(
+    monkeypatch, tmp_path, outcome, compiled
+):
+    """A cold compile predicts dynamic state names in a forked child.
+
+    Only a child that compiled spares the caller its exact in-process compile.
+    """
+    from reflex.compiler import disk_cache
+
+    seen = tmp_path / "predicted"
+
+    def attempt() -> bool:
+        """Record the prediction mode, then end as ``outcome`` says.
+
+        Returns:
+            Whether the compile succeeded.
+
+        Raises:
+            DynamicStatePredictionError: For a failed prediction.
+            RuntimeError: For an error.
+        """
+        seen.write_text(str(disk_cache._predict_dynamic_names))
+        if outcome == "failed prediction":
+            route = "/two"
+            raise disk_cache.DynamicStatePredictionError(route)
+        if outcome == "error":
+            msg = "boom"
+            raise RuntimeError(msg)
+        return outcome == "ok"
+
+    monkeypatch.setattr(compile_daemon, "_single_threaded", lambda: True)
+    assert compile_daemon.compiled_in_predicting_child(attempt) is compiled
+    assert seen.read_text() == "True"
+    assert disk_cache._predict_dynamic_names is None
+
+
+@pytest.mark.parametrize(
+    ("single_threaded", "chosen"), [(False, None), (True, False), (True, True)]
+)
+def test_cold_compile_without_a_safe_fork_compiles_in_process(
+    monkeypatch, single_threaded, chosen
+):
+    """The caller compiles in-process with other threads alive or a mode chosen."""
+    from reflex.compiler import disk_cache
+
+    monkeypatch.setattr(compile_daemon, "_single_threaded", lambda: single_threaded)
+    monkeypatch.setattr(disk_cache, "_predict_dynamic_names", chosen)
+    assert compile_daemon.compiled_in_predicting_child(lambda: True) is False

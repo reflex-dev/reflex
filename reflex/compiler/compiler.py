@@ -1425,6 +1425,76 @@ def _read_stateful_pages_marker() -> list[str] | None:
         raise
 
 
+def _compile_from_cache(
+    app: App,
+    compiler_plugins: Sequence[Plugin],
+    radix_themes_plugin: RadixThemesPlugin,
+    *,
+    prerender_routes: bool,
+    use_rich: bool,
+    registrations: dict[str, str],
+) -> CompileContext | bool:
+    """Compile from the compile cache, writing the plugin outputs on success.
+
+    Args:
+        app: The app.
+        compiler_plugins: The resolved compiler plugins.
+        radix_themes_plugin: The resolved Radix Themes plugin.
+        prerender_routes: Whether to prerender routes.
+        use_rich: Whether to show rich progress.
+        registrations: Each route's registration digest.
+
+    Returns:
+        True when the cache compiled the app, the evaluated pages to adopt
+        when it fell back after evaluating, else False.
+    """
+    from reflex.compiler import disk_cache
+
+    config = get_config()
+    outputs: dict[Path, str] = {}
+    rebuilt = disk_cache.try_incremental_rebuild(
+        app,
+        compiler_plugins=compiler_plugins,
+        prerender_routes=prerender_routes,
+        use_rich=use_rich,
+        outputs=outputs,
+        registrations=registrations,
+    )
+    if rebuilt is True:
+        try:
+            save_tasks, modify_tasks = _plugin_output_tasks(
+                config.plugins,
+                radix_themes_plugin,
+                list(app._unevaluated_pages.values()),
+            )
+            manifest = disk_cache.load_manifest()
+            stylesheet_path, stylesheet_code = compile_root_stylesheet(
+                app.stylesheets, app.reset_style, plugins=compiler_plugins
+            )
+            outputs[utils.resolve_path_of_web_dir(stylesheet_path)] = stylesheet_code
+            for task_fn, args, kwargs in save_tasks:
+                result = task_fn(*args, **kwargs)
+                if result is not None:
+                    for path, code in result if isinstance(result, list) else [result]:
+                        outputs[utils.resolve_path_of_web_dir(path)] = code
+            sources = _apply_plugin_outputs(
+                outputs,
+                config.plugins,
+                modify_tasks,
+                manifest.get("plugin_sources", {}) if manifest is not None else {},
+            )
+            for path, code in outputs.items():
+                utils.write_file(path, code)
+            if manifest is not None and manifest.get("plugin_sources") != sources:
+                manifest["plugin_sources"] = sources
+                disk_cache._write(manifest)
+        except BaseException:
+            # The staged manifest must not validate outputs that failed to save.
+            disk_cache._manifest_path().unlink(missing_ok=True)
+            raise
+    return rebuilt
+
+
 def compile_app(
     app: App,
     *,
@@ -1511,53 +1581,24 @@ def compile_app(
         page_cache.enable_read_tracking()
         # Taken before any page evaluates: evaluation mutates components.
         registrations = disk_cache.registration_digests(app._unevaluated_pages.values())
-        outputs: dict[Path, str] = {}
-        rebuilt = disk_cache.try_incremental_rebuild(
-            app,
-            compiler_plugins=compiler_plugins,
-            prerender_routes=prerender_routes,
-            use_rich=use_rich,
-            outputs=outputs,
-            registrations=registrations,
-        )
+        from reflex.utils import compile_daemon
+
+        def attempt() -> CompileContext | bool:
+            return _compile_from_cache(
+                app,
+                compiler_plugins,
+                radix_themes_plugin,
+                prerender_routes=prerender_routes,
+                use_rich=use_rich,
+                registrations=registrations,
+            )
+
+        if compile_daemon.compiled_in_predicting_child(lambda: attempt() is True):
+            return True
+        rebuilt = attempt()
         if isinstance(rebuilt, CompileContext):
             evaluated = rebuilt
         elif rebuilt:
-            try:
-                save_tasks, modify_tasks = _plugin_output_tasks(
-                    config.plugins,
-                    radix_themes_plugin,
-                    list(app._unevaluated_pages.values()),
-                )
-                manifest = disk_cache.load_manifest()
-                stylesheet_path, stylesheet_code = compile_root_stylesheet(
-                    app.stylesheets, app.reset_style, plugins=compiler_plugins
-                )
-                outputs[utils.resolve_path_of_web_dir(stylesheet_path)] = (
-                    stylesheet_code
-                )
-                for task_fn, args, kwargs in save_tasks:
-                    result = task_fn(*args, **kwargs)
-                    if result is not None:
-                        for path, code in (
-                            result if isinstance(result, list) else [result]
-                        ):
-                            outputs[utils.resolve_path_of_web_dir(path)] = code
-                sources = _apply_plugin_outputs(
-                    outputs,
-                    config.plugins,
-                    modify_tasks,
-                    manifest.get("plugin_sources", {}) if manifest is not None else {},
-                )
-                for path, code in outputs.items():
-                    utils.write_file(path, code)
-                if manifest is not None and manifest.get("plugin_sources") != sources:
-                    manifest["plugin_sources"] = sources
-                    disk_cache._write(manifest)
-            except BaseException:
-                # The staged manifest must not validate outputs that failed to save.
-                disk_cache._manifest_path().unlink(missing_ok=True)
-                raise
             return True
 
     progress = console.progress() if use_rich else console.PoorProgress()

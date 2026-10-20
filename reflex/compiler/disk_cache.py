@@ -76,8 +76,10 @@ def set_changed_hint(paths: Iterable[Path | str] | None) -> None:
 #: Whether this compile predicts the ``reflex.istate.dynamic`` state names of
 #: the pages it does not re-evaluate, instead of re-evaluating every page that
 #: defines such states (see :func:`_with_dynamic_state_pages`). Only a caller
-#: that can discard this process and compile again sets it.
-_predict_dynamic_names = False
+#: that can discard this process and compile again sets it; None means no
+#: caller chose, and a cold compile tries it in a forked child (see
+#: ``compile_daemon.compiled_in_predicting_child``).
+_predict_dynamic_names: bool | None = None
 
 
 def set_dynamic_name_prediction(enabled: bool) -> None:
