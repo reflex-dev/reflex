@@ -97,6 +97,15 @@ def test_library_component_title_preserves_hyphens():
     assert title == "Select (Low Level) · Forms · Library · Reflex"
 
 
+def test_library_single_component_ll_page_uses_component_format():
+    """Single-component low-level pages use component format."""
+    from reflex_docs.pages.docs.metadata import docs_metadata
+
+    title, _ = docs_metadata("library/forms/input-ll/", "Input (Low Level)", None)
+    assert "rx.input.slot" in title, "Single-component -ll pages should use component format"
+    assert title == "rx.input.slot: Python Input (Low Level) Component · Reflex"
+
+
 def test_library_category_title_uses_display_name():
     """Category pages use the display name, not component format."""
     from reflex_docs.pages.docs.metadata import docs_metadata

@@ -105,6 +105,8 @@ def docs_metadata(path: str, title: str, description: str | None) -> tuple[str, 
             from reflex_docs.pages.docs import _frontmatter_for, doc_markdown_sources
 
             route_key = rx.utils.format.to_kebab_case(f"/{route}/")
+            if route_key not in doc_markdown_sources:
+                route_key = route_key.rstrip("/")
             if route_key in doc_markdown_sources:
                 fm = _frontmatter_for(doc_markdown_sources[route_key])
                 if fm and fm.components and len(fm.components) == 1:
