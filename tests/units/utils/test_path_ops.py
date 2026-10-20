@@ -934,3 +934,46 @@ def test_write_file_updates_changed_file(tmp_path: Path) -> None:
     write_file(path, "before")
     write_file(path, "after")
     assert path.read_text(encoding="utf-8") == "after"
+
+
+def test_try_lock_marks_a_holder_until_it_closes(tmp_path: Path):
+    """A lock taken without waiting is visible to others until released."""
+    lock = tmp_path / "owner.lock"
+    assert path_ops.is_locked(lock) is False
+    descriptor = path_ops.try_lock(lock)
+    assert descriptor is not None
+    try:
+        assert path_ops.is_locked(lock) is True
+        assert path_ops.try_lock(lock) is None
+    finally:
+        os.close(descriptor)
+    assert path_ops.is_locked(lock) is False
+
+
+def test_lock_is_released_when_its_holder_is_killed(tmp_path: Path):
+    """A killed holder cannot leave a lock behind, unlike a pid file."""
+    lock = tmp_path / "owner.lock"
+    holder = subprocess.Popen(
+        [
+            sys.executable,
+            "-c",
+            (
+                "import time\n"
+                "from pathlib import Path\n"
+                "from reflex.utils import path_ops\n"
+                f"assert path_ops.try_lock(Path({str(lock)!r})) is not None\n"
+                "print('held', flush=True)\n"
+                "time.sleep(60)\n"
+            ),
+        ],
+        stdout=subprocess.PIPE,
+        text=True,
+    )
+    try:
+        assert holder.stdout is not None
+        assert holder.stdout.readline().strip() == "held"
+        assert path_ops.is_locked(lock) is True
+    finally:
+        holder.kill()
+        holder.wait()
+    assert path_ops.is_locked(lock) is False

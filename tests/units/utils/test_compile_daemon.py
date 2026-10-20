@@ -226,28 +226,35 @@ def test_missed_changes_catches_edits_during_compile(tmp_path):
 
 
 def test_wait_for_compile_respects_lock(tmp_path, monkeypatch):
-    import subprocess
-    import sys
     import time
 
+    from reflex.utils import path_ops
+
     monkeypatch.setattr("reflex.utils.prerequisites.get_backend_dir", lambda: tmp_path)
-    # No lock -> returns at once.
+    monkeypatch.setattr(compile_daemon, "daemon_active", lambda: True)
+    # No compile in progress -> returns at once.
     start = time.monotonic()
     compile_daemon.wait_for_compile(timeout=1)
     assert time.monotonic() - start < 0.2
-    # A live holder -> waits until the lock clears (or the timeout).
+    # A compile in progress -> waits until it finishes (or the timeout).
     with compile_daemon._compile_lock(tmp_path):
         start = time.monotonic()
         compile_daemon.wait_for_compile(timeout=0.3)
         assert time.monotonic() - start >= 0.3
-    assert not compile_daemon._lock_path().exists()
-    # A dead holder -> not waited on.
-    proc = subprocess.Popen([sys.executable, "-c", "pass"])
-    proc.wait()
-    compile_daemon._lock_path().write_text(str(proc.pid))
+    # A lock file nobody holds (a compile killed mid-way) is not waited on,
+    # even when it holds the pid of a live process.
+    lock = compile_daemon._lock_path()
+    lock.write_text(str(os.getpid()))
+    assert not path_ops.is_locked(lock)
     start = time.monotonic()
     compile_daemon.wait_for_compile(timeout=5)
     assert time.monotonic() - start < 0.5
+    # A daemon that exits mid-wait releases the worker.
+    monkeypatch.setattr(compile_daemon, "daemon_active", lambda: False)
+    with compile_daemon._compile_lock(tmp_path):
+        start = time.monotonic()
+        compile_daemon.wait_for_compile(timeout=5)
+        assert time.monotonic() - start < 0.5
 
 
 def test_wait_for_compile_waits_for_unbuilt_edits(tmp_path, monkeypatch):
@@ -260,6 +267,7 @@ def test_wait_for_compile_waits_for_unbuilt_edits(tmp_path, monkeypatch):
     import time
 
     monkeypatch.setattr("reflex.utils.prerequisites.get_backend_dir", lambda: tmp_path)
+    monkeypatch.setattr(compile_daemon, "daemon_active", lambda: True)
     page = tmp_path / "page.py"
     page.write_text("v1")
     built = compile_daemon._snapshot({page})
@@ -561,50 +569,39 @@ def test_quiesce_parent_stops_telemetry_worker():
     assert telemetry._executor is None
 
 
-def test_owns_compilation_follows_the_daemon_marker(tmp_path, monkeypatch):
-    """Backend workers defer to a live daemon; the daemon itself always owns."""
+def test_owns_compilation_follows_the_daemon_lock(tmp_path, monkeypatch):
+    """Backend workers defer to a daemon holding its lock; the daemon always owns."""
     from reflex_base.environment import environment
+
+    from reflex.utils import path_ops
 
     monkeypatch.setattr("reflex.utils.prerequisites.get_backend_dir", lambda: tmp_path)
     monkeypatch.delenv(environment.REFLEX_COMPILE_DAEMON.name, raising=False)
-    # No marker: a plain process compiles as usual.
+    # No daemon: a plain process compiles as usual.
     assert compile_daemon.daemon_active() is False
     assert compile_daemon.owns_compilation() is True
-    # A live reflex-run marker: workers stand down.
-    compile_daemon.mark_daemon_active()
-    assert compile_daemon.daemon_active() is True
-    assert compile_daemon.owns_compilation() is False
-    # ...but the daemon's own processes still own the build.
-    monkeypatch.setenv(environment.REFLEX_COMPILE_DAEMON.name, "1")
-    assert compile_daemon.owns_compilation() is True
+    # A lock file nobody holds (a killed daemon, a copied .web) names no owner,
+    # even when it holds the pid of a live process.
+    lock = compile_daemon._daemon_lock_path()
+    lock.write_text(str(os.getpid()))
+    assert compile_daemon.daemon_active() is False
+    # A daemon holding the lock: workers stand down.
+    descriptor = path_ops.try_lock(lock)
+    assert descriptor is not None
+    try:
+        assert compile_daemon.daemon_active() is True
+        assert compile_daemon.owns_compilation() is False
+        # ...but the daemon's own processes still own the build.
+        monkeypatch.setenv(environment.REFLEX_COMPILE_DAEMON.name, "1")
+        assert compile_daemon.owns_compilation() is True
+    finally:
+        os.close(descriptor)
     monkeypatch.delenv(environment.REFLEX_COMPILE_DAEMON.name)
-    # A marker left by a dead process is ignored.
-    import subprocess
-    import sys
-
-    proc = subprocess.Popen([sys.executable, "-c", "pass"])
-    proc.wait()
-    compile_daemon._daemon_marker_path().write_text(str(proc.pid))
-    assert compile_daemon.daemon_active() is False
     assert compile_daemon.owns_compilation() is True
-    compile_daemon.clear_daemon_marker()
-    assert not compile_daemon._daemon_marker_path().exists()
 
 
-def test_pid_alive_distinguishes_live_and_exited_processes():
-    import subprocess
-    import sys
-
-    assert compile_daemon._pid_alive(os.getpid()) is True
-    proc = subprocess.Popen([sys.executable, "-c", "pass"])
-    proc.wait()
-    assert compile_daemon._pid_alive(proc.pid) is False
-
-
-def test_failed_daemon_spawn_leaves_no_marker(tmp_path, monkeypatch):
-    """A failed spawn must leave backend workers owning compilation."""
-    marker = tmp_path / "daemon.pid"
-    monkeypatch.setattr(compile_daemon, "_daemon_marker_path", lambda: marker)
+def test_failed_daemon_spawn_propagates(monkeypatch):
+    """A failed spawn raises out of the run scope, leaving workers in charge."""
 
     def fail(*args, **kwargs):
         """Simulate failure to launch the child."""
@@ -614,7 +611,6 @@ def test_failed_daemon_spawn_leaves_no_marker(tmp_path, monkeypatch):
     monkeypatch.setattr(compile_daemon.subprocess, "Popen", fail)
     with pytest.raises(OSError, match="spawn failed"), compile_daemon.running():
         pass
-    assert not marker.exists()
 
 
 @pytest.mark.parametrize("exit_with", [None, KeyboardInterrupt])
@@ -626,13 +622,13 @@ def test_daemon_stops_when_the_run_scope_exits(tmp_path, monkeypatch, exit_with)
     """
     import subprocess
 
-    marker = tmp_path / "daemon.pid"
-    monkeypatch.setattr(compile_daemon, "_daemon_marker_path", lambda: marker)
+    monkeypatch.setattr("reflex.utils.prerequisites.get_backend_dir", lambda: tmp_path)
+    lock = compile_daemon._daemon_lock_path()
     popen = subprocess.Popen
     spawned: list[subprocess.Popen] = []
 
-    def spawn_sleeper(args, **kwargs):
-        """Stand in for the daemon with a process that never exits on its own.
+    def spawn_holder(args, **kwargs):
+        """Stand in for the daemon: hold its lock and never exit on its own.
 
         Args:
             args: The daemon command (replaced).
@@ -641,21 +637,34 @@ def test_daemon_stops_when_the_run_scope_exits(tmp_path, monkeypatch, exit_with)
         Returns:
             The spawned process.
         """
-        proc = popen([sys.executable, "-c", "import time; time.sleep(60)"], **kwargs)
+        holder = (
+            "import time\n"
+            "from pathlib import Path\n"
+            "from reflex.utils import path_ops\n"
+            f"assert path_ops.try_lock(Path({str(lock)!r})) is not None\n"
+            "print('held', flush=True)\n"
+            "time.sleep(60)\n"
+        )
+        proc = popen(
+            [sys.executable, "-c", holder], stdout=subprocess.PIPE, text=True, **kwargs
+        )
         spawned.append(proc)
         return proc
 
-    monkeypatch.setattr(compile_daemon.subprocess, "Popen", spawn_sleeper)
+    monkeypatch.setattr(compile_daemon.subprocess, "Popen", spawn_holder)
     with (
         contextlib.suppress(KeyboardInterrupt),
         compile_daemon.running(),
     ):
+        [proc] = spawned
+        assert proc.stdout is not None
+        assert proc.stdout.readline().strip() == "held"
         assert compile_daemon.daemon_active()
         if exit_with is not None:
             raise exit_with
     [proc] = spawned
     assert proc.poll() is not None
-    assert not marker.exists()
+    assert compile_daemon.daemon_active() is False
 
 
 def test_watch_state_discovers_new_project_root_sources(tmp_path):
@@ -704,7 +713,7 @@ def test_watcher_preserves_snapshot_before_teardown(tmp_path, monkeypatch):
 @pytest.mark.parametrize("warm_only", [False, True])
 def test_daemon_initial_work_holds_lock(tmp_path, monkeypatch, warm_only):
     """Startup either warms or compiles, always under the backend wait lock."""
-    from reflex.utils import prerequisites
+    from reflex.utils import path_ops, prerequisites
 
     lock = tmp_path / "compile.lock"
     monkeypatch.chdir(tmp_path)
@@ -721,11 +730,11 @@ def test_daemon_initial_work_holds_lock(tmp_path, monkeypatch, warm_only):
 
     def compile_app(**kwargs):
         """Verify initial compilation blocks backend readers."""
-        calls.append(("compile", lock.exists()))
+        calls.append(("compile", path_ops.is_locked(lock)))
 
     def import_app(**kwargs):
         """Verify warm startup only imports the application."""
-        calls.append(("import", lock.exists()))
+        calls.append(("import", path_ops.is_locked(lock)))
 
     monkeypatch.setattr(prerequisites, "get_compiled_app", compile_app)
     monkeypatch.setattr(prerequisites, "get_app", import_app)
@@ -735,7 +744,7 @@ def test_daemon_initial_work_holds_lock(tmp_path, monkeypatch, warm_only):
         monkeypatch.delenv("REFLEX_COMPILE_DAEMON_PRECOMPILED", raising=False)
     compile_daemon._serve()
     assert calls == [("import" if warm_only else "compile", True)]
-    assert not lock.exists()
+    assert not path_ops.is_locked(lock)
     assert "REFLEX_COMPILE_DAEMON_PRECOMPILED" not in os.environ
 
 

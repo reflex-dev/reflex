@@ -2085,3 +2085,36 @@ def test_compile_app_resolves_show_built_with_reflex(
     assert get_user_tier.called is (
         compile_context == constants.CompileContext.DEPLOY and configured is None
     )
+
+
+@pytest.mark.parametrize("plugins", [[], [rx.plugins.SitemapPlugin()]])
+def test_compile_app_progress_ends_at_its_total(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture, plugins
+):
+    """The progress bar finishes exactly at the total it announced.
+
+    Args:
+        tmp_path: Directory for compiler output.
+        monkeypatch: Fixture for changing the app directory.
+        mocker: Fixture for configuring the test app.
+        plugins: The configured plugins.
+    """
+    monkeypatch.chdir(tmp_path)
+    poor_progress = compiler.console.PoorProgress
+    bars: list[compiler.console.PoorProgress] = []
+
+    def recording_progress() -> compiler.console.PoorProgress:
+        bar = poor_progress()
+        bars.append(bar)
+        return bar
+
+    mocker.patch.object(compiler.console, "PoorProgress", recording_progress)
+    with RegistrationContext():
+        config = rx.Config(app_name="progress_test", plugins=plugins)
+        mocker.patch("reflex_base.config._get_config", return_value=config)
+        app = rx.App()
+        app.add_page(lambda: rx.el.div("hello"), route="/")
+        compiler.compile_app(app, dry_run=True, use_rich=False)
+    [bar] = bars
+    [task] = bar.tasks.values()
+    assert task["current"] == task["total"]

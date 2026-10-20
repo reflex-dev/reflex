@@ -1516,7 +1516,7 @@ def compile_app(
             return True
 
     progress = console.progress() if use_rich else console.PoorProgress()
-    fixed_steps = 7
+    fixed_steps = 8
     all_pages = list(app._unevaluated_pages.values())
     if evaluated is None:
         pages_to_compile = all_pages

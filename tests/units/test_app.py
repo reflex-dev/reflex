@@ -5529,7 +5529,7 @@ def test_compile_emits_stage_spans(
 
 
 def test_should_compile_consumes_the_nocompile_marker_under_a_daemon(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest
 ):
     """A backend worker consumes its ``nocompile`` marker even while a daemon owns .web.
 
@@ -5537,17 +5537,18 @@ def test_should_compile_consumes_the_nocompile_marker_under_a_daemon(
     child finds it, consumes it and skips the compile, so the first edit never
     reaches the browser. Daemon processes never touch the marker at all.
     """
-    from reflex.utils import compile_daemon
+    from reflex.utils import compile_daemon, path_ops
 
     web_dir = tmp_path / ".web"
     web_dir.mkdir()
     monkeypatch.setattr("reflex.utils.prerequisites.get_web_dir", lambda: web_dir)
-    monkeypatch.setattr(
-        compile_daemon, "_daemon_marker_path", lambda: tmp_path / "daemon.pid"
-    )
+    daemon_lock = tmp_path / "daemon.lock"
+    monkeypatch.setattr(compile_daemon, "_daemon_lock_path", lambda: daemon_lock)
     monkeypatch.delenv(environment.REFLEX_SKIP_COMPILE.name, raising=False)
     monkeypatch.delenv(environment.REFLEX_COMPILE_DAEMON.name, raising=False)
-    compile_daemon.mark_daemon_active()
+    descriptor = path_ops.try_lock(daemon_lock)
+    assert descriptor is not None
+    request.addfinalizer(lambda: os.close(descriptor))
     marker = web_dir / constants.NOCOMPILE_FILE
     marker.touch()
     app = App()

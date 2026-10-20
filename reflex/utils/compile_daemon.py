@@ -25,6 +25,8 @@ from pathlib import Path
 from reflex_base.environment import environment
 from reflex_base.utils import log
 
+from reflex.utils import path_ops
+
 logger = logging.getLogger(__name__)
 
 #: Fallback polling only (no ``watchfiles``): seconds between poll passes.
@@ -53,8 +55,8 @@ def running(
     """Run the compile daemon as a subprocess for the duration of the block.
 
     ``reflex run`` owns the daemon's lifetime: however the block exits (Ctrl-C,
-    a signal to ``reflex run`` alone, an error), the daemon is stopped and its
-    ownership marker cleared, so backend workers compile again. The daemon is
+    a signal to ``reflex run`` alone, an error), the daemon is stopped, which
+    releases its lock, so backend workers compile again. The daemon is
     its own process so that it stays single-threaded, which keeps its per-edit
     ``fork()`` safe, and its environment stays separate from the backend's. If
     ``reflex run`` is killed outright, the daemon exits on noticing its parent
@@ -80,10 +82,8 @@ def running(
         [sys.executable, "-m", "reflex.utils.compile_daemon"], env=env
     )
     try:
-        mark_daemon_active(proc.pid)
         yield
     finally:
-        clear_daemon_marker()
         if proc.poll() is None:
             proc.terminate()
             try:
@@ -628,8 +628,9 @@ def _reset_model_metadata() -> None:
 
 #: Name of the env var carrying the changed-path hint to a cold compile child.
 _CHANGED_ENV = "REFLEX_COMPILE_CHANGED"
-#: Lock file (under the backend dir) held while a compile is in progress, so a
-#: backend reload worker can wait for the fresh stateful-pages marker.
+#: Lock file (under the backend dir) whose OS lock the daemon holds while a
+#: compile is in progress, so a backend reload worker can wait for the fresh
+#: stateful-pages marker.
 _COMPILE_LOCK_FILE = ".compile_in_progress"
 #: Give up waiting on the lock after this long (a wedged daemon must not hang
 #: the backend forever; its own watchdog is ``_COMPILE_TIMEOUT``).
@@ -638,14 +639,14 @@ _LOCK_WAIT_TIMEOUT = _COMPILE_TIMEOUT + 10
 #: inputs the frontend build reflects, so a backend reload worker can tell an
 #: edit the daemon has not compiled yet from one it has.
 _BUILT_INPUTS_FILE = ".compiled_inputs.json"
-
-
-#: Marker (under the backend dir) holding the pid of the ``reflex run`` that
-#: owns a compile daemon. Backend workers skip frontend compilation while it
-#: names a live process. A file, not an environment variable: workers may be
-#: forked from a ``forkserver`` whose environment predates ``reflex run``
-#: deciding to start the daemon.
-_DAEMON_MARKER_FILE = ".compile_daemon"
+#: Lock file (under the backend dir) whose OS lock the daemon holds for its
+#: lifetime. Backend workers skip frontend compilation while it is held. A
+#: file, not an environment variable: workers may be forked from a
+#: ``forkserver`` whose environment predates ``reflex run`` deciding to start
+#: the daemon.
+_DAEMON_LOCK_FILE = ".compile_daemon"
+#: How long a lock holder waits out a worker's momentary probe of the lock.
+_LOCK_ACQUIRE_TIMEOUT = 1.0
 
 
 def _lock_path() -> Path:
@@ -654,36 +655,36 @@ def _lock_path() -> Path:
     return prerequisites.get_backend_dir() / _COMPILE_LOCK_FILE
 
 
-def _daemon_marker_path() -> Path:
+def _daemon_lock_path() -> Path:
     from reflex.utils import prerequisites
 
-    return prerequisites.get_backend_dir() / _DAEMON_MARKER_FILE
+    return prerequisites.get_backend_dir() / _DAEMON_LOCK_FILE
 
 
-def mark_daemon_active(pid: int | None = None) -> None:
-    """Record the process that owns frontend compilation.
+def _acquire_lock(path: Path) -> int | None:
+    """Take the OS lock on ``path``, waiting out other processes' probes of it.
 
     Args:
-        pid: Daemon PID, defaulting to the current process.
+        path: The lock file.
+
+    Returns:
+        The descriptor holding the lock, or None when another process keeps it.
     """
-    marker = _daemon_marker_path()
-    marker.parent.mkdir(parents=True, exist_ok=True)
-    marker.write_text(str(os.getpid() if pid is None else pid))
-
-
-def clear_daemon_marker() -> None:
-    """Remove the daemon-ownership marker (on ``reflex run`` exit)."""
-    _daemon_marker_path().unlink(missing_ok=True)
+    deadline = time.monotonic() + _LOCK_ACQUIRE_TIMEOUT
+    while (descriptor := path_ops.try_lock(path)) is None:
+        if time.monotonic() > deadline:
+            return None
+        time.sleep(0.005)
+    return descriptor
 
 
 def daemon_active() -> bool:
-    """Whether a live ``reflex run`` owns frontend compilation via the daemon.
+    """Whether a live compile daemon owns frontend compilation.
 
     Returns:
-        True if the marker names a process that is still alive.
+        True while a daemon holds its lock.
     """
-    marker = _daemon_marker_path()
-    return marker.exists() and _lock_holder_alive(marker)
+    return path_ops.is_locked(_daemon_lock_path())
 
 
 def owns_compilation() -> bool:
@@ -692,7 +693,7 @@ def owns_compilation() -> bool:
     False for a backend reload worker while a compile daemon owns the build;
     the daemon (and its forked compile children) carry
     ``REFLEX_COMPILE_DAEMON`` and always own it. Decided from the on-disk
-    marker rather than inherited environment, which a ``forkserver`` started
+    lock rather than inherited environment, which a ``forkserver`` started
     before ``reflex run`` chose the daemon would not carry.
 
     Returns:
@@ -716,54 +717,14 @@ def _compile_lock(root: Path):
     Yields:
         None.
     """
-    lock = _lock_path()
-    lock.parent.mkdir(parents=True, exist_ok=True)
-    lock.write_text(str(os.getpid()))
+    descriptor = _acquire_lock(_lock_path())
     try:
         yield
     finally:
-        lock.unlink(missing_ok=True)
-
-
-def _pid_alive(pid: int) -> bool:
-    """Whether a process with ``pid`` exists.
-
-    Args:
-        pid: The process id.
-
-    Returns:
-        True if the process is alive (or exists but is not ours to signal).
-    """
-    if os.name == "nt":
-        import ctypes
-
-        kernel32 = ctypes.windll.kernel32  # type: ignore[attr-defined]
-        # PROCESS_QUERY_LIMITED_INFORMATION; os.kill(pid, 0) would *terminate*
-        # the process on Windows. OpenProcess still succeeds on an exited
-        # process while any handle to it stays open (e.g. a parent's Popen), so
-        # the exit code decides: STILL_ACTIVE (259) means running.
-        handle = kernel32.OpenProcess(0x1000, False, pid)
-        if not handle:
-            return False
-        exit_code = ctypes.c_ulong()
-        queried = kernel32.GetExitCodeProcess(handle, ctypes.byref(exit_code))
-        kernel32.CloseHandle(handle)
-        return bool(queried) and exit_code.value == 259
-    try:
-        os.kill(pid, 0)
-    except ProcessLookupError:
-        return False
-    except PermissionError:
-        return True
-    return True
-
-
-def _lock_holder_alive(lock: Path) -> bool:
-    try:
-        pid = int(lock.read_text().strip())
-    except (OSError, ValueError):
-        return False
-    return _pid_alive(pid)
+        # Closing releases the lock; the file stays so every holder and
+        # waiter uses the same inode.
+        if descriptor is not None:
+            os.close(descriptor)
 
 
 def _built_inputs_path() -> Path:
@@ -812,7 +773,7 @@ def wait_for_compile(timeout: float = _LOCK_WAIT_TIMEOUT) -> None:
     (``REFLEX_SKIP_COMPILE``) before it reads the stateful-pages marker. Waits
     while a compile is in progress, and otherwise while a built input changed
     since the last compile (the daemon has not picked the edit up yet).
-    Returns when the build is current, when the lock holder died, or after
+    Returns when the build is current, when the daemon is gone, or after
     ``timeout``.
 
     Args:
@@ -821,11 +782,8 @@ def wait_for_compile(timeout: float = _LOCK_WAIT_TIMEOUT) -> None:
     lock = _lock_path()
     deadline = time.monotonic() + timeout
     waited = False
-    while time.monotonic() < deadline:
-        if lock.exists():
-            if not _lock_holder_alive(lock):
-                break
-        elif _built_inputs_current():
+    while time.monotonic() < deadline and daemon_active():
+        if not path_ops.is_locked(lock) and _built_inputs_current():
             break
         if not waited:
             logger.debug(
@@ -1139,6 +1097,14 @@ def main(argv: list[str] | None = None) -> int:
             logger.exception("Hot reload compile failed.")
             return 1
         return 0
+    # Held for the process lifetime, so backend workers defer to this daemon
+    # exactly while it lives (see ``daemon_active``). Forked compile children
+    # share the lock; ``os.execv`` drops it and the new image retakes it.
+    if _acquire_lock(_daemon_lock_path()) is None:
+        logger.warning(
+            "Another compile daemon owns this project's .web; backend workers "
+            "defer to it."
+        )
     try:
         _serve()
     except KeyboardInterrupt:
