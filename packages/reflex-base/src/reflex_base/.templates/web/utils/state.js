@@ -35,6 +35,7 @@ const NEW_VERSION_BANNER_ID = "reflex-new-version-banner";
 // Client error types (must match reflex_base/constants/event.py ClientErrorType)
 const ERROR_TYPE_DISPATCH_MISSING = "dispatch_function_missing";
 const ERROR_TYPE_STATE_UPDATE = "state_update_processing_error";
+const ERROR_TYPE_HYDRATION_PAYLOAD_TOO_LARGE = "hydration_payload_too_large";
 
 // These hostnames indicate that the backend and frontend are reachable via the same domain.
 const SAME_DOMAIN_HOSTNAMES = ["localhost", "0.0.0.0", "::", "0:0:0:0:0:0:0:0"];
@@ -195,6 +196,21 @@ const createSocket = (endpoint, transports, token) =>
     query: { token },
     reconnection: false,
   });
+
+/**
+ * Measure an Engine.IO frame the way the server limits it.
+ * @param frame The encoded frame.
+ * @param transport The transport that carries it.
+ * @returns The code points of a websocket text frame, or the UTF-8 bytes of a polling body.
+ */
+const frameSize = (frame, transport) => {
+  if (transport !== "websocket") {
+    return new TextEncoder().encode(frame).byteLength;
+  }
+  let size = 0;
+  for (const _ of frame) size++;
+  return size;
+};
 
 let warmSocket = null;
 let cancelWarmup = () => {};
@@ -915,6 +931,32 @@ export const connect = async (
     return { event: boot_event, state_schema: app.stateSchema };
   };
 
+  // The server drops a transport whose frame exceeds the limit its handshake
+  // announced, so an oversized hydrate is reported instead of sent. The page
+  // stays offline until browser storage shrinks and it reloads: wait_connect
+  // stays set, so reconnect() does not rebuild the hydrate.
+  const sendWithinLimit = (auth) => (send) => {
+    // socket.io-client is pinned, so its namespace and handshake limit are stable.
+    const { encoder, engine } = socket.current.io;
+    // An Engine.IO message ("4") carrying a Socket.IO CONNECT packet (type 0).
+    const packet = { type: 0, nsp: socket.current.nsp, data: auth };
+    const frame = `4${encoder.encode(packet)[0]}`;
+    const transport = engine.transport.name;
+    const size = frameSize(frame, transport);
+    if (size > engine._maxPayload) {
+      const unit = transport === "websocket" ? "characters" : "bytes";
+      const error = new Error(
+        `Hydration payload (${size} ${unit}) exceeds the server limit (${engine._maxPayload} ${unit}). Reduce browser storage data and reload.`,
+      );
+      error.code = ERROR_TYPE_HYDRATION_PAYLOAD_TOO_LARGE;
+      console.error(error.message);
+      setConnectErrors((errors) => [...errors.slice(-9), error]);
+      socket.current.disconnect();
+      return;
+    }
+    send(auth);
+  };
+
   // Create the socket. A new session's token is saved here, once the app has
   // mounted, even when a transport warmed up with it earlier.
   socketStarted = true;
@@ -933,7 +975,7 @@ export const connect = async (
     warmSocket ?? createSocket(endpoint, transports, session_token);
   warmSocket = null;
   cancelWarmup();
-  socket.current.auth = bootAuth(true);
+  socket.current.auth = sendWithinLimit(bootAuth(true));
   socket.current.wait_connect = !socket.current.connected;
   // Ensure undefined fields in events are sent as null instead of removed
   socket.current.io.encoder.replacer = (k, v) => (v === undefined ? null : v);
@@ -954,7 +996,7 @@ export const connect = async (
       socket.current.wait_connect = true;
       socket.current.io.opts.query = { token: getToken() }; // Update token for reconnect.
       // A reconnect rehydrates in full: the reducers no longer hold the defaults.
-      socket.current.auth = bootAuth(false);
+      socket.current.auth = sendWithinLimit(bootAuth(false));
       socket.current.connect();
     }
   };
