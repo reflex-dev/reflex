@@ -129,7 +129,9 @@ def get_component_list(component_type: str = "core"):
         raise ValueError(f"Unknown component type: {component_type}")
 
 
-def render_component_grid(component_category: str, component_list: dict, prefix: str = "") -> rx.Component:
+def render_component_grid(
+    component_category: str, component_list: dict, prefix: str = ""
+) -> rx.Component:
     """Render the component card grid for a category.
 
     Args:
@@ -215,22 +217,30 @@ def create_previews(
                 ),
                 rx.el.ul(
                     rx.el.li(
-                        rx.el.strong("rx.table", class_name="font-semibold text-foreground"),
+                        rx.el.strong(
+                            "rx.table", class_name="font-semibold text-foreground"
+                        ),
                         " — Composable semantic table for custom layouts. Build headers, rows, and cells with full styling control. Best for small datasets or when you need complete control over the table structure.",
                         class_name="mt-3 text-sm leading-6 text-muted-foreground",
                     ),
                     rx.el.li(
-                        rx.el.strong("rx.data_table", class_name="font-semibold text-foreground"),
+                        rx.el.strong(
+                            "rx.data_table", class_name="font-semibold text-foreground"
+                        ),
                         " — Drop in a pandas DataFrame and enable search, sort, and pagination with `search=True`, `sort=True`, and `pagination=True`. Perfect for displaying static data from CSV files or database queries. Read-only by default.",
                         class_name="mt-3 text-sm leading-6 text-muted-foreground",
                     ),
                     rx.el.li(
-                        rx.el.strong("rx.data_editor", class_name="font-semibold text-foreground"),
+                        rx.el.strong(
+                            "rx.data_editor", class_name="font-semibold text-foreground"
+                        ),
                         " — Spreadsheet-like editing with cell selection and inline updates. Use this when users need to edit data directly in the grid, like in an admin panel or data entry form.",
                         class_name="mt-3 text-sm leading-6 text-muted-foreground",
                     ),
                     rx.el.li(
-                        rx.el.strong("AG Grid", class_name="font-semibold text-foreground"),
+                        rx.el.strong(
+                            "AG Grid", class_name="font-semibold text-foreground"
+                        ),
                         " (enterprise) — The most powerful option. Includes advanced filtering, column pivoting, row grouping, master-detail, tree data, and Excel export. See the ",
                         rx.el.a(
                             "AG Grid docs",
@@ -257,22 +267,30 @@ def create_previews(
                 ),
                 rx.el.ul(
                     rx.el.li(
-                        rx.el.strong("Recharts", class_name="font-semibold text-foreground"),
+                        rx.el.strong(
+                            "Recharts", class_name="font-semibold text-foreground"
+                        ),
                         " (built-in) — Declarative React charts with a simple API. Best for standard business charts like bar, line, area, and pie. Works great for dashboards and reports. All Recharts components are included in Reflex.",
                         class_name="mt-3 text-sm leading-6 text-muted-foreground",
                     ),
                     rx.el.li(
-                        rx.el.strong("Plotly", class_name="font-semibold text-foreground"),
+                        rx.el.strong(
+                            "Plotly", class_name="font-semibold text-foreground"
+                        ),
                         " (rx.plotly) — Interactive scientific charts with zoom, pan, and hover. Supports 3D plots, contours, and statistical charts. Use this when you need publication-quality figures or complex scientific visualizations.",
                         class_name="mt-3 text-sm leading-6 text-muted-foreground",
                     ),
                     rx.el.li(
-                        rx.el.strong("Matplotlib", class_name="font-semibold text-foreground"),
+                        rx.el.strong(
+                            "Matplotlib", class_name="font-semibold text-foreground"
+                        ),
                         " (pyplot) — Render any matplotlib.pyplot figure in your web app. Best when you already have matplotlib code from notebooks or scripts. Supports all matplotlib chart types but outputs static images.",
                         class_name="mt-3 text-sm leading-6 text-muted-foreground",
                     ),
                     rx.el.li(
-                        rx.el.strong("AG Charts", class_name="font-semibold text-foreground"),
+                        rx.el.strong(
+                            "AG Charts", class_name="font-semibold text-foreground"
+                        ),
                         " (enterprise) — High-performance enterprise charts with smooth animations and advanced features. See the ",
                         rx.el.a(
                             "AG Charts docs",

@@ -50,6 +50,7 @@ import reflex as rx
 
 nba_data = pd.read_csv("data/nba.csv")
 
+
 def index():
     return rx.data_table(
         data=nba_data[["Name", "Height", "Age"]],
@@ -77,10 +78,11 @@ You can also programmatically control the default sort order in your state:
 ```python
 class TableState(rx.State):
     data: pd.DataFrame = pd.read_csv("data/nba.csv")
-    
+
     @rx.var
     def sorted_data(self) -> pd.DataFrame:
         return self.data.sort_values("Name")
+
 
 def index():
     return rx.data_table(
@@ -121,18 +123,20 @@ The example below shows how to create a data table from a list in state. This pa
 from typing import List
 import reflex as rx
 
+
 class TableState(rx.State):
     data: List[List[str]] = [
-        ["Lionel", "Messi", "PSG"], 
+        ["Lionel", "Messi", "PSG"],
         ["Christiano", "Ronaldo", "Al-Nasir"],
         ["Neymar", "Jr", "Al-Hilal"],
         ["Kylian", "Mbappe", "PSG"],
     ]
     columns: List[str] = ["First Name", "Last Name", "Team"]
-    
+
     @rx.event
     def add_player(self, first: str, last: str, team: str):
         self.data.append([first, last, team])
+
 
 def index():
     return rx.data_table(

@@ -82,7 +82,9 @@ def test_library_component_title_preserves_underscores():
     """Component page titles preserve underscores in component names."""
     from reflex_docs.pages.docs.metadata import docs_metadata
 
-    title, _ = docs_metadata("library/tables-and-data-grids/data_table/", "Data Table", None)
+    title, _ = docs_metadata(
+        "library/tables-and-data-grids/data_table/", "Data Table", None
+    )
     assert "rx.data_table" in title, "Component name should preserve underscores"
     assert "rx.data table" not in title, "Component name should not have spaces"
     assert title == "rx.data_table: Python Data Table Component · Reflex"
@@ -102,7 +104,9 @@ def test_library_single_component_ll_page_uses_component_format():
     from reflex_docs.pages.docs.metadata import docs_metadata
 
     title, _ = docs_metadata("library/forms/input-ll/", "Input (Low Level)", None)
-    assert "rx.input.slot" in title, "Single-component -ll pages should use component format"
+    assert "rx.input.slot" in title, (
+        "Single-component -ll pages should use component format"
+    )
     assert title == "rx.input.slot: Python Input (Low Level) Component · Reflex"
 
 
@@ -110,7 +114,9 @@ def test_library_category_title_uses_display_name():
     """Category pages use the display name, not component format."""
     from reflex_docs.pages.docs.metadata import docs_metadata
 
-    title, _ = docs_metadata("library/tables-and-data-grids/", "Tables And Data Grids", None)
+    title, _ = docs_metadata(
+        "library/tables-and-data-grids/", "Tables And Data Grids", None
+    )
     assert "rx." not in title, "Category pages should not have rx. prefix"
     assert title == "Tables And Data Grids · Library · Reflex"
 
@@ -121,7 +127,11 @@ def test_library_index_title():
 
     title, desc = docs_metadata("library/", "Component Library", None)
     assert title == "Component Library · Reflex"
-    assert "Python UI Component Library" in desc or "Browse Reflex UI components" in desc or "Build web UIs in pure Python" in desc
+    assert (
+        "Python UI Component Library" in desc
+        or "Browse Reflex UI components" in desc
+        or "Build web UIs in pure Python" in desc
+    )
 
 
 def test_non_library_title_unchanged():
