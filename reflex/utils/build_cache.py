@@ -400,16 +400,24 @@ def frontend_build_cache(
         command: Production export command.
 
     Yields:
-        A cache handle, or None when disabled or local inputs cannot be tracked.
+        A cache handle, or None when disabled, when the workspace lock could not
+        be taken, or when local inputs cannot be tracked.
     """
-    with path_ops.file_lock(web_dir) as web_dir:
+    with path_ops.file_lock(web_dir) as lock:
+        web_dir = lock.path
         directory = web_dir / _CACHE_DIR
         enabled = (
             environment.REFLEX_FRONTEND_BUILD_CACHE.get() and not constants.IS_WINDOWS
         )
         cache = None
         try:
-            if not enabled:
+            if not lock.acquired:
+                # Restore, capture, publication and cleanup all assume that no
+                # other build is touching the workspace.
+                logger.debug(
+                    "Frontend cache skipped: the workspace lock is unavailable."
+                )
+            elif not enabled:
                 # A forced fresh build must not leave an older reusable snapshot.
                 _remove_cache_entry(directory)
             elif not directory.is_symlink():

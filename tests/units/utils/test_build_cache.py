@@ -143,6 +143,25 @@ def test_dependency_edit_with_restored_mtime_rebuilds(cached_build):
     assert process.call_count == 2
 
 
+def test_unavailable_lock_bypasses_cache(cached_build, monkeypatch, tmp_path: Path):
+    """Without the workspace lock, no snapshot is restored, captured, or published."""
+    web, _, process = cached_build
+    build.build()
+    assert (web / "reflex.build-cache/current").is_dir()
+    published = sorted(path.name for path in (web / "reflex.build-cache").iterdir())
+    # A regular file cannot contain the lock directory, so the lock falls back.
+    monkeypatch.setenv("REFLEX_DIR", str(tmp_path / "runtime"))
+    (web / "app/page.js").write_text("changed")
+    build.build()
+    build.build()
+    assert process.call_count == 3
+    assert (web / "build/client/index.html").read_text() == "changed"
+    assert (
+        sorted(path.name for path in (web / "reflex.build-cache").iterdir())
+        == published
+    )
+
+
 def test_disabled_cache_forces_and_refreshes_build(cached_build, monkeypatch):
     """Disabling the cache prevents an older snapshot from being reused later."""
     _, _, process = cached_build

@@ -159,7 +159,11 @@ path processing again. Python compilation and the normal dependency checks still
 
 Enable this option only when build output is determined by the tracked local inputs.
 Prerendering, Vite plugins, and custom export scripts can read remote data, the clock,
-or files outside `.web`; changes to those inputs require a fresh build. Run with
+or files outside `.web`; changes to those inputs require a fresh build. Source and
+asset fingerprints cover file content, path, and mode but not modification times or
+other filesystem metadata, so a custom build that reads those must also keep caching
+disabled. When the workspace lock described below cannot be taken, the cache is
+bypassed and a fresh build runs. Run with
 `REFLEX_FRONTEND_BUILD_CACHE=false` to force one and discard the previous snapshot,
 or remove `.web/reflex.build-cache`. Re-enabling the option then populates a new cache.
 
