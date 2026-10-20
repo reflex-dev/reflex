@@ -115,8 +115,15 @@ def _unregister_state(cls: type[BaseState]) -> None:
 
 
 @pytest.mark.parametrize("edited_module", ["state", "helper"])
-def test_imported_state_edit_invalidates_contexts(tmp_path, monkeypatch, edited_module):
-    """Module-level state edits need a full compile to refresh shared contexts."""
+def test_imported_state_edit_rebuilds_the_contexts(
+    tmp_path, monkeypatch, edited_module
+):
+    """A module-level state edit rebuilds the contexts, not every page.
+
+    The edited state's module (or a helper it imports) is an input of the
+    contexts file; the pages that read the state recompile through their own
+    recorded dependencies.
+    """
     _use_tmp_web_dir(tmp_path, monkeypatch)
     source = tmp_path / "state_view.py"
     helper_source = tmp_path / "state_helper.py"
@@ -133,28 +140,97 @@ def test_imported_state_edit_invalidates_contexts(tmp_path, monkeypatch, edited_
         "def index():\n"
         "    return rx.el.div(ImportedState.value)\n"
     )
-    source.write_text(code)
-    module = ModuleType("cache_review_state_view")
-    module.__file__ = str(source)
-    monkeypatch.setitem(sys.modules, module.__name__, module)
-    exec(compile(code, str(source), "exec"), module.__dict__)
+
+    def load(source_code: str) -> ModuleType:
+        """Execute the state module, as importing the app does.
+
+        Args:
+            source_code: The module source.
+
+        Returns:
+            The module.
+        """
+        source.write_text(source_code)
+        module = ModuleType("cache_review_state_view")
+        module.__file__ = str(source)
+        monkeypatch.setitem(sys.modules, module.__name__, module)
+        exec(compile(source_code, str(source), "exec"), module.__dict__)
+        return module
+
+    module = load(code)
     try:
         app = rx.App()
         app.add_page(module.index, route="/state")
+        app.add_page(_page_a, route="/a")
         pages = list(app._unevaluated_pages.values())
         ctx = _compile(pages, app)
         assert not ctx.stateful_routes
+        _stub_externals(app, monkeypatch)
         disk_cache.write_manifest(ctx, pages, ctx.all_imports, root=tmp_path)
+        # The edit, then a fresh import of the app, as the daemon child does.
+        _unregister_state(module.ImportedState)
         if edited_module == "state":
-            source.write_text(code.replace("= DEFAULT", "= 'new default'"))
+            module = load(code.replace("= DEFAULT", "= 'new default'"))
         else:
             helper_source.write_text("DEFAULT = 'new default'\n")
-        _stub_externals(app, monkeypatch)
-        assert not disk_cache.try_incremental_rebuild(
-            app, compiler_plugins=[], prerender_routes=False, root=tmp_path
+            helper.__dict__["DEFAULT"] = "new default"
+            module = load(code)
+        app._unevaluated_pages["state"] = dataclasses.replace(
+            app._unevaluated_pages["state"], component=module.index
         )
+        captured = _capture_contexts(monkeypatch)
+        assert (
+            disk_cache.try_incremental_rebuild(
+                app, compiler_plugins=[], prerender_routes=False, root=tmp_path
+            )
+            is True
+        )
+        [(initial, _, _)] = captured
+        [values] = [
+            values
+            for name, values in initial.items()
+            if name.endswith("imported_state")
+        ]
+        assert "new default" in json.dumps(values)
     finally:
         _unregister_state(module.ImportedState)
+
+
+def test_new_import_time_state_rebuilds_the_contexts(tmp_path, monkeypatch):
+    """A state a recompiled page's module newly imports reaches the contexts.
+
+    Importing the app registers it before any page evaluates, so no page
+    defines it; only comparing the import-time states sees it.
+    """
+    web = _use_tmp_web_dir(tmp_path, monkeypatch)
+    app = rx.App()
+    app.add_page(_page_a, route="/a")
+    pages = list(app._unevaluated_pages.values())
+    ctx = _compile(pages, app)
+    _stub_externals(app, monkeypatch)
+    disk_cache.write_manifest(ctx, pages, ctx.all_imports, root=tmp_path)
+    manifest_path = web / disk_cache._MANIFEST_FILE
+    manifest = json.loads(manifest_path.read_text())
+    _stale_dep(manifest, "a", str(tmp_path / "view.py"))
+    manifest_path.write_text(json.dumps(manifest))
+    # The edited page module now imports a module defining a new state.
+    new_state: Any = type(
+        "_ImportTimeState",
+        (rx.State,),
+        {"__annotations__": {"value": int}, "value": 3, "__module__": "fp_mod_x"},
+    )
+    captured = _capture_contexts(monkeypatch)
+    try:
+        assert (
+            disk_cache.try_incremental_rebuild(
+                app, compiler_plugins=[], prerender_routes=False, root=tmp_path
+            )
+            is True
+        )
+    finally:
+        _unregister_state(new_state)
+    [(initial, _, _)] = captured
+    assert new_state.get_full_name() in initial
 
 
 def test_imports_round_trip():
@@ -252,6 +328,7 @@ def _manifest(pages: dict[str, dict], root: Path | None = None, **overrides) -> 
         "entry": {"path": None, "digest": None},
         "wrap_table": {},
         "state_libraries": {},
+        "module_states": {"names": [], "files": [], "dynamic": []},
         "app_root": {
             "wraps": {},
             "libraries": [],
@@ -619,7 +696,7 @@ def test_unchanged_pages_compile_identically(tmp_path, monkeypatch):
 _CONTEXTS_STUB = "// contexts stub"
 
 
-_TEST_STATE_MODULES = (__name__, "fp_mod_x")
+_TEST_STATE_MODULES = (__name__, "fp_mod_x", "cache_review_state_view")
 
 
 def _scoped_contexts_snapshot(app) -> ContextsSnapshot | None:
@@ -2246,6 +2323,7 @@ def test_update_manifest_for_misses_keeps_complete_imports(tmp_path, monkeypatch
         app_root_inputs=manifest["app_root"],
         state_libraries={},
         registrations={"/a": "recorded"},
+        module_states=manifest["module_states"],
     )
 
     written = json.loads((web / disk_cache._MANIFEST_FILE).read_text())
@@ -2269,6 +2347,7 @@ def test_update_manifest_refreshes_imports_without_misses(tmp_path, monkeypatch)
         app_root_inputs=manifest["app_root"],
         state_libraries={},
         registrations={"/a": "recorded"},
+        module_states=manifest["module_states"],
     )
 
     written = json.loads((web / disk_cache._MANIFEST_FILE).read_text())

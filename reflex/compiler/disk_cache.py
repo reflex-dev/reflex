@@ -53,7 +53,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 #: Bump when the manifest layout changes (old manifests are then ignored).
-_SCHEMA = 20
+_SCHEMA = 21
 #: Manifest filename under the web directory.
 _MANIFEST_FILE = "reflex_compile_cache.json"
 
@@ -748,9 +748,19 @@ def write_manifest(
         globals_: dict[str, str] = {"reflex": page_cache._reflex_version()}
         absent: list[str] = []
         global_paths = page_cache.global_input_paths(root, pages=pages)
-        global_paths.update({
-            f"state:{path}": path for path in _imported_state_files(compile_ctx, root)
-        })
+        page_states = {
+            name for names in compile_ctx.stateful_routes.values() for name in names
+        }
+        module_states = _record_module_states(
+            (
+                name
+                for name in RegistrationContext.ensure_context().base_states
+                if name not in page_states
+            ),
+            hasher,
+            files,
+            root,
+        )
         for label, path in global_paths.items():
             entry = hasher(path)
             if entry is None:
@@ -788,6 +798,9 @@ def write_manifest(
             "memo_files": memo_files,
             "wrap_table": wrap_table,
             "state_libraries": state_libraries,
+            # The states importing the app registers (see
+            # ``_record_module_states``).
+            "module_states": module_states,
             # The app root's inputs: merged app wraps (by digest, in insertion
             # order) and the bundled libraries (see ``_refresh_app_root``).
             "app_root": {
@@ -817,30 +830,64 @@ def _compile_mode() -> str:
     return environment.REFLEX_ENV_MODE.get().value
 
 
-def _imported_state_files(compile_ctx: CompileContext, root: Path | None) -> set[str]:
-    """Find source dependencies of states not owned by page evaluation.
-
-    These states have no per-page context slice. Changing their definitions
-    requires a full compile to refresh the shared frontend contexts.
+def _module_state_files(state_names: Iterable[str], root: Path | None) -> set[str]:
+    """Find the source files that define the given states, with their imports.
 
     Args:
-        compile_ctx: The completed full compile.
+        state_names: Full names of registered states.
         root: Project root for dependency discovery.
 
     Returns:
-        First-party source files affecting import-time state definitions.
+        First-party source files the states' definitions depend on.
     """
-    page_states = {
-        name for names in compile_ctx.stateful_routes.values() for name in names
-    }
     roots = page_cache.first_party_roots(root)
+    base_states = RegistrationContext.ensure_context().base_states
     sources = {
         str(path)
-        for name, cls in RegistrationContext.ensure_context().base_states.items()
-        if name not in page_states
-        and (path := page_cache._class_module_file(cls, roots)) is not None
+        for name in state_names
+        if (path := page_cache._class_module_file(base_states[name], roots)) is not None
     }
     return page_cache._walk_import_closure(page_cache.build_import_graph(root), sources)
+
+
+def _record_module_states(
+    state_names: Iterable[str],
+    hasher: Callable[[str], page_cache.FileEntry | None],
+    files: dict[str, page_cache.FileEntry],
+    root: Path | None,
+) -> dict[str, list[str]]:
+    """Record the states importing the app registers, and their source files.
+
+    They belong to no page, so the contexts file depends on them directly.
+
+    Args:
+        state_names: Full names of the import-time states.
+        hasher: A memoized path -> file-entry function.
+        files: The manifest file table, extended with the source files.
+        root: Project root for dependency discovery.
+
+    Returns:
+        ``{"names": [...], "files": [...], "dynamic": [...]}``.
+    """
+    import reflex.istate.dynamic as istate_dynamic
+
+    names = sorted(state_names)
+    recorded = []
+    for path in sorted(_module_state_files(names, root)):
+        if (entry := hasher(path)) is not None:
+            files[path] = entry
+            recorded.append(path)
+    base_states = RegistrationContext.ensure_context().base_states
+    return {
+        "names": names,
+        "files": recorded,
+        # Import-time dynamic-module states, which take names before any page.
+        "dynamic": [
+            name
+            for name in names
+            if base_states[name].__module__ == istate_dynamic.__name__
+        ],
+    }
 
 
 def globals_mismatch(
@@ -1538,6 +1585,40 @@ def try_incremental_rebuild(
         for route in [route for route in manifest["pages"] if route not in routes]
     }
     route_set_changed = bool(removed_entries) or not routes <= set(manifest["pages"])
+    # The states importing the app registered (no page has evaluated yet).
+    page_states = {
+        name
+        for entry in (*manifest["pages"].values(), *removed_entries.values())
+        if (state_slice := entry["state_slice"])
+        for name in state_slice["schema"]
+    }
+    live_module_states = [
+        name
+        for name in RegistrationContext.ensure_context().base_states
+        if name not in page_states
+    ]
+    recorded_module_states = manifest["module_states"]
+    module_states_changed = sorted(live_module_states) != recorded_module_states[
+        "names"
+    ] or not (
+        (
+            changed_hint is not None
+            and changed_hint.isdisjoint(recorded_module_states["files"])
+        )
+        or validator.unchanged(recorded_module_states["files"])
+    )
+    if module_states_changed:
+        import reflex.istate.dynamic as istate_dynamic
+
+        base_states = RegistrationContext.ensure_context().base_states
+        if sorted(
+            name
+            for name in live_module_states
+            if base_states[name].__module__ == istate_dynamic.__name__
+        ) != sorted(recorded_module_states["dynamic"]):
+            # They take names before any page, so every page's could shift.
+            _log_fallback("the app's import-time dynamic states changed")
+            return False
     miss_pages = partition_pages(
         pages, manifest, validator, changed_hint, registrations
     )
@@ -1748,12 +1829,16 @@ def try_incremental_rebuild(
     # edit leaves them identical and the contexts file is reused untouched.
     contexts_snapshot: compiler_utils.ContextsSnapshot | None = None
     state_libraries: dict[str, list[str]] = manifest["state_libraries"]
-    if route_set_changed or (
-        miss_ctx is not None
-        and any(
-            route in miss_ctx.stateful_routes
-            or manifest["pages"].get(route, {}).get("is_stateful")
-            for route in miss_routes
+    if (
+        route_set_changed
+        or module_states_changed
+        or (
+            miss_ctx is not None
+            and any(
+                route in miss_ctx.stateful_routes
+                or manifest["pages"].get(route, {}).get("is_stateful")
+                for route in miss_routes
+            )
         )
     ):
         contexts_snapshot = _contexts_snapshot(app)
@@ -1762,6 +1847,8 @@ def try_incremental_rebuild(
         changed_route = (
             "the route set"
             if route_set_changed
+            else "the app's states"
+            if module_states_changed
             else _changed_state_config_route(
                 manifest, miss_ctx, contexts_snapshot, miss_routes
             )
@@ -1876,6 +1963,16 @@ def try_incremental_rebuild(
         app_root_inputs=app_root_inputs,
         state_libraries=state_libraries,
         registrations=registrations,
+        module_states=(
+            _record_module_states(
+                live_module_states,
+                page_cache.make_hasher(),
+                manifest["files"],
+                root,
+            )
+            if module_states_changed
+            else recorded_module_states
+        ),
         route_set_changed=route_set_changed,
         validator=validator,
     )
@@ -2049,6 +2146,7 @@ def _update_manifest_for_misses(
     app_root_inputs: dict[str, Any],
     state_libraries: dict[str, list[str]],
     registrations: dict[str, str],
+    module_states: dict[str, list[str]],
     route_set_changed: bool = False,
     validator: page_cache.FileValidator | None = None,
 ) -> None:
@@ -2073,6 +2171,7 @@ def _update_manifest_for_misses(
         app_root_inputs: The app root's recorded inputs after this rebuild.
         state_libraries: The libraries each state's initial values request.
         registrations: Each route's registration digest.
+        module_states: The import-time states and their source files.
         route_set_changed: Whether pages were added or removed.
         validator: The validator used for this rebuild, for its refreshed
             entries.
@@ -2121,9 +2220,11 @@ def _update_manifest_for_misses(
         if (
             manifest["app_root"] != app_root_inputs
             or manifest["state_libraries"] != state_libraries
+            or manifest["module_states"] != module_states
         ):
             manifest["app_root"] = app_root_inputs
             manifest["state_libraries"] = state_libraries
+            manifest["module_states"] = module_states
             dirty = True
         if dirty:
             # Keep only the stored wraps a page or the app root still uses.
