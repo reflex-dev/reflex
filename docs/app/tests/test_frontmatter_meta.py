@@ -89,12 +89,12 @@ def test_library_component_title_preserves_underscores():
 
 
 def test_library_component_title_preserves_hyphens():
-    """Component page titles preserve hyphens in component names."""
+    """Low-level multi-component pages use breadcrumb format."""
     from reflex_docs.pages.docs.metadata import docs_metadata
 
     title, _ = docs_metadata("library/forms/select-ll/", "Select (Low Level)", None)
-    assert "rx.select-ll" in title, "Component name should preserve hyphens"
-    assert title == "rx.select-ll: Python Select (Low Level) Component · Reflex"
+    assert "rx." not in title, "Multi-component pages should use breadcrumb format"
+    assert title == "Select (Low Level) · Forms · Library · Reflex"
 
 
 def test_library_category_title_uses_display_name():

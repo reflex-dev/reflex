@@ -131,19 +131,17 @@ def get_component_list(component_type: str = "core"):
 
 def render_component_grid(component_category: str, component_list: dict, prefix: str = "") -> rx.Component:
     """Render the component card grid for a category.
-    
+
     Args:
         component_category: The category name to render cards for.
         component_list: Dict mapping category names to component lists.
         prefix: URL prefix for component links.
-    
+
     Returns:
         A grid of component cards.
     """
-    from reflex_docs.templates.docpage.sidebar.sidebar_items import (
-        get_component_link,
-    )
-    
+    from reflex_docs.templates.docpage.sidebar.sidebar_items import get_component_link
+
     return rx.el.div(
         *[
             component_card(
