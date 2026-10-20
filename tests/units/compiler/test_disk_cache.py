@@ -16,6 +16,7 @@ from reflex_base.components.component import Component
 from reflex_base.environment import environment
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
 from reflex_base.registry import RegistrationContext
+from reflex_base.utils.format import to_snake_case
 from reflex_base.utils.imports import ImportVar
 
 import reflex as rx
@@ -1725,11 +1726,77 @@ def _page_collide_two() -> Component:
     return rx.el.div(rx.el.p(CollideState.two), _footer())
 
 
-def _unregister_collide_states() -> None:
-    """Drop every registered ``CollideState``, like the daemon child's reset."""
+def _rebuild_second_page(
+    tmp_path,
+    monkeypatch,
+    first: Callable[[], Component],
+    second: Callable[[], Component],
+    *,
+    predict: bool,
+    markers: tuple[str, ...],
+    prepare: Callable[[], None],
+) -> tuple[Any, list[str], list[str]]:
+    """Compile two pages, then rebuild the second as if its module changed.
+
+    Args:
+        tmp_path: The project root.
+        monkeypatch: The pytest monkeypatch fixture.
+        first: The first page.
+        second: The second page.
+        predict: Whether the rebuild predicts dynamic state names.
+        markers: Name parts of the dynamic states the pages define, dropped
+            before the rebuild like the daemon child's fresh import does.
+        prepare: Resets page bookkeeping before the rebuild.
+
+    Returns:
+        The rebuild result, the second page's states before the edit, and its
+        recorded states after the rebuild.
+    """
+    web = _use_tmp_web_dir(tmp_path, monkeypatch)
+    app = rx.App()
+    app.add_page(first, route="/one")
+    app.add_page(second, route="/two")
+    pages = list(app._unevaluated_pages.values())
+    ctx = _compile(pages, app=app)
+    second_states = ctx.stateful_routes[pages[1].route]
+    _stub_externals(app, monkeypatch)
+    disk_cache.write_manifest(ctx, pages, ctx.all_imports, root=tmp_path)
+    manifest_path = web / disk_cache._MANIFEST_FILE
+    manifest = json.loads(manifest_path.read_text())
+    _stale_dep(manifest, pages[1].route, str(tmp_path / "view.py"))
+    # Keep the first page out of the miss set, as if it lived in another module.
+    manifest["pages"][pages[0].route]["has_memos"] = False
+    manifest_path.write_text(json.dumps(manifest))
+    _drop_dynamic_states(*markers)
+    prepare()
+    monkeypatch.setattr(disk_cache, "_predict_dynamic_names", predict)
+    try:
+        result = disk_cache.try_incremental_rebuild(
+            app, compiler_plugins=[], prerender_routes=False, root=tmp_path
+        )
+    finally:
+        _drop_dynamic_states(*markers)
+    refreshed = json.loads(manifest_path.read_text())
+    return (
+        result,
+        list(second_states),
+        list(refreshed["pages"][pages[1].route]["state_slice"]["schema"]),
+    )
+
+
+def _drop_dynamic_states(*markers: str) -> None:
+    """Unregister dynamic-module states whose names contain a marker.
+
+    Args:
+        markers: Class name parts, as in the ``reflex.istate.dynamic`` names.
+    """
+    import reflex.istate.dynamic as istate_dynamic
+
     for name, cls in list(RegistrationContext.ensure_context().base_states.items()):
-        if "collide_state" in name or "unique_to_two_state" in name:
+        if any(to_snake_case(marker) in name for marker in markers):
             _unregister_state(cls)
+    for name in [n for n in vars(istate_dynamic) if any(m in n for m in markers)]:
+        delattr(istate_dynamic, name)
 
 
 def _rebuild_second_collide_page(
@@ -1754,48 +1821,24 @@ def _rebuild_second_collide_page(
         The rebuild result, the second page's states before the edit, and its
         recorded states after the rebuild.
     """
-    web = _use_tmp_web_dir(tmp_path, monkeypatch)
-    app = rx.App()
-    app.add_page(_page_collide_one, route="/one")
-    app.add_page(_page_collide_two, route="/two")
-    pages = list(app._unevaluated_pages.values())
-    ctx = _compile(pages, app=app)
-    two_states = ctx.stateful_routes[pages[1].route]
-    assert two_states[0].endswith("collide_state_0")
-    _stub_externals(app, monkeypatch)
-    disk_cache.write_manifest(ctx, pages, ctx.all_imports, root=tmp_path)
-    manifest_path = web / disk_cache._MANIFEST_FILE
-    manifest = json.loads(manifest_path.read_text())
-    _stale_dep(manifest, pages[1].route, str(tmp_path / "view.py"))
-    # Keep the first page out of the miss set, as if it lived in another module.
-    manifest["pages"][pages[0].route]["has_memos"] = False
-    manifest_path.write_text(json.dumps(manifest))
-    _unregister_collide_states()
-    monkeypatch.setitem(_COLLIDE, "one", 0)
-    monkeypatch.setitem(_COLLIDE, "two", 0)
-    monkeypatch.setitem(_COLLIDE, "two_extra", two_extra)
-    monkeypatch.setitem(_COLLIDE, "two_unique", two_unique)
-    monkeypatch.setattr(disk_cache, "_predict_dynamic_names", predict)
-    try:
-        result = disk_cache.try_incremental_rebuild(
-            app, compiler_plugins=[], prerender_routes=False, root=tmp_path
-        )
-    finally:
-        _unregister_collide_states()
-        import reflex.istate.dynamic as istate_dynamic
 
-        for name in [
-            n
-            for n in vars(istate_dynamic)
-            if "CollideState" in n or "UniqueToTwoState" in n
-        ]:
-            delattr(istate_dynamic, name)
-    refreshed = json.loads(manifest_path.read_text())
-    return (
-        result,
-        list(two_states),
-        list(refreshed["pages"][pages[1].route]["state_slice"]["schema"]),
+    def prepare() -> None:
+        monkeypatch.setitem(_COLLIDE, "one", 0)
+        monkeypatch.setitem(_COLLIDE, "two", 0)
+        monkeypatch.setitem(_COLLIDE, "two_extra", two_extra)
+        monkeypatch.setitem(_COLLIDE, "two_unique", two_unique)
+
+    result, before, after = _rebuild_second_page(
+        tmp_path,
+        monkeypatch,
+        _page_collide_one,
+        _page_collide_two,
+        predict=predict,
+        markers=("CollideState", "UniqueToTwoState"),
+        prepare=prepare,
     )
+    assert before[0].endswith("collide_state_0")
+    return result, before, after
 
 
 def test_incremental_rebuild_keeps_colliding_local_state_names(tmp_path, monkeypatch):
@@ -1847,6 +1890,69 @@ def test_unverified_local_state_prediction_asks_for_a_fresh_compile(
         _rebuild_second_collide_page(
             tmp_path, monkeypatch, predict=True, two_extra=True
         )
+
+
+class SharedCounter(rx.ComponentState):
+    """A ``ComponentState`` both counter pages create."""
+
+    value: int = 0
+
+    @classmethod
+    def get_component(cls, *children, **props) -> Component:
+        """Render the instance's value.
+
+        Args:
+            children: Unused.
+            props: Unused.
+
+        Returns:
+            The component.
+        """
+        return rx.el.p(cls.value)
+
+
+_COUNTER = {"one": 0, "two": 0}
+
+
+def _page_counter_one() -> Component:
+    _COUNTER["one"] += 1
+    return rx.el.div(SharedCounter.create(), _footer())
+
+
+def _page_counter_two() -> Component:
+    _COUNTER["two"] += 1
+    return rx.el.div(SharedCounter.create(), _footer())
+
+
+def test_predicted_component_state_numbers_rebuild_only_the_changed_page(
+    tmp_path, monkeypatch
+):
+    """A re-evaluated page draws the ``ComponentState`` number of a full compile.
+
+    Instance numbers are handed out in page order. A fresh import starts the
+    counter at zero, so the rebuild advances it past the number the first page
+    drew instead of evaluating that page again.
+    """
+    monkeypatch.setattr(SharedCounter, "_per_component_state_instance_count", 0)
+
+    def prepare() -> None:
+        monkeypatch.setattr(SharedCounter, "_per_component_state_instance_count", 0)
+        monkeypatch.setitem(_COUNTER, "one", 0)
+        monkeypatch.setitem(_COUNTER, "two", 0)
+
+    result, before, after = _rebuild_second_page(
+        tmp_path,
+        monkeypatch,
+        _page_counter_one,
+        _page_counter_two,
+        predict=True,
+        markers=("SharedCounter_n",),
+        prepare=prepare,
+    )
+    assert result is True
+    assert before[0].endswith("shared_counter_n2")
+    assert after == before
+    assert (_COUNTER["one"], _COUNTER["two"]) == (0, 1)
 
 
 def _route_set_rebuild(tmp_path, monkeypatch, edit) -> tuple[Any, Any, Path]:

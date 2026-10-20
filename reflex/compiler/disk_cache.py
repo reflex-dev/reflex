@@ -31,7 +31,7 @@ from typing import TYPE_CHECKING, Any
 from reflex_base import constants
 from reflex_base.components.dynamic import record_bundle_requests
 from reflex_base.environment import environment
-from reflex_base.plugins import CompileContext, CompilerHooks
+from reflex_base.plugins import CompileContext, CompilerHooks, Plugin
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils import log
 from reflex_base.utils.format import json_dumps
@@ -1136,6 +1136,90 @@ def _shifting_dynamic_claims(
     return None
 
 
+_INSTANCE_NUMBER = re.compile(r"_n(\d+)$")
+
+
+def _numbers_before_miss_pages(
+    pages: Sequence[PageDefinition], manifest: dict[str, Any], miss_routes: set[str]
+) -> dict[str, dict[str, int]]:
+    """The highest ``ComponentState`` numbers kept pages drew before each miss.
+
+    Args:
+        pages: All current page definitions (in compile order).
+        manifest: The loaded manifest.
+        miss_routes: Routes re-evaluated in this rebuild.
+
+    Returns:
+        For each re-evaluated route, the dotted ``ComponentState`` class path
+        mapped to the highest instance number drawn by an earlier kept page.
+    """
+    numbers: dict[str, int] = {}
+    before: dict[str, dict[str, int]] = {}
+    for page in pages:
+        if page.route in miss_routes:
+            if numbers:
+                before[page.route] = dict(numbers)
+            continue
+        # A ComponentState claim requests its dotted class path; a local
+        # state's request is a bare class name.
+        for name, requested in manifest["pages"][page.route]["dynamic_claims"]:
+            if "." in requested and (match := _INSTANCE_NUMBER.search(name)):
+                numbers[requested] = max(numbers.get(requested, 0), int(match[1]))
+    return before
+
+
+def _resolve_class_path(path: str) -> Any:
+    """Look up a loaded class by its dotted ``module.qualname`` path.
+
+    Args:
+        path: The dotted path.
+
+    Returns:
+        The object at the path, or None.
+    """
+    parts = path.split(".")
+    for split in range(len(parts) - 1, 0, -1):
+        if (obj := sys.modules.get(".".join(parts[:split]))) is not None:
+            for part in parts[split:]:
+                obj = getattr(obj, part, None)
+            return obj
+    return None
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class _ComponentStateNumbersPlugin(Plugin):
+    """Advance ``ComponentState`` counters before each re-evaluated page.
+
+    Instance numbers are handed out in page order and only grow. Before a
+    re-evaluated page, a full compile's counter is past every number drawn
+    by the earlier pages: the kept ones (recorded) and the re-evaluated ones
+    (drawn live in this rebuild).
+    """
+
+    numbers_before: dict[str, dict[str, int]]
+
+    def eval_page(
+        self, page_fn: Any, /, *, page: PageDefinition, **kwargs: Any
+    ) -> None:
+        """Advance the counters to the numbers kept pages drew before this page.
+
+        Args:
+            page_fn: The page function (unused).
+            page: The page about to be evaluated.
+            kwargs: Other hook arguments (unused).
+        """
+        from reflex.state import ComponentState
+
+        for path, number in self.numbers_before.get(page.route, {}).items():
+            cls = _resolve_class_path(path)
+            if (
+                isinstance(cls, type)
+                and issubclass(cls, ComponentState)
+                and cls._per_component_state_instance_count < number
+            ):
+                cls._per_component_state_instance_count = number
+
+
 def _claim_recorded_dynamic_names(
     manifest: dict[str, Any], miss_routes: set[str]
 ) -> None:
@@ -1695,14 +1779,21 @@ def try_incremental_rebuild(
         # afterwards so post-evaluation closures (memo entries, page deps)
         # include the newly loaded modules.
         modules_before = set(page_cache._loaded_first_party_modules(resolved_root))
+        page_plugins: Sequence[Plugin] = compiler_plugins
         if _predict_dynamic_names:
             _claim_recorded_dynamic_names(manifest, miss_routes)
+            page_plugins = (
+                _ComponentStateNumbersPlugin(
+                    _numbers_before_miss_pages(pages, manifest, miss_routes)
+                ),
+                *compiler_plugins,
+            )
 
         miss_ctx = CompileContext(
             app=app,
             pages=miss_pages,
             hooks=CompilerHooks(
-                plugins=default_page_plugins(style=app.style, plugins=compiler_plugins)
+                plugins=default_page_plugins(style=app.style, plugins=page_plugins)
             ),
             bundle_base=bundle_base,
         )
