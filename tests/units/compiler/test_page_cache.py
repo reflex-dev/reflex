@@ -835,3 +835,157 @@ def test_entrypoint_digest_ignores_imports_used_only_to_register_pages(tmp_path)
         )
         != base
     )
+
+
+_SLICED_MODULE = """\
+import reflex as rx
+from .other import unused
+
+TITLE = "t"
+
+
+class PageState(rx.State):
+    value: int = 0
+
+
+def helper():
+    return rx.text(TITLE)
+
+
+def page_a():
+    return rx.box(helper(), PageState.value)
+
+
+def page_b():
+    return rx.text("b")
+"""
+
+
+@pytest.mark.parametrize(
+    ("old", "new", "changes"),
+    [
+        ('rx.text("b")', 'rx.text("b2")', False),
+        ("\n\ndef page_b", "\n\n# a comment\ndef page_b", False),
+        ("def page_b", "def unrelated():\n    return 1\n\n\ndef page_b", False),
+        ("from .other import unused\n", "", False),
+        ("rx.box(helper()", "rx.vstack(helper()", True),
+        ("rx.text(TITLE)", "rx.heading(TITLE)", True),
+        ('TITLE = "t"', 'TITLE = "u"', True),
+        ("value: int = 0", "value: int = 1", True),
+        ("from .other import unused\n", "from .other import *\n", True),
+    ],
+)
+def test_function_slice_digest_covers_what_the_function_reads(
+    tmp_path, old, new, changes
+):
+    """A page function's slice changes only with the code it can read.
+
+    That is its own body, the module-level functions it calls (transitively),
+    every class, and every statement that runs at import.
+    """
+    module = tmp_path / "sliced.py"
+    module.write_text(_SLICED_MODULE)
+    before = page_cache.function_slice_digest(str(module), "page_a")
+    assert before is not None
+    module.write_text(_SLICED_MODULE.replace(old, new, 1))
+    after = page_cache.function_slice_digest(str(module), "page_a")
+    assert (after != before) is changes
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        # A decorator can hand the function to code the page reads.
+        (
+            "REG = []\n\n\ndef register(f):\n    REG.append(f)\n    return f\n\n\n"
+            "@register\ndef widget():\n    return 1\n\n\n"
+            "def page_a():\n    return [f() for f in REG]\n"
+        ),
+        # Names reached through globals() are invisible to the syntax tree.
+        (
+            "def widget():\n    return 1\n\n\n"
+            'def page_a():\n    return globals()["widget"]()\n'
+        ),
+    ],
+)
+def test_function_slice_digest_keeps_code_reached_indirectly(tmp_path, source):
+    """Code the page reaches without naming it stays in the slice."""
+    module = tmp_path / "indirect.py"
+    module.write_text(source)
+    before = page_cache.function_slice_digest(str(module), "page_a")
+    module.write_text(source.replace("return 1", "return 2"))
+    assert page_cache.function_slice_digest(str(module), "page_a") != before
+
+
+def test_function_slice_digest_needs_a_top_level_function(tmp_path):
+    """Only a module-level function has a slice."""
+    module = tmp_path / "nested.py"
+    module.write_text("def outer():\n    def inner():\n        return 1\n")
+    assert page_cache.function_slice_digest(str(module), "inner") is None
+    assert page_cache.function_slice_digest(str(tmp_path / "gone.py"), "x") is None
+
+
+def test_entrypoint_digest_ignores_page_function_bodies(tmp_path):
+    """A page defined beside its App is compared page by page, not globally."""
+    entry = tmp_path / "entry_app.py"
+
+    def digest(source: str) -> str | None:
+        entry.write_text(source)
+        return page_cache.entrypoint_digest(str(entry))
+
+    source = (
+        "import reflex as rx\n\n\ndef make_theme():\n    return rx.theme()\n\n\n"
+        'def index():\n    return rx.text("a")\n\n\n'
+        "app = rx.App(theme=make_theme())\n"
+        'app.add_page(index, route="/")\n'
+    )
+    base = digest(source)
+    assert base is not None
+    assert digest(source.replace('rx.text("a")', 'rx.text("b")')) == base
+    assert digest(source.replace("rx.theme()", "rx.theme(accent_color='red')")) != base
+
+
+def test_page_dependency_files_track_the_page_function_slice(tmp_path, monkeypatch):
+    """A page depends on its function's slice of its module, not the whole file."""
+    from types import SimpleNamespace
+
+    module = _prepare_runtime_module(tmp_path, monkeypatch, "sliced_pages_module")
+    module.write_text(_SLICED_MODULE.replace("from .other import unused\n", ""))
+    try:
+        page_a = importlib.import_module("sliced_pages_module").page_a
+        page_cache.clear_import_graph()
+        page_ctx = SimpleNamespace(
+            root_component=SimpleNamespace(children=[]),
+            output_code="",
+            memo_contributions={},
+            source_files=set(),
+        )
+        deps = page_cache.page_dependency_files(
+            cast(Any, page_ctx), page_a, {}, tmp_path
+        )
+    finally:
+        _forget_modules("sliced_pages_module")
+        page_cache.clear_import_graph()
+
+    file = str(module.resolve())
+    assert f"{file}{page_cache.SLICE_SEPARATOR}page_a" in deps
+    assert file not in deps
+
+
+def test_file_validator_compares_function_slices(tmp_path):
+    """A slice dependency is stat-first and changes only with its slice."""
+    module = tmp_path / "sliced.py"
+    module.write_text(_SLICED_MODULE)
+    dep = f"{module}{page_cache.SLICE_SEPARATOR}page_a"
+    entry = page_cache.file_entry(dep)
+    assert entry is not None
+    files = {dep: entry}
+    assert page_cache.FileValidator(files).unchanged([dep])
+    module.write_text(_SLICED_MODULE.replace('rx.text("b")', 'rx.text("b2")'))
+    validator = page_cache.FileValidator(files)
+    assert validator.unchanged([dep])
+    assert dep in validator.refreshed
+    module.write_text(_SLICED_MODULE.replace("rx.box(", "rx.vstack("))
+    assert not page_cache.FileValidator(files).unchanged([dep])
+    assert page_cache.dep_file(dep) == str(module)
+    assert page_cache.dep_file(str(module)) == str(module)

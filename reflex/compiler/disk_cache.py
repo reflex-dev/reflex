@@ -53,7 +53,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 #: Bump when the manifest layout changes (old manifests are then ignored).
-_SCHEMA = 21
+_SCHEMA = 22
 #: Manifest filename under the web directory.
 _MANIFEST_FILE = "reflex_compile_cache.json"
 
@@ -630,7 +630,7 @@ def manifest_dependency_files(manifest: dict[str, Any]) -> set[str]:
     """
     files: set[str] = set()
     for entry in manifest.get("pages", {}).values():
-        files.update(entry.get("deps", ()))
+        files.update(page_cache.dep_file(dep) for dep in entry.get("deps", ()))
     files.update(
         path for label, path in manifest.get("globals", {}).items() if label != "reflex"
     )
@@ -951,6 +951,29 @@ def globals_mismatch(
     if stale:
         return f"global input(s) changed: {format_path_list(stale, root)}"
     return None
+
+
+def _with_hinted_slices(
+    changed_hint: set[str] | None, manifest: dict[str, Any]
+) -> set[str] | None:
+    """Add the recorded function slices of the files the watcher reported.
+
+    Args:
+        changed_hint: Resolved paths the watcher saw change, or None if unknown.
+        manifest: The loaded manifest.
+
+    Returns:
+        The hint with every page dependency that reads a reported file.
+    """
+    if not changed_hint:
+        return changed_hint
+    return changed_hint | {
+        dep
+        for entry in manifest["pages"].values()
+        for dep in entry["deps"]
+        if page_cache.SLICE_SEPARATOR in dep
+        and page_cache.dep_file(dep) in changed_hint
+    }
 
 
 def partition_pages(
@@ -1306,14 +1329,15 @@ def _changed_dependency_files(
         changed_hint: Resolved paths the watcher saw change, or None if unknown.
 
     Returns:
-        The set of changed dependency file paths.
+        The set of changed dependency file paths (a changed function slice
+        as its file).
     """
     candidates: Iterable[str] = {
         path for entry in manifest["pages"].values() for path in entry["deps"]
     }
     if changed_hint is not None:
         candidates = changed_hint.intersection(candidates)
-    return {path for path in candidates if validator.changed(path)}
+    return {page_cache.dep_file(path) for path in candidates if validator.changed(path)}
 
 
 def _module_source_file(module_name: str | None) -> str | None:
@@ -1654,7 +1678,7 @@ def try_incremental_rebuild(
     if registrations is None:
         registrations = registration_digests(pages)
     validator = page_cache.FileValidator(manifest["files"])
-    changed_hint = _changed_hint
+    changed_hint = _with_hinted_slices(_changed_hint, manifest)
 
     if (
         reason := globals_mismatch(manifest, validator=validator, root=root)

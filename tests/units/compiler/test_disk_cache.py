@@ -2494,3 +2494,61 @@ def test_generated_names_do_not_depend_on_other_pages():
     assert la.output_code is not None
     assert lb.output_code is not None
     assert la.output_code != lb.output_code
+
+
+_TWO_PAGE_MODULE = """\
+import reflex as rx
+
+CALLS = {"a": 0, "b": 0}
+
+
+def page_a():
+    CALLS["a"] += 1
+    return rx.el.p("a")
+
+
+def page_b():
+    CALLS["b"] += 1
+    return rx.el.p("b")
+"""
+
+
+@pytest.mark.parametrize("hinted", [True, False])
+def test_incremental_rebuild_recompiles_only_the_edited_function(
+    tmp_path, monkeypatch, hinted
+):
+    """Editing one page function recompiles only that page of its module.
+
+    The watcher reports the module file; a page tracking its function's slice
+    of that file must still be validated.
+    """
+    import importlib
+
+    module_name = "two_page_module_t7"
+    module = tmp_path / f"{module_name}.py"
+    module.write_text(_TWO_PAGE_MODULE)
+    monkeypatch.syspath_prepend(str(tmp_path))
+    web = _use_tmp_web_dir(tmp_path, monkeypatch)
+    try:
+        mod = importlib.import_module(module_name)
+        app = rx.App()
+        app.add_page(mod.page_a, route="/a")
+        app.add_page(mod.page_b, route="/b")
+        pages = list(app._unevaluated_pages.values())
+        ctx = _compile(pages, app=app)
+        disk_cache.write_manifest(ctx, pages, ctx.all_imports, root=tmp_path)
+        _stub_externals(app, monkeypatch)
+        manifest = json.loads((web / disk_cache._MANIFEST_FILE).read_text())
+        assert disk_cache.manifest_dependency_files(manifest) >= {str(module.resolve())}
+
+        module.write_text(_TWO_PAGE_MODULE.replace('rx.el.p("a")', 'rx.el.p("a2")'))
+        mod.CALLS.update(a=0, b=0)
+        disk_cache.set_changed_hint({module} if hinted else None)
+        result = disk_cache.try_incremental_rebuild(
+            app, compiler_plugins=[], prerender_routes=False, root=tmp_path
+        )
+    finally:
+        disk_cache.set_changed_hint(None)
+        sys.modules.pop(module_name, None)
+    assert result is True
+    assert mod.CALLS == {"a": 1, "b": 0}

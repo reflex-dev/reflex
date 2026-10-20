@@ -11,6 +11,7 @@ from __future__ import annotations
 import ast
 import builtins
 import contextlib
+import dataclasses
 import hashlib
 import importlib
 import importlib.util
@@ -525,15 +526,266 @@ def _loaded_names(nodes: Iterable[ast.AST]) -> set[str]:
     }
 
 
-def entrypoint_digest(path: str) -> str | None:
-    """Digest the app entry module apart from its top-level page registrations.
+#: Separates a module file from a module-level function name in a dependency
+#: on the parts of the module that function can read (see
+#: :func:`function_slice_digest`).
+SLICE_SEPARATOR = "::"
 
-    Left out are top-level ``<app>.add_page(...)`` statements and the imported
-    names no other statement reads (a page imported only to be registered),
-    plus what the syntax tree never holds (comments, formatting).
-    Two versions with the same digest differ only in the pages they register,
-    which the compile cache compares page by page; any other edit can change
-    every page.
+#: Builtins that reach module globals no syntax tree names.
+_DYNAMIC_GLOBAL_NAMES = frozenset({
+    "globals",
+    "vars",
+    "locals",
+    "eval",
+    "exec",
+    "__import__",
+})
+
+#: Decorators that keep the function they wrap to themselves at import time.
+_INERT_DECORATORS = frozenset({"page", "memo", "cache", "lru_cache"})
+
+
+def dep_file(dep: str) -> str:
+    """Return the file a dependency reads.
+
+    Args:
+        dep: A file path, or a function slice (``<file>::<function>``).
+
+    Returns:
+        The file path.
+    """
+    file, separator, _ = dep.rpartition(SLICE_SEPARATOR)
+    return file if separator else dep
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class _ModulePart:
+    """One top-level statement of a module, as a slice sees it."""
+
+    # The statement's syntax tree and the names it reads.
+    dump: str
+    loads: frozenset[str]
+    # A function or class: its name, and the parts that run at import time
+    # (decorators, defaults, bases) with the names they read.
+    name: str | None = None
+    is_class: bool = False
+    header: str = ""
+    header_loads: frozenset[str] = frozenset()
+    # An import: each bound name (``*`` for a star import) and its syntax tree.
+    aliases: tuple[tuple[str, str], ...] = ()
+
+
+def _is_inert_decorator(decorator: ast.expr) -> bool:
+    """Whether a decorator keeps the function it wraps to itself.
+
+    Args:
+        decorator: The decorator expression.
+
+    Returns:
+        True for a known decorator such as ``rx.page`` or ``functools.cache``.
+    """
+    if isinstance(decorator, ast.Call):
+        decorator = decorator.func
+    name = getattr(decorator, "attr", None) or getattr(decorator, "id", None)
+    return name in _INERT_DECORATORS
+
+
+def _module_part(statement: ast.stmt) -> _ModulePart:
+    """Describe one top-level statement for slicing.
+
+    Args:
+        statement: The statement.
+
+    Returns:
+        Its slice description.
+    """
+    if isinstance(statement, (ast.Import, ast.ImportFrom)):
+        origin = (
+            f"{statement.module}:{statement.level}:"
+            if isinstance(statement, ast.ImportFrom)
+            else ""
+        )
+        return _ModulePart(
+            dump="",
+            loads=frozenset(),
+            aliases=tuple(
+                (
+                    (alias.asname or alias.name).partition(".")[0],
+                    origin + ast.dump(alias),
+                )
+                for alias in statement.names
+            ),
+        )
+    dump = ast.dump(statement)
+    loads = frozenset(_loaded_names([statement]))
+    # A decorator other than the inert ones may hand the function to code
+    # that runs at import (a registry), so it counts as import-time code.
+    if isinstance(
+        statement, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
+    ) and all(_is_inert_decorator(d) for d in statement.decorator_list):
+        header: list[ast.expr] = list(statement.decorator_list)
+        if isinstance(statement, ast.ClassDef):
+            header.extend(statement.bases)
+            header.extend(keyword.value for keyword in statement.keywords)
+        else:
+            header.extend(statement.args.defaults)
+            header.extend(d for d in statement.args.kw_defaults if d is not None)
+        return _ModulePart(
+            dump=dump,
+            loads=loads,
+            name=statement.name,
+            is_class=isinstance(statement, ast.ClassDef),
+            header="".join(ast.dump(node) for node in header),
+            header_loads=frozenset(_loaded_names(header)),
+        )
+    return _ModulePart(dump=dump, loads=loads)
+
+
+#: File -> (stat key, parts) for the modules sliced in this process.
+_module_parts_cache: dict[str, tuple[tuple[int, int], list[_ModulePart]]] = {}
+
+
+def _module_parts(path: str) -> list[_ModulePart] | None:
+    """Parse a module into slice parts, leaving out its page registrations.
+
+    Args:
+        path: The module file.
+
+    Returns:
+        The parts in source order, or None when the file cannot be read or
+        parsed.
+    """
+    key = _stat_key(path)
+    cached = _module_parts_cache.get(path)
+    if key is not None and cached is not None and cached[0] == key:
+        return cached[1]
+    try:
+        tree = ast.parse(Path(path).read_bytes())
+    except (OSError, SyntaxError, ValueError):
+        return None
+    parts = [_module_part(s) for s in tree.body if not _is_page_registration(s)]
+    if key is not None:
+        _module_parts_cache[path] = (key, parts)
+    return parts
+
+
+def _definition_closure(
+    definitions: Mapping[str, Sequence[_ModulePart]], starts: Iterable[str]
+) -> set[str]:
+    """Name the definitions reachable from ``starts`` through the names they read.
+
+    Args:
+        definitions: The module's definitions by name.
+        starts: The names to start from.
+
+    Returns:
+        The reachable definition names.
+    """
+    closure: set[str] = set()
+    stack = [name for name in starts if name in definitions]
+    while stack:
+        name = stack.pop()
+        if name in closure:
+            continue
+        closure.add(name)
+        stack.extend(
+            load
+            for part in definitions[name]
+            for load in part.loads
+            if load in definitions and load not in closure
+        )
+    return closure
+
+
+def _sliced_texts(part: _ModulePart, used: set[str], closure: set[str]) -> list[str]:
+    """Return what one module part adds to a slice.
+
+    Args:
+        part: The part.
+        used: The names the slice's code reads.
+        closure: The definitions in the slice.
+
+    Returns:
+        The texts to digest.
+    """
+    if part.aliases:
+        return [
+            dump
+            for bound, dump in part.aliases
+            if bound == "*" or bound in used or bound in closure
+        ]
+    if part.name is None or part.name in closure:
+        return [part.dump]
+    return [part.header] if part.header else []
+
+
+def _slice_digest(parts: Sequence[_ModulePart], seeds: Iterable[str]) -> str:
+    """Digest the parts of a module that code starting at ``seeds`` can read.
+
+    That is every statement that runs at import, the import-time parts of
+    every definition, and the whole definitions named (transitively) by those
+    or by ``seeds``. Imports count only for the names that code reads. Code
+    reaching module globals by computed name makes every definition count.
+    Like a dependency across modules, a call-time mutation of a shared object
+    is not tracked.
+
+    Args:
+        parts: The module's parts (see :func:`_module_parts`).
+        seeds: The definition names to start from.
+
+    Returns:
+        The hex digest.
+    """
+    definitions: dict[str, list[_ModulePart]] = {}
+    always: set[str] = set()
+    for part in parts:
+        if part.name is not None:
+            definitions.setdefault(part.name, []).append(part)
+            always |= part.header_loads
+        else:
+            always |= part.loads
+    closure = _definition_closure(definitions, (*seeds, *always))
+    used = always.union(*(part.loads for name in closure for part in definitions[name]))
+    if not used.isdisjoint(_DYNAMIC_GLOBAL_NAMES):
+        closure = set(definitions)
+    digest = hashlib.sha256()
+    for part in parts:
+        for text in _sliced_texts(part, used, closure):
+            digest.update(text.encode())
+            digest.update(b"\n")
+    return digest.hexdigest()
+
+
+def function_slice_digest(path: str, name: str) -> str | None:
+    """Digest the parts of a module a module-level function can read.
+
+    Every class counts: a page reaches the states and components of its own
+    module through its rendered tree, not only through names it reads.
+
+    Args:
+        path: The module file.
+        name: The function's name.
+
+    Returns:
+        The digest, or None when the file cannot be parsed or defines no
+        such module-level function or class.
+    """
+    parts = _module_parts(path)
+    if parts is None or not any(part.name == name for part in parts):
+        return None
+    classes = [part.name for part in parts if part.name is not None and part.is_class]
+    return _slice_digest(parts, (name, *classes))
+
+
+def entrypoint_digest(path: str) -> str | None:
+    """Digest the app entry module apart from its pages.
+
+    Left out are top-level ``<app>.add_page(...)`` statements and the code only
+    they read: page functions defined in the module (each page tracks its own
+    slice, see :func:`function_slice_digest`) and imported pages. So is what
+    the syntax tree never holds (comments, formatting). Two versions with the
+    same digest differ only in their pages, which the compile cache compares
+    page by page; any other edit can change every page.
 
     Args:
         path: The entry module's file.
@@ -541,25 +793,8 @@ def entrypoint_digest(path: str) -> str | None:
     Returns:
         The digest, or None when the file cannot be read or parsed.
     """
-    try:
-        tree = ast.parse(Path(path).read_text(encoding="utf-8"))
-    except (OSError, SyntaxError, ValueError):
-        return None
-    others = [s for s in tree.body if not _is_page_registration(s)]
-    used = _loaded_names(others)
-    body: list[ast.stmt] = []
-    for statement in others:
-        if isinstance(statement, (ast.Import, ast.ImportFrom)):
-            statement.names = [
-                alias
-                for alias in statement.names
-                if (alias.asname or alias.name).partition(".")[0] in used
-            ]
-            if not statement.names:
-                continue
-        body.append(statement)
-    tree.body = body
-    return hashlib.sha256(ast.dump(tree).encode()).hexdigest()
+    parts = _module_parts(path)
+    return None if parts is None else _slice_digest(parts, ())
 
 
 def _app_entrypoint_file(root: Path | None = None) -> Path | None:
@@ -1132,8 +1367,17 @@ def file_entry(path: str) -> FileEntry | None:
         path: The file path.
 
     Returns:
-        ``[sha256, st_mtime_ns, st_size]``, or None if unreadable.
+        ``[sha256, st_mtime_ns, st_size]``, or None if unreadable. For a
+        function slice (see :data:`SLICE_SEPARATOR`), the slice digest and
+        the stat of its file.
     """
+    file, separator, name = path.rpartition(SLICE_SEPARATOR)
+    if separator:
+        key = _stat_key(file)
+        digest = function_slice_digest(file, name)
+        if key is None or digest is None:
+            return None
+        return [digest, *key]
     try:
         with Path(path).open("rb") as fh:
             st = os.fstat(fh.fileno())
@@ -1198,7 +1442,7 @@ class FileValidator:
         entry = self._files.get(path)
         result = True
         if entry is not None and len(entry) == 3:
-            key = _stat_key(path)
+            key = _stat_key(dep_file(path))
             if key is not None and (key[0], key[1]) == (entry[1], entry[2]):
                 result = False
             elif (fresh := file_entry(path)) is not None and fresh[0] == entry[0]:
@@ -1353,7 +1597,47 @@ def page_dependency_files(
     dynamic_py = {f for f in page_ctx.source_files if f.endswith(".py")}
     if dynamic_py:
         deps |= _walk_import_closure(build_import_graph(root), dynamic_py)
+    if (own := _own_function_slice(component, page_ctx.source_files, root)) is not None:
+        deps.discard(dep_file(own))
+        deps.add(own)
     return deps
+
+
+def _own_function_slice(
+    component: object, source_files: Iterable[str], root: Path
+) -> str | None:
+    """The slice of its module a page function reads, when that is all it reads.
+
+    A page reaching its module another way (an import cycle, an import or a
+    read during evaluation) depends on the whole file.
+
+    Args:
+        component: The page component or callable.
+        source_files: The files read while the page was evaluated.
+        root: Resolved project root.
+
+    Returns:
+        The slice dependency (``<file>::<function>``), or None.
+    """
+    name = getattr(component, "__name__", None)
+    files = _component_source_files(component, root)
+    if (
+        not isinstance(name, str)
+        or getattr(component, "__qualname__", None) != name
+        or len(files) != 1
+    ):
+        return None
+    (file,) = files
+    source_files = set(source_files)
+    graph = build_import_graph(root)
+    starts = graph.get(file, set()) | {f for f in source_files if f.endswith(".py")}
+    if (
+        file in source_files
+        or file in _walk_import_closure(graph, starts)
+        or function_slice_digest(file, name) is None
+    ):
+        return None
+    return f"{file}{SLICE_SEPARATOR}{name}"
 
 
 def page_dependency_entries(
