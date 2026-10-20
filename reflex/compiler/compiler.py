@@ -1146,6 +1146,42 @@ def _resolve_app_wrap_components(
     return app_wrappers
 
 
+def _build_app_root(
+    app: App,
+    page_app_wrap_components: dict[tuple[int, str], Component],
+    compile_ctx: CompileContext,
+) -> tuple[Component, str | None]:
+    """Assemble the app root from the pages' app wraps.
+
+    Memo definitions the root needs (stateful wraps, the hydrate fallback) are
+    registered on ``compile_ctx.auto_memo_components``.
+
+    Args:
+        app: The app being compiled.
+        page_app_wrap_components: The app wraps the pages require.
+        compile_ctx: The compile context receiving the root's memo definitions.
+
+    Returns:
+        The app root and the hydrate fallback's export name, if any.
+    """
+    app_wrappers = _resolve_app_wrap_components(app, page_app_wrap_components)
+    app_root = _memoize_stateful_app_wraps(app._app_root(app_wrappers), compile_ctx)
+    hydrate_fallback = app._resolve_hydrate_fallback()
+    hydrate_fallback_export = None
+    if hydrate_fallback is not None:
+        hydrate_fallback._add_style_recursive(app.style)
+        # Compile the fallback through the memo pipeline so it lands in its own
+        # JS module; root.jsx then re-exports it as HydrateFallback.
+        hydrate_fallback_definition = create_component_memo(
+            hydrate_fallback, "hydrate_fallback"
+        )
+        compile_ctx.auto_memo_components[
+            hydrate_fallback_definition.export_name, None
+        ] = hydrate_fallback_definition
+        hydrate_fallback_export = hydrate_fallback_definition.export_name
+    return app_root, hydrate_fallback_export
+
+
 def _memoize_stateful_app_wraps(
     app_root: Component,
     compile_context: CompileContext,
@@ -1338,11 +1374,14 @@ def _apply_plugin_outputs(
     return sources
 
 
-def _reset_compile_registries(compiler_plugins: Sequence[Plugin]) -> None:
+def _reset_compile_registries(compiler_plugins: Sequence[Plugin]) -> list[str]:
     """Reset the registries a compile fills before any page is evaluated.
 
     Args:
         compiler_plugins: The resolved compiler plugins.
+
+    Returns:
+        The bundled libraries registered after the reset.
     """
     from reflex_base.components.dynamic import (
         _bundle_library,
@@ -1360,6 +1399,7 @@ def _reset_compile_registries(compiler_plugins: Sequence[Plugin]) -> None:
     for plugin in compiler_plugins:
         for dependency in plugin.get_frontend_dependencies():
             _bundle_library(dependency)
+    return list(RegistrationContext.ensure_context().bundled_libraries)
 
 
 def _read_stateful_pages_marker() -> list[str] | None:
@@ -1398,6 +1438,7 @@ def compile_app(
         ``True`` when a real frontend compile ran, ``False`` when the call
         short-circuited (backend-only paths that only re-evaluate pages).
     """
+    from reflex_base.components.dynamic import record_bundle_requests
     from reflex_base.utils.exceptions import ReflexRuntimeError
 
     app._apply_decorated_pages()
@@ -1520,8 +1561,9 @@ def compile_app(
     all_pages = list(app._unevaluated_pages.values())
     if evaluated is None:
         pages_to_compile = all_pages
-        _reset_compile_registries(compiler_plugins)
+        bundle_base = _reset_compile_registries(compiler_plugins)
     else:
+        bundle_base = evaluated.bundle_base
         # The incremental attempt already did the resets above and bundled what
         # its pages registered; only the pages it never touched remain.
         pages_to_compile = [
@@ -1537,6 +1579,7 @@ def compile_app(
         hooks=CompilerHooks(
             plugins=default_page_plugins(style=app.style, plugins=compiler_plugins)
         ),
+        bundle_base=bundle_base,
     )
 
     with (
@@ -1597,23 +1640,11 @@ def compile_app(
         raise ReflexRuntimeError(msg)
     progress.advance(task)
 
-    app_wrappers = _resolve_app_wrap_components(app, compile_ctx.app_wrap_components)
-    app_root = _memoize_stateful_app_wraps(app._app_root(app_wrappers), compile_ctx)
-    all_imports = utils.merge_imports(all_imports, app_root._get_all_imports())
-
-    hydrate_fallback = app._resolve_hydrate_fallback()
-    hydrate_fallback_export = None
-    if hydrate_fallback is not None:
-        hydrate_fallback._add_style_recursive(app.style)
-        # Compile the fallback through the memo pipeline so it lands in its own
-        # JS module; root.jsx then re-exports it as HydrateFallback.
-        hydrate_fallback_definition = create_component_memo(
-            hydrate_fallback, "hydrate_fallback"
+    with record_bundle_requests() as root_bundle_requests:
+        app_root, hydrate_fallback_export = _build_app_root(
+            app, compile_ctx.app_wrap_components, compile_ctx
         )
-        compile_ctx.auto_memo_components[
-            hydrate_fallback_definition.export_name, None
-        ] = hydrate_fallback_definition
-        hydrate_fallback_export = hydrate_fallback_definition.export_name
+    all_imports = utils.merge_imports(all_imports, app_root._get_all_imports())
 
     memo_component_files, memo_components_imports = compile_memo_components(
         (
@@ -1765,6 +1796,7 @@ def compile_app(
             all_imports,
             plugin_sources=plugin_sources,
             contexts_snapshot=contexts_snapshot,
+            root_bundle_requests=root_bundle_requests,
         )
 
     return True

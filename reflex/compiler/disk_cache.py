@@ -16,16 +16,19 @@ without even a stat.
 
 from __future__ import annotations
 
+import base64
 import contextlib
 import dataclasses
 import hashlib
 import json
 import logging
+import pickle
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from reflex_base import constants
+from reflex_base.components.dynamic import record_bundle_requests
 from reflex_base.environment import environment
 from reflex_base.plugins import CompileContext, CompilerHooks
 from reflex_base.registry import RegistrationContext
@@ -49,7 +52,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 #: Bump when the manifest layout changes (old manifests are then ignored).
-_SCHEMA = 16
+_SCHEMA = 17
 #: Manifest filename under the web directory.
 _MANIFEST_FILE = "reflex_compile_cache.json"
 
@@ -175,16 +178,144 @@ def _deserialize_imports(data: dict[str, list[dict[str, Any]]]) -> ParsedImportD
     return {lib: [ImportVar(**iv) for iv in ivs] for lib, ivs in data.items()}
 
 
-def _wrap_key_strs(keys: Any) -> list[str]:
-    """Render app-wrap ``(priority, name)`` keys as sorted stable strings.
+def _wrap_key_str(key: tuple[int, str]) -> str:
+    """Format an app-wrap key for the manifest.
 
     Args:
-        keys: An iterable of ``(priority, name)`` app-wrap keys.
+        key: The ``(priority, name)`` app-wrap key.
 
     Returns:
-        A sorted list of ``"priority:name"`` strings.
+        ``"<priority>:<name>"``.
     """
-    return sorted(f"{p}:{n}" for p, n in keys)
+    return f"{key[0]}:{key[1]}"
+
+
+def _wrap_key(key_str: str) -> tuple[int, str]:
+    """Parse an app-wrap key formatted by :func:`_wrap_key_str`.
+
+    Args:
+        key_str: The formatted key.
+
+    Returns:
+        The ``(priority, name)`` app-wrap key.
+    """
+    priority, _, name = key_str.partition(":")
+    return int(priority), name
+
+
+def _wrap_digest(component: Any) -> str:
+    """Digest what an app wrap contributes to the compiled app root.
+
+    Args:
+        component: The app-wrap component.
+
+    Returns:
+        A digest of its render, imports, hooks, custom code, dynamic imports
+        and the app wraps its own subtree declares.
+    """
+    payload = [
+        component.render(),
+        _serialize_imports(component._get_all_imports()),
+        list(component._get_all_hooks()),
+        list(component._get_all_custom_code()),
+        sorted(component._get_all_dynamic_imports()),
+        sorted(map(_wrap_key_str, component._get_all_app_wrap_components())),
+    ]
+    return hashlib.sha256(json_dumps(payload).encode()).hexdigest()
+
+
+def _stored_wrap(component: Any, digest: str) -> str | None:
+    """Serialize an app wrap so the app root can be rebuilt without its page.
+
+    Args:
+        component: The app-wrap component.
+        digest: Its :func:`_wrap_digest`.
+
+    Returns:
+        The encoded component, or None when it does not round-trip to the same
+        contribution.
+    """
+    try:
+        data = pickle.dumps(component)
+        if _wrap_digest(pickle.loads(data)) != digest:
+            return None
+    except Exception:
+        return None
+    return base64.b64encode(data).decode()
+
+
+def _record_app_wraps(
+    page_ctx: PageContext, wrap_table: dict[str, str | None]
+) -> dict[str, str]:
+    """Record a page's app wraps by digest, interning each in the wrap table.
+
+    Args:
+        page_ctx: The compiled page context.
+        wrap_table: The manifest's digest -> stored component table (extended).
+
+    Returns:
+        The page's app-wrap keys mapped to their digests, in page order.
+    """
+    wraps = {}
+    for key, component in page_ctx.app_wrap_components.items():
+        digest = _wrap_digest(component)
+        if digest not in wrap_table:
+            wrap_table[digest] = _stored_wrap(component, digest)
+        wraps[_wrap_key_str(key)] = digest
+    return wraps
+
+
+def _state_libraries(initial_state: dict[str, Any]) -> dict[str, list[str]]:
+    """Record the libraries serializing each state's initial values requests.
+
+    Args:
+        initial_state: Initial values keyed by state full name.
+
+    Returns:
+        The requested libraries of each state that requests any.
+    """
+    from reflex.compiler import utils as compiler_utils
+
+    libraries = {}
+    for name, values in initial_state.items():
+        with record_bundle_requests() as requests:
+            compiler_utils._serialize_initial_state({name: values})
+        if requests:
+            libraries[name] = requests
+    return libraries
+
+
+def _reconstruct_libraries(
+    base: Sequence[str],
+    page_requests: Sequence[Sequence[Sequence[str]]],
+    root_requests: Sequence[str],
+    state_libraries: dict[str, list[str]],
+) -> list[str]:
+    """Rebuild the bundled-library registry in full-compile order.
+
+    A full compile evaluates every page, then renders every page, builds the
+    app root and serializes the states in name order; the registry keeps the
+    first request of each library.
+
+    Args:
+        base: The registry after the compile's reset.
+        page_requests: ``[evaluate, render]`` requests of each page, in page
+            order.
+        root_requests: The requests made while building the app root.
+        state_libraries: The requests of each state's initial values.
+
+    Returns:
+        The bundled libraries, in registry order.
+    """
+    ordered = [*base]
+    for evaluate, _ in page_requests:
+        ordered.extend(evaluate)
+    for _, render in page_requests:
+        ordered.extend(render)
+    ordered.extend(root_requests)
+    for name in sorted(state_libraries):
+        ordered.extend(state_libraries[name])
+    return list(dict.fromkeys(ordered))
 
 
 def _manifest_page_entry(
@@ -195,6 +326,7 @@ def _manifest_page_entry(
     files: dict[str, page_cache.FileEntry],
     *,
     defined_states: Sequence[str] | None,
+    wrap_table: dict[str, str | None],
     state_slice: dict[str, Any] | None = None,
     root: Path | None = None,
 ) -> dict[str, Any]:
@@ -208,6 +340,8 @@ def _manifest_page_entry(
         files: The manifest file table, extended with the page's dependencies.
         defined_states: Full names of the states the page defined while it
             evaluated, or None for a stateless page.
+        wrap_table: The manifest's app-wrap table, extended with the page's
+            wraps.
         state_slice: The page's contribution to the contexts file
             (see :func:`_state_slice`), or None for stateless pages.
         root: Project root for dependency discovery. Defaults to cwd.
@@ -222,7 +356,13 @@ def _manifest_page_entry(
         "deps": page_cache.page_dependency_entries(
             page_ctx, component, state_index, hasher, files, root
         ),
-        "app_wrap_keys": _wrap_key_strs(page_ctx.app_wrap_components.keys()),
+        # The app wraps the page requires, by digest (see ``_refresh_app_root``).
+        "app_wraps": _record_app_wraps(page_ctx, wrap_table),
+        # Libraries requested while evaluating and rendering the page.
+        "bundle_requests": [
+            page_ctx.evaluate_bundle_requests,
+            page_ctx.render_bundle_requests,
+        ],
         "is_stateful": defined_states is not None,
         "state_slice": state_slice,
         # The ``reflex.istate.dynamic`` names the page's states took, whose
@@ -373,19 +513,6 @@ def _with_hit_state_slices(
     return dict(sorted(initial.items())), storage, schema_entries
 
 
-def _built_bundled_libraries() -> set[str]:
-    """Read the bundled libraries the last full compile exposed.
-
-    Returns:
-        The library names, or an empty set when the file is unreadable.
-    """
-    path = prerequisites.get_web_dir() / constants.Dirs.BUNDLED_LIBRARIES
-    try:
-        return set(json.loads(path.read_text(encoding="utf-8")))
-    except (OSError, ValueError, TypeError):
-        return set()
-
-
 def load_manifest() -> dict[str, Any] | None:
     """Load the persisted compile manifest, or None if absent/unusable.
 
@@ -447,6 +574,7 @@ def write_manifest(
     *,
     plugin_sources: dict[str, str] | None = None,
     contexts_snapshot: compiler_utils.ContextsSnapshot | None = None,
+    root_bundle_requests: Sequence[str] = (),
 ) -> None:
     """Persist a manifest of the just-completed full compile.
 
@@ -465,11 +593,14 @@ def write_manifest(
         plugin_sources: Unmodified source content for plugin file modifiers.
         contexts_snapshot: The state-tree inputs used for the contexts output.
             When absent, a snapshot is captured for direct callers.
+        root_bundle_requests: The libraries requested while building the app
+            root.
     """
     try:
         state_index, _ = page_cache.state_dependency_index(root)
         hasher = page_cache.make_hasher()
         files: dict[str, page_cache.FileEntry] = {}
+        wrap_table: dict[str, str | None] = {}
         if contexts_snapshot is None and compile_ctx.stateful_routes:
             contexts_snapshot = _contexts_snapshot(compile_ctx.app)
 
@@ -494,12 +625,30 @@ def write_manifest(
                 hasher,
                 files,
                 defined_states=defined_states,
+                wrap_table=wrap_table,
                 state_slice=(
                     _state_slice(defined_states, *contexts_snapshot)
                     if defined_states and contexts_snapshot is not None
                     else None
                 ),
                 root=root,
+            )
+        state_libraries = (
+            _state_libraries(contexts_snapshot[0])
+            if contexts_snapshot is not None
+            else {}
+        )
+        libraries = list(RegistrationContext.ensure_context().bundled_libraries)
+        reconstructed = _reconstruct_libraries(
+            compile_ctx.bundle_base,
+            [pages_data[page.route]["bundle_requests"] for page in pages],
+            root_bundle_requests,
+            state_libraries,
+        )
+        if reconstructed != libraries:
+            logger.debug(
+                "Compile cache: bundled libraries were requested outside the "
+                "recorded phases; changes to the app root need a full compile."
             )
 
         # Post-evaluation and complete: the full compile evaluated every page,
@@ -536,6 +685,19 @@ def write_manifest(
             "all_imports": _serialize_imports(install_imports),
             "pages": pages_data,
             "memo_files": memo_files,
+            "wrap_table": wrap_table,
+            "state_libraries": state_libraries,
+            # The app root's inputs: merged app wraps (by digest, in insertion
+            # order) and the bundled libraries (see ``_refresh_app_root``).
+            "app_root": {
+                "wraps": {
+                    _wrap_key_str(key): _wrap_digest(component)
+                    for key, component in compile_ctx.app_wrap_components.items()
+                },
+                "libraries": libraries,
+                "root_requests": list(root_bundle_requests),
+                "reconstructible": reconstructed == libraries,
+            },
         }
         _write(manifest)
     except Exception as exc:  # best-effort: never break the build
@@ -1231,9 +1393,10 @@ def try_incremental_rebuild(
 
     from reflex.compiler import compiler
 
+    bundle_base: list[str] = []
     if miss_pages or dirty_memo_paths:
         # Match the full compile's clean bundling/memo state before compiling.
-        compiler._reset_compile_registries(compiler_plugins)
+        bundle_base = compiler._reset_compile_registries(compiler_plugins)
 
     # Recompile only the source-changed pages.
     miss_ctx = None
@@ -1252,6 +1415,7 @@ def try_incremental_rebuild(
             hooks=CompilerHooks(
                 plugins=default_page_plugins(style=app.style, plugins=compiler_plugins)
             ),
+            bundle_base=bundle_base,
         )
         # Progress over the changed pages (evaluate + render each), so a hot
         # reload shows how much is being recompiled.
@@ -1270,8 +1434,6 @@ def try_incremental_rebuild(
             progress.stop()
         if set(page_cache._loaded_first_party_modules(resolved_root)) != modules_before:
             page_cache.clear_import_graph()
-        # Guard: a miss must not change the app-wrap set, or the reused on-disk
-        # app root would be wrong.
         for page in miss_pages:
             page_ctx = miss_ctx.compiled_pages.get(page.route)
             if (
@@ -1282,14 +1444,6 @@ def try_incremental_rebuild(
                 _fall_back_after_evaluation(f"page {page.route!r} produced no output")
                 return False
             entry = manifest["pages"][page.route]
-            if (
-                _wrap_key_strs(page_ctx.app_wrap_components.keys())
-                != entry["app_wrap_keys"]
-            ):
-                _fall_back_after_evaluation(
-                    f"page {page.route!r} changed its app-wrap set"
-                )
-                return miss_ctx
             if _predict_dynamic_names and (
                 _dynamic_claims(miss_ctx.stateful_routes.get(page.route, ()))
                 != entry["dynamic_claims"]
@@ -1376,6 +1530,7 @@ def try_incremental_rebuild(
     # from the on-disk contexts file, so compare those first: a content-only
     # edit leaves them identical and the contexts file is reused untouched.
     contexts_snapshot: compiler_utils.ContextsSnapshot | None = None
+    state_libraries: dict[str, list[str]] = manifest["state_libraries"]
     if miss_ctx is not None and any(
         route in miss_ctx.stateful_routes or manifest["pages"][route]["is_stateful"]
         for route in miss_routes
@@ -1404,26 +1559,39 @@ def try_incremental_rebuild(
                 ),
                 None,
             )
+            merged_snapshot = (
+                None
+                if contexts_snapshot is None
+                else _with_hit_state_slices(contexts_snapshot, manifest, miss_routes)
+            )
             context_path, context_code = compiler.compile_contexts(
-                app._state,
-                theme,
-                contexts_snapshot=(
-                    None
-                    if contexts_snapshot is None
-                    else _with_hit_state_slices(
-                        contexts_snapshot, manifest, miss_routes
-                    )
-                ),
+                app._state, theme, contexts_snapshot=merged_snapshot
             )
             _save_incremental_output(context_path, context_code, outputs)
+            if contexts_snapshot is not None and merged_snapshot is not None:
+                live_libraries = _state_libraries(contexts_snapshot[0])
+                state_libraries = {
+                    name: libraries
+                    for name in merged_snapshot[0]
+                    if (
+                        libraries := live_libraries.get(name)
+                        if name in contexts_snapshot[0]
+                        else state_libraries.get(name)
+                    )
+                }
 
-    # Evaluation and state serialization bundle libraries for dynamic
-    # components; only a full compile rewrites the app root that exposes them.
-    if miss_ctx is not None and not _built_bundled_libraries().issuperset(
-        RegistrationContext.ensure_context().bundled_libraries
-    ):
-        _fall_back_after_evaluation("recompiled pages bundle new libraries")
-        return miss_ctx
+    app_root_inputs = manifest["app_root"]
+    if miss_ctx is not None:
+        try:
+            refreshed = _refresh_app_root(
+                app, manifest, pages, miss_ctx, state_libraries, outputs
+            )
+        except _AppRootUnavailableError as err:
+            _fall_back_after_evaluation(str(err))
+            return miss_ctx
+        if refreshed is not None:
+            app_root_inputs, root_imports = refreshed
+            install_imports = merge_imports(install_imports, root_imports)
 
     # The assets copy is cheap, idempotent, and excluded from dependency
     # tracking entirely, so it is always re-run.
@@ -1469,6 +1637,8 @@ def try_incremental_rebuild(
         contexts_snapshot=contexts_snapshot,
         memo_state=final_memo_state,
         memo_file_entries=memo_files_table,
+        app_root_inputs=app_root_inputs,
+        state_libraries=state_libraries,
         validator=validator,
     )
 
@@ -1481,6 +1651,143 @@ def try_incremental_rebuild(
     return True
 
 
+class _AppRootUnavailableError(Exception):
+    """The app root cannot be rebuilt from the recorded inputs."""
+
+
+def _refresh_app_root(
+    app: App,
+    manifest: dict[str, Any],
+    pages: Sequence[PageDefinition],
+    miss_ctx: CompileContext,
+    state_libraries: dict[str, list[str]],
+    outputs: dict[Path, str] | None,
+) -> tuple[dict[str, Any], ParsedImportDict] | None:
+    """Rebuild the app root and bundled-library file when their inputs changed.
+
+    The app root is a function of the pages' merged app wraps (positioned by
+    the first page requiring each, valued by the last, like the full compile's
+    ``dict.update``) and of the bundled libraries, rebuilt in full-compile
+    order from each page's and state's recorded requests. When neither
+    changed, the root on disk stays. Otherwise it is rebuilt from the
+    recompiled pages' live wraps and the recorded wraps of the other pages,
+    without evaluating them.
+
+    Args:
+        app: The app being compiled.
+        manifest: The loaded manifest; its wrap table gains the live wraps.
+        pages: All current page definitions (in compile order).
+        miss_ctx: The compile context of the recompiled pages.
+        state_libraries: The libraries each state's initial values request.
+        outputs: Output mapping supplied by the main compiler, if any.
+
+    Returns:
+        The new recorded app-root inputs and the imports the root needs, or
+        None when the root is unchanged.
+
+    Raises:
+        _AppRootUnavailableError: When the recorded inputs cannot rebuild it.
+    """
+    from reflex_base.components.memo import MEMOS
+
+    from reflex.compiler import compiler
+    from reflex.compiler import utils as compiler_utils
+
+    stored = manifest["app_root"]
+    wrap_table = manifest["wrap_table"]
+    merged: dict[str, str] = {}
+    providers: dict[str, str] = {}
+    page_requests = []
+    memo_paths: set[str] = set(manifest["memo_files"])
+    for page in pages:
+        entry = manifest["pages"][page.route]
+        if (page_ctx := miss_ctx.compiled_pages.get(page.route)) is not None:
+            wraps = _record_app_wraps(page_ctx, wrap_table)
+            page_requests.append([
+                page_ctx.evaluate_bundle_requests,
+                page_ctx.render_bundle_requests,
+            ])
+            has_memos = bool(page_ctx.memo_contributions)
+        else:
+            wraps = entry["app_wraps"]
+            page_requests.append(entry["bundle_requests"])
+            has_memos = entry["has_memos"]
+        if has_memos and (
+            path := _memo_output_path(getattr(page, "_source_module", None))
+        ):
+            memo_paths.add(path)
+        for key_str, digest in wraps.items():
+            merged[key_str] = digest
+            providers[key_str] = page.route
+    libraries = _reconstruct_libraries(
+        miss_ctx.bundle_base, page_requests, stored["root_requests"], state_libraries
+    )
+    if merged == stored["wraps"] and libraries == stored["libraries"]:
+        return None
+    if not stored["reconstructible"]:
+        msg = "the app root's bundled libraries cannot be rebuilt"
+        raise _AppRootUnavailableError(msg)
+
+    components = {}
+    for key_str, digest in merged.items():
+        key = _wrap_key(key_str)
+        if (page_ctx := miss_ctx.compiled_pages.get(providers[key_str])) is not None:
+            components[key] = page_ctx.app_wrap_components[key]
+        elif (data := wrap_table.get(digest)) is not None:
+            components[key] = pickle.loads(base64.b64decode(data))
+        else:
+            msg = f"page {providers[key_str]!r} requires an app wrap that cannot be stored"
+            raise _AppRootUnavailableError(msg)
+    logger.info(
+        "Compile cache: the app wraps or bundled libraries changed; rebuilding the app root"
+    )
+    memos_before = set(MEMOS)
+    root_ctx = CompileContext(app=app, pages=())
+    with root_ctx, record_bundle_requests() as root_requests:
+        app_root, hydrate_fallback_export = compiler._build_app_root(
+            app, components, root_ctx
+        )
+    root_memos = [
+        *(memo for key, memo in MEMOS.items() if key not in memos_before),
+        *root_ctx.auto_memo_components.values(),
+    ]
+    root_memo_paths = {
+        path
+        for memo in root_memos
+        if (path := _memo_output_path(memo.source_module)) is not None
+    }
+    if root_memo_paths & memo_paths:
+        msg = "the app root's memos share a file with page memos"
+        raise _AppRootUnavailableError(msg)
+    memo_files, memo_imports = compiler.compile_memo_components([
+        *(
+            memo
+            for key, memo in MEMOS.items()
+            if key in memos_before and _memo_output_path(key[1]) in root_memo_paths
+        ),
+        *root_memos,
+    ])
+    libraries = _reconstruct_libraries(
+        miss_ctx.bundle_base, page_requests, root_requests, state_libraries
+    )
+    RegistrationContext.ensure_context().bundled_libraries[:] = libraries
+    for path, code in (
+        *memo_files,
+        compiler.compile_app_root(app_root, hydrate_fallback_export),
+        compiler_utils._compile_bundled_libraries(),
+    ):
+        _save_incremental_output(path, code, outputs)
+    return (
+        {
+            "wraps": merged,
+            "libraries": libraries,
+            "root_requests": root_requests,
+            "reconstructible": True,
+        },
+        merge_imports(app_root._get_all_imports(), memo_imports),
+    )
+
+
 def _update_manifest_for_misses(
     manifest: dict[str, Any],
     miss_ctx: CompileContext | None,
@@ -1491,6 +1798,8 @@ def _update_manifest_for_misses(
     contexts_snapshot: compiler_utils.ContextsSnapshot | None = None,
     memo_state: dict[str, dict[str, Any]],
     memo_file_entries: dict[str, page_cache.FileEntry],
+    app_root_inputs: dict[str, Any],
+    state_libraries: dict[str, list[str]],
     validator: page_cache.FileValidator | None = None,
 ) -> None:
     """Update the on-disk manifest entries for the recompiled pages.
@@ -1511,6 +1820,8 @@ def _update_manifest_for_misses(
             :func:`_memo_state_entries`).
         memo_file_entries: File-table entries for the memo records' closures,
             withheld until validation finished.
+        app_root_inputs: The app root's recorded inputs after this rebuild.
+        state_libraries: The libraries each state's initial values request.
         validator: The validator used for this rebuild, for its refreshed
             entries.
     """
@@ -1533,6 +1844,7 @@ def _update_manifest_for_misses(
                     hasher,
                     manifest["files"],
                     defined_states=defined_states,
+                    wrap_table=manifest["wrap_table"],
                     state_slice=(
                         _state_slice(defined_states, *contexts_snapshot)
                         if defined_states and contexts_snapshot is not None
@@ -1541,6 +1853,23 @@ def _update_manifest_for_misses(
                     root=root,
                 )
             dirty = True
+        if (
+            manifest["app_root"] != app_root_inputs
+            or manifest["state_libraries"] != state_libraries
+        ):
+            manifest["app_root"] = app_root_inputs
+            manifest["state_libraries"] = state_libraries
+            dirty = True
+        if dirty:
+            # Keep only the stored wraps a page or the app root still uses.
+            used = set(app_root_inputs["wraps"].values()).union(
+                *(entry["app_wraps"].values() for entry in manifest["pages"].values())
+            )
+            manifest["wrap_table"] = {
+                digest: data
+                for digest, data in manifest["wrap_table"].items()
+                if digest in used
+            }
         # A memo-only rewrite can add packages with no page recompiled.
         if (imports := _serialize_imports(all_imports)) != manifest["all_imports"]:
             manifest["all_imports"] = imports

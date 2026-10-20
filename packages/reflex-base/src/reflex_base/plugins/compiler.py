@@ -609,6 +609,9 @@ class PageContext(BaseContext):
     # The page's unique-name generator state after evaluation, resumed for its
     # render so its generated names never depend on other pages.
     unique_name_state: Any = None
+    # Libraries requested for bundling while the page evaluated and rendered.
+    evaluate_bundle_requests: list[str] = dataclasses.field(default_factory=list)
+    render_bundle_requests: list[str] = dataclasses.field(default_factory=list)
     # Auto-memo components first registered while compiling this page.
     memo_contributions: dict[tuple[str, str | None], Any] = dataclasses.field(
         default_factory=dict
@@ -701,6 +704,10 @@ class CompileContext(BaseContext):
     auto_memo_components: dict[tuple[str, str | None], Any] = dataclasses.field(
         default_factory=dict
     )
+    # The bundled libraries registered when this compile reset the registry,
+    # before any page evaluated; the compile cache rebuilds the registry's
+    # order from it and the libraries each page and state requested.
+    bundle_base: list[str] = dataclasses.field(default_factory=list)
 
     def compile(
         self,
@@ -721,6 +728,7 @@ class CompileContext(BaseContext):
         """
         from reflex.compiler import compiler
         from reflex.state import all_base_state_classes
+        from reflex_base.components.dynamic import record_bundle_requests
         from reflex_base.components.memo import registration_owner
         from reflex_base.vars.base import (
             reset_unique_variable_names,
@@ -747,7 +755,10 @@ class CompileContext(BaseContext):
             seed_unique_variable_names(page.route)
             # Memos registered while this page evaluates (e.g. from modules
             # imported inside the page function) are owned by this route.
-            with registration_owner(page.route):
+            with (
+                registration_owner(page.route),
+                record_bundle_requests() as bundle_requests,
+            ):
                 if recorder is not None:
                     with recorder() as read_set:
                         page_ctx = self.hooks.eval_page(
@@ -785,6 +796,7 @@ class CompileContext(BaseContext):
                 ]
 
             page_ctx.unique_name_state = unique_variable_name_state()
+            page_ctx.evaluate_bundle_requests = bundle_requests
             self.compiled_pages[page_ctx.route] = page_ctx
 
             if evaluate_progress is not None:
@@ -797,7 +809,7 @@ class CompileContext(BaseContext):
         ):
             memo_before = set(self.auto_memo_components)
             restore_unique_variable_name_state(page_ctx.unique_name_state)
-            with page_ctx:
+            with page_ctx, record_bundle_requests() as render_requests:
                 page_ctx.root_component = self.hooks.compile_component(
                     page_ctx.root_component,
                     page_context=page_ctx,
@@ -821,9 +833,11 @@ class CompileContext(BaseContext):
                 self.all_imports, page_ctx.frontend_imports
             )
             self.app_wrap_components.update(page_ctx.app_wrap_components)
-            page_ctx.output_path, page_ctx.output_code = (
-                compiler.compile_page_from_context(page_ctx)
-            )
+            with record_bundle_requests() as output_requests:
+                page_ctx.output_path, page_ctx.output_code = (
+                    compiler.compile_page_from_context(page_ctx)
+                )
+            page_ctx.render_bundle_requests = render_requests + output_requests
 
             if render_progress is not None:
                 render_progress()

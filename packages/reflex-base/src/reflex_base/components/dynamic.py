@@ -1,6 +1,9 @@
 """Components that are dynamically generated on the backend."""
 
+import contextlib
 import dataclasses
+from collections.abc import Iterator
+from contextvars import ContextVar
 from typing import TYPE_CHECKING, Any, Union
 
 from reflex_base import constants
@@ -141,6 +144,35 @@ def _bundle_imports(
                 _bundle_library(library + subpath, explicit=explicit)
 
 
+#: The list recording bundle requests in the current block, if any.
+_bundle_requests: ContextVar[list[str] | None] = ContextVar(
+    "_bundle_requests", default=None
+)
+
+
+@contextlib.contextmanager
+def record_bundle_requests() -> Iterator[list[str]]:
+    """Record every library requested for bundling within the block, in order.
+
+    A request counts even when the library is already bundled: the registry
+    keeps first occurrences, so its order can be rebuilt from the requests of
+    each source in compile order. An enclosing recorder receives the requests
+    too.
+
+    Yields:
+        The list the requests are appended to.
+    """
+    requests: list[str] = []
+    outer = _bundle_requests.get()
+    token = _bundle_requests.set(requests)
+    try:
+        yield requests
+    finally:
+        _bundle_requests.reset(token)
+        if outer is not None:
+            outer.extend(requests)
+
+
 def _bundle_library(library: str, *, explicit: bool = False) -> None:
     """Register a library, optionally retaining it across compiler resets.
 
@@ -149,6 +181,8 @@ def _bundle_library(library: str, *, explicit: bool = False) -> None:
         explicit: Whether this registration belongs to the app rather than a compile.
     """
     library = format_library_name(library)
+    if (requests := _bundle_requests.get()) is not None:
+        requests.append(library)
     context = RegistrationContext.ensure_context()
     if explicit:
         context._explicit_bundled_libraries[library] = None

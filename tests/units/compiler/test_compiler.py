@@ -2118,3 +2118,34 @@ def test_compile_app_progress_ends_at_its_total(
     [bar] = bars
     [task] = bar.tasks.values()
     assert task["current"] == task["total"]
+
+
+def test_compile_records_bundle_requests_per_page_and_phase():
+    """Each page records the libraries it requested while evaluating and rendering."""
+    from reflex_base.plugins import CompileContext, CompilerHooks
+
+    from reflex.compiler.plugins import default_page_plugins
+
+    def page_one() -> rx.Component:
+        bundle_library("lib-one")
+        return rx.el.div("one")
+
+    def page_two() -> rx.Component:
+        bundle_library("lib-one")
+        bundle_library("lib-two")
+        return rx.el.div("two")
+
+    with RegistrationContext():
+        app = rx.App()
+        app.add_page(page_one, route="/one")
+        app.add_page(page_two, route="/two")
+        ctx = CompileContext(
+            app=app,
+            pages=list(app._unevaluated_pages.values()),
+            hooks=CompilerHooks(plugins=default_page_plugins()),
+        )
+        with ctx:
+            ctx.compile()
+    assert ctx.compiled_pages["one"].evaluate_bundle_requests == ["lib-one"]
+    assert ctx.compiled_pages["two"].evaluate_bundle_requests == ["lib-one", "lib-two"]
+    assert ctx.compiled_pages["two"].render_bundle_requests == []

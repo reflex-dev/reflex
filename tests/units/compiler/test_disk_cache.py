@@ -11,6 +11,7 @@ from types import ModuleType, SimpleNamespace
 from typing import Any, cast
 
 import pytest
+from reflex_base import constants
 from reflex_base.components.component import Component
 from reflex_base.environment import environment
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
@@ -73,10 +74,15 @@ def _page_c() -> Component:
 
 
 def _compile(pages: Sequence[Any], app: Any = None) -> CompileContext:
+    from reflex.compiler import compiler
+
+    # Reset like a full compile, so the manifest can rebuild the registry.
+    bundle_base = compiler._reset_compile_registries([])
     ctx = CompileContext(
         app=app,
         pages=pages,
         hooks=CompilerHooks(plugins=default_page_plugins()),
+        bundle_base=bundle_base,
     )
     with ctx:
         ctx.compile()
@@ -226,13 +232,9 @@ def test_serialize_imports_collapses_duplicates():
     }
 
 
-def test_wrap_key_strs_is_sorted_and_stable():
-    keys = [(200, "StrictMode"), (0, "AppWrap"), (45, "ColorMode")]
-    assert disk_cache._wrap_key_strs(keys) == [
-        "0:AppWrap",
-        "200:StrictMode",
-        "45:ColorMode",
-    ]
+def test_wrap_keys_round_trip_through_the_manifest_format():
+    for key in [(200, "StrictMode"), (0, "AppWrap"), (45, "Name:With:Colons")]:
+        assert disk_cache._wrap_key(disk_cache._wrap_key_str(key)) == key
 
 
 def _manifest(pages: dict[str, dict], root: Path | None = None, **overrides) -> dict:
@@ -247,6 +249,14 @@ def _manifest(pages: dict[str, dict], root: Path | None = None, **overrides) -> 
         "all_imports": {},
         "pages": pages,
         "memo_files": {},
+        "wrap_table": {},
+        "state_libraries": {},
+        "app_root": {
+            "wraps": {},
+            "libraries": [],
+            "root_requests": [],
+            "reconstructible": True,
+        },
     }
     base.update(overrides)
     return base
@@ -518,7 +528,8 @@ def test_write_and_load_manifest(tmp_path, monkeypatch):
         assert set(entry) == {
             "deps",
             "component_counts",
-            "app_wrap_keys",
+            "app_wraps",
+            "bundle_requests",
             "is_stateful",
             "state_slice",
             "has_memos",
@@ -754,7 +765,10 @@ def test_post_evaluation_fallback_hands_over_the_evaluated_pages(tmp_path, monke
         # compile can rebuild the app root.
         manifest_path = web / disk_cache._MANIFEST_FILE
         manifest = json.loads(manifest_path.read_text())
-        manifest["pages"][route_s]["app_wrap_keys"] = ["99:RecordedWrap"]
+        # The app root can no longer be rebuilt from the records, while /s
+        # now brings different app wraps than recorded.
+        manifest["app_root"]["reconstructible"] = False
+        manifest["app_root"]["wraps"] = {}
         _stale_dep(manifest, route_s, str(tmp_path / "demo.md"))
         manifest_path.write_text(json.dumps(manifest))
 
@@ -1399,11 +1413,12 @@ def _page_component_default() -> Component:
     return rx.el.div(rx.box(state_cls.comp))
 
 
-def test_state_default_from_new_library_needs_a_full_compile(tmp_path, monkeypatch):
-    """A component default from a library the app root lacks needs a full compile.
+def test_state_default_from_new_library_rebuilds_the_app_root(tmp_path, monkeypatch):
+    """A component default from a new library rewrites the root and library file.
 
-    The contexts reference the library through ``window.__reflex``, which only
-    a rewritten app root and bundled-library file provide.
+    The contexts reference the library through ``window.__reflex``, which the
+    app root and bundled-library file provide; both are rebuilt from recorded
+    requests without evaluating the unchanged pages.
     """
     from reflex.compiler import compiler
 
@@ -1428,7 +1443,115 @@ def test_state_default_from_new_library_needs_a_full_compile(tmp_path, monkeypat
         )
     finally:
         _unregister_state(_FP_HOLDER.pop("_ComponentDefaultState"))
-    assert isinstance(result, CompileContext)
+    assert result is True
+    libraries = json.loads((web / constants.Dirs.BUNDLED_LIBRARIES).read_text())
+    assert "recharts" in libraries
+    assert "recharts" in _app_root_file(web).read_text()
+
+
+def _app_root_file(web: Path) -> Path:
+    return web / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+
+
+class _WrappedDiv(rx.el.Div):
+    """A div that requires an app-level wrap no other test page provides."""
+
+    @staticmethod
+    def _get_app_wrap_components() -> dict[tuple[int, str], Component]:
+        """Declare the extra app wrap.
+
+        Returns:
+            The app wraps this component requires.
+        """
+        return {(55, "TestWrap"): rx.el.section(class_name="test-wrap")}
+
+
+_WRAP_EDIT = {"wrap": False, "state": False}
+
+
+def _page_wrap_edit() -> Component:
+    if _WRAP_EDIT["wrap"]:
+        return rx.el.div(_WrappedDiv.create("wrapped"), _footer())
+    if _WRAP_EDIT["state"]:
+        return rx.el.div(rx.el.p(_fp_state("_WrapEditState").value), _footer())
+    return rx.el.div("plain", _footer())
+
+
+def _page_state_provider() -> Component:
+    return rx.el.div(rx.el.p(_fp_state("_ProviderState").value), _footer())
+
+
+def _root_rebuild(tmp_path, monkeypatch, **edit) -> tuple[Any, Path, str]:
+    """Fully compile a stateful page and a plain page, then edit the plain one.
+
+    Args:
+        tmp_path: The project root.
+        monkeypatch: The pytest monkeypatch fixture.
+        edit: The ``_WRAP_EDIT`` flags the edit turns on.
+
+    Returns:
+        The rebuild result, the app root file and its content before the edit.
+    """
+    from reflex_base.components.dynamic import record_bundle_requests
+
+    from reflex.compiler import compiler
+
+    try:
+        web = _use_tmp_web_dir(tmp_path, monkeypatch)
+        app = rx.App()
+        app.add_page(_page_state_provider, route="/s")
+        app.add_page(_page_wrap_edit, route="/p")
+        pages = list(app._unevaluated_pages.values())
+        ctx = _compile(pages, app=app)
+        _stub_externals(app, monkeypatch)
+        with record_bundle_requests() as root_requests:
+            root_path, root_code = compiler.compile_app_root(
+                *compiler._build_app_root(app, ctx.app_wrap_components, ctx)
+            )
+        Path(root_path).parent.mkdir(parents=True, exist_ok=True)
+        Path(root_path).write_text(root_code)
+        disk_cache.write_manifest(
+            ctx,
+            pages,
+            ctx.all_imports,
+            root=tmp_path,
+            root_bundle_requests=root_requests,
+        )
+        manifest_path = web / disk_cache._MANIFEST_FILE
+        manifest = json.loads(manifest_path.read_text())
+        assert manifest["app_root"]["reconstructible"]
+        _stale_dep(manifest, pages[1].route, str(tmp_path / "view.py"))
+        manifest_path.write_text(json.dumps(manifest))
+        # The daemon child starts without the states its pages define.
+        _unregister_state(_FP_HOLDER.pop("_ProviderState"))
+        for flag, value in edit.items():
+            monkeypatch.setitem(_WRAP_EDIT, flag, value)
+        result = disk_cache.try_incremental_rebuild(
+            app, compiler_plugins=[], prerender_routes=False, root=tmp_path
+        )
+    finally:
+        for name in ("_ProviderState", "_WrapEditState"):
+            if (cls := _FP_HOLDER.pop(name, None)) is not None:
+                _unregister_state(cls)
+    return result, _app_root_file(web), root_code
+
+
+def test_page_gaining_a_provided_wrap_reuses_the_app_root(tmp_path, monkeypatch):
+    """The app root depends on the union of wraps, not on each page's own set."""
+    result, root_file, before = _root_rebuild(tmp_path, monkeypatch, state=True)
+    assert result is True
+    assert root_file.read_text() == before
+
+
+def test_page_bringing_a_new_wrap_rebuilds_only_the_app_root(tmp_path, monkeypatch):
+    """A new wrap rebuilds the root from recorded and recompiled wraps."""
+    result, root_file, before = _root_rebuild(tmp_path, monkeypatch, wrap=True)
+    assert result is True
+    after = root_file.read_text()
+    assert after != before
+    assert "test-wrap" in after
+    # The unchanged stateful page still provides the state providers.
+    assert "StateProvider" in after
 
 
 _COLLIDE = {"one": 0, "two": 0, "two_extra": False}
@@ -1905,12 +2028,12 @@ def test_update_manifest_for_misses_keeps_complete_imports(tmp_path, monkeypatch
         app_wrap_components={},
         frontend_imports={},
         memo_contributions={},
+        evaluate_bundle_requests=[],
+        render_bundle_requests=[],
     )
     miss_ctx = SimpleNamespace(compiled_pages={"/a": page_ctx}, stateful_routes={})
     complete_imports = {"memo-lib": [ImportVar("MemoThing")]}
-    manifest = _manifest({
-        "/a": {"deps": [], "app_wrap_keys": [], "is_stateful": False}
-    })
+    manifest = _manifest({"/a": {"deps": [], "app_wraps": {}, "is_stateful": False}})
 
     disk_cache._update_manifest_for_misses(
         manifest,
@@ -1920,6 +2043,8 @@ def test_update_manifest_for_misses_keeps_complete_imports(tmp_path, monkeypatch
         root=tmp_path,
         memo_state={},
         memo_file_entries={},
+        app_root_inputs=manifest["app_root"],
+        state_libraries={},
     )
 
     written = json.loads((web / disk_cache._MANIFEST_FILE).read_text())
@@ -1940,6 +2065,8 @@ def test_update_manifest_refreshes_imports_without_misses(tmp_path, monkeypatch)
         root=tmp_path,
         memo_state={},
         memo_file_entries={},
+        app_root_inputs=manifest["app_root"],
+        state_libraries={},
     )
 
     written = json.loads((web / disk_cache._MANIFEST_FILE).read_text())
