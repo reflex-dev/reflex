@@ -216,6 +216,20 @@ def test_dataeditor_literal_columns_defaults():
     assert columns == passed
 
 
+def test_dataeditor_literal_columns_with_a_var_get_defaults_at_render_time():
+    """A var among literal columns gets its defaults through the same mapping."""
+    extra = Var(_js_expr="state.extra")
+
+    editor = _create(columns=[{"title": "Name"}, extra])
+
+    columns = _prop(editor, "columns")
+    assert re.fullmatch(r"columns_\w+", columns)
+    (memo_hook,) = [hook for hook in _hooks(editor) if "useMemo" in hook]
+    assert memo_hook.startswith(f"const {columns} = useMemo(() => ([")
+    assert "state.extra]).map(" in memo_hook
+    assert memo_hook.endswith(", [state.extra])")
+
+
 def test_dataeditor_literal_columns_reject_unknown_type():
     """A column is a title, a dict or a var."""
     with pytest.raises(ValueError, match="unexpected type"):

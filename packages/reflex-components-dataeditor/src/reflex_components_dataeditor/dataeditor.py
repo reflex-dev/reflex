@@ -232,10 +232,11 @@ def _hook_deps(*hook_vars: Var) -> str:
 
 
 def _with_column_defaults(columns: Var, editor_id: str) -> Var:
-    """Fill in the default type and id of a state-backed column list.
+    """Fill in the default type and id of a column list at render time.
 
-    The mapping runs in a ``useMemo`` keyed on the columns, so it is redone when
-    they change rather than on every render, let alone for every cell Glide draws.
+    The mapping runs in a ``useMemo`` keyed on the vars the columns read, so it
+    is redone when they change rather than on every render, let alone for every
+    cell Glide draws.
 
     Args:
         columns: The column list var.
@@ -594,7 +595,12 @@ class DataEditor(NoSSRComponent):
             ):
                 msg = "Cannot pass in both a pandas dataframe and columns to the data_editor component."
                 raise ValueError(msg)
-            columns = LiteralVar.create([_format_column(col) for col in columns])
+            formatted = [_format_column(col) for col in columns]
+            columns = LiteralVar.create(formatted)
+            if any(isinstance(col, Var) for col in formatted):
+                # A var among the columns gets its defaults at render time, like
+                # a state-backed list; the mapping leaves the literal ones as is.
+                columns = _with_column_defaults(columns, editor_id)
         if not isinstance(data, Var):
             data = LiteralVar.create(data)
         props["columns"] = columns
