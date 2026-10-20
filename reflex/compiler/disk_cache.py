@@ -23,6 +23,7 @@ import hashlib
 import json
 import logging
 import pickle
+import re
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -907,6 +908,67 @@ def _dynamic_claims(defined_states: Iterable[str]) -> list[list[str]]:
     return claims
 
 
+_NAME_SUFFIX = re.compile(r"_\d+$")
+
+
+def _claims_by_family(claims: Iterable[Sequence[str]]) -> dict[str, list[list[str]]]:
+    """Group dynamic state name claims by the name family they draw from.
+
+    A local state takes the first free name among its class name and its
+    ``_<n>`` suffixes, so it competes with every claim whose name or request
+    has the same stem. A ``ComponentState`` instance draws from its class's
+    counter; its request is the dotted class path, which no class name has.
+
+    Args:
+        claims: ``[name, requested]`` pairs (see :func:`_dynamic_claims`).
+
+    Returns:
+        The claims of each family, in order.
+    """
+    families: dict[str, list[list[str]]] = {}
+    for name, requested in claims:
+        for family in {_NAME_SUFFIX.sub("", name), _NAME_SUFFIX.sub("", requested)}:
+            families.setdefault(family, []).append([name, requested])
+    return families
+
+
+def _shifting_dynamic_claims(
+    manifest: dict[str, Any], miss_ctx: CompileContext, miss_routes: set[str]
+) -> str | None:
+    """Find a re-evaluated page whose new claims could shift other pages' names.
+
+    Names in a family are handed out in evaluation order, so a re-evaluated
+    page changing its claims in a family moves the names of later pages in
+    that family. Pages that were not re-evaluated keep their recorded names,
+    which is exact only when no family they use changed.
+
+    Args:
+        manifest: The loaded manifest.
+        miss_ctx: The compile context of the re-evaluated pages.
+        miss_routes: The re-evaluated routes.
+
+    Returns:
+        The first re-evaluated route that changed a shared family, or None.
+    """
+    shared = {
+        family
+        for route, entry in manifest["pages"].items()
+        if route not in miss_routes
+        for family in _claims_by_family(entry["dynamic_claims"])
+    }
+    for route in miss_routes:
+        recorded = _claims_by_family(manifest["pages"][route]["dynamic_claims"])
+        live = _claims_by_family(
+            _dynamic_claims(miss_ctx.stateful_routes.get(route, ()))
+        )
+        if any(
+            live.get(family) != recorded.get(family)
+            for family in (live.keys() | recorded.keys()) & shared
+        ):
+            return route
+    return None
+
+
 def _claim_recorded_dynamic_names(
     manifest: dict[str, Any], miss_routes: set[str]
 ) -> None:
@@ -1443,14 +1505,12 @@ def try_incremental_rebuild(
             ):
                 _fall_back_after_evaluation(f"page {page.route!r} produced no output")
                 return False
-            entry = manifest["pages"][page.route]
-            if _predict_dynamic_names and (
-                _dynamic_claims(miss_ctx.stateful_routes.get(page.route, ()))
-                != entry["dynamic_claims"]
-            ):
-                _fall_back_after_evaluation(
-                    f"page {page.route!r} changed its dynamic state names"
-                )
+        if _predict_dynamic_names and (
+            route := _shifting_dynamic_claims(manifest, miss_ctx, miss_routes)
+        ):
+            _fall_back_after_evaluation(
+                f"page {route!r} changed dynamic state names other pages share"
+            )
 
     # Write changed pages + their memo files; reuse everything else on disk.
     install_imports = _deserialize_imports(manifest["all_imports"])

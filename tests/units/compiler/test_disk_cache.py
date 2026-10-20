@@ -1554,7 +1554,7 @@ def test_page_bringing_a_new_wrap_rebuilds_only_the_app_root(tmp_path, monkeypat
     assert "StateProvider" in after
 
 
-_COLLIDE = {"one": 0, "two": 0, "two_extra": False}
+_COLLIDE = {"one": 0, "two": 0, "two_extra": False, "two_unique": False}
 
 
 def _page_collide_one() -> Component:
@@ -1576,20 +1576,31 @@ def _page_collide_two() -> Component:
         class CollideState(rx.State):
             extra: int = 3
 
+    def define_unique() -> None:
+        class UniqueToTwoState(rx.State):
+            unique: int = 4
+
     if _COLLIDE["two_extra"]:
         define_extra()
+    if _COLLIDE["two_unique"]:
+        define_unique()
     return rx.el.div(rx.el.p(CollideState.two), _footer())
 
 
 def _unregister_collide_states() -> None:
     """Drop every registered ``CollideState``, like the daemon child's reset."""
     for name, cls in list(RegistrationContext.ensure_context().base_states.items()):
-        if "collide_state" in name:
+        if "collide_state" in name or "unique_to_two_state" in name:
             _unregister_state(cls)
 
 
 def _rebuild_second_collide_page(
-    tmp_path, monkeypatch, *, predict: bool, two_extra: bool = False
+    tmp_path,
+    monkeypatch,
+    *,
+    predict: bool,
+    two_extra: bool = False,
+    two_unique: bool = False,
 ) -> tuple[Any, list[str], list[str]]:
     """Compile two pages defining a same-named local state, then rebuild the second.
 
@@ -1598,6 +1609,8 @@ def _rebuild_second_collide_page(
         monkeypatch: The pytest monkeypatch fixture.
         predict: Whether the rebuild predicts dynamic state names.
         two_extra: Whether the edited second page defines one more such state.
+        two_unique: Whether the edited second page defines a state no other
+            page names the same way.
 
     Returns:
         The rebuild result, the second page's states before the edit, and its
@@ -1623,6 +1636,7 @@ def _rebuild_second_collide_page(
     monkeypatch.setitem(_COLLIDE, "one", 0)
     monkeypatch.setitem(_COLLIDE, "two", 0)
     monkeypatch.setitem(_COLLIDE, "two_extra", two_extra)
+    monkeypatch.setitem(_COLLIDE, "two_unique", two_unique)
     monkeypatch.setattr(disk_cache, "_predict_dynamic_names", predict)
     try:
         result = disk_cache.try_incremental_rebuild(
@@ -1632,7 +1646,11 @@ def _rebuild_second_collide_page(
         _unregister_collide_states()
         import reflex.istate.dynamic as istate_dynamic
 
-        for name in [n for n in vars(istate_dynamic) if "CollideState" in n]:
+        for name in [
+            n
+            for n in vars(istate_dynamic)
+            if "CollideState" in n or "UniqueToTwoState" in n
+        ]:
             delattr(istate_dynamic, name)
     refreshed = json.loads(manifest_path.read_text())
     return (
@@ -1666,6 +1684,17 @@ def test_predicted_local_state_names_rebuild_only_the_changed_page(
     )
     assert result is True
     assert after == before
+    assert (_COLLIDE["one"], _COLLIDE["two"]) == (0, 1)
+
+
+def test_prediction_accepts_a_new_state_name_no_other_page_uses(tmp_path, monkeypatch):
+    """A new local state in a name family of its own cannot shift other pages."""
+    result, before, after = _rebuild_second_collide_page(
+        tmp_path, monkeypatch, predict=True, two_unique=True
+    )
+    assert result is True
+    assert after[: len(before)] == before
+    assert after[-1].endswith("unique_to_two_state")
     assert (_COLLIDE["one"], _COLLIDE["two"]) == (0, 1)
 
 
