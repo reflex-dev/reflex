@@ -345,6 +345,18 @@ def test_first_party_module_names_includes_namespace_packages(tmp_path, monkeypa
         sys.modules.pop("ns_under_test.leaf", None)
 
 
+def test_reset_model_metadata_skips_unloaded_model_layers(monkeypatch):
+    """A child of an app that never loaded the model layer does not import it.
+
+    Importing it only to clear its registries cost every hot reload ~0.3 s.
+    """
+    for name in ("sqlmodel", "reflex.model"):
+        monkeypatch.delitem(sys.modules, name, raising=False)
+    compile_daemon._reset_model_metadata()
+    assert "sqlmodel" not in sys.modules
+    assert "reflex.model" not in sys.modules
+
+
 @pytest.mark.skipif(not hasattr(os, "fork"), reason="requires os.fork (POSIX)")
 def test_reset_model_metadata_allows_table_redefinition():
     """After reset, an ``rx.Model`` table can be redefined without conflict.

@@ -608,22 +608,19 @@ def _reset_model_metadata() -> None:
     forked child inherits warm and populated. Re-evaluating a page that defines
     such a model would then raise ``Table '...' is already defined``. A fresh
     respawn never hits this (empty registry); resetting here restores that
-    fresh-process contract. Best-effort: apps without a DB layer have nothing to
-    clear.
+    fresh-process contract. Only a loaded model layer holds tables; one a page
+    imports first starts empty, as in a fresh process.
     """
-    with contextlib.suppress(Exception):
-        import sqlmodel
-
+    if (sqlmodel := sys.modules.get("sqlmodel")) is not None:
         sqlmodel.SQLModel.metadata.clear()
-    with contextlib.suppress(Exception):
-        from reflex.model import Model
-
-        Model.metadata.clear()
-    with contextlib.suppress(Exception):
-        from reflex.model import ModelRegistry
-
-        ModelRegistry.models.clear()
-        ModelRegistry._metadata = None
+    if (model := sys.modules.get("reflex.model")) is None:
+        return
+    # Without the DB extras these are stubs that have no registries.
+    with contextlib.suppress(AttributeError):
+        model.Model.metadata.clear()
+    with contextlib.suppress(AttributeError):
+        model.ModelRegistry.models.clear()
+        model.ModelRegistry._metadata = None
 
 
 #: Name of the env var carrying the changed-path hint to a cold compile child.
