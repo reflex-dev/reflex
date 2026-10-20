@@ -29,7 +29,7 @@ def docs_announcement_banner() -> rx.Component:
                             class_name="docs-announcement-badge",
                         ),
                         rx.el.span(
-                            "xy is now in Reflex Build",
+                            "XY is now in Reflex Build",
                             class_name="docs-announcement-message",
                         ),
                         rx.el.span("Read more", class_name="docs-announcement-cta"),
@@ -38,7 +38,7 @@ def docs_announcement_banner() -> rx.Component:
                     href=XY_IN_REFLEX_BUILD_URL,
                     target="_blank",
                     rel="noopener noreferrer",
-                    aria_label="New: xy is now in Reflex Build — Read more (opens in a new tab)",
+                    aria_label="New: XY is now in Reflex Build — Read more (opens in a new tab)",
                     class_name="docs-announcement-link",
                 ),
                 rx.el.button(
