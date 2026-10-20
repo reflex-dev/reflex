@@ -46,7 +46,11 @@ async function createConnection(
   const body = element("body");
   const socket = {
     connected: true,
-    io: { opts: {}, encoder: {}, decoder: {} },
+    io: {
+      opts: {},
+      encoder: { encode: (packet) => [JSON.stringify(packet)] },
+      decoder: {},
+    },
     on: (name, handler) => handlers.set(name, handler),
     emit: (name, value) => sent.push({ name, value }),
     connect: () => {
