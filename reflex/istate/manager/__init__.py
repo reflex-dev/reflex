@@ -3,9 +3,11 @@
 import contextlib
 import dataclasses
 import logging
+import sys
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
-from typing import TYPE_CHECKING, TypedDict, overload
+from types import TracebackType
+from typing import TYPE_CHECKING, Generic, TypedDict, overload
 
 from reflex_base import constants
 from reflex_base.config import get_config
@@ -209,13 +211,12 @@ class StateManager(ABC):
         """
         yield  # pyright: ignore[reportReturnType]
 
-    @contextlib.asynccontextmanager
-    async def modify_state_with_links(
+    def modify_state_with_links(
         self,
         token: StateToken[TOKEN_TYPE] | str,
         previous_dirty_vars: dict[str, set[str]] | None = None,
         **context: Unpack[StateModificationContext],
-    ) -> AsyncIterator[TOKEN_TYPE]:
+    ) -> contextlib.AbstractAsyncContextManager[TOKEN_TYPE]:
         """Modify the state for a token, including linked substates, while holding exclusive lock.
 
         Args:
@@ -223,29 +224,113 @@ class StateManager(ABC):
             previous_dirty_vars: The previously dirty vars for linked states.
             context: The state modification context.
 
-        Yields:
-            The state for the token with linked states patched in.
+        Returns:
+            An async context manager yielding the state for the token with linked states patched in.
         """
-        from reflex.state import BaseState
-
-        token = self._coerce_token(token)
-        async with self.modify_state(token, **context) as root_state:
-            if (
-                isinstance(root_state, BaseState)
-                and getattr(root_state, "_reflex_internal_links", None) is not None
-            ):
-                from reflex.istate.shared import SharedStateBaseInternal
-
-                shared_state = await root_state.get_state(SharedStateBaseInternal)
-                async with shared_state._modify_linked_states(
-                    previous_dirty_vars=previous_dirty_vars
-                ) as _:
-                    yield root_state
-            else:
-                yield root_state
+        return _ModifyStateWithLinks(self, token, previous_dirty_vars, context)
 
     async def close(self):  # noqa: B027
         """Close the state manager."""
+
+
+class _ModifyStateWithLinks(Generic[TOKEN_TYPE]):
+    """Async context manager behind `StateManager.modify_state_with_links`.
+
+    Not an `asynccontextmanager`: every event enters two of those (this one and
+    the manager's `modify_state`), and building their async generators costs
+    more than the locking they wrap.
+    """
+
+    __slots__ = (
+        "_context",
+        "_links",
+        "_manager",
+        "_previous_dirty_vars",
+        "_state_context",
+        "_token",
+    )
+
+    def __init__(
+        self,
+        manager: StateManager,
+        token: StateToken[TOKEN_TYPE] | str,
+        previous_dirty_vars: dict[str, set[str]] | None,
+        context: StateModificationContext,
+    ):
+        """Store the arguments of `modify_state_with_links`.
+
+        Args:
+            manager: The state manager.
+            token: The token to modify the state for.
+            previous_dirty_vars: The previously dirty vars for linked states.
+            context: The state modification context.
+        """
+        self._manager = manager
+        self._token = token
+        self._previous_dirty_vars = previous_dirty_vars
+        self._context = context
+        self._links: contextlib.AbstractAsyncContextManager[None] | None = None
+
+    async def __aenter__(self) -> TOKEN_TYPE:
+        """Lock the state and patch in its linked states.
+
+        Returns:
+            The root state for the token.
+        """
+        manager = self._manager
+        token = manager._coerce_token(self._token)
+        state_context = self._state_context = manager.modify_state(
+            token, **self._context
+        )
+        root_state = await state_context.__aenter__()
+        try:
+            # Only a state that has links needs the shared-state imports.
+            if getattr(root_state, "_reflex_internal_links", None) is not None:
+                from reflex.istate.shared import SharedStateBaseInternal
+                from reflex.state import BaseState
+
+                if isinstance(root_state, BaseState):
+                    shared_state = await root_state.get_state(SharedStateBaseInternal)
+                    links = shared_state._modify_linked_states(
+                        previous_dirty_vars=self._previous_dirty_vars
+                    )
+                    await links.__aenter__()
+                    self._links = links
+        except BaseException:
+            # __aexit__ does not run when __aenter__ raises: release the lock here.
+            await state_context.__aexit__(*sys.exc_info())
+            raise
+        return root_state
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
+    ):
+        """Release the linked states, then the state lock.
+
+        Args:
+            exc_type: The type of the exception raised in the context, if any.
+            exc: The exception raised in the context, if any.
+            tb: The traceback of the exception raised in the context, if any.
+
+        Returns:
+            Whether the exception raised in the context is suppressed.
+        """
+        suppressed = False
+        if (links := self._links) is not None:
+            try:
+                if await links.__aexit__(exc_type, exc, tb):
+                    exc_type = exc = tb = None
+                    suppressed = True
+            except BaseException as links_exc:
+                if await self._state_context.__aexit__(
+                    type(links_exc), links_exc, links_exc.__traceback__
+                ):
+                    return True
+                raise
+        return await self._state_context.__aexit__(exc_type, exc, tb) or suppressed
 
 
 def _release_state_tree(state: "BaseState"):

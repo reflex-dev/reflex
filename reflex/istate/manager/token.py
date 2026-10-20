@@ -4,9 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 import pickle
-from typing import TYPE_CHECKING, BinaryIO, Generic, TypeVar
-
-from typing_extensions import Self
+from typing import TYPE_CHECKING, BinaryIO, Generic, Self, TypeVar
 
 from reflex.utils import console
 
@@ -150,14 +148,27 @@ class BaseStateToken(StateToken["BaseState"]):
         """
         return super().with_cls(cls)
 
+    def _state_key(self, cls: type[BaseState]) -> str:
+        """Get the key a state of this token's tree is stored under.
+
+        Formats the key directly, which is cheaper than building a token for the
+        state class with `with_cls` and converting it to a string.
+
+        Args:
+            cls: The class of the state.
+
+        Returns:
+            The key of the state in the underlying StateManager store.
+        """
+        return f"{self.ident}_{cls.get_full_name()}"
+
     def __str__(self) -> str:
         """The key used in the underlying StateManager store.
 
         Returns:
             A string representation of the token, which is a combination of the ident and cls name.
         """
-        # urlencode the redis token to escape the slash delimiter.
-        return f"{self.ident}_{self.cls.get_full_name()}"
+        return self._state_key(self.cls)
 
     @classmethod
     def serialize(cls, state: BaseState) -> bytes:
@@ -234,11 +245,19 @@ class BaseStateToken(StateToken["BaseState"]):
 
         console.deprecate(
             feature_name="Passing a string to modify_state",
-            reason="Use rx.BaseStateToken(token, state_cls) instead of the legacy string format",
+            reason="Use rx.BaseStateToken(ident=token, cls=state_cls) instead of the legacy string format",
             deprecation_version="0.9.0",
             removal_version="1.0",
         )
 
         client_token, state_path = _split_substate_key(legacy_token)
-        state_cls = root_state.get_class_substate(tuple(state_path.split(".")))  # type: ignore[union-attr]
+        try:
+            state_cls = root_state.get_class_substate(tuple(state_path.split(".")))  # type: ignore[union-attr]
+        except ValueError as err:
+            msg = (
+                "Invalid legacy state token: no state found for the state path. Expected "
+                "'<client_token>_<state_full_name>'. Use "
+                "rx.BaseStateToken(ident=client_token, cls=StateClass) instead."
+            )
+            raise ValueError(msg) from err
         return cls(ident=client_token, cls=state_cls)
