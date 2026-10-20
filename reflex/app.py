@@ -368,6 +368,76 @@ class _ContextMiddleware:
         await self.app(scope, receive, send)
 
 
+class _DrainOversizedBodyMiddleware:
+    """Drain oversized polling POST bodies before engine.io rejects the request.
+
+    engine.io compares ``Content-Length`` against ``max_http_buffer_size`` and
+    answers 400 without reading the request body. The client is still sending
+    at that point, and the unsent remainder can wedge its connection pool so
+    the reconnect handshake is never served. Reading the body to completion
+    first lets the rejection reach a client that has finished sending, so it
+    can record the failure and retry.
+    """
+
+    def __init__(self, app: ASGIApp, max_size: int) -> None:
+        """Wrap an ASGI app, draining oversized POST bodies before forwarding.
+
+        Args:
+            app: The next ASGI app in the middleware stack.
+            max_size: The maximum accepted body size; larger POST bodies are drained.
+        """
+        self.app = app
+        self.max_size = max_size
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """Drain an oversized POST body, then forward the request downstream.
+
+        Args:
+            scope: The ASGI connection scope.
+            receive: The ASGI receive callable.
+            send: The ASGI send callable.
+        """
+        if scope["type"] != "http" or scope["method"] != "POST":
+            await self.app(scope, receive, send)
+            return
+
+        content_length: int | None = None
+        for name, value in scope.get("headers", []):
+            if name.lower() == b"content-length":
+                try:
+                    content_length = int(value)
+                except ValueError:
+                    content_length = None
+                break
+
+        if content_length is None or content_length <= self.max_size:
+            await self.app(scope, receive, send)
+            return
+
+        # Drain the declared body so the client finishes sending before
+        # engine.io answers 400. The bytes are discarded; engine.io rejects on
+        # Content-Length without reading them.
+        remaining = content_length
+        while remaining > 0:
+            message = await receive()
+            if message["type"] != "http.request":
+                break
+            remaining -= len(message.get("body", b""))
+            if not message.get("more_body"):
+                break
+
+        drained = False
+
+        async def drained_receive() -> Message:
+            nonlocal drained
+            if not drained:
+                drained = True
+                return {"type": "http.request", "body": b"", "more_body": False}
+            return await receive()
+
+        await self.app(scope, drained_receive, send)
+
+
 def _is_location_specifier(specifier: str) -> bool:
     """Check whether a dependency specifier points at a location.
 
@@ -655,6 +725,12 @@ class App(MiddlewareMixin, LifespanMixin):
 
         # Create the socket app. Note event endpoint constant replaces the default 'socket.io' path.
         socket_app = EngineIOApp(self.sio, socketio_path="")
+        # Drain oversized polling POST bodies before engine.io rejects them, so
+        # the 400 response does not strand a half-sent request on the client.
+        drained_socket_app = _DrainOversizedBodyMiddleware(
+            socket_app,
+            max_size=self.sio.eio.max_http_buffer_size,
+        )
         namespace = config.get_event_namespace()
 
         # Create the event namespace and attach the main app. Not related to any paths.
@@ -690,7 +766,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
                     return await self.app(scope, receive, modified_send)
 
-            socket_app_with_headers = HeaderMiddleware(socket_app)
+            socket_app_with_headers = HeaderMiddleware(drained_socket_app)
             self._api.mount(
                 config.prepend_backend_path(str(constants.Endpoint.EVENT)),
                 socket_app_with_headers,
