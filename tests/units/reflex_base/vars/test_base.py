@@ -2,6 +2,7 @@
 
 import dataclasses
 import datetime
+import decimal
 import enum
 import gc
 import logging
@@ -14,15 +15,18 @@ import traceback
 import typing
 import weakref
 from abc import ABC, abstractmethod
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator, Sequence
 from pathlib import Path
 from typing import Any, ClassVar, Literal, Self, TypeVar
 from unittest import mock
 
 import pytest
 from reflex_base import constants
+from reflex_base.components.component import LiteralComponentVar
 from reflex_base.constants import RouteArgType
+from reflex_base.constants.colors import Color
 from reflex_base.environment import _load_dotenv_from_files, environment
+from reflex_base.event import LiteralEventChainVar, LiteralEventVar
 from reflex_base.utils import serializers
 from reflex_base.utils.exceptions import (
     BackendVarFormatError,
@@ -38,9 +42,11 @@ from reflex_base.vars.base import (
     GLOBAL_CACHE,
     BaseStateMeta,
     CachedVarOperation,
+    CustomVarOperation,
     EvenMoreBasicBaseState,
     Field,
     LiteralVar,
+    StateOperation,
     Var,
     VarData,
     _global_vars,
@@ -50,14 +56,32 @@ from reflex_base.vars.base import (
     cached_property_no_lock,
     computed_var,
     field,
+    get_leaf_vars,
     var_operation,
     var_operation_return,
 )
+from reflex_base.vars.color import LiteralColorVar
+from reflex_base.vars.function import (
+    ArgsFunctionOperation,
+    ArgsFunctionOperationBuilder,
+    FunctionStringVar,
+    FunctionVar,
+    VarOperationCall,
+)
 from reflex_base.vars.number import NumberVar
-from reflex_base.vars.object import ObjectVar
-from reflex_base.vars.sequence import ArrayVar, StringVar
+from reflex_base.vars.object import LiteralObjectVar, ObjectItemOperation, ObjectVar
+from reflex_base.vars.sequence import (
+    ArraySliceOperation,
+    ArrayVar,
+    ConcatVarOperation,
+    LiteralArrayVar,
+    LiteralRangeVar,
+    StringVar,
+)
 from typing_extensions import TypeAliasType, TypeVarTuple
 
+import reflex as rx
+from reflex.istate.data import ReflexURLCastedVar, RouterDataVar
 from reflex.istate.proxy import MutableProxy
 from reflex.state import BaseState, State, _override_base_method
 
@@ -2189,3 +2213,199 @@ def test_new_default_for_inherited_private_field_stays_a_field():
         assert child_field.default == 2
         assert isinstance(vars(child)["__counter__"], Field)
         assert child().__counter__ == 2
+
+
+def _identical(leaves: Sequence[Var], *expected: Var) -> bool:
+    """Check that the leaves are exactly the given var objects, in order.
+
+    ``Var.__eq__`` builds a var, so lists of vars cannot be compared directly.
+
+    Args:
+        leaves: The leaves returned.
+        *expected: The vars the compound var was built from.
+
+    Returns:
+        Whether each leaf is the expected var object.
+    """
+    return len(leaves) == len(expected) and all(
+        leaf is var for leaf, var in zip(leaves, expected, strict=True)
+    )
+
+
+def test_get_leaf_vars_returns_a_leaf_alone() -> None:
+    var = Var(_js_expr="state.a")
+    (same,) = get_leaf_vars(var)
+    assert same is var
+
+
+def test_get_leaf_vars_dissolves_literals() -> None:
+    """A constant literal reads nothing; a container or a color what it holds.
+
+    A raw item is converted the way the renderer does, so an f-string with a
+    var inside a list still reads that var. Any other literal value stays
+    whole, since what it reads is not known.
+    """
+    a = Var(_js_expr="state.a")
+    b = Var(_js_expr="state.b").to(int)
+
+    assert get_leaf_vars(LiteralVar.create(1)) == []
+    assert get_leaf_vars(LiteralVar.create("text")) == []
+    assert get_leaf_vars(LiteralVar.create(decimal.Decimal("1.5"))) == []
+    assert get_leaf_vars(LiteralVar.create(range(3))) == []
+    assert get_leaf_vars(LiteralVar.create(datetime.datetime(2020, 1, 1))) == []
+    assert get_leaf_vars(LiteralVar.create({1, 2})) == []
+    assert _identical(get_leaf_vars(LiteralVar.create([1, a, [b]])), a, b)
+    assert _identical(get_leaf_vars(LiteralVar.create({"k": a, b: 2})), a, b)
+    assert _identical(get_leaf_vars(LiteralVar.create({a})), a)
+    assert _identical(get_leaf_vars(LiteralVar.create([f"{a}-x"])), a)
+    # A var that is the whole of a formatted string is decoded into a new object.
+    (decoded,) = get_leaf_vars(LiteralVar.create([f"{a}"]))
+    assert decoded is not a
+    assert decoded.equals(a)
+    assert _identical(get_leaf_vars(LiteralVar.create(Color("red", shade=b))), b)
+    event = LiteralVar.create(rx.console_log(a))
+    (same,) = get_leaf_vars(event)
+    assert same is event
+
+
+def test_get_leaf_vars_unwraps_operations_and_casts() -> None:
+    """Operands come back in order, through nested operations and casts, once."""
+    a = Var(_js_expr="state.a").to(int)
+    b = Var(_js_expr="state.b").to(int)
+
+    assert _identical(get_leaf_vars((a + 1) * b), a, b)
+    assert _identical(get_leaf_vars((a + b).to(str)), a, b)
+    assert _identical(get_leaf_vars(a + a), a)
+    # A cast of a leaf is the leaf, as the caller holds it.
+    assert _identical(get_leaf_vars(a), a)
+
+
+def test_get_leaf_vars_reads_through_a_function_body() -> None:
+    """A function reads what its body reads, other than its own parameters."""
+    items = Var(_js_expr="state.items").to(list[str])
+    outer = Var(_js_expr="outer").to(str)
+
+    assert _identical(get_leaf_vars(items.filter(lambda item: item == "r")), items)
+    assert _identical(
+        get_leaf_vars(items.filter(lambda item: item == outer)), items, outer
+    )
+    nested = items.map(lambda item: items.filter(lambda other: other == item))
+    assert _identical(get_leaf_vars(nested), items)
+    rest = Var(_js_expr="rest").to(list[str])
+    spread = ArgsFunctionOperation.create((), rest[0] + outer, rest="rest")
+    assert _identical(get_leaf_vars(spread), outer)
+    colored = items.map(lambda item: Color(outer, shade=item.to(int)))
+    assert _identical(get_leaf_vars(colored), items, outer)
+    priced = items.map(lambda item: item.length() + decimal.Decimal("1.5"))
+    assert _identical(get_leaf_vars(priced), items)
+    # A cast around a function reads like the function.
+    x = Var(_js_expr="x").to(int)
+    cast = ArgsFunctionOperation.create(("x",), x + items.length()).to(FunctionVar)
+    assert _identical(get_leaf_vars(cast), items)
+    # A named function is a leaf.
+    fn = FunctionStringVar.create("fn")
+    assert _identical(get_leaf_vars(fn), fn)
+
+
+def test_get_leaf_vars_keeps_a_function_whole_when_a_leaf_reads_a_parameter() -> None:
+    """A body leaf that is not a parameter itself may still read one.
+
+    Hoisting it out of the function would name something bound only inside.
+    """
+    items = Var(_js_expr="state.items").to(list[str])
+    other = Var(_js_expr="state.other").to(list[str])
+
+    built = items.map(lambda item: Var(_js_expr=f"{item}.length").to(int))
+    array, function = get_leaf_vars(built)
+    assert array is items
+    assert isinstance(function, FunctionVar)
+
+    closing = items.map(lambda item: other.map(lambda o: rx.console_log(item)))
+    array, function = get_leaf_vars(closing)
+    assert array is items
+    assert isinstance(function, FunctionVar)
+
+
+def test_get_leaf_vars_keeps_a_function_with_an_opaque_body_whole() -> None:
+    """A literal kept whole may read the parameters; the function stays whole."""
+    items = Var(_js_expr="state.items").to(list[str])
+
+    array, function = get_leaf_vars(items.map(lambda item: rx.console_log(item)))
+
+    assert str(array) == "state.items"
+    assert isinstance(function, FunctionVar)
+
+
+def test_get_leaf_vars_converts_raw_operands() -> None:
+    """A raw operand is rendered through LiteralVar.create, so it is read that way."""
+    a = Var(_js_expr="state.a")
+    n = Var(_js_expr="state.n").to(int)
+    fn = FunctionStringVar.create("fn")
+
+    call = fn.call(Color("red", shade=n), [a, 1], f"{a}-x")
+    assert _identical(get_leaf_vars(call), fn, n, a)
+
+
+def test_get_leaf_vars_unwraps_operations_with_their_own_fields() -> None:
+    """Operations outside ``var_operation`` keep their operands in fields."""
+    items = Var(_js_expr="state.items").to(list[str])
+    n = Var(_js_expr="state.n").to(int)
+    obj = Var(_js_expr="state.obj").to(dict[str, str])
+    key = Var(_js_expr="state.key").to(str)
+    fn = FunctionStringVar.create("fn")
+
+    assert _identical(get_leaf_vars(items[1:]), items)
+    assert _identical(get_leaf_vars(items[n:][0]), items, n)
+    assert _identical(get_leaf_vars(obj[key]), obj, key)
+    assert _identical(get_leaf_vars(key + "-" + key.upper()), key)
+    assert _identical(get_leaf_vars(fn.call(n, items[0])), fn, n, items)
+
+
+def test_get_leaf_vars_sorts_every_cached_operation() -> None:
+    """Each cached operation is sorted on purpose.
+
+    A new operation class has to be added here after deciding whether every
+    value it holds in a field is one it reads, so the generic unwrapping applies,
+    or whether it needs its own branch or is a leaf.
+
+    Classes are compared by name: a ``slots=True`` dataclass is a rebuilt copy
+    of the class first defined, and the discarded original stays in
+    ``__subclasses__`` until it is garbage collected.
+    """
+
+    def subclasses(cls: type) -> set[type]:
+        return set(cls.__subclasses__()).union(
+            *(subclasses(sub) for sub in cls.__subclasses__())
+        )
+
+    def names(classes: Iterable[type]) -> set[str]:
+        return {f"{cls.__module__}.{cls.__qualname__}" for cls in classes}
+
+    operations = {
+        cls
+        for cls in subclasses(CachedVarOperation)
+        if cls.__module__.startswith(("reflex_base.", "reflex."))
+    }
+
+    assert names(operations) == names({
+        CustomVarOperation,
+        ArraySliceOperation,
+        ObjectItemOperation,
+        ConcatVarOperation,
+        VarOperationCall,
+        ReflexURLCastedVar,
+        RouterDataVar,
+        # Literals read what their value holds, or nothing for a constant.
+        LiteralArrayVar,
+        LiteralObjectVar,
+        LiteralColorVar,
+        LiteralRangeVar,
+        # Functions read their body minus their parameters.
+        ArgsFunctionOperation,
+        ArgsFunctionOperationBuilder,
+        # Leaves: a state field access, and literals of other values.
+        StateOperation,
+        LiteralComponentVar,
+        LiteralEventVar,
+        LiteralEventChainVar,
+    })
