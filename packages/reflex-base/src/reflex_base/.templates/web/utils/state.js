@@ -198,10 +198,10 @@ const createSocket = (endpoint, transports, token) =>
   });
 
 /**
- * Measure an Engine.IO frame the way the server limits it.
- * @param frame The encoded frame.
+ * Measure encoded text the way the Engine.IO server limits a frame.
+ * @param frame The encoded text.
  * @param transport The transport that carries it.
- * @returns The code points of a websocket text frame, or the UTF-8 bytes of a polling body.
+ * @returns The code points for a websocket text frame, or the UTF-8 bytes for a polling body.
  */
 const frameSize = (frame, transport) => {
   if (transport !== "websocket") {
@@ -931,32 +931,6 @@ export const connect = async (
     return { event: boot_event, state_schema: app.stateSchema };
   };
 
-  // The server drops a transport whose frame exceeds the limit its handshake
-  // announced, so an oversized hydrate is reported instead of sent. The page
-  // stays offline until browser storage shrinks and it reloads: wait_connect
-  // stays set, so reconnect() does not rebuild the hydrate.
-  const sendWithinLimit = (auth) => (send) => {
-    // socket.io-client is pinned, so its namespace and handshake limit are stable.
-    const { encoder, engine } = socket.current.io;
-    // An Engine.IO message ("4") carrying a Socket.IO CONNECT packet (type 0).
-    const packet = { type: 0, nsp: socket.current.nsp, data: auth };
-    const frame = `4${encoder.encode(packet)[0]}`;
-    const transport = engine.transport.name;
-    const size = frameSize(frame, transport);
-    if (size > engine._maxPayload) {
-      const unit = transport === "websocket" ? "characters" : "bytes";
-      const error = new Error(
-        `Hydration payload (${size} ${unit}) exceeds the server limit (${engine._maxPayload} ${unit}). Reduce browser storage data and reload.`,
-      );
-      error.code = ERROR_TYPE_HYDRATION_PAYLOAD_TOO_LARGE;
-      console.error(error.message);
-      setConnectErrors((errors) => [...errors.slice(-9), error]);
-      socket.current.disconnect();
-      return;
-    }
-    send(auth);
-  };
-
   // Create the socket. A new session's token is saved here, once the app has
   // mounted, even when a transport warmed up with it earlier.
   socketStarted = true;
@@ -975,10 +949,40 @@ export const connect = async (
     warmSocket ?? createSocket(endpoint, transports, session_token);
   warmSocket = null;
   cancelWarmup();
-  socket.current.auth = sendWithinLimit(bootAuth(true));
+  socket.current.auth = bootAuth(true);
   socket.current.wait_connect = !socket.current.connected;
   // Ensure undefined fields in events are sent as null instead of removed
   socket.current.io.encoder.replacer = (k, v) => (v === undefined ? null : v);
+  // The server drops a transport whose frame exceeds the limit its handshake
+  // announced, so a CONNECT packet (type 0) that carries an oversized hydrate
+  // is reported instead of sent. The page stays offline until browser storage
+  // shrinks and it reloads: wait_connect stays set, so reconnect() does not
+  // rebuild the hydrate.
+  const { encoder } = socket.current.io;
+  const encode = encoder.encode.bind(encoder);
+  encoder.encode = (packet) => {
+    const encoded = encode(packet);
+    if (packet.type !== 0) {
+      return encoded;
+    }
+    // socket.io-client is pinned; test_hydration_storage.py covers these internals.
+    const { engine } = socket.current.io;
+    const transport = engine.transport.name;
+    // The Engine.IO message type ("4") prefixes the encoded packet.
+    const size = 1 + frameSize(encoded[0], transport);
+    if (size > engine._maxPayload) {
+      const unit = transport === "websocket" ? "characters" : "bytes";
+      const error = new Error(
+        `Hydration payload (${size} ${unit}) exceeds the server limit (${engine._maxPayload} ${unit}). Reduce browser storage data and reload.`,
+      );
+      error.code = ERROR_TYPE_HYDRATION_PAYLOAD_TOO_LARGE;
+      console.error(error.message);
+      setConnectErrors((errors) => [...errors.slice(-9), error]);
+      socket.current.disconnect();
+      return [];
+    }
+    return encoded;
+  };
   socket.current.io.decoder.tryParse = (str) => {
     try {
       return parseJson(str);
@@ -996,7 +1000,7 @@ export const connect = async (
       socket.current.wait_connect = true;
       socket.current.io.opts.query = { token: getToken() }; // Update token for reconnect.
       // A reconnect rehydrates in full: the reducers no longer hold the defaults.
-      socket.current.auth = sendWithinLimit(bootAuth(false));
+      socket.current.auth = bootAuth(false);
       socket.current.connect();
     }
   };

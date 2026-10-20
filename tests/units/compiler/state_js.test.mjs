@@ -90,7 +90,9 @@ async function setup({
         },
         // Like socket.io-parser's Encoder.encodeAsString.
         encoder: {
+          encodes: 0,
           encode({ type, nsp, data }) {
+            this.encodes++;
             const prefix = nsp && nsp !== "/" ? `${nsp},` : "";
             return [`${type}${prefix}${JSON.stringify(data, this.replacer)}`];
           },
@@ -116,28 +118,30 @@ async function setup({
         ]) {
           assert.ok(handlers.has(name), `missing handler: ${name}`);
         }
-        // Like Socket.onopen: an auth function decides whether CONNECT goes out.
-        const send = (data) => {
-          this.sentAuth = data;
-          this.frames.push(
-            `4${this.io.encoder.encode({ type: 0, nsp: this.nsp, data })[0]}`,
-          );
-          this.namespaceConnects++;
-          if (this.namespaceConnects <= dropConnects) {
-            // The transport closes before the CONNECT is acknowledged. A
-            // transport error reports connect_error before the disconnect.
-            if (dropReason === "transport error") {
-              handlers.get("connect_error")(new Error("xhr post error"));
-            }
-            handlers.get("disconnect")(dropReason);
-            return;
+        // Like Manager._packet: the server receives the frames the encoder returns.
+        const frames = this.io.encoder.encode({
+          type: 0,
+          nsp: this.nsp,
+          data: this.auth,
+        });
+        if (frames.length === 0) {
+          return;
+        }
+        this.frames.push(...frames.map((frame) => `4${frame}`));
+        this.namespaceConnects++;
+        if (this.namespaceConnects <= dropConnects) {
+          // The transport closes before the CONNECT is acknowledged. A
+          // transport error reports connect_error before the disconnect.
+          if (dropReason === "transport error") {
+            handlers.get("connect_error")(new Error("xhr post error"));
           }
-          this.connected = true;
-          handlers.get("connect")();
-          handlers.get("new_token")("assigned-token");
-          handlers.get("event")({ delta: { child: { count: 7 } } });
-        };
-        typeof this.auth === "function" ? this.auth(send) : send(this.auth);
+          handlers.get("disconnect")(dropReason);
+          return;
+        }
+        this.connected = true;
+        handlers.get("connect")();
+        handlers.get("new_token")("assigned-token");
+        handlers.get("event")({ delta: { child: { count: 7 } } });
       },
       disconnect() {
         this.disconnects++;
@@ -262,7 +266,25 @@ test("warm the transport without hydrating, then reuse it with every handler att
   assert.deepEqual(app.firstHydrates, [true]);
   assert.equal(app.timers.size, 0);
   assert.equal(app.window.sessionStorage.getItem("token"), "assigned-token");
-  assert.equal(app.socket.current.sentAuth.event.router_data.pathname, "/page");
+  assert.equal(app.socket.current.auth.event.router_data.pathname, "/page");
+});
+
+test("the size check encodes a CONNECT packet once and leaves other packets alone", async () => {
+  const app = await connectWith("websocket", {}, 1_000_000);
+  const { encoder } = app.socket.current.io;
+  assert.equal(app.socket.current.namespaceConnects, 1);
+  assert.equal(encoder.encodes, 1);
+  assert.match(app.socket.current.frames[0], /"name":"root.hydrate_and_load"/);
+
+  // An event over the limit is not a hydrate; it is encoded as before.
+  const event = {
+    type: 2,
+    nsp: "/_event",
+    data: ["event", "x".repeat(1_000_001)],
+  };
+  assert.equal(encoder.encode(event).length, 1);
+  assert.equal(encoder.encodes, 2);
+  assert.equal(app.connectErrors.length, 0);
 });
 
 /** Measure a frame like the Engine.IO server: code points per websocket text frame, bytes per polling body. */

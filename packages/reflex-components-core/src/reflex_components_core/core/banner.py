@@ -248,12 +248,13 @@ class ConnectionModal(Component):
         """
         if not comp:
             comp = el.span(*default_connection_error())
+        is_open = has_too_many_connection_errors | has_hydration_payload_error
         return cond(
-            has_too_many_connection_errors,
+            is_open,
             el.dialog(
                 el.h2("Connection Error"),
                 comp,
-                open=has_too_many_connection_errors,
+                open=is_open,
                 z_index=9999,
             ),
         )
