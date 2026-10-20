@@ -11,7 +11,7 @@ import click
 
 from reflex_cli import constants
 from reflex_cli.utils import console, log
-from reflex_cli.utils.exceptions import TokenValidationError
+from reflex_cli.utils.exceptions import TokenAccessDeniedError, TokenValidationError
 from reflex_cli.utils.output import json_option, print_json
 
 logger = logging.getLogger(__name__)
@@ -106,8 +106,11 @@ def whoami_command(token: str | None, loglevel: str, as_json: bool):
 
     try:
         validated_info = hosting.validate_token(access_token)
-    except TokenValidationError as err:
+    except TokenAccessDeniedError as err:
         logger.error(hosting.rejected_token_message(source, err))
+        raise click.exceptions.Exit(1) from err
+    except TokenValidationError as err:
+        logger.error(hosting._token_validation_failure_message(source, err))
         raise click.exceptions.Exit(1) from err
 
     identity = {

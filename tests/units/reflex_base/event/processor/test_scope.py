@@ -1,6 +1,7 @@
 """Tests for the per-event ambient-context scope hook."""
 
 import contextlib
+import weakref
 from typing import TYPE_CHECKING, cast
 
 import pytest
@@ -118,3 +119,23 @@ async def test_provider_can_suppress_a_body_exception():
     async with scope.event_scope(_ROOT):
         msg = "swallowed"
         raise RuntimeError(msg)
+
+
+@pytest.mark.asyncio
+async def test_entered_scope_releases_the_root_state():
+    """A background task's scope must not pin the tree its proxy replaces."""
+
+    class Root:
+        pass
+
+    async def provider(_root):  # noqa: RUF029 (async required by provider protocol)
+        return contextlib.nullcontext()
+
+    scope.register_event_scope_provider(provider)
+    root = Root()
+    root_ref = weakref.ref(root)
+    event_scope = scope.event_scope(cast("BaseState", root))
+    del root
+
+    async with event_scope:
+        assert root_ref() is None

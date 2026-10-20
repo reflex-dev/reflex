@@ -54,12 +54,16 @@ class _EventScope:
         self._stack = contextlib.ExitStack()
 
     async def __aenter__(self) -> None:
+        # Drop the reference so a background task's scope does not pin the tree
+        # its proxy replaces on `async with self`.
+        root_state = self._root_state
+        del self._root_state
         # ``async with`` only calls ``__aexit__`` if ``__aenter__`` returns, so
         # a provider raising mid-loop would otherwise leak the contexts already
         # entered (e.g. an earlier provider's contextvar token).
         try:
             for provider in _providers:
-                self._stack.enter_context(await provider(self._root_state))
+                self._stack.enter_context(await provider(root_state))
         except BaseException:
             self._stack.close()
             raise

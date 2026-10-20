@@ -2,20 +2,26 @@
 
 from __future__ import annotations
 
+import contextlib
 import importlib.metadata
 import json
 import os
+import signal
 import subprocess
 import sys
+import time
 from types import SimpleNamespace
 
 import click
 import click.testing
+import psutil
 import pytest
 from pytest_mock import MockerFixture
+from reflex_base import constants
 
 from reflex import reflex
 from reflex.reflex import _PluginCommand, cli
+from reflex.testing import DEFAULT_TIMEOUT
 
 _CLI_STARTUP_DENIED_MODULES = frozenset({
     "PIL",
@@ -72,6 +78,7 @@ def _run_cli_probe(probe: str) -> dict[str, object]:
         (["--help"], _CLI_STARTUP_DENIED_MODULES),
         (["--version"], _CLI_STARTUP_DENIED_MODULES),
         (["run", "--help"], _CLI_STARTUP_DENIED_MODULES),
+        (["component", "--help"], _CLI_STARTUP_DENIED_MODULES),
         (
             ["deploy", "--help"],
             _CLI_STARTUP_DENIED_MODULES - {"reflex_cli.v2.deploy"},
@@ -85,6 +92,7 @@ def _run_cli_probe(probe: str) -> dict[str, object]:
         "help",
         "version",
         "run-help",
+        "component-help",
         "deploy-help",
         "cloud-help",
     ],
@@ -167,6 +175,84 @@ def test_compile_app_worker_flushes_telemetry_on_failure(mocker):
     flush.assert_called_once_with()
 
 
+def test_compile_app_sets_start_method_before_compile_pool(mocker: MockerFixture):
+    """The start method is fixed before the compile pool spawns any process."""
+    from unittest import mock
+
+    from reflex.utils import exec as exec_utils
+    from reflex.utils import prerequisites
+
+    calls: list[str] = []
+    mocker.patch.object(exec_utils, "should_use_granian", return_value=True)
+    mocker.patch.object(exec_utils, "should_prerender_routes", return_value=False)
+    mocker.patch.object(
+        exec_utils,
+        "set_dev_start_method",
+        side_effect=lambda: calls.append("start_method"),
+    )
+    mocker.patch.object(prerequisites, "compile_or_validate_app")
+
+    class FakeExecutor:
+        def __init__(self, *_args, **_kwargs):
+            calls.append("pool")
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_exc):
+            return False
+
+        def submit(self, *_args, **_kwargs):
+            future = mock.Mock()
+            future.result.return_value = True
+            return future
+
+    mocker.patch("concurrent.futures.ProcessPoolExecutor", FakeExecutor)
+
+    reflex._compile_app()
+
+    assert calls == ["start_method", "pool"]
+
+
+@pytest.mark.parametrize(
+    ("running_mode", "launcher"),
+    [
+        (constants.RunningMode.BACKEND_ONLY, "run_backend_prod"),
+        (constants.RunningMode.FRONTEND_ONLY, "run_frontend_prod"),
+    ],
+)
+def test_run_prod_sends_telemetry_synchronously(
+    mocker, running_mode: constants.RunningMode, launcher: str
+):
+    """The run-prod event is delivered on the calling thread, before the server.
+
+    The server forks its workers from this process, so the event must not be
+    queued on the telemetry thread pool. Going through ``_process_event`` keeps
+    the one-time alias migration, which a backend-only run has no other event
+    to ride on.
+    """
+    from reflex.utils import build, exec, processes, telemetry
+
+    config = mocker.patch.object(reflex, "get_config").return_value
+    mocker.patch.object(reflex, "_compile_app")
+    mocker.patch.object(reflex, "_skip_compile")
+    mocker.patch.object(build, "setup_frontend_prod")
+    mocker.patch.object(processes, "atexit_handler")
+    mocker.patch("atexit.register")
+    mocker.patch.object(exec, "notify_app_running")
+    mocker.patch.object(exec, "notify_frontend")
+    queued = mocker.patch.object(telemetry, "send")
+    calls = mocker.Mock()
+    calls.attach_mock(mocker.patch.object(telemetry, "_process_event"), "send")
+    calls.attach_mock(mocker.patch.object(exec, launcher), "serve")
+
+    reflex._run_prod(running_mode, 8000, "127.0.0.1")
+
+    queued.assert_not_called()
+    calls.send.assert_called_once_with("run-prod", config.telemetry_enabled)
+    assert [name for name, _args, _kwargs in calls.mock_calls] == ["send", "serve"]
+
+
 def test_cloud_commands_registered():
     """The hosting CLI commands import, resolve, and dispatch only on demand."""
     probe = """
@@ -225,9 +311,89 @@ print(json.dumps({
     }
 
 
-def test_component_command_is_not_registered():
-    """The custom components CLI has been removed."""
-    assert "component" not in reflex.cli.commands
+_COMPONENT_TEMPLATE_URL = "https://github.com/reflex-dev/component-template"
+
+
+def test_component_command_is_hidden():
+    """The removed component CLI keeps a shim that stays out of the listing."""
+    assert reflex.cli.commands["component"].hidden
+
+    result = click.testing.CliRunner().invoke(reflex.cli, ["--help"])
+
+    assert result.exit_code == 0
+    listed = [line.split()[0] for line in result.output.splitlines() if line.strip()]
+    assert "component" not in listed
+
+
+@pytest.mark.parametrize(
+    "args",
+    [
+        [],
+        ["init"],
+        ["build"],
+        ["install", "reflex-example"],
+        ["share", "--no-interactive"],
+        ["--library-name", "reflex-example"],
+    ],
+)
+def test_component_command_points_to_template(
+    caplog: pytest.LogCaptureFixture, args: list[str]
+):
+    """Every removed component subcommand reports where the workflow moved.
+
+    Args:
+        caplog: The pytest log capture fixture.
+        args: The arguments a user of the old workflow passes.
+    """
+    result = click.testing.CliRunner().invoke(reflex.cli.commands["component"], args)
+
+    assert result.exit_code == 1
+    assert _COMPONENT_TEMPLATE_URL in caplog.text
+    assert "No such option" not in result.output
+    assert "No such command" not in result.output
+
+
+@pytest.mark.parametrize("args", [["--help"], ["init", "--help"]])
+def test_component_help_points_to_template(
+    monkeypatch: pytest.MonkeyPatch, args: list[str]
+):
+    """Asking the removed component CLI for help prints the pointer.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+        args: The help invocation after ``reflex component``.
+    """
+    from reflex_base.utils import log
+
+    # Registered so teardown restores the variable the CLI callback sets.
+    monkeypatch.setenv(log._MANAGED_ENV_VAR, "true")
+    try:
+        result = click.testing.CliRunner().invoke(reflex.cli, ["component", *args])
+    finally:
+        log._reset()
+
+    assert result.exit_code == 0, result.output
+    assert _COMPONENT_TEMPLATE_URL in result.output
+
+
+def test_component_command_dispatches_from_cli():
+    """``reflex component init`` reaches the shim instead of a usage error."""
+    completed = subprocess.run(
+        [sys.executable, "-m", "reflex", "component", "init"],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=30,
+        env={
+            **os.environ,
+            "REFLEX_CHECK_LATEST_VERSION": "false",
+            "REFLEX_TELEMETRY_ENABLED": "false",
+        },
+    )
+
+    assert completed.returncode == 1, completed.stderr
+    assert _COMPONENT_TEMPLATE_URL in completed.stderr
+    assert "No such command" not in completed.stderr
 
 
 def test_lazy_command_delegates_click_introspection(monkeypatch: pytest.MonkeyPatch):
@@ -529,6 +695,480 @@ def test_init_records_version_check_after_frontend_setup(
     assert events == ["frontend", "version"]
 
 
+@pytest.fixture
+def init_in_reflex_dir(tmp_path, monkeypatch: pytest.MonkeyPatch) -> list[str]:
+    """Run `_init` from a directory named `reflex` with the setup steps stubbed.
+
+    Args:
+        tmp_path: Pytest temporary directory.
+        monkeypatch: Pytest monkeypatch fixture.
+
+    Returns:
+        The app names passed to `initialize_app`.
+    """
+    initialized: list[str] = []
+    app_dir = tmp_path / "reflex"
+    app_dir.mkdir()
+    monkeypatch.chdir(app_dir)
+    for target in (
+        "reflex.utils.exec.output_system_info",
+        "reflex.utils.prerequisites.initialize_reflex_user_directory",
+        "reflex.utils.prerequisites.ensure_reflex_installation_id",
+        "reflex.utils.prerequisites.initialize_frontend_dependencies",
+        "reflex.utils.frontend_skeleton.initialize_gitignore",
+        "reflex.utils.frontend_skeleton.initialize_agents_md",
+    ):
+        monkeypatch.setattr(target, lambda: None)
+    monkeypatch.setattr(
+        "reflex.utils.prerequisites.check_latest_package_version", lambda package: None
+    )
+    monkeypatch.setattr(
+        "reflex.utils.templates.initialize_app",
+        lambda app_name, template: initialized.append(app_name),
+    )
+    monkeypatch.setattr(
+        "reflex.utils.frontend_skeleton.initialize_requirements_txt", lambda: False
+    )
+    return initialized
+
+
+def test_init_existing_app_in_reflex_dir(
+    init_in_reflex_dir: list[str], monkeypatch: pytest.MonkeyPatch
+):
+    """Reinitializing an existing app validates its app_name, not its directory."""
+    constants.Config.FILE.write_text("")
+    monkeypatch.setattr(
+        reflex, "get_config", lambda: SimpleNamespace(app_name="fooapp")
+    )
+
+    result = click.testing.CliRunner().invoke(reflex.init, [])
+
+    assert result.exit_code == 0
+    assert init_in_reflex_dir == ["fooapp"]
+
+
+def test_init_new_app_in_reflex_dir(init_in_reflex_dir: list[str]):
+    """A new app still cannot be created in a directory named reflex."""
+    result = click.testing.CliRunner().invoke(reflex.init, [])
+
+    assert result.exit_code == 1
+    assert init_in_reflex_dir == []
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX signals")
+def test_frontend_preflight_failure_cleans_process(tmp_path):
+    ready = tmp_path / "frontend.pid"
+    driver = tmp_path / "driver.py"
+    driver.write_text(
+        """import subprocess, sys, types
+from reflex.utils import build, exec as exec_mod, telemetry
+
+def frontend(*args):
+    p = subprocess.Popen([sys.executable, "-c", "import time;time.sleep(60)"])
+    exec_mod.frontend_process = p
+    with open(PIDS, "w") as handshake:
+        handshake.write(str(p.pid))
+    sys.stderr.write("x" * 131072)
+    raise SystemExit(3)
+
+exec_mod.run_frontend = frontend
+exec_mod.run_backend = lambda *args: None
+telemetry.send = lambda *args, **kwargs: None
+build.setup_frontend = lambda *args, **kwargs: None
+import reflex.reflex as rx
+rx._compile_app = lambda: None
+rx.get_config = lambda: types.SimpleNamespace(
+    _set_persistent=lambda **kwargs: None,
+    loglevel=types.SimpleNamespace(subprocess_level=lambda: None),
+)
+from reflex_base import constants
+rx._run_dev(constants.RunningMode.FULLSTACK, 3000, 8000, "127.0.0.1")
+""".replace("PIDS", repr(str(ready)))
+    )
+    launcher = subprocess.Popen(
+        [sys.executable, str(driver)],
+        cwd=tmp_path,
+        start_new_session=True,
+        stderr=subprocess.PIPE,
+    )
+    child = None
+    try:
+        _, stderr = launcher.communicate(timeout=DEFAULT_TIMEOUT)
+        assert ready.exists(), (
+            "frontend did not start: " + stderr.decode(errors="replace")[-1000:]
+        )
+        child = int(ready.read_text())
+        assert launcher.returncode == 3, stderr.decode(errors="replace")[-1000:]
+        with contextlib.suppress(psutil.NoSuchProcess):
+            assert psutil.Process(child).status() in (
+                psutil.STATUS_ZOMBIE,
+                psutil.STATUS_DEAD,
+            )
+    finally:
+        if launcher.poll() is None:
+            os.killpg(launcher.pid, signal.SIGKILL)
+            launcher.communicate(timeout=DEFAULT_TIMEOUT)
+        if child is not None:
+            with contextlib.suppress(ProcessLookupError):
+                os.kill(child, signal.SIGKILL)
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX signals")
+def test_late_frontend_start_stops_after_backend_returns(tmp_path):
+    """A frontend started after backend teardown must exit without hanging."""
+    pids = tmp_path / "frontend.pid"
+    driver = tmp_path / "driver.py"
+    driver.write_text(
+        """import subprocess, sys, time, types
+from pathlib import Path
+from reflex.utils import build, exec as exec_mod, processes, telemetry
+
+original_new_process = processes.new_process
+def record_process(*args, **kwargs):
+    deadline = time.monotonic() + 5
+    while not exec_mod._frontend_shutting_down and time.monotonic() < deadline:
+        time.sleep(0.01)
+    assert exec_mod._frontend_shutting_down
+    p = original_new_process(*args, **kwargs)
+    with open(PIDS, "w") as handshake:
+        handshake.write(str(p.pid))
+    return p
+processes.new_process = record_process
+exec_mod.get_web_dir = lambda: Path.cwd()
+exec_mod.get_package_json_and_hash = lambda *args: ({}, "unchanged")
+exec_mod.frontend_env = lambda *args: {}
+exec_mod.path_ops.get_node_bin_path = lambda: None
+
+def frontend(*args):
+    exec_mod.run_process_and_launch_url(
+        [sys.executable, "-c", "import time;time.sleep(60)"], True
+    )
+
+def backend(*args):
+    return None
+
+exec_mod.run_frontend = frontend
+exec_mod.run_backend = backend
+telemetry.send = lambda *args, **kwargs: None
+build.setup_frontend = lambda *args, **kwargs: None
+import reflex.reflex as rx
+rx._compile_app = lambda: None
+rx.get_config = lambda: types.SimpleNamespace(
+    _set_persistent=lambda **kwargs: None,
+    loglevel=types.SimpleNamespace(subprocess_level=lambda: None),
+)
+from reflex_base import constants
+rx._run_dev(constants.RunningMode.FULLSTACK, 3000, 8000, "127.0.0.1")
+""".replace("PIDS", repr(str(pids)))
+    )
+    launcher = subprocess.Popen(
+        [sys.executable, str(driver)],
+        cwd=tmp_path,
+        start_new_session=True,
+        stderr=subprocess.PIPE,
+    )
+    child = None
+    try:
+        try:
+            launcher.wait(timeout=3)
+        except subprocess.TimeoutExpired:
+            pytest.fail("late frontend trapped the run after backend returned")
+        assert launcher.returncode == 0
+        assert pids.exists(), "late frontend never launched"
+        child = int(pids.read_text().strip())
+        with contextlib.suppress(psutil.NoSuchProcess):
+            assert psutil.Process(child).status() in (
+                psutil.STATUS_ZOMBIE,
+                psutil.STATUS_DEAD,
+            )
+    finally:
+        if launcher.poll() is None:
+            os.killpg(launcher.pid, signal.SIGKILL)
+            launcher.wait(timeout=DEFAULT_TIMEOUT)
+        if child is not None:
+            with contextlib.suppress(ProcessLookupError):
+                os.kill(child, signal.SIGKILL)
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX signals")
+def test_fullstack_backend_exit_stops_frontend(tmp_path):
+    """Frontend must not trap the run after a normal backend return."""
+    pids = tmp_path / "frontend.pid"
+    driver = tmp_path / "driver.py"
+    driver.write_text(
+        """import subprocess, sys, time, types
+from pathlib import Path
+from reflex.utils import build, exec as exec_mod, processes, telemetry
+
+exec_mod.get_web_dir = lambda: Path.cwd()
+exec_mod.get_package_json_and_hash = lambda *args: ({}, "unchanged")
+exec_mod.frontend_env = lambda *args: {}
+exec_mod.path_ops.get_node_bin_path = lambda: None
+original_new_process = processes.new_process
+def record_process(*args, **kwargs):
+    p = original_new_process(*args, **kwargs)
+    with open(PIDS, "w") as handshake:
+        handshake.write(str(p.pid))
+    return p
+processes.new_process = record_process
+exec_mod.run_frontend = lambda *args: exec_mod.run_process_and_launch_url(
+    [sys.executable, "-c", "import time;time.sleep(60)"], True
+)
+def backend(*args):
+    from pathlib import Path
+    deadline = time.monotonic() + 5
+    while not Path(PIDS).exists() and time.monotonic() < deadline:
+        time.sleep(0.01)
+exec_mod.run_backend = backend
+telemetry.send = lambda *args, **kwargs: None
+build.setup_frontend = lambda *args, **kwargs: None
+import reflex.reflex as rx
+rx._compile_app = lambda: None
+rx.get_config = lambda: types.SimpleNamespace(
+    _set_persistent=lambda **kwargs: None,
+    loglevel=types.SimpleNamespace(subprocess_level=lambda: None),
+)
+from reflex_base import constants
+rx._run_dev(constants.RunningMode.FULLSTACK, 3000, 8000, "127.0.0.1")
+""".replace("PIDS", repr(str(pids)))
+    )
+    launcher = subprocess.Popen(
+        [sys.executable, str(driver)],
+        cwd=tmp_path,
+        start_new_session=True,
+        stderr=subprocess.PIPE,
+    )
+    child = None
+    try:
+        # The launcher may finish before the parent gets scheduled to observe it.
+        _, stderr = launcher.communicate(timeout=DEFAULT_TIMEOUT)
+        assert pids.exists(), (
+            "frontend did not start: " + stderr.decode(errors="replace")[-1000:]
+        )
+        child = int(pids.read_text().strip())
+        assert launcher.returncode == 0, stderr.decode(errors="replace")[-1000:]
+        with contextlib.suppress(psutil.NoSuchProcess):
+            assert psutil.Process(child).status() in (
+                psutil.STATUS_ZOMBIE,
+                psutil.STATUS_DEAD,
+            )
+    finally:
+        if launcher.poll() is None:
+            os.killpg(launcher.pid, signal.SIGKILL)
+            launcher.communicate(timeout=DEFAULT_TIMEOUT)
+        if child is not None:
+            with contextlib.suppress(ProcessLookupError):
+                os.kill(child, signal.SIGKILL)
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX process groups")
+@pytest.mark.parametrize("mode", ["frontend", "fullstack"])
+def test_sigkill_run_group_stops_frontend(tmp_path, mode):
+    """A hard kill of the CLI job group must not leave frontend workers alive."""
+    pids = tmp_path / "children"
+    driver = tmp_path / "driver.py"
+    driver.write_text(
+        """import subprocess, sys, time, types
+from pathlib import Path
+from reflex.utils import build, exec as exec_mod, processes, telemetry
+
+code = "import subprocess,sys,time\\n" + \
+    "p=subprocess.Popen([sys.executable,'-c','import time;time.sleep(60)'])\\n" + \
+    "print(p.pid,flush=True);time.sleep(60)\\n"
+exec_mod.get_web_dir=lambda:Path.cwd()
+exec_mod.get_package_json_and_hash=lambda *args:({}, "unchanged")
+exec_mod.frontend_env=lambda *args:{}
+exec_mod.path_ops.get_node_bin_path=lambda:None
+original_new_process=processes.new_process
+def record_process(*args,**kwargs):
+    p=original_new_process(*args,**kwargs)
+    with open(PIDS,"w") as handshake:
+        handshake.write(str(p.pid))
+    return p
+processes.new_process=record_process
+exec_mod.run_frontend=lambda *args:exec_mod.run_process_and_launch_url(
+    [sys.executable,"-c",code],True
+)
+exec_mod.run_backend=lambda *args: time.sleep(60)
+telemetry.send=lambda *a,**k:None
+build.setup_frontend=lambda *a,**k:None
+import reflex.reflex as rx
+rx._compile_app=lambda:None
+rx.get_config=lambda:types.SimpleNamespace(_set_persistent=lambda **k:None,
+    loglevel=types.SimpleNamespace(subprocess_level=lambda:None))
+from reflex_base import constants
+rx._run_dev(MODE,3000,PORT,"127.0.0.1")
+"""
+        .replace("PIDS", repr(str(pids)))
+        .replace(
+            "MODE",
+            "constants.RunningMode.FRONTEND_ONLY"
+            if mode == "frontend"
+            else "constants.RunningMode.FULLSTACK",
+        )
+        .replace("PORT", "None" if mode == "frontend" else "8000")
+    )
+    launcher = subprocess.Popen(
+        [sys.executable, str(driver)],
+        cwd=tmp_path,
+        start_new_session=True,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    child = grandchild = None
+    try:
+        deadline = time.monotonic() + DEFAULT_TIMEOUT
+        while time.monotonic() < deadline:
+            if launcher.poll() is not None:
+                pytest.fail(f"launcher exited early: {launcher.returncode}")
+            if pids.exists():
+                parts = pids.read_text().split()
+                if len(parts) == 1:
+                    child = int(parts[0])
+                    children = psutil.Process(child).children()
+                    if children:
+                        grandchild = children[0].pid
+                        break
+            time.sleep(0.01)
+        assert child is not None
+        assert grandchild is not None
+        assert os.getpgid(child) == launcher.pid
+        os.killpg(launcher.pid, signal.SIGKILL)
+        launcher.wait(timeout=DEFAULT_TIMEOUT)
+        for pid in (child, grandchild):
+            deadline = time.monotonic() + DEFAULT_TIMEOUT
+            while time.monotonic() < deadline:
+                try:
+                    if psutil.Process(pid).status() in (
+                        psutil.STATUS_ZOMBIE,
+                        psutil.STATUS_DEAD,
+                    ):
+                        break
+                except psutil.NoSuchProcess:
+                    break
+                time.sleep(0.05)
+            else:
+                pytest.fail(f"frontend descendant {pid} survived SIGKILL")
+    finally:
+        if launcher.poll() is None:
+            os.killpg(launcher.pid, signal.SIGKILL)
+            launcher.wait(timeout=DEFAULT_TIMEOUT)
+        if child is not None:
+            with contextlib.suppress(ProcessLookupError):
+                os.killpg(child, signal.SIGKILL)
+        for pid in (child, grandchild):
+            if pid is not None:
+                with contextlib.suppress(ProcessLookupError):
+                    os.kill(pid, signal.SIGKILL)
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX signals")
+@pytest.mark.parametrize("mode", ["frontend", "fullstack"])
+@pytest.mark.parametrize("sig", ["SIGTERM", "SIGINT"])
+def test_no_tty_run_stops_frontend(tmp_path, mode, sig):
+    """Headless runs stop the frontend on SIGTERM or SIGINT."""
+    pids = tmp_path / "children"
+    driver = tmp_path / "driver.py"
+    driver.write_text(
+        """import signal, subprocess, sys, time, types
+from reflex.utils import build, exec as exec_mod, telemetry
+
+def frontend(*args):
+    code = "import signal,subprocess,sys,time\\n" + \
+        "p=subprocess.Popen([sys.executable,'-c','import time;time.sleep(60)'])\\n" + \
+        "signal.signal(signal.SIGTERM, lambda *a: (p.terminate(), sys.exit(0)))\\n" + \
+        "print(p.pid,flush=True);time.sleep(60)\\n"
+    p = subprocess.Popen([sys.executable,"-c",code],stdout=subprocess.PIPE,text=True)
+    grandchild = int(p.stdout.readline())
+    exec_mod.frontend_process = p
+    with open(PIDS,"w") as handshake:
+        handshake.write(f"{p.pid} {grandchild}")
+    p.wait()
+
+def backend(*args):
+    def stop(sig,frame): raise SystemExit(0)
+    signal.signal(signal.SIGTERM,stop)
+    signal.signal(signal.SIGINT,stop)
+    while True: time.sleep(1)
+
+exec_mod.run_frontend=frontend
+exec_mod.run_backend=backend
+telemetry.send=lambda *a,**k:None
+build.setup_frontend=lambda *a,**k:None
+import reflex.reflex as rx
+rx._compile_app=lambda:None
+rx.get_config=lambda:types.SimpleNamespace(_set_persistent=lambda **k:None,
+    loglevel=types.SimpleNamespace(subprocess_level=lambda:None))
+from reflex_base import constants
+rx._run_dev(MODE,3000,PORT,"127.0.0.1")
+"""
+        .replace("PIDS", repr(str(pids)))
+        .replace(
+            "MODE",
+            "constants.RunningMode.FRONTEND_ONLY"
+            if mode == "frontend"
+            else "constants.RunningMode.FULLSTACK",
+        )
+        .replace("PORT", "None" if mode == "frontend" else "8000")
+    )
+    launcher = subprocess.Popen(
+        [sys.executable, str(driver)],
+        cwd=tmp_path,
+        start_new_session=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    child = grandchild = None
+    try:
+        deadline = time.monotonic() + DEFAULT_TIMEOUT
+        while time.monotonic() < deadline:
+            if launcher.poll() is not None:
+                pytest.fail(f"launcher exited early: {launcher.returncode}")
+            if pids.exists():
+                parts = pids.read_text().split()
+                if len(parts) == 2:
+                    child, grandchild = map(int, parts)
+                    break
+            time.sleep(0.01)
+        assert child is not None, "frontend did not start"
+        assert grandchild is not None, "frontend grandchild did not start"
+        os.kill(launcher.pid, getattr(signal, sig))
+        try:
+            returncode = launcher.wait(timeout=DEFAULT_TIMEOUT)
+        except subprocess.TimeoutExpired:
+            pytest.fail("no-TTY launcher hung after signal")
+        if sig == "SIGINT":
+            assert returncode in (0, -signal.SIGINT)
+        else:
+            assert returncode == 0
+        for pid in (child, grandchild):
+            deadline = time.monotonic() + DEFAULT_TIMEOUT
+            while time.monotonic() < deadline:
+                try:
+                    if psutil.Process(pid).status() in (
+                        psutil.STATUS_ZOMBIE,
+                        psutil.STATUS_DEAD,
+                    ):
+                        break
+                except psutil.NoSuchProcess:
+                    break
+                time.sleep(0.05)
+            else:
+                pytest.fail(f"frontend descendant {pid} survived signal")
+    finally:
+        if launcher.poll() is None:
+            os.killpg(launcher.pid, signal.SIGKILL)
+            launcher.wait(timeout=DEFAULT_TIMEOUT)
+        if child is not None:
+            with contextlib.suppress(ProcessLookupError):
+                os.killpg(child, signal.SIGKILL)
+        for pid in (child, grandchild):
+            if pid is not None:
+                with contextlib.suppress(ProcessLookupError):
+                    os.kill(pid, signal.SIGKILL)
+
+
 @pytest.mark.parametrize(
     ("argv", "supervised", "expected"),
     [(["--json"], False, True), (["--json"], True, False), ([], False, False)],
@@ -615,3 +1255,129 @@ def test_db_commands_with_partial_db_install_point_to_install(
     assert result.exit_code == 1
     assert "pip install reflex[db]" in caplog.text
     assert not isinstance(result.exception, ImportError)
+
+
+def test_db_commands_run_without_sqlmodel(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+):
+    """Db commands run with sqlalchemy and alembic installed but not sqlmodel."""
+    from reflex.utils import prerequisites
+
+    monkeypatch.setattr(
+        reflex, "find_spec", lambda name: None if name == "sqlmodel" else object()
+    )
+    monkeypatch.setattr(prerequisites, "get_app", lambda: None)
+    monkeypatch.setattr(prerequisites, "check_db_initialized", lambda: False)
+
+    result = click.testing.CliRunner().invoke(reflex.db_cli, ["migrate"])
+
+    assert result.exit_code == 0, result.output
+    assert "pip install reflex[db]" not in caplog.text
+
+
+@pytest.fixture
+def patched_production_startup(mocker: MockerFixture) -> dict:
+    """Patch process startup while retaining the production command sequence.
+
+    Returns:
+        Mocked startup operations and the frontend lock context.
+    """
+    config = mocker.patch("reflex.reflex.get_config", return_value=mocker.Mock())
+    mocker.patch("reflex.reflex._skip_compile")
+    mocker.patch("atexit.register")
+    mocker.patch("reflex.utils.telemetry.send")
+    mocker.patch("reflex.utils.exec.notify_app_running")
+    mocker.patch("reflex.utils.exec.notify_frontend")
+    mount_frontend = mocker.patch(
+        "reflex.reflex.environment.REFLEX_MOUNT_FRONTEND_COMPILED_APP"
+    ).set
+    return {
+        "config": config.return_value,
+        "mount_frontend": mount_frontend,
+        "lock": mocker.patch("reflex.utils.path_ops.file_lock"),
+        "compile": mocker.patch("reflex.reflex._compile_app"),
+        "setup": mocker.patch("reflex.utils.build.setup_frontend_prod"),
+        "backend_prod": mocker.patch("reflex.utils.exec.run_backend_prod"),
+        "backend_preview": mocker.patch("reflex.utils.exec.run_backend"),
+        "frontend": mocker.patch("reflex.utils.exec.run_frontend_prod"),
+    }
+
+
+@pytest.mark.parametrize("runner_name", ["_run_prod", "_run_preview"])
+@pytest.mark.parametrize(
+    "running_mode",
+    [constants.RunningMode.FULLSTACK, constants.RunningMode.FRONTEND_ONLY],
+)
+def test_production_startup_locks_compile_and_build_before_serving(
+    patched_production_startup, runner_name: str, running_mode: constants.RunningMode
+):
+    """Only compile and build hold the lock; serving starts after release."""
+    context = patched_production_startup["lock"].return_value
+
+    def require_lock(*args, **kwargs):
+        """Compilation and setup share the same unreleased lock."""
+        context.__enter__.assert_called_once()
+        context.__exit__.assert_not_called()
+
+    def require_release(*args, **kwargs):
+        """Serving must not retain the frontend lock for the server lifetime."""
+        context.__exit__.assert_called_once_with(None, None, None)
+
+    patched_production_startup["compile"].side_effect = require_lock
+    patched_production_startup["setup"].side_effect = require_lock
+    patched_production_startup["config"]._set_persistent.side_effect = require_lock
+    patched_production_startup["mount_frontend"].side_effect = require_lock
+    for server in ("backend_prod", "backend_preview", "frontend"):
+        patched_production_startup[server].side_effect = require_release
+
+    getattr(reflex, runner_name)(running_mode, 8000, "127.0.0.1")
+
+    patched_production_startup["lock"].assert_called_once()
+    patched_production_startup["setup"].assert_called_once()
+    patched_production_startup["config"]._set_persistent.assert_called_once_with(
+        frontend_port=8000, backend_port=8000
+    )
+    server = (
+        "frontend"
+        if running_mode == constants.RunningMode.FRONTEND_ONLY
+        else "backend_prod"
+        if runner_name == "_run_prod"
+        else "backend_preview"
+    )
+    patched_production_startup[server].assert_called_once()
+
+
+@pytest.mark.parametrize("runner_name", ["_run_prod", "_run_preview"])
+@pytest.mark.parametrize("failing_target", ["compile", "setup"])
+def test_production_startup_releases_lock_after_failed_build(
+    patched_production_startup, runner_name: str, failing_target: str
+):
+    """A startup failure releases the lock and does not start a server."""
+    error = RuntimeError("build failed")
+    patched_production_startup[failing_target].side_effect = error
+    with pytest.raises(RuntimeError, match="build failed"):
+        getattr(reflex, runner_name)(constants.RunningMode.FULLSTACK, 8000, "127.0.0.1")
+
+    context = patched_production_startup["lock"].return_value
+    context.__enter__.assert_called_once()
+    context.__exit__.assert_called_once()
+    assert context.__exit__.call_args.args[:2] == (RuntimeError, error)
+    for server in ("backend_prod", "backend_preview", "frontend"):
+        patched_production_startup[server].assert_not_called()
+
+
+@pytest.mark.parametrize("runner_name", ["_run_prod", "_run_preview"])
+def test_backend_only_startup_does_not_lock_frontend(
+    patched_production_startup, runner_name: str
+):
+    """Backend-only startup does not access the frontend working directory."""
+    getattr(reflex, runner_name)(constants.RunningMode.BACKEND_ONLY, 8000, "127.0.0.1")
+
+    patched_production_startup["lock"].assert_not_called()
+    patched_production_startup["compile"].assert_not_called()
+    patched_production_startup["setup"].assert_not_called()
+    patched_production_startup["config"]._set_persistent.assert_called_once_with(
+        frontend_port=8000, backend_port=8000
+    )
+    if runner_name == "_run_preview":
+        patched_production_startup["mount_frontend"].assert_called_once_with(False)

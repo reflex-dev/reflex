@@ -241,11 +241,10 @@ class StateManagerDisk(StateManager):
             token: The token used to identify the state object.
             substate: The substate to set.
         """
-        substate_token = token.with_cls(type(substate))
-
         if token.get_and_reset_touched_state(substate):
             pickle_state = token.serialize(substate)
             if pickle_state:
+                substate_token = token.with_cls(type(substate))
                 if not self.states_directory.exists():
                     self.states_directory.mkdir(parents=True, exist_ok=True)
                 await run_in_thread(
@@ -345,7 +344,7 @@ class StateManagerDisk(StateManager):
                         self._purge_token(token)
                 await run_in_thread(self._purge_expired_states)
                 await self._process_write_queue_delay()
-            except asyncio.CancelledError:  # noqa: PERF203
+            except asyncio.CancelledError:
                 await self._flush_write_queue()
                 raise
             except Exception as e:
