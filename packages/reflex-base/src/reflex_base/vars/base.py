@@ -2185,7 +2185,7 @@ def figure_out_type(value: Any) -> types.GenericType:
     Returns:
         The type of the value.
     """
-    if isinstance(value, (list, set, tuple, Mapping, Var)):
+    if isinstance(value, (list, set, frozenset, tuple, Mapping, Var)):
         if isinstance(value, Var):
             return value._var_type
         if has_args(value_type := type(value)):
@@ -2194,8 +2194,11 @@ def figure_out_type(value: Any) -> types.GenericType:
             if not value:
                 return Sequence[NoReturn]
             return Sequence[unionize(*{figure_out_type(v) for v in value[:100]})]
-        if isinstance(value, set):
-            return set[unionize(*{figure_out_type(v) for v in value})]
+        if isinstance(value, (set, frozenset)):
+            element_type = unionize(*{figure_out_type(v) for v in value})
+            if isinstance(value, frozenset):
+                return frozenset[element_type]
+            return set[element_type]
         if isinstance(value, tuple):
             if not value:
                 return tuple[NoReturn, ...]
