@@ -891,6 +891,13 @@ class App(MiddlewareMixin, LifespanMixin):
 
             for api_transformer in api_transformers:
                 if isinstance(api_transformer, Starlette):
+                    if api_transformer.router.lifespan_context in self._lifespan_tasks:
+                        logger.warning(
+                            f"The lifespan of api_transformer {api_transformer!r} is "
+                            "also registered with register_lifespan_task, so it runs "
+                            "twice: Reflex now runs a transformer's own lifespan. "
+                            "Remove the register_lifespan_task call."
+                        )
                     if asgi_app is not api:
                         lifespan_apps.append(asgi_app)
                     # Mount the api to the starlette app.

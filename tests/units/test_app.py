@@ -647,6 +647,32 @@ def test_api_transformer_lifespans_run(mocker: MockerFixture):
     assert events[4:] == ["callable http", "outer stop", "inner stop", "reflex stop"]
 
 
+@pytest.mark.parametrize("also_registered", [False, True])
+def test_api_transformer_lifespan_also_registered_warns(
+    mocker: MockerFixture, caplog: pytest.LogCaptureFixture, also_registered: bool
+):
+    """Warn when a transformer's lifespan is also registered as a lifespan task.
+
+    Args:
+        mocker: The mock fixture for skipping frontend compilation.
+        caplog: The log capture fixture.
+        also_registered: Whether the lifespan is also registered as a task.
+    """
+
+    @contextlib.asynccontextmanager
+    async def lifespan(app: Any):
+        yield
+
+    app = App(api_transformer=FastAPI(lifespan=lifespan))
+    if also_registered:
+        app.register_lifespan_task(lifespan)
+    mocker.patch.object(app, "_compile")
+
+    with caplog.at_level(logging.WARNING, logger="reflex.app"):
+        app()
+    assert ("runs twice" in caplog.text) is also_registered
+
+
 def test_api_transformer_lifespan_startup_failure_stops_the_app(
     mocker: MockerFixture,
 ):
@@ -676,6 +702,41 @@ def test_api_transformer_lifespan_startup_failure_stops_the_app(
 
     with pytest.raises(RuntimeError, match="boom"), TestClient(app()):
         pass
+    assert stopped == ["reflex"]
+
+
+def test_api_transformer_lifespan_shutdown_failure_is_reported(
+    mocker: MockerFixture,
+):
+    """A transformer failing to stop fails the server's shutdown after Reflex stops.
+
+    Args:
+        mocker: The mock fixture for skipping frontend compilation.
+    """
+    stopped: list[str] = []
+
+    @contextlib.asynccontextmanager
+    async def reflex_task():
+        try:
+            yield
+        finally:
+            stopped.append("reflex")
+
+    @contextlib.asynccontextmanager
+    async def failing_lifespan(app: Starlette):
+        yield
+        msg = "boom"
+        raise ValueError(msg)
+
+    app = App(api_transformer=Starlette(lifespan=failing_lifespan))
+    app.register_lifespan_task(reflex_task)
+    mocker.patch.object(app, "_compile")
+
+    client = TestClient(app())
+    client.__enter__()
+    assert client.get("/ping").status_code == 200
+    with pytest.raises(RuntimeError, match="boom"):
+        client.__exit__(None, None, None)
     assert stopped == ["reflex"]
 
 
