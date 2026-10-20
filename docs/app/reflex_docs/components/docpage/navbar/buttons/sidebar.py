@@ -18,7 +18,7 @@ def navbar_sidebar_button() -> rx.Component:
                 "Cancel01Icon", class_name="hidden size-5 group-open/docs-menu:block"
             ),
             aria_label="Toggle navigation menu",
-            class_name="flex size-9 cursor-pointer list-none items-center justify-center rounded-full text-foreground hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring [&::-webkit-details-marker]:hidden",
+            class_name="docs-navbar-menu-trigger flex size-9 cursor-pointer list-none items-center justify-center rounded-full text-foreground hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring [&::-webkit-details-marker]:hidden",
         ),
         rx.el.div(
             *[
@@ -30,7 +30,7 @@ def navbar_sidebar_button() -> rx.Component:
                         class_name="size-4 shrink-0",
                     ),
                     href=href,
-                    class_name="flex w-full items-center justify-between gap-3 border-b border-border px-4 py-4 text-base font-medium text-foreground transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring last:border-b-0",
+                    class_name="docs-navbar-mobile-link flex w-full items-center justify-between gap-3 border-b border-border px-4 py-4 text-base font-normal text-foreground transition-colors duration-150 hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring motion-reduce:transition-none last:border-b-0",
                 )
                 for label, href in (
                     ("Overview", "/docs/"),
@@ -43,9 +43,9 @@ def navbar_sidebar_button() -> rx.Component:
             ],
             aria_label="Documentation navigation",
             role="navigation",
-            class_name="fixed inset-x-0 top-[var(--docs-header-height)] max-h-[calc(100dvh-var(--docs-header-height))] overflow-y-auto border-b border-border-subtle bg-background px-6 py-4 shadow-small",
+            class_name="docs-navbar-mobile-panel fixed inset-x-0 top-[var(--docs-header-height)] max-h-[calc(100dvh-var(--docs-header-height))] overflow-y-auto border-b border-border-subtle bg-background px-6 py-4 shadow-small",
         ),
-        class_name="group/docs-menu",
+        class_name="docs-navbar-menu group/docs-menu",
     )
 
 
