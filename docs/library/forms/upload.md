@@ -12,6 +12,8 @@ import reflex as rx
 
 Reflex makes it simple to add file upload functionality to your app. You can let users select files, store them on your server, and display or process them as needed. Below is a minimal example that demonstrates how to upload files, save them to disk, and display uploaded images using application state.
 
+For a complete processing workflow, try the [image input and output example](/docs/guides/model-and-media-interfaces/#run-an-image-input-and-output-workflow). It validates an uploaded image, creates a grayscale preview, and offers a PNG download without saving the result to the public upload directory.
+
 ## Basic File Upload Example
 
 You can let users upload files and keep track of them in your app’s state. The example below allows users to upload files, saves them using the backend, and then displays the uploaded files as images.

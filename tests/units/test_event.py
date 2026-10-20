@@ -1,6 +1,10 @@
 import json
-from collections.abc import Callable
-from typing import Any, cast
+import logging
+import shutil
+import subprocess
+from collections import UserList
+from collections.abc import Callable, Mapping, Sequence
+from typing import Any, TypeVar, cast
 
 import pytest
 from reflex_base.constants import LogLevel
@@ -13,17 +17,22 @@ from reflex_base.event import (
     EventHandler,
     EventSpec,
     LambdaEventCallback,
+    _check_event_args_subclass_of_callback,
     call_event_handler,
     event,
+    event_sequence,
     fix_events,
     on_submit_event,
     on_submit_string_event,
 )
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils import format, log
 from reflex_base.utils.exceptions import (
     EventHandlerArgTypeMismatchError,
+    EventHandlerTypeError,
     EventHandlerValueError,
 )
+from reflex_base.utils.form import FormData
 from reflex_base.vars.base import Field, LiteralVar, Var, field
 from rich.console import Console
 from typing_extensions import TypeAliasType
@@ -116,6 +125,37 @@ def test_call_event_handler():
     with pytest.raises(TypeError):
         # Optional packages can register serializers for Python functions.
         handler(object())
+
+
+def test_format_event_client_handler_name():
+    """client_handler_name must land in the fourth ReflexEvent slot, after event_actions."""
+
+    def handle_upload(files):
+        pass
+
+    handle_upload.__qualname__ = "handle_upload"
+
+    handler = EventHandler(fn=handle_upload)
+    event_spec = EventSpec(
+        handler=handler,
+        client_handler_name="uploadFiles",
+        args=((Var(_js_expr="files"), Var(_js_expr="filesById")),),
+    )
+    assert (
+        format.format_event(event_spec)
+        == 'ReflexEvent("handle_upload", {files:filesById}, {}, "uploadFiles")'
+    )
+
+    event_spec = EventSpec(
+        handler=handler,
+        event_actions={"debounce": 300},
+        client_handler_name="uploadFiles",
+        args=((Var(_js_expr="files"), Var(_js_expr="filesById")),),
+    )
+    assert (
+        format.format_event(event_spec)
+        == 'ReflexEvent("handle_upload", {files:filesById}, {"debounce": 300}, "uploadFiles")'
+    )
 
 
 def test_call_event_handler_partial():
@@ -223,6 +263,65 @@ def test_state_event_handler_type_hints_are_stable_after_class_patch():
     assert handler.prevent_default._type_hints is handler._type_hints
 
 
+def test_backend_var_event_arg_reports_repr():
+    """A backend var passed as an event arg reports its repr, not a format error."""
+
+    class S(BaseState):
+        _secret: int = 42
+
+        @event
+        def on_event(self, value: int):
+            pass
+
+    with pytest.raises(EventHandlerTypeError, match=r"Got Field\(default=42"):
+        S.on_event(S._secret)
+    with pytest.raises(EventHandlerTypeError, match=r"Got Field\(default=42"):
+        cast(EventSpec, S.on_event()).add_args(S._secret)  # pyright: ignore[reportArgumentType]
+
+
+class BackendTriggerState(BaseState):
+    """A state with a backend var, for event trigger misuse tests."""
+
+    _secret: int = 42
+
+    @event
+    def on_upload(self, files: list[rx.UploadFile]):
+        """Receive uploaded files.
+
+        Args:
+            files: The uploaded files.
+        """
+
+
+@pytest.mark.parametrize(
+    ("value", "match"),
+    [
+        (BackendTriggerState._secret, r"Invalid event chain: Field\(default=42"),
+        ([BackendTriggerState._secret], r"Invalid event: Field\(default=42"),
+        (lambda: BackendTriggerState._secret, r"-> Field\(default=42"),
+    ],
+)
+def test_backend_var_event_trigger_reports_repr(value: Any, match: str):
+    """Binding a backend var as an event trigger reports its repr, not a format error.
+
+    Args:
+        value: The misused event trigger value.
+        match: The expected error message pattern.
+    """
+    with pytest.raises(ValueError, match=match):
+        EventChain.create(value=value, args_spec=lambda: ())
+
+
+def test_backend_var_upload_progress_reports_repr():
+    """A backend var passed as on_upload_progress reports its repr."""
+    upload = rx.upload_files(
+        upload_id="u",
+        on_upload_progress=BackendTriggerState._secret,  # pyright: ignore[reportArgumentType]
+    )
+    with pytest.raises(ValueError, match=r"^Field\(default=42.* is not a valid"):
+        upload.as_event_spec(handler=cast(EventHandler, BackendTriggerState.on_upload))
+
+
 def test_state_event_handler_caches_unresolved_type_hints():
     """Unresolved annotations should be retried after their type is defined."""
 
@@ -271,6 +370,28 @@ def test_fix_events(arg1, arg2):
     event = fix_events([event_spec])[0]
     assert event.name == fn_with_args.__qualname__
     assert event.payload == {"arg1": arg1, "arg2": arg2}
+
+
+def _handler_with_arg() -> EventHandler:
+    def fn_with_arg(arg):
+        pass
+
+    fn_with_arg.__qualname__ = "fn_with_arg"
+    return EventHandler(fn=fn_with_arg)
+
+
+def test_fix_events_accepts_a_tuple():
+    """A handler can return its events as a tuple as well as a list."""
+    handler = _handler_with_arg()
+    events = fix_events((handler(1), handler(2)))
+    assert [event.payload for event in events] == [{"arg": 1}, {"arg": 2}]
+
+
+def test_from_event_type_accepts_a_tuple():
+    """Events built from a tuple of event specs match those built from a list."""
+    handler = _handler_with_arg()
+    events = Event.from_event_type((handler(1), handler(2)))
+    assert [event.payload for event in events] == [{"arg": 1}, {"arg": 2}]
 
 
 class _ProxyPayloadState(BaseState):
@@ -588,6 +709,49 @@ def test_remove_local_storage():
         format.format_event(spec)
         == 'ReflexEvent("_remove_local_storage", {key:"testkey"})'
     )
+
+
+def _download_var_data_url() -> Var:
+    """Build the data: URL an ``rx.download`` of a list-typed Var produces.
+
+    Returns:
+        The ``url`` argument of the download event.
+    """
+    data = Var(_js_expr="data", _var_type=list[dict[str, str]]).guess_type()
+    return rx.download(data=data, filename="data.json").args[0][1]
+
+
+def test_download_var_data_is_percent_encoded():
+    """A Var passed as download data is percent-encoded into its data: URL."""
+    assert str(_download_var_data_url()) == (
+        '(pyAnd(((typeof(data))?.valueOf?.() === "string"?.valueOf?.()), '
+        '() => (data.startsWith("data:"))) ? data : '
+        '("data:text/plain,"+(encodeURIComponent((JSON.stringify(data))))))'
+    )
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is unavailable")
+def test_download_var_data_url_keeps_hash_and_percent():
+    """The downloaded bytes are exactly the JSON, even with ``#`` or ``%`` in it.
+
+    Unencoded, a ``#`` ends the data: URL there (the rest of the file is lost)
+    and ``%XX`` sequences are percent-decoded.
+    """
+    rows = [{"address": "12 Main St #4", "note": "100%25 sure"}]
+    script = (
+        "const pyAnd = (a, b) => (a ? b() : a);\n"
+        f"const data = {json.dumps(rows)};\n"
+        f"fetch({_download_var_data_url()!s})"
+        ".then((r) => r.text()).then((t) => process.stdout.write(t));\n"
+    )
+    result = subprocess.run(
+        ["node", "-e", script],
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=30,
+    )
+    assert result.stdout == json.dumps(rows, separators=(",", ":"))
 
 
 def test_event_actions():
@@ -1129,6 +1293,34 @@ def test_event_chain_create_lambda_rejects_non_union_callable_var():
         )
 
 
+def test_event_chain_create_accepts_a_tuple_of_events():
+    """A tuple of events binds into the same chain as a list of them."""
+    events = (_handler_with_arg()(1), rx.console_log("logged"))
+
+    from_tuple = EventChain.create(events, args_spec=lambda: ())
+    from_list = EventChain.create(list(events), args_spec=lambda: ())
+
+    assert str(LiteralVar.create(from_tuple)) == str(LiteralVar.create(from_list))
+
+
+@pytest.mark.parametrize("sequence_type", [tuple, UserList])
+def test_event_chain_create_lambda_returns_a_sequence_of_events(
+    sequence_type: Callable[[list[Any]], Sequence[Any]],
+):
+    """A lambda returning any sequence of events binds like one returning a list."""
+    events = [_handler_with_arg()(1), rx.console_log("logged")]
+
+    from_sequence = EventChain.create(
+        cast(LambdaEventCallback[()], lambda: sequence_type(events)),
+        args_spec=lambda: (),
+    )
+    from_list = EventChain.create(
+        cast(LambdaEventCallback[()], lambda: events), args_spec=lambda: ()
+    )
+
+    assert str(LiteralVar.create(from_sequence)) == str(LiteralVar.create(from_list))
+
+
 def test_event_chain_create_wraps_plain_function_var_kwargs():
     """FunctionVars should compose with chain-level kwargs instead of bypassing wrapping."""
     frontend_handler = rx.vars.FunctionStringVar.create(
@@ -1368,3 +1560,156 @@ def test_arg_mismatch_warning_renders_brackets_verbatim(capsys, monkeypatch):
         log._reset()
     assert "expects (dict[str, typing.Any]) -> () but got (dict[str, str]) -> ()" in out
     assert "\\" not in out
+
+
+def test_event_chain_cache_lives_on_the_registration_context(
+    forked_registration_context: RegistrationContext,
+):
+    """Bound chains are shared per context and leave the handler stateless."""
+
+    class ChainState(BaseState):
+        @event
+        def handler(self):
+            pass
+
+    def args_spec():
+        return ()
+
+    chain = EventChain.create(ChainState.handler, args_spec=args_spec, key="on_click")
+    with forked_registration_context.fork():
+        forked = EventChain.create(
+            ChainState.handler, args_spec=args_spec, key="on_click"
+        )
+        assert forked is not chain
+        assert (
+            EventChain.create(ChainState.handler, args_spec=args_spec, key="on_click")
+            is forked
+        )
+    assert (
+        EventChain.create(ChainState.handler, args_spec=args_spec, key="on_click")
+        is chain
+    )
+
+    def retains(value: Any) -> bool:
+        if isinstance(value, dict):
+            value = tuple(value.values())
+        if isinstance(value, (tuple, list)):
+            return any(retains(item) for item in value)
+        return value is chain
+
+    assert not any(retains(value) for value in vars(ChainState.handler).values())
+
+
+def test_event_chain_create_shares_chains_bound_from_one_handler():
+    """A handler bound to one trigger yields one chain for every call site."""
+
+    class ChainState(BaseState):
+        @event
+        def handler(self):
+            pass
+
+    def args_spec():
+        return ()
+
+    chain = EventChain.create(ChainState.handler, args_spec=args_spec, key="on_click")
+    assert isinstance(chain, EventChain)
+    assert (
+        EventChain.create(ChainState.handler, args_spec=args_spec, key="on_click")
+        is chain
+    )
+    assert (
+        EventChain.create(ChainState.handler, args_spec=args_spec, key="on_blur")
+        is not chain
+    )
+    assert (
+        EventChain.create(ChainState.handler, args_spec=lambda: (), key="on_click")
+        is not chain
+    )
+    with_actions = EventChain.create(
+        ChainState.handler, args_spec=args_spec, key="on_click", event_actions={"x": 1}
+    )
+    assert with_actions is not chain
+    # The event_actions call above must not replace the cached chain.
+    assert (
+        EventChain.create(ChainState.handler, args_spec=args_spec, key="on_click")
+        is chain
+    )
+    bound_chains = RegistrationContext.ensure_context()._bound_event_chains
+    cached = len(bound_chains)
+    assert (
+        EventChain.create(
+            ChainState.handler.prevent_default, args_spec=args_spec, key="on_click"
+        )
+        is not chain
+    )
+    assert len(bound_chains) == cached
+    assert (
+        EventChain.create([ChainState.handler], args_spec=args_spec, key="on_click")
+        is not chain
+    )
+
+
+_BOUNDED_SPEC_ARG = TypeVar("_BOUNDED_SPEC_ARG", bound=Mapping[str, Any])
+_CONSTRAINED_SPEC_ARG = TypeVar("_CONSTRAINED_SPEC_ARG", int, str)
+
+
+@pytest.mark.parametrize(
+    ("spec_arg", "annotation", "accepted"),
+    [
+        (_BOUNDED_SPEC_ARG, dict[str, str], True),
+        (_BOUNDED_SPEC_ARG, list[str], False),
+        (_BOUNDED_SPEC_ARG, FormData[str, str] | None, True),
+        (_BOUNDED_SPEC_ARG, list[str] | None, False),
+        (_CONSTRAINED_SPEC_ARG, int, True),
+        (_CONSTRAINED_SPEC_ARG, str, True),
+        (_CONSTRAINED_SPEC_ARG, float, False),
+    ],
+)
+def test_generic_event_spec_arg_admits_callback_types(spec_arg, annotation, accepted):
+    """A TypeVar spec arg accepts callback types within its bound or constraints."""
+
+    def check():
+        _check_event_args_subclass_of_callback(
+            ["value"], [tuple[Var[spec_arg]]], {"value": annotation}
+        )
+
+    if accepted:
+        check()
+    else:
+        with pytest.raises(EventHandlerArgTypeMismatchError):
+            check()
+
+
+@pytest.mark.parametrize(
+    ("fallback_spec_arg", "warns"),
+    [(_BOUNDED_SPEC_ARG, False), (dict[str, str], True)],
+)
+def test_generic_event_spec_fallback_is_not_reported(fallback_spec_arg, warns, caplog):
+    """Matching a later generic spec is not reported as a mismatch with the first spec."""
+    with caplog.at_level(logging.WARNING):
+        _check_event_args_subclass_of_callback(
+            ["value"],
+            [tuple[Var[str]], tuple[Var[fallback_spec_arg]]],
+            {"value": dict[str, str]},
+        )
+    assert ("intentionally ignored" in caplog.text) is warns
+
+
+def test_event_sequence():
+    """A single event is wrapped in a list, and a non-string sequence is kept."""
+
+    def handler():
+        pass
+
+    spec = EventSpec(handler=EventHandler(fn=handler))
+    events = [spec, spec]
+    events_tuple = (spec, spec)
+    events_user_list = UserList(events)
+
+    assert event_sequence(spec) == [spec]
+    assert event_sequence(handler) == [handler]
+    assert event_sequence(events) is events
+    assert event_sequence(events_tuple) is events_tuple
+    assert event_sequence(events_user_list) is events_user_list
+    assert event_sequence("abc") == ["abc"]
+    assert event_sequence(b"ab") == [b"ab"]

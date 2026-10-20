@@ -58,9 +58,12 @@ def app_dialog_with_trigger(
                 rx.el.div(
                     rx.el.div(
                         rx.el.p(
-                            app_name, class_name="text-md !text-secondary-11 font-bold"
+                            app_name,
+                            class_name="text-md !text-muted-foreground font-bold",
                         ),
-                        rx.el.p(app_author, class_name="text-sm !text-secondary-9"),
+                        rx.el.p(
+                            app_author, class_name="text-sm !text-subtle-foreground"
+                        ),
                         class_name="flex flex-row gap-x-2 items-center",
                     ),
                     rx.link(
@@ -68,7 +71,7 @@ def app_dialog_with_trigger(
                             "Learn More",
                             variant="secondary",
                             size="md",
-                            class_name="!text-secondary-12",
+                            class_name="!text-foreground",
                         ),
                         href=app_inner_page,
                         class_name="no-underline outline-none",
@@ -126,7 +129,7 @@ def integrations_stack(integrations: list[str]) -> rx.Component:
                 ui.tooltip(
                     trigger=rx.el.div(
                         integration_image(integration, class_name="size-4"),
-                        class_name="size-8 shrink-0 flex justify-center items-center rounded-full shadow-small border border-secondary-a5 bg-white-1 dark:bg-secondary-1 cursor-default",
+                        class_name="size-8 shrink-0 flex justify-center items-center rounded-full shadow-small border border-border bg-white-1 dark:bg-background cursor-default",
                     ),
                     side="bottom",
                     content=integration,
@@ -174,7 +177,7 @@ def extended_gallery_grid_item(
                                     "Learn More",
                                     variant="secondary",
                                     size="md",
-                                    class_name="w-full !text-secondary-12",
+                                    class_name="w-full !text-foreground",
                                     on_click=rx.stop_propagation,
                                 ),
                                 href=app_inner_page,
@@ -196,12 +199,12 @@ def extended_gallery_grid_item(
                 rx.el.div(
                     rx.el.span(
                         app_name,
-                        class_name="text-sm font-semibold text-secondary-12 truncate min-w-0 max-w-[90%]",
+                        class_name="text-sm font-semibold text-foreground truncate min-w-0 max-w-[90%]",
                     ),
                     rx.el.div(
                         rx.el.span(
                             "App Integrations: ",
-                            class_name="text-secondary-9 text-sm font-medium",
+                            class_name="text-subtle-foreground text-sm font-medium",
                         ),
                         rx.el.div(
                             integrations_stack(app_integrations),
@@ -210,13 +213,13 @@ def extended_gallery_grid_item(
                         class_name="flex flex-row items-center gap-2 mt-2",
                     ),
                     class_name=(
-                        "flex flex-col w-full px-4 py-3 border-t border-secondary-4 gap-2 relative pb-4",
+                        "flex flex-col w-full px-4 py-3 border-t border-border-subtle gap-2 relative pb-4",
                     ),
                 ),
                 class_name="flex flex-col w-full",
             ),
             key=app_name,
-            class_name="group cursor-pointer rounded-2xl shadow-small border border-secondary-4 bg-secondary-1 flex flex-col w-full relative overflow-hidden",
+            class_name="group cursor-pointer rounded-2xl shadow-small border border-border-subtle bg-background flex flex-col w-full relative overflow-hidden",
         ),
     )
 
@@ -269,11 +272,11 @@ def create_header():
         rx.box(
             rx.el.h1(
                 "Reflex Build Templates",
-                class_name="text-secondary-12 text-4xl font-bold mb-6",
+                class_name="text-foreground text-4xl font-bold mb-6",
             ),
             rx.el.p(
                 "Production-ready app templates built with Reflex — explore dashboards, tools, and AI-powered apps.",
-                class_name="text-secondary-11 text-lg leading-relaxed mb-12 max-w-lg font-medium",
+                class_name="text-muted-foreground text-lg leading-relaxed mb-12 max-w-lg font-medium",
             ),
             class_name="mb-8 lg:mb-0 text-center",
         ),

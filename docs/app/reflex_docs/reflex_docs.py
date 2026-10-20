@@ -3,20 +3,22 @@
 import json
 import os
 import sys
-from functools import partial
+from collections.abc import Callable
+from copy import deepcopy
+from functools import cache, partial, wraps
 
 import reflex as rx
 import reflex_enterprise as rxe
+from reflex_components_internal.blocks.telemetry import get_google_analytics_trackers
 from reflex_site_shared import styles
 from reflex_site_shared.backend.status import monitor_checkly_status
-from reflex_site_shared.constants import REFLEX_ASSETS_CDN
+from reflex_site_shared.constants import OG_IMAGE_URL, REFLEX_DOMAIN_URL
 from reflex_site_shared.meta.meta import (
     ONE_LINE_DESCRIPTION,
     create_meta_tags,
     favicons_links,
     to_cdn_image_url,
 )
-from reflex_site_shared.utils.url import public_url
 
 from reflex_docs.pages import page404, routes
 from reflex_docs.redirects import DocsRedirectMiddleware
@@ -29,15 +31,42 @@ WINDOWS_MAX_ROUTES = int(os.environ.get("REFLEX_WEB_WINDOWS_MAX_ROUTES", "100"))
 LLMS_TXT_PATH = "/llms.txt"
 
 
+def _stable_page_factory(
+    component: Callable[[], rx.Component],
+) -> Callable[[], rx.Component]:
+    """Keep demo state identities stable while isolating compiler mutations.
+
+    Args:
+        component: The page factory whose demos must be instantiated only once.
+
+    Returns:
+        A factory yielding independent copies of the pristine component tree.
+    """
+    build_once = cache(component)
+
+    @wraps(component)
+    def page() -> rx.Component:
+        """Copy the pristine tree before handing it to a compiler or plugin.
+
+        Returns:
+            A fresh component tree retaining the original state classes.
+        """
+        return deepcopy(build_once())
+
+    return page
+
+
 def _llms_txt_directive() -> rx.Component:
     """Return the agent-facing docs index directive."""
     return rx.el.blockquote(
         rx.el.span("For AI agents: the complete documentation index is at "),
         rx.el.a("llms.txt", href=LLMS_TXT_PATH),
         rx.el.span(
-            ". Markdown versions are available by appending .md or sending "
-            "Accept: text/markdown."
+            ". Remove the trailing slash from a page URL and append .md "
+            "to read its Markdown version. For the docs home, use "
         ),
+        rx.el.a("index.md", href="/index.md"),
+        ".",
         class_name="sr-only",
     )
 
@@ -45,6 +74,11 @@ def _llms_txt_directive() -> rx.Component:
 # Create the app.
 app = rxe.App(
     style=styles.BASE_STYLE,
+    stylesheets=[
+        "/docs-theme.css",
+        "/docs-header-theme.css",
+        "/docs-overlays-theme.css",
+    ],
     app_wraps={},
     theme=rx.theme(
         _llms_txt_directive(),
@@ -52,7 +86,10 @@ app = rxe.App(
         radius="large",
         accent_color="violet",
     ),
-    head_components=favicons_links(),
+    head_components=[
+        *get_google_analytics_trackers(tracking_id="G-4T7C8ZD9TR"),
+        *favicons_links(),
+    ],
 )
 
 app.register_lifespan_task(monitor_checkly_status)
@@ -86,12 +123,12 @@ def _canonical_url(path: str) -> str:
     # "/docsoverview/" instead of "/docs/overview/".
     if not path.startswith("/"):
         path = "/" + path
-    url = public_url(path)
+    url = REFLEX_DOMAIN_URL.rstrip("/") + _FRONTEND_PATH + path
     return url if url.endswith("/") else url + "/"
 
 
 # Add the pages to the app.
-_DEFAULT_PREVIEW = f"{REFLEX_ASSETS_CDN}previews/index_preview.webp"
+_DEFAULT_PREVIEW = OG_IMAGE_URL
 for route in routes:
     # print(f"Adding route: {route}")
     if _check_whitelisted_path(route.path):
@@ -141,6 +178,15 @@ for route in routes:
             meta = list(route.meta) if route.meta is not None else []
         if canonical is not None:
             meta.append(
+                rx.el.link(
+                    rel="alternate",
+                    type="text/markdown",
+                    href=canonical + "index.md"
+                    if route.path.strip("/") == ""
+                    else canonical.rstrip("/") + ".md",
+                )
+            )
+            meta.append(
                 rx.el.script(
                     json.dumps(
                         breadcrumb_data(route.path, head_title.split(" · ")[0]),
@@ -162,7 +208,11 @@ for route in routes:
         ]
 
         page_args = {
-            "component": route.component,
+            # XY registers chart plans by evaluating pages again at worker startup.
+            # Instantiate demos once, but give each compiler its own mutable tree.
+            "component": _stable_page_factory(route.component)
+            if callable(route.component)
+            else route.component,
             "route": route.path,
             "title": head_title,
             "image": image_url,
@@ -199,6 +249,10 @@ redirects.extend([
     ("/hosting/adding-members/", "/hosting/project-members/"),
     ("/hosting/projects/", "/hosting/project-members/"),
     ("/authentication/authentication-overview/", "/enterprise/auth/overview/"),
+    ("/custom-components/", "/wrapping-react/overview/"),
+    ("/custom-components/overview/", "/wrapping-react/overview/"),
+    ("/custom-components/command-reference/", "/wrapping-react/overview/"),
+    ("/custom-components/prerequisites-for-publishing/", "/wrapping-react/overview/"),
 ])
 
 
@@ -235,7 +289,13 @@ for source, target in redirects:
             ],
         )
 
-app.add_page(page404.component, route=page404.path)
+app.add_page(
+    page404.component,
+    route=page404.path,
+    title=page404.title,
+    description=page404.description,
+    meta=page404.meta,
+)
 
 
 # HTTP 301 applies when page requests reach this backend. Separate frontend

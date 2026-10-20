@@ -11,6 +11,7 @@ from reflex_base import constants
 from reflex_base.components.dynamic import bundle_library, reset_bundled_libraries
 from reflex_base.constants.base import LiteralColorMode
 from reflex_base.constants.compiler import PageNames
+from reflex_base.environment import environment
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import (
     DynamicRouteArgShadowsStateVarError,
@@ -20,7 +21,7 @@ from reflex_base.utils.exceptions import (
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
 from reflex_base.vars.base import Var
 from reflex_base.vars.sequence import LiteralStringVar
-from reflex_components_core.base import document
+from reflex_components_core.base import Description, document
 from reflex_components_core.base.document import Links, Scripts
 from reflex_components_core.el.elements.metadata import Head, Link, Meta
 from reflex_components_core.el.elements.other import Html
@@ -29,6 +30,36 @@ import reflex as rx
 from reflex.compiler import compiler, utils
 from reflex.state import BaseState
 from reflex.utils import prerequisites
+
+
+@pytest.mark.parametrize("content", ["", '["index",'])
+def test_read_stateful_pages_marker_recovers_legacy_corruption(
+    tmp_path, mocker, content
+):
+    """A marker truncated by an older writer requests full page evaluation."""
+    mocker.patch("reflex.utils.prerequisites.get_backend_dir", return_value=tmp_path)
+    (tmp_path / constants.Dirs.STATEFUL_PAGES).write_text(content)
+    assert compiler._read_stateful_pages_marker() is None
+
+
+def test_read_stateful_pages_marker_recovers_undecodable_marker(tmp_path, mocker):
+    """A marker that is not valid UTF-8 requests full page evaluation."""
+    mocker.patch("reflex.utils.prerequisites.get_backend_dir", return_value=tmp_path)
+    # No BOM: json.loads() would decode a UTF-16 one and raise JSONDecodeError.
+    (tmp_path / constants.Dirs.STATEFUL_PAGES).write_bytes(b"\xff garbage")
+    assert compiler._read_stateful_pages_marker() is None
+
+
+@pytest.mark.parametrize("windows", [False, True])
+def test_read_stateful_pages_marker_sharing_violation(mocker, windows):
+    """An unavailable Windows marker requests evaluation without hiding POSIX errors."""
+    mocker.patch.object(constants, "IS_WINDOWS", windows)
+    mocker.patch.object(Path, "read_bytes", side_effect=PermissionError)
+    if windows:
+        assert compiler._read_stateful_pages_marker() is None
+    else:
+        with pytest.raises(PermissionError):
+            compiler._read_stateful_pages_marker()
 
 
 @pytest.mark.parametrize(
@@ -711,6 +742,35 @@ def test_compile_contexts_theme_appearance_overrides_config(mocker: MockerFixtur
     assert 'export const defaultColorMode = "dark"' in code
 
 
+def test_compile_contexts_embeds_frontend_state_schema():
+    """The context module carries the hash of the state tree it was compiled for.
+
+    The frontend sends it on every socket connect, and the backend computes
+    the same function over its own tree, so the two values drift only when
+    the trees do.
+    """
+
+    # A root of its own: compiling rx.State would instantiate every state other
+    # test modules registered in this process.
+    class SchemaContextRoot(BaseState):
+        value: int = 0
+
+    class SchemaContextChild(SchemaContextRoot):
+        name: str = ""
+
+    _, code = compiler.compile_contexts(SchemaContextRoot, None)
+
+    schema = SchemaContextRoot._to_frontend_schema()
+    assert f'export const stateSchema = "{schema}"' in code
+    start = code.index("registerApp({")
+    assert "stateSchema," in code[start : code.index("});", start)]
+    assert SchemaContextChild.get_full_name() in code
+
+    # Without state there is nothing to compare, and nothing to connect with.
+    _, code = compiler.compile_contexts(None, None)
+    assert "export const stateSchema = null" in code
+
+
 @pytest.mark.parametrize(
     ("theme", "config_mode", "expected"),
     [
@@ -779,6 +839,17 @@ def test_compile_nonexistent_stylesheet(tmp_path, mocker: MockerFixture):
         compiler.compile_root_stylesheet(stylesheets)
 
 
+@pytest.fixture
+def dev_mode(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Pin dev mode, whose document head omits the stylesheet preload.
+
+    Args:
+        monkeypatch: Selects dev mode and restores the previous mode afterwards.
+    """
+    monkeypatch.setenv("REFLEX_ENV_MODE", constants.Env.DEV.value)
+
+
+@pytest.mark.usefixtures("dev_mode")
 def test_create_document_root():
     """Test that the document root is created correctly."""
     # Test with no components.
@@ -791,7 +862,7 @@ def test_create_document_root():
     assert isinstance(lang, LiteralStringVar)
     assert lang.equals(Var.create("en"))
     # No children in head.
-    assert len(root.children[0].children) == 7
+    assert len(root.children[0].children) == 6
     assert isinstance(root.children[0].children[1], Meta)
     char_set = root.children[0].children[1].char_set  # pyright: ignore [reportAttributeAccessIssue]
     assert isinstance(char_set, LiteralStringVar)
@@ -802,10 +873,42 @@ def test_create_document_root():
     assert name.equals(Var.create("viewport"))
     assert isinstance(root.children[0].children[3], document.Meta)
     assert isinstance(root.children[0].children[4], Link)
-    assert isinstance(root.children[0].children[5], Link)
-    assert isinstance(root.children[0].children[6], Links)
+    assert isinstance(root.children[0].children[5], Links)
 
 
+def test_add_meta_accepts_dynamic_description():
+    """Dynamic page descriptions should be represented as component Vars."""
+
+    class PageState(rx.State):
+        description: str = "Dynamic description"
+
+    page = utils.add_meta(
+        rx.box(),
+        title="title",
+        image="",
+        meta=(),
+        description=PageState.description,
+    )
+
+    description = page.children[1]
+    assert isinstance(description, Description)
+    assert description.content is PageState.description  # pyright: ignore [reportAttributeAccessIssue]
+
+
+def test_add_meta_drops_empty_description():
+    """An empty-string description keeps producing no description tag."""
+    page = utils.add_meta(
+        rx.box(),
+        title="title",
+        image="",
+        meta=(),
+        description="",
+    )
+
+    assert not any(isinstance(child, Description) for child in page.children)
+
+
+@pytest.mark.usefixtures("dev_mode")
 def test_create_document_root_with_scripts():
     # Test with components.
     comps = [
@@ -818,7 +921,7 @@ def test_create_document_root_with_scripts():
         html_custom_attrs={"project": "reflex"},
     )
     assert isinstance(root, Html)
-    assert len(root.children[0].children) == 9
+    assert len(root.children[0].children) == 8
     names = [c.tag for c in root.children[0].children]
     assert names == [
         "script",
@@ -827,7 +930,6 @@ def test_create_document_root_with_scripts():
         "meta",
         "meta",
         "Meta",
-        "link",
         "link",
         "Links",
     ]
@@ -838,6 +940,7 @@ def test_create_document_root_with_scripts():
     assert root.custom_attrs == {"project": "reflex"}
 
 
+@pytest.mark.usefixtures("dev_mode")
 def test_create_document_root_with_meta_char_set():
     # Test with components.
     comps = [
@@ -847,12 +950,13 @@ def test_create_document_root_with_meta_char_set():
         head_components=comps,
     )
     assert isinstance(root, Html)
-    assert len(root.children[0].children) == 7
+    assert len(root.children[0].children) == 6
     names = [c.tag for c in root.children[0].children]
-    assert names == ["script", "meta", "meta", "Meta", "link", "link", "Links"]
+    assert names == ["script", "meta", "meta", "Meta", "link", "Links"]
     assert str(root.children[0].children[1].char_set) == '"cp1252"'  # pyright: ignore [reportAttributeAccessIssue]
 
 
+@pytest.mark.usefixtures("dev_mode")
 def test_create_document_root_with_meta_viewport():
     # Test with components.
     comps = [
@@ -863,9 +967,9 @@ def test_create_document_root_with_meta_viewport():
         head_components=comps,
     )
     assert isinstance(root, Html)
-    assert len(root.children[0].children) == 8
+    assert len(root.children[0].children) == 7
     names = [c.tag for c in root.children[0].children]
-    assert names == ["script", "meta", "meta", "meta", "Meta", "link", "link", "Links"]
+    assert names == ["script", "meta", "meta", "meta", "Meta", "link", "Links"]
     assert str(root.children[0].children[1].http_equiv) == '"refresh"'  # pyright: ignore [reportAttributeAccessIssue]
     assert str(root.children[0].children[2].name) == '"viewport"'  # pyright: ignore [reportAttributeAccessIssue]
     assert str(root.children[0].children[2].content) == '"foo"'  # pyright: ignore [reportAttributeAccessIssue]
@@ -928,7 +1032,37 @@ def test_compile_registers_plugin_routes_on_backend_early_return(
     if with_stateful_marker:
         compile_page.assert_called_once_with("plugin-page", save_page=False)
     else:
-        compile_page.assert_not_called()
+        compile_page.assert_any_call("plugin-page", save_page=False)
+
+
+@pytest.mark.usefixtures("clean_registration_context")
+def test_backend_compile_evaluates_all_pages_when_marker_missing(
+    tmp_path: Path, mocker: MockerFixture
+):
+    """A backend dir without a complete marker falls through to evaluating every page.
+
+    Another worker may have created the backend dir but not yet swapped its
+    marker into place, so a missing marker must not be mistaken for "no
+    stateful pages".
+    """
+    app = rx.App(enable_state=False)
+    app.add_page(lambda: rx.fragment(), route="index")
+    mocker.patch.object(app, "_apply_decorated_pages")
+    mocker.patch.object(app, "_should_compile", return_value=False)
+    compile_page = mocker.patch.object(app, "_compile_page")
+    mocker.patch.object(app, "_add_optional_endpoints")
+    mocker.patch.object(prerequisites, "get_backend_dir", return_value=tmp_path)
+    mocker.patch.object(
+        compiler, "get_config", return_value=rx.Config(app_name="testing", plugins=[])
+    )
+
+    assert compiler.compile_app(app, use_rich=False) is False
+
+    assert {call.args[0] for call in compile_page.call_args_list} == {
+        "index",
+        constants.Page404.SLUG,
+    }
+    assert json.loads((tmp_path / constants.Dirs.STATEFUL_PAGES).read_text()) == []
 
 
 @pytest.mark.usefixtures("clean_registration_context")
@@ -1864,3 +1998,90 @@ def test_preloaded_app_skips_incremental_reuse(monkeypatch, mocker):
     with pytest.raises(FullCompileReached):
         compiler.compile_app(app, use_rich=False)
     reuse.assert_not_called()
+
+
+def test_compile_app_drops_event_caches_from_earlier_compiles(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
+):
+    """Chains and wrappers cached by an earlier compile do not outlive it.
+
+    Args:
+        tmp_path: Directory for compiler output.
+        monkeypatch: Fixture for changing the app directory.
+        mocker: Fixture for configuring the test app.
+    """
+    monkeypatch.chdir(tmp_path)
+    with RegistrationContext() as context:
+        config = rx.Config(app_name="event_cache_test", plugins=[])
+        mocker.patch("reflex_base.config._get_config", return_value=config)
+        app = rx.App()
+        app.add_page(lambda: rx.el.div("hello"), route="/")
+        stale = object()
+        context._bound_event_chains[0, 0, None] = stale  # pyright: ignore[reportArgumentType]
+        context._memoized_event_triggers["on_click", 0] = stale  # pyright: ignore[reportArgumentType]
+
+        compiler.compile_app(app, dry_run=True, use_rich=False)
+
+        assert (0, 0, None) not in context._bound_event_chains
+        assert ("on_click", 0) not in context._memoized_event_triggers
+
+
+@pytest.mark.parametrize(
+    ("compile_context", "tier", "configured", "expected"),
+    [
+        # A deploy keeps an explicit setting whatever the stored login's tier:
+        # the hosting CLI enforces the badge from the tier of the deploy token.
+        (constants.CompileContext.DEPLOY, "free", False, False),
+        (constants.CompileContext.DEPLOY, "team", True, True),
+        # An unset setting follows the stored login's tier.
+        (constants.CompileContext.DEPLOY, "free", None, True),
+        (constants.CompileContext.DEPLOY, "pro", None, False),
+        (constants.CompileContext.DEPLOY, "anonymous", None, True),
+        # Outside of deploys the badge shows unless the app opts out.
+        (constants.CompileContext.EXPORT, "free", None, True),
+        (constants.CompileContext.EXPORT, "free", False, False),
+        (constants.CompileContext.RUN, "pro", True, True),
+    ],
+)
+def test_compile_app_resolves_show_built_with_reflex(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+    compile_context: constants.CompileContext,
+    tier: str,
+    configured: bool | None,
+    expected: bool,
+):
+    """A production compile installs the badge according to the app's setting.
+
+    Args:
+        tmp_path: Directory for compiler output.
+        monkeypatch: Fixture for changing the app directory and compile context.
+        mocker: Fixture for configuring the test app, the user's tier and prod mode.
+        compile_context: The context the app is compiled in.
+        tier: The tier of the deploying user.
+        configured: The app's own show_built_with_reflex setting.
+        expected: The setting the compile should resolve to.
+    """
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv(environment.REFLEX_COMPILE_CONTEXT.name, compile_context.value)
+    get_user_tier = mocker.patch(
+        "reflex.utils.prerequisites.get_user_tier", return_value=tier
+    )
+    mocker.patch("reflex.compiler.compiler.is_prod_mode", return_value=True)
+    with RegistrationContext():
+        config = rx.Config(
+            app_name="badge_test", plugins=[], show_built_with_reflex=configured
+        )
+        mocker.patch("reflex_base.config._get_config", return_value=config)
+        app = rx.App()
+        app.add_page(lambda: rx.el.div("hello"), route="/")
+
+        compiler.compile_app(app, dry_run=True, use_rich=False)
+
+        assert config.show_built_with_reflex is expected
+        assert ((0, "StickyBadge") in app.app_wraps) is expected
+    # Only an unset setting on a deploy needs the tier.
+    assert get_user_tier.called is (
+        compile_context == constants.CompileContext.DEPLOY and configured is None
+    )

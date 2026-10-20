@@ -6,13 +6,13 @@ import collections
 import dataclasses
 import json
 import logging
-import sys
 from collections.abc import Callable, Iterable, Sequence
 from inspect import getmodule
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
 from reflex_base import constants, otel
+from reflex_base.components.app_wraps import collect_var_app_wraps_in_subtree
 from reflex_base.components.component import (
     BaseComponent,
     Component,
@@ -50,9 +50,13 @@ from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 
 from reflex.compiler import templates, utils
 from reflex.compiler.plugins import default_page_plugins
-from reflex.compiler.plugins.builtin import collect_var_app_wraps_in_subtree
 from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin
-from reflex.state import BaseState, code_uses_state_contexts
+from reflex.state import (
+    BaseState,
+    _hash_frontend_schema,
+    code_uses_state_contexts,
+    state_snapshot_hashes,
+)
 from reflex.utils import console, frontend_skeleton, path_ops, prerequisites
 from reflex.utils.exec import get_compile_context, is_prod_mode
 from reflex.utils.prerequisites import get_web_dir
@@ -262,22 +266,20 @@ def _resolve_default_color_mode(theme: Component | None) -> str:
 def _compile_contexts(
     state: type[BaseState] | None,
     theme: Component | None,
-    extra_state: tuple[dict[str, Any], dict[str, dict[str, Any]]] | None = None,
     *,
     component_imports: ParsedImportDict | None = None,
-    contexts_snapshot: tuple[dict[str, Any], dict[str, dict[str, Any]]] | None = None,
+    contexts_snapshot: utils.ContextsSnapshot | None = None,
 ) -> str:
     """Compile the initial state and contexts.
 
     Args:
         state: The app state.
         theme: The top-level app theme.
-        extra_state: ``(initial_state, client_storage)`` entries for states that
-            are not in this process's state tree (states only registered while
-            a page evaluates, restored from the compile cache manifest).
         component_imports: Optional accumulator for initial component dependencies.
-        contexts_snapshot: Initial state and client storage compiled for this
-            contexts output, when already available.
+        contexts_snapshot: The state-tree inputs compiled for this contexts
+            output, when already available. They may include states that are
+            not in this process's state tree (states only registered while a
+            page evaluates, restored from the compile cache manifest).
 
     Returns:
         The compiled context file.
@@ -297,23 +299,19 @@ def _compile_contexts(
             state, component_imports=component_imports
         )
         client_storage = utils.compile_client_storage(state)
+        state_schema = state._to_frontend_schema()
     else:
-        initial_state, client_storage = contexts_snapshot
+        initial_state, client_storage, schema_entries = contexts_snapshot
         initial_state_json = utils._serialize_initial_state(
             initial_state, component_imports=component_imports
         )
-    if extra_state is not None:
-        extra_initial, extra_storage = extra_state
-        initial_state = dict(sorted({**initial_state, **extra_initial}.items()))
-        initial_state_json = utils._serialize_initial_state(
-            initial_state, component_imports=component_imports
-        )
-        for kind, entries in extra_storage.items():
-            client_storage.setdefault(kind, {}).update(entries)
+        state_schema = _hash_frontend_schema(schema_entries)
     return templates.context_template(
         initial_state=initial_state,
         initial_state_json=initial_state_json,
+        initial_state_hashes=state_snapshot_hashes(initial_state),
         state_name=state.get_name(),
+        state_schema=state_schema,
         client_storage=client_storage,
         is_dev_mode=not is_prod_mode(),
         default_color_mode=default_color_mode,
@@ -797,17 +795,15 @@ def compile_theme(style: ComponentStyle) -> tuple[str, str]:
 def compile_contexts(
     state: type[BaseState] | None,
     theme: Component | None,
-    extra_state: tuple[dict[str, Any], dict[str, dict[str, Any]]] | None = None,
     *,
     component_imports: ParsedImportDict | None = None,
-    contexts_snapshot: tuple[dict[str, Any], dict[str, dict[str, Any]]] | None = None,
+    contexts_snapshot: utils.ContextsSnapshot | None = None,
 ) -> tuple[str, str]:
     """Compile the initial state / context.
 
     Args:
         state: The app state.
         theme: The top-level app theme.
-        extra_state: See :func:`_compile_contexts`.
         component_imports: Optional accumulator for initial component dependencies.
         contexts_snapshot: See :func:`_compile_contexts`.
 
@@ -820,7 +816,6 @@ def compile_contexts(
     return output_path, _compile_contexts(
         state,
         theme,
-        extra_state,
         component_imports=component_imports,
         contexts_snapshot=contexts_snapshot,
     )
@@ -1105,8 +1100,7 @@ def compile_unevaluated_page(
         )
 
     except Exception as e:
-        if sys.version_info >= (3, 11):
-            e.add_note(f"Happened while evaluating page {route!r}")
+        e.add_note(f"Happened while evaluating page {route!r}")
         raise
     else:
         return component
@@ -1362,6 +1356,53 @@ def _apply_plugin_outputs(
     return sources
 
 
+def _reset_compile_registries(compiler_plugins: Sequence[Plugin]) -> None:
+    """Reset the registries a compile fills before any page is evaluated.
+
+    Args:
+        compiler_plugins: The resolved compiler plugins.
+    """
+    from reflex_base.components.dynamic import (
+        _bundle_library,
+        _reset_bundled_libraries_for_compile,
+    )
+
+    _reset_bundled_libraries_for_compile()
+    # Drop cached memo wrapper classes so each compile recomputes a memo's
+    # ``library`` from the current module layout (handles a module flipping to
+    # a package across hot reloads).
+    reset_memo_component_classes()
+    # Page evaluation rebuilds every chain that is not interned by handler, so
+    # entries from an earlier compile can only retain dead chains.
+    RegistrationContext.ensure_context()._reset_compile_caches()
+    for plugin in compiler_plugins:
+        for dependency in plugin.get_frontend_dependencies():
+            _bundle_library(dependency)
+
+
+def _read_stateful_pages_marker() -> list[str] | None:
+    """Read the routes that create state classes from a previous compile.
+
+    A missing marker or one corrupted by an older writer requires full page
+    evaluation. New writers replace the marker atomically.
+
+    Returns:
+        The stateful routes, or None if no valid marker has been written yet.
+    """
+    marker = prerequisites.get_backend_dir() / constants.Dirs.STATEFUL_PAGES
+    try:
+        return json.loads(marker.read_bytes())
+    except (FileNotFoundError, ValueError):
+        # ValueError covers both JSONDecodeError and the UnicodeDecodeError of a
+        # marker that is not valid UTF-8.
+        return None
+    except PermissionError:
+        if constants.IS_WINDOWS:
+            # A concurrent atomic replacement can temporarily block Windows readers.
+            return None
+        raise
+
+
 def compile_app(
     app: App,
     *,
@@ -1375,10 +1416,6 @@ def compile_app(
         ``True`` when a real frontend compile ran, ``False`` when the call
         short-circuited (backend-only paths that only re-evaluate pages).
     """
-    from reflex_base.components.dynamic import (
-        _bundle_library,
-        _reset_bundled_libraries_for_compile,
-    )
     from reflex_base.utils.exceptions import ReflexRuntimeError
 
     app._apply_decorated_pages()
@@ -1388,21 +1425,20 @@ def compile_app(
     app._cached_component_counts = None
 
     should_compile = app._should_compile()
-    backend_dir = prerequisites.get_backend_dir()
-    if not dry_run and not should_compile and backend_dir.exists():
+    if not dry_run and not should_compile:
         from reflex.utils import compile_daemon
 
         if compile_daemon.daemon_active():
             # The compile daemon reacts to the same save; read its marker only
             # once it has finished rewriting .web for this change.
             compile_daemon.wait_for_compile()
-        stateful_pages_marker = backend_dir / constants.Dirs.STATEFUL_PAGES
-        if stateful_pages_marker.exists():
-            with stateful_pages_marker.open("r") as file:
-                stateful_pages = json.load(file)
-            for route in stateful_pages:
-                logger.debug(f"BE Evaluating stateful page: {route}")
-                app._compile_page(route, save_page=False)
+        stateful_pages = _read_stateful_pages_marker()
+    else:
+        stateful_pages = None
+    if stateful_pages is not None:
+        for route in stateful_pages:
+            logger.debug(f"BE Evaluating stateful page: {route}")
+            app._compile_page(route, save_page=False)
         if app._state is not None:
             utils._restore_bundled_libraries()
             utils._compile_initial_state(app._state)
@@ -1502,14 +1538,7 @@ def compile_app(
     all_pages = list(app._unevaluated_pages.values())
     if evaluated is None:
         pages_to_compile = all_pages
-        _reset_bundled_libraries_for_compile()
-        # Drop cached memo wrapper classes so each compile recomputes a memo's
-        # ``library`` from the current module layout (handles a module flipping
-        # to a package across hot reloads).
-        reset_memo_component_classes()
-        for plugin in compiler_plugins:
-            for dependency in plugin.get_frontend_dependencies():
-                _bundle_library(dependency)
+        _reset_compile_registries(compiler_plugins)
     else:
         # The incremental attempt already did the resets above and bundled what
         # its pages registered; only the pages it never touched remain.
@@ -1542,7 +1571,8 @@ def compile_app(
 
     _register_compiled_pages(app, compile_ctx.compiled_pages)
     app._stateful_pages.update(dict.fromkeys(compile_ctx.stateful_routes))
-    app._write_stateful_pages_marker()
+    if not dry_run:
+        app._write_stateful_pages_marker()
     app._add_optional_endpoints()
     app._validate_var_dependencies()
 
@@ -1670,9 +1700,7 @@ def compile_app(
         progress.advance(task)
 
     contexts_snapshot = (
-        (utils.compile_state(app._state), utils.compile_client_storage(app._state))
-        if app._state is not None
-        else None
+        utils.compile_contexts_snapshot(app._state) if app._state is not None else None
     )
     compile_results.extend([
         compile_contexts(
@@ -1709,6 +1737,13 @@ def compile_app(
     frontend_skeleton.update_react_router_config(
         prerender_routes=prerender_routes,
     )
+
+    # Persist the route table so the standalone prod static server can serve
+    # routable SPA paths with 200 and reserve 404 for unknown ones.
+    compile_results.append((
+        constants.Dirs.ROUTES_MANIFEST,
+        json.dumps(app._page_routes),
+    ))
 
     if is_prod_mode():
         purge_web_pages_dir()

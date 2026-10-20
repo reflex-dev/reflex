@@ -41,9 +41,10 @@ if TYPE_CHECKING:
     from reflex_base.utils.imports import ParsedImportDict
 
     from reflex.app import App
+    from reflex.compiler import utils as compiler_utils
 
 #: Bump when the manifest layout changes (old manifests are then ignored).
-_SCHEMA = 12
+_SCHEMA = 13
 #: Manifest filename under the web directory.
 _MANIFEST_FILE = "reflex_compile_cache.json"
 
@@ -200,22 +201,26 @@ def _state_slice(
     state_names: Sequence[str],
     initial_state: dict[str, Any],
     client_storage: dict[str, dict[str, Any]],
+    schema_entries: dict[str, list[Any]],
 ) -> dict[str, Any]:
     """Extract some states' contribution to the compiled contexts file.
 
-    A state's contribution is exactly its initial-state entry plus its
-    client-storage entries (see ``templates.context_template``). Persisting the
-    slice, not just a fingerprint, lets an incremental rebuild re-emit the
-    contexts file for pages it did not evaluate (states only registered while
-    their page evaluates, e.g. exec'd docs demos) without evaluating them.
+    A state's contribution is exactly its initial-state entry, its
+    client-storage entries and its frontend schema entry (see
+    ``templates.context_template``). Persisting the slice, not just a
+    fingerprint, lets an incremental rebuild re-emit the contexts file for
+    pages it did not evaluate (states only registered while their page
+    evaluates, e.g. exec'd docs demos) without evaluating them.
 
     Args:
         state_names: Full names of the states to slice.
         initial_state: The complete initial-state mapping (full name -> vars).
         client_storage: The compiled client-storage mapping per storage kind.
+        schema_entries: The frontend schema entries (full name -> entry).
 
     Returns:
-        ``{"initial_state": {...}, "client_storage": {kind: {...}}}``.
+        ``{"initial_state": {...}, "client_storage": {kind: {...}},
+        "schema": {...}}``.
     """
     names = sorted(state_names)
     prefixes = tuple(f"{name}." for name in names)
@@ -227,25 +232,10 @@ def _state_slice(
             kind: {k: v for k, v in entries.items() if k.startswith(prefixes)}
             for kind, entries in client_storage.items()
         },
+        "schema": {
+            name: schema_entries[name] for name in names if name in schema_entries
+        },
     }
-
-
-def _contexts_fingerprint(
-    state_names: Sequence[str],
-    initial_state: dict[str, Any],
-    client_storage: dict[str, dict[str, Any]],
-) -> str:
-    """Fingerprint some states' contribution to the compiled contexts file.
-
-    Args:
-        state_names: Full names of the states to fingerprint.
-        initial_state: The complete initial-state mapping (full name -> vars).
-        client_storage: The compiled client-storage mapping per storage kind.
-
-    Returns:
-        A stable hash of :func:`_state_slice`.
-    """
-    return _slice_digest(_state_slice(state_names, initial_state, client_storage))
 
 
 def _slice_digest(state_slice: dict[str, Any] | None) -> str:
@@ -260,32 +250,27 @@ def _slice_digest(state_slice: dict[str, Any] | None) -> str:
     return hashlib.sha256(json_dumps(state_slice).encode()).hexdigest()
 
 
-def _contexts_snapshot(
-    app: App | None,
-) -> tuple[dict[str, Any], dict[str, Any]] | None:
+def _contexts_snapshot(app: App | None) -> compiler_utils.ContextsSnapshot | None:
     """Capture the state-tree inputs of the contexts file.
 
     Args:
         app: The app being compiled (absent in bare compile contexts).
 
     Returns:
-        The (initial state, client storage) mappings keyed by state full name,
-        or None when there is no state tree.
+        The contexts snapshot of the app's state tree, or None when there is
+        no state tree.
     """
     if app is None or app._state is None:
         return None
     from reflex.compiler import utils as compiler_utils
 
-    return (
-        compiler_utils.compile_state(app._state),
-        compiler_utils.compile_client_storage(app._state),
-    )
+    return compiler_utils.compile_contexts_snapshot(app._state)
 
 
 def _changed_state_config_route(
     manifest: dict[str, Any],
     miss_ctx: CompileContext,
-    snapshot: tuple[dict[str, Any], dict[str, Any]] | None,
+    snapshot: compiler_utils.ContextsSnapshot | None,
 ) -> str | None:
     """Find the first recompiled stateful route whose state config changed.
 
@@ -314,27 +299,33 @@ def _changed_state_config_route(
     return None
 
 
-def _hit_state_extras(
-    manifest: dict[str, Any], miss_routes: set[str]
-) -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
+def _with_hit_state_slices(
+    snapshot: compiler_utils.ContextsSnapshot,
+    manifest: dict[str, Any],
+    miss_routes: set[str],
+) -> compiler_utils.ContextsSnapshot:
     """Merge the stored contexts contributions of the stateful hit pages.
 
     Args:
+        snapshot: The contexts snapshot of this process's state tree.
         manifest: The loaded manifest.
         miss_routes: Routes recompiled in this rebuild (their states are live).
 
     Returns:
-        ``(initial_state, client_storage)`` extras for ``compile_contexts``.
+        The snapshot of the live states plus the hit pages' stored states.
     """
-    initial: dict[str, Any] = {}
-    storage: dict[str, dict[str, Any]] = {}
+    live_initial, live_storage, live_schema = snapshot
+    initial = dict(live_initial)
+    storage = {kind: dict(entries) for kind, entries in live_storage.items()}
+    schema_entries = dict(live_schema)
     for route, entry in manifest["pages"].items():
-        if route in miss_routes or not (state_slice := entry.get("state_slice")):
+        if route in miss_routes or not (state_slice := entry["state_slice"]):
             continue
-        initial.update(state_slice.get("initial_state", {}))
-        for kind, entries in state_slice.get("client_storage", {}).items():
+        initial.update(state_slice["initial_state"])
+        for kind, entries in state_slice["client_storage"].items():
             storage.setdefault(kind, {}).update(entries)
-    return initial, storage
+        schema_entries.update(state_slice["schema"])
+    return dict(sorted(initial.items())), storage, schema_entries
 
 
 def load_manifest() -> dict[str, Any] | None:
@@ -397,7 +388,7 @@ def write_manifest(
     root: Path | None = None,
     *,
     plugin_sources: dict[str, str] | None = None,
-    contexts_snapshot: tuple[dict[str, Any], dict[str, dict[str, Any]]] | None = None,
+    contexts_snapshot: compiler_utils.ContextsSnapshot | None = None,
 ) -> None:
     """Persist a manifest of the just-completed full compile.
 
@@ -414,8 +405,8 @@ def write_manifest(
             install from this complete set, not just the per-page union.
         root: Project root for fingerprinting. Defaults to cwd.
         plugin_sources: Unmodified source content for plugin file modifiers.
-        contexts_snapshot: Initial state and client storage used for the contexts
-            output. When absent, a snapshot is captured for direct callers.
+        contexts_snapshot: The state-tree inputs used for the contexts output.
+            When absent, a snapshot is captured for direct callers.
     """
     try:
         state_index, _ = page_cache.state_dependency_index(root)
@@ -1073,19 +1064,11 @@ def try_incremental_rebuild(
         console.info(f"Compile cache: reusing all {len(pages)} pages from disk")
     miss_routes = {p.route for p in miss_pages}
 
-    if miss_pages or dirty_memo_paths:
-        from reflex_base.components.dynamic import (
-            bundle_library,
-            reset_bundled_libraries,
-        )
-        from reflex_base.components.memo import reset_memo_component_classes
+    from reflex.compiler import compiler
 
+    if miss_pages or dirty_memo_paths:
         # Match the full compile's clean bundling/memo state before compiling.
-        reset_bundled_libraries()
-        reset_memo_component_classes()
-        for plugin in compiler_plugins:
-            for dependency in plugin.get_frontend_dependencies():
-                bundle_library(dependency)
+        compiler._reset_compile_registries(compiler_plugins)
 
     # Recompile only the source-changed pages.
     miss_ctx = None
@@ -1143,8 +1126,6 @@ def try_incremental_rebuild(
             if (page.route in miss_ctx.stateful_routes) != entry["is_stateful"]:
                 _log_fallback(f"page {page.route!r} changed statefulness")
                 return miss_ctx
-
-    from reflex.compiler import compiler
 
     # Write changed pages + their memo files; reuse everything else on disk.
     install_imports = _deserialize_imports(manifest["all_imports"])
@@ -1221,7 +1202,7 @@ def try_incremental_rebuild(
     # stateful miss can change state config, and only its OWN states can differ
     # from the on-disk contexts file, so compare those first: a content-only
     # edit leaves them identical and the contexts file is reused untouched.
-    contexts_snapshot: tuple[dict[str, Any], dict[str, Any]] | None = None
+    contexts_snapshot: compiler_utils.ContextsSnapshot | None = None
     if miss_ctx is not None and miss_ctx.stateful_routes:
         contexts_snapshot = _contexts_snapshot(app)
         changed_route = _changed_state_config_route(
@@ -1250,8 +1231,13 @@ def try_incremental_rebuild(
             context_path, context_code = compiler.compile_contexts(
                 app._state,
                 theme,
-                _hit_state_extras(manifest, miss_routes),
-                contexts_snapshot=contexts_snapshot,
+                contexts_snapshot=(
+                    None
+                    if contexts_snapshot is None
+                    else _with_hit_state_slices(
+                        contexts_snapshot, manifest, miss_routes
+                    )
+                ),
             )
             _save_incremental_output(context_path, context_code, outputs)
 
@@ -1318,7 +1304,7 @@ def _update_manifest_for_misses(
     all_imports: ParsedImportDict,
     root: Path | None = None,
     *,
-    contexts_snapshot: tuple[dict[str, Any], dict[str, Any]] | None = None,
+    contexts_snapshot: compiler_utils.ContextsSnapshot | None = None,
     memo_state: dict[str, dict[str, Any]],
     memo_file_entries: dict[str, page_cache.FileEntry],
     validator: page_cache.FileValidator | None = None,

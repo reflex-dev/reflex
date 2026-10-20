@@ -1,9 +1,10 @@
 """Compatibility hacks and helpers."""
 
+import dataclasses
 import sys
 from collections.abc import Mapping
 from functools import lru_cache
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 if sys.version_info >= (3, 14):
     from annotationlib import (
@@ -12,6 +13,12 @@ if sys.version_info >= (3, 14):
         get_annotate_from_class_namespace,
         get_annotations,
     )
+
+if TYPE_CHECKING or sys.version_info < (3, 15):
+    # Typeshed still models MISSING with the pre-3.15 class.
+    MISSING_TYPE = dataclasses._MISSING_TYPE
+else:
+    MISSING_TYPE = dataclasses.MISSING
 
 
 async def windows_hot_reload_lifespan_hack():

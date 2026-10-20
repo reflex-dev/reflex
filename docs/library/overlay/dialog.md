@@ -192,7 +192,7 @@ def dialog_example():
     )
 ```
 
-Check out the [menu docs](/docs/library/overlay/dropdown-menu) for an example of opening a dialog from within a dropdown menu.
+Check out the [menu docs](/docs/library/overlay/dropdown-menu/) for an example of opening a dialog from within a dropdown menu.
 
 ## Form Submission to a Database from a Dialog
 

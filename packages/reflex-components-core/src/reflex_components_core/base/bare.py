@@ -7,7 +7,7 @@ from collections.abc import Iterator, Sequence
 from typing import Any
 
 from reflex_base.components.component import BaseComponent, Component, ComponentStyle
-from reflex_base.components.tags import Tag
+from reflex_base.components.tags import CommonTag
 from reflex_base.components.tags.tagless import Tagless
 from reflex_base.environment import PerformanceMode, environment
 from reflex_base.utils.decorator import once
@@ -180,7 +180,7 @@ class Bare(Component):
                 refs |= component._get_all_refs()
         return refs
 
-    def _render(self) -> Tag:
+    def _render(self) -> CommonTag:
         contents = (
             Var.create(self.contents)
             if not isinstance(self.contents, Var)

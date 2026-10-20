@@ -1,3 +1,3 @@
-from ._plugin import AgentFilesPlugin
+from agent_files._plugin import AgentFilesPlugin
 
 __all__ = ["AgentFilesPlugin"]

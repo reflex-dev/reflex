@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import sys
-
 import pytest
 from reflex_base.utils.exceptions import VarValueError
 from reflex_base.vars.dep_tracking import (
@@ -286,9 +284,6 @@ def test_nested_function():
     assert tracker.dependencies == expected_deps
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 11), reason="Requires Python 3.11+ for positions"
-)
 def test_get_var_value_functionality():
     """Test tracking dependencies when using get_var_value."""
 
@@ -300,9 +295,24 @@ def test_get_var_value_functionality():
     assert tracker.dependencies == expected_deps
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 11), reason="Requires Python 3.11+ for positions"
-)
+def test_get_var_value_tracks_all_composed_fields():
+    """Composed get_var_value arguments register every state field they read."""
+    composed_var = DependencyTestState.count + DependencyTestState.items.length()
+
+    async def composed(self: DependencyTestState):
+        """Read a composite expression.
+
+        Returns:
+            The combined field value.
+        """
+        return await self.get_var_value(composed_var)
+
+    tracker = DependencyTracker(composed, DependencyTestState)
+    assert tracker.dependencies == {
+        DependencyTestState.get_full_name(): {"count", "items"}
+    }
+
+
 def test_get_var_value_multiple_lines_functionality():
     """Test tracking dependencies when using get_var_value spread out on multiple lines."""
 
@@ -318,9 +328,6 @@ def test_get_var_value_multiple_lines_functionality():
     assert tracker.dependencies == expected_deps
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 11), reason="Requires Python 3.11+ for positions"
-)
 def test_get_var_value_with_import_from():
     """Test that get_var_value with function-local `from ... import ...` finds correct dependency."""
 

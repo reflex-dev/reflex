@@ -525,7 +525,7 @@ def _reset_first_party(roots: list[Path]) -> None:
 
     import reflex.istate.dynamic as istate_dynamic
     from reflex.compiler import page_cache
-    from reflex.state import BaseState, all_base_state_classes
+    from reflex.state import BaseState, _frontend_schema, all_base_state_classes
 
     ctx = RegistrationContext.ensure_context()
     kept = [
@@ -539,14 +539,9 @@ def _reset_first_party(roots: list[Path]) -> None:
     ctx.base_state_substates.clear()
     ctx.event_handlers.clear()
     all_base_state_classes.clear()
-    for cached in (
-        BaseState.get_parent_state,
-        BaseState.get_root_state,
-        BaseState.get_name,
-        BaseState.get_full_name,
-        BaseState.get_class_substate,
-    ):
-        cached.cache_clear()
+    # Kept classes' per-class caches stay valid; these caches span the tree.
+    BaseState.get_class_substate.cache_clear()
+    _frontend_schema.cache_clear()
     # Locally-defined states are attached to ``reflex.istate.dynamic`` under
     # collision-suffixed names; with the warm parent's attributes in place,
     # every re-created state would drift to a new suffix and diverge from the

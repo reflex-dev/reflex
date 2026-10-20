@@ -14,6 +14,7 @@ from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.components.radix.themes.base import RadixThemesComponent
+from reflex_components_core.el.elements.base import BaseHTML
 from reflex_docgen import (
     EventHandlerDocumentation,
     PropDocumentation,
@@ -46,7 +47,7 @@ TYPE_COLORS = {
     "float": "orange",
     "str": "yellow",
     "bool": "teal",
-    "Component": "purple",
+    "Component": "gray",
     "List": "blue",
     "Dict": "blue",
     "Tuple": "blue",
@@ -103,22 +104,32 @@ EXCLUDED_COMPONENTS = [
 ]
 
 
+_PILL_BTN_BASE_CLASS = (
+    "docs-api-option inline-flex min-h-10 min-w-10 cursor-pointer items-center "
+    "justify-center rounded-full border border-transparent px-3 text-sm font-normal "
+    "transition-colors motion-reduce:transition-none focus-visible:outline-2 "
+    "focus-visible:outline-offset-2 focus-visible:outline-ring"
+)
 _PILL_BTN_CLASS = (
-    "inline-flex h-7 cursor-pointer items-center justify-center rounded-md "
-    "border border-secondary-5 bg-secondary-1 px-2.5 text-sm font-medium text-secondary-11 "
-    "transition-colors hover:border-secondary-6 hover:bg-secondary-2 hover:text-secondary-12 "
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary-7"
+    f"{_PILL_BTN_BASE_CLASS} bg-muted text-muted-foreground "
+    "hover:bg-accent-hover hover:text-foreground"
 )
 _PILL_BTN_ACTIVE_CLASS = (
-    "inline-flex h-7 cursor-pointer items-center justify-center rounded-md "
-    "border border-secondary-8 bg-secondary-3 px-2.5 text-sm font-medium text-secondary-12 "
-    "shadow-[inset_0_0_0_1px_var(--secondary-6)] transition-colors "
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary-7"
+    f"{_PILL_BTN_BASE_CLASS} bg-primary text-primary-foreground hover:bg-primary-hover"
 )
 _PROPS_TABLE_COMPACT_CELL_CLASS = (
     "cell-content max-h-[4.25rem] overflow-hidden "
     "[mask-image:linear-gradient(to_bottom,black_82%,transparent)] "
     "[-webkit-mask-image:linear-gradient(to_bottom,black_82%,transparent)]"
+)
+_API_HEADING_CLASS = (
+    "docs-heading font-heading text-2xl font-normal leading-tight "
+    "tracking-[-0.025em] text-foreground"
+)
+_API_LINK_CLASS = (
+    "docs-text-link text-sm font-normal leading-6 text-foreground "
+    "underline underline-offset-4 focus-visible:outline-2 "
+    "focus-visible:outline-offset-4 focus-visible:outline-ring"
 )
 
 
@@ -126,6 +137,7 @@ def _pill_button(label: str, active, on_click) -> rx.Component:
     return rx.el.button(
         label,
         type="button",
+        aria_pressed=active,
         on_click=on_click,
         class_name=rx.cond(active, _PILL_BTN_ACTIVE_CLASS, _PILL_BTN_CLASS),
     )
@@ -134,7 +146,7 @@ def _pill_button(label: str, active, on_click) -> rx.Component:
 def _pill_row(values, var, setter) -> rx.Component:
     return rx.el.div(
         *[_pill_button(v, var == v, setter(v)) for v in values],
-        class_name="flex flex-wrap gap-1.5",
+        class_name="flex min-w-0 flex-wrap gap-2",
     )
 
 
@@ -142,7 +154,7 @@ def _bool_pills(var, setter) -> rx.Component:
     return rx.el.div(
         _pill_button("false", ~var, setter(False)),
         _pill_button("true", var, setter(True)),
-        class_name="flex flex-wrap gap-1.5",
+        class_name="flex min-w-0 flex-wrap gap-2",
     )
 
 
@@ -224,10 +236,10 @@ def render_select(prop: PropDocumentation, component: type[Component], prop_dict
                 type="button",
                 class_name=(
                     "inline-flex h-8 w-32 cursor-pointer items-center justify-between "
-                    "rounded-md border border-secondary-5 bg-secondary-1 px-2.5 text-secondary-11 "
-                    "transition-colors hover:border-secondary-6 hover:bg-secondary-2 "
-                    "hover:text-secondary-12 focus-visible:outline-none "
-                    "focus-visible:ring-2 focus-visible:ring-secondary-7"
+                    "rounded-md border border-border bg-background px-2.5 text-muted-foreground "
+                    "transition-colors hover:border-border hover:bg-muted "
+                    "hover:text-foreground focus-visible:outline-none "
+                    "focus-visible:ring-2 focus-visible:ring-border-strong"
                 ),
             ),
             content=rx.box(
@@ -269,7 +281,7 @@ def hovercard(trigger: rx.Component, content: rx.Component) -> rx.Component:
             content,
             side="top",
             align="center",
-            class_name="font-small text-secondary-11",
+            class_name="font-small text-muted-foreground",
         ),
     )
 
@@ -388,8 +400,8 @@ def prop_docs(
                             size=14,
                             class_name=rx.cond(
                                 expanded,
-                                "row-expand-icon mt-0.5 shrink-0 rotate-180 text-secondary-9 opacity-100 transition-[opacity,transform]",
-                                "row-expand-icon mt-0.5 shrink-0 text-secondary-9 opacity-0 transition-[opacity,transform] group-hover:opacity-100",
+                                "row-expand-icon mt-0.5 shrink-0 rotate-180 text-subtle-foreground opacity-100 transition-[opacity,transform] motion-reduce:transition-none",
+                                "row-expand-icon mt-0.5 shrink-0 text-subtle-foreground opacity-0 transition-[opacity,transform] group-hover:opacity-100 motion-reduce:transition-none",
                             ),
                         )
                         if expanded is not None
@@ -437,11 +449,11 @@ def prop_docs(
                             rx.icon(
                                 tag="info",
                                 size=15,
-                                class_name="!text-secondary-9 shrink-0",
+                                class_name="!text-subtle-foreground shrink-0",
                             ),
                             rx.text(
                                 f"Union[{', '.join(all_types)}]",
-                                class_name="font-small text-secondary-11",
+                                class_name="text-sm font-normal leading-6 text-muted-foreground",
                             ),
                         ),
                     ),
@@ -453,7 +465,7 @@ def prop_docs(
                 rx.box(
                     render_inline_markdown(
                         description,
-                        class_name="font-small text-secondary-11 whitespace-normal leading-snug break-words",
+                        class_name="text-sm font-normal text-muted-foreground whitespace-normal leading-6 break-words",
                     ),
                     class_name=cell_content_class,
                 ),
@@ -475,9 +487,10 @@ def generate_props(
     prop_list = list(props)
     if len(prop_list) == 0:
         return rx.box(
-            rx.heading("Props", as_="h3", class_name="font-large text-secondary-12"),
+            rx.heading("Props", as_="h3", class_name=_API_HEADING_CLASS),
             rx.text(
-                "No component specific props", class_name="text-secondary-11 font-base"
+                "No component specific props",
+                class_name="text-sm font-normal leading-6 text-muted-foreground",
             ),
             class_name="flex flex-col overflow-x-auto justify-start py-2 w-full",
         )
@@ -545,7 +558,7 @@ def generate_props(
         cells, is_long_row, expanded_name, expanded = prop_docs(prop, component)
         row_props = {
             "class_name": ui.cn(
-                "border-b border-secondary-4 last:border-b-0 transition-colors hover:bg-secondary-2",
+                "border-b border-border-subtle last:border-b-0 transition-colors hover:bg-muted",
                 "group cursor-pointer" if is_long_row else "",
             )
         }
@@ -615,10 +628,10 @@ def generate_props(
                 return False
 
         line_class = "font-mono text-sm whitespace-pre"
-        kw_class = "text-primary-11"
+        kw_class = "text-foreground"
         str_class = "text-orange-11"
         bool_class = "text-blue-11"
-        prop_name_class = "text-secondary-12"
+        prop_name_class = "text-foreground"
         token_re = re.compile(
             r'(rx\.[\w.]+)|("[^"]*")|(\b(?:True|False|None)\b)|(\b\d+(?:\.\d+)?\b)|(\w+)|(\s+)|(.)'
         )
@@ -732,18 +745,18 @@ def generate_props(
             rx.el.div(
                 comp,
                 class_name=(
-                    "flex flex-col items-center justify-center p-6 flex-1 "
-                    "bg-secondary-2 border-b lg:border-b-0 lg:border-r "
-                    "border-secondary-4 min-w-0"
+                    "docs-api-preview flex flex-col items-center justify-center p-6 flex-1 "
+                    "bg-muted border-b lg:border-b-0 lg:border-r "
+                    "border-border-subtle min-w-0 overflow-x-auto"
                 ),
             ),
             rx.el.div(
                 *code_children,
-                class_name="flex-1 p-4 bg-secondary-1 min-w-0 overflow-x-auto",
+                class_name="flex-1 p-4 bg-background min-w-0 overflow-x-auto",
             ),
             class_name=(
-                "flex flex-col lg:flex-row w-full rounded-xl border "
-                "border-secondary-4 overflow-hidden"
+                "docs-api-playground flex min-w-0 flex-col lg:flex-row w-full rounded-[20px] border "
+                "border-border-subtle overflow-hidden"
             ),
         )
     else:
@@ -756,20 +769,22 @@ def generate_props(
                 rx.el.div(
                     rx.code(
                         prop.name,
-                        class_name="code-style text-nowrap leading-normal text-secondary-11",
+                        class_name="code-style text-nowrap leading-normal text-muted-foreground",
                     ),
                     control,
+                    role="group",
+                    aria_label=f"{prop.name} options",
                     class_name=(
-                        "grid grid-cols-[8rem_minmax(0,1fr)] items-start gap-4 "
-                        "border-b border-secondary-4 px-4 py-3 transition-colors "
-                        "last:border-b-0 hover:bg-secondary-2"
+                        "grid min-w-0 grid-cols-1 items-start gap-3 "
+                        "border-b border-border-subtle px-5 py-4 last:border-b-0 "
+                        "sm:grid-cols-[8rem_minmax(0,1fr)] sm:gap-4"
                     ),
                 )
                 for prop, control in interactive_controls
             ],
             class_name=(
-                "mb-4 w-full min-w-0 overflow-hidden rounded-xl border "
-                "border-secondary-4 bg-secondary-1 shadow-small"
+                "docs-api-controls mb-4 w-full min-w-0 overflow-hidden rounded-[20px] border "
+                "border-border-subtle bg-background"
             ),
         )
 
@@ -779,7 +794,7 @@ def generate_props(
         rx.heading(
             "Props",
             as_="h3",
-            class_name="font-large text-secondary-12 mt-4 mb-2 text-left self-start",
+            class_name=f"{_API_HEADING_CLASS} mt-4 mb-2 text-left self-start",
         ),
         docs_api_table(*rows),
     )
@@ -792,36 +807,30 @@ def generate_event_triggers(
 
     if not custom_handlers:
         return rx.box(
-            rx.heading(
-                "Event Triggers", as_="h3", class_name="font-large text-secondary-12"
-            ),
+            rx.heading("Event Triggers", as_="h3", class_name=_API_HEADING_CLASS),
             rx.link(
                 "See the full list of default event triggers",
                 href="https://reflex.dev/docs/api-reference/event-triggers/",
-                class_name="text-primary-11 font-base",
+                class_name=_API_LINK_CLASS,
                 is_external=True,
             ),
             class_name="py-2 overflow-x-auto justify-start flex flex-col gap-4",
         )
-    table_header_class_name = (
-        "font-small text-secondary-12 text-normal w-auto justify-start pl-4 font-bold"
-    )
+    table_header_class_name = "w-auto justify-start px-4 py-3 text-left text-sm font-normal text-muted-foreground"
     return rx.box(
-        rx.heading(
-            "Event Triggers", as_="h3", class_name="font-large text-secondary-12"
-        ),
+        rx.heading("Event Triggers", as_="h3", class_name=_API_HEADING_CLASS),
         rx.link(
             "See the full list of default event triggers",
             href="https://reflex.dev/docs/api-reference/event-triggers/",
-            class_name="text-primary-11 font-base",
+            class_name=_API_LINK_CLASS,
             is_external=True,
         ),
         rx.scroll_area(
             rx.table.root(
                 rx.el.style(
                     """
-                    .rt-TableRoot:where(.rt-variant-surface) :where(.rt-TableRootTable) :where(.rt-TableHeader) {
-                        --table-row-background-color: "transparent"
+                    .docs-event-triggers-table.rt-TableRoot:where(.rt-variant-surface) :where(.rt-TableRootTable) :where(.rt-TableHeader) {
+                        --table-row-background-color: transparent;
                     }
                 """
                 ),
@@ -834,7 +843,7 @@ def generate_event_triggers(
                             "Description", class_name=table_header_class_name
                         ),
                     ),
-                    class_name="bg-secondary-3",
+                    class_name="bg-muted",
                 ),
                 rx.table.body(
                     *[
@@ -845,16 +854,16 @@ def generate_event_triggers(
                             ),
                             rx.table.cell(
                                 handler.description or "",
-                                class_name="justify-start p-4 text-secondary-11 font-small",
+                                class_name="justify-start p-4 text-sm font-normal leading-6 text-muted-foreground",
                             ),
                         )
                         for handler in custom_handlers
                     ],
-                    class_name="bg-secondary-2",
+                    class_name="bg-background",
                 ),
                 variant="surface",
                 size="1",
-                class_name="w-full border border-secondary-4",
+                class_name="docs-event-triggers-table w-full rounded-[20px] border border-border-subtle bg-background !shadow-none",
             ),
             class_name="w-full justify-start overflow-hidden",
         ),
@@ -871,16 +880,33 @@ def generate_valid_children(comp: type[Component]) -> rx.Component:
         for child in comp._valid_children
     ]
     return rx.box(
-        rx.heading(
-            "Valid Children", as_="h3", class_name="font-large text-secondary-12"
-        ),
+        rx.heading("Valid Children", as_="h3", class_name=_API_HEADING_CLASS),
         rx.box(*valid_children, class_name="flex flex-row gap-2 flex-wrap"),
         class_name="pb-6 w-full items-start flex flex-col gap-4",
     )
 
 
+def shared_html_props(
+    components: list[type[Component]],
+) -> tuple[PropDocumentation, ...]:
+    """Find inherited HTML props shared unchanged by at least two components."""
+    if len(components) < 2:
+        return ()
+    props_by_component = [
+        {prop.name: prop for prop in generate_documentation(component).props}
+        for component in components
+    ]
+    return tuple(
+        prop
+        for prop in generate_documentation(BaseHTML).props
+        if sum(props.get(prop.name) == prop for props in props_by_component) >= 2
+    )
+
+
 def component_docs(
-    component_tuple: tuple[type[Component], str], previews: dict[str, str]
+    component_tuple: tuple[type[Component], str],
+    previews: dict[str, str],
+    shared_props: tuple[PropDocumentation, ...] = (),
 ) -> rx.Component:
     """Generates documentation for a given component."""
     component = component_tuple[0]
@@ -895,7 +921,13 @@ def component_docs(
         component_tuple[1], component_tuple[1]
     )
 
-    props = generate_props(doc.props, component, previews, comp_display_name)
+    inherited_props = tuple(prop for prop in doc.props if prop in shared_props)
+    props = generate_props(
+        tuple(prop for prop in doc.props if prop not in inherited_props),
+        component,
+        previews,
+        comp_display_name,
+    )
     triggers = generate_event_triggers(doc.event_handlers)
     children = generate_valid_children(component)
 
@@ -903,6 +935,18 @@ def component_docs(
         h2_comp(text=comp_display_name),
         rx.box(render_markdown(doc.description or ""), class_name="pb-2"),
         props,
+        rx.el.p(
+            "Also accepts the ",
+            rx.el.a(
+                "shared HTML props",
+                href="#shared-html-props",
+                class_name="docs-text-link underline underline-offset-4",
+            ),
+            ".",
+            class_name="mb-4 text-sm text-muted-foreground",
+        )
+        if inherited_props
+        else rx.fragment(),
         children,
         triggers,
         class_name="pb-8 w-full text-left",
@@ -925,9 +969,24 @@ def multi_docs(
     ll_doc_exists = os.path.exists(ll_actual_path)
     ll_list = ll_component_list if ll_component_list is not None else component_list
 
-    active_class_name = "font-small bg-secondary-2 p-2 text-secondary-11 rounded-xl shadow-large w-28 cursor-default border border-secondary-4 text-center"
+    def shared_reference(props):
+        """Render the common reference once, retaining it in prerendered HTML."""
+        if not props:
+            return rx.fragment()
+        return rx.el.div(
+            h2_comp(text="Shared HTML props"),
+            rx.el.p(
+                "Components linked to this section accept these HTML props. "
+                "Component-specific additions and overrides are listed below.",
+                class_name="mb-4 text-sm leading-6 text-muted-foreground",
+            ),
+            generate_props(props, BaseHTML, {}),
+        )
 
-    non_active_class_name = "font-small w-28 transition-color hover:text-secondary-12 text-secondary-11 p-2 text-center"
+    active_class_name = "flex min-h-10 w-28 items-center justify-center rounded-full bg-primary px-4 py-2 text-center text-sm font-normal text-primary-foreground"
+
+    non_active_class_name = "flex min-h-10 w-28 items-center justify-center rounded-full px-4 py-2 text-center text-sm font-normal text-muted-foreground transition-colors hover:bg-accent-hover hover:text-foreground motion-reduce:transition-none"
+    link_class_name = "rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
 
     def links(current_page, ll_doc_exists, path):
         path = str(path).rstrip("/")
@@ -939,15 +998,18 @@ def multi_docs(
                         rx.link(
                             rx.box(rx.text("High Level"), class_name=active_class_name),
                             underline="none",
+                            aria_current="page",
+                            class_name=link_class_name,
                         ),
                         rx.link(
                             rx.box(
                                 rx.text("Low Level"), class_name=non_active_class_name
                             ),
-                            href=path + "/low",
+                            href=path + "/low/",
                             underline="none",
+                            class_name=link_class_name,
                         ),
-                        class_name="bg-secondary-3 rounded-[1.125rem] p-2 gap-2 flex items-center justify-center",
+                        class_name="flex items-center justify-center gap-1 rounded-full bg-muted p-1",
                     ),
                     class_name="flex mb-2",
                 )
@@ -959,15 +1021,18 @@ def multi_docs(
                             rx.box(
                                 rx.text("High Level"), class_name=non_active_class_name
                             ),
-                            href=path,
+                            href=path + "/",
                             underline="none",
+                            class_name=link_class_name,
                         ),
                         rx.link(
                             rx.box(rx.text("Low Level"), class_name=active_class_name),
-                            href=path + "/low",
+                            href=path + "/low/",
                             underline="none",
+                            aria_current="page",
+                            class_name=link_class_name,
                         ),
-                        class_name="bg-secondary-3 rounded-[1.125rem] p-2 gap-2 flex items-center justify-center",
+                        class_name="flex items-center justify-center gap-1 rounded-full bg-muted p-1",
                     ),
                     class_name="flex mb-2",
                 )
@@ -982,8 +1047,9 @@ def multi_docs(
     )
     def out():
         # Build prop docs during page eval so imports stay cheap.
+        shared = shared_html_props([item[0] for item in component_list[1:]])
         components = [
-            component_docs(component_tuple, previews)
+            component_docs(component_tuple, previews, shared)
             for component_tuple in component_list[1:]
         ]
         toc = get_docgen_toc(actual_path)
@@ -996,11 +1062,14 @@ def multi_docs(
         # Append API Reference headings for the component list
         if components:
             toc.append((1, "API Reference"))
+        if shared:
+            toc.append((2, "Shared HTML props"))
         for component_tuple in component_list[1:]:
             toc.append((2, component_tuple[1]))
         api_ref_section = (
             [
                 h2_comp(text="API Reference"),
+                shared_reference(shared),
                 rx.box(*components, class_name="flex flex-col"),
             ]
             if components
@@ -1028,26 +1097,31 @@ def multi_docs(
     )
 
     @docpage(
-        set_path=path + "low",
+        set_path=path.rstrip("/") + "/low/",
         t=title + " (Low Level)",
         description=ll_description,
         image=image,
         source_path=ll_actual_path,
     )
     def ll():
+        ll_shared = shared_html_props([item[0] for item in ll_list[1:]])
         ll_components = [
-            component_docs(component_tuple, previews) for component_tuple in ll_list[1:]
+            component_docs(component_tuple, previews, ll_shared)
+            for component_tuple in ll_list[1:]
         ]
         ll_virtual = virtual_path.replace(".md", "-ll.md")
         toc = get_docgen_toc(ll_actual_path)
         doc_content = Path(ll_actual_path).read_text(encoding="utf-8")
         if ll_components:
             toc.append((1, "API Reference"))
+        if ll_shared:
+            toc.append((2, "Shared HTML props"))
         for component_tuple in ll_list[1:]:
             toc.append((2, component_tuple[1]))
         api_ref_section = (
             [
                 h2_comp(text="API Reference"),
+                shared_reference(ll_shared),
                 rx.box(*ll_components, class_name="flex flex-col"),
             ]
             if ll_components

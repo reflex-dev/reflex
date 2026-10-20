@@ -243,6 +243,73 @@ def test_render_inline_markdown_handles_inline_and_block_content() -> None:
     assert "Paragraph." in block
 
 
+def _anchors(component: rx.Component):
+    """Yield every anchor in a rendered tree.
+
+    Args:
+        component: The rendered component.
+
+    Yields:
+        Each ``a`` component, which renders only its own children.
+    """
+    if getattr(component, "tag", None) == "a":
+        yield component
+    for child in getattr(component, "children", ()):
+        yield from _anchors(child)
+
+
+@pytest.mark.parametrize(
+    ("source", "markup"),
+    [
+        (
+            "Pass [`run_workflows`](/docs/workers/) here.",
+            ["jsx(CodeComp", 'text:"run_workflows"'],
+        ),
+        (
+            "See [the **worker** guide](/docs/workers/) first.",
+            ['"the "', 'jsx("strong",{},"worker")', '" guide"'],
+        ),
+        (
+            "Use [`start` and `run`](/docs/workers/) instead.",
+            ['text:"start"', '" and "', 'text:"run"'],
+        ),
+    ],
+)
+@pytest.mark.parametrize("render", [render_markdown, render_inline_markdown])
+def test_link_text_keeps_its_inline_markup(
+    render, source: str, markup: list[str]
+) -> None:
+    """A link whose text is code or emphasis renders that markup inside the link."""
+    [link] = _anchors(render(source))
+    rendered = str(link)
+    for fragment in markup:
+        assert fragment in rendered
+
+
+@pytest.mark.parametrize("level", [1, 2, 3, 4])
+def test_heading_keeps_inline_code_and_its_plain_anchor(level: int) -> None:
+    """A heading shows its code as code, and its anchor is the plain text's."""
+    marks = "#" * level
+    rendered = str(render_markdown(f"{marks} Using `rx.cond` here"))
+    assert f'as:"h{level}"' in rendered
+    assert 'text:"rx.cond"' in rendered
+    assert 'slugifyMixedTextHastNode("Using rx.cond here")' in rendered
+    # A plain heading compiles exactly as it did.
+    plain = str(render_markdown(f"{marks} Using rx.cond here"))
+    assert 'text:"Using rx.cond here"' in plain
+
+
+def test_heading_shows_a_link_as_text_inside_its_own_anchor() -> None:
+    """A link in a heading keeps its text and markup but nests no second anchor."""
+    heading = render_markdown("## Use [the `match` component](/docs/match/) here")
+    rendered = str(heading)
+    assert list(_anchors(heading)) == []
+    assert 'href:"/docs/match/"' not in rendered
+    assert '"the "' in rendered
+    assert 'text:"match"' in rendered
+    assert 'slugifyMixedTextHastNode("Use the match component here")' in rendered
+
+
 def test_render_docgen_document_extracts_faq_jsonld(tmp_path: Path) -> None:
     """Strip the FAQ block into JSON-LD and keep it out of the visible body."""
     doc = tmp_path / "faq.md"

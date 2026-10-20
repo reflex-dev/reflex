@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Generic, cast, overload
+from typing import TYPE_CHECKING, Any, Generic, Self, cast, overload
 
-from typing_extensions import Self, TypeVar
+from typing_extensions import TypeVar
 
 from reflex_base.utils.exceptions import HybridPropertyError
 
@@ -69,7 +69,7 @@ class _StateBackendVarGuard:
             HybridPropertyError: If a backend (underscore-prefixed) var is accessed.
         """
         state_cls = object.__getattribute__(self, "_state_cls")
-        if name in state_cls.backend_vars:
+        if (field := state_cls.get_fields().get(name)) is not None and field._backend:
             property_name = object.__getattribute__(self, "_property_name")
             msg = (
                 f"Hybrid property '{property_name}' of state "
@@ -436,8 +436,6 @@ class HybridProperty(_PropertyBase, Generic[_T, _O, _V]):
             from reflex.state import BaseState
 
             if issubclass(owner, BaseState):
-                if not owner.backend_vars:
-                    return self._get_var(owner)
                 return self._get_var(_StateBackendVarGuard(owner, self._property_name))
         return self
 

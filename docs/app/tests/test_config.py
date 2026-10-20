@@ -16,7 +16,7 @@ import pytest
 def test_docs_deployment_origin_comes_from_environment(
     monkeypatch, deploy_url, expected
 ):
-    """Local runs keep the framework default; deployment jobs supply their origin."""
+    """Builds preserve the chart's expected origin unless explicitly overridden."""
     monkeypatch.delenv("REFLEX_DEPLOY_URL", raising=False)
     monkeypatch.delenv("REFLEX_FRONTEND_PORT", raising=False)
     if deploy_url is not None:

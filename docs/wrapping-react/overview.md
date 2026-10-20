@@ -9,7 +9,7 @@ One of Reflex's most powerful features is the ability to wrap React components a
 
 If you want a specific component for your app but Reflex doesn't provide it, there's a good chance it's available as a React component. Search for it on [npm](https://www.npmjs.com/), and if it's there, you can use it in your Reflex app. You can also create your own local React components and wrap them in Reflex.
 
-Once you wrap your component, you [publish it](/docs/custom-components/overview) to the Reflex library so that others can use it.
+For a complete example with typed props, Python state, and an event handler, follow [Wrapping React Step by Step](/docs/wrapping-react/step-by-step/).
 
 ## Simple Example
 
@@ -154,5 +154,9 @@ export default function App() {
   );
 }
 ```
+
+## Sharing a Component as a Package
+
+To reuse a wrapped component across apps or publish it to PyPI, start from the [component template](https://github.com/reflex-dev/component-template). It is a GitHub template repository with a wrapped component, tests, a demo app, generated type stubs, and workflows that check every push and publish tagged releases to PyPI with trusted publishing. Select **Use this template** on GitHub, then run its rename script to give the package your own name.
 
 In the next page, we will go step by step through a more complex example of wrapping a React component.

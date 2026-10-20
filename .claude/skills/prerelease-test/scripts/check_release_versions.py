@@ -14,7 +14,7 @@ Usage (the script carries PEP 723 metadata and no shebang, so run it through uv)
 """
 
 # /// script
-# requires-python = ">=3.10"
+# requires-python = ">=3.11"
 # ///
 
 from __future__ import annotations
@@ -68,7 +68,7 @@ def excluded_changelogs(ref: str, repo: str) -> set[str]:
     be a false blocker. Both lists name packages, and reflex-release resolves those
     names against the root package as well as the directories under ``packages-dir``,
     so the root changelog is excluded on the same terms as any other. Parsed with a
-    regex rather than a TOML library to keep this script dependency-free on 3.10.
+    regex rather than a TOML library to keep this script dependency-free.
 
     Args:
         ref: The git ref to read the root ``pyproject.toml`` from.

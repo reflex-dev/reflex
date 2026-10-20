@@ -15,7 +15,7 @@ cell_style = {
     "font_size": "14px",
     "line_height": "1.5",
     "letter_spacing": "-0.0125em",
-    "color": "var(--secondary-11)",
+    "color": "var(--muted-foreground)",
 }
 
 github_actions_configs = [

@@ -147,7 +147,7 @@ with RegistrationContext(), patch('reflex.compiler.compiler.get_config', return_
     bundle_library('quality-lazy-fixture')
     print(compile_app_root(rx.el.div('Quality'))[1])
 `], {cwd: root, encoding: "utf8"});
-  const setup = new Function("window", "React", "emotion_react", "utils_context", "utils_state", "loadFixture",
+  const setup = new Function("window", "React", "emotion_react", "utils_context", "utils_context_registry", "utils_state", "loadFixture",
     rootCode.replace(/^import .*$/gm, "")
       .replace(/^export default function/gm, "function")
       .replace(/^export /gm, "")
@@ -165,7 +165,7 @@ with RegistrationContext(), patch('reflex.compiler.compiler.get_config', return_
   try {
     let calls = 0;
     globalThis.window = {};
-    setup(window, react, {}, {}, {}, async () => {calls++; return {value: 42};});
+    setup(window, react, {}, {}, {}, {}, async () => {calls++; return {value: 42};});
     assert.equal(calls, 0);
     assert.equal(window.__reflex.react, react);
     assert.equal(window.__reflex["quality-lazy-fixture"], undefined);
@@ -179,7 +179,7 @@ with RegistrationContext(), patch('reflex.compiler.compiler.get_config', return_
 
     let attempts = 0;
     globalThis.window = {};
-    setup(window, react, {}, {}, {}, async () => {
+    setup(window, react, {}, {}, {}, {}, async () => {
       if (++attempts === 1) throw new Error("Temporary download failure");
       return {value: 43};
     });
@@ -195,4 +195,37 @@ with RegistrationContext(), patch('reflex.compiler.compiler.get_config', return_
     if (previousWindow === undefined) delete globalThis.window;
     else globalThis.window = previousWindow;
   }
+});
+
+test("Published marketing actions preserve native semantics and caller events", async () => {
+  const { createElement } = await import(resolve("react"));
+  const { renderToStaticMarkup } = await import(resolve("react-dom/server"));
+  const { transform } = await import(resolve("rolldown/utils"));
+  const filename = path.join(web, "public/components/GradientButton.tsx");
+  const source = await readFile(filename, "utf8");
+  const compiled = await transform(filename, source, {jsx: {runtime: "automatic"}});
+  const { GradientButton } = await import(moduleUrl(compiled.code
+    .replaceAll('from "react"', `from "${resolve("react")}"`)
+    .replaceAll('from "react/jsx-runtime"', `from "${resolve("react/jsx-runtime")}"`)
+    .replaceAll('from "clsx-for-tailwind"', `from "${resolve("clsx-for-tailwind")}"`)));
+  const html = renderToStaticMarkup(createElement(GradientButton, {
+    type: "submit", disabled: true, name: "action", value: "send", form: "feedback",
+  }, "Send"));
+  assert.match(html, /^<button/);
+  for (const prop of ['type="submit"', 'disabled=""', 'name="action"', 'value="send"', 'form="feedback"']) {
+    assert.ok(html.includes(prop), prop);
+  }
+  assert.match(html, /rounded-control/);
+  assert.match(html, /focus-visible:outline-2/);
+  assert.equal(GradientButton({children: "Link", nativeButton: false}).type, "div");
+  assert.equal(GradientButton({children: "Demo", nativeButton: false, "aria-haspopup": "dialog"}).type, "button");
+  let moves = 0;
+  const element = GradientButton({children: "Send", onMouseMove: () => moves++});
+  const properties = new Map();
+  element.props.onMouseMove({clientX: 12, clientY: 24, currentTarget: {
+    getBoundingClientRect: () => ({left: 2, top: 4}),
+    style: {setProperty: (key, value) => properties.set(key, value)},
+  }});
+  assert.equal(moves, 1);
+
 });

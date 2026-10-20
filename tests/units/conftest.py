@@ -1,9 +1,14 @@
 """Test fixtures."""
 
+import collections
+import dataclasses
+import enum
 import platform
+import sys
 import traceback
 import uuid
 from collections.abc import AsyncGenerator, Generator, Mapping
+from types import ModuleType
 from typing import Any
 from unittest import mock
 
@@ -234,6 +239,36 @@ def token() -> str:
         A fresh/unique token string.
     """
     return str(uuid.uuid4())
+
+
+@pytest.fixture
+def app_classes_module(monkeypatch: pytest.MonkeyPatch) -> ModuleType:
+    """Create a throwaway module of app classes that a stored state can pickle.
+
+    Tests break the module (remove it, delete a class, change a class) to
+    simulate a deploy that changes classes held in a stored state.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+
+    Returns:
+        The module, registered in sys.modules, with Entry, Color and Point.
+    """
+    module = ModuleType("_reflex_test_app_classes")
+    monkeypatch.setitem(sys.modules, module.__name__, module)
+
+    @dataclasses.dataclass
+    class Entry:
+        name: str
+
+    Entry.__module__ = module.__name__
+    Entry.__qualname__ = "Entry"
+    module.Entry = Entry  # pyright: ignore[reportAttributeAccessIssue]
+    module.Color = enum.Enum(  # pyright: ignore[reportAttributeAccessIssue]
+        "Color", {"RED": "red", "BLUE": "blue"}, module=module.__name__
+    )
+    module.Point = collections.namedtuple("Point", "x y", module=module.__name__)  # pyright: ignore[reportAttributeAccessIssue]
+    return module
 
 
 @pytest.fixture

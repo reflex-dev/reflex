@@ -37,7 +37,7 @@ export function DeferredDemo({ children, style, ...props }) {
               minHeight: "450px",
               display: "grid",
               placeItems: "center",
-              color: "var(--secondary-11)",
+              color: "var(--muted-foreground)",
               fontSize: "0.875rem",
             },
           },

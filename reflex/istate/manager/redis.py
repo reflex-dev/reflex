@@ -6,17 +6,18 @@ import dataclasses
 import inspect
 import logging
 import os
-import sys
 import time
 import uuid
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
+from datetime import timedelta
 from typing import Any, TypedDict, cast
 
 from redis import ResponseError
 from redis.asyncio import Redis
 from reflex_base.config import get_config
-from reflex_base.environment import environment
+from reflex_base.environment import environment, oplock_hold_time
 from reflex_base.utils.exceptions import (
+    EnvironmentVarValueError,
     InvalidLockWarningThresholdError,
     LockExpiredError,
     StateSchemaMismatchError,
@@ -87,10 +88,22 @@ def _default_oplock_hold_time_ms() -> int:
 
     Returns:
         The default opportunistic lock hold time.
+
+    Raises:
+        EnvironmentVarValueError: If the configured hold time is negative.
     """
-    return environment.REFLEX_OPLOCK_HOLD_TIME_MS.get() or (
-        _default_lock_expiration() // 2
-    )
+    hold_time = oplock_hold_time()
+    if hold_time < timedelta(0):
+        msg = (
+            "The opportunistic lock hold time must not be negative, got "
+            f"{hold_time.total_seconds()} seconds."
+        )
+        raise EnvironmentVarValueError(msg)
+    if not hold_time:
+        return _default_lock_expiration() // 2
+    # A configured hold time is worth at least one millisecond, so that a
+    # sub-millisecond duration is not mistaken for the unset default above.
+    return max(hold_time // timedelta(milliseconds=1), 1)
 
 
 # The lock waiter task should subscribe to lock channel updates within this period.
@@ -112,6 +125,21 @@ class RedisPubSubMessage(TypedDict):
 
 class OplockFound(Exception):  # noqa: N818
     """Indicates that an opportunistic lock was found."""
+
+
+# KEYS: the lock key, then the state keys. ARGV: the lock id, the state
+# expiration in seconds, then the serialized states in KEYS order. Writes only
+# while the lock is held by ARGV[1], and returns the lock's remaining PTTL, or
+# nil when the lock changed hands or expired and nothing was written.
+_FENCED_SAVE_SCRIPT = """
+if redis.call('GET', KEYS[1]) ~= ARGV[1] then
+    return nil
+end
+for i = 2, #KEYS do
+    redis.call('SET', KEYS[i], ARGV[i + 1], 'EX', ARGV[2])
+end
+return redis.call('PTTL', KEYS[1])
+"""
 
 
 @dataclasses.dataclass
@@ -329,14 +357,20 @@ class StateManagerRedis(StateManager):
             key=lambda x: x.get_full_name(),
         )
 
-        redis_pipeline = self.redis.pipeline()
-        for state_cls in required_state_classes:
-            redis_pipeline.get(str(token.with_cls(state_cls)))
+        # Read the tree atomically with one command instead of a transaction
+        # containing a GET for each state. An already populated tree needs no IO.
+        redis_states = (
+            await self.redis.mget([
+                token._state_key(state_cls) for state_cls in required_state_classes
+            ])
+            if required_state_classes
+            else []
+        )
 
         for state_cls, redis_state in zip(
             required_state_classes,
-            await redis_pipeline.execute(),
-            strict=False,
+            redis_states,
+            strict=True,
         ):
             state = None
 
@@ -350,15 +384,14 @@ class StateManagerRedis(StateManager):
                     init_substates=False,
                     _reflex_internal_init=True,
                 )
-            flat_state_tree[state.get_full_name()] = state
+            state_full_name = state.get_full_name()
+            flat_state_tree[state_full_name] = state
             if state.get_parent_state() is not None:
-                parent_state_name, _dot, state_name = state.get_full_name().rpartition(
-                    "."
-                )
+                parent_state_name, _dot, state_name = state_full_name.rpartition(".")
                 parent_state = flat_state_tree.get(parent_state_name)
                 if parent_state is None:
                     msg = (
-                        f"Parent state for {state.get_full_name()} was not found "
+                        f"Parent state for {state_full_name} was not found "
                         "in the state tree, but should have already been fetched. "
                         "This is a bug"
                     )
@@ -397,46 +430,61 @@ class StateManagerRedis(StateManager):
             RuntimeError: If the state instance doesn't match the state name in the token.
         """
         token = self._coerce_token(token)
-        # Check that we're holding the lock.
-        if (
-            lock_id is not None
-            and (existing_lock_id := await self.redis.get(self._lock_key(token)))
-            != lock_id
-        ):
+        if isinstance(token, BaseStateToken):
+            # Serialize the touched states up front so they go out in one write.
+            writes = self._collect_state_writes(token, cast(BaseState, state))
+        else:
+            # Non-BaseState token: simple single-key write.
+            pickle_state = token.serialize(state)
+            writes = [(str(token), pickle_state)] if pickle_state else []
+
+        if lock_id is None:
+            if writes:
+                pipeline = self.redis.pipeline(transaction=False)
+                for key, pickle_state in writes:
+                    pipeline.set(key, pickle_state, ex=self.token_expiration)
+                await pipeline.execute()
+            return
+
+        event_suffix = (
+            f" Happened in event: {event.name}"
+            if (event := context.get("event")) is not None
+            else ""
+        )
+        lock_key = self._lock_key(token)
+        # One round trip: the script checks the lock and writes atomically on
+        # the server, so an expired or re-acquired lock discards every write,
+        # and a retried command re-checks the lock instead of bypassing it.
+        # redis-py types EVAL arguments as str and its reply as str; both keys
+        # and payloads are bytes here and the script replies with an int or nil.
+        fenced_save = cast("Callable[..., Awaitable[int | None]]", self.redis.eval)
+        pttl = await fenced_save(
+            _FENCED_SAVE_SCRIPT,
+            1 + len(writes),
+            lock_key,
+            *(key for key, _ in writes),
+            lock_id,
+            self.token_expiration,
+            *(pickle_state for _, pickle_state in writes),
+        )
+        if pttl is None:
+            existing_lock_id = await self.redis.get(lock_key)
             msg = (
                 f"Lock expired for token {token} while processing. Consider increasing "
                 f"`app.state_manager.lock_expiration` (currently {self.lock_expiration}) "
                 "or use `@rx.event(background=True)` decorator for long-running tasks. "
                 f"Current lock id: {existing_lock_id!r}, expected lock id: {lock_id!r}."
-                + (
-                    f" Happened in event: {event.name}"
-                    if (event := context.get("event")) is not None
-                    else ""
-                )
+                + event_suffix
             )
             raise LockExpiredError(msg)
-
-        if not isinstance(token, BaseStateToken):
-            # Non-BaseState token: simple single-key write.
-            pickle_state = token.serialize(state)
-            if pickle_state:
-                await self.redis.set(str(token), pickle_state, ex=self.token_expiration)
-            return
-
-        base_state = cast(BaseState, state)
-
-        lock_key = token.lock_key
-
-        if lock_id is not None and lock_key not in self._local_leases:
-            time_taken = (
-                self.lock_expiration - (await self.redis.pttl(self._lock_key(token)))
-            ) / 1000
+        if (
+            isinstance(token, BaseStateToken)
+            and token.lock_key not in self._local_leases
+        ):
+            # lock_expiration, the PTTL and the threshold are milliseconds; the
+            # warning reports the time held in seconds.
+            time_taken = (self.lock_expiration - pttl) / 1000
             if time_taken > self.lock_warning_threshold / 1000:
-                event_suffix = (
-                    f" Happened in event: {event.name}"
-                    if (event := context.get("event")) is not None
-                    else ""
-                )
                 logger.warning(
                     f"Lock for token {token} was held too long {time_taken=}s, "
                     "use `@rx.event(background=True)` decorator for long-running "
@@ -444,32 +492,28 @@ class StateManagerRedis(StateManager):
                     extra={"dedupe": True},
                 )
 
-        # Recursively set_state on all known substates.
-        tasks = [
-            asyncio.create_task(
-                self.set_state(
-                    token,
-                    substate,
-                    lock_id=lock_id,
-                    **context,
-                ),
-                name=f"reflex_set_state|{lock_key}|{substate.get_full_name()}",
-            )
-            for substate in base_state.substates.values()
-        ]
-        # Persist only the given state (parents or substates are excluded by BaseState.__getstate__).
-        if BaseState._get_was_touched(base_state):
-            pickle_state = base_state._serialize()
-            if pickle_state:
-                await self.redis.set(
-                    str(token.with_cls(type(base_state))),
-                    pickle_state,
-                    ex=self.token_expiration,
-                )
+    def _collect_state_writes(
+        self, token: BaseStateToken, base_state: BaseState
+    ) -> list[tuple[str, bytes]]:
+        """Serialize a state and every substate attached to it that was touched.
 
-        # Wait for substates to be persisted.
-        for t in tasks:
-            await t
+        Args:
+            token: The token (any state class) identifying the client.
+            base_state: The state instance whose tree to persist.
+
+        Returns:
+            The redis keys and pickled payloads to write.
+        """
+        writes: list[tuple[str, bytes]] = []
+        stack = [base_state]
+        while stack:
+            state = stack.pop()
+            # Persist only the given state (parents or substates are excluded by
+            # BaseState.__getstate__).
+            if state._was_touched and (pickle_state := state._serialize()):
+                writes.append((token._state_key(type(state)), pickle_state))
+            stack.extend(state.substates.values())
+        return writes
 
     @contextlib.asynccontextmanager
     async def _try_modify_state(
@@ -736,6 +780,12 @@ class StateManagerRedis(StateManager):
                 with contextlib.suppress(asyncio.CancelledError):
                     await existing_task
 
+        if not self._lock_updates_subscribed.is_set():
+            # Only a contention notification breaks the lease early, so the
+            # subscriber must be listening before contenders are counted below.
+            # Until it is, update without a lease rather than wait for it.
+            return None
+
         # Now we might need to create a new lock.
         if (state_lock := self._cached_states_locks.get(lock_key)) is None:
             async with self._state_manager_lock:
@@ -848,10 +898,11 @@ class StateManagerRedis(StateManager):
         }
         async with self.redis.pubsub() as pubsub:
             await pubsub.psubscribe(**handlers)  # pyright: ignore[reportArgumentType]
-            self._lock_updates_subscribed.set()
             try:
-                async for _ in pubsub.listen():
-                    pass
+                # Notifications are only delivered once redis confirms the subscription.
+                async for message in pubsub.listen():
+                    if message["type"] == "psubscribe":
+                        self._lock_updates_subscribed.set()
             finally:
                 self._lock_updates_subscribed.clear()
 
@@ -875,6 +926,8 @@ class StateManagerRedis(StateManager):
         Raises:
             TimeoutError: If the lock updates subscriber task fails to subscribe in time.
         """
+        if self._lock_updates_subscribed.is_set():
+            return
         if timeout is None:
             timeout = min(
                 LOCK_SUBSCRIBE_TASK_TIMEOUT,
@@ -1007,7 +1060,7 @@ class StateManagerRedis(StateManager):
             and (lease_task := self._local_leases.get(token)) is not None
             and not lease_task.done()
             and not lease_task.cancelled()
-            and (sys.version_info < (3, 11) or not lease_task.cancelling())
+            and not lease_task.cancelling()
         ):
             if raise_when_found:
                 raise OplockFound
@@ -1062,7 +1115,7 @@ class StateManagerRedis(StateManager):
                         lock_released_event.wait(),
                         timeout=max(self.lock_expiration / 1000, 0),
                     )
-                except (TimeoutError, asyncio.TimeoutError):
+                except TimeoutError:
                     if self._debug_enabled:
                         logger.debug(
                             f"{SMR} [{time.monotonic() - start:.3f}] {lock_key.decode()} wait timeout for {lock_id.decode()}"

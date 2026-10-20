@@ -81,10 +81,10 @@ Use `rx.select` when:
 
 Consider alternatives when:
 
-- You have fewer than five options → use [Radio Group](/docs/library/forms/radio-group) for better visibility
-- Users need to select multiple values → use [Checkbox](/docs/library/forms/checkbox) groups or a multi-select pattern
-- Users should type a value rather than choose one → use [Input](/docs/library/forms/input)
-- You need hierarchical or searchable options → use the [low-level Select API](/docs/library/forms/select/low) with custom content
+- You have fewer than five options → use [Radio Group](/docs/library/forms/radio-group/) for better visibility
+- Users need to select multiple values → use [Checkbox](/docs/library/forms/checkbox/) groups or a multi-select pattern
+- Users should type a value rather than choose one → use [Input](/docs/library/forms/input/)
+- You need hierarchical or searchable options → use the [low-level Select API](/docs/library/forms/select/low/) with custom content
 
 ## Basic Usage
 
@@ -98,7 +98,7 @@ The user can click the trigger button to open the dropdown and choose a differen
 
 ## Tracking the Selected Value
 
-In most real apps, you need to react when the user selects a value, to filter data, update a chart, save to a database, or trigger another event. Bind the select to a [State](/docs/state/overview) var using the `value` prop and an `on_change` event handler.
+In most real apps, you need to react when the user selects a value, to filter data, update a chart, save to a database, or trigger another event. Bind the select to a [State](/docs/state/overview/) var using the `value` prop and an `on_change` event handler.
 
 ```python demo exec
 class SelectState(rx.State):
@@ -200,7 +200,7 @@ rx.select(
 )
 ```
 
-To disable individual items rather than the whole select, use the [low-level API](/docs/library/forms/select/low) and set `disabled=True` on specific `rx.select.item` components.
+To disable individual items rather than the whole select, use the [low-level API](/docs/library/forms/select/low/) and set `disabled=True` on specific `rx.select.item` components.
 
 ## Using Select in a Form
 
@@ -254,11 +254,11 @@ def select_form():
     )
 ```
 
-For full details on building forms, validation, and submission handling, see the [Form documentation](/docs/library/forms/form).
+For full details on building forms, validation, and submission handling, see the [Form documentation](/docs/library/forms/form/).
 
 ## Mapping Display Labels to Underlying Values
 
-When your options have separate display labels and underlying values (e.g., a user ID for the value, a name for the label), use a [computed var](/docs/vars/computed-vars) to map between them.
+When your options have separate display labels and underlying values (e.g., a user ID for the value, a name for the label), use a [computed var](/docs/vars/computed-vars/) to map between them.
 
 ```python demo exec
 class SelectDictState(rx.State):
@@ -298,11 +298,11 @@ def select_dict_example():
     )
 ```
 
-For native label/value separation in the dropdown itself, use the [low-level Select API](/docs/library/forms/select/low) and pass `value=` and a display label child to each `rx.select.item`.
+For native label/value separation in the dropdown itself, use the [low-level Select API](/docs/library/forms/select/low/) and pass `value=` and a display label child to each `rx.select.item`.
 
 ## Using Select Inside a Dialog
 
-When placing a select inside a [Dialog](/docs/library/overlay/dialog) or other portal-based container, set `position="popper"` on the select so the dropdown menu positions itself correctly above the overlay content.
+When placing a select inside a [Dialog](/docs/library/overlay/dialog/) or other portal-based container, set `position="popper"` on the select so the dropdown menu positions itself correctly above the overlay content.
 
 ```python demo
 rx.dialog.root(
@@ -326,7 +326,7 @@ rx.dialog.root(
 
 Beyond `on_change`, the `on_open_change` event fires when the dropdown opens or closes. Use this to trigger analytics, prefetch data, or animate related UI.
 
-The example below uses [rx.cond](/docs/library/dynamic-rendering/cond) to swap between two badges based on whether the dropdown is open.
+The example below uses [rx.cond](/docs/library/dynamic-rendering/cond/) to swap between two badges based on whether the dropdown is open.
 
 ```python demo exec
 class SelectOpenState(rx.State):
@@ -497,15 +497,15 @@ A dropdown (or single-select) lets the user pick one option. A multiselect lets 
 
 ## Related Components
 
-- [Radio Group](/docs/library/forms/radio-group) - inline single-selection for fewer than 5 options
-- [Checkbox](/docs/library/forms/checkbox) - single or multi-selection with visible state
-- [Form](/docs/library/forms/form) - grouping selects with other inputs for submission
-- [Dialog](/docs/library/overlay/dialog) - modal dialogs that can contain selects
-- [Low-level Select API](/docs/library/forms/select/low) - fine-grained control over trigger, content, and items
+- [Radio Group](/docs/library/forms/radio-group/) - inline single-selection for fewer than 5 options
+- [Checkbox](/docs/library/forms/checkbox/) - single or multi-selection with visible state
+- [Form](/docs/library/forms/form/) - grouping selects with other inputs for submission
+- [Dialog](/docs/library/overlay/dialog/) - modal dialogs that can contain selects
+- [Low-level Select API](/docs/library/forms/select/low/) - fine-grained control over trigger, content, and items
 
 ## Related Concepts
 
-- [State Management](/docs/state/overview) - how Reflex components track and update values
-- [Event Handlers](/docs/events/events-overview) - understanding `on_change`, `on_open_change`, and related triggers
-- [Forms and Validation](/docs/library/forms/form) - building complete forms with typed, validated inputs
-- [Computed Vars](/docs/vars/computed-vars) - deriving values from state for dynamic options and lookups
+- [State Management](/docs/state/overview/) - how Reflex components track and update values
+- [Event Handlers](/docs/events/events-overview/) - understanding `on_change`, `on_open_change`, and related triggers
+- [Forms and Validation](/docs/library/forms/form/) - building complete forms with typed, validated inputs
+- [Computed Vars](/docs/vars/computed-vars/) - deriving values from state for dynamic options and lookups

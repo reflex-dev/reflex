@@ -1,55 +1,57 @@
 import reflex as rx
 import reflex_components_internal as ui
 
+from reflex_docs.pages.docs_landing.views.layout import FOCUS
+
 
 def faded_borders() -> rx.Component:
-    return rx.fragment(
-        rx.el.div(
-            class_name="absolute bottom-0 -left-24 w-24 h-px bg-gradient-to-r from-transparent to-current text-secondary-4"
-        ),
-        rx.el.div(
-            class_name="absolute -top-px -left-24 w-24 h-px bg-gradient-to-r from-transparent to-current text-secondary-4"
-        ),
-        rx.el.div(
-            class_name="absolute bottom-0 -right-24 w-24 h-px bg-gradient-to-l from-transparent to-current text-secondary-4"
-        ),
-        rx.el.div(
-            class_name="absolute right-0 -top-24 h-24 w-px bg-gradient-to-b from-transparent to-current text-secondary-4"
-        ),
-    )
+    """Keep the former decoration hook without drawing beyond the content frame.
+
+    Returns:
+        An empty fragment for existing section callers.
+    """
+    return rx.fragment()
 
 
 def link_item(
     icon: str, title: str, description: str, href: str, has_padding_left: bool = False
 ) -> rx.Component:
-    return rx.el.div(
+    """Render a guide as one readable, keyboard-accessible card.
+
+    Args:
+        icon: Shared icon name.
+        title: Guide name.
+        description: Guide summary.
+        href: Existing destination.
+        has_padding_left: Retained for callers; all cards now use equal insets.
+
+    Returns:
+        A single native navigation target.
+    """
+    return rx.el.a(
         rx.el.div(
             ui.icon(
                 icon,
-                class_name="size-6 shrink-0 group-hover:text-primary-10 group-hover:dark:text-secondary-11",
+                class_name="size-5 shrink-0 text-foreground",
                 stroke_width=1.5,
+                aria_hidden=True,
             ),
-            rx.el.span(
+            rx.el.h3(
                 title,
-                class_name="text-secondary-12 text-xl font-[575] group-hover:text-primary-10 group-hover:dark:text-secondary-11",
+                class_name="min-w-0 font-heading text-2xl font-normal leading-7 tracking-[-0.025em] text-foreground",
             ),
             ui.icon(
                 "ArrowRight01Icon",
-                class_name="size-4 ml-auto group-hover:text-primary-10 group-hover:dark:text-secondary-11 shrink-0",
+                class_name="ml-auto mt-1 size-4 shrink-0 text-muted-foreground",
+                aria_hidden=True,
             ),
-            class_name="flex flex-row gap-3 items-center max-lg:text-start",
+            class_name="flex items-start gap-3",
         ),
-        rx.el.span(
+        rx.el.p(
             description,
-            class_name="text-secondary-11 text-sm font-[475] text-start",
+            class_name="max-w-xl text-sm font-normal leading-6 text-muted-foreground",
         ),
-        rx.el.a(
-            to=href,
-            aria_label=title,
-            class_name="absolute inset-0 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary-9",
-        ),
-        class_name=ui.cn(
-            "flex flex-col gap-2 pr-8 py-8 group border-r border-b border-secondary-4 relative max-lg:p-6 hover:bg-[linear-gradient(243deg,var(--secondary-2)_0%,var(--secondary-1)_100%)]",
-            "lg:pl-8 pl-6" if has_padding_left else "",
-        ),
+        to=href,
+        aria_label=title,
+        class_name=f"group flex min-w-0 flex-col gap-4 rounded-[20px] bg-muted p-6 text-left transition-colors hover:bg-accent-hover motion-reduce:transition-none sm:p-8 {FOCUS}",
     )

@@ -149,6 +149,11 @@ Some important notes regarding this approach:
 - The repo or archive must contain a `package.json` file.
 - `prepare` or `build` scripts will NOT be executed. The distribution archive,
   directory, or repo must already contain the built javascript files (this is common).
+- When pointing at a local _directory_, the package manager links the files in
+  place instead of copying them, so the bundler resolves that package's own
+  runtime dependencies from the directory itself. Run `npm install` (or `bun
+  install`) inside the local package directory, or reference a packed archive
+  created with `npm pack` instead.
 
 ````md alert
 # Ensure CSS files are exported in `package.json`

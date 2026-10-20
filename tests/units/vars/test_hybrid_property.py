@@ -1,6 +1,7 @@
 """Unit tests for reflex_base.vars.hybrid_property."""
 
 from collections.abc import Generator
+from typing import assert_type
 
 import pytest
 from reflex_base.registry import RegistrationContext
@@ -8,7 +9,6 @@ from reflex_base.utils.exceptions import HybridPropertyError
 from reflex_base.vars.number import BooleanVar, NumberVar
 from reflex_base.vars.object import ObjectVar
 from reflex_base.vars.sequence import ArrayVar, StringVar
-from typing_extensions import assert_type
 
 import reflex as rx
 from reflex.experimental import hybrid_property
@@ -694,7 +694,7 @@ def test_hybrid_property_backend_var_not_resolved_during_class_creation():
 
     assert calls == []
     # The annotation must not shadow the inherited descriptor with storage.
-    assert "_foo" not in GuardState.backend_vars
+    assert "_foo" not in GuardState.get_fields()
     assert GuardState(_reflex_internal_init=True)._foo == 1  # pyright: ignore[reportCallIssue]
     assert calls == ["getter ran"]
 

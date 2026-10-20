@@ -1,0 +1,1 @@
+A workflow can declare `__workflow_limit__ = Limit(by="customer", at_most=3)` to cap how much of one group runs at once, counted across every worker. Workers also take their tables in turn and share each pass between them, so a table with a backlog no longer holds up the rest.

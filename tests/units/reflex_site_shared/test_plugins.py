@@ -40,6 +40,8 @@ def test_shared_site_styles_plugin_emits_package_css():
         Path("public/components/DeferredDemo.jsx"),
         Path("public/components/GradientButton.tsx"),
         Path("public/icons/search.svg"),
+        Path("public/components/marketing-date.jsx"),
+        Path("public/homepage/lib/use-isomorphic-layout-effect.ts"),
     ]
     assert all(content.strip() for _path, content in assets)
     assert "ph-conversations-widget" in assets[1][1]
@@ -47,6 +49,7 @@ def test_shared_site_styles_plugin_emits_package_css():
     assert "export function DeferredDemo" in assets[4][1]
     assert "export function GradientButton" in assets[5][1]
     assert "<svg" in assets[6][1]
+    assert Path("public/favicon.svg") not in dict(assets)
 
 
 def test_docs_markdown_plugin_emits_route_equivalents(tmp_path: Path, monkeypatch):
@@ -105,3 +108,23 @@ def test_docs_markdown_plugin_stages_assets_for_production_relocation(
     assert (static_dir / "guide.md").read_text(encoding="utf-8") == "# Guide\n"
     assert (static_dir / "guide" / ".md").read_text(encoding="utf-8") == "# Guide\n"
     assert not (static_dir / "guide.html").exists()
+
+
+def test_compact_marketing_buttons_use_navigation_spacing():
+    """Keep compact navigation actions at the marketing control size."""
+    assets = dict(SharedSiteStylesPlugin().get_static_assets())
+    button = assets[Path("public/components/GradientButton.tsx")]
+    assert 'sm: "px-4 h-9 rounded-control gap-2 text-sm leading-none"' in button
+
+
+def test_docs_code_uses_github_syntax_themes():
+    """Code components select the light and dark GitHub syntax palettes."""
+    from reflex_site_shared.components.blocks.code import doccmdoutput
+
+    rendered = str(doccmdoutput("echo hello", "hello"))
+    assert "github-light-high-contrast" in rendered
+    assert "github-dark-high-contrast" in rendered
+    assets = dict(SharedSiteStylesPlugin().get_static_assets())
+    theme = assets[Path("styles/reflex-site-shared/tailwind-theme.css")]
+    assert ".counter-code-block .token.keyword" not in theme
+    assert "filter: grayscale(1)" not in theme

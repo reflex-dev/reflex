@@ -81,12 +81,12 @@ def radial_bar_advanced():
 
 ## When to Use a Radial Bar Chart
 
-A radial bar chart is a compact, eye-catching alternative to a standard bar chart, best suited to comparing a small number of categories or showing progress toward a goal. Because the bars wrap around a circle, it works well for dashboards where space is limited. The key props for shaping the chart are `inner_radius` and `outer_radius` (how far the bars sit from the center), `start_angle` and `end_angle` (the arc the bars span — use `180` to `0` for a half-circle gauge), `min_angle` (the minimum bar length), and `background` (a track drawn behind each bar). For many categories or precise value comparisons, a standard [Bar Chart](/docs/library/graphing/charts/barchart) is usually easier to read.
+A radial bar chart is a compact, eye-catching alternative to a standard bar chart, best suited to comparing a small number of categories or showing progress toward a goal. Because the bars wrap around a circle, it works well for dashboards where space is limited. The key props for shaping the chart are `inner_radius` and `outer_radius` (how far the bars sit from the center), `start_angle` and `end_angle` (the arc the bars span — use `180` to `0` for a half-circle gauge), `min_angle` (the minimum bar length), and `background` (a track drawn behind each bar). For many categories or precise value comparisons, a standard [Bar Chart](/docs/library/graphing/charts/barchart/) is usually easier to read.
 
 ## Related Charts
 
 Explore more chart types you can build with Reflex and Recharts in pure Python:
 
-- [Radar Chart](/docs/library/graphing/charts/radarchart)
-- [Pie Chart](/docs/library/graphing/charts/piechart)
-- [Bar Chart](/docs/library/graphing/charts/barchart)
+- [Radar Chart](/docs/library/graphing/charts/radarchart/)
+- [Pie Chart](/docs/library/graphing/charts/piechart/)
+- [Bar Chart](/docs/library/graphing/charts/barchart/)

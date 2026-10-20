@@ -3,11 +3,12 @@ import os
 import frontmatter
 import reflex as rx
 import reflex_components_internal as ui
-from reflex_site_shared.components.marquee import marquee
-from reflex_site_shared.constants import REFLEX_ASSETS_CDN
 from reflex_site_shared.integrations import get_integration_logo_url
 
 from reflex_docs.pages.docs import ai_builder as ai_builder_pages
+from reflex_docs.pages.docs_landing.views.artwork import artwork
+from reflex_docs.pages.docs_landing.views.layout import SECTION, section_heading
+from reflex_docs.pages.docs_landing.views.mcp_artwork import mcp_artwork
 
 
 def get_integration_path() -> list:
@@ -67,33 +68,50 @@ def get_integration_path() -> list:
 
 
 def card(
-    title: str, description: str, content: str, href: str, enteprise_only: bool = False
+    title: str,
+    description: str,
+    content: rx.Component,
+    href: str,
+    tone: str,
+    enterprise_only: bool = False,
 ) -> rx.Component:
-    return rx.el.div(
-        rx.el.span(
-            "Enterprise-only",
-            class_name="text-secondary-12 text-xs font-medium bg-secondary-1 px-2.5 h-7 absolute top-0 right-0 border-b border-l rounded-bl-lg border-secondary-4 flex justify-center items-center",
-        )
-        if enteprise_only
-        else None,
+    """Render a linked guide with a matching editorial illustration panel."""
+    return rx.el.a(
         rx.el.div(
-            rx.el.span(
-                title,
-                class_name="text-secondary-12 text-xl font-[575]",
+            rx.el.div(content, class_name="flex w-full max-w-[18rem] justify-center"),
+            class_name="hidden h-44 items-center justify-center overflow-hidden border-b border-border-subtle bg-muted px-6 sm:flex",
+            aria_hidden=True,
+        ),
+        rx.el.div(
+            rx.el.div(
+                rx.el.h3(
+                    title,
+                    class_name="font-heading text-2xl font-normal leading-8 tracking-[-0.025em]",
+                ),
+                rx.el.span(
+                    "Enterprise-only",
+                    class_name="w-fit rounded-full border border-border px-2.5 py-1 text-xs font-normal text-muted-foreground",
+                )
+                if enterprise_only
+                else None,
+                class_name="flex w-full flex-wrap items-center gap-x-3 gap-y-2 text-foreground",
             ),
-            rx.el.span(
+            rx.el.p(
                 description,
-                class_name="text-secondary-11 text-sm font-[475]",
+                class_name="text-sm font-normal leading-6 text-muted-foreground",
             ),
-            class_name="flex flex-col gap-2 p-8",
+            rx.el.span(
+                "Read the guide",
+                ui.icon("ArrowRight01Icon", size=16, aria_hidden=True),
+                class_name="mt-auto inline-flex items-center gap-2 pt-4 text-sm font-normal text-foreground",
+            ),
+            class_name="flex flex-1 flex-col items-start gap-3 p-6 sm:p-7",
         ),
-        content,
-        rx.el.a(
-            href=href,
-            aria_label=title,
-            class_name="absolute inset-0 rounded-xl focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-primary-9",
-        ),
-        class_name="flex flex-col bg-secondary-1/96 backdrop-blur-[16px] rounded-xl relative cursor-pointer transition-colors overflow-hidden shadow-[0_0_0_1px_rgba(0,0,0,0.04),0_12px_24px_0_rgba(0,0,0,0.08),0_1px_1px_0_rgba(0,0,0,0.01),0_4px_8px_0_rgba(0,0,0,0.03)] dark:shadow-none dark:border dark:border-secondary-4",
+        href=href,
+        aria_label=title,
+        data_tone=tone,
+        style={"--ai-accent": "var(--foreground)", "--ai-tint": "var(--accent)"},
+        class_name="group flex min-w-0 flex-col overflow-hidden rounded-[20px] border border-border-subtle bg-background text-left transition-colors hover:bg-muted hover:border-border motion-reduce:transition-none focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-ring",
     )
 
 
@@ -106,91 +124,69 @@ def integration_icon_marquee(integration_name: str) -> rx.Component:
             ),
             alt=f"{integration_name} logo",
             unstyled=True,
-            class_name="size-full",
+            class_name="size-6 object-contain",
         ),
         ui.avatar.fallback(
             integration_name[0],
-            class_name="text-secondary-12 text-base font-semibold uppercase size-full",
+            class_name="text-foreground text-base font-normal uppercase size-full",
             unstyled=True,
         ),
         unstyled=True,
-        class_name="size-6.5 flex items-center justify-center mx-3",
+        class_name="flex aspect-square w-full items-center justify-center rounded-xl border border-border-subtle bg-background",
     )
 
 
 @rx.memo
 def integrations_marquee() -> rx.Component:
+    """Show a quiet sample of integration marks without continuous motion.
+
+    Returns:
+        A decorative grid of supported integration logos.
+    """
     integration_names = [
         next(iter(item.values()))["name"] for item in get_integration_path()
     ]
     return rx.el.div(
-        marquee(
-            *[integration_icon_marquee(name) for name in reversed(integration_names)],
-            direction="left",
-            gradient_color="light-dark(rgba(255, 255, 255, 0.96), var(--secondary-1))",
-            class_name="h-auto w-full overflow-hidden",
-            gradient_width=65,
-            speed=25,
-            pause_on_hover=False,
-        ),
-        marquee(
-            *[integration_icon_marquee(name) for name in integration_names],
-            direction="right",
-            gradient_color="light-dark(rgba(255, 255, 255, 0.96), var(--secondary-1))",
-            class_name="h-auto w-full overflow-hidden",
-            gradient_width=65,
-            speed=25,
-            pause_on_hover=False,
-        ),
-        class_name="flex flex-col gap-6.5 px-8 max-lg:pb-6",
+        *[integration_icon_marquee(name) for name in sorted(integration_names)[:8]],
+        class_name="grid w-full max-w-[228px] grid-cols-4 gap-3",
     )
 
 
 def ai_builder_section() -> rx.Component:
     return rx.el.section(
         rx.el.div(
-            rx.el.div(
-                rx.el.h2(
-                    "AI Builder",
-                    class_name="text-secondary-12 text-3xl font-[575]",
-                ),
-                rx.el.p(
-                    "Learn how to build applications with Reflex AI.",
-                    class_name="text-secondary-11 text-sm font-[475]",
-                ),
-                class_name="flex flex-col gap-4",
+            section_heading(
+                "AI Builder", "Learn how to build applications with Reflex AI."
             ),
             rx.el.div(
                 card(
                     title="Getting Started",
                     description="A comprehensive guide to working effectively with AI Builder. The key to success is clarity, structure, and iteration.",
-                    content=rx.image(
-                        src=f"{REFLEX_ASSETS_CDN}docs/{rx.color_mode_cond('light', 'dark')}/getting_started_1.svg",
-                        alt="AI Builder getting started guide",
-                        class_name="w-full h-auto pb-8",
+                    content=artwork(
+                        "ai_getting_started",
+                        "w-full",
                     ),
                     href=ai_builder_pages.overview.best_practices.path,
+                    tone="blue",
                 ),
                 card(
                     title="Integrations",
                     description="Easily connect with the tools your team already uses or extend your app with any Python SDK, library, or API.",
                     content=integrations_marquee(),
                     href=ai_builder_pages.integrations.overview.path,
+                    tone="peach",
                 ),
                 card(
                     title="MCP",
                     description="The Reflex Model Context Protocol (MCP) provides AI assistants and coding tools with structured access to Reflex documentation and component information.",
-                    content=rx.image(
-                        src=f"{REFLEX_ASSETS_CDN}docs/{rx.color_mode_cond('light', 'dark')}/mcp_1.svg",
-                        alt="Reflex MCP integration illustration",
-                        class_name="w-full h-auto -mt-4",
-                    ),
+                    content=mcp_artwork(),
                     href=ai_builder_pages.integrations.mcp_overview.path,
-                    enteprise_only=True,
+                    tone="mint",
+                    enterprise_only=True,
                 ),
-                class_name="grid grid-cols-1 lg:grid-cols-3 gap-12",
+                class_name="grid grid-cols-1 gap-4 md:grid-cols-3",
             ),
-            class_name="flex flex-col gap-10 max-lg:text-center relative max-w-(--landing-layout-max-width) mx-auto",
+            class_name=SECTION,
         ),
-        class_name="bg-gradient-to-b from-secondary-2 to-secondary-1 w-full lg:pt-24 lg:pb-24 pb-10 max-xl:px-6 max-lg:pt-10",
+        class_name="w-full border-b border-border-subtle bg-background",
     )

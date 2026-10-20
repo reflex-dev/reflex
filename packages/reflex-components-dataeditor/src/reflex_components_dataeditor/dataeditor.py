@@ -410,7 +410,10 @@ class DataEditor(NoSSRComponent):
         if self.library is None:
             return {}
         return {
-            "": f"{format.format_library_name(self.library)}/dist/index.css",
+            "": [
+                f"{format.format_library_name(self.library)}/dist/index.css",
+                "react-responsive-carousel/lib/styles/carousel.min.css",
+            ],
             self.library: ["GridCellKind", "CompactSelection"],
             "$/utils/helpers/dataeditor.js": ImportVar(
                 tag="formatDataEditorCells", is_default=False, install=False

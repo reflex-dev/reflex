@@ -1,0 +1,1 @@
+Repeated request headers are no longer collapsed to their last value: repeated `cookie` fields are joined with `"; "` and any other repeated field with `", "`, so `router.headers.cookie` keeps every cookie and `router.session.client_ip` is taken from the first `x-forwarded-for` hop.

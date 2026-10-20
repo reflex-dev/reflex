@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 from reflex_base.components.component import field
-from reflex_base.components.tags.tag import Tag
+from reflex_base.components.tags.tag import CommonTag
 from reflex_base.constants.compiler import Hooks
 from reflex_base.event import EventChain, EventHandler, passthrough_event_spec
 from reflex_base.utils.format import format_prop, wrap
@@ -59,7 +59,7 @@ class Clipboard(Fragment):
     def _exclude_props(self) -> list[str]:
         return [*super()._exclude_props(), "on_paste", "on_paste_event_actions"]
 
-    def _render(self) -> Tag:
+    def _render(self) -> CommonTag:
         tag = super()._render()
         # Ensure a different Fragment component is created whenever targets differ
         return tag.remove_props("targets").add_props(key=self.targets)

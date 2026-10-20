@@ -126,12 +126,11 @@ def test_login_flow(
 
     login_sample.poll_for_content(login_button)
     with utils.poll_for_navigation(driver):
-        login_button.click()
+        utils.click_element(driver, By.ID, "login")
     assert driver.current_url.endswith("/login")
 
-    do_it_button = driver.find_element(By.ID, "doit")
     with utils.poll_for_navigation(driver):
-        do_it_button.click()
+        utils.click_element(driver, By.ID, "doit")
     assert driver.current_url == login_sample.frontend_url
 
     def check_auth_token_header():
@@ -143,8 +142,7 @@ def test_login_flow(
 
     assert AppHarness.poll_for_or_raise_timeout(check_auth_token_header) == "12345"
 
-    logout_button = driver.find_element(By.ID, "logout")
-    logout_button.click()
+    utils.click_element(driver, By.ID, "logout")
 
     state_name = login_sample.get_full_state_name(["_state"])
     AppHarness.expect(

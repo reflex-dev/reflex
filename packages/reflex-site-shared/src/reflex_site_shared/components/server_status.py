@@ -8,7 +8,7 @@ from reflex_site_shared.constants import STATUS_WEB_URL
 
 StatusVariant = Literal["Success", "Warning", "Critical"]
 
-DEFAULT_CLASS_NAME = "inline-flex flex-row gap-1.5 items-center font-medium text-sm px-2.5 rounded-[10px] h-9 hover:bg-secondary-3 transition-bg"
+DEFAULT_CLASS_NAME = "inline-flex flex-row gap-1.5 items-center font-medium text-sm px-2.5 rounded-[10px] h-9 hover:bg-accent transition-bg"
 
 STATUS_TEXT_COLORS: dict[StatusVariant, str] = {
     "Success": "text-success-11",

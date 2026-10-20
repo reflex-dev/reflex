@@ -5,7 +5,7 @@ import datetime
 import itertools
 import json
 import sys
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
 from typing import Any, cast
@@ -14,12 +14,14 @@ import pytest
 from reflex_base.components.component import Component
 from reflex_base.environment import environment
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils.imports import ImportVar
 
 import reflex as rx
 from reflex.compiler import disk_cache, page_cache
 from reflex.compiler.plugins import default_page_plugins
-from reflex.state import BaseState
+from reflex.compiler.utils import ContextsSnapshot
+from reflex.state import BaseState, _frontend_schema_entries
 
 
 @dataclasses.dataclass(slots=True)
@@ -563,36 +565,54 @@ _CONTEXTS_STUB = "// contexts stub"
 _TEST_STATE_MODULES = (__name__, "fp_mod_x")
 
 
-def _scoped_contexts_snapshot(app) -> tuple[dict[str, Any], dict[str, Any]] | None:
+def _scoped_contexts_snapshot(app) -> ContextsSnapshot | None:
     """A ``_contexts_snapshot`` limited to the states this test file defines.
 
     Same shape and serialization as the real snapshot, but each test state is
     compiled standalone instead of walking the whole root state tree, which
     would pick up unrelated (and sometimes broken) state classes collected
-    from other test modules.
+    from other test modules. Schema entries only read class metadata, so they
+    still cover the whole tree.
 
     Args:
         app: The app being compiled.
 
     Returns:
-        The (initial state, client storage) mappings for this file's states,
-        or None when the app has no state tree.
+        The contexts snapshot for this file's states, or None when the app has
+        no state tree.
     """
     if app is None or app._state is None:
         return None
-    from reflex_base.registry import RegistrationContext
+    context = RegistrationContext.ensure_context()
+    initial, storage, _ = _states_snapshot(
+        cls
+        for cls in list(context.base_states.values())
+        if cls.__module__ in _TEST_STATE_MODULES
+    )
+    return initial, storage, _frontend_schema_entries(app._state, context)
 
+
+def _states_snapshot(classes: Iterable[type[BaseState]]) -> ContextsSnapshot:
+    """Compile a contexts snapshot from the given states, each standalone.
+
+    Args:
+        classes: The states to compile.
+
+    Returns:
+        The contexts snapshot of those states.
+    """
     from reflex.compiler import utils as compiler_utils
 
+    context = RegistrationContext.ensure_context()
     initial: dict[str, Any] = {}
     storage: dict[str, dict[str, Any]] = {}
-    ctx = RegistrationContext.ensure_context()
-    for cls in list(ctx.base_states.values()):
-        if cls.__module__ in _TEST_STATE_MODULES:
-            initial.update(compiler_utils.compile_state(cls))
-            for kind, entries in compiler_utils.compile_client_storage(cls).items():
-                storage.setdefault(kind, {}).update(entries)
-    return initial, storage
+    schema_entries: dict[str, list[Any]] = {}
+    for cls in classes:
+        initial.update(compiler_utils.compile_state(cls))
+        for kind, entries in compiler_utils.compile_client_storage(cls).items():
+            storage.setdefault(kind, {}).update(entries)
+        schema_entries.update(_frontend_schema_entries(cls, context))
+    return initial, storage, schema_entries
 
 
 def _stub_externals(app, monkeypatch):
@@ -608,7 +628,7 @@ def _stub_externals(app, monkeypatch):
     # classes from other collected test modules.
     monkeypatch.setattr(
         "reflex.compiler.compiler.compile_contexts",
-        lambda state, theme, extra_state=None, **kwargs: (
+        lambda state, theme, **kwargs: (
             compiler_utils.get_context_path(),
             _CONTEXTS_STUB,
         ),
@@ -646,8 +666,8 @@ def test_manifest_state_slice_matches_the_compiled_contexts_snapshot(
         page.route for page in pages if page.component is _page_local_component_default
     )
     defined_states = ctx.stateful_routes[route]
-    snapshot = disk_cache._contexts_snapshot(app)
-    assert snapshot is not None
+    registry = RegistrationContext.ensure_context()
+    snapshot = _states_snapshot(registry.base_states[name] for name in defined_states)
     expected = json.loads(
         disk_cache.json_dumps(disk_cache._state_slice(defined_states, *snapshot))
     )
@@ -664,9 +684,6 @@ def test_manifest_state_slice_matches_the_compiled_contexts_snapshot(
         assert manifest is not None
         assert manifest["pages"][route]["state_slice"] == expected
     finally:
-        from reflex_base.registry import RegistrationContext
-
-        registry = RegistrationContext.ensure_context()
         for state_name in defined_states:
             _unregister_state(registry.base_states[state_name])
 
@@ -930,6 +947,7 @@ def test_stateful_miss_rewrites_contexts_from_manifest_slices(tmp_path, monkeypa
             "local_storage": {},
             "session_storage": {},
         },
+        "schema": {"root.hit_state": ["root.hit_state", [["count", "int"]], [], []]},
     }
     manifest["pages"][hit_route]["is_stateful"] = True
     manifest["pages"][hit_route]["state_slice"] = hit_slice
@@ -941,8 +959,8 @@ def test_stateful_miss_rewrites_contexts_from_manifest_slices(tmp_path, monkeypa
     )
     captured: list[Any] = []
 
-    def fake_compile_contexts(state, theme, extra_state=None, **kwargs):
-        captured.append(extra_state)
+    def fake_compile_contexts(state, theme, *, contexts_snapshot, **kwargs):
+        captured.append(contexts_snapshot)
         return compiler_utils.get_context_path(), _CONTEXTS_STUB
 
     monkeypatch.setattr(
@@ -957,9 +975,23 @@ def test_stateful_miss_rewrites_contexts_from_manifest_slices(tmp_path, monkeypa
     )
     # No page is re-evaluated; the hit page's stored slice is merged instead.
     assert reevaluated == []
-    assert captured == [(hit_slice["initial_state"], hit_slice["client_storage"])]
+    [(initial, storage, schema_entries)] = captured
+    assert initial["root.hit_state"] == {"count": 0}
+    assert storage["cookies"]["root.hit_state.token_rx_field_"] == {"name": "t"}
+    assert schema_entries["root.hit_state"] == hit_slice["schema"]["root.hit_state"]
     out_path = compiler_utils.resolve_path_of_web_dir(compiler_utils.get_context_path())
     assert out_path.read_text(encoding="utf-8") == _CONTEXTS_STUB
+
+
+def _slice_fingerprint(
+    names: list[str],
+    initial: dict[str, Any],
+    storage: dict[str, dict[str, Any]],
+    schema_entries: dict[str, list[Any]],
+) -> str:
+    return disk_cache._slice_digest(
+        disk_cache._state_slice(names, initial, storage, schema_entries)
+    )
 
 
 def test_contexts_fingerprint_sensitivity():
@@ -969,31 +1001,42 @@ def test_contexts_fingerprint_sensitivity():
         "local_storage": {},
         "session_storage": {},
     }
-    base = disk_cache._contexts_fingerprint(["root.s_one"], initial, storage)
+    schema = {
+        "root.s_one": ["root.s_one", [["value", "str"]], [], []],
+        "root.s_two": ["root.s_two", [["count", "int"]], [], []],
+    }
+    base = _slice_fingerprint(["root.s_one"], initial, storage, schema)
     # Stable across equal inputs and insensitive to name order.
-    assert disk_cache._contexts_fingerprint(["root.s_one"], dict(initial), storage) == (
-        base
-    )
-    both = disk_cache._contexts_fingerprint(
-        ["root.s_one", "root.s_two"], initial, storage
-    )
+    assert _slice_fingerprint(["root.s_one"], dict(initial), storage, schema) == base
+    both = _slice_fingerprint(["root.s_one", "root.s_two"], initial, storage, schema)
     assert (
-        disk_cache._contexts_fingerprint(["root.s_two", "root.s_one"], initial, storage)
+        _slice_fingerprint(["root.s_two", "root.s_one"], initial, storage, schema)
         == both
     )
-    # Sensitive to which states, their initial values, and their client storage.
-    assert disk_cache._contexts_fingerprint(["root.s_two"], initial, storage) != base
+    # Sensitive to which states, their initial values, their client storage
+    # and their frontend schema.
+    assert _slice_fingerprint(["root.s_two"], initial, storage, schema) != base
     assert (
-        disk_cache._contexts_fingerprint(
-            ["root.s_one"], {"root.s_one": {"value": "x"}}, storage
+        _slice_fingerprint(
+            ["root.s_one"], {"root.s_one": {"value": "x"}}, storage, schema
         )
         != base
     )
     assert (
-        disk_cache._contexts_fingerprint(
+        _slice_fingerprint(
             ["root.s_one"],
             initial,
             {"cookies": {}, "local_storage": {}, "session_storage": {}},
+            schema,
+        )
+        != base
+    )
+    assert (
+        _slice_fingerprint(
+            ["root.s_one"],
+            initial,
+            storage,
+            {"root.s_one": ["root.s_one", [["value", "str"]], [], ["touch"]]},
         )
         != base
     )
@@ -1079,6 +1122,131 @@ def test_stateful_miss_with_unchanged_states_reuses_contexts(tmp_path, monkeypat
     refreshed = json.loads(manifest_path.read_text())
     assert refreshed["pages"][stateful_route]["state_slice"] == stored_fp
     _unregister_state(_FP_HOLDER.pop("cls"))
+
+
+_SCHEMA_MISS_HANDLER = {"handler": False}
+
+
+def _fp_state(name: str, *, handler: bool = False) -> Any:
+    """Define a test state in the ``fp_mod_x`` module, as a page evaluation does.
+
+    Args:
+        name: The class name.
+        handler: Whether the state defines an event handler.
+
+    Returns:
+        The state class, also kept in ``_FP_HOLDER`` under ``name``.
+    """
+    namespace: dict[str, Any] = {
+        "__annotations__": {"value": str},
+        "value": "",
+        "__module__": "fp_mod_x",
+    }
+    if handler:
+
+        def touch(self):
+            """A handler that only exists in the edited state."""
+
+        namespace["touch"] = touch
+    state_cls = type(name, (rx.State,), namespace)
+    _FP_HOLDER[name] = state_cls
+    return state_cls
+
+
+def _page_schema_miss() -> Component:
+    state_cls = _fp_state("_SchemaMissState", handler=_SCHEMA_MISS_HANDLER["handler"])
+    return rx.el.div(rx.el.p(state_cls.value), _footer())
+
+
+def _page_schema_hit() -> Component:
+    return rx.el.div(rx.el.p(_fp_state("_SchemaHitState").value), _footer())
+
+
+def _schema_pages(tmp_path, monkeypatch):
+    """Compile a stateful miss page and a stateful hit page, then reset states.
+
+    Args:
+        tmp_path: The project root.
+        monkeypatch: The pytest monkeypatch fixture.
+
+    Returns:
+        The app, the manifest path, the miss route and the full-tree schema.
+    """
+    web = _use_tmp_web_dir(tmp_path, monkeypatch)
+    app = rx.App()
+    app.add_page(_page_schema_miss, route="/miss")
+    app.add_page(_page_schema_hit, route="/hit")
+    pages = list(app._unevaluated_pages.values())
+    ctx = _compile(pages, app=app)
+    assert app._state is not None
+    full_schema = app._state._to_frontend_schema()
+    _stub_externals(app, monkeypatch)
+    disk_cache.write_manifest(ctx, pages, ctx.all_imports, root=tmp_path)
+    manifest_path = web / disk_cache._MANIFEST_FILE
+    manifest = json.loads(manifest_path.read_text())
+    miss_route = pages[0].route
+    _stale_dep(manifest, miss_route, str(tmp_path / "view.py"))
+    # Keep the hit page out of the miss set, as if it lived in another module.
+    manifest["pages"][pages[1].route]["has_memos"] = False
+    manifest_path.write_text(json.dumps(manifest))
+    # The daemon child starts without the states its pages define.
+    for name in ("_SchemaMissState", "_SchemaHitState"):
+        _unregister_state(_FP_HOLDER.pop(name))
+    return app, manifest_path, miss_route, full_schema
+
+
+def test_contexts_rebuild_hashes_the_schema_of_cached_states(tmp_path, monkeypatch):
+    """A contexts rebuild hashes the hit pages' cached states into ``stateSchema``.
+
+    The backend evaluates every stateful page, so its schema covers states
+    that this process never evaluated. A schema of the live tree alone would
+    make every frontend look stale to a matching backend.
+    """
+    from reflex.compiler import compiler
+    from reflex.compiler import utils as compiler_utils
+
+    compile_contexts = compiler.compile_contexts
+    app, manifest_path, miss_route, full_schema = _schema_pages(tmp_path, monkeypatch)
+    manifest = json.loads(manifest_path.read_text())
+    manifest["pages"][miss_route]["state_slice"] = None
+    manifest_path.write_text(json.dumps(manifest))
+    monkeypatch.setattr(compiler, "compile_contexts", compile_contexts)
+
+    try:
+        assert (
+            disk_cache.try_incremental_rebuild(
+                app, compiler_plugins=[], prerender_routes=False, root=tmp_path
+            )
+            is True
+        )
+    finally:
+        _unregister_state(_FP_HOLDER.pop("_SchemaMissState"))
+    contexts = compiler_utils.resolve_path_of_web_dir(
+        compiler_utils.get_context_path()
+    ).read_text(encoding="utf-8")
+    assert f"export const stateSchema = {json.dumps(full_schema)}" in contexts
+
+
+def test_handler_only_state_edit_rebuilds_contexts(tmp_path, monkeypatch):
+    """An event handler added to a recompiled page's state rebuilds contexts."""
+    from reflex.compiler import utils as compiler_utils
+
+    app, _, _, _ = _schema_pages(tmp_path, monkeypatch)
+    out_path = compiler_utils.resolve_path_of_web_dir(compiler_utils.get_context_path())
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text("// pre-existing contexts", encoding="utf-8")
+    monkeypatch.setitem(_SCHEMA_MISS_HANDLER, "handler", True)
+
+    try:
+        assert (
+            disk_cache.try_incremental_rebuild(
+                app, compiler_plugins=[], prerender_routes=False, root=tmp_path
+            )
+            is True
+        )
+    finally:
+        _unregister_state(_FP_HOLDER.pop("_SchemaMissState"))
+    assert out_path.read_text(encoding="utf-8") == _CONTEXTS_STUB
 
 
 def test_incremental_rebuild_copies_assets(tmp_path, monkeypatch):

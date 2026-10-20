@@ -7,12 +7,13 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
+import reflex as rx
 from reflex.istate.shared import (
-    SharedState,
     SharedStateBaseInternal,
     _do_update_other_tokens,
+    _patch_state,
 )
-from reflex.state import State
+from reflex.state import BaseState, State
 from reflex.utils.token_manager import (
     LocalTokenManager,
     RedisTokenManager,
@@ -115,41 +116,60 @@ async def test_update_other_tokens_redis_cross_instance(redis_manager, mock_redi
     assert local_key not in [call.args[0] for call in mock_redis.get.call_args_list]
 
 
-@pytest.mark.parametrize("held_lock", [False, True], ids=["direct", "linked"])
-async def test_shared_updates_with_shadowed_touched_method(
-    clean_registration_context, monkeypatch: pytest.MonkeyPatch, held_lock: bool
-):
-    """Notify linked clients when a backend var shadows the touched-state method.
+async def test_no_fan_out_without_linked_clients():
+    """An event with nothing linked does not reach for the registered App.
 
-    Args:
-        clean_registration_context: A fresh, empty registration context.
-        monkeypatch: Restore shared-state defaults after the test.
-        held_lock: Whether to collect the shared state from held locks.
+    Defining any ``SharedState`` subclass routes every event in the process
+    through ``_modify_linked_states``. Apps that never link pay that path on
+    each event with no client to fan out to, so it must not do the work -- nor
+    require an App to be registered -- when there is nothing to propagate.
     """
-    monkeypatch.setitem(State.backend_vars, "_reflex_internal_links", {})
-    monkeypatch.setattr(
-        State, "_always_dirty_substates", State._always_dirty_substates.copy()
-    )
+    root_state = State.get_root_state()(_reflex_internal_init=True)
+    root_state._reflex_internal_links = {}
+    shared_base = root_state.substates[SharedStateBaseInternal.get_name()]
+    assert isinstance(shared_base, SharedStateBaseInternal)
 
-    class ShadowState(SharedState):
-        """State with an intentional framework-method collision."""
+    with patch("reflex.istate.shared._do_update_other_tokens") as do_update:
+        async with shared_base._modify_linked_states():
+            pass
 
-        _get_was_touched: int = 7
+    do_update.assert_not_called()
 
-    root = State()
-    parent = await root.get_state(SharedStateBaseInternal)
-    state = await root.get_state(ShadowState)
-    state._linked_from = {"other-client"}
-    root._clean()
-    state._was_touched = False
-    state._previous_dirty_vars.clear()
 
-    with patch("reflex.istate.shared._do_update_other_tokens") as update:
-        async with parent._modify_linked_states():
-            if held_lock:
-                parent._held_locks = {"shared": {ShadowState: state}}
-            state._get_was_touched = 8
+class PatchRoot(BaseState):
+    """The root of a tree a state is patched into."""
 
-    update.assert_called_once()
-    assert update.call_args.kwargs["affected_tokens"] == {"other-client"}
-    assert state._get_was_touched == 8
+
+class PatchSource(PatchRoot):
+    """A state swapped for another instance while patched."""
+
+    who: str = "private"
+
+
+class PatchReader(PatchRoot):
+    """A state with a computed var reading the patched state."""
+
+    @rx.var
+    async def greeting(self) -> str:
+        """Read the patched state.
+
+        Returns:
+            Its value.
+        """
+        return (await self.get_state(PatchSource)).who
+
+
+@pytest.mark.asyncio
+async def test_patch_state_recomputes_readers_after_restoring():
+    """Computed vars read from a patched state are recomputed once it is swapped back."""
+    root = PatchRoot(_reflex_internal_init=True)  # pyright: ignore[reportCallIssue]
+    original = root.get_substate([PatchSource.get_name()])
+    reader = root.get_substate([PatchReader.get_name()])
+    # The state of another client, in a tree of its own.
+    linked_root = PatchRoot(_reflex_internal_init=True)  # pyright: ignore[reportCallIssue]
+    linked = linked_root.get_substate([PatchSource.get_name()])
+    linked.who = "linked"  # pyright: ignore[reportAttributeAccessIssue]
+
+    async with _patch_state(original_state=original, linked_state=linked):
+        assert await reader.greeting == "linked"  # pyright: ignore[reportAttributeAccessIssue]
+    assert await reader.greeting == "private"  # pyright: ignore[reportAttributeAccessIssue]

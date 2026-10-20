@@ -62,6 +62,9 @@ class Dirs(SimpleNamespace):
     BUNDLED_LIBRARIES = BACKEND + "/bundled_libraries.json"
     # The name of the reflex json file.
     REFLEX_JSON = "reflex.json"
+    # JSON-encoded list of the app's page routes, written at compile time so the
+    # prod static file server can tell routable SPA paths from unknown ones.
+    ROUTES_MANIFEST = "routes.json"
     # The name of the postcss config file.
     POSTCSS_JS = "postcss.config.js"
     # The name of the states directory.

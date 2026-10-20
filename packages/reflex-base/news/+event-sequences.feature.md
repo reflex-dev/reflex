@@ -1,0 +1,1 @@
+Event props and the events an event handler returns accept any sequence of events, e.g. a tuple or a variable typed `list[EventSpec]`, not only a list literal. The new `reflex_base.event.event_sequence` helper returns such a value as a sequence of events, wrapping a single event in a list.
