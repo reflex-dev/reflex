@@ -20,10 +20,7 @@ without touching this script.
 # interpreters that lack it: the hook runs outside the project environment and can
 # only rely on what this block declares.
 # /// script
-# requires-python = ">=3.10"
-# dependencies = [
-#     "tomli; python_version < '3.11'",
-# ]
+# requires-python = ">=3.11"
 # ///
 
 from __future__ import annotations
@@ -31,15 +28,11 @@ from __future__ import annotations
 import os
 import sys
 import tarfile
+import tomllib
 import zipfile
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
-
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    import tomli as tomllib  # pyright: ignore[reportMissingImports]
 
 #: The hatch build hook (packages/hatch-reflex-pyi) that a component package
 #: declares to have its stubs generated during the build.

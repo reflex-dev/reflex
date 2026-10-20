@@ -3,9 +3,9 @@
 import dataclasses
 import logging
 from copy import deepcopy
-from typing import Any, Literal, TypedDict
+from typing import Any, Literal, NotRequired, TypedDict
 
-from typing_extensions import NotRequired, Unpack
+from typing_extensions import Unpack
 
 from .base import Plugin as PluginBase
 

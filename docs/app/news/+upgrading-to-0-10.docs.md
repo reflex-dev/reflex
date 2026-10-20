@@ -1,0 +1,1 @@
+Add an "Upgrading to Reflex 0.10" guide to Getting Started, and document reading the default of a backend var on a state class, the scope of class-level default assignment, and calling handlers from background tasks.
