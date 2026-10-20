@@ -861,6 +861,20 @@ def page_b():
 """
 
 
+def _rewrite_module(path: Path, source: str) -> None:
+    """Rewrite a module with a distinct modification time for the stat cache.
+
+    Immediate same-size writes can retain their timestamp on Windows.
+
+    Args:
+        path: The existing module file.
+        source: The replacement source.
+    """
+    stat = path.stat()
+    path.write_text(source)
+    os.utime(path, ns=(stat.st_atime_ns, stat.st_mtime_ns + 1_000_000_000))
+
+
 @pytest.mark.parametrize(
     ("old", "new", "changes"),
     [
@@ -887,7 +901,7 @@ def test_function_slice_digest_covers_what_the_function_reads(
     module.write_text(_SLICED_MODULE)
     before = page_cache.function_slice_digest(str(module), "page_a")
     assert before is not None
-    module.write_text(_SLICED_MODULE.replace(old, new, 1))
+    _rewrite_module(module, _SLICED_MODULE.replace(old, new, 1))
     after = page_cache.function_slice_digest(str(module), "page_a")
     assert (after != before) is changes
 
@@ -913,7 +927,7 @@ def test_function_slice_digest_keeps_code_reached_indirectly(tmp_path, source):
     module = tmp_path / "indirect.py"
     module.write_text(source)
     before = page_cache.function_slice_digest(str(module), "page_a")
-    module.write_text(source.replace("return 1", "return 2"))
+    _rewrite_module(module, source.replace("return 1", "return 2"))
     assert page_cache.function_slice_digest(str(module), "page_a") != before
 
 
@@ -1069,7 +1083,7 @@ def test_only_known_decorators_keep_a_function_out_of_other_slices(
     )
     module.write_text(source)
     before = page_cache.function_slice_digest(str(module), "page_a")
-    module.write_text(source.replace("return 1", "return 3"))
+    _rewrite_module(module, source.replace("return 1", "return 3"))
     after = page_cache.function_slice_digest(str(module), "page_a")
     assert (after == before) is inert
 
