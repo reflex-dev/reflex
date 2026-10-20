@@ -1993,7 +1993,7 @@ def test_preloaded_app_skips_incremental_reuse(monkeypatch, mocker):
         """Stop before full-compile side effects."""
 
     mocker.patch.object(
-        compiler, "make_compile_progress", side_effect=FullCompileReached
+        compiler.console, "PoorProgress", side_effect=FullCompileReached
     )
     with pytest.raises(FullCompileReached):
         compiler.compile_app(app, use_rich=False)

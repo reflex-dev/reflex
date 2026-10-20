@@ -579,13 +579,17 @@ def test_dev_daemon_does_not_disable_backend_fallback(monkeypatch, mocker):
     concurrent = mocker.patch.object(
         processes, "run_concurrently_context", return_value=contextlib.nullcontext()
     )
+    daemon = mocker.patch.object(
+        compile_daemon, "running", return_value=contextlib.nullcontext()
+    )
     reflex._run_dev(constants.RunningMode.FRONTEND_ONLY, None, None, "localhost")
     compiled.assert_called_once()
     assert not environment.REFLEX_SKIP_COMPILE.get()
-    commands = concurrent.call_args.args
-    assert any(
-        command[0] is compile_daemon.run_compile_daemon and command[2] is True
-        for command in commands
+    # The run scope owns the daemon process; no concurrent task supervises it.
+    daemon.assert_called_once_with(mocker.ANY, initial_compiled=True)
+    assert all(
+        getattr(command[0], "__module__", None) != compile_daemon.__name__
+        for command in concurrent.call_args.args
     )
 
 

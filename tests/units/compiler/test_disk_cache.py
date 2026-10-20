@@ -186,12 +186,11 @@ def test_manifest_serializes_state_defaults_like_contexts(tmp_path, monkeypatch,
     )
 
 
-def test_manifest_write_failure_is_visible(tmp_path, monkeypatch):
+def test_manifest_write_failure_is_visible(tmp_path, monkeypatch, caplog):
     """A failed cache write must explain why subsequent reloads compile everything."""
     _use_tmp_web_dir(tmp_path, monkeypatch)
     pages = [_FakePage(route="/a", component=_page_a)]
     ctx = _compile(pages)
-    warnings = []
 
     def fail_write(manifest):
         """Simulate a failure writing the cache manifest.
@@ -203,9 +202,9 @@ def test_manifest_write_failure_is_visible(tmp_path, monkeypatch):
         raise OSError(msg)
 
     monkeypatch.setattr(disk_cache, "_write", fail_write)
-    monkeypatch.setattr(disk_cache.console, "warn", warnings.append)
-    disk_cache.write_manifest(ctx, pages, ctx.all_imports, root=tmp_path)
-    assert any("disk full" in warning for warning in warnings)
+    with caplog.at_level("WARNING", logger=disk_cache.__name__):
+        disk_cache.write_manifest(ctx, pages, ctx.all_imports, root=tmp_path)
+    assert any("disk full" in record.getMessage() for record in caplog.records)
 
 
 def test_serialize_imports_collapses_duplicates():
@@ -236,9 +235,10 @@ def test_wrap_key_strs_is_sorted_and_stable():
     ]
 
 
-def _manifest(pages: dict[str, dict], **overrides) -> dict:
+def _manifest(pages: dict[str, dict], root: Path | None = None, **overrides) -> dict:
     base = {
         "schema": disk_cache._SCHEMA,
+        "root": str((root or Path.cwd()).resolve()),
         "reflex_version": page_cache._reflex_version(),
         "mode": environment.REFLEX_ENV_MODE.get().value,
         "files": {},
@@ -273,7 +273,11 @@ def _validator(manifest: dict) -> page_cache.FileValidator:
 
 
 def test_globals_mismatch_names_the_changed_input(tmp_path):
-    m = _manifest({"/a": {}, "/b": {}}, globals_absent=[str(tmp_path / "rxconfig.py")])
+    m = _manifest(
+        {"/a": {}, "/b": {}},
+        root=tmp_path,
+        globals_absent=[str(tmp_path / "rxconfig.py")],
+    )
     routes = {"/a", "/b"}
     assert (
         disk_cache.globals_mismatch(
@@ -299,6 +303,20 @@ def test_globals_mismatch_names_the_changed_input(tmp_path):
     assert "0.0.0-old" in reason
 
 
+def test_globals_mismatch_names_a_moved_project(tmp_path):
+    """A manifest only describes the project directory that wrote it.
+
+    Its file table holds absolute paths, so a copy of the project made with
+    its ``.web`` would otherwise validate the original project's files.
+    """
+    m = _manifest({"/a": {}}, root=tmp_path / "original")
+    reason = disk_cache.globals_mismatch(
+        m, routes={"/a"}, validator=_validator(m), root=tmp_path / "copy"
+    )
+    assert reason is not None
+    assert "project root changed" in reason
+
+
 def test_globals_mismatch_names_a_compile_mode_change(tmp_path, monkeypatch):
     """A development build's output must never be reused by a production build.
 
@@ -306,7 +324,7 @@ def test_globals_mismatch_names_a_compile_mode_change(tmp_path, monkeypatch):
     the mode is part of the cache identity.
     """
     monkeypatch.setenv("REFLEX_ENV_MODE", "dev")
-    m = _manifest({"/a": {}})
+    m = _manifest({"/a": {}}, root=tmp_path)
     assert (
         disk_cache.globals_mismatch(
             m, routes={"/a"}, validator=_validator(m), root=tmp_path
@@ -336,6 +354,7 @@ def test_globals_mismatch_validates_stored_inputs_only(tmp_path):
     assert entry is not None
     m = _manifest(
         {"/a": {}},
+        root=tmp_path,
         files={str(theme): entry},
         globals={"reflex": page_cache._reflex_version(), f"app:{theme}": str(theme)},
         # global files absent from this root at write time and still absent

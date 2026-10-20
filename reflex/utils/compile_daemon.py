@@ -11,19 +11,21 @@ from __future__ import annotations
 import contextlib
 import importlib
 import json
+import logging
 import os
 import signal
 import subprocess
 import sys
 import threading
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
 
 from reflex_base.environment import environment
+from reflex_base.utils import log
 
-from reflex.utils import console
+logger = logging.getLogger(__name__)
 
 #: Fallback polling only (no ``watchfiles``): seconds between poll passes.
 _POLL_INTERVAL = 0.5
@@ -44,19 +46,26 @@ _WATCH_SUFFIXES = (".py", ".md", ".mdx")
 _SKIP_DIRS = {".web", ".venv", "venv", "node_modules", "__pycache__", ".git"}
 
 
-def run_compile_daemon(
+@contextlib.contextmanager
+def running(
     prerender_routes: bool = False, initial_compiled: bool = False
-) -> None:
-    """Supervise the compile daemon as its own (fork-safe) subprocess.
+) -> Iterator[None]:
+    """Run the compile daemon as a subprocess for the duration of the block.
 
-    Runs on a ``reflex run`` worker thread alongside the frontend. Launching the
-    daemon as a separate process keeps it single-threaded so its per-edit
-    ``fork()`` is safe, and isolates its environment from the backend (which
-    checks the daemon ownership marker before frontend compilation).
+    ``reflex run`` owns the daemon's lifetime: however the block exits (Ctrl-C,
+    a signal to ``reflex run`` alone, an error), the daemon is stopped and its
+    ownership marker cleared, so backend workers compile again. The daemon is
+    its own process so that it stays single-threaded, which keeps its per-edit
+    ``fork()`` safe, and its environment stays separate from the backend's. If
+    ``reflex run`` is killed outright, the daemon exits on noticing its parent
+    is gone (see :func:`_serve`).
 
     Args:
         prerender_routes: Whether the daemon should prerender routes when compiling.
         initial_compiled: Whether the parent already produced the initial frontend.
+
+    Yields:
+        None, while the daemon runs.
     """
     env = {**os.environ}
     # The daemon DOES compile; ensure the cache is on and the skip flag is off.
@@ -70,8 +79,10 @@ def run_compile_daemon(
     proc = subprocess.Popen(
         [sys.executable, "-m", "reflex.utils.compile_daemon"], env=env
     )
-
-    def _terminate() -> None:
+    try:
+        mark_daemon_active(proc.pid)
+        yield
+    finally:
         clear_daemon_marker()
         if proc.poll() is None:
             proc.terminate()
@@ -79,19 +90,7 @@ def run_compile_daemon(
                 proc.wait(timeout=3)
             except subprocess.TimeoutExpired:
                 proc.kill()
-
-    # Backstop: the daemon must never outlive reflex-run, even if this thread is
-    # interrupted before its finally runs. The daemon also self-exits if its
-    # parent dies (see _serve), so the two together prevent an orphan.
-    import atexit
-
-    atexit.register(_terminate)
-    try:
-        mark_daemon_active(proc.pid)
-        proc.wait()
-    finally:
-        _terminate()
-        atexit.unregister(_terminate)
+                proc.wait()
 
 
 def _reload_roots() -> list[Path]:
@@ -389,7 +388,7 @@ def _next_changes(state: _WatchState, alive: Callable[[], bool]) -> set[Path] | 
     try:
         import watchfiles
     except ImportError:
-        console.warn(
+        logger.warning(
             "watchfiles is not installed; the compile daemon falls back to polling."
         )
         return _poll_changes(state, alive)
@@ -829,7 +828,7 @@ def wait_for_compile(timeout: float = _LOCK_WAIT_TIMEOUT) -> None:
         elif _built_inputs_current():
             break
         if not waited:
-            console.debug(
+            logger.debug(
                 "Waiting for the compile daemon to finish the current compile."
             )
             waited = True
@@ -881,7 +880,7 @@ def _child_compile(
     t2 = time.perf_counter()
     app._compile(prerender_routes=prerender_routes, use_rich=True, trigger="hot_reload")
     t3 = time.perf_counter()
-    console.info(
+    logger.info(
         f"Hot reload {t3 - t0:.2f}s (reset {t1 - t0:.2f}s, "
         f"reimport {t2 - t1:.2f}s, compile {t3 - t2:.2f}s)"
     )
@@ -907,7 +906,7 @@ def _await_child(pid: int) -> bool:
                 os.kill(pid, signal.SIGKILL)
             with contextlib.suppress(OSError):
                 os.waitpid(pid, 0)
-            console.error("Compile child timed out; killed it, keeping last build.")
+            logger.error("Compile child timed out; killed it, keeping last build.")
             return False
         time.sleep(0.02)
 
@@ -963,7 +962,7 @@ def _can_fork() -> bool:
         deadline = time.monotonic() + 0.25
         while (count := _os_thread_count()) is not None and count > 1:
             if time.monotonic() > deadline:
-                console.warn(
+                logger.warning(
                     f"Compile daemon: {count} OS threads still alive; "
                     "falling back to a cold subprocess."
                 )
@@ -973,7 +972,7 @@ def _can_fork() -> bool:
     others = [
         t.name for t in threading.enumerate() if t is not threading.current_thread()
     ]
-    console.warn(
+    logger.warning(
         "Compile daemon: cannot fork a warm child while other threads are "
         f"alive ({', '.join(others)}); falling back to a cold subprocess."
     )
@@ -1003,9 +1002,7 @@ def _compile_once(
             try:
                 _child_compile(roots, prerender_routes, changed)
             except BaseException:  # report any failure, never crash the daemon
-                import traceback
-
-                traceback.print_exc()
+                logger.exception("Hot reload compile failed.")
                 code = 1
             finally:
                 os._exit(code)
@@ -1023,7 +1020,7 @@ def _compile_once(
             env=env,
         )
     except subprocess.TimeoutExpired:
-        console.error("Compile subprocess timed out; keeping the last good build.")
+        logger.error("Compile subprocess timed out; keeping the last good build.")
         return False
     return proc.returncode == 0
 
@@ -1042,7 +1039,7 @@ def _serve() -> None:
     # here (e.g. the app is mid-edit and broken) must NOT kill the daemon; fall
     # through to the watch loop so the next edit that fixes it recompiles.
     try:
-        with _compile_lock(root), console.timing("Compile daemon: initial compile"):
+        with _compile_lock(root), log.timing(logger, "Compile daemon: initial compile"):
             if os.environ.pop("REFLEX_COMPILE_DAEMON_PRECOMPILED", None):
                 prerequisites.get_app()
             else:
@@ -1053,15 +1050,12 @@ def _serve() -> None:
                     trigger="initial",
                 )
     except BaseException:  # tolerate a broken initial state; keep watching
-        import traceback
-
-        traceback.print_exc()
-        console.error("Initial compile failed; watching for a fix.")
+        logger.exception("Initial compile failed; watching for a fix.")
     _prepare_fork_parent(roots)
 
     state = _WatchState.build(roots, root)
     state.checkpoint = _dependency_snapshot(state)
-    console.info("Compile daemon ready (warm); watching for changes.")
+    logger.info("Compile daemon ready (warm); watching for changes.")
     # The first snapshot is the watch baseline; edits made since the last build
     # wrote the manifest raise no event, so compile them now.
     if not (pending := _unbuilt_changes(state)):
@@ -1083,7 +1077,7 @@ def _serve() -> None:
         changed = changed | unapplied
         from reflex.compiler.disk_cache import format_path_list
 
-        console.info(
+        logger.info(
             f"Compile daemon: change detected in {format_path_list(map(str, changed), root)}"
         )
 
@@ -1091,7 +1085,7 @@ def _serve() -> None:
         # upgrade) can't be applied to the warm parent (it imported the old
         # version); re-exec the daemon so the new world is actually loaded.
         if changed & state.globals_:
-            console.info("Global config changed; restarting compile daemon.")
+            logger.info("Global config changed; restarting compile daemon.")
             os.execv(
                 sys.executable, [sys.executable, "-m", "reflex.utils.compile_daemon"]
             )
@@ -1109,7 +1103,7 @@ def _serve() -> None:
             _record_built_inputs(_known_snapshot(state, before))
         unapplied = set() if ok else changed
         if not ok:
-            console.error("Compile failed; keeping the last good build.")
+            logger.error("Compile failed; keeping the last good build.")
         # Refresh what is watched from the new manifest so a newly-referenced
         # content file becomes watched, and catch up on edits made while the
         # watcher was down for the compile.
@@ -1142,9 +1136,7 @@ def main(argv: list[str] | None = None) -> int:
                 changed,
             )
         except BaseException:  # report any failure, never crash
-            import traceback
-
-            traceback.print_exc()
+            logger.exception("Hot reload compile failed.")
             return 1
         return 0
     try:
@@ -1155,4 +1147,9 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    # ``python -m`` executes this file as ``__main__``, a second copy of the
+    # module. Run the importable module instead, so its logger sits in the
+    # ``reflex`` tree and no state is split between two copies.
+    from reflex.utils.compile_daemon import main as _main
+
+    sys.exit(_main())

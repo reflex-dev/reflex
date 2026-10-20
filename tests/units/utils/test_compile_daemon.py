@@ -1,6 +1,8 @@
 """Tests for the warm fork-per-compile dev compile daemon."""
 
+import contextlib
 import os
+import sys
 from pathlib import Path
 
 import pytest
@@ -610,8 +612,49 @@ def test_failed_daemon_spawn_leaves_no_marker(tmp_path, monkeypatch):
         raise OSError(message)
 
     monkeypatch.setattr(compile_daemon.subprocess, "Popen", fail)
-    with pytest.raises(OSError, match="spawn failed"):
-        compile_daemon.run_compile_daemon()
+    with pytest.raises(OSError, match="spawn failed"), compile_daemon.running():
+        pass
+    assert not marker.exists()
+
+
+@pytest.mark.parametrize("exit_with", [None, KeyboardInterrupt])
+def test_daemon_stops_when_the_run_scope_exits(tmp_path, monkeypatch, exit_with):
+    """Leaving the ``reflex run`` scope stops the daemon, however the run ends.
+
+    A signal to ``reflex run`` alone (an IDE stop, ``kill``) must not leave the
+    run waiting on a daemon that never got the signal.
+    """
+    import subprocess
+
+    marker = tmp_path / "daemon.pid"
+    monkeypatch.setattr(compile_daemon, "_daemon_marker_path", lambda: marker)
+    popen = subprocess.Popen
+    spawned: list[subprocess.Popen] = []
+
+    def spawn_sleeper(args, **kwargs):
+        """Stand in for the daemon with a process that never exits on its own.
+
+        Args:
+            args: The daemon command (replaced).
+            kwargs: The Popen options.
+
+        Returns:
+            The spawned process.
+        """
+        proc = popen([sys.executable, "-c", "import time; time.sleep(60)"], **kwargs)
+        spawned.append(proc)
+        return proc
+
+    monkeypatch.setattr(compile_daemon.subprocess, "Popen", spawn_sleeper)
+    with (
+        contextlib.suppress(KeyboardInterrupt),
+        compile_daemon.running(),
+    ):
+        assert compile_daemon.daemon_active()
+        if exit_with is not None:
+            raise exit_with
+    [proc] = spawned
+    assert proc.poll() is not None
     assert not marker.exists()
 
 
@@ -805,3 +848,32 @@ def test_daemon_compiles_an_edit_made_before_its_first_snapshot(tmp_path, monkey
     compile_daemon._serve()
     assert compiled == [{page}]
     assert compile_daemon._built_inputs_current()
+
+
+def test_daemon_entry_point_runs_the_canonical_module(tmp_path):
+    """``python -m`` must run the importable module, not a ``__main__`` copy.
+
+    Records go through the ``reflex`` logger tree only from the real module's
+    logger, and module state must not be split between two copies.
+    """
+    import subprocess
+
+    probe = (
+        "import runpy, sys\n"
+        "import reflex.utils.compile_daemon as daemon\n"
+        "def main(argv=None):\n"
+        "    print(daemon.logger.name, sys.modules['reflex.utils.compile_daemon'] is daemon)\n"
+        "    return 0\n"
+        "daemon.main = main\n"
+        "runpy.run_module('reflex.utils.compile_daemon', run_name='__main__')\n"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", probe],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=15,
+    )
+    assert result.stdout.split() == ["reflex.utils.compile_daemon", "True"], (
+        result.stderr
+    )

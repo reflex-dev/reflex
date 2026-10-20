@@ -20,6 +20,7 @@ import contextlib
 import dataclasses
 import hashlib
 import json
+import logging
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -28,6 +29,7 @@ from reflex_base import constants
 from reflex_base.environment import environment
 from reflex_base.plugins import CompileContext, CompilerHooks
 from reflex_base.registry import RegistrationContext
+from reflex_base.utils import log
 from reflex_base.utils.format import json_dumps
 from reflex_base.utils.imports import ImportVar, merge_imports
 
@@ -44,8 +46,10 @@ if TYPE_CHECKING:
     from reflex.app import App
     from reflex.compiler import utils as compiler_utils
 
+logger = logging.getLogger(__name__)
+
 #: Bump when the manifest layout changes (old manifests are then ignored).
-_SCHEMA = 14
+_SCHEMA = 15
 #: Manifest filename under the web directory.
 _MANIFEST_FILE = "reflex_compile_cache.json"
 
@@ -100,7 +104,7 @@ def _log_fallback(reason: str) -> None:
     Args:
         reason: The human-readable fallback reason.
     """
-    console.info(f"Compile cache: falling back to a full compile — {reason}")
+    logger.info(f"Compile cache: falling back to a full compile — {reason}")
 
 
 _IMPORT_VAR_FIELDS = tuple(f.name for f in dataclasses.fields(ImportVar))
@@ -446,7 +450,7 @@ def write_manifest(
                 or page_ctx.output_code is None
                 or page_ctx.output_path is None
             ):
-                console.warn(
+                logger.warning(
                     f"Compile cache: cannot save manifest because page {page.route!r} "
                     "has incomplete output. The next reload will need a full compile."
                 )
@@ -487,6 +491,9 @@ def write_manifest(
 
         manifest = {
             "schema": _SCHEMA,
+            # File paths below are absolute: the manifest describes this
+            # project directory only.
+            "root": str((root or Path.cwd()).resolve()),
             "plugin_sources": plugin_sources or {},
             "reflex_version": page_cache._reflex_version(),
             "mode": _compile_mode(),
@@ -501,7 +508,7 @@ def write_manifest(
         }
         _write(manifest)
     except Exception as exc:  # best-effort: never break the build
-        console.warn(
+        logger.warning(
             f"Compile cache: could not save manifest ({exc!r}). "
             "The next reload may need a full compile."
         )
@@ -567,11 +574,15 @@ def globals_mismatch(
         manifest: The loaded manifest.
         routes: The current set of page routes.
         validator: The file validator bound to the manifest's file table.
-        root: Project root used to shorten paths in the reason. Defaults to cwd.
+        root: Project root the manifest must describe; also shortens paths in
+            the reason. Defaults to cwd.
 
     Returns:
         A human-readable mismatch reason, or None when the global inputs match.
     """
+    current_root = str((root or Path.cwd()).resolve())
+    if manifest["root"] != current_root:
+        return f"project root changed ({manifest['root']} -> {current_root})"
     old_version = manifest.get("reflex_version")
     if old_version != page_cache._reflex_version():
         return (
@@ -1104,17 +1115,18 @@ def try_incremental_rebuild(
         )
         miss_pages = _with_module_siblings(miss_pages, pages, manifest)
         miss_pages = _with_dynamic_state_pages(miss_pages, pages, manifest)
-        console.info(
+        memo_note = (
+            f"; rewriting {len(dirty_memo_paths)} memo file(s)"
+            if dirty_memo_paths
+            else ""
+        )
+        logger.info(
             f"Compile cache: recompiling {len(miss_pages)}/{len(pages)} pages; "
             f"changed file(s): {format_path_list(changed_files, resolved_root)}"
-            + (
-                f"; rewriting {len(dirty_memo_paths)} memo file(s)"
-                if dirty_memo_paths
-                else ""
-            )
+            f"{memo_note}"
         )
     else:
-        console.info(f"Compile cache: reusing all {len(pages)} pages from disk")
+        logger.info(f"Compile cache: reusing all {len(pages)} pages from disk")
     miss_routes = {p.route for p in miss_pages}
 
     from reflex.compiler import compiler
@@ -1126,8 +1138,6 @@ def try_incremental_rebuild(
     # Recompile only the source-changed pages.
     miss_ctx = None
     if miss_pages:
-        from reflex.compiler.compiler import make_compile_progress
-
         # Page evaluation can import modules the cached import graph (built
         # pre-evaluation for the memo state) has never seen; drop the cache
         # afterwards so post-evaluation closures (memo entries, page deps)
@@ -1143,7 +1153,7 @@ def try_incremental_rebuild(
         )
         # Progress over the changed pages (evaluate + render each), so a hot
         # reload shows how much is being recompiled.
-        progress = make_compile_progress(use_rich)
+        progress = console.progress() if use_rich else console.PoorProgress()
         progress.start()
         task = progress.add_task(
             "Recompiling changed pages:", total=len(miss_pages) * 2
@@ -1262,12 +1272,12 @@ def try_incremental_rebuild(
             manifest, miss_ctx, contexts_snapshot
         )
         if changed_route is None:
-            console.info(
+            logger.info(
                 "Compile cache: recompiled pages define unchanged states; "
                 "reusing contexts file"
             )
         else:
-            console.info(
+            logger.info(
                 f"Compile cache: page {changed_route!r} changed its state "
                 "config; rebuilding contexts"
             )
@@ -1314,7 +1324,7 @@ def try_incremental_rebuild(
     # Frontend packages + routing scaffolding (cheap, idempotent).
     from reflex.utils import frontend_skeleton
 
-    with console.timing("Install Frontend Packages"):
+    with log.timing(logger, "Install Frontend Packages"):
         app._get_frontend_packages(install_imports)
     frontend_skeleton.update_react_router_config(prerender_routes=prerender_routes)
     frontend_skeleton.update_entry_client()
@@ -1425,4 +1435,4 @@ def _update_manifest_for_misses(
         if dirty:
             _write(manifest)
     except Exception as exc:  # best-effort
-        console.warn(f"Compile cache: could not refresh manifest ({exc!r}).")
+        logger.warning(f"Compile cache: could not refresh manifest ({exc!r}).")

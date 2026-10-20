@@ -46,7 +46,7 @@ from reflex_base.vars.sequence import LiteralStringVar
 from reflex_components_core.base.app_wrap import AppWrap
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_radix.plugin import RadixThemesPlugin
-from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
+from rich.progress import Progress
 
 from reflex.compiler import templates, utils
 from reflex.compiler.plugins import default_page_plugins
@@ -73,24 +73,6 @@ def _set_progress_total(
 ) -> None:
     """Update a task total for either rich or fallback progress bars."""
     progress.update(task, total=total)
-
-
-def make_compile_progress(use_rich: bool) -> Progress | console.PoorProgress:
-    """Build a compile progress bar.
-
-    Args:
-        use_rich: Whether to use a rich progress bar (else a plain fallback).
-
-    Returns:
-        A progress bar suitable for tracking a compile.
-    """
-    if use_rich:
-        return Progress(
-            *Progress.get_default_columns()[:-1],
-            MofNCompleteColumn(),
-            TimeElapsedColumn(),
-        )
-    return console.PoorProgress()
 
 
 def _apply_common_imports(
@@ -1533,7 +1515,7 @@ def compile_app(
                 raise
             return True
 
-    progress = make_compile_progress(use_rich)
+    progress = console.progress() if use_rich else console.PoorProgress()
     fixed_steps = 7
     all_pages = list(app._unevaluated_pages.values())
     if evaluated is None:
