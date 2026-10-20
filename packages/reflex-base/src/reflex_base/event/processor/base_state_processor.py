@@ -26,6 +26,7 @@ from reflex_base.registry import RegisteredEventHandler
 from reflex_base.utils.form import form_data_as_dict, transform_form_data
 from reflex_base.utils.format import format_event_handler
 from reflex_base.utils.serializers import deserializers
+from reflex_base.utils.types import is_non_string_sequence
 
 logger = logging.getLogger(__name__)
 
@@ -85,7 +86,7 @@ def _check_valid_yield(events: Any, handler_name: str = "unknown") -> Any:
     if events is None or _is_valid_type(events):
         return events
 
-    if not (isinstance(events, Sequence) and not isinstance(events, (str, bytes))):
+    if not is_non_string_sequence(events):
         events = [events]
 
     try:
@@ -392,7 +393,8 @@ class BaseStateEventProcessor(EventProcessor):
     frontend.
     """
 
-    async def _rehydrate(self, root_state: BaseState):
+    @staticmethod
+    async def _rehydrate(root_state: BaseState):
         """Rehydrate the state by calling the hydrate event handler.
 
         Args:
@@ -540,6 +542,10 @@ class BaseStateEventProcessor(EventProcessor):
         # background task's own state changes are emitted (and cleaned) by its
         # `async with self` context exits, which re-acquire the lock.
         proxy = StateProxy(substate)
+        # Leave the tree loaded under the lock to the proxy, which replaces it on
+        # `async with self`. A manager like redis loads a fresh tree for every
+        # lock, so these locals would pin an extra copy for the whole task.
+        del state, substate, root_state
         handler_error: BaseException | None = None
         try:
             await process_event(

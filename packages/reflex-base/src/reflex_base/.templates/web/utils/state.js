@@ -458,13 +458,15 @@ function urlFrom(string) {
  *
  * The value is read when the event is sent, so it and the write count recorded
  * with it come from the same moment.
- * @param payload The storage name and state key of the var.
+ * @param payload The storage name and the state keys of the vars that use it.
  * @returns The update_vars_internal event.
  */
-const syncLocalStorageEvent = ({ key, state_key }) =>
-  ReflexEvent(`${app.state_name}.${UPDATE_VARS_INTERNAL}`, {
-    vars: { [state_key]: localStorage.getItem(key) },
+const syncLocalStorageEvent = ({ key, state_keys }) => {
+  const value = localStorage.getItem(key);
+  return ReflexEvent(`${app.state_name}.${UPDATE_VARS_INTERNAL}`, {
+    vars: Object.fromEntries(state_keys.map((state_key) => [state_key, value])),
   });
+};
 
 /**
  * Handle frontend event or send the event to the backend via Websocket.
@@ -1522,26 +1524,33 @@ export const useEventLoop = (
 
   // localStorage event handling
   useEffect(() => {
-    const storage_to_state_map = {};
+    // A Map, so a storage name like "constructor" is not an inherited property.
+    const storage_to_state_map = new Map();
 
     if (client_storage.local_storage && typeof window !== "undefined") {
       for (const state_key in client_storage.local_storage) {
         const options = client_storage.local_storage[state_key];
         if (options.sync) {
           const local_storage_value_key = options.name || state_key;
-          storage_to_state_map[local_storage_value_key] = state_key;
+          // Several vars can share one storage name; sync all of them.
+          const state_keys = storage_to_state_map.get(local_storage_value_key);
+          if (state_keys) {
+            state_keys.push(state_key);
+          } else {
+            storage_to_state_map.set(local_storage_value_key, [state_key]);
+          }
         }
       }
     }
 
     // e is StorageEvent
     const handleStorage = (e) => {
-      const state_key = storage_to_state_map[e.key];
+      const state_keys = storage_to_state_map.get(e.key);
       // Session storage changes in same-origin frames raise storage events too.
-      if (state_key && e.storageArea === localStorage) {
+      if (state_keys && e.storageArea === localStorage) {
         // The value is read when the event is sent: see syncLocalStorageEvent.
         addEvents(
-          [ReflexEvent(SYNC_LOCAL_STORAGE, { key: e.key, state_key })],
+          [ReflexEvent(SYNC_LOCAL_STORAGE, { key: e.key, state_keys })],
           e,
         );
       }
