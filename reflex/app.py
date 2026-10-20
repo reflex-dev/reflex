@@ -429,6 +429,11 @@ class _DrainOversizedBodyMiddleware:
         drained = False
 
         async def drained_receive() -> Message:
+            """Replay the drained request as a single empty body, then delegate.
+
+            Returns:
+                A one-time empty http.request message, then downstream messages.
+            """
             nonlocal drained
             if not drained:
                 drained = True
