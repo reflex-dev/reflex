@@ -143,6 +143,7 @@ def test_dependency_edit_with_restored_mtime_rebuilds(cached_build):
     assert process.call_count == 2
 
 
+@pytest.mark.skipif(os.name == "nt", reason="Cache uses POSIX change timestamps")
 def test_unavailable_lock_bypasses_cache(cached_build, monkeypatch, tmp_path: Path):
     """Without the workspace lock, no snapshot is restored, captured, or published."""
     web, _, process = cached_build
