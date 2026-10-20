@@ -50,6 +50,8 @@ from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.core.upload import selected_files
 from reflex_components_radix.themes.typography.text import Text
 from reflex_otel import ReflexInstrumentor
+from socketio import ASGIApp as EngineIOApp
+from socketio import AsyncServer
 from starlette.applications import Starlette
 from starlette.datastructures import FormData, Headers, UploadFile
 from starlette.exceptions import HTTPException
@@ -5707,9 +5709,6 @@ def _polling_engine_app(max_size: int):
     Returns:
         A socket.io ASGI app wrapping a fresh engine.io server.
     """
-    from socketio import ASGIApp as EngineIOApp
-    from socketio import AsyncServer
-
     sio = AsyncServer(
         async_mode="asgi",
         max_http_buffer_size=max_size,
@@ -5741,6 +5740,11 @@ async def _asgi_http_call(
     index = 0
 
     async def receive():  # noqa: RUF029
+        """Yield the request body one chunk at a time, then disconnect.
+
+        Returns:
+            http.request messages for each chunk, then http.disconnect.
+        """
         nonlocal consumed, index
         if index < len(chunks):
             chunk = chunks[index]
@@ -5754,6 +5758,11 @@ async def _asgi_http_call(
         return {"type": "http.disconnect"}
 
     async def send(message):  # noqa: RUF029
+        """Record an outgoing ASGI message.
+
+        Args:
+            message: The ASGI message sent by the app.
+        """
         sent.append(message)
 
     headers = []
@@ -5862,6 +5871,13 @@ async def test_drain_oversized_body_middleware_passes_regular_requests_through()
     received = []
 
     async def echo_app(scope, receive, send):
+        """Echo app that records the first request body and replies 200.
+
+        Args:
+            scope: The ASGI connection scope.
+            receive: The ASGI receive callable.
+            send: The ASGI send callable.
+        """
         received.append(await receive())
         await send({"type": "http.response.start", "status": 200, "headers": []})
         await send({"type": "http.response.body", "body": b"ok"})
