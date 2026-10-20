@@ -597,10 +597,11 @@ def test_admin_dashboard_routes_remain_reversible(
 
 
 def test_api_transformer_lifespans_run(mocker: MockerFixture):
-    """Run each Starlette api_transformer's lifespan inside the Reflex lifespan tasks.
+    """Send ASGI lifespan events through the api_transformer apps.
 
-    Only the transformer instances get lifespan events: neither apps mounted on
-    them nor the app a callable transformer returns receive them.
+    The outermost app and each app a Starlette transformer mounts get them, after
+    the Reflex lifespan tasks start; apps mounted on a transformer by the user
+    do not.
 
     Args:
         mocker: The mock fixture for skipping frontend compilation.
@@ -635,18 +636,47 @@ def test_api_transformer_lifespans_run(mocker: MockerFixture):
     mocker.patch.object(app, "_compile")
 
     with TestClient(app()) as client:
-        assert events == ["reflex start", "inner start", "outer start"]
+        assert events == [
+            "reflex start",
+            "callable lifespan",
+            "inner start",
+            "outer start",
+        ]
         assert client.get("/db").json() == {"db": "conn", "own_app": True}
         assert client.get("/ping").text == '"pong"'
-    assert events == [
-        "reflex start",
-        "inner start",
-        "outer start",
-        "callable http",
-        "outer stop",
-        "inner stop",
-        "reflex stop",
-    ]
+    assert events[4:] == ["callable http", "outer stop", "inner stop", "reflex stop"]
+
+
+def test_api_transformer_lifespan_startup_failure_stops_the_app(
+    mocker: MockerFixture,
+):
+    """A transformer failing to start fails the server's startup.
+
+    Args:
+        mocker: The mock fixture for skipping frontend compilation.
+    """
+    stopped: list[str] = []
+
+    @contextlib.asynccontextmanager
+    async def reflex_task():
+        try:
+            yield
+        finally:
+            stopped.append("reflex")
+
+    @contextlib.asynccontextmanager
+    async def failing_lifespan(app: Starlette):
+        msg = "boom"
+        raise ValueError(msg)
+        yield
+
+    app = App(api_transformer=Starlette(lifespan=failing_lifespan))
+    app.register_lifespan_task(reflex_task)
+    mocker.patch.object(app, "_compile")
+
+    with pytest.raises(RuntimeError, match="boom"), TestClient(app()):
+        pass
+    assert stopped == ["reflex"]
 
 
 @pytest.mark.parametrize("callable_last", [False, True])

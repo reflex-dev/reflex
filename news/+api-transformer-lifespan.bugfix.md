@@ -1,1 +1,1 @@
-A Starlette or FastAPI app passed to `api_transformer` now runs its own `lifespan`, after the app's lifespan tasks start and before they stop, and the state it yields is available on `request.state`. Apps mounted on a transformer still get no lifespan events.
+Apps passed to `api_transformer` now get ASGI lifespan events, so the `lifespan` of a FastAPI or Starlette transformer runs and the state it yields is available on `request.state`. Events are forwarded through callable transformers as the ASGI spec describes; apps you mount on a transformer yourself still get none.
