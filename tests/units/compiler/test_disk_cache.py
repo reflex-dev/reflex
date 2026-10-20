@@ -94,6 +94,7 @@ def _unregister_state(cls: type[BaseState]) -> None:
     """
     from reflex_base.registry import RegistrationContext
 
+    import reflex.istate.dynamic as istate_dynamic
     from reflex.state import all_base_state_classes
 
     ctx = RegistrationContext.ensure_context()
@@ -103,6 +104,8 @@ def _unregister_state(cls: type[BaseState]) -> None:
     if parent is not None:
         ctx.base_state_substates.get(parent.get_full_name(), set()).discard(cls)
     all_base_state_classes.pop(full_name, None)
+    if getattr(istate_dynamic, cls.__name__, None) is cls:
+        delattr(istate_dynamic, cls.__name__)
 
 
 @pytest.mark.parametrize("edited_module", ["state", "helper"])
@@ -500,11 +503,13 @@ def test_write_and_load_manifest(tmp_path, monkeypatch):
             "is_stateful",
             "state_slice",
             "has_memos",
+            "has_dynamic_states",
         }
         # these static pages register no new state and contribute no memos
         assert entry["is_stateful"] is False
         assert entry["state_slice"] is None
         assert entry["has_memos"] is False
+        assert entry["has_dynamic_states"] is False
         # every dependency has a file-table entry: [sha256, mtime_ns, size]
         for dep in entry["deps"]:
             digest, mtime_ns, size = manifest["files"][dep]
@@ -637,6 +642,11 @@ def _stub_externals(app, monkeypatch):
     monkeypatch.setattr(fs, "update_react_router_config", lambda **k: None)
     monkeypatch.setattr(fs, "update_entry_client", lambda *a, **k: None)
     monkeypatch.setattr(fs, "initialize_vite_config", lambda: None)
+    # The full compile that preceded the rebuild wrote the bundled libraries.
+    libs_path, libs_code = compiler_utils._compile_bundled_libraries()
+    libs_file = compiler_utils.resolve_path_of_web_dir(libs_path)
+    libs_file.parent.mkdir(parents=True, exist_ok=True)
+    libs_file.write_text(libs_code)
 
 
 def _page_local_state() -> Component:
@@ -699,8 +709,6 @@ def test_post_evaluation_fallback_hands_over_the_evaluated_pages(tmp_path, monke
     """
     from reflex_base.registry import RegistrationContext
 
-    import reflex.istate.dynamic as istate_dynamic
-
     web = _use_tmp_web_dir(tmp_path, monkeypatch)
     app = rx.App()
     app.add_page(_page_a, route="/a")
@@ -720,8 +728,6 @@ def test_post_evaluation_fallback_hands_over_the_evaluated_pages(tmp_path, monke
             cls = registry.base_states.get(name)
             if cls is not None:
                 _unregister_state(cls)
-                if getattr(istate_dynamic, cls.__name__, None) is cls:
-                    delattr(istate_dynamic, cls.__name__)
 
     forget_local_states()
     try:
@@ -1247,6 +1253,120 @@ def test_handler_only_state_edit_rebuilds_contexts(tmp_path, monkeypatch):
     finally:
         _unregister_state(_FP_HOLDER.pop("_SchemaMissState"))
     assert out_path.read_text(encoding="utf-8") == _CONTEXTS_STUB
+
+
+_COMPONENT_DEFAULT = {"recharts": False}
+
+
+def _page_component_default() -> Component:
+    def default() -> Component:
+        if _COMPONENT_DEFAULT["recharts"]:
+            return rx.recharts.line_chart(rx.recharts.line(data_key="v"))
+        return rx.el.div("plain")
+
+    state_cls: Any = type(
+        "_ComponentDefaultState",
+        (rx.State,),
+        {
+            "__annotations__": {"comp": rx.Field[rx.Component]},
+            "comp": rx.field(default_factory=default),
+            "__module__": "fp_mod_x",
+        },
+    )
+    _FP_HOLDER["_ComponentDefaultState"] = state_cls
+    return rx.el.div(rx.box(state_cls.comp))
+
+
+def test_state_default_from_new_library_needs_a_full_compile(tmp_path, monkeypatch):
+    """A component default from a library the app root lacks needs a full compile.
+
+    The contexts reference the library through ``window.__reflex``, which only
+    a rewritten app root and bundled-library file provide.
+    """
+    from reflex.compiler import compiler
+
+    compile_contexts = compiler.compile_contexts
+    web = _use_tmp_web_dir(tmp_path, monkeypatch)
+    app = rx.App()
+    app.add_page(_page_component_default, route="/dyn")
+    pages = list(app._unevaluated_pages.values())
+    ctx = _compile(pages, app=app)
+    _stub_externals(app, monkeypatch)
+    disk_cache.write_manifest(ctx, pages, ctx.all_imports, root=tmp_path)
+    manifest_path = web / disk_cache._MANIFEST_FILE
+    manifest = json.loads(manifest_path.read_text())
+    _stale_dep(manifest, pages[0].route, str(tmp_path / "view.py"))
+    manifest_path.write_text(json.dumps(manifest))
+    _unregister_state(_FP_HOLDER.pop("_ComponentDefaultState"))
+    monkeypatch.setitem(_COMPONENT_DEFAULT, "recharts", True)
+    monkeypatch.setattr(compiler, "compile_contexts", compile_contexts)
+    try:
+        result = disk_cache.try_incremental_rebuild(
+            app, compiler_plugins=[], prerender_routes=False, root=tmp_path
+        )
+    finally:
+        _unregister_state(_FP_HOLDER.pop("_ComponentDefaultState"))
+    assert isinstance(result, CompileContext)
+
+
+def _page_collide_one() -> Component:
+    class CollideState(rx.State):
+        one: int = 1
+
+    return rx.el.div(rx.el.p(CollideState.one), _footer())
+
+
+def _page_collide_two() -> Component:
+    class CollideState(rx.State):
+        two: int = 2
+
+    return rx.el.div(rx.el.p(CollideState.two), _footer())
+
+
+def _unregister_collide_states() -> None:
+    """Drop every registered ``CollideState``, like the daemon child's reset."""
+    for name, cls in list(RegistrationContext.ensure_context().base_states.items()):
+        if "collide_state" in name:
+            _unregister_state(cls)
+
+
+def test_incremental_rebuild_keeps_colliding_local_state_names(tmp_path, monkeypatch):
+    """A page whose local state took a collision suffix keeps it when it misses.
+
+    Local states are named in evaluation order, and the backend evaluates every
+    stateful page, so the second page's state stays ``CollideState_0`` there.
+    """
+    web = _use_tmp_web_dir(tmp_path, monkeypatch)
+    app = rx.App()
+    app.add_page(_page_collide_one, route="/one")
+    app.add_page(_page_collide_two, route="/two")
+    pages = list(app._unevaluated_pages.values())
+    ctx = _compile(pages, app=app)
+    two_states = ctx.stateful_routes[pages[1].route]
+    assert two_states[0].endswith("collide_state_0")
+    _stub_externals(app, monkeypatch)
+    disk_cache.write_manifest(ctx, pages, ctx.all_imports, root=tmp_path)
+    manifest_path = web / disk_cache._MANIFEST_FILE
+    manifest = json.loads(manifest_path.read_text())
+    _stale_dep(manifest, pages[1].route, str(tmp_path / "view.py"))
+    # Keep the first page out of the miss set, as if it lived in another module.
+    manifest["pages"][pages[0].route]["has_memos"] = False
+    manifest_path.write_text(json.dumps(manifest))
+    _unregister_collide_states()
+
+    try:
+        assert (
+            disk_cache.try_incremental_rebuild(
+                app, compiler_plugins=[], prerender_routes=False, root=tmp_path
+            )
+            is True
+        )
+    finally:
+        _unregister_collide_states()
+    refreshed = json.loads(manifest_path.read_text())
+    assert list(refreshed["pages"][pages[1].route]["state_slice"]["schema"]) == list(
+        two_states
+    )
 
 
 def test_incremental_rebuild_copies_assets(tmp_path, monkeypatch):

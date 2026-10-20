@@ -21,7 +21,7 @@ from contextvars import ContextVar
 from functools import lru_cache
 from importlib import metadata
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeVar
 
 from reflex_base.environment import environment
 
@@ -141,6 +141,11 @@ _PYTHON_PREFIXES = tuple(
 #: None). Cleared by ``enable_read_tracking`` when the recorder root changes.
 _module_file_cache: dict[object, str | None] = {}
 _app_import_reads: dict[Path, set[str]] = {}
+T = TypeVar("T")
+
+#: Maps an absolute import name to the files read while importing it under a
+#: recorder, so every later importer of the cached module depends on them too.
+_module_import_reads: dict[str, set[str]] = {}
 
 
 @contextlib.contextmanager
@@ -313,20 +318,49 @@ def _record_imported_modules(
     result_id = id(result)
     if (module := sys.modules.get(name)) and id(module) != result_id:
         _record_module_file(module, target)
+    target.update(_module_import_reads.get(name, ()))
     parent = name
     while "." in parent:
         parent = parent.rsplit(".", 1)[0]
         if (module := sys.modules.get(parent)) is not None:
             _record_module_file(module, target)
+            target.update(_module_import_reads.get(parent, ()))
     if not fromlist:
         return
     for item in fromlist:
         if (
             item != "*"
-            and (module := sys.modules.get(f"{name}.{item}"))
+            and (module := sys.modules.get(submodule := f"{name}.{item}"))
             and id(module) != result_id
         ):
             _record_module_file(module, target)
+            target.update(_module_import_reads.get(submodule, ()))
+
+
+def _import_recording_reads(name: str, do_import: Callable[[], T]) -> T:
+    """Run an import under a fresh read set kept as the module's import reads.
+
+    A module executing afresh replaces its recorded reads; importing a loaded
+    module only adds the reads of submodules it loads for the first time.
+
+    Args:
+        name: The absolute requested module name.
+        do_import: Performs the import.
+
+    Returns:
+        The result of ``do_import``.
+    """
+    executes = name not in sys.modules
+    reads: set[str] = set()
+    token = _active_reads.set(reads)
+    try:
+        return do_import()
+    finally:
+        _active_reads.reset(token)
+        if executes:
+            _module_import_reads.pop(name, None)
+        if reads:
+            _module_import_reads.setdefault(name, set()).update(reads)
 
 
 def enable_read_tracking(root: Path | None = None) -> None:
@@ -391,20 +425,23 @@ def enable_read_tracking(root: Path | None = None) -> None:
         fromlist: Sequence[str] | None = (),
         level: int = 0,
     ):
-        result = orig_import(name, globals_, locals_, fromlist, level)
-        if (target := _active_reads.get()) is not None:
-            _record_imported_modules(
-                _absolute_import_name(name, globals_, level),
-                result,
-                target,
-                fromlist,
-            )
+        if (target := _active_reads.get()) is None:
+            return orig_import(name, globals_, locals_, fromlist, level)
+        absolute = _absolute_import_name(name, globals_, level)
+        result = _import_recording_reads(
+            absolute, lambda: orig_import(name, globals_, locals_, fromlist, level)
+        )
+        _record_imported_modules(absolute, result, target, fromlist)
         return result
 
     def import_module(name: str, package: str | None = None):
-        result = orig_import_module(name, package)
-        if (target := _active_reads.get()) is not None:
-            _record_imported_modules(result.__name__, result, target)
+        if (target := _active_reads.get()) is None:
+            return orig_import_module(name, package)
+        absolute = importlib.util.resolve_name(name, package) if package else name
+        result = _import_recording_reads(
+            absolute, lambda: orig_import_module(name, package)
+        )
+        _record_imported_modules(result.__name__, result, target)
         return result
 
     Path.read_text = read_text  # type: ignore[method-assign,assignment]

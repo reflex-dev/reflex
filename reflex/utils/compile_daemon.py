@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import contextlib
 import importlib
+import json
 import os
 import signal
 import subprocess
@@ -436,6 +437,44 @@ def _dependency_snapshot(state: _WatchState) -> dict[Path, int]:
     return _snapshot(state.watch_paths())
 
 
+def _known_snapshot(state: _WatchState, snapshot: dict[Path, int]) -> dict[Path, int]:
+    """Restrict a snapshot to recorded compile inputs.
+
+    Only their edits are sure to trigger a compile; a backend worker waiting on
+    any other file could wait for a build that never comes.
+
+    Args:
+        state: The watch state the snapshot was taken for.
+        snapshot: ``{path: mtime_ns}`` of the watched inputs.
+
+    Returns:
+        The entries of ``snapshot`` for ``state.known``.
+    """
+    return {p: m for p, m in snapshot.items() if p in state.known}
+
+
+def _unbuilt_changes(state: _WatchState) -> set[Path]:
+    """Recorded compile inputs that differ from the manifest on disk.
+
+    Args:
+        state: The current watch state.
+
+    Returns:
+        The inputs edited since the last build wrote its manifest.
+    """
+    from reflex.compiler import disk_cache, page_cache
+
+    if (manifest := disk_cache.load_manifest()) is None:
+        return set()
+    files = manifest["files"]
+    validator = page_cache.FileValidator(files)
+    return {
+        path
+        for path in state.known
+        if str(path) in files and validator.changed(str(path))
+    }
+
+
 def _missed_changes(before: dict[Path, int], after: dict[Path, int]) -> set[Path]:
     """Inputs that changed between two dependency snapshots.
 
@@ -596,6 +635,10 @@ _COMPILE_LOCK_FILE = ".compile_in_progress"
 #: Give up waiting on the lock after this long (a wedged daemon must not hang
 #: the backend forever; its own watchdog is ``_COMPILE_TIMEOUT``).
 _LOCK_WAIT_TIMEOUT = _COMPILE_TIMEOUT + 10
+#: File (under the backend dir) holding ``{path: mtime_ns}`` of the compile
+#: inputs the frontend build reflects, so a backend reload worker can tell an
+#: edit the daemon has not compiled yet from one it has.
+_BUILT_INPUTS_FILE = ".compiled_inputs.json"
 
 
 #: Marker (under the backend dir) holding the pid of the ``reflex run`` that
@@ -724,13 +767,54 @@ def _lock_holder_alive(lock: Path) -> bool:
     return _pid_alive(pid)
 
 
+def _built_inputs_path() -> Path:
+    """The built-inputs record under the backend dir.
+
+    Returns:
+        The record's path.
+    """
+    from reflex.utils import prerequisites
+
+    return prerequisites.get_backend_dir() / _BUILT_INPUTS_FILE
+
+
+def _record_built_inputs(snapshot: dict[Path, int]) -> None:
+    """Record the compile inputs the frontend build now reflects.
+
+    Args:
+        snapshot: ``{path: mtime_ns}`` of the inputs the compile read.
+    """
+    path = _built_inputs_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(f"{path.name}.{os.getpid()}.tmp")
+    tmp.write_text(json.dumps({str(p): m for p, m in snapshot.items()}))
+    tmp.replace(path)
+
+
+def _built_inputs_current() -> bool:
+    """Whether every recorded compile input still has its built mtime.
+
+    Returns:
+        True when the build reflects the inputs (or nothing was recorded).
+    """
+    try:
+        built = json.loads(_built_inputs_path().read_text())
+    except FileNotFoundError:
+        return True
+    except (OSError, ValueError):
+        return False
+    return all(_mtime_ns(Path(p)) == mtime for p, mtime in built.items())
+
+
 def wait_for_compile(timeout: float = _LOCK_WAIT_TIMEOUT) -> None:
-    """Block while the compile daemon is rewriting ``.web`` for the same change.
+    """Block until the compile daemon has rewritten ``.web`` for the current inputs.
 
     Called by a backend worker that skips frontend compilation
-    (``REFLEX_SKIP_COMPILE``) before it reads the stateful-pages marker. Returns
-    immediately when no compile is in progress, when the lock holder died, or
-    after ``timeout``.
+    (``REFLEX_SKIP_COMPILE``) before it reads the stateful-pages marker. Waits
+    while a compile is in progress, and otherwise while a built input changed
+    since the last compile (the daemon has not picked the edit up yet).
+    Returns when the build is current, when the lock holder died, or after
+    ``timeout``.
 
     Args:
         timeout: Maximum seconds to wait.
@@ -738,8 +822,11 @@ def wait_for_compile(timeout: float = _LOCK_WAIT_TIMEOUT) -> None:
     lock = _lock_path()
     deadline = time.monotonic() + timeout
     waited = False
-    while lock.exists() and time.monotonic() < deadline:
-        if not _lock_holder_alive(lock):
+    while time.monotonic() < deadline:
+        if lock.exists():
+            if not _lock_holder_alive(lock):
+                break
+        elif _built_inputs_current():
             break
         if not waited:
             console.debug(
@@ -975,12 +1062,15 @@ def _serve() -> None:
     state = _WatchState.build(roots, root)
     state.checkpoint = _dependency_snapshot(state)
     console.info("Compile daemon ready (warm); watching for changes.")
+    # The first snapshot is the watch baseline; edits made since the last build
+    # wrote the manifest raise no event, so compile them now.
+    if not (pending := _unbuilt_changes(state)):
+        _record_built_inputs(_known_snapshot(state, state.checkpoint))
 
     def alive() -> bool:
         # Never outlive reflex-run: if our parent died we were reparented.
         return os.getppid() == parent_pid
 
-    pending: set[Path] = set()
     # Changes a failed compile never applied. The manifest only moves on a
     # successful compile, so they stay in the changed hint until one succeeds;
     # otherwise the hint's stat-free hit shortcut would reuse their pages.
@@ -1014,6 +1104,9 @@ def _serve() -> None:
         state.roots = roots = _reload_roots()
         with _compile_lock(root):
             ok = _compile_once(roots, prerender_routes, changed)
+            # Also after a failure: workers must not wait on an edit that will
+            # not build; a fix is a newer edit.
+            _record_built_inputs(_known_snapshot(state, before))
         unapplied = set() if ok else changed
         if not ok:
             console.error("Compile failed; keeping the last good build.")

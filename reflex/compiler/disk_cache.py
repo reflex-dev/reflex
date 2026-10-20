@@ -27,6 +27,7 @@ from typing import TYPE_CHECKING, Any
 from reflex_base import constants
 from reflex_base.environment import environment
 from reflex_base.plugins import CompileContext, CompilerHooks
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils.format import json_dumps
 from reflex_base.utils.imports import ImportVar, merge_imports
 
@@ -44,7 +45,7 @@ if TYPE_CHECKING:
     from reflex.compiler import utils as compiler_utils
 
 #: Bump when the manifest layout changes (old manifests are then ignored).
-_SCHEMA = 13
+_SCHEMA = 14
 #: Manifest filename under the web directory.
 _MANIFEST_FILE = "reflex_compile_cache.json"
 
@@ -159,7 +160,7 @@ def _manifest_page_entry(
     hasher: Callable[[str], page_cache.FileEntry | None],
     files: dict[str, page_cache.FileEntry],
     *,
-    is_stateful: bool,
+    defined_states: Sequence[str] | None,
     state_slice: dict[str, Any] | None = None,
     root: Path | None = None,
 ) -> dict[str, Any]:
@@ -171,7 +172,8 @@ def _manifest_page_entry(
         state_index: The state-context identifier -> file index.
         hasher: A memoized path -> file-entry function.
         files: The manifest file table, extended with the page's dependencies.
-        is_stateful: Whether the page registered state during compile.
+        defined_states: Full names of the states the page defined while it
+            evaluated, or None for a stateless page.
         state_slice: The page's contribution to the contexts file
             (see :func:`_state_slice`), or None for stateless pages.
         root: Project root for dependency discovery. Defaults to cwd.
@@ -179,16 +181,24 @@ def _manifest_page_entry(
     Returns:
         The JSON-able manifest entry for the page.
     """
+    import reflex.istate.dynamic as istate_dynamic
     from reflex.utils.telemetry_accounting import _count_components
 
+    base_states = RegistrationContext.ensure_context().base_states
     return {
         "component_counts": _count_components([page_ctx.root_component]),
         "deps": page_cache.page_dependency_entries(
             page_ctx, component, state_index, hasher, files, root
         ),
         "app_wrap_keys": _wrap_key_strs(page_ctx.app_wrap_components.keys()),
-        "is_stateful": is_stateful,
+        "is_stateful": defined_states is not None,
         "state_slice": state_slice,
+        # Whether the page defined states in ``reflex.istate.dynamic``, whose
+        # names depend on evaluation order (see ``_with_dynamic_state_pages``).
+        "has_dynamic_states": any(
+            base_states[name].__module__ == istate_dynamic.__name__
+            for name in defined_states or ()
+        ),
         # Whether the page contributed auto memos: pages sharing a source
         # module share one memo output file, so a memo-contributing hit page
         # must be recompiled alongside a same-module miss (see
@@ -328,6 +338,19 @@ def _with_hit_state_slices(
     return dict(sorted(initial.items())), storage, schema_entries
 
 
+def _built_bundled_libraries() -> set[str]:
+    """Read the bundled libraries the last full compile exposed.
+
+    Returns:
+        The library names, or an empty set when the file is unreadable.
+    """
+    path = prerequisites.get_web_dir() / constants.Dirs.BUNDLED_LIBRARIES
+    try:
+        return set(json.loads(path.read_text(encoding="utf-8")))
+    except (OSError, ValueError, TypeError):
+        return set()
+
+
 def load_manifest() -> dict[str, Any] | None:
     """Load the persisted compile manifest, or None if absent/unusable.
 
@@ -435,7 +458,7 @@ def write_manifest(
                 state_index,
                 hasher,
                 files,
-                is_stateful=defined_states is not None,
+                defined_states=defined_states,
                 state_slice=(
                     _state_slice(defined_states, *contexts_snapshot)
                     if defined_states and contexts_snapshot is not None
@@ -506,8 +529,6 @@ def _imported_state_files(compile_ctx: CompileContext, root: Path | None) -> set
     Returns:
         First-party source files affecting import-time state definitions.
     """
-    from reflex_base.registry import RegistrationContext
-
     page_states = {
         name for names in compile_ctx.stateful_routes.values() for name in names
     }
@@ -650,6 +671,37 @@ def _with_module_siblings(
             getattr(page, "_source_module", None) in miss_modules
             and manifest["pages"][page.route]["has_memos"]
         )
+    ]
+
+
+def _with_dynamic_state_pages(
+    miss_pages: list[PageDefinition],
+    pages: Sequence[PageDefinition],
+    manifest: dict[str, Any],
+) -> list[PageDefinition]:
+    """Expand a miss set with every page that defines dynamic-module states.
+
+    States defined in ``reflex.istate.dynamic`` (function-local classes,
+    ``ComponentState`` instances) take collision-suffixed names in evaluation
+    order. Evaluating all of them in page order reproduces the names of a full
+    compile and of the backend, which evaluates every stateful page.
+
+    Args:
+        miss_pages: The pages to recompile.
+        pages: All current page definitions (in compile order).
+        manifest: The loaded manifest.
+
+    Returns:
+        The expanded miss list, in ``pages`` order.
+    """
+    if not miss_pages:
+        return miss_pages
+    miss_routes = {page.route for page in miss_pages}
+    return [
+        page
+        for page in pages
+        if page.route in miss_routes
+        or manifest["pages"][page.route]["has_dynamic_states"]
     ]
 
 
@@ -1051,6 +1103,7 @@ def try_incremental_rebuild(
             miss_pages, pages, manifest, dirty_memo_paths, stale_owner_routes
         )
         miss_pages = _with_module_siblings(miss_pages, pages, manifest)
+        miss_pages = _with_dynamic_state_pages(miss_pages, pages, manifest)
         console.info(
             f"Compile cache: recompiling {len(miss_pages)}/{len(pages)} pages; "
             f"changed file(s): {format_path_list(changed_files, resolved_root)}"
@@ -1241,6 +1294,14 @@ def try_incremental_rebuild(
             )
             _save_incremental_output(context_path, context_code, outputs)
 
+    # Evaluation and state serialization bundle libraries for dynamic
+    # components; only a full compile rewrites the app root that exposes them.
+    if miss_ctx is not None and not _built_bundled_libraries().issuperset(
+        RegistrationContext.ensure_context().bundled_libraries
+    ):
+        _log_fallback("recompiled pages bundle new libraries")
+        return miss_ctx
+
     # The assets copy is cheap, idempotent, and excluded from dependency
     # tracking entirely, so it is always re-run.
     assets_src = (root or Path.cwd()) / constants.Dirs.APP_ASSETS
@@ -1348,7 +1409,7 @@ def _update_manifest_for_misses(
                     state_index,
                     hasher,
                     manifest["files"],
-                    is_stateful=defined_states is not None,
+                    defined_states=defined_states,
                     state_slice=(
                         _state_slice(defined_states, *contexts_snapshot)
                         if defined_states and contexts_snapshot is not None

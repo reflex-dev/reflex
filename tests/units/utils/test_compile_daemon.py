@@ -248,6 +248,39 @@ def test_wait_for_compile_respects_lock(tmp_path, monkeypatch):
     assert time.monotonic() - start < 0.5
 
 
+def test_wait_for_compile_waits_for_unbuilt_edits(tmp_path, monkeypatch):
+    """Without a lock, a worker still waits while a built input has changed.
+
+    The daemon takes its lock only once its watcher reports the edit, so a
+    worker that restarts first would read the previous stateful-pages marker.
+    """
+    import threading
+    import time
+
+    monkeypatch.setattr("reflex.utils.prerequisites.get_backend_dir", lambda: tmp_path)
+    page = tmp_path / "page.py"
+    page.write_text("v1")
+    built = compile_daemon._snapshot({page})
+    compile_daemon._record_built_inputs(built)
+    start = time.monotonic()
+    compile_daemon.wait_for_compile(timeout=1)
+    assert time.monotonic() - start < 0.2
+    mtime = built[page] + 1_000_000_000
+    os.utime(page, ns=(mtime, mtime))
+    start = time.monotonic()
+    compile_daemon.wait_for_compile(timeout=0.3)
+    assert time.monotonic() - start >= 0.3
+    # The daemon builds the edit: the worker proceeds.
+    timer = threading.Timer(
+        0.1, compile_daemon._record_built_inputs, [compile_daemon._snapshot({page})]
+    )
+    timer.start()
+    start = time.monotonic()
+    compile_daemon.wait_for_compile(timeout=5)
+    assert 0.1 <= time.monotonic() - start < 1
+    timer.join()
+
+
 def test_first_party_module_names_caches_file_classification(tmp_path, monkeypatch):
     """Module files are classified once; a repeat pass resolves no paths."""
     import sys
@@ -733,3 +766,42 @@ def test_serve_keeps_failed_changes_pending_until_a_compile_succeeds(
     monkeypatch.setattr(compile_daemon, "_compile_once", compile_once)
     compile_daemon._serve()
     assert compiles == [{a, b}, {a, b}, {a}]
+
+
+def test_daemon_compiles_an_edit_made_before_its_first_snapshot(tmp_path, monkeypatch):
+    """An input edited after the last build but before the watch starts compiles.
+
+    The first snapshot is the watch baseline, so such an edit raises no event.
+    """
+    from reflex.compiler import disk_cache, page_cache
+    from reflex.utils import prerequisites
+
+    page = tmp_path / "page.py"
+    page.write_text("TITLE = 'v1'\n")
+    entry = page_cache.file_entry(str(page))
+    assert entry is not None
+    files = {str(page): list(entry)}
+    page.write_text("TITLE = 'edited before the daemon watched'\n")
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("REFLEX_COMPILE_DAEMON_PRECOMPILED", "1")
+    monkeypatch.setattr(compile_daemon, "_lock_path", lambda: tmp_path / "lock")
+    monkeypatch.setattr(compile_daemon, "_reload_roots", lambda: [tmp_path])
+    monkeypatch.setattr(compile_daemon, "_prepare_fork_parent", lambda roots: None)
+    monkeypatch.setattr(compile_daemon, "_next_changes", lambda *args: None)
+    monkeypatch.setattr(
+        compile_daemon._WatchState,
+        "build",
+        lambda *args: compile_daemon._WatchState([tmp_path], tmp_path, known={page}),
+    )
+    monkeypatch.setattr(prerequisites, "get_app", lambda **kwargs: None)
+    monkeypatch.setattr(disk_cache, "load_manifest", lambda: {"files": files})
+    compiled = []
+    monkeypatch.setattr(
+        compile_daemon,
+        "_compile_once",
+        lambda roots, prerender, changed: compiled.append(changed) or True,
+    )
+    monkeypatch.setattr("reflex.utils.prerequisites.get_backend_dir", lambda: tmp_path)
+    compile_daemon._serve()
+    assert compiled == [{page}]
+    assert compile_daemon._built_inputs_current()

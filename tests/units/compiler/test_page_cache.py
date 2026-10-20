@@ -7,6 +7,8 @@ from pathlib import Path
 from types import ModuleType
 from typing import Any, cast
 
+import pytest
+
 from reflex.compiler import page_cache
 
 
@@ -740,3 +742,32 @@ def test_missing_read_remains_a_dependency(tmp_path, monkeypatch):
     assert deps == [missing]
     Path(missing).write_text("{}")
     assert not page_cache.FileValidator(files).unchanged(deps)
+
+
+@pytest.mark.parametrize("statement", ["import", "import_module"])
+def test_import_time_reads_are_recorded_for_every_importer(
+    tmp_path, monkeypatch, statement
+):
+    """A module's import-time reads are deps of each page that imports it.
+
+    Only the first page's import executes the module; a later page gets the
+    cached module and must still depend on what its execution read.
+    """
+    data = tmp_path / "shared_data.json"
+    data.write_text('{"title": "v1"}')
+    _prepare_runtime_module(tmp_path, monkeypatch, "review_shared_helper").write_text(
+        f"from pathlib import Path\nTITLE = Path({str(data)!r}).read_text()\n"
+    )
+    page_cache.enable_read_tracking(tmp_path)
+    page_reads = []
+    try:
+        for _ in range(2):
+            with page_cache.record_reads() as reads:
+                if statement == "import":
+                    exec("import review_shared_helper", {})
+                else:
+                    importlib.import_module("review_shared_helper")
+            page_reads.append(reads)
+    finally:
+        _forget_modules("review_shared_helper")
+    assert [str(data) in reads for reads in page_reads] == [True, True]
