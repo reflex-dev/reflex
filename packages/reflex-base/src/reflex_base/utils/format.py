@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any
 from rich.markup import escape as escape_markup
 
 from reflex_base import constants
-from reflex_base.utils import exceptions
+from reflex_base.utils.types import is_non_string_sequence
 
 if TYPE_CHECKING:
     from reflex_base.components.component import ComponentStyle
@@ -402,7 +402,7 @@ def format_match(
 
 def format_prop(
     prop: Var | EventChain | ComponentStyle | str,
-) -> int | float | str:
+) -> str:
     """Format a prop.
 
     Args:
@@ -412,13 +412,10 @@ def format_prop(
         The formatted prop to display within a tag.
 
     Raises:
-        exceptions.InvalidStylePropError: If the style prop value is not a valid type.
         TypeError: If the prop is not valid.
-        ValueError: If the prop is not a string.
     """
     # import here to avoid circular import.
     from reflex_base.event import EventChain
-    from reflex_base.utils import serializers
     from reflex_base.vars import Var
 
     try:
@@ -436,23 +433,13 @@ def format_prop(
                 return prop
             return json_dumps(prop)
 
-        # For dictionaries, convert any properties to strings.
-        if isinstance(prop, dict):
-            prop = serializers.serialize_dict(prop)  # ty:ignore[unresolved-attribute]
-
-        else:
-            # Dump the prop as JSON.
-            prop = json_dumps(prop)
-    except exceptions.InvalidStylePropError:
-        raise
+        # Dump the prop as JSON.
+        prop = json_dumps(prop)
     except TypeError as e:
         msg = f"Could not format prop: {prop} of type {type(prop)}"
         raise TypeError(msg) from e
 
     # Wrap the variable in braces.
-    if not isinstance(prop, str):
-        msg = f"Invalid prop: {prop}. Expected a string."
-        raise ValueError(msg)
     return wrap(prop, "{", check_first=False)
 
 
@@ -604,11 +591,11 @@ def format_queue_events(
         arg_def = "()"
 
     payloads = []
-    if not isinstance(events, list):
-        events = [events]
+    if not is_non_string_sequence(events):
+        events = [events]  # ty:ignore[invalid-assignment] https://github.com/astral-sh/ty/issues/4394
 
     # Process each event/spec/lambda (similar to Component._create_event_chain).
-    for spec in events:
+    for spec in events:  # ty:ignore[not-iterable] https://github.com/astral-sh/ty/issues/4394
         specs: list[EventSpec] = []
         if isinstance(spec, (EventHandler, EventSpec)):
             specs = [call_event_handler(spec, args_spec or _default_args_spec)]
@@ -752,20 +739,43 @@ def _get_serialize() -> Callable[[Any], Any]:
     return _serialize
 
 
-def json_dumps(obj: Any, **kwargs) -> str:
+@lru_cache
+def _get_json_encoder(separators: tuple[str, str] | None) -> json.JSONEncoder:
+    """Get the JSON encoder that serializes values with the Reflex serializers.
+
+    ``json.dumps`` builds a new encoder on every call when given any option, which
+    dominates the cost of small payloads. Encoders keep no state between calls, so
+    one is shared per set of separators.
+
+    Args:
+        separators: The item and key separators, or None for the default ones.
+
+    Returns:
+        The shared encoder.
+    """
+    return json.JSONEncoder(
+        ensure_ascii=False, default=_get_serialize(), separators=separators
+    )
+
+
+def json_dumps(obj: Any, separators: tuple[str, str] | None = None, **kwargs) -> str:
     """Takes an object and returns a jsonified string.
 
     Args:
         obj: The object to be serialized.
+        separators: The item and key separators, as for json.dumps.
         kwargs: Additional keyword arguments to pass to json.dumps.
 
     Returns:
         A string
     """
+    if not kwargs and (separators is None or isinstance(separators, tuple)):
+        return _get_json_encoder(separators).encode(obj)
+
     kwargs.setdefault("ensure_ascii", False)
     kwargs.setdefault("default", _get_serialize())
 
-    return json.dumps(obj, **kwargs)
+    return json.dumps(obj, separators=separators, **kwargs)
 
 
 def collect_form_dict_names(form_dict: dict[str, Any]) -> dict[str, Any]:

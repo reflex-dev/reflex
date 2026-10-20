@@ -67,10 +67,9 @@ development-release pins and fails if any are found (used by the publish pipelin
 """
 
 # /// script
-# requires-python = ">=3.10"
+# requires-python = ">=3.11"
 # dependencies = [
 #     "packaging",
-#     "tomli; python_version < '3.11'",
 # ]
 # ///
 
@@ -84,6 +83,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import tomllib
 from collections.abc import Iterable, Iterator, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
@@ -92,11 +92,6 @@ from pathlib import Path
 from packaging.requirements import InvalidRequirement, Requirement
 from packaging.utils import canonicalize_name, parse_wheel_filename
 from packaging.version import InvalidVersion, Version
-
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    import tomli as tomllib  # ty:ignore[unresolved-import]
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 

@@ -16,7 +16,7 @@ from types import SimpleNamespace
 from typing import Any, Literal, Optional, Union
 
 import pytest
-from reflex_base.components.component import Component
+from reflex_base.components.component import Component, ComponentNamespace
 from reflex_base.utils.pyi_generator import (
     StubGenerator,
     _get_type_hint,
@@ -286,8 +286,8 @@ def _generate_stub_from_source(source: str) -> str:
             name: obj
             for name, obj in vars(mod).items()
             if isinstance(obj, type)
-            and issubclass(obj, Component)
-            and obj is not Component
+            and issubclass(obj, (Component, SimpleNamespace))
+            and obj not in (Component, ComponentNamespace)
         }
 
         tree = ast.parse(source)
@@ -297,6 +297,52 @@ def _generate_stub_from_source(source: str) -> str:
     finally:
         sys.modules.pop(module_name, None)
         linecache.cache.pop(filename, None)
+
+
+_CLASS_STUB_NAMESPACE_SOURCE = """
+from typing import ClassVar
+
+from reflex_base.components.component import Component, ComponentNamespace
+from reflex_base.vars.base import Var
+
+class Box(dict):
+    pass
+
+class PanelRoot(Component):
+    open: Var[bool]
+
+class Panel(ComponentNamespace):
+    _stub_as_class: ClassVar[bool] = True
+    root = staticmethod(PanelRoot.create)
+    Box = Box
+    __call__ = staticmethod(PanelRoot.create)
+
+panel = Panel()
+"""
+
+
+def test_stub_namespace_as_class():
+    """An opted-in namespace is stubbed as a class constructed like its __call__."""
+    result = _generate_stub_from_source(_CLASS_STUB_NAMESPACE_SOURCE)
+    assert "_stub_as_class" not in result
+    assert "def __new__(cls, *children" in result
+    assert "-> 'PanelRoot':" in result
+    assert "def __call__" not in result
+    assert "root = staticmethod(PanelRoot.create)" in result
+    assert "Box = Box" in result
+    assert "panel = Panel\n" in result + "\n"
+
+
+def test_stub_namespace_as_instance_by_default():
+    """Namespaces are stubbed as instances with a static __call__ by default."""
+    result = _generate_stub_from_source(
+        _CLASS_STUB_NAMESPACE_SOURCE.replace(
+            "    _stub_as_class: ClassVar[bool] = True\n", ""
+        )
+    )
+    assert "def __call__(" in result
+    assert "def __new__" not in result
+    assert "panel = Panel()" in result
 
 
 def test_stub_private_method_removed():

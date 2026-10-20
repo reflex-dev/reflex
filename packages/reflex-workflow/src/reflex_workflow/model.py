@@ -83,6 +83,10 @@ PARENT_FAN_OUT = "fan_out"
 # How many delivered event keys a row remembers, to refuse repeats of them.
 EVENT_KEY_HISTORY = 16
 
+# Where a claim keeps the key of the held event it took, among the arguments of
+# the step it scheduled, until that step's attempt commits and remembers it.
+TAKEN_KEY = "event_key"
+
 # Workflow classes by table name, filled in as classes are defined.
 REGISTRY: dict[str, type[Workflow]] = {}
 

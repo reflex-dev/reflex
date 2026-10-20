@@ -146,7 +146,12 @@ class HeadingLink(rx.link.__self__):
                     "line_height": "1.2" if heading == "h1" else "1.25",
                     **(style or {}),
                 },
-                class_name=class_name + " " + scroll_margin + " mt-" + mt,
+                class_name="docs-heading "
+                + class_name
+                + " "
+                + scroll_margin
+                + " mt-"
+                + mt,
             ),
             rx.icon(
                 tag="link",

@@ -783,6 +783,36 @@ def test_component_create_unallowed_types(children, test_component):
         test_component.create(*children)
 
 
+def test_component_create_backend_var_child(test_component):
+    """A backend var child reports its repr rather than formatting the field."""
+
+    class BackendChildState(BaseState):
+        _secret: int = 42
+
+    with pytest.raises(ChildrenTypeError, match=r"received child Field\(default=42"):
+        test_component.create(BackendChildState._secret)
+
+
+def test_component_create_backend_var_prop():
+    """A backend var passed to a typed prop reports its repr, not a format error."""
+
+    class BackendPropState(BaseState):
+        _size: str = "3"
+
+    with pytest.raises(TypeError, match=r"got value Field\(default='3'"):
+        rx.heading("x", size=BackendPropState._size)  # ty:ignore[invalid-argument-type]
+
+
+def test_component_create_backend_var_class_name():
+    """A backend var in a class_name list reports its repr, not a format error."""
+
+    class BackendClassNameState(BaseState):
+        _cls: str = "a"
+
+    with pytest.raises(TypeError, match=r"got value Field\(default='a'"):
+        rx.box(class_name=["b", BackendClassNameState._cls])
+
+
 @pytest.mark.parametrize(
     ("element", "expected"),
     [
@@ -1416,7 +1446,7 @@ class EventState(rx.State):
             id="direct-event-handler",
         ),
         pytest.param(
-            rx.fragment(on_blur=EventState.handler2(TEST_VAR)),  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/2870
+            rx.fragment(on_blur=EventState.handler2(TEST_VAR)),  # ty:ignore[no-matching-overload]
             [ARG_VAR, TEST_VAR],
             id="direct-event-handler-arg",
         ),
@@ -1426,7 +1456,7 @@ class EventState(rx.State):
             id="direct-event-handler-arg2",
         ),
         pytest.param(
-            rx.fragment(on_blur=lambda: EventState.handler2(TEST_VAR)),  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/2870 https://github.com/astral-sh/ty/issues/4098
+            rx.fragment(on_blur=lambda: EventState.handler2(TEST_VAR)),  # ty:ignore[invalid-argument-type, no-matching-overload] https://github.com/astral-sh/ty/issues/4098
             [ARG_VAR, TEST_VAR],
             id="direct-event-handler-lambda",
         ),
@@ -2143,8 +2173,12 @@ def test_add_style_embedded_vars(test_state: type[TestState]):
     page._add_style_recursive(Style())
 
     assert (
-        f"const {test_state.get_name()} = useContext(StateContexts.{test_state.get_name()})"
+        f'const {test_state.get_name()} = useStateContext("{test_state.get_full_name()}")'
         in page._get_all_hooks_internal()
+    )
+    assert any(
+        import_var.tag == "useStateContext"
+        for import_var in page._get_all_imports()["$/utils/context-registry"]
     )
     assert "useText" in page._get_all_hooks_internal()
     assert "useParent" in page._get_all_hooks_internal()

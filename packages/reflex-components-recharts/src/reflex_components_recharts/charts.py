@@ -4,7 +4,15 @@ from __future__ import annotations
 
 import inspect
 from collections.abc import Callable, Mapping, Sequence
-from typing import Any, ClassVar, TypedDict, get_args, get_origin, get_type_hints
+from typing import (
+    Any,
+    ClassVar,
+    NotRequired,
+    TypedDict,
+    get_args,
+    get_origin,
+    get_type_hints,
+)
 
 from reflex_base.components.component import Component, ComponentNamespace, field
 from reflex_base.components.memo import memo
@@ -14,7 +22,6 @@ from reflex_base.event import EventHandler, no_args_event_spec
 from reflex_base.utils.format import callable_name
 from reflex_base.vars.base import Var
 from reflex_base.vars.object import RestProp
-from typing_extensions import NotRequired
 
 from reflex_components_recharts.general import ResponsiveContainer
 

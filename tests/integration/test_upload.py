@@ -200,10 +200,10 @@ def UploadFile():
             ),
             rx.button(
                 "Upload",
-                on_click=UploadState.handle_upload_secondary(  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/2870
+                on_click=UploadState.handle_upload_secondary(
                     rx.upload_files(
                         upload_id="secondary",
-                        on_upload_progress=UploadState.upload_progress,  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/4098
+                        on_upload_progress=UploadState.upload_progress,
                     ),
                 ),
                 id="upload_button_secondary",
@@ -242,7 +242,7 @@ def UploadFile():
             ),
             rx.button(
                 "Upload",
-                on_click=UploadState.handle_upload_tertiary(  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/2870
+                on_click=UploadState.handle_upload_tertiary(
                     rx.upload_files(
                         upload_id="tertiary",
                     ),
@@ -264,7 +264,7 @@ def UploadFile():
                     rx.button("Select File"),
                     rx.text("Drag and drop files here or click to select files"),
                 ),
-                on_drop=UploadState.handle_upload_quaternary(  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/2870
+                on_drop=UploadState.handle_upload_quaternary(  # ty:ignore[no-matching-overload]
                     rx.upload_files(
                         upload_id="quaternary",
                     ),
@@ -291,10 +291,10 @@ def UploadFile():
             ),
             rx.button(
                 "Upload",
-                on_click=UploadState.handle_upload_stream(  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/2870
+                on_click=UploadState.handle_upload_stream(  # ty:ignore[no-matching-overload]
                     rx.upload_files_chunk(
                         upload_id="streaming",
-                        on_upload_progress=UploadState.stream_upload_progress,  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/4098
+                        on_upload_progress=UploadState.stream_upload_progress,
                     ),
                     "stream-field",
                 ),

@@ -184,7 +184,7 @@ def test_upload_create():
 
     up_comp_5 = Upload.create(
         id="foo_id",
-        on_drop=StreamingUploadStateTest.chunk_drop_handler(  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/2870
+        on_drop=StreamingUploadStateTest.chunk_drop_handler(
             rx.upload_files_chunk(upload_id="foo_id")
         ),
     )
@@ -193,7 +193,7 @@ def test_upload_create():
 
     up_comp_6 = Upload.create(
         id="foo_id",
-        on_drop=StreamingUploadStateTest.chunk_upload_alias_handler(  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/2870
+        on_drop=StreamingUploadStateTest.chunk_upload_alias_handler(
             rx.upload_files_chunk(upload_id="foo_id")
         ),
     )
@@ -216,7 +216,7 @@ def test_upload_button_handlers_allow_custom_param_names():
 
     chunk_button = rx.button(
         "Upload",
-        on_click=StreamingUploadStateTest.chunk_upload_alias_handler(  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/2870
+        on_click=StreamingUploadStateTest.chunk_upload_alias_handler(
             rx.upload_files_chunk(upload_id="foo_id")
         ),
     )

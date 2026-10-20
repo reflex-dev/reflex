@@ -156,7 +156,7 @@ def test_create_token(client: ReflexBuild, mock_api: MockAPI):
     assert client.auth.tokens.create("ci") == CreatedToken(
         token=token_id,
         name="ci",
-        expires_at=datetime.datetime(2026, 10, 16, 10, tzinfo=datetime.timezone.utc),
+        expires_at=datetime.datetime(2026, 10, 16, 10, tzinfo=datetime.UTC),
     )
     assert json_body(mock_api.requests[0]) == {
         "name": "ci",
@@ -199,7 +199,7 @@ def test_list_tokens(client: ReflexBuild, mock_api: MockAPI):
             ],
         ),
     )
-    utc = datetime.timezone.utc
+    utc = datetime.UTC
     assert client.auth.tokens.list() == [
         Token(
             name="ci",

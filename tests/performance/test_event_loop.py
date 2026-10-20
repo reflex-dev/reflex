@@ -90,7 +90,7 @@ async def _wait_events_bounded(awaitable: Any, *, events: int, scenario: str) ->
     timeout = _EVENT_WAIT_BASE_TIMEOUT_SECONDS + events * _EVENT_WAIT_PER_EVENT_SECONDS
     try:
         await asyncio.wait_for(awaitable, timeout=timeout)
-    except asyncio.TimeoutError:
+    except TimeoutError:
         pytest.fail(
             f"{scenario}: {events} event future(s) still pending after "
             f"{timeout:.0f}s; the event pipeline is stuck"

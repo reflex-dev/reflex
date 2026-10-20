@@ -1,9 +1,12 @@
 import asyncio
 import importlib.metadata
 import json
+import os
 import sys
 import threading
+import time
 import uuid
+import warnings
 from types import SimpleNamespace
 
 import pytest
@@ -549,13 +552,16 @@ def test_maybe_alias_sends_create_alias_for_legacy_install(mocker: MockerFixture
     mocker.patch.object(telemetry, "ensure_reflex_installation_id", return_value=12345)
     mocker.patch.object(telemetry, "has_uuid_distinct_id_semantics", return_value=False)
     mark = mocker.patch.object(telemetry, "mark_uuid_distinct_id_semantics")
-    send_mock = mocker.patch.object(telemetry, "send")
+    send_mock = mocker.patch.object(telemetry, "_send")
+    queued = mocker.patch.object(telemetry, "send")
 
     telemetry._maybe_alias_legacy_distinct_id(telemetry_enabled=True)
 
     send_mock.assert_called_once_with(
         "$create_alias", True, properties={"alias": 12345}
     )
+    # The alias goes out on the calling thread, never through the pool.
+    queued.assert_not_called()
     mark.assert_called_once()
 
 
@@ -564,7 +570,7 @@ def test_maybe_alias_skips_for_uuid_native_install(mocker: MockerFixture):
     mocker.patch.object(telemetry, "ensure_reflex_installation_id", return_value=12345)
     mocker.patch.object(telemetry, "has_uuid_distinct_id_semantics", return_value=True)
     mark = mocker.patch.object(telemetry, "mark_uuid_distinct_id_semantics")
-    send_mock = mocker.patch.object(telemetry, "send")
+    send_mock = mocker.patch.object(telemetry, "_send")
 
     telemetry._maybe_alias_legacy_distinct_id(telemetry_enabled=True)
 
@@ -577,7 +583,7 @@ def test_maybe_alias_skips_without_installation_id(mocker: MockerFixture):
     mocker.patch.object(telemetry, "ensure_reflex_installation_id", return_value=None)
     has = mocker.patch.object(telemetry, "has_uuid_distinct_id_semantics")
     mark = mocker.patch.object(telemetry, "mark_uuid_distinct_id_semantics")
-    send_mock = mocker.patch.object(telemetry, "send")
+    send_mock = mocker.patch.object(telemetry, "_send")
 
     telemetry._maybe_alias_legacy_distinct_id(telemetry_enabled=True)
 
@@ -589,7 +595,7 @@ def test_maybe_alias_skips_without_installation_id(mocker: MockerFixture):
 def test_maybe_alias_skips_when_telemetry_disabled(mocker: MockerFixture):
     """Disabled telemetry does no work and leaves the marker unwritten."""
     ensure = mocker.patch.object(telemetry, "ensure_reflex_installation_id")
-    send_mock = mocker.patch.object(telemetry, "send")
+    send_mock = mocker.patch.object(telemetry, "_send")
 
     telemetry._maybe_alias_legacy_distinct_id(telemetry_enabled=False)
 
@@ -602,7 +608,7 @@ def test_maybe_alias_runs_at_most_once_per_process(mocker: MockerFixture):
     mocker.patch.object(telemetry, "ensure_reflex_installation_id", return_value=7)
     mocker.patch.object(telemetry, "has_uuid_distinct_id_semantics", return_value=False)
     mocker.patch.object(telemetry, "mark_uuid_distinct_id_semantics")
-    send_mock = mocker.patch.object(telemetry, "send")
+    send_mock = mocker.patch.object(telemetry, "_send")
 
     telemetry._maybe_alias_legacy_distinct_id(telemetry_enabled=True)
     telemetry._maybe_alias_legacy_distinct_id(telemetry_enabled=True)
@@ -622,8 +628,6 @@ def test_maybe_alias_create_alias_payload(
     )
 
     telemetry._maybe_alias_legacy_distinct_id(telemetry_enabled=True)
-    # The $create_alias is now sent on the telemetry worker thread; wait for it.
-    telemetry._flush()
 
     urlopen.assert_called_once()
     payload = posted_json(urlopen.call_args)
@@ -815,6 +819,128 @@ def test_flush_returns_false_when_worker_does_not_drain_in_time():
     finally:
         release.set()
         blocker.result(timeout=5)
+
+
+def test_executor_is_recreated_after_fork():
+    """A forked child drops the inherited pool, whose thread it does not own."""
+    inherited = telemetry._get_telemetry_executor()
+
+    telemetry._reset_executor_after_fork()
+
+    fresh = telemetry._get_telemetry_executor()
+    assert fresh is not inherited
+    assert fresh.submit(lambda: 1).result(timeout=5) == 1
+    # In this process the orphaned pool's thread is real; stop it.
+    inherited.shutdown()
+
+
+def test_executor_lock_is_recreated_after_fork():
+    """A lock held by another thread at fork time does not block the child."""
+    orphaned = telemetry._get_telemetry_executor()
+    held = telemetry._executor_lock
+    held.acquire()
+    try:
+        telemetry._reset_executor_after_fork()
+    finally:
+        held.release()
+        orphaned.shutdown()
+
+    assert telemetry._executor_lock is not held
+    assert not telemetry._executor_lock.locked()
+
+
+@pytest.mark.skipif(not hasattr(os, "fork"), reason="os.fork is POSIX-only")
+def test_forked_child_starts_with_fresh_executor_state():
+    """The at-fork hook is registered and runs in a real forked child."""
+    telemetry._get_telemetry_executor()
+    with warnings.catch_warnings():
+        # The telemetry worker thread is alive, which is the point of the test.
+        warnings.simplefilter("ignore", DeprecationWarning)
+        with telemetry._executor_lock:
+            pid = os.fork()
+            if pid == 0:
+                clean = (
+                    telemetry._executor is None
+                    and not telemetry._executor_lock.locked()
+                )
+                os._exit(0 if clean else 1)
+    _, status = os.waitpid(pid, 0)
+    assert os.waitstatus_to_exitcode(status) == 0
+
+
+def test_shutdown_executor_drains_queued_work_and_stops_the_thread():
+    """Queued events are delivered and no telemetry thread survives the call."""
+    done = threading.Event()
+    executor = telemetry._get_telemetry_executor()
+    executor.submit(done.set)
+    workers = list(executor._threads)
+
+    assert telemetry._shutdown_executor()
+
+    assert done.is_set()
+    assert telemetry._executor is None
+    assert workers
+    assert not any(worker.is_alive() for worker in workers)
+
+
+def test_shutdown_executor_keeps_the_pool_published_until_it_stops(
+    mocker: MockerFixture,
+):
+    """A send racing the shutdown cannot start a second pool before the fork."""
+    executor = telemetry._get_telemetry_executor()
+    seen = []
+    stop = executor.shutdown
+
+    def shutdown(*args, **kwargs):
+        # What a concurrent send() would submit to while the pool stops.
+        seen.append(telemetry._get_telemetry_executor())
+        stop(*args, **kwargs)
+
+    mocker.patch.object(executor, "shutdown", side_effect=shutdown)
+
+    telemetry._shutdown_executor()
+
+    assert seen == [executor]
+    assert telemetry._executor is None
+
+
+def test_shutdown_executor_gives_up_on_a_stalled_task():
+    """A send that hangs (e.g. on DNS) cannot block the fork past the timeout."""
+    running = threading.Event()
+    release = threading.Event()
+
+    def stall():
+        running.set()
+        release.wait(10)
+
+    executor = telemetry._get_telemetry_executor()
+    workers = list(executor._threads)
+    executor.submit(stall)
+    queued = executor.submit(lambda: None)
+    # Only a task the worker has picked up keeps it alive; a queued one would
+    # just be cancelled.
+    assert running.wait(5)
+    started = time.monotonic()
+    try:
+        # The stalled send's thread is still alive, so forking is unsafe.
+        assert not telemetry._shutdown_executor(timeout=0.05)
+        elapsed = time.monotonic() - started
+    finally:
+        release.set()
+        for worker in workers:
+            worker.join(5)
+
+    assert elapsed < 2
+    assert telemetry._executor is None
+    assert queued.cancelled()
+
+
+def test_shutdown_executor_without_executor_is_a_noop():
+    """Nothing to drain when no telemetry was ever sent."""
+    assert telemetry._shutdown_executor()
+    assert telemetry._shutdown_executor()
+
+    assert telemetry._executor is None
 
 
 def test_send_event_posts_json_without_httpx(mocker: MockerFixture):

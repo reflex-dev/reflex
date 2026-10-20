@@ -266,7 +266,7 @@ def _link_shared_asset(dst_file: Path, src_file: Path) -> None:
         for attempt in range(_MAX_LINK_ATTEMPTS):
             try:
                 tmp_file.replace(dst_file)
-            except PermissionError:  # noqa: PERF203  # bounded, and dwarfed by the syscall
+            except PermissionError:  # bounded, and dwarfed by the syscall
                 if _links_to(dst_file, src_file):
                     # The process that denied us wanted the same link.
                     return

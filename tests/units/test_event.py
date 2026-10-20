@@ -1,8 +1,10 @@
 import json
+import logging
 import shutil
 import subprocess
-from collections.abc import Callable
-from typing import Any, cast
+from collections import UserList
+from collections.abc import Callable, Mapping, Sequence
+from typing import Any, TypeVar, cast
 
 import pytest
 from reflex_base.constants import LogLevel
@@ -15,8 +17,10 @@ from reflex_base.event import (
     EventHandler,
     EventSpec,
     LambdaEventCallback,
+    _check_event_args_subclass_of_callback,
     call_event_handler,
     event,
+    event_sequence,
     fix_events,
     on_submit_event,
     on_submit_string_event,
@@ -25,8 +29,10 @@ from reflex_base.registry import RegistrationContext
 from reflex_base.utils import format, log
 from reflex_base.utils.exceptions import (
     EventHandlerArgTypeMismatchError,
+    EventHandlerTypeError,
     EventHandlerValueError,
 )
+from reflex_base.utils.form import FormData
 from reflex_base.vars.base import Field, LiteralVar, Var, field
 from rich.console import Console
 from typing_extensions import TypeAliasType
@@ -257,6 +263,65 @@ def test_state_event_handler_type_hints_are_stable_after_class_patch():
     assert handler.prevent_default._type_hints is handler._type_hints
 
 
+def test_backend_var_event_arg_reports_repr():
+    """A backend var passed as an event arg reports its repr, not a format error."""
+
+    class S(BaseState):
+        _secret: int = 42
+
+        @event
+        def on_event(self, value: int):
+            pass
+
+    with pytest.raises(EventHandlerTypeError, match=r"Got Field\(default=42"):
+        S.on_event(S._secret)
+    with pytest.raises(EventHandlerTypeError, match=r"Got Field\(default=42"):
+        cast(EventSpec, S.on_event()).add_args(S._secret)  # ty:ignore[invalid-argument-type]
+
+
+class BackendTriggerState(BaseState):
+    """A state with a backend var, for event trigger misuse tests."""
+
+    _secret: int = 42
+
+    @event
+    def on_upload(self, files: list[rx.UploadFile]):
+        """Receive uploaded files.
+
+        Args:
+            files: The uploaded files.
+        """
+
+
+@pytest.mark.parametrize(
+    ("value", "match"),
+    [
+        (BackendTriggerState._secret, r"Invalid event chain: Field\(default=42"),
+        ([BackendTriggerState._secret], r"Invalid event: Field\(default=42"),
+        (lambda: BackendTriggerState._secret, r"-> Field\(default=42"),
+    ],
+)
+def test_backend_var_event_trigger_reports_repr(value: Any, match: str):
+    """Binding a backend var as an event trigger reports its repr, not a format error.
+
+    Args:
+        value: The misused event trigger value.
+        match: The expected error message pattern.
+    """
+    with pytest.raises(ValueError, match=match):
+        EventChain.create(value=value, args_spec=lambda: ())
+
+
+def test_backend_var_upload_progress_reports_repr():
+    """A backend var passed as on_upload_progress reports its repr."""
+    upload = rx.upload_files(
+        upload_id="u",
+        on_upload_progress=BackendTriggerState._secret,  # ty:ignore[invalid-argument-type]
+    )
+    with pytest.raises(ValueError, match=r"^Field\(default=42.* is not a valid"):
+        upload.as_event_spec(handler=cast(EventHandler, BackendTriggerState.on_upload))
+
+
 def test_state_event_handler_caches_unresolved_type_hints():
     """Unresolved annotations should be retried after their type is defined."""
 
@@ -305,6 +370,28 @@ def test_fix_events(arg1, arg2):
     event = fix_events([event_spec])[0]
     assert event.name == fn_with_args.__qualname__
     assert event.payload == {"arg1": arg1, "arg2": arg2}
+
+
+def _handler_with_arg() -> EventHandler:
+    def fn_with_arg(arg):
+        pass
+
+    fn_with_arg.__qualname__ = "fn_with_arg"
+    return EventHandler(fn=fn_with_arg)
+
+
+def test_fix_events_accepts_a_tuple():
+    """A handler can return its events as a tuple as well as a list."""
+    handler = _handler_with_arg()
+    events = fix_events((handler(1), handler(2)))
+    assert [event.payload for event in events] == [{"arg": 1}, {"arg": 2}]
+
+
+def test_from_event_type_accepts_a_tuple():
+    """Events built from a tuple of event specs match those built from a list."""
+    handler = _handler_with_arg()
+    events = Event.from_event_type((handler(1), handler(2)))
+    assert [event.payload for event in events] == [{"arg": 1}, {"arg": 2}]
 
 
 class _ProxyPayloadState(BaseState):
@@ -757,7 +844,7 @@ def test_event_var_data():
     assert handler_var._get_all_var_data() is None
 
     # Ensure spec carries _var_data
-    spec_var = Var.create(S.s(S.x))  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/2870
+    spec_var = Var.create(S.s(S.x))
     assert spec_var._get_all_var_data() == S.x._get_all_var_data()
 
     # Needed to instantiate the EventChain
@@ -767,7 +854,7 @@ def test_event_var_data():
     # Ensure chain carries _var_data
     chain_var = Var.create(
         EventChain(
-            events=[S.s(S.x)],  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/2870
+            events=[S.s(S.x)],
             args_spec=_args_spec,
             invocation=rx.vars.FunctionStringVar.create(""),
         )
@@ -809,7 +896,7 @@ def test_event_chain_statement_block_preserves_nested_var_data():
 
     chain_var_data = Var.create(
         EventChain(
-            events=[S.s(S.x), make_timeout_logger()],  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/2870
+            events=[S.s(S.x), make_timeout_logger()],
             args_spec=lambda: (),
         )
     )._get_all_var_data()
@@ -837,7 +924,7 @@ def test_event_bound_method() -> None:
 
     class Wrapper:
         def get_handler(self, arg: Var[str]):
-            return S.e(arg)  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/2870
+            return S.e(arg)
 
     w = Wrapper()
     _ = rx.input(on_change=w.get_handler)  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/4098
@@ -1135,7 +1222,7 @@ def test_event_chain_create_lambda_allows_conditional_mixed_function_and_event()
         return rx.cond(
             v == "foo",
             log_after_timeout.partial("Input was foo!"),
-            MixedState.do_a_thing(v.to(str)),  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/2870
+            MixedState.do_a_thing(v.to(str)),
         )
 
     chain = EventChain.create(
@@ -1171,7 +1258,7 @@ def test_event_chain_mixed_dispatch_reaches_addevents_via_module_import():
         return rx.cond(
             v == "foo",
             log_after_timeout.partial("Input was foo!"),
-            MixedState.do_a_thing(v.to(str)),  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/2870
+            MixedState.do_a_thing(v.to(str)),
         )
 
     chain = EventChain.create(
@@ -1204,6 +1291,34 @@ def test_event_chain_create_lambda_rejects_non_union_callable_var():
             cast(LambdaEventCallback[Any], return_plain_callable_var),
             args_spec=lambda e: [e],
         )
+
+
+def test_event_chain_create_accepts_a_tuple_of_events():
+    """A tuple of events binds into the same chain as a list of them."""
+    events = (_handler_with_arg()(1), rx.console_log("logged"))
+
+    from_tuple = EventChain.create(events, args_spec=lambda: ())
+    from_list = EventChain.create(list(events), args_spec=lambda: ())
+
+    assert str(LiteralVar.create(from_tuple)) == str(LiteralVar.create(from_list))
+
+
+@pytest.mark.parametrize("sequence_type", [tuple, UserList])
+def test_event_chain_create_lambda_returns_a_sequence_of_events(
+    sequence_type: Callable[[list[Any]], Sequence[Any]],
+):
+    """A lambda returning any sequence of events binds like one returning a list."""
+    events = [_handler_with_arg()(1), rx.console_log("logged")]
+
+    from_sequence = EventChain.create(
+        cast(LambdaEventCallback[()], lambda: sequence_type(events)),
+        args_spec=lambda: (),
+    )
+    from_list = EventChain.create(
+        cast(LambdaEventCallback[()], lambda: events), args_spec=lambda: ()
+    )
+
+    assert str(LiteralVar.create(from_sequence)) == str(LiteralVar.create(from_list))
 
 
 def test_event_chain_create_wraps_plain_function_var_kwargs():
@@ -1532,3 +1647,69 @@ def test_event_chain_create_shares_chains_bound_from_one_handler():
         EventChain.create([ChainState.handler], args_spec=args_spec, key="on_click")
         is not chain
     )
+
+
+_BOUNDED_SPEC_ARG = TypeVar("_BOUNDED_SPEC_ARG", bound=Mapping[str, Any])
+_CONSTRAINED_SPEC_ARG = TypeVar("_CONSTRAINED_SPEC_ARG", int, str)
+
+
+@pytest.mark.parametrize(
+    ("spec_arg", "annotation", "accepted"),
+    [
+        (_BOUNDED_SPEC_ARG, dict[str, str], True),
+        (_BOUNDED_SPEC_ARG, list[str], False),
+        (_BOUNDED_SPEC_ARG, FormData[str, str] | None, True),
+        (_BOUNDED_SPEC_ARG, list[str] | None, False),
+        (_CONSTRAINED_SPEC_ARG, int, True),
+        (_CONSTRAINED_SPEC_ARG, str, True),
+        (_CONSTRAINED_SPEC_ARG, float, False),
+    ],
+)
+def test_generic_event_spec_arg_admits_callback_types(spec_arg, annotation, accepted):
+    """A TypeVar spec arg accepts callback types within its bound or constraints."""
+
+    def check():
+        _check_event_args_subclass_of_callback(
+            ["value"], [tuple[Var[spec_arg]]], {"value": annotation}
+        )
+
+    if accepted:
+        check()
+    else:
+        with pytest.raises(EventHandlerArgTypeMismatchError):
+            check()
+
+
+@pytest.mark.parametrize(
+    ("fallback_spec_arg", "warns"),
+    [(_BOUNDED_SPEC_ARG, False), (dict[str, str], True)],
+)
+def test_generic_event_spec_fallback_is_not_reported(fallback_spec_arg, warns, caplog):
+    """Matching a later generic spec is not reported as a mismatch with the first spec."""
+    with caplog.at_level(logging.WARNING):
+        _check_event_args_subclass_of_callback(
+            ["value"],
+            [tuple[Var[str]], tuple[Var[fallback_spec_arg]]],
+            {"value": dict[str, str]},
+        )
+    assert ("intentionally ignored" in caplog.text) is warns
+
+
+def test_event_sequence():
+    """A single event is wrapped in a list, and a non-string sequence is kept."""
+
+    def handler():
+        pass
+
+    spec = EventSpec(handler=EventHandler(fn=handler))
+    events = [spec, spec]
+    events_tuple = (spec, spec)
+    events_user_list = UserList(events)
+
+    assert event_sequence(spec) == [spec]
+    assert event_sequence(handler) == [handler]
+    assert event_sequence(events) is events
+    assert event_sequence(events_tuple) is events_tuple
+    assert event_sequence(events_user_list) is events_user_list
+    assert event_sequence("abc") == ["abc"]
+    assert event_sequence(b"ab") == [b"ab"]

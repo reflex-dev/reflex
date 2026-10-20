@@ -136,7 +136,7 @@ def LifespanApp(
                 rx.moment(
                     interval=LifespanState.interval, on_change=LifespanState.tick
                 ),
-                on_click=LifespanState.set_interval(  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/2870
+                on_click=LifespanState.set_interval(
                     rx.cond(LifespanState.interval, 0, 100)
                 ),
                 id="toggle-tick",

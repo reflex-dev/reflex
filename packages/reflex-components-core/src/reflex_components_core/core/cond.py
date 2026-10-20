@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, TypeVar, overload
+from typing import Any, LiteralString, TypeVar, overload
 
 from reflex_base.components.component import BaseComponent, Component, field
 from reflex_base.components.memoize_helpers import passthrough_children_var
@@ -14,7 +14,6 @@ from reflex_base.utils.imports import ImportDict, ImportVar
 from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.number import ternary_operation
-from typing_extensions import LiteralString
 
 from reflex_components_core.base.bare import Bare
 from reflex_components_core.base.fragment import Fragment

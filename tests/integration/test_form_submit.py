@@ -12,14 +12,28 @@ from selenium.webdriver.common.keys import Keys
 
 from reflex.testing import AppHarness
 
+FORM_CONTENT_WRAPPER_ID = "form_content_wrapper"
+FORM_ID = "form_id"
 
-def FormSubmit(form_component):
+
+def FormSubmit(
+    form_component,
+    form_id=FORM_ID,
+    form_content_wrapper_id=FORM_CONTENT_WRAPPER_ID,
+):
     """App with a form using on_submit.
 
     Args:
         form_component: The str name of the form component to use.
+        form_id: The form element ID.
+        form_content_wrapper_id: The non-control wrapper ID.
     """
+    from reflex_components_core.el.elements.base import BaseHTML
+
     import reflex as rx
+
+    class NativeInput(BaseHTML):
+        tag = "input"
 
     class FormState(rx.State):
         form_data: rx.Field[dict] = rx.field(default_factory=dict)
@@ -42,12 +56,17 @@ def FormSubmit(form_component):
             eval(form_component)(
                 rx.vstack(
                     rx.input(id="name_input"),
+                    rx.input(id="empty_input"),
+                    NativeInput.create(
+                        id="native_input", custom_attrs={"defaultValue": "native"}
+                    ),
                     rx.checkbox(id="bool_input"),
                     rx.switch(id="bool_input2"),
                     rx.checkbox(id="bool_input3"),
                     rx.switch(id="bool_input4"),
                     rx.slider(id="slider_input", default_value=[50], width="100%"),
                     rx.radio(["option1", "option2"], id="radio_input"),
+                    rx.radio_group(["u1", "u2"], id="radio_unset"),
                     rx.radio(FormState.var_options, id="radio_input_var"),
                     rx.select(
                         ["option1", "option2"],
@@ -62,9 +81,11 @@ def FormSubmit(form_component):
                         on_change=rx.console_log,  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/4098
                     ),
                     rx.button("Submit", type_="submit"),
+                    id=form_content_wrapper_id,
                 ),
                 on_submit=FormState.form_submit,
                 custom_attrs={"action": "/invalid"},
+                id=form_id,
             ),
             rx.text(FormState.form_data.to_string(), id="form-data"),
             rx.spacer(),
@@ -72,21 +93,36 @@ def FormSubmit(form_component):
         )
 
 
-def FormSubmitName(form_component):
+def FormSubmitName(
+    form_component,
+    form_id=FORM_ID,
+    form_content_wrapper_id=FORM_CONTENT_WRAPPER_ID,
+):
     """App with a form using on_submit.
 
     Args:
         form_component: The str name of the form component to use.
+        form_id: The form element ID.
+        form_content_wrapper_id: The non-control wrapper ID.
     """
     import reflex as rx
 
     class FormState(rx.State):
         form_data: rx.Field[dict] = rx.field(default_factory=dict)
+        tags: rx.Field[list[str]] = rx.field(default_factory=list)
         val: str = "foo"
         options: list[str] = ["option1", "option2"]
 
+        @rx.event
         def form_submit(self, form_data: dict):
-            self.form_data = form_data
+            # A file input submits its contents as bytes.
+            self.form_data = {
+                name: value for name, value in form_data.items() if name != "attachment"
+            }
+
+        @rx.event
+        def form_submit_all(self, form_data: rx.form.FormData[str, str]):
+            self.tags = form_data.getlist("tag")
 
     app = rx.App()
 
@@ -101,11 +137,18 @@ def FormSubmitName(form_component):
             eval(form_component)(
                 rx.vstack(
                     rx.input(name="name_input"),
+                    rx.input(name="empty_input"),
+                    rx.el.input(type="hidden", name="tag", value="a"),
+                    rx.el.input(type="hidden", name="tag", value="b"),
+                    # Its File makes Socket.IO send the event as a binary packet.
+                    rx.el.input(type="file", name="attachment"),
                     rx.checkbox(name="bool_input"),
                     rx.switch(name="bool_input2"),
                     rx.checkbox(name="bool_input3"),
                     rx.switch(name="bool_input4"),
                     rx.slider(name="slider_input", default_value=[50], width="100%"),
+                    # Two thumbs submit their values as "range_input[]".
+                    rx.slider(name="range_input", default_value=[20, 80], width="100%"),
                     rx.radio(FormState.options, name="radio_input"),
                     rx.select(
                         FormState.options,
@@ -120,11 +163,14 @@ def FormSubmitName(form_component):
                     ),
                     rx.button("Submit", type_="submit"),
                     rx.icon_button(rx.icon(tag="plus")),
+                    id=form_content_wrapper_id,
                 ),
-                on_submit=FormState.form_submit,
+                on_submit=[FormState.form_submit, FormState.form_submit_all],
                 custom_attrs={"action": "/invalid"},
+                id=form_id,
             ),
             rx.text(FormState.form_data.to_string(), id="form-data"),
+            rx.text(FormState.tags.to_string(), id="tags"),
             rx.spacer(),
             height="100vh",
         )
@@ -238,7 +284,10 @@ async def test_submit(driver, form_submit: AppHarness):
 
     print(form_data)
 
+    assert FORM_ID not in form_data
+    assert FORM_CONTENT_WRAPPER_ID not in form_data
     assert form_data["name_input"] == "foo"
+    assert form_data["empty_input"] == ""
     assert form_data["bool_input"]
     assert form_data["bool_input2"]
     assert not form_data.get("bool_input3", False)
@@ -246,9 +295,20 @@ async def test_submit(driver, form_submit: AppHarness):
 
     assert form_data["slider_input"] == "50"
     assert form_data["radio_input"] == "option2"
+    if by == By.ID:
+        assert form_data["radio_unset"] is None
+        assert form_data["native_input"] == "native"
     assert form_data["select_input"] == "option1"
     assert form_data["text_area_input"] == "Some\nText"
     assert form_data["debounce_input"] == "bar baz"
+    if by == By.NAME:
+        # A dict keeps the last value of a repeated name; FormData keeps them all.
+        assert form_data["range_input[]"] == "80"
+        assert form_data["tag"] == "b"
+        tags = form_submit.poll_for_content(
+            driver.find_element(By.ID, "tags"), exp_not_equal="[]"
+        )
+        assert json.loads(tags) == ["a", "b"]
 
     # submitting the form should NOT change the url (preventDefault on_submit event)
     assert driver.current_url == prev_url
