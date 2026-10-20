@@ -79,7 +79,7 @@ from reflex.compiler.compiler import (
 )
 from reflex.compiler.plugins import default_page_plugins
 from reflex.environment import environment
-from reflex.istate.data import RouterData, URLData
+from reflex.istate.data import HeaderData, RouterData, URLData
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
@@ -4499,13 +4499,47 @@ def test_decode_asgi_headers():
         "host": "example.com",
         "x-forwarded-for": "10.0.0.1, 10.0.0.2",
     }
-    # Later duplicates win, matching dict comprehension semantics.
+    # Repeated cookie fields are joined with "; " (RFC 9113 section 8.2.3).
     assert _decode_asgi_headers([
         (b"cookie", b"a=1"),
         (b"cookie", b"b=2"),
-    ]) == {"cookie": "b=2"}
+    ]) == {"cookie": "a=1; b=2"}
+    # Any other repeated field is joined in order with ", " (RFC 9110 section 5.3).
+    assert _decode_asgi_headers([
+        (b"x-forwarded-for", b"10.0.0.1"),
+        (b"accept", b"text/html"),
+        (b"x-forwarded-for", b"10.0.0.2, 10.0.0.3"),
+    ]) == {
+        "x-forwarded-for": "10.0.0.1, 10.0.0.2, 10.0.0.3",
+        "accept": "text/html",
+    }
     # Names and values are decoded as UTF-8.
     assert _decode_asgi_headers([(b"x-name", "café".encode())]) == {"x-name": "café"}
+
+
+def test_static_router_data_keeps_every_repeated_header_field():
+    """Repeated cookie and x-forwarded-for fields all reach the router data."""
+    router_data = EventNamespace("/event", Mock())._build_static_router_data(
+        "sid1",
+        {
+            "asgi.scope": {
+                "headers": [
+                    (b"cookie", b"sid=1"),
+                    (b"x-forwarded-for", b"203.0.113.7"),
+                    (b"cookie", b"other=2"),
+                    (b"x-forwarded-for", b"10.0.0.2"),
+                ],
+                "client": ("127.0.0.1", 1234),
+            }
+        },
+    )
+
+    headers = router_data[constants.RouteVar.HEADERS]
+    assert headers["cookie"] == "sid=1; other=2"
+    assert headers["x-forwarded-for"] == "203.0.113.7, 10.0.0.2"
+    # The original client hop comes first, not the proxy that added the second field.
+    assert router_data[constants.RouteVar.CLIENT_IP] == "203.0.113.7"
+    assert HeaderData.from_router_data(router_data).cookie == "sid=1; other=2"
 
 
 def test_call_ignores_stale_marker_without_dev_backend_reload(

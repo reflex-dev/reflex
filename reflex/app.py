@@ -1855,7 +1855,11 @@ class App(MiddlewareMixin, LifespanMixin):
         """Modify the state out of band.
 
         Args:
-            token: The token to modify the state for.
+            token: The token to modify the state for. Use
+                ``rx.BaseStateToken(ident=client_token, cls=StateClass)``.
+                Deprecated string tokens must include the state path in the
+                format ``<client_token>_<state_full_name>``; a bare client token
+                is not supported.
             background: Whether the modification is happening in a background task.
             previous_dirty_vars: Vars that are considered dirty from a previous operation.
 
@@ -1864,6 +1868,8 @@ class App(MiddlewareMixin, LifespanMixin):
 
         Raises:
             RuntimeError: If the app has not been initialized yet.
+            ValueError: If a legacy string token has no state path or its state
+                class cannot be found.
         """
         if self.event_namespace is None:
             msg = "App has not been initialized yet."
@@ -2095,13 +2101,25 @@ def _sio_loads(data: str | bytes, **kwargs: Any) -> Any:
 def _decode_asgi_headers(headers: Iterable[tuple[bytes, bytes]]) -> dict[str, str]:
     """Decode raw ASGI scope header pairs into a str-keyed dict.
 
+    ASGI keeps a repeated header as separate pairs, so their values are combined in
+    order: cookies with "; " (RFC 9113 section 8.2.3), any other field with ", "
+    (RFC 9110 section 5.3).
+
     Args:
         headers: Raw (name, value) byte pairs from the ASGI scope.
 
     Returns:
         A dict mapping decoded header names to decoded values.
     """
-    return {k.decode("utf-8"): v.decode("utf-8") for (k, v) in headers}
+    decoded: dict[str, str] = {}
+    for raw_name, raw_value in headers:
+        name = raw_name.decode()
+        value = raw_value.decode()
+        if name in decoded:
+            decoded[name] += ("; " if name == "cookie" else ", ") + value
+        else:
+            decoded[name] = value
+    return decoded
 
 
 class EventNamespace(AsyncNamespace):

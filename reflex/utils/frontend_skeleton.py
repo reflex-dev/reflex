@@ -457,8 +457,8 @@ def initialize_web_directory():
     # Keep JSON writers out of their same-directory staging window while the
     # frontend tree is removed and recreated.
     with (
-        path_ops.json_file_lock(web_dir / constants.Reflex.JSON),
-        path_ops.json_file_lock(web_dir / constants.Dirs.ENV_JSON),
+        path_ops.file_lock(web_dir / constants.Reflex.JSON),
+        path_ops.file_lock(web_dir / constants.Dirs.ENV_JSON),
     ):
         # Reuse the hash if one is already created, so we don't over-write it when running reflex init
         project_hash = get_project_hash()

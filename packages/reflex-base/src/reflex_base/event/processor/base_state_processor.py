@@ -407,7 +407,8 @@ class BaseStateEventProcessor(EventProcessor):
     frontend.
     """
 
-    async def _rehydrate(self, root_state: BaseState):
+    @staticmethod
+    async def _rehydrate(root_state: BaseState):
         """Rehydrate the state by calling the hydrate event handler.
 
         Args:
