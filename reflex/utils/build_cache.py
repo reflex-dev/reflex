@@ -53,22 +53,19 @@ class _Digest(Protocol):
         """Add data to the digest."""
 
 
-def _is_generated(relative: Path) -> bool:
+def _is_generated(relative: str) -> bool:
     """Identify paths omitted from the frontend input fingerprint.
 
     Args:
-        relative: Path relative to the frontend working directory.
+        relative: POSIX path relative to the frontend working directory.
 
     Returns:
         Whether the path belongs to generated output or a transient cache.
     """
-    return bool(relative.parts) and (
-        relative.parts[0] in _GENERATED_ROOT_ENTRIES
-        or (
-            len(relative.parts) >= 2
-            and relative.parts[0] == Javascript.NODE_MODULES
-            and relative.parts[1] in _DEPENDENCY_CACHE_ENTRIES
-        )
+    top, _, rest = relative.partition("/")
+    return top in _GENERATED_ROOT_ENTRIES or (
+        top == Javascript.NODE_MODULES
+        and rest.partition("/")[0] in _DEPENDENCY_CACHE_ENTRIES
     )
 
 
@@ -104,13 +101,11 @@ def _digest_symlink(digest: _Digest, root: Path, path: Path, *, inputs: bool) ->
     if not inputs or not target.is_relative_to(root):
         msg = "Build cache cannot track an external symlink"
         raise ValueError(msg)
-    target_relative = target.relative_to(root)
+    target_relative = target.relative_to(root).as_posix()
     if _is_generated(target_relative):
         msg = "Build input links to an untracked generated directory"
         raise ValueError(msg)
-    digest.update(
-        json.dumps([str(path.readlink()), target_relative.as_posix()]).encode()
-    )
+    digest.update(json.dumps([str(path.readlink()), target_relative]).encode())
 
 
 def _digest_frontend_metadata(digest: _Digest, path: Path) -> None:
@@ -141,57 +136,49 @@ def _digest_frontend_metadata(digest: _Digest, path: Path) -> None:
 
 
 def _digest_regular_file(
-    digest: _Digest, path: Path, relative: Path, info: os.stat_result, *, inputs: bool
+    digest: _Digest, path: str, relative: str, info: os.stat_result, *, inputs: bool
 ) -> None:
     """Hash a file's content or installed-dependency metadata.
 
     Args:
         digest: The digest receiving file metadata.
         path: The file path.
-        relative: The path relative to the tracked tree.
+        relative: The POSIX path relative to the tracked tree.
         info: The file status metadata.
         inputs: Whether this is the frontend input tree.
 
     Raises:
         ValueError: Frontend metadata is not a JSON object.
     """
-    if inputs and relative.parts[0] == Javascript.NODE_MODULES:
+    if inputs and relative.partition("/")[0] == Javascript.NODE_MODULES:
         digest.update(
-            json.dumps([
-                info.st_dev,
-                info.st_ino,
-                info.st_size,
-                info.st_mtime_ns,
-                info.st_ctime_ns,
-            ]).encode()
+            f"{info.st_dev},{info.st_ino},{info.st_size},"
+            f"{info.st_mtime_ns},{info.st_ctime_ns}".encode()
         )
         return
-    if inputs and relative.as_posix() == constants.Reflex.JSON:
-        _digest_frontend_metadata(digest, path)
+    if inputs and relative == constants.Reflex.JSON:
+        _digest_frontend_metadata(digest, Path(path))
         return
-    content_digest = hashlib.sha256()
-    with path.open("rb") as source:
-        while chunk := source.read(1024 * 1024):
-            content_digest.update(chunk)
-    digest.update(content_digest.digest())
+    with Path(path).open("rb") as source:
+        digest.update(hashlib.file_digest(source, "sha256").digest())
 
 
 def _digest_entry(
     digest: _Digest,
     root: Path,
-    path: Path,
-    relative: Path,
+    path: str,
+    relative: str,
     info: os.stat_result,
     *,
     inputs: bool,
-) -> Path | None:
+) -> str | None:
     """Hash one tree entry and return a directory that should be visited.
 
     Args:
         digest: The digest receiving entry data.
         root: The root of the tracked tree.
         path: The entry path.
-        relative: The path relative to the tracked tree.
+        relative: The POSIX path relative to the tracked tree.
         info: The entry status metadata.
         inputs: Whether this is the frontend input tree.
 
@@ -202,7 +189,7 @@ def _digest_entry(
         ValueError: The entry is unsupported or cannot be safely tracked.
     """
     if stat.S_ISLNK(info.st_mode):
-        _digest_symlink(digest, root, path, inputs=inputs)
+        _digest_symlink(digest, root, Path(path), inputs=inputs)
         return None
     if stat.S_ISDIR(info.st_mode):
         return path
@@ -232,28 +219,30 @@ def _tree_digest(root: Path, *, inputs: bool = False) -> str:
         raise ValueError(msg)
     digest = hashlib.sha256()
 
-    def visit(directory: Path) -> None:
+    def visit(directory: str, prefix: str) -> None:
         """Hash entries in one directory and descend into physical directories.
 
         Args:
             directory: Directory within the tracked tree.
+            prefix: The directory's relative POSIX path plus a trailing slash.
         """
         with os.scandir(directory) as entries:
             ordered_entries = sorted(entries, key=lambda entry: entry.name)
         for entry in ordered_entries:
-            path = Path(entry.path)
-            relative = path.relative_to(root)
+            relative = prefix + entry.name
             if inputs and _is_generated(relative):
                 continue
             info = entry.stat(follow_symlinks=False)
-            digest.update(json.dumps([relative.as_posix(), info.st_mode]).encode())
+            digest.update(
+                f"{relative}\0{info.st_mode}".encode(errors="surrogateescape")
+            )
             if child_directory := _digest_entry(
-                digest, root, path, relative, info, inputs=inputs
+                digest, root, entry.path, relative, info, inputs=inputs
             ):
-                visit(child_directory)
+                visit(child_directory, relative + "/")
             digest.update(b"\0")
 
-    visit(root)
+    visit(str(root), "")
     return digest.hexdigest()
 
 
@@ -413,8 +402,7 @@ def frontend_build_cache(
     Yields:
         A cache handle, or None when disabled or local inputs cannot be tracked.
     """
-    with path_ops.file_lock(web_dir):
-        web_dir = web_dir.resolve()
+    with path_ops.file_lock(web_dir) as web_dir:
         directory = web_dir / _CACHE_DIR
         enabled = (
             environment.REFLEX_FRONTEND_BUILD_CACHE.get() and not constants.IS_WINDOWS
