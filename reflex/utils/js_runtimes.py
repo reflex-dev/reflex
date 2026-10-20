@@ -804,7 +804,7 @@ def _install_frontend_packages(
                 primary_package_manager,
                 "add",
                 "--legacy-peer-deps",
-                "-d",
+                "-D",
                 *dev_deps_to_add,
             ],
             show_status_message="Installing frontend development dependencies",
