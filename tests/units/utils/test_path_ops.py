@@ -18,6 +18,7 @@ from unittest.mock import Mock
 import pytest
 
 from reflex import constants
+from reflex.testing import AppHarness
 from reflex.utils import frontend_skeleton, path_ops
 from reflex.utils.path_ops import write_file
 
@@ -976,4 +977,5 @@ def test_lock_is_released_when_its_holder_is_killed(tmp_path: Path):
     finally:
         holder.kill()
         holder.wait()
-    assert path_ops.is_locked(lock) is False
+    # Windows can release byte-range locks asynchronously after process exit.
+    assert AppHarness._poll_for(lambda: not path_ops.is_locked(lock), timeout=5)

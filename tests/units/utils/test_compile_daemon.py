@@ -9,6 +9,7 @@ import pytest
 
 import reflex as rx
 from reflex.compiler import disk_cache
+from reflex.testing import AppHarness
 from reflex.utils import compile_daemon
 
 
@@ -664,7 +665,8 @@ def test_daemon_stops_when_the_run_scope_exits(tmp_path, monkeypatch, exit_with)
             raise exit_with
     [proc] = spawned
     assert proc.poll() is not None
-    assert compile_daemon.daemon_active() is False
+    # Windows can release byte-range locks asynchronously after process exit.
+    assert AppHarness._poll_for(lambda: not compile_daemon.daemon_active(), timeout=5)
 
 
 def test_watch_state_discovers_new_project_root_sources(tmp_path):
