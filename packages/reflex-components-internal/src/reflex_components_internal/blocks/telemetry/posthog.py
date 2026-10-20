@@ -79,6 +79,9 @@ def _track_form_posthog(
     )
 
 
+# Form field name shared by the demo and intro forms and their trackers.
+PHONE_NUMBER_KEY: str = "phone_number"
+
 _COMMON_KEYS = {
     "email",
     "first_name",
@@ -99,7 +102,9 @@ def track_demo_form_posthog_submission(form_data: dict[str, Any]) -> rx.event.Ev
     Returns:
         Event that runs PostHog identify and capture in the browser.
     """
-    return _track_form_posthog("demo_request", form_data, _COMMON_KEYS)
+    return _track_form_posthog(
+        "demo_request", form_data, _COMMON_KEYS | {PHONE_NUMBER_KEY}
+    )
 
 
 def track_intro_form_posthog_submission(
@@ -111,7 +116,7 @@ def track_intro_form_posthog_submission(
         Event that runs PostHog identify and capture in the browser.
     """
     return _track_form_posthog(
-        "intro_submit", form_data, _COMMON_KEYS | {"phone_number"}
+        "intro_submit", form_data, _COMMON_KEYS | {PHONE_NUMBER_KEY}
     )
 
 

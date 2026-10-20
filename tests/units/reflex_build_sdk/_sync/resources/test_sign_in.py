@@ -31,7 +31,7 @@ APP_ID = "5f0c5e0e-8f6a-4d57-9a55-3c1c1d7b6a01"
 USER_ID = "8b0f4a52-3a8a-4c43-9d7e-2f0c7d2a4b11"
 AUTH_PATH = f"/api/v1/apps/{APP_ID}/auth"
 ISSUER = "https://build.reflex.dev/oidc"
-UTC = datetime.timezone.utc
+UTC = datetime.UTC
 NOON = datetime.datetime(2026, 9, 16, 12, tzinfo=UTC)
 
 
