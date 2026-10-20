@@ -310,29 +310,35 @@ def _changed_state_config_route(
     manifest: dict[str, Any],
     miss_ctx: CompileContext,
     snapshot: compiler_utils.ContextsSnapshot | None,
+    miss_routes: Iterable[str],
 ) -> str | None:
-    """Find the first recompiled stateful route whose state config changed.
+    """Find the first recompiled route whose contribution to contexts changed.
 
-    Compares each stateful miss page's just-evaluated states against the slice
-    recorded in the manifest. Only these pages' states can differ from the
-    on-disk contexts file: hit pages' definitions are unchanged by
-    construction (all their dependency files still match).
+    Compares each recompiled page's just-evaluated states against the slice
+    recorded in the manifest; a page without states contributes no slice, so
+    gaining or losing states counts as a change. Only these pages' states can
+    differ from the on-disk contexts file: hit pages' definitions are
+    unchanged by construction (all their dependency files still match).
 
     Args:
         manifest: The loaded compile manifest.
         miss_ctx: The compile context of the recompiled pages.
         snapshot: The ``_contexts_snapshot`` of the app, or None when there is
-            no state tree to compare against.
+            no state tree.
+        miss_routes: The recompiled routes.
 
     Returns:
         The first route requiring a contexts rebuild, or None if none do.
     """
-    if snapshot is None:
-        return next(iter(miss_ctx.stateful_routes))
-    for route, defined_states in miss_ctx.stateful_routes.items():
-        stored = manifest["pages"].get(route, {}).get("state_slice")
-        if _slice_digest(stored) != _slice_digest(
+    for route in miss_routes:
+        defined_states = miss_ctx.stateful_routes.get(route)
+        live = (
             _state_slice(defined_states, *snapshot)
+            if defined_states and snapshot is not None
+            else None
+        )
+        if _slice_digest(manifest["pages"][route]["state_slice"]) != _slice_digest(
+            live
         ):
             return route
     return None
@@ -1264,8 +1270,8 @@ def try_incremental_rebuild(
             progress.stop()
         if set(page_cache._loaded_first_party_modules(resolved_root)) != modules_before:
             page_cache.clear_import_graph()
-        # Guard: a miss must not change the app-wrap set or its stateful flag, or
-        # the reused on-disk app root / state marker would be wrong.
+        # Guard: a miss must not change the app-wrap set, or the reused on-disk
+        # app root would be wrong.
         for page in miss_pages:
             page_ctx = miss_ctx.compiled_pages.get(page.route)
             if (
@@ -1283,9 +1289,6 @@ def try_incremental_rebuild(
                 _fall_back_after_evaluation(
                     f"page {page.route!r} changed its app-wrap set"
                 )
-                return miss_ctx
-            if (page.route in miss_ctx.stateful_routes) != entry["is_stateful"]:
-                _fall_back_after_evaluation(f"page {page.route!r} changed statefulness")
                 return miss_ctx
             if _predict_dynamic_names and (
                 _dynamic_claims(miss_ctx.stateful_routes.get(page.route, ()))
@@ -1373,10 +1376,13 @@ def try_incremental_rebuild(
     # from the on-disk contexts file, so compare those first: a content-only
     # edit leaves them identical and the contexts file is reused untouched.
     contexts_snapshot: compiler_utils.ContextsSnapshot | None = None
-    if miss_ctx is not None and miss_ctx.stateful_routes:
+    if miss_ctx is not None and any(
+        route in miss_ctx.stateful_routes or manifest["pages"][route]["is_stateful"]
+        for route in miss_routes
+    ):
         contexts_snapshot = _contexts_snapshot(app)
         changed_route = _changed_state_config_route(
-            manifest, miss_ctx, contexts_snapshot
+            manifest, miss_ctx, contexts_snapshot, miss_routes
         )
         if changed_route is None:
             logger.info(

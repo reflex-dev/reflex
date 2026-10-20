@@ -750,11 +750,11 @@ def test_post_evaluation_fallback_hands_over_the_evaluated_pages(tmp_path, monke
 
     forget_local_states()
     try:
-        # The manifest recorded /s as stateless; its evaluation now flips
-        # statefulness, which only a full compile can resolve.
+        # The manifest recorded another app-wrap set for /s; only a full
+        # compile can rebuild the app root.
         manifest_path = web / disk_cache._MANIFEST_FILE
         manifest = json.loads(manifest_path.read_text())
-        manifest["pages"][route_s]["is_stateful"] = False
+        manifest["pages"][route_s]["app_wrap_keys"] = ["99:RecordedWrap"]
         _stale_dep(manifest, route_s, str(tmp_path / "demo.md"))
         manifest_path.write_text(json.dumps(manifest))
 
@@ -766,6 +766,109 @@ def test_post_evaluation_fallback_hands_over_the_evaluated_pages(tmp_path, monke
         assert result.stateful_routes[route_s] == defined
     finally:
         forget_local_states()
+
+
+def _capture_contexts(monkeypatch) -> list[Any]:
+    """Record the snapshots handed to ``compile_contexts``.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+
+    Returns:
+        The list the snapshots are appended to.
+    """
+    from reflex.compiler import utils as compiler_utils
+
+    captured: list[Any] = []
+
+    def fake_compile_contexts(state, theme, *, contexts_snapshot, **kwargs):
+        captured.append(contexts_snapshot)
+        return compiler_utils.get_context_path(), _CONTEXTS_STUB
+
+    monkeypatch.setattr(
+        "reflex.compiler.compiler.compile_contexts", fake_compile_contexts
+    )
+    return captured
+
+
+def _page_flip() -> Component:
+    return rx.el.div(rx.el.p(_fp_state("_FlipState").value), _footer())
+
+
+def test_page_becoming_stateful_rebuilds_incrementally(tmp_path, monkeypatch):
+    """A page that starts defining states needs only its contexts slice.
+
+    The app root depends on whether the app has state at all, which ``rx.App``
+    decides, not on which pages define states.
+    """
+    web = _use_tmp_web_dir(tmp_path, monkeypatch)
+    app = rx.App()
+    app.add_page(_page_a, route="/a")
+    app.add_page(_page_flip, route="/s")
+    pages = list(app._unevaluated_pages.values())
+    route_s = pages[1].route
+    ctx = _compile(pages, app)
+    defined = ctx.stateful_routes[route_s]
+    _stub_externals(app, monkeypatch)
+    disk_cache.write_manifest(ctx, pages, ctx.all_imports, root=tmp_path)
+    _unregister_state(_FP_HOLDER.pop("_FlipState"))
+    manifest_path = web / disk_cache._MANIFEST_FILE
+    manifest = json.loads(manifest_path.read_text())
+    # Recorded before the edit that made /s define its state.
+    manifest["pages"][route_s].update(is_stateful=False, state_slice=None)
+    _stale_dep(manifest, route_s, str(tmp_path / "view.py"))
+    manifest_path.write_text(json.dumps(manifest))
+    captured = _capture_contexts(monkeypatch)
+    try:
+        assert (
+            disk_cache.try_incremental_rebuild(
+                app, compiler_plugins=[], prerender_routes=False, root=tmp_path
+            )
+            is True
+        )
+    finally:
+        _unregister_state(_FP_HOLDER.pop("_FlipState"))
+    [(initial, _, _)] = captured
+    assert set(defined) <= set(initial)
+    refreshed = json.loads(manifest_path.read_text())
+    assert refreshed["pages"][route_s]["is_stateful"] is True
+
+
+def test_page_dropping_its_states_rebuilds_contexts(tmp_path, monkeypatch):
+    """A page that stops defining states takes its slice out of the contexts."""
+    web = _use_tmp_web_dir(tmp_path, monkeypatch)
+    app = rx.App()
+    app.add_page(_page_a, route="/a")
+    pages = list(app._unevaluated_pages.values())
+    ctx = _compile(pages, app)
+    _stub_externals(app, monkeypatch)
+    disk_cache.write_manifest(ctx, pages, ctx.all_imports, root=tmp_path)
+    manifest_path = web / disk_cache._MANIFEST_FILE
+    manifest = json.loads(manifest_path.read_text())
+    # Recorded before the edit that removed the page's state.
+    gone = "reflex___state____state.gone_state"
+    manifest["pages"]["a"].update(
+        is_stateful=True,
+        state_slice={
+            "initial_state": {gone: {"value_rx_state_": 0}},
+            "client_storage": {},
+            "schema": {gone: [gone, [["value", "int"]], [], []]},
+        },
+    )
+    _stale_dep(manifest, "a", str(tmp_path / "view.py"))
+    manifest_path.write_text(json.dumps(manifest))
+    captured = _capture_contexts(monkeypatch)
+    assert (
+        disk_cache.try_incremental_rebuild(
+            app, compiler_plugins=[], prerender_routes=False, root=tmp_path
+        )
+        is True
+    )
+    [(initial, _, schema_entries)] = captured
+    assert gone not in initial
+    assert gone not in schema_entries
+    refreshed = json.loads(manifest_path.read_text())
+    assert refreshed["pages"]["a"]["is_stateful"] is False
 
 
 def test_incremental_rebuild_all_hits(tmp_path, monkeypatch):
