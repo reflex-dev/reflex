@@ -190,8 +190,8 @@ class TestTemplateOutput:
         assert "ssrHydrated" not in result
         assert "ssrState" not in result
 
-    def test_context_template_ssr_reducer_uses_ssr_state(self):
-        """With runtime_ssr=True, useReducer initializers check ssrState."""
+    def test_context_template_ssr_store_uses_ssr_state(self):
+        """With runtime_ssr=True, the state stores start from ssrState."""
         from reflex.compiler.templates import context_template
 
         result = context_template(
@@ -203,11 +203,11 @@ class TestTemplateOutput:
             runtime_ssr=True,
         )
 
-        # The SSR-aware reducer initialization pattern.
+        assert "createStateStore({ ...initialState, ...ssrState })" in result
         assert "ssrState?.[substateName] ?? initialState[substateName]" in result
 
-    def test_context_template_static_reducer_no_ssr_state(self):
-        """With runtime_ssr=False, useReducer uses initialState directly."""
+    def test_context_template_static_store_no_ssr_state(self):
+        """With runtime_ssr=False, the state stores use initialState directly."""
         from reflex.compiler.templates import context_template
 
         result = context_template(
@@ -219,7 +219,8 @@ class TestTemplateOutput:
             runtime_ssr=False,
         )
 
-        assert "initialState[substateName]" in result
+        assert "createStateStore(initialState)" in result
+        assert "store: serverStateStore" in result
         assert "ssrState" not in result
 
 

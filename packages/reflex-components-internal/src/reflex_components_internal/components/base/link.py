@@ -89,9 +89,7 @@ class Link(ReactRouterLink):
         """Validate the link variant."""
         if variant not in LINK_VARIANTS["variant"]:
             available_variants = ", ".join(LINK_VARIANTS["variant"].keys())
-            message = (
-                f"Invalid variant: {variant}. Available variants: {available_variants}"
-            )
+            message = f"Invalid variant: {variant!s}. Available variants: {available_variants}"
             raise ValueError(message)
 
     @staticmethod
@@ -99,7 +97,7 @@ class Link(ReactRouterLink):
         """Validate the link size."""
         if size not in LINK_VARIANTS["size"]:
             available_sizes = ", ".join(LINK_VARIANTS["size"].keys())
-            message = f"Invalid size: {size}. Available sizes: {available_sizes}"
+            message = f"Invalid size: {size!s}. Available sizes: {available_sizes}"
             raise ValueError(message)
 
     def _exclude_props(self) -> list[str]:
