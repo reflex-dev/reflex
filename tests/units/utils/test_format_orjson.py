@@ -273,7 +273,7 @@ def test_walker_passes_through_unknown_types():
         {"nested": {"deep": [1, "two", None]}},
         datetime.datetime(2026, 4, 25, 10, 30, 45),
         datetime.datetime(2026, 4, 25, 10, 30, 45, 123456),
-        datetime.datetime(2026, 4, 25, 10, 30, 45, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2026, 4, 25, 10, 30, 45, tzinfo=datetime.UTC),
         datetime.date(2026, 4, 25),
         datetime.time(10, 30, 45),
         datetime.timedelta(days=1, seconds=1, microseconds=1),

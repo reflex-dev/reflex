@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any, Literal
 from reflex_base import constants
 from reflex_base.constants import Hooks
 from reflex_base.utils import memo_paths
-from reflex_base.utils.format import format_state_name, json_dumps, orjson_dumps
+from reflex_base.utils.format import json_dumps, orjson_dumps
 from reflex_base.vars.base import VarData
 
 if TYPE_CHECKING:
@@ -310,7 +310,9 @@ def context_template(
     default_color_mode: str,
     initial_state: dict[str, Any] | None = None,
     initial_state_json: str | None = None,
+    initial_state_hashes: list[str] | None = None,
     state_name: str | None = None,
+    state_schema: str | None = None,
     client_storage: dict[str, dict[str, dict[str, Any]]] | None = None,
     disable_react_owner_stacks: bool = False,
 ):
@@ -319,7 +321,14 @@ def context_template(
     Args:
         initial_state: The initial state for the context.
         initial_state_json: Initial state JSON already serialized by the compiler.
+        initial_state_hashes: Per-state hashes of ``initial_state`` in sorted
+            state name order, sent with the first hydrate so the backend can
+            skip vars still at their default.
         state_name: The name of the state.
+        state_schema: Hash of the state tree (names, frontend vars, event
+            handlers) this frontend is compiled for, sent on every socket
+            connect so the backend can detect a frontend built for another
+            version of the app.
         client_storage: The client storage for the context.
         is_dev_mode: Whether the app is in development mode.
         default_color_mode: The default color mode for the context.
@@ -333,31 +342,32 @@ def context_template(
     initial_state = initial_state or {}
     if initial_state_json is None:
         initial_state_json = json_dumps(initial_state)
-    # Context objects come from the static registry so they survive hot
-    # updates of this module; only the lookup table is generated here.
-    state_contexts_str = "".join([
-        f'{format_state_name(state_name)}: getStateContext("{state_name}"),'
-        for state_name in initial_state
-    ])
-
     state_str = (
         rf"""
 export const state_name = "{state_name}"
 
 export const exception_state_name = "{constants.CompileVars.FRONTEND_EXCEPTION_STATE_FULL}"
 
-// These events are triggered on initial load and each page navigation.
+// Tracked cookie and local storage vars set in the browser, or undefined if none.
+const clientStorageVars = () => {{
+    const client_storage_vars = hydrateClientStorage(clientStorage);
+    if (client_storage_vars && Object.keys(client_storage_vars).length !== 0) {{
+        return client_storage_vars;
+    }}
+    return undefined;
+}}
+
+// These events are triggered on each client-side page navigation.
 export const onLoadInternalEvent = () => {{
     const internal_events = [];
 
-    // Get tracked cookie and local storage vars to send to the backend.
-    const client_storage_vars = hydrateClientStorage(clientStorage);
-    // But only send the vars if any are actually set in the browser.
-    if (client_storage_vars && Object.keys(client_storage_vars).length !== 0) {{
+    // Only send the client storage vars if any are actually set in the browser.
+    const client_storage_vars = clientStorageVars();
+    if (client_storage_vars !== undefined) {{
         internal_events.push(
             ReflexEvent(
                 '{state_name}.{constants.CompileVars.UPDATE_VARS_INTERNAL}',
-                {{vars: client_storage_vars}},
+                {{{constants.CompileVars.PAYLOAD_VARS}: client_storage_vars}},
             ),
         );
     }}
@@ -369,11 +379,22 @@ export const onLoadInternalEvent = () => {{
     return internal_events;
 }}
 
-// The following events are sent when the websocket connects or reconnects.
-export const initialEvents = () => [
-    ReflexEvent('{state_name}.{constants.CompileVars.HYDRATE}'),
-    ...onLoadInternalEvent()
-]
+// The single event sent when the websocket connects or reconnects: it resets and
+// applies client storage, sends the state, and queues the page's on_load events.
+// On the first connect the frontend still holds the compiled defaults, so it
+// sends their hashes and the backend only returns the vars that differ; any
+// later (re)hydrate gets the full state.
+export const initialEvents = (first = false) => {{
+    const client_storage_vars = clientStorageVars();
+    const payload = {{}};
+    if (client_storage_vars !== undefined) {{
+        payload["{constants.CompileVars.PAYLOAD_VARS}"] = client_storage_vars;
+    }}
+    if (first) {{
+        payload["{constants.CompileVars.PAYLOAD_HASHES}"] = initialStateHashes;
+    }}
+    return [ReflexEvent('{state_name}.{constants.CompileVars.HYDRATE_AND_LOAD}', payload)];
+}}
     """
         if state_name
         else """
@@ -385,11 +406,6 @@ export const onLoadInternalEvent = () => []
 
 export const initialEvents = () => []
 """
-    )
-
-    substates_str = "".join(
-        f"\n  ['{state_name}', '{format_state_name(state_name)}'],"
-        for state_name in initial_state
     )
 
     disable_owner_stacks_str = (
@@ -420,16 +436,17 @@ if (typeof window !== "undefined") {
         else ""
     )
 
-    return rf"""import {"React, " if disable_react_owner_stacks else ""}{{ useContext, useMemo, useReducer, useRef, useState, createElement, useEffect, useLayoutEffect }} from "react"
+    return rf"""import {"React, " if disable_react_owner_stacks else ""}{{ useContext, useMemo, useState, createElement, useEffect }} from "react"
 import {{ applyDelta, ReflexEvent, hydrateClientStorage, useEventLoop, refs }} from "$/utils/state"
-import {{ ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext, getStateContext, registerApp, eventLoop }} from "$/utils/context-registry"
+import {{ ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext, StateStoreContext, registerApp, eventLoop }} from "$/utils/context-registry"
 import {{ jsx }} from "@emotion/react";
 {disable_owner_stacks_str}
-export {{ ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext }};
+export {{ ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext, StateStoreContext }};
 export const initialState = {initial_state_json}
+export const initialStateHashes = {"[]" if not initial_state_hashes else json_dumps(initial_state_hashes)}
+export const stateSchema = {orjson_dumps(state_schema)}
 
 export const defaultColorMode = {default_color_mode}
-export const StateContexts = {{{state_contexts_str}}};
 export const clientStorage = {"{}" if client_storage is None else orjson_dumps(client_storage)}
 
 {state_str}
@@ -442,6 +459,7 @@ registerApp({{
   initialState,
   clientStorage,
   state_name,
+  stateSchema,
   exception_state_name,
   onLoadInternalEvent,
   initialEvents,
@@ -511,78 +529,80 @@ export function EventLoopProvider({{ children }}) {{
   );
 }}
 
-// ``useLayoutEffect`` warns when rendered on the server, where no effect runs
-// at all, so fall back to ``useEffect`` there.
-const useIsomorphicLayoutEffect =
-  typeof document !== "undefined" ? useLayoutEffect : useEffect;
-
-// Holds the mutable substate -> dispatch registry that ``SubstateProvider``
-// writes into and ``EventLoopProvider`` reads. The registry object identity is
-// stable for the lifetime of the tree, so neither adding a dispatcher nor
-// updating a substate re-renders the consumers of ``DispatchContext``.
-const DispatchProvider = ({{ children }}) => {{
-  const dispatchers = useRef({{}});
-  return useMemo(
-    () =>
-      createElement(DispatchContext, {{ value: dispatchers.current }}, children),
-    [children],
-  );
-}};
-
-// One provider per substate: each owns its own reducer, so a delta for one
-// substate only re-renders its provider instead of recreating every provider.
-const SubstateProvider = ({{ children, substateName, contextName }}) => {{
-  const dispatchers = useContext(DispatchContext);
-  const [state, dispatchSubstate] = useReducer(
-    applyDelta,
-    initialState[substateName],
-  );
-  // A layout effect, not a passive one: layout effects for the whole commit
-  // run before any passive effect, so every dispatcher is registered before
-  // ``EventLoopProvider`` (mounted below this provider) connects the socket.
-  // A delta naming an unregistered substate is a fatal state mismatch.
-  useIsomorphicLayoutEffect(() => {{
-    dispatchers[substateName] = dispatchSubstate;
-    return () => {{
-      delete dispatchers[substateName];
-    }};
-  }}, [dispatchers, dispatchSubstate, substateName]);
-  return useMemo(
-    () => createElement(StateContexts[contextName], {{ value: state }}, children),
-    [children, state, contextName],
-  );
-}};
-
-// ``[substateName, contextName]`` for every substate, outermost first.
-const SUBSTATES = [{substates_str}
-];
-
-function ClientStateProvider({{ children }}) {{
-  return useMemo(() => {{
-    let tree = children;
-    for (let i = SUBSTATES.length - 1; i >= 0; i--) {{
-      const [substateName, contextName] = SUBSTATES[i];
-      tree = createElement(SubstateProvider, {{ substateName, contextName }}, tree);
+// Dispatch updates happen outside render; useSyncExternalStore keeps reads
+// consistent while notifying only consumers of the changed substate.
+function createStateStore(initialState) {{
+  const state = {{}};
+  const listeners = new Map();
+  const dispatchers = {{}};
+  const notify = (substateName) =>
+    listeners.get(substateName)?.forEach((listener) => listener());
+  // Hot reload passes the recompiled initial state: new substates are added,
+  // and existing substates gain new fields at their defaults while keeping
+  // their live values.
+  const mergeInitialState = (nextInitialState) => {{
+    for (const [substateName, value] of Object.entries(nextInitialState)) {{
+      const liveState = state[substateName];
+      if (liveState !== undefined) {{
+        if (Object.keys(value).some((key) => !Object.hasOwn(liveState, key))) {{
+          state[substateName] = {{ ...value, ...liveState }};
+          notify(substateName);
+        }}
+        continue;
+      }}
+      state[substateName] = value;
+      dispatchers[substateName] = (delta) => {{
+        const currentState = state[substateName];
+        const nextState = applyDelta(currentState, delta);
+        if (nextState === currentState) return;
+        state[substateName] = nextState;
+        notify(substateName);
+      }};
+      notify(substateName);
     }}
-    return createElement(DispatchProvider, {{}}, tree);
-  }}, [children]);
+  }};
+  mergeInitialState(initialState);
+
+  return {{
+    dispatchers,
+    mergeInitialState,
+    getSnapshot: (substateName) => state[substateName],
+    subscribe: (substateName, listener) => {{
+      let substateListeners = listeners.get(substateName);
+      if (!substateListeners) {{
+        substateListeners = new Set();
+        listeners.set(substateName, substateListeners);
+      }}
+      substateListeners.add(listener);
+      return () => substateListeners.delete(listener);
+    }},
+  }};
 }}
 
-// The server renders once and never applies a delta, so it provides the
-// initial state through bare context providers. ``SubstateProvider`` would add
-// a second render level per substate, and the server renderer recurses once per
-// level, so with many substates rendering a page can exhaust the stack.
+function StateStoreProviders({{ children, store }}) {{
+  return createElement(
+    StateStoreContext,
+    {{ value: store }},
+    createElement(DispatchContext, {{ value: store.dispatchers }}, children),
+  );
+}}
+
+function ClientStateProvider({{ children }}) {{
+  const [store] = useState(() => createStateStore(initialState));
+  useEffect(() => store.mergeInitialState(initialState), [store, initialState]);
+  return createElement(StateStoreProviders, {{ children, store }});
+}}
+
+// The server renders once and never applies a delta, so it only reads the
+// initial state.
+const serverStateStore = {{
+  dispatchers: {{}},
+  getSnapshot: (substateName) => initialState[substateName],
+  subscribe: () => () => {{}},
+}};
+
 function ServerStateProvider({{ children }}) {{
-  let tree = children;
-  for (let i = SUBSTATES.length - 1; i >= 0; i--) {{
-    const [substateName, contextName] = SUBSTATES[i];
-    tree = createElement(
-      StateContexts[contextName],
-      {{ value: initialState[substateName] }},
-      tree,
-    );
-  }}
-  return createElement(DispatchContext, {{ value: {{}} }}, tree);
+  return createElement(StateStoreProviders, {{ children, store: serverStateStore }});
 }}
 
 export const StateProvider =
@@ -709,6 +729,7 @@ def vite_config_template(
     allowed_hosts: bool | list[str] = False,
     prod_react: bool = False,
     warmup_routes: bool = False,
+    react_compiler: bool = False,
 ):
     """Template for vite.config.js.
 
@@ -724,6 +745,7 @@ def vite_config_template(
             (dev server only; see REFLEX_DEV_PROD_REACT).
         warmup_routes: Pre-transform every route module when the dev server
             starts, so the first visit to a page does not wait on Vite.
+        react_compiler: Enable React Compiler for generated components.
 
     Returns:
         Rendered vite.config.js content as string.
@@ -820,11 +842,17 @@ function prodReactPrebundle() {
         if warmup_routes
         else ""
     )
+    react_compiler_import = (
+        'import reactCompiler from "./vite-plugin-react-compiler.js";\n'
+        if react_compiler
+        else ""
+    )
+    react_compiler_plugin = "    reactCompiler(),\n" if react_compiler else ""
     return rf"""import {{ fileURLToPath, URL }} from "url";
 import {{ reactRouter }} from "@react-router/dev/vite";
 import {{ defineConfig }} from "vite";
 import safariCacheBustPlugin from "./vite-plugin-safari-cachebust.js";
-
+{react_compiler_import}
 // Ensure that bun always uses the react-dom/server.node functions.
 function alwaysUseReactDomServerNode() {{
   return {{
@@ -891,7 +919,7 @@ export default defineConfig((config) => ({{
   base: "{base}",
   plugins: [
     alwaysUseReactDomServerNode(),
-    reactRouter(),
+{react_compiler_plugin}    reactRouter(),
     patchReactRouterHmrRuntime(),
     safariCacheBustPlugin(),
   ].concat({"[fullReload()]" if force_full_reload else "[]"}),

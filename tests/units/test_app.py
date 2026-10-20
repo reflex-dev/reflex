@@ -79,7 +79,7 @@ from reflex.compiler.compiler import (
 )
 from reflex.compiler.plugins import default_page_plugins
 from reflex.environment import environment
-from reflex.istate.data import RouterData, URLData
+from reflex.istate.data import HeaderData, RouterData, URLData
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
@@ -538,6 +538,18 @@ def test_add_page_set_route_nested(app: App, index_page: ComponentCallable):
     assert app._unevaluated_pages == {}
     app.add_page(index_page, route=route)
     assert app._unevaluated_pages.keys() == {route}
+
+
+def test_add_page_on_load_tuple(app: App, index_page: ComponentCallable):
+    """A tuple of on_load events registers each event, like a list of them.
+
+    Args:
+        app: The app to test.
+        index_page: The index page.
+    """
+    events = (rx.console_log("a"), rx.console_log("b"))
+    app.add_page(index_page, route="test", on_load=events)
+    assert app._load_events["test"] == list(events)
 
 
 def test_apply_decorated_pages_uses_app_context(
@@ -3107,7 +3119,7 @@ def test_stateful_app_wrap_is_memoized(
     ).read_text()
     app_wrap_fn = root_contents[root_contents.index("function AppWrap") :]
     # No state hooks may remain in the AppWrap function body.
-    assert "useContext(StateContexts" not in app_wrap_fn
+    assert "useStateContext(" not in app_wrap_fn
     # The route children still flow through the (memoized) wrap chain, which
     # renders inside the state provider.
     assert "jsx(StateProvider" in app_wrap_fn
@@ -3116,7 +3128,7 @@ def test_stateful_app_wrap_is_memoized(
     # The extracted memo module carries the state hook instead.
     memo_dir = web_dir / constants.Dirs.COMPONENTS_PATH
     assert any(
-        "useContext(StateContexts" in memo_file.read_text()
+        "useStateContext(" in memo_file.read_text()
         for memo_file in memo_dir.glob(f"*{constants.Ext.JSX}")
     )
 
@@ -4563,13 +4575,47 @@ def test_decode_asgi_headers():
         "host": "example.com",
         "x-forwarded-for": "10.0.0.1, 10.0.0.2",
     }
-    # Later duplicates win, matching dict comprehension semantics.
+    # Repeated cookie fields are joined with "; " (RFC 9113 section 8.2.3).
     assert _decode_asgi_headers([
         (b"cookie", b"a=1"),
         (b"cookie", b"b=2"),
-    ]) == {"cookie": "b=2"}
+    ]) == {"cookie": "a=1; b=2"}
+    # Any other repeated field is joined in order with ", " (RFC 9110 section 5.3).
+    assert _decode_asgi_headers([
+        (b"x-forwarded-for", b"10.0.0.1"),
+        (b"accept", b"text/html"),
+        (b"x-forwarded-for", b"10.0.0.2, 10.0.0.3"),
+    ]) == {
+        "x-forwarded-for": "10.0.0.1, 10.0.0.2, 10.0.0.3",
+        "accept": "text/html",
+    }
     # Names and values are decoded as UTF-8.
     assert _decode_asgi_headers([(b"x-name", "café".encode())]) == {"x-name": "café"}
+
+
+def test_static_router_data_keeps_every_repeated_header_field():
+    """Repeated cookie and x-forwarded-for fields all reach the router data."""
+    router_data = EventNamespace("/event", Mock())._build_static_router_data(
+        "sid1",
+        {
+            "asgi.scope": {
+                "headers": [
+                    (b"cookie", b"sid=1"),
+                    (b"x-forwarded-for", b"203.0.113.7"),
+                    (b"cookie", b"other=2"),
+                    (b"x-forwarded-for", b"10.0.0.2"),
+                ],
+                "client": ("127.0.0.1", 1234),
+            }
+        },
+    )
+
+    headers = router_data[constants.RouteVar.HEADERS]
+    assert headers["cookie"] == "sid=1; other=2"
+    assert headers["x-forwarded-for"] == "203.0.113.7, 10.0.0.2"
+    # The original client hop comes first, not the proxy that added the second field.
+    assert router_data[constants.RouteVar.CLIENT_IP] == "203.0.113.7"
+    assert HeaderData.from_router_data(router_data).cookie == "sid=1; other=2"
 
 
 def test_call_ignores_stale_marker_without_dev_backend_reload(
@@ -4719,6 +4765,7 @@ async def test_client_error_dispatch_missing_reports_actionable_error(
     assert len(frontend_errors) == 1
     message = frontend_errors[0]
     assert "reflex___state____state.my___state____my_state" in message
+    assert "skipped" in message.lower()
     assert "rebuild" in message.lower()
 
 
@@ -5167,6 +5214,184 @@ def test_compile_releases_memo_naming_caches(
         app._compile()
 
     assert not _hash_str_encodings
+
+
+@pytest.mark.asyncio
+async def test_on_connect_processes_boot_event_from_auth(
+    event_namespace: EventNamespace,
+):
+    """The hydrate event carried in the socket.io CONNECT packet is processed on connect.
+
+    As the connection's first event it records the new sid and token on the
+    state, so the connect does not load and save the state tree for that
+    first; a connect without a boot event still does.
+
+    Args:
+        event_namespace: The event namespace.
+    """
+    event_namespace._token_manager = Mock()
+    event_namespace._token_manager.link_token_to_sid = AsyncMock(return_value=None)
+    event_namespace.on_event = AsyncMock()
+    state = Mock(router_data={})
+    modify_state = event_namespace.app.state_manager.modify_state = Mock(
+        return_value=AsyncMock(__aenter__=AsyncMock(return_value=state))
+    )
+    boot_event = {"name": "state.hydrate_and_load", "payload": {}, "router_data": {}}
+
+    await event_namespace.on_connect(
+        "new_sid", {"QUERY_STRING": "token=abc"}, {"event": boot_event}
+    )
+    event_namespace._token_manager.link_token_to_sid.assert_awaited_once_with(
+        "abc", "new_sid"
+    )
+    event_namespace.on_event.assert_awaited_once_with("new_sid", boot_event)
+    modify_state.assert_not_called()
+
+    # Without a boot event (or without auth at all) nothing is processed, and
+    # the connect records the new sid and token on the state itself.
+    event_namespace.on_event.reset_mock()
+    await event_namespace.on_connect("new_sid", {"QUERY_STRING": "token=abc"}, None)
+    await event_namespace.on_connect("new_sid", {"QUERY_STRING": "token=abc"})
+    event_namespace.on_event.assert_not_awaited()
+    assert modify_state.call_count == 2
+    assert state.router_data[constants.RouteVar.SESSION_ID] == "new_sid"
+    assert state.router_data[constants.RouteVar.CLIENT_TOKEN] == "abc"
+
+
+def _schema_checking_namespace(
+    event_namespace: EventNamespace, backend_schema: str
+) -> tuple[AsyncMock, AsyncMock]:
+    """Prepare an event namespace for on_connect with a known backend schema.
+
+    Args:
+        event_namespace: The event namespace.
+        backend_schema: The frontend schema hash the backend's state tree has.
+
+    Returns:
+        The mocks installed as the namespace's ``on_event`` and ``emit``.
+    """
+    event_namespace._token_manager = Mock()
+    event_namespace._token_manager.link_token_to_sid = AsyncMock(return_value=None)
+    on_event = event_namespace.on_event = AsyncMock()
+    emit = event_namespace.emit = AsyncMock()
+    cast(Any, event_namespace.app)._state = Mock(
+        _to_frontend_schema=Mock(return_value=backend_schema)
+    )
+    return on_event, emit
+
+
+@pytest.mark.asyncio
+async def test_on_connect_reports_state_schema_mismatch(
+    event_namespace: EventNamespace, caplog: pytest.LogCaptureFixture
+):
+    """A frontend compiled for another state tree is told once, and still hydrates.
+
+    Args:
+        event_namespace: The event namespace.
+        caplog: pytest fixture capturing backend log records.
+    """
+    on_event, emit = _schema_checking_namespace(event_namespace, "backend-schema")
+    boot_event = {"name": "state.hydrate_and_load", "payload": {}, "router_data": {}}
+
+    with caplog.at_level(logging.WARNING, logger="reflex"):
+        await event_namespace.on_connect(
+            "new_sid",
+            {"QUERY_STRING": "token=abc"},
+            {"event": boot_event, "state_schema": "frontend-schema"},
+        )
+
+    emit.assert_awaited_once_with(
+        "state_mismatch",
+        {"backend": "backend-schema", "reload_cooldown_ms": 10_000},
+        to="new_sid",
+    )
+    on_event.assert_awaited_once_with("new_sid", boot_event)
+    app_warnings = [
+        r.getMessage()
+        for r in caplog.records
+        if r.name == "reflex.app" and r.levelno == logging.WARNING
+    ]
+    assert len(app_warnings) == 1
+    assert "frontend-schema" in app_warnings[0]
+    assert "backend-schema" in app_warnings[0]
+    assert "new_sid" in app_warnings[0]
+
+    # The client-supplied hash is sanitized and bounded before it is logged.
+    caplog.clear()
+    await event_namespace.on_connect(
+        "new_sid",
+        {"QUERY_STRING": "token=abc"},
+        {"event": boot_event, "state_schema": "x\nforged line [bold]" + "y" * 500},
+    )
+    (message,) = [
+        r.getMessage()
+        for r in caplog.records
+        if r.name == "reflex.app" and r.levelno == logging.WARNING
+    ]
+    assert "forged" in message
+    assert "\n" not in message
+    assert "\\[bold]" in message
+    assert "(truncated)" in message
+    assert len(message) < 400
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "auth",
+    [
+        pytest.param(
+            {"event": {"name": "state.hydrate_and_load"}, "state_schema": "same"},
+            id="matching",
+        ),
+        pytest.param({"event": {"name": "state.hydrate_and_load"}}, id="old-frontend"),
+        pytest.param(None, id="no-auth"),
+    ],
+)
+async def test_on_connect_sends_no_mismatch_without_one(
+    event_namespace: EventNamespace, auth: dict[str, Any] | None
+):
+    """A matching or missing frontend schema sends nothing to the client.
+
+    Args:
+        event_namespace: The event namespace.
+        auth: The CONNECT auth payload.
+    """
+    on_event, emit = _schema_checking_namespace(event_namespace, "same")
+    state = Mock(router_data={})
+    event_namespace.app.state_manager.modify_state = Mock(
+        return_value=AsyncMock(__aenter__=AsyncMock(return_value=state))
+    )
+
+    await event_namespace.on_connect("new_sid", {"QUERY_STRING": "token=abc"}, auth)
+
+    emit.assert_not_awaited()
+    assert on_event.await_count == (1 if auth else 0)
+
+
+@pytest.mark.asyncio
+async def test_on_connect_unlinks_token_when_boot_event_fails(
+    event_namespace: EventNamespace,
+):
+    """A boot event that fails to process drops the sid/token link before refusing the connect.
+
+    Args:
+        event_namespace: The event namespace.
+    """
+    event_namespace._token_manager = Mock()
+    event_namespace._token_manager.link_token_to_sid = AsyncMock(return_value=None)
+    event_namespace._token_manager.disconnect_token = AsyncMock()
+    event_namespace._token_manager.sid_to_token = {"new_sid": "abc"}
+    event_namespace.on_event = AsyncMock(side_effect=ValueError("bad boot event"))
+
+    with pytest.raises(ValueError, match="bad boot event"):
+        await event_namespace.on_connect(
+            "new_sid", {"QUERY_STRING": "token=abc"}, {"event": {"name": "x"}}
+        )
+    event_namespace._token_manager.disconnect_token.assert_awaited_once_with(
+        "abc", "new_sid"
+    )
+    # The connection-scoped router data cached for the refused sid goes too.
+    assert "new_sid" not in event_namespace._static_router_data
 
 
 def test_call_app_wraps_with_otel_asgi_middleware():

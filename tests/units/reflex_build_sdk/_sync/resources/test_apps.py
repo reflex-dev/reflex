@@ -42,7 +42,7 @@ DEPLOYMENT_ID = "0e7b9d2c-5a4f-4c3b-8e1d-6f2a9b8c7d10"
 PREVIOUS_DEPLOYMENT_ID = "1f8c0e3d-6b5a-4d4c-9f2e-7a3b0c9d8e21"
 USER_ID = "8b0f4a52-3a8a-4c43-9d7e-2f0c7d2a4b11"
 APP_PATH = f"/api/v1/apps/{APP_ID}"
-UTC = datetime.timezone.utc
+UTC = datetime.UTC
 
 APP_SUMMARY = {
     "id": APP_ID,

@@ -1,6 +1,7 @@
 """Tests for development backend launchers in ``reflex.utils.exec``."""
 
 import builtins
+import gc
 import hashlib
 import json
 import logging
@@ -8,6 +9,7 @@ import multiprocessing
 import os
 import socket
 import sys
+import threading
 import time
 from http.client import HTTPConnection
 from multiprocessing.queues import Queue
@@ -21,6 +23,7 @@ from reflex_base.environment import environment
 from reflex_base.utils import serializers
 
 from reflex.utils import exec as exec_utils
+from reflex.utils import prerequisites, telemetry
 from reflex.utils.precompressed_staticfiles import PrecompressedStaticFiles
 
 DEV_BACKEND_RELOAD_ENV_NAME = environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.name
@@ -133,6 +136,8 @@ def test_run_backend_skips_app_preload_for_spawn(
     run_granian = mocker.patch.object(exec_utils, "run_granian_backend")
     mocker.patch.object(exec_utils, "notify_backend")
     mocker.patch.object(multiprocessing, "get_start_method", return_value="spawn")
+    mocker.patch.object(multiprocessing, "set_start_method")
+    monkeypatch.delenv(environment.REFLEX_BACKEND_START_METHOD.name, raising=False)
     monkeypatch.setenv(environment.REFLEX_STRICT_HOT_RELOAD.name, "False")
 
     real_import = builtins.__import__
@@ -161,6 +166,8 @@ def test_run_backend_preloads_app_for_fork(
     mocker.patch.object(exec_utils, "run_granian_backend")
     mocker.patch.object(exec_utils, "notify_backend")
     mocker.patch.object(multiprocessing, "get_start_method", return_value="fork")
+    mocker.patch.object(multiprocessing, "set_start_method")
+    monkeypatch.delenv(environment.REFLEX_BACKEND_START_METHOD.name, raising=False)
     monkeypatch.setenv(environment.REFLEX_STRICT_HOT_RELOAD.name, "False")
 
     imported: list[str] = []
@@ -276,6 +283,141 @@ def test_get_package_json_and_hash_matches_stdlib_json(tmp_path: Path):
         package_hash
         == hashlib.sha256(json.dumps(package_json, sort_keys=True).encode()).hexdigest()
     )
+
+
+@pytest.mark.parametrize(
+    ("strict", "default_method", "expected"),
+    [
+        (True, "forkserver", "start:spawn"),
+        (False, "forkserver", "start:fork"),
+        (False, "fork", "start:fork"),
+        (False, "spawn", None),
+    ],
+)
+def test_set_dev_start_method(
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    strict: bool,
+    default_method: str,
+    expected: str | None,
+):
+    """Strict hot reload spawns; otherwise the platform rule decides."""
+    monkeypatch.setenv(environment.REFLEX_STRICT_HOT_RELOAD.name, str(strict))
+    monkeypatch.delenv(environment.REFLEX_BACKEND_START_METHOD.name, raising=False)
+    calls: list[str] = []
+    mocker.patch.object(
+        multiprocessing, "get_start_method", return_value=default_method
+    )
+    mocker.patch.object(
+        multiprocessing,
+        "set_start_method",
+        side_effect=lambda method, force=False: calls.append(f"start:{method}"),
+    )
+
+    exec_utils.set_dev_start_method()
+
+    assert calls == ([expected] if expected else [])
+
+
+def test_set_dev_start_method_explicit_method_beats_strict_hot_reload(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """REFLEX_BACKEND_START_METHOD wins even when strict hot reload is on."""
+    monkeypatch.setenv(environment.REFLEX_STRICT_HOT_RELOAD.name, "True")
+    monkeypatch.setenv(environment.REFLEX_BACKEND_START_METHOD.name, "forkserver")
+    set_start_method = mocker.patch.object(multiprocessing, "set_start_method")
+
+    exec_utils.set_dev_start_method()
+
+    set_start_method.assert_called_once_with("forkserver", force=True)
+
+
+def _fake_granian_dev(
+    mocker: MockerFixture,
+    calls: list[str],
+    start_method: str,
+    telemetry_stopped: bool = True,
+):
+    """Patch granian and the dev launcher's collaborators, recording call order."""
+    granian_server = pytest.importorskip("granian.server")
+
+    class FakeGranian:
+        def __init__(self, *_args, **_kwargs):
+            pass
+
+        def on_reload(self, _callback):
+            pass
+
+        def serve(self):
+            calls.append("serve")
+
+    mocker.patch.object(granian_server, "Server", FakeGranian)
+    mocker.patch.object(
+        exec_utils, "get_app_instance_from_file", return_value="app:app"
+    )
+    mocker.patch.object(exec_utils, "get_reload_paths", return_value=[])
+    mocker.patch.object(exec_utils, "reset_dev_backend_reload_marker")
+    mocker.patch.object(
+        multiprocessing,
+        "set_start_method",
+        side_effect=lambda method, force=False: calls.append(f"start:{method}"),
+    )
+    mocker.patch.object(multiprocessing, "get_start_method", return_value=start_method)
+    mocker.patch.object(
+        prerequisites, "get_app", side_effect=lambda: calls.append("preload")
+    )
+    mocker.patch.object(
+        telemetry,
+        "_shutdown_executor",
+        side_effect=lambda: calls.append("drain") or telemetry_stopped,
+    )
+    mocker.patch.object(gc, "freeze", side_effect=lambda: calls.append("freeze"))
+
+
+@pytest.mark.parametrize(
+    ("start_method", "expected"),
+    [
+        ("fork", ["start:fork", "drain", "freeze", "serve"]),
+        ("spawn", ["start:spawn", "serve"]),
+    ],
+)
+def test_run_granian_backend_freezes_only_for_fork(
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    start_method: str,
+    expected: list[str],
+):
+    """Forked reload workers share a frozen heap; the app is never preloaded.
+
+    The telemetry thread (e.g. from the run-dev event) is drained and stopped
+    first, so the supervisor has no telemetry thread when it forks the worker.
+    """
+    monkeypatch.setenv(environment.REFLEX_BACKEND_START_METHOD.name, start_method)
+    monkeypatch.setenv(environment.REFLEX_STRICT_HOT_RELOAD.name, "False")
+    calls: list[str] = []
+    _fake_granian_dev(mocker, calls, start_method)
+
+    exec_utils.run_granian_backend(
+        host="0.0.0.0", port=8000, loglevel=exec_utils.LogLevel.INFO
+    )
+
+    assert calls == expected
+
+
+def test_run_granian_backend_spawns_when_telemetry_is_stuck(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """A telemetry thread that outlives the drain makes the dev fork unsafe."""
+    monkeypatch.setenv(environment.REFLEX_BACKEND_START_METHOD.name, "fork")
+    monkeypatch.setenv(environment.REFLEX_STRICT_HOT_RELOAD.name, "False")
+    calls: list[str] = []
+    _fake_granian_dev(mocker, calls, "fork", telemetry_stopped=False)
+
+    exec_utils.run_granian_backend(
+        host="0.0.0.0", port=8000, loglevel=exec_utils.LogLevel.INFO
+    )
+
+    assert calls == ["start:fork", "drain", "start:spawn", "serve"]
 
 
 def test_run_granian_backend_binds_listen_socket_in_supervisor(
@@ -426,6 +568,151 @@ def test_arbitrate_ssr_env_var_wins(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv(environment.REFLEX_SSR.name, "False")
 
     assert exec_utils.arbitrate_ssr(True) is False
+
+
+def _fake_granian_prod(
+    mocker: MockerFixture, calls: list[str], telemetry_stopped: bool = True
+):
+    """Patch granian and the prod launcher's collaborators, recording call order."""
+    granian_server = pytest.importorskip("granian.server")
+
+    class FakeGranian:
+        def __init__(self, *_args, **_kwargs):
+            pass
+
+        def startup(self, *_args):
+            calls.append("workers")
+
+        def serve(self):
+            calls.append("serve")
+            self.startup(None, None)
+
+    mocker.patch.object(granian_server, "Server", FakeGranian)
+    mocker.patch.object(
+        exec_utils, "get_app_instance_from_file", return_value="app:app"
+    )
+    mocker.patch.object(exec_utils, "_get_backend_workers", return_value=1)
+    mocker.patch.object(
+        multiprocessing,
+        "set_start_method",
+        side_effect=lambda method, force=False: calls.append(f"start:{method}"),
+    )
+    mocker.patch.object(
+        prerequisites, "get_app", side_effect=lambda: calls.append("preload")
+    )
+    mocker.patch.object(
+        serializers,
+        "_prepare_serializers_for_fork",
+        side_effect=lambda: calls.append("serializers"),
+    )
+    mocker.patch.object(
+        telemetry,
+        "_shutdown_executor",
+        side_effect=lambda: calls.append("drain") or telemetry_stopped,
+    )
+    mocker.patch.object(gc, "freeze", side_effect=lambda: calls.append("freeze"))
+
+
+def test_run_granian_backend_prod_preloads_app_before_forking(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """With fork, the app is imported, telemetry drained and the heap frozen first."""
+    monkeypatch.setenv(environment.REFLEX_BACKEND_START_METHOD.name, "fork")
+    calls: list[str] = []
+    _fake_granian_prod(mocker, calls)
+
+    exec_utils.run_granian_backend_prod(
+        host="0.0.0.0", port=8000, loglevel=exec_utils.LogLevel.INFO
+    )
+
+    assert calls == [
+        "start:fork",
+        "preload",
+        "serializers",
+        "drain",
+        "freeze",
+        "serve",
+        "workers",
+    ]
+
+
+def test_run_granian_backend_prod_spawns_when_telemetry_is_stuck(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """A telemetry thread that outlives the drain makes forking unsafe.
+
+    The app is still imported under the requested start method, so anything it
+    creates at import time uses the same context as before the fallback.
+    """
+    monkeypatch.setenv(environment.REFLEX_BACKEND_START_METHOD.name, "fork")
+    calls: list[str] = []
+    _fake_granian_prod(mocker, calls, telemetry_stopped=False)
+
+    exec_utils.run_granian_backend_prod(
+        host="0.0.0.0", port=8000, loglevel=exec_utils.LogLevel.INFO
+    )
+
+    assert calls == [
+        "start:fork",
+        "preload",
+        "serializers",
+        "drain",
+        "start:spawn",
+        "serve",
+        "workers",
+    ]
+
+
+def test_run_granian_backend_prod_spawn_skips_preload(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """Spawned workers re-import the app, so the supervisor does not load it."""
+    monkeypatch.setenv(environment.REFLEX_BACKEND_START_METHOD.name, "spawn")
+    calls: list[str] = []
+    _fake_granian_prod(mocker, calls)
+
+    exec_utils.run_granian_backend_prod(
+        host="0.0.0.0", port=8000, loglevel=exec_utils.LogLevel.INFO
+    )
+
+    assert calls == ["start:spawn", "serve", "workers"]
+
+
+def test_run_granian_backend_prod_custom_target_only_freezes(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """A non-reflex target lives in an already-imported module."""
+    monkeypatch.setenv(environment.REFLEX_BACKEND_START_METHOD.name, "fork")
+    calls: list[str] = []
+    _fake_granian_prod(mocker, calls)
+
+    exec_utils.run_granian_backend_prod(
+        host="0.0.0.0",
+        port=8000,
+        loglevel=exec_utils.LogLevel.INFO,
+        app_target="reflex.utils.exec:_frontend_prod_app",
+    )
+
+    assert calls == ["start:fork", "serializers", "drain", "freeze", "serve", "workers"]
+
+
+@pytest.mark.parametrize(
+    ("default_method", "expected"),
+    [("fork", "fork"), ("forkserver", "fork"), ("spawn", None)],
+)
+def test_backend_start_method_follows_platform_default(
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    default_method: str,
+    expected: str | None,
+):
+    """Fork is forced only where the interpreter already defaults to forking."""
+    monkeypatch.delenv(environment.REFLEX_BACKEND_START_METHOD.name, raising=False)
+    mocker.patch.object(
+        multiprocessing, "get_start_method", return_value=default_method
+    )
+
+    assert exec_utils._backend_start_method() == expected
 
 
 def test_get_routes_manifest_router_missing_manifest(
@@ -628,6 +915,7 @@ def test_run_granian_backend_prod_json_logs_in_json_mode(
         exec_utils, "get_app_instance_from_file", return_value="app:app"
     )
     mocker.patch.object(exec_utils, "_get_backend_workers", return_value=1)
+    mocker.patch.object(exec_utils, "_backend_start_method", return_value=None)
     granian_server = pytest.importorskip("granian.server")
     options: dict[str, object] = {}
 
@@ -710,13 +998,22 @@ def _dev_granian_supervisor(mocker: MockerFixture, tmp_path: Path, port: int):
     granian_server = pytest.importorskip("granian.server")
     servers: list[Any] = []
 
+    class FakeInner:
+        exitcode = None
+
+        def join(self):
+            """Return at once: the fake worker is never running."""
+
     class FakeWorker:
         def __init__(self):
             self.interrupt_by_parent = False
             self.alive = True
+            self.inner = FakeInner()
+            self.granian_watched = False
 
         def _watcher(self):
-            """Stand in for granian's watcher body, which joins the process."""
+            """Stand in for granian's watcher body, which logs an unexpected exit."""
+            self.granian_watched = True
 
         def is_alive(self):
             return self.alive
@@ -728,6 +1025,7 @@ def _dev_granian_supervisor(mocker: MockerFixture, tmp_path: Path, port: int):
             self.backlog = 16
             self.wrks = []
             self.shutdowns = []
+            self.main_loop_interrupt = threading.Event()
             self._ssp = self._shd = self._sfd = None
             self._sso: Any = None
             servers.append(self)
@@ -801,6 +1099,36 @@ def test_run_granian_backend_keeps_socket_across_worker_restart(
         worker._watcher()
 
         assert not _port_is_bindable(port)
+    finally:
+        server._close_shared_socket()
+
+
+def test_run_granian_backend_reports_only_unclean_worker_exits(
+    tmp_path: Path, mocker: MockerFixture
+):
+    """Only a worker exiting 0 while the supervisor is signalled skips granian's report."""
+    port = _free_port()
+    server = _dev_granian_supervisor(mocker, tmp_path, port)
+    try:
+        server._init_shared_socket()
+        stopped = _spawn_supervisor_worker(server)
+        stopped.inner.exitcode = 0
+        stopped.alive = False
+        server.main_loop_interrupt.set()
+        stopped._watcher()
+        assert not stopped.granian_watched
+        assert _port_is_bindable(port)
+
+        mocker.patch.object(server.main_loop_interrupt, "wait", return_value=False)
+        exited = _spawn_supervisor_worker(server)
+        exited.inner.exitcode = 0
+        exited._watcher()
+        assert exited.granian_watched
+
+        crashed = _spawn_supervisor_worker(server)
+        crashed.inner.exitcode = -1
+        crashed._watcher()
+        assert crashed.granian_watched
     finally:
         server._close_shared_socket()
 

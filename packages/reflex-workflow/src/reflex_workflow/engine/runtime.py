@@ -12,9 +12,10 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 class Settled:
     """Counts the passes a worker made without claiming anything.
 
-    A pass that claims nothing is the worker saying there is nothing it can
-    take: either nothing is due, or what is due is held back by a limit. Both
-    are answers, so both end a wait for the worker to catch up.
+    A pass that claims nothing, with none of its steps still running, is the
+    worker saying there is nothing it can take: either nothing is due, or what
+    is due is held back by a limit. Both are answers, so both end a wait for
+    the worker to catch up.
     """
 
     def __init__(self) -> None:
@@ -44,7 +45,7 @@ class Settled:
                     self.changed.wait_for(lambda: self.passes > seen),
                     timeout.total_seconds(),
                 )
-        except (TimeoutError, asyncio.TimeoutError):
+        except TimeoutError:
             return False
         return True
 

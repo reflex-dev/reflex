@@ -21,7 +21,7 @@ AGENT_TOOLKIT_EARLY_ACCESS_URL = (
 )
 
 # October 25, 2025 12:01 AM PDT (UTC-7) = October 25, 2025 07:01 AM UTC
-DEADLINE = datetime.datetime(2025, 10, 25, 7, 1, tzinfo=datetime.timezone.utc)
+DEADLINE = datetime.datetime(2025, 10, 25, 7, 1, tzinfo=datetime.UTC)
 
 
 class HostingBannerState(rx.State):
@@ -38,7 +38,7 @@ class HostingBannerState(rx.State):
     @rx.event
     def check_deadline(self):
         """Check deadline."""
-        if datetime.datetime.now(datetime.timezone.utc) < DEADLINE:
+        if datetime.datetime.now(datetime.UTC) < DEADLINE:
             self.show_banner = True
 
     @rx.event
