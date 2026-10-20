@@ -140,6 +140,44 @@ def add_logging_middleware(app):
 app = rx.App(api_transformer=[fastapi_app, add_logging_middleware])
 ```
 
+## Lifespan
+
+Each Starlette or FastAPI instance passed to `api_transformer` runs its own
+`lifespan`. It starts after the app's [lifespan tasks](/docs/utility-methods/lifespan-tasks/)
+and stops before them. When there are several, they start in the order given
+and stop in reverse order. Any state they yield is available on `request.state`.
+
+```python
+from contextlib import asynccontextmanager
+
+import reflex as rx
+from fastapi import FastAPI, Request
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    app.state.greeting = "hello"
+    yield {"client": "connected"}
+
+
+fastapi_app = FastAPI(lifespan=lifespan)
+
+
+@fastapi_app.get("/api/greeting")
+async def greeting(request: Request):
+    return dict(
+        greeting=request.app.state.greeting,
+        client=request.state.client,
+    )
+
+
+app = rx.App(api_transformer=fastapi_app)
+```
+
+Only the transformer instances themselves get lifespan events. Apps mounted on
+them and apps returned by a callable transformer do not; register their startup
+and shutdown code with `app.register_lifespan_task` instead.
+
 ## Reserved Routes
 
 Some routes on the backend are reserved for the runtime of Reflex, and should not be overridden unless you know what you are doing.

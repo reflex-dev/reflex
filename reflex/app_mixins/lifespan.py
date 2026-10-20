@@ -9,8 +9,8 @@ import functools
 import inspect
 import logging
 import time
-from collections.abc import Callable, Coroutine
-from typing import TYPE_CHECKING, TypeVar, overload
+from collections.abc import Callable, Coroutine, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, TypeVar, overload
 
 from reflex_base.utils import console
 from reflex_base.utils.exceptions import InvalidLifespanTaskTypeError
@@ -188,6 +188,34 @@ class LifespanMixin(AppMixin):
         else:
             await state_manager.close()
         await prerequisites.close_health_redis()
+
+    @contextlib.asynccontextmanager
+    async def _run_lifespan(
+        self, starlette_app: Starlette, transformers: Sequence[Starlette]
+    ):
+        """Run the lifespan tasks, then the lifespan of each Starlette transformer.
+
+        Shutdown runs in reverse order, so the transformers stop before the tasks.
+
+        Args:
+            starlette_app: The Starlette app passed to tasks accepting ``starlette_app``.
+            transformers: The Starlette api_transformers, in the order they wrap the app.
+
+        Yields:
+            The lifespan state the transformers yielded, merged in order, or None.
+        """
+        state: dict[str, Any] = {}
+        async with contextlib.AsyncExitStack() as stack:
+            await stack.enter_async_context(self._run_lifespan_tasks(starlette_app))
+            for transformer in transformers:
+                transformer_state: (
+                    Mapping[str, Any] | None
+                ) = await stack.enter_async_context(
+                    transformer.router.lifespan_context(transformer)
+                )
+                if transformer_state is not None:
+                    state.update(transformer_state)
+            yield state or None
 
     @overload
     def register_lifespan_task(

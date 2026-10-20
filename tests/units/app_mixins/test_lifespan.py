@@ -360,3 +360,93 @@ async def test_lifespan_cleanup_error_is_logged_while_another_task_is_stuck(capl
     finally:
         release.set()
         await shutdown
+
+
+def _starlette_with_lifespan(events: list[str], name: str, state=None) -> Starlette:
+    """Create a Starlette app whose lifespan records its start and stop.
+
+    Args:
+        events: The list to record lifespan events in.
+        name: The name of the app in the recorded events.
+        state: The lifespan state the app yields.
+
+    Returns:
+        The Starlette app.
+    """
+
+    @contextlib.asynccontextmanager
+    async def lifespan(app: Starlette):
+        events.append(f"{name} start {app is starlette_app}")
+        try:
+            yield state
+        finally:
+            events.append(f"{name} stop")
+
+    starlette_app = Starlette(lifespan=lifespan)
+    return starlette_app
+
+
+@pytest.mark.asyncio
+async def test_run_lifespan_merges_transformer_state():
+    """Transformers start after the tasks, stop before them, and merge their state."""
+    mixin = LifespanMixin()
+    events: list[str] = []
+
+    @contextlib.asynccontextmanager
+    async def task():
+        events.append("task start")
+        yield
+        events.append("task stop")
+
+    mixin.register_lifespan_task(task)
+    transformers = [
+        _starlette_with_lifespan(events, "inner", {"a": 1, "b": 1}),
+        _starlette_with_lifespan(events, "middle"),
+        _starlette_with_lifespan(events, "outer", {"b": 2}),
+    ]
+
+    async with mixin._run_lifespan(Starlette(), transformers) as state:
+        assert state == {"a": 1, "b": 2}
+    assert events == [
+        "task start",
+        "inner start True",
+        "middle start True",
+        "outer start True",
+        "outer stop",
+        "middle stop",
+        "inner stop",
+        "task stop",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_run_lifespan_without_state_yields_none():
+    """No lifespan state is reported when no transformer yields any."""
+    mixin = LifespanMixin()
+
+    async with mixin._run_lifespan(Starlette(), [Starlette()]) as state:
+        assert state is None
+
+
+@pytest.mark.asyncio
+async def test_run_lifespan_stops_started_lifespans_when_a_transformer_fails():
+    """A transformer failing to start stops the lifespans already started."""
+    mixin = LifespanMixin()
+    events: list[str] = []
+
+    @contextlib.asynccontextmanager
+    async def failing_lifespan(app: Starlette):
+        msg = "boom"
+        raise RuntimeError(msg)
+        yield
+
+    transformers = [
+        _starlette_with_lifespan(events, "inner"),
+        Starlette(lifespan=failing_lifespan),
+        _starlette_with_lifespan(events, "outer"),
+    ]
+
+    with pytest.raises(RuntimeError, match="boom"):
+        async with mixin._run_lifespan(Starlette(), transformers):
+            pass
+    assert events == ["inner start True", "inner stop"]

@@ -1,0 +1,1 @@
+The backend no longer wraps the app in an extra `Starlette` application to run lifespan tasks, which removes a routing layer and a duplicate CORS middleware from every request. `App.__call__` therefore no longer returns a `Starlette` instance, and lifespan tasks accepting `starlette_app` receive the `Starlette` app that serves Reflex's own routes.
