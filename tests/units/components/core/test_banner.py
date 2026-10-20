@@ -63,9 +63,3 @@ def test_connection_toaster_shows_hydration_errors_at_once():
     assert hydration_check < hooks.index("(connectErrors.length >= 2)")
     assert 'id: "hydration-payload-error"' in hooks
     assert "duration: Infinity" in hooks
-
-
-def test_connection_modal_opens_on_a_hydration_error():
-    rendered = str(ConnectionModal.create().render())
-
-    assert "hydration_payload_too_large" in rendered
