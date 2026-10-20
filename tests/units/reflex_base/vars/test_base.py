@@ -378,6 +378,21 @@ def test_var_data_field_name_reports_the_first_field():
     assert VarData().field_name == ""
 
 
+def test_var_data_position_is_deprecated_and_ignored():
+    """Hooks of different positions merge, in order, instead of raising."""
+    with mock.patch("reflex_base.utils.console.deprecate") as deprecate:
+        internal = VarData(
+            hooks=["const a = 1"], position=constants.Hooks.HookPosition.INTERNAL
+        )
+        post = VarData(
+            hooks=["const b = a"], position=constants.Hooks.HookPosition.POST_TRIGGER
+        )
+    assert deprecate.call_count == 2
+    merged = VarData.merge(internal, post)
+    assert merged is not None
+    assert merged.hooks == ("const a = 1", "const b = a")
+
+
 def test_serializer_attribute_error_is_not_masked() -> None:
     """An AttributeError raised inside a serializer surfaces chained, with its own frame."""
 
