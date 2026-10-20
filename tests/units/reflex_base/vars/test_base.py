@@ -14,7 +14,7 @@ import traceback
 import typing
 import weakref
 from abc import ABC, abstractmethod
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterable, Iterator, Sequence
 from pathlib import Path
 from typing import Any, ClassVar, Literal, Self, TypeVar
 from unittest import mock
@@ -2330,6 +2330,10 @@ def test_get_leaf_vars_sorts_every_cached_operation() -> None:
     A new operation class has to be added here after deciding whether every
     value it holds in a field is one it reads, so the generic unwrapping applies,
     or whether it needs its own branch or is a leaf.
+
+    Classes are compared by name: a ``slots=True`` dataclass is a rebuilt copy
+    of the class first defined, and the discarded original stays in
+    ``__subclasses__`` until it is garbage collected.
     """
 
     def subclasses(cls: type) -> set[type]:
@@ -2337,13 +2341,16 @@ def test_get_leaf_vars_sorts_every_cached_operation() -> None:
             *(subclasses(sub) for sub in cls.__subclasses__())
         )
 
+    def names(classes: Iterable[type]) -> set[str]:
+        return {f"{cls.__module__}.{cls.__qualname__}" for cls in classes}
+
     operations = {
         cls
         for cls in subclasses(CachedVarOperation)
         if cls.__module__.startswith("reflex_base.")
     }
 
-    assert operations == {
+    assert names(operations) == names({
         CustomVarOperation,
         ArraySliceOperation,
         ObjectItemOperation,
@@ -2362,4 +2369,4 @@ def test_get_leaf_vars_sorts_every_cached_operation() -> None:
         LiteralComponentVar,
         LiteralEventVar,
         LiteralEventChainVar,
-    }
+    })
