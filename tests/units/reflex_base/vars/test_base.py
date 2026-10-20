@@ -2,6 +2,7 @@
 
 import dataclasses
 import datetime
+import decimal
 import enum
 import gc
 import logging
@@ -80,6 +81,7 @@ from reflex_base.vars.sequence import (
 from typing_extensions import TypeAliasType, TypeVarTuple
 
 import reflex as rx
+from reflex.istate.data import ReflexURLCastedVar, RouterDataVar
 from reflex.istate.proxy import MutableProxy
 from reflex.state import BaseState, State, _override_base_method
 
@@ -2248,10 +2250,13 @@ def test_get_leaf_vars_dissolves_literals() -> None:
 
     assert get_leaf_vars(LiteralVar.create(1)) == []
     assert get_leaf_vars(LiteralVar.create("text")) == []
+    assert get_leaf_vars(LiteralVar.create(decimal.Decimal("1.5"))) == []
     assert get_leaf_vars(LiteralVar.create(range(3))) == []
     assert get_leaf_vars(LiteralVar.create(datetime.datetime(2020, 1, 1))) == []
+    assert get_leaf_vars(LiteralVar.create({1, 2})) == []
     assert _identical(get_leaf_vars(LiteralVar.create([1, a, [b]])), a, b)
     assert _identical(get_leaf_vars(LiteralVar.create({"k": a, b: 2})), a, b)
+    assert _identical(get_leaf_vars(LiteralVar.create({a})), a)
     assert _identical(get_leaf_vars(LiteralVar.create([f"{a}-x"])), a)
     # A var that is the whole of a formatted string is decoded into a new object.
     (decoded,) = get_leaf_vars(LiteralVar.create([f"{a}"]))
@@ -2291,9 +2296,34 @@ def test_get_leaf_vars_reads_through_a_function_body() -> None:
     assert _identical(get_leaf_vars(spread), outer)
     colored = items.map(lambda item: Color(outer, shade=item.to(int)))
     assert _identical(get_leaf_vars(colored), items, outer)
+    priced = items.map(lambda item: item.length() + decimal.Decimal("1.5"))
+    assert _identical(get_leaf_vars(priced), items)
+    # A cast around a function reads like the function.
+    x = Var(_js_expr="x").to(int)
+    cast = ArgsFunctionOperation.create(("x",), x + items.length()).to(FunctionVar)
+    assert _identical(get_leaf_vars(cast), items)
     # A named function is a leaf.
     fn = FunctionStringVar.create("fn")
     assert _identical(get_leaf_vars(fn), fn)
+
+
+def test_get_leaf_vars_keeps_a_function_whole_when_a_leaf_reads_a_parameter() -> None:
+    """A body leaf that is not a parameter itself may still read one.
+
+    Hoisting it out of the function would name something bound only inside.
+    """
+    items = Var(_js_expr="state.items").to(list[str])
+    other = Var(_js_expr="state.other").to(list[str])
+
+    built = items.map(lambda item: Var(_js_expr=f"{item}.length").to(int))
+    array, function = get_leaf_vars(built)
+    assert array is items
+    assert isinstance(function, FunctionVar)
+
+    closing = items.map(lambda item: other.map(lambda o: rx.console_log(item)))
+    array, function = get_leaf_vars(closing)
+    assert array is items
+    assert isinstance(function, FunctionVar)
 
 
 def test_get_leaf_vars_keeps_a_function_with_an_opaque_body_whole() -> None:
@@ -2354,7 +2384,7 @@ def test_get_leaf_vars_sorts_every_cached_operation() -> None:
     operations = {
         cls
         for cls in subclasses(CachedVarOperation)
-        if cls.__module__.startswith("reflex_base.")
+        if cls.__module__.startswith(("reflex_base.", "reflex."))
     }
 
     assert names(operations) == names({
@@ -2363,6 +2393,8 @@ def test_get_leaf_vars_sorts_every_cached_operation() -> None:
         ObjectItemOperation,
         ConcatVarOperation,
         VarOperationCall,
+        ReflexURLCastedVar,
+        RouterDataVar,
         # Literals read what their value holds, or nothing for a constant.
         LiteralArrayVar,
         LiteralObjectVar,

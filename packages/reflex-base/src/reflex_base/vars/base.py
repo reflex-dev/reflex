@@ -7,6 +7,7 @@ import contextlib
 import copy
 import dataclasses
 import datetime
+import decimal
 import functools
 import hashlib
 import inspect
@@ -86,6 +87,7 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from reflex.state import BaseState
     from reflex_base.components.component import BaseComponent
+    from reflex_base.vars.function import FunctionArgs
 
     from .color import LiteralColorVar
     from .number import BooleanVar, LiteralBooleanVar, LiteralNumberVar, NumberVar
@@ -3567,14 +3569,18 @@ _CONSTANT_TYPES = (
     datetime.date,
     datetime.time,
     datetime.timedelta,
+    decimal.Decimal,
 )
+
+# Literal values that hold other values.
+_CONTAINER_TYPES = (tuple, list, set, frozenset, Mapping)
 
 # The fields every var has; an operation's operands are in the others.
 _VAR_FIELDS = frozenset(field.name for field in dataclasses.fields(Var))
 
 
 def _items_in(value: Any) -> Iterator[Any]:
-    """Yield the items a value holds, flattening tuples, lists and mappings.
+    """Yield the items a value holds, flattening containers.
 
     Args:
         value: The value to look into.
@@ -3582,68 +3588,22 @@ def _items_in(value: Any) -> Iterator[Any]:
     Yields:
         Each item, a var or a raw value, in order.
     """
-    if isinstance(value, (tuple, list)):
-        for item in value:
-            yield from _items_in(item)
-    elif isinstance(value, Mapping):
+    if isinstance(value, Mapping):
         for key, item in value.items():
             yield from _items_in(key)
+            yield from _items_in(item)
+    elif isinstance(value, _CONTAINER_TYPES):
+        for item in value:
             yield from _items_in(item)
     else:
         yield value
 
 
-def _operands(var: Var) -> list[Any] | None:
-    """Get the values a var reads, or None when it is a leaf.
-
-    A ``CustomVarOperation`` reads its operands. A literal container reads what
-    it holds, a color its parts, a scalar nothing;
-    any other literal value, an event or a component, stays whole as a leaf,
-    since what it reads is not known. So does a state field access, since its
-    field is no expression on its own, and a function, whose body
-    ``get_leaf_vars`` reads minus its parameters. Every other cached operation
-    reads what its own fields hold: an array slice, an object item, a string
-    concatenation, a function call.
-
-    The values come back as they are stored. A raw one, such as the arguments
-    of a call or the items of a container, is rendered through
-    ``LiteralVar.create``, which the caller mirrors to see what it reads.
-
-    Args:
-        var: The var to look into.
-
-    Returns:
-        The values read, vars or raw, in order; None for a leaf.
-    """
-    # function.py imports this module.
-    from reflex_base.vars.function import FunctionVar
-
-    if isinstance(var, CustomVarOperation):
-        return [arg for _, arg in var._args]
-    if isinstance(var, LiteralVar):
-        value = var._var_value
-        if isinstance(value, Color):
-            return [value.color, value.shade, value.alpha]
-        if isinstance(value, (tuple, list, Mapping)):
-            return list(_items_in(value))
-        return [] if isinstance(value, _CONSTANT_TYPES) else None
-    if isinstance(var, (FunctionVar, StateOperation)) or not isinstance(
-        var, CachedVarOperation
-    ):
-        return None
-    return [
-        item
-        for field in dataclasses.fields(var)
-        if field.name not in _VAR_FIELDS
-        for item in _items_in(getattr(var, field.name))
-    ]
-
-
-def _parameter_names(args: Any) -> set[str]:
+def _parameter_names(args: FunctionArgs) -> set[str]:
     """Collect the names a function's parameters bind.
 
     Args:
-        args: The function's ``FunctionArgs``.
+        args: The function's parameters.
 
     Returns:
         Every bound name, destructured fields and rest parameters included.
@@ -3659,20 +3619,108 @@ def _parameter_names(args: Any) -> set[str]:
     return names
 
 
+def _function_reads(function: Any) -> list[Var] | None:
+    """Get the vars a function reads other than its parameters.
+
+    Args:
+        function: An ``ArgsFunctionOperation`` or its builder, with a var body.
+
+    Returns:
+        The leaves of the body that are not parameters, or None when the function
+        has to stay whole: a leaf that is no parameter itself may still read one,
+        such as a var built from a formatted parameter or a nested function
+        closing over it, and hoisting it out would name something bound only
+        inside the function.
+    """
+    parameters = _parameter_names(function._args)
+    free = [
+        leaf
+        for leaf in get_leaf_vars(function._return_expr)
+        if leaf._js_expr not in parameters
+    ]
+    if parameters:
+        bound = re.compile(
+            rf"(?<![\w$.])(?:{'|'.join(map(re.escape, parameters))})(?![\w$])"
+        )
+        if any(bound.search(str(leaf)) for leaf in free):
+            return None
+    return free
+
+
+def _operands(var: Var) -> list[Any] | None:
+    """Get the values a var reads, or None when it is a leaf.
+
+    A cast reads what the var it wraps reads, so a cast of a leaf is a leaf
+    itself, as the caller holds it. A ``CustomVarOperation`` reads its operands.
+    A function reads what its body reads other than its parameters, or is a
+    leaf when a leaf of the body still reads one. A literal container reads
+    what it holds, a color its parts, a constant nothing; any other literal
+    value, an event or a component, stays whole as a leaf, since what it reads
+    is not known. So does a state field access, since its field is no
+    expression on its own, and a named function. Every other cached operation
+    reads what its own fields hold: an array slice, an object item, a string
+    concatenation, a function call.
+
+    The values come back as they are stored. A raw one, such as the arguments
+    of a call or the items of a container, is rendered through
+    ``LiteralVar.create``, which the caller mirrors to see what it reads.
+
+    Args:
+        var: The var to look into.
+
+    Returns:
+        The values read, vars or raw, in order; None for a leaf.
+    """
+    # function.py imports this module.
+    from reflex_base.vars.function import (
+        ArgsFunctionOperation,
+        ArgsFunctionOperationBuilder,
+        FunctionVar,
+    )
+
+    if isinstance(var, ToOperation):
+        return _operands(var._original)
+    if isinstance(var, CustomVarOperation):
+        return [arg for _, arg in var._args]
+    if (
+        isinstance(var, (ArgsFunctionOperation, ArgsFunctionOperationBuilder))
+        and not isinstance(var, LiteralVar)
+        and isinstance(var._return_expr, Var)
+    ):
+        return _function_reads(var)
+    if isinstance(var, LiteralVar):
+        value = var._var_value
+        if isinstance(value, Color):
+            return [value.color, value.shade, value.alpha]
+        if isinstance(value, _CONTAINER_TYPES):
+            return list(_items_in(value))
+        return [] if isinstance(value, _CONSTANT_TYPES) else None
+    if isinstance(var, (FunctionVar, StateOperation)) or not isinstance(
+        var, CachedVarOperation
+    ):
+        return None
+    return [
+        item
+        for field in dataclasses.fields(var)
+        if field.name not in _VAR_FIELDS
+        for item in _items_in(getattr(var, field.name))
+    ]
+
+
 def get_leaf_vars(var: Var) -> Sequence[Var]:
     """Collect the leaf vars a var reads.
 
     A var operation such as ``state.items.filter(...)`` or ``state.items[1:]``
     renders to a fresh value every time it is evaluated, so a React hook reading
     one has to depend on the vars it reads instead. This unwraps an operation
-    into its operands, a cast into the operation it wraps and a literal
-    container into the vars it holds, recursively, converting a raw value the
-    way the renderer does; a plain literal is a constant and yields nothing. A
-    leaf comes back as the caller holds it, cast included, and a function yields
-    what its body reads other than its own parameters, so a predicate closing
-    over nothing yields nothing and one closing over a loop var yields that var.
-    A body holding a literal that cannot be taken apart may read the parameters
-    inside it, so such a function stays whole.
+    into its operands, a cast into what it wraps and a literal container into
+    the vars it holds, recursively, converting a raw value the way the renderer
+    does; a plain literal is a constant and yields nothing. A leaf comes back as
+    the caller holds it, cast included. A function yields what its body reads
+    other than its own parameters, so a predicate closing over nothing yields
+    nothing and one closing over a loop var yields that var; it stays whole when
+    a leaf of its body still reads a parameter, since hoisting that leaf out
+    would name something bound only inside the function.
 
     Args:
         var: The var to take apart.
@@ -3681,39 +3729,10 @@ def get_leaf_vars(var: Var) -> Sequence[Var]:
         The leaves, in order of first appearance and without duplicates. A var
         that is no operation is its own only leaf.
     """
-    # function.py imports this module.
-    from reflex_base.vars.function import (
-        ArgsFunctionOperation,
-        ArgsFunctionOperationBuilder,
-    )
-
     leaves: dict[tuple[Any, ...], Var] = {}
     stack = [var]
     while stack:
         current = stack.pop()
-        if isinstance(current, ToOperation):
-            wrapped = current._original
-            while isinstance(wrapped, ToOperation):
-                wrapped = wrapped._original
-            if _operands(wrapped) is None:
-                leaves.setdefault(current._hash_key(), current)
-            else:
-                stack.append(wrapped)
-            continue
-        if (
-            isinstance(current, (ArgsFunctionOperation, ArgsFunctionOperationBuilder))
-            and not isinstance(current, LiteralVar)
-            and isinstance(current._return_expr, Var)
-        ):
-            body_leaves = get_leaf_vars(current._return_expr)
-            if any(isinstance(leaf, LiteralVar) for leaf in body_leaves):
-                leaves.setdefault(current._hash_key(), current)
-                continue
-            parameters = _parameter_names(current._args)
-            for leaf in body_leaves:
-                if leaf._js_expr not in parameters:
-                    leaves.setdefault(leaf._hash_key(), leaf)
-            continue
         operands = _operands(current)
         if operands is None:
             leaves.setdefault(current._hash_key(), current)
