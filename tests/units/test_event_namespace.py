@@ -47,6 +47,7 @@ from reflex.event_namespace import (
     decode_channel_frame,
     encode_channel_frame,
 )
+from reflex.istate.data import HeaderData
 from reflex.utils.token_manager import SocketRecord
 
 from .conftest import active_tracer, metric_points
@@ -1977,11 +1978,20 @@ def test_decode_asgi_headers():
         "host": "example.com",
         "x-forwarded-for": "10.0.0.1, 10.0.0.2",
     }
-    # Later duplicates win, matching dict comprehension semantics.
+    # Repeated cookie fields are joined with "; " (RFC 9113 section 8.2.3).
     assert _decode_asgi_headers([
         (b"cookie", b"a=1"),
         (b"cookie", b"b=2"),
-    ]) == {"cookie": "b=2"}
+    ]) == {"cookie": "a=1; b=2"}
+    # Any other repeated field is joined in order with ", " (RFC 9110 section 5.3).
+    assert _decode_asgi_headers([
+        (b"x-forwarded-for", b"10.0.0.1"),
+        (b"accept", b"text/html"),
+        (b"x-forwarded-for", b"10.0.0.2, 10.0.0.3"),
+    ]) == {
+        "x-forwarded-for": "10.0.0.1, 10.0.0.2, 10.0.0.3",
+        "accept": "text/html",
+    }
     # Names and values are decoded as UTF-8.
     assert _decode_asgi_headers([(b"x-name", "café".encode())]) == {"x-name": "café"}
     # Octets that are not UTF-8, in a name or a value, decode as Latin-1; the
@@ -1991,6 +2001,34 @@ def test_decode_asgi_headers():
         (b"x-raw", b"\xfe"),
         ("x-café".encode(), "café".encode()),
     ]) == {"x-ÿ": "a", "x-raw": "þ", "x-café": "café"}
+    # A repeated field is still joined when one of its values is not UTF-8.
+    assert _decode_asgi_headers([
+        (b"cookie", b"a=1"),
+        (b"cookie", b"b=\xff"),
+    ]) == {"cookie": "a=1; b=ÿ"}
+
+
+def test_static_router_data_keeps_every_repeated_header_field():
+    """Repeated cookie and x-forwarded-for fields all reach the router data."""
+    router_data = event_namespace.build_static_router_data(
+        "sid1",
+        {
+            "headers": [
+                (b"cookie", b"sid=1"),
+                (b"x-forwarded-for", b"203.0.113.7"),
+                (b"cookie", b"other=2"),
+                (b"x-forwarded-for", b"10.0.0.2"),
+            ],
+            "client": ("127.0.0.1", 1234),
+        },
+    )
+
+    headers = router_data[constants.RouteVar.HEADERS]
+    assert headers["cookie"] == "sid=1; other=2"
+    assert headers["x-forwarded-for"] == "203.0.113.7, 10.0.0.2"
+    # The original client hop comes first, not the proxy that added the second field.
+    assert router_data[constants.RouteVar.CLIENT_IP] == "203.0.113.7"
+    assert HeaderData.from_router_data(router_data).cookie == "sid=1; other=2"
 
 
 @pytest.mark.asyncio

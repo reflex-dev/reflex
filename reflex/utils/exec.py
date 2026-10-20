@@ -617,6 +617,9 @@ def run_backend(
 
     # Run the backend in development mode.
     if should_use_granian():
+        # Fix the start method first so a backend-only run, which skips the
+        # compile pool, preloads under the same rule as the reload worker.
+        set_dev_start_method()
         # Forked workers inherit imported modules from the supervisor. Spawned
         # and forkserver workers do not, so preloading the app there only keeps
         # the full framework graph resident in the long-lived supervisor.
@@ -877,13 +880,12 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
         port: The app port
         loglevel: The log level.
     """
+    import multiprocessing
+
     logger.debug("Using Granian for backend")
     _cap_message_size_for_granian()
 
-    if environment.REFLEX_STRICT_HOT_RELOAD.get():
-        import multiprocessing
-
-        multiprocessing.set_start_method("spawn", force=True)
+    set_dev_start_method()
 
     from granian.constants import Interfaces
     from granian.log import LogLevels
@@ -1018,6 +1020,14 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
             self._close_shared_socket()
             super().shutdown(exit_code)
 
+    # The app itself is not imported here: the reload worker must load it
+    # fresh on every restart. Only the framework pages are shared.
+    # The supervisor forks again on every reload; the run-dev event was sent
+    # before this point and nothing in it sends telemetry afterwards.
+    if multiprocessing.get_start_method() == "fork" and not _freeze_for_fork():
+        logger.debug("A telemetry send is still running; spawning the worker.")
+        multiprocessing.set_start_method("spawn", force=True)
+
     reset_dev_backend_reload_marker()
     environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.set(True)
 
@@ -1137,7 +1147,7 @@ def run_uvicorn_backend_prod(
 
 
 def _backend_start_method() -> str | None:
-    """Resolve the multiprocessing start method for production backend workers.
+    """Resolve the multiprocessing start method for backend workers.
 
     Returns:
         The start method to force, or None to keep the interpreter default.
@@ -1154,6 +1164,48 @@ def _backend_start_method() -> str | None:
     return None
 
 
+def set_dev_start_method() -> None:
+    """Fix the multiprocessing start method for the development backend.
+
+    An explicit ``REFLEX_BACKEND_START_METHOD`` wins; otherwise strict hot
+    reload spawns workers and the platform rule of ``_backend_start_method``
+    applies. Call this before the first child process starts, or a forkserver
+    started for the compile pool stays alive for the whole session.
+    """
+    import multiprocessing
+
+    if (
+        environment.REFLEX_STRICT_HOT_RELOAD.get()
+        and environment.REFLEX_BACKEND_START_METHOD.get() is None
+    ):
+        start_method = "spawn"
+    else:
+        start_method = _backend_start_method()
+    if start_method is not None:
+        multiprocessing.set_start_method(start_method, force=True)
+
+
+def _freeze_for_fork() -> bool:
+    """Stop the telemetry thread and freeze the heap before forking workers.
+
+    Forking while the telemetry thread may hold a lock can deadlock the child.
+    Without the freeze, worker GC passes write to the inherited objects'
+    headers, which copies the shared pages private again.
+
+    Returns:
+        Whether forking is safe; False when a telemetry thread is still alive.
+    """
+    import gc
+
+    from reflex.utils import telemetry
+
+    if not telemetry._shutdown_executor():
+        return False
+    gc.collect()
+    gc.freeze()
+    return True
+
+
 def _preload_for_fork(app_target: str | None) -> bool:
     """Import the app in the supervisor so forked workers share its pages.
 
@@ -1164,25 +1216,16 @@ def _preload_for_fork(app_target: str | None) -> bool:
     Returns:
         Whether forking is safe; False when a telemetry thread is still alive.
     """
-    import gc
-
     from reflex_base.utils import serializers
 
-    from reflex.utils import prerequisites, telemetry
+    from reflex.utils import prerequisites
 
     if app_target is None:
         prerequisites.get_app()
     serializers._prepare_serializers_for_fork()
-    # Forking while the telemetry thread may hold a lock can deadlock the child.
     # Nothing in the supervisor sends telemetry after this point, so no thread
     # exists at any later fork either (e.g. a worker respawn).
-    if not telemetry._shutdown_executor():
-        return False
-    # Freezing keeps worker GC passes from writing to the preloaded objects'
-    # headers, which would copy-on-write the shared pages private again.
-    gc.collect()
-    gc.freeze()
-    return True
+    return _freeze_for_fork()
 
 
 def run_granian_backend_prod(

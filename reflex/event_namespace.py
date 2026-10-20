@@ -91,17 +91,30 @@ def _decode_header_octets(octets: bytes) -> str:
 def _decode_asgi_headers(headers: Iterable[tuple[bytes, bytes]]) -> dict[str, str]:
     """Decode raw ASGI scope header pairs into a str-keyed dict.
 
+    ASGI keeps a repeated header as separate pairs, so their values are combined in
+    order: cookies with "; " (RFC 9113 section 8.2.3), any other field with ", "
+    (RFC 9110 section 5.3).
+
     Args:
         headers: Raw (name, value) byte pairs from the ASGI scope.
 
     Returns:
         A dict mapping decoded header names to decoded values.
     """
-    # The common all-UTF-8 case decodes without a function call per header.
-    try:
-        return {k.decode(): v.decode() for k, v in headers}
-    except UnicodeDecodeError:
-        return {_decode_header_octets(k): _decode_header_octets(v) for k, v in headers}
+    decoded: dict[str, str] = {}
+    for raw_name, raw_value in headers:
+        # The common all-UTF-8 case decodes without a function call per header.
+        try:
+            name = raw_name.decode()
+            value = raw_value.decode()
+        except UnicodeDecodeError:
+            name = _decode_header_octets(raw_name)
+            value = _decode_header_octets(raw_value)
+        if name in decoded:
+            decoded[name] += ("; " if name == "cookie" else ", ") + value
+        else:
+            decoded[name] = value
+    return decoded
 
 
 def build_static_router_data(sid: str, asgi_scope: Mapping[str, Any]) -> dict[str, Any]:

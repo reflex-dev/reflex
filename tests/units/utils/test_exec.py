@@ -136,6 +136,8 @@ def test_run_backend_skips_app_preload_for_spawn(
     run_granian = mocker.patch.object(exec_utils, "run_granian_backend")
     mocker.patch.object(exec_utils, "notify_backend")
     mocker.patch.object(multiprocessing, "get_start_method", return_value="spawn")
+    mocker.patch.object(multiprocessing, "set_start_method")
+    monkeypatch.delenv(environment.REFLEX_BACKEND_START_METHOD.name, raising=False)
     monkeypatch.setenv(environment.REFLEX_STRICT_HOT_RELOAD.name, "False")
 
     real_import = builtins.__import__
@@ -164,6 +166,8 @@ def test_run_backend_preloads_app_for_fork(
     mocker.patch.object(exec_utils, "run_granian_backend")
     mocker.patch.object(exec_utils, "notify_backend")
     mocker.patch.object(multiprocessing, "get_start_method", return_value="fork")
+    mocker.patch.object(multiprocessing, "set_start_method")
+    monkeypatch.delenv(environment.REFLEX_BACKEND_START_METHOD.name, raising=False)
     monkeypatch.setenv(environment.REFLEX_STRICT_HOT_RELOAD.name, "False")
 
     imported: list[str] = []
@@ -249,6 +253,141 @@ def test_run_granian_backend_sets_reload_env_var_and_clears_marker(
     )
 
     assert seen["value"] == "True"
+
+
+@pytest.mark.parametrize(
+    ("strict", "default_method", "expected"),
+    [
+        (True, "forkserver", "start:spawn"),
+        (False, "forkserver", "start:fork"),
+        (False, "fork", "start:fork"),
+        (False, "spawn", None),
+    ],
+)
+def test_set_dev_start_method(
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    strict: bool,
+    default_method: str,
+    expected: str | None,
+):
+    """Strict hot reload spawns; otherwise the platform rule decides."""
+    monkeypatch.setenv(environment.REFLEX_STRICT_HOT_RELOAD.name, str(strict))
+    monkeypatch.delenv(environment.REFLEX_BACKEND_START_METHOD.name, raising=False)
+    calls: list[str] = []
+    mocker.patch.object(
+        multiprocessing, "get_start_method", return_value=default_method
+    )
+    mocker.patch.object(
+        multiprocessing,
+        "set_start_method",
+        side_effect=lambda method, force=False: calls.append(f"start:{method}"),
+    )
+
+    exec_utils.set_dev_start_method()
+
+    assert calls == ([expected] if expected else [])
+
+
+def test_set_dev_start_method_explicit_method_beats_strict_hot_reload(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """REFLEX_BACKEND_START_METHOD wins even when strict hot reload is on."""
+    monkeypatch.setenv(environment.REFLEX_STRICT_HOT_RELOAD.name, "True")
+    monkeypatch.setenv(environment.REFLEX_BACKEND_START_METHOD.name, "forkserver")
+    set_start_method = mocker.patch.object(multiprocessing, "set_start_method")
+
+    exec_utils.set_dev_start_method()
+
+    set_start_method.assert_called_once_with("forkserver", force=True)
+
+
+def _fake_granian_dev(
+    mocker: MockerFixture,
+    calls: list[str],
+    start_method: str,
+    telemetry_stopped: bool = True,
+):
+    """Patch granian and the dev launcher's collaborators, recording call order."""
+    granian_server = pytest.importorskip("granian.server")
+
+    class FakeGranian:
+        def __init__(self, *_args, **_kwargs):
+            pass
+
+        def on_reload(self, _callback):
+            pass
+
+        def serve(self):
+            calls.append("serve")
+
+    mocker.patch.object(granian_server, "Server", FakeGranian)
+    mocker.patch.object(
+        exec_utils, "get_app_instance_from_file", return_value="app:app"
+    )
+    mocker.patch.object(exec_utils, "get_reload_paths", return_value=[])
+    mocker.patch.object(exec_utils, "reset_dev_backend_reload_marker")
+    mocker.patch.object(
+        multiprocessing,
+        "set_start_method",
+        side_effect=lambda method, force=False: calls.append(f"start:{method}"),
+    )
+    mocker.patch.object(multiprocessing, "get_start_method", return_value=start_method)
+    mocker.patch.object(
+        prerequisites, "get_app", side_effect=lambda: calls.append("preload")
+    )
+    mocker.patch.object(
+        telemetry,
+        "_shutdown_executor",
+        side_effect=lambda: calls.append("drain") or telemetry_stopped,
+    )
+    mocker.patch.object(gc, "freeze", side_effect=lambda: calls.append("freeze"))
+
+
+@pytest.mark.parametrize(
+    ("start_method", "expected"),
+    [
+        ("fork", ["start:fork", "drain", "freeze", "serve"]),
+        ("spawn", ["start:spawn", "serve"]),
+    ],
+)
+def test_run_granian_backend_freezes_only_for_fork(
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    start_method: str,
+    expected: list[str],
+):
+    """Forked reload workers share a frozen heap; the app is never preloaded.
+
+    The telemetry thread (e.g. from the run-dev event) is drained and stopped
+    first, so the supervisor has no telemetry thread when it forks the worker.
+    """
+    monkeypatch.setenv(environment.REFLEX_BACKEND_START_METHOD.name, start_method)
+    monkeypatch.setenv(environment.REFLEX_STRICT_HOT_RELOAD.name, "False")
+    calls: list[str] = []
+    _fake_granian_dev(mocker, calls, start_method)
+
+    exec_utils.run_granian_backend(
+        host="0.0.0.0", port=8000, loglevel=exec_utils.LogLevel.INFO
+    )
+
+    assert calls == expected
+
+
+def test_run_granian_backend_spawns_when_telemetry_is_stuck(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """A telemetry thread that outlives the drain makes the dev fork unsafe."""
+    monkeypatch.setenv(environment.REFLEX_BACKEND_START_METHOD.name, "fork")
+    monkeypatch.setenv(environment.REFLEX_STRICT_HOT_RELOAD.name, "False")
+    calls: list[str] = []
+    _fake_granian_dev(mocker, calls, "fork", telemetry_stopped=False)
+
+    exec_utils.run_granian_backend(
+        host="0.0.0.0", port=8000, loglevel=exec_utils.LogLevel.INFO
+    )
+
+    assert calls == ["start:fork", "drain", "start:spawn", "serve"]
 
 
 def test_run_granian_backend_binds_listen_socket_in_supervisor(
