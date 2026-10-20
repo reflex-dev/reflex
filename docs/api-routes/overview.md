@@ -129,8 +129,9 @@ def add_logging_middleware(app):
     # This is a simple example middleware that logs requests
     async def middleware(scope, receive, send):
         # Log the request path; lifespan scopes have none
-        if scope["type"] != "lifespan":
-            print("Request:", scope["path"])
+        path = scope.get("path")
+        if path is not None:
+            print("Request:", path)
         await app(scope, receive, send)
 
     return middleware
