@@ -51,6 +51,7 @@ from reflex_base.vars.sequence import (
     ConcatVarOperation,
     LiteralArrayVar,
     LiteralStringVar,
+    StringVar,
 )
 
 import reflex as rx
@@ -419,6 +420,19 @@ def test_date_comparison_uses_compare_datetime():
 
     assert str(lhs < rhs) == '(compareDatetime("2024-01-01", "2024-01-02") < 0)'
     assert str(lhs == rhs) == '(compareDatetime("2024-01-01", "2024-01-02") === 0)'
+
+
+def test_frozenset_literal_types_its_elements():
+    """A frozen set literal infers its element type like a set does."""
+    # The static array bound is Sequence, which no set satisfies; see the PR.
+    var = cast(ArrayVar, v(frozenset({"a"})))
+
+    assert var._var_type == frozenset[str]
+    assert isinstance(var[0], StringVar)
+    assert re.fullmatch(
+        r'\["a"\]\.map\(\(\((\w+)\) => \1\.toUpperCase\(\)\)\)',
+        str(var.map(lambda item: item.upper())),
+    )
 
 
 def test_datetime_equality_with_other_type_uses_default_comparison():

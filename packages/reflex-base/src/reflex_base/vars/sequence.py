@@ -1920,6 +1920,7 @@ def _determine_value_of_array_index(
         Iterable,
         list,
         set,
+        frozenset,
         collections.abc.Sequence,
         collections.abc.Iterable,
     ]:
