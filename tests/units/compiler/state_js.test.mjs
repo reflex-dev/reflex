@@ -19,7 +19,8 @@ async function setup({
   hidden = false,
   storedToken = "original-token",
   clientStorage = {},
-  dropConnect = false,
+  dropConnects = 0,
+  dropReason = "transport close",
   react = { useCallback() {}, useEffect() {}, useRef() {}, useState() {} },
 } = {}) {
   const sockets = [];
@@ -61,6 +62,7 @@ async function setup({
     clearTimeout: (fn) => timers.delete(fn),
   });
   window.setTimeout = context.setTimeout;
+  window.clearTimeout = context.clearTimeout;
 
   function io(url, opts) {
     const handlers = new Map();
@@ -94,9 +96,13 @@ async function setup({
           assert.ok(handlers.has(name), `missing handler: ${name}`);
         }
         this.namespaceConnects++;
-        if (dropConnect) {
-          // The server closes the transport before acknowledging the CONNECT.
-          handlers.get("disconnect")("transport close");
+        if (this.namespaceConnects <= dropConnects) {
+          // The transport closes before the CONNECT is acknowledged. A
+          // transport error reports connect_error before the disconnect.
+          if (dropReason === "transport error") {
+            handlers.get("connect_error")(new Error("xhr post error"));
+          }
+          handlers.get("disconnect")(dropReason);
           return;
         }
         this.connected = true;
@@ -270,7 +276,7 @@ test("reconnect uses the assigned token and requests a full hydrate", async () =
 });
 
 test("a transport closed before the namespace connects backs off with an error", async () => {
-  const app = await setup({ dropConnect: true });
+  const app = await setup({ dropConnects: Infinity });
   app.flush();
   await app.connect();
   const socket = app.socket.current;
@@ -284,6 +290,40 @@ test("a transport closed before the namespace connects backs off with an error",
   assert.equal(socket.namespaceConnects, 2);
   assert.equal(app.connectErrors.length, 2);
   assert.deepEqual([...app.timers.values()], [400]);
+});
+
+test("a transport error before the namespace connects retries once with backoff", async () => {
+  const app = await setup({ dropConnects: 2, dropReason: "transport error" });
+  app.flush();
+  await app.connect();
+  const socket = app.socket.current;
+  assert.equal(socket.namespaceConnects, 1);
+  assert.equal(app.connectErrors.length, 1);
+  assert.deepEqual([...app.timers.values()], [200]);
+
+  const [retry] = app.timers.keys();
+  app.timers.clear();
+  retry();
+  assert.equal(socket.namespaceConnects, 2);
+  assert.deepEqual([...app.timers.values()], [400]);
+});
+
+test("a connect cancels the pending retry", async () => {
+  const app = await setup({ dropConnects: 1 });
+  app.flush();
+  await app.connect();
+  const socket = app.socket.current;
+  assert.equal(app.timers.size, 1);
+
+  // Another path, such as the page becoming visible, reconnects first.
+  socket.reconnect();
+  assert.equal(socket.connected, true);
+  assert.equal(app.timers.size, 0);
+
+  socket.connected = false;
+  socket.handlers.get("disconnect")("io server disconnect");
+  assert.equal(socket.namespaceConnects, 2);
+  assert.equal(app.timers.size, 0);
 });
 
 test("a dropped connection reconnects at once", async () => {

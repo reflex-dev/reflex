@@ -1003,12 +1003,16 @@ export const connect = async (
   const reported_missing_substates = new Set();
   // Failed connection attempts since the last connect, for the retry backoff.
   let failed_attempts = 0;
+  // The scheduled retry of the last failed attempt.
+  let retry_timer;
 
   // Once the socket is open, hydrate the page.
   socket.current.on("connect", async () => {
     socket.current.wait_connect = false;
     reported_missing_substates.clear();
     failed_attempts = 0;
+    window.clearTimeout(retry_timer);
+    retry_timer = undefined;
     setConnectErrors([]);
     window.__reflex_otel?.onSocketConnect?.();
     window.addEventListener("pagehide", pagehideHandler);
@@ -1024,7 +1028,9 @@ export const connect = async (
     socket.current.wait_connect = false;
     failed_attempts = Math.min(failed_attempts + 1, 10);
     setConnectErrors((connectErrors) => [...connectErrors.slice(-9), error]);
-    window.setTimeout(() => {
+    window.clearTimeout(retry_timer);
+    retry_timer = window.setTimeout(() => {
+      retry_timer = undefined;
       if (socket.current && !socket.current.connected) {
         socket.current.reconnect();
       }
@@ -1040,6 +1046,10 @@ export const connect = async (
       retryConnect(
         new Error(`connection closed before connecting (${reason})`),
       );
+      return;
+    }
+    // A transport error reports connect_error first, which scheduled the retry.
+    if (retry_timer !== undefined) {
       return;
     }
     window.__reflex_otel?.onSocketDisconnect?.(reason);

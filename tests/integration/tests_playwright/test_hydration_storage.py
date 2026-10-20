@@ -1,7 +1,9 @@
 """Browser regressions for client-storage writes during hydration and assigned defaults."""
 
 import re
+import time
 from collections.abc import Callable, Generator
+from itertools import pairwise
 
 import pytest
 from playwright.sync_api import Page, WebSocketRoute, expect
@@ -665,8 +667,11 @@ def test_refused_hydration_retries_with_backoff(
         limit: Whether the server limit or a smaller proxy limit drops the packet.
     """
     assert hydration_storage_app.frontend_url is not None
-    opens: list[str] = []
-    page.on("websocket", lambda ws: opens.append(ws.url))
+    opens: list[float] = []
+    page.on(
+        "websocket",
+        lambda ws: opens.append(time.monotonic()) if "/_event" in ws.url else None,
+    )
     if limit == "proxy":
 
         def proxy(route: WebSocketRoute):
@@ -690,11 +695,15 @@ def test_refused_hydration_retries_with_backoff(
     opens.clear()
     page.reload()
     expect(page.get_by_text("Cannot connect to server")).to_be_visible()
-    page.wait_for_timeout(3000)
-    # The backoff allows about six attempts in three seconds; an immediate
-    # reconnect makes hundreds.
-    event_opens = [url for url in opens if "/_event" in url]
-    assert len(event_opens) < 10, event_opens
+    deadline = time.monotonic() + 10
+    while len(opens) < 4 and time.monotonic() < deadline:
+        page.wait_for_timeout(100)
+    # Each retry waits 200 ms longer than the one before; an immediate
+    # reconnect retries within a few ms.
+    gaps = [b - a for a, b in pairwise(opens[:4])]
+    assert len(gaps) == 3, gaps
+    assert all(gap > 0.15 for gap in gaps), gaps
+    assert gaps[0] < gaps[2], gaps
     expect(page.locator("#hydrated")).to_have_text("false")
 
     page.evaluate("localStorage.removeItem('hydrate-local')")
