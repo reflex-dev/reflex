@@ -268,6 +268,14 @@ def test_hot_reload_recomputes_cached_vars(tmp_path: Path):
     backend.write_text(_HOT_RELOAD_BACKEND)
 
     def run(step: str) -> str:
+        """Run one step of the backend script in a new process.
+
+        Args:
+            step: "before" or "after" the reload.
+
+        Returns:
+            What the script printed.
+        """
         return subprocess.run(
             # -B: no bytecode cache, so the second run imports the edited app.
             [sys.executable, "-B", str(backend), step],
