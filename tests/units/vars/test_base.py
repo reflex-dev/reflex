@@ -101,6 +101,40 @@ def test_reset_unique_variable_names_is_deterministic():
     assert [get_unique_variable_name() for _ in range(8)] == first
 
 
+def test_seeded_unique_variable_names_block_resumes_the_outer_sequence():
+    """A seeded block draws by its seed alone and keeps its names reserved."""
+    from reflex_base.vars.base import (
+        USED_VARIABLES,
+        get_unique_variable_name,
+        reset_unique_variable_names,
+        seed_unique_variable_names,
+        seeded_unique_variable_names,
+    )
+
+    reset_unique_variable_names()
+    outer_first = get_unique_variable_name()
+    with seeded_unique_variable_names("state.one"):
+        block_names = [get_unique_variable_name() for _ in range(3)]
+    outer_next = get_unique_variable_name()
+    # The block's names are a function of its seed, whatever ran before.
+    seed_unique_variable_names("unrelated")
+    get_unique_variable_name()
+    with seeded_unique_variable_names("state.one"):
+        assert [get_unique_variable_name() for _ in range(3)] == block_names
+    # The outer sequence resumed where it stopped, with the block's names taken.
+    reset_unique_variable_names()
+    assert get_unique_variable_name() == outer_first
+    with seeded_unique_variable_names("state.one"):
+        assert set(block_names) & USED_VARIABLES == set()
+        assert [get_unique_variable_name() for _ in range(3)] == block_names
+    assert set(block_names) <= USED_VARIABLES
+    assert get_unique_variable_name() == outer_next
+    # Reserved names are never handed out again by a seeded sequence.
+    seed_unique_variable_names("app", reserved=block_names)
+    assert set(block_names) <= USED_VARIABLES
+    assert get_unique_variable_name() not in block_names
+
+
 def test_seeded_unique_variable_names_are_per_page():
     """Each page seed yields its own reproducible sequence, resumable later.
 

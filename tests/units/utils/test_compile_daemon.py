@@ -535,6 +535,12 @@ def test_reset_first_party_keeps_surviving_module_states(tmp_path):
             assert local_cls.__module__ == istate_dynamic.__name__
             local_name = local_cls.__name__
 
+            from reflex_base.vars.base import (
+                get_unique_variable_name,
+                reset_unique_variable_names,
+            )
+
+            get_unique_variable_name()  # the parent drew names
             compile_daemon._reset_first_party([tmp_path.resolve()])
 
             substate_names = {c.__name__ for c in State.get_substates()}
@@ -552,6 +558,11 @@ def test_reset_first_party_keeps_surviving_module_states(tmp_path):
             # A re-created local state gets its original (fresh-process) name,
             # not a collision-suffixed drift.
             redefined_deterministic = _local_state().__name__ == local_name
+            # Re-imported modules draw the names a cold process draws.
+            child_names = [get_unique_variable_name() for _ in range(3)]
+            reset_unique_variable_names()
+            cold_names = [get_unique_variable_name() for _ in range(3)]
+            names_reset = child_names == cold_names
 
             result = (
                 b"1"
@@ -560,6 +571,7 @@ def test_reset_first_party_keeps_surviving_module_states(tmp_path):
                     and purged_dropped
                     and dynamic_dropped
                     and redefined_deterministic
+                    and names_reset
                 )
                 else b"0"
             )

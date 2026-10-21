@@ -17,7 +17,7 @@ import re
 import string
 import warnings
 from abc import ABCMeta
-from collections.abc import Callable, Coroutine, Iterable, Mapping, Sequence
+from collections.abc import Callable, Coroutine, Iterable, Iterator, Mapping, Sequence
 from dataclasses import MISSING
 from decimal import Decimal
 from types import CodeType, FunctionType
@@ -3721,17 +3721,44 @@ USED_VARIABLES = set()
 _UNIQUE_NAME_RNG = random.Random(42)
 
 
+#: The names the process drew before its first compile (at import), which
+#: every compile's post-page phase keeps reserved (see
+#: :func:`names_before_first_compile`).
+_names_before_first_compile: frozenset[str] | None = None
+
+
 def reset_unique_variable_names() -> None:
     """Reset the deterministic unique-name generator to its initial state.
 
     Names only need to be unique within one compile, so resetting before each
-    compile makes auto-generated ref names reproducible.
+    compile makes auto-generated ref names reproducible. A process that
+    re-imports its first-party code (the compile daemon's child) resets
+    first, so the re-imported modules draw the names a cold process draws.
     """
+    global _names_before_first_compile
     USED_VARIABLES.clear()
     _UNIQUE_NAME_RNG.seed(42)
+    _names_before_first_compile = None
 
 
-def seed_unique_variable_names(seed: str) -> None:
+def names_before_first_compile() -> frozenset[str]:
+    """The names drawn before the first compile of this process.
+
+    Module-level components draw their names at import, and the process
+    keeps using them; the names a compile draws after its pages (the app
+    root, runtime components) must not repeat them. Captured once so every
+    compile of the process draws the same post-page names.
+
+    Returns:
+        The reserved names.
+    """
+    global _names_before_first_compile
+    if _names_before_first_compile is None:
+        _names_before_first_compile = frozenset(USED_VARIABLES)
+    return _names_before_first_compile
+
+
+def seed_unique_variable_names(seed: str, *, reserved: Iterable[str] = ()) -> None:
     """Start a fresh, seed-determined name sequence (one per compiled page).
 
     Generated names are order-dependent, so a process-wide sequence gives a
@@ -3742,9 +3769,39 @@ def seed_unique_variable_names(seed: str) -> None:
 
     Args:
         seed: The page route (or another stable label).
+        reserved: Names the sequence must not hand out again (names drawn
+            before the compile, which the process keeps using).
     """
     USED_VARIABLES.clear()
+    USED_VARIABLES.update(reserved)
     _UNIQUE_NAME_RNG.seed(f"reflex-unique-names:{seed}")
+
+
+@contextlib.contextmanager
+def seeded_unique_variable_names(seed: str) -> Iterator[None]:
+    """Draw names from a seed-determined sequence within the block.
+
+    The names drawn in the block are a function of ``seed`` alone, so two
+    processes evaluating the same thing (a state's default values, say)
+    agree on them whatever they drew before. The outer sequence resumes
+    afterwards, with the names drawn in the block reserved.
+
+    Args:
+        seed: A stable label for what the block evaluates.
+
+    Yields:
+        None.
+    """
+    rng_state = _UNIQUE_NAME_RNG.getstate()
+    used_before = set(USED_VARIABLES)
+    seed_unique_variable_names(seed)
+    try:
+        yield
+    finally:
+        drawn = set(USED_VARIABLES)
+        _UNIQUE_NAME_RNG.setstate(rng_state)
+        USED_VARIABLES.clear()
+        USED_VARIABLES.update(used_before | drawn)
 
 
 def unique_variable_name_state() -> tuple[Any, frozenset[str]]:

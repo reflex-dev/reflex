@@ -70,6 +70,7 @@ from reflex_base.vars.base import (
     computed_var,
     dispatch,
     is_computed_var,
+    seeded_unique_variable_names,
 )
 from rich.markup import escape
 
@@ -2007,9 +2008,19 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         """
         if include_computed:
             self._mark_dirty_computed_vars()
-        base_vars = {
-            prop_name: self.get_value(prop_name) for prop_name in self.base_vars
-        }
+        if initial:
+            # A compile serializes the initial values; a default component's
+            # generated names must not depend on which states came first (a
+            # set's order varies by process, and the compile cache merges
+            # values recorded by different processes).
+            with seeded_unique_variable_names(self.get_full_name()):
+                base_vars = {
+                    prop_name: self.get_value(prop_name) for prop_name in self.base_vars
+                }
+        else:
+            base_vars = {
+                prop_name: self.get_value(prop_name) for prop_name in self.base_vars
+            }
         if initial and include_computed:
             computed_vars = {
                 # Include initial computed vars.

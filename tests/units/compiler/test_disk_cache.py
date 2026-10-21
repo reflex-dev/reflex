@@ -703,6 +703,28 @@ def test_unchanged_pages_compile_identically(tmp_path, monkeypatch):
     )
 
 
+def test_names_drawn_after_the_pages_never_repeat_import_time_names():
+    """The post-page phase keeps the names the process drew before the compile.
+
+    A module-level component draws its ref name at import; after the pages,
+    the app root and runtime components draw more. Reseeding the import
+    sequence would hand the same names out again.
+    """
+    from reflex_base.vars.base import (
+        get_unique_variable_name,
+        reset_unique_variable_names,
+    )
+
+    reset_unique_variable_names()
+    import_names = {get_unique_variable_name() for _ in range(3)}
+    _compile([_FakePage(route="/a", component=_page_a)])
+    after = {get_unique_variable_name() for _ in range(50)}
+    assert not after & import_names
+    # And the post-page sequence is the same on every compile.
+    _compile([_FakePage(route="/b", component=_page_b)])
+    assert {get_unique_variable_name() for _ in range(50)} == after
+
+
 _CONTEXTS_STUB = "// contexts stub"
 
 

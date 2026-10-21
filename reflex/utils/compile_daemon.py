@@ -611,6 +611,7 @@ def _reset_first_party(roots: list[Path]) -> None:
 
     from reflex_base.components.memo import MEMOS
     from reflex_base.registry import RegistrationContext
+    from reflex_base.vars.base import reset_unique_variable_names
 
     import reflex.istate.dynamic as istate_dynamic
     from reflex.compiler import page_cache
@@ -621,6 +622,8 @@ def _reset_first_party(roots: list[Path]) -> None:
     # old registration, or a memo file the app no longer defines).
     for key in [key for key in MEMOS if key[1] in purged]:
         del MEMOS[key]
+    # The re-imported modules draw the names a cold process draws at import.
+    reset_unique_variable_names()
     ctx = RegistrationContext.ensure_context()
     kept = [
         cls

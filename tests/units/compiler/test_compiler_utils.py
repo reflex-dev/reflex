@@ -329,3 +329,47 @@ def test_document_root_controls_preserve_no_id_and_page_refs():
 
     assert not document_root._get_all_hooks()
     assert page_script._get_all_hooks()
+
+
+def test_compile_state_default_component_names_do_not_depend_on_state_order():
+    """A default component's generated names are a function of its state.
+
+    Substates are a set, whose order varies by process; the compile cache
+    merges initial values recorded by different processes, which must agree.
+    """
+    from reflex_base.vars.base import reset_unique_variable_names
+
+    with RegistrationContext():
+
+        class _OrderRoot(rx.State):
+            pass
+
+        class _OrderOne(_OrderRoot):
+            comp: rx.Field[rx.Component] = rx.field(
+                default_factory=lambda: rx.auto_scroll()
+            )
+
+        class _OrderTwo(_OrderRoot):
+            comp: rx.Field[rx.Component] = rx.field(
+                default_factory=lambda: rx.auto_scroll()
+            )
+
+        def serialized(substates: list[type[rx.State]]) -> str:
+            reset_unique_variable_names()
+            original = _OrderRoot.get_substates
+            _OrderRoot.get_substates = classmethod(  # type: ignore[method-assign]
+                lambda cls: substates if cls is _OrderRoot else set()
+            )
+            try:
+                return utils._serialize_initial_state(compile_state(_OrderRoot))
+            finally:
+                _OrderRoot.get_substates = original  # type: ignore[method-assign]
+
+        first = serialized([_OrderOne, _OrderTwo])
+        second = serialized([_OrderTwo, _OrderOne])
+    assert first == second
+    one, two = (
+        first.index(_OrderOne.get_full_name()),
+        first.index(_OrderTwo.get_full_name()),
+    )
+    assert one != two

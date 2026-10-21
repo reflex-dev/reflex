@@ -724,12 +724,16 @@ class CompileContext(BaseContext):
         from reflex.state import all_base_state_classes
         from reflex_base.components.memo import registration_owner
         from reflex_base.vars.base import (
-            reset_unique_variable_names,
+            names_before_first_compile,
             restore_unique_variable_name_state,
             seed_unique_variable_names,
             unique_variable_name_state,
         )
 
+        # The names drawn before the compile (at import, in the serving
+        # process) stay taken: whatever draws names after the pages must not
+        # repeat them.
+        names_before = names_before_first_compile()
         self.ensure_context_attached()
         self.compiled_pages.clear()
         self.all_imports.clear()
@@ -797,6 +801,7 @@ class CompileContext(BaseContext):
             strict=True,
         ):
             restore_unique_variable_name_state(page_ctx.unique_name_state)
+            page_ctx.unique_name_state = None
             with page_ctx:
                 page_ctx.root_component = self.hooks.compile_component(
                     page_ctx.root_component,
@@ -822,8 +827,9 @@ class CompileContext(BaseContext):
                 render_progress()
 
         # Whatever compiles after the pages (app root, memo modules) starts
-        # from the same state on every compile.
-        reset_unique_variable_names()
+        # from the same state on every compile, and never repeats a name the
+        # process drew before the pages.
+        seed_unique_variable_names("app", reserved=names_before)
         return self.compiled_pages
 
     def absorb(self, other: CompileContext, pages: Sequence[PageDefinition]) -> None:

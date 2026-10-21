@@ -60,6 +60,7 @@ from reflex_base.utils.types import (
     Send,
     is_non_string_sequence,
 )
+from reflex_base.vars.base import seeded_unique_variable_names
 from reflex_base.vars.dep_tracking import is_dependency
 from reflex_components_core.base.error_boundary import ErrorBoundary
 from reflex_components_core.base.fragment import Fragment
@@ -1361,12 +1362,15 @@ class App(MiddlewareMixin, LifespanMixin):
             return
 
         n_states_before = len(all_base_state_classes)
-        component = compiler.compile_unevaluated_page(
-            route,
-            self._unevaluated_pages[route],
-            self.style,
-            self.theme,
-        )
+        # The same names the compiling process drew for this page (a
+        # ``ClientStateVar`` created inside the page function is used by both).
+        with seeded_unique_variable_names(route):
+            component = compiler.compile_unevaluated_page(
+                route,
+                self._unevaluated_pages[route],
+                self.style,
+                self.theme,
+            )
 
         # Indicate that evaluating this page creates one or more state classes.
         if len(all_base_state_classes) > n_states_before:
