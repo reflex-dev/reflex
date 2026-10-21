@@ -1,6 +1,20 @@
 """SEO metadata helpers for docs routes."""
 
+from collections.abc import Sequence
+from os.path import commonprefix
+
+from reflex.utils.format import to_snake_case
+
 GENERIC_DESCRIPTION_TEMPLATE = "{subject}: documentation, examples, and reference for building Python web applications with Reflex."
+
+# Frontmatter components documented under a different public constructor.
+_PUBLIC_NAME_OVERRIDES = {
+    "rx.lucide.Icon": "rx.icon",
+    "rx.toast.provider": "rx.toast",
+}
+
+# Namespaces too broad to name a page on their own.
+_GENERIC_NAMESPACES = {"", "rx", "rx.recharts"}
 
 # Summaries for generated catalogs, reference pages, and pages without usable prose.
 PAGE_DESCRIPTIONS = {
@@ -38,6 +52,44 @@ PAGE_DESCRIPTIONS = {
 }
 
 
+def component_title_name(components: Sequence[str]) -> str | None:
+    """Return the public name a component page should lead its title with.
+
+    Frontmatter lists implementation names (``rx.recharts.AreaChart``,
+    ``rx.dialog.root``); search titles need the name users call. Pages that
+    share one namespace use it (``rx.dialog``); otherwise the first,
+    primary component is used. HTML element collections get no name.
+
+    Args:
+        components: The component names from a doc's frontmatter.
+
+    Returns:
+        The public component name, or None when the page has none.
+    """
+    names = list(dict.fromkeys(_public_component_name(c) for c in components))
+    if not names or any(name.startswith("rx.el.") for name in names):
+        return None
+    namespace = ".".join(commonprefix([name.split(".") for name in names]))
+    return names[0] if namespace in _GENERIC_NAMESPACES else namespace
+
+
+def _public_component_name(component: str) -> str:
+    """Map a frontmatter component reference to the name users call.
+
+    Args:
+        component: A frontmatter component reference.
+
+    Returns:
+        The public constructor name.
+    """
+    if component in _PUBLIC_NAME_OVERRIDES:
+        return _PUBLIC_NAME_OVERRIDES[component]
+    module, _, name = component.rpartition(".")
+    if module == "rx.recharts":
+        return f"{module}.{to_snake_case(name)}"
+    return component.removesuffix(".root")
+
+
 def truncate_meta_description(description: str, max_len: int = 155) -> str:
     """Return a search-snippet-safe meta description.
 
@@ -58,13 +110,20 @@ def truncate_meta_description(description: str, max_len: int = 155) -> str:
     return f"{truncated}…"
 
 
-def docs_metadata(path: str, title: str, description: str | None) -> tuple[str, str]:
+def docs_metadata(
+    path: str,
+    title: str,
+    description: str | None,
+    component_name: str | None = None,
+) -> tuple[str, str]:
     """Build distinct search snippets using the page's product hierarchy.
 
     Args:
         path: The app-relative documentation route.
         title: The page heading.
         description: A summary extracted from the document, when available.
+        component_name: The public component name a library page documents,
+            which leads the title in place of the breadcrumb.
 
     Returns:
         The search title and description.
@@ -91,35 +150,8 @@ def docs_metadata(path: str, title: str, description: str | None) -> tuple[str, 
     context = [
         parent for parent in reversed(parents) if parent.lower() != title.lower()
     ]
+    subject = " · ".join([title, *context])
     route = path.strip("/")
-    is_component_page = (
-        route.startswith("library/")
-        and route.count("/") >= 2
-        and not route.startswith("library/html/")
-    )
-    if is_component_page:
-        component_name = None
-        try:
-            import reflex as rx
-
-            from reflex_docs.pages.docs import _frontmatter_for, doc_markdown_sources
-
-            route_key = rx.utils.format.to_kebab_case(f"/{route}/")
-            if route_key not in doc_markdown_sources:
-                route_key = route_key.rstrip("/")
-            if route_key in doc_markdown_sources:
-                fm = _frontmatter_for(doc_markdown_sources[route_key])
-                if fm and fm.components and len(fm.components) == 1:
-                    component_name = fm.components[0]
-        except (ImportError, KeyError):
-            pass
-
-        if component_name:
-            subject = f"{component_name}: Python {title} Component"
-        else:
-            subject = " · ".join([title, *context])
-    else:
-        subject = " · ".join([title, *context])
     if route == "changelog" or route.startswith("changelog/"):
         package = route.removeprefix("changelog/") if "/" in route else "reflex"
         fallback = f"Read {package} release notes, including new features, bug fixes, and breaking changes, before upgrading your project."
@@ -128,4 +160,7 @@ def docs_metadata(path: str, title: str, description: str | None) -> tuple[str, 
     summary = (
         description or fallback or GENERIC_DESCRIPTION_TEMPLATE.format(subject=subject)
     )
-    return f"{subject} · Reflex", truncate_meta_description(summary)
+    heading = (
+        f"{component_name}: Python {title} Component" if component_name else subject
+    )
+    return f"{heading} · Reflex Docs", truncate_meta_description(summary)

@@ -1,17 +1,9 @@
 import reflex as rx
-from reflex.utils.format import to_snake_case, to_title_case
+from reflex.utils.format import to_snake_case
 
+from reflex_docs.docgen_pipeline import render_markdown
 from reflex_docs.templates.docpage import docpage, h1_comp, h2_comp, text_comp_2
-
-
-def get_display_name(name: str) -> str:
-    normalized = to_snake_case(name)
-    if normalized == "html":
-        return "HTML"
-    if normalized == "svg":
-        return "SVG"
-    return to_title_case(normalized, sep=" ")
-
+from reflex_docs.utils.library import get_display_name
 
 HTML_COMPONENT_ORDER = {
     "html": 0,
@@ -114,11 +106,43 @@ def component_grid():
     )
 
 
+LIBRARY_FAQ = """## How Reflex components compare
+
+Like Streamlit widgets, Reflex components are written in Python, but Reflex gives you full control over layout and styling. Instead of rerunning the whole script on each interaction as Streamlit does, Reflex runs event handlers that update state, and only the parts of the UI that depend on that state re-render. NiceGUI and Gradio also build web UIs in Python. Reflex's library covers forms, layouts, overlays, data tables, a spreadsheet-style data editor, and charts, with enterprise AG Grid and AG Charts components for data-heavy apps.
+
+## Frequently asked questions
+
+### Can I use Reflex components without learning React?
+
+Yes. Reflex components compile to React on the frontend, but you write everything in Python. You never touch JavaScript, JSX, or React hooks.
+
+### Do Reflex components work with pandas DataFrames?
+
+Yes. [`rx.data_table`](/docs/library/tables-and-data-grids/data-table/) takes a pandas DataFrame directly, with built-in search, sorting, and pagination. For editable grids, use [`rx.data_editor`](/docs/library/tables-and-data-grids/data-editor/) or the enterprise [AG Grid](/docs/enterprise/ag-grid/) component.
+
+### Can I style Reflex components with custom CSS?
+
+Yes. Every component accepts style props and a `class_name` prop. With the [Tailwind plugin](/docs/styling/tailwind/) enabled, you can pass Tailwind utility classes to `class_name`. For animations, keyframes, or other global styles, add [custom stylesheets](/docs/styling/custom-stylesheets/).
+
+### Are Reflex components accessible?
+
+Many core components are built on Radix UI primitives, which follow WAI-ARIA patterns and include keyboard navigation, focus management, and screen reader support.
+
+### Can I wrap my own React components?
+
+Yes. Reflex can wrap any React component from npm: declare its props and events in Python and Reflex generates the bindings. See the [wrapping React guide](/docs/wrapping-react/overview/).
+
+### Do I need to install components separately?
+
+No. All core components are included when you install Reflex. For enterprise components like AG Grid and AG Charts, install the `reflex-enterprise` package.
+"""
+
+
 @docpage(
     set_path="/library/",
     right_sidebar=True,
     pseudo_right_bar=True,
-    page_title="Python UI Component Library · Reflex",
+    page_title="Python UI Component Library · Reflex Docs",
 )
 def library():
     return rx.box(
@@ -128,63 +152,8 @@ def library():
         text_comp_2(
             text="Reflex provides 100+ UI components that work entirely in Python — no HTML, CSS, or JavaScript required. Build forms, tables, data grids, charts, and complete web interfaces using familiar Python syntax. Each component is fully documented with examples and integrates directly with your Python state.",
         ),
-        rx.el.h2(
-            "How Reflex components compare",
-            class_name="mt-8 font-heading text-2xl font-normal leading-8 tracking-[-0.02em] text-foreground",
-        ),
-        text_comp_2(
-            text="Reflex components are similar to Streamlit widgets, but they give you more control over layout and styling with Tailwind CSS. Unlike Streamlit's top-to-bottom reruns, Reflex uses event handlers that update only the parts of your UI that change. Compared to NiceGUI and Gradio, Reflex offers a larger component library and better support for complex data tables and enterprise charts through AG Grid integration. All four frameworks let you write web UIs in Python, but Reflex is built for apps that need custom layouts and fine-grained state management.",
-        ),
-        rx.el.h2(
-            "Frequently Asked Questions",
-            class_name="mt-8 font-heading text-2xl font-normal leading-8 tracking-[-0.02em] text-foreground",
-        ),
-        rx.el.div(
-            rx.el.h3(
-                "Can I use Reflex components without learning React?",
-                class_name="mt-6 font-heading text-lg font-normal leading-6 tracking-[-0.02em] text-foreground",
-            ),
-            text_comp_2(
-                text="Yes. Reflex components compile to React on the frontend, but you write everything in Python. You never touch JavaScript, JSX, or React hooks.",
-            ),
-            rx.el.h3(
-                "Do Reflex components work with pandas DataFrames?",
-                class_name="mt-6 font-heading text-lg font-normal leading-6 tracking-[-0.02em] text-foreground",
-            ),
-            text_comp_2(
-                text="Yes. The rx.data_table component takes a pandas DataFrame directly, with built-in search, sorting, and pagination. For editable data grids, use rx.data_editor or the enterprise AG Grid component.",
-            ),
-            rx.el.h3(
-                "Can I style Reflex components with custom CSS?",
-                class_name="mt-6 font-heading text-lg font-normal leading-6 tracking-[-0.02em] text-foreground",
-            ),
-            text_comp_2(
-                text="Yes. Every component accepts Tailwind CSS classes via the class_name prop. For complex styles like animations or keyframes, you can also link external CSS files in your app config.",
-            ),
-            rx.el.h3(
-                "Are Reflex components accessible?",
-                class_name="mt-6 font-heading text-lg font-normal leading-6 tracking-[-0.02em] text-foreground",
-            ),
-            text_comp_2(
-                text="Yes. Many of Reflex's core components are built on Radix UI primitives, which follow WAI-ARIA standards. They include keyboard navigation, focus management, and screen reader support out of the box.",
-            ),
-            rx.el.h3(
-                "Can I wrap my own React components?",
-                class_name="mt-6 font-heading text-lg font-normal leading-6 tracking-[-0.02em] text-foreground",
-            ),
-            text_comp_2(
-                text="Yes. Reflex lets you wrap any React component from npm. Define the props and events in Python, and Reflex generates the bindings. See the wrapping React guide for examples.",
-            ),
-            rx.el.h3(
-                "Do I need to install components separately?",
-                class_name="mt-6 font-heading text-lg font-normal leading-6 tracking-[-0.02em] text-foreground",
-            ),
-            text_comp_2(
-                text="No. All core components are included when you install Reflex. For enterprise components like AG Grid and AG Charts, install the reflex-enterprise package.",
-            ),
-            class_name="mb-8",
-        ),
         component_grid(),
+        rx.el.div(render_markdown(LIBRARY_FAQ), class_name="mt-8"),
         rx.el.p(
             "Connect your components to data and events with the ",
             rx.el.a(

@@ -1,20 +1,11 @@
 import reflex as rx
-from reflex.utils.format import to_snake_case, to_title_case
+from reflex.utils.format import to_snake_case
 from reflex_site_shared.constants import REFLEX_ASSETS_CDN
 
 from reflex_docs.docgen_pipeline import render_markdown
 from reflex_docs.pages.docs.metadata import truncate_meta_description
 from reflex_docs.templates.docpage import docpage, h1_comp, text_comp_2
-
-
-def get_display_name(name: str) -> str:
-    normalized = to_snake_case(name)
-    if normalized == "html":
-        return "HTML"
-    if normalized == "svg":
-        return "SVG"
-    return to_title_case(normalized, sep=" ")
-
+from reflex_docs.utils.library import get_display_name
 
 HTML_COMPONENT_ORDER = {
     "html": 0,
@@ -129,38 +120,23 @@ def get_component_list(component_type: str = "core"):
         raise ValueError(f"Unknown component type: {component_type}")
 
 
-def render_component_grid(
-    component_category: str, component_list: dict, prefix: str = ""
-) -> rx.Component:
-    """Render the component card grid for a category.
+# Markdown guides shown between a category's intro and its component cards.
+CATEGORY_GUIDES = {
+    "Tables-And-Data-Grids": """## Which table component should I use?
 
-    Args:
-        component_category: The category name to render cards for.
-        component_list: Dict mapping category names to component lists.
-        prefix: URL prefix for component links.
+- **`rx.table`**: a composable semantic table. Build headers, rows, and cells yourself for full control over structure and styling. Best for small datasets and custom layouts.
+- **`rx.data_table`**: pass a pandas DataFrame or a list of rows and turn on search, sorting, and pagination with `search=True`, `sort=True`, and `pagination=True`. Read-only; best for displaying data from CSV files or database queries.
+- **`rx.data_editor`**: a spreadsheet-like grid with cell selection and inline editing. Use it when users edit data directly, as in an admin panel or data entry form.
+- **AG Grid** (enterprise): advanced filtering, column pivoting, row grouping, master-detail, tree data, and Excel export. See the [AG Grid docs](/docs/enterprise/ag-grid/) to get started.
+""",
+    "Charts": """## Choosing a charting library
 
-    Returns:
-        A grid of component cards.
-    """
-    from reflex_docs.templates.docpage.sidebar.sidebar_items import get_component_link
-
-    return rx.el.div(
-        *[
-            component_card(
-                name=component[0],
-                link=get_component_link(
-                    component_category,
-                    component,
-                    prefix.strip("/") + "/" if prefix.strip("/") else "",
-                ),
-                section=component_category,
-            )
-            for component in get_components_for_category(
-                component_category, component_list[component_category]
-            )
-        ],
-        class_name="gap-5 grid min-w-0 grid-cols-1 md:grid-cols-2 xl:grid-cols-3",
-    )
+- **Recharts** (built in): declarative charts with a simple API for standard business charts like bar, line, area, and pie. Good for dashboards and reports.
+- **[Plotly](/docs/library/graphing/other-charts/plotly/)** (`rx.plotly`): interactive scientific charts with zoom, pan, and hover, including 3D plots, contours, and statistical charts.
+- **[Matplotlib](/docs/library/graphing/other-charts/pyplot/)** (`pyplot`): render any `matplotlib.pyplot` figure as a static image. Best when you already have Matplotlib code from notebooks or scripts.
+- **AG Charts** (enterprise): high-performance charts with animations and advanced features. See the [AG Charts docs](/docs/enterprise/ag-chart/) for examples.
+""",
+}
 
 
 def create_previews(
@@ -179,6 +155,10 @@ def create_previews(
         description=meta_description,
     )
     def page() -> rx.Component:
+        from reflex_docs.templates.docpage.sidebar.sidebar_items import (
+            get_component_link,
+        )
+
         component_list = get_component_list(type)
         if component_category == "State":
             return rx.el.div(
@@ -205,106 +185,7 @@ def create_previews(
                 ),
                 class_name="docs-library flex min-w-0 flex-col w-full mb-10",
             )
-        if component_category == "Tables-And-Data-Grids":
-            return rx.el.div(
-                h1_comp(text=get_display_name(component_category)),
-                text_comp_2(
-                    text=description,
-                ),
-                rx.el.h2(
-                    "Which table component should I use?",
-                    class_name="mt-8 font-heading text-2xl font-normal leading-8 tracking-[-0.02em] text-foreground",
-                ),
-                rx.el.ul(
-                    rx.el.li(
-                        rx.el.strong(
-                            "rx.table", class_name="font-semibold text-foreground"
-                        ),
-                        " — Composable semantic table for custom layouts. Build headers, rows, and cells with full styling control. Best for small datasets or when you need complete control over the table structure.",
-                        class_name="mt-3 text-sm leading-6 text-muted-foreground",
-                    ),
-                    rx.el.li(
-                        rx.el.strong(
-                            "rx.data_table", class_name="font-semibold text-foreground"
-                        ),
-                        " — Drop in a pandas DataFrame and enable search, sort, and pagination with `search=True`, `sort=True`, and `pagination=True`. Perfect for displaying static data from CSV files or database queries. Read-only by default.",
-                        class_name="mt-3 text-sm leading-6 text-muted-foreground",
-                    ),
-                    rx.el.li(
-                        rx.el.strong(
-                            "rx.data_editor", class_name="font-semibold text-foreground"
-                        ),
-                        " — Spreadsheet-like editing with cell selection and inline updates. Use this when users need to edit data directly in the grid, like in an admin panel or data entry form.",
-                        class_name="mt-3 text-sm leading-6 text-muted-foreground",
-                    ),
-                    rx.el.li(
-                        rx.el.strong(
-                            "AG Grid", class_name="font-semibold text-foreground"
-                        ),
-                        " (enterprise) — The most powerful option. Includes advanced filtering, column pivoting, row grouping, master-detail, tree data, and Excel export. See the ",
-                        rx.el.a(
-                            "AG Grid docs",
-                            href="/docs/enterprise/ag-grid/",
-                            class_name="docs-text-link underline underline-offset-4",
-                        ),
-                        " to get started.",
-                        class_name="mt-3 text-sm leading-6 text-muted-foreground",
-                    ),
-                    class_name="mt-4 mb-8 list-none space-y-0 p-0",
-                ),
-                render_component_grid(component_category, component_list, prefix),
-                class_name="docs-library flex min-w-0 flex-col h-full mb-10",
-            )
-        if component_category in ["Charts", "Other-Charts"]:
-            return rx.el.div(
-                h1_comp(text=get_display_name(component_category)),
-                text_comp_2(
-                    text=description,
-                ),
-                rx.el.h2(
-                    "Choosing a charting library",
-                    class_name="mt-8 font-heading text-2xl font-normal leading-8 tracking-[-0.02em] text-foreground",
-                ),
-                rx.el.ul(
-                    rx.el.li(
-                        rx.el.strong(
-                            "Recharts", class_name="font-semibold text-foreground"
-                        ),
-                        " (built-in) — Declarative React charts with a simple API. Best for standard business charts like bar, line, area, and pie. Works great for dashboards and reports. All Recharts components are included in Reflex.",
-                        class_name="mt-3 text-sm leading-6 text-muted-foreground",
-                    ),
-                    rx.el.li(
-                        rx.el.strong(
-                            "Plotly", class_name="font-semibold text-foreground"
-                        ),
-                        " (rx.plotly) — Interactive scientific charts with zoom, pan, and hover. Supports 3D plots, contours, and statistical charts. Use this when you need publication-quality figures or complex scientific visualizations.",
-                        class_name="mt-3 text-sm leading-6 text-muted-foreground",
-                    ),
-                    rx.el.li(
-                        rx.el.strong(
-                            "Matplotlib", class_name="font-semibold text-foreground"
-                        ),
-                        " (pyplot) — Render any matplotlib.pyplot figure in your web app. Best when you already have matplotlib code from notebooks or scripts. Supports all matplotlib chart types but outputs static images.",
-                        class_name="mt-3 text-sm leading-6 text-muted-foreground",
-                    ),
-                    rx.el.li(
-                        rx.el.strong(
-                            "AG Charts", class_name="font-semibold text-foreground"
-                        ),
-                        " (enterprise) — High-performance enterprise charts with smooth animations and advanced features. See the ",
-                        rx.el.a(
-                            "AG Charts docs",
-                            href="/docs/enterprise/ag-chart/",
-                            class_name="docs-text-link underline underline-offset-4",
-                        ),
-                        " for examples.",
-                        class_name="mt-3 text-sm leading-6 text-muted-foreground",
-                    ),
-                    class_name="mt-4 mb-8 list-none space-y-0 p-0",
-                ),
-                render_component_grid(component_category, component_list, prefix),
-                class_name="docs-library flex min-w-0 flex-col h-full mb-10",
-            )
+        guide = CATEGORY_GUIDES.get(component_category)
         return rx.el.div(
             rx.el.div(
                 h1_comp(text=get_display_name(component_category)),
@@ -313,7 +194,24 @@ def create_previews(
                 ),
                 class_name="flex flex-col w-full",
             ),
-            render_component_grid(component_category, component_list, prefix),
+            *([rx.el.div(render_markdown(guide), class_name="mb-8")] if guide else []),
+            rx.el.div(
+                *[
+                    component_card(
+                        name=component[0],
+                        link=get_component_link(
+                            component_category,
+                            component,
+                            prefix.strip("/") + "/" if prefix.strip("/") else "",
+                        ),
+                        section=component_category,
+                    )
+                    for component in get_components_for_category(
+                        component_category, component_list[component_category]
+                    )
+                ],
+                class_name="gap-5 grid min-w-0 grid-cols-1 md:grid-cols-2 xl:grid-cols-3",
+            ),
             class_name="docs-library flex min-w-0 flex-col h-full mb-10",
         )
 

@@ -64,7 +64,7 @@ def index():
 
 ## Sorting
 
-Enable sorting by setting `sort=True`. Users can click column headers to sort ascending or descending. Sorting works on all data types including numbers, strings, and dates.
+Enable sorting by setting `sort=True`. Users can click column headers to sort ascending or descending.
 
 ```python
 rx.data_table(
@@ -117,25 +117,20 @@ Search is case-insensitive and matches partial strings. When combined with pagin
 
 ## Complete Example with State
 
-The example below shows how to create a data table from a list in state. This pattern is useful when you want to dynamically update the table data based on user actions or external data sources.
+The example below builds a data table from rows and columns stored in state. Any event handler that updates `TableState.data` re-renders the table.
 
 ```python
-from typing import List
 import reflex as rx
 
 
 class TableState(rx.State):
-    data: List[List[str]] = [
-        ["Lionel", "Messi", "PSG"],
-        ["Christiano", "Ronaldo", "Al-Nasir"],
-        ["Neymar", "Jr", "Al-Hilal"],
-        ["Kylian", "Mbappe", "PSG"],
+    data: list[list[str]] = [
+        ["Lionel", "Messi", "Argentina"],
+        ["Cristiano", "Ronaldo", "Portugal"],
+        ["Neymar", "Jr", "Brazil"],
+        ["Kylian", "Mbappé", "France"],
     ]
-    columns: List[str] = ["First Name", "Last Name", "Team"]
-
-    @rx.event
-    def add_player(self, first: str, last: str, team: str):
-        self.data.append([first, last, team])
+    columns: list[str] = ["First Name", "Last Name", "Country"]
 
 
 def index():
