@@ -244,6 +244,10 @@ class _LazyBody(Generic[_BodyT]):
         """
         return self._ready
 
+    def reset(self) -> None:
+        """Drop the cached body so the next :meth:`get` runs the thunk again."""
+        self._ready = False
+
     def get(self, thunk: Callable[[], _BodyT] | None = None) -> _BodyT:
         """Return the body, running and caching ``thunk`` on first read.
 
@@ -654,12 +658,25 @@ def _register_memo_definition(definition: MemoDefinition) -> None:
 
 
 def _reregister_used_memo(definition: MemoDefinition) -> None:
-    """Re-register a used ``@rx.memo`` so a cleared ``MEMOS`` is repopulated from
-    usage. Passthrough auto-memos (defined in this module) are tracked
-    separately and stay out of ``MEMOS``.
+    """Re-register a used ``@rx.memo`` that a cleared ``MEMOS`` dropped.
+
+    Its cached body is reset, so the next read re-runs it and re-registers the
+    nested memos it uses too. Passthrough auto-memos (defined in this module)
+    are tracked separately and stay out of ``MEMOS``.
+
+    Args:
+        definition: The memo definition being used.
     """
-    if definition.fn.__module__ != __name__:
-        _register_memo_definition(definition)
+    if definition.fn.__module__ == __name__:
+        return
+    key = _memo_registry_key(definition)
+    if key in MEMOS:
+        return
+    MEMOS[key] = definition
+    if isinstance(definition, MemoComponentDefinition):
+        definition._component.reset()
+    elif isinstance(definition, MemoFunctionDefinition):
+        definition._function.reset()
 
 
 def materialize_registered_memo_bodies() -> None:

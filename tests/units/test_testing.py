@@ -199,6 +199,31 @@ def test_app_harness_initialize_preserves_existing_imported_app(
     assert ("existing_memo", None) in MEMOS
 
 
+def test_app_harness_initialize_loads_real_app_config_before_frontend(
+    tmp_path, harness_mocks, monkeypatch
+):
+    """A real app's ``.web`` is initialized from its own config, not a stale one.
+
+    Args:
+        tmp_path: pytest tmp_path fixture
+        harness_mocks: shared AppHarness mock setup
+        monkeypatch: pytest monkeypatch fixture
+    """
+    calls = []
+    monkeypatch.setattr(
+        reflex_testing, "reload_config", lambda: calls.append("reload_config")
+    )
+    monkeypatch.setattr(
+        reflex.utils.prerequisites,
+        "initialize_frontend_dependencies",
+        lambda: calls.append("initialize_frontend_dependencies"),
+    )
+
+    AppHarness.create(root=tmp_path / "plain_app")._initialize_app()
+
+    assert calls == ["reload_config", "initialize_frontend_dependencies"]
+
+
 def test_app_harness_frontend_env_has_development_condition(
     tmp_path, monkeypatch: pytest.MonkeyPatch, harness_mocks
 ) -> None:

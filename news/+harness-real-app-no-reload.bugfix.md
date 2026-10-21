@@ -1,1 +1,1 @@
-`AppHarness` no longer destructively reloads a real (pre-imported) app on start: reloading only re-ran the top module, silently dropping every page, `rx.State` subclass, and `@rx.memo` defined in a submodule (flaky "Invalid path" compile errors and unresolved `$/app_components/...` memo imports). Such apps are now imported once and used as-is (`reload=False`); generated `app_source` apps are unaffected.
+`AppHarness` no longer reloads an existing app (one created without `app_source`), which dropped the pages, states and `@rx.memo` components defined in the app's submodules.

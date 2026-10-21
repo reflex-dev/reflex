@@ -2066,19 +2066,52 @@ def test_nested_var_memo_reregistered_before_compile_snapshot():
     assert outer_key in MEMOS
     assert inner_key not in MEMOS
 
-    # A snapshot taken now (as the compiler used to) omits inner: compiling it
-    # reads outer's body — which re-registers inner too late for this snapshot —
-    # so inner's module is never emitted even though outer.jsx imports it.
-    stale_snapshot = tuple(MEMOS.values())
-    stale_files, _ = compiler.compile_memo_components(stale_snapshot)
-    assert not any(f"export const {inner_sym} =" in code for _, code in stale_files)
-
     # The compiler pre-pass settles the registry before it snapshots MEMOS.
     materialize_registered_memo_bodies()
     assert inner_key in MEMOS
 
     files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
     assert any(f"export const {inner_sym} =" in code for _, code in files)
+
+
+def test_cached_memo_bodies_reregister_nested_memos_after_registry_clear():
+    """Memos nested in a body an earlier compile cached are emitted again.
+
+    Regression: a later ``AppHarness`` clears ``MEMOS`` without re-importing a
+    shared memo module, so only re-running the cached outer bodies can
+    re-register the inner memos their compiled modules import.
+    """
+
+    @rx.memo
+    def nested_fmt(*, value: rx.Var[str]) -> rx.Var[str]:
+        return rx.Var.create(f"[{value}]")
+
+    @rx.memo
+    def wrapping_fmt(*, value: rx.Var[str]) -> rx.Var[str]:
+        return nested_fmt(value=value)
+
+    @rx.memo
+    def nested_card(*, title: rx.Var[str]) -> rx.Component:
+        return rx.text(title)
+
+    @rx.memo
+    def wrapping_card(*, title: rx.Var[str]) -> rx.Component:
+        return rx.box(nested_card(title=title))
+
+    # The first app's compile caches every body.
+    materialize_registered_memo_bodies()
+
+    MEMOS.clear()
+    wrapping_fmt(value=rx.Var.create("x"))
+    wrapping_card(title="Hello")
+    materialize_registered_memo_bodies()
+
+    assert ("nested_fmt", __name__) in MEMOS
+    assert ("NestedCard", __name__) in MEMOS
+    files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
+    for name in ("nested_fmt", "NestedCard"):
+        sym = memo_paths.mirrored_symbol(name, __name__)
+        assert any(f"export const {sym} =" in code for _, code in files)
 
 
 def test_reregister_used_memo_skips_passthrough_auto_memos():

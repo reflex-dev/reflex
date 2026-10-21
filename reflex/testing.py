@@ -274,10 +274,11 @@ class AppHarness:
             # already-imported app re-runs only the top module, dropping every
             # submodule page/state/@rx.memo, so use reload=False (no reset).
             with chdir(self.app_path):
+                # Load this app's config before .web is initialized from it.
+                reload_config()
                 reflex.utils.prerequisites.initialize_frontend_dependencies()
                 os.environ.pop(reflex.constants.PYTEST_CURRENT_TEST, None)
                 os.environ[reflex.constants.APP_HARNESS_FLAG] = "true"
-                reload_config()
                 self.app_instance, self.app_module = (
                     reflex.utils.prerequisites.get_and_validate_app(reload=False)
                 )

@@ -1,1 +1,1 @@
-Re-register `@rx.memo` definitions on use so a cleared `MEMOS` registry (e.g. an `AppHarness` reload, which only re-imports the top app module) still emits every memo module the compiled tree references, instead of failing to resolve them at runtime.
+Fix `@rx.memo` definitions from a module shared by several `AppHarness` apps in one test process going missing from later apps, which left their imports unresolved at runtime.
