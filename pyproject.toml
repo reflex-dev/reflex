@@ -559,8 +559,6 @@ reflex-components-recharts = false
 reflex-components-sonner = false
 reflex-enterprise = false
 reflex-hosting-cli = false
-# Security fixes (Pillow GHSA-8g5g-8vmr-9782 et al., certifi GHSA-6q48-6c7w-9gw2)
-# published inside the window; remove these once it passes them (after 2026-10-28).
 pillow = "2026-10-21T00:00:00Z"
 certifi = "2026-10-21T00:00:00Z"
 
