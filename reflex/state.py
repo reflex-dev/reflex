@@ -1800,8 +1800,6 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         """
         # A mixin has no place in the state tree of its own: resolve it.
         if state_cls._mixin:
-            from reflex_base.registry import RegistrationContext
-
             state_cls = RegistrationContext.get().resolve_implementation(state_cls)
 
         # Fast case - if this state instance is already cached, get_substate from root state.
