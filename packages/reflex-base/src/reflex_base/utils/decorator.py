@@ -6,8 +6,6 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import ParamSpec, TypeVar, cast
 
-from reflex_base.utils.format import callable_name
-
 logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
@@ -66,6 +64,9 @@ def debug(f: Callable[P, T]) -> Callable[P, T]:
     Returns:
         A function that prints the function name, arguments, and result.
     """
+    # Import here to avoid circular imports.
+    from reflex_base.utils.format import callable_name
+
     fn_name = callable_name(f)
 
     @functools.wraps(f)
@@ -115,6 +116,9 @@ def cached_procedure(
     """
 
     def _inner_decorator(func: Callable[P, Picklable]) -> Callable[P, Picklable]:  # ty:ignore[invalid-type-form]
+        # Import here to avoid circular imports.
+        from reflex_base.utils.format import callable_name
+
         fn_name = callable_name(func)
 
         def _inner(*args: P.args, **kwargs: P.kwargs) -> Picklable:

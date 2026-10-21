@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 import reflex as rx
 
-from reflex_docs.pages.docs.metadata import docs_metadata
+from reflex_docs.pages.docs.metadata import component_title_name, docs_metadata
 
 
 @pytest.mark.parametrize(
@@ -20,6 +20,38 @@ def test_metadata_preserves_acronyms_and_code_identifiers(title, expected):
     """Normalize standalone acronyms without rewriting component names."""
     seo_title, _ = docs_metadata("/api-reference/cli/", title, None)
     assert seo_title.startswith(expected + " · ")
+
+
+@pytest.mark.parametrize(
+    ("components", "expected"),
+    [
+        (["rx.data_table"], "rx.data_table"),
+        (["rx.input.slot"], "rx.input.slot"),
+        (["rx.lucide.Icon"], "rx.icon"),
+        (["rx.toast.provider"], "rx.toast"),
+        (["rx.dialog.root", "rx.dialog.trigger", "rx.dialog.content"], "rx.dialog"),
+        (["rx.text", "rx.text.em"], "rx.text"),
+        (["rx.recharts.AreaChart", "rx.recharts.Area"], "rx.recharts.area_chart"),
+        (["rx.recharts.GraphingTooltip"], "rx.recharts.graphing_tooltip"),
+        (["rx.stack", "rx.hstack", "rx.vstack"], "rx.stack"),
+        (["pyplot"], "pyplot"),
+        (["rx.el.abbr", "rx.el.b"], None),
+        (["rx.el.svg.circle", "rx.el.svg.rect"], None),
+        ([], None),
+    ],
+)
+def test_component_title_name(components, expected):
+    """Library titles lead with the public name users call."""
+    assert component_title_name(components) == expected
+
+
+def test_metadata_component_title_keeps_breadcrumb_description():
+    """A component name leads the title, not the generic description."""
+    title, description = docs_metadata(
+        "/library/overlay/dialog/", "Dialog", None, component_name="rx.dialog"
+    )
+    assert title == "rx.dialog: Python Dialog Component · Reflex Docs"
+    assert description.startswith("Dialog · Overlay · Library: documentation")
 
 
 @pytest.fixture
@@ -462,3 +494,45 @@ def test_routes_have_specific_descriptions(routes_fixture):
         )
     ]
     assert not failures, failures
+
+
+@pytest.mark.parametrize(
+    ("path", "expected"),
+    [
+        ("/library/", "Python UI Component Library · Reflex Docs"),
+        (
+            "/library/tables-and-data-grids/",
+            "Tables And Data Grids Component Library · Reflex Docs",
+        ),
+        (
+            "/library/tables-and-data-grids/data-table/",
+            "rx.data_table: Python Data Table Component · Reflex Docs",
+        ),
+        (
+            "/library/overlay/dialog/",
+            "rx.dialog: Python Dialog Component · Reflex Docs",
+        ),
+        ("/library/data-display/icon/", "rx.icon: Python Icon Component · Reflex Docs"),
+        (
+            "/library/graphing/charts/areachart/",
+            "rx.recharts.area_chart: Python Area Chart Component · Reflex Docs",
+        ),
+        (
+            "/library/forms/select/low/",
+            "rx.select: Python Select (Low Level) Component · Reflex Docs",
+        ),
+        (
+            "/library/forms/input/low/",
+            "rx.input.slot: Python Input (Low Level) Component · Reflex Docs",
+        ),
+        ("/library/html/text/", "Text · HTML · Library · Reflex Docs"),
+        (
+            "/library/dynamic-rendering/foreach/",
+            "Foreach · Dynamic Rendering · Library · Reflex Docs",
+        ),
+    ],
+)
+def test_library_route_titles(routes_fixture, path, expected):
+    """Published library pages carry the final title search engines see."""
+    titles = {route.path: route.seo_title or route.title for route in routes_fixture}
+    assert titles[path] == expected

@@ -1,9 +1,12 @@
 import copy
+import random
+import re
 from contextlib import nullcontext
 from dataclasses import dataclass
 from typing import Any, ClassVar, TypedDict
 
 import pytest
+from reflex_base.compiler.templates import _render_hooks
 from reflex_base.components.component import Component, field
 from reflex_base.components.tags import CommonTag, Tag
 from reflex_base.constants import EventTriggers
@@ -2137,6 +2140,87 @@ def test_component_add_hooks_var():
     assert len(imports["react"]) == 2
     assert ImportVar(tag="useRef") in imports["react"]
     assert ImportVar(tag="useEffect") in imports["react"]
+
+
+class _HookReader(Component):
+    """Reads ``value`` through a prop and ``added`` through an ``add_hooks`` Var."""
+
+    tag = "HookReader"
+
+    value: Var[int]
+
+    added: Var[int] = field(default=Var(_js_expr="0"), is_javascript_property=False)
+
+    def add_hooks(self):
+        return [Var(f"const read_{self.added!s} = {self.added}")]
+
+
+def _assert_declared_before_use(rendered: str, names: str):
+    """Assert that every name a hook line reads is declared on an earlier line.
+
+    Args:
+        rendered: The rendered hooks.
+        names: A regex matching the declared names to check.
+    """
+    declared = set()
+    for line in filter(None, (line.strip() for line in rendered.splitlines())):
+        target = re.match(r"const (\w+) =", line)
+        # A string literal names the state; only an identifier reads it.
+        rhs = re.sub(r'"[^"]*"', "", line[target.end() :] if target else line)
+        assert set(re.findall(names, rhs)) <= declared, line
+        if target:
+            declared.add(target.group(1))
+
+
+def test_hooks_render_after_the_state_hook_they_read(test_state: type[TestState]):
+    """A prop hook and an added hook that read one state share its declaration."""
+    num = Var.create(test_state.num)
+    derived = Var(
+        _js_expr="derived",
+        _var_data=VarData(
+            hooks={f"const derived = {num!s} + 1": num._get_all_var_data()}
+        ),
+    )
+
+    reader = _HookReader.create(value=derived, added=num)
+    _assert_declared_before_use(
+        _render_hooks(reader._get_all_hooks()),
+        rf"\b{test_state.get_name()}\b|\bderived\b",
+    )
+
+
+@pytest.mark.parametrize("seed", range(25))
+def test_hooks_render_after_their_dependencies(seed: int):
+    """Random hook graphs, read across a random tree, render dependencies first.
+
+    Args:
+        seed: The seed for the random graph and tree.
+    """
+    rng = random.Random(seed)
+    hook_vars: list[Var] = []
+    for i in range(8):
+        deps = rng.sample(hook_vars, min(len(hook_vars), rng.randint(0, 3)))
+        expr = " + ".join(str(dep) for dep in deps) or "0"
+        hook_vars.append(
+            Var(
+                _js_expr=f"h{i}",
+                _var_data=VarData(
+                    hooks={
+                        f"const h{i} = {expr}": VarData.merge(
+                            *(dep._get_all_var_data() for dep in deps)
+                        )
+                    }
+                ),
+            )
+        )
+
+    def tree(depth: int) -> Component:
+        children = [tree(depth - 1) for _ in range(rng.randint(0, 2) if depth else 0)]
+        return _HookReader.create(
+            *children, value=rng.choice(hook_vars), added=rng.choice(hook_vars)
+        )
+
+    _assert_declared_before_use(_render_hooks(tree(3)._get_all_hooks()), r"\bh\d+\b")
 
 
 def test_add_style_embedded_vars(test_state: type[TestState]):
