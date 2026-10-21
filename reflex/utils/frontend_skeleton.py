@@ -6,7 +6,7 @@ import uuid
 from pathlib import Path
 from typing import Literal
 
-from reflex_base import constants
+from reflex_base import constants, ssr
 from reflex_base.config import Config, get_config
 from reflex_base.environment import environment
 from reflex_base.plugins.embed import get_embed_plugin
@@ -528,7 +528,7 @@ def _update_react_router_config(config: Config, prerender_routes: bool = False):
         "future": {
             "unstable_optimizeDeps": True,
         },
-        "ssr": False,
+        "ssr": ssr.ssr_build_enabled(),
     }
 
     if prerender_routes:
