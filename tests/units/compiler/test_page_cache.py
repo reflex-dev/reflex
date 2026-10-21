@@ -1099,3 +1099,17 @@ def test_entrypoint_digest_tracks_class_bodies(tmp_path):
     before = page_cache.entrypoint_digest(str(entry))
     entry.write_text(source.replace("'red'", "'blue'"))
     assert page_cache.entrypoint_digest(str(entry)) != before
+
+
+def test_function_slice_digest_keeps_imports_reached_only_by_computed_name(tmp_path):
+    """A computed global lookup can reach an import no definition names."""
+    module = tmp_path / "computed_import.py"
+    source = (
+        "from reflex import text as widget\n\n\n"
+        'def page_a():\n    return globals()["widget"]()\n'
+    )
+    module.write_text(source)
+    before = page_cache.function_slice_digest(str(module), "page_a")
+    module.write_text(source.replace("text as widget", "heading as widget"))
+    os.utime(module, ns=(1, 1))
+    assert page_cache.function_slice_digest(str(module), "page_a") != before

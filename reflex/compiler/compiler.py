@@ -1501,8 +1501,18 @@ def compile_app(
     prerender_routes: bool = False,
     dry_run: bool = False,
     use_rich: bool = True,
+    serving: bool = False,
 ) -> bool:
     """Compile an app using the compiler plugin pipeline.
+
+    Args:
+        app: The app to compile.
+        prerender_routes: Whether to prerender the routes.
+        dry_run: Whether to compile the app without saving it.
+        use_rich: Whether to use rich progress bars.
+        serving: Whether this process serves the app after compiling. It
+            needs every page evaluated to register their states, so the
+            incremental cache is not used.
 
     Returns:
         ``True`` when a real frontend compile ran, ``False`` when the call
@@ -1561,6 +1571,7 @@ def compile_app(
 
     cache_on = (
         not dry_run
+        and not serving
         and environment.REFLEX_COMPILE_CACHE.get()
         and config.app_module_import is None
     )

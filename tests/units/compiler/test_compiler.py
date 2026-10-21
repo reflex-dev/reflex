@@ -2000,6 +2000,32 @@ def test_preloaded_app_skips_incremental_reuse(monkeypatch, mocker):
     reuse.assert_not_called()
 
 
+def test_serving_app_compiles_every_page(monkeypatch, mocker):
+    """A process that serves the app registers every page's states.
+
+    The incremental cache evaluates only changed pages, so it is not used.
+    """
+    from reflex.compiler import disk_cache
+
+    mocker.patch("reflex.app.reload_config")
+    app = rx.App()
+    mocker.patch.object(app, "_should_compile", return_value=True)
+    reuse = mocker.patch.object(
+        disk_cache, "try_incremental_rebuild", return_value=True
+    )
+    monkeypatch.setenv("REFLEX_COMPILE_CACHE", "1")
+
+    class FullCompileReached(Exception):
+        """Stop before full-compile side effects."""
+
+    mocker.patch.object(
+        compiler.console, "PoorProgress", side_effect=FullCompileReached
+    )
+    with pytest.raises(FullCompileReached):
+        compiler.compile_app(app, use_rich=False, serving=True)
+    reuse.assert_not_called()
+
+
 def test_compile_app_drops_event_caches_from_earlier_compiles(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
 ):

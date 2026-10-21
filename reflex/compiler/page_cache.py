@@ -793,9 +793,11 @@ def _slice_digest(parts: Sequence[_ModulePart], seeds: Iterable[str]) -> str:
     closure = _definition_closure(definitions, (*seeds, *always))
     used = always.union(*(part.loads for name in closure for part in definitions[name]))
     if not used.isdisjoint(_DYNAMIC_GLOBAL_NAMES):
+        # A computed name can reach every module global, imports included.
         closure = set(definitions)
         used = always.union(
-            *(part.loads for group in definitions.values() for part in group)
+            *(part.loads for group in definitions.values() for part in group),
+            (bound for part in parts for bound, _ in part.aliases),
         )
     digest = hashlib.sha256()
     for part in parts:

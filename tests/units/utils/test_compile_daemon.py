@@ -5,6 +5,7 @@ import errno
 import os
 import sys
 from pathlib import Path
+from typing import Any
 from unittest.mock import Mock
 
 import pytest
@@ -1075,7 +1076,19 @@ def test_cold_compile_without_a_safe_fork_compiles_in_process(
 
     monkeypatch.setattr(compile_daemon, "_single_threaded", lambda: single_threaded)
     monkeypatch.setattr(disk_cache, "_predict_dynamic_names", chosen)
-    assert compile_daemon.compiled_in_predicting_child(lambda: True) is False
+    attempts: list[bool] = []
+
+    def attempt() -> bool:
+        """Record a compile the caller must not have handed over.
+
+        Returns:
+            True.
+        """
+        attempts.append(True)
+        return True
+
+    assert compile_daemon.compiled_in_predicting_child(attempt) is False
+    assert attempts == []
 
 
 @pytest.mark.parametrize("lock", ["held", "unsupported"])
@@ -1103,23 +1116,32 @@ def test_daemon_without_its_lock_does_not_serve(tmp_path, monkeypatch, lock):
     assert served == []
 
 
-def test_built_inputs_include_dependencies_the_compile_added(tmp_path, monkeypatch):
+@pytest.mark.parametrize("recorded", [True, False])
+def test_built_inputs_include_dependencies_the_compile_added(
+    tmp_path, monkeypatch, recorded
+):
     """Workers wait on an edit to a file the last compile started reading.
 
-    The file was not watched before that compile, which is no edit.
+    The file was not watched before that compile, which is no edit when the
+    manifest records it as read. A file created after the compile read it as
+    missing is an edit.
     """
+    from reflex.compiler import disk_cache, page_cache
     from reflex.utils import prerequisites
 
     page, data = tmp_path / "page.py", tmp_path / "data.json"
     page.write_text("TITLE = 'v1'\n")
-    data.write_text("{}")
+    files: dict[str, Any] = {}
+    if recorded:
+        data.write_text("{}")
+        files[str(data)] = page_cache.file_entry(str(data))
     known = {page}
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("REFLEX_COMPILE_DAEMON_PRECOMPILED", "1")
     monkeypatch.setattr(compile_daemon, "_lock_path", lambda: tmp_path / "lock")
     monkeypatch.setattr(compile_daemon, "_reload_roots", lambda: [tmp_path])
     monkeypatch.setattr(compile_daemon, "_prepare_fork_parent", lambda roots: None)
-    monkeypatch.setattr(compile_daemon, "_unbuilt_changes", lambda state: set())
+    monkeypatch.setattr(disk_cache, "load_manifest", lambda: {"files": files})
     monkeypatch.setattr(prerequisites, "get_app", lambda **kwargs: None)
     monkeypatch.setattr("reflex.utils.prerequisites.get_backend_dir", lambda: tmp_path)
     monkeypatch.setattr(
@@ -1145,13 +1167,34 @@ def test_built_inputs_include_dependencies_the_compile_added(tmp_path, monkeypat
         """
         compiles.append(changed)
         known.add(data)
+        if not data.exists():
+            data.write_text("{}")
         return True
 
     compiles: list[set[Path] | None] = []
     monkeypatch.setattr(compile_daemon, "_compile_once", compile_once)
     compile_daemon._serve()
+    if not recorded:
+        assert compiles == [{page}, {data}]
+        return
     assert compiles == [{page}]
     assert compile_daemon._built_inputs_current()
     data.write_text('{"edited": true}')
     os.utime(data, ns=(1, 1))
     assert not compile_daemon._built_inputs_current()
+
+
+def test_unbuilt_changes_compare_function_slices(tmp_path, monkeypatch):
+    """A module recorded only as function slices still reports its edits."""
+    from reflex.compiler import disk_cache, page_cache
+
+    page = tmp_path / "page.py"
+    page.write_text("def index():\n    return 'v1'\n")
+    dep = f"{page}{page_cache.SLICE_SEPARATOR}index"
+    files = {dep: page_cache.file_entry(dep)}
+    monkeypatch.setattr(disk_cache, "load_manifest", lambda: {"files": files})
+    state = compile_daemon._WatchState([tmp_path], tmp_path, known={page})
+    assert compile_daemon._unbuilt_changes(state) == set()
+    page.write_text("def index():\n    return 'edited'\n")
+    os.utime(page, ns=(1, 1))
+    assert compile_daemon._unbuilt_changes(state) == {page}

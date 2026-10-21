@@ -807,6 +807,7 @@ class App(MiddlewareMixin, LifespanMixin):
         self._compile(
             prerender_routes=should_prerender_routes(),
             trigger=trigger,
+            serving=True,
         )
 
         # In preview mode the frontend is served as a mounted static bundle rather
@@ -1732,6 +1733,7 @@ class App(MiddlewareMixin, LifespanMixin):
         dry_run: bool = False,
         use_rich: bool = True,
         trigger: CompileTrigger | None = None,
+        serving: bool = False,
     ):
         """Compile the app and output it to the pages folder.
 
@@ -1741,6 +1743,7 @@ class App(MiddlewareMixin, LifespanMixin):
             use_rich: Whether to use rich progress bars.
             trigger: Label identifying what initiated this compile. Recorded
                 on the ``compile`` telemetry event.
+            serving: Whether this process serves the app after compiling.
 
         Raises:
             ReflexRuntimeError: When any page uses state, but no rx.State subclass is defined.
@@ -1757,6 +1760,7 @@ class App(MiddlewareMixin, LifespanMixin):
                         prerender_routes=prerender_routes,
                         dry_run=dry_run,
                         use_rich=use_rich,
+                        serving=serving,
                     )
                     return
 
@@ -1768,6 +1772,7 @@ class App(MiddlewareMixin, LifespanMixin):
                             prerender_routes=prerender_routes,
                             dry_run=dry_run,
                             use_rich=use_rich,
+                            serving=serving,
                         )
                     except Exception as exc:
                         ctx.set_exception(exc)

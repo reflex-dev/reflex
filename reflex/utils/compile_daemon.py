@@ -18,15 +18,19 @@ import subprocess
 import sys
 import threading
 import time
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from reflex_base import constants
 from reflex_base.environment import environment
 from reflex_base.utils import log
 
 from reflex.utils import path_ops
+
+if TYPE_CHECKING:
+    from reflex.compiler import page_cache
 
 logger = logging.getLogger(__name__)
 
@@ -460,6 +464,34 @@ def _known_snapshot(state: _WatchState, snapshot: dict[Path, int]) -> dict[Path,
     return {p: m for p, m in snapshot.items() if p in state.known}
 
 
+def _recorded_inputs(
+    paths: Iterable[Path],
+) -> tuple[page_cache.FileValidator, dict[Path, list[str]]] | None:
+    """Find the manifest entries of input files.
+
+    A file is recorded whole, as function slices (``<file>::<function>``),
+    or both.
+
+    Args:
+        paths: The input files.
+
+    Returns:
+        A validator for the manifest's file table and each recorded file's
+        entries, or None without a manifest.
+    """
+    from reflex.compiler import disk_cache, page_cache
+
+    if (manifest := disk_cache.load_manifest()) is None:
+        return None
+    files = manifest["files"]
+    wanted = {str(path): path for path in paths}
+    entries: dict[Path, list[str]] = {}
+    for key in files:
+        if (path := wanted.get(page_cache.dep_file(key))) is not None:
+            entries.setdefault(path, []).append(key)
+    return page_cache.FileValidator(files), entries
+
+
 def _unbuilt_changes(state: _WatchState) -> set[Path]:
     """Recorded compile inputs that differ from the manifest on disk.
 
@@ -469,17 +501,25 @@ def _unbuilt_changes(state: _WatchState) -> set[Path]:
     Returns:
         The inputs edited since the last build wrote its manifest.
     """
-    from reflex.compiler import disk_cache, page_cache
-
-    if (manifest := disk_cache.load_manifest()) is None:
+    if (recorded := _recorded_inputs(state.known)) is None:
         return set()
-    files = manifest["files"]
-    validator = page_cache.FileValidator(files)
-    return {
-        path
-        for path in state.known
-        if str(path) in files and validator.changed(str(path))
-    }
+    validator, entries = recorded
+    return {path for path, keys in entries.items() if not validator.unchanged(keys)}
+
+
+def _built_inputs(paths: set[Path]) -> set[Path]:
+    """Inputs the manifest records with their current content.
+
+    Args:
+        paths: The input files.
+
+    Returns:
+        The paths that have entries, all unchanged.
+    """
+    if (recorded := _recorded_inputs(paths)) is None:
+        return set()
+    validator, entries = recorded
+    return {path for path, keys in entries.items() if validator.unchanged(keys)}
 
 
 def _missed_changes(before: dict[Path, int], after: dict[Path, int]) -> set[Path]:
@@ -1209,10 +1249,10 @@ def _serve() -> None:
             logger.error("Compile failed; keeping the last good build.")
         # Catch up on edits made while the watcher was down for the compile. An
         # input the compile started to read was not watched before it; it
-        # changed only if it differs from what the compile recorded.
+        # changed unless the compile recorded its current content.
         pending = _missed_changes(before, state.checkpoint)
         if appeared := (pending - before.keys()) & state.known:
-            pending -= appeared - _unbuilt_changes(state)
+            pending -= _built_inputs(appeared)
 
 
 def main(argv: list[str] | None = None) -> int:

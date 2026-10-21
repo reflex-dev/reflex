@@ -5799,3 +5799,11 @@ def test_write_stateful_pages_marker_concurrent_readers_see_valid_json(
         for future in readers:
             future.result()
     assert json.loads(marker.read_text()) == routes
+
+
+def test_backend_compile_is_marked_serving(mocker):
+    """The backend's own compile tells the compiler that it serves the app."""
+    app = App()
+    compile_ = mocker.patch.object(app, "_compile")
+    app()
+    assert compile_.call_args.kwargs["serving"] is True
