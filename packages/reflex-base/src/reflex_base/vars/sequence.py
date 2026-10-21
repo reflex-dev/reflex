@@ -50,8 +50,12 @@ if TYPE_CHECKING:
     from .function import FunctionVar
     from .object import ObjectVar
 
-ARRAY_VAR_TYPE = TypeVar("ARRAY_VAR_TYPE", bound=Sequence, covariant=True)
-OTHER_ARRAY_VAR_TYPE = TypeVar("OTHER_ARRAY_VAR_TYPE", bound=Sequence, covariant=True)
+ARRAY_VAR_TYPE = TypeVar(
+    "ARRAY_VAR_TYPE", bound=Sequence | set | frozenset, covariant=True
+)
+OTHER_ARRAY_VAR_TYPE = TypeVar(
+    "OTHER_ARRAY_VAR_TYPE", bound=Sequence | set | frozenset, covariant=True
+)
 MAPPING_VAR_TYPE = TypeVar("MAPPING_VAR_TYPE", bound=Mapping, covariant=True)
 
 OTHER_TUPLE = TypeVar("OTHER_TUPLE")
@@ -166,43 +170,57 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set, frozenset)):
 
     @overload
     def __getitem__(
-        self: ArrayVar[Sequence[bool]], i: int | NumberVar
+        self: ArrayVar[Sequence[bool] | set[bool] | frozenset[bool]], i: int | NumberVar
     ) -> BooleanVar: ...
 
     @overload
     def __getitem__(
         self: (
-            ArrayVar[Sequence[int]]
-            | ArrayVar[Sequence[float]]
-            | ArrayVar[Sequence[int | float]]
+            ArrayVar[Sequence[int] | set[int] | frozenset[int]]
+            | ArrayVar[Sequence[float] | set[float] | frozenset[float]]
+            | ArrayVar[
+                Sequence[int | float] | set[int | float] | frozenset[int | float]
+            ]
         ),
         i: int | NumberVar,
     ) -> NumberVar: ...
 
     @overload
-    def __getitem__(self: ArrayVar[Sequence[str]], i: int | NumberVar) -> StringVar: ...
+    def __getitem__(
+        self: ArrayVar[Sequence[str] | set[str] | frozenset[str]], i: int | NumberVar
+    ) -> StringVar: ...
 
     @overload
     def __getitem__(
-        self: ArrayVar[Sequence[OTHER_ARRAY_VAR_TYPE]],
+        self: ArrayVar[
+            Sequence[OTHER_ARRAY_VAR_TYPE]
+            | set[OTHER_ARRAY_VAR_TYPE]
+            | frozenset[OTHER_ARRAY_VAR_TYPE]
+        ],
         i: int | NumberVar,
     ) -> ArrayVar[OTHER_ARRAY_VAR_TYPE]: ...
 
     @overload
     def __getitem__(
-        self: ArrayVar[Sequence[MAPPING_VAR_TYPE]],
+        self: ArrayVar[
+            Sequence[MAPPING_VAR_TYPE]
+            | set[MAPPING_VAR_TYPE]
+            | frozenset[MAPPING_VAR_TYPE]
+        ],
         i: int | NumberVar,
     ) -> ObjectVar[MAPPING_VAR_TYPE]: ...
 
     @overload
     def __getitem__(
-        self: ArrayVar[Sequence[SQLA_TYPE]],
+        self: ArrayVar[Sequence[SQLA_TYPE] | set[SQLA_TYPE] | frozenset[SQLA_TYPE]],
         i: int | NumberVar,
     ) -> ObjectVar[SQLA_TYPE]: ...
 
     @overload
     def __getitem__(
-        self: ArrayVar[Sequence[DATACLASS_TYPE]],
+        self: ArrayVar[
+            Sequence[DATACLASS_TYPE] | set[DATACLASS_TYPE] | frozenset[DATACLASS_TYPE]
+        ],
         i: int | NumberVar,
     ) -> ObjectVar[DATACLASS_TYPE]: ...
 
@@ -613,7 +631,9 @@ class LiteralArrayVar(
 ):
     """Base class for immutable literal array vars."""
 
-    _var_value: Sequence[Var | Any] = dataclasses.field(default=())
+    _var_value: Sequence[Var | Any] | set[Var | Any] | frozenset[Var | Any] = (
+        dataclasses.field(default=())
+    )
 
     @cached_property_no_lock
     def _cached_var_name(self) -> str:
