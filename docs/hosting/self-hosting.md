@@ -18,6 +18,9 @@ Use `reflex deploy` for the managed workflow. Follow this page when you need to 
 - Moving from managed hosting also requires transferring persistent data, secrets, domains, and any external service configuration.
 - You operate the servers, TLS, monitoring, backups, and updates in a self-hosted environment.
 
+For multiple backend replicas, regional state, durable jobs, and recovery tests,
+see [Scaling Reflex Apps](/docs/hosting/scaling/).
+
 ## Managed vs. self-hosted
 
 | Deployment choice | Managed (`reflex deploy`) | Self-hosted |

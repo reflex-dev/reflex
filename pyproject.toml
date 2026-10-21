@@ -547,6 +547,8 @@ reflex-components-recharts = false
 reflex-components-sonner = false
 reflex-enterprise = false
 reflex-hosting-cli = false
+pillow = "2026-10-21T00:00:00Z"
+certifi = "2026-10-21T00:00:00Z"
 # Keep the type checker itself resolvable at its latest release; ty ships frequent
 # fixes the migration depends on.
 ty = false
