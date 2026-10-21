@@ -2463,6 +2463,9 @@ class State(BaseState):
         """
         from reflex_base.event.context import EventContext
 
+        # Inline to avoid a circular import through the processor package init.
+        from reflex_base.event.processor.scope import event_scope
+
         self._reset_client_storage()
         applied = await _apply_client_storage_vars(self, vars) if vars else []
         self._clean()
@@ -2472,12 +2475,15 @@ class State(BaseState):
         self.is_hydrated = False
         ctx = EventContext.get()
         if ctx.emit_delta_impl is not None:
-            delta = await _resolve_delta(self.dict())
-            if hashes:
-                delta = await _diff_against_initial_state(type(self), delta, hashes)
-            # Include the guard and values changed while resolving the snapshot.
-            for state_name, changes in (await self._get_resolved_delta()).items():
-                delta.setdefault(state_name, {}).update(changes)
+            # The event scope (e.g. the i18n locale) was derived before the
+            # browser's storage was applied; re-derive it for the snapshot.
+            async with event_scope(self):
+                delta = await _resolve_delta(self.dict())
+                if hashes:
+                    delta = await _diff_against_initial_state(type(self), delta, hashes)
+                # Include the guard and values changed while resolving the snapshot.
+                for state_name, changes in (await self._get_resolved_delta()).items():
+                    delta.setdefault(state_name, {}).update(changes)
             await ctx.emit_delta(delta=delta)
             # Follow-up corrections must be allowed to write browser storage.
             self.dirty_vars.discard(constants.CompileVars.IS_HYDRATED)

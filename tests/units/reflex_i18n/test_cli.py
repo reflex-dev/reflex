@@ -93,6 +93,25 @@ def test_merge_preserves_existing_translation(tmp_path: Path):
     assert stats.missing == 2
 
 
+@pytest.mark.parametrize(
+    ("locale", "plural_forms"),
+    [("pt-BR", "nplurals=2; plural=(n > 1);"), ("zh-Hant", "nplurals=1; plural=0;")],
+)
+def test_merge_into_locale_accepts_region_and_script_tags(
+    tmp_path: Path, locale: str, plural_forms: str
+):
+    # Configured tags are hyphenated; Babel only parses its underscore form,
+    # both for a new catalog and for reading an existing one back.
+    template = extract_catalog(tmp_path, (MessageKey("Static hello"),))
+    po_path = tmp_path / "locales" / f"{locale}.po"
+
+    merge_into_locale(template, po_path, locale)
+    stats = merge_into_locale(template, po_path, locale)
+
+    assert stats.missing == 1
+    assert plural_forms in po_path.read_text(encoding="utf-8")
+
+
 def test_catalog_stats_counts_missing_and_obsolete(tmp_path: Path):
     app_dir = tmp_path / "myapp"
     _write_app_source(app_dir)

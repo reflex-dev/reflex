@@ -130,10 +130,12 @@ def _read_or_new_catalog(po_path: Path, locale: str) -> Catalog:
     from babel.messages.catalog import Catalog
     from babel.messages.pofile import read_po
 
+    # Babel parses only the underscore form of a hyphenated tag (pt-BR).
+    babel_locale = locale.replace("-", "_")
     if po_path.exists():
         with po_path.open("rb") as f:
-            return read_po(f, locale=locale)
-    return Catalog(locale=locale)
+            return read_po(f, locale=babel_locale)
+    return Catalog(locale=babel_locale)
 
 
 def _write_catalog(catalog: Catalog, path: Path) -> None:
