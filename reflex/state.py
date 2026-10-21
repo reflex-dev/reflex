@@ -1828,10 +1828,6 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         if not isinstance(var, Var):
             return var
 
-        # Fast case: this is a literal var and the value is known.
-        if isinstance(var, LiteralVar) and not isinstance(var._var_value, Var):
-            return var._var_value
-
         # Unwrap any cast wrappers and resolve via the underlying var's *own*
         # var data, not the recursive _get_all_var_data(). For an operation or
         # derived var (e.g. State.a + State.b or State.items[0]), the recursive
@@ -1842,6 +1838,13 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         inner_var = var
         while isinstance(inner_var, ToOperation):
             inner_var = inner_var._original
+
+        # Fast case: this is a literal var and the value is known.
+        if isinstance(inner_var, LiteralVar) and not isinstance(
+            inner_var._var_value, Var
+        ):
+            return inner_var._var_value
+
         var_data = inner_var._var_data
         if var_data is None or not var_data.state or not var_data.field_name:
             msg = f"Unable to retrieve value for {var._js_expr}: not associated with any state."

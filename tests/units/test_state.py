@@ -6344,6 +6344,9 @@ async def test_get_var_value(
     # LiteralVar with known value
     assert await state.get_var_value(rx.Var.create([1, 2, 3])) == [1, 2, 3]
 
+    # Cast LiteralVar resolves to the original literal value
+    assert await state.get_var_value(rx.Var.create(1).to(int)) == 1
+
     # Generic Var with no state
     with pytest.raises(UnretrievableVarValueError):
         await state.get_var_value(rx.Var("undefined"))
