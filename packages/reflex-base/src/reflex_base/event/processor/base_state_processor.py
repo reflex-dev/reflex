@@ -18,7 +18,7 @@ from reflex.istate.proxy import StateProxy
 from reflex.utils import types
 from reflex_base import otel
 from reflex_base.constants import CompileVars
-from reflex_base.event import Event, EventHandler, EventSpec
+from reflex_base.event import Event, EventHandler, EventSpec, get_hydrate_event_name
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.event_processor import EventProcessor, EventQueueEntry
 from reflex_base.event.processor.future import EventFuture
@@ -42,27 +42,41 @@ else:
 
 
 @functools.lru_cache(maxsize=1)
-def _hydrate_event_names() -> frozenset[str]:
-    from reflex.state import State
+def _connect_handlers() -> tuple[EventHandler, EventHandler]:
+    """Look up the (re)connect handler and the page-load handler it supersedes.
 
-    return frozenset(
-        format_event_handler(State.event_handlers[name])
-        for name in (CompileVars.HYDRATE, CompileVars.HYDRATE_AND_LOAD)
+    Cached as handlers, not names: the names follow the active name resolver,
+    and ``format_event_handler`` caches each one on its handler.
+
+    Returns:
+        The ``hydrate_and_load`` and ``on_load_internal`` handlers.
+    """
+    from reflex.state import OnLoadInternalState, State
+
+    return (
+        State.event_handlers[CompileVars.HYDRATE_AND_LOAD],
+        OnLoadInternalState.event_handlers["on_load_internal"],
     )
 
 
-@functools.lru_cache(maxsize=1)
+def _hydrate_event_names() -> tuple[str, str]:
+    """The events that hydrate the state themselves.
+
+    Returns:
+        The full event names of ``hydrate`` and ``hydrate_and_load``.
+    """
+    return get_hydrate_event_name(), format_event_handler(_connect_handlers()[0])
+
+
 def _connect_supersedes() -> tuple[str, str]:
     """The (re)connect event and the page-load event whose chain it cancels.
 
     Returns:
         The full event names of ``hydrate_and_load`` and ``on_load_internal``.
     """
-    from reflex.state import OnLoadInternalState, State
-
-    return (
-        format_event_handler(State.event_handlers[CompileVars.HYDRATE_AND_LOAD]),
-        format_event_handler(OnLoadInternalState.event_handlers["on_load_internal"]),
+    hydrate_and_load, on_load_internal = _connect_handlers()
+    return format_event_handler(hydrate_and_load), format_event_handler(
+        on_load_internal
     )
 
 
