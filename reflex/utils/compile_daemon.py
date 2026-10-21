@@ -115,9 +115,13 @@ def running(
         env["REFLEX_COMPILE_DAEMON_PRECOMPILED"] = "1"
 
     def spawn() -> subprocess.Popen:
-        return subprocess.Popen(
+        proc = subprocess.Popen(
             [sys.executable, "-m", "reflex.utils.compile_daemon"], env=env
         )
+        # A restarted daemon compiles: the config change it restarts for
+        # made the frontend the first daemon produced stale.
+        env.pop("REFLEX_COMPILE_DAEMON_PRECOMPILED", None)
+        return proc
 
     lock = threading.Lock()
     stopping = False
@@ -696,7 +700,8 @@ def _reset_first_party(roots: list[Path]) -> None:
     kept = [
         cls
         for name, cls in ctx.base_states.items()
-        if name not in page_states and _survives_purge(cls)
+        if (page_states is None or name not in page_states)
+        and _survives_purge(cls, page_states is not None)
     ]
     ctx.base_states.clear()
     ctx.base_state_substates.clear()
@@ -734,24 +739,24 @@ def _reset_first_party(roots: list[Path]) -> None:
     _reset_model_metadata()
 
 
-def _page_defined_states() -> set[str]:
+def _page_defined_states() -> set[str] | None:
     """The states the last compile recorded as defined by a page's evaluation.
 
     They are re-created when the page re-evaluates, so they never survive a
-    reset; without a manifest, every ``reflex.istate.dynamic`` state is
-    taken for one.
+    reset.
 
     Returns:
-        The full names of the page-defined states.
+        The full names of the page-defined states, or None without a
+        manifest to tell them from the states created at import.
     """
     from reflex.compiler import disk_cache
 
     if (manifest := disk_cache.load_manifest()) is None:
-        return set()
+        return None
     return disk_cache._hit_page_states(manifest, set())
 
 
-def _survives_purge(cls: type) -> bool:
+def _survives_purge(cls: type, page_states_known: bool) -> bool:
     """Whether a registered state stays registered across the first-party purge.
 
     A state's code re-registers it when it runs again, which only happens
@@ -764,6 +769,8 @@ def _survives_purge(cls: type) -> bool:
 
     Args:
         cls: The registered state class.
+        page_states_known: Whether a manifest told the page-defined states
+            apart from the ones created at import.
 
     Returns:
         True when the state is kept.
@@ -772,9 +779,7 @@ def _survives_purge(cls: type) -> bool:
 
     module_name = getattr(cls, "__module__", None)
     if module_name == istate_dynamic.__name__:
-        from reflex.compiler import disk_cache
-
-        if disk_cache.load_manifest() is None:
+        if not page_states_known:
             return False
         # A local state remembers its module; a ComponentState instance is
         # created from a class defined in its creating module.

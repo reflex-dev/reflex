@@ -906,13 +906,24 @@ def test_running_restarts_the_daemon_on_its_restart_code(tmp_path, monkeypatch):
         spawned.append(proc)
         return proc
 
-    monkeypatch.setattr(compile_daemon.subprocess, "Popen", spawn)
-    with compile_daemon.running():
+    environments: list[dict[str, str]] = []
+    original_spawn = spawn
+
+    def spawn_recording_env(args, **kwargs):
+        environments.append(dict(kwargs["env"]))
+        return original_spawn(args, **kwargs)
+
+    monkeypatch.setattr(compile_daemon.subprocess, "Popen", spawn_recording_env)
+    with compile_daemon.running(initial_compiled=True):
         assert AppHarness._poll_for(lambda: len(spawned) == 2, timeout=10)
         assert spawned[0].poll() == compile_daemon._RESTART_EXIT_CODE
         assert spawned[1].poll() is None
     assert spawned[1].poll() is not None
     assert len(spawned) == 2
+    # The first daemon found the frontend compiled; the restarted one must
+    # compile, since the config change made that frontend stale.
+    assert "REFLEX_COMPILE_DAEMON_PRECOMPILED" in environments[0]
+    assert "REFLEX_COMPILE_DAEMON_PRECOMPILED" not in environments[1]
 
 
 @pytest.mark.skipif(not hasattr(os, "fork"), reason="requires os.fork (POSIX)")
