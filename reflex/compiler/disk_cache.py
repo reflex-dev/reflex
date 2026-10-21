@@ -669,7 +669,11 @@ def manifest_dependency_files(manifest: dict[str, Any]) -> set[str]:
         The files of :func:`manifest_dependency_entries` plus the global
         inputs recorded as absent.
     """
-    files = {page_cache.dep_file(dep) for dep in manifest_dependency_entries(manifest)}
+    files = {
+        page_cache.dep_file(dep)
+        for dep in manifest_dependency_entries(manifest)
+        if dep != page_cache.VOLATILE_DEP
+    }
     files.update(manifest.get("globals_absent", ()))
     return files
 

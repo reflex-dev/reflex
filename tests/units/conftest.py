@@ -41,6 +41,22 @@ from .states.upload import SubUploadState, UploadState
 
 
 @pytest.fixture(autouse=True)
+def _forget_compile_start() -> Generator[None, None, None]:
+    """Unset the compile cache's racy-edit threshold between tests.
+
+    A compile sets it before importing the app; a test that writes files
+    after another test compiled would otherwise record them as racy.
+
+    Yields:
+        None.
+    """
+    from reflex.compiler import page_cache
+
+    yield
+    page_cache._compile_start_ns = None
+
+
+@pytest.fixture(autouse=True)
 def _isolate_app_in_context() -> Generator[None, None, None]:
     """Reset the App slot on the active RegistrationContext between tests.
 

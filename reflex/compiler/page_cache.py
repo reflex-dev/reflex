@@ -4,6 +4,14 @@ Each page records the first-party Python import closure of its page callable,
 files read during page evaluation, component modules in its rendered tree, and
 fine-grained state files it references. ``disk_cache`` persists hashes of that
 set so only pages whose dependencies changed need to be recompiled.
+
+Reads are tracked through ``open``, ``io.open``, ``Path.open``,
+``Path.read_text``/``read_bytes``, ``tokenize.open`` (``linecache`` and
+``inspect.getsource``) and ``io.open_code`` (``pkgutil.get_data``), on the
+thread that evaluates the page. A page whose output depends on anything else
+(a read from a C extension or a worker thread, the environment, the clock, a
+directory listing, a subprocess) calls :func:`mark_volatile` while it
+evaluates, and is then recompiled by every compile.
 """
 
 from __future__ import annotations
@@ -16,14 +24,17 @@ import functools
 import hashlib
 import importlib
 import importlib.util
+import io
 import os
 import re
 import sys
+import time
+import tokenize
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from contextvars import ContextVar
 from importlib import metadata
 from pathlib import Path
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING
 
 from reflex_base import constants
 from reflex_base.environment import environment
@@ -32,22 +43,26 @@ if TYPE_CHECKING:
     from reflex_base.components.component import BaseComponent
     from reflex_base.plugins import PageContext
 
-#: A manifest file-table entry: ``[content sha256, st_mtime_ns, st_size]``.
+#: A manifest file-table entry: ``[content sha256, st_mtime_ns, st_size]``, or
+#: :data:`ABSENT_ENTRY` for a dependency that did not exist, or
+#: :data:`RACY_ENTRY` for one that changed while the compile ran.
 FileEntry = list
 
-#: Directories never worth hashing (build artifacts, deps, caches).
-_SKIP_DIRS = {
-    constants.Dirs.WEB,
-    ".venv",
-    "venv",
-    "node_modules",
-    "__pycache__",
-    ".git",
-    constants.Dirs.APP_ASSETS,
-}
+#: The file-table entry of a dependency that was absent when recorded. It is
+#: unchanged while the file stays absent.
+ABSENT_ENTRY: FileEntry = ["<absent>"]
+
+#: The file-table entry of a dependency modified at or after the compile
+#: started (the racy-git rule): the content the compile read is unknown, so
+#: the next compile always counts the file as changed and records it afresh.
+RACY_ENTRY: FileEntry = ["<racy>", -1, -1]
+
+#: The dependency a volatile page records (see :func:`mark_volatile`). It has
+#: no file-table entry, so the page misses on every compile.
+VOLATILE_DEP = "<volatile>"
 
 #: Genuinely-global files: a change here can affect every page's output, so it
-#: bumps ``global_epoch`` rather than any single page's dependency set.
+#: is a global input rather than part of any single page's dependency set.
 #: ``reflex.lock/`` is deliberately absent: its lockfiles are derived from
 #: inputs tracked elsewhere (``rxconfig.py`` frontend packages, page imports,
 #: the Reflex version) and are rewritten by every install, so treating them as
@@ -62,22 +77,6 @@ _GLOBAL_FILES = (
 
 #: Matches a JS state-context identifier in compiled page output.
 STATE_CONTEXT_RE = re.compile(r"reflex___state[A-Za-z0-9_]+")
-
-
-def _sha(*parts: bytes | str) -> str:
-    """Digest parts with a separator, so their boundaries count.
-
-    Args:
-        parts: The text or bytes to digest.
-
-    Returns:
-        The hex digest.
-    """
-    h = hashlib.sha256()
-    for p in parts:
-        h.update(p.encode() if isinstance(p, str) else p)
-        h.update(b"\x1f")
-    return h.hexdigest()
 
 
 def _reflex_version() -> str:
@@ -113,6 +112,29 @@ def first_party_roots(root: Path | None = None) -> tuple[Path, ...]:
     return (root, *(p for p in include if p != root))
 
 
+def _containing_root(path: Path, roots: Iterable[Path]) -> Path | None:
+    """Find the root that contains (or is) ``path``.
+
+    Compares path strings: this runs for every import and read under a
+    recorder, and ``root in path.parents`` builds a Path per ancestor.
+
+    Args:
+        path: Absolute path to test.
+        roots: Absolute root paths.
+
+    Returns:
+        The first root containing ``path``, or None.
+    """
+    path_str = str(path)
+    for root in roots:
+        root_str = str(root)
+        if path_str == root_str or path_str.startswith(
+            root_str if root_str.endswith(os.sep) else root_str + os.sep
+        ):
+            return root
+    return None
+
+
 def _under_any(path: Path, roots: Iterable[Path]) -> bool:
     """Whether ``path`` is nested below (or is) one of ``roots``.
 
@@ -123,7 +145,7 @@ def _under_any(path: Path, roots: Iterable[Path]) -> bool:
     Returns:
         True when some root contains ``path``.
     """
-    return any(root == path or root in path.parents for root in roots)
+    return _containing_root(path, roots) is not None
 
 
 # A page's markdown/data dependencies are read lazily while the page is
@@ -133,10 +155,45 @@ def _under_any(path: Path, roots: Iterable[Path]) -> bool:
 _active_reads: ContextVar[set[str] | None] = ContextVar("_active_reads", default=None)
 _patched = False
 _recorder_root: Path | None = None
+#: The first-party roots of ``_recorder_root``, resolved once per root.
+_recorder_roots: tuple[Path, ...] = ()
+#: ``time.time_ns()`` when the current compile started importing the app.
+#: A dependency modified at or after it is recorded as :data:`RACY_ENTRY`.
+_compile_start_ns: int | None = None
 
-#: Path parts that mark a dependency/build location whose reads are never a
-#: page's own source dependency (a change there flows through the version/epoch).
-_EXCLUDE_PARTS = _SKIP_DIRS | {"site-packages", "dist-packages"}
+#: Path parts that mark a dependency/build location whose files are never a
+#: page's own source dependency (a change there flows through the version or
+#: the global inputs). Tested against the parts below the first-party root a
+#: file is under, so a project living in a directory of such a name is not
+#: excluded wholesale; a file outside every root is tested by its full path.
+_EXCLUDE_PARTS = frozenset({
+    constants.Dirs.WEB,
+    ".venv",
+    "venv",
+    "node_modules",
+    "__pycache__",
+    ".git",
+    "site-packages",
+    "dist-packages",
+})
+
+
+def _excluded(path: Path, roots: tuple[Path, ...]) -> bool:
+    """Whether ``path`` lies in a dependency/build location.
+
+    Args:
+        path: Absolute path to test.
+        roots: The first-party roots.
+
+    Returns:
+        True when a part of the path (below its root, if any) names an
+        excluded directory.
+    """
+    parts = path.parts
+    if (root := _containing_root(path, roots)) is not None:
+        parts = parts[len(root.parts) :]
+    return not _EXCLUDE_PARTS.isdisjoint(parts)
+
 
 #: Suffixes of content files a page may read from *outside* the project root
 #: (e.g. the docs app reads its markdown from a sibling directory). Reads under
@@ -165,11 +222,20 @@ _PYTHON_PREFIXES = tuple(
 #: None). Cleared by ``enable_read_tracking`` when the recorder root changes.
 _module_file_cache: dict[object, str | None] = {}
 _app_import_reads: dict[Path, set[str]] = {}
-T = TypeVar("T")
 
-#: Maps an absolute import name to the files read while importing it under a
-#: recorder, so every later importer of the cached module depends on them too.
-_module_import_reads: dict[str, set[str]] = {}
+#: Maps a first-party module file to the files code in it read under a
+#: recorder, whichever page (or the app import) was running. A read behind a
+#: shared cache (``functools.cache``, a module-level loader) happens once per
+#: process, for the first caller only, so a page depends on the reads of every
+#: module in its import closure, not only on the reads its own evaluation
+#: performed. The over-approximation is safe.
+_module_reads: dict[str, set[str]] = {}
+_THIS_FILE = __file__
+
+
+def forget_module_reads() -> None:
+    """Drop the reads attributed to modules (before first-party code reloads)."""
+    _module_reads.clear()
 
 
 @contextlib.contextmanager
@@ -186,8 +252,31 @@ def _suspend_tracking():
         _active_reads.reset(token)
 
 
+def _reading_module_file() -> str | None:
+    """Find the first-party module whose code performed the current read.
+
+    Walks the stack from the read hook's caller up to the first frame whose
+    code lives in a first-party module file, so a read made by a library on
+    a page's behalf is attributed to the page's code.
+
+    Returns:
+        The resolved module file, or None when no first-party code is on the
+        stack.
+    """
+    frame = sys._getframe(2)
+    while frame is not None:
+        file = frame.f_code.co_filename
+        if file != _THIS_FILE and (module_file := _recordable_module_file(file)):
+            return module_file
+        frame = frame.f_back
+    return None
+
+
 def _record_read(path: object) -> None:
     """Add a first-party file read to the active read set, if any.
+
+    The read is also attributed to the first-party module that performed it
+    (see :data:`_module_reads`).
 
     Args:
         path: The path the code read.
@@ -200,26 +289,29 @@ def _record_read(path: object) -> None:
             resolved = Path(path).resolve()  # type: ignore[arg-type]
         except (OSError, TypeError, ValueError):
             return
-        if any(part in _EXCLUDE_PARTS for part in resolved.parts):
+        if _excluded(resolved, _recorder_roots):
             return
-        root = _recorder_root
-        under_root = root is not None and _under_any(resolved, first_party_roots(root))
-        if not under_root and resolved.suffix.lower() not in _CONTENT_SUFFIXES:
+        if (
+            not _under_any(resolved, _recorder_roots)
+            and resolved.suffix.lower() not in _CONTENT_SUFFIXES
+        ):
             return
-        target.add(str(resolved))
+        read = str(resolved)
+        target.add(read)
+        if (module_file := _reading_module_file()) is not None:
+            _module_reads.setdefault(module_file, set()).add(read)
 
 
-def _is_inside(path: Path, root: Path) -> bool:
-    """Return whether ``path`` is nested below ``root``.
+def mark_volatile() -> None:
+    """Make the page being evaluated recompile on every compile.
 
-    Args:
-        path: Absolute path to test.
-        root: Absolute root path.
-
-    Returns:
-        True when ``path`` is nested below ``root``.
+    For a page whose output depends on an input the cache cannot see: a read
+    made by a C extension or on another thread, an environment variable, the
+    clock, a directory listing, a subprocess. A no-op outside a compile that
+    records dependencies.
     """
-    return root in path.parents
+    if (target := _active_reads.get()) is not None:
+        target.add(VOLATILE_DEP)
 
 
 def _is_python_install_file(path: Path) -> bool:
@@ -264,9 +356,9 @@ def _recordable_module_file(file: object) -> str | None:
         except (OSError, TypeError, ValueError):
             return None
 
-        roots = first_party_roots(root)
+        roots = _recorder_roots
         resolved_str = None
-        if not any(part in _EXCLUDE_PARTS for part in path.parts) and (
+        if not _excluded(path, roots) and (
             _under_any(path, roots) or not _is_python_install_file(path)
         ):
             try:
@@ -274,10 +366,8 @@ def _recordable_module_file(file: object) -> str | None:
             except (OSError, TypeError, ValueError):
                 pass
             else:
-                if not any(part in _EXCLUDE_PARTS for part in resolved.parts):
-                    resolved_str = (
-                        str(resolved) if _under_any(resolved, roots) else None
-                    )
+                if _under_any(resolved, roots) and not _excluded(resolved, roots):
+                    resolved_str = str(resolved)
         _module_file_cache[file] = resolved_str
         return resolved_str
 
@@ -347,72 +437,40 @@ def _record_imported_modules(
     result_id = id(result)
     if (module := sys.modules.get(name)) and id(module) != result_id:
         _record_module_file(module, target)
-    target.update(_module_import_reads.get(name, ()))
     parent = name
     while "." in parent:
         parent = parent.rsplit(".", 1)[0]
         if (module := sys.modules.get(parent)) is not None:
             _record_module_file(module, target)
-            target.update(_module_import_reads.get(parent, ()))
     if not fromlist:
         return
     for item in fromlist:
         if (
             item != "*"
-            and (module := sys.modules.get(submodule := f"{name}.{item}"))
+            and (module := sys.modules.get(f"{name}.{item}"))
             and id(module) != result_id
         ):
             _record_module_file(module, target)
-            target.update(_module_import_reads.get(submodule, ()))
-
-
-def _import_recording_reads(
-    name: str, do_import: Callable[[], T], target: set[str]
-) -> T:
-    """Run an import under a fresh read set kept as the module's import reads.
-
-    A module executing afresh replaces its recorded reads; importing a loaded
-    module only adds the reads of submodules it loads for the first time. The
-    reads also go to ``target``, even when the import fails.
-
-    Args:
-        name: The absolute requested module name.
-        do_import: Performs the import.
-        target: The active read set.
-
-    Returns:
-        The result of ``do_import``.
-    """
-    executes = name not in sys.modules
-    reads: set[str] = set()
-    token = _active_reads.set(reads)
-    try:
-        return do_import()
-    finally:
-        _active_reads.reset(token)
-        if executes:
-            _module_import_reads.pop(name, None)
-        if reads:
-            _module_import_reads.setdefault(name, set()).update(reads)
-            target.update(reads)
 
 
 def enable_read_tracking(root: Path | None = None) -> None:
     """Install per-page source-read tracking and register the recorder hook.
 
-    Idempotent. Patches ``Path.read_text``/``read_bytes`` and ``open`` to record
-    reads (only while a recording set is active) and points the reflex-base
-    compile loop at :func:`record_reads`. Called when an incremental cache flag
-    is on; a no-op to the compile otherwise.
+    Idempotent. Patches the read entry points named in the module docstring
+    and the import functions to record reads and imported module files (only
+    while a recording set is active) and points the reflex-base compile loop
+    at :func:`record_reads`. Called when an incremental cache flag is on; a
+    no-op to the compile otherwise.
 
     Args:
         root: Project root; only reads under it are recorded. Defaults to cwd.
     """
-    global _patched, _recorder_root
+    global _patched, _recorder_root, _recorder_roots
     resolved_root = (root or Path.cwd()).resolve()
     if _recorder_root != resolved_root:
         _module_file_cache.clear()
-        _module_import_reads.clear()
+        _module_reads.clear()
+        _recorder_roots = first_party_roots(resolved_root)
     _recorder_root = resolved_root
 
     from reflex_base.plugins import compiler as _bc
@@ -427,6 +485,8 @@ def enable_read_tracking(root: Path | None = None) -> None:
     orig_read_bytes = Path.read_bytes
     orig_path_open = Path.open
     orig_open = builtins.open
+    orig_open_code = io.open_code
+    orig_tokenize_open = tokenize.open
     orig_import = builtins.__import__
     orig_import_module = importlib.import_module
 
@@ -453,6 +513,17 @@ def enable_read_tracking(root: Path | None = None) -> None:
             _record_read(file)
         return orig_open(file, mode, *args, **kwargs)  # type: ignore[arg-type]
 
+    # ``importlib`` loaders (``pkgutil.get_data``) read through the C module.
+    def open_code(path: str):
+        _record_read(path)
+        return orig_open_code(path)
+
+    # ``linecache`` (``inspect.getsource``) opens source through ``tokenize``,
+    # which bound ``builtins.open`` when it was imported.
+    def tokenize_open(filename: object):
+        _record_read(filename)
+        return orig_tokenize_open(filename)  # type: ignore[arg-type]
+
     def import_(
         name: str,
         globals_: dict[str, object] | None = None,
@@ -460,31 +531,27 @@ def enable_read_tracking(root: Path | None = None) -> None:
         fromlist: Sequence[str] | None = (),
         level: int = 0,
     ):
-        if (target := _active_reads.get()) is None:
-            return orig_import(name, globals_, locals_, fromlist, level)
-        absolute = _absolute_import_name(name, globals_, level)
-        result = _import_recording_reads(
-            absolute,
-            lambda: orig_import(name, globals_, locals_, fromlist, level),
-            target,
-        )
-        _record_imported_modules(absolute, result, target, fromlist)
+        result = orig_import(name, globals_, locals_, fromlist, level)
+        if (target := _active_reads.get()) is not None:
+            absolute = _absolute_import_name(name, globals_, level)
+            _record_imported_modules(absolute, result, target, fromlist)
         return result
 
     def import_module(name: str, package: str | None = None):
-        if (target := _active_reads.get()) is None:
-            return orig_import_module(name, package)
-        absolute = importlib.util.resolve_name(name, package) if package else name
-        result = _import_recording_reads(
-            absolute, lambda: orig_import_module(name, package), target
-        )
-        _record_imported_modules(result.__name__, result, target)
+        result = orig_import_module(name, package)
+        if (target := _active_reads.get()) is not None:
+            _record_imported_modules(result.__name__, result, target)
         return result
 
     Path.read_text = read_text  # type: ignore[method-assign,assignment]
     Path.read_bytes = read_bytes  # type: ignore[method-assign,assignment]
     Path.open = path_open  # type: ignore[method-assign,assignment]
     builtins.open = open_  # type: ignore[assignment]
+    io.open = open_  # type: ignore[assignment]
+    io.open_code = open_code
+    # ``importlib`` loaders call ``open_code`` on the C module object.
+    setattr(sys.modules["_io"], "open_code", open_code)  # noqa: B010
+    tokenize.open = tokenize_open  # type: ignore[assignment]
     builtins.__import__ = import_  # type: ignore[assignment]
     importlib.import_module = import_module
 
@@ -508,13 +575,18 @@ def record_reads():
 def record_app_import(root: Path | None = None):
     """Record files read/imported while importing the app module.
 
+    Also marks the start of the compile, for the racy-edit rule of
+    :func:`file_entry`: everything the compile reads is read after this.
+
     Args:
         root: Project root. Defaults to cwd.
 
     Yields:
         None.
     """
+    global _compile_start_ns
     root = (root or Path.cwd()).resolve()
+    _compile_start_ns = time.time_ns()
     recorded: set[str] = set()
     success = False
     try:
@@ -525,6 +597,27 @@ def record_app_import(root: Path | None = None):
     finally:
         if success:
             _app_import_reads[root] = recorded
+
+
+def _is_racy(mtime_ns: int) -> bool:
+    """Whether a file modified at ``mtime_ns`` may have changed during the compile.
+
+    A file modified at or after the compile started may hold other content
+    than the compile read. A whole-second timestamp comes from a file system
+    with coarse timestamps, where a change in the compile's first second is
+    indistinguishable from one just before it.
+
+    Args:
+        mtime_ns: The file's modification time.
+
+    Returns:
+        True when the content the compile read cannot be vouched for.
+    """
+    if (start := _compile_start_ns) is None:
+        return False
+    if mtime_ns % 1_000_000_000 == 0:
+        start -= start % 1_000_000_000
+    return mtime_ns >= start
 
 
 def _is_page_registration(statement: ast.stmt) -> bool:
@@ -566,7 +659,9 @@ def _loaded_names(nodes: Iterable[ast.AST]) -> set[str]:
 #: :func:`function_slice_digest`).
 SLICE_SEPARATOR = "::"
 
-#: Builtins that reach module globals no syntax tree names.
+#: Names through which code reaches module globals, or the module's own
+#: source text or line numbers, that no syntax tree names: a slice reading
+#: any of them depends on the whole module file.
 _DYNAMIC_GLOBAL_NAMES = frozenset({
     "globals",
     "vars",
@@ -574,6 +669,13 @@ _DYNAMIC_GLOBAL_NAMES = frozenset({
     "eval",
     "exec",
     "__import__",
+    "sys",
+    "inspect",
+    "linecache",
+    "tokenize",
+    "getsource",
+    "getsourcelines",
+    "getsourcefile",
 })
 
 #: Decorators (``<module>.<name>``) that keep the function they wrap to
@@ -743,44 +845,41 @@ def _definition_closure(
     return closure
 
 
-def _sliced_texts(part: _ModulePart, used: set[str], closure: set[str]) -> list[str]:
+def _sliced_texts(part: _ModulePart, closure: set[str]) -> list[str]:
     """Return what one module part adds to a slice.
 
     Args:
         part: The part.
-        used: The names the slice's code reads.
         closure: The definitions in the slice.
 
     Returns:
         The texts to digest.
     """
     if part.aliases:
-        return [
-            dump
-            for bound, dump in part.aliases
-            if bound == "*" or bound in used or bound in closure
-        ]
+        # Every import counts: importing a module runs it, and that can
+        # change what any code in this module sees.
+        return [dump for _, dump in part.aliases]
     if part.name is None or part.name in closure:
         return [part.dump]
     return [part.header] if part.header else []
 
 
-def _slice_digest(parts: Sequence[_ModulePart], seeds: Iterable[str]) -> str:
+def _slice_digest(parts: Sequence[_ModulePart], seeds: Iterable[str]) -> str | None:
     """Digest the parts of a module that code starting at ``seeds`` can read.
 
-    That is every statement that runs at import, the import-time parts of
-    every definition, and the whole definitions named (transitively) by those
-    or by ``seeds``. Imports count only for the names that code reads. Code
-    reaching module globals by computed name makes every definition count.
-    Like a dependency across modules, a call-time mutation of a shared object
-    is not tracked.
+    That is every statement that runs at import (imports included), the
+    import-time parts of every definition, and the whole definitions named
+    (transitively) by those or by ``seeds``. Like a dependency across modules,
+    a call-time mutation of a shared object is not tracked.
 
     Args:
         parts: The module's parts (see :func:`_module_parts`).
         seeds: The definition names to start from.
 
     Returns:
-        The hex digest.
+        The hex digest, or None when the code reaches module globals or the
+        module's own source by a computed name, so only the whole file is a
+        safe dependency.
     """
     definitions: dict[str, list[_ModulePart]] = {}
     always: set[str] = set()
@@ -793,15 +892,10 @@ def _slice_digest(parts: Sequence[_ModulePart], seeds: Iterable[str]) -> str:
     closure = _definition_closure(definitions, (*seeds, *always))
     used = always.union(*(part.loads for name in closure for part in definitions[name]))
     if not used.isdisjoint(_DYNAMIC_GLOBAL_NAMES):
-        # A computed name can reach every module global, imports included.
-        closure = set(definitions)
-        used = always.union(
-            *(part.loads for group in definitions.values() for part in group),
-            (bound for part in parts for bound, _ in part.aliases),
-        )
+        return None
     digest = hashlib.sha256()
     for part in parts:
-        for text in _sliced_texts(part, used, closure):
+        for text in _sliced_texts(part, closure):
             digest.update(text.encode())
             digest.update(b"\n")
     return digest.hexdigest()
@@ -830,8 +924,9 @@ def function_slice_digest(path: str, name: str) -> str | None:
         name: The function's name.
 
     Returns:
-        The digest, or None when the file cannot be parsed or defines no
-        such module-level function or class.
+        The digest, or None when the file cannot be parsed, defines no such
+        module-level function or class, or reaches its globals or source by
+        a computed name (see :func:`_slice_digest`).
     """
     parts = _module_parts(path)
     if parts is None or not any(part.name == name for part in parts):
@@ -842,19 +937,21 @@ def function_slice_digest(path: str, name: str) -> str | None:
 def entrypoint_digest(path: str) -> str | None:
     """Digest the app entry module apart from its pages.
 
-    Left out are top-level ``<app>.add_page(...)`` statements and the code only
-    they read: page functions defined in the module (each page tracks its own
-    slice, see :func:`function_slice_digest`) and imported pages. Class bodies
-    run at import, so every class counts. Also left out is what
-    the syntax tree never holds (comments, formatting). Two versions with the
-    same digest differ only in their pages, which the compile cache compares
-    page by page; any other edit can change every page.
+    Left out are top-level ``<app>.add_page(...)`` statements and the page
+    functions defined in the module (each page tracks its own slice, see
+    :func:`function_slice_digest`). Every import counts, a page's included:
+    importing a module runs it. Class bodies run at import, so every class
+    counts. Also left out is what the syntax tree never holds (comments,
+    formatting). Two versions with the same digest differ only in their
+    pages, which the compile cache compares page by page; any other edit can
+    change every page.
 
     Args:
         path: The entry module's file.
 
     Returns:
-        The digest, or None when the file cannot be read or parsed.
+        The digest, or None when the file cannot be read or parsed, or
+        reaches its globals or source by a computed name.
     """
     parts = _module_parts(path)
     if parts is None:
@@ -892,58 +989,24 @@ def _app_entrypoint_file(root: Path | None = None) -> Path | None:
     return rf if root in rf.parents else None
 
 
-def global_epoch_inputs(
-    root: Path | None = None, *, pages: Sequence[object] | None = None
-) -> dict[str, str]:
-    """Fingerprint each genuinely-global input individually.
-
-    These can affect every page's output but belong to no single page, so they
-    gate the whole cache rather than any one page's dependency set: the Reflex
-    version, the config/lockfiles, and the app-level config files: the app
-    entrypoint module plus the config-only modules it imports (theme, app-wraps,
-    stylesheets, head components; see :func:`app_dependency_files`). Kept small
-    on purpose; per-file edits flow through per-page dependency sets instead.
-
-    Keeping each input's digest separate (rather than one combined sha) lets a
-    mismatch report *which* global input changed.
-
-    Args:
-        root: Project root. Defaults to cwd.
-        pages: The current page definitions, used as barriers so page modules
-            (tracked per page) are excluded from the app-level config files.
-
-    Returns:
-        A mapping of input label (``reflex``, a global filename, or
-        ``app:<path>``) to its content digest (``<absent>`` if unreadable).
-    """
-    root = (root or Path.cwd()).resolve()
-    inputs: dict[str, str] = {"reflex": _reflex_version()}
-    for name in _GLOBAL_FILES:
-        path = root / name
-        try:
-            inputs[name] = hashlib.sha256(path.read_bytes()).hexdigest()
-        except OSError:
-            inputs[name] = "<absent>"
-    for path_str in app_dependency_files(pages, root):
-        try:
-            digest = hashlib.sha256(Path(path_str).read_bytes()).hexdigest()
-        except OSError:
-            digest = "<absent>"
-        inputs[f"app:{path_str}"] = digest
-    return inputs
-
-
 def global_input_paths(
     root: Path | None = None, *, pages: Sequence[object] | None = None
 ) -> dict[str, str]:
     """Map each file-backed global input label to its path.
 
+    These can affect every page's output but belong to no single page, so they
+    gate the whole cache rather than any one page's dependency set: the
+    config/lockfiles and the app-level config files, i.e. the app entrypoint
+    module plus the config-only modules it imports (theme, app-wraps,
+    stylesheets, head components; see :func:`app_dependency_files`). Kept small
+    on purpose; per-file edits flow through per-page dependency sets instead.
     The manifest stores these labels with their paths and keeps the content
     entries in its file table, so validation is stat-first like page deps.
 
     Args:
         root: Project root. Defaults to cwd.
-        pages: The current page definitions (see :func:`global_epoch_inputs`).
+        pages: The current page definitions, used as barriers so page modules
+            (tracked per page) are excluded from the app-level config files.
 
     Returns:
         ``{label: path}`` for every global input except the Reflex version.
@@ -952,24 +1015,6 @@ def global_input_paths(
     paths = {name: str(root / name) for name in _GLOBAL_FILES}
     paths.update({f"app:{p}": p for p in app_dependency_files(pages, root)})
     return paths
-
-
-def global_epoch(
-    root: Path | None = None, *, pages: Sequence[object] | None = None
-) -> str:
-    """Fingerprint the genuinely-global inputs as one digest.
-
-    Args:
-        root: Project root. Defaults to cwd.
-        pages: The current page definitions (see :func:`global_epoch_inputs`).
-
-    Returns:
-        A hex digest of the global inputs.
-    """
-    # Sorted for a deterministic digest regardless of dict insertion order.
-    return _sha(
-        *(f"{k}={v}" for k, v in sorted(global_epoch_inputs(root, pages=pages).items()))
-    )
 
 
 def _module_file(component: object) -> Path | None:
@@ -1140,8 +1185,6 @@ def _import_from_targets(
     Returns:
         Candidate dotted module names to resolve.
     """
-    import ast
-
     if not isinstance(node, ast.ImportFrom):
         return []
     if node.level:  # relative import: walk up from the importing package
@@ -1225,8 +1268,6 @@ def _module_import_names(file: str, modname: str) -> list[str]:
     Returns:
         The imported dotted-name candidates (see :func:`_import_from_targets`).
     """
-    import ast
-
     key = _stat_key(file)
     cached = _import_names_cache.get(file)
     if cached is not None and key is not None and cached[0] == key:
@@ -1412,7 +1453,7 @@ def app_dependency_files(
 
     These configure the app-wide files an incremental rebuild reuses on disk
     (app root, contexts, theme, stylesheet), so they are folded into
-    :func:`global_epoch`: editing one forces a full recompile instead of leaving
+    :func:`global_input_paths`: editing one forces a full recompile instead of leaving
     those files stale.
 
     Args:
@@ -1452,7 +1493,8 @@ def file_entry(path: str) -> FileEntry | None:
     Returns:
         ``[sha256, st_mtime_ns, st_size]``, or None if unreadable. For a
         function slice (see :data:`SLICE_SEPARATOR`), the slice digest and
-        the stat of its file.
+        the stat of its file. :data:`RACY_ENTRY` for a file modified since
+        the compile started (see :func:`_is_racy`).
     """
     file, separator, name = path.rpartition(SLICE_SEPARATOR)
     if separator:
@@ -1460,13 +1502,15 @@ def file_entry(path: str) -> FileEntry | None:
         digest = function_slice_digest(file, name)
         if key is None or digest is None:
             return None
-        return [digest, *key]
+        return RACY_ENTRY if _is_racy(key[0]) else [digest, *key]
     try:
         with Path(path).open("rb") as fh:
             st = os.fstat(fh.fileno())
             digest = hashlib.sha256(fh.read()).hexdigest()
     except OSError:
         return None
+    if _is_racy(st.st_mtime_ns):
+        return RACY_ENTRY
     return [digest, st.st_mtime_ns, st.st_size]
 
 
@@ -1518,13 +1562,17 @@ class FileValidator:
 
         Returns:
             True if the file changed, is unreadable, or is not in the table.
+            A recorded-absent file is unchanged while it is still absent; a
+            racy entry (see :data:`RACY_ENTRY`) always counts as changed.
         """
         cached = self._changed.get(path)
         if cached is not None:
             return cached
         entry = self._files.get(path)
         result = True
-        if entry is not None and len(entry) == 3:
+        if entry == ABSENT_ENTRY:
+            result = SLICE_SEPARATOR in path or Path(path).exists()
+        elif entry is not None and entry != RACY_ENTRY and len(entry) == 3:
             key = _stat_key(dep_file(path))
             if key is not None and (key[0], key[1]) == (entry[1], entry[2]):
                 result = False
@@ -1656,7 +1704,7 @@ def page_dependency_files(
     evaluated (markdown/data, via the read recorder), the component modules in
     its rendered tree, and the fine-grained state files it references. A change
     to any file *outside* this set cannot change the page's output, except the
-    genuinely-global inputs tracked by :func:`global_epoch` and route additions
+    genuinely-global inputs tracked by :func:`global_input_paths` and route additions
     (shared nav). This is the dependency set that makes invalidation precise.
 
     Args:
@@ -1688,6 +1736,9 @@ def page_dependency_files(
     dynamic_py = {f for f in page_ctx.source_files if f.endswith(".py")}
     if dynamic_py:
         deps |= _walk_import_closure(build_import_graph(root), dynamic_py)
+    # What the modules in the closure read on any page's behalf (a read
+    # behind a shared cache happens for the first caller only).
+    deps.update(*(_module_reads.get(dep, ()) for dep in list(deps)))
     if (own := _own_function_slice(component, page_ctx.source_files, root)) is not None:
         deps.discard(dep_file(own))
         deps.add(own)
@@ -1754,8 +1805,8 @@ def page_dependency_entries(
     """
     deps: list[str] = []
     for path in sorted(page_dependency_files(page_ctx, component, state_index, root)):
-        entry = hasher(path)
-        if entry is not None:
-            files[path] = entry
+        if path != VOLATILE_DEP:
+            entry = hasher(path)
+            files[path] = ABSENT_ENTRY if entry is None else entry
         deps.append(path)
     return deps

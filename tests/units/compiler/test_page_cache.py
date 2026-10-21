@@ -80,19 +80,39 @@ def _forget_modules(*module_names):
         sys.modules.pop(module_name, None)
 
 
-def test_global_epoch_tracks_global_files(tmp_path):
+def _global_inputs(root: Path, pages: Any = None) -> dict[str, str | None]:
+    """Digest every global input as the manifest records it.
+
+    Args:
+        root: The project root.
+        pages: The page definitions, as barriers.
+
+    Returns:
+        Each global input label mapped to its content digest (None if absent).
+    """
+    import hashlib
+
+    return {
+        label: hashlib.sha256(Path(path).read_bytes()).hexdigest()
+        if Path(path).is_file()
+        else None
+        for label, path in page_cache.global_input_paths(root, pages=pages).items()
+    }
+
+
+def test_global_inputs_tracks_global_files(tmp_path):
     (tmp_path / "rxconfig.py").write_text("config = 1\n")
     (tmp_path / "other.py").write_text("x = 1\n")
-    epoch = page_cache.global_epoch(root=tmp_path)
+    epoch = _global_inputs(tmp_path)
     # editing a non-global file does NOT change the epoch
     (tmp_path / "other.py").write_text("x = 2\n")
-    assert page_cache.global_epoch(root=tmp_path) == epoch
+    assert _global_inputs(tmp_path) == epoch
     # editing a genuinely-global file (rxconfig.py) DOES
     (tmp_path / "rxconfig.py").write_text("config = 2\n")
-    assert page_cache.global_epoch(root=tmp_path) != epoch
+    assert _global_inputs(tmp_path) != epoch
 
 
-def test_global_epoch_tracks_app_entrypoint(tmp_path, monkeypatch):
+def test_global_inputs_tracks_app_entrypoint(tmp_path, monkeypatch):
     """Editing the app entrypoint (theme/app_wraps live there) bumps the epoch.
 
     App-wide config is configured where ``rx.App`` is built, not in any page's
@@ -105,10 +125,10 @@ def test_global_epoch_tracks_app_entrypoint(tmp_path, monkeypatch):
     monkeypatch.setattr(
         page_cache, "_app_entrypoint_file", lambda root=None: entrypoint
     )
-    epoch = page_cache.global_epoch(root=tmp_path)
+    epoch = _global_inputs(tmp_path)
     # editing the app entrypoint DOES change the epoch
     entrypoint.write_text("app = rx.App(theme=dark)\n")
-    assert page_cache.global_epoch(root=tmp_path) != epoch
+    assert _global_inputs(tmp_path) != epoch
 
 
 def test_app_entrypoint_file_resolution(tmp_path, monkeypatch):
@@ -183,7 +203,7 @@ def test_app_dependency_files_keeps_config_excludes_pages(tmp_path, monkeypatch)
     assert result == {str(entry), str(theme)}
 
 
-def test_global_epoch_excludes_page_modules(tmp_path, monkeypatch):
+def test_global_inputs_excludes_page_modules(tmp_path, monkeypatch):
     """A page-module edit keeps the epoch (incremental); an app-config edit bumps it."""
     from types import SimpleNamespace
 
@@ -215,16 +235,16 @@ def test_global_epoch_excludes_page_modules(tmp_path, monkeypatch):
     )
     pages = [SimpleNamespace(component=object())]
 
-    epoch = page_cache.global_epoch(root=tmp_path, pages=pages)
+    epoch = _global_inputs(tmp_path, pages)
     # editing a page module does NOT change the epoch (tracked per page instead)
     page.write_text("p = 2\n")
-    assert page_cache.global_epoch(root=tmp_path, pages=pages) == epoch
+    assert _global_inputs(tmp_path, pages) == epoch
     # editing app-level config the entrypoint imports (theme) DOES
     theme.write_text("t = 2\n")
-    assert page_cache.global_epoch(root=tmp_path, pages=pages) != epoch
+    assert _global_inputs(tmp_path, pages) != epoch
 
 
-def test_global_epoch_hashes_only_app_dependency_closure(tmp_path, monkeypatch):
+def test_global_inputs_hashes_only_app_dependency_closure(tmp_path, monkeypatch):
     """Unrelated first-party modules do not make the app epoch coarse."""
     from types import SimpleNamespace
 
@@ -254,23 +274,11 @@ def test_global_epoch_hashes_only_app_dependency_closure(tmp_path, monkeypatch):
         lambda file, modname, file_to_mod: graph[file],
     )
 
-    epoch = page_cache.global_epoch(
-        root=tmp_path, pages=[SimpleNamespace(component=object())]
-    )
+    epoch = _global_inputs(tmp_path, [SimpleNamespace(component=object())])
     unrelated.write_text("x = 2\n")
-    assert (
-        page_cache.global_epoch(
-            root=tmp_path, pages=[SimpleNamespace(component=object())]
-        )
-        == epoch
-    )
+    assert _global_inputs(tmp_path, [SimpleNamespace(component=object())]) == epoch
     theme.write_text("t = 2\n")
-    assert (
-        page_cache.global_epoch(
-            root=tmp_path, pages=[SimpleNamespace(component=object())]
-        )
-        != epoch
-    )
+    assert _global_inputs(tmp_path, [SimpleNamespace(component=object())]) != epoch
 
 
 def test_app_dependency_files_skips_graph_without_entrypoint(tmp_path, monkeypatch):
@@ -317,7 +325,7 @@ def test_app_dependency_files_tracks_dynamic_import_config_read(tmp_path, monkey
     try:
         prerequisites.get_app()
         deps = page_cache.app_dependency_files(root=tmp_path)
-        epoch = page_cache.global_epoch(root=tmp_path)
+        epoch = _global_inputs(tmp_path)
 
         config_file.write_text('"dark"\n')
     finally:
@@ -325,7 +333,7 @@ def test_app_dependency_files_tracks_dynamic_import_config_read(tmp_path, monkey
 
     assert str(dynamic.resolve()) in deps
     assert str(config_file.resolve()) in deps
-    assert page_cache.global_epoch(root=tmp_path) != epoch
+    assert _global_inputs(tmp_path) != epoch
 
 
 def test_app_dependency_files_subtracts_pages_from_app_import_reads(
@@ -751,11 +759,13 @@ def test_import_time_reads_are_recorded_for_every_importer(
     """A module's import-time reads are deps of each page that imports it.
 
     Only the first page's import executes the module; a later page gets the
-    cached module and must still depend on what its execution read.
+    cached module and must still depend on what its execution read, which
+    the read's attribution to the module provides.
     """
     data = tmp_path / "shared_data.json"
     data.write_text('{"title": "v1"}')
-    _prepare_runtime_module(tmp_path, monkeypatch, "review_shared_helper").write_text(
+    helper = _prepare_runtime_module(tmp_path, monkeypatch, "review_shared_helper")
+    helper.write_text(
         f"from pathlib import Path\nTITLE = Path({str(data)!r}).read_text()\n"
     )
     page_cache.enable_read_tracking(tmp_path)
@@ -770,7 +780,185 @@ def test_import_time_reads_are_recorded_for_every_importer(
             page_reads.append(reads)
     finally:
         _forget_modules("review_shared_helper")
-    assert [str(data) in reads for reads in page_reads] == [True, True]
+    helper_file = str(helper.resolve())
+    assert [str(data) in reads for reads in page_reads] == [True, False]
+    assert [helper_file in reads for reads in page_reads] == [True, True]
+    assert page_cache._module_reads[helper_file] == {str(data)}
+
+
+def test_reads_behind_a_shared_cache_reach_every_dependent_page(tmp_path, monkeypatch):
+    """A read a cached helper makes for the first page is a dep of every page.
+
+    ``functools.cache`` (or a module-level loader) reads the file once per
+    process, while evaluating the first page that calls it. The read is
+    attributed to the helper's module, so a page whose import closure holds
+    that module depends on the file even when its own evaluation read nothing.
+    """
+    from types import SimpleNamespace
+
+    posts = tmp_path / "posts.md"
+    posts.write_text("v1")
+    helper = _prepare_runtime_module(tmp_path, monkeypatch, "cached_posts_loader")
+    helper.write_text(
+        "import functools\nfrom pathlib import Path\n\n\n"
+        "@functools.cache\ndef load_posts():\n"
+        f"    return Path({str(posts)!r}).read_text()\n"
+    )
+    page_cache.enable_read_tracking(tmp_path)
+    page_cache.clear_import_graph()
+    try:
+        module = importlib.import_module("cached_posts_loader")
+        page_reads = []
+        for _ in range(2):
+            with page_cache.record_reads() as reads:
+                module.load_posts()
+            page_reads.append(reads)
+        assert [str(posts) in reads for reads in page_reads] == [True, False]
+
+        def blog_b():
+            return module.load_posts()
+
+        page_ctx = SimpleNamespace(
+            root_component=SimpleNamespace(children=[]),
+            output_code="",
+            memo_contributions={},
+            source_files={str(helper.resolve())},
+        )
+        deps = page_cache.page_dependency_files(
+            cast(Any, page_ctx), blog_b, {}, tmp_path
+        )
+    finally:
+        _forget_modules("cached_posts_loader")
+        page_cache.clear_import_graph()
+    assert str(posts) in deps
+
+
+def test_reads_are_attributed_to_the_first_party_caller(tmp_path, monkeypatch):
+    """A read a library performs on a page's behalf belongs to the page's module."""
+    data = tmp_path / "note.txt"
+    data.write_text("hello")
+    reader = _prepare_runtime_module(tmp_path, monkeypatch, "first_party_reader")
+    reader.write_text(
+        "import json\n\n\ndef load(path):\n    return json.load(open(path))\n"
+    )
+    data.write_text('{"a": 1}')
+    page_cache.enable_read_tracking(tmp_path)
+    try:
+        module = importlib.import_module("first_party_reader")
+        with page_cache.record_reads() as reads:
+            module.load(str(data))
+    finally:
+        _forget_modules("first_party_reader")
+    assert str(data) in reads
+    assert page_cache._module_reads[str(reader.resolve())] == {str(data)}
+    page_cache.forget_module_reads()
+    assert not page_cache._module_reads
+
+
+@pytest.mark.parametrize("api", ["io.open", "pkgutil", "getsource"])
+def test_record_reads_tracks_stdlib_read_entry_points(tmp_path, monkeypatch, api):
+    """Reads through ``io.open``, loaders and ``linecache`` are recorded."""
+    import inspect
+    import io
+    import pkgutil
+
+    package = tmp_path / "read_api_pkg"
+    package.mkdir()
+    (package / "__init__.py").write_text("def f():\n    return 1\n")
+    (package / "data.md").write_text("# data")
+    monkeypatch.syspath_prepend(str(tmp_path))
+    _forget_modules("read_api_pkg")
+    importlib.invalidate_caches()
+    page_cache.enable_read_tracking(root=tmp_path)
+    try:
+        module = importlib.import_module("read_api_pkg")
+        with page_cache.record_reads() as reads:
+            if api == "io.open":
+                with io.open(package / "data.md") as fh:  # noqa: UP020
+                    fh.read()
+            elif api == "pkgutil":
+                pkgutil.get_data("read_api_pkg", "data.md")
+            else:
+                import linecache
+
+                linecache.clearcache()
+                inspect.getsource(module.f)
+    finally:
+        _forget_modules("read_api_pkg")
+    expected = package / ("__init__.py" if api == "getsource" else "data.md")
+    assert str(expected.resolve()) in reads
+
+
+def test_mark_volatile_makes_the_page_miss_every_compile(tmp_path):
+    """A volatile page records a dependency no file table can satisfy."""
+    page_cache.enable_read_tracking(root=tmp_path)
+    with page_cache.record_reads() as reads:
+        page_cache.mark_volatile()
+    assert reads == {page_cache.VOLATILE_DEP}
+    from types import SimpleNamespace
+
+    page_ctx = SimpleNamespace(
+        root_component=SimpleNamespace(children=[]),
+        output_code="",
+        memo_contributions={},
+        source_files=reads,
+    )
+    files = {}
+    deps = page_cache.page_dependency_entries(
+        cast(Any, page_ctx), lambda: None, {}, page_cache.file_entry, files, tmp_path
+    )
+    assert page_cache.VOLATILE_DEP in deps
+    assert page_cache.VOLATILE_DEP not in files
+    assert not page_cache.FileValidator(files).unchanged(deps)
+    page_cache.mark_volatile()  # a no-op outside a recorder
+
+
+@pytest.mark.parametrize("location", ["assets", "venv_project"])
+def test_reads_under_the_project_are_tracked_whatever_the_directory_names(
+    tmp_path, location
+):
+    """Only parts below the project root decide the exclusion of a read."""
+    root = tmp_path / ("venv" if location == "venv_project" else "app")
+    data_dir = root / ("assets" if location == "assets" else "data")
+    data_dir.mkdir(parents=True)
+    data = data_dir / "note.txt"
+    data.write_text("v1")
+    page_cache.enable_read_tracking(root=root)
+    with page_cache.record_reads() as reads:
+        data.read_text()
+    assert str(data.resolve()) in reads
+    excluded = root / "node_modules" / "pkg" / "readme.md"
+    excluded.parent.mkdir(parents=True)
+    excluded.write_text("x")
+    with page_cache.record_reads() as reads:
+        excluded.read_text()
+    assert reads == set()
+
+
+def test_file_modified_during_the_compile_is_recorded_as_racy(tmp_path):
+    """A dependency edited after the compile started always misses next time.
+
+    The compile may have read the earlier content, so the manifest cannot
+    vouch for the file (the racy-git rule).
+    """
+    data = tmp_path / "slow.txt"
+    data.write_text("v2")
+    with page_cache.record_app_import(tmp_path):
+        pass
+    data.write_text("v3")
+    entry = page_cache.file_entry(str(data))
+    assert entry == page_cache.RACY_ENTRY
+    files = {str(data): page_cache.RACY_ENTRY}
+    assert not page_cache.FileValidator(files).unchanged([str(data)])
+    # Unchanged after the compile: a normal entry.
+    stat = data.stat()
+    start = page_cache._compile_start_ns
+    assert start is not None
+    os.utime(data, ns=(stat.st_atime_ns, start - 5_000_000_000))
+    assert page_cache.file_entry(str(data)) != page_cache.RACY_ENTRY
+    # A whole-second timestamp in the compile's first second is racy too.
+    os.utime(data, ns=(stat.st_atime_ns, start - start % 1_000_000_000))
+    assert page_cache.file_entry(str(data)) == page_cache.RACY_ENTRY
 
 
 def test_entrypoint_digest_ignores_page_registrations_only(tmp_path):
@@ -804,8 +992,8 @@ def test_entrypoint_digest_ignores_page_registrations_only(tmp_path):
     assert digest("this is not python (") is None
 
 
-def test_entrypoint_digest_ignores_imports_used_only_to_register_pages(tmp_path):
-    """Importing a page only to register it is a registration; other imports count."""
+def test_entrypoint_digest_counts_every_import(tmp_path):
+    """Every import counts, even one used only to register a page."""
     entry = tmp_path / "entry_app.py"
 
     def digest(source: str) -> str | None:
@@ -817,6 +1005,7 @@ def test_entrypoint_digest_ignores_imports_used_only_to_register_pages(tmp_path)
         "from .pages.a import a\n\napp = rx.App(theme=theme)\n"
         'app.add_page(a, route="/a")\n'
     )
+    # Importing a page runs its module, which can configure the app.
     assert (
         digest(
             "import reflex as rx\nfrom .themes import dark as theme\n"
@@ -824,7 +1013,7 @@ def test_entrypoint_digest_ignores_imports_used_only_to_register_pages(tmp_path)
             'app = rx.App(theme=theme)\napp.add_page(a, route="/a")\n'
             'app.add_page(b, route="/b")\n'
         )
-        == base
+        != base
     )
     # The same App call with a theme imported from elsewhere is another app.
     assert (
@@ -881,7 +1070,7 @@ def _rewrite_module(path: Path, source: str) -> None:
         ('rx.text("b")', 'rx.text("b2")', False),
         ("\n\ndef page_b", "\n\n# a comment\ndef page_b", False),
         ("def page_b", "def unrelated():\n    return 1\n\n\ndef page_b", False),
-        ("from .other import unused\n", "", False),
+        ("from .other import unused\n", "", True),
         ("rx.box(helper()", "rx.vstack(helper()", True),
         ("rx.text(TITLE)", "rx.heading(TITLE)", True),
         ('TITLE = "t"', 'TITLE = "u"', True),
@@ -906,29 +1095,59 @@ def test_function_slice_digest_covers_what_the_function_reads(
     assert (after != before) is changes
 
 
-@pytest.mark.parametrize(
-    "source",
-    [
-        # A decorator can hand the function to code the page reads.
-        (
-            "REG = []\n\n\ndef register(f):\n    REG.append(f)\n    return f\n\n\n"
-            "@register\ndef widget():\n    return 1\n\n\n"
-            "def page_a():\n    return [f() for f in REG]\n"
-        ),
-        # Names reached through globals() are invisible to the syntax tree.
-        (
-            "def widget():\n    return 1\n\n\n"
-            'def page_a():\n    return globals()["widget"]()\n'
-        ),
-    ],
-)
-def test_function_slice_digest_keeps_code_reached_indirectly(tmp_path, source):
-    """Code the page reaches without naming it stays in the slice."""
+def test_function_slice_digest_keeps_code_reached_indirectly(tmp_path):
+    """Code a decorator hands to import-time code stays in the slice."""
     module = tmp_path / "indirect.py"
+    source = (
+        "REG = []\n\n\ndef register(f):\n    REG.append(f)\n    return f\n\n\n"
+        "@register\ndef widget():\n    return 1\n\n\n"
+        "def page_a():\n    return [f() for f in REG]\n"
+    )
     module.write_text(source)
     before = page_cache.function_slice_digest(str(module), "page_a")
     _rewrite_module(module, source.replace("return 1", "return 2"))
     assert page_cache.function_slice_digest(str(module), "page_a") != before
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        # Names reached through globals() are invisible to the syntax tree.
+        'globals()["widget"]()',
+        'getattr(sys.modules[__name__], "widget")()',
+        # The module's own source text and line numbers are not in the tree.
+        "inspect.getsource(widget)",
+        "sys._getframe().f_lineno",
+    ],
+)
+def test_function_slice_falls_back_to_the_whole_file_for_computed_access(
+    tmp_path, monkeypatch, body
+):
+    """A page reaching its module by a computed name depends on the whole file."""
+    from types import SimpleNamespace
+
+    module = _prepare_runtime_module(tmp_path, monkeypatch, "computed_access_page")
+    module.write_text(
+        "import inspect\nimport sys\n\n\ndef widget():\n    return 1\n\n\n"
+        f"def page_a():\n    return {body}\n"
+    )
+    assert page_cache.function_slice_digest(str(module), "page_a") is None
+    page_cache.clear_import_graph()
+    try:
+        page_a = importlib.import_module("computed_access_page").page_a
+        page_ctx = SimpleNamespace(
+            root_component=SimpleNamespace(children=[]),
+            output_code="",
+            memo_contributions={},
+            source_files=set(),
+        )
+        deps = page_cache.page_dependency_files(
+            cast(Any, page_ctx), page_a, {}, tmp_path
+        )
+    finally:
+        _forget_modules("computed_access_page")
+        page_cache.clear_import_graph()
+    assert str(module.resolve()) in deps
 
 
 def test_function_slice_digest_needs_a_top_level_function(tmp_path):
@@ -1044,24 +1263,6 @@ def test_failed_import_keeps_its_reads(tmp_path, monkeypatch):
     assert str(missing.resolve()) in reads
 
 
-def test_function_slice_digest_keeps_imports_of_code_reached_by_computed_name(
-    tmp_path,
-):
-    """With a computed global lookup, every definition's imports count too."""
-    module = tmp_path / "computed.py"
-    source = (
-        "from .widgets import card\n\n\n"
-        "def widget():\n    return card()\n\n\n"
-        'def page_a():\n    return globals()["widget"]()\n'
-    )
-    module.write_text(source)
-    before = page_cache.function_slice_digest(str(module), "page_a")
-    module.write_text(
-        source.replace("from .widgets import card", "from .other import card")
-    )
-    assert page_cache.function_slice_digest(str(module), "page_a") != before
-
-
 @pytest.mark.parametrize(
     ("decorator", "inert"),
     [
@@ -1101,13 +1302,10 @@ def test_entrypoint_digest_tracks_class_bodies(tmp_path):
     assert page_cache.entrypoint_digest(str(entry)) != before
 
 
-def test_function_slice_digest_keeps_imports_reached_only_by_computed_name(tmp_path):
-    """A computed global lookup can reach an import no definition names."""
-    module = tmp_path / "computed_import.py"
-    source = (
-        "from reflex import text as widget\n\n\n"
-        'def page_a():\n    return globals()["widget"]()\n'
-    )
+def test_function_slice_digest_counts_imports_no_definition_names(tmp_path):
+    """An import counts for every slice, whether or not the code names it."""
+    module = tmp_path / "unused_import.py"
+    source = "from reflex import text as widget\n\n\ndef page_a():\n    return 1\n"
     module.write_text(source)
     before = page_cache.function_slice_digest(str(module), "page_a")
     module.write_text(source.replace("text as widget", "heading as widget"))
