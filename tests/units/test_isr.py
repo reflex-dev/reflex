@@ -4,10 +4,19 @@ from __future__ import annotations
 
 import asyncio
 import time
+import uuid
 
 import pytest
 
-from reflex.isr import CachedPage, ISRManager, MemoryISRCache, RenderResult, cache_key
+from reflex.isr import (
+    CachedPage,
+    ISRManager,
+    MemoryISRCache,
+    RedisISRCache,
+    RenderResult,
+    cache_key,
+)
+from reflex.utils import prerequisites
 
 
 class FakeRenderer:
@@ -192,3 +201,29 @@ async def test_render_failure_is_not_cached():
     # A subsequent request retries (nothing was cached).
     await mgr.get_html("/p")
     assert renderer.calls == 2
+
+
+@pytest.mark.asyncio
+async def test_redis_release_lock_keeps_lock_of_next_owner():
+    """Releasing an expired lock leaves the lock another worker acquired since."""
+    redis = prerequisites.get_redis()
+    if redis is None:
+        pytest.skip("Test requires redis")
+    cache = RedisISRCache(redis)
+    key = f"test:{uuid.uuid4().hex}"
+    lock_key = RedisISRCache._LOCK_PREFIX + key
+    try:
+        first = await cache.acquire_lock(key, 30)
+        assert first is not None
+        await redis.delete(lock_key)  # the first holder's lock expires
+        second = await cache.acquire_lock(key, 30)
+        assert second is not None
+
+        await cache.release_lock(key, first)
+        assert await redis.exists(lock_key)
+
+        await cache.release_lock(key, second)
+        assert not await redis.exists(lock_key)
+    finally:
+        await redis.delete(lock_key)
+        await redis.aclose()

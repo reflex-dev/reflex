@@ -225,6 +225,7 @@ export async function loader({ request }) {
   // Fetch on_load-hydrated state from the Python /_ssr_data endpoint so the
   // server-rendered HTML already contains real data.
   try {
+    const url = new URL(request.url);
     const res = await fetch(getBackendURL(env.SSR_DATA), {
       method: "POST",
       headers: {
@@ -232,7 +233,8 @@ export async function loader({ request }) {
         ...(request.headers.get("cookie") ? { Cookie: request.headers.get("cookie") } : {}),
       },
       body: JSON.stringify({
-        path: new URL(request.url).pathname,
+        path: url.pathname,
+        search: url.search,
         headers: Object.fromEntries(request.headers),
       }),
     });

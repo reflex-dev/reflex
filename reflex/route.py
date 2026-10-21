@@ -96,7 +96,7 @@ def get_route_args(route: str) -> dict[str, str]:
     return args
 
 
-def extract_route_params(path: str, route: str) -> dict[str, str]:
+def extract_route_params(path: str, route: str) -> dict[str, str | list[str]]:
     """Extract dynamic route parameter values from a concrete path.
 
     Given a concrete path (e.g. "/blog/hello-world") and a route pattern
@@ -108,13 +108,13 @@ def extract_route_params(path: str, route: str) -> dict[str, str]:
 
     Returns:
         Dict mapping parameter names to their values,
-        e.g. {"slug": "hello-world"}.
+        e.g. {"slug": "hello-world"}; a catch-all maps to a list of segments.
     """
     route_args = get_route_args(route)
     if not route_args:
         return {}
 
-    params: dict[str, str] = {}
+    params: dict[str, str | list[str]] = {}
     route_parts = route.strip("/").split("/")
     path_parts = path.strip("/").split("/")
     for i, route_part in enumerate(route_parts):
@@ -124,7 +124,10 @@ def extract_route_params(path: str, route: str) -> dict[str, str]:
             )
             if arg_match:
                 param_name = arg_match.group(1)
-                if param_name in route_args:
+                if route_args.get(param_name) == constants.RouteArgType.LIST:
+                    # The catch-all is last and, as on the client, takes the rest.
+                    params[param_name] = path_parts[i:]
+                elif param_name in route_args:
                     params[param_name] = path_parts[i]
     return params
 

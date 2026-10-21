@@ -18,11 +18,12 @@ import asyncio
 import inspect
 import traceback
 from typing import TYPE_CHECKING, Any
+from urllib.parse import parse_qsl
 
 from reflex_base import constants
 from reflex_base.ssr import is_enabled as is_enabled
 
-from reflex.utils import console
+from reflex.utils import console, format
 
 if TYPE_CHECKING:
     from starlette.requests import Request
@@ -37,13 +38,14 @@ SSR_TOKEN = "__ssr__"
 
 
 def _build_router_data(
-    app: App, path: str, headers: dict[str, str], client_ip: str
+    app: App, path: str, search: str, headers: dict[str, str], client_ip: str
 ) -> dict[str, Any]:
     """Build the ``router_data`` dict for a stateless SSR render.
 
     Args:
         app: The app, used to resolve the concrete path to a route pattern.
         path: The concrete request path (e.g. ``/blog/hello-world``).
+        search: The URL query string (e.g. ``?q=reflex``).
         headers: The forwarded request headers.
         client_ip: The client IP address.
 
@@ -53,11 +55,14 @@ def _build_router_data(
     from reflex.route import extract_route_params
 
     resolved_route = app.router(path) or "404"
-    params = extract_route_params(path, resolved_route)
-    return {
+    router_data = {
         constants.RouteVar.PATH: "/" + resolved_route.removeprefix("/"),
-        constants.RouteVar.ORIGIN: path,
-        constants.RouteVar.QUERY: dict(params),
+        constants.RouteVar.ORIGIN: path + search,
+        # Route params take precedence over query params, as on the client.
+        constants.RouteVar.QUERY: {
+            **dict(parse_qsl(search.removeprefix("?"), keep_blank_values=True)),
+            **extract_route_params(path, resolved_route),
+        },
         constants.RouteVar.CLIENT_TOKEN: SSR_TOKEN,
         constants.RouteVar.SESSION_ID: SSR_TOKEN,
         constants.RouteVar.HEADERS: {
@@ -66,6 +71,8 @@ def _build_router_data(
         },
         constants.RouteVar.CLIENT_IP: client_ip,
     }
+    router_data[constants.RouteVar.QUERY] = format.format_query_params(router_data)
+    return router_data
 
 
 async def _run_on_load_event(state: BaseState, event: Event, path: str) -> None:
@@ -88,7 +95,7 @@ async def _run_on_load_event(state: BaseState, event: Event, path: str) -> None:
         substate = state.get_substate(substate_path)
         handler = substate.event_handlers[method]
 
-        result = handler.fn(substate)
+        result = handler.fn(substate, **event.payload)
         if asyncio.iscoroutine(result):
             result = await result
         if inspect.isgenerator(result):
@@ -132,8 +139,8 @@ def ssr_data(app: App):
     """
     from starlette.responses import Response
 
-    from reflex.state import RouterData, State
-    from reflex.utils import format
+    from reflex.istate.data import RouterData
+    from reflex.state import State
 
     async def ssr_data_handler(request: Request) -> Response:
         """Handle an SSR data request.
@@ -146,6 +153,7 @@ def ssr_data(app: App):
         """
         body = await request.json()
         path = body.get("path", "/")
+        search = body.get("search", "")
         headers = body.get("headers", {})
 
         if not app._state:
@@ -162,6 +170,7 @@ def ssr_data(app: App):
         router_data = _build_router_data(
             app,
             path,
+            search,
             headers,
             request.client.host if request.client else "0.0.0.0",
         )

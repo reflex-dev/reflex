@@ -25,6 +25,7 @@ import dataclasses
 import json
 import os
 import time
+import uuid
 from collections.abc import Awaitable, Callable
 from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
@@ -152,7 +153,7 @@ class ISRCache(Protocol):
         """
         ...
 
-    async def acquire_lock(self, key: str, ttl: float) -> bool:
+    async def acquire_lock(self, key: str, ttl: float) -> str | None:
         """Try to acquire the single-flight render lock for ``key``.
 
         Args:
@@ -160,15 +161,16 @@ class ISRCache(Protocol):
             ttl: Lock expiry in seconds.
 
         Returns:
-            True if this caller now holds the lock.
+            An owner token if this caller now holds the lock, else None.
         """
         ...
 
-    async def release_lock(self, key: str) -> None:
-        """Release the single-flight render lock for ``key``.
+    async def release_lock(self, key: str, token: str) -> None:
+        """Release the single-flight render lock for ``key`` if ``token`` owns it.
 
         Args:
             key: The cache key.
+            token: The owner token returned by :meth:`acquire_lock`.
         """
         ...
 
@@ -194,7 +196,7 @@ class MemoryISRCache:
         """Initialize empty stores."""
         self._pages: dict[str, CachedPage] = {}
         self._tags: dict[str, set[str]] = {}
-        self._locks: set[str] = set()
+        self._locks: dict[str, str] = {}
 
     async def get(self, key: str) -> CachedPage | None:
         """Get a cached page.
@@ -226,7 +228,7 @@ class MemoryISRCache:
         """
         self._pages.pop(key, None)
 
-    async def acquire_lock(self, key: str, ttl: float) -> bool:
+    async def acquire_lock(self, key: str, ttl: float) -> str | None:
         """Acquire the render lock (no TTL needed in-process).
 
         Args:
@@ -234,20 +236,22 @@ class MemoryISRCache:
             ttl: Unused for the in-memory backend.
 
         Returns:
-            True if the lock was acquired.
+            An owner token if the lock was acquired, else None.
         """
         if key in self._locks:
-            return False
-        self._locks.add(key)
-        return True
+            return None
+        token = self._locks[key] = uuid.uuid4().hex
+        return token
 
-    async def release_lock(self, key: str) -> None:
-        """Release the render lock.
+    async def release_lock(self, key: str, token: str) -> None:
+        """Release the render lock if ``token`` owns it.
 
         Args:
             key: The cache key.
+            token: The owner token returned by :meth:`acquire_lock`.
         """
-        self._locks.discard(key)
+        if self._locks.get(key) == token:
+            del self._locks[key]
 
     async def invalidate_tag(self, tag: str) -> int:
         """Delete all pages carrying ``tag``.
@@ -262,6 +266,16 @@ class MemoryISRCache:
         for key in keys:
             self._pages.pop(key, None)
         return len(keys)
+
+
+# Deletes the lock in KEYS[1] only while ARGV[1] still owns it, so a worker
+# whose lock expired cannot release the lock another worker acquired since.
+_RELEASE_LOCK_SCRIPT = """
+if redis.call('GET', KEYS[1]) == ARGV[1] then
+    return redis.call('DEL', KEYS[1])
+end
+return 0
+"""
 
 
 class RedisISRCache:
@@ -318,7 +332,7 @@ class RedisISRCache:
         """
         await self._redis.delete(self._PAGE_PREFIX + key)
 
-    async def acquire_lock(self, key: str, ttl: float) -> bool:
+    async def acquire_lock(self, key: str, ttl: float) -> str | None:
         """Acquire the single-flight lock via ``SET NX EX``.
 
         Args:
@@ -326,20 +340,22 @@ class RedisISRCache:
             ttl: Lock expiry in seconds (guards against a crashed holder).
 
         Returns:
-            True if the lock was acquired.
+            An owner token if the lock was acquired, else None.
         """
+        token = uuid.uuid4().hex
         acquired = await self._redis.set(
-            self._LOCK_PREFIX + key, b"1", nx=True, ex=max(1, int(ttl))
+            self._LOCK_PREFIX + key, token, nx=True, ex=max(1, int(ttl))
         )
-        return bool(acquired)
+        return token if acquired else None
 
-    async def release_lock(self, key: str) -> None:
-        """Release the single-flight lock.
+    async def release_lock(self, key: str, token: str) -> None:
+        """Release the single-flight lock if ``token`` still owns it.
 
         Args:
             key: The cache key.
+            token: The owner token returned by :meth:`acquire_lock`.
         """
-        await self._redis.delete(self._LOCK_PREFIX + key)
+        await self._redis.eval(_RELEASE_LOCK_SCRIPT, 1, self._LOCK_PREFIX + key, token)  # pyright: ignore[reportGeneralTypeIssues]
 
     async def invalidate_tag(self, tag: str) -> int:
         """Delete all pages carrying ``tag``.
@@ -449,11 +465,11 @@ class ISRManager:
         Returns:
             The rendered HTML, or None on failure/timeout.
         """
-        if await self.cache.acquire_lock(key, self.lock_ttl):
+        if (token := await self.cache.acquire_lock(key, self.lock_ttl)) is not None:
             try:
                 return await self._render_and_store(key, path)
             finally:
-                await self.cache.release_lock(key)
+                await self.cache.release_lock(key, token)
 
         # Another worker is rendering; poll briefly for its result.
         deadline = time.monotonic() + self.wait_timeout
@@ -517,12 +533,12 @@ class ISRManager:
             key: The cache key.
             path: The request path.
         """
-        if not await self.cache.acquire_lock(key, self.lock_ttl):
+        if (token := await self.cache.acquire_lock(key, self.lock_ttl)) is None:
             return
         try:
             await self._render_and_store(key, path)
         finally:
-            await self.cache.release_lock(key)
+            await self.cache.release_lock(key, token)
 
     async def revalidate_path(self, path: str) -> None:
         """Invalidate the cached page for a specific path.
@@ -542,11 +558,6 @@ class ISRManager:
             The number of pages invalidated.
         """
         return await self.cache.invalidate_tag(tag)
-
-
-# ---------------------------------------------------------------------------
-# HTTP render tier: the concrete Renderer that calls a separate render service.
-# ---------------------------------------------------------------------------
 
 
 class HttpRenderer:
@@ -616,11 +627,6 @@ class HttpRenderer:
             revalidate=data.get("revalidate"),
             tags=tuple(data.get("tags", ())),
         )
-
-
-# ---------------------------------------------------------------------------
-# Factories + the dedicated ISR page-server (sits behind nginx proxy_cache).
-# ---------------------------------------------------------------------------
 
 
 def is_enabled(config: Config | None = None) -> bool:

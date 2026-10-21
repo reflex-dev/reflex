@@ -51,17 +51,20 @@ def _isolate_ssr_state(clean_registration_context):
         State.get_class_substate.cache_clear()
 
 
-def _make_request(path: str = "/", headers: dict | None = None) -> Mock:
+def _make_request(
+    path: str = "/", headers: dict | None = None, search: str = ""
+) -> Mock:
     """Create a mock Starlette Request with the given path and headers.
 
     Args:
         path: The URL path to include in the request body.
         headers: Optional headers dict to include in the request body.
+        search: The URL query string (e.g. ``?q=reflex``).
 
     Returns:
         A mock Request object.
     """
-    body = {"path": path, "headers": headers or {}}
+    body = {"path": path, "search": search, "headers": headers or {}}
     request = Mock()
     request.json = AsyncMock(return_value=body)
     request.client = Mock()
@@ -172,6 +175,61 @@ async def test_ssr_data_on_load_runs():
     data = _parse_response(response)
     substate_name = LoadState.get_full_name()
     assert data["state"][substate_name]["title_rx_state_"] == "loaded"
+
+
+@pytest.mark.asyncio
+async def test_ssr_data_on_load_payload():
+    """An on_load handler bound with arguments receives them."""
+
+    class PayloadState(rx.State):
+        post_id: int = 0
+
+        @rx.event
+        def load(self, post_id: int):
+            self.post_id = post_id
+
+    app = App()
+    app._state = PayloadState
+    app.add_page(
+        lambda: rx.text(PayloadState.post_id),
+        route="/post",
+        on_load=PayloadState.load(123),
+    )
+
+    response = await ssr_data(app)(_make_request("/post"))
+
+    data = _parse_response(response)
+    assert data["state"][PayloadState.get_full_name()]["post_id_rx_state_"] == 123
+
+
+@pytest.mark.asyncio
+async def test_ssr_data_query_params():
+    """Query parameters reach on_load, with route params taking precedence."""
+
+    class SearchState(rx.State):
+        q: str = ""
+
+        @rx.event
+        def load(self):
+            self.q = self.router.url.query_parameters.get("q", "")
+
+    app = App()
+    app._state = SearchState
+    app.add_page(
+        lambda: rx.text(SearchState.q),
+        route="/search/[slug]",
+        on_load=SearchState.load,
+    )
+
+    response = await ssr_data(app)(
+        _make_request("/search/hello", search="?q=reflex&slug=x&sort-by=new")
+    )
+
+    data = _parse_response(response)
+    assert data["state"][SearchState.get_full_name()]["q_rx_state_"] == "reflex"
+    page = data["state"][rx.State.get_full_name()]["rx_router_page_rx_state_"]
+    assert page["params"] == {"q": "reflex", "slug": "hello", "sort_by": "new"}
+    assert page["raw_path"] == "/search/hello?q=reflex&slug=x&sort-by=new"
 
 
 @pytest.mark.asyncio
