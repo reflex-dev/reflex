@@ -175,7 +175,6 @@ def _var_data_key(data: VarData | None) -> tuple | None:
         data.imports,
         data.hooks,
         tuple(id(dep) for dep in data.deps),
-        data.position,
         tuple(id(component) for component in data.components),
         tuple((priority, id(component)) for priority, component in data.app_wraps),
     )

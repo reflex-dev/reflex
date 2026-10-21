@@ -2,6 +2,7 @@ from reflex_components_core.core.banner import (
     ConnectionBanner,
     ConnectionModal,
     ConnectionPulser,
+    ConnectionToaster,
     WebsocketTargetURL,
     connection_error,
     has_connection_errors,
@@ -84,3 +85,14 @@ def test_has_too_many_connection_errors_composes_the_fatal_check():
         "(connectErrors.length >= 2 || ((connectErrors.length > 0)"
         " && connectErrors[connectErrors.length - 1].fatal === true))"
     )
+
+
+def test_connection_toaster_shows_hydration_errors_at_once():
+    hooks = "\n".join(map(str, ConnectionToaster.create()._get_all_hooks()))
+    hydration_check = hooks.index("error.code === 'hydration_payload_too_large'")
+
+    # Checked before the two-error threshold, with an id no connection toast
+    # dismisses, and kept open until the user closes it.
+    assert hydration_check < hooks.index(str(has_too_many_connection_errors))
+    assert 'id: "hydration-payload-error"' in hooks
+    assert "duration: Infinity" in hooks

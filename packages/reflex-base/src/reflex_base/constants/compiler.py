@@ -177,7 +177,7 @@ class Hooks(SimpleNamespace):
     )
 
     class HookPosition(enum.Enum):
-        """The position of the hook in the component."""
+        """Deprecated: hooks render in the order they are declared and merged."""
 
         INTERNAL = "internal"
         PRE_TRIGGER = "pre_trigger"

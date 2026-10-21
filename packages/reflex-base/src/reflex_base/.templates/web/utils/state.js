@@ -36,6 +36,7 @@ const NEW_VERSION_BANNER_ID = "reflex-new-version-banner";
 // Client error types (must match reflex_base/constants/event.py ClientErrorType)
 const ERROR_TYPE_DISPATCH_MISSING = "dispatch_function_missing";
 const ERROR_TYPE_STATE_UPDATE = "state_update_processing_error";
+const ERROR_TYPE_HYDRATION_PAYLOAD_TOO_LARGE = "hydration_payload_too_large";
 
 // Shown in the connection UI when the backend cannot understand this bundle:
 // the only action available to the viewer is a reload.
@@ -216,6 +217,21 @@ const createSocket = (endpoint, transports, token) =>
     query: handshakeQuery(token),
     reconnection: false,
   });
+
+/**
+ * Measure encoded text the way the Engine.IO server limits a frame.
+ * @param frame The encoded text.
+ * @param transport The transport that carries it.
+ * @returns The code points for a websocket text frame, or the UTF-8 bytes for a polling body.
+ */
+const frameSize = (frame, transport) => {
+  if (transport !== "websocket") {
+    return new TextEncoder().encode(frame).byteLength;
+  }
+  let size = 0;
+  for (const _ of frame) size++;
+  return size;
+};
 
 let warmSocket = null;
 let cancelWarmup = () => {};
@@ -968,6 +984,36 @@ export const connect = async (
   socket.current.wait_connect = !socket.current.connected;
   // Ensure undefined fields in events are sent as null instead of removed
   socket.current.io.encoder.replacer = (k, v) => (v === undefined ? null : v);
+  // The server drops a transport whose frame exceeds the limit its handshake
+  // announced, so a CONNECT packet (type 0) that carries an oversized hydrate
+  // is reported instead of sent. The page stays offline until browser storage
+  // shrinks and it reloads: wait_connect stays set, so reconnect() does not
+  // rebuild the hydrate.
+  const { encoder } = socket.current.io;
+  const encode = encoder.encode.bind(encoder);
+  encoder.encode = (packet) => {
+    const encoded = encode(packet);
+    if (packet.type !== 0) {
+      return encoded;
+    }
+    // socket.io-client is pinned; test_hydration_storage.py covers these internals.
+    const { engine } = socket.current.io;
+    const transport = engine.transport.name;
+    // The Engine.IO message type ("4") prefixes the encoded packet.
+    const size = 1 + frameSize(encoded[0], transport);
+    if (size > engine._maxPayload) {
+      const unit = transport === "websocket" ? "characters" : "bytes";
+      const error = new Error(
+        `Hydration payload (${size} ${unit}) exceeds the server limit (${engine._maxPayload} ${unit}). Reduce browser storage data and reload.`,
+      );
+      error.code = ERROR_TYPE_HYDRATION_PAYLOAD_TOO_LARGE;
+      console.error(error.message);
+      setConnectErrors((errors) => [...errors.slice(-9), error]);
+      socket.current.disconnect();
+      return [];
+    }
+    return encoded;
+  };
   socket.current.io.decoder.tryParse = (str) => {
     try {
       return parseJson(str);
@@ -1036,11 +1082,18 @@ export const connect = async (
 
   // Unknown substates already reported on this connection.
   const reported_missing_substates = new Set();
+  // Failed connection attempts since the last connect, for the retry backoff.
+  let failed_attempts = 0;
+  // The scheduled retry of the last failed attempt.
+  let retry_timer;
 
   // Once the socket is open, hydrate the page.
   socket.current.on("connect", async () => {
     socket.current.wait_connect = false;
     reported_missing_substates.clear();
+    failed_attempts = 0;
+    window.clearTimeout(retry_timer);
+    retry_timer = undefined;
     // A fatal mismatch is emitted from the server's connect handler, so it is
     // buffered and replayed before this runs; clearing it here would discard
     // the only notice the viewer gets. It also outlives a reconnect, since
@@ -1059,23 +1112,36 @@ export const connect = async (
     }
   });
 
-  socket.current.on("connect_error", (error) => {
+  // Record a failed connection attempt and retry it with incremental backoff.
+  const retryConnect = (error) => {
     socket.current.wait_connect = false;
-    let n_connect_errors = 0;
-    setConnectErrors((connectErrors) => {
-      const new_errors = [...connectErrors.slice(-9), error];
-      n_connect_errors = new_errors.length;
-      return new_errors;
-    });
-    window.setTimeout(() => {
+    failed_attempts = Math.min(failed_attempts + 1, 10);
+    setConnectErrors((connectErrors) => [...connectErrors.slice(-9), error]);
+    window.clearTimeout(retry_timer);
+    retry_timer = window.setTimeout(() => {
+      retry_timer = undefined;
       if (socket.current && !socket.current.connected) {
         socket.current.reconnect();
       }
-    }, 200 * n_connect_errors); // Incremental backoff
-  });
+    }, 200 * failed_attempts); // Incremental backoff
+  };
+
+  socket.current.on("connect_error", retryConnect);
 
   socket.current.on("disconnect", (reason, details) => {
-    socket.current.wait_connect = false;
+    // A transport closed before the namespace connected is a failed attempt,
+    // e.g. a CONNECT packet over the server or a proxy message size limit. A
+    // client disconnect is deliberate, like a fatal mismatch replayed early.
+    if (socket.current.wait_connect && reason !== "io client disconnect") {
+      retryConnect(
+        new Error(`connection closed before connecting (${reason})`),
+      );
+      return;
+    }
+    // A transport error reports connect_error first, which scheduled the retry.
+    if (retry_timer !== undefined) {
+      return;
+    }
     window.__reflex_otel?.onSocketDisconnect?.(reason);
     const try_reconnect =
       reason !== "io server disconnect" && reason !== "io client disconnect";
