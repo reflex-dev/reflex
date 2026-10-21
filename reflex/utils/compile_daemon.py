@@ -649,6 +649,9 @@ _LOCK_WAIT_TIMEOUT = _COMPILE_TIMEOUT + 10
 #: inputs the frontend build reflects, so a backend reload worker can tell an
 #: edit the daemon has not compiled yet from one it has.
 _BUILT_INPUTS_FILE = ".compiled_inputs.json"
+#: Briefly retry Windows readers that prevent atomically replacing the record.
+_BUILT_INPUTS_WRITE_ATTEMPTS = 3
+_BUILT_INPUTS_RETRY_DELAY = 0.01
 #: Lock file (under the backend dir) whose OS lock the daemon holds for its
 #: lifetime. Backend workers skip frontend compilation while it is held. A
 #: file, not an environment variable: workers may be forked from a
@@ -767,8 +770,22 @@ def _record_built_inputs(snapshot: dict[Path, int]) -> None:
     path = _built_inputs_path()
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(f"{path.name}.{os.getpid()}.tmp")
-    tmp.write_text(json.dumps({str(p): m for p, m in snapshot.items()}))
-    tmp.replace(path)
+    try:
+        tmp.write_text(json.dumps({str(p): m for p, m in snapshot.items()}))
+        for attempt in range(_BUILT_INPUTS_WRITE_ATTEMPTS):
+            try:
+                tmp.replace(path)
+            except PermissionError:
+                if (
+                    not constants.IS_WINDOWS
+                    or attempt == _BUILT_INPUTS_WRITE_ATTEMPTS - 1
+                ):
+                    raise
+                time.sleep(_BUILT_INPUTS_RETRY_DELAY * (attempt + 1))
+            else:
+                return
+    finally:
+        tmp.unlink(missing_ok=True)
 
 
 def _built_inputs_current() -> bool:

@@ -5,6 +5,7 @@ import errno
 import os
 import sys
 from pathlib import Path
+from unittest.mock import Mock
 
 import pytest
 
@@ -259,6 +260,84 @@ def test_wait_for_compile_respects_lock(tmp_path, monkeypatch):
         assert time.monotonic() - start < 0.5
 
 
+@pytest.mark.parametrize("blocked_attempts", [1, 2])
+def test_record_built_inputs_retries_windows_readers(
+    tmp_path, monkeypatch, blocked_attempts
+):
+    """Publish the new record after Windows readers release the old record."""
+    monkeypatch.setattr("reflex.utils.prerequisites.get_backend_dir", lambda: tmp_path)
+    monkeypatch.setattr(compile_daemon.constants, "IS_WINDOWS", True)
+    page = tmp_path / "page.py"
+    page.write_text("v1")
+    built = compile_daemon._snapshot({page})
+    compile_daemon._record_built_inputs(built)
+    record = compile_daemon._built_inputs_path()
+    previous_record = record.read_text()
+    mtime = built[page] + 1_000_000_000
+    os.utime(page, ns=(mtime, mtime))
+    replace = Path.replace
+    attempts = 0
+
+    def replace_after_reader_closes(source, target):
+        """Keep the previous record intact while a reader blocks replacement.
+
+        Args:
+            source: Temporary record to publish.
+            target: Destination record.
+
+        Returns:
+            The destination after the reader releases it.
+
+        Raises:
+            PermissionError: While the reader still holds the destination open.
+        """
+        nonlocal attempts
+        attempts += 1
+        assert record.read_text() == previous_record
+        assert not compile_daemon._built_inputs_current()
+        if attempts <= blocked_attempts:
+            raise PermissionError(errno.EACCES, "Reader still has the record open")
+        return replace(source, target)
+
+    monkeypatch.setattr(Path, "replace", replace_after_reader_closes)
+    sleep = Mock()
+    monkeypatch.setattr(compile_daemon.time, "sleep", sleep)
+    compile_daemon._record_built_inputs(compile_daemon._snapshot({page}))
+    assert compile_daemon._built_inputs_current()
+    assert sleep.call_count == blocked_attempts
+    assert not list(tmp_path.glob("*.tmp"))
+
+
+@pytest.mark.parametrize(
+    ("is_windows", "error", "attempts"),
+    [
+        (True, PermissionError(errno.EACCES, "Access denied"), 3),
+        (False, PermissionError(errno.EACCES, "Access denied"), 1),
+        (True, OSError(errno.ENOSPC, "No space left"), 1),
+    ],
+)
+def test_record_built_inputs_propagates_errors(
+    tmp_path, monkeypatch, is_windows, error, attempts
+):
+    """Bound retries, retain the old record, and remove a failed temporary write."""
+    monkeypatch.setattr("reflex.utils.prerequisites.get_backend_dir", lambda: tmp_path)
+    monkeypatch.setattr(compile_daemon.constants, "IS_WINDOWS", is_windows)
+    compile_daemon._record_built_inputs({})
+    record = compile_daemon._built_inputs_path()
+    previous_record = record.read_text()
+    replace = Mock(side_effect=error)
+    monkeypatch.setattr(Path, "replace", replace)
+    sleep = Mock()
+    monkeypatch.setattr(compile_daemon.time, "sleep", sleep)
+    with pytest.raises(type(error)) as raised:
+        compile_daemon._record_built_inputs({tmp_path / "page.py": 1})
+    assert raised.value is error
+    assert replace.call_count == attempts
+    assert sleep.call_count == attempts - 1
+    assert record.read_text() == previous_record
+    assert not list(tmp_path.glob("*.tmp"))
+
+
 def test_wait_for_compile_waits_for_unbuilt_edits(tmp_path, monkeypatch):
     """Without a lock, a worker still waits while a built input has changed.
 
@@ -288,9 +367,12 @@ def test_wait_for_compile_waits_for_unbuilt_edits(tmp_path, monkeypatch):
     )
     timer.start()
     start = time.monotonic()
-    compile_daemon.wait_for_compile(timeout=5)
-    assert 0.1 <= time.monotonic() - start < 1
-    timer.join()
+    try:
+        compile_daemon.wait_for_compile(timeout=5)
+        assert time.monotonic() - start < 1
+        assert compile_daemon._built_inputs_current()
+    finally:
+        timer.join()
 
 
 def test_first_party_module_names_caches_file_classification(tmp_path, monkeypatch):
