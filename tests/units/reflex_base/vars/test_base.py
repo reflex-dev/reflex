@@ -50,8 +50,10 @@ from reflex_base.vars.base import (
     Var,
     VarData,
     _global_vars,
+    _is_tree_state,
     _linearize_bases,
     _type_check_depth,
+    _validate_state_name,
     cached_property,
     cached_property_no_lock,
     computed_var,
@@ -861,22 +863,30 @@ def test_reserved_annotation_only(clean_registration_context):
             _init_bookkeeping: int
 
 
-@pytest.mark.parametrize("state_mixin", [False, True])
-def test_reserved_mixin_var(state_mixin: bool, clean_registration_context):
-    """Reject collisions from both ordinary Python mixins and state mixins.
+def test_reserved_mixin_var(clean_registration_context):
+    """Reject a reserved var from an ordinary Python mixin where a state inherits it.
 
     Args:
-        state_mixin: Whether the mixin subclasses BaseState.
+        clean_registration_context: An isolated state registry.
+    """
+    mixin = type("Mixin", (), {"__module__": __name__, "_get_root_state": 7})
+    with pytest.raises(StateValueError, match="_get_root_state"):
+        type("MixedState", (mixin, BaseState), {"__module__": __name__})
+
+
+def test_reserved_state_mixin_var(clean_registration_context):
+    """Reject a reserved var where a state mixin declares it.
+
+    Args:
         clean_registration_context: An isolated state registry.
     """
     with pytest.raises(StateValueError, match="_get_root_state"):
-        mixin = type(
+        type(
             "Mixin",
-            (BaseState,) if state_mixin else (),
+            (BaseState,),
             {"__module__": __name__, "_get_root_state": 7},
-            **({"mixin": True} if state_mixin else {}),
+            mixin=True,
         )
-        type("MixedState", (mixin, BaseState), {"__module__": __name__})
 
 
 @pytest.mark.parametrize("state_mixin", [False, True])
@@ -1196,6 +1206,31 @@ def test_state_roots_do_not_share_reserved_names():
 
         class ShadowA(RootA):
             alpha: int = 3
+
+
+def test_only_states_below_a_root_are_tree_states():
+    """Treat neither a root nor a state outside any root's hierarchy as a tree state."""
+
+    class Rootless(EvenMoreBasicBaseState):
+        pass
+
+    class Root(EvenMoreBasicBaseState, state_root=True):
+        pass
+
+    class Child(Root):
+        pass
+
+    assert Rootless._reflex_state_root is None
+    assert not _is_tree_state(Rootless)
+    assert not _is_tree_state(Root)
+    assert _is_tree_state(Child)
+
+
+def test_no_root_reserves_no_names():
+    """Accept any name for a state outside every root's hierarchy."""
+    _validate_state_name(None, "_get_root_state", 7)
+    with pytest.raises(StateValueError, match="_get_root_state"):
+        _validate_state_name(BaseState, "_get_root_state", 7)
 
 
 def test_inherited_field_on_plain_model():
