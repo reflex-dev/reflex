@@ -1226,6 +1226,45 @@ def test_sync_moves_a_reparented_id_off_an_occupied_sibling_id():
     assert not errors, errors
 
 
+def test_sync_keeps_ids_that_only_decode_alike():
+    """``sync`` compares ids as the strings they are on the wire.
+
+    A hand-edited ``aa`` decodes to the same number as ``a`` and ``ab`` to the
+    same as ``b``, yet each is a distinct name, so none of them has to move.
+    """
+
+    class LeadingRoot(BaseState):
+        pass
+
+    class LeadingKept(LeadingRoot):
+        pass
+
+    class LeadingMoved(LeadingRoot):
+        pass
+
+    class LeadingSibling(LeadingRoot):
+        pass
+
+    root_path = get_state_full_path(LeadingRoot)
+    kept_path = get_state_full_path(LeadingKept)
+    moved_path = get_state_full_path(LeadingMoved)
+    existing = make_config(
+        states={
+            root_path: StateEntry(id="a", parent=None),
+            kept_path: StateEntry(id="aa", parent=root_path),
+            moved_path: StateEntry(id="ab", parent="some.old.Parent"),
+            get_state_full_path(LeadingSibling): StateEntry(id="b", parent=root_path),
+        }
+    )
+
+    new_config = sync_minify_config(existing, LeadingRoot)
+
+    assert new_config["states"][kept_path]["id"] == "aa"
+    assert new_config["states"][moved_path] == StateEntry(id="ab", parent=root_path)
+    errors, _warnings, _missing = validate_minify_config(new_config, LeadingRoot)
+    assert not errors, errors
+
+
 def test_validate_exempts_an_orphan_holding_its_parent_id():
     """An orphan may keep an id its live parent also holds.
 

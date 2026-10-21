@@ -691,7 +691,7 @@ def _assign_next_ids(
 
 def _state_id_scope(
     states: dict[str, StateEntry], parent_key: str | None, exclude: Collection[str]
-) -> tuple[set[int], set[int]]:
+) -> tuple[set[str], set[str]]:
     """Get the ids a state under ``parent_key`` may not take.
 
     Args:
@@ -704,14 +704,12 @@ def _state_id_scope(
         leading segment of a relative path can only ever mean the parent.
     """
     siblings = {
-        minified_name_to_int(entry["id"])
+        entry["id"]
         for path, entry in states.items()
         if entry["parent"] == parent_key and path not in exclude
     }
     parent_entry = states.get(parent_key) if parent_key is not None else None
-    parent = (
-        set() if parent_entry is None else {minified_name_to_int(parent_entry["id"])}
-    )
+    parent = set() if parent_entry is None else {parent_entry["id"]}
     return siblings, parent
 
 
@@ -734,7 +732,11 @@ def _assign_state_ids(
     """
     siblings, parent = _state_id_scope(states, parent_key, set(state_paths))
     return _assign_next_ids(
-        state_paths, siblings, reassign_deleted, for_states=True, skip=parent
+        state_paths,
+        {minified_name_to_int(i) for i in siblings},
+        reassign_deleted,
+        for_states=True,
+        skip={minified_name_to_int(i) for i in parent},
     )
 
 
@@ -817,9 +819,8 @@ def _rehome_conflicting_ids(
         if entry is None or entry["parent"] is None:
             continue
         siblings, parent = _state_id_scope(states, entry["parent"], (state_path,))
-        state_id = minified_name_to_int(entry["id"])
-        shares_parent_id = state_id in parent
-        if state_id not in siblings and not shares_parent_id:
+        shares_parent_id = entry["id"] in parent
+        if entry["id"] not in siblings and not shares_parent_id:
             continue
         if state_path not in reparented and not shares_parent_id:
             continue
