@@ -248,6 +248,7 @@ def get_app(reload: bool = False) -> ModuleType:
     Raises:
         Exception: If an error occurs while getting the app module.
     """
+    from reflex.minify import ensure_minify_resolver_for_active_context
     from reflex.utils import telemetry
 
     try:
@@ -259,6 +260,9 @@ def get_app(reload: bool = False) -> ModuleType:
 
         module = config.module
         sys.path.insert(0, getcwd())  # noqa: PTH109
+        # Before the user module imports, so the Vars its module-level code
+        # builds from state Vars use the configured names.
+        ensure_minify_resolver_for_active_context()
         app = (
             __import__(module, fromlist=(constants.CompileVars.APP,))
             if not config.app_module
