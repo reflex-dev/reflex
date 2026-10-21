@@ -30,7 +30,7 @@ class StrictComponent(Component):
     _valid_children: ClassVar[list[str]] = ["ChildA", "ChildB"]
 
     # The memoization mode.
-    _memoization_mode: ClassVar[Any] = None
+    _memoization_mode: ClassVar[Any] = None  # ty:ignore[invalid-attribute-override]
 
     # A public prop that should appear in create().
     visible_prop: Var[str] = field(doc="A prop visible in the stub.")

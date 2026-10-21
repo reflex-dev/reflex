@@ -42,7 +42,7 @@ def test_render_on_submit():
         _var_type=EventChain,
     )
     f = Form.create(on_submit=submit_it)
-    exp_submit_name = f"handleSubmit_{f.handle_submit_unique_name}"  # pyright: ignore [reportAttributeAccessIssue]
+    exp_submit_name = f"handleSubmit_{f.handle_submit_unique_name}"  # ty:ignore[unresolved-attribute]
     assert f"onSubmit:{exp_submit_name}" in f.render()["props"]
 
 
@@ -121,7 +121,7 @@ def test_form_refs_include_debounced_controls():
     """ID-only debounced inputs remain available to submit handlers."""
     form = HTMLForm.create(
         DebounceInput.create(
-            Input.create(id=DEBOUNCED_INPUT_ID, on_change=rx.console_log)
+            Input.create(id=DEBOUNCED_INPUT_ID, on_change=rx.console_log)  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/4098
         )
     )
 
@@ -185,7 +185,7 @@ def test_on_submit_rejects_typed_dict_with_unresolved_field_types():
     """A TypedDict whose field types cannot be resolved fails at compile time."""
 
     class LooseData(TypedDict):
-        tags: _T  # pyright: ignore[reportGeneralTypeIssues]
+        tags: _T  # ty:ignore[unbound-type-variable]
 
     class LooseState(rx.State):
         @rx.event
@@ -277,7 +277,7 @@ def _memoized_control() -> Component:
         (_memoized_control, "memoized_input"),
         (
             lambda: DebounceInput.create(
-                Input.create(id="debounced_input", on_change=rx.console_log)
+                Input.create(id="debounced_input", on_change=rx.console_log)  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/4098
             ),
             "debounced_input",
         ),
@@ -304,12 +304,16 @@ def test_on_submit_warns_for_custom_controls_with_only_an_id(
         lambda: Input.create(id="disabled_input", disabled=True),
         lambda: DebounceInput.create(
             Input.create(
-                id="debounced_named", name="debounced_named", on_change=rx.console_log
+                id="debounced_named",
+                name="debounced_named",
+                on_change=rx.console_log,  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/4098
             )
         ),
         lambda: DebounceInput.create(
             Input.create(
-                id="debounced_disabled", disabled=True, on_change=rx.console_log
+                id="debounced_disabled",
+                disabled=True,
+                on_change=rx.console_log,  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/4098
             )
         ),
     ],
@@ -333,10 +337,10 @@ def test_on_submit_accepts_typed_dict_with_unresolvable_field_types():
 
     class OrderData(TypedDict):
         name: str
-        amount: "Decimal"  # noqa: F821 # pyright: ignore[reportUndefinedVariable]
-        tip: "NotRequired[Decimal]"  # noqa: F821 # pyright: ignore[reportUndefinedVariable]
-        fee: "NotRequired[billing.Money]"  # noqa: F821 # pyright: ignore[reportUndefinedVariable]
-        tags: "Seq[str]"  # noqa: F821 # pyright: ignore[reportUndefinedVariable]
+        amount: "Decimal"  # noqa: F821  # ty:ignore[unresolved-reference]
+        tip: "NotRequired[Decimal]"  # noqa: F821  # ty:ignore[unresolved-reference]
+        fee: "NotRequired[billing.Money]"  # noqa: F821  # ty:ignore[unresolved-reference]
+        tags: "Seq[str]"  # noqa: F821  # ty:ignore[unresolved-reference]
 
     class OrderState(rx.State):
         @rx.event
@@ -416,7 +420,7 @@ def test_on_submit_typed_dict_accepts_debounced_control_name():
             pass
 
     HTMLForm.create(
-        DebounceInput.create(Input.create(name="email", on_change=rx.console_log)),
+        DebounceInput.create(Input.create(name="email", on_change=rx.console_log)),  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/4098
         on_submit=EmailState.on_submit,
     )
 
@@ -480,7 +484,7 @@ def test_on_submit_resolves_typed_dict_after_bound_args():
 
     form = HTMLForm.create(
         Input.create(name="email"),
-        on_submit=SignupState.on_submit("marketing"),  # pyright: ignore [reportCallIssue]
+        on_submit=SignupState.on_submit("marketing"),
     )
 
     assert isinstance(form.event_triggers["on_submit"], EventChain)

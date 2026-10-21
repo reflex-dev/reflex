@@ -53,7 +53,7 @@ class Database:
         Returns:
             The database, or None if the app has none.
         """
-        database = self._client._request(
+        database = self._client._request(  # ty:ignore[no-matching-overload]
             "GET",
             f"apps/{path_segment(app_id)}/database",
             ManagedDatabase | _NoDatabase,

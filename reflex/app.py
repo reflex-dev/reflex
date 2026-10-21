@@ -980,7 +980,9 @@ class App(MiddlewareMixin, LifespanMixin):
         if route is not None:
             return format.format_route(route)
         if isinstance(component, Callable):
-            return format.format_route(format.to_kebab_case(component.__name__))
+            return format.format_route(
+                format.to_kebab_case(format.callable_name(component))
+            )
         return None
 
     def add_page(
@@ -1166,7 +1168,7 @@ class App(MiddlewareMixin, LifespanMixin):
             state = self._state or State
             state.setup_dynamic_args(prepared.route_args)
 
-        self._load_events[page.route] = (
+        self._load_events[page.route] = (  # ty:ignore[invalid-assignment] https://github.com/astral-sh/ty/issues/4394
             (
                 list(page.on_load)
                 if is_non_string_sequence(page.on_load)
@@ -1829,7 +1831,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
     @overload
     @deprecated("pass token as rx.BaseStateToken instead of str")
-    def modify_state(
+    def modify_state(  # ty:ignore[invalid-overload] https://github.com/astral-sh/ty/issues/2057
         self,
         token: str,
         background: bool = False,
@@ -1837,7 +1839,7 @@ class App(MiddlewareMixin, LifespanMixin):
     ) -> contextlib.AbstractAsyncContextManager[BaseState]: ...
 
     @overload
-    def modify_state(
+    def modify_state(  # ty:ignore[invalid-overload] https://github.com/astral-sh/ty/issues/2057
         self,
         token: BaseStateToken,
         background: bool = False,
@@ -2024,7 +2026,7 @@ async def health(_request: Request) -> JSONResponse:
             - "db" (bool or str): Database status - True, False, or "NA".
             - "redis" (bool or str): Redis status - True, False, or "NA".
     """
-    health_status = {"status": True}
+    health_status: dict[str, bool | None] = {"status": True}
     status_code = 200
 
     tasks = []

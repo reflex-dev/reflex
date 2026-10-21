@@ -206,8 +206,8 @@ def test_event_handler_props():
             pass
 
     props = EventProps(
-        on_click=FooState.handle_click,  # pyright: ignore[reportArgumentType]
-        not_start_with_on=FooState.handle_input,  # pyright: ignore[reportArgumentType]
+        on_click=FooState.handle_click,
+        not_start_with_on=FooState.handle_input,
     )
     props_dict = props.dict()
     assert isinstance(props_dict["onClick"], EventChain)

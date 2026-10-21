@@ -503,7 +503,7 @@ def _expire_token(state_manager: StateManager, token: str) -> None:
         state_manager._purge_token(BaseStateToken(ident=token, cls=State))
         return
     assert isinstance(state_manager, StateManagerRedis)
-    keys = state_manager.redis._internals["keys"]  # pyright: ignore[reportAttributeAccessIssue]
+    keys = state_manager.redis._internals["keys"]  # ty:ignore[unresolved-attribute]
     for key in [key for key in keys if key.startswith(token.encode())]:
         del keys[key]
 
@@ -1051,7 +1051,7 @@ async def test_background_event_releases_the_dispatch_state_tree(
         @event(background=True)
         async def bg(self):
             dispatch_root.append(
-                weakref.ref(self.__wrapped__._get_root_state())  # pyright: ignore [reportAttributeAccessIssue]
+                weakref.ref(self.__wrapped__._get_root_state())  # ty:ignore[unresolved-attribute]
             )
             async with self:
                 pass
@@ -1509,7 +1509,7 @@ async def test_rehydrate_resolves_dynamic_route_args_of_the_incoming_event(
 
         @event
         def load_item(self):
-            item_id = self.item_id  # pyright: ignore[reportAttributeAccessIssue]
+            item_id = self.item_id  # ty:ignore[unresolved-attribute]
             self.seen = [*self.seen, f"{self.router.url.path}|{item_id}"]
 
         @event
@@ -2015,7 +2015,7 @@ def test_prepare_event_payload_falls_back_to_form_data_dict(caplog):
 def test_prepare_event_payload_falls_back_when_hints_do_not_resolve():
     """Unresolvable annotations still never expose the wrapped form entries."""
 
-    def handler(self, form_data: "_UndefinedFormData"):  # noqa: F821 # pyright: ignore[reportUndefinedVariable]
+    def handler(self, form_data: "_UndefinedFormData"):  # noqa: F821  # ty:ignore[unresolved-reference]
         pass
 
     payload = _prepare_event_payload(

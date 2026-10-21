@@ -167,4 +167,4 @@ class PageNamespace(metaclass=PageNamespaceMeta):
 
 
 page_namespace = PageNamespace
-sys.modules[__name__] = page_namespace  # pyright: ignore[reportArgumentType]
+sys.modules[__name__] = page_namespace  # ty:ignore[invalid-assignment]

@@ -51,7 +51,8 @@ def _planned(
             record.append(f"cleanup {ctx.arm}")
 
     bench = Benchmark.define(
-        Recorder, **{"id": "t.ab", "metrics": {"wall": WALL}, **define}
+        Recorder,
+        **{"id": "t.ab", "metrics": {"wall": WALL}, **define},  # ty:ignore[invalid-argument-type]
     )
     return Planned(bench, bench.expand()[0])
 
@@ -62,7 +63,7 @@ def _schedulers(
     head: Subject | None = None,
     **policy: Any,
 ) -> tuple[Scheduler, Scheduler]:
-    shared = Policy(**{"runs": 3, **policy})
+    shared = Policy(**{"runs": 3, **policy})  # ty:ignore[invalid-argument-type]
     return (
         Scheduler(base or make_subject(), shared, home=tmp_path, seed=1),
         Scheduler(head or make_subject(), shared, home=tmp_path, seed=1),

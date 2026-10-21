@@ -42,7 +42,7 @@ def FrontendPathApp():
 
         @rx.event
         def on_load_dynamic(self):
-            page_id = self.page_id  # pyright: ignore[reportAttributeAccessIssue]
+            page_id = self.page_id  # ty:ignore[unresolved-attribute]
             self.on_load_events.append(f"dynamic-{page_id}")
 
         @rx.event
@@ -121,7 +121,7 @@ def FrontendPathApp():
                 id="router-url-path",
             ),
             rx.input(
-                value=FPState.router.page.raw_path,  # pyright: ignore[reportDeprecated]
+                value=FPState.router.page.raw_path,
                 read_only=True,
                 id="router-page-raw-path",
             ),
@@ -202,7 +202,7 @@ def FrontendPathApp():
     @rx.page("/dynamic/[page_id]", on_load=FPState.on_load_dynamic)
     def dynamic_page():
         return rx.box(
-            rx.text(f"dynamic page {rx.State.page_id}", id="page-id"),  # pyright: ignore[reportAttributeAccessIssue]
+            rx.text(f"dynamic page {rx.State.page_id}", id="page-id"),  # ty:ignore[unresolved-attribute]
             rx.input(
                 value=FPState.router.session.client_token,
                 read_only=True,

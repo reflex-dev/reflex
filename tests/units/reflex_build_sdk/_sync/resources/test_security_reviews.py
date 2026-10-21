@@ -109,7 +109,8 @@ def test_get(client: ReflexBuild, mock_api: MockAPI):
         job_id=JOB_ID,
         status="complete",
         result=SecurityReviewResult(
-            summary="One issue.", violations=[SecurityViolation(**VIOLATION)]
+            summary="One issue.",
+            violations=[SecurityViolation(**VIOLATION)],  # ty:ignore[invalid-argument-type]
         ),
     )
 

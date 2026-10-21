@@ -177,7 +177,7 @@ def test_unmapped_properties_are_in_the_schema_and_unmapped(model: type):
         for component in SCHEMA_MODELS[model]
         for key in components[component].get("properties", {})
     }
-    mapped = {json_key(field) for field in dataclasses.fields(model)}
+    mapped = {json_key(field) for field in dataclasses.fields(model)}  # ty:ignore[invalid-argument-type]
     assert set(UNMAPPED_PROPERTIES[model]) <= properties - mapped
 
 
@@ -218,7 +218,7 @@ _COMPONENT = {
 def _problems(**overrides: Any) -> list[str]:
     component = {
         **_COMPONENT,
-        "properties": {**_COMPONENT["properties"], **overrides},
+        "properties": {**_COMPONENT["properties"], **overrides},  # ty:ignore[invalid-argument-type]
     }
     return model_problems(_Model, component, {_Nested: ("Nested",)})
 
@@ -293,7 +293,7 @@ def test_checker_reports_missing_and_optional_fields():
     component = {
         "properties": {
             key: value
-            for key, value in _COMPONENT["properties"].items()
+            for key, value in _COMPONENT["properties"].items()  # ty:ignore[unresolved-attribute]
             if key != "tags"
         },
         "required": ["id", "nested"],
@@ -308,7 +308,7 @@ def test_checker_reports_unmapped_properties():
     component = {
         **_COMPONENT,
         "properties": {
-            **_COMPONENT["properties"],
+            **_COMPONENT["properties"],  # ty:ignore[invalid-argument-type]
             "added": {"type": "string"},
             "skipped": {"type": "string"},
         },

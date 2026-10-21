@@ -15,7 +15,7 @@ import stat
 import sys
 import threading
 import unicodedata
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from pathlib import Path
 
 from reflex_base.config import get_config
@@ -395,7 +395,7 @@ def _write_json_file(file_path: Path, value: dict[str, object]) -> None:
         raise
 
 
-def update_json_file(file_path: str | Path, update_dict: dict[str, object]) -> None:
+def update_json_file(file_path: str | Path, update_dict: Mapping[str, object]) -> None:
     """Update the contents of a json file.
 
     Args:

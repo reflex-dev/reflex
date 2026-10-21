@@ -130,8 +130,8 @@ def custom_link(link: rx.Var[SankeyLinkProps]) -> rx.Component:
         namespace,
     )
 
-    assert callable(sankey_chart.node(namespace["custom_node"]))
-    assert callable(sankey_chart.link(namespace["custom_link"]))
+    assert callable(sankey_chart.node(namespace["custom_node"]))  # ty:ignore[invalid-argument-type]
+    assert callable(sankey_chart.link(namespace["custom_link"]))  # ty:ignore[invalid-argument-type]
 
 
 def test_sankey_renderer_decorator_rejects_positional_only_parameter():

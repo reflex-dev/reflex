@@ -1,6 +1,5 @@
 """Flexdown module — component maps and markdown helpers."""
 
-# pyright: reportAttributeAccessIssue=false
 from reflex_base.constants.colors import ColorType
 from reflex_components_code.shiki_code_block import code_block as shiki_code_block
 

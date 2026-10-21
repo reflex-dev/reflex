@@ -7,6 +7,8 @@ from collections.abc import Callable, Coroutine
 from contextvars import Context
 from typing import Any
 
+from reflex_base.utils.format import callable_name
+
 logger = logging.getLogger(__name__)
 
 
@@ -32,6 +34,7 @@ async def _run_forever(
     """
     last_regular_loop_start = 0
     exception_count = 0
+    fn_name = callable_name(coro_function)
 
     while True:
         # Reset the exception count when the limit window has elapsed since the last non-exception loop started.
@@ -48,10 +51,10 @@ async def _run_forever(
                 exception_count += 1
                 if exception_count >= exception_limit:
                     logger.error(
-                        f"{coro_function.__name__}: task exceeded exception limit {exception_limit} within {exception_limit_window}s: {e}"
+                        f"{fn_name}: task exceeded exception limit {exception_limit} within {exception_limit_window}s: {e}"
                     )
                     raise
-                logger.error(f"{coro_function.__name__}: task error suppressed: {e}")
+                logger.error(f"{fn_name}: task error suppressed: {e}")
                 await asyncio.sleep(exception_delay)
                 continue
             raise
@@ -106,7 +109,8 @@ def ensure_task(
             exception_limit_window=exception_limit_window,
             **kwargs,
         )
-        task_name = f"reflex_ensure_task|{type(owner).__name__}.{task_attribute}={coro_function.__name__}|{time.time()}"
+        fn_name = callable_name(coro_function)
+        task_name = f"reflex_ensure_task|{type(owner).__name__}.{task_attribute}={fn_name}|{time.time()}"
         if task_context is not None:
             # Run the task in the given context (not needed after Python 3.11+ which supports passing context to create_task directly).
             task = task_context.run(asyncio.create_task, rf_coro, name=task_name)

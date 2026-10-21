@@ -31,7 +31,7 @@ def grids() -> rx.Component:
                 rx.data_editor(
                     columns=EDITOR_COLUMNS,
                     data=GridState.rows,
-                    on_cell_edited=GridState.edit_cell,  # pyright: ignore[reportArgumentType]
+                    on_cell_edited=GridState.edit_cell,  # ty:ignore[invalid-argument-type]
                     height="20rem",
                 ),
                 id="grids-editor",

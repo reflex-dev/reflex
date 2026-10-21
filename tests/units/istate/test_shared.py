@@ -162,14 +162,14 @@ class PatchReader(PatchRoot):
 @pytest.mark.asyncio
 async def test_patch_state_recomputes_readers_after_restoring():
     """Computed vars read from a patched state are recomputed once it is swapped back."""
-    root = PatchRoot(_reflex_internal_init=True)  # pyright: ignore[reportCallIssue]
+    root = PatchRoot(_reflex_internal_init=True)  # ty:ignore[unknown-argument]
     original = root.get_substate([PatchSource.get_name()])
     reader = root.get_substate([PatchReader.get_name()])
     # The state of another client, in a tree of its own.
-    linked_root = PatchRoot(_reflex_internal_init=True)  # pyright: ignore[reportCallIssue]
+    linked_root = PatchRoot(_reflex_internal_init=True)  # ty:ignore[unknown-argument]
     linked = linked_root.get_substate([PatchSource.get_name()])
     linked.who = "linked"  # pyright: ignore[reportAttributeAccessIssue]
 
     async with _patch_state(original_state=original, linked_state=linked):
-        assert await reader.greeting == "linked"  # pyright: ignore[reportAttributeAccessIssue]
-    assert await reader.greeting == "private"  # pyright: ignore[reportAttributeAccessIssue]
+        assert await reader.greeting == "linked"  # ty:ignore[unresolved-attribute]
+    assert await reader.greeting == "private"  # ty:ignore[unresolved-attribute]

@@ -60,7 +60,7 @@ class DataState(rx.State):
         """Query the current page of the filtered, sorted products."""
         statement = Product.select()
         if self.query:
-            statement = statement.where(Product.name.contains(self.query))  # pyright: ignore[reportAttributeAccessIssue]
+            statement = statement.where(Product.name.contains(self.query))  # ty:ignore[unresolved-attribute]
         if self.category != "all":
             statement = statement.where(Product.category == self.category)
         column = getattr(Product, self.sort_by)

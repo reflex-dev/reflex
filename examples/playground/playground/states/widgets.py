@@ -23,7 +23,7 @@ class WidgetState(rx.State):
         Args:
             value: One of ``cards``, ``list`` and ``table``.
         """
-        if value in LAYOUTS:
+        if isinstance(value, str) and value in LAYOUTS:
             self.layout = value
 
     @rx.event

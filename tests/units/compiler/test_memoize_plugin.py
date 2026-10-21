@@ -365,13 +365,10 @@ def test_special_form_memo_wrappers_render_structural_body(
                 lambda item: rx.text(item),
             )
         if special_form == "cond":
-            return cast(
-                Component,
-                rx.cond(
-                    SpecialFormMemoState.flag,
-                    rx.text("yes"),
-                    rx.text("no"),
-                ),
+            return rx.cond(
+                SpecialFormMemoState.flag,
+                rx.text("yes"),
+                rx.text("no"),
             )
         return cast(
             Component,
@@ -501,13 +498,10 @@ def test_common_memoization_snapshot_helper_classifies_snapshot_cases() -> None:
             lambda item: rx.text(item),
         )
     )
-    cond_fragment = cast(
-        Component,
-        rx.cond(
-            SpecialFormMemoState.flag,
-            rx.text("yes"),
-            rx.text("no"),
-        ),
+    cond_fragment = rx.cond(
+        SpecialFormMemoState.flag,
+        rx.text("yes"),
+        rx.text("no"),
     )
     match_fragment = cast(
         Component,
@@ -855,8 +849,12 @@ def test_passthrough_memo_definitions_are_not_shared_globally(monkeypatch) -> No
         fake_create_passthrough_component_memo,
     )
 
-    first_compile = SimpleNamespace(memoize_wrappers={}, auto_memo_components={})
-    second_compile = SimpleNamespace(memoize_wrappers={}, auto_memo_components={})
+    first_compile = cast(
+        CompileContext, SimpleNamespace(memoize_wrappers={}, auto_memo_components={})
+    )
+    second_compile = cast(
+        CompileContext, SimpleNamespace(memoize_wrappers={}, auto_memo_components={})
+    )
     page_context = cast(PageContext, SimpleNamespace(source_module=None))
 
     MemoizeStatefulPlugin._build_wrapper(
@@ -2162,7 +2160,7 @@ def test_form_memo_preserves_control_refs(form_factory) -> None:
         lambda: form_factory(
             rx.box(
                 rx.input(id="plain_field"),
-                rx.input(id="debounced_field", on_change=rx.console_log),
+                rx.input(id="debounced_field", on_change=rx.console_log),  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/4098
                 rx.radio_group(["a", "b"], id="unset_field"),
                 rx.text("Label", id="label"),
                 id="wrapper",

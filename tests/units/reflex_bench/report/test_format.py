@@ -90,7 +90,7 @@ def _comparison(**changes) -> ComparisonDoc:
         "verdict": "regressed",
         "runs_needed": None,
     }
-    comparison.update(changes)  # pyright: ignore[reportCallIssue, reportArgumentType]
+    comparison.update(changes)  # ty:ignore[invalid-argument-type]
     return comparison
 
 

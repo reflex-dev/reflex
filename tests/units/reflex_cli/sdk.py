@@ -113,7 +113,7 @@ def gcp_connection(name: str, **fields: Any) -> GcpConnection:
     Returns:
         The connection.
     """
-    return GcpConnection(**{
+    return GcpConnection(**{  # ty:ignore[invalid-argument-type]
         "id": uuid.uuid5(uuid.NAMESPACE_OID, name),
         "name": name,
         "is_default": False,
@@ -134,7 +134,7 @@ def provider_account(name: str, **fields: Any) -> ProviderAccount:
         The provider account.
     """
     created = datetime.datetime(2026, 7, 1, tzinfo=datetime.UTC)
-    return ProviderAccount(**{
+    return ProviderAccount(**{  # ty:ignore[invalid-argument-type]
         "id": uuid.uuid5(uuid.NAMESPACE_OID, name),
         "provider": "gcp",
         "name": name,

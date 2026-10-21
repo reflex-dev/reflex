@@ -238,8 +238,8 @@ def compile_state(state: type[BaseState]) -> dict:
                 asyncio.run, _resolve_delta(initial_state)
             ).result()
     # A backend in this process diffs first hydrates against these exact values.
-    cache_initial_snapshot(state, resolved_initial_state)
-    return _sorted_keys(resolved_initial_state)
+    cache_initial_snapshot(state, resolved_initial_state)  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/3186
+    return _sorted_keys(resolved_initial_state)  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/3186
 
 
 def _compile_initial_state(
@@ -783,11 +783,10 @@ def create_document_root(
 
     for component in head_components or []:
         if isinstance(component, Meta):
-            if component.char_set is not None:  # pyright: ignore[reportAttributeAccessIssue]
+            if component.char_set is not None:  # ty:ignore[unresolved-attribute]
                 existing_meta_types.add("char_set")
-            if (
-                (name := component.name) is not None  # pyright: ignore[reportAttributeAccessIssue]
-                and name.equals(Var.create("viewport"))
+            if (name := component.name) is not None and name.equals(  # ty:ignore[unresolved-attribute]
+                Var.create("viewport")
             ):
                 existing_meta_types.add("viewport")
 
@@ -1000,7 +999,7 @@ def get_memo_module_path(segments: tuple[str, ...]) -> str:
 def add_meta(
     page: Component,
     title: str | Var,
-    image: str,
+    image: str | Var,
     meta: Sequence[Mapping[str, Any] | Component],
     description: str | Var | None = None,
 ) -> Component:

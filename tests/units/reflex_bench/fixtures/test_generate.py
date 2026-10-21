@@ -89,7 +89,7 @@ def test_pages_and_routes(tmp_path: Path, pages: int):
     assert files == sorted(f"page_{index}.py" for index in range(pages))
     module = ast.parse((tmp_path / "genapp" / "genapp.py").read_text(encoding="utf-8"))
     routes = {
-        call.args[0].id: next(k.value.value for k in call.keywords if k.arg == "route")  # pyright: ignore[reportAttributeAccessIssue]
+        call.args[0].id: next(k.value.value for k in call.keywords if k.arg == "route")  # ty:ignore[unresolved-attribute]
         for call in ast.walk(module)
         if isinstance(call, ast.Call)
         and isinstance(call.func, ast.Attribute)
@@ -185,7 +185,7 @@ def test_the_output_imports_only_reflex(tmp_path: Path):
                 imported.add(node.module)
     assert "reflex" in imported
     # Besides reflex, only the app's own modules.
-    assert {name for name in imported if name.split(".")[0] != "genapp"} == {"reflex"}
+    assert {name for name in imported if name.split(".")[0] != "genapp"} == {"reflex"}  # ty:ignore[unresolved-attribute]
 
 
 def test_rxconfig_has_only_the_radix_guard(tmp_path: Path):
@@ -213,7 +213,7 @@ def test_the_state_tree(tmp_path: Path):
 
     def members(name: str) -> tuple[list[str], list[str], list[str]]:
         body = classes[name].body
-        fields = [node.target.id for node in body if isinstance(node, ast.AnnAssign)]  # pyright: ignore[reportAttributeAccessIssue]
+        fields = [node.target.id for node in body if isinstance(node, ast.AnnAssign)]  # ty:ignore[unresolved-attribute]
         functions = [node for node in body if isinstance(node, ast.FunctionDef)]
         by_decorator = {
             decorator: [

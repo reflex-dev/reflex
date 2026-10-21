@@ -93,7 +93,7 @@ def event_processing_harness():
             emitted_deltas.clear()
 
             async with processor as p:
-                async for _ in asyncio.as_completed([
+                async for _ in asyncio.as_completed([  # ty:ignore[not-iterable]
                     await p.enqueue(token, event) for token in tokens
                 ]):
                     pass
@@ -344,7 +344,7 @@ async def _event_pipeline(
             async with processor as p:
                 async for _ in asyncio.as_completed([
                     await p.enqueue("benchmark-token", event) for event in events
-                ]):
+                ]):  # ty:ignore[not-iterable]
                     pass
             assert emitted == len(events)
 
@@ -418,7 +418,7 @@ async def test_table_event_deltas():
         assert delta["status" + FIELD_MARKER] == status
         assert delta["sort_reverse" + FIELD_MARKER] == reverse
         assert delta["filtered_orders" + FIELD_MARKER] == expected
-        assert delta["total_amount" + FIELD_MARKER] == sum(
+        assert delta["total_amount" + FIELD_MARKER] == sum(  # ty:ignore[no-matching-overload]
             row["amount"] for row in expected
         )
 

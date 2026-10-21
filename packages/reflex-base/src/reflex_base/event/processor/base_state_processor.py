@@ -24,7 +24,7 @@ from reflex_base.event.processor.event_processor import EventProcessor, EventQue
 from reflex_base.event.processor.future import EventFuture
 from reflex_base.registry import RegisteredEventHandler
 from reflex_base.utils.form import form_data_as_dict, transform_form_data
-from reflex_base.utils.format import format_event_handler
+from reflex_base.utils.format import callable_qualname, format_event_handler
 from reflex_base.utils.serializers import deserializers
 from reflex_base.utils.types import is_non_string_sequence
 
@@ -608,7 +608,7 @@ class BaseStateEventProcessor(EventProcessor):
             if events := self.backend_exception_handler(ex):
                 await chain_updates(
                     events=events,
-                    handler_name=self.backend_exception_handler.__qualname__,
+                    handler_name=callable_qualname(self.backend_exception_handler),
                 )
 
 
