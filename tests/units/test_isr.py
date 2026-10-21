@@ -61,12 +61,25 @@ class FakeRenderer:
 
 
 async def _drain_background(manager: ISRManager) -> None:
-    """Wait for any background revalidation tasks to finish."""
+    """Wait for any background revalidation tasks to finish.
+
+    Args:
+        manager: The manager whose background tasks to await.
+    """
     if manager._background:
         await asyncio.gather(*list(manager._background))
 
 
 def _manager(renderer, **kwargs) -> ISRManager:
+    """Build a manager on a fresh in-memory cache.
+
+    Args:
+        renderer: The renderer to use.
+        **kwargs: Overrides for the manager options.
+
+    Returns:
+        The ISR manager.
+    """
     kwargs.setdefault("build_id", "b1")
     kwargs.setdefault("default_revalidate", 60.0)
     return ISRManager(MemoryISRCache(), renderer, **kwargs)

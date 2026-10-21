@@ -7,7 +7,7 @@ import re
 from collections.abc import Iterable, Mapping
 from typing import TYPE_CHECKING, Any, Literal
 
-from reflex_base import constants
+from reflex_base import constants, ssr
 from reflex_base.constants import Hooks
 from reflex_base.utils import memo_paths
 from reflex_base.utils.format import json_dumps
@@ -211,8 +211,6 @@ def app_root_template(
         f'    "{lib_path}": {lib_alias},' for lib_alias, lib_path in window_libraries
     ])
 
-    from reflex_base import ssr
-
     if ssr.is_enabled():
         ssr_imports = (
             'import { useLoaderData } from "react-router";\n'
@@ -387,8 +385,6 @@ def context_template(
     Returns:
         Rendered context file content as string.
     """
-    from reflex_base import ssr
-
     ssr_enabled = ssr.is_enabled()
     initial_state = initial_state or {}
     if initial_state_json is None:

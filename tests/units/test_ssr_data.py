@@ -12,6 +12,7 @@ from starlette.responses import Response
 import reflex as rx
 from reflex.app import App
 from reflex.ssr import ssr_data
+from reflex.state import State
 
 
 @pytest.fixture(autouse=True)
@@ -31,8 +32,6 @@ def _isolate_ssr_state(clean_registration_context):
     Yields:
         None.
     """
-    from reflex.state import State
-
     names = (
         "_potentially_dirty_states",
         "_always_dirty_substates",
@@ -158,6 +157,7 @@ async def test_ssr_data_on_load_runs():
 
         @rx.event
         def on_load_post(self):
+            """Set the title."""
             self.title = "loaded"
 
     app = App()
@@ -186,6 +186,11 @@ async def test_ssr_data_on_load_payload():
 
         @rx.event
         def load(self, post_id: int):
+            """Store the post id.
+
+            Args:
+                post_id: The bound post id.
+            """
             self.post_id = post_id
 
     app = App()
@@ -211,6 +216,7 @@ async def test_ssr_data_query_params():
 
         @rx.event
         def load(self):
+            """Copy the ``q`` query parameter."""
             self.q = self.router.url.query_parameters.get("q", "")
 
     app = App()
@@ -241,6 +247,7 @@ async def test_ssr_data_async_on_load():
 
         @rx.event
         async def load_data(self):
+            """Set the message asynchronously."""
             self.message = "async-loaded"
 
     app = App()
@@ -269,6 +276,11 @@ async def test_ssr_data_on_load_error_graceful():
 
         @rx.event
         def bad_handler(self):
+            """Always fail.
+
+            Raises:
+                RuntimeError: Always.
+            """
             msg = "boom"
             raise RuntimeError(msg)
 

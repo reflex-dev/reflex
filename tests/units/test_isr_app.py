@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from starlette.testclient import TestClient
+
 import reflex as rx
 from reflex.isr import (
     ISRManager,
@@ -33,24 +35,25 @@ class _Renderer:
         return RenderResult(html=f"<html>{path}#{self.calls}</html>", tags=("t",))
 
 
-def _app(renderer: _Renderer, *, shell: str | None = "<html>shell</html>"):
+def _client(renderer: _Renderer) -> TestClient:
+    """Build a test client for a page-server around ``renderer``.
+
+    Args:
+        renderer: The renderer to use.
+
+    Returns:
+        A test client for the page-server.
+    """
     manager = ISRManager(
         MemoryISRCache(), renderer, build_id="b", default_revalidate=60
     )
-    return create_isr_app(manager, shell=shell), manager
-
-
-def _client(app):
-    from starlette.testclient import TestClient
-
-    return TestClient(app)
+    return TestClient(create_isr_app(manager, shell="<html>shell</html>"))
 
 
 def test_serves_and_caches_rendered_html():
     """The page-server renders once and then serves from cache."""
     renderer = _Renderer()
-    app, _ = _app(renderer)
-    client = _client(app)
+    client = _client(renderer)
 
     r1 = client.get("/blog/hello")
     r2 = client.get("/blog/hello")
@@ -65,12 +68,17 @@ def test_falls_back_to_shell_on_render_failure():
     """When the renderer yields no HTML, the SPA shell is served."""
 
     class _NullRenderer:
+        """Renderer that never produces HTML."""
+
         async def __call__(self, path: str) -> None:
-            return None
+            """Fail to render the path.
+
+            Args:
+                path: The path being rendered.
+            """
 
     manager = ISRManager(MemoryISRCache(), _NullRenderer(), build_id="b")
-    app = create_isr_app(manager, shell="<html>SHELL</html>")
-    client = _client(app)
+    client = TestClient(create_isr_app(manager, shell="<html>SHELL</html>"))
 
     r = client.get("/anything")
     assert r.status_code == 200
@@ -80,8 +88,7 @@ def test_falls_back_to_shell_on_render_failure():
 def test_revalidate_path_endpoint():
     """POST /_isr/revalidate with a path drops that page from cache."""
     renderer = _Renderer()
-    app, _ = _app(renderer)
-    client = _client(app)
+    client = _client(renderer)
 
     client.get("/p")
     assert renderer.calls == 1
@@ -97,8 +104,7 @@ def test_revalidate_path_endpoint():
 def test_revalidate_tag_endpoint():
     """POST /_isr/revalidate with a tag invalidates all tagged pages."""
     renderer = _Renderer()
-    app, _ = _app(renderer)
-    client = _client(app)
+    client = _client(renderer)
 
     client.get("/a")
     client.get("/b")
@@ -116,8 +122,7 @@ def test_revalidate_requires_token_when_configured(monkeypatch):
     """When REFLEX_ISR_REVALIDATE_TOKEN is set, the endpoint enforces it."""
     monkeypatch.setenv("REFLEX_ISR_REVALIDATE_TOKEN", "secret")
     renderer = _Renderer()
-    app, _ = _app(renderer)
-    client = _client(app)
+    client = _client(renderer)
 
     assert client.post("/_isr/revalidate", json={"path": "/p"}).status_code == 401
     ok = client.post(

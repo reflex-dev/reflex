@@ -22,16 +22,18 @@ from urllib.parse import parse_qsl
 
 from reflex_base import constants
 from reflex_base.ssr import is_enabled as is_enabled
+from starlette.responses import Response
 
+from reflex.event import Event
+from reflex.istate.data import RouterData
+from reflex.route import extract_route_params
+from reflex.state import BaseState, State
 from reflex.utils import console, format
 
 if TYPE_CHECKING:
     from starlette.requests import Request
-    from starlette.responses import Response
 
     from reflex.app import App
-    from reflex.event import Event
-    from reflex.state import BaseState
 
 # Sentinel token/session id used for the stateless SSR render.
 SSR_TOKEN = "__ssr__"
@@ -52,8 +54,6 @@ def _build_router_data(
     Returns:
         A ``router_data`` dict with the same shape ``process()`` produces.
     """
-    from reflex.route import extract_route_params
-
     resolved_route = app.router(path) or "404"
     router_data = {
         constants.RouteVar.PATH: "/" + resolved_route.removeprefix("/"),
@@ -116,8 +116,6 @@ async def _run_on_load_events(app: App, state: BaseState, path: str) -> None:
         state: The ephemeral root state instance.
         path: The URL path (for error logging).
     """
-    from reflex.event import Event
-
     load_events = app.get_load_events(path)
     if not load_events:
         return
@@ -137,10 +135,6 @@ def ssr_data(app: App):
     Returns:
         The SSR data request handler.
     """
-    from starlette.responses import Response
-
-    from reflex.istate.data import RouterData
-    from reflex.state import State
 
     async def ssr_data_handler(request: Request) -> Response:
         """Handle an SSR data request.

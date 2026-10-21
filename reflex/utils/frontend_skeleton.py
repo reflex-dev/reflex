@@ -6,7 +6,7 @@ import uuid
 from pathlib import Path
 from typing import Literal
 
-from reflex_base import constants
+from reflex_base import constants, ssr
 from reflex_base.config import Config, get_config
 from reflex_base.environment import environment
 from reflex_base.plugins.embed import get_embed_plugin
@@ -523,8 +523,6 @@ def update_react_router_config(prerender_routes: bool = False):
 
 
 def _update_react_router_config(config: Config, prerender_routes: bool = False):
-    from reflex_base import ssr
-
     react_router_config = {
         "basename": config.prepend_frontend_path("/"),
         "future": {

@@ -25,18 +25,23 @@ import dataclasses
 import json
 import os
 import time
+import traceback
 import uuid
 from collections.abc import Awaitable, Callable
 from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
-from reflex.utils import console
+import httpx
+from reflex_base import constants
+from reflex_base.config import Config, get_config
+from starlette.applications import Starlette
+from starlette.requests import Request
+from starlette.responses import HTMLResponse, JSONResponse, Response
+from starlette.routing import Route
+
+from reflex.utils import console, prerequisites
 
 if TYPE_CHECKING:
-    import httpx
     from redis.asyncio import Redis
-    from starlette.applications import Starlette
-
-    from reflex.config import Config
 
 
 @dataclasses.dataclass(frozen=True)
@@ -493,8 +498,6 @@ class ISRManager:
         try:
             result = await self.renderer(path)
         except Exception:
-            import traceback
-
             console.warn(f"ISR render failed for {path}: {traceback.format_exc()}")
             return None
         if result is None:
@@ -588,8 +591,6 @@ class HttpRenderer:
         Returns:
             The pooled async HTTP client.
         """
-        import httpx
-
         if self._client is None:
             self._client = httpx.AsyncClient(timeout=self._timeout)
         return self._client
@@ -638,8 +639,6 @@ def is_enabled(config: Config | None = None) -> bool:
     Returns:
         True when ``config.isr_render_url`` is set.
     """
-    from reflex.config import get_config
-
     config = config if config is not None else get_config()
     return config.isr_render_url is not None
 
@@ -655,8 +654,6 @@ def get_build_id(config: Config | None = None) -> str:
     Returns:
         The build id.
     """
-    from reflex.config import get_config
-
     config = config if config is not None else get_config()
     return config.isr_build_id or os.environ.get("REFLEX_BUILD_ID") or "dev"
 
@@ -667,8 +664,6 @@ def get_cache() -> ISRCache:
     Returns:
         A shared Redis-backed cache, or an in-process fallback.
     """
-    from reflex.utils import prerequisites
-
     redis = prerequisites.get_redis()
     if redis is not None:
         return RedisISRCache(redis)
@@ -691,8 +686,6 @@ async def revalidate_path(path: str, *, config: Config | None = None) -> None:
         path: The path to invalidate (e.g. ``/blog/hello-world``).
         config: The config to read the build id from (defaults to global).
     """
-    from reflex.utils import prerequisites
-
     redis = prerequisites.get_redis()
     if redis is not None:
         await RedisISRCache(redis).delete(cache_key(get_build_id(config), path))
@@ -709,8 +702,6 @@ async def revalidate_tag(tag: str) -> int:
     Returns:
         The number of pages invalidated (0 when no ``redis_url`` is configured).
     """
-    from reflex.utils import prerequisites
-
     redis = prerequisites.get_redis()
     if redis is None:
         return 0
@@ -736,8 +727,6 @@ def create_manager(
     Raises:
         ValueError: If no renderer is given and ``isr_render_url`` is unset.
     """
-    from reflex.config import get_config
-
     config = config if config is not None else get_config()
     if renderer is None:
         if not config.isr_render_url:
@@ -758,9 +747,6 @@ def _load_shell() -> str | None:
     Returns:
         The shell HTML, or None if it cannot be found.
     """
-    from reflex import constants
-    from reflex.utils import prerequisites
-
     static_dir = prerequisites.get_web_dir() / constants.Dirs.STATIC
     for name in (constants.ReactRouter.SPA_FALLBACK, "index.html"):
         candidate = static_dir / name
@@ -792,16 +778,19 @@ def create_isr_app(
     Returns:
         A Starlette app.
     """
-    from starlette.applications import Starlette
-    from starlette.requests import Request
-    from starlette.responses import HTMLResponse, JSONResponse, Response
-    from starlette.routing import Route
-
     mgr = manager if manager is not None else create_manager()
     shell_html = shell if shell is not None else _load_shell()
     revalidate_token = os.environ.get("REFLEX_ISR_REVALIDATE_TOKEN")
 
     async def serve(request: Request) -> Response:
+        """Serve a page via ISR, falling back to the SPA shell.
+
+        Args:
+            request: The page request.
+
+        Returns:
+            The rendered page, the shell, or a 404.
+        """
         html = await mgr.get_html(request.url.path)
         if html is not None:
             return HTMLResponse(html)
@@ -811,6 +800,14 @@ def create_isr_app(
         return Response("Not found", status_code=404)
 
     async def revalidate(request: Request) -> Response:
+        """Invalidate the cached pages for the posted path and/or tag.
+
+        Args:
+            request: The revalidation request.
+
+        Returns:
+            A JSON summary, or 401 when the token does not match.
+        """
         if revalidate_token and (
             request.headers.get("x-reflex-isr-token") != revalidate_token
         ):
@@ -825,7 +822,14 @@ def create_isr_app(
 
     @contextlib.asynccontextmanager
     async def _lifespan(_app: Starlette):
-        """Close the renderer's pooled HTTP client on shutdown, if any."""
+        """Close the renderer's pooled HTTP client on shutdown, if any.
+
+        Args:
+            _app: The page-server app.
+
+        Yields:
+            Control while the app runs.
+        """
         try:
             yield
         finally:
