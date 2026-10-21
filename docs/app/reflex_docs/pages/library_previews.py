@@ -120,6 +120,14 @@ def get_component_list(component_type: str = "core"):
         raise ValueError(f"Unknown component type: {component_type}")
 
 
+CHARTS_GUIDE = """## Choosing a charting library
+
+- **[Recharts](/docs/library/graphing/charts/)** (built in): declarative charts with a simple API for standard business charts like bar, line, area, and pie. Good for dashboards and reports.
+- **[Plotly](/docs/library/graphing/other-charts/plotly/)** (`rx.plotly`): interactive scientific charts with zoom, pan, and hover, including 3D plots, contours, and statistical charts.
+- **[Matplotlib](/docs/library/graphing/other-charts/pyplot/)** (`pyplot`): render any `matplotlib.pyplot` figure as a static image. Best when you already have Matplotlib code from notebooks or scripts.
+- **AG Charts** (enterprise): high-performance charts with animations and advanced features. See the [AG Charts docs](/docs/enterprise/ag-chart/) for examples.
+"""
+
 # Markdown guides shown between a category's intro and its component cards.
 CATEGORY_GUIDES = {
     "Tables-And-Data-Grids": """## Which table component should I use?
@@ -129,13 +137,8 @@ CATEGORY_GUIDES = {
 - **`rx.data_editor`**: a spreadsheet-like grid with cell selection and inline editing. Use it when users edit data directly, as in an admin panel or data entry form.
 - **AG Grid** (enterprise): advanced filtering, column pivoting, row grouping, master-detail, tree data, and Excel export. See the [AG Grid docs](/docs/enterprise/ag-grid/) to get started.
 """,
-    "Charts": """## Choosing a charting library
-
-- **Recharts** (built in): declarative charts with a simple API for standard business charts like bar, line, area, and pie. Good for dashboards and reports.
-- **[Plotly](/docs/library/graphing/other-charts/plotly/)** (`rx.plotly`): interactive scientific charts with zoom, pan, and hover, including 3D plots, contours, and statistical charts.
-- **[Matplotlib](/docs/library/graphing/other-charts/pyplot/)** (`pyplot`): render any `matplotlib.pyplot` figure as a static image. Best when you already have Matplotlib code from notebooks or scripts.
-- **AG Charts** (enterprise): high-performance charts with animations and advanced features. See the [AG Charts docs](/docs/enterprise/ag-chart/) for examples.
-""",
+    "Charts": CHARTS_GUIDE,
+    "Other-Charts": CHARTS_GUIDE,
 }
 
 
