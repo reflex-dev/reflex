@@ -22,6 +22,18 @@ class _SurvivingModuleState(rx.State):
     b: int = 0
 
 
+@pytest.fixture(autouse=True)
+def _isolated_daemon_process_state(tmp_path_factory, monkeypatch):
+    """Keep the daemon's lock files and bytecode cache out of the user's dirs.
+
+    Args:
+        tmp_path_factory: The pytest temporary path factory.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    monkeypatch.setenv("REFLEX_DIR", str(tmp_path_factory.mktemp("reflex-data")))
+    monkeypatch.setattr(sys, "pycache_prefix", sys.pycache_prefix)
+
+
 def test_can_fork_rejects_remaining_native_threads(monkeypatch):
     """Native threads must force the subprocess fallback after the grace period."""
     monkeypatch.setattr(compile_daemon, "_quiesce_parent", lambda: None)
@@ -248,6 +260,7 @@ def test_wait_for_compile_respects_lock(tmp_path, monkeypatch):
     # A lock file nobody holds (a compile killed mid-way) is not waited on,
     # even when it holds the pid of a live process.
     lock = compile_daemon._lock_path()
+    lock.parent.mkdir(parents=True, exist_ok=True)
     lock.write_text(str(os.getpid()))
     assert not path_ops.is_locked(lock)
     start = time.monotonic()
@@ -592,6 +605,73 @@ def test_reset_first_party_keeps_surviving_module_states(tmp_path):
 
 
 @pytest.mark.skipif(not hasattr(os, "fork"), reason="requires os.fork (POSIX)")
+@pytest.mark.skipif(not hasattr(os, "fork"), reason="requires os.fork (POSIX)")
+def test_reset_first_party_keeps_dynamic_states_surviving_modules_created(tmp_path):
+    """A dynamic state a surviving module created at import stays registered.
+
+    An installed library's local state or ``ComponentState.create()`` runs
+    once, at import; purged modules re-import, surviving ones do not, so
+    dropping it would lose it from the state tree for good. A state a page
+    defined (per the manifest) is dropped: the page re-evaluates.
+    """
+    read_fd, write_fd = os.pipe()
+    pid = os.fork()
+    if pid == 0:  # child
+        os.close(read_fd)
+        result = b"E"
+        try:
+            import reflex.istate.dynamic as istate_dynamic
+            from reflex.state import State
+
+            def _import_time_state() -> type[rx.State]:
+                class LibraryState(rx.State):
+                    c: int = 0
+
+                return LibraryState
+
+            def _page_state() -> type[rx.State]:
+                class PageLocalState(rx.State):
+                    d: int = 0
+
+                return PageLocalState
+
+            library_cls = _import_time_state()
+            page_cls = _page_state()
+            manifest = {
+                "pages": {
+                    "/p": {"state_slice": {"schema": {page_cls.get_full_name(): []}}}
+                }
+            }
+            disk_cache.load_manifest = lambda: manifest
+
+            compile_daemon._reset_first_party([tmp_path.resolve()])
+
+            names = {c.__name__ for c in State.get_substates()}
+            kept = library_cls.__name__ in names and hasattr(
+                istate_dynamic, library_cls.__name__
+            )
+            dropped = page_cls.__name__ not in names and not hasattr(
+                istate_dynamic, page_cls.__name__
+            )
+            # The page's local state re-registers under its original name.
+            redefined = _page_state().__name__ == page_cls.__name__
+            result = b"1" if (kept and dropped and redefined) else b"0"
+        except Exception:
+            import traceback
+
+            traceback.print_exc()
+        finally:
+            os.write(write_fd, result)
+            os.close(write_fd)
+            os._exit(0)
+
+    os.close(write_fd)
+    out = os.read(read_fd, 1)
+    os.close(read_fd)
+    os.waitpid(pid, 0)
+    assert out == b"1"
+
+
 def test_reset_first_party_drops_memos_of_purged_modules(tmp_path):
     """A purged module's memos leave the registry; the module re-registers them.
 
@@ -736,24 +816,31 @@ def test_quiesce_parent_stops_telemetry_worker():
     assert not any(t.name.startswith("reflex-telemetry") for t in threading.enumerate())
     # A later send lazily recreates a worker, so shutdown is not one-way.
     telemetry._get_telemetry_executor().submit(lambda: None).result()
-    telemetry.shutdown_executor()
+    telemetry._shutdown_executor()
     assert telemetry._executor is None
 
 
 def test_owns_compilation_follows_the_daemon_lock(tmp_path, monkeypatch):
-    """Backend workers defer to a daemon holding its lock; the daemon always owns."""
+    """Backend reload workers defer to a daemon holding its lock; nobody else.
+
+    The daemon always owns the build, and so does a process that asked for
+    a compile (``reflex compile``, ``reflex export``): deferring would leave
+    its output to the daemon's dev build.
+    """
     from reflex_base.environment import environment
 
     from reflex.utils import path_ops
 
     monkeypatch.setattr("reflex.utils.prerequisites.get_backend_dir", lambda: tmp_path)
     monkeypatch.delenv(environment.REFLEX_COMPILE_DAEMON.name, raising=False)
-    # No daemon: a plain process compiles as usual.
+    monkeypatch.setenv(environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.name, "1")
+    # No daemon: a worker compiles as usual.
     assert compile_daemon.daemon_active() is False
     assert compile_daemon.owns_compilation() is True
     # A lock file nobody holds (a killed daemon, a copied .web) names no owner,
     # even when it holds the pid of a live process.
     lock = compile_daemon._daemon_lock_path()
+    lock.parent.mkdir(parents=True, exist_ok=True)
     lock.write_text(str(os.getpid()))
     assert compile_daemon.daemon_active() is False
     # A daemon holding the lock: workers stand down.
@@ -765,9 +852,169 @@ def test_owns_compilation_follows_the_daemon_lock(tmp_path, monkeypatch):
         # ...but the daemon's own processes still own the build.
         monkeypatch.setenv(environment.REFLEX_COMPILE_DAEMON.name, "1")
         assert compile_daemon.owns_compilation() is True
+        # ...and so does a CLI compile, which is no reload worker.
+        monkeypatch.delenv(environment.REFLEX_COMPILE_DAEMON.name)
+        monkeypatch.delenv(environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.name)
+        assert compile_daemon.owns_compilation() is True
     finally:
         os.close(descriptor)
-    monkeypatch.delenv(environment.REFLEX_COMPILE_DAEMON.name)
+
+
+def test_lock_files_live_outside_the_web_dir(tmp_path, monkeypatch):
+    """``rm -rf .web`` while the daemon runs must not unlink the lock it holds."""
+    from reflex_base.environment import environment
+
+    backend = tmp_path / ".web" / "backend"
+    monkeypatch.setattr("reflex.utils.prerequisites.get_backend_dir", lambda: backend)
+    for lock in (compile_daemon._lock_path(), compile_daemon._daemon_lock_path()):
+        assert not lock.is_relative_to(tmp_path / ".web")
+        assert lock.is_relative_to(environment.REFLEX_DIR.get().expanduser())
+    assert compile_daemon._lock_path() != compile_daemon._daemon_lock_path()
+    # Keyed by the project: another project's daemon holds another lock.
+    this_project = compile_daemon._daemon_lock_path()
+    monkeypatch.setattr(
+        "reflex.utils.prerequisites.get_backend_dir", lambda: tmp_path / "other"
+    )
+    assert compile_daemon._daemon_lock_path() != this_project
+
+
+def test_running_restarts_the_daemon_on_its_restart_code(tmp_path, monkeypatch):
+    """A daemon exiting for a global config change is started again.
+
+    The daemon cannot apply such a change to its warm parent; a new process
+    loads the new world. Re-executing in place would leave ``reflex run``
+    with a dead handle on Windows, where that starts a new process.
+    """
+    import subprocess
+
+    popen = subprocess.Popen
+    spawned: list[subprocess.Popen] = []
+
+    def spawn(args, **kwargs):
+        """Stand in for the daemon: ask for a restart once, then wait.
+
+        Args:
+            args: The daemon command (replaced).
+            kwargs: The Popen options.
+
+        Returns:
+            The spawned process.
+        """
+        code = compile_daemon._RESTART_EXIT_CODE if not spawned else 0
+        body = f"import sys, time\nsys.exit({code}) if {code} else time.sleep(60)\n"
+        proc = popen([sys.executable, "-c", body], **kwargs)
+        spawned.append(proc)
+        return proc
+
+    monkeypatch.setattr(compile_daemon.subprocess, "Popen", spawn)
+    with compile_daemon.running():
+        assert AppHarness._poll_for(lambda: len(spawned) == 2, timeout=10)
+        assert spawned[0].poll() == compile_daemon._RESTART_EXIT_CODE
+        assert spawned[1].poll() is None
+    assert spawned[1].poll() is not None
+    assert len(spawned) == 2
+
+
+@pytest.mark.skipif(not hasattr(os, "fork"), reason="requires os.fork (POSIX)")
+def test_await_child_kills_the_child_when_the_daemon_exits(monkeypatch):
+    """A daemon unwinding mid-compile (SIGTERM, Ctrl-C) takes its child with it.
+
+    Otherwise the orphaned child keeps the locks and writes ``.web`` after
+    ``reflex run`` ended, and a new run finds a daemon that owns the project.
+    """
+    import time
+
+    pid = os.fork()
+    if pid == 0:  # child: a compile that never ends
+        try:
+            time.sleep(60)
+        finally:
+            os._exit(0)
+
+    def exit_now(_seconds: float) -> None:
+        raise SystemExit(0)
+
+    monkeypatch.setattr(compile_daemon.time, "sleep", exit_now)
+    with pytest.raises(SystemExit):
+        compile_daemon._await_child(pid)
+    # Reaped: the pid is gone (or at least no longer ours to wait for).
+    with pytest.raises(ChildProcessError):
+        os.waitpid(pid, 0)
+
+
+def test_watch_state_skips_build_dirs_below_the_project_only(tmp_path, monkeypatch):
+    """A project living under a directory named like a build dir is watched."""
+    root = tmp_path / "venv" / "project"
+    app_root = root / "app"
+    app_root.mkdir(parents=True)
+    monkeypatch.setattr(disk_cache, "load_manifest", lambda: None)
+    state = compile_daemon._WatchState.build([app_root.resolve()], root.resolve())
+    assert state.accepts(app_root / "page.py")
+    assert not state.accepts(app_root / "node_modules" / "pkg" / "index.py")
+    assert not state.accepts(root / ".web" / "x.py")
+
+
+def test_child_compile_uses_a_private_bytecode_cache(tmp_path, monkeypatch):
+    """Changed modules re-import from source, not from same-second bytecode.
+
+    Timestamp ``.pyc`` files are keyed by whole-second mtime and size, so a
+    second same-size edit within a second of the compile that cached the
+    first would import stale bytecode.
+    """
+    import importlib.util
+
+    monkeypatch.setattr("reflex.utils.prerequisites.get_backend_dir", lambda: tmp_path)
+    compile_daemon._use_private_pycache()
+    assert sys.pycache_prefix == str(tmp_path.resolve() / compile_daemon._PYCACHE_DIR)
+    source = tmp_path / "page.py"
+    source.write_text("x = 1\n")
+    cached = Path(importlib.util.cache_from_source(str(source)))
+    assert cached.is_relative_to(tmp_path / compile_daemon._PYCACHE_DIR)
+    cached.parent.mkdir(parents=True)
+    cached.write_bytes(b"stale")
+    compile_daemon._forget_bytecode({source, tmp_path / "data.md"})
+    assert not cached.exists()
+    compile_daemon._forget_bytecode({source})  # already gone: no error
+
+
+def test_compile_child_telemetry_is_sent_by_the_daemon(tmp_path, monkeypatch):
+    """A compile child spools its events; the daemon sends them afterwards.
+
+    A forked child must not start the telemetry thread, nor touch macOS's
+    proxy lookup after a fork, and ``os._exit`` drops anything it queued.
+    """
+    from reflex_base.environment import environment
+
+    from reflex.utils import telemetry
+
+    monkeypatch.setattr("reflex.utils.prerequisites.get_backend_dir", lambda: tmp_path)
+    sent: list[tuple[str, dict]] = []
+    monkeypatch.setattr(
+        telemetry, "send", lambda event, **kwargs: sent.append((event, kwargs))
+    )
+    monkeypatch.setattr(compile_daemon, "_can_fork", lambda: False)
+
+    def run(args, **kwargs):
+        """Stand in for the cold compile child: send an event, exit.
+
+        Args:
+            args: The compile command (replaced).
+            kwargs: The run options.
+
+        Returns:
+            A completed process.
+        """
+        spool = Path(kwargs["env"][environment.REFLEX_TELEMETRY_SPOOL.name])
+        telemetry._spool_event(spool, "compile", {"pages_count": 1}, {})
+        return Mock(returncode=0)
+
+    monkeypatch.setattr(compile_daemon.subprocess, "run", run)
+    assert (
+        compile_daemon._run_compile_child([tmp_path], False, None, predict=False) == 0
+    )
+    assert sent == [("compile", {"properties": {"pages_count": 1}})]
+    assert not list(tmp_path.glob(".telemetry.*"))
+    assert environment.REFLEX_TELEMETRY_SPOOL.get() is None
     assert compile_daemon.owns_compilation() is True
 
 
@@ -1138,9 +1385,20 @@ def test_cold_compile_predicts_names_in_a_child(
         return outcome == "ok"
 
     monkeypatch.setattr(compile_daemon, "_single_threaded", lambda: True)
+    monkeypatch.setattr(disk_cache, "load_manifest", lambda: {"pages": {}})
     assert compile_daemon.compiled_in_predicting_child(attempt) is compiled
     assert seen.read_text() == "True"
     assert disk_cache._predict_dynamic_names is None
+
+
+def test_cold_compile_without_a_manifest_does_not_fork(monkeypatch):
+    """With nothing to reuse, the attempt would only fall back: no child."""
+    from reflex.compiler import disk_cache
+
+    monkeypatch.setattr(compile_daemon, "_single_threaded", lambda: True)
+    monkeypatch.setattr(disk_cache, "load_manifest", lambda: None)
+    monkeypatch.setattr(compile_daemon.os, "fork", Mock(side_effect=AssertionError))
+    assert compile_daemon.compiled_in_predicting_child(lambda: True) is False
 
 
 @pytest.mark.parametrize(

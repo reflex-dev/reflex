@@ -763,6 +763,12 @@ class EnvironmentVariables:
     # workers of the same `reflex run` skip frontend compilation.
     REFLEX_COMPILE_DAEMON: EnvVar[bool] = env_var(False, internal=True)
 
+    # Set by the compile daemon for its compile children: a file the child
+    # appends its telemetry events to instead of sending them, which the
+    # daemon sends once the child exited (a forked child must not start the
+    # telemetry thread, nor touch macOS's proxy lookup after fork).
+    REFLEX_TELEMETRY_SPOOL: EnvVar[Path | None] = env_var(None, internal=True)
+
     # Inherited by uvicorn/granian reload workers so the backend can distinguish
     # dev reload-capable worker boots from other backend starts. Never set in prod.
     REFLEX_DEV_BACKEND_RELOAD_ACTIVE: EnvVar[bool] = env_var(False, internal=True)

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import contextlib
 import importlib
+import importlib.util
 import json
 import logging
 import os
@@ -49,15 +50,36 @@ _RESCAN_INTERVAL = 1.0
 _COMPILE_TIMEOUT = 300.0
 #: Source suffixes edited under the app roots that should trigger a recompile.
 _WATCH_SUFFIXES = (".py", ".md", ".mdx")
-#: Directories never worth walking while building the watch snapshot.
-_SKIP_DIRS = {
+#: Directories never worth walking while building the watch snapshot, or
+#: reacting to changes in. Tested against the parts below the root a path is
+#: under, so a project living in a directory of such a name is still watched.
+_SKIP_DIRS = frozenset({
     constants.Dirs.WEB,
     ".venv",
     "venv",
     "node_modules",
     "__pycache__",
     ".git",
-}
+})
+#: Exit code of the daemon asking ``reflex run`` to start it afresh: a change
+#: to a global input (rxconfig, a lockfile, a Reflex upgrade) cannot be
+#: applied to the warm parent, which imported the old version.
+_RESTART_EXIT_CODE = 4
+
+
+def _stop(proc: subprocess.Popen) -> None:
+    """Stop a daemon process, killing it if it ignores the request.
+
+    Args:
+        proc: The daemon process.
+    """
+    if proc.poll() is None:
+        proc.terminate()
+        try:
+            proc.wait(timeout=3)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.wait()
 
 
 @contextlib.contextmanager
@@ -72,7 +94,8 @@ def running(
     its own process so that it stays single-threaded, which keeps its per-edit
     ``fork()`` safe, and its environment stays separate from the backend's. If
     ``reflex run`` is killed outright, the daemon exits on noticing its parent
-    is gone (see :func:`_serve`).
+    is gone (see :func:`_serve`). A daemon that exits asking for a restart
+    (see :data:`_RESTART_EXIT_CODE`) is started again, on every OS.
 
     Args:
         prerender_routes: Whether the daemon should prerender routes when compiling.
@@ -90,19 +113,39 @@ def running(
         env["REFLEX_PRERENDER_ROUTES"] = "1"
     if initial_compiled:
         env["REFLEX_COMPILE_DAEMON_PRECOMPILED"] = "1"
-    proc = subprocess.Popen(
-        [sys.executable, "-m", "reflex.utils.compile_daemon"], env=env
+
+    def spawn() -> subprocess.Popen:
+        return subprocess.Popen(
+            [sys.executable, "-m", "reflex.utils.compile_daemon"], env=env
+        )
+
+    lock = threading.Lock()
+    stopping = False
+    proc = spawn()
+
+    def supervise() -> None:
+        nonlocal proc
+        while True:
+            current = proc
+            current.wait()
+            with lock:
+                if stopping or current.returncode != _RESTART_EXIT_CODE:
+                    return
+                logger.info("Compile daemon: restarting after a global config change.")
+                proc = spawn()
+
+    supervisor = threading.Thread(
+        target=supervise, name="reflex-compile-daemon", daemon=True
     )
+    supervisor.start()
     try:
         yield
     finally:
-        if proc.poll() is None:
-            proc.terminate()
-            try:
-                proc.wait(timeout=3)
-            except subprocess.TimeoutExpired:
-                proc.kill()
-                proc.wait()
+        with lock:
+            stopping = True
+            current = proc
+        _stop(current)
+        supervisor.join(timeout=3)
 
 
 def _reload_roots() -> list[Path]:
@@ -293,7 +336,7 @@ class _WatchState:
             True for watched-suffix sources, recorded dependencies, global
             inputs and assets; False for build output and unrelated files.
         """
-        if any(part in _SKIP_DIRS for part in path.parts):
+        if _in_skipped_dir(path, [self.root, *self.roots]):
             return False
         if path in self.globals_ or path in self.known:
             return True
@@ -436,8 +479,30 @@ def _next_changes(state: _WatchState, alive: Callable[[], bool]) -> set[Path] | 
     return None
 
 
+def _in_skipped_dir(path: Path, roots: Iterable[Path]) -> bool:
+    """Whether ``path`` lies in a build or dependency directory.
+
+    Args:
+        path: The path to test.
+        roots: The roots the path may be under; only the parts below the
+            containing root count.
+
+    Returns:
+        True when a directory on the way names a skipped directory.
+    """
+    parts = path.parts
+    for root in roots:
+        if _under_roots(path, [root]):
+            parts = parts[len(root.parts) :]
+            break
+    return not _SKIP_DIRS.isdisjoint(parts)
+
+
 def _dependency_snapshot(state: _WatchState) -> dict[Path, int]:
     """Snapshot all watchable inputs while the OS watcher is stopped.
+
+    Taken once per compile (around the watcher's teardown), never per idle
+    watcher batch.
 
     Args:
         state: The watch state whose known dependencies to stat.
@@ -595,8 +660,10 @@ def _reset_first_party(roots: list[Path]) -> None:
     workspace packages) never re-executes in this process, so clearing its
     registration would lose the state from the app's state tree — and from the
     compiled contexts file — permanently. Those registrations are kept; states
-    from purged modules re-register on re-import, and runtime-created states in
-    ``reflex.istate.dynamic`` re-register when their page re-evaluates.
+    from purged modules re-register on re-import, and the runtime-created
+    states in ``reflex.istate.dynamic`` re-register when the code that
+    created them runs again: a page re-evaluating, or a purged module
+    re-importing. One a surviving module created at import is kept too.
 
     Args:
         roots: The resolved reload roots whose modules are first-party.
@@ -625,12 +692,11 @@ def _reset_first_party(roots: list[Path]) -> None:
     # The re-imported modules draw the names a cold process draws at import.
     reset_unique_variable_names()
     ctx = RegistrationContext.ensure_context()
+    page_states = _page_defined_states()
     kept = [
         cls
-        for cls in ctx.base_states.values()
-        if (module_name := getattr(cls, "__module__", None)) is not None
-        and module_name != istate_dynamic.__name__
-        and getattr(sys.modules.get(module_name), "__file__", None) is not None
+        for name, cls in ctx.base_states.items()
+        if name not in page_states and _survives_purge(cls)
     ]
     ctx.base_states.clear()
     ctx.base_state_substates.clear()
@@ -643,8 +709,15 @@ def _reset_first_party(roots: list[Path]) -> None:
     # collision-suffixed names; with the warm parent's attributes in place,
     # every re-created state would drift to a new suffix and diverge from the
     # names the (cold) backend computes. Reset the module so re-created states
-    # get their fresh-process names.
-    for attr in [name for name in vars(istate_dynamic) if not name.startswith("__")]:
+    # get their fresh-process names, keeping the names of the kept ones.
+    kept_dynamic = {
+        cls.__name__ for cls in kept if cls.__module__ == istate_dynamic.__name__
+    }
+    for attr in [
+        name
+        for name in vars(istate_dynamic)
+        if not name.startswith("__") and name not in kept_dynamic
+    ]:
         delattr(istate_dynamic, attr)
     # Original registration order, so parents always precede their children.
     for cls in kept:
@@ -659,6 +732,62 @@ def _reset_first_party(roots: list[Path]) -> None:
     page_cache.clear_import_graph()
     page_cache.forget_module_reads()
     _reset_model_metadata()
+
+
+def _page_defined_states() -> set[str]:
+    """The states the last compile recorded as defined by a page's evaluation.
+
+    They are re-created when the page re-evaluates, so they never survive a
+    reset; without a manifest, every ``reflex.istate.dynamic`` state is
+    taken for one.
+
+    Returns:
+        The full names of the page-defined states.
+    """
+    from reflex.compiler import disk_cache
+
+    if (manifest := disk_cache.load_manifest()) is None:
+        return set()
+    return disk_cache._hit_page_states(manifest, set())
+
+
+def _survives_purge(cls: type) -> bool:
+    """Whether a registered state stays registered across the first-party purge.
+
+    A state's code re-registers it when it runs again, which only happens
+    for a purged module: a module-level state stays iff its module survives
+    the purge, and a ``reflex.istate.dynamic`` state (a function-local class,
+    a ``ComponentState`` instance) iff the module that created it at import
+    survives. A state a page defines is re-created when the page
+    re-evaluates (see :func:`_page_defined_states`); without a manifest to
+    tell them apart, every dynamic state is dropped.
+
+    Args:
+        cls: The registered state class.
+
+    Returns:
+        True when the state is kept.
+    """
+    import reflex.istate.dynamic as istate_dynamic
+
+    module_name = getattr(cls, "__module__", None)
+    if module_name == istate_dynamic.__name__:
+        from reflex.compiler import disk_cache
+
+        if disk_cache.load_manifest() is None:
+            return False
+        # A local state remembers its module; a ComponentState instance is
+        # created from a class defined in its creating module.
+        module_name = cls.__dict__.get("__original_module__")
+        if module_name is None:
+            origin = cls.__bases__[0]
+            module_name = getattr(origin, "__module__", None)
+        if module_name == istate_dynamic.__name__:
+            return False
+    if module_name is None:
+        return False
+    module = sys.modules.get(module_name)
+    return module is not None and getattr(module, "__file__", None) is not None
 
 
 def _reset_model_metadata() -> None:
@@ -686,14 +815,23 @@ def _reset_model_metadata() -> None:
 
 #: Name of the env var carrying the changed-path hint to a cold compile child.
 _CHANGED_ENV = "REFLEX_COMPILE_CHANGED"
+#: Where the daemon and its children write bytecode caches (under the
+#: backend dir). Timestamp-based ``.pyc`` files are keyed by whole-second
+#: mtime and size, so a second same-size edit within a second of the compile
+#: that cached the first would import stale bytecode; a private cache lets
+#: the daemon drop the entries of the files that changed, with no other
+#: process writing them back.
+_PYCACHE_DIR = ".pycache_daemon"
 #: Name of the env var telling a cold compile child to predict dynamic state names.
 _PREDICT_ENV = "REFLEX_COMPILE_PREDICT_DYNAMIC_NAMES"
 #: Exit code of a compile child whose dynamic state name prediction failed; the
 #: daemon compiles again in a fresh child without prediction.
 _RETRY_EXIT_CODE = 3
-#: Lock file (under the backend dir) whose OS lock the daemon holds while a
-#: compile is in progress, so a backend reload worker can wait for the fresh
-#: stateful-pages marker.
+#: Lock whose OS lock the daemon holds while a compile is in progress, so a
+#: backend reload worker can wait for the fresh stateful-pages marker. The
+#: lock files live in Reflex's per-user data directory, keyed by the backend
+#: dir they guard (see ``path_ops._file_lock_path``): a ``rm -rf .web`` while
+#: the daemon runs must not unlink the lock it holds.
 _COMPILE_LOCK_FILE = ".compile_in_progress"
 #: Give up waiting on the lock after this long (a wedged daemon must not hang
 #: the backend forever; its own watchdog is ``_COMPILE_TIMEOUT``).
@@ -705,11 +843,10 @@ _BUILT_INPUTS_FILE = ".compiled_inputs.json"
 #: Briefly retry Windows readers that prevent atomically replacing the record.
 _BUILT_INPUTS_WRITE_ATTEMPTS = 3
 _BUILT_INPUTS_RETRY_DELAY = 0.01
-#: Lock file (under the backend dir) whose OS lock the daemon holds for its
-#: lifetime. Backend workers skip frontend compilation while it is held. A
-#: file, not an environment variable: workers may be forked from a
-#: ``forkserver`` whose environment predates ``reflex run`` deciding to start
-#: the daemon.
+#: Lock whose OS lock the daemon holds for its lifetime. Backend reload
+#: workers skip frontend compilation while it is held. A file, not an
+#: environment variable: workers may be forked from a ``forkserver`` whose
+#: environment predates ``reflex run`` deciding to start the daemon.
 _DAEMON_LOCK_FILE = ".compile_daemon"
 #: How long a lock holder waits out a worker's momentary probe of the lock.
 _LOCK_ACQUIRE_TIMEOUT = 1.0
@@ -719,22 +856,26 @@ def _lock_path() -> Path:
     """Return the compile-in-progress lock file.
 
     Returns:
-        The lock file under the backend dir.
+        The lock file, in the per-user data directory.
     """
     from reflex.utils import prerequisites
 
-    return prerequisites.get_backend_dir() / _COMPILE_LOCK_FILE
+    return path_ops._file_lock_path(
+        prerequisites.get_backend_dir().resolve() / _COMPILE_LOCK_FILE
+    )
 
 
 def _daemon_lock_path() -> Path:
     """Return the daemon ownership lock file.
 
     Returns:
-        The lock file under the backend dir.
+        The lock file, in the per-user data directory.
     """
     from reflex.utils import prerequisites
 
-    return prerequisites.get_backend_dir() / _DAEMON_LOCK_FILE
+    return path_ops._file_lock_path(
+        prerequisites.get_backend_dir().resolve() / _DAEMON_LOCK_FILE
+    )
 
 
 def _acquire_lock(path: Path) -> int | None:
@@ -768,14 +909,20 @@ def owns_compilation() -> bool:
 
     False for a backend reload worker while a compile daemon owns the build;
     the daemon (and its forked compile children) carry
-    ``REFLEX_COMPILE_DAEMON`` and always own it. Decided from the on-disk
-    lock rather than inherited environment, which a ``forkserver`` started
-    before ``reflex run`` chose the daemon would not carry.
+    ``REFLEX_COMPILE_DAEMON`` and always own it, and so does every other
+    process (``reflex compile``, ``reflex export``): they asked for a
+    compile. Whether a daemon runs is decided from the on-disk lock rather
+    than inherited environment, which a ``forkserver`` started before
+    ``reflex run`` chose the daemon would not carry.
 
     Returns:
         True if this process compiles the frontend.
     """
-    return environment.REFLEX_COMPILE_DAEMON.get() or not daemon_active()
+    return (
+        environment.REFLEX_COMPILE_DAEMON.get()
+        or not environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.get()
+        or not daemon_active()
+    )
 
 
 @contextlib.contextmanager
@@ -900,6 +1047,27 @@ def _prepare_fork_parent(roots: list[Path]) -> None:
     page_cache.warm_module_file_cache()
 
 
+def _use_private_pycache() -> None:
+    """Point this process's bytecode cache at the daemon's private directory."""
+    from reflex.utils import prerequisites
+
+    sys.pycache_prefix = str(prerequisites.get_backend_dir().resolve() / _PYCACHE_DIR)
+
+
+def _forget_bytecode(changed: Iterable[Path]) -> None:
+    """Drop the cached bytecode of the changed modules before re-importing them.
+
+    Args:
+        changed: The changed paths.
+    """
+    for path in changed:
+        if path.suffix == ".py":
+            with contextlib.suppress(OSError):
+                Path(importlib.util.cache_from_source(str(path))).unlink(
+                    missing_ok=True
+                )
+
+
 def _child_compile(
     roots: list[Path],
     prerender_routes: bool,
@@ -923,6 +1091,9 @@ def _child_compile(
     from reflex.compiler import disk_cache
     from reflex.utils import prerequisites
 
+    _use_private_pycache()
+    if changed:
+        _forget_bytecode(changed)
     disk_cache.set_changed_hint(changed)
     disk_cache.set_dynamic_name_prediction(predict)
     # Timed in three steps so every hot reload reports where it spent its time
@@ -940,8 +1111,25 @@ def _child_compile(
     )
 
 
+def _kill_child(pid: int) -> None:
+    """Kill and reap a forked compile child.
+
+    Args:
+        pid: The child's pid.
+    """
+    with contextlib.suppress(OSError):
+        os.kill(pid, signal.SIGKILL)
+    with contextlib.suppress(OSError):
+        os.waitpid(pid, 0)
+
+
 def _await_child(pid: int) -> int:
     """Reap a forked compile child, killing it if it exceeds the watchdog timeout.
+
+    The child never outlives the daemon: a daemon stopped while a compile
+    runs (SIGTERM from ``reflex run``, Ctrl-C) kills the child on its way
+    out, so the child does not keep the locks and write ``.web`` after the
+    run ended.
 
     Args:
         pid: The forked child's pid.
@@ -951,19 +1139,31 @@ def _await_child(pid: int) -> int:
         child, such as Ctrl-C during shutdown, is a quiet failure).
     """
     deadline = time.monotonic() + _COMPILE_TIMEOUT
-    while True:
-        done, status = os.waitpid(pid, os.WNOHANG)
-        if done == pid:
-            code = os.waitstatus_to_exitcode(status)
-            return code if code >= 0 else 1
-        if time.monotonic() > deadline:
-            with contextlib.suppress(OSError):
-                os.kill(pid, signal.SIGKILL)
-            with contextlib.suppress(OSError):
-                os.waitpid(pid, 0)
-            logger.error("Compile child timed out; killed it, keeping last build.")
-            return 1
-        time.sleep(0.02)
+    try:
+        while True:
+            done, status = os.waitpid(pid, os.WNOHANG)
+            if done == pid:
+                code = os.waitstatus_to_exitcode(status)
+                return code if code >= 0 else 1
+            if time.monotonic() > deadline:
+                _kill_child(pid)
+                logger.error("Compile child timed out; killed it, keeping last build.")
+                return 1
+            time.sleep(0.02)
+    except BaseException:
+        _kill_child(pid)
+        raise
+
+
+def _die_with_parent() -> None:
+    """Ask the kernel to kill this forked child when its parent dies (Linux)."""
+    if sys.platform != "linux":
+        return
+    with contextlib.suppress(Exception):
+        import ctypes
+
+        pr_set_pdeathsig = 1
+        ctypes.CDLL("libc.so.6", use_errno=True).prctl(pr_set_pdeathsig, signal.SIGKILL)
 
 
 def _quiesce_parent() -> None:
@@ -977,7 +1177,7 @@ def _quiesce_parent() -> None:
     """
     from reflex.utils import telemetry
 
-    telemetry.shutdown_executor()
+    telemetry._shutdown_executor()
 
 
 def _os_thread_count() -> int | None:
@@ -1051,7 +1251,7 @@ def compiled_in_predicting_child(attempt: Callable[[], bool]) -> bool:
     the caller compiles exactly in this process (which also reports errors).
 
     Skipped where a caller already chose the mode, such as the daemon's
-    exact retry.
+    exact retry, and where there is no manifest to compile from.
 
     Args:
         attempt: Runs the incremental compile; returns True when it compiled.
@@ -1065,12 +1265,14 @@ def compiled_in_predicting_child(attempt: Callable[[], bool]) -> bool:
         disk_cache._predict_dynamic_names is not None
         or not hasattr(os, "fork")
         or not _single_threaded()
+        or disk_cache.load_manifest() is None
     ):
         return False
     pid = os.fork()
     if pid == 0:  # child
         code = 1
         try:
+            _die_with_parent()
             disk_cache.set_dynamic_name_prediction(True)
             code = 0 if attempt() else 2
         except disk_cache.DynamicStatePredictionError as exc:
@@ -1140,50 +1342,68 @@ def _run_compile_child(
         a failure code.
     """
     from reflex.compiler import disk_cache
+    from reflex.utils import prerequisites, telemetry
 
-    if _can_fork():
-        pid = os.fork()
-        if pid == 0:  # child
-            code = 0
-            try:
-                _child_compile(roots, prerender_routes, changed, predict)
-            except disk_cache.DynamicStatePredictionError as exc:
-                _log_failed_prediction(exc)
-                code = _RETRY_EXIT_CODE
-            except BaseException:  # report any failure, never crash the daemon
-                logger.exception("Hot reload compile failed.")
-                code = 1
-            finally:
-                os._exit(code)
-        return _await_child(pid)
-
-    # No fork (Windows) or unsafe to fork: a fresh (cold) subprocess compiles.
-    env = {**os.environ}
-    if changed is not None:
-        env[_CHANGED_ENV] = "\n".join(sorted(str(p) for p in changed))
-    if predict:
-        env[_PREDICT_ENV] = "1"
+    # The child spools its telemetry (the compile event) for the daemon to
+    # send once the child is gone: a forked child must not start the
+    # telemetry thread, nor touch macOS's proxy lookup after a fork, and
+    # ``os._exit`` would drop what it queued.
+    spool = prerequisites.get_backend_dir().resolve() / f".telemetry.{os.getpid()}"
+    environment.REFLEX_TELEMETRY_SPOOL.set(spool)
     try:
-        proc = subprocess.run(
-            [sys.executable, "-m", "reflex.utils.compile_daemon", "--once"],
-            check=False,
-            timeout=_COMPILE_TIMEOUT,
-            env=env,
-        )
-    except subprocess.TimeoutExpired:
-        logger.error("Compile subprocess timed out; keeping the last good build.")
-        return 1
-    return proc.returncode
+        if _can_fork():
+            pid = os.fork()
+            if pid == 0:  # child
+                code = 0
+                try:
+                    _die_with_parent()
+                    _child_compile(roots, prerender_routes, changed, predict)
+                except disk_cache.DynamicStatePredictionError as exc:
+                    _log_failed_prediction(exc)
+                    code = _RETRY_EXIT_CODE
+                except BaseException:  # report any failure, never crash the daemon
+                    logger.exception("Hot reload compile failed.")
+                    code = 1
+                finally:
+                    os._exit(code)
+            return _await_child(pid)
+
+        # No fork (Windows) or unsafe to fork: a fresh (cold) subprocess compiles.
+        env = {**os.environ}
+        if changed is not None:
+            env[_CHANGED_ENV] = "\n".join(sorted(str(p) for p in changed))
+        if predict:
+            env[_PREDICT_ENV] = "1"
+        try:
+            proc = subprocess.run(
+                [sys.executable, "-m", "reflex.utils.compile_daemon", "--once"],
+                check=False,
+                timeout=_COMPILE_TIMEOUT,
+                env=env,
+            )
+        except subprocess.TimeoutExpired:
+            logger.error("Compile subprocess timed out; keeping the last good build.")
+            return 1
+        return proc.returncode
+    finally:
+        environment.REFLEX_TELEMETRY_SPOOL.set(None)
+        telemetry.send_spooled(spool)
 
 
-def _serve() -> None:
-    """Run the warm compile daemon: initial compile, then watch-and-recompile."""
+def _serve() -> int:
+    """Run the warm compile daemon: initial compile, then watch-and-recompile.
+
+    Returns:
+        The process exit code: :data:`_RESTART_EXIT_CODE` to be started
+        afresh after a global config change, else 0.
+    """
     from reflex.utils import prerequisites
 
     root = Path.cwd()
     prerender_routes = bool(os.environ.get("REFLEX_PRERENDER_ROUTES"))
     roots = _reload_roots()
     parent_pid = os.getppid()
+    _use_private_pycache()
 
     # Warm import + initial compile (writes .web + the manifest); keeps the app
     # and its third-party deps resident for copy-on-write children. A failure
@@ -1234,12 +1454,12 @@ def _serve() -> None:
 
         # A change to a genuinely-global input (rxconfig/lockfiles, or a reflex
         # upgrade) can't be applied to the warm parent (it imported the old
-        # version); re-exec the daemon so the new world is actually loaded.
+        # version); exit so ``reflex run`` starts a daemon that loads the new
+        # world. (An in-place ``execv`` would leave ``reflex run`` holding a
+        # dead handle on Windows, where it starts a new process.)
         if changed & state.globals_:
             logger.info("Global config changed; restarting compile daemon.")
-            os.execv(
-                sys.executable, [sys.executable, "-m", "reflex.utils.compile_daemon"]
-            )
+            return _RESTART_EXIT_CODE
 
         before = (
             state.checkpoint
@@ -1266,6 +1486,7 @@ def _serve() -> None:
         pending = _missed_changes(before, state.checkpoint)
         if appeared := (pending - before.keys()) & state.known:
             pending -= _built_inputs(appeared)
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -1303,7 +1524,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     # Held for the process lifetime, so backend workers defer to this daemon
     # exactly while it lives (see ``daemon_active``). Forked compile children
-    # share the lock; ``os.execv`` drops it and the new image retakes it.
+    # share the lock; a restarted daemon takes it afresh.
     try:
         descriptor = _acquire_lock(_daemon_lock_path())
     except OSError as exc:
@@ -1318,11 +1539,28 @@ def main(argv: list[str] | None = None) -> int:
             "compiles to it."
         )
         return 0
+    # ``reflex run`` stops the daemon with SIGTERM; raising lets the compile
+    # in progress kill its child on the way out (see ``_await_child``).
+    signal.signal(signal.SIGTERM, _exit_on_sigterm)
     try:
-        _serve()
+        return _serve()
     except KeyboardInterrupt:
         return 0  # clean shutdown (Ctrl-C); no traceback
-    return 0
+    except SystemExit:
+        return 0
+
+
+def _exit_on_sigterm(signum: int, frame: object) -> None:
+    """Turn SIGTERM into a ``SystemExit`` that unwinds the daemon.
+
+    Args:
+        signum: The signal number.
+        frame: The interrupted frame.
+
+    Raises:
+        SystemExit: Always.
+    """
+    raise SystemExit(0)
 
 
 if __name__ == "__main__":

@@ -2176,13 +2176,27 @@ def try_incremental_rebuild(
     ):
         _save_incremental_output(_manifest_path(), _manifest_text(manifest), outputs)
 
-    counts: dict[str, int] = {}
-    for page in pages:
-        page_counts = manifest["pages"][page.route].get("component_counts", {})
-        for name, count in page_counts.items():
-            counts[name] = counts.get(name, 0) + count
-    app._cached_component_counts = counts
+    app._cached_component_counts = manifest_component_counts(manifest)
     return True
+
+
+def manifest_component_counts(manifest: dict[str, Any]) -> dict[str, int]:
+    """Sum the component counts the manifest records per page.
+
+    The compile telemetry of a process that reused every page from disk, or
+    compiled in a child, has no evaluated pages to count.
+
+    Args:
+        manifest: The loaded manifest.
+
+    Returns:
+        The count of each component class across the pages.
+    """
+    counts: dict[str, int] = {}
+    for entry in manifest["pages"].values():
+        for name, count in entry.get("component_counts", {}).items():
+            counts[name] = counts.get(name, 0) + count
+    return counts
 
 
 def _update_manifest_for_misses(

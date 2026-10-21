@@ -1588,6 +1588,12 @@ def compile_app(
             )
 
         if compile_daemon.compiled_in_predicting_child(lambda: attempt() is True):
+            # The child's pages never existed here; the manifest it wrote has
+            # their counts for the compile telemetry.
+            if (manifest := disk_cache.load_manifest()) is not None:
+                app._cached_component_counts = disk_cache.manifest_component_counts(
+                    manifest
+                )
             return True
         rebuilt = attempt()
         if isinstance(rebuilt, CompileContext):

@@ -538,16 +538,23 @@ def test_serialize(value: Any, expected: str):
     assert json.loads(json_dumps(value)) == json.loads(json_dumps(expected))
 
 
-def test_serialize_set_deterministic_order():
-    """Sortable sets serialize in sorted order regardless of the hash seed.
+def test_sorted_set_is_deterministic_and_serialize_set_is_not_sorted():
+    """Compiled output sorts sets; a state delta keeps the cheap list.
 
     Compiled output and cache fingerprints embed serialized sets; a
-    hash-seed-dependent order churns files on every process restart.
+    hash-seed-dependent order churns files on every process restart. A delta
+    is serialized on every update and its order carries no meaning.
     """
-    assert serializers.serialize_set({"b", "c", "a"}) == ["a", "b", "c"]
-    assert serializers.serialize_set({3, 1, 2}) == [1, 2, 3]
-    # Unsortable element mixes fall back to iteration order.
+    from reflex_base.vars import LiteralVar
+
+    assert serializers.sorted_set({"b", "c", "a"}) == ["a", "b", "c"]
+    assert serializers.sorted_set({3, 1, 2}) == [1, 2, 3]
+    # Unsortable element mixes sort by their serialized form.
+    assert serializers.sorted_set({1, "a"}) == serializers.sorted_set({"a", 1})
     assert set(serializers.serialize_set({1, "a"})) == {1, "a"}
+    assert serializers.serialize_set({3, 1, 2}) == list({3, 1, 2})
+    assert str(LiteralVar.create({"b", "c", "a"})) == '["a", "b", "c"]'
+    assert str(LiteralVar.create({3, 1, 2})) == "[1, 2, 3]"
 
 
 @pytest.mark.parametrize(
@@ -612,6 +619,4 @@ def test_serialize_unordered_enum_set_is_deterministic():
             return reversed(list(super().__iter__()))
 
     values = {Choice.A, Choice.B}
-    assert serializers.serialize_set(values) == serializers.serialize_set(
-        ReversedSet(values)
-    )
+    assert serializers.sorted_set(values) == serializers.sorted_set(ReversedSet(values))

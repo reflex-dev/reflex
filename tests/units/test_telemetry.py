@@ -963,3 +963,23 @@ def test_send_event_swallows_delivery_errors(mocker: MockerFixture):
         "reflex.utils.telemetry.urllib.request.urlopen", side_effect=OSError("down")
     )
     assert not telemetry._send_event({"api_key": "k", "event": "e"})  # pyright: ignore[reportArgumentType]
+
+
+def test_send_spools_events_for_another_process(tmp_path, monkeypatch, mocker):
+    """With a spool configured, events are appended to it instead of sent."""
+    from reflex_base.environment import environment
+
+    spool = tmp_path / "spool.jsonl"
+    monkeypatch.setenv(environment.REFLEX_TELEMETRY_SPOOL.name, str(spool))
+    submit = mocker.patch.object(telemetry, "_submit")
+    telemetry.send("compile", telemetry_enabled=True, properties={"pages_count": 2})
+    telemetry.send("export", telemetry_enabled=True, status="success")
+    submit.assert_not_called()
+    monkeypatch.delenv(environment.REFLEX_TELEMETRY_SPOOL.name)
+    sent = mocker.patch.object(telemetry, "send")
+    telemetry.send_spooled(spool)
+    assert [call.args for call in sent.call_args_list] == [("compile",), ("export",)]
+    assert sent.call_args_list[0].kwargs == {"properties": {"pages_count": 2}}
+    assert sent.call_args_list[1].kwargs == {"properties": None, "status": "success"}
+    assert not spool.exists()
+    telemetry.send_spooled(spool)  # nothing spooled: nothing to do
