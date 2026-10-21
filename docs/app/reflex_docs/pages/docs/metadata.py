@@ -18,7 +18,7 @@ _GENERIC_NAMESPACES = {"", "rx", "rx.recharts"}
 
 # Summaries for generated catalogs, reference pages, and pages without usable prose.
 PAGE_DESCRIPTIONS = {
-    "library": "Build web UIs in pure Python with Reflex's component library. Includes 100+ ready-to-use UI components — forms, tables, data grids, charts, layouts, and media — with full Python integration, no JavaScript required.",
+    "library": "Build web UIs in pure Python with 100+ Reflex components for forms, tables, data grids, charts, layouts, and media. No JavaScript required.",
     "recipes": "Find reusable Reflex recipes for page layouts, content, and authentication, with examples you can adapt for your Python app.",
     "api-reference/app": "Configure rx.App, register pages, and customize application behavior with the App class attributes and methods reference.",
     "api-reference/component": "Explore the Component API for creating Reflex UI elements, managing props, and customizing component rendering and behavior.",

@@ -3,7 +3,7 @@ components:
   - rx.hover_card.root
   - rx.hover_card.content
   - rx.hover_card.trigger
-meta_description: "Display rich hover cards in Python with Reflex. The rx.hover_card component shows detailed content on hover, perfect for previews and tooltips with custom layouts."
+meta_description: "Display rich hover cards in Python with Reflex. rx.hover_card shows detailed content on hover, for link previews and custom layouts."
 
 only_low_level:
   - True

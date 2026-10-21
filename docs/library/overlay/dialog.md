@@ -6,7 +6,7 @@ components:
   - rx.dialog.content
   - rx.dialog.description
   - rx.dialog.close
-meta_description: "Create modal dialogs in Python with Reflex. The rx.dialog component displays accessible modal windows with title, description, and custom content — all in pure Python."
+meta_description: "Create modal dialogs in Python with Reflex. rx.dialog displays accessible modal windows with a title, description, and custom content."
 
 only_low_level:
   - True
