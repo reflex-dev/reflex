@@ -4,6 +4,7 @@ import dataclasses
 import datetime
 import itertools
 import json
+import os
 import sys
 from collections.abc import Callable, Iterable, Sequence
 from pathlib import Path
@@ -74,16 +75,17 @@ def _page_c() -> Component:
     return rx.el.div(rx.el.h1("Page C"), _footer())
 
 
-def _compile(pages: Sequence[Any], app: Any = None) -> CompileContext:
+def _compile(
+    pages: Sequence[Any], app: Any = None, plugins: Sequence[Any] = ()
+) -> CompileContext:
     from reflex.compiler import compiler
 
-    # Reset like a full compile, so the manifest can rebuild the registry.
-    bundle_base = compiler._reset_compile_registries([])
+    # Reset like a full compile does before evaluating any page.
+    compiler._reset_compile_registries(plugins)
     ctx = CompileContext(
         app=app,
         pages=pages,
-        hooks=CompilerHooks(plugins=default_page_plugins()),
-        bundle_base=bundle_base,
+        hooks=CompilerHooks(plugins=default_page_plugins(plugins=plugins)),
     )
     with ctx:
         ctx.compile()
@@ -309,11 +311,6 @@ def test_serialize_imports_collapses_duplicates():
     }
 
 
-def test_wrap_keys_round_trip_through_the_manifest_format():
-    for key in [(200, "StrictMode"), (0, "AppWrap"), (45, "Name:With:Colons")]:
-        assert disk_cache._wrap_key(disk_cache._wrap_key_str(key)) == key
-
-
 def _manifest(pages: dict[str, dict], root: Path | None = None, **overrides) -> dict:
     base = {
         "schema": disk_cache._SCHEMA,
@@ -327,15 +324,8 @@ def _manifest(pages: dict[str, dict], root: Path | None = None, **overrides) -> 
         "pages": pages,
         "memo_files": {},
         "entry": {"path": None, "digest": None},
-        "wrap_table": {},
-        "state_libraries": {},
         "module_states": {"names": [], "files": [], "dynamic": []},
-        "app_root": {
-            "wraps": {},
-            "libraries": [],
-            "root_requests": [],
-            "reconstructible": True,
-        },
+        "app_root": {"wraps": {}, "libraries": [], "memo_keys": []},
     }
     base.update(overrides)
     return base
@@ -495,7 +485,6 @@ def test_partition_pages_detects_changed_source(tmp_path):
         _FakePage(route="/a", component=_page_a),
         _FakePage(route="/b", component=_page_b),
     ]
-    registrations = {page.route: "recorded" for page in pages}
     x, y = tmp_path / "x.py", tmp_path / "y.py"
     x.write_text("X = 1\n")
     y.write_text("Y = 1\n")
@@ -513,20 +502,40 @@ def test_partition_pages_detects_changed_source(tmp_path):
             str(y): page_cache.file_entry(str(y)),
         },
     )
-    assert (
-        disk_cache.partition_pages(pages, m, _validator(m), None, registrations) == []
-    )
+    assert disk_cache.partition_pages(pages, m, _validator(m), None) == []
     y.write_text("Y = 2\n")
-    miss = disk_cache.partition_pages(pages, m, _validator(m), None, registrations)
+    miss = disk_cache.partition_pages(pages, m, _validator(m), None)
     assert {p.route for p in miss} == {"/b"}
     # With the watcher's changed set, pages depending on none of the changed
     # paths are hits without touching the filesystem.
-    assert (
-        disk_cache.partition_pages(pages, m, _validator(m), {str(x)}, registrations)
-        == []
-    )
-    miss = disk_cache.partition_pages(pages, m, _validator(m), {str(y)}, registrations)
+    assert disk_cache.partition_pages(pages, m, _validator(m), {str(x)}) == []
+    miss = disk_cache.partition_pages(pages, m, _validator(m), {str(y)})
     assert {p.route for p in miss} == {"/b"}
+
+
+def test_pages_mismatch_names_the_change(tmp_path):
+    """The page registry is an input of every page, so any change is global."""
+    pages = [
+        _FakePage(route="/a", component=_page_a),
+        _FakePage(route="/b", component=_page_b),
+    ]
+    registrations = {page.route: "recorded" for page in pages}
+    m = _manifest({page.route: {"registration": "recorded"} for page in pages})
+    assert disk_cache._pages_mismatch(pages, m, registrations) is None
+    reason = disk_cache._pages_mismatch(pages[::-1], m, registrations)
+    assert reason == "the page order changed"
+    reason = disk_cache._pages_mismatch(
+        [*pages, _FakePage(route="/c", component=_page_c)],
+        m,
+        {**registrations, "/c": "new"},
+    )
+    assert reason is not None
+    assert "added /c" in reason
+    reason = disk_cache._pages_mismatch(pages[:1], m, registrations)
+    assert reason is not None
+    assert "removed /b" in reason
+    reason = disk_cache._pages_mismatch(pages, m, {**registrations, "/b": "retitled"})
+    assert reason == "page '/b' was registered differently"
 
 
 def test_incomplete_cache_miss_falls_back_without_adoption(tmp_path, monkeypatch):
@@ -627,18 +636,18 @@ def test_write_and_load_manifest(tmp_path, monkeypatch):
             "deps",
             "component_counts",
             "app_wraps",
-            "bundle_requests",
             "registration",
-            "memo_path",
             "is_stateful",
             "state_slice",
-            "has_memos",
             "dynamic_claims",
+            "memo_keys",
+            "radix",
         }
-        # these static pages register no new state and contribute no memos
+        # these static pages register no new state and use no memos
         assert entry["is_stateful"] is False
         assert entry["state_slice"] is None
-        assert entry["has_memos"] is False
+        assert entry["memo_keys"] == []
+        assert entry["radix"] is False
         assert entry["dynamic_claims"] == []
         # every dependency has a file-table entry: [sha256, mtime_ns, size]
         for dep in entry["deps"]:
@@ -865,9 +874,6 @@ def test_post_evaluation_fallback_hands_over_the_evaluated_pages(tmp_path, monke
         # compile can rebuild the app root.
         manifest_path = web / disk_cache._MANIFEST_FILE
         manifest = json.loads(manifest_path.read_text())
-        # The app root can no longer be rebuilt from the records, while /s
-        # now brings different app wraps than recorded.
-        manifest["app_root"]["reconstructible"] = False
         manifest["app_root"]["wraps"] = {}
         _stale_dep(manifest, route_s, str(tmp_path / "demo.md"))
         manifest_path.write_text(json.dumps(manifest))
@@ -1488,8 +1494,6 @@ def _schema_pages(tmp_path, monkeypatch):
     manifest = json.loads(manifest_path.read_text())
     miss_route = pages[0].route
     _stale_dep(manifest, miss_route, str(tmp_path / "view.py"))
-    # Keep the hit page out of the miss set, as if it lived in another module.
-    manifest["pages"][pages[1].route]["has_memos"] = False
     manifest_path.write_text(json.dumps(manifest))
     # The daemon child starts without the states its pages define.
     for name in ("_SchemaMissState", "_SchemaHitState"):
@@ -1573,12 +1577,12 @@ def _page_component_default() -> Component:
     return rx.el.div(rx.box(state_cls.comp))
 
 
-def test_state_default_from_new_library_rebuilds_the_app_root(tmp_path, monkeypatch):
-    """A component default from a new library rewrites the root and library file.
+def test_state_default_from_new_library_falls_back(tmp_path, monkeypatch):
+    """A component default from a new library needs a full compile.
 
     The contexts reference the library through ``window.__reflex``, which the
-    app root and bundled-library file provide; both are rebuilt from recorded
-    requests without evaluating the unchanged pages.
+    app root and bundled-library file provide; only a full compile rewrites
+    them, and it adopts the pages the attempt evaluated.
     """
     from reflex.compiler import compiler
 
@@ -1603,10 +1607,8 @@ def test_state_default_from_new_library_rebuilds_the_app_root(tmp_path, monkeypa
         )
     finally:
         _unregister_state(_FP_HOLDER.pop("_ComponentDefaultState"))
-    assert result is True
-    libraries = json.loads((web / constants.Dirs.BUNDLED_LIBRARIES).read_text())
-    assert "recharts" in libraries
-    assert "recharts" in _app_root_file(web).read_text()
+    assert isinstance(result, CompileContext)
+    assert set(result.compiled_pages) == {pages[0].route}
 
 
 def test_unchanged_component_default_reuses_the_contexts(tmp_path, monkeypatch):
@@ -1695,8 +1697,6 @@ def _root_rebuild(
     Returns:
         The rebuild result, the app root file and its content before the edit.
     """
-    from reflex_base.components.dynamic import record_bundle_requests
-
     from reflex.compiler import compiler
 
     try:
@@ -1707,22 +1707,14 @@ def _root_rebuild(
         pages = list(app._unevaluated_pages.values())
         ctx = _compile(pages, app=app)
         _stub_externals(app, monkeypatch)
-        with record_bundle_requests() as root_requests:
-            root_path, root_code = compiler.compile_app_root(
-                *compiler._build_app_root(app, ctx.app_wrap_components, ctx)
-            )
+        root_path, root_code = compiler.compile_app_root(
+            *compiler._build_app_root(app, ctx.app_wrap_components, ctx)
+        )
         Path(root_path).parent.mkdir(parents=True, exist_ok=True)
         Path(root_path).write_text(root_code)
-        disk_cache.write_manifest(
-            ctx,
-            pages,
-            ctx.all_imports,
-            root=tmp_path,
-            root_bundle_requests=root_requests,
-        )
+        disk_cache.write_manifest(ctx, pages, ctx.all_imports, root=tmp_path)
         manifest_path = web / disk_cache._MANIFEST_FILE
         manifest = json.loads(manifest_path.read_text())
-        assert manifest["app_root"]["reconstructible"]
         if reversed_wraps is not None:
             wraps = manifest["app_root"]["wraps"]
             assert len(wraps) > 1
@@ -1751,24 +1743,26 @@ def test_page_gaining_a_provided_wrap_reuses_the_app_root(tmp_path, monkeypatch)
     assert root_file.read_text() == before
 
 
-def test_app_root_follows_the_order_of_its_wraps(tmp_path, monkeypatch):
-    """Wraps of one priority nest in the order pages first require them."""
+def test_app_root_with_reordered_wraps_falls_back(tmp_path, monkeypatch):
+    """Wraps of one priority nest in page order, so another order is a change."""
     recorded: list[str] = []
-    result, _, _ = _root_rebuild(tmp_path, monkeypatch, reversed_wraps=recorded)
-    assert result is True
-    manifest = json.loads((tmp_path / ".web" / disk_cache._MANIFEST_FILE).read_text())
-    assert list(manifest["app_root"]["wraps"]) == recorded[::-1]
+    result, root_file, before = _root_rebuild(
+        tmp_path, monkeypatch, reversed_wraps=recorded
+    )
+    assert isinstance(result, CompileContext)
+    assert root_file.read_text() == before
 
 
-def test_page_bringing_a_new_wrap_rebuilds_only_the_app_root(tmp_path, monkeypatch):
-    """A new wrap rebuilds the root from recorded and recompiled wraps."""
+def test_page_bringing_a_new_wrap_falls_back(tmp_path, monkeypatch):
+    """A wrap no recorded page provides needs the app root rebuilt in full.
+
+    The attempt hands over the page it evaluated; the root on disk is left
+    for the full compile to replace.
+    """
     result, root_file, before = _root_rebuild(tmp_path, monkeypatch, wrap=True)
-    assert result is True
-    after = root_file.read_text()
-    assert after != before
-    assert "test-wrap" in after
-    # The unchanged stateful page still provides the state providers.
-    assert "StateProvider" in after
+    assert isinstance(result, CompileContext)
+    assert set(result.compiled_pages) == {"p"}
+    assert root_file.read_text() == before
 
 
 _COLLIDE = {"one": 0, "two": 0, "two_extra": False, "two_unique": False}
@@ -1842,8 +1836,6 @@ def _rebuild_second_page(
     manifest_path = web / disk_cache._MANIFEST_FILE
     manifest = json.loads(manifest_path.read_text())
     _stale_dep(manifest, pages[1].route, str(tmp_path / "view.py"))
-    # Keep the first page out of the miss set, as if it lived in another module.
-    manifest["pages"][pages[0].route]["has_memos"] = False
     manifest_path.write_text(json.dumps(manifest))
     _drop_dynamic_states(*markers)
     prepare()
@@ -2071,77 +2063,53 @@ def _route_set_rebuild(tmp_path, monkeypatch, edit) -> tuple[Any, Any, Path]:
     return result, evaluated, web
 
 
-def test_added_page_rebuilds_incrementally(tmp_path, monkeypatch):
-    """A new route is a miss; the other pages keep their output."""
-    from reflex.compiler import utils as compiler_utils
-
-    result, evaluated, web = _route_set_rebuild(
-        tmp_path, monkeypatch, lambda app: app.add_page(_page_b, route="/b")
-    )
-    assert result is True
-    assert evaluated == ["b"]
-    assert Path(compiler_utils.get_page_path("b")).exists()
-    manifest = json.loads((web / disk_cache._MANIFEST_FILE).read_text())
-    assert set(manifest["pages"]) == {"a", "c", "b"}
-    assert "b" in json.loads((web / constants.Dirs.ROUTES_MANIFEST).read_text())
+def _add_b(app) -> None:
+    app.add_page(_page_b, route="/b")
 
 
-def test_removed_page_rebuilds_incrementally(tmp_path, monkeypatch):
-    """A removed route loses its output and manifest entry, nothing else."""
-    from reflex.compiler import utils as compiler_utils
-
-    def remove_c(app):
-        del app._unevaluated_pages["c"]
-
-    result, evaluated, web = _route_set_rebuild(tmp_path, monkeypatch, remove_c)
-    assert result is True
-    assert evaluated == []
-    assert not Path(compiler_utils.get_page_path("c")).exists()
-    assert Path(compiler_utils.get_page_path("a")).exists()
-    manifest = json.loads((web / disk_cache._MANIFEST_FILE).read_text())
-    assert set(manifest["pages"]) == {"a"}
+def _remove_c(app) -> None:
+    del app._unevaluated_pages["c"]
 
 
-def test_removed_stateful_page_leaves_the_contexts(tmp_path, monkeypatch):
-    """A removed page's local states leave the contexts file."""
-    web = _use_tmp_web_dir(tmp_path, monkeypatch)
-    app = rx.App()
-    app.add_page(_page_a, route="/a")
-    app.add_page(_page_collide_one, route="/s")
-    pages = list(app._unevaluated_pages.values())
-    try:
-        ctx = _compile(pages, app=app)
-        local_states = ctx.stateful_routes[pages[1].route]
-        _stub_externals(app, monkeypatch)
-        disk_cache.write_manifest(ctx, pages, ctx.all_imports, root=tmp_path)
-        _drop_dynamic_states("CollideState")
-        del app._unevaluated_pages[pages[1].route]
-        captured = _capture_contexts(monkeypatch)
-        result = disk_cache.try_incremental_rebuild(
-            app, compiler_plugins=[], prerender_routes=False, root=tmp_path
-        )
-    finally:
-        _drop_dynamic_states("CollideState")
-    assert result is True
-    [(initial, _, schema_entries)] = captured
-    assert not set(local_states) & set(initial)
-    assert not set(local_states) & set(schema_entries)
-    marker = json.loads((web / disk_cache._MANIFEST_FILE).read_text())
-    assert set(marker["pages"]) == {"a"}
+def _reorder(app) -> None:
+    app._unevaluated_pages = dict(reversed(app._unevaluated_pages.items()))
 
 
-def test_changed_registration_recompiles_only_that_page(tmp_path, monkeypatch):
-    """A page whose registration changed (here its title) is a miss."""
+def _retitle_c(app) -> None:
     import dataclasses
 
-    def retitle_c(app):
-        app._unevaluated_pages["c"] = dataclasses.replace(
-            app._unevaluated_pages["c"], title="Renamed"
-        )
+    app._unevaluated_pages["c"] = dataclasses.replace(
+        app._unevaluated_pages["c"], title="Renamed"
+    )
 
-    result, evaluated, _ = _route_set_rebuild(tmp_path, monkeypatch, retitle_c)
-    assert result is True
-    assert evaluated == ["c"]
+
+@pytest.mark.parametrize(
+    ("edit", "reason"),
+    [
+        (_add_b, "added b"),
+        (_remove_c, "removed c"),
+        (_reorder, "order changed"),
+        (_retitle_c, "registered differently"),
+    ],
+)
+def test_page_registry_change_falls_back(tmp_path, monkeypatch, caplog, edit, reason):
+    """The page registry is an input of every page (a sidebar lists them).
+
+    Adding, removing, reordering or re-registering a page (its title, say)
+    therefore re-evaluates every page, which a full compile does.
+    """
+    from reflex.compiler import utils as compiler_utils
+
+    with caplog.at_level("INFO", logger=disk_cache.logger.name):
+        result, evaluated, web = _route_set_rebuild(tmp_path, monkeypatch, edit)
+    assert result is False
+    assert evaluated == []
+    assert reason in caplog.text
+    # Nothing was written or removed: the full compile does that.
+    assert Path(compiler_utils.get_page_path("a")).exists()
+    assert Path(compiler_utils.get_page_path("c")).exists()
+    manifest = json.loads((web / disk_cache._MANIFEST_FILE).read_text())
+    assert list(manifest["pages"]) == ["a", "c"]
 
 
 def test_incremental_rebuild_copies_assets(tmp_path, monkeypatch):
@@ -2404,57 +2372,72 @@ class _MemoCacheState(rx.State):
     other: str = "y"
 
 
-def _page_e() -> Component:
-    return rx.el.div(rx.el.p(_MemoCacheState.value, class_name="e"), rx.el.h1("E"))
+_SHARED_MEMO = {"edit_one": False}
 
 
-def _page_f() -> Component:
-    return rx.el.div(rx.el.p(_MemoCacheState.other, class_name="f"), rx.el.h2("F"))
+def _page_shared_one() -> Component:
+    if _SHARED_MEMO["edit_one"]:
+        return rx.el.div(rx.el.p(_MemoCacheState.other, class_name="one"))
+    return rx.el.div(rx.el.p(_MemoCacheState.value, class_name="shared"))
 
 
-def test_incremental_miss_keeps_sibling_memo_exports(
+def _page_shared_two() -> Component:
+    return rx.el.div(rx.el.p(_MemoCacheState.value, class_name="shared"))
+
+
+def _memo_file_of(page_ctx: PageContext) -> Path:
+    """The single auto memo file a test page's output imports.
+
+    Args:
+        page_ctx: The compiled page.
+
+    Returns:
+        The memo file path.
+    """
+    [(tag, _)] = page_ctx.memo_uses
+    return Path(disk_cache._memo_file(tag))
+
+
+def test_incremental_miss_leaves_the_memo_a_reused_page_shares(
     tmp_path, monkeypatch, preserve_memo_registries
 ):
-    """A miss must not clobber memo exports owned by hit pages.
+    """A miss never touches the memo files of the pages it reuses.
 
-    Auto-memo output is grouped into one file per source module. Pages E and F
-    live in this module and each contributes a stateful auto memo, so both land
-    in the same mirrored file. When only E misses (e.g. a data-file edit),
-    rewriting that file from E's contributions alone drops F's export while
-    F's reused page module still imports it.
+    Pages one and two render the same stateful subtree, so both import the
+    same content-addressed auto memo. Editing page one gives it another
+    memo; the shared memo must survive for page two, which still imports it.
     """
     from reflex.compiler import compiler
     from reflex.compiler import utils as compiler_utils
 
     web = _use_tmp_web_dir(tmp_path, monkeypatch)
-
     app = rx.App()
-    app.add_page(_page_e, route="/e")
-    app.add_page(_page_f, route="/f")
+    app.add_page(_page_shared_one, route="/one")
+    app.add_page(_page_shared_two, route="/two")
     pages = list(app._unevaluated_pages.values())
-    route_e, route_f = pages[0].route, pages[1].route
+    route_one, route_two = pages[0].route, pages[1].route
     ctx = _compile(pages)
-
-    e_memos = list(ctx.compiled_pages[route_e].memo_contributions.values())
-    f_memos = list(ctx.compiled_pages[route_f].memo_contributions.values())
-    assert e_memos, "page E must contribute an auto memo"
-    assert f_memos, "page F must contribute an auto memo"
-
-    # Simulate the full compile's on-disk memo state (shared grouped file).
-    memo_files, _ = compiler.compile_memo_components([*e_memos, *f_memos])
-    assert memo_files
+    one_ctx, two_ctx = ctx.compiled_pages[route_one], ctx.compiled_pages[route_two]
+    shared = _memo_file_of(one_ctx)
+    assert shared == _memo_file_of(two_ctx), "both pages must share the memo"
+    # The full compile's on-disk memo state.
+    memo_files, _ = compiler.compile_memo_components(ctx.auto_memo_components.values())
+    assert [Path(path) for path, _ in memo_files] == [shared]
     for mpath, mcode in memo_files:
         compiler_utils.write_file(compiler_utils.resolve_path_of_web_dir(mpath), mcode)
-
+    compiler_utils.prune_stale_memo_files(path for path, _ in memo_files)
     disk_cache.write_manifest(ctx, pages, ctx.all_imports, root=tmp_path)
     _stub_externals(app, monkeypatch)
-
-    # Make only page E miss (a dependency of E changed, e.g. a data file).
     manifest_path = web / disk_cache._MANIFEST_FILE
     manifest = json.loads(manifest_path.read_text())
-    _stale_dep(manifest, route_e, str(tmp_path / "data.md"))
-    manifest_path.write_text(json.dumps(manifest))
+    [tag] = manifest["pages"][route_two]["memo_keys"]
+    assert manifest["pages"][route_one]["memo_keys"] == [tag]
+    assert manifest["app_root"]["memo_keys"] == []
 
+    # Edit page one so it renders another subtree, and make only it miss.
+    monkeypatch.setitem(_SHARED_MEMO, "edit_one", True)
+    _stale_dep(manifest, route_one, str(tmp_path / "data.md"))
+    manifest_path.write_text(json.dumps(manifest))
     assert (
         disk_cache.try_incremental_rebuild(
             app, compiler_plugins=[], prerender_routes=False, root=tmp_path
@@ -2462,13 +2445,127 @@ def test_incremental_miss_keeps_sibling_memo_exports(
         is True
     )
 
-    # Every export (E's and F's) survives in the rewritten grouped file(s).
-    for mpath, _mcode in memo_files:
-        content = compiler_utils.resolve_path_of_web_dir(mpath).read_text(
-            encoding="utf-8"
+    # The shared memo is still there for page two; page one got a new one.
+    assert shared.exists()
+    refreshed = json.loads(manifest_path.read_text())
+    [new_tag] = refreshed["pages"][route_one]["memo_keys"]
+    assert new_tag != tag
+    assert refreshed["pages"][route_two]["memo_keys"] == [tag]
+    new_file = Path(disk_cache._memo_file(new_tag))
+    assert new_file.exists()
+    page_one = Path(compiler_utils.get_page_path(route_one)).read_text()
+    assert new_tag in page_one
+    assert tag not in page_one
+    memo_manifest = compiler_utils._read_memo_manifest(web)
+    assert memo_manifest == {
+        str(path.relative_to(web)).replace(os.sep, "/") for path in (shared, new_file)
+    }
+
+
+def test_incremental_miss_drops_the_memo_no_page_uses(
+    tmp_path, monkeypatch, preserve_memo_registries
+):
+    """A memo only the recompiled page used is deleted once it stops using it."""
+    from reflex.compiler import compiler
+    from reflex.compiler import utils as compiler_utils
+
+    web = _use_tmp_web_dir(tmp_path, monkeypatch)
+    app = rx.App()
+    app.add_page(_page_shared_one, route="/one")
+    pages = list(app._unevaluated_pages.values())
+    route_one = pages[0].route
+    ctx = _compile(pages)
+    old_file = _memo_file_of(ctx.compiled_pages[route_one])
+    memo_files, _ = compiler.compile_memo_components(ctx.auto_memo_components.values())
+    for mpath, mcode in memo_files:
+        compiler_utils.write_file(compiler_utils.resolve_path_of_web_dir(mpath), mcode)
+    compiler_utils.prune_stale_memo_files(path for path, _ in memo_files)
+    disk_cache.write_manifest(ctx, pages, ctx.all_imports, root=tmp_path)
+    _stub_externals(app, monkeypatch)
+    manifest_path = web / disk_cache._MANIFEST_FILE
+    manifest = json.loads(manifest_path.read_text())
+    monkeypatch.setitem(_SHARED_MEMO, "edit_one", True)
+    _stale_dep(manifest, route_one, str(tmp_path / "data.md"))
+    manifest_path.write_text(json.dumps(manifest))
+    assert (
+        disk_cache.try_incremental_rebuild(
+            app, compiler_plugins=[], prerender_routes=False, root=tmp_path
         )
-        for memo_def in (*e_memos, *f_memos):
-            assert memo_def.export_name in content
+        is True
+    )
+    assert not old_file.exists()
+    refreshed = json.loads(manifest_path.read_text())
+    [new_tag] = refreshed["pages"][route_one]["memo_keys"]
+    new_relative = str(Path(disk_cache._memo_file(new_tag)).relative_to(web)).replace(
+        os.sep, "/"
+    )
+    assert compiler_utils._read_memo_manifest(web) == {new_relative}
+
+
+def _page_radix() -> Component:
+    return rx.el.div(rx.button("Radix"), _footer())
+
+
+def test_reused_radix_page_keeps_the_implicit_plugin_enabled(tmp_path, monkeypatch):
+    """A rebuild that compiles no Radix page still ships the Radix stylesheet.
+
+    The implicit plugin enables itself while compiling a Radix component; a
+    page reused from disk is not compiled, so the manifest records the page's
+    Radix use and the rebuild enables the plugin from it.
+    """
+    from reflex_components_radix.plugin import RadixThemesPlugin
+
+    web = _use_tmp_web_dir(tmp_path, monkeypatch)
+    app = rx.App()
+    app.add_page(_page_radix, route="/radix")
+    app.add_page(_page_a, route="/a")
+    pages = list(app._unevaluated_pages.values())
+    ctx = _compile(pages, plugins=[RadixThemesPlugin.create_implicit()])
+    _stub_externals(app, monkeypatch)
+    disk_cache.write_manifest(ctx, pages, ctx.all_imports, root=tmp_path)
+    manifest_path = web / disk_cache._MANIFEST_FILE
+    manifest = json.loads(manifest_path.read_text())
+    assert manifest["pages"][pages[0].route]["radix"] is True
+    assert manifest["pages"][pages[1].route]["radix"] is False
+
+    # An all-hit rebuild, and one that recompiles only the plain page.
+    for stale in (None, pages[1].route):
+        if stale is not None:
+            _stale_dep(manifest, stale, str(tmp_path / "view.py"))
+            manifest_path.write_text(json.dumps(manifest))
+        plugin = RadixThemesPlugin.create_implicit()
+        assert not plugin.enabled
+        assert (
+            disk_cache.try_incremental_rebuild(
+                app, compiler_plugins=[plugin], prerender_routes=False, root=tmp_path
+            )
+            is True
+        )
+        assert plugin.enabled
+        assert plugin.get_stylesheet_paths()
+
+
+def test_recompiled_page_leaves_a_hit_pages_state_to_it(tmp_path, monkeypatch):
+    """A state a hit page recorded is not claimed by a recompiled page.
+
+    In a process that evaluates only the recompiled pages, one of them can
+    be the first to import the module defining a state another page owns.
+    """
+    miss_ctx = SimpleNamespace(
+        stateful_routes={
+            "/miss": ["app.shared", "app.own"],
+            "/other": ["app.shared"],
+        }
+    )
+    manifest = _manifest({
+        "/hit": {"state_slice": {"schema": {"app.shared": []}}},
+        "/miss": {"state_slice": None},
+        "/other": {"state_slice": None},
+    })
+    disk_cache._disown_hit_page_states(
+        cast(Any, miss_ctx), manifest, {"/miss", "/other"}
+    )
+    assert miss_ctx.stateful_routes == {"/miss": ["app.own"]}
 
 
 def test_load_manifest_rejects_wrong_schema(tmp_path, monkeypatch):
@@ -2489,15 +2586,13 @@ def test_update_manifest_for_misses_keeps_complete_imports(tmp_path, monkeypatch
         root_component=rx.el.div(),
         app_wrap_components={},
         frontend_imports={},
-        memo_contributions={},
-        evaluate_bundle_requests=[],
-        render_bundle_requests=[],
+        memo_uses={},
     )
     miss_ctx = SimpleNamespace(compiled_pages={"/a": page_ctx}, stateful_routes={})
     complete_imports = {"memo-lib": [ImportVar("MemoThing")]}
     manifest = _manifest({"/a": {"deps": [], "app_wraps": {}, "is_stateful": False}})
 
-    disk_cache._update_manifest_for_misses(
+    assert disk_cache._update_manifest_for_misses(
         manifest,
         cast(Any, miss_ctx),
         [page],
@@ -2505,11 +2600,10 @@ def test_update_manifest_for_misses_keeps_complete_imports(tmp_path, monkeypatch
         root=tmp_path,
         memo_state={},
         memo_file_entries={},
-        app_root_inputs=manifest["app_root"],
-        state_libraries={},
         registrations={"/a": "recorded"},
         module_states=manifest["module_states"],
     )
+    disk_cache._write(manifest)
 
     written = json.loads((web / disk_cache._MANIFEST_FILE).read_text())
     assert disk_cache._deserialize_imports(written["all_imports"]) == complete_imports
@@ -2521,7 +2615,7 @@ def test_update_manifest_refreshes_imports_without_misses(tmp_path, monkeypatch)
     manifest = _manifest({}, all_imports={"old-lib": [{"tag": "Old"}]})
     memo_imports = {"old-lib": [ImportVar("Old")], "memo-lib": [ImportVar("Memo")]}
 
-    disk_cache._update_manifest_for_misses(
+    assert disk_cache._update_manifest_for_misses(
         manifest,
         None,
         [],
@@ -2529,14 +2623,25 @@ def test_update_manifest_refreshes_imports_without_misses(tmp_path, monkeypatch)
         root=tmp_path,
         memo_state={},
         memo_file_entries={},
-        app_root_inputs=manifest["app_root"],
-        state_libraries={},
         registrations={"/a": "recorded"},
         module_states=manifest["module_states"],
     )
+    disk_cache._write(manifest)
 
     written = json.loads((web / disk_cache._MANIFEST_FILE).read_text())
     assert disk_cache._deserialize_imports(written["all_imports"]) == memo_imports
+    # Nothing changed: nothing to write.
+    assert not disk_cache._update_manifest_for_misses(
+        written,
+        None,
+        [],
+        memo_imports,
+        root=tmp_path,
+        memo_state={},
+        memo_file_entries={},
+        registrations={"/a": "recorded"},
+        module_states=written["module_states"],
+    )
 
 
 def _page_loop_a() -> Component:
@@ -2667,38 +2772,34 @@ def test_partial_page_depends_on_its_function_module(tmp_path, monkeypatch):
     assert files == {str(module.resolve())}
 
 
-def test_dynamic_state_pages_bring_their_memo_siblings():
-    """A dynamic-state page pulled into a rebuild brings its memo siblings.
+@pytest.mark.parametrize("predict", [False, True])
+def test_expand_miss_pages_keeps_page_order(monkeypatch, predict):
+    """Re-evaluated pages are evaluated in page order, whatever added them.
 
-    They share its module's memo file, which the rebuild rewrites.
+    ``ComponentState`` numbers and memo emit order follow evaluation order.
     """
-    pages = [
-        _FakePage("/a", _page_a, _source_module="first_module"),
-        _FakePage("/b", _page_b, _source_module="second_module"),
-        _FakePage("/c", _page_c, _source_module="second_module"),
-    ]
+    pages = [_FakePage(f"/{name}", _page_a) for name in "abcd"]
 
-    def entry(claims: list[list[str]], has_memos: bool) -> dict[str, Any]:
-        return {"dynamic_claims": claims, "has_memos": has_memos}
+    def entry(claims: list[list[str]]) -> dict[str, Any]:
+        return {"dynamic_claims": claims}
 
     manifest = {
         "pages": {
-            "/a": entry([], has_memos=False),
-            "/b": entry([["LocalState", "LocalState"]], has_memos=True),
-            "/c": entry([], has_memos=True),
+            "/a": entry([]),
+            "/b": entry([["LocalState", "LocalState"]]),
+            "/c": entry([]),
+            "/d": entry([]),
         }
     }
-    misses = disk_cache._expand_miss_pages(
-        [pages[0]], pages, manifest, set(), set(), dynamic_names_shift=False
-    )
-    assert [page.route for page in misses] == ["/a", "/b", "/c"]
+    monkeypatch.setattr(disk_cache, "_predict_dynamic_names", predict)
+    misses = disk_cache._expand_miss_pages([pages[3]], pages, manifest, {"/a"})
+    expected = ["/a", "/d"] if predict else ["/a", "/b", "/d"]
+    assert [page.route for page in misses] == expected
 
 
 @pytest.mark.parametrize("predict", [False, True])
-def test_reordering_dynamic_state_pages_reevaluates_them(
-    tmp_path, monkeypatch, predict
-):
-    """Dynamic state names follow page order, so a reorder renames them."""
+def test_reordering_pages_falls_back_before_evaluating(tmp_path, monkeypatch, predict):
+    """A reorder changes the page registry, which every page may read."""
     web = _use_tmp_web_dir(tmp_path, monkeypatch)
     app = rx.App()
     app.add_page(_page_collide_one, route="/one")
@@ -2716,19 +2817,13 @@ def test_reordering_dynamic_state_pages_reevaluates_them(
     monkeypatch.setitem(_COLLIDE, "two", 0)
     monkeypatch.setattr(disk_cache, "_predict_dynamic_names", predict)
     try:
-        if predict:
-            with pytest.raises(disk_cache.DynamicStatePredictionError):
-                disk_cache.try_incremental_rebuild(
-                    app, compiler_plugins=[], prerender_routes=False, root=tmp_path
-                )
-            return
         result = disk_cache.try_incremental_rebuild(
             app, compiler_plugins=[], prerender_routes=False, root=tmp_path
         )
     finally:
         _drop_dynamic_states("CollideState")
-    assert result is True
-    assert (_COLLIDE["one"], _COLLIDE["two"]) == (1, 1)
+    assert result is False
+    assert (_COLLIDE["one"], _COLLIDE["two"]) == (0, 0)
 
 
 def test_manifest_dependency_files_cover_every_recorded_input():

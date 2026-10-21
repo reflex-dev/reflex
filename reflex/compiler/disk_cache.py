@@ -1,36 +1,40 @@
 """Disk-persisted incremental compile cache for ``REFLEX_COMPILE_CACHE``.
 
 The manifest stores only bookkeeping: a file table (content hash plus stat key
-per dependency file), each page's dependency paths, app-wrap keys, statefulness
-and its contribution to the contexts file, the app-wide frontend imports, and
-the import-name parse cache. Rendered files stay in ``.web``. When global
-inputs and routes still match, unchanged pages are reused from disk and only
+per dependency file), each page's dependency paths, app-wrap digests, memo
+uses, statefulness and its contribution to the contexts file, the app-wide
+frontend imports, the app root's inputs, and the import-name parse cache.
+Rendered files stay in ``.web``. When the global inputs, the page set and the
+registrations still match, unchanged pages are reused from disk and only
 dependency-changed pages are recompiled.
+
+Each page is a memoized query over the inputs it recorded. Outputs that
+several pages feed are handled in one of two ways: the memo files are
+content-addressed, one file per auto memo, so a page's memos never share a
+file with another page's; and the app root and the bundled-library file are
+compared against their recorded inputs and fall back to a full compile when a
+recompiled page changed them.
 
 Validation is stat-first (see :class:`page_cache.FileValidator`): an unchanged
 file is recognised from ``(mtime_ns, size)`` without being read, and when the
 watcher reports which paths changed, pages depending on none of them are hits
 without even a stat.
-
 """
 
 from __future__ import annotations
 
-import base64
 import contextlib
 import dataclasses
 import functools
 import hashlib
 import json
 import logging
-import pickle
 import re
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from reflex_base import constants
-from reflex_base.components.dynamic import record_bundle_requests
 from reflex_base.environment import environment
 from reflex_base.plugins import CompileContext, CompilerHooks, Plugin
 from reflex_base.registry import RegistrationContext
@@ -54,7 +58,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 #: Bump when the manifest layout changes (old manifests are then ignored).
-_SCHEMA = 22
+_SCHEMA = 23
 #: Manifest filename under the web directory.
 _MANIFEST_FILE = "reflex_compile_cache.json"
 
@@ -199,19 +203,6 @@ def _wrap_key_str(key: tuple[int, str]) -> str:
     return f"{key[0]}:{key[1]}"
 
 
-def _wrap_key(key_str: str) -> tuple[int, str]:
-    """Parse an app-wrap key formatted by :func:`_wrap_key_str`.
-
-    Args:
-        key_str: The formatted key.
-
-    Returns:
-        The ``(priority, name)`` app-wrap key.
-    """
-    priority, _, name = key_str.partition(":")
-    return int(priority), name
-
-
 def _wrap_digest(component: Any) -> str:
     """Digest what an app wrap contributes to the compiled app root.
 
@@ -233,98 +224,19 @@ def _wrap_digest(component: Any) -> str:
     return hashlib.sha256(json_dumps(payload).encode()).hexdigest()
 
 
-def _stored_wrap(component: Any, digest: str) -> str | None:
-    """Serialize an app wrap so the app root can be rebuilt without its page.
-
-    Args:
-        component: The app-wrap component.
-        digest: Its :func:`_wrap_digest`.
-
-    Returns:
-        The encoded component, or None when it does not round-trip to the same
-        contribution.
-    """
-    try:
-        data = pickle.dumps(component)
-        if _wrap_digest(pickle.loads(data)) != digest:
-            return None
-    except Exception:
-        return None
-    return base64.b64encode(data).decode()
-
-
-def _record_app_wraps(
-    page_ctx: PageContext, wrap_table: dict[str, str | None]
-) -> dict[str, str]:
-    """Record a page's app wraps by digest, interning each in the wrap table.
+def _record_app_wraps(page_ctx: PageContext) -> dict[str, str]:
+    """Record a page's app wraps by digest.
 
     Args:
         page_ctx: The compiled page context.
-        wrap_table: The manifest's digest -> stored component table (extended).
 
     Returns:
         The page's app-wrap keys mapped to their digests, in page order.
     """
-    wraps = {}
-    for key, component in page_ctx.app_wrap_components.items():
-        digest = _wrap_digest(component)
-        if digest not in wrap_table:
-            wrap_table[digest] = _stored_wrap(component, digest)
-        wraps[_wrap_key_str(key)] = digest
-    return wraps
-
-
-def _state_libraries(initial_state: dict[str, Any]) -> dict[str, list[str]]:
-    """Record the libraries serializing each state's initial values requests.
-
-    Args:
-        initial_state: Initial values keyed by state full name.
-
-    Returns:
-        The requested libraries of each state that requests any.
-    """
-    from reflex.compiler import utils as compiler_utils
-
-    libraries = {}
-    for name, values in initial_state.items():
-        with record_bundle_requests() as requests:
-            compiler_utils._serialize_initial_state({name: values})
-        if requests:
-            libraries[name] = requests
-    return libraries
-
-
-def _reconstruct_libraries(
-    base: Sequence[str],
-    page_requests: Sequence[Sequence[Sequence[str]]],
-    root_requests: Sequence[str],
-    state_libraries: dict[str, list[str]],
-) -> list[str]:
-    """Rebuild the bundled-library registry in full-compile order.
-
-    A full compile evaluates every page, then renders every page, builds the
-    app root and serializes the states in name order; the registry keeps the
-    first request of each library.
-
-    Args:
-        base: The registry after the compile's reset.
-        page_requests: ``[evaluate, render]`` requests of each page, in page
-            order.
-        root_requests: The requests made while building the app root.
-        state_libraries: The requests of each state's initial values.
-
-    Returns:
-        The bundled libraries, in registry order.
-    """
-    ordered = [*base]
-    for evaluate, _ in page_requests:
-        ordered.extend(evaluate)
-    for _, render in page_requests:
-        ordered.extend(render)
-    ordered.extend(root_requests)
-    for name in sorted(state_libraries):
-        ordered.extend(state_libraries[name])
-    return list(dict.fromkeys(ordered))
+    return {
+        _wrap_key_str(key): _wrap_digest(component)
+        for key, component in page_ctx.app_wrap_components.items()
+    }
 
 
 def _stable_value(value: Any) -> Any:
@@ -397,6 +309,38 @@ def registration_digests(pages: Iterable[PageDefinition]) -> dict[str, str]:
     return {page.route: _registration_digest(page) for page in pages}
 
 
+def _memo_keys(page_ctx: PageContext) -> list[str]:
+    """The export names of the auto memos a page's output imports.
+
+    Args:
+        page_ctx: The compiled page context.
+
+    Returns:
+        The sorted memo tags.
+    """
+    return sorted(tag for tag, _ in page_ctx.memo_uses)
+
+
+def _uses_radix(root_component: object) -> bool:
+    """Whether a rendered tree holds a Radix Themes component.
+
+    The implicit ``RadixThemesPlugin`` enables itself when it compiles one;
+    a page reused from disk is not compiled, so the manifest remembers.
+
+    Args:
+        root_component: The page's root component.
+
+    Returns:
+        True when the tree enables Radix Themes.
+    """
+    from reflex_components_radix.themes.base import RadixThemesComponent
+
+    return any(
+        issubclass(cls, RadixThemesComponent)
+        for cls in page_cache.component_tree_classes(root_component)
+    )
+
+
 def _manifest_page_entry(
     page_ctx: PageContext,
     page: PageDefinition,
@@ -406,7 +350,6 @@ def _manifest_page_entry(
     *,
     defined_states: Sequence[str] | None,
     registration: str,
-    wrap_table: dict[str, str | None],
     state_slice: dict[str, Any] | None = None,
     root: Path | None = None,
 ) -> dict[str, Any]:
@@ -422,8 +365,6 @@ def _manifest_page_entry(
             evaluated, or None for a stateless page.
         registration: The page's registration digest (see
             :func:`registration_digests`).
-        wrap_table: The manifest's app-wrap table, extended with the page's
-            wraps.
         state_slice: The page's contribution to the contexts file
             (see :func:`_state_slice`), or None for stateless pages.
         root: Project root for dependency discovery. Defaults to cwd.
@@ -438,31 +379,21 @@ def _manifest_page_entry(
         "deps": page_cache.page_dependency_entries(
             page_ctx, page.component, state_index, hasher, files, root
         ),
-        # Everything the page was registered with (see ``partition_pages``).
+        # Everything the page was registered with (see ``_pages_mismatch``).
         "registration": registration,
-        # The app wraps the page requires, by digest (see ``_refresh_app_root``).
-        "app_wraps": _record_app_wraps(page_ctx, wrap_table),
-        # Libraries requested while evaluating and rendering the page.
-        "bundle_requests": [
-            page_ctx.evaluate_bundle_requests,
-            page_ctx.render_bundle_requests,
-        ],
+        # The app wraps the page requires, by digest (see ``_app_root_change``).
+        "app_wraps": _record_app_wraps(page_ctx),
         "is_stateful": defined_states is not None,
         "state_slice": state_slice,
         # The ``reflex.istate.dynamic`` names the page's states took, whose
         # suffixes depend on evaluation order (see ``_with_dynamic_state_pages``).
         "dynamic_claims": _dynamic_claims(defined_states or ()),
-        # Whether the page contributed auto memos: pages sharing a source
-        # module share one memo output file, so a memo-contributing hit page
-        # must be recompiled alongside a same-module miss (see
-        # ``_with_module_siblings``).
-        "has_memos": bool(page_ctx.memo_contributions),
-        # Where those auto memos are written, so removing the page rewrites it.
-        "memo_path": (
-            _memo_output_path(getattr(page, "_source_module", None))
-            if page_ctx.memo_contributions
-            else None
-        ),
+        # The auto memos the page imports, each in its own content-addressed
+        # file (see ``_memo_file``); the files a rebuild may drop are the ones
+        # no page uses any more.
+        "memo_keys": _memo_keys(page_ctx),
+        # Whether the page enables the implicit Radix Themes plugin.
+        "radix": _uses_radix(page_ctx.root_component),
     }
 
 
@@ -611,6 +542,47 @@ def _with_hit_state_slices(
     return dict(sorted(initial.items())), storage, schema_entries
 
 
+def _hit_page_states(manifest: dict[str, Any], miss_routes: set[str]) -> set[str]:
+    """The states the manifest records as defined by pages that hit.
+
+    Args:
+        manifest: The loaded manifest.
+        miss_routes: The recompiled routes.
+
+    Returns:
+        The full names of the hit pages' states.
+    """
+    return {
+        name
+        for route, entry in manifest["pages"].items()
+        if route not in miss_routes and (state_slice := entry["state_slice"])
+        for name in state_slice["schema"]
+    }
+
+
+def _disown_hit_page_states(
+    miss_ctx: CompileContext, manifest: dict[str, Any], miss_routes: set[str]
+) -> None:
+    """Leave a hit page's states to it when a recompiled page registers them.
+
+    A module state is recorded by the page whose evaluation first imported
+    its module. In a process that evaluates only the recompiled pages, one
+    of them can import that module first and would otherwise claim the
+    state, marking itself stateful where a full compile would not.
+
+    Args:
+        miss_ctx: The compile context of the recompiled pages (mutated).
+        manifest: The loaded manifest.
+        miss_routes: The recompiled routes.
+    """
+    owned = _hit_page_states(manifest, miss_routes)
+    for route, names in list(miss_ctx.stateful_routes.items()):
+        if kept := [name for name in names if name not in owned]:
+            miss_ctx.stateful_routes[route] = kept
+        else:
+            del miss_ctx.stateful_routes[route]
+
+
 def load_manifest() -> dict[str, Any] | None:
     """Load the persisted compile manifest, or None if absent/unusable.
 
@@ -678,16 +650,28 @@ def manifest_dependency_files(manifest: dict[str, Any]) -> set[str]:
     return files
 
 
+def _manifest_text(manifest: dict[str, Any]) -> str:
+    """Serialize the manifest, including the current import-name parse cache.
+
+    Args:
+        manifest: The manifest to serialize.
+
+    Returns:
+        The manifest JSON.
+    """
+    manifest["import_names"] = page_cache.export_import_names_cache()
+    return json_dumps(manifest)
+
+
 def _write(manifest: dict[str, Any]) -> None:
-    """Persist the manifest, including the current import-name parse cache.
+    """Persist the manifest.
 
     Args:
         manifest: The manifest to write.
     """
-    manifest["import_names"] = page_cache.export_import_names_cache()
     path = _manifest_path()
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json_dumps(manifest), encoding="utf-8")
+    path.write_text(_manifest_text(manifest), encoding="utf-8")
 
 
 def write_manifest(
@@ -698,7 +682,6 @@ def write_manifest(
     *,
     plugin_sources: dict[str, str] | None = None,
     contexts_snapshot: compiler_utils.ContextsSnapshot | None = None,
-    root_bundle_requests: Sequence[str] = (),
     registrations: dict[str, str] | None = None,
 ) -> None:
     """Persist a manifest of the just-completed full compile.
@@ -707,7 +690,8 @@ def write_manifest(
     never breaks the build.
 
     Args:
-        compile_ctx: The completed compile context (all pages compiled).
+        compile_ctx: The completed compile context (all pages compiled, the
+            app root built).
         pages: The full list of page definitions that were compiled.
         install_imports: The **complete** frontend import set the full compile
             installed: page imports merged with the app-root (app-wrap, e.g.
@@ -718,8 +702,6 @@ def write_manifest(
         plugin_sources: Unmodified source content for plugin file modifiers.
         contexts_snapshot: The state-tree inputs used for the contexts output.
             When absent, a snapshot is captured for direct callers.
-        root_bundle_requests: The libraries requested while building the app
-            root.
         registrations: Each route's registration digest, taken before any page
             evaluated; computed now when absent.
     """
@@ -727,7 +709,6 @@ def write_manifest(
         state_index, _ = page_cache.state_dependency_index(root)
         hasher = page_cache.make_hasher()
         files: dict[str, page_cache.FileEntry] = {}
-        wrap_table: dict[str, str | None] = {}
         if registrations is None:
             registrations = registration_digests(pages)
         if contexts_snapshot is None and compile_ctx.stateful_routes:
@@ -755,30 +736,12 @@ def write_manifest(
                 files,
                 defined_states=defined_states,
                 registration=registrations[page.route],
-                wrap_table=wrap_table,
                 state_slice=(
                     _state_slice(defined_states, *contexts_snapshot)
                     if defined_states and contexts_snapshot is not None
                     else None
                 ),
                 root=root,
-            )
-        state_libraries = (
-            _state_libraries(contexts_snapshot[0])
-            if contexts_snapshot is not None
-            else {}
-        )
-        libraries = list(RegistrationContext.ensure_context().bundled_libraries)
-        reconstructed = _reconstruct_libraries(
-            compile_ctx.bundle_base,
-            [pages_data[page.route]["bundle_requests"] for page in pages],
-            root_bundle_requests,
-            state_libraries,
-        )
-        if reconstructed != libraries:
-            logger.debug(
-                "Compile cache: bundled libraries were requested outside the "
-                "recorded phases; changes to the app root need a full compile."
             )
 
         # Post-evaluation and complete: the full compile evaluated every page,
@@ -809,6 +772,9 @@ def write_manifest(
                 files[path] = entry
                 globals_[label] = path
 
+        page_memo_keys = {
+            tag for entry in pages_data.values() for tag in entry["memo_keys"]
+        }
         entry_file = page_cache._app_entrypoint_file(root)
         manifest = {
             "schema": _SCHEMA,
@@ -836,21 +802,25 @@ def write_manifest(
             "all_imports": _serialize_imports(install_imports),
             "pages": pages_data,
             "memo_files": memo_files,
-            "wrap_table": wrap_table,
-            "state_libraries": state_libraries,
             # The states importing the app registers (see
             # ``_record_module_states``).
             "module_states": module_states,
-            # The app root's inputs: merged app wraps (by digest, in insertion
-            # order) and the bundled libraries (see ``_refresh_app_root``).
+            # The app root's inputs: the merged app wraps (by digest, in
+            # insertion order) and the bundled libraries (see
+            # ``_app_root_change``), plus the memo files only the root uses.
             "app_root": {
                 "wraps": {
                     _wrap_key_str(key): _wrap_digest(component)
                     for key, component in compile_ctx.app_wrap_components.items()
                 },
-                "libraries": libraries,
-                "root_requests": list(root_bundle_requests),
-                "reconstructible": reconstructed == libraries,
+                "libraries": sorted(
+                    RegistrationContext.ensure_context().bundled_libraries
+                ),
+                "memo_keys": sorted(
+                    tag
+                    for tag, _ in compile_ctx.auto_memo_components
+                    if tag not in page_memo_keys
+                ),
             },
         }
         _write(manifest)
@@ -978,7 +948,7 @@ def globals_mismatch(
         if label != "reflex"
         and validator.changed(path)
         # An entry module that only changed its page registrations is compared
-        # page by page (see ``partition_pages``).
+        # page by page (see ``_pages_mismatch``).
         and not (
             path == entry["path"]
             and entry["digest"] is not None
@@ -990,6 +960,45 @@ def globals_mismatch(
     )
     if stale:
         return f"global input(s) changed: {format_path_list(stale, root)}"
+    return None
+
+
+def _pages_mismatch(
+    pages: Sequence[PageDefinition],
+    manifest: dict[str, Any],
+    registrations: dict[str, str],
+) -> str | None:
+    """Explain why the manifest's page set no longer matches, or None if it does.
+
+    The page registry is an input of every page (a navigation built from the
+    registered pages is common), so a page added, removed, reordered or
+    registered differently (its title, say) is a change to every page.
+
+    Args:
+        pages: The current page definitions, in compile order.
+        manifest: The loaded manifest.
+        registrations: Each route's registration digest.
+
+    Returns:
+        A human-readable mismatch reason, or None when the pages match.
+    """
+    recorded = manifest["pages"]
+    routes = [page.route for page in pages]
+    if routes != list(recorded):
+        changes = [
+            f"{label} {format_path_list(items)}"
+            for label, items in (
+                ("added", set(routes) - set(recorded)),
+                ("removed", set(recorded) - set(routes)),
+            )
+            if items
+        ]
+        if not changes:
+            return "the page order changed"
+        return f"the page set changed ({'; '.join(changes)})"
+    for route in routes:
+        if recorded[route]["registration"] != registrations[route]:
+            return f"page {route!r} was registered differently"
     return None
 
 
@@ -1021,77 +1030,33 @@ def partition_pages(
     manifest: dict[str, Any],
     validator: page_cache.FileValidator,
     changed_hint: set[str] | None,
-    registrations: dict[str, str],
 ) -> list[PageDefinition]:
-    """Return the pages that are new or changed since the manifest.
+    """Return the pages whose recorded dependencies changed.
 
-    Globals are assumed already matched (see :func:`globals_mismatch`), so a
-    recorded page is a hit if it was registered the same way and every file
-    in its recorded dependency set is unchanged. When the watcher reported the
-    changed paths, a page depending on none of them skips the filesystem.
+    Globals and the page set are assumed already matched (see
+    :func:`globals_mismatch` and :func:`_pages_mismatch`), so a page is a
+    hit if every file in its recorded dependency set is unchanged. When the
+    watcher reported the changed paths, a page depending on none of them
+    skips the filesystem.
 
     Args:
         pages: The current page definitions.
         manifest: The loaded manifest.
         validator: The file validator bound to the manifest's file table.
         changed_hint: Resolved paths the watcher saw change, or None if unknown.
-        registrations: Each route's registration digest.
 
     Returns:
-        The list of miss pages (new, re-registered or a dependency changed).
+        The list of miss pages, in ``pages`` order.
     """
     manifest_pages = manifest["pages"]
     misses: list[PageDefinition] = []
     for page in pages:
-        entry = manifest_pages.get(page.route)
-        if entry is None or entry["registration"] != registrations[page.route]:
-            misses.append(page)
-            continue
-        deps = entry["deps"]
+        deps = manifest_pages[page.route]["deps"]
         if changed_hint is not None and changed_hint.isdisjoint(deps):
             continue
         if not validator.unchanged(deps):
             misses.append(page)
     return misses
-
-
-def _with_module_siblings(
-    miss_pages: list[PageDefinition],
-    pages: Sequence[PageDefinition],
-    manifest: dict[str, Any],
-) -> list[PageDefinition]:
-    """Expand the miss set with memo-contributing same-module hit pages.
-
-    Auto-memo output is grouped into one file per source module, so rewriting
-    that file needs the contributions of *all* the module's pages that have
-    any. Hit pages that contributed no memos (per the manifest) have nothing
-    in that file and are left reused.
-
-    Args:
-        miss_pages: The dependency-changed pages.
-        pages: All current page definitions (in compile order).
-        manifest: The loaded manifest.
-
-    Returns:
-        The expanded miss list, in ``pages`` order.
-    """
-    miss_modules = {
-        module
-        for page in miss_pages
-        if (module := getattr(page, "_source_module", None)) is not None
-    }
-    if not miss_modules:
-        return miss_pages
-    miss_routes = {page.route for page in miss_pages}
-    return [
-        page
-        for page in pages
-        if page.route in miss_routes
-        or (
-            getattr(page, "_source_module", None) in miss_modules
-            and manifest["pages"][page.route]["has_memos"]
-        )
-    ]
 
 
 def _dynamic_claims(defined_states: Iterable[str]) -> list[list[str]]:
@@ -1148,26 +1113,22 @@ def _claims_by_family(claims: Iterable[Sequence[str]]) -> dict[str, list[list[st
 
 
 def _shifting_dynamic_claims(
-    manifest: dict[str, Any],
-    miss_ctx: CompileContext | None,
-    miss_routes: set[str],
-    removed_entries: dict[str, dict[str, Any]],
+    manifest: dict[str, Any], miss_ctx: CompileContext, miss_routes: set[str]
 ) -> str | None:
-    """Find a changed page whose claims could shift other pages' names.
+    """Find a re-evaluated page whose claims could shift other pages' names.
 
-    Names in a family are handed out in evaluation order, so a re-evaluated,
-    added or removed page changing its claims in a family moves the names of
-    later pages in that family. Pages that were not re-evaluated keep their
-    recorded names, which is exact only when no family they use changed.
+    Names in a family are handed out in evaluation order, so a re-evaluated
+    page changing its claims in a family moves the names of later pages in
+    that family. Pages that were not re-evaluated keep their recorded names,
+    which is exact only when no family they use changed.
 
     Args:
-        manifest: The loaded manifest (without the removed pages).
-        miss_ctx: The compile context of the re-evaluated pages, if any.
+        manifest: The loaded manifest.
+        miss_ctx: The compile context of the re-evaluated pages.
         miss_routes: The re-evaluated routes.
-        removed_entries: The manifest entries of the removed routes.
 
     Returns:
-        The first changed route that changed a shared family, or None.
+        The first re-evaluated route that changed a shared family, or None.
     """
     shared = {
         family
@@ -1175,22 +1136,11 @@ def _shifting_dynamic_claims(
         if route not in miss_routes
         for family in _claims_by_family(entry["dynamic_claims"])
     }
-    changes = [
-        (
-            route,
-            manifest["pages"].get(route, {}).get("dynamic_claims", []),
+    for route in miss_routes:
+        recorded = _claims_by_family(manifest["pages"][route]["dynamic_claims"])
+        live = _claims_by_family(
             _dynamic_claims(miss_ctx.stateful_routes.get(route, ()))
-            if miss_ctx is not None
-            else [],
         )
-        for route in miss_routes
-    ]
-    changes.extend(
-        (route, entry["dynamic_claims"], []) for route, entry in removed_entries.items()
-    )
-    for route, recorded_claims, live_claims in changes:
-        recorded = _claims_by_family(recorded_claims)
-        live = _claims_by_family(live_claims)
         if any(
             live.get(family) != recorded.get(family)
             for family in (live.keys() | recorded.keys()) & shared
@@ -1284,11 +1234,9 @@ class _ComponentStateNumbersPlugin(Plugin):
 
 
 def _route_dropping_a_shared_state(
-    manifest: dict[str, Any],
-    miss_routes: Iterable[str],
-    removed_entries: dict[str, dict[str, Any]],
+    manifest: dict[str, Any], miss_routes: Iterable[str]
 ) -> str | None:
-    """Find a recompiled or removed page whose recorded module state is gone.
+    """Find a recompiled page whose recorded module state is gone.
 
     A page records the states its evaluation registered first. Another page
     using the same module state recorded none, so when the first page stops
@@ -1296,9 +1244,8 @@ def _route_dropping_a_shared_state(
     its page alone.
 
     Args:
-        manifest: The loaded manifest (without the removed pages).
+        manifest: The loaded manifest.
         miss_routes: The recompiled routes.
-        removed_entries: The manifest entries of the removed routes.
 
     Returns:
         The first such route, or None.
@@ -1307,10 +1254,9 @@ def _route_dropping_a_shared_state(
 
     local_prefix = istate_dynamic.__name__.replace(".", "___") + "___"
     live = RegistrationContext.ensure_context().base_states
-    entries = [(route, manifest["pages"].get(route)) for route in miss_routes]
-    entries.extend(removed_entries.items())
-    for route, entry in entries:
-        if entry is None or not entry["state_slice"]:
+    for route in miss_routes:
+        entry = manifest["pages"][route]
+        if not entry["state_slice"]:
             continue
         for name in entry["state_slice"]["schema"]:
             if name not in live and not name.rpartition(".")[2].startswith(
@@ -1362,8 +1308,6 @@ def _with_dynamic_state_pages(
     miss_pages: list[PageDefinition],
     pages: Sequence[PageDefinition],
     manifest: dict[str, Any],
-    *,
-    shifted: bool = False,
 ) -> list[PageDefinition]:
     """Expand a miss set with every page that defines dynamic-module states.
 
@@ -1378,13 +1322,11 @@ def _with_dynamic_state_pages(
         miss_pages: The pages to recompile.
         pages: All current page definitions (in compile order).
         manifest: The loaded manifest.
-        shifted: Whether names may have shifted without a miss: a removed
-            page defined dynamic-module states, or such pages were reordered.
 
     Returns:
         The expanded miss list, in ``pages`` order.
     """
-    if not miss_pages and not shifted:
+    if not miss_pages:
         return miss_pages
     miss_routes = {page.route for page in miss_pages}
     return [
@@ -1394,63 +1336,32 @@ def _with_dynamic_state_pages(
     ]
 
 
-def _dynamic_page_order_changed(
-    manifest: dict[str, Any], pages: Sequence[PageDefinition]
-) -> bool:
-    """Whether the recorded pages defining dynamic states changed their order.
-
-    Their states take names in page order. The manifest lists pages in the
-    order of the compile that wrote it.
-
-    Args:
-        manifest: The loaded manifest (without the removed pages).
-        pages: All current page definitions (in compile order).
-
-    Returns:
-        True when those pages are in another order now.
-    """
-    recorded = manifest["pages"]
-    return [route for route, entry in recorded.items() if entry["dynamic_claims"]] != [
-        page.route
-        for page in pages
-        if (entry := recorded.get(page.route)) is not None and entry["dynamic_claims"]
-    ]
-
-
 def _expand_miss_pages(
     miss_pages: list[PageDefinition],
     pages: Sequence[PageDefinition],
     manifest: dict[str, Any],
-    dirty_memo_paths: set[str],
     stale_owner_routes: set[str],
-    *,
-    dynamic_names_shift: bool,
 ) -> list[PageDefinition]:
     """Add the pages a rebuild of ``miss_pages`` must evaluate too.
 
-    Module siblings come last: every page added before them may share a
-    memo file with hit pages of its module.
+    A route-owned memo entry whose dependency files changed needs its owner
+    page re-evaluated: only that page's evaluation re-registers the memo
+    definitions the rewrite compiles from.
 
     Args:
-        miss_pages: The new or changed pages.
+        miss_pages: The dependency-changed pages.
         pages: All current page definitions (in compile order).
         manifest: The loaded manifest.
-        dirty_memo_paths: Memo output paths the rebuild rewrites.
         stale_owner_routes: Owners of route-owned memo records that changed.
-        dynamic_names_shift: Whether dynamic state names may have shifted
-            without a miss (see :func:`_with_dynamic_state_pages`).
 
     Returns:
         The expanded miss list, in ``pages`` order.
     """
-    miss_pages = _with_memo_contributing_pages(
-        miss_pages, pages, manifest, dirty_memo_paths, stale_owner_routes
-    )
-    if not _predict_dynamic_names:
-        miss_pages = _with_dynamic_state_pages(
-            miss_pages, pages, manifest, shifted=dynamic_names_shift
-        )
-    return _with_module_siblings(miss_pages, pages, manifest)
+    routes = {page.route for page in miss_pages} | stale_owner_routes
+    miss_pages = [page for page in pages if page.route in routes]
+    if _predict_dynamic_names:
+        return miss_pages
+    return _with_dynamic_state_pages(miss_pages, pages, manifest)
 
 
 def _changed_dependency_files(
@@ -1496,7 +1407,7 @@ def _module_source_file(module_name: str | None) -> str | None:
 
 
 def _memo_output_path(source_module: str | None) -> str | None:
-    """Resolve the mirrored output file path for a memo source module.
+    """Resolve the mirrored output file path for a user memo's source module.
 
     Args:
         source_module: The dotted module name that defined the memo.
@@ -1513,6 +1424,20 @@ def _memo_output_path(source_module: str | None) -> str | None:
     if segments is None:
         return None
     return compiler_utils.get_memo_module_path(segments)
+
+
+def _memo_file(tag: str) -> str:
+    """The content-addressed file of an auto memo.
+
+    Args:
+        tag: The memo's export name, derived from its rendered body.
+
+    Returns:
+        The absolute output path string.
+    """
+    from reflex.compiler import utils as compiler_utils
+
+    return compiler_utils.get_memo_component_path(tag)
 
 
 def _memo_state_entries(
@@ -1629,24 +1554,22 @@ def _dirty_memo_paths(
 
 
 def _memo_defs_for_rewrite(
-    contributions: dict[tuple[str, str | None], Any],
+    memo_uses: dict[tuple[str, str | None], Any],
     dirty_paths: set[str],
     changed_files: set[str],
 ) -> list[Any]:
-    """Return the full definition set for the memo files being rewritten.
+    """Return the definitions of the memo files a rebuild writes.
 
-    Memo output is grouped one file per source module, so a rewrite must carry
-    every definition landing in that file: the recompiled pages' auto-memo
-    contributions plus every user ``@rx.memo`` definition whose output file is
-    being rewritten — because its recorded memo state changed (``dirty_paths``,
-    see :func:`_current_memo_state`) or because a recompiled page contributes
-    auto memos to it. The ``changed_files`` condition runs post-evaluation, so
-    it additionally covers memos the pre-evaluation state can't see: modules
-    imported inside a page function whose file (a recorded page dependency)
-    changed.
+    User memo output is grouped one file per source module, so a rewrite
+    must carry every definition landing in that file: every user ``@rx.memo``
+    whose output file is being rewritten because its recorded memo state
+    changed (``dirty_paths``, see :func:`_dirty_memo_paths`), or whose module
+    file (a recorded page dependency) changed, which the pre-evaluation state
+    can't see for modules imported inside a page function. Auto memos are one
+    file each, so the recompiled pages' uses are written as they are.
 
     Args:
-        contributions: The recompiled pages' auto-memo contributions.
+        memo_uses: The auto memos the recompiled pages use.
         dirty_paths: Output paths whose stored memo state no longer matches.
         changed_files: The recorded dependency files whose content changed.
 
@@ -1656,62 +1579,13 @@ def _memo_defs_for_rewrite(
     """
     from reflex_base.components.memo import MEMOS
 
-    rewrite_paths = dirty_paths | {
-        path
-        for definition in contributions.values()
-        if (path := _memo_output_path(definition.source_module)) is not None
-    }
     user_memos = [
         memo
         for (_, source_module), memo in MEMOS.items()
-        if _memo_output_path(source_module) in rewrite_paths
+        if _memo_output_path(source_module) in dirty_paths
         or _module_source_file(source_module) in changed_files
     ]
-    return [*user_memos, *contributions.values()]
-
-
-def _with_memo_contributing_pages(
-    miss_pages: list[PageDefinition],
-    pages: Sequence[PageDefinition],
-    manifest: dict[str, Any],
-    dirty_paths: set[str],
-    stale_owner_routes: set[str],
-) -> list[PageDefinition]:
-    """Add hit pages that must re-evaluate for a memo file rewrite.
-
-    A dirty user-memo file is rewritten from scratch, so hit pages
-    contributing auto memos to the same file must be re-evaluated for their
-    contributions, or the rewrite would drop their exports. Likewise, a
-    route-owned memo entry whose dependency files changed needs its owner
-    page re-evaluated: only that page's evaluation re-registers the memo
-    definitions the rewrite compiles from.
-
-    Args:
-        miss_pages: The dependency-changed pages.
-        pages: All current page definitions (in compile order).
-        manifest: The loaded manifest.
-        dirty_paths: Output paths whose stored memo state no longer matches.
-        stale_owner_routes: Routes owning stored memo entries with changed
-            dependency files.
-
-    Returns:
-        The miss list extended with the affected hit pages.
-    """
-    miss_routes = {page.route for page in miss_pages}
-    extra = [
-        page
-        for page in pages
-        if page.route not in miss_routes
-        and (
-            page.route in stale_owner_routes
-            or (
-                manifest["pages"][page.route]["has_memos"]
-                and _memo_output_path(getattr(page, "_source_module", None))
-                in dirty_paths
-            )
-        )
-    ]
-    return [*miss_pages, *extra] if extra else miss_pages
+    return [*user_memos, *memo_uses.values()]
 
 
 def _refresh_file_table(
@@ -1733,7 +1607,7 @@ def _refresh_file_table(
 
 
 def _save_incremental_output(
-    path: str, code: str, outputs: dict[Path, str] | None
+    path: str | Path, code: str, outputs: dict[Path, str] | None
 ) -> None:
     """Stage output for plugin processing or write it for a direct rebuild.
 
@@ -1751,10 +1625,130 @@ def _save_incremental_output(
         outputs[resolved] = code
 
 
+def _app_root_change(
+    manifest: dict[str, Any],
+    pages: Sequence[PageDefinition],
+    compiled_pages: dict[str, PageContext],
+) -> str | None:
+    """Explain how the recompiled pages changed the app root, or None.
+
+    The app root is a function of the pages' merged app wraps (positioned by
+    the first page requiring each, valued by the last, like the full
+    compile's ``dict.update``). Rebuilding it from stored wraps would need
+    every wrap component to survive a round trip through the manifest, so
+    a changed root is left to a full compile instead; a page first gaining a
+    provider is rare.
+
+    Args:
+        manifest: The loaded manifest.
+        pages: All current page definitions (in compile order).
+        compiled_pages: The recompiled pages' contexts, by route.
+
+    Returns:
+        A human-readable reason, or None when the root on disk still matches.
+    """
+    merged: dict[str, str] = {}
+    providers: dict[str, str] = {}
+    for page in pages:
+        if (page_ctx := compiled_pages.get(page.route)) is not None:
+            wraps = _record_app_wraps(page_ctx)
+        else:
+            wraps = manifest["pages"][page.route]["app_wraps"]
+        for key, digest in wraps.items():
+            merged[key] = digest
+            providers[key] = page.route
+    stored = manifest["app_root"]["wraps"]
+    # Wraps of one priority nest in insertion order, so the order counts.
+    if list(merged.items()) == list(stored.items()):
+        return None
+    for key in sorted(merged.keys() | stored.keys()):
+        if merged.get(key) != stored.get(key):
+            return f"page {providers.get(key)!r} changed the app wrap {key!r}"
+    return "the app wraps changed their order"
+
+
+def _new_bundled_libraries(manifest: dict[str, Any]) -> set[str]:
+    """The libraries this compile bundled that the recorded app root lacks.
+
+    The bundled-library file lists the registry of a full compile, which the
+    recompiled pages' requests are only a part of; a library none of them
+    needs can stay listed, a new one needs the file rewritten.
+
+    Args:
+        manifest: The loaded manifest.
+
+    Returns:
+        The libraries missing from the recorded registry.
+    """
+    live = RegistrationContext.ensure_context().bundled_libraries
+    return set(live) - set(manifest["app_root"]["libraries"])
+
+
+def _reconcile_memo_files(
+    manifest: dict[str, Any],
+    miss_routes: set[str],
+    miss_memo_keys: dict[str, list[str]],
+    emitted: Iterable[str],
+) -> None:
+    """Update the memo file manifest and drop the auto memo files no page uses.
+
+    Args:
+        manifest: The loaded manifest, with the hit pages' entries.
+        miss_routes: The recompiled routes.
+        miss_memo_keys: The memo keys of each recompiled route, now.
+        emitted: The memo files this rebuild wrote.
+    """
+    from reflex.compiler import utils as compiler_utils
+
+    used = set(manifest["app_root"]["memo_keys"])
+    for route, entry in manifest["pages"].items():
+        used.update(
+            miss_memo_keys[route] if route in miss_routes else entry["memo_keys"]
+        )
+    dropped = {
+        _memo_file(tag)
+        for route in miss_routes
+        for tag in manifest["pages"][route]["memo_keys"]
+        if tag not in used
+    }
+    compiler_utils.reconcile_memo_manifest(emitted, dropped)
+
+
+def _enable_radix_for_hit_pages(
+    compiler_plugins: Sequence[Plugin], manifest: dict[str, Any], miss_routes: set[str]
+) -> None:
+    """Enable the implicit Radix Themes plugin when a reused page needs it.
+
+    The implicit plugin enables itself while compiling a Radix component; a
+    page reused from disk is not compiled, so without this the stylesheet,
+    the theme and the package would drop out of a rebuild that re-evaluates
+    no Radix page.
+
+    Args:
+        compiler_plugins: The resolved compiler plugins for this compile.
+        manifest: The loaded manifest.
+        miss_routes: The recompiled routes (compiled, so they enable it
+            themselves).
+    """
+    from reflex_components_radix.plugin import RadixThemesPlugin
+
+    for plugin in compiler_plugins:
+        if (
+            isinstance(plugin, RadixThemesPlugin)
+            and not plugin.enabled
+            and any(
+                entry["radix"]
+                for route, entry in manifest["pages"].items()
+                if route not in miss_routes
+            )
+        ):
+            plugin.enabled = True
+
+
 def try_incremental_rebuild(
     app: App,
     *,
-    compiler_plugins: Any,
+    compiler_plugins: Sequence[Plugin],
     prerender_routes: bool,
     root: Path | None = None,
     use_rich: bool = True,
@@ -1764,19 +1758,20 @@ def try_incremental_rebuild(
     """Attempt a disk-cache-assisted partial rebuild; report whether it ran.
 
     Returns False (so the caller does a full compile) whenever anything is
-    unsafe to reuse: no/old manifest, a changed global input or a route change.
-    When a miss page turns out to have altered its app-wrap set or stateful
-    flag, the miss pages are already evaluated and rendered. A page is never
-    evaluated twice in one process (its locally defined states would register
-    under collision-suffixed names the backend does not use), so the context
-    holding those compiled pages is returned instead of False, for the full
-    compile to adopt (see ``CompileContext.absorb``).
+    unsafe to reuse: no/old manifest, a changed global input, a changed page
+    set or registration. When a miss page turns out to have altered the app
+    root's inputs or its stateful flag, the miss pages are already evaluated
+    and rendered. A page is never evaluated twice in one process (its locally
+    defined states would register under collision-suffixed names the backend
+    does not use), so the context holding those compiled pages is returned
+    instead of False, for the full compile to adopt (see
+    ``CompileContext.absorb``).
 
     User-memo output files are reconciled against the manifest's stored memo
-    record (see :func:`_current_memo_state`): files whose record differs are
-    rewritten, with the affected memo-contributing hit pages re-evaluated so
-    their exports survive the rewrite. Files of deleted memo modules are left
-    orphaned (nothing imports them; the next full compile prunes them).
+    record (see :func:`_memo_state_entries`): files whose record differs are
+    rewritten. Auto memos are content-addressed, one file each, so the
+    recompiled pages write theirs without touching any other page's; files
+    no page uses any more are dropped.
 
     The ``assets`` copy is excluded from dependency tracking and always re-run
     (cheap, idempotent). The contexts file is rewritten only when a stateful
@@ -1786,7 +1781,9 @@ def try_incremental_rebuild(
 
     On success, reports (at info level) how many pages were recompiled vs reused
     and, while recompiling, shows a progress bar over the changed pages so a hot
-    reload makes the incremental work visible.
+    reload makes the incremental work visible. The refreshed manifest is the
+    last output: with ``outputs`` it is staged after every other file, so a
+    manifest on disk never vouches for files that were not written.
 
     Args:
         app: The app being compiled.
@@ -1811,32 +1808,20 @@ def try_incremental_rebuild(
         return False
 
     pages = list(app._unevaluated_pages.values())
-    routes = {p.route for p in pages}
     if registrations is None:
         registrations = registration_digests(pages)
     validator = page_cache.FileValidator(manifest["files"])
     changed_hint = _with_hinted_slices(_changed_hint, manifest)
 
-    if (
-        reason := globals_mismatch(manifest, validator=validator, root=root)
-    ) is not None:
+    if (reason := globals_mismatch(manifest, validator=validator, root=root)) or (
+        reason := _pages_mismatch(pages, manifest, registrations)
+    ):
         _log_fallback(reason)
         return False
 
     resolved_root = (root or Path.cwd()).resolve()
-    # Removed routes leave the manifest; added ones have no entry, so they miss.
-    removed_entries = {
-        route: manifest["pages"].pop(route)
-        for route in [route for route in manifest["pages"] if route not in routes]
-    }
-    route_set_changed = bool(removed_entries) or not routes <= set(manifest["pages"])
     # The states importing the app registered (no page has evaluated yet).
-    page_states = {
-        name
-        for entry in (*manifest["pages"].values(), *removed_entries.values())
-        if (state_slice := entry["state_slice"])
-        for name in state_slice["schema"]
-    }
+    page_states = _hit_page_states(manifest, set())
     live_module_states = [
         name
         for name in RegistrationContext.ensure_context().base_states
@@ -1864,17 +1849,15 @@ def try_incremental_rebuild(
             # They take names before any page, so every page's could shift.
             _log_fallback("the app's import-time dynamic states changed")
             return False
-    miss_pages = partition_pages(
-        pages, manifest, validator, changed_hint, registrations
-    )
-    # Memo files are decided salsa-style: derive the files the current memo
-    # registry demands and rewrite the ones whose stored record differs. This
-    # catches what changed-file diffing structurally cannot: a memo module the
-    # previous compile never saw (its file is in no recorded dependency set).
-    # Only import-owned memos are comparable here (pre-evaluation);
-    # route-owned entries are handled by owner status: a changed dependency
-    # pulls the owner page into the miss set, and its re-evaluation feeds the
-    # post-evaluation comparison below.
+    miss_pages = partition_pages(pages, manifest, validator, changed_hint)
+    # User memo files are decided salsa-style: derive the files the current
+    # memo registry demands and rewrite the ones whose stored record differs.
+    # This catches what changed-file diffing structurally cannot: a memo
+    # module the previous compile never saw (its file is in no recorded
+    # dependency set). Only import-owned memos are comparable here
+    # (pre-evaluation); route-owned entries are handled by owner status: a
+    # changed dependency pulls the owner page into the miss set, and its
+    # re-evaluation feeds the post-evaluation comparison below.
     memo_hasher = page_cache.make_hasher()
     memo_files_table: dict[str, page_cache.FileEntry] = {}
     memo_state = _memo_state_entries(
@@ -1884,40 +1867,17 @@ def try_incremental_rebuild(
     dirty_memo_paths = _dirty_memo_paths(
         memo_state, stored_memo_files, validator, changed_hint
     )
-    # A removed page's auto memos must leave its module's memo file.
-    removed_memo_paths = {
-        path for entry in removed_entries.values() if (path := entry["memo_path"])
-    }
-    dirty_memo_paths |= removed_memo_paths
     stale_owner_routes = {
         owner
         for entry in stored_memo_files.values()
         if (owner := entry["owner_route"]) is not None
-        and owner in routes
+        and owner in manifest["pages"]
         and _memo_deps_changed(entry["deps"], validator, changed_hint)
     }
-    order_changed = _dynamic_page_order_changed(manifest, pages)
-    if order_changed and _predict_dynamic_names:
-        msg = "the order of the pages defining dynamic states changed"
-        raise DynamicStatePredictionError(msg)
     changed_files: set[str] = set()
-    if (
-        miss_pages
-        or dirty_memo_paths
-        or stale_owner_routes
-        or removed_entries
-        or order_changed
-    ):
+    if miss_pages or dirty_memo_paths or stale_owner_routes:
         changed_files = _changed_dependency_files(manifest, validator, changed_hint)
-        miss_pages = _expand_miss_pages(
-            miss_pages,
-            pages,
-            manifest,
-            dirty_memo_paths,
-            stale_owner_routes,
-            dynamic_names_shift=order_changed
-            or any(e["dynamic_claims"] for e in removed_entries.values()),
-        )
+        miss_pages = _expand_miss_pages(miss_pages, pages, manifest, stale_owner_routes)
         memo_note = (
             f"; rewriting {len(dirty_memo_paths)} memo file(s)"
             if dirty_memo_paths
@@ -1931,14 +1891,13 @@ def try_incremental_rebuild(
     else:
         logger.info(f"Compile cache: reusing all {len(pages)} pages from disk")
     miss_routes = {p.route for p in miss_pages}
+    _enable_radix_for_hit_pages(compiler_plugins, manifest, miss_routes)
 
     from reflex.compiler import compiler
-    from reflex.compiler import utils as compiler_utils
 
-    bundle_base: list[str] = []
-    if miss_pages or dirty_memo_paths or route_set_changed:
+    if miss_pages or dirty_memo_paths:
         # Match the full compile's clean bundling/memo state before compiling.
-        bundle_base = compiler._reset_compile_registries(compiler_plugins)
+        compiler._reset_compile_registries(compiler_plugins)
 
     # Recompile only the source-changed pages.
     miss_ctx = None
@@ -1964,7 +1923,6 @@ def try_incremental_rebuild(
             hooks=CompilerHooks(
                 plugins=default_page_plugins(style=app.style, plugins=page_plugins)
             ),
-            bundle_base=bundle_base,
         )
         # Progress over the changed pages (evaluate + render each), so a hot
         # reload shows how much is being recompiled.
@@ -1983,6 +1941,7 @@ def try_incremental_rebuild(
             progress.stop()
         if set(page_cache._loaded_first_party_modules(resolved_root)) != modules_before:
             page_cache.clear_import_graph()
+        _disown_hit_page_states(miss_ctx, manifest, miss_routes)
         for page in miss_pages:
             page_ctx = miss_ctx.compiled_pages.get(page.route)
             if (
@@ -1993,27 +1952,32 @@ def try_incremental_rebuild(
                 _fall_back_after_evaluation(f"page {page.route!r} produced no output")
                 return False
 
-    if _predict_dynamic_names and (
-        route := _shifting_dynamic_claims(
-            manifest, miss_ctx, miss_routes, removed_entries
-        )
+    if (
+        _predict_dynamic_names
+        and miss_ctx is not None
+        and (route := _shifting_dynamic_claims(manifest, miss_ctx, miss_routes))
     ):
         _fall_back_after_evaluation(
             f"page {route!r} changed dynamic state names other pages share"
         )
-    if route := _route_dropping_a_shared_state(manifest, miss_routes, removed_entries):
+    if route := _route_dropping_a_shared_state(manifest, miss_routes):
         _fall_back_after_evaluation(
             f"page {route!r} no longer registers a state other pages may use"
         )
         return miss_ctx if miss_ctx is not None else False
+    if miss_ctx is not None and (
+        reason := _app_root_change(manifest, pages, miss_ctx.compiled_pages)
+    ):
+        _fall_back_after_evaluation(reason)
+        return miss_ctx
 
     # Write changed pages + their memo files; reuse everything else on disk.
     install_imports = _deserialize_imports(manifest["all_imports"])
     eval_memo_state: dict[str, dict[str, Any]] = {}
-    # Outputs of removed pages, deleted once the rebuild succeeded.
-    stale_outputs = [compiler_utils.get_page_path(route) for route in removed_entries]
+    emitted_memo_files: list[str] = []
+    miss_memo_keys: dict[str, list[str]] = {}
     if miss_ctx is not None or dirty_memo_paths:
-        memo_contributions: dict[tuple[str, str | None], Any] = {}
+        memo_uses: dict[tuple[str, str | None], Any] = {}
         miss_imports = []
         if miss_ctx is not None:
             for page in miss_pages:
@@ -2027,7 +1991,8 @@ def try_incremental_rebuild(
                     )
                     return False
                 _save_incremental_output(output_path, output_code, outputs)
-                memo_contributions.update(page_ctx.memo_contributions)
+                memo_uses.update(page_ctx.memo_uses)
+                miss_memo_keys[page.route] = _memo_keys(page_ctx)
                 miss_imports.append(page_ctx.frontend_imports)
             # Post-evaluation pass: the miss pages just evaluated, so memos
             # they own (registered during their evaluation, e.g. from modules
@@ -2043,20 +2008,12 @@ def try_incremental_rebuild(
             dirty_memo_paths = dirty_memo_paths | _dirty_memo_paths(
                 eval_memo_state, stored_memo_files, validator, changed_hint
             )
-        # Memo output files are grouped per source module, so compile them once
-        # with the complete definition set (all recompiled pages' contributions
-        # plus the user memos landing in a file being rewritten).
         memo_files, memo_imports = compiler.compile_memo_components(
-            _memo_defs_for_rewrite(memo_contributions, dirty_memo_paths, changed_files)
+            _memo_defs_for_rewrite(memo_uses, dirty_memo_paths, changed_files)
         )
         for mpath, mcode in memo_files:
             _save_incremental_output(mpath, mcode, outputs)
-        emitted = {mpath for mpath, _ in memo_files}
-        stale_outputs.extend(
-            path
-            for path in removed_memo_paths
-            if path not in emitted and path not in manifest["memo_files"]
-        )
+            emitted_memo_files.append(mpath)
         # Merge once: re-merging the app-wide set per page re-walks its ~100k
         # entries each time.
         install_imports = merge_imports(install_imports, *miss_imports, memo_imports)
@@ -2093,26 +2050,16 @@ def try_incremental_rebuild(
     # from the on-disk contexts file, so compare those first: a content-only
     # edit leaves them identical and the contexts file is reused untouched.
     contexts_snapshot: compiler_utils.ContextsSnapshot | None = None
-    state_libraries: dict[str, list[str]] = manifest["state_libraries"]
-    if (
-        route_set_changed
-        or module_states_changed
-        or (
-            miss_ctx is not None
-            and any(
-                route in miss_ctx.stateful_routes
-                or manifest["pages"].get(route, {}).get("is_stateful")
-                for route in miss_routes
-            )
+    if module_states_changed or (
+        miss_ctx is not None
+        and any(
+            route in miss_ctx.stateful_routes or manifest["pages"][route]["is_stateful"]
+            for route in miss_routes
         )
     ):
         contexts_snapshot = _contexts_snapshot(app)
-        # A route change can drop slices or add dynamic route arguments to the
-        # root state, so it always rebuilds the contexts.
         changed_route = (
-            "the route set"
-            if route_set_changed
-            else "the app's states"
+            "the app's states"
             if module_states_changed
             else _changed_state_config_route(
                 manifest, miss_ctx, contexts_snapshot, miss_routes
@@ -2154,36 +2101,15 @@ def try_incremental_rebuild(
             )
             _save_incremental_output(context_path, context_code, outputs)
             install_imports = merge_imports(install_imports, state_imports)
-            if contexts_snapshot is not None and merged_snapshot is not None:
-                live_libraries = _state_libraries(contexts_snapshot[0])
-                state_libraries = {
-                    name: libraries
-                    for name in merged_snapshot[0]
-                    if (
-                        libraries := live_libraries.get(name)
-                        if name in contexts_snapshot[0]
-                        else state_libraries.get(name)
-                    )
-                }
 
-    app_root_inputs = manifest["app_root"]
-    if miss_ctx is not None or route_set_changed:
-        try:
-            refreshed = _refresh_app_root(
-                app,
-                manifest,
-                pages,
-                miss_ctx.compiled_pages if miss_ctx is not None else {},
-                bundle_base,
-                state_libraries,
-                outputs,
-            )
-        except _AppRootUnavailableError as err:
-            _fall_back_after_evaluation(str(err))
-            return miss_ctx if miss_ctx is not None else False
-        if refreshed is not None:
-            app_root_inputs, root_imports = refreshed
-            install_imports = merge_imports(install_imports, root_imports)
+    # The bundled-library file and the app root reference every bundled
+    # library; a library first requested by this rebuild (a recompiled page,
+    # a state default) needs both rewritten, which only a full compile does.
+    if new_libraries := _new_bundled_libraries(manifest):
+        _fall_back_after_evaluation(
+            f"new bundled libraries: {format_path_list(new_libraries)}"
+        )
+        return miss_ctx if miss_ctx is not None else False
 
     # The assets copy is cheap, idempotent, and excluded from dependency
     # tracking entirely, so it is always re-run.
@@ -2203,6 +2129,12 @@ def try_incremental_rebuild(
     frontend_skeleton.update_entry_client()
     frontend_skeleton.initialize_vite_config()
 
+    # The route table the production static server reads.
+    _save_incremental_output(
+        constants.Dirs.ROUTES_MANIFEST, json.dumps(app._page_routes), outputs
+    )
+    _reconcile_memo_files(manifest, miss_routes, miss_memo_keys, emitted_memo_files)
+
     # The next manifest merges three memo-record sources, mirroring salsa's
     # reuse of queries that did not re-run: route-owned entries whose owner
     # page hit carry forward unchanged (their page never re-evaluated here),
@@ -2214,14 +2146,13 @@ def try_incremental_rebuild(
             for path, entry in stored_memo_files.items()
             if entry["owner_route"] is not None
             and entry["owner_route"] not in miss_routes
-            and entry["owner_route"] in routes
         },
         **memo_state,
         **eval_memo_state,
     }
 
-    # Refresh the manifest for the next process.
-    _update_manifest_for_misses(
+    # Refresh the manifest for the next process; it is the last output.
+    if _update_manifest_for_misses(
         manifest,
         miss_ctx,
         miss_pages,
@@ -2230,10 +2161,7 @@ def try_incremental_rebuild(
         contexts_snapshot=contexts_snapshot,
         memo_state=final_memo_state,
         memo_file_entries=memo_files_table,
-        app_root_inputs=app_root_inputs,
-        state_libraries=state_libraries,
         registrations=registrations,
-        page_order=[page.route for page in pages],
         module_states=(
             _record_module_states(
                 live_module_states,
@@ -2244,16 +2172,9 @@ def try_incremental_rebuild(
             if module_states_changed
             else recorded_module_states
         ),
-        route_set_changed=route_set_changed,
         validator=validator,
-    )
-
-    # The route table the production static server reads.
-    _save_incremental_output(
-        constants.Dirs.ROUTES_MANIFEST, json.dumps(app._page_routes), outputs
-    )
-    for path in stale_outputs:
-        Path(path).unlink(missing_ok=True)
+    ):
+        _save_incremental_output(_manifest_path(), _manifest_text(manifest), outputs)
 
     counts: dict[str, int] = {}
     for page in pages:
@@ -2262,150 +2183,6 @@ def try_incremental_rebuild(
             counts[name] = counts.get(name, 0) + count
     app._cached_component_counts = counts
     return True
-
-
-class _AppRootUnavailableError(Exception):
-    """The app root cannot be rebuilt from the recorded inputs."""
-
-
-def _refresh_app_root(
-    app: App,
-    manifest: dict[str, Any],
-    pages: Sequence[PageDefinition],
-    compiled_pages: dict[str, PageContext],
-    bundle_base: Sequence[str],
-    state_libraries: dict[str, list[str]],
-    outputs: dict[Path, str] | None,
-) -> tuple[dict[str, Any], ParsedImportDict] | None:
-    """Rebuild the app root and bundled-library file when their inputs changed.
-
-    The app root is a function of the pages' merged app wraps (positioned by
-    the first page requiring each, valued by the last, like the full compile's
-    ``dict.update``) and of the bundled libraries, rebuilt in full-compile
-    order from each page's and state's recorded requests. When neither
-    changed, the root on disk stays. Otherwise it is rebuilt from the
-    recompiled pages' live wraps and the recorded wraps of the other pages,
-    without evaluating them.
-
-    Args:
-        app: The app being compiled.
-        manifest: The loaded manifest; its wrap table gains the live wraps.
-        pages: All current page definitions (in compile order).
-        compiled_pages: The recompiled pages' contexts, by route.
-        bundle_base: The bundled libraries registered after this rebuild's
-            registry reset.
-        state_libraries: The libraries each state's initial values request.
-        outputs: Output mapping supplied by the main compiler, if any.
-
-    Returns:
-        The new recorded app-root inputs and the imports the root needs, or
-        None when the root is unchanged.
-
-    Raises:
-        _AppRootUnavailableError: When the recorded inputs cannot rebuild it.
-    """
-    from reflex_base.components.memo import MEMOS
-
-    from reflex.compiler import compiler
-    from reflex.compiler import utils as compiler_utils
-
-    stored = manifest["app_root"]
-    wrap_table = manifest["wrap_table"]
-    merged: dict[str, str] = {}
-    providers: dict[str, str] = {}
-    page_requests = []
-    memo_paths: set[str] = set(manifest["memo_files"])
-    for page in pages:
-        if (page_ctx := compiled_pages.get(page.route)) is not None:
-            wraps = _record_app_wraps(page_ctx, wrap_table)
-            page_requests.append([
-                page_ctx.evaluate_bundle_requests,
-                page_ctx.render_bundle_requests,
-            ])
-            has_memos = bool(page_ctx.memo_contributions)
-        else:
-            entry = manifest["pages"][page.route]
-            wraps = entry["app_wraps"]
-            page_requests.append(entry["bundle_requests"])
-            has_memos = entry["has_memos"]
-        if has_memos and (
-            path := _memo_output_path(getattr(page, "_source_module", None))
-        ):
-            memo_paths.add(path)
-        for key_str, digest in wraps.items():
-            merged[key_str] = digest
-            providers[key_str] = page.route
-    libraries = _reconstruct_libraries(
-        bundle_base, page_requests, stored["root_requests"], state_libraries
-    )
-    # Wraps of one priority nest in insertion order, so the order counts.
-    if (
-        list(merged.items()) == list(stored["wraps"].items())
-        and libraries == stored["libraries"]
-    ):
-        return None
-    if not stored["reconstructible"]:
-        msg = "the app root's bundled libraries cannot be rebuilt"
-        raise _AppRootUnavailableError(msg)
-
-    components = {}
-    for key_str, digest in merged.items():
-        key = _wrap_key(key_str)
-        if (page_ctx := compiled_pages.get(providers[key_str])) is not None:
-            components[key] = page_ctx.app_wrap_components[key]
-        elif (data := wrap_table.get(digest)) is not None:
-            components[key] = pickle.loads(base64.b64decode(data))
-        else:
-            msg = f"page {providers[key_str]!r} requires an app wrap that cannot be stored"
-            raise _AppRootUnavailableError(msg)
-    logger.info(
-        "Compile cache: the app wraps or bundled libraries changed; rebuilding the app root"
-    )
-    memos_before = set(MEMOS)
-    root_ctx = CompileContext(app=app, pages=())
-    with root_ctx, record_bundle_requests() as root_requests:
-        app_root, hydrate_fallback_export = compiler._build_app_root(
-            app, components, root_ctx
-        )
-    root_memos = [
-        *(memo for key, memo in MEMOS.items() if key not in memos_before),
-        *root_ctx.auto_memo_components.values(),
-    ]
-    root_memo_paths = {
-        path
-        for memo in root_memos
-        if (path := _memo_output_path(memo.source_module)) is not None
-    }
-    if root_memo_paths & memo_paths:
-        msg = "the app root's memos share a file with page memos"
-        raise _AppRootUnavailableError(msg)
-    memo_files, memo_imports = compiler.compile_memo_components([
-        *(
-            memo
-            for key, memo in MEMOS.items()
-            if key in memos_before and _memo_output_path(key[1]) in root_memo_paths
-        ),
-        *root_memos,
-    ])
-    libraries = _reconstruct_libraries(
-        bundle_base, page_requests, root_requests, state_libraries
-    )
-    RegistrationContext.ensure_context().bundled_libraries[:] = libraries
-    for path, code in (
-        *memo_files,
-        compiler.compile_app_root(app_root, hydrate_fallback_export),
-        compiler_utils._compile_bundled_libraries(),
-    ):
-        _save_incremental_output(path, code, outputs)
-    return (
-        {
-            "wraps": merged,
-            "libraries": libraries,
-            "root_requests": root_requests,
-            "reconstructible": True,
-        },
-        merge_imports(app_root._get_all_imports(), memo_imports),
-    )
 
 
 def _update_manifest_for_misses(
@@ -2418,22 +2195,18 @@ def _update_manifest_for_misses(
     contexts_snapshot: compiler_utils.ContextsSnapshot | None = None,
     memo_state: dict[str, dict[str, Any]],
     memo_file_entries: dict[str, page_cache.FileEntry],
-    app_root_inputs: dict[str, Any],
-    state_libraries: dict[str, list[str]],
     registrations: dict[str, str],
     module_states: dict[str, list[str]],
-    page_order: Sequence[str] = (),
-    route_set_changed: bool = False,
     validator: page_cache.FileValidator | None = None,
-) -> None:
-    """Update the on-disk manifest entries for the recompiled pages.
+) -> bool:
+    """Update the manifest entries for the recompiled pages.
 
     Also refreshes the stat keys of files that were touched without changing
-    (so they are not re-hashed on every later reload) and persists the
-    import-name parse cache. Rewritten only when something changed.
+    (so they are not re-hashed on every later reload). The caller persists
+    the manifest when something changed.
 
     Args:
-        manifest: The loaded manifest (mutated and rewritten).
+        manifest: The loaded manifest (mutated).
         miss_ctx: The compile context of the recompiled pages, if any.
         miss_pages: The recompiled page definitions.
         all_imports: The complete frontend import set after this rebuild.
@@ -2444,87 +2217,56 @@ def _update_manifest_for_misses(
             :func:`_memo_state_entries`).
         memo_file_entries: File-table entries for the memo records' closures,
             withheld until validation finished.
-        app_root_inputs: The app root's recorded inputs after this rebuild.
-        state_libraries: The libraries each state's initial values request.
         registrations: Each route's registration digest.
         module_states: The import-time states and their source files.
-        page_order: The routes in compile order, which the manifest keeps.
-        route_set_changed: Whether pages were added or removed.
         validator: The validator used for this rebuild, for its refreshed
             entries.
+
+    Returns:
+        Whether the manifest changed and must be written.
     """
-    try:
-        dirty = route_set_changed or (
-            validator is not None and _refresh_file_table(manifest, validator)
-        )
-        # An entry module whose edit only changed page registrations stays the
-        # recorded one; record its new content so the next rebuild skips it.
-        if (
-            validator is not None
-            and (entry_path := manifest["entry"]["path"]) is not None
-            and validator.changed(entry_path)
-            and (entry := page_cache.file_entry(entry_path)) is not None
-        ):
-            manifest["files"][entry_path] = list(entry)
-            dirty = True
-        if manifest["memo_files"] != memo_state:
-            manifest["memo_files"] = memo_state
-            manifest["files"].update(memo_file_entries)
-            dirty = True
-        if miss_ctx is not None and miss_pages:
-            state_index, _ = page_cache.state_dependency_index(root)
-            hasher = page_cache.make_hasher()
-            for page in miss_pages:
-                page_ctx = miss_ctx.compiled_pages[page.route]
-                defined_states = miss_ctx.stateful_routes.get(page.route)
-                manifest["pages"][page.route] = _manifest_page_entry(
-                    page_ctx,
-                    page,
-                    state_index,
-                    hasher,
-                    manifest["files"],
-                    defined_states=defined_states,
-                    registration=registrations[page.route],
-                    wrap_table=manifest["wrap_table"],
-                    state_slice=(
-                        _state_slice(defined_states, *contexts_snapshot)
-                        if defined_states and contexts_snapshot is not None
-                        else None
-                    ),
-                    root=root,
-                )
-            dirty = True
-        if page_order and list(manifest["pages"]) != list(page_order):
-            manifest["pages"] = {
-                route: manifest["pages"][route] for route in page_order
-            }
-            dirty = True
-        if (
-            manifest["app_root"] != app_root_inputs
-            # Dict equality ignores the wrap order, which the root keeps.
-            or list(manifest["app_root"]["wraps"]) != list(app_root_inputs["wraps"])
-            or manifest["state_libraries"] != state_libraries
-            or manifest["module_states"] != module_states
-        ):
-            manifest["app_root"] = app_root_inputs
-            manifest["state_libraries"] = state_libraries
-            manifest["module_states"] = module_states
-            dirty = True
-        if dirty:
-            # Keep only the stored wraps a page or the app root still uses.
-            used = set(app_root_inputs["wraps"].values()).union(
-                *(entry["app_wraps"].values() for entry in manifest["pages"].values())
+    dirty = validator is not None and _refresh_file_table(manifest, validator)
+    # An entry module whose edit only changed page registrations stays the
+    # recorded one; record its new content so the next rebuild skips it.
+    if (
+        validator is not None
+        and (entry_path := manifest["entry"]["path"]) is not None
+        and validator.changed(entry_path)
+        and (entry := page_cache.file_entry(entry_path)) is not None
+    ):
+        manifest["files"][entry_path] = list(entry)
+        dirty = True
+    if manifest["memo_files"] != memo_state:
+        manifest["memo_files"] = memo_state
+        manifest["files"].update(memo_file_entries)
+        dirty = True
+    if miss_ctx is not None and miss_pages:
+        state_index, _ = page_cache.state_dependency_index(root)
+        hasher = page_cache.make_hasher()
+        for page in miss_pages:
+            page_ctx = miss_ctx.compiled_pages[page.route]
+            defined_states = miss_ctx.stateful_routes.get(page.route)
+            manifest["pages"][page.route] = _manifest_page_entry(
+                page_ctx,
+                page,
+                state_index,
+                hasher,
+                manifest["files"],
+                defined_states=defined_states,
+                registration=registrations[page.route],
+                state_slice=(
+                    _state_slice(defined_states, *contexts_snapshot)
+                    if defined_states and contexts_snapshot is not None
+                    else None
+                ),
+                root=root,
             )
-            manifest["wrap_table"] = {
-                digest: data
-                for digest, data in manifest["wrap_table"].items()
-                if digest in used
-            }
-        # A memo-only rewrite can add packages with no page recompiled.
-        if (imports := _serialize_imports(all_imports)) != manifest["all_imports"]:
-            manifest["all_imports"] = imports
-            dirty = True
-        if dirty:
-            _write(manifest)
-    except Exception as exc:  # best-effort
-        logger.warning(f"Compile cache: could not refresh manifest ({exc!r}).")
+        dirty = True
+    if manifest["module_states"] != module_states:
+        manifest["module_states"] = module_states
+        dirty = True
+    # A memo-only rewrite can add packages with no page recompiled.
+    if (imports := _serialize_imports(all_imports)) != manifest["all_imports"]:
+        manifest["all_imports"] = imports
+        dirty = True
+    return dirty

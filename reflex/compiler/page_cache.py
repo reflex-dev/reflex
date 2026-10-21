@@ -1080,6 +1080,30 @@ def warm_module_file_cache(root: Path | None = None) -> None:
     _loaded_first_party_modules(roots[0])
 
 
+def component_tree_classes(root_component: object) -> set[type]:
+    """Collect the class of every component in a rendered tree.
+
+    Args:
+        root_component: The page's root component (its rendered tree).
+
+    Returns:
+        The distinct component classes.
+    """
+    classes: set[type] = set()
+    seen: set[int] = set()
+    stack: list[object] = [root_component]
+    while stack:
+        comp = stack.pop()
+        if id(comp) in seen:
+            continue
+        seen.add(id(comp))
+        classes.add(type(comp))
+        children = getattr(comp, "children", None)
+        if children:
+            stack.extend(children)
+    return classes
+
+
 def component_module_files(
     root_component: object, root: Path | None = None
 ) -> set[Path]:
@@ -1097,20 +1121,11 @@ def component_module_files(
         The set of resolved first-party module files the tree depends on.
     """
     roots = first_party_roots(root)
-    files: set[Path] = set()
-    seen: set[int] = set()
-    stack: list[object] = [root_component]
-    while stack:
-        comp = stack.pop()
-        if id(comp) in seen:
-            continue
-        seen.add(id(comp))
-        if (rf := _class_module_file(type(comp), roots)) is not None:
-            files.add(rf)
-        children = getattr(comp, "children", None)
-        if children:
-            stack.extend(children)
-    return files
+    return {
+        rf
+        for cls in component_tree_classes(root_component)
+        if (rf := _class_module_file(cls, roots)) is not None
+    }
 
 
 #: Cache of the first-party import graph, keyed by project root.
@@ -1665,15 +1680,13 @@ def used_state_files(
 
     Stateful subtrees are auto-memoized into separate components, so a page's
     own ``output_code`` may not name the state it uses; the state lives in the
-    memo components it owns (its ``memo_contributions``). Each stateful memo
-    is owned by exactly one page, which regenerates it whenever it recompiles,
-    so scanning ``output_code`` plus the page's own memo components captures the
-    full dependency set. If a memo can't be introspected, depend on every fine
-    state file.
+    memo components it uses (its ``memo_uses``), so scanning ``output_code``
+    plus those captures the full dependency set. If a memo can't be
+    introspected, depend on every fine state file.
 
     Args:
         output_code: The page's compiled JS.
-        memo_components: The page's own memo component subtrees (renderable).
+        memo_components: The memo component subtrees the page uses (renderable).
         id_to_file: The state-context identifier -> file index.
 
     Returns:
@@ -1721,7 +1734,7 @@ def page_dependency_files(
     files |= component_module_files(page_ctx.root_component, root)
     files |= used_state_files(
         page_ctx.output_code or "",
-        [m.component for m in page_ctx.memo_contributions.values()],
+        [m.component for m in page_ctx.memo_uses.values()],
         state_index,
     )
     deps = {str(f) for f in files}

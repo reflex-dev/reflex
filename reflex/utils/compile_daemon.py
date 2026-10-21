@@ -601,19 +601,26 @@ def _reset_first_party(roots: list[Path]) -> None:
     Args:
         roots: The resolved reload roots whose modules are first-party.
     """
-    for name in _first_party_module_names(roots):
+    purged = _first_party_module_names(roots)
+    for name in purged:
         sys.modules.pop(name, None)
     # The import-system finder caches were inherited from the warm parent via
     # fork and are now stale (they reference the purged modules); without this a
     # re-import can resolve a stale spec for a since-changed module.
     importlib.invalidate_caches()
 
+    from reflex_base.components.memo import MEMOS
     from reflex_base.registry import RegistrationContext
 
     import reflex.istate.dynamic as istate_dynamic
     from reflex.compiler import page_cache
     from reflex.state import BaseState, _frontend_schema, all_base_state_classes
 
+    # A purged module re-registers its memos when it re-imports; a renamed or
+    # deleted memo must not survive from the parent (a name collision with the
+    # old registration, or a memo file the app no longer defines).
+    for key in [key for key in MEMOS if key[1] in purged]:
+        del MEMOS[key]
     ctx = RegistrationContext.ensure_context()
     kept = [
         cls
@@ -644,8 +651,10 @@ def _reset_first_party(roots: list[Path]) -> None:
     object.__setattr__(ctx, "_app", None)
     # The import graph caches each module's parsed import edges; a changed file
     # may import differently now, so drop it to force a re-parse. Cross-compile
-    # page reuse comes from the on-disk manifest.
+    # page reuse comes from the on-disk manifest. The reads attributed to the
+    # purged modules are re-recorded as they re-execute.
     page_cache.clear_import_graph()
+    page_cache.forget_module_reads()
     _reset_model_metadata()
 
 

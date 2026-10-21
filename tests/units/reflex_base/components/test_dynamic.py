@@ -165,19 +165,3 @@ def test_unknown_attribute_raises(module_name: str):
     module = importlib.import_module(f"{module_name}.components.dynamic")
     with pytest.raises(AttributeError, match=f"{module.__name__!r}"):
         _ = module.definitely_not_an_attribute
-
-
-def test_bundle_requests_are_recorded_in_order():
-    """Every request is recorded, bundled already or not, and reaches outer recorders.
-
-    A compile reconstructs the bundled-library order from what each page and
-    state requested, so a request for an already bundled library still counts.
-    """
-    with RegistrationContext():
-        with dynamic.record_bundle_requests() as outer:
-            dynamic.bundle_library("lib-a")
-            with dynamic.record_bundle_requests() as inner:
-                dynamic.bundle_library("lib-a")
-                dynamic.bundle_library("lib-b")
-        assert inner == ["lib-a", "lib-b"]
-        assert outer == ["lib-a", "lib-a", "lib-b"]

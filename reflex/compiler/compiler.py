@@ -559,7 +559,6 @@ def _compile_memo_components(
     output_files: list[tuple[str, str]] = []
     aggregate_imports: dict[str, list[ImportVar]] = {}
     unmirrored_files: list[tuple[str, str]] = []
-    unmirrored_base_dir = utils.get_memo_components_dir()
     groups: collections.defaultdict[tuple[str, ...], _MemoGroup] = (
         collections.defaultdict(_MemoGroup)
     )
@@ -570,10 +569,7 @@ def _compile_memo_components(
         render_imports: dict,
     ) -> None:
         code, file_imports = compile_fn(render, render_imports)
-        unmirrored_files.append((
-            _memo_component_file_path(unmirrored_base_dir, render["name"]),
-            code,
-        ))
+        unmirrored_files.append((utils.get_memo_component_path(render["name"]), code))
         _extend_imports_in_place(aggregate_imports, file_imports)
 
     for memo in memos:
@@ -681,19 +677,6 @@ def _compile_single_memo_function(
         function=function_render,
     )
     return code, imports
-
-
-def _memo_component_file_path(base_dir: str, name: str) -> str:
-    """Return the on-disk path for a per-memo module.
-
-    Args:
-        base_dir: The directory that holds per-memo files.
-        name: The memo's export name.
-
-    Returns:
-        The absolute path for the memo's ``.jsx`` file.
-    """
-    return str(Path(base_dir) / f"{name}{constants.Ext.JSX}")
 
 
 def compile_document_root(
@@ -1374,14 +1357,11 @@ def _apply_plugin_outputs(
     return sources
 
 
-def _reset_compile_registries(compiler_plugins: Sequence[Plugin]) -> list[str]:
+def _reset_compile_registries(compiler_plugins: Sequence[Plugin]) -> None:
     """Reset the registries a compile fills before any page is evaluated.
 
     Args:
         compiler_plugins: The resolved compiler plugins.
-
-    Returns:
-        The bundled libraries registered after the reset.
     """
     from reflex_base.components.dynamic import (
         _bundle_library,
@@ -1399,7 +1379,6 @@ def _reset_compile_registries(compiler_plugins: Sequence[Plugin]) -> list[str]:
     for plugin in compiler_plugins:
         for dependency in plugin.get_frontend_dependencies():
             _bundle_library(dependency)
-    return list(RegistrationContext.ensure_context().bundled_libraries)
 
 
 def _read_stateful_pages_marker() -> list[str] | None:
@@ -1461,37 +1440,42 @@ def _compile_from_cache(
         registrations=registrations,
     )
     if rebuilt is True:
-        try:
-            save_tasks, modify_tasks = _plugin_output_tasks(
-                config.plugins,
-                radix_themes_plugin,
-                list(app._unevaluated_pages.values()),
-            )
-            manifest = disk_cache.load_manifest()
-            stylesheet_path, stylesheet_code = compile_root_stylesheet(
-                app.stylesheets, app.reset_style, plugins=compiler_plugins
-            )
-            outputs[utils.resolve_path_of_web_dir(stylesheet_path)] = stylesheet_code
-            for task_fn, args, kwargs in save_tasks:
-                result = task_fn(*args, **kwargs)
-                if result is not None:
-                    for path, code in result if isinstance(result, list) else [result]:
-                        outputs[utils.resolve_path_of_web_dir(path)] = code
-            sources = _apply_plugin_outputs(
-                outputs,
-                config.plugins,
-                modify_tasks,
-                manifest.get("plugin_sources", {}) if manifest is not None else {},
-            )
-            for path, code in outputs.items():
-                utils.write_file(path, code)
-            if manifest is not None and manifest.get("plugin_sources") != sources:
-                manifest["plugin_sources"] = sources
-                disk_cache._write(manifest)
-        except BaseException:
-            # The staged manifest must not validate outputs that failed to save.
-            disk_cache._manifest_path().unlink(missing_ok=True)
-            raise
+        manifest_path = disk_cache._manifest_path().absolute()
+        # The refreshed manifest is written last: a manifest on disk must
+        # never vouch for outputs that were not written, so until every
+        # other file is on disk there is none.
+        staged_manifest = outputs.pop(manifest_path, None)
+        manifest = (
+            json.loads(staged_manifest)
+            if staged_manifest is not None
+            else disk_cache.load_manifest()
+        )
+        manifest_path.unlink(missing_ok=True)
+        save_tasks, modify_tasks = _plugin_output_tasks(
+            config.plugins,
+            radix_themes_plugin,
+            list(app._unevaluated_pages.values()),
+        )
+        stylesheet_path, stylesheet_code = compile_root_stylesheet(
+            app.stylesheets, app.reset_style, plugins=compiler_plugins
+        )
+        outputs[utils.resolve_path_of_web_dir(stylesheet_path)] = stylesheet_code
+        for task_fn, args, kwargs in save_tasks:
+            result = task_fn(*args, **kwargs)
+            if result is not None:
+                for path, code in result if isinstance(result, list) else [result]:
+                    outputs[utils.resolve_path_of_web_dir(path)] = code
+        sources = _apply_plugin_outputs(
+            outputs,
+            config.plugins,
+            modify_tasks,
+            manifest.get("plugin_sources", {}) if manifest is not None else {},
+        )
+        for path, code in outputs.items():
+            utils.write_file(path, code)
+        if manifest is not None:
+            manifest["plugin_sources"] = sources
+            disk_cache._write(manifest)
     return rebuilt
 
 
@@ -1518,7 +1502,6 @@ def compile_app(
         ``True`` when a real frontend compile ran, ``False`` when the call
         short-circuited (backend-only paths that only re-evaluate pages).
     """
-    from reflex_base.components.dynamic import record_bundle_requests
     from reflex_base.utils.exceptions import ReflexRuntimeError
 
     app._apply_decorated_pages()
@@ -1617,9 +1600,8 @@ def compile_app(
     all_pages = list(app._unevaluated_pages.values())
     if evaluated is None:
         pages_to_compile = all_pages
-        bundle_base = _reset_compile_registries(compiler_plugins)
+        _reset_compile_registries(compiler_plugins)
     else:
-        bundle_base = evaluated.bundle_base
         # The incremental attempt already did the resets above and bundled what
         # its pages registered; only the pages it never touched remain.
         pages_to_compile = [
@@ -1635,7 +1617,6 @@ def compile_app(
         hooks=CompilerHooks(
             plugins=default_page_plugins(style=app.style, plugins=compiler_plugins)
         ),
-        bundle_base=bundle_base,
     )
 
     with (
@@ -1696,10 +1677,9 @@ def compile_app(
         raise ReflexRuntimeError(msg)
     progress.advance(task)
 
-    with record_bundle_requests() as root_bundle_requests:
-        app_root, hydrate_fallback_export = _build_app_root(
-            app, compile_ctx.app_wrap_components, compile_ctx
-        )
+    app_root, hydrate_fallback_export = _build_app_root(
+        app, compile_ctx.app_wrap_components, compile_ctx
+    )
     all_imports = utils.merge_imports(all_imports, app_root._get_all_imports())
 
     memo_component_files, memo_components_imports = compile_memo_components(
@@ -1857,7 +1837,6 @@ def compile_app(
             all_imports,
             plugin_sources=plugin_sources,
             contexts_snapshot=contexts_snapshot,
-            root_bundle_requests=root_bundle_requests,
             registrations=registrations,
         )
 

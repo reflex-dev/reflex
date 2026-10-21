@@ -676,7 +676,7 @@ def test_page_dependency_files_closes_over_dynamic_imports(tmp_path, monkeypatch
         page_ctx = SimpleNamespace(
             root_component=SimpleNamespace(children=[]),
             output_code="",
-            memo_contributions={},
+            memo_uses={},
             source_files={str(helper.resolve())},
         )
         deps = page_cache.page_dependency_files(
@@ -821,7 +821,7 @@ def test_reads_behind_a_shared_cache_reach_every_dependent_page(tmp_path, monkey
         page_ctx = SimpleNamespace(
             root_component=SimpleNamespace(children=[]),
             output_code="",
-            memo_contributions={},
+            memo_uses={},
             source_files={str(helper.resolve())},
         )
         deps = page_cache.page_dependency_files(
@@ -900,7 +900,7 @@ def test_mark_volatile_makes_the_page_miss_every_compile(tmp_path):
     page_ctx = SimpleNamespace(
         root_component=SimpleNamespace(children=[]),
         output_code="",
-        memo_contributions={},
+        memo_uses={},
         source_files=reads,
     )
     files = {}
@@ -1138,7 +1138,7 @@ def test_function_slice_falls_back_to_the_whole_file_for_computed_access(
         page_ctx = SimpleNamespace(
             root_component=SimpleNamespace(children=[]),
             output_code="",
-            memo_contributions={},
+            memo_uses={},
             source_files=set(),
         )
         deps = page_cache.page_dependency_files(
@@ -1190,7 +1190,7 @@ def test_page_dependency_files_track_the_page_function_slice(tmp_path, monkeypat
         page_ctx = SimpleNamespace(
             root_component=SimpleNamespace(children=[]),
             output_code="",
-            memo_contributions={},
+            memo_uses={},
             source_files=set(),
         )
         deps = page_cache.page_dependency_files(

@@ -1162,9 +1162,7 @@ def test_compile_memo_components_falls_back_when_no_source_module():
     )
 
     files, _ = compiler.compile_memo_components((legacy_definition,))
-    exp_path = compiler._memo_component_file_path(
-        compiler_utils.get_memo_components_dir(), "LegacyMemo"
-    )
+    exp_path = compiler_utils.get_memo_component_path("LegacyMemo")
     assert any(path == exp_path for path, _ in files)
 
 
@@ -1339,9 +1337,7 @@ def test_component_memo_wrapper_none_in_unmirrored_module():
     )
 
     files, _ = compiler.compile_memo_components((definition,))
-    exp_path = compiler._memo_component_file_path(
-        compiler_utils.get_memo_components_dir(), "BareSingle"
-    )
+    exp_path = compiler_utils.get_memo_component_path("BareSingle")
     single_code = next(code for path, code in files if path == exp_path)
     assert "export const BareSingle = ((" in single_code
     assert " = memo(" not in single_code

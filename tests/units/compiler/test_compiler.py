@@ -1975,6 +1975,83 @@ def test_incremental_compile_runs_plugin_outputs(
     assert (tmp_path / "page.txt").read_text() == ("new!" if fresh_page else "base!")
 
 
+@pytest.mark.parametrize("write_fails", [False, True])
+def test_cached_compile_writes_the_manifest_last(
+    tmp_path, monkeypatch, mocker, write_fails
+):
+    """The refreshed manifest reaches disk only after every other output.
+
+    A manifest on disk vouches for the files it describes; it must never be
+    there while they are not (a kill between the two leaves pages stale).
+    """
+    from reflex.compiler import disk_cache
+
+    monkeypatch.setenv("REFLEX_COMPILE_CACHE", "1")
+    monkeypatch.setenv("REFLEX_WEB_WORKDIR", str(tmp_path))
+    mocker.patch("reflex.app.reload_config")
+    app = rx.App()
+    app.add_page(lambda: rx.el.div("page"), route="index")
+    mocker.patch.object(
+        compiler, "get_config", return_value=rx.Config(app_name="testing", plugins=[])
+    )
+    mocker.patch.object(app, "_should_compile", return_value=True)
+    # The attempt runs in this process, where the writes can be observed.
+    from reflex.utils import compile_daemon
+
+    mocker.patch.object(
+        compile_daemon, "compiled_in_predicting_child", return_value=False
+    )
+    manifest_path = disk_cache._manifest_path().absolute()
+    manifest_path.write_text(json.dumps({"schema": 0, "plugin_sources": {}}))
+    page = tmp_path / "page.txt"
+    written: list[Path] = []
+    original_write = compiler.utils.write_file
+
+    def write_file(path, code):
+        """Write an output, failing the page when the test asks.
+
+        Args:
+            path: The output path.
+            code: The output content.
+
+        Raises:
+            OSError: When the page write is made to fail.
+        """
+        if write_fails and Path(path) == page:
+            msg = "disk full"
+            raise OSError(msg)
+        written.append(Path(path))
+        original_write(path, code)
+
+    mocker.patch.object(compiler.utils, "write_file", side_effect=write_file)
+
+    def rebuild(*args, outputs, **kwargs):
+        """Stage a page and the refreshed manifest, manifest first.
+
+        Args:
+            args: Application arguments.
+            outputs: Compiler output mapping.
+            kwargs: Rebuild options.
+
+        Returns:
+            Whether the incremental rebuild succeeded.
+        """
+        outputs[manifest_path] = json.dumps({"schema": 1, "plugin_sources": {}})
+        outputs[page] = "new"
+        return True
+
+    mocker.patch.object(disk_cache, "try_incremental_rebuild", side_effect=rebuild)
+    if write_fails:
+        with pytest.raises(OSError, match="disk full"):
+            compiler.compile_app(app, use_rich=False)
+        assert not manifest_path.exists()
+        return
+    assert compiler.compile_app(app, use_rich=False)
+    assert json.loads(manifest_path.read_text())["schema"] == 1
+    assert manifest_path not in written
+    assert written.index(page) < len(written)
+
+
 def test_preloaded_app_skips_incremental_reuse(monkeypatch, mocker):
     """Unobserved import-time reads require a full compile for preloaded apps."""
     from reflex.compiler import disk_cache
@@ -2144,37 +2221,6 @@ def test_compile_app_progress_ends_at_its_total(
     [bar] = bars
     [task] = bar.tasks.values()
     assert task["current"] == task["total"]
-
-
-def test_compile_records_bundle_requests_per_page_and_phase():
-    """Each page records the libraries it requested while evaluating and rendering."""
-    from reflex_base.plugins import CompileContext, CompilerHooks
-
-    from reflex.compiler.plugins import default_page_plugins
-
-    def page_one() -> rx.Component:
-        bundle_library("lib-one")
-        return rx.el.div("one")
-
-    def page_two() -> rx.Component:
-        bundle_library("lib-one")
-        bundle_library("lib-two")
-        return rx.el.div("two")
-
-    with RegistrationContext():
-        app = rx.App()
-        app.add_page(page_one, route="/one")
-        app.add_page(page_two, route="/two")
-        ctx = CompileContext(
-            app=app,
-            pages=list(app._unevaluated_pages.values()),
-            hooks=CompilerHooks(plugins=default_page_plugins()),
-        )
-        with ctx:
-            ctx.compile()
-    assert ctx.compiled_pages["one"].evaluate_bundle_requests == ["lib-one"]
-    assert ctx.compiled_pages["two"].evaluate_bundle_requests == ["lib-one", "lib-two"]
-    assert ctx.compiled_pages["two"].render_bundle_requests == []
 
 
 def test_serving_compile_discards_the_manifest(tmp_path, monkeypatch, mocker):

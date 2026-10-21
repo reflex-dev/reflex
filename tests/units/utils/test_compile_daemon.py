@@ -580,6 +580,68 @@ def test_reset_first_party_keeps_surviving_module_states(tmp_path):
 
 
 @pytest.mark.skipif(not hasattr(os, "fork"), reason="requires os.fork (POSIX)")
+def test_reset_first_party_drops_memos_of_purged_modules(tmp_path):
+    """A purged module's memos leave the registry; the module re-registers them.
+
+    Otherwise a renamed memo collides with the parent's registration of its
+    old name on every re-import, and a deleted memo keeps being emitted.
+    Memos of surviving modules stay.
+    """
+    mod_file = tmp_path / "purged_memo_mod.py"
+    mod_file.write_text(
+        "import reflex as rx\n\n@rx.memo\ndef my_card() -> rx.Component:\n"
+        "    return rx.text('card')\n"
+    )
+
+    read_fd, write_fd = os.pipe()
+    pid = os.fork()
+    if pid == 0:  # child
+        os.close(read_fd)
+        result = b"E"
+        try:
+            import importlib.util
+            import sys
+
+            from reflex_base.components.memo import MEMOS
+
+            def load(source: str) -> None:
+                mod_file.write_text(source)
+                spec = importlib.util.spec_from_file_location(
+                    "purged_memo_mod", mod_file
+                )
+                assert spec is not None
+                module = importlib.util.module_from_spec(spec)
+                sys.modules["purged_memo_mod"] = module
+                spec.loader.exec_module(module)  # type: ignore[union-attr]
+
+            load(mod_file.read_text())
+            surviving = {key for key in MEMOS if key[1] != "purged_memo_mod"}
+            assert ("MyCard", "purged_memo_mod") in MEMOS
+
+            compile_daemon._reset_first_party([tmp_path.resolve()])
+            dropped = ("MyCard", "purged_memo_mod") not in MEMOS
+            kept = surviving <= set(MEMOS)
+            # The renamed memo re-registers under its export name without a
+            # collision with the parent's registration.
+            load(mod_file.read_text().replace("def my_card", "def _my_card"))
+            renamed = ("MyCard", "purged_memo_mod") in MEMOS
+            result = b"1" if (dropped and kept and renamed) else b"0"
+        except Exception:
+            import traceback
+
+            traceback.print_exc()
+        finally:
+            os.write(write_fd, result)
+            os.close(write_fd)
+            os._exit(0)
+
+    os.close(write_fd)
+    out = os.read(read_fd, 1)
+    os.close(read_fd)
+    os.waitpid(pid, 0)
+    assert out == b"1"
+
+
 def test_reset_first_party_purges_modules_and_registries(tmp_path):
     """``_reset_first_party`` purges first-party modules and clears registries.
 
