@@ -92,7 +92,13 @@ if TYPE_CHECKING:
     from .color import LiteralColorVar
     from .number import BooleanVar, LiteralBooleanVar, LiteralNumberVar, NumberVar
     from .object import LiteralObjectVar, ObjectVar
-    from .sequence import ArrayVar, LiteralArrayVar, LiteralStringVar, StringVar
+    from .sequence import (
+        ARRAY_VAR_TYPE,
+        ArrayVar,
+        LiteralArrayVar,
+        LiteralStringVar,
+        StringVar,
+    )
 
 
 VAR_TYPE = TypeVar("VAR_TYPE", covariant=True)
@@ -1041,9 +1047,9 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
     @classmethod
     def create(
         cls,
-        value: SEQUENCE_TYPE,
+        value: ARRAY_VAR_TYPE,
         _var_data: VarData | None = None,
-    ) -> LiteralArrayVar[SEQUENCE_TYPE]: ...
+    ) -> LiteralArrayVar[ARRAY_VAR_TYPE]: ...
 
     @overload
     @classmethod
@@ -2094,7 +2100,7 @@ def var_operation(
 ) -> Callable[P, StringVar]: ...
 
 
-LIST_T = TypeVar("LIST_T", bound=Sequence)
+LIST_T = TypeVar("LIST_T", bound=Sequence | set | frozenset)
 
 
 @overload

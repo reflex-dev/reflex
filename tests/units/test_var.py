@@ -44,7 +44,12 @@ from reflex_base.vars.function import (
     DestructuredArg,
     FunctionStringVar,
 )
-from reflex_base.vars.number import LiteralBooleanVar, LiteralNumberVar, NumberVar
+from reflex_base.vars.number import (
+    BooleanVar,
+    LiteralBooleanVar,
+    LiteralNumberVar,
+    NumberVar,
+)
 from reflex_base.vars.object import LiteralObjectVar, ObjectVar
 from reflex_base.vars.sequence import (
     ArrayVar,
@@ -424,10 +429,47 @@ def test_date_comparison_uses_compare_datetime():
 
 def test_frozenset_literal_types_its_elements():
     """A frozen set literal infers its element type like a set does."""
-    # The static array bound is Sequence, which no set satisfies; see the PR.
-    var = cast(ArrayVar, v(frozenset({"a"})))
+    var = LiteralVar.create(frozenset({"a"}))
+    typing.assert_type(var, LiteralArrayVar[frozenset[str]])
+    typing.assert_type(
+        LiteralArrayVar.create(frozenset({"a"})), LiteralArrayVar[frozenset[str]]
+    )
+    typing.assert_type(var[0], StringVar)
+    typing.assert_type(var.reverse(), ArrayVar[frozenset[str]])
+    typing.assert_type(var + var, ArrayVar[frozenset[str]])
+    typing.assert_type(var * 2, ArrayVar[frozenset[str]])
+    typing.assert_type(var[:1], ArrayVar[frozenset[str]])
+    typing.assert_type(LiteralVar.create(frozenset({1}))[0], NumberVar)
+    typing.assert_type(LiteralVar.create(frozenset({True}))[0], BooleanVar)
+    typing.assert_type(
+        LiteralVar.create(frozenset({frozenset({"a"})}))[0], ArrayVar[frozenset[str]]
+    )
 
     assert var._var_type == frozenset[str]
+    assert isinstance(var[0], StringVar)
+    assert re.fullmatch(
+        r'\["a"\]\.map\(\(\((\w+)\) => \1\.toUpperCase\(\)\)\)',
+        str(var.map(lambda item: item.upper())),
+    )
+
+
+def test_set_literal_types_its_elements():
+    """A set literal preserves its array and element types."""
+    var = LiteralVar.create({"a"})
+    typing.assert_type(var, LiteralArrayVar[set[str]])
+    typing.assert_type(LiteralArrayVar.create({"a"}), LiteralArrayVar[set[str]])
+    typing.assert_type(var[0], StringVar)
+    typing.assert_type(var.reverse(), ArrayVar[set[str]])
+    typing.assert_type(var + var, ArrayVar[set[str]])
+    typing.assert_type(var * 2, ArrayVar[set[str]])
+    typing.assert_type(var[:1], ArrayVar[set[str]])
+    typing.assert_type(LiteralVar.create({1})[0], NumberVar)
+    typing.assert_type(LiteralVar.create({True})[0], BooleanVar)
+    typing.assert_type(
+        LiteralVar.create({frozenset({"a"})})[0], ArrayVar[frozenset[str]]
+    )
+
+    assert var._var_type == set[str]
     assert isinstance(var[0], StringVar)
     assert re.fullmatch(
         r'\["a"\]\.map\(\(\((\w+)\) => \1\.toUpperCase\(\)\)\)',
