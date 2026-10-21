@@ -169,6 +169,9 @@ class _EmbeddedServer:
                 getattr(socket, "SO_EXCLUSIVEADDRUSE", socket.SO_REUSEADDR),
                 1,
             )
+            # Accepted sockets inherit it, as from the listeners granian binds:
+            # with Nagle, a small frame waits for the client's delayed ACK.
+            sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
             sock.bind((host, port))
             sock.listen()
         except OSError:

@@ -7,6 +7,7 @@ import sys
 import threading
 import time
 from collections.abc import Callable, Iterator
+from pathlib import Path
 from types import ModuleType, SimpleNamespace
 from unittest import mock
 
@@ -299,6 +300,40 @@ def test_embedded_server_owns_its_port():
         server.wait_started(timeout=15)
         _assert_port_taken(server.host, server.port)
         assert httpx.get(f"http://{server.host}:{server.port}/").content == b"embedded"
+
+
+def _accepted_nodelay(client: socket.socket) -> int:
+    """Read TCP_NODELAY of the in-process server end of a connection.
+
+    Args:
+        client: the client end of the connection.
+
+    Returns:
+        The TCP_NODELAY value of the accepted socket.
+    """
+    peer = client.getsockname()
+    for fd in Path("/dev/fd").iterdir():
+        try:
+            sock = socket.fromfd(int(fd.name), socket.AF_INET, socket.SOCK_STREAM)
+        except OSError:  # closed since the listing
+            continue
+        # Not every fd is a connected socket.
+        with sock, contextlib.suppress(OSError):
+            if sock.getpeername() == peer:
+                return sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY)
+    pytest.fail("The server end of the connection was not found.")
+
+
+@pytest.mark.skipif(IS_WINDOWS, reason="Finds the accepted socket through /dev/fd.")
+def test_embedded_server_connections_use_tcp_nodelay():
+    """Accepted connections send small websocket frames without waiting for an ACK."""
+    server = reflex_testing._EmbeddedServer(_asgi_app())
+    with _running(server):
+        server.wait_started(timeout=15)
+        with socket.create_connection(server.getsockname()) as client:
+            client.sendall(b"GET / HTTP/1.1\r\nHost: localhost\r\n\r\n")
+            assert client.recv(1024).startswith(b"HTTP/1.1 200")
+            assert _accepted_nodelay(client)
 
 
 def test_poll_for_servers_waits_for_the_backend_itself(tmp_path):
