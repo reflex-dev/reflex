@@ -2729,3 +2729,33 @@ def test_reordering_dynamic_state_pages_reevaluates_them(
         _drop_dynamic_states("CollideState")
     assert result is True
     assert (_COLLIDE["one"], _COLLIDE["two"]) == (1, 1)
+
+
+def test_manifest_dependency_files_cover_every_recorded_input():
+    """The daemon watches, and checks at startup, every input the manifest records.
+
+    Import-time state files and memo source closures belong to no page, so
+    they are listed alongside the page dependencies and global inputs.
+    """
+    manifest = {
+        "pages": {"index": {"deps": ["/app/pages.py::index", "/app/data.md"]}},
+        "globals": {"reflex": "0.0.0", "rxconfig": "/app/rxconfig.py"},
+        "globals_absent": ["/app/uv.lock"],
+        "module_states": {"files": ["/app/state.py"]},
+        "memo_files": {"memo.js": {"deps": ["/lib/memo.py"]}},
+    }
+    assert disk_cache.manifest_dependency_entries(manifest) == {
+        "/app/pages.py::index",
+        "/app/data.md",
+        "/app/rxconfig.py",
+        "/app/state.py",
+        "/lib/memo.py",
+    }
+    assert disk_cache.manifest_dependency_files(manifest) == {
+        "/app/pages.py",
+        "/app/data.md",
+        "/app/rxconfig.py",
+        "/app/uv.lock",
+        "/app/state.py",
+        "/lib/memo.py",
+    }

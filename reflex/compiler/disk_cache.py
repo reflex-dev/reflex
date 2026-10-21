@@ -666,14 +666,10 @@ def manifest_dependency_files(manifest: dict[str, Any]) -> set[str]:
         manifest: The loaded manifest.
 
     Returns:
-        Page dependency paths plus the file-backed global inputs.
+        The files of :func:`manifest_dependency_entries` plus the global
+        inputs recorded as absent.
     """
-    files: set[str] = set()
-    for entry in manifest.get("pages", {}).values():
-        files.update(page_cache.dep_file(dep) for dep in entry.get("deps", ()))
-    files.update(
-        path for label, path in manifest.get("globals", {}).items() if label != "reflex"
-    )
+    files = {page_cache.dep_file(dep) for dep in manifest_dependency_entries(manifest)}
     files.update(manifest.get("globals_absent", ()))
     return files
 

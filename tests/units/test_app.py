@@ -5790,12 +5790,16 @@ def test_write_stateful_pages_marker_concurrent_readers_see_valid_json(
 
     with ThreadPoolExecutor(max_workers=8) as pool:
         readers = [pool.submit(reader) for _ in range(4)]
+        writers = [pool.submit(writer) for _ in range(4)]
         try:
-            writers = [pool.submit(writer) for _ in range(4)]
             for future in writers:
                 future.result()
-        finally:
+        except BaseException:
+            # Free the readers so the pool can join. Never on success: a reader
+            # released from the last round but not yet scheduled would see the
+            # aborted barrier and raise.
             round_started.abort()
+            raise
         for future in readers:
             future.result()
     assert json.loads(marker.read_text()) == routes
