@@ -2463,6 +2463,9 @@ class State(BaseState):
         """
         from reflex_base.event.context import EventContext
 
+        # Inline to avoid a circular import through the processor package init.
+        from reflex_base.event.processor.scope import event_scope
+
         self._reset_client_storage()
         applied = await _apply_client_storage_vars(self, vars) if vars else []
         self._clean()
@@ -2472,12 +2475,15 @@ class State(BaseState):
         self.is_hydrated = False
         ctx = EventContext.get()
         if ctx.emit_delta_impl is not None:
-            delta = await _resolve_delta(self.dict())
-            if hashes:
-                delta = await _diff_against_initial_state(type(self), delta, hashes)
-            # Include the guard and values changed while resolving the snapshot.
-            for state_name, changes in (await self._get_resolved_delta()).items():
-                delta.setdefault(state_name, {}).update(changes)
+            # The event scope (e.g. the i18n locale) was derived before the
+            # browser's storage was applied; re-derive it for the snapshot.
+            async with event_scope(self):
+                delta = await _resolve_delta(self.dict())
+                if hashes:
+                    delta = await _diff_against_initial_state(type(self), delta, hashes)
+                # Include the guard and values changed while resolving the snapshot.
+                for state_name, changes in (await self._get_resolved_delta()).items():
+                    delta.setdefault(state_name, {}).update(changes)
             await ctx.emit_delta(delta=delta)
             # Follow-up corrections must be allowed to write browser storage.
             self.dirty_vars.discard(constants.CompileVars.IS_HYDRATED)
@@ -3040,6 +3046,29 @@ def reload_state_module(
         state: Recursive argument for the state class to reload.
 
     """
+    removed: set[str] = set()
+    _reload_state_module(module, state, removed)
+    # Drop dependency edges that point at reloaded states from every surviving
+    # state. A state removed here re-registers its edges when its module is
+    # re-imported; without this, an edge stored on a state that is NOT in the
+    # reloaded module (e.g. a package-level state a computed var depends on)
+    # would dangle and crash _mark_dirty_computed_vars on the next app.
+    if removed:
+        _purge_dependencies_on_states(removed, state.get_root_state())
+
+
+def _reload_state_module(
+    module: str,
+    state: type[BaseState],
+    removed: set[str],
+) -> None:
+    """Recursively reset rx.State subclasses defined in ``module``.
+
+    Args:
+        module: The module to reload.
+        state: The state class to reload.
+        removed: Accumulates the full names of states removed during reload.
+    """
     # Clean out all potentially dirty states of reloaded modules.
     for pd_state in tuple(state._potentially_dirty_states):
         with contextlib.suppress(ValueError):
@@ -3051,11 +3080,32 @@ def reload_state_module(
     reg_ctx = RegistrationContext.get()
     substates = reg_ctx.get_substates(state)
     for subclass in tuple(substates):
-        reload_state_module(module=module, state=subclass)
+        _reload_state_module(module, subclass, removed)
         if subclass.__module__ == module and module is not None:
+            removed.add(subclass.get_full_name())
             all_base_state_classes.pop(subclass.get_full_name(), None)
             substates.remove(subclass)
             state._always_dirty_substates.discard(subclass.get_name())
             state._var_dependencies = {}
             state._init_var_dependency_dicts()
     state.get_class_substate.cache_clear()
+
+
+def _purge_dependencies_on_states(
+    removed: set[str],
+    root: type[BaseState],
+) -> None:
+    """Remove dependency edges pointing at any of ``removed`` from all states.
+
+    Args:
+        removed: Full names of states that were reloaded/removed.
+        root: The root state used to resolve remaining state classes.
+    """
+    for full_name in tuple(all_base_state_classes):
+        try:
+            cls = root.get_class_substate(full_name)
+        except ValueError:
+            continue
+        cls._potentially_dirty_states.difference_update(removed)
+        for deps in cls._var_dependencies.values():
+            deps.difference_update({edge for edge in deps if edge[0] in removed})
