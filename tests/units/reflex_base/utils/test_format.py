@@ -1,5 +1,6 @@
 """Unit tests for reflex_base.utils.format."""
 
+from pytest_mock import MockerFixture
 from reflex_base import constants
 from reflex_base.utils import format
 
@@ -67,3 +68,21 @@ def test_format_var_key_marks_names_the_resolver_keeps(clean_registration_contex
     assert format.format_var_key(FormatKeyState, "count") == (
         "count" + constants.state.FIELD_MARKER
     )
+
+
+def test_format_data_editor_column_deprecated(mocker: MockerFixture):
+    """The column formatter still works, but warns that rx.data_editor owns it.
+
+    Args:
+        mocker: The pytest mocker fixture.
+    """
+    deprecate = mocker.patch("reflex_base.utils.console.deprecate")
+
+    assert format.format_data_editor_column("Name") == {
+        "title": "Name",
+        "id": "name",
+        "type": "str",
+    }
+
+    deprecate.assert_called_once()
+    assert deprecate.call_args.kwargs["feature_name"] == "format_data_editor_column"

@@ -9,7 +9,6 @@ from collections.abc import Iterable, Mapping
 from typing import TYPE_CHECKING, Any, Literal
 
 from reflex_base import constants
-from reflex_base.constants import Hooks
 from reflex_base.utils import memo_paths
 from reflex_base.utils.format import json_dumps
 from reflex_base.vars.base import VarData
@@ -17,39 +16,6 @@ from reflex_base.vars.base import VarData
 if TYPE_CHECKING:
     from reflex.compiler.utils import _ImportDict
     from reflex_base.components.component import Component
-
-
-def _sort_hooks(
-    hooks: dict[str, VarData | None],
-) -> tuple[list[str], list[str], list[str]]:
-    """Sort the hooks by their position.
-
-    Args:
-        hooks: The hooks to sort.
-
-    Returns:
-        The sorted hooks.
-    """
-    internal_hooks = []
-    pre_trigger_hooks = []
-    post_trigger_hooks = []
-
-    for hook, data in hooks.items():
-        if data and data.position and data.position == Hooks.HookPosition.INTERNAL:
-            internal_hooks.append(hook)
-        elif not data or (
-            not data.position
-            or data.position == constants.Hooks.HookPosition.PRE_TRIGGER
-        ):
-            pre_trigger_hooks.append(hook)
-        elif (
-            data
-            and data.position
-            and data.position == constants.Hooks.HookPosition.POST_TRIGGER
-        ):
-            post_trigger_hooks.append(hook)
-
-    return internal_hooks, pre_trigger_hooks, post_trigger_hooks
 
 
 class _RenderUtils:
@@ -1239,19 +1205,16 @@ def styles_template(stylesheets: list[str]) -> str:
     ])
 
 
-def _render_hooks(hooks: dict[str, VarData | None], memo: list | None = None) -> str:
-    """Render hooks for macros.
+def _render_hooks(hooks: dict[str, VarData | None]) -> str:
+    """Render hooks in the order they were declared and merged.
+
+    Every hook's dependencies are declared before it, so declaration order is
+    the dependency order.
 
     Args:
         hooks: Dictionary of hooks to render.
-        memo: Optional list of memo hooks.
 
     Returns:
         Rendered hooks code as string.
     """
-    internal, pre_trigger, post_trigger = _sort_hooks(hooks)
-    internal_str = "\n".join(internal)
-    pre_trigger_str = "\n".join(pre_trigger)
-    post_trigger_str = "\n".join(post_trigger)
-    memo_str = "\n".join(memo) if memo is not None else ""
-    return f"{internal_str}\n{pre_trigger_str}\n{memo_str}\n{post_trigger_str}"
+    return "\n".join(hooks)
