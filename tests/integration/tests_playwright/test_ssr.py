@@ -19,10 +19,6 @@ from playwright.sync_api import Page, expect
 import reflex as rx
 from reflex.testing import AppHarnessSSR
 
-# ---------------------------------------------------------------------------
-# App source - a minimal blog with a dynamic /blog/[slug] route.
-# ---------------------------------------------------------------------------
-
 
 def SSRBlogApp():
     """A blog app with dynamic routes for SSR testing."""
@@ -104,10 +100,6 @@ def SSRBlogApp():
     app.add_page(index)
 
 
-# ---------------------------------------------------------------------------
-# Fixtures
-# ---------------------------------------------------------------------------
-
 GOOGLEBOT_UA = (
     "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
 )
@@ -134,11 +126,6 @@ def ssr_blog_app(tmp_path_factory) -> Generator[AppHarnessSSR, None, None]:
     ) as harness:
         assert harness.app_instance is not None, "app is not running"
         yield harness
-
-
-# ---------------------------------------------------------------------------
-# Tests
-# ---------------------------------------------------------------------------
 
 
 def test_bot_gets_ssr_html(ssr_blog_app: AppHarnessSSR):

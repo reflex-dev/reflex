@@ -11,6 +11,7 @@ import pytest
 import reflex_base
 from pytest_mock import MockerFixture
 from reflex_base import constants
+from reflex_base.config import Config
 
 from reflex.plugins import EmbedPlugin, Plugin
 from reflex.utils import build, path_ops
@@ -95,6 +96,45 @@ def test_zip_excludes_directory_symlink_aliases(tmp_path: Path):
 
     with zipfile.ZipFile(target) as archive:
         assert archive.namelist() == []
+
+
+def test_zip_app_ssr_excludes_only_top_level_source_dirs(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
+):
+    """The SSR frontend archive keeps build output named like excluded source dirs."""
+    monkeypatch.chdir(tmp_path)
+    web_dir = tmp_path / constants.Dirs.WEB
+    kept = [
+        "ssr-serve.js",
+        "package.json",
+        "build/server/index.js",
+        "build/client/styles/site.css",
+        "build/client/components/logo.svg",
+        "build/client/public/robots.txt",
+    ]
+    excluded = [
+        "node_modules/express/index.js",
+        "app/root.jsx",
+        "utils/state.js",
+        "styles/styles.css",
+        "components/reflex/chakra.js",
+        "backend/bundled_libraries.json",
+        "public/favicon.ico",
+    ]
+    for name in kept + excluded:
+        (web_dir / name).parent.mkdir(parents=True, exist_ok=True)
+        (web_dir / name).write_text(name)
+    mocker.patch.object(build.prerequisites, "get_web_dir", return_value=web_dir)
+    mocker.patch.object(
+        build,
+        "get_config",
+        return_value=Config(app_name="test", runtime_ssr=True),
+    )
+
+    build.zip_app(backend=False, zip_dest_dir=tmp_path)
+
+    with zipfile.ZipFile(tmp_path / constants.ComponentName.FRONTEND.zip()) as archive:
+        assert sorted(archive.namelist()) == sorted(kept)
 
 
 def test_compress_static_output_overwrites_stale_sidecars(

@@ -192,23 +192,26 @@ def zip_app(
     if frontend:
         web_dir = prerequisites.get_web_dir()
         if get_config().runtime_ssr:
-            # SSR mode: zip build/ (client + server) + ssr-serve.js + package.json.
-            # Use build/ as root and include the extra files via globs from web_dir.
+            # SSR mode: zip build/ (client + server) + ssr-serve.js + package.json,
+            # leaving out the top-level source directories of web_dir.
             _zip(
                 component_name=constants.ComponentName.FRONTEND,
                 target=zip_dest_dir / constants.ComponentName.FRONTEND.zip(),
                 root_directory=web_dir,
-                files_to_exclude=files_to_exclude,
-                exclude_venv_directories=False,
-                directory_names_to_exclude={
-                    "node_modules",
-                    "app",
-                    "utils",
-                    "styles",
-                    "components",
-                    "backend",
-                    "public",
+                files_to_exclude=files_to_exclude
+                | {
+                    web_dir / name
+                    for name in (
+                        constants.ReactRouter.NODE_MODULES,
+                        constants.Dirs.PAGES,
+                        constants.Dirs.UTILS,
+                        constants.Dirs.STYLES,
+                        "components",
+                        constants.Dirs.BACKEND,
+                        constants.Dirs.PUBLIC,
+                    )
                 },
+                exclude_venv_directories=False,
             )
         else:
             _zip(

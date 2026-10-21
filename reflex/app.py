@@ -2127,7 +2127,8 @@ def ssr_data(app: App):
         """
         body = await request.json()
 
-        path = body.get("path", "/")
+        # The browser path and query string, including frontend_path.
+        path, _, search = body.get("path", "/").partition("?")
         headers = body.get("headers", {})
 
         if not app._state:
@@ -2141,18 +2142,24 @@ def ssr_data(app: App):
         # with inherited vars that can't be set without a parent.
         state = State(_reflex_internal_init=True)  # pyright: ignore[reportCallIssue]
 
+        # The router and router data take the path relative to frontend_path,
+        # as the client sends it; the loader only runs below that basename.
+        page_path = path.removeprefix(get_config().frontend_path.rstrip("/")) or "/"
+
         # Resolve the route pattern from the concrete path.
-        resolved_route = app.router(path) or "404"
+        resolved_route = app.router(page_path) or "404"
 
         # Extract route params from the path by matching against the route pattern.
         # e.g. route="blog/[slug]", path="/blog/hello-world" => {"slug": "hello-world"}
-        params = extract_route_params(path, resolved_route)
+        params = extract_route_params(page_path, resolved_route)
 
         # Build router_data dict (same structure as process() uses).
         router_data = {
             constants.RouteVar.PATH: "/" + resolved_route.removeprefix("/"),
-            constants.RouteVar.ORIGIN: path,
+            constants.RouteVar.ORIGIN: f"{page_path}?{search}" if search else page_path,
+            # Route params win over query values, as in the client's router data.
             constants.RouteVar.QUERY: {
+                **dict(urllib.parse.parse_qsl(search, keep_blank_values=True)),
                 **params,
             },
             constants.RouteVar.CLIENT_TOKEN: "__ssr__",
@@ -2167,6 +2174,7 @@ def ssr_data(app: App):
                 request.client.host if request.client else "0.0.0.0"
             ),
         }
+        router_data[constants.RouteVar.QUERY] = format.format_query_params(router_data)
 
         # Set router data on the state — this triggers DynamicRouteVar recomputation.
         state.router_data = router_data

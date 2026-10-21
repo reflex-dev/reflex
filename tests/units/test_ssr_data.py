@@ -7,6 +7,7 @@ from typing import Any
 from unittest.mock import AsyncMock, Mock
 
 import pytest
+from pytest_mock import MockerFixture
 from reflex_base.registry import RegistrationContext
 from starlette.responses import Response
 
@@ -132,6 +133,55 @@ async def test_ssr_data_dynamic_route_params():
     page = data["state"][root_name]["rx_router_page_rx_state_"]
     assert page["params"] == {"slug": "hello-world"}
     assert page["raw_path"] == "/blog/hello-world"
+
+
+@pytest.mark.asyncio
+async def test_ssr_data_query_params():
+    """Query string values reach the page params, behind the route params."""
+
+    class QueryState(rx.State):
+        pass
+
+    app = App()
+    app._state = QueryState
+    app.add_page(lambda: rx.text("post"), route="/blog/[slug]")
+
+    handler = ssr_data(app)
+    response = await handler(
+        _make_request("/blog/hello-world?q=reflex&utm-source=feed&slug=other")
+    )
+
+    data = _parse_response(response)
+    page = data["state"][rx.State.get_full_name()]["rx_router_page_rx_state_"]
+    assert page["params"] == {
+        "q": "reflex",
+        "utm_source": "feed",
+        "slug": "hello-world",
+    }
+    assert page["raw_path"] == "/blog/hello-world?q=reflex&utm-source=feed&slug=other"
+
+
+@pytest.mark.asyncio
+async def test_ssr_data_frontend_path(mocker: MockerFixture):
+    """A path below frontend_path resolves its route relative to frontend_path."""
+    conf = rx.Config(app_name="testing", frontend_path="/app")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+
+    class PrefixState(rx.State):
+        pass
+
+    app = App()
+    app._state = PrefixState
+    app.add_page(lambda: rx.text("post"), route="/blog/[slug]")
+
+    handler = ssr_data(app)
+    response = await handler(_make_request("/app/blog/hello-world"))
+
+    data = _parse_response(response)
+    page = data["state"][rx.State.get_full_name()]["rx_router_page_rx_state_"]
+    assert page["path"] == "/blog/[slug]"
+    assert page["params"] == {"slug": "hello-world"}
+    assert page["raw_path"] == "/app/blog/hello-world"
 
 
 @pytest.mark.asyncio

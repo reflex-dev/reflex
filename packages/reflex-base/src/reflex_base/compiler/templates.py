@@ -268,6 +268,7 @@ export async function loader({ request }) {
   //     loader to fetch route data as JSON for the next page.
   // Both cases need real state data from the backend.
   const backendUrl = getBackendURL(env.SSR_DATA);
+  const { pathname, search } = new URL(request.url);
   try {
     const res = await fetch(backendUrl, {
       method: "POST",
@@ -276,7 +277,7 @@ export async function loader({ request }) {
         ...(request.headers.get("cookie") ? { "Cookie": request.headers.get("cookie") } : {}),
       },
       body: JSON.stringify({
-        path: new URL(request.url).pathname,
+        path: pathname + search,
         headers: Object.fromEntries(request.headers),
       }),
     });

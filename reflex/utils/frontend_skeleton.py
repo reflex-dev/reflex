@@ -2,6 +2,7 @@
 
 import json
 import logging
+import shutil
 import uuid
 from pathlib import Path
 from typing import Literal
@@ -528,8 +529,6 @@ def copy_ssr_scripts():
     Copies ssr-serve.js (production server) and generate-shell.mjs
     (post-build static shell generator) when runtime_ssr is enabled.
     """
-    import shutil
-
     web_dir = get_web_dir()
     for filename in ("ssr-serve.js", "generate-shell.mjs"):
         src = constants.Templates.Dirs.WEB_TEMPLATE / filename
