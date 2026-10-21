@@ -15,7 +15,7 @@ RUN adduser --disabled-password --gecos "" --home /app reflex && chown reflex /a
 # Install python requirements first so app edits do not reinstall them. uv is
 # mounted only for this step so it does not end up in the image.
 COPY requirements.txt .
-RUN --mount=from=ghcr.io/astral-sh/uv:0.12,source=/uv,target=/bin/uv \
+RUN --mount=from=ghcr.io/astral-sh/uv:0.13,source=/uv,target=/bin/uv \
     uv venv && uv pip install -r requirements.txt
 
 # Copy local context to `/app` inside container (see .dockerignore)

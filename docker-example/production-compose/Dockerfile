@@ -5,8 +5,11 @@
 FROM python:3.13-slim AS builder
 
 # uv installs python packages; reflex uses a bun found on PATH instead of downloading its own.
-COPY --from=ghcr.io/astral-sh/uv:0.12 /uv /bin/uv
+COPY --from=ghcr.io/astral-sh/uv:0.13 /uv /bin/uv
 COPY --from=oven/bun:1 /usr/local/bin/bun /usr/local/bin/bun
+# Bun's compiled-in roots still trust emSign ECC Root CA - G3, whose intermediates
+# have crackable keys; a global cafile replaces them for `bun install`.
+RUN printf '[install]\ncafile = "/etc/ssl/certs/ca-certificates.crt"\n' > /root/.bunfig.toml
 ENV UV_COMPILE_BYTECODE=1 UV_NO_CACHE=1 PATH="/app/.venv/bin:$PATH"
 
 WORKDIR /app
