@@ -4955,7 +4955,8 @@ def _is_tree_state(cls: Any) -> bool:
     return (
         isinstance(cls, BaseStateMeta)
         and not cls._mixin
-        and cls._reflex_state_root not in (None, cls)
+        and cls._reflex_state_root is not None
+        and cls._reflex_state_root is not cls
     )
 
 
