@@ -584,6 +584,8 @@ def run_backend(
     if not frontend_present:
         notify_backend(host)
 
+    get_config()._persist_state_flags()
+
     # Run the backend in development mode.
     if should_use_granian():
         # Fix the start method first so a backend-only run, which skips the
@@ -963,6 +965,7 @@ def run_backend_prod(
         mount_frontend_compiled_app: Whether to mount the compiled frontend app with the backend.
     """
     environment.REFLEX_MOUNT_FRONTEND_COMPILED_APP.set(mount_frontend_compiled_app)
+    get_config()._persist_state_flags()
 
     if should_use_granian():
         run_granian_backend_prod(host, port, loglevel)
