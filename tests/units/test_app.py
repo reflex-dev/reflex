@@ -2424,7 +2424,7 @@ def test_app_wrap_compile_theme(
         function_app_definition, "DefaultOverlayComponents"
     )
     expected = (
-        "function AppWrap({children}) {\n\n\n\n\n"
+        "function AppWrap({children}) {\n\n"
         "return ("
         + ("jsx(StrictMode,{}," if react_strict_mode else "")
         + "jsx(StateProvider,{},"
@@ -3338,7 +3338,7 @@ def test_app_wrap_priority(
         function_app_definition, "DefaultOverlayComponents"
     )
     expected = (
-        "function AppWrap({children}) {\n\n\n\n\n"
+        "function AppWrap({children}) {\n\n"
         "return ("
         + ("jsx(StrictMode,{}," if react_strict_mode else "")
         + "jsx(StateProvider,{},"

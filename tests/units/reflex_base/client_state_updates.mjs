@@ -67,6 +67,7 @@ async function createConnection(
     dependencies: {
       "test:browser": {
         window: {
+          clearTimeout,
           location: {
             pathname: "/",
             search: "",

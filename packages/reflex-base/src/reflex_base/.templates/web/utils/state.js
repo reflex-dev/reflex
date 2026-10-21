@@ -1067,11 +1067,18 @@ export const connect = async (
 
   // Unknown substates already reported on this connection.
   const reported_missing_substates = new Set();
+  // Failed connection attempts since the last connect, for the retry backoff.
+  let failed_attempts = 0;
+  // The scheduled retry of the last failed attempt.
+  let retry_timer;
 
   // Once the socket is open, hydrate the page.
   socket.current.on("connect", async () => {
     socket.current.wait_connect = false;
     reported_missing_substates.clear();
+    failed_attempts = 0;
+    window.clearTimeout(retry_timer);
+    retry_timer = undefined;
     setConnectErrors([]);
     window.__reflex_otel?.onSocketConnect?.();
     window.addEventListener("pagehide", pagehideHandler);
@@ -1082,23 +1089,36 @@ export const connect = async (
     }
   });
 
-  socket.current.on("connect_error", (error) => {
+  // Record a failed connection attempt and retry it with incremental backoff.
+  const retryConnect = (error) => {
     socket.current.wait_connect = false;
-    let n_connect_errors = 0;
-    setConnectErrors((connectErrors) => {
-      const new_errors = addConnectError(connectErrors, error);
-      n_connect_errors = new_errors.length;
-      return new_errors;
-    });
-    window.setTimeout(() => {
+    failed_attempts = Math.min(failed_attempts + 1, MAX_CONNECT_ERRORS);
+    setConnectErrors((connectErrors) => addConnectError(connectErrors, error));
+    window.clearTimeout(retry_timer);
+    retry_timer = window.setTimeout(() => {
+      retry_timer = undefined;
       if (socket.current && !socket.current.connected) {
         socket.current.reconnect();
       }
-    }, 200 * n_connect_errors); // Incremental backoff
-  });
+    }, 200 * failed_attempts); // Incremental backoff
+  };
+
+  socket.current.on("connect_error", retryConnect);
 
   socket.current.on("disconnect", (reason, details) => {
-    socket.current.wait_connect = false;
+    // A transport closed before the namespace connected is a failed attempt,
+    // e.g. a CONNECT packet over the server or a proxy message size limit.
+    // Socket.IO reports it here; the plain WebSocket as connect_error.
+    if (socket.current.wait_connect) {
+      retryConnect(
+        new Error(`connection closed before connecting (${reason})`),
+      );
+      return;
+    }
+    // A transport error reports connect_error first, which scheduled the retry.
+    if (retry_timer !== undefined) {
+      return;
+    }
     window.__reflex_otel?.onSocketDisconnect?.(reason);
     const try_reconnect =
       reason !== "io server disconnect" && reason !== "io client disconnect";

@@ -22,6 +22,8 @@ async function setup({
   socketio = false,
   importFails = false,
   clientStorage = {},
+  dropConnects = 0,
+  dropReason = "transport close",
   react = { useCallback() {}, useEffect() {}, useRef() {}, useState() {} },
 } = {}) {
   const sockets = [];
@@ -29,6 +31,8 @@ async function setup({
   const timers = new Map();
   const firstHydrates = [];
   const updates = [];
+  let connectErrors = [];
+  const errorUpdates = [];
   const window = new EventTarget();
   window.location = new URL("http://localhost:3000/page?query=value");
   const storage = new Map(storedToken ? [["token", storedToken]] : []);
@@ -61,12 +65,14 @@ async function setup({
     clearTimeout: (fn) => timers.delete(fn),
   });
   window.setTimeout = context.setTimeout;
+  window.clearTimeout = context.clearTimeout;
 
   /** A transport double shared by the plain WebSocket and socket.io clients. */
   function fakeSocket(kind, opts) {
     const handlers = new Map();
     const socket = {
       kind,
+      handlers,
       connected: false,
       opens: 0,
       namespaceConnects: 0,
@@ -94,6 +100,24 @@ async function setup({
           assert.ok(handlers.has(name), `missing handler: ${name}`);
         }
         this.namespaceConnects++;
+        if (this.namespaceConnects <= dropConnects) {
+          // The transport closes before the CONNECT is acknowledged.
+          if (kind === "websocket") {
+            // The plain WebSocket reports a close before its handshake as a
+            // failed attempt only.
+            handlers.get("connect_error")(
+              new Error("websocket connection failed"),
+            );
+            return;
+          }
+          // A socket.io transport error reports connect_error before the
+          // disconnect.
+          if (dropReason === "transport error") {
+            handlers.get("connect_error")(new Error("xhr post error"));
+          }
+          handlers.get("disconnect")(dropReason);
+          return;
+        }
         this.connected = true;
         handlers.get("connect")();
         handlers.get("new_token")("assigned-token");
@@ -198,9 +222,7 @@ async function setup({
   await module.link(link);
   await module.evaluate();
   const socket = { current: null };
-  let connectErrors = [];
   return {
-    connectErrors: () => connectErrors,
     sockets,
     timers,
     firstHydrates,
@@ -208,6 +230,14 @@ async function setup({
     localStorage,
     socket,
     updates,
+    get connectErrors() {
+      // Like React with pending work, apply queued updaters only on render.
+      for (const update of errorUpdates.splice(0)) {
+        connectErrors =
+          typeof update === "function" ? update(connectErrors) : update;
+      }
+      return connectErrors;
+    },
     module,
     dispose,
     flush: () => microtasks.splice(0).forEach((fn) => fn()),
@@ -216,10 +246,7 @@ async function setup({
         socket,
         { child: (delta) => updates.push(delta.count) },
         transports,
-        (update) => {
-          connectErrors =
-            typeof update === "function" ? update(connectErrors) : update;
-        },
+        (update) => errorUpdates.push(update),
         {},
         () => {},
         { current: {} },
@@ -291,6 +318,77 @@ for (const socketio of [false, true]) {
   });
 }
 
+for (const socketio of [false, true]) {
+  const over = socketio ? " over socket.io" : "";
+
+  test(`a transport closed before the namespace connects${over} backs off with an error`, async () => {
+    const app = await setup({ socketio, dropConnects: Infinity });
+    app.flush();
+    await app.connect();
+    const socket = app.socket.current;
+    assert.equal(socket.kind, socketio ? "socketio" : "websocket");
+    assert.equal(socket.namespaceConnects, 1);
+    assert.equal(app.connectErrors.length, 1);
+    assert.deepEqual([...app.timers.values()], [200]);
+
+    const [retry] = app.timers.keys();
+    app.timers.clear();
+    retry();
+    assert.equal(socket.namespaceConnects, 2);
+    assert.equal(app.connectErrors.length, 2);
+    assert.deepEqual([...app.timers.values()], [400]);
+  });
+
+  test(`a connect${over} cancels the pending retry`, async () => {
+    const app = await setup({ socketio, dropConnects: 1 });
+    app.flush();
+    await app.connect();
+    const socket = app.socket.current;
+    assert.equal(app.timers.size, 1);
+
+    // Another path, such as the page becoming visible, reconnects first.
+    socket.reconnect();
+    assert.equal(socket.connected, true);
+    assert.equal(app.timers.size, 0);
+
+    socket.connected = false;
+    socket.handlers.get("disconnect")("io server disconnect");
+    assert.equal(socket.namespaceConnects, 2);
+    assert.equal(app.timers.size, 0);
+  });
+
+  test(`a dropped connection${over} reconnects at once`, async () => {
+    const app = await setup({ socketio });
+    app.flush();
+    await app.connect();
+    const socket = app.socket.current;
+    socket.connected = false;
+    socket.handlers.get("disconnect")("transport close");
+    assert.equal(socket.namespaceConnects, 2);
+    assert.equal(app.connectErrors.length, 0);
+    assert.equal(app.timers.size, 0);
+  });
+}
+
+test("a socket.io transport error before the namespace connects retries once with backoff", async () => {
+  const app = await setup({
+    socketio: true,
+    dropConnects: 2,
+    dropReason: "transport error",
+  });
+  await app.connect();
+  const socket = app.socket.current;
+  assert.equal(socket.namespaceConnects, 1);
+  assert.equal(app.connectErrors.length, 1);
+  assert.deepEqual([...app.timers.values()], [200]);
+
+  const [retry] = app.timers.keys();
+  app.timers.clear();
+  retry();
+  assert.equal(socket.namespaceConnects, 2);
+  assert.deepEqual([...app.timers.values()], [400]);
+});
+
 for (const reason of ["timeout", "pagehide", "hot reload"]) {
   test(`discard an unclaimed warm transport on ${reason}`, async () => {
     const app = await setup();
@@ -334,7 +432,7 @@ test("blocked session storage does not throw from speculative setup", async () =
   // which reconnects, which would fail again without end.
   await app.connect();
   assert.equal(app.sockets.length, 0);
-  assert.match(String(app.connectErrors()[0]), /storage blocked/);
+  assert.match(String(app.connectErrors[0]), /storage blocked/);
   // A later attempt is not locked out by the failed one.
   app.window.sessionStorage.getItem = () => "original-token";
   await app.connect();
@@ -345,8 +443,8 @@ test("a socket.io client that fails to load is a connection error", async () => 
   const app = await setup({ socketio: true, importFails: true });
   await app.connect();
   assert.equal(app.socket.current, null);
-  assert.equal(app.connectErrors().length, 1);
-  assert.match(String(app.connectErrors()[0]), /dynamically imported module/);
+  assert.equal(app.connectErrors.length, 1);
+  assert.match(String(app.connectErrors[0]), /dynamically imported module/);
 });
 
 for (const transport of ["websocket", "polling"]) {
