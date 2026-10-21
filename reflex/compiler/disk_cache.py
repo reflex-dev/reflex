@@ -633,6 +633,32 @@ def load_manifest() -> dict[str, Any] | None:
     return data
 
 
+def manifest_dependency_entries(manifest: dict[str, Any]) -> set[str]:
+    """Every file-table key the manifest's current entries reference.
+
+    An incremental rebuild extends the file table without pruning it, so a
+    dependency a page dropped (a renamed function's slice, say) keeps its
+    entry; comparing a file's recorded content must go through these keys.
+
+    Args:
+        manifest: The loaded manifest.
+
+    Returns:
+        Page dependencies, file-backed global inputs, import-time state files
+        and memo source closures (paths or function slices).
+    """
+    entries: set[str] = set()
+    for entry in manifest.get("pages", {}).values():
+        entries.update(entry.get("deps", ()))
+    entries.update(
+        path for label, path in manifest.get("globals", {}).items() if label != "reflex"
+    )
+    entries.update(manifest.get("module_states", {}).get("files", ()))
+    for memo in manifest.get("memo_files", {}).values():
+        entries.update(memo.get("deps", ()))
+    return entries
+
+
 def manifest_dependency_files(manifest: dict[str, Any]) -> set[str]:
     """Every file the manifest records as a compile input.
 

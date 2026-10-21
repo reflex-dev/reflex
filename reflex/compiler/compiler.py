@@ -1839,13 +1839,18 @@ def compile_app(
         output_mapping, config.plugins, modify_files_tasks
     )
 
+    from reflex.compiler import disk_cache
+
+    if not cache_on:
+        # The output written below is not recorded: a manifest an earlier cached
+        # compile left must not validate files this compile overwrites.
+        disk_cache._manifest_path().unlink(missing_ok=True)
+
     with log.timing(logger, "Write to Disk"), otel.span("reflex.compile.write"):
         for output_path, code in output_mapping.items():
             utils.write_file(output_path, code)
 
     if cache_on:
-        from reflex.compiler import disk_cache
-
         disk_cache.write_manifest(
             compile_ctx,
             all_pages,

@@ -2175,3 +2175,33 @@ def test_compile_records_bundle_requests_per_page_and_phase():
     assert ctx.compiled_pages["one"].evaluate_bundle_requests == ["lib-one"]
     assert ctx.compiled_pages["two"].evaluate_bundle_requests == ["lib-one", "lib-two"]
     assert ctx.compiled_pages["two"].render_bundle_requests == []
+
+
+def test_serving_compile_discards_the_manifest(tmp_path, monkeypatch, mocker):
+    """A compile that bypasses the cache leaves no manifest describing its output.
+
+    The manifest an earlier cached compile wrote would otherwise validate
+    files this compile overwrote.
+    """
+    from reflex.compiler import disk_cache
+
+    monkeypatch.setenv("REFLEX_COMPILE_CACHE", "1")
+    monkeypatch.setenv("REFLEX_WEB_WORKDIR", str(tmp_path))
+    mocker.patch("reflex.app.reload_config")
+    # A fresh registry: states other test modules left behind would otherwise
+    # join the compiled state tree.
+    with RegistrationContext():
+        app = rx.App()
+        app.add_page(lambda: rx.el.div("page"), route="index")
+        mocker.patch.object(
+            compiler,
+            "get_config",
+            return_value=rx.Config(app_name="testing", plugins=[]),
+        )
+        mocker.patch.object(app, "_should_compile", return_value=True)
+        mocker.patch.object(app, "_get_frontend_packages")
+        mocker.patch.object(app, "_add_optional_endpoints")
+        manifest = disk_cache._manifest_path()
+        manifest.write_text("{}")
+        assert compiler.compile_app(app, use_rich=False, serving=True)
+    assert not manifest.exists()

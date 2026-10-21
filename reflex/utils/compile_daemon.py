@@ -470,7 +470,8 @@ def _recorded_inputs(
     """Find the manifest entries of input files.
 
     A file is recorded whole, as function slices (``<file>::<function>``),
-    or both.
+    or both. Only the entries the manifest still references count: the file
+    table keeps the ones a rebuild dropped.
 
     Args:
         paths: The input files.
@@ -486,8 +487,8 @@ def _recorded_inputs(
     files = manifest["files"]
     wanted = {str(path): path for path in paths}
     entries: dict[Path, list[str]] = {}
-    for key in files:
-        if (path := wanted.get(page_cache.dep_file(key))) is not None:
+    for key in disk_cache.manifest_dependency_entries(manifest):
+        if key in files and (path := wanted.get(page_cache.dep_file(key))) is not None:
             entries.setdefault(path, []).append(key)
     return page_cache.FileValidator(files), entries
 

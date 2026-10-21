@@ -944,7 +944,11 @@ def test_daemon_compiles_an_edit_made_before_its_first_snapshot(tmp_path, monkey
         lambda *args: compile_daemon._WatchState([tmp_path], tmp_path, known={page}),
     )
     monkeypatch.setattr(prerequisites, "get_app", lambda **kwargs: None)
-    monkeypatch.setattr(disk_cache, "load_manifest", lambda: {"files": files})
+    monkeypatch.setattr(
+        disk_cache,
+        "load_manifest",
+        lambda: {"files": files, "pages": {"index": {"deps": list(files)}}},
+    )
     compiled = []
     monkeypatch.setattr(
         compile_daemon,
@@ -1141,7 +1145,11 @@ def test_built_inputs_include_dependencies_the_compile_added(
     monkeypatch.setattr(compile_daemon, "_lock_path", lambda: tmp_path / "lock")
     monkeypatch.setattr(compile_daemon, "_reload_roots", lambda: [tmp_path])
     monkeypatch.setattr(compile_daemon, "_prepare_fork_parent", lambda roots: None)
-    monkeypatch.setattr(disk_cache, "load_manifest", lambda: {"files": files})
+    monkeypatch.setattr(
+        disk_cache,
+        "load_manifest",
+        lambda: {"files": files, "pages": {"index": {"deps": list(files)}}},
+    )
     monkeypatch.setattr(prerequisites, "get_app", lambda **kwargs: None)
     monkeypatch.setattr("reflex.utils.prerequisites.get_backend_dir", lambda: tmp_path)
     monkeypatch.setattr(
@@ -1191,10 +1199,33 @@ def test_unbuilt_changes_compare_function_slices(tmp_path, monkeypatch):
     page = tmp_path / "page.py"
     page.write_text("def index():\n    return 'v1'\n")
     dep = f"{page}{page_cache.SLICE_SEPARATOR}index"
-    files = {dep: page_cache.file_entry(dep)}
-    monkeypatch.setattr(disk_cache, "load_manifest", lambda: {"files": files})
+    manifest = {
+        "files": {dep: page_cache.file_entry(dep)},
+        "pages": {"index": {"deps": [dep]}},
+    }
+    monkeypatch.setattr(disk_cache, "load_manifest", lambda: manifest)
     state = compile_daemon._WatchState([tmp_path], tmp_path, known={page})
     assert compile_daemon._unbuilt_changes(state) == set()
     page.write_text("def index():\n    return 'edited'\n")
     os.utime(page, ns=(1, 1))
     assert compile_daemon._unbuilt_changes(state) == {page}
+
+
+def test_unbuilt_changes_ignore_unreferenced_file_table_entries(tmp_path, monkeypatch):
+    """A slice no page depends on any more does not report its module as edited.
+
+    An incremental rebuild extends the file table without pruning it, so a
+    renamed page function leaves its old slice behind.
+    """
+    from reflex.compiler import disk_cache, page_cache
+
+    page = tmp_path / "page.py"
+    page.write_text("def home():\n    return 'v1'\n")
+    stale = f"{page}{page_cache.SLICE_SEPARATOR}index"
+    current = f"{page}{page_cache.SLICE_SEPARATOR}home"
+    files = {stale: ["0" * 64, 1, 1], current: page_cache.file_entry(current)}
+    manifest = {"files": files, "pages": {"home": {"deps": [current]}}}
+    monkeypatch.setattr(disk_cache, "load_manifest", lambda: manifest)
+    state = compile_daemon._WatchState([tmp_path], tmp_path, known={page})
+    assert compile_daemon._unbuilt_changes(state) == set()
+    assert compile_daemon._built_inputs({page}) == {page}
