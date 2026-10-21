@@ -25,7 +25,10 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 UPDATE_OTHER_CLIENT_TASKS: set[asyncio.Task] = set()
+# Reaps still waiting out the reconnect grace, by client token.
 DISCONNECT_REAP_TASKS: dict[str, asyncio.Task] = {}
+# Reaps past the grace, referenced until their cleanup finishes.
+STARTED_REAP_TASKS: set[asyncio.Task] = set()
 LINKED_STATE = TypeVar("LINKED_STATE", bound="SharedStateBaseInternal")
 
 
@@ -96,7 +99,7 @@ def schedule_disconnect_reap(app: "App", token: str) -> asyncio.Task | None:
     (REFLEX_SHARED_STATE_DISCONNECT_GRACE) so brief reconnects (page reloads,
     network blips) are no-ops; a client reaped too eagerly re-subscribes on its
     next event through _internal_patch_linked_state. A new disconnect for the
-    same token restarts the grace.
+    same token restarts a pending grace; a cleanup already under way finishes.
 
     Args:
         app: The application object.
@@ -120,6 +123,7 @@ def schedule_disconnect_reap(app: "App", token: str) -> asyncio.Task | None:
     def _on_done(task: asyncio.Task) -> None:
         if DISCONNECT_REAP_TASKS.get(token) is task:
             DISCONNECT_REAP_TASKS.pop(token, None)
+        STARTED_REAP_TASKS.discard(task)
         if not task.cancelled() and (exc := task.exception()) is not None:
             logger.warning(f"Error reaping disconnected shared state client: {exc}")
 
@@ -136,9 +140,16 @@ async def _reap_disconnected_client(app: "App", token: str, grace: float) -> Non
         grace: Seconds to wait for a reconnect before unsubscribing.
     """
     await asyncio.sleep(grace)
+    # Past the grace, a new disconnect schedules another reap instead of
+    # cancelling this cleanup midway.
+    task = asyncio.current_task()
+    if task is not None and DISCONNECT_REAP_TASKS.get(token) is task:
+        del DISCONNECT_REAP_TASKS[token]
+        STARTED_REAP_TASKS.add(task)
     if (event_namespace := app.event_namespace) is None:
         return
-    if await event_namespace._token_manager.is_token_connected(token):
+    token_manager = event_namespace._token_manager
+    if await token_manager.is_token_connected(token):
         # The client reconnected, possibly to another instance.
         return
     if app._state is None:
@@ -163,6 +174,10 @@ async def _reap_disconnected_client(app: "App", token: str, grace: float) -> Non
                     or token not in shared._linked_from
                 ):
                     continue
+                # Recheck under the lock: the client may have reconnected and
+                # resubscribed while the reap waited for it.
+                if await token_manager.is_token_connected(token):
+                    return
                 shared._linked_from.discard(token)
                 await shared._on_subscriber_disconnected(token)
         except Exception as e:

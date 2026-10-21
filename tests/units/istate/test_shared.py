@@ -10,6 +10,7 @@ import pytest
 import reflex as rx
 from reflex.istate.shared import (
     DISCONNECT_REAP_TASKS,
+    STARTED_REAP_TASKS,
     SharedState,
     SharedStateBaseInternal,
     _do_update_other_tokens,
@@ -179,6 +180,29 @@ async def test_reap_skips_reconnected_client():
     shared._on_subscriber_disconnected.assert_not_awaited()
 
 
+async def test_reap_skips_client_reconnected_before_lock():
+    """A client reconnecting while the reap waits for the shared lock stays subscribed."""
+    manager = LocalTokenManager()
+    app, shared, modified_tokens = _mock_reap_app(manager)
+    modify_state = app.modify_state
+
+    @asynccontextmanager
+    async def reconnect_then_modify_state(token):
+        manager.token_to_socket["gone"] = SocketRecord(
+            instance_id=manager.instance_id, sid="sid2"
+        )
+        async with modify_state(token) as shared_root:
+            yield shared_root
+
+    app.modify_state = reconnect_then_modify_state
+
+    await _reap_disconnected_client(app, "gone", grace=0)
+
+    assert modified_tokens == ["room-token"]
+    assert shared._linked_from == {"gone", "other"}
+    shared._on_subscriber_disconnected.assert_not_awaited()
+
+
 async def test_reap_skips_unsubscribed_client():
     """A token no longer in the subscriber set does not trigger the hook."""
     app, shared, modified_tokens = _mock_reap_app(LocalTokenManager())
@@ -217,6 +241,42 @@ async def test_schedule_disconnect_reap_restarts_grace(monkeypatch):
         await second
     assert not DISCONNECT_REAP_TASKS
     assert modified_tokens == []
+
+
+async def test_schedule_disconnect_reap_lets_started_cleanup_finish(monkeypatch):
+    """A new disconnect restarts the grace without cancelling a started cleanup."""
+    monkeypatch.setenv("REFLEX_SHARED_STATE_DISCONNECT_GRACE", "60")
+    sleep = asyncio.sleep
+
+    async def skip_grace(delay):
+        await sleep(0)
+
+    monkeypatch.setattr(asyncio, "sleep", skip_grace)
+    app, shared, _ = _mock_reap_app(LocalTokenManager())
+    hook_entered = asyncio.Event()
+    release_hook = asyncio.Event()
+
+    async def slow_hook(token):
+        hook_entered.set()
+        await release_hook.wait()
+
+    shared._on_subscriber_disconnected.side_effect = slow_hook
+
+    first = schedule_disconnect_reap(app, "gone")
+    await hook_entered.wait()
+    second = schedule_disconnect_reap(app, "gone")
+    release_hook.set()
+    assert first is not None
+    assert second is not None
+    await first
+    await second
+    # Let the done callbacks release the tasks.
+    await sleep(0)
+
+    assert shared._linked_from == {"other"}
+    shared._on_subscriber_disconnected.assert_awaited_once_with("gone")
+    assert not DISCONNECT_REAP_TASKS
+    assert not STARTED_REAP_TASKS
 
 
 async def test_no_fan_out_without_linked_clients():
