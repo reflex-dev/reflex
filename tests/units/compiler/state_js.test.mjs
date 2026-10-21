@@ -18,6 +18,9 @@ async function setup({
   disabled = false,
   hidden = false,
   storedToken = "original-token",
+  clientStorage = {},
+  dropConnects = 0,
+  dropReason = "transport close",
   react = { useCallback() {}, useEffect() {}, useRef() {}, useState() {} },
 } = {}) {
   const sockets = [];
@@ -25,12 +28,20 @@ async function setup({
   const timers = new Map();
   const firstHydrates = [];
   const updates = [];
+  let connectErrors = [];
+  const errorUpdates = [];
   const window = new EventTarget();
   window.location = new URL("http://localhost:3000/page?query=value");
   const storage = new Map(storedToken ? [["token", storedToken]] : []);
   window.sessionStorage = {
     getItem: (key) => storage.get(key),
     setItem: (key, value) => storage.set(key, value),
+  };
+  const localStorage = {
+    items: new Map(),
+    getItem(key) {
+      return this.items.get(key) ?? null;
+    },
   };
   const document = new EventTarget();
   document.cookie = disabled ? "backend-enabled=false" : "";
@@ -41,6 +52,7 @@ async function setup({
     URL,
     URLSearchParams,
     performance,
+    localStorage,
     ...(browser ? { window, document } : {}),
     queueMicrotask: (fn) => microtasks.push(fn),
     setTimeout: (fn, ms) => {
@@ -50,10 +62,12 @@ async function setup({
     clearTimeout: (fn) => timers.delete(fn),
   });
   window.setTimeout = context.setTimeout;
+  window.clearTimeout = context.clearTimeout;
 
   function io(url, opts) {
     const handlers = new Map();
     const socket = {
+      handlers,
       connected: false,
       namespaceConnects: 0,
       disconnects: 0,
@@ -82,6 +96,15 @@ async function setup({
           assert.ok(handlers.has(name), `missing handler: ${name}`);
         }
         this.namespaceConnects++;
+        if (this.namespaceConnects <= dropConnects) {
+          // The transport closes before the CONNECT is acknowledged. A
+          // transport error reports connect_error before the disconnect.
+          if (dropReason === "transport error") {
+            handlers.get("connect_error")(new Error("xhr post error"));
+          }
+          handlers.get("disconnect")(dropReason);
+          return;
+        }
         this.connected = true;
         handlers.get("connect")();
         handlers.get("new_token")("assigned-token");
@@ -127,6 +150,7 @@ async function setup({
         initialState: stateful ? { root: {}, child: {} } : {},
         onLoadInternalEvent() {},
         state_name: "root",
+        clientStorage,
         exception_state_name: "exception",
       },
       eventLoop: { addEvents() {}, connectErrors: [] },
@@ -164,8 +188,17 @@ async function setup({
     timers,
     firstHydrates,
     window,
+    localStorage,
     socket,
     updates,
+    get connectErrors() {
+      // Like React with pending work, apply queued updaters only on render.
+      for (const update of errorUpdates.splice(0)) {
+        connectErrors =
+          typeof update === "function" ? update(connectErrors) : update;
+      }
+      return connectErrors;
+    },
     module,
     dispose,
     flush: () => microtasks.splice(0).forEach((fn) => fn()),
@@ -174,7 +207,7 @@ async function setup({
         socket,
         { child: (delta) => updates.push(delta.count) },
         transports,
-        () => {},
+        (update) => errorUpdates.push(update),
         {},
         () => {},
         { current: {} },
@@ -240,6 +273,69 @@ test("reconnect uses the assigned token and requests a full hydrate", async () =
   assert.equal(app.socket.current.io.opts.query.token, "assigned-token");
   assert.deepEqual(app.firstHydrates, [true, false]);
   assert.equal(app.socket.current.namespaceConnects, 2);
+});
+
+test("a transport closed before the namespace connects backs off with an error", async () => {
+  const app = await setup({ dropConnects: Infinity });
+  app.flush();
+  await app.connect();
+  const socket = app.socket.current;
+  assert.equal(socket.namespaceConnects, 1);
+  assert.equal(app.connectErrors.length, 1);
+  assert.deepEqual([...app.timers.values()], [200]);
+
+  const [retry] = app.timers.keys();
+  app.timers.clear();
+  retry();
+  assert.equal(socket.namespaceConnects, 2);
+  assert.equal(app.connectErrors.length, 2);
+  assert.deepEqual([...app.timers.values()], [400]);
+});
+
+test("a transport error before the namespace connects retries once with backoff", async () => {
+  const app = await setup({ dropConnects: 2, dropReason: "transport error" });
+  app.flush();
+  await app.connect();
+  const socket = app.socket.current;
+  assert.equal(socket.namespaceConnects, 1);
+  assert.equal(app.connectErrors.length, 1);
+  assert.deepEqual([...app.timers.values()], [200]);
+
+  const [retry] = app.timers.keys();
+  app.timers.clear();
+  retry();
+  assert.equal(socket.namespaceConnects, 2);
+  assert.deepEqual([...app.timers.values()], [400]);
+});
+
+test("a connect cancels the pending retry", async () => {
+  const app = await setup({ dropConnects: 1 });
+  app.flush();
+  await app.connect();
+  const socket = app.socket.current;
+  assert.equal(app.timers.size, 1);
+
+  // Another path, such as the page becoming visible, reconnects first.
+  socket.reconnect();
+  assert.equal(socket.connected, true);
+  assert.equal(app.timers.size, 0);
+
+  socket.connected = false;
+  socket.handlers.get("disconnect")("io server disconnect");
+  assert.equal(socket.namespaceConnects, 2);
+  assert.equal(app.timers.size, 0);
+});
+
+test("a dropped connection reconnects at once", async () => {
+  const app = await setup();
+  app.flush();
+  await app.connect();
+  const socket = app.socket.current;
+  socket.connected = false;
+  socket.handlers.get("disconnect")("transport close");
+  assert.equal(socket.namespaceConnects, 2);
+  assert.equal(app.connectErrors.length, 0);
+  assert.equal(app.timers.size, 0);
 });
 
 for (const reason of ["error", "timeout", "pagehide", "hot reload"]) {
@@ -314,7 +410,7 @@ for (const config of [
 }
 
 /** Run `useEventLoop` once with minimal hooks, keeping the effects it registers. */
-async function mountEventLoop() {
+async function mountEventLoop(clientStorage = {}) {
   const effects = [];
   const sent = [];
   const emitted = {
@@ -323,6 +419,7 @@ async function mountEventLoop() {
   };
   let refs = 0;
   const harness = await setup({
+    clientStorage,
     react: {
       useCallback: (fn) => fn,
       useEffect: (fn) => effects.push(fn),
@@ -334,7 +431,7 @@ async function mountEventLoop() {
   harness.module.namespace.useEventLoop(
     () => {},
     () => [],
-    {},
+    clientStorage,
   );
   return { harness, effects, sent };
 }
@@ -392,4 +489,67 @@ test("window.onerror preserves the original Error message", async () => {
     error.name + ": " + error.message + "\n" + error.stack,
   );
   assert.equal(event.payload.component_stack, "");
+});
+
+test("a storage event syncs every synced var that shares the storage name", async () => {
+  const clientStorage = {
+    local_storage: {
+      first: { name: "shared", sync: true },
+      second: { name: "shared", sync: true },
+      other: { name: "other", sync: true },
+      unsynced: { name: "shared" },
+    },
+  };
+  const { harness, effects, sent } = await mountEventLoop(clientStorage);
+  for (const effect of effects) effect();
+  harness.localStorage.items.set("shared", "stored");
+
+  const event = new Event("storage");
+  event.key = "shared";
+  event.storageArea = harness.localStorage;
+  harness.window.dispatchEvent(event);
+  await new Promise((resolve) => setImmediate(resolve));
+
+  const updates = sent.filter((e) => e.name.endsWith("update_vars_internal"));
+  assert.equal(updates.length, 1, JSON.stringify(sent));
+  // The vars come from the vm's realm, so compare their serialised form.
+  assert.equal(
+    JSON.stringify(updates[0].payload.vars),
+    JSON.stringify({ first: "stored", second: "stored" }),
+  );
+});
+
+test("storage names that are Object.prototype properties sync like any other", async () => {
+  const clientStorage = {
+    local_storage: {
+      first: { name: "constructor", sync: true },
+      second: { name: "constructor", sync: true },
+      third: { name: "__proto__", sync: true },
+    },
+  };
+  const { harness, effects, sent } = await mountEventLoop(clientStorage);
+  assert.doesNotThrow(() => {
+    for (const effect of effects) effect();
+  });
+  harness.localStorage.items.set("constructor", "stored");
+
+  for (const key of ["constructor", "toString", "__proto__"]) {
+    const event = new Event("storage");
+    event.key = key;
+    event.storageArea = harness.localStorage;
+    harness.window.dispatchEvent(event);
+  }
+  await new Promise((resolve) => setImmediate(resolve));
+
+  // Only the names a var declared are synced, and a name's vars all are.
+  const updates = sent.filter((e) => e.name.endsWith("update_vars_internal"));
+  assert.equal(updates.length, 2, JSON.stringify(sent));
+  assert.equal(
+    JSON.stringify(updates[0].payload.vars),
+    JSON.stringify({ first: "stored", second: "stored" }),
+  );
+  assert.equal(
+    JSON.stringify(updates[1].payload.vars),
+    JSON.stringify({ third: null }),
+  );
 });

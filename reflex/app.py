@@ -52,7 +52,14 @@ from reflex_base.registry import RegistrationContext
 from reflex_base.telemetry_context import CompileTrigger, TelemetryContext
 from reflex_base.utils import memo_paths
 from reflex_base.utils.imports import ImportVar
-from reflex_base.utils.types import ASGIApp, Message, Receive, Scope, Send
+from reflex_base.utils.types import (
+    ASGIApp,
+    Message,
+    Receive,
+    Scope,
+    Send,
+    is_non_string_sequence,
+)
 from reflex_base.vars.dep_tracking import is_dependency
 from reflex_components_core.base.error_boundary import ErrorBoundary
 from reflex_components_core.base.fragment import Fragment
@@ -1160,7 +1167,11 @@ class App(MiddlewareMixin, LifespanMixin):
             state.setup_dynamic_args(prepared.route_args)
 
         self._load_events[page.route] = (
-            (page.on_load if isinstance(page.on_load, list) else [page.on_load])
+            (
+                list(page.on_load)
+                if is_non_string_sequence(page.on_load)
+                else [page.on_load]
+            )
             if page.on_load is not None
             else []
         )
@@ -1844,7 +1855,11 @@ class App(MiddlewareMixin, LifespanMixin):
         """Modify the state out of band.
 
         Args:
-            token: The token to modify the state for.
+            token: The token to modify the state for. Use
+                ``rx.BaseStateToken(ident=client_token, cls=StateClass)``.
+                Deprecated string tokens must include the state path in the
+                format ``<client_token>_<state_full_name>``; a bare client token
+                is not supported.
             background: Whether the modification is happening in a background task.
             previous_dirty_vars: Vars that are considered dirty from a previous operation.
 
@@ -1853,6 +1868,8 @@ class App(MiddlewareMixin, LifespanMixin):
 
         Raises:
             RuntimeError: If the app has not been initialized yet.
+            ValueError: If a legacy string token has no state path or its state
+                class cannot be found.
         """
         if self.event_namespace is None:
             msg = "App has not been initialized yet."
@@ -2084,7 +2101,10 @@ def _sio_loads(data: str | bytes, **kwargs: Any) -> Any:
 def _decode_asgi_headers(headers: Iterable[tuple[bytes, bytes]]) -> dict[str, str]:
     """Decode raw ASGI scope header pairs into a str-keyed dict.
 
-    Header values that are not valid UTF-8 are decoded as Latin-1.
+    ASGI keeps a repeated header as separate pairs, so their values are combined in
+    order: cookies with "; " (RFC 9113 section 8.2.3), any other field with ", "
+    (RFC 9110 section 5.3). Header values that are not valid UTF-8 are decoded as
+    Latin-1.
 
     Args:
         headers: Raw (name, value) byte pairs from the ASGI scope.
@@ -2099,7 +2119,10 @@ def _decode_asgi_headers(headers: Iterable[tuple[bytes, bytes]]) -> dict[str, st
             value = raw_value.decode("utf-8")
         except UnicodeDecodeError:
             value = raw_value.decode("latin-1")
-        decoded[name] = value
+        if name in decoded:
+            decoded[name] += ("; " if name == "cookie" else ", ") + value
+        else:
+            decoded[name] = value
     return decoded
 
 

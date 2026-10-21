@@ -458,13 +458,15 @@ function urlFrom(string) {
  *
  * The value is read when the event is sent, so it and the write count recorded
  * with it come from the same moment.
- * @param payload The storage name and state key of the var.
+ * @param payload The storage name and the state keys of the vars that use it.
  * @returns The update_vars_internal event.
  */
-const syncLocalStorageEvent = ({ key, state_key }) =>
-  ReflexEvent(`${app.state_name}.${UPDATE_VARS_INTERNAL}`, {
-    vars: { [state_key]: localStorage.getItem(key) },
+const syncLocalStorageEvent = ({ key, state_keys }) => {
+  const value = localStorage.getItem(key);
+  return ReflexEvent(`${app.state_name}.${UPDATE_VARS_INTERNAL}`, {
+    vars: Object.fromEntries(state_keys.map((state_key) => [state_key, value])),
   });
+};
 
 /**
  * Handle frontend event or send the event to the backend via Websocket.
@@ -999,11 +1001,18 @@ export const connect = async (
 
   // Unknown substates already reported on this connection.
   const reported_missing_substates = new Set();
+  // Failed connection attempts since the last connect, for the retry backoff.
+  let failed_attempts = 0;
+  // The scheduled retry of the last failed attempt.
+  let retry_timer;
 
   // Once the socket is open, hydrate the page.
   socket.current.on("connect", async () => {
     socket.current.wait_connect = false;
     reported_missing_substates.clear();
+    failed_attempts = 0;
+    window.clearTimeout(retry_timer);
+    retry_timer = undefined;
     setConnectErrors([]);
     window.__reflex_otel?.onSocketConnect?.();
     window.addEventListener("pagehide", pagehideHandler);
@@ -1014,23 +1023,35 @@ export const connect = async (
     }
   });
 
-  socket.current.on("connect_error", (error) => {
+  // Record a failed connection attempt and retry it with incremental backoff.
+  const retryConnect = (error) => {
     socket.current.wait_connect = false;
-    let n_connect_errors = 0;
-    setConnectErrors((connectErrors) => {
-      const new_errors = [...connectErrors.slice(-9), error];
-      n_connect_errors = new_errors.length;
-      return new_errors;
-    });
-    window.setTimeout(() => {
+    failed_attempts = Math.min(failed_attempts + 1, 10);
+    setConnectErrors((connectErrors) => [...connectErrors.slice(-9), error]);
+    window.clearTimeout(retry_timer);
+    retry_timer = window.setTimeout(() => {
+      retry_timer = undefined;
       if (socket.current && !socket.current.connected) {
         socket.current.reconnect();
       }
-    }, 200 * n_connect_errors); // Incremental backoff
-  });
+    }, 200 * failed_attempts); // Incremental backoff
+  };
+
+  socket.current.on("connect_error", retryConnect);
 
   socket.current.on("disconnect", (reason, details) => {
-    socket.current.wait_connect = false;
+    // A transport closed before the namespace connected is a failed attempt,
+    // e.g. a CONNECT packet over the server or a proxy message size limit.
+    if (socket.current.wait_connect) {
+      retryConnect(
+        new Error(`connection closed before connecting (${reason})`),
+      );
+      return;
+    }
+    // A transport error reports connect_error first, which scheduled the retry.
+    if (retry_timer !== undefined) {
+      return;
+    }
     window.__reflex_otel?.onSocketDisconnect?.(reason);
     const try_reconnect =
       reason !== "io server disconnect" && reason !== "io client disconnect";
@@ -1522,26 +1543,33 @@ export const useEventLoop = (
 
   // localStorage event handling
   useEffect(() => {
-    const storage_to_state_map = {};
+    // A Map, so a storage name like "constructor" is not an inherited property.
+    const storage_to_state_map = new Map();
 
     if (client_storage.local_storage && typeof window !== "undefined") {
       for (const state_key in client_storage.local_storage) {
         const options = client_storage.local_storage[state_key];
         if (options.sync) {
           const local_storage_value_key = options.name || state_key;
-          storage_to_state_map[local_storage_value_key] = state_key;
+          // Several vars can share one storage name; sync all of them.
+          const state_keys = storage_to_state_map.get(local_storage_value_key);
+          if (state_keys) {
+            state_keys.push(state_key);
+          } else {
+            storage_to_state_map.set(local_storage_value_key, [state_key]);
+          }
         }
       }
     }
 
     // e is StorageEvent
     const handleStorage = (e) => {
-      const state_key = storage_to_state_map[e.key];
+      const state_keys = storage_to_state_map.get(e.key);
       // Session storage changes in same-origin frames raise storage events too.
-      if (state_key && e.storageArea === localStorage) {
+      if (state_keys && e.storageArea === localStorage) {
         // The value is read when the event is sent: see syncLocalStorageEvent.
         addEvents(
-          [ReflexEvent(SYNC_LOCAL_STORAGE, { key: e.key, state_key })],
+          [ReflexEvent(SYNC_LOCAL_STORAGE, { key: e.key, state_keys })],
           e,
         );
       }
