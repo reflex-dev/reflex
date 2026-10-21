@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import collections
 import dataclasses
-import json
 import logging
 from collections.abc import Callable, Iterable, Sequence
 from inspect import getmodule
@@ -35,7 +34,7 @@ from reflex_base.plugins import CompileContext, CompilerHooks, PageContext, Plug
 from reflex_base.registry import RegistrationContext, _default_bundled_libraries
 from reflex_base.utils import log, memo_paths
 from reflex_base.utils.exceptions import ReflexError
-from reflex_base.utils.format import to_title_case
+from reflex_base.utils.format import orjson_dumps, orjson_loads, to_title_case
 from reflex_base.utils.imports import (
     ABSOLUTE_IMPORT_PREFIXES,
     ImportVar,
@@ -1217,7 +1216,7 @@ def _read_stateful_pages_marker() -> list[str] | None:
     """
     marker = prerequisites.get_backend_dir() / constants.Dirs.STATEFUL_PAGES
     try:
-        return json.loads(marker.read_bytes())
+        return orjson_loads(marker.read_bytes())
     except (FileNotFoundError, ValueError):
         # ValueError covers both JSONDecodeError and the UnicodeDecodeError of a
         # marker that is not valid UTF-8.
@@ -1530,7 +1529,7 @@ def compile_app(
     # routable SPA paths with 200 and reserve 404 for unknown ones.
     compile_results.append((
         constants.Dirs.ROUTES_MANIFEST,
-        json.dumps(app._page_routes),
+        orjson_dumps(app._page_routes),
     ))
 
     if is_prod_mode():

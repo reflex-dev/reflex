@@ -10,7 +10,6 @@ load page modules through a memory router.
 from __future__ import annotations
 
 import html
-import json
 import logging
 import os
 import re
@@ -19,6 +18,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 from reflex_base import constants
+from reflex_base.utils.format import orjson_dumps
 
 from .base import Plugin
 
@@ -80,9 +80,7 @@ def _embed_manifest_entry(route: str) -> str:
 
     path = _embed_manifest_path_for(route)
     specifier = get_page_import_specifier(route)
-    return (
-        f"{{ path: {json.dumps(path)}, load: () => import({json.dumps(specifier)}) }}"
-    )
+    return f"{{ path: {orjson_dumps(path)}, load: () => import({orjson_dumps(specifier)}) }}"
 
 
 def compile_embed_manifest(routes: Iterable[str]) -> tuple[str, str]:
@@ -215,7 +213,7 @@ def _inject_vite_dev_preview(mount_target: str):
         A function suitable for ``add_modify_task`` that injects the plugin
         definition into ``vite.config.js`` and prepends it to the plugins array.
     """
-    html_literal = json.dumps(_render_dev_host_html(mount_target))
+    html_literal = orjson_dumps(_render_dev_host_html(mount_target))
     define_anchor = "export default defineConfig"
     plugins_anchor = "alwaysUseReactDomServerNode(),"
 
@@ -348,7 +346,7 @@ class EmbedPlugin(Plugin):
         hashed_url = f"{base}/assets/{matches[0].name}"
         shim_path = static_dir / constants.Embed.ENTRY_PATH
         shim_path.parent.mkdir(parents=True, exist_ok=True)
-        shim_path.write_text(f"import {json.dumps(hashed_url)};\n")
+        shim_path.write_text(f"import {orjson_dumps(hashed_url)};\n", encoding="utf-8")
 
 
 def get_embed_plugin() -> EmbedPlugin | None:
