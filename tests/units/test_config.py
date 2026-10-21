@@ -72,12 +72,15 @@ def test_trusted_proxy_hops_defaults_to_zero(base_config_values):
     assert rx.Config(**base_config_values).trusted_proxy_hops == 0
 
 
-def test_trusted_proxy_hops_must_be_non_negative(base_config_values):
+@pytest.mark.parametrize("trusted_proxy_hops", [-1, True, False, 1.5, "2", None])
+def test_trusted_proxy_hops_must_be_non_negative(
+    base_config_values, trusted_proxy_hops
+):
     """Reject invalid trusted proxy hop counts."""
     with pytest.raises(
         ConfigError, match="trusted_proxy_hops must be a non-negative integer"
     ):
-        rx.Config(**base_config_values, trusted_proxy_hops=-1)
+        rx.Config(**base_config_values, trusted_proxy_hops=trusted_proxy_hops)
 
 
 def test_react_compiler_default(base_config_values):
