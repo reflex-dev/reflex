@@ -72,10 +72,11 @@ Traces:
 
 What leaves the process: event and handler names, a pseudonymous
 `session.id` (a truncated SHA-256 of the client token, never the token
-itself), exception types, messages and stack traces of failed handlers, and
+itself), exception types, messages and stack traces of failed handlers and step attempts, and
 the ASGI middleware's request attributes with the `token` query parameter of
 the websocket URL redacted, and workflow table, step and lane names. Event
-payloads, state, step arguments and row columns are never recorded.
+payloads, state, step arguments and row columns are never recorded as such,
+though an exception message that quotes them leaves with the exception.
 
 Metrics:
 
