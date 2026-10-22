@@ -1430,21 +1430,24 @@ const applyClientStorageDelta = (client_storage, delta) => {
             writes: ++localStorageWrites,
           };
           // The storage event fires in other tabs only, so queue the sync for
-          // this tab's other synced vars sharing the name here, whether or
-          // not the written var itself syncs (storage writes raise the event
-          // cross-tab either way). Skip an unchanged value: its vars are
-          // already in sync, and re-sending would ping-pong when an echo
-          // misses. Deltas are per-session, and a sent update echoes back and
-          // takeEcho keeps it from writing again.
+          // this tab's synced vars sharing the name here, whether or not the
+          // written var itself syncs (storage writes raise the event
+          // cross-tab either way). Like handleStorage, the sync covers every
+          // synced var with the name: when one delta writes several of them,
+          // the last write wins in storage, and the sync reads that value.
+          // Skip an unchanged value: its vars are already in sync, and
+          // re-sending would ping-pong when an echo misses. Deltas are
+          // per-session, and a sent update echoes back and takeEcho keeps it
+          // from writing again.
           if (previous !== String(value) && !pending_syncs.has(name)) {
             const state_keys = Object.keys(client_storage.local_storage).filter(
               (other_key) =>
-                other_key !== state_key &&
                 client_storage.local_storage[other_key].sync &&
                 (client_storage.local_storage[other_key].name || other_key) ===
                   name,
             );
-            if (state_keys.length > 0) {
+            // Sync only when another var shares the name.
+            if (state_keys.some((other_key) => other_key !== state_key)) {
               pending_syncs.set(name, state_keys);
             }
           }

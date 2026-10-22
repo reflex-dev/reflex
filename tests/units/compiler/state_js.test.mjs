@@ -762,7 +762,11 @@ test("a synced storage write syncs the writing tab's sibling vars", async () => 
   assert.equal(syncs().length, 1, JSON.stringify(app.emits));
   assert.equal(
     JSON.stringify(syncs()[0].payload.vars),
-    JSON.stringify({ "child.second": "from-cs0", "child.third": "from-cs0" }),
+    JSON.stringify({
+      "child.first": "from-cs0",
+      "child.second": "from-cs0",
+      "child.third": "from-cs0",
+    }),
   );
 
   // The echoed sibling updates neither write again nor queue another sync.
@@ -829,8 +833,17 @@ test("two same-name vars in one delta queue one sync per storage name", async ()
   // One sync per storage name, reading the name's latest value when sent.
   assert.equal(syncs().length, 2, JSON.stringify(app.emits));
   const byVars = syncs().map((e) => JSON.stringify(e.payload.vars));
-  assert.ok(byVars.includes(JSON.stringify({ "child.second": "two" })));
-  assert.ok(byVars.includes(JSON.stringify({ "child.fourth": "three" })));
+  // Every synced var with the name converges on the last written value.
+  assert.ok(
+    byVars.includes(
+      JSON.stringify({ "child.first": "two", "child.second": "two" }),
+    ),
+  );
+  assert.ok(
+    byVars.includes(
+      JSON.stringify({ "child.third": "three", "child.fourth": "three" }),
+    ),
+  );
 });
 
 test("an unhydrated delta writes and syncs no client storage", async () => {
@@ -888,7 +901,7 @@ test("a newer backend value re-syncs once, then the echo terminates it", async (
   assert.equal(syncs().length, 2, JSON.stringify(app.emits));
   assert.equal(
     JSON.stringify(syncs()[1].payload.vars),
-    JSON.stringify({ "child.first": "v2" }),
+    JSON.stringify({ "child.first": "v2", "child.second": "v2" }),
   );
 
   // That update's echo is recognized: no write, no third sync. No ping-pong.
