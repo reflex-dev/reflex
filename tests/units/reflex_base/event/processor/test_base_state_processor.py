@@ -8,6 +8,7 @@ import gc
 import inspect
 import logging
 import traceback
+import warnings
 import weakref
 from collections.abc import Mapping
 from pathlib import Path
@@ -24,6 +25,7 @@ from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor
 from reflex_base.event.processor.base_state_processor import (
     _prepare_event_payload,
+    _transform_event_arg,
     _transform_event_payload,
 )
 from reflex_base.registry import RegistrationContext
@@ -1973,6 +1975,31 @@ def test_transform_event_payload_passes_form_data_on_as_dict(hint, expected):
     )
     assert payload["data"] == expected
     assert type(payload["data"]) is type(expected)
+
+
+def test_transform_event_arg_model_drops_non_fields_without_deprecation():
+    """Filtering a Model payload to its fields emits no Pydantic deprecation."""
+    pydantic_warnings = pytest.importorskip("pydantic.warnings")
+    pytest.importorskip("sqlmodel")
+
+    class Post(rx.Model):
+        title: str
+        likes: int = 0
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        post = _transform_event_arg(
+            {"title": "hi", "likes": 2, "extra": 1, "other": 2}, Post
+        )
+
+    assert [
+        w
+        for w in caught
+        if issubclass(w.category, pydantic_warnings.PydanticDeprecatedSince20)
+    ] == []
+    assert isinstance(post, Post)
+    assert (post.title, post.likes) == ("hi", 2)
+    assert not post.model_extra
 
 
 def test_prepare_event_payload_transforms_form_data():
