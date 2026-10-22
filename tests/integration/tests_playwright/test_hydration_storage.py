@@ -149,6 +149,7 @@ def HydrationStorageApp():
 
     class SharedNameState(rx.State):
         synced: str = rx.LocalStorage("", name="hydrate-shared", sync=True)
+        synced2: str = rx.LocalStorage("", name="hydrate-shared", sync=True)
         plain: str = rx.LocalStorage("", name="hydrate-shared")
 
         @rx.event
@@ -159,6 +160,15 @@ def HydrationStorageApp():
                 value: The value to store.
             """
             self.plain = value
+
+        @rx.event
+        def set_synced(self, value: str):
+            """Store a value through the synced var.
+
+            Args:
+                value: The value to store.
+            """
+            self.synced = value
 
     def synced():
         """Display a browser storage var synced across tabs.
@@ -174,10 +184,16 @@ def HydrationStorageApp():
             rx.text(ReplaceState.plain, id="replace-plain"),
             rx.button("Keep", on_click=ReplaceState.keep_sent, id="keep-sent"),
             rx.text(SharedNameState.synced, id="shared-value"),
+            rx.text(SharedNameState.synced2, id="shared-value-2"),
             rx.button(
                 "Plain old",
                 on_click=SharedNameState.set_plain("old"),
                 id="set-plain-old",
+            ),
+            rx.button(
+                "Synced new",
+                on_click=SharedNameState.set_synced("new"),
+                id="set-synced-new",
             ),
             rx.text(rx.cond(rx.State.is_hydrated, "true", "false"), id="hydrated"),
         )
@@ -587,6 +603,28 @@ def test_synced_storage_echo_after_own_write_is_written(
     expect(page.locator(f"#{display}")).to_have_text("sent")
     page.wait_for_timeout(500)
     assert page.evaluate("key => localStorage.getItem(key)", key) == "sent"
+
+
+def test_synced_storage_shared_name_syncs_siblings_in_writing_tab(
+    hydration_storage_app: AppHarness, page: Page
+):
+    """A write to one synced var sharing a storage name updates the others in the writing tab.
+
+    The storage event only fires in other tabs, so the writing tab syncs its
+    sibling vars sharing the name itself (issue #7567).
+
+    Args:
+        hydration_storage_app: The running app.
+        page: A fresh browser page.
+    """
+    open_synced(hydration_storage_app, page)
+    page.locator("#set-synced-new").click()
+    expect(page.locator("#shared-value")).to_have_text("new")
+    expect(page.locator("#shared-value-2")).to_have_text("new")
+    page.wait_for_timeout(500)
+    expect(page.locator("#shared-value")).to_have_text("new")
+    expect(page.locator("#shared-value-2")).to_have_text("new")
+    assert page.evaluate("localStorage.getItem('hydrate-shared')") == "new"
 
 
 @pytest.mark.parametrize("other_tab_stores", [False, True], ids=["alone", "other_tab"])

@@ -1446,8 +1446,17 @@ const applyClientStorageDelta = (client_storage, delta) => {
                 (client_storage.local_storage[other_key].name || other_key) ===
                   name,
             );
-            // Sync only when another var shares the name.
-            if (state_keys.some((other_key) => other_key !== state_key)) {
+            // Sync only when another var shares the name. Skip when a synced
+            // var with the name has an unechoed sent value: this delta replies
+            // to an older event than that value. The echo of the newer value
+            // carries every applied key for the name, so storage and the
+            // sibling vars converge without a sync from this stale delta.
+            if (
+              state_keys.some((other_key) => other_key !== state_key) &&
+              !state_keys.some(
+                (other_key) => sentStorageValues[other_key]?.length > 0,
+              )
+            ) {
               pending_syncs.set(name, state_keys);
             }
           }

@@ -872,6 +872,56 @@ test("an unhydrated delta writes and syncs no client storage", async () => {
   );
 });
 
+test("a stale delta queues no sibling sync while a sent value is unechoed", async () => {
+  const clientStorage = {
+    local_storage: {
+      "child.synced": { name: "shared", sync: true },
+      "child.synced2": { name: "shared", sync: true },
+      "child.plain": { name: "shared" },
+    },
+  };
+  // One module instance: the storage-event path (sent) and the backend-delta
+  // path (emits) share the sent-value bookkeeping.
+  const { harness, effects, sent } = await mountEventLoop(clientStorage);
+  for (const effect of effects) effect();
+  harness.connect(["websocket"], clientStorage);
+  harness.flush();
+  const sock = harness.sockets[0];
+  const syncs = () =>
+    harness.emits.filter((e) => e?.name?.endsWith?.("update_vars_internal"));
+
+  // Another tab stores "sent"; this tab sends it for its synced vars and the
+  // backend's reply is still out.
+  harness.localStorage.items.set("shared", "sent");
+  const storage_event = new Event("storage");
+  storage_event.key = "shared";
+  storage_event.storageArea = harness.localStorage;
+  harness.window.dispatchEvent(storage_event);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(sent.length, 1, JSON.stringify(sent));
+
+  // A stale handler reply writes an older value through an unsynced var.
+  sock.handlers.get("event")({ delta: { child: { plain: "old" } } });
+  harness.flush();
+  await new Promise((resolve) => setImmediate(resolve));
+
+  // The stale write stores "old" but queues no sibling sync: the unechoed
+  // "sent" is newer.
+  assert.equal(harness.localStorage.items.get("shared"), "old");
+  assert.equal(syncs().length, 0, JSON.stringify(harness.emits));
+
+  // The echo of "sent" writes it back over this tab's own newer write. As
+  // the real backend does, it carries every applied key for the name, so
+  // storage and the sibling vars converge with no further sync.
+  sock.handlers.get("event")({
+    delta: { child: { synced: "sent", synced2: "sent" } },
+  });
+  harness.flush();
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(harness.localStorage.items.get("shared"), "sent");
+  assert.equal(syncs().length, 0, JSON.stringify(harness.emits));
+});
+
 test("a newer backend value re-syncs once, then the echo terminates it", async () => {
   const clientStorage = {
     local_storage: {
@@ -892,6 +942,9 @@ test("a newer backend value re-syncs once, then the echo terminates it", async (
   };
 
   await deliver({ child: { first: "v1" } });
+  assert.equal(syncs().length, 1, JSON.stringify(app.emits));
+  // The backend echoes the whole update, clearing the sent entries.
+  await deliver({ child: { first: "v1", second: "v1" } });
   assert.equal(syncs().length, 1, JSON.stringify(app.emits));
 
   // A backend value that matches no sent value overrides storage and syncs
