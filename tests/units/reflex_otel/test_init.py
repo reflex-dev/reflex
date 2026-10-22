@@ -352,7 +352,8 @@ async def test_asgi_middleware_handles_requests(instrumentor: ReflexInstrumentor
 
 def test_instrument_toggles_the_workflow_trace_points(instrumentor: ReflexInstrumentor):
     """reflex-workflow's trace points follow the instrumentor when it is installed."""
-    from reflex_workflow import otel as workflow_otel
+    # One CI leg runs without the database libraries reflex-workflow imports.
+    workflow_otel = pytest.importorskip("reflex_workflow.otel")
 
     assert workflow_otel.enabled is False
     instrumentor.instrument(tracer_provider=TracerProvider())
