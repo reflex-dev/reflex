@@ -116,7 +116,8 @@ def MemoApp():
         """
         return rx.text(
             MemoState.numbers.filter(lambda number: number % divisor == 0).length(),
-            id="derived-count",
+            # No ``id``: its ref write keeps React Compiler from compiling the memo.
+            class_name="derived-count",
         )
 
     def index() -> rx.Component:
@@ -364,7 +365,7 @@ def test_memo_derived_array_updates(memo_app: AppHarness, page: Page) -> None:
         page: Playwright page.
     """
     _load_page(page, memo_app)
-    count = page.locator("#derived-count")
+    count = page.locator(".derived-count")
     expect(count).to_have_text("2")
 
     page.locator("#memo-input").fill("before replacement")
