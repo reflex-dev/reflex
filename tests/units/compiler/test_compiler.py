@@ -1968,6 +1968,12 @@ def test_incremental_compile_runs_plugin_outputs(
         "load_manifest",
         return_value={"plugin_sources": {str(tmp_path / "page.txt"): "base"}},
     )
+    # The attempt runs in this process, where the outputs can be observed.
+    from reflex.utils import compile_daemon
+
+    mocker.patch.object(
+        compile_daemon, "compiled_in_predicting_child", return_value=False
+    )
     (tmp_path / "page.txt").write_text("base!")
     assert compiler.compile_app(app, use_rich=False)
     assert (tmp_path / "asset.txt").read_text() == "asset"
@@ -2008,22 +2014,34 @@ def test_cached_compile_writes_the_manifest_last(
     original_write = compiler.utils.write_file
 
     def write_file(path, code):
-        """Write an output, failing the page when the test asks.
+        """Write an output, failing every write after the page when asked.
 
         Args:
             path: The output path.
             code: The output content.
 
         Raises:
-            OSError: When the page write is made to fail.
+            OSError: When a write after the page is made to fail.
         """
-        if write_fails and Path(path) == page:
+        if write_fails and page in written:
             msg = "disk full"
             raise OSError(msg)
         written.append(Path(path))
         original_write(path, code)
 
     mocker.patch.object(compiler.utils, "write_file", side_effect=write_file)
+    original_manifest_write = disk_cache._write
+
+    def write_manifest(manifest):
+        """Record when the manifest is written.
+
+        Args:
+            manifest: The manifest to write.
+        """
+        written.append(manifest_path)
+        original_manifest_write(manifest)
+
+    mocker.patch.object(disk_cache, "_write", side_effect=write_manifest)
 
     def rebuild(*args, outputs, **kwargs):
         """Stage a page and the refreshed manifest, manifest first.
@@ -2048,8 +2066,9 @@ def test_cached_compile_writes_the_manifest_last(
         return
     assert compiler.compile_app(app, use_rich=False)
     assert json.loads(manifest_path.read_text())["schema"] == 1
-    assert manifest_path not in written
-    assert written.index(page) < len(written)
+    assert written[0] == page
+    assert len(written) > 2
+    assert written.index(manifest_path) == len(written) - 1
 
 
 def test_preloaded_app_skips_incremental_reuse(monkeypatch, mocker):

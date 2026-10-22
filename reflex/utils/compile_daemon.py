@@ -1425,6 +1425,8 @@ def _serve() -> int:
                     use_rich=True,
                     trigger="initial",
                 )
+    except _Terminated:
+        raise
     except BaseException:  # tolerate a broken initial state; keep watching
         logger.exception("Initial compile failed; watching for a fix.")
     _prepare_fork_parent(roots)
@@ -1555,6 +1557,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
 
+class _Terminated(SystemExit):
+    """The ``SystemExit`` SIGTERM raises, which no compile failure handler keeps."""
+
+
 def _exit_on_sigterm(signum: int, frame: object) -> None:
     """Turn SIGTERM into a ``SystemExit`` that unwinds the daemon.
 
@@ -1565,7 +1571,7 @@ def _exit_on_sigterm(signum: int, frame: object) -> None:
     Raises:
         SystemExit: Always.
     """
-    raise SystemExit(0)
+    raise _Terminated(0)
 
 
 if __name__ == "__main__":

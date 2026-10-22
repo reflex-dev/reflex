@@ -356,14 +356,13 @@ def test_compile_state_default_component_names_do_not_depend_on_state_order():
 
         def serialized(substates: list[type[rx.State]]) -> str:
             reset_unique_variable_names()
-            original = _OrderRoot.get_substates
             _OrderRoot.get_substates = classmethod(  # type: ignore[method-assign]
                 lambda cls: substates if cls is _OrderRoot else set()
             )
             try:
                 return utils._serialize_initial_state(compile_state(_OrderRoot))
             finally:
-                _OrderRoot.get_substates = original  # type: ignore[method-assign]
+                del _OrderRoot.get_substates
 
         first = serialized([_OrderOne, _OrderTwo])
         second = serialized([_OrderTwo, _OrderOne])

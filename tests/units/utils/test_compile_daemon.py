@@ -1179,6 +1179,35 @@ def test_daemon_initial_work_holds_lock(tmp_path, monkeypatch, warm_only):
     assert "REFLEX_COMPILE_DAEMON_PRECOMPILED" not in os.environ
 
 
+def test_sigterm_during_the_initial_compile_stops_the_daemon(tmp_path, monkeypatch):
+    """SIGTERM is not a broken initial compile: the daemon exits, not watches."""
+    from reflex.utils import prerequisites
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(compile_daemon, "_lock_path", lambda: tmp_path / "c.lock")
+    monkeypatch.setattr(compile_daemon, "_reload_roots", lambda: [tmp_path])
+    monkeypatch.setattr(compile_daemon, "_prepare_fork_parent", lambda roots: None)
+    monkeypatch.setattr(
+        compile_daemon._WatchState,
+        "build",
+        lambda *args: compile_daemon._WatchState([tmp_path], tmp_path),
+    )
+    watched = []
+    monkeypatch.setattr(
+        compile_daemon, "_next_changes", lambda *args: watched.append(args)
+    )
+    monkeypatch.delenv("REFLEX_COMPILE_DAEMON_PRECOMPILED", raising=False)
+
+    def terminated(**kwargs):
+        """Receive SIGTERM mid-compile."""
+        compile_daemon._exit_on_sigterm(0, None)
+
+    monkeypatch.setattr(prerequisites, "get_compiled_app", terminated)
+    with pytest.raises(compile_daemon._Terminated):
+        compile_daemon._serve()
+    assert watched == []
+
+
 def test_watcher_reconciles_edits_after_an_idle_batch(tmp_path, monkeypatch):
     """A late edit must be included even if its OS event is in a later batch."""
     import watchfiles
@@ -1409,7 +1438,9 @@ def test_cold_compile_without_a_manifest_does_not_fork(monkeypatch):
 
     monkeypatch.setattr(compile_daemon, "_single_threaded", lambda: True)
     monkeypatch.setattr(disk_cache, "load_manifest", lambda: None)
-    monkeypatch.setattr(compile_daemon.os, "fork", Mock(side_effect=AssertionError))
+    monkeypatch.setattr(
+        compile_daemon.os, "fork", Mock(side_effect=AssertionError), raising=False
+    )
     assert compile_daemon.compiled_in_predicting_child(lambda: True) is False
 
 

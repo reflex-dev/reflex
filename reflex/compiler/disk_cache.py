@@ -2155,28 +2155,38 @@ def try_incremental_rebuild(
     }
 
     # Refresh the manifest for the next process; it is the last output.
-    if _update_manifest_for_misses(
-        manifest,
-        miss_ctx,
-        miss_pages,
-        install_imports,
-        root,
-        contexts_snapshot=contexts_snapshot,
-        memo_state=final_memo_state,
-        memo_file_entries=memo_files_table,
-        registrations=registrations,
-        module_states=(
-            _record_module_states(
-                live_module_states,
-                page_cache.make_hasher(),
-                manifest["files"],
-                root,
-            )
-            if module_states_changed
-            else recorded_module_states
-        ),
-        validator=validator,
-    ):
+    try:
+        refreshed = _update_manifest_for_misses(
+            manifest,
+            miss_ctx,
+            miss_pages,
+            install_imports,
+            root,
+            contexts_snapshot=contexts_snapshot,
+            memo_state=final_memo_state,
+            memo_file_entries=memo_files_table,
+            registrations=registrations,
+            module_states=(
+                _record_module_states(
+                    live_module_states,
+                    page_cache.make_hasher(),
+                    manifest["files"],
+                    root,
+                )
+                if module_states_changed
+                else recorded_module_states
+            ),
+            validator=validator,
+        )
+    except Exception as exc:  # best-effort, like ``write_manifest``
+        logger.warning(
+            f"Compile cache: could not refresh manifest ({exc!r}). "
+            "The next reload may need a full compile."
+        )
+        # No manifest may vouch for the outputs about to be written.
+        _manifest_path().unlink(missing_ok=True)
+        refreshed = False
+    if refreshed:
         _save_incremental_output(_manifest_path(), _manifest_text(manifest), outputs)
 
     app._cached_component_counts = manifest_component_counts(manifest)

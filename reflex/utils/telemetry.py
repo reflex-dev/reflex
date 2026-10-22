@@ -670,7 +670,8 @@ def send_spooled(spool: Path) -> None:
         lines = spool.read_text(encoding="utf-8").splitlines()
     except OSError:
         return
-    spool.unlink(missing_ok=True)
+    with suppress(OSError):
+        spool.unlink(missing_ok=True)
     for line in lines:
         with suppress(Exception):
             entry = json.loads(line)

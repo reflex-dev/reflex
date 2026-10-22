@@ -538,6 +538,18 @@ def test_serialize(value: Any, expected: str):
     assert json.loads(json_dumps(value)) == json.loads(json_dumps(expected))
 
 
+class _ReversedSet(set):
+    """A set that iterates in descending order, unlike small-int sets."""
+
+    def __iter__(self):
+        """Iterate in descending order.
+
+        Returns:
+            The descending iterator.
+        """
+        return iter(sorted(set.__iter__(self), reverse=True))
+
+
 def test_sorted_set_is_deterministic_and_serialize_set_is_not_sorted():
     """Compiled output sorts sets; a state delta keeps the cheap list.
 
@@ -552,7 +564,8 @@ def test_sorted_set_is_deterministic_and_serialize_set_is_not_sorted():
     # Unsortable element mixes sort by their serialized form.
     assert serializers.sorted_set({1, "a"}) == serializers.sorted_set({"a", 1})
     assert set(serializers.serialize_set({1, "a"})) == {1, "a"}
-    assert serializers.serialize_set({3, 1, 2}) == list({3, 1, 2})
+    # The state-delta path keeps the set's own order: no sort per delta.
+    assert serializers.serialize_set(_ReversedSet({1, 2, 3})) == [3, 2, 1]
     assert str(LiteralVar.create({"b", "c", "a"})) == '["a", "b", "c"]'
     assert str(LiteralVar.create({3, 1, 2})) == "[1, 2, 3]"
 

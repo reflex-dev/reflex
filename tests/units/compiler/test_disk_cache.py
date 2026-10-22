@@ -723,19 +723,28 @@ def test_names_drawn_after_the_pages_never_repeat_import_time_names():
     the app root and runtime components draw more. Reseeding the import
     sequence would hand the same names out again.
     """
+    from reflex_base.vars import base as vars_base
     from reflex_base.vars.base import (
         get_unique_variable_name,
         reset_unique_variable_names,
+        restore_unique_variable_name_state,
+        unique_variable_name_state,
     )
 
-    reset_unique_variable_names()
-    import_names = {get_unique_variable_name() for _ in range(3)}
-    _compile([_FakePage(route="/a", component=_page_a)])
-    after = {get_unique_variable_name() for _ in range(50)}
-    assert not after & import_names
-    # And the post-page sequence is the same on every compile.
-    _compile([_FakePage(route="/b", component=_page_b)])
-    assert {get_unique_variable_name() for _ in range(50)} == after
+    saved = unique_variable_name_state()
+    saved_reserved = vars_base._names_before_first_compile
+    try:
+        reset_unique_variable_names()
+        import_names = {get_unique_variable_name() for _ in range(3)}
+        _compile([_FakePage(route="/a", component=_page_a)])
+        after = {get_unique_variable_name() for _ in range(50)}
+        assert not after & import_names
+        # And the post-page sequence is the same on every compile.
+        _compile([_FakePage(route="/b", component=_page_b)])
+        assert {get_unique_variable_name() for _ in range(50)} == after
+    finally:
+        restore_unique_variable_name_state(saved)
+        vars_base._names_before_first_compile = saved_reserved
 
 
 _CONTEXTS_STUB = "// contexts stub"
@@ -2535,6 +2544,36 @@ def test_incremental_miss_drops_the_memo_no_page_uses(
         os.sep, "/"
     )
     assert compiler_utils._read_memo_manifest(web) == {new_relative}
+
+
+def test_failed_manifest_refresh_leaves_no_manifest(
+    tmp_path, monkeypatch, preserve_memo_registries
+):
+    """A refresh that raises still rebuilds, and leaves no stale manifest."""
+    web = _use_tmp_web_dir(tmp_path, monkeypatch)
+    app = rx.App()
+    app.add_page(_page_shared_one, route="/one")
+    pages = list(app._unevaluated_pages.values())
+    ctx = _compile(pages)
+    disk_cache.write_manifest(ctx, pages, ctx.all_imports, root=tmp_path)
+    _stub_externals(app, monkeypatch)
+    manifest_path = web / disk_cache._MANIFEST_FILE
+    manifest = json.loads(manifest_path.read_text())
+    _stale_dep(manifest, pages[0].route, str(tmp_path / "data.md"))
+    manifest_path.write_text(json.dumps(manifest))
+
+    def fail(*args, **kwargs):
+        msg = "boom"
+        raise ValueError(msg)
+
+    monkeypatch.setattr(disk_cache, "_update_manifest_for_misses", fail)
+    assert (
+        disk_cache.try_incremental_rebuild(
+            app, compiler_plugins=[], prerender_routes=False, root=tmp_path
+        )
+        is True
+    )
+    assert not manifest_path.exists()
 
 
 def test_incremental_miss_keeps_the_memo_the_app_root_shares(
