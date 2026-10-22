@@ -25,7 +25,7 @@ class Bun(SimpleNamespace):
     # even across dependency changes, so already-initialized projects survive.)
     # Keep this in step with VERSION across the 1.4 boundary so a system bun
     # old enough to choke on a v2 lockfile is never preferred over the pinned one.
-    MIN_VERSION = "1.4.0"
+    MIN_VERSION = "1.4.4"
 
     # URL to bun install script.
     INSTALL_URL = "https://raw.githubusercontent.com/reflex-dev/reflex/main/scripts/bun_install.sh"
