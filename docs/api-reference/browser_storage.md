@@ -42,7 +42,8 @@ A var is stored in the browser when its default is a storage value, such as
 with a storage type, such as `theme: rx.LocalStorage = "light"`. The storage key
 and options must be known when the app compiles, so a `default_factory` cannot
 provide them: `rx.field(default_factory=lambda: rx.LocalStorage(...))` fails to
-compile, whichever way the var is annotated.
+compile on a var annotated with a storage type or with a type that accepts a
+`str`, such as `str`, `str | None` or a `Literal` of strings.
 ```
 
 ```md alert warning

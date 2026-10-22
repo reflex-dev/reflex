@@ -359,6 +359,7 @@ def _may_hold_str(type_: Any) -> bool:
     Returns:
         Whether the type accepts a str or a str subclass.
     """
+    type_ = types.resolve_type_alias(type_)
     if type_ is Any:
         return True
     if types.is_union(type_):

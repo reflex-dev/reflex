@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from copy import deepcopy
-from typing import Literal, TypedDict
+from typing import Annotated, Literal, TypedDict
 
 import pytest
 from reflex_base import constants
@@ -313,11 +313,17 @@ def test_compile_client_storage_rejects_factory_producing_storage(
             default_factory=lambda: rx.LocalStorage("light", name="theme")
         )
 
+    class MetadataStorageState(State):
+        theme: rx.Field[Annotated[str, "meta"]] = rx.field(
+            default_factory=lambda: rx.LocalStorage("light", name="theme")
+        )
+
     for state in (
         StorageState,
         OptionalStorageState,
         OptionalAnnotatedStorageState,
         LiteralStorageState,
+        MetadataStorageState,
     ):
         with pytest.raises(
             VarTypeError, match=r"\.theme' cannot use a default_factory"
