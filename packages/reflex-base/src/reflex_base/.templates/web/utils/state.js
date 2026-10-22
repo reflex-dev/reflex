@@ -896,6 +896,7 @@ const handleStateMismatch = (info) => {
  * @param client_storage The client storage object from context.js
  * @param navigate The navigate function from React Router
  * @param params The params object from React Router
+ * @param ssrHydrated Whether the page already holds state rendered by the backend
  */
 export const connect = async (
   socket,
@@ -905,6 +906,7 @@ export const connect = async (
   client_storage = {},
   navigate,
   params,
+  ssrHydrated = false,
 ) => {
   // Socket already allocated, just reconnect it if needed.
   if (socket.current) {
@@ -924,7 +926,14 @@ export const connect = async (
   // the state schema goes along on every (re)connect, since a reconnect can
   // land on another backend version.
   const bootAuth = (first) => {
-    const boot_event = withRouterData(app.initialEvents(first)[0], params);
+    // A server-rendered page already ran its on_load handlers and holds no
+    // compiled defaults to diff against, so its first connect only hydrates.
+    const boot_event = withRouterData(
+      first && ssrHydrated
+        ? ReflexEvent(`${app.state_name}.hydrate`)
+        : app.initialEvents(first)[0],
+      params,
+    );
     recordSentStorageValues(boot_event);
     // Instrumentation hook (installed by reflex-otel): may add a traceparent.
     window.__reflex_otel?.onEventSend?.(boot_event);
@@ -1429,6 +1438,7 @@ const applyClientStorageDelta = (client_storage, delta) => {
  * @param dispatch The reducer dispatch function to update state.
  * @param initial_events The initial app events.
  * @param client_storage The client storage object from context.js
+ * @param ssrHydrated Whether the page already holds state rendered by the backend
  *
  * @returns [addEvents, connectErrors] -
  *   addEvents is used to queue an event, and
@@ -1438,6 +1448,7 @@ export const useEventLoop = (
   dispatch,
   initial_events = () => [],
   client_storage = {},
+  ssrHydrated = false,
 ) => {
   const socket = useRef(null);
   const location = useLocation();
@@ -1483,6 +1494,7 @@ export const useEventLoop = (
         client_storage,
         navigate,
         params,
+        ssrHydrated,
       );
     }
   }, [

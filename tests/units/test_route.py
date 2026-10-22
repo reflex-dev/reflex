@@ -4,7 +4,12 @@ from reflex_base import constants
 
 import reflex as rx
 from reflex.app import App
-from reflex.route import get_route_args, get_router, verify_route_validity
+from reflex.route import (
+    extract_route_params,
+    get_route_args,
+    get_router,
+    verify_route_validity,
+)
 
 
 @pytest.mark.parametrize(
@@ -22,6 +27,32 @@ from reflex.route import get_route_args, get_router, verify_route_validity
 )
 def test_route_args(route_name, expected):
     assert get_route_args(route_name) == expected
+
+
+@pytest.mark.parametrize(
+    ("path", "route", "expected"),
+    [
+        ("/blog/hello-world", "blog/[slug]", {"slug": "hello-world"}),
+        ("/blog/my-post", "/blog/[slug]", {"slug": "my-post"}),
+        ("/blog/my-post/", "blog/[slug]", {"slug": "my-post"}),
+        ("/users/42/posts/99", "users/[id]/posts/[pid]", {"id": "42", "pid": "99"}),
+        ("/about", "about", {}),
+        ("/", "/", {}),
+        ("/blog", "blog/[slug]", {}),
+        ("/docs/intro", "docs/[[section]]", {"section": "intro"}),
+        ("/docs", "docs/[[section]]", {}),
+        ("/docs/intro", "docs/[[lang]]/[page]", {"page": "intro"}),
+        ("/docs/en/intro", "docs/[[lang]]/[page]", {"lang": "en", "page": "intro"}),
+        ("/blog/hello%20world", "blog/[slug]", {"slug": "hello world"}),
+        ("/files/a/b", "files/[[...splat]]", {"splat": ["a", "b"]}),
+        ("/files/a%20b/c", "files/[[...splat]]", {"splat": ["a b", "c"]}),
+        ("/files", "files/[[...splat]]", {}),
+    ],
+)
+def test_extract_route_params(path: str, route: str, expected: dict):
+    # Params match what React Router reports to the client: decoded, the splat
+    # split into segments, and omitted optional segments left out.
+    assert extract_route_params(path, route) == expected
 
 
 @pytest.mark.parametrize(

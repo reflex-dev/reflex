@@ -1,0 +1,1 @@
+Add an experimental, default-off `runtime_ssr` config option that renders pages on the server, with the state their `on_load` handlers produce, for search engine crawlers, while browsers keep receiving the static app shell.
