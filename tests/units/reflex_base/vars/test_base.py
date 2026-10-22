@@ -1,6 +1,9 @@
 """Tests for reflex_base.vars.base state metaclass field handling."""
 
 import dataclasses
+import datetime
+import decimal
+import enum
 import gc
 import logging
 import os
@@ -12,16 +15,25 @@ import traceback
 import typing
 import weakref
 from abc import ABC, abstractmethod
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator, Sequence
 from pathlib import Path
-from typing import Any, ClassVar, Literal, TypeVar
+from typing import Any, ClassVar, Literal, Self, TypeVar
+from unittest import mock
 
 import pytest
 from reflex_base import constants
+from reflex_base.components.component import LiteralComponentVar
 from reflex_base.constants import RouteArgType
+from reflex_base.constants.colors import Color
 from reflex_base.environment import _load_dotenv_from_files, environment
+from reflex_base.event import LiteralEventChainVar, LiteralEventVar
 from reflex_base.utils import serializers
-from reflex_base.utils.exceptions import ReflexRuntimeError, StateValueError
+from reflex_base.utils.exceptions import (
+    BackendVarFormatError,
+    ReflexRuntimeError,
+    StateValueError,
+    UntypedVarError,
+)
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import get_field_type
 from reflex_base.vars.base import (
@@ -30,26 +42,49 @@ from reflex_base.vars.base import (
     GLOBAL_CACHE,
     BaseStateMeta,
     CachedVarOperation,
+    CustomVarOperation,
     EvenMoreBasicBaseState,
     Field,
     LiteralVar,
+    StateOperation,
     Var,
     VarData,
     _global_vars,
+    _is_tree_state,
     _linearize_bases,
     _type_check_depth,
+    _validate_state_name,
     cached_property,
     cached_property_no_lock,
     computed_var,
     field,
+    get_leaf_vars,
     var_operation,
     var_operation_return,
 )
+from reflex_base.vars.color import LiteralColorVar
+from reflex_base.vars.function import (
+    ArgsFunctionOperation,
+    ArgsFunctionOperationBuilder,
+    FunctionStringVar,
+    FunctionVar,
+    VarOperationCall,
+)
 from reflex_base.vars.number import NumberVar
-from reflex_base.vars.object import ObjectVar
-from reflex_base.vars.sequence import ArrayVar, StringVar
-from typing_extensions import Self, TypeAliasType, TypeVarTuple, Unpack
+from reflex_base.vars.object import LiteralObjectVar, ObjectItemOperation, ObjectVar
+from reflex_base.vars.sequence import (
+    ArraySliceOperation,
+    ArrayVar,
+    ConcatVarOperation,
+    LiteralArrayVar,
+    LiteralRangeVar,
+    StringVar,
+)
+from typing_extensions import TypeAliasType, TypeVarTuple
 
+import reflex as rx
+from reflex.istate.data import ReflexURLCastedVar, RouterDataVar
+from reflex.istate.proxy import MutableProxy
 from reflex.state import BaseState, State, _override_base_method
 
 _MARKER_ATTR = "_marker"
@@ -193,18 +228,18 @@ def test_guess_type_resolves_variadic_type_alias(alias_cls: type) -> None:
     just the one a plain positional zip would pair it with.
     """
     ts = TypeVarTuple("ts")
-    tup = alias_cls("Tup", tuple[Unpack[ts]], type_params=(ts,))  # pyright: ignore[reportGeneralTypeIssues]
+    tup = alias_cls("Tup", tuple[*ts], type_params=(ts,))  # pyright: ignore[reportGeneralTypeIssues]
     var = Var(_js_expr="t", _var_type=tup[str, int]).guess_type()
     assert isinstance(var, ArrayVar)
     assert var._var_type == tuple[str, int]
 
     t = TypeVar("t")
-    prefixed = alias_cls("Prefixed", dict[t, tuple[Unpack[ts]]], type_params=(t, ts))  # pyright: ignore[reportGeneralTypeIssues]
+    prefixed = alias_cls("Prefixed", dict[t, tuple[*ts]], type_params=(t, ts))  # pyright: ignore[reportGeneralTypeIssues]
     prefixed_var = Var(_js_expr="p", _var_type=prefixed[str, int, float]).guess_type()
     assert isinstance(prefixed_var, ObjectVar)
     assert prefixed_var._var_type == dict[str, tuple[int, float]]
 
-    suffixed = alias_cls("Suffixed", dict[t, tuple[Unpack[ts]]], type_params=(ts, t))  # pyright: ignore[reportGeneralTypeIssues]
+    suffixed = alias_cls("Suffixed", dict[t, tuple[*ts]], type_params=(ts, t))  # pyright: ignore[reportGeneralTypeIssues]
     suffixed_var = Var(_js_expr="s", _var_type=suffixed[int, float, str]).guess_type()
     assert isinstance(suffixed_var, ObjectVar)
     assert suffixed_var._var_type == dict[str, tuple[int, float]]
@@ -343,6 +378,21 @@ def test_var_data_field_name_reports_the_first_field():
     assert VarData(field_name="a").field_name == "a"
     assert VarData(field_dependencies={"s": ("a", "b")}).field_name == "a"
     assert VarData().field_name == ""
+
+
+def test_var_data_position_is_deprecated_and_ignored():
+    """Hooks of different positions merge, in order, instead of raising."""
+    with mock.patch("reflex_base.utils.console.deprecate") as deprecate:
+        internal = VarData(
+            hooks=["const a = 1"], position=constants.Hooks.HookPosition.INTERNAL
+        )
+        post = VarData(
+            hooks=["const b = a"], position=constants.Hooks.HookPosition.POST_TRIGGER
+        )
+    assert deprecate.call_count == 2
+    merged = VarData.merge(internal, post)
+    assert merged is not None
+    assert merged.hooks == ("const a = 1", "const b = a")
 
 
 def test_serializer_attribute_error_is_not_masked() -> None:
@@ -512,6 +562,88 @@ def test_literal_var_dispatch_follows_later_registrations():
         del base._var_literal_subclasses[literal_subclasses:]
         base._clear_var_subclass_lookup_caches()
         base._literal_var_by_type.clear()
+
+
+def test_guess_type_dispatch_follows_later_registrations():
+    """A Var subclass registered after a guess wins the next guess for its type."""
+
+    class Tags(list):
+        """A list type no Var subclass claims yet."""
+
+    from reflex_base.vars import base
+
+    var_subclasses = len(base._var_subclasses)
+    tags = Var(_js_expr="tags", _var_type=Tags)
+    try:
+        assert isinstance(tags.guess_type(), ArrayVar)
+        assert isinstance(tags.guess_type(), ArrayVar)
+
+        class TagsVar(ArrayVar, python_types=Tags):
+            """A Var holding tags."""
+
+        assert isinstance(tags.guess_type(), TagsVar)
+    finally:
+        del base._var_subclasses[var_subclasses:]
+        base._clear_var_subclass_lookup_caches()
+
+
+def test_guess_type_with_an_unhashable_var_type():
+    """A var type that cannot be a cache key is still guessed."""
+    var = Var(_js_expr="x", _var_type=typing.Annotated[int, []])
+    assert isinstance(var.guess_type(), NumberVar)
+    assert isinstance(var.guess_type(), NumberVar)
+
+
+def test_cached_property_releases_entries_across_a_hierarchy():
+    """Every cached property of a class and its bases is released with the instance."""
+
+    class Base:
+        @cached_property
+        def first(self) -> list[int]:
+            return [1]
+
+    class Child(Base):
+        @cached_property
+        def second(self) -> list[int]:
+            return [2]
+
+        @cached_property
+        def never_read(self) -> list[int]:
+            return [3]
+
+    child = Child()
+    assert child.first == [1]
+    assert child.second == [2]
+    keys = [
+        child.__dict__["_reflex_cache_first"],
+        child.__dict__["_reflex_cache_second"],
+    ]
+    assert all(key in GLOBAL_CACHE for key in keys)
+    del child
+    gc.collect()
+    assert not any(key in GLOBAL_CACHE for key in keys)
+
+
+def test_cached_property_keeps_running_an_inherited_del():
+    """A __del__ the owner inherits still runs after its cached entries are released."""
+    deleted = []
+
+    class Base:
+        def __del__(self):
+            deleted.append(type(self).__name__)
+
+    class Child(Base):
+        @cached_property
+        def value(self) -> list[int]:
+            return [1]
+
+    child = Child()
+    assert child.value == [1]
+    key = child.__dict__["_reflex_cache_value"]
+    del child
+    gc.collect()
+    assert deleted == ["Child"]
+    assert key not in GLOBAL_CACHE
 
 
 def _operand_with_var_data() -> NumberVar[int]:
@@ -731,22 +863,30 @@ def test_reserved_annotation_only(clean_registration_context):
             _init_bookkeeping: int
 
 
-@pytest.mark.parametrize("state_mixin", [False, True])
-def test_reserved_mixin_var(state_mixin: bool, clean_registration_context):
-    """Reject collisions from both ordinary Python mixins and state mixins.
+def test_reserved_mixin_var(clean_registration_context):
+    """Reject a reserved var from an ordinary Python mixin where a state inherits it.
 
     Args:
-        state_mixin: Whether the mixin subclasses BaseState.
+        clean_registration_context: An isolated state registry.
+    """
+    mixin = type("Mixin", (), {"__module__": __name__, "_get_root_state": 7})
+    with pytest.raises(StateValueError, match="_get_root_state"):
+        type("MixedState", (mixin, BaseState), {"__module__": __name__})
+
+
+def test_reserved_state_mixin_var(clean_registration_context):
+    """Reject a reserved var where a state mixin declares it.
+
+    Args:
         clean_registration_context: An isolated state registry.
     """
     with pytest.raises(StateValueError, match="_get_root_state"):
-        mixin = type(
+        type(
             "Mixin",
-            (BaseState,) if state_mixin else (),
+            (BaseState,),
             {"__module__": __name__, "_get_root_state": 7},
-            **({"mixin": True} if state_mixin else {}),
+            mixin=True,
         )
-        type("MixedState", (mixin, BaseState), {"__module__": __name__})
 
 
 @pytest.mark.parametrize("state_mixin", [False, True])
@@ -1068,6 +1208,31 @@ def test_state_roots_do_not_share_reserved_names():
             alpha: int = 3
 
 
+def test_only_states_below_a_root_are_tree_states():
+    """Treat neither a root nor a state outside any root's hierarchy as a tree state."""
+
+    class Rootless(EvenMoreBasicBaseState):
+        pass
+
+    class Root(EvenMoreBasicBaseState, state_root=True):
+        pass
+
+    class Child(Root):
+        pass
+
+    assert Rootless._reflex_state_root is None
+    assert not _is_tree_state(Rootless)
+    assert not _is_tree_state(Root)
+    assert _is_tree_state(Child)
+
+
+def test_no_root_reserves_no_names():
+    """Accept any name for a state outside every root's hierarchy."""
+    _validate_state_name(None, "_get_root_state", 7)
+    with pytest.raises(StateValueError, match="_get_root_state"):
+        _validate_state_name(BaseState, "_get_root_state", 7)
+
+
 def test_inherited_field_on_plain_model():
     """An inherited field of a model without a state tree reads from the model itself."""
 
@@ -1219,6 +1384,112 @@ def test_backend_field_is_not_type_checked():
     assert model._value == 1
 
 
+@pytest.mark.parametrize("name", ["_secret", "bookkeeping"])
+def test_backend_field_format_raises(name: str):
+    """Formatting a backend var raises instead of embedding its repr.
+
+    Args:
+        name: The backend field to format, underscore-prefixed or is_var=False.
+    """
+
+    class Model(EvenMoreBasicBaseState):
+        _secret: int = 42
+        bookkeeping: int = field(default=0, is_var=False)
+
+    with pytest.raises(
+        BackendVarFormatError, match=rf"Backend var 'Model\.{name}' exists only"
+    ):
+        f"{getattr(Model, name)}px"
+
+
+@pytest.mark.parametrize("mixin", [False, True])
+@pytest.mark.parametrize(("name", "default"), [("_secret", 42), ("bookkeeping", 0)])
+def test_backend_field_format_error_names_the_fix(name: str, default: int, mixin: bool):
+    """The backend var format error names the var and how to use it in the UI.
+
+    Args:
+        name: The backend field to format, underscore-prefixed or is_var=False.
+        default: The default value of that field.
+        mixin: Whether the field is declared on a mixin.
+    """
+
+    class Model(EvenMoreBasicBaseState, mixin=mixin):
+        _secret: int = 42
+        bookkeeping: int = field(default=0, is_var=False)
+
+    with pytest.raises(BackendVarFormatError) as exc_info:
+        f"{getattr(Model, name)}px"
+
+    message = str(exc_info.value)
+    assert f"Backend var 'Model.{name}' exists only on the server" in message
+    assert f"Use Model.{name}.default_value() for its default value" in message
+    assert "declare it as ClassVar[...]" in message
+    assert "use a regular state var" in message
+    # The suggested call returns the default.
+    assert getattr(Model, name).default_value() == default
+
+
+def test_mixin_field_format_raises():
+    """A mixin's frontend field has no Var, and the error says to use the including state."""
+
+    class Mixin(EvenMoreBasicBaseState, mixin=True):
+        count: int = 0
+
+    with pytest.raises(
+        BackendVarFormatError, match=r"Var 'Mixin\.count' is declared on a mixin state"
+    ):
+        f"{Mixin.count}"
+
+
+def test_unbound_field_format_raises():
+    """An unbound field has no Var to format, and the error shows its definition."""
+    with pytest.raises(
+        BackendVarFormatError,
+        match=r"^Field\(default=0, is_var=True, annotated_type=typing.Any\) has no",
+    ):
+        f"{field(default=0)}"
+
+
+def test_untyped_var_item_access_reports_backend_var_key():
+    """Indexing an untyped Var with a backend var names the key, not a format error."""
+
+    class Model(EvenMoreBasicBaseState):
+        _secret: int = 42
+
+    with pytest.raises(UntypedVarError, match=r"access the item 'Field\(default=42"):
+        Var(_js_expr="x")[Model._secret]  # pyright: ignore[reportIndexIssue]
+
+
+def test_backend_field_literal_var_reports_repr():
+    """Creating a LiteralVar from a backend var reports its repr, not a format error."""
+
+    class Model(EvenMoreBasicBaseState):
+        _secret: int = 42
+
+    with pytest.raises(
+        TypeError, match=r"Tried to create a LiteralVar from Field\(default=42"
+    ):
+        LiteralVar.create(Model._secret)
+
+
+def test_mistyped_backend_field_value_logs_repr(caplog: pytest.LogCaptureFixture):
+    """Assigning a backend var to a typed field logs its repr and stores it.
+
+    Args:
+        caplog: The log capture fixture.
+    """
+
+    class Model(EvenMoreBasicBaseState):
+        _secret: int = 42
+        count: int = 0
+
+    model = Model()  # pyright: ignore[reportCallIssue]
+    with caplog.at_level(logging.ERROR, logger="reflex_base.vars.base"):
+        model.count = Model._secret  # pyright: ignore[reportAttributeAccessIssue]
+    assert "but got Field(default=42" in caplog.text
+    assert model.__dict__["count"] is Model._secret
+
+
 def test_classvar_over_inherited_field_is_not_a_field():
     """A ClassVar redeclaring an inherited field stays a class attribute."""
 
@@ -1230,6 +1501,536 @@ def test_classvar_over_inherited_field_is_not_a_field():
 
     assert Child.get_fields()["count"] is Parent.get_fields()["count"]
     assert "count" not in Child.base_vars
+
+
+@pytest.mark.parametrize("name", ["value", "_value"])
+def test_class_assignment_over_a_var_raises(name: str):
+    """Assigning a state var on its class or a subclass raises and keeps the var.
+
+    Args:
+        name: A frontend or a backend var.
+    """
+
+    class Parent(BaseState):
+        value: int = 0
+        _value: int = 0
+
+    class Child(Parent):
+        pass
+
+    declared = Parent.get_fields()[name]
+    for cls in (Parent, Child):
+        with pytest.raises(
+            TypeError, match=f"'{name}' is a state var of {Parent.__name__}"
+        ):
+            setattr(cls, name, 5)
+    assert Parent.__dict__[name] is declared
+    assert name not in Child.__dict__
+    assert declared.default == 0
+
+
+def test_class_assignment_error_names_the_declaring_state():
+    """The error through a substate points at the state declaring the var."""
+
+    class Parent(BaseState):
+        count: int = 0
+
+    class Child(Parent):
+        pass
+
+    parent, child = Parent.__name__, Child.__name__
+    with pytest.raises(TypeError) as exc_info:
+        Child.count = 9  # pyright: ignore[reportAttributeAccessIssue]
+    message = str(exc_info.value)
+    assert message.startswith(
+        f"'count' is a state var of {parent}, inherited by {child}; assigning "
+        f"it on {child} would replace the var."
+    )
+    assert f"{parent}.__fields__['count'].set_default(...)" in message
+    assert "every state that inherits it" in message
+    assert f"{child}.__fields__" not in message
+
+    with pytest.raises(TypeError) as exc_info:
+        Parent.count = 9
+    message = str(exc_info.value)
+    assert message.startswith(
+        f"'count' is a state var of {parent}; assigning it on the class would "
+        "replace the var."
+    )
+    assert "every state that inherits it" not in message
+
+
+def test_class_assignment_error_names_the_state_mixing_in_a_var():
+    """A state mixing in a var owns its copy, so the error names that state."""
+
+    class Mixin(State, mixin=True):
+        count: int = 0
+
+    class Mixed(Mixin, State):
+        pass
+
+    class Child(Mixed):
+        pass
+
+    mixin, mixed, child = Mixin.__name__, Mixed.__name__, Child.__name__
+    for cls, owner, declared in (
+        (Mixin, mixin, mixin),
+        (Mixed, mixed, mixed),
+        (Child, mixed, f"{mixed}, inherited by {child}"),
+    ):
+        with pytest.raises(TypeError) as exc_info:
+            cls.count = 9
+        message = str(exc_info.value)
+        assert message.startswith(f"'count' is a state var of {declared}; "), cls
+        assert f"{owner}.__fields__['count'].set_default(...)" in message
+    assert Mixed.get_fields()["count"] is not Mixin.get_fields()["count"]
+
+
+def test_class_assignment_error_suggests_set_default():
+    """The error suggests set_default for a mutable and an immutable value alike."""
+
+    class S(BaseState):
+        items: list[str] = []
+
+    for value in (["a"], ("a",)):
+        with pytest.raises(TypeError) as exc_info:
+            S.items = value  # pyright: ignore[reportAttributeAccessIssue]
+        assert f"{S.__name__}.__fields__['items'].set_default(...)" in str(
+            exc_info.value
+        )
+
+
+def test_field_set_default():
+    """set_default copies a mutable default per instance and keeps one kind of default."""
+
+    class S(BaseState):
+        count: int = 0
+        items: list[str] = []
+        maybe: list[str] | None = None
+        stamp: list[int] = []
+
+    fields = S.get_fields()
+    fields["count"].set_default(5)
+    assert (fields["count"].default, fields["count"].default_factory) == (5, None)
+    assert S().count == 5
+
+    # A mutable default replaces a set default with a factory copying the value
+    # as it was when set.
+    value = ["a"]
+    fields["maybe"].set_default(value)
+    assert fields["maybe"].default is dataclasses.MISSING
+    first, second = S(), S()
+    assert first.maybe is not value
+    assert first.maybe is not None
+    first.maybe.append("changed")
+    value.append("changed")
+    assert second.maybe == ["a"]
+    assert S().maybe == ["a"]
+
+    # An immutable default, here passed by keyword, replaces a factory.
+    fields["items"].set_default(default=("x",))
+    assert fields["items"].default == ("x",)
+    assert fields["items"].default_factory is None
+    assert S().items == ("x",)
+
+    # A factory replaces a set default and is called for each instance.
+    calls = iter(range(10))
+    fields["count"].set_default(default_factory=lambda: next(calls))
+    assert fields["count"].default is dataclasses.MISSING
+    assert (S().count, S().count) == (0, 1)
+
+    # None is a default value, and a None factory counts as not given.
+    fields["maybe"].set_default(None, default_factory=None)
+    assert (fields["maybe"].default, fields["maybe"].default_factory) == (None, None)
+    assert S().maybe is None
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "message"),
+    [
+        ({}, "requires a default or a default_factory"),
+        ({"default_factory": None}, "requires a default or a default_factory"),
+        ({"default": 1, "default_factory": lambda: 1}, "not both"),
+    ],
+    ids=["neither", "factory_none", "both"],
+)
+def test_field_set_default_takes_exactly_one(kwargs: dict[str, Any], message: str):
+    """set_default needs exactly one of default and default_factory.
+
+    Args:
+        kwargs: The arguments passed to set_default.
+        message: The expected error message.
+    """
+
+    class S(BaseState):
+        count: int = 0
+
+    field = S.get_fields()["count"]
+    with pytest.raises(TypeError, match=message):
+        field.set_default(**kwargs)
+    assert (field.default, field.default_factory) == (0, None)
+
+
+def test_class_assignment_of_other_attributes_is_allowed():
+    """ClassVars, including one over an inherited var, and new names stay assignable."""
+
+    class Parent(BaseState):
+        _value: str = "old"
+        _config: ClassVar[str] = "old"
+
+    class Child(Parent):
+        _value: ClassVar[str] = "child"  # pyright: ignore[reportIncompatibleVariableOverride]
+
+    Child._value = "new"
+    Parent._config = "new"
+    Parent.extra = 1  # pyright: ignore[reportAttributeAccessIssue]
+    assert (Child._value, Parent._config, Parent.extra) == ("new", "new", 1)  # pyright: ignore[reportAttributeAccessIssue]
+    assert Parent.get_fields()["_value"].default == "old"
+
+
+def test_var_default_patches_round_trip():
+    """A test patches a var's default on its field, or deletes the var to replace it."""
+
+    class Svc(BaseState):
+        _limit: int = 5
+
+    declared = Svc.get_fields()["_limit"]
+    with mock.patch.object(declared, "default", 99):
+        assert Svc()._limit == 99
+    assert Svc()._limit == 5
+
+    with pytest.MonkeyPatch.context() as monkeypatch:
+        monkeypatch.delattr(Svc, "_limit")
+        monkeypatch.setattr(Svc, "_limit", 99, raising=False)
+        assert Svc._limit == 99
+    assert Svc.__dict__["_limit"] is declared
+    assert Svc()._limit == 5
+
+    # Patching the class attribute itself raises, and its cleanup restores nothing.
+    with (
+        pytest.raises(TypeError, match="'_limit' is a state var of Svc"),
+        mock.patch.object(Svc, "_limit", 99),
+    ):
+        pass
+    assert Svc.__dict__["_limit"] is declared
+    assert Svc()._limit == 5
+
+
+def test_inherited_var_patch_raises_type_error():
+    """Patching or deleting a var through a state that inherits it names the var."""
+
+    class Parent(BaseState):
+        value: int = 0
+
+    class Child(Parent):
+        pass
+
+    declared = Parent.get_fields()["value"]
+    # The patch's cleanup deletes the attribute it failed to set on Child.
+    with (
+        pytest.raises(
+            TypeError,
+            match=f"'value' is a state var of {Parent.__name__}, inherited by "
+            f"{Child.__name__}",
+        ),
+        mock.patch.object(Child, "value", 99),
+    ):
+        pass
+    with pytest.raises(TypeError, match=f"deleting it on {Child.__name__}"):
+        del Child.value
+    assert Parent.__dict__["value"] is declared
+    assert "value" not in Child.__dict__
+    assert Child().value == 0
+
+
+def test_computed_var_type_mismatch_is_logged_once_per_value(
+    caplog: pytest.LogCaptureFixture,
+):
+    """A computed value of the wrong type is reported when computed, not on each read.
+
+    Args:
+        caplog: The log capture fixture.
+    """
+
+    class MismatchState(BaseState):
+        count: int = 0
+
+        @computed_var
+        def cached(self) -> int:
+            return str(self.count)  # pyright: ignore [reportReturnType]
+
+        @computed_var(cache=False)
+        def uncached(self) -> int:
+            return str(self.count)  # pyright: ignore [reportReturnType]
+
+    state = MismatchState()
+    with caplog.at_level(logging.ERROR, logger="reflex_base.vars.base"):
+        assert [state.cached for _ in range(3)] == ["0"] * 3
+        assert len(caplog.records) == 1
+        assert "MismatchState.cached" in caplog.text
+        state.count = 1
+        assert state.cached == "1"
+        assert len(caplog.records) == 2
+        caplog.clear()
+        assert [state.uncached for _ in range(3)] == ["1"] * 3
+        assert len(caplog.records) == 3
+
+
+async def test_async_computed_var_type_mismatch_is_logged_once_per_value(
+    caplog: pytest.LogCaptureFixture,
+):
+    """An async computed value of the wrong type is reported when computed, not on each read.
+
+    Args:
+        caplog: The log capture fixture.
+    """
+
+    class AsyncMismatchState(BaseState):
+        count: int = 0
+
+        @computed_var
+        async def cached(self) -> int:
+            return str(self.count)  # pyright: ignore [reportReturnType]
+
+        @computed_var(cache=False)
+        async def uncached(self) -> int:
+            return str(self.count)  # pyright: ignore [reportReturnType]
+
+    state = AsyncMismatchState()
+    with caplog.at_level(logging.ERROR, logger="reflex_base.vars.base"):
+        for _ in range(3):
+            assert await state.cached == "0"  # pyright: ignore [reportGeneralTypeIssues]
+        assert len(caplog.records) == 1
+        state.count = 1
+        assert await state.cached == "1"  # pyright: ignore [reportGeneralTypeIssues]
+        assert len(caplog.records) == 2
+        caplog.clear()
+        for _ in range(3):
+            assert await state.uncached == "1"  # pyright: ignore [reportGeneralTypeIssues]
+        assert len(caplog.records) == 3
+
+
+@pytest.mark.parametrize(
+    ("annotation", "value", "mismatch"),
+    [
+        (int, 1, False),
+        (int, "1", True),
+        (bool, 1, True),
+        (float, 1, False),
+        (float, "1", True),
+        (int | None, None, False),
+        (int | None, "1", True),
+        (list[int], [1], False),
+        (list[int], ["1"], True),
+        (dict[str, int], {"a": 1}, False),
+        (dict[str, int], {"a": "1"}, True),
+    ],
+)
+def test_computed_var_return_type_check(
+    annotation: Any,
+    value: Any,
+    mismatch: bool,
+    caplog: pytest.LogCaptureFixture,
+    clean_registration_context,
+):
+    """A computed value is checked against the return type, plain classes included.
+
+    Args:
+        annotation: The return type of the computed var.
+        value: The value it computes.
+        mismatch: Whether the value does not match the return type.
+        caplog: The log capture fixture.
+        clean_registration_context: An isolated state registry.
+    """
+
+    def compute(self):
+        return value
+
+    state_cls = type(
+        "ReturnTypeState",
+        (BaseState,),
+        {
+            "__module__": __name__,
+            "compute": computed_var(compute, return_type=annotation, auto_deps=False),
+        },
+    )
+    state = state_cls()
+    with caplog.at_level(logging.ERROR, logger="reflex_base.vars.base"):
+        assert state.compute == value  # pyright: ignore [reportAttributeAccessIssue]
+    assert bool(caplog.records) is mismatch
+
+
+def test_computed_var_update_time_is_only_kept_for_interval_vars():
+    """Only a computed var with an update interval stores when it was last computed."""
+    calls = 0
+
+    class TimedState(BaseState):
+        count: int = 0
+
+        @computed_var
+        def plain(self) -> int:
+            return self.count
+
+        @computed_var(interval=datetime.timedelta(seconds=30))
+        def timed(self) -> int:
+            nonlocal calls
+            calls += 1
+            return self.count
+
+    state = TimedState()
+    plain, timed = TimedState.computed_vars["plain"], TimedState.computed_vars["timed"]
+    assert (state.plain, state.timed) == (0, 0)
+    assert plain._last_updated_attr not in vars(state)
+    assert timed._last_updated_attr in vars(state)
+    assert not plain.needs_update(state)
+    assert not timed.needs_update(state)
+
+    # The cached value is served until the interval has elapsed.
+    assert (state.timed, calls) == (0, 1)
+    vars(state)[timed._last_updated_attr] -= datetime.timedelta(seconds=31)
+    assert timed.needs_update(state)
+    assert (state.timed, calls) == (0, 2)
+    assert not timed.needs_update(state)
+
+
+def test_computed_var_mark_dirty_drops_only_the_cached_value():
+    """Marking a computed var dirty drops its cached value, whether there is one or not."""
+
+    class DirtyState(BaseState):
+        count: int = 1
+
+        @computed_var
+        def doubled(self) -> int:
+            return self.count * 2
+
+    state = DirtyState()
+    doubled = DirtyState.computed_vars["doubled"]
+    doubled.mark_dirty(state)
+    assert doubled._cache_attr not in vars(state)
+    assert state.doubled == 2
+    assert vars(state)[doubled._cache_attr] == 2
+    doubled.mark_dirty(state)
+    doubled.mark_dirty(state)
+    assert doubled._cache_attr not in vars(state)
+    assert state.doubled == 2
+
+
+def test_computed_var_caches_a_missing_value():
+    """A computed var returning `dataclasses.MISSING` is cached like any other value."""
+    calls = 0
+
+    class MissingValueState(BaseState):
+        @computed_var
+        def missing(self) -> object:
+            nonlocal calls
+            calls += 1
+            return dataclasses.MISSING
+
+    state = MissingValueState()
+    assert state.missing is dataclasses.MISSING
+    state._was_touched = False
+    assert state.missing is dataclasses.MISSING
+    assert calls == 1
+    assert not state._was_touched
+
+
+async def test_async_computed_var_caches_a_missing_value():
+    """An async computed var returning `dataclasses.MISSING` is cached like any other value."""
+    calls = 0
+
+    class AsyncMissingValueState(BaseState):
+        @computed_var
+        async def missing(self) -> object:
+            nonlocal calls
+            calls += 1
+            return dataclasses.MISSING
+
+    state = AsyncMissingValueState()
+    assert await state.missing is dataclasses.MISSING  # pyright: ignore [reportGeneralTypeIssues]
+    state._was_touched = False
+    assert await state.missing is dataclasses.MISSING  # pyright: ignore [reportGeneralTypeIssues]
+    assert calls == 1
+    assert not state._was_touched
+
+
+class _Flavor(enum.IntEnum):
+    SWEET = 1
+
+
+class _Label(str):
+    pass
+
+
+class _Items(list):
+    pass
+
+
+@dataclasses.dataclass
+class _Point:
+    x: int = 0
+
+
+@pytest.mark.parametrize(
+    ("annotation", "value"),
+    [
+        (int, 1),
+        (str, "a"),
+        (float, 1.5),
+        (bool, True),
+        (int | None, None),
+        (_Flavor, _Flavor.SWEET),
+        (_Label, _Label("a")),
+    ],
+    ids=repr,
+)
+def test_field_read_leaves_immutable_values_unwrapped(annotation: Any, value: Any):
+    """A field holding an immutable value reads back that very value.
+
+    Args:
+        annotation: The type of the field.
+        value: The value to store.
+    """
+    state_cls = type(
+        "ImmutableReadState",
+        (BaseState,),
+        {
+            "__module__": __name__,
+            "__annotations__": {"item": annotation},
+            "item": value,
+        },
+    )
+    state = state_cls()
+    state.item = value  # pyright: ignore [reportAttributeAccessIssue]
+    assert state.item is value  # pyright: ignore [reportAttributeAccessIssue]
+
+
+@pytest.mark.parametrize(
+    ("annotation", "value"),
+    [
+        (list[int], [1]),
+        (dict[str, int], {"a": 1}),
+        (set[int], {1}),
+        (_Items, _Items([1])),
+        (_Point, _Point(1)),
+    ],
+    ids=repr,
+)
+def test_field_read_wraps_mutable_values(annotation: Any, value: Any):
+    """A field holding a mutable value reads back a proxy of it.
+
+    Args:
+        annotation: The type of the field.
+        value: The value to store.
+    """
+    state_cls = type(
+        "MutableReadState",
+        (BaseState,),
+        {"__module__": __name__, "__annotations__": {"item": annotation}},
+    )
+    state = state_cls()
+    state.item = value  # pyright: ignore [reportAttributeAccessIssue]
+    assert isinstance(state.item, MutableProxy)  # pyright: ignore [reportAttributeAccessIssue]
+    assert state.item.__wrapped__ is value  # pyright: ignore [reportAttributeAccessIssue]
 
 
 def test_cached_computed_var_checks_return_type_on_recompute_only(
@@ -1388,3 +2189,273 @@ async def test_cached_async_computed_var_checks_return_type_on_recompute_only(
     state.items = [5]
     assert await state.doubled == [10]
     assert checked == [[2, 4, 6], [10]]
+
+
+def test_private_names_are_not_fields():
+    """A double-underscore name is a plain class attribute unless declared a field.
+
+    A name-mangled private attribute, a hand-mangled one and a dunder stay
+    ordinary attributes, as before fields became descriptors.
+    """
+
+    class Model(EvenMoreBasicBaseState):
+        __mangled: int = 1  # pyright: ignore[reportGeneralTypeIssues]
+        __unannotated = 2
+        _Model__by_hand: int = 3
+        __dunder__: int = 4
+        __declared: Field[int] = field(default=5)  # pyright: ignore[reportGeneralTypeIssues]
+        __unannotated_declared = field(default=6)  # pyright: ignore[reportGeneralTypeIssues]
+        _backend: int = 7
+
+    assert set(Model.__fields__) == {
+        "_Model__declared",
+        "_Model__unannotated_declared",
+        "_backend",
+    }
+    assert Model.__fields__["_Model__declared"]._backend
+    model = Model()
+    for name, value in (
+        ("_Model__mangled", 1),
+        ("_Model__unannotated", 2),
+        ("_Model__by_hand", 3),
+        ("__dunder__", 4),
+    ):
+        assert vars(Model)[name] == value
+        assert getattr(model, name) == value
+    for name, value in (
+        ("_Model__declared", 5),
+        ("_Model__unannotated_declared", 6),
+    ):
+        assert getattr(model, name) == value
+
+
+def test_private_names_of_plain_base_are_not_fields():
+    """A plain base's private names are not fields of a model inheriting it either."""
+
+    class Plain:
+        __mangled: int = 1
+        __dunder__: int = 2
+        _backend: int = 3
+
+    class Model(Plain, EvenMoreBasicBaseState):
+        pass
+
+    assert set(Model.__fields__) == {"_backend"}
+    name = "_Plain__mangled"
+    assert getattr(Model(), name) == 1
+
+
+def test_new_default_for_inherited_private_field_stays_a_field():
+    """A private name shadowing an inherited explicit field is a field as well."""
+
+    class Parent(EvenMoreBasicBaseState):
+        __counter__: Field[int] = field(default=1)
+
+    class Annotated(Parent):
+        __counter__: int = 2  # pyright: ignore[reportIncompatibleVariableOverride]
+
+    class Unannotated(Parent):
+        __counter__ = 2  # pyright: ignore[reportAssignmentType]
+
+    for child in (Annotated, Unannotated):
+        child_field = child.__fields__["__counter__"]
+        assert child_field is not Parent.__fields__["__counter__"]
+        assert child_field.default == 2
+        assert isinstance(vars(child)["__counter__"], Field)
+        assert child().__counter__ == 2
+
+
+def _identical(leaves: Sequence[Var], *expected: Var) -> bool:
+    """Check that the leaves are exactly the given var objects, in order.
+
+    ``Var.__eq__`` builds a var, so lists of vars cannot be compared directly.
+
+    Args:
+        leaves: The leaves returned.
+        *expected: The vars the compound var was built from.
+
+    Returns:
+        Whether each leaf is the expected var object.
+    """
+    return len(leaves) == len(expected) and all(
+        leaf is var for leaf, var in zip(leaves, expected, strict=True)
+    )
+
+
+def test_get_leaf_vars_returns_a_leaf_alone() -> None:
+    var = Var(_js_expr="state.a")
+    (same,) = get_leaf_vars(var)
+    assert same is var
+
+
+def test_get_leaf_vars_dissolves_literals() -> None:
+    """A constant literal reads nothing; a container or a color what it holds.
+
+    A raw item is converted the way the renderer does, so an f-string with a
+    var inside a list still reads that var. Any other literal value stays
+    whole, since what it reads is not known.
+    """
+    a = Var(_js_expr="state.a")
+    b = Var(_js_expr="state.b").to(int)
+
+    assert get_leaf_vars(LiteralVar.create(1)) == []
+    assert get_leaf_vars(LiteralVar.create("text")) == []
+    assert get_leaf_vars(LiteralVar.create(decimal.Decimal("1.5"))) == []
+    assert get_leaf_vars(LiteralVar.create(range(3))) == []
+    assert get_leaf_vars(LiteralVar.create(datetime.datetime(2020, 1, 1))) == []
+    assert get_leaf_vars(LiteralVar.create({1, 2})) == []
+    assert _identical(get_leaf_vars(LiteralVar.create([1, a, [b]])), a, b)
+    assert _identical(get_leaf_vars(LiteralVar.create({"k": a, b: 2})), a, b)
+    assert _identical(get_leaf_vars(LiteralVar.create({a})), a)
+    assert _identical(get_leaf_vars(LiteralVar.create([f"{a}-x"])), a)
+    # A var that is the whole of a formatted string is decoded into a new object.
+    (decoded,) = get_leaf_vars(LiteralVar.create([f"{a}"]))
+    assert decoded is not a
+    assert decoded.equals(a)
+    assert _identical(get_leaf_vars(LiteralVar.create(Color("red", shade=b))), b)
+    event = LiteralVar.create(rx.console_log(a))
+    (same,) = get_leaf_vars(event)
+    assert same is event
+
+
+def test_get_leaf_vars_unwraps_operations_and_casts() -> None:
+    """Operands come back in order, through nested operations and casts, once."""
+    a = Var(_js_expr="state.a").to(int)
+    b = Var(_js_expr="state.b").to(int)
+
+    assert _identical(get_leaf_vars((a + 1) * b), a, b)
+    assert _identical(get_leaf_vars((a + b).to(str)), a, b)
+    assert _identical(get_leaf_vars(a + a), a)
+    # A cast of a leaf is the leaf, as the caller holds it.
+    assert _identical(get_leaf_vars(a), a)
+
+
+def test_get_leaf_vars_reads_through_a_function_body() -> None:
+    """A function reads what its body reads, other than its own parameters."""
+    items = Var(_js_expr="state.items").to(list[str])
+    outer = Var(_js_expr="outer").to(str)
+
+    assert _identical(get_leaf_vars(items.filter(lambda item: item == "r")), items)
+    assert _identical(
+        get_leaf_vars(items.filter(lambda item: item == outer)), items, outer
+    )
+    nested = items.map(lambda item: items.filter(lambda other: other == item))
+    assert _identical(get_leaf_vars(nested), items)
+    rest = Var(_js_expr="rest").to(list[str])
+    spread = ArgsFunctionOperation.create((), rest[0] + outer, rest="rest")
+    assert _identical(get_leaf_vars(spread), outer)
+    colored = items.map(lambda item: Color(outer, shade=item.to(int)))
+    assert _identical(get_leaf_vars(colored), items, outer)
+    priced = items.map(lambda item: item.length() + decimal.Decimal("1.5"))
+    assert _identical(get_leaf_vars(priced), items)
+    # A cast around a function reads like the function.
+    x = Var(_js_expr="x").to(int)
+    cast = ArgsFunctionOperation.create(("x",), x + items.length()).to(FunctionVar)
+    assert _identical(get_leaf_vars(cast), items)
+    # A named function is a leaf.
+    fn = FunctionStringVar.create("fn")
+    assert _identical(get_leaf_vars(fn), fn)
+
+
+def test_get_leaf_vars_keeps_a_function_whole_when_a_leaf_reads_a_parameter() -> None:
+    """A body leaf that is not a parameter itself may still read one.
+
+    Hoisting it out of the function would name something bound only inside.
+    """
+    items = Var(_js_expr="state.items").to(list[str])
+    other = Var(_js_expr="state.other").to(list[str])
+
+    built = items.map(lambda item: Var(_js_expr=f"{item}.length").to(int))
+    array, function = get_leaf_vars(built)
+    assert array is items
+    assert isinstance(function, FunctionVar)
+
+    closing = items.map(lambda item: other.map(lambda o: rx.console_log(item)))
+    array, function = get_leaf_vars(closing)
+    assert array is items
+    assert isinstance(function, FunctionVar)
+
+
+def test_get_leaf_vars_keeps_a_function_with_an_opaque_body_whole() -> None:
+    """A literal kept whole may read the parameters; the function stays whole."""
+    items = Var(_js_expr="state.items").to(list[str])
+
+    array, function = get_leaf_vars(items.map(lambda item: rx.console_log(item)))
+
+    assert str(array) == "state.items"
+    assert isinstance(function, FunctionVar)
+
+
+def test_get_leaf_vars_converts_raw_operands() -> None:
+    """A raw operand is rendered through LiteralVar.create, so it is read that way."""
+    a = Var(_js_expr="state.a")
+    n = Var(_js_expr="state.n").to(int)
+    fn = FunctionStringVar.create("fn")
+
+    call = fn.call(Color("red", shade=n), [a, 1], f"{a}-x")
+    assert _identical(get_leaf_vars(call), fn, n, a)
+
+
+def test_get_leaf_vars_unwraps_operations_with_their_own_fields() -> None:
+    """Operations outside ``var_operation`` keep their operands in fields."""
+    items = Var(_js_expr="state.items").to(list[str])
+    n = Var(_js_expr="state.n").to(int)
+    obj = Var(_js_expr="state.obj").to(dict[str, str])
+    key = Var(_js_expr="state.key").to(str)
+    fn = FunctionStringVar.create("fn")
+
+    assert _identical(get_leaf_vars(items[1:]), items)
+    assert _identical(get_leaf_vars(items[n:][0]), items, n)
+    assert _identical(get_leaf_vars(obj[key]), obj, key)
+    assert _identical(get_leaf_vars(key + "-" + key.upper()), key)
+    assert _identical(get_leaf_vars(fn.call(n, items[0])), fn, n, items)
+
+
+def test_get_leaf_vars_sorts_every_cached_operation() -> None:
+    """Each cached operation is sorted on purpose.
+
+    A new operation class has to be added here after deciding whether every
+    value it holds in a field is one it reads, so the generic unwrapping applies,
+    or whether it needs its own branch or is a leaf.
+
+    Classes are compared by name: a ``slots=True`` dataclass is a rebuilt copy
+    of the class first defined, and the discarded original stays in
+    ``__subclasses__`` until it is garbage collected.
+    """
+
+    def subclasses(cls: type) -> set[type]:
+        return set(cls.__subclasses__()).union(
+            *(subclasses(sub) for sub in cls.__subclasses__())
+        )
+
+    def names(classes: Iterable[type]) -> set[str]:
+        return {f"{cls.__module__}.{cls.__qualname__}" for cls in classes}
+
+    operations = {
+        cls
+        for cls in subclasses(CachedVarOperation)
+        if cls.__module__.startswith(("reflex_base.", "reflex."))
+    }
+
+    assert names(operations) == names({
+        CustomVarOperation,
+        ArraySliceOperation,
+        ObjectItemOperation,
+        ConcatVarOperation,
+        VarOperationCall,
+        ReflexURLCastedVar,
+        RouterDataVar,
+        # Literals read what their value holds, or nothing for a constant.
+        LiteralArrayVar,
+        LiteralObjectVar,
+        LiteralColorVar,
+        LiteralRangeVar,
+        # Functions read their body minus their parameters.
+        ArgsFunctionOperation,
+        ArgsFunctionOperationBuilder,
+        # Leaves: a state field access, and literals of other values.
+        StateOperation,
+        LiteralComponentVar,
+        LiteralEventVar,
+        LiteralEventChainVar,
+    })

@@ -3,9 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import TYPE_CHECKING, Any
-
-from typing_extensions import Self
+from typing import TYPE_CHECKING, Any, Self
 
 from reflex_base.context.base import BaseContext
 from reflex_base.utils.exceptions import ReflexRuntimeError, StateValueError
@@ -34,6 +32,7 @@ def _default_bundled_libraries() -> list[str]:
         "react",
         "@emotion/react",
         f"$/{constants.Dirs.CONTEXTS_PATH}",
+        f"$/{constants.Dirs.UTILS}/context-registry",
         f"$/{constants.Dirs.STATE_PATH}",
     ]
 

@@ -67,6 +67,32 @@ def test_frozen_lockfile_default(base_config_values):
     assert config.frozen_lockfile is True
 
 
+def test_trusted_proxy_hops_defaults_to_zero(base_config_values):
+    """Do not trust client-controlled forwarded headers by default."""
+    assert rx.Config(**base_config_values).trusted_proxy_hops == 0
+
+
+@pytest.mark.parametrize("trusted_proxy_hops", [-1, True, False, 1.5, "2", None])
+def test_trusted_proxy_hops_must_be_non_negative(
+    base_config_values, trusted_proxy_hops
+):
+    """Reject invalid trusted proxy hop counts."""
+    with pytest.raises(
+        ConfigError, match="trusted_proxy_hops must be a non-negative integer"
+    ):
+        rx.Config(**base_config_values, trusted_proxy_hops=trusted_proxy_hops)
+
+
+def test_react_compiler_default(base_config_values):
+    """Keep React Compiler disabled unless the app opts in.
+
+    Args:
+        base_config_values: Config values.
+    """
+    assert rx.Config(**base_config_values).react_compiler is False
+    assert rx.Config(**base_config_values, react_compiler=True).react_compiler is True
+
+
 @pytest.mark.parametrize(
     ("env_var", "value"),
     [
@@ -78,12 +104,15 @@ def test_frozen_lockfile_default(base_config_values):
         ("REFLEX_API_URL", "https://mybackend.com:8000"),
         ("REFLEX_DEPLOY_URL", "https://myfrontend.com"),
         ("REFLEX_BACKEND_HOST", "127.0.0.1"),
+        ("REFLEX_TRUSTED_PROXY_HOPS", 2),
         ("REFLEX_DB_URL", "postgresql://user:pass@localhost:5432/db"),
         ("REFLEX_REDIS_URL", "redis://localhost:6379"),
         ("REFLEX_TELEMETRY_ENABLED", False),
         ("REFLEX_TELEMETRY_ENABLED", True),
         ("REFLEX_FROZEN_LOCKFILE", False),
         ("REFLEX_FROZEN_LOCKFILE", True),
+        ("REFLEX_REACT_COMPILER", False),
+        ("REFLEX_REACT_COMPILER", True),
         ("REFLEX_DEFAULT_COLOR_MODE", "dark"),
     ],
 )

@@ -52,7 +52,7 @@ def commit_all(repo: Path, message: str = "wip") -> None:
     git(repo, "commit", "-q", "-m", message)
 
 
-def write_lockstep(repo: Path) -> None:
+def write_lockstep(repo: Path, *, publish_last: bool = True) -> None:
     """Make the repository's two packages a lockstep group.
 
     The root package publishes last and pins the sub-package exactly, mirroring
@@ -60,6 +60,7 @@ def write_lockstep(repo: Path) -> None:
 
     Args:
         repo: The repository root.
+        publish_last: Whether the root publishes last and pins its sibling exactly.
     """
     pyproject = repo / "pyproject.toml"
     pyproject.write_text(
@@ -67,9 +68,8 @@ def write_lockstep(repo: Path) -> None:
             "\n[tool.towncrier]",
             "\n[[tool.reflex-release.lockstep]]\n"
             'members = ["mypkg", "widget-core"]\n'
-            'publish-last = ["mypkg"]\n'
-            "pin-exact = true\n"
-            "\n[tool.towncrier]",
+            + ('publish-last = ["mypkg"]\npin-exact = true\n' if publish_last else "")
+            + "\n[tool.towncrier]",
         ),
         encoding="utf-8",
     )

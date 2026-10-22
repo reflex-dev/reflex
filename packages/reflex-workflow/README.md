@@ -150,7 +150,9 @@ lost; a run that goes on to wait for something else, stops, or goes back round a
 schedule, discards it. A run holds one event at a time, whichever wait it is for, so
 while one is held a second delivery is refused and `deliver` returns 0 for it, rather
 than replacing an answer already given — and a discarded event means its sender is the
-one who has to send it again.
+one who has to send it again. The held event stops counting once a worker takes it to
+run its step: an event delivered while that step runs is held for the next wait, so a
+run that waits on the same step again, such as a conversation, misses nothing.
 Passing a `key` makes delivery idempotent: a run refuses a key it has already taken,
 remembering the last sixteen. A key is taken when the run runs the event, not when it is
 held, so a resend of an event that was discarded is accepted. Arguments are checked

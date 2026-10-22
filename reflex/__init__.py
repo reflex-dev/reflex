@@ -84,20 +84,8 @@ In the example above, you will be able to do `rx.list`
 
 from __future__ import annotations
 
-import sys
-
 from reflex_base.utils import lazy_loader
-
-if sys.version_info < (3, 11):
-    import logging
-
-    logging.getLogger(__name__).warning(
-        "Reflex support for Python 3.10 is deprecated and will be removed in a future release. Please upgrade to Python 3.11 or higher for continued support."
-    )
-    del logging
-del sys
-
-from reflex_components_radix.mappings import RADIX_MAPPING  # noqa: E402
+from reflex_components_radix.mappings import RADIX_MAPPING
 
 _COMPONENTS_CORE_MAPPING: lazy_loader.SubmodAttrsType = {
     "reflex_components_core.core.banner": [
@@ -163,7 +151,7 @@ _ALL_COMPONENTS_MAPPING: lazy_loader.SubmodAttrsType = {
     "reflex_base.components.props": ["PropsBase"],
     "reflex_components_core.datadisplay.logo": ["logo"],
     "reflex_components_gridjs": ["data_table"],
-    "reflex_components_moment": ["MomentDelta", "moment"],
+    "reflex_components_moment": ["MomentDelta", "moment", "moment_provider"],
 }
 
 _COMPONENT_NAME_TO_PATH: dict[str, str] = {
