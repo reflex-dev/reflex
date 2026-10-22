@@ -281,7 +281,7 @@ class StateProxy(wrapt.ObjectProxy):
                 # next event loads its current page.
                 from reflex_base.event.processor import BaseStateEventProcessor
 
-                await BaseStateEventProcessor._rehydrate(mutable_state)
+                await BaseStateEventProcessor._rehydrate_snapshot(mutable_state)
         except (Exception, asyncio.CancelledError):
             # Restore the proxy to a consistent state since __aexit__ will not be called when __aenter__ raises.
             await self.__aexit__(*sys.exc_info())
