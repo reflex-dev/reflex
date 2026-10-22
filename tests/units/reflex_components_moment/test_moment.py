@@ -1,31 +1,41 @@
 """Tests for per-component Moment locale configuration."""
 
+import pytest
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars.base import Var
 from reflex_components_moment.moment import Moment, MomentProvider
 
+MOMENT_IMPORT = {"moment@2.31.0": ImportVar(tag="moment", is_default=True)}
+RESET = ['moment.locale("en");']
 
-def test_default_locale_is_inherited_from_root_english_provider():
-    """Omitted locales read the nearest provider; the app root provides English."""
+
+def test_default_locale_keeps_moment_lazy():
+    """An omitted locale adds no eager moment import, reset, or app wrap."""
     moment = Moment.create("2024-03-14")
     assert not any(prop.startswith("locale:") for prop in moment.render()["props"])
-    assert "moment/locale/en" not in moment.add_imports().values()
-
-    root = moment._get_all_app_wrap_components()[10, "MomentProvider"]
-    assert isinstance(root, MomentProvider)
-    assert root.render()["props"] == ['locale:"en"']
-    assert root.add_imports() == {}
+    assert moment.add_imports() == {}
+    assert moment.add_custom_code() == []
+    assert moment._get_all_app_wrap_components() == {}
 
 
-def test_moment_in_memo_requests_root_provider():
-    """A Moment inside rx.memo still wraps the app in the English provider."""
-    import reflex as rx
-
-    @rx.memo
-    def memo_moment() -> rx.Component:
-        return rx.moment("2024-03-14")
-
-    assert (10, "MomentProvider") in memo_moment()._get_all_app_wrap_components()
+@pytest.mark.parametrize(
+    ("component", "locale", "module"),
+    [
+        (Moment, "fr", "moment/locale/fr"),
+        (MomentProvider, "fr", "moment/locale/fr"),
+        (Moment, Var(_js_expr="selectedLocale", _var_type=str), "moment/min/locales"),
+        (
+            MomentProvider,
+            Var(_js_expr="selectedLocale", _var_type=str),
+            "moment/min/locales",
+        ),
+    ],
+)
+def test_locale_import_restores_global_locale(component, locale, module):
+    """Every locale import resets the global locale that it changes to English."""
+    instance = component.create("2024-03-14", locale=locale)
+    assert instance.add_imports() == {"": module, **MOMENT_IMPORT}
+    assert instance.add_custom_code() == RESET
 
 
 def test_explicit_english_locale_is_preserved():
@@ -44,19 +54,17 @@ def test_explicit_child_locale_overrides_provider():
     assert 'locale:"en"' in provider.children[0].render()["props"]
 
 
-def test_literal_locale_import_is_preserved():
-    """A component that requests French still imports and renders that locale."""
+def test_literal_locale_is_rendered():
+    """A component that requests French renders that locale."""
     moment = Moment.create("2024-03-14", locale="fr")
     assert 'locale:"fr"' in moment.render()["props"]
-    assert moment.add_imports()[""] == "moment/locale/fr"
 
 
-def test_reactive_locale_imports_all_locales():
-    """Reactive locale selection remains available independently of the default."""
+def test_reactive_locale_is_rendered():
+    """Reactive locale selection is forwarded to React."""
     locale = Var(_js_expr="selectedLocale", _var_type=str)
     moment = Moment.create("2024-03-14", locale=locale)
     assert "locale:selectedLocale" in moment.render()["props"]
-    assert moment.add_imports()[""] == "moment/min/locales"
 
 
 def test_react_moment_2_props_are_forwarded():
@@ -116,17 +124,10 @@ def test_moment_provider_exports_named_component_and_shared_props():
     assert 'timezone:"America/Los_Angeles"' in props
     assert provider.add_imports() == {
         "": "moment/locale/fr",
+        **MOMENT_IMPORT,
         "moment-timezone@0.6.5": "",
     }
     assert (
         ImportVar(tag="MomentProvider")
         in provider._get_all_imports()["react-moment@2.0.2"]
     )
-
-
-def test_moment_provider_reactive_locale_imports_all_locales():
-    """A reactive provider locale includes the available locale modules."""
-    locale = Var(_js_expr="selectedLocale", _var_type=str)
-    provider = MomentProvider.create(Moment.create("2024-03-14"), locale=locale)
-
-    assert provider.add_imports() == {"": "moment/min/locales"}

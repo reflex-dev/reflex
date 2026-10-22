@@ -32,6 +32,22 @@ class MomentDelta:
     milliseconds: int | None = dataclasses.field(default=None)
 
 
+def _locale_module(locale: Var[str] | None) -> str | None:
+    """Return the moment locale module that a locale prop requires.
+
+    Args:
+        locale: The locale prop, if set.
+
+    Returns:
+        The locale module, or None when the built-in English locale suffices.
+    """
+    if isinstance(locale, LiteralVar):
+        if locale._var_value == "en":
+            return None
+        return f"moment/locale/{locale._var_value}"
+    return None if locale is None else "moment/min/locales"
+
+
 def _locale_timezone_imports(
     locale: Var[str] | None, timezone: Var[str] | None
 ) -> ImportDict:
@@ -42,17 +58,31 @@ def _locale_timezone_imports(
         timezone: The timezone prop, if set.
 
     Returns:
-        The locale and timezone module imports.
+        The locale and timezone module imports, plus moment itself for
+        _restore_global_locale when a locale module is imported.
     """
     imports: ImportDict = {}
-    if isinstance(locale, LiteralVar):
-        if locale._var_value != "en":
-            imports[""] = f"moment/locale/{locale._var_value}"
-    elif locale is not None:
-        imports[""] = "moment/min/locales"
+    if (module := _locale_module(locale)) is not None:
+        imports[""] = module
+        imports["moment@2.31.0"] = ImportVar(tag="moment", is_default=True)
     if timezone is not None:
         imports["moment-timezone@0.6.5"] = ""
     return imports
+
+
+def _restore_global_locale(locale: Var[str] | None) -> list[str]:
+    """Return code that resets moment's global locale after a locale import.
+
+    Importing a locale module also makes it moment's global locale, which
+    Moment components without a locale or provider use.
+
+    Args:
+        locale: The locale prop, if set.
+
+    Returns:
+        The reset code, or nothing when no locale module is imported.
+    """
+    return [] if _locale_module(locale) is None else ['moment.locale("en");']
 
 
 class MomentProvider(Component):
@@ -86,6 +116,14 @@ class MomentProvider(Component):
             The locale and timezone module imports.
         """
         return _locale_timezone_imports(self.locale, self.timezone)
+
+    def add_custom_code(self) -> list[str]:
+        """Keep moment's global locale English after the locale import.
+
+        Returns:
+            The global locale reset, if a locale module is imported.
+        """
+        return _restore_global_locale(self.locale)
 
 
 class Moment(NoSSRComponent, MemoizationLeaf):
@@ -226,15 +264,10 @@ class Moment(NoSSRComponent, MemoizationLeaf):
 
         return imports
 
-    @staticmethod
-    def _get_app_wrap_components() -> dict[tuple[int, str], Component]:
-        """Wrap the app in an English MomentProvider.
-
-        Moment components without a locale read it from the nearest provider,
-        so they never fall back to moment's global locale, which every locale
-        module import changes.
+    def add_custom_code(self) -> list[str]:
+        """Keep moment's global locale English after the locale import.
 
         Returns:
-            The root MomentProvider.
+            The global locale reset, if a locale module is imported.
         """
-        return {(10, "MomentProvider"): MomentProvider.create(locale="en")}
+        return _restore_global_locale(self.locale)
