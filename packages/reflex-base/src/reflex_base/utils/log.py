@@ -506,7 +506,12 @@ def supervise_output(args: list[str]) -> int:
     proc: subprocess.Popen[bytes] | None = None
     pending_signals: list[int] = []
 
-    def forward_signal(signum: int, _frame: object) -> None:
+    previous_handlers: dict[
+        int,
+        int | signal.Handlers | Callable[[int, FrameType | None], Any] | None,
+    ] = {}
+
+    def forward_signal(signum: int, frame: FrameType | None) -> None:
         """Forward shutdown signals, queueing them until the child exists."""
         if proc is None:
             pending_signals.append(signum)
@@ -515,23 +520,23 @@ def supervise_output(args: list[str]) -> int:
                 killpg = getattr(os, "killpg", None)
                 if callable(killpg):
                     killpg(proc.pid, signum)
+        previous_handler = previous_handlers.get(signum)
+        # The default SIGINT handler raises KeyboardInterrupt before the child exits.
+        if (
+            callable(previous_handler)
+            and previous_handler is not signal.default_int_handler
+        ):
+            previous_handler(signum, frame)
 
-    previous_handlers: list[
-        tuple[
-            int,
-            int | signal.Handlers | Callable[[int, FrameType | None], Any] | None,
-        ]
-    ] = []
     if os.name == "posix":
         forwarded_signals = [signal.SIGINT, signal.SIGTERM]
         for signal_name in ("SIGHUP", "SIGQUIT"):
             signum = getattr(signal, signal_name, None)
             if signum is not None:
                 forwarded_signals.append(signum)
-        previous_handlers.extend(
-            (int(signum), signal.signal(signum, forward_signal))
-            for signum in forwarded_signals
-        )
+        for signum in forwarded_signals:
+            previous_handlers[int(signum)] = signal.getsignal(signum)
+            signal.signal(signum, forward_signal)
 
     try:
         # Raw pipes that only the readers close: closing a pipe while a reader
@@ -567,7 +572,7 @@ def supervise_output(args: list[str]) -> int:
                 if os.name == "posix":
                     raise
     finally:
-        for signum, handler in previous_handlers:
+        for signum, handler in previous_handlers.items():
             signal.signal(signum, handler)
     wall_deadline = time.monotonic() + _DRAIN_WALL_SECONDS
     snapshots = [pump.writing_snapshot() for pump in pumps]

@@ -1167,6 +1167,51 @@ def test_supervise_output_forwards_sigterm(tmp_path):
         assert proc.wait(timeout=10) == 128 + signal.SIGTERM
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="SIGTERM is POSIX-only")
+def test_supervise_output_calls_and_restores_previous_signal_handler(tmp_path):
+    """A custom signal handler still runs and is restored after supervision."""
+    script = tmp_path / "sigterm_previous_handler.py"
+    marker = tmp_path / "previous-handler-called"
+    script.write_text(
+        """
+import signal
+import sys
+import time
+from pathlib import Path
+
+from reflex_base.utils import log
+
+if not log.is_output_supervised():
+    marker = Path(sys.argv[1])
+
+    def previous_handler(signum, frame):
+        marker.write_text(str(signum))
+
+    signal.signal(signal.SIGTERM, previous_handler)
+    returncode = log.supervise_output([sys.executable, __file__, str(marker)])
+    marker.write_text(
+        f"{marker.read_text() if marker.exists() else 'not-called'}"
+        f"\\nrestored={signal.getsignal(signal.SIGTERM) is previous_handler}"
+    )
+    sys.exit(returncode)
+
+print("ready", flush=True)
+time.sleep(30)
+"""
+    )
+    with subprocess.Popen(
+        [sys.executable, str(script), str(marker)],
+        stdout=subprocess.PIPE,
+        env={**os.environ, "REFLEX_LOG_JSON": "true"},
+    ) as proc:
+        assert proc.stdout is not None
+        assert json.loads(proc.stdout.readline())["message"] == "ready"
+        proc.send_signal(signal.SIGTERM)
+        assert proc.wait(timeout=10) == 128 + signal.SIGTERM
+
+    assert marker.read_text() == f"{signal.SIGTERM}\nrestored=True"
+
+
 @pytest.mark.skipif(sys.platform == "win32", reason="SIGINT is POSIX-only")
 def test_supervise_output_forwards_pid_targeted_sigint(tmp_path):
     """A PID-targeted interrupt reaches the supervised command."""
