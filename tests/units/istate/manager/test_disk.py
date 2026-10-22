@@ -14,6 +14,9 @@ from reflex.istate.manager.token import BaseStateToken, StateToken
 from reflex.state import BaseState
 from reflex.utils import prerequisites
 
+# A pickle of a global from a module that does not exist.
+MISSING_MODULE_PICKLE = b"cmissing_module_for_disk_test\nThing\n."
+
 
 class DiskPersistState(BaseState):
     """A state for testing disk persistence."""
@@ -200,12 +203,17 @@ async def test_load_state_missing_file_is_not_logged(tmp_path, monkeypatch, capl
         (StateToken(ident="client", cls=int), b"", 0),
         (BaseStateToken(ident="client", cls=DiskPersistState), b"not-a-pickle", None),
         (BaseStateToken(ident="client", cls=DiskPersistState), b"", None),
+        (
+            BaseStateToken(ident="client", cls=DiskPersistState),
+            MISSING_MODULE_PICKLE,
+            None,
+        ),
     ],
 )
 async def test_load_state_logs_unreadable_file(
     tmp_path, monkeypatch, caplog, token, contents, fresh_state
 ):
-    """A persisted state file that is damaged is logged as a warning.
+    """A persisted state file that cannot be read or unpickled is logged as a warning.
 
     Args:
         tmp_path: A temporary directory.
@@ -225,6 +233,7 @@ async def test_load_state_logs_unreadable_file(
 
     [record] = caplog.records
     assert record.levelno == logging.WARNING
+    assert str(token) in record.getMessage()
     assert str(token_path) in record.getMessage()
     assert record.exc_info is not None
 

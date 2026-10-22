@@ -5,7 +5,6 @@ import contextlib
 import dataclasses
 import functools
 import logging
-import pickle
 import time
 from collections.abc import AsyncIterator
 from hashlib import md5
@@ -149,9 +148,9 @@ class StateManagerDisk(StateManager):
         """Load a state object based on the provided token.
 
         A missing state file returns None without logging. A state file that
-        cannot be loaded also returns None: a state class that changed since the
-        file was written is logged at debug level, a damaged or unreadable file
-        as a warning.
+        cannot be loaded also returns None: one whose stored schema no longer
+        matches the state class is logged at debug level, one that cannot be
+        read or unpickled as a warning.
 
         Args:
             token: The token used to identify the state object.
@@ -166,17 +165,14 @@ class StateManagerDisk(StateManager):
                 with token_path.open(mode="rb") as file:
                     return token.deserialize(fp=file)
             except Exception as err:
-                # BaseState reports a damaged file as a schema mismatch too, so
-                # tell it apart from a state class that changed by its cause.
-                if isinstance(err, StateSchemaMismatchError) and not isinstance(
-                    err.__cause__, (pickle.UnpicklingError, EOFError)
-                ):
+                # BaseState also reports a file it cannot unpickle as a schema
+                # mismatch, chained to the unpickling error.
+                if isinstance(err, StateSchemaMismatchError) and err.__cause__ is None:
                     logger.debug(
                         "Discarding persisted state for %s from %s: it no longer "
                         "matches the state class.",
                         token,
                         token_path,
-                        exc_info=True,
                     )
                     return None
                 logger.warning(
