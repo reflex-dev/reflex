@@ -1332,16 +1332,14 @@ def test_supervise_output_truncates_oversized_records_as_valid_json(tmp_path):
 def test_truncate_json_record_preserves_exception_and_extra_fields():
     """Oversized JSON keeps bounded traceback and custom fields."""
     record = (
-        json.dumps(
-            {
-                "timestamp": "2026-10-15T00:00:00+00:00",
-                "level": "error",
-                "logger": "test",
-                "message": "message " + "m" * 500,
-                "exception": "Traceback (most recent call last):\n" + "frame\n" * 500,
-                "request_id": "request-" + "r" * 500,
-            }
-        ).encode()
+        json.dumps({
+            "timestamp": "2026-10-15T00:00:00+00:00",
+            "level": "error",
+            "logger": "test",
+            "message": "message " + "m" * 500,
+            "exception": "Traceback (most recent call last):\n" + "frame\n" * 500,
+            "request_id": "request-" + "r" * 500,
+        }).encode()
         + b"\n"
     )
 
@@ -1400,12 +1398,10 @@ def test_truncate_json_record_bounds_serialization_retries(monkeypatch):
 def test_truncate_json_record_normalizes_non_finite_numbers():
     """Oversized JSON does not emit the non-standard NaN or Infinity tokens."""
     record = (
-        json.dumps(
-            {
-                "message": "x" * 1000,
-                "measurements": [float("nan"), float("inf"), -float("inf")],
-            }
-        ).encode()
+        json.dumps({
+            "message": "x" * 1000,
+            "measurements": [float("nan"), float("inf"), -float("inf")],
+        }).encode()
         + b"\n"
     )
 
