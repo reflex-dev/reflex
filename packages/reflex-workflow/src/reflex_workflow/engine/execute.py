@@ -541,6 +541,7 @@ async def wake_on_schedule(
     try:
         values["wake_at"] = repeat(now)
     except Exception as err:
+        otel.record_failure(err)
         error = f"{type(err).__name__}: {err}"[:2000]
         values |= stop() | {"last_error": error, "pending_event": null()}
         return error
