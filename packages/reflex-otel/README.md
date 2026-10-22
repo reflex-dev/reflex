@@ -60,11 +60,22 @@ Traces:
   `.pages`, `.copy_assets`, `.install_frontend_packages`, `.write` as
   child spans.
 
+- With `reflex-workflow` installed, one `CONSUMER` span per step attempt,
+  named `<table>.<step>`, with `reflex.workflow.table`, `.step`, `.attempt`,
+  `.lane`, `.outcome` (`ok`, `retry`, `failed`, `fenced`) and, on a failed
+  attempt, `error.type` and the exception. A step runs on whichever worker
+  claims it, possibly long after it was scheduled, so its span is a trace root
+  that *links* to the span that scheduled it — the event handler or request
+  that called `start`, `run` or `deliver`, or the step that returned it — and
+  a retry links to the attempt that failed. The `traceparent` travels in the
+  row's `next_args` and is stripped before the step sees its arguments.
+
 What leaves the process: event and handler names, a pseudonymous
 `session.id` (a truncated SHA-256 of the client token, never the token
 itself), exception types, messages and stack traces of failed handlers, and
 the ASGI middleware's request attributes with the `token` query parameter of
-the websocket URL redacted. Event payloads and state are never recorded.
+the websocket URL redacted, and workflow table, step and lane names. Event
+payloads, state, step arguments and row columns are never recorded.
 
 Metrics:
 

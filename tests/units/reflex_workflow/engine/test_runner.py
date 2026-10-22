@@ -4741,3 +4741,69 @@ async def test_a_listener_that_keeps_failing_wakes_the_worker_once():
         assert not rt.wake.is_set()
     finally:
         await nowhere.dispose()
+
+
+async def test_steps_are_traced_as_linked_root_spans(session_factory):
+    from opentelemetry import trace
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+    from opentelemetry.sdk.trace.export.in_memory_span_exporter import (
+        InMemorySpanExporter,
+    )
+    from opentelemetry.trace import SpanKind, StatusCode
+    from reflex_workflow import otel
+
+    def span_ids(context):
+        return context.trace_id, context.span_id
+
+    def linked_to(span):
+        return [span_ids(link.context) for link in span.links]
+
+    exporter = InMemorySpanExporter()
+    provider = TracerProvider()
+    provider.add_span_processor(SimpleSpanProcessor(exporter))
+    otel.enable(tracer_provider=provider)
+    try:
+        chain_key, flaky_key = uuid.uuid4().hex, uuid.uuid4().hex
+        with trace.get_tracer("app", tracer_provider=provider).start_as_current_span(
+            "handler"
+        ) as handler:
+            assert await Chain(key=chain_key).start(Chain.first)
+            assert await Flaky(key=flaky_key).start(Flaky.call)
+        await wait_until(status_is(Chain, chain_key, "done"))
+        await wait_until(status_is(Flaky, flaky_key, "done"), timeout=5)
+    finally:
+        otel.disable()
+    spans = {}
+    for span in exporter.get_finished_spans():
+        spans.setdefault(span.name, []).append(span)
+    first, second = spans["wf_test_chain.first"], spans["wf_test_chain.second"]
+    assert len(first) == len(second) == 1
+    assert {span.kind for span in first + second} == {SpanKind.CONSUMER}
+    assert {span.parent for span in first + second} == {None}
+    # Each step links to what scheduled it: the handler, then the step before.
+    assert linked_to(first[0]) == [span_ids(handler.get_span_context())]
+    assert linked_to(second[0]) == [span_ids(first[0].get_span_context())]
+    assert first[0].attributes[otel.ATTR_OUTCOME] == "ok"
+    assert first[0].attributes[otel.ATTR_ATTEMPT] == 1
+    # The traceparent travels in next_args and never reaches the step.
+    row = await Chain.by(Chain.key == chain_key).get()
+    assert row is not None
+    assert row.next_args is None
+    attempts = sorted(
+        spans["wf_test_flaky.call"], key=lambda s: s.attributes[otel.ATTR_ATTEMPT]
+    )
+    assert [s.attributes[otel.ATTR_OUTCOME] for s in attempts] == [
+        "retry",
+        "retry",
+        "ok",
+    ]
+    assert [s.status.status_code for s in attempts] == [
+        StatusCode.ERROR,
+        StatusCode.ERROR,
+        StatusCode.UNSET,
+    ]
+    assert attempts[0].attributes[otel.ATTR_ERROR_TYPE] == "ConnectionError"
+    # A retry links to the attempt that failed, not back to the handler.
+    assert linked_to(attempts[1]) == [span_ids(attempts[0].get_span_context())]
+    assert linked_to(attempts[2]) == [span_ids(attempts[1].get_span_context())]
