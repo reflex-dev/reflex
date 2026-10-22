@@ -17,7 +17,7 @@ class Bun(SimpleNamespace):
     """Bun constants."""
 
     # The Bun version.
-    VERSION = "1.4.2"
+    VERSION = "1.4.4"
 
     # Min Bun Version. Bun 1.4 creates new lockfiles at `lockfileVersion: 2`,
     # which 1.3.x cannot parse at all, so a `reflex.lock/bun.lock` generated
@@ -25,7 +25,7 @@ class Bun(SimpleNamespace):
     # even across dependency changes, so already-initialized projects survive.)
     # Keep this in step with VERSION across the 1.4 boundary so a system bun
     # old enough to choke on a v2 lockfile is never preferred over the pinned one.
-    MIN_VERSION = "1.4.0"
+    MIN_VERSION = "1.4.4"
 
     # URL to bun install script.
     INSTALL_URL = "https://raw.githubusercontent.com/reflex-dev/reflex/main/scripts/bun_install.sh"
