@@ -1172,7 +1172,18 @@ export const connect = async (
         for (const substate in delta) {
           dispatch[substate](delta[substate]);
         }
-        applyClientStorageDelta(client_storage, delta);
+        const pending_syncs = applyClientStorageDelta(client_storage, delta);
+        if (pending_syncs.length > 0) {
+          queueEvents(
+            pending_syncs.map(({ key, state_keys }) =>
+              ReflexEvent(SYNC_LOCAL_STORAGE, { key, state_keys }),
+            ),
+            socket,
+            false,
+            navigate,
+            params,
+          ).catch(reportStateUpdateError);
+        }
       }
       if (update.events && update.events.length > 0) {
         queueEvents(update.events, socket, false, navigate, params).catch(
@@ -1363,8 +1374,13 @@ const takeEcho = (state_key, value) => {
  * Update client storage values based on backend state delta.
  * @param client_storage The client storage object from context.js
  * @param delta The state update from the backend
+ * @returns Storage syncs to send for this tab's sibling vars sharing a
+ *   written storage name, as [{key, state_keys}]. The storage event reaches
+ *   other tabs only, so same-tab siblings are synced from the write here.
  */
 const applyClientStorageDelta = (client_storage, delta) => {
+  // Syncs to send, keyed by storage name so one name syncs once per delta.
+  const pending_syncs = new Map();
   // find the main state and check for is_hydrated
   const unqualified_states = Object.keys(delta).filter(
     (key) => key.split(".").length === 1,
@@ -1377,7 +1393,7 @@ const applyClientStorageDelta = (client_storage, delta) => {
     ) {
       // skip if the state is not hydrated yet, since all client storage
       // values are sent in the hydrate event
-      return;
+      return [];
     }
   }
   // Save known client storage values to cookies and localStorage.
@@ -1395,7 +1411,8 @@ const applyClientStorageDelta = (client_storage, delta) => {
         state_key in client_storage.local_storage &&
         typeof window !== "undefined"
       ) {
-        const name = client_storage.local_storage[state_key].name || state_key;
+        const options = client_storage.local_storage[state_key];
+        const name = options.name || state_key;
         const echo = takeEcho(state_key, value);
         const last = lastLocalStorageWrites[name];
         // Write an echo only over this tab's own later write, which the backend
@@ -1406,11 +1423,31 @@ const applyClientStorageDelta = (client_storage, delta) => {
           (last?.writes > echo.writes &&
             localStorage.getItem(name) === last.value)
         ) {
+          const previous = localStorage.getItem(name);
           localStorage.setItem(name, value);
           lastLocalStorageWrites[name] = {
             value,
             writes: ++localStorageWrites,
           };
+          // The storage event fires in other tabs only, so queue the sync for
+          // this tab's other synced vars sharing the name here, whether or
+          // not the written var itself syncs (storage writes raise the event
+          // cross-tab either way). Skip an unchanged value: its vars are
+          // already in sync, and re-sending would ping-pong when an echo
+          // misses. Deltas are per-session, and a sent update echoes back and
+          // takeEcho keeps it from writing again.
+          if (previous !== String(value) && !pending_syncs.has(name)) {
+            const state_keys = Object.keys(client_storage.local_storage).filter(
+              (other_key) =>
+                other_key !== state_key &&
+                client_storage.local_storage[other_key].sync &&
+                (client_storage.local_storage[other_key].name || other_key) ===
+                  name,
+            );
+            if (state_keys.length > 0) {
+              pending_syncs.set(name, state_keys);
+            }
+          }
         }
       } else if (
         client_storage.session_storage &&
@@ -1422,6 +1459,7 @@ const applyClientStorageDelta = (client_storage, delta) => {
       }
     }
   }
+  return [...pending_syncs].map(([key, state_keys]) => ({ key, state_keys }));
 };
 
 /**

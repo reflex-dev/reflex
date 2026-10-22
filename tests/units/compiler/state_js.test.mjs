@@ -32,6 +32,7 @@ async function setup({
   const timers = new Map();
   const firstHydrates = [];
   const updates = [];
+  const emits = [];
   const consoleErrors = [];
   let connectErrors = [];
   const errorUpdates = [];
@@ -44,8 +45,13 @@ async function setup({
   };
   const localStorage = {
     items: new Map(),
+    writes: 0,
     getItem(key) {
       return this.items.get(key) ?? null;
+    },
+    setItem(key, value) {
+      this.writes++;
+      this.items.set(key, String(value));
     },
   };
   const document = new EventTarget();
@@ -106,6 +112,9 @@ async function setup({
       },
       on(name, handler) {
         handlers.set(name, handler);
+      },
+      emit(name, payload) {
+        emits.push(payload);
       },
       connect() {
         // A ready transport can deliver these synchronously on namespace connect.
@@ -226,6 +235,7 @@ async function setup({
     localStorage,
     socket,
     updates,
+    emits,
     consoleErrors,
     get connectErrors() {
       // Like React with pending work, apply queued updaters only on render.
@@ -238,13 +248,13 @@ async function setup({
     module,
     dispose,
     flush: () => microtasks.splice(0).forEach((fn) => fn()),
-    connect: (transports = ["websocket"]) =>
+    connect: (transports = ["websocket"], storage = {}) =>
       module.namespace.connect(
         socket,
         { child: (delta) => updates.push(delta.count) },
         transports,
         (update) => errorUpdates.push(update),
-        {},
+        storage,
         () => {},
         { current: {} },
       ),
@@ -723,4 +733,167 @@ test("storage names that are Object.prototype properties sync like any other", a
     JSON.stringify(updates[1].payload.vars),
     JSON.stringify({ third: null }),
   );
+});
+
+test("a synced storage write syncs the writing tab's sibling vars", async () => {
+  const clientStorage = {
+    local_storage: {
+      "child.first": { name: "shared", sync: true },
+      "child.second": { name: "shared", sync: true },
+      "child.third": { name: "shared", sync: true },
+      "child.unsynced": { name: "shared" },
+    },
+  };
+  const app = await setup({ clientStorage });
+  app.connect(["websocket"], clientStorage);
+  app.flush();
+  const sock = app.sockets[0];
+  const syncs = () =>
+    app.emits.filter((e) => e?.name?.endsWith?.("update_vars_internal"));
+
+  // The backend applies a write to one synced var.
+  sock.handlers.get("event")({ delta: { child: { first: "from-cs0" } } });
+  app.flush();
+  await new Promise((resolve) => setImmediate(resolve));
+
+  // The storage event only fires in other tabs, so the writing tab syncs its
+  // own sibling vars sharing the name.
+  assert.equal(app.localStorage.items.get("shared"), "from-cs0");
+  assert.equal(syncs().length, 1, JSON.stringify(app.emits));
+  assert.equal(
+    JSON.stringify(syncs()[0].payload.vars),
+    JSON.stringify({ "child.second": "from-cs0", "child.third": "from-cs0" }),
+  );
+
+  // The echoed sibling updates neither write again nor queue another sync.
+  const writes = app.localStorage.writes;
+  sock.handlers.get("event")({
+    delta: { child: { second: "from-cs0", third: "from-cs0" } },
+  });
+  app.flush();
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(app.localStorage.writes, writes);
+  assert.equal(syncs().length, 1, JSON.stringify(app.emits));
+});
+
+test("an unsynced write still syncs its synced siblings in the writing tab", async () => {
+  const clientStorage = {
+    local_storage: {
+      "child.first": { name: "shared", sync: true },
+      "child.second": { name: "shared" },
+    },
+  };
+  const app = await setup({ clientStorage });
+  app.connect(["websocket"], clientStorage);
+  app.flush();
+  const sock = app.sockets[0];
+  const syncs = () =>
+    app.emits.filter((e) => e?.name?.endsWith?.("update_vars_internal"));
+
+  // Storage writes raise the cross-tab event whether or not the written var
+  // syncs, so the writing tab syncs its synced siblings either way.
+  sock.handlers.get("event")({ delta: { child: { second: "plain" } } });
+  app.flush();
+  await new Promise((resolve) => setImmediate(resolve));
+
+  assert.equal(app.localStorage.items.get("shared"), "plain");
+  assert.equal(syncs().length, 1, JSON.stringify(app.emits));
+  assert.equal(
+    JSON.stringify(syncs()[0].payload.vars),
+    JSON.stringify({ "child.first": "plain" }),
+  );
+});
+
+test("two same-name vars in one delta queue one sync per storage name", async () => {
+  const clientStorage = {
+    local_storage: {
+      "child.first": { name: "shared", sync: true },
+      "child.second": { name: "shared", sync: true },
+      "child.third": { name: "other", sync: true },
+      "child.fourth": { name: "other", sync: true },
+    },
+  };
+  const app = await setup({ clientStorage });
+  app.connect(["websocket"], clientStorage);
+  app.flush();
+  const sock = app.sockets[0];
+  const syncs = () =>
+    app.emits.filter((e) => e?.name?.endsWith?.("update_vars_internal"));
+
+  sock.handlers.get("event")({
+    delta: { child: { first: "one", second: "two", third: "three" } },
+  });
+  app.flush();
+  await new Promise((resolve) => setImmediate(resolve));
+
+  // One sync per storage name, reading the name's latest value when sent.
+  assert.equal(syncs().length, 2, JSON.stringify(app.emits));
+  const byVars = syncs().map((e) => JSON.stringify(e.payload.vars));
+  assert.ok(byVars.includes(JSON.stringify({ "child.second": "two" })));
+  assert.ok(byVars.includes(JSON.stringify({ "child.fourth": "three" })));
+});
+
+test("an unhydrated delta writes and syncs no client storage", async () => {
+  const clientStorage = {
+    local_storage: {
+      "child.first": { name: "shared", sync: true },
+      "child.second": { name: "shared", sync: true },
+    },
+  };
+  const app = await setup({ clientStorage });
+  app.connect(["websocket"], clientStorage);
+  app.flush();
+  const sock = app.sockets[0];
+
+  sock.handlers.get("event")({
+    delta: { child: { is_hydrated_rx_state_: false, first: "early" } },
+  });
+  app.flush();
+  await new Promise((resolve) => setImmediate(resolve));
+
+  assert.equal(app.localStorage.items.get("shared"), undefined);
+  assert.equal(
+    app.emits.filter((e) => e?.name?.endsWith?.("update_vars_internal")).length,
+    0,
+    JSON.stringify(app.emits),
+  );
+});
+
+test("a newer backend value re-syncs once, then the echo terminates it", async () => {
+  const clientStorage = {
+    local_storage: {
+      "child.first": { name: "shared", sync: true },
+      "child.second": { name: "shared", sync: true },
+    },
+  };
+  const app = await setup({ clientStorage });
+  app.connect(["websocket"], clientStorage);
+  app.flush();
+  const sock = app.sockets[0];
+  const syncs = () =>
+    app.emits.filter((e) => e?.name?.endsWith?.("update_vars_internal"));
+  const deliver = async (delta) => {
+    sock.handlers.get("event")({ delta });
+    app.flush();
+    await new Promise((resolve) => setImmediate(resolve));
+  };
+
+  await deliver({ child: { first: "v1" } });
+  assert.equal(syncs().length, 1, JSON.stringify(app.emits));
+
+  // A backend value that matches no sent value overrides storage and syncs
+  // the siblings once more.
+  await deliver({ child: { second: "v2" } });
+  assert.equal(app.localStorage.items.get("shared"), "v2");
+  assert.equal(syncs().length, 2, JSON.stringify(app.emits));
+  assert.equal(
+    JSON.stringify(syncs()[1].payload.vars),
+    JSON.stringify({ "child.first": "v2" }),
+  );
+
+  // That update's echo is recognized: no write, no third sync. No ping-pong.
+  const writes = app.localStorage.writes;
+  await deliver({ child: { first: "v2" } });
+  assert.equal(app.localStorage.writes, writes);
+  assert.equal(syncs().length, 2, JSON.stringify(app.emits));
 });
