@@ -244,6 +244,10 @@ class _LazyBody(Generic[_BodyT]):
         """
         return self._ready
 
+    def reset(self) -> None:
+        """Drop the cached body so the next :meth:`get` runs the thunk again."""
+        self._ready = False
+
     def get(self, thunk: Callable[[], _BodyT] | None = None) -> _BodyT:
         """Return the body, running and caching ``thunk`` on first read.
 
@@ -651,6 +655,48 @@ def _register_memo_definition(definition: MemoDefinition) -> None:
         raise ValueError(msg)
 
     MEMOS[key] = definition
+
+
+def _reregister_used_memo(definition: MemoDefinition) -> None:
+    """Re-register a used ``@rx.memo`` that a cleared ``MEMOS`` dropped.
+
+    Its cached body is reset, so the next read re-runs it and re-registers the
+    nested memos it uses too. Passthrough auto-memos (defined in this module)
+    are tracked separately and stay out of ``MEMOS``.
+
+    Args:
+        definition: The memo definition being used.
+    """
+    if definition.fn.__module__ == __name__:
+        return
+    key = _memo_registry_key(definition)
+    if key in MEMOS:
+        return
+    MEMOS[key] = definition
+    if isinstance(definition, MemoComponentDefinition):
+        definition._component.reset()
+    elif isinstance(definition, MemoFunctionDefinition):
+        definition._function.reset()
+
+
+def materialize_registered_memo_bodies() -> None:
+    """Evaluate every registered memo body, until ``MEMOS`` stops growing.
+
+    Reading a memo body re-registers any nested ``@rx.memo`` it references (see
+    :func:`_reregister_used_memo`), so the compiler must do this before it
+    snapshots ``MEMOS`` — else a dependency surfaced only while compiling a lazy
+    var-memo body is left out. Bodies cache, so re-reading one is a no-op.
+    """
+    evaluated: set[tuple[str, str | None]] = set()
+    while pending := [
+        (key, definition) for key, definition in MEMOS.items() if key not in evaluated
+    ]:
+        for key, definition in pending:
+            evaluated.add(key)
+            if isinstance(definition, MemoFunctionDefinition):
+                _ = definition.function
+            elif isinstance(definition, MemoComponentDefinition):
+                _ = definition.component
 
 
 def _annotation_inner_type(annotation: Any) -> Any:
@@ -1713,6 +1759,7 @@ class _MemoFunctionWrapper:
         Returns:
             The function call var.
         """
+        _reregister_used_memo(self._definition)
         return self._imported_var.call(
             *_bind_function_runtime_args(self._definition, *args, **kwargs)
         )
@@ -1727,6 +1774,7 @@ class _MemoFunctionWrapper:
         Returns:
             The partially applied function var.
         """
+        _reregister_used_memo(self._definition)
         return self._imported_var.partial(
             *_bind_function_runtime_args(self._definition, *args, **kwargs)
         )
@@ -1737,6 +1785,7 @@ class _MemoFunctionWrapper:
         Returns:
             The imported function var.
         """
+        _reregister_used_memo(self._definition)
         return self._imported_var
 
 
@@ -1775,6 +1824,7 @@ class _MemoComponentWrapper:
             The rendered memo component.
         """
         definition = self._definition
+        _reregister_used_memo(definition)
         rest_param = self._rest_param
 
         # Validate positional children usage and reserved keywords.
@@ -1868,6 +1918,7 @@ class _MemoComponentWrapper:
         Returns:
             The imported component var.
         """
+        _reregister_used_memo(self._definition)
         return _component_import_var(
             self._definition.export_name, self._definition.source_module
         )
@@ -2452,5 +2503,6 @@ __all__ = [
     "MemoFunctionDefinition",
     "create_component_memo",
     "create_passthrough_component_memo",
+    "materialize_registered_memo_bodies",
     "memo",
 ]
