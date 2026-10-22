@@ -561,6 +561,7 @@ reflex-enterprise = false
 reflex-hosting-cli = false
 pillow = "2026-10-21T00:00:00Z"
 certifi = "2026-10-21T00:00:00Z"
+virtualenv = "2026-10-22T00:00:00Z"
 
 [tool.uv.sources]
 hatch-reflex-pyi.workspace = true
