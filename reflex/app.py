@@ -2103,7 +2103,8 @@ def _decode_asgi_headers(headers: Iterable[tuple[bytes, bytes]]) -> dict[str, st
 
     ASGI keeps a repeated header as separate pairs, so their values are combined in
     order: cookies with "; " (RFC 9113 section 8.2.3), any other field with ", "
-    (RFC 9110 section 5.3).
+    (RFC 9110 section 5.3). Header values that are not valid UTF-8 are decoded as
+    Latin-1.
 
     Args:
         headers: Raw (name, value) byte pairs from the ASGI scope.
@@ -2114,7 +2115,10 @@ def _decode_asgi_headers(headers: Iterable[tuple[bytes, bytes]]) -> dict[str, st
     decoded: dict[str, str] = {}
     for raw_name, raw_value in headers:
         name = raw_name.decode()
-        value = raw_value.decode()
+        try:
+            value = raw_value.decode()
+        except UnicodeDecodeError:
+            value = raw_value.decode("latin-1")
         if name in decoded:
             decoded[name] += ("; " if name == "cookie" else ", ") + value
         else:
