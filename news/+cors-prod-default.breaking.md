@@ -1,0 +1,1 @@
+In prod mode, the backend now accepts cross-origin requests only from the origin of `deploy_url` unless `cors_allowed_origins` is set explicitly. Previously any origin was allowed by default. Set `deploy_url` to the frontend's URL, or set `cors_allowed_origins` (`["*"]` restores the old behavior).

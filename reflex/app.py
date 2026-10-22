@@ -387,6 +387,26 @@ def _is_location_specifier(specifier: str) -> bool:
     )
 
 
+def _cors_allowed_origins() -> list[str]:
+    """Resolve the origins the backend accepts cross-origin requests from.
+
+    An explicitly configured ``cors_allowed_origins`` is used as is. The
+    ``["*"]`` default stays open in dev mode, but in prod mode it narrows to
+    the origin of ``deploy_url`` so only the configured frontend can reach
+    the backend; without a ``deploy_url`` no cross-origin request is accepted.
+
+    Returns:
+        The allowed origins, where ``["*"]`` means any origin.
+    """
+    config = get_config()
+    if "cors_allowed_origins" in config._non_default_attributes or not is_prod_mode():
+        return list(config.cors_allowed_origins)
+    if not config.deploy_url:
+        return []
+    parts = urllib.parse.urlsplit(config.deploy_url)
+    return [f"{parts.scheme}://{parts.netloc}"]
+
+
 @dataclasses.dataclass()
 class App(MiddlewareMixin, LifespanMixin):
     """The main Reflex app that encapsulates the backend and frontend.
@@ -626,13 +646,7 @@ class App(MiddlewareMixin, LifespanMixin):
             self.sio = AsyncServer(
                 async_mode="asgi",
                 cors_allowed_origins=(
-                    (
-                        "*"
-                        if config.cors_allowed_origins == ("*",)
-                        else list(config.cors_allowed_origins)
-                    )
-                    if config.transport == "websocket"
-                    else []
+                    _cors_allowed_origins() if config.transport == "websocket" else []
                 ),
                 cors_credentials=config.transport == "websocket",
                 max_http_buffer_size=environment.REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE.get(),
@@ -932,7 +946,7 @@ class App(MiddlewareMixin, LifespanMixin):
             allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],
-            allow_origins=get_config().cors_allowed_origins,
+            allow_origins=_cors_allowed_origins(),
         )
 
     @property
