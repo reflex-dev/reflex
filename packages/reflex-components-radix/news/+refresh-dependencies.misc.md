@@ -1,0 +1,1 @@
+Update the Radix accordion, dialog, form, progress, and slider primitives to 1.3.1, 1.3.1, 0.3.0, 1.2.1, and 1.6.1, the versions bundled with the current `radix-ui` release that Radix Themes depends on, so apps load a single copy of each primitive.
