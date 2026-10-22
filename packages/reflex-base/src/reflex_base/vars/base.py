@@ -4955,8 +4955,8 @@ def _is_tree_state(cls: Any) -> bool:
     return (
         isinstance(cls, BaseStateMeta)
         and not cls._mixin
-        and cls._reflex_state_root is not None
-        and cls._reflex_state_root is not cls
+        and (root := cls._reflex_state_root) is not None
+        and root is not cls
     )
 
 
@@ -4971,10 +4971,11 @@ class BaseStateMeta(ABCMeta):
 
     - ``state_root=True`` makes the class the root of a state hierarchy; its
       members are reserved and its subclasses may not shadow them.
-    - ``mixin=True`` marks a state mixin, which is never instantiated.
+    - ``mixin=True`` marks a state mixin, which is never instantiated. A class
+      whose state bases are all mixins is a mixin too.
 
-    ``_reflex_state_root`` is a reserved name: it holds the root a class
-    descends from, or None outside any hierarchy.
+    ``_reflex_state_root`` is a reserved name: it holds the root of the class's
+    hierarchy (the class itself on a root), or None outside any hierarchy.
     """
 
     if TYPE_CHECKING:
