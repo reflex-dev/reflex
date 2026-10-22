@@ -108,7 +108,7 @@ The `self.router` attribute has several sub-attributes that provide various info
 - `router.session`: data about the current session
   - `client_token`: UUID associated with the current tab's token. Each tab has a unique token.
   - `session_id`: The ID associated with the client's websocket connection. Each tab has a unique session ID.
-  - `client_ip`: The IP address of the client. Many users may share the same IP address.
+  - `client_ip`: The client IP, taken from the connection peer by default. To use `X-Forwarded-For` behind trusted reverse proxies, configure `trusted_proxy_hops` in `rx.Config`; see [client IP configuration](/docs/advanced-onboarding/configuration/#client-ip-behind-proxies).
 
 - `router.headers`: headers associated with the websocket connection. These values can only change when the websocket is re-established (for example, during page refresh).
   - `host`: The hostname and port serving the websocket (backend).
