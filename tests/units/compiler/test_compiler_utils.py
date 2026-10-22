@@ -65,6 +65,7 @@ def test_bundled_libraries_artifact_round_trip(
             "react",
             "@emotion/react",
             "$/utils/context",
+            f"$/{constants.Dirs.UTILS}/context-registry",
             "$/utils/state",
             "@radix-ui/themes",
         ]
