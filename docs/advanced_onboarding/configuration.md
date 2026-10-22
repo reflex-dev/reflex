@@ -115,6 +115,19 @@ Both values are normalized to start with a `/`.
 
 When `frontend_path` is set, use `rx.asset()` for local files in the `assets/` directory. It adds the configured frontend path to the generated URL. Literal paths such as `src="/components/logo.svg"` are not rewritten, so they must already include the prefix (for example, `src="/app/components/logo.svg"`).
 
+## Client IP Behind Proxies
+
+`router.session.client_ip` uses the connection's peer address by default and ignores `X-Forwarded-For`, which an untrusted client can set. If the backend is reachable only through trusted reverse proxies that append their observed client address to `X-Forwarded-For`, set `trusted_proxy_hops` to the number of those proxies:
+
+```python
+config = rx.Config(
+    app_name="my_app_name",
+    trusted_proxy_hops=1,
+)
+```
+
+For example, `trusted_proxy_hops=1` uses the rightmost `X-Forwarded-For` entry; `2` uses the second entry from the right. The default is `0`. Do not enable forwarded-header trust if untrusted clients can connect directly to the backend or bypass the trusted proxy chain. The setting can also be provided as `REFLEX_TRUSTED_PROXY_HOPS`.
+
 ## Plugins
 
 Plugins extend the Reflex compiler. Add plugin instances via the `plugins` parameter, and disable plugins that are enabled by default (like the sitemap plugin) with `disable_plugins`:
@@ -142,6 +155,29 @@ REFLEX_EXTRA_PLUGINS="reflex.plugins.SitemapPlugin" uv run reflex run
 ```
 
 See the [plugins reference](/docs/api-reference/plugins/) for the available plugins and how to write your own.
+
+## React Compiler (Experimental)
+
+React Compiler adds automatic memoization to generated React components. It is disabled by default. To try it, set `react_compiler=True` in `rxconfig.py`:
+
+```python
+config = rx.Config(
+    app_name="my_app_name",
+    react_compiler=True,
+)
+```
+
+Or enable it with an environment variable:
+
+```bash
+REFLEX_REACT_COMPILER=true uv run reflex run
+```
+
+This option targets Reflex's supported React 19 runtime and runs in both development and production. It compiles generated JavaScript and JSX in `app/`, `app_components/`, and `utils/components/`. Other runtime utilities and installed dependencies are excluded. Existing Reflex memoization remains enabled.
+
+The compiler adds build time and memory overhead. Runtime performance depends on the workload: it can avoid repeated calculations during unrelated state updates, but list-heavy updates can become slower. Measure your application's interactions before enabling it in production.
+
+Restart `reflex run` after changing the flag, and rebuild production output. Disabling the flag removes the compiler transform and its optional build dependencies on the next frontend install, unless another component or plugin requires those dependencies.
 
 ## Customizable App Data Directory
 

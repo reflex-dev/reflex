@@ -1,0 +1,1 @@
+A state var annotation that names an undefined symbol, such as `items: list[Item] = []` under `from __future__ import annotations`, raises `NameError: name 'Item' is not defined` again instead of an unrelated `TypeError` or `AttributeError`. This also covers vars without a default, backend vars, and Python 3.14 annotations without the `__future__` import.
