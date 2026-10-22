@@ -7,8 +7,10 @@ from collections.abc import Sequence
 from typing import Any
 
 import pytest
+from reflex_base.constants.base import Dirs
+from reflex_base.utils import serializers
 from reflex_base.utils.exceptions import VarTypeError
-from reflex_base.vars.base import LiteralVar, Var
+from reflex_base.vars.base import LiteralVar, Var, VarData
 from reflex_base.vars.number import BooleanVar, NumberVar
 from reflex_base.vars.sequence import ArrayVar, LiteralArrayVar, StringVar
 from reflex_base.vars.set import LiteralSetVar, SetVar
@@ -47,10 +49,23 @@ def test_set_literal_with_incomparable_elements():
 
 def test_set_literal_holds_vars():
     """A set literal carries the var data of its elements."""
-    inner = Var(_js_expr="x", _var_type=str).guess_type()
+    var_data = VarData(hooks={"const x = 1": None})
+    inner = Var(_js_expr="x", _var_type=str, _var_data=var_data).guess_type()
     var = LiteralVar.create({inner})
     assert str(var) == "[x]"
-    assert LiteralSetVar._get_all_var_data_without_creating_var({inner}) is None
+    assert var._get_all_var_data() == var_data
+    assert LiteralSetVar._get_all_var_data_without_creating_var({inner}) == var_data
+    assert LiteralSetVar._get_all_var_data_without_creating_var({"x"}) is None
+
+
+def _helper_imports(var: Var) -> list[str]:
+    var_data = var._get_all_var_data()
+    assert var_data is not None
+    return [
+        import_var.tag
+        for import_var in dict(var_data.imports)[f"$/{Dirs.STATE_PATH}"]
+        if import_var.tag
+    ]
 
 
 def test_set_typed_var_guesses_set_var():
@@ -72,8 +87,9 @@ def test_set_contains_and_length():
     contains = tags.contains("x")
     typing.assert_type(contains, BooleanVar)
     assert isinstance(contains, BooleanVar)
-    assert str(contains) == 'state.tags.includes("x")'
-    assert str(tags.has("x")) == 'state.tags.includes("x")'
+    assert str(contains) == 'pySetHas(state.tags, "x")'
+    assert _helper_imports(contains) == ["pySetHas"]
+    assert str(tags.has("x")) == 'pySetHas(state.tags, "x")'
     length = tags.length()
     typing.assert_type(length, NumberVar[int])
     assert str(length) == "state.tags.length"
@@ -81,50 +97,30 @@ def test_set_contains_and_length():
 
 
 @pytest.mark.parametrize(
-    ("operation", "expected"),
+    ("operation", "helper"),
     [
-        ("union", "[...new Set([...state.tags, ...state.other])]"),
-        (
-            "intersection",
-            "((a, b) => a.filter((x) => b.has(x)))(state.tags, new Set(state.other))",
-        ),
-        (
-            "difference",
-            "((a, b) => a.filter((x) => !b.has(x)))(state.tags, new Set(state.other))",
-        ),
-        (
-            "symmetric_difference",
-            (
-                "((a, b) => [...[...a].filter((x) => !b.has(x)), ...[...b].filter((x) => !a.has(x))])"
-                "(new Set(state.tags), new Set(state.other))"
-            ),
-        ),
+        ("union", "pySetUnion"),
+        ("intersection", "pySetIntersection"),
+        ("difference", "pySetDifference"),
+        ("symmetric_difference", "pySetSymmetricDifference"),
     ],
 )
-def test_set_combinations_return_set_vars(operation: str, expected: str):
+def test_set_combinations_return_set_vars(operation: str, helper: str):
     tags = _tags()
     other = Var(_js_expr="state.other", _var_type=set[str]).guess_type()
     result = getattr(tags, operation)(other)
     assert isinstance(result, SetVar)
     assert result._var_type == set[str]
-    assert str(result) == expected
+    assert str(result) == f"{helper}(state.tags, state.other)"
+    assert _helper_imports(result) == [helper]
 
 
 @pytest.mark.parametrize(
     ("operation", "expected"),
     [
-        (
-            "issubset",
-            "((a, b) => a.every((x) => b.has(x)))(state.tags, new Set(state.other))",
-        ),
-        (
-            "issuperset",
-            "((a, b) => b.every((x) => a.has(x)))(new Set(state.tags), state.other)",
-        ),
-        (
-            "isdisjoint",
-            "((a, b) => !a.some((x) => b.has(x)))(state.tags, new Set(state.other))",
-        ),
+        ("issubset", "pySetIsSubset(state.tags, state.other)"),
+        ("issuperset", "pySetIsSubset(state.other, state.tags)"),
+        ("isdisjoint", "pySetIsDisjoint(state.tags, state.other)"),
     ],
 )
 def test_set_comparisons_return_boolean_vars(operation: str, expected: str):
@@ -133,24 +129,30 @@ def test_set_comparisons_return_boolean_vars(operation: str, expected: str):
     result = getattr(tags, operation)(other)
     assert isinstance(result, BooleanVar)
     assert str(result) == expected
+    assert _helper_imports(result) == [expected.split("(")[0]]
 
 
 def test_set_operations_accept_literals_and_arrays():
     """The other operand may be a python set, frozenset, list, tuple or an array var."""
     tags = _tags()
-    assert str(tags.union({"z"})) == '[...new Set([...state.tags, ...["z"]])]'
-    assert (
-        str(tags.union(frozenset({"z"}))) == '[...new Set([...state.tags, ...["z"]])]'
-    )
-    assert str(tags.issubset(["a", "b"])) == (
-        '((a, b) => a.every((x) => b.has(x)))(state.tags, new Set(["a", "b"]))'
-    )
+    assert str(tags.union({"z"})) == 'pySetUnion(state.tags, ["z"])'
+    assert str(tags.union(frozenset({"z"}))) == 'pySetUnion(state.tags, ["z"])'
+    assert str(tags.issubset(["a", "b"])) == 'pySetIsSubset(state.tags, ["a", "b"])'
     items = Var(_js_expr="state.items", _var_type=list[int]).guess_type()
     union = tags.union(items)
     assert union._var_type == set[str | int]
-    assert str(tags.intersection(("a",))) == (
-        '((a, b) => a.filter((x) => b.has(x)))(state.tags, new Set(["a"]))'
+    assert str(tags.intersection(("a",))) == 'pySetIntersection(state.tags, ["a"])'
+
+
+def test_set_of_tuples():
+    """Structured elements render as nested arrays; the helpers compare them by value."""
+    points = Var(_js_expr="state.points").to(set[tuple[int, int]])
+    assert str(points.contains((1, 2))) == "pySetHas(state.points, [1, 2])"
+    assert str(LiteralVar.create({(1, 2)}).intersection({(1, 2)})) == (
+        "pySetIntersection([[1, 2]], [[1, 2]])"
     )
+    typing.assert_type(points.to_array()[0], ArrayVar[tuple[int, int]])
+    assert points.to_array()[0]._var_type == tuple[int, int]
 
 
 def test_set_operations_keep_frozenset_type():
@@ -207,6 +209,27 @@ def test_set_to_array():
     assert frozen.to_array()._var_type == Sequence[int]
 
 
+def test_optional_set_to_array_stays_optional():
+    """An optional set's array view is optional too, so foreach keeps its null guard."""
+    maybe = Var(_js_expr="state.maybe", _var_type=set[str] | None).guess_type()
+    assert isinstance(maybe, SetVar)
+    assert maybe.to_array()._var_type == Sequence[str] | None
+    component = rx.foreach(maybe, lambda tag: rx.text(tag))
+    assert str(component.iterable) == ("(isTrue(state.maybe) ? state.maybe : [])")
+
+
+def test_set_concatenation_fallbacks():
+    """`set + set` and `array + set` still compile, as arrays, with a warning."""
+    tags = _tags()
+    other = Var(_js_expr="state.other").to(set[str])
+    items = Var(_js_expr="state.items").to(list[str])
+    assert str(tags + other) == "[...state.tags, ...state.other]"  # pyright: ignore[reportDeprecated]
+    assert str(items + tags) == "[...state.items, ...state.tags]"  # pyright: ignore[reportDeprecated]
+    assert str(tags + items) == "[...state.tags, ...state.items]"  # pyright: ignore[reportDeprecated]
+    with pytest.raises(VarTypeError):
+        _ = items + 1  # pyright: ignore[reportOperatorIssue]
+
+
 def test_set_array_operations_are_deprecated(mocker):
     """Sequence operations still work on a set var, with a deprecation warning."""
     deprecate = mocker.patch("reflex_base.vars.set.console.deprecate")
@@ -243,20 +266,30 @@ def test_state_set_fields_are_set_vars():
 
     class SetState(rx.State):
         tags: rx.Field[set[str]] = rx.field({"a"})
+        frozen: rx.Field[frozenset[int]] = rx.field(frozenset({1}))
         maybe: rx.Field[set[str] | None] = rx.field(None)
 
         @rx.var
         def doubled(self) -> set[str]:
             return {tag * 2 for tag in self.tags}
 
+        @rx.var
+        def frozen_doubled(self) -> frozenset[int]:
+            return frozenset(value * 2 for value in self.frozen)
+
     typing.assert_type(SetState.tags, SetVar[set[str]])
+    typing.assert_type(SetState.frozen, SetVar[frozenset[int]])
     typing.assert_type(SetState.maybe, SetVar[set[str]])
     typing.assert_type(SetState.doubled, SetVar[set[str]])
+    typing.assert_type(SetState.frozen_doubled, SetVar[frozenset[int]])
     typing.assert_type(SetState.tags.contains("x"), BooleanVar)
     assert isinstance(SetState.tags, SetVar)
+    assert isinstance(SetState.frozen, SetVar)
     assert isinstance(SetState.maybe, SetVar)
     assert isinstance(SetState.doubled, SetVar)
+    assert isinstance(SetState.frozen_doubled, SetVar)
     assert SetState.tags.to_array()._var_type == Sequence[str]
+    assert serializers.serialize(frozenset({1})) == [1]
 
 
 def test_foreach_accepts_a_set_var():

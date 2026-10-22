@@ -13,7 +13,9 @@ import dataclasses
 from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Any, TypeVar, overload
 
-from reflex_base.utils import console
+from reflex_base.constants.base import Dirs
+from reflex_base.utils import console, types
+from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import GenericType, get_origin, unionize
 
 from .base import (
@@ -75,11 +77,76 @@ def _set_type_like(var_type: GenericType, element_type: GenericType) -> GenericT
     return (frozenset if origin is frozenset else set)[element_type]
 
 
+def _combined_set_type(lhs: SetVar, rhs: Var) -> GenericType:
+    """The type of a set holding elements of both operands.
+
+    Args:
+        lhs: The set whose origin (set or frozenset) the result keeps.
+        rhs: The other set or array.
+
+    Returns:
+        The set type whose element type is the union of both element types.
+    """
+    return _set_type_like(
+        lhs._var_type,
+        unionize(_element_type(lhs._var_type), _element_type(rhs._var_type)),
+    )
+
+
+def _set_helper_operation(
+    helper: str, *args: Var, var_type: GenericType
+) -> CustomVarOperationReturn:
+    """Call one of the ``pySet*`` helpers of state.js.
+
+    Args:
+        helper: The name of the helper.
+        *args: The arguments of the helper.
+        var_type: The type of the result.
+
+    Returns:
+        The var operation return.
+    """
+    return var_operation_return(
+        js_expression=f"{helper}({', '.join(map(str, args))})",
+        var_type=var_type,
+        var_data=VarData(
+            imports={f"$/{Dirs.STATE_PATH}": [ImportVar(tag=helper)]},
+        ),
+    )
+
+
+def _deprecate_array_operation(name: str) -> None:
+    """Warn that an array operation is used on a set var.
+
+    Args:
+        name: The name of the array operation.
+    """
+    console.deprecate(
+        feature_name=f"SetVar.{name}",
+        reason=_ARRAY_OPERATION_REASON,
+        deprecation_version="0.10.1",
+        removal_version="1.0",
+    )
+
+
+def _as_array(value: Any) -> Any:
+    """View a set var as an array, leaving any other value as it is.
+
+    Args:
+        value: The operand of an array operation.
+
+    Returns:
+        The array view of a set var, or the value itself.
+    """
+    return value.to_array() if isinstance(value, SetVar) else value
+
+
 def _deprecated_array_operation(name: str) -> Callable[..., Any]:
     """Make a method that runs an array operation on the set as an array.
 
     The method warns that the operation is deprecated on sets, then delegates
-    to the same operation on ``to_array()``.
+    to the same operation on ``to_array()``, with set operands viewed as
+    arrays too.
 
     Args:
         name: The name of the array operation.
@@ -89,13 +156,8 @@ def _deprecated_array_operation(name: str) -> Callable[..., Any]:
     """
 
     def operation(self: SetVar, *args: Any, **kwargs: Any) -> Any:
-        console.deprecate(
-            feature_name=f"SetVar.{name}",
-            reason=_ARRAY_OPERATION_REASON,
-            deprecation_version="0.10.0",
-            removal_version="1.0",
-        )
-        return getattr(self.to_array(), name)(*args, **kwargs)
+        _deprecate_array_operation(name)
+        return getattr(self.to_array(), name)(*map(_as_array, args), **kwargs)
 
     operation.__name__ = name
     return operation
@@ -235,11 +297,43 @@ class SetVar(Var[SET_VAR_TYPE], python_types=(set, frozenset)):
         """View the set as an array, for rx.foreach and array operations.
 
         The frontend value is already an array, so this only changes the type.
+        An optional set stays optional.
 
         Returns:
             The set as an array var.
         """
-        return self.to(ArrayVar, Sequence[_element_type(self._var_type)])
+        array_type = Sequence[_element_type(self._var_type)]
+        if types.is_optional(self._var_type):
+            array_type = array_type | None
+        return self.to(ArrayVar, array_type)
+
+    if TYPE_CHECKING:
+
+        @deprecated(_ARRAY_OPERATION_REASON)
+        def __radd__(self, other: ArrayVar) -> ArrayVar:
+            """Concatenate an array with the set as an array (deprecated, use to_array).
+
+            Args:
+                other: The array.
+
+            Returns:
+                The concatenated array.
+            """
+            ...
+
+    else:
+
+        def __radd__(self, other: ArrayVar) -> ArrayVar:
+            """Concatenate an array with the set as an array (deprecated, use to_array).
+
+            Args:
+                other: The array.
+
+            Returns:
+                The concatenated array.
+            """
+            _deprecate_array_operation("__radd__")
+            return other + self.to_array()
 
     if TYPE_CHECKING:
 
@@ -401,10 +495,7 @@ def set_contains_operation(
     Returns:
         The set contains operation.
     """
-    return var_operation_return(
-        js_expression=f"{haystack!s}.includes({needle!s})",
-        var_type=bool,
-    )
+    return _set_helper_operation("pySetHas", haystack, needle, var_type=bool)
 
 
 @var_operation
@@ -433,12 +524,8 @@ def set_union_operation(
     Returns:
         The set union operation.
     """
-    return var_operation_return(
-        js_expression=f"[...new Set([...{lhs!s}, ...{rhs!s}])]",
-        var_type=_set_type_like(
-            lhs._var_type,
-            unionize(_element_type(lhs._var_type), _element_type(rhs._var_type)),
-        ),
+    return _set_helper_operation(
+        "pySetUnion", lhs, rhs, var_type=_combined_set_type(lhs, rhs)
     )
 
 
@@ -455,10 +542,7 @@ def set_intersection_operation(
     Returns:
         The set intersection operation.
     """
-    return var_operation_return(
-        js_expression=f"((a, b) => a.filter((x) => b.has(x)))({lhs!s}, new Set({rhs!s}))",
-        var_type=lhs._var_type,
-    )
+    return _set_helper_operation("pySetIntersection", lhs, rhs, var_type=lhs._var_type)
 
 
 @var_operation
@@ -474,10 +558,7 @@ def set_difference_operation(
     Returns:
         The set difference operation.
     """
-    return var_operation_return(
-        js_expression=f"((a, b) => a.filter((x) => !b.has(x)))({lhs!s}, new Set({rhs!s}))",
-        var_type=lhs._var_type,
-    )
+    return _set_helper_operation("pySetDifference", lhs, rhs, var_type=lhs._var_type)
 
 
 @var_operation
@@ -493,15 +574,8 @@ def set_symmetric_difference_operation(
     Returns:
         The set symmetric difference operation.
     """
-    return var_operation_return(
-        js_expression=(
-            "((a, b) => [...[...a].filter((x) => !b.has(x)), ...[...b].filter((x) => !a.has(x))])"
-            f"(new Set({lhs!s}), new Set({rhs!s}))"
-        ),
-        var_type=_set_type_like(
-            lhs._var_type,
-            unionize(_element_type(lhs._var_type), _element_type(rhs._var_type)),
-        ),
+    return _set_helper_operation(
+        "pySetSymmetricDifference", lhs, rhs, var_type=_combined_set_type(lhs, rhs)
     )
 
 
@@ -518,10 +592,7 @@ def set_issubset_operation(
     Returns:
         The set issubset operation.
     """
-    return var_operation_return(
-        js_expression=f"((a, b) => a.every((x) => b.has(x)))({lhs!s}, new Set({rhs!s}))",
-        var_type=bool,
-    )
+    return _set_helper_operation("pySetIsSubset", lhs, rhs, var_type=bool)
 
 
 @var_operation
@@ -537,10 +608,7 @@ def set_issuperset_operation(
     Returns:
         The set issuperset operation.
     """
-    return var_operation_return(
-        js_expression=f"((a, b) => b.every((x) => a.has(x)))(new Set({lhs!s}), {rhs!s})",
-        var_type=bool,
-    )
+    return _set_helper_operation("pySetIsSubset", rhs, lhs, var_type=bool)
 
 
 @var_operation
@@ -556,10 +624,7 @@ def set_isdisjoint_operation(
     Returns:
         The set isdisjoint operation.
     """
-    return var_operation_return(
-        js_expression=f"((a, b) => !a.some((x) => b.has(x)))({lhs!s}, new Set({rhs!s}))",
-        var_type=bool,
-    )
+    return _set_helper_operation("pySetIsDisjoint", lhs, rhs, var_type=bool)
 
 
 def _ordered(value: set | frozenset) -> list:

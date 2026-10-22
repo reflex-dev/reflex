@@ -412,6 +412,19 @@ def serialize_set(value: set) -> list:
 
 
 @serializer
+def serialize_frozenset(value: frozenset) -> list:
+    """Serialize a frozenset to a JSON serializable list.
+
+    Args:
+        value: The frozenset to serialize.
+
+    Returns:
+        The serialized list.
+    """
+    return list(value)
+
+
+@serializer
 def serialize_sequence(value: Sequence) -> list:
     """Serialize a sequence to a JSON serializable list.
 

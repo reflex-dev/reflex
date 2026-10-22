@@ -10,9 +10,11 @@ def SetOperationsApp():
     import reflex as rx
 
     class SetOperationsState(rx.State):
-        tags: set[str] = {"a", "b"}
-        other: set[str] = {"b", "c"}
-        received: list[str] = []
+        tags: rx.Field[set[str]] = rx.field({"a", "b"})
+        other: rx.Field[frozenset[str]] = rx.field(frozenset({"b", "c"}))
+        points: rx.Field[set[tuple[int, int]]] = rx.field({(1, 2), (3, 4)})
+        maybe: rx.Field[set[str] | None] = rx.field(None)
+        received: rx.Field[list[str]] = rx.field([])
 
         @rx.event
         def add_tag(self):
@@ -21,6 +23,10 @@ def SetOperationsApp():
         @rx.event
         def remove_tag(self):
             self.tags.discard("a")
+
+        @rx.event
+        def set_maybe(self):
+            self.maybe = {"m"}
 
         @rx.event
         def receive(self, tags: set[str]):
@@ -75,9 +81,27 @@ def SetOperationsApp():
                 SetOperationsState.tags,
                 lambda tag: rx.text(tag, class_name="tag"),
             ),
+            # Tuple elements compare by value, not by array identity.
+            rx.text(SetOperationsState.points.contains((1, 2)), id="has_point"),
+            rx.text(
+                SetOperationsState.points.union({(3, 4), (5, 6)}).length(),
+                id="points_union_length",
+            ),
+            rx.text(
+                SetOperationsState.points.intersection({(3, 4)}).length(),
+                id="points_intersection_length",
+            ),
+            # An unset optional set renders no children instead of failing.
+            rx.foreach(
+                SetOperationsState.maybe,
+                lambda tag: rx.text(tag, class_name="maybe"),
+            ),
             rx.text(SetOperationsState.received.join(","), id="received"),
             rx.button("Add", id="add", on_click=SetOperationsState.add_tag),
             rx.button("Remove", id="remove", on_click=SetOperationsState.remove_tag),
+            rx.button(
+                "Set maybe", id="set_maybe", on_click=SetOperationsState.set_maybe
+            ),
             rx.button(
                 "Send",
                 id="send",
@@ -136,6 +160,14 @@ def test_set_operations(set_operations_app: AppHarness, page: Page):
     expect(page.locator("id=issuperset")).to_have_text("true")
     expect(page.locator("id=isdisjoint")).to_have_text("true")
     expect(page.locator(".tag")).to_have_count(2)
+
+    expect(page.locator("id=has_point")).to_have_text("true")
+    expect(page.locator("id=points_union_length")).to_have_text("3")
+    expect(page.locator("id=points_intersection_length")).to_have_text("1")
+
+    expect(page.locator(".maybe")).to_have_count(0)
+    page.locator("id=set_maybe").click()
+    expect(page.locator(".maybe")).to_have_count(1)
 
     # A backend mutation of the set re-renders every operation.
     page.locator("id=add").click()

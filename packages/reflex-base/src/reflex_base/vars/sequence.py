@@ -117,6 +117,10 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=Sequence):
             ArrayConcatOperation: The concatenation of the two arrays.
         """
         if not isinstance(other, ArrayVar):
+            from .set import SetVar
+
+            if isinstance(other, SetVar):
+                return other.__radd__(self)
             raise_unsupported_operand_types("+", (type(self), type(other)))
 
         return array_concat_operation(self, other)
