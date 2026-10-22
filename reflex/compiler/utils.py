@@ -14,7 +14,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import MISSING
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, TypedDict, get_args
+from typing import TYPE_CHECKING, Any, Literal, TypedDict, get_args, get_origin
 from urllib.parse import urlparse
 
 from reflex_base import constants
@@ -363,6 +363,8 @@ def _may_hold_str(type_: Any) -> bool:
         return True
     if types.is_union(type_):
         return any(_may_hold_str(arg) for arg in get_args(type_))
+    if get_origin(type_) is Literal:
+        return any(isinstance(arg, str) for arg in get_args(type_))
     return types.safe_issubclass(str, type_) or types.safe_issubclass(type_, str)
 
 
