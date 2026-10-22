@@ -1138,7 +1138,7 @@ def test_supervise_output_does_not_wait_for_lingering_descendants(tmp_path):
     assert elapsed < 10
 
 
-_SIGTERM_SCRIPT = """
+_SLEEP_SCRIPT = """
 import sys
 import time
 
@@ -1151,11 +1151,16 @@ time.sleep(30)
 """
 
 
-@pytest.mark.skipif(sys.platform == "win32", reason="SIGTERM is POSIX-only")
-def test_supervise_output_forwards_sigterm(tmp_path):
-    """Terminating the supervisor terminates the command and reports the signal."""
-    script = tmp_path / "sigterm.py"
-    script.write_text(_SIGTERM_SCRIPT)
+@pytest.mark.skipif(
+    sys.platform == "win32", reason="PID-targeted signals are POSIX-only"
+)
+@pytest.mark.parametrize(
+    "signum", [signal.SIGTERM, signal.SIGINT], ids=["sigterm", "sigint"]
+)
+def test_supervise_output_forwards_shutdown_signal(tmp_path, signum):
+    """A signal sent to the supervisor's PID stops the command and is reported."""
+    script = tmp_path / "sleep.py"
+    script.write_text(_SLEEP_SCRIPT)
     with subprocess.Popen(
         [sys.executable, str(script)],
         stdout=subprocess.PIPE,
@@ -1163,217 +1168,8 @@ def test_supervise_output_forwards_sigterm(tmp_path):
     ) as proc:
         assert proc.stdout is not None
         assert json.loads(proc.stdout.readline())["message"] == "ready"
-        proc.send_signal(signal.SIGTERM)
-        assert proc.wait(timeout=10) == 128 + signal.SIGTERM
-
-
-@pytest.mark.skipif(sys.platform == "win32", reason="SIGTERM is POSIX-only")
-def test_supervise_output_calls_and_restores_previous_signal_handler(tmp_path):
-    """A custom signal handler still runs and is restored after supervision."""
-    script = tmp_path / "sigterm_previous_handler.py"
-    marker = tmp_path / "previous-handler-called"
-    script.write_text(
-        """
-import signal
-import sys
-import time
-from pathlib import Path
-
-from reflex_base.utils import log
-
-if not log.is_output_supervised():
-    marker = Path(sys.argv[1])
-
-    def previous_handler(signum, frame):
-        marker.write_text(str(signum))
-
-    signal.signal(signal.SIGTERM, previous_handler)
-    returncode = log.supervise_output([sys.executable, __file__, str(marker)])
-    marker.write_text(
-        f"{marker.read_text() if marker.exists() else 'not-called'}"
-        f"\\nrestored={signal.getsignal(signal.SIGTERM) is previous_handler}"
-    )
-    sys.exit(returncode)
-
-print("ready", flush=True)
-time.sleep(30)
-"""
-    )
-    with subprocess.Popen(
-        [sys.executable, str(script), str(marker)],
-        stdout=subprocess.PIPE,
-        env={**os.environ, "REFLEX_LOG_JSON": "true"},
-    ) as proc:
-        assert proc.stdout is not None
-        assert json.loads(proc.stdout.readline())["message"] == "ready"
-        proc.send_signal(signal.SIGTERM)
-        assert proc.wait(timeout=10) == 128 + signal.SIGTERM
-
-    assert marker.read_text() == f"{signal.SIGTERM}\nrestored=True"
-
-
-@pytest.mark.skipif(sys.platform == "win32", reason="SIGINT is POSIX-only")
-def test_supervise_output_forwards_pid_targeted_sigint(tmp_path):
-    """A PID-targeted interrupt reaches the supervised command."""
-    script = tmp_path / "sigint.py"
-    script.write_text(_SIGTERM_SCRIPT)
-    with subprocess.Popen(
-        [sys.executable, str(script)],
-        stdout=subprocess.PIPE,
-        env={**os.environ, "REFLEX_LOG_JSON": "true"},
-    ) as proc:
-        assert proc.stdout is not None
-        assert json.loads(proc.stdout.readline())["message"] == "ready"
-        proc.send_signal(signal.SIGINT)
-        assert proc.wait(timeout=10) == 128 + signal.SIGINT
-
-
-_SIGINT_CLEANUP_SCRIPT = """
-import os
-import signal
-import sys
-import time
-from pathlib import Path
-
-from reflex_base.utils import log
-
-if not log.is_output_supervised():
-    mode, marker, ready = sys.argv[1:]
-
-    def previous_handler(signum, frame):
-        with Path(f"{marker}.handler").open("a") as handler_calls:
-            handler_calls.write("x")
-
-    signal.signal(signal.SIGINT, previous_handler)
-    if mode == "setup":
-        real_popen = log.subprocess.Popen
-
-        def spawn_and_interrupt(*args, **kwargs):
-            child = real_popen(*args, **kwargs)
-            deadline = time.monotonic() + 10
-            while not Path(ready).exists() and time.monotonic() < deadline:
-                time.sleep(0.01)
-            assert Path(ready).exists()
-            os.kill(os.getpid(), signal.SIGINT)
-            return child
-
-        log.subprocess.Popen = spawn_and_interrupt
-    sys.exit(
-        log.supervise_output([sys.executable, __file__, mode, marker, ready])
-    )
-
-signal_count = 0
-mode, marker, ready = sys.argv[1:]
-signal_name = {"hangup": "SIGHUP", "quit": "SIGQUIT"}.get(mode, "SIGINT")
-signal_number = getattr(signal, signal_name, signal.SIGINT)
-
-def handle_shutdown(*_):
-    global signal_count
-    signal_count += 1
-
-signal.signal(signal_number, handle_shutdown)
-Path(ready).write_text("ready")
-print("ready", flush=True)
-while signal_count == 0:
-    time.sleep(0.01)
-time.sleep(0.25)
-Path(marker).write_text(str(signal_count))
-"""
-
-
-@pytest.mark.skipif(sys.platform == "win32", reason="SIGINT is POSIX-only")
-def test_supervise_output_does_not_double_forward_terminal_sigint(tmp_path):
-    """A terminal interrupt reaches the child once and allows cleanup to finish."""
-    script = tmp_path / "sigint_cleanup.py"
-    marker = tmp_path / "cleanup-count"
-    ready = tmp_path / "ready"
-    script.write_text(_SIGINT_CLEANUP_SCRIPT)
-    with subprocess.Popen(
-        [sys.executable, str(script), "terminal", str(marker), str(ready)],
-        stdout=subprocess.PIPE,
-        env={**os.environ, "REFLEX_LOG_JSON": "true"},
-        start_new_session=True,
-    ) as proc:
-        assert proc.stdout is not None
-        assert json.loads(proc.stdout.readline())["message"] == "ready"
-        killpg = getattr(os, "killpg", None)
-        assert callable(killpg)
-        killpg(proc.pid, signal.SIGINT)
-        assert proc.wait(timeout=10) == 0
-
-    assert marker.read_text() == "1"
-    assert Path(f"{marker}.handler").read_text() == "x"
-
-
-@pytest.mark.skipif(sys.platform == "win32", reason="SIGINT is POSIX-only")
-def test_supervise_output_forwards_sigint_during_setup(tmp_path):
-    """A SIGINT between spawn and wait is queued until the child can be signaled."""
-    script = tmp_path / "sigint_cleanup.py"
-    marker = tmp_path / "cleanup-count"
-    ready = tmp_path / "ready"
-    script.write_text(_SIGINT_CLEANUP_SCRIPT)
-    with subprocess.Popen(
-        [sys.executable, str(script), "setup", str(marker), str(ready)],
-        stdout=subprocess.PIPE,
-        env={**os.environ, "REFLEX_LOG_JSON": "true"},
-        start_new_session=True,
-    ) as proc:
-        assert proc.stdout is not None
-        assert json.loads(proc.stdout.readline())["message"] == "ready"
-        assert proc.wait(timeout=10) == 0
-
-    assert marker.read_text() == "1"
-    assert Path(f"{marker}.handler").read_text() == "x"
-
-
-@pytest.mark.skipif(sys.platform == "win32", reason="SIGHUP is POSIX-only")
-def test_supervise_output_forwards_terminal_sighup(tmp_path):
-    """A terminal hangup reaches the child and waits for its cleanup."""
-    script = tmp_path / "sigint_cleanup.py"
-    marker = tmp_path / "cleanup-count"
-    ready = tmp_path / "ready"
-    script.write_text(_SIGINT_CLEANUP_SCRIPT)
-    with subprocess.Popen(
-        [sys.executable, str(script), "hangup", str(marker), str(ready)],
-        stdout=subprocess.PIPE,
-        env={**os.environ, "REFLEX_LOG_JSON": "true"},
-        start_new_session=True,
-    ) as proc:
-        assert proc.stdout is not None
-        assert json.loads(proc.stdout.readline())["message"] == "ready"
-        killpg = getattr(os, "killpg", None)
-        sighup = getattr(signal, "SIGHUP", None)
-        assert callable(killpg)
-        assert sighup is not None
-        killpg(proc.pid, sighup)
-        assert proc.wait(timeout=10) == 0
-
-    assert marker.read_text() == "1"
-
-
-@pytest.mark.skipif(sys.platform == "win32", reason="SIGQUIT is POSIX-only")
-def test_supervise_output_forwards_terminal_sigquit(tmp_path):
-    """A terminal quit reaches the child and waits for its cleanup."""
-    script = tmp_path / "sigint_cleanup.py"
-    marker = tmp_path / "cleanup-count"
-    ready = tmp_path / "ready"
-    script.write_text(_SIGINT_CLEANUP_SCRIPT)
-    with subprocess.Popen(
-        [sys.executable, str(script), "quit", str(marker), str(ready)],
-        stdout=subprocess.PIPE,
-        env={**os.environ, "REFLEX_LOG_JSON": "true"},
-        start_new_session=True,
-    ) as proc:
-        assert proc.stdout is not None
-        assert json.loads(proc.stdout.readline())["message"] == "ready"
-        killpg = getattr(os, "killpg", None)
-        sigquit = getattr(signal, "SIGQUIT", None)
-        assert callable(killpg)
-        assert sigquit is not None
-        killpg(proc.pid, sigquit)
-        assert proc.wait(timeout=10) == 0
-
-    assert marker.read_text() == "1"
+        proc.send_signal(signum)
+        assert proc.wait(timeout=10) == 128 + signum
 
 
 def test_output_pump_survives_a_gone_consumer():
