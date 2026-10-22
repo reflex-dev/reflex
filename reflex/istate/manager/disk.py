@@ -5,6 +5,7 @@ import contextlib
 import dataclasses
 import functools
 import logging
+import pickle
 import time
 from collections.abc import AsyncIterator
 from hashlib import md5
@@ -12,6 +13,7 @@ from pathlib import Path
 from typing import Any, Generic, cast
 
 from reflex_base.environment import state_manager_disk_debounce
+from reflex_base.utils.exceptions import StateSchemaMismatchError
 from typing_extensions import Unpack, override
 
 from reflex.istate.manager import (
@@ -146,6 +148,11 @@ class StateManagerDisk(StateManager):
     async def load_state(self, token: StateToken[TOKEN_TYPE]) -> TOKEN_TYPE | None:
         """Load a state object based on the provided token.
 
+        A missing state file returns None without logging. A state file that
+        cannot be loaded also returns None: a state class that changed since the
+        file was written is logged at debug level, a damaged or unreadable file
+        as a warning.
+
         Args:
             token: The token used to identify the state object.
 
@@ -158,8 +165,27 @@ class StateManagerDisk(StateManager):
             try:
                 with token_path.open(mode="rb") as file:
                     return token.deserialize(fp=file)
-            except Exception:
-                pass
+            except Exception as err:
+                # BaseState reports a damaged file as a schema mismatch too, so
+                # tell it apart from a state class that changed by its cause.
+                if isinstance(err, StateSchemaMismatchError) and not isinstance(
+                    err.__cause__, (pickle.UnpicklingError, EOFError)
+                ):
+                    logger.debug(
+                        "Discarding persisted state for %s from %s: it no longer "
+                        "matches the state class.",
+                        token,
+                        token_path,
+                        exc_info=True,
+                    )
+                    return None
+                logger.warning(
+                    "Failed to load persisted state for %s from %s, starting "
+                    "from a fresh state.",
+                    token,
+                    token_path,
+                    exc_info=True,
+                )
         return None
 
     async def populate_substates(
