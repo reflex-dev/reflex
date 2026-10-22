@@ -1,0 +1,1 @@
+`rx.data_editor` columns backed by state now get the same defaults as literal columns: `type` defaults to `"str"`, `id` to the lowercased `title`, and a column may be given as just its title string. The column dicts passed to `columns` are no longer modified in place.
