@@ -40,7 +40,7 @@ from typing import get_origin as get_origin_og
 from typing import get_type_hints as get_type_hints_og
 
 import typing_extensions
-from typing_extensions import TypeAliasType, TypeVarTuple
+from typing_extensions import TypeAliasType, TypeIs, TypeVarTuple
 from typing_extensions import override as override
 
 from reflex_base import constants
@@ -570,6 +570,25 @@ def is_none(cls: GenericType) -> bool:
         Whether the class is None.
     """
     return cls is type(None) or cls is None
+
+
+def is_non_string_sequence(value: object) -> TypeIs[Sequence[Any]]:
+    """Check if a value is a sequence other than a str or bytes, e.g. a list of events.
+
+    Separate list and tuple checks come first: they are the common case, and
+    cheaper than the Sequence ABC check.
+
+    Args:
+        value: The value to check.
+
+    Returns:
+        Whether the value is a sequence and not a str or bytes.
+    """
+    return (
+        isinstance(value, list)  # noqa: SIM101 - a lone list check is the fastest
+        or isinstance(value, tuple)
+        or (isinstance(value, Sequence) and not isinstance(value, (str, bytes)))
+    )
 
 
 def is_union(cls: GenericType) -> bool:
@@ -1744,6 +1763,35 @@ def typehint_issubclass(
     )
 
 
+def _resolve_annotation(
+    value: Any, base_globals: dict[str, Any] | None, *, strict: bool = False
+) -> Any:
+    """Resolve a string or ForwardRef annotation into a type object if possible.
+
+    Args:
+        value: The raw annotation to resolve.
+        base_globals: The globals of the module declaring the annotation.
+        strict: Whether an annotation naming an undefined symbol raises,
+            unless it is a ClassVar.
+
+    Returns:
+        The resolved annotation, or the unresolved ForwardRef.
+
+    Raises:
+        NameError: If strict and the annotation names an undefined symbol.
+    """
+    if isinstance(value, str):
+        value = ForwardRef(value, is_argument=False, is_class=True)
+    try:
+        if sys.version_info >= (3, 13):
+            return _eval_type(value, base_globals, None, type_params=())
+        return _eval_type(value, base_globals, None)
+    except NameError:
+        if strict and not is_classvar(value):
+            raise
+        return value
+
+
 def resolve_annotations(
     raw_annotations: Mapping[str, type[Any]], module_name: str | None
 ) -> dict[str, type[Any]]:
@@ -1764,20 +1812,10 @@ def resolve_annotations(
         module.__dict__ if module is not None else None
     )
 
-    annotations = {}
-    for name, value in raw_annotations.items():
-        if isinstance(value, str):
-            value = ForwardRef(value, is_argument=False, is_class=True)
-        try:
-            if sys.version_info >= (3, 13):
-                value = _eval_type(value, base_globals, None, type_params=())
-            else:
-                value = _eval_type(value, base_globals, None)
-        except NameError:
-            # this is ok, it can be fixed with update_forward_refs
-            pass
-        annotations[name] = value
-    return annotations
+    return {
+        name: _resolve_annotation(value, base_globals)
+        for name, value in raw_annotations.items()
+    }
 
 
 TYPES_THAT_HAS_DEFAULT_VALUE = (int, float, tuple, list, set, dict, str)

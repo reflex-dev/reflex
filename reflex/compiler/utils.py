@@ -528,7 +528,7 @@ def compile_experimental_component_memo(
             )
             render._imports_cache = analysis.imports
         # Strings returned by the root's ``add_hooks`` can reference symbols
-        # (``refs``, ``StateContexts``, etc.) that normally reach this module
+        # (``refs``, ``EventLoopContext``, etc.) that normally reach this module
         # through descendants' ``_get_hooks_imports`` / ``_get_imports``. JS
         # imports are side-effect-free and dedup cleanly, so pulling the
         # whole subtree's imports here is safe even when some go unused.
