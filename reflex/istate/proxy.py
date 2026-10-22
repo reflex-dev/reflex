@@ -14,22 +14,26 @@ from collections.abc import (
     ItemsView,
     Iterable,
     Iterator,
+    Mapping,
     MappingView,
     Sequence,
     ValuesView,
 )
 from importlib import import_module
 from importlib.util import find_spec
-from types import MethodType
+from types import MappingProxyType, MethodType
 from typing import (
     TYPE_CHECKING,
     Any,
+    ClassVar,
+    Generic,
     Literal,
     NoReturn,
     Self,
     SupportsIndex,
     TypeVar,
     cast,
+    overload,
 )
 
 import wrapt
@@ -56,6 +60,8 @@ if TYPE_CHECKING:
 
 T_STATE = TypeVar("T_STATE", bound="BaseState")
 T = TypeVar("T")
+_KT = TypeVar("_KT")
+_VT = TypeVar("_VT")
 _AccessSpec = (
     tuple[Literal["attr"], str]
     | tuple[Literal["item"], Any]
@@ -617,8 +623,8 @@ def _new_proxy(
 
 
 def _proxied_items(
-    proxy: MutableProxy, pairs: Iterable[tuple[Any, Any]], with_keys: bool
-) -> Iterator[Any]:
+    proxy: MutableProxy, pairs: Iterable[tuple[_KT, _VT]], with_keys: bool
+) -> Iterator[tuple[_KT, _VT] | _VT]:
     """Read the values of a proxied dict's items back through the proxy.
 
     Args:
@@ -631,14 +637,15 @@ def _proxied_items(
     """
     path = proxy._self_path
     for key, value in pairs:
-        if type(value) not in _SCALAR_TYPES and (
-            isinstance(value, MutableProxy) or is_mutable_type(type(value))
+        value_type = type(value)
+        if value_type not in _SCALAR_TYPES and (
+            issubclass(value_type, MutableProxy) or is_mutable_type(value_type)
         ):
             value = proxy._wrap_mutable(value, (*path, ("item", key)))
         yield (key, value) if with_keys else value
 
 
-class _ProxyDictView(MappingView):
+class _ProxyDictView(MappingView, Generic[_KT, _VT]):
     """A view of a proxied dict that reads each value back through the proxy.
 
     `dict.values` and `dict.items` hand out the nested values unwrapped, so a
@@ -651,9 +658,32 @@ class _ProxyDictView(MappingView):
 
     _mapping: MutableProxy
     # Whether each element pairs the key with its value, as an items view does.
-    _with_keys = False
+    _with_keys: ClassVar[bool] = False
 
-    def __iter__(self) -> Iterator[Any]:
+    @property
+    def mapping(self) -> MappingProxyType[_KT, _VT]:
+        """The proxied dict, read-only, like the native view's `mapping`.
+
+        Returns:
+            A mapping proxy over the dict's proxy, so the nested values it
+            hands out keep tracking mutations.
+        """
+        return MappingProxyType(cast("Mapping[_KT, _VT]", self._mapping))
+
+    def __repr__(self) -> str:
+        """Represent the view as the native view of the wrapped dict does.
+
+        Returns:
+            The native view's representation.
+        """
+        wrapped = self._mapping.__wrapped__
+        return repr(wrapped.items() if self._with_keys else wrapped.values())
+
+    @overload
+    def __iter__(self: _ProxyItemsView[_KT, _VT]) -> Iterator[tuple[_KT, _VT]]: ...
+    @overload
+    def __iter__(self: _ProxyValuesView[_KT, _VT]) -> Iterator[_VT]: ...
+    def __iter__(self) -> Iterator[tuple[_KT, _VT] | _VT]:
         """Iterate the view in key order.
 
         Returns:
@@ -663,7 +693,13 @@ class _ProxyDictView(MappingView):
             self._mapping, self._mapping.__wrapped__.items(), self._with_keys
         )
 
-    def __reversed__(self) -> Iterator[Any]:
+    @overload
+    def __reversed__(
+        self: _ProxyItemsView[_KT, _VT],
+    ) -> Iterator[tuple[_KT, _VT]]: ...
+    @overload
+    def __reversed__(self: _ProxyValuesView[_KT, _VT]) -> Iterator[_VT]: ...
+    def __reversed__(self) -> Iterator[tuple[_KT, _VT] | _VT]:
         """Iterate the view in reverse key order, like a native dict view.
 
         Returns:
@@ -674,13 +710,13 @@ class _ProxyDictView(MappingView):
         )
 
 
-class _ProxyValuesView(_ProxyDictView, ValuesView):
+class _ProxyValuesView(_ProxyDictView[_KT, _VT], ValuesView[_VT]):
     """The values of a proxied dict."""
 
     __slots__ = ()
 
 
-class _ProxyItemsView(_ProxyDictView, ItemsView):
+class _ProxyItemsView(_ProxyDictView[_KT, _VT], ItemsView[_KT, _VT]):
     """The items of a proxied dict."""
 
     __slots__ = ()
@@ -688,7 +724,6 @@ class _ProxyItemsView(_ProxyDictView, ItemsView):
     _with_keys = True
 
 
-# The dict view methods, by name, replaced by views reading through the proxy.
 _DICT_VIEWS = {"items": _ProxyItemsView, "values": _ProxyValuesView}
 
 

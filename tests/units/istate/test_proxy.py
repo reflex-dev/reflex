@@ -11,7 +11,8 @@ from asyncio import CancelledError
 from collections.abc import Callable, Mapping
 from contextlib import asynccontextmanager
 from operator import attrgetter, itemgetter
-from typing import Any, ClassVar
+from types import MappingProxyType
+from typing import Any, ClassVar, assert_type
 
 import pytest
 from reflex_base.constants.state import FIELD_MARKER
@@ -28,6 +29,8 @@ from reflex.istate.proxy import (
     ReadOnlyStateProxy,
     StateProxy,
     _proxy_class,
+    _ProxyItemsView,
+    _ProxyValuesView,
     is_mutable_type,
 )
 from reflex.state import BaseState
@@ -1392,6 +1395,36 @@ def test_mutable_proxy_dict_view_tracks_nested_mutation(
         present, missing = ("c", present), ("c", missing)
     assert present in view
     assert missing not in view
+
+    # `repr` and `mapping` match the native view, with `mapping` reading through
+    # the proxy, so the nested values it hands out keep tracking mutations.
+    plain = {"a": {"x": 1, "z": 3}, "b": {"y": 2, "z": 3}, "c": {"w": 4}}
+    assert repr(view) == repr(getattr(plain, view_name)())
+    mapping = view.mapping
+    assert isinstance(mapping, MappingProxyType)
+    assert mapping == plain
+    assert isinstance(mapping["c"], MutableProxy)
+    with pytest.raises(TypeError, match="does not support item assignment"):
+        mapping["c"] = {}  # pyright: ignore[reportIndexIssue]
+    state._clean()
+    mapping["c"]["w"] = 5
+    assert state.dirty_vars == {"data"}
+    assert state.data["c"] == {"w": 5}
+
+
+def test_proxy_dict_views_carry_key_and_value_types() -> None:
+    """The views are generic in the dict's key and value types, per element shape."""
+    state = NestedMutableProxyState()
+    values_view: _ProxyValuesView[str, dict[str, int]] = _ProxyValuesView(state.data)
+    items_view: _ProxyItemsView[str, dict[str, int]] = _ProxyItemsView(state.data)
+    assert_type(next(iter(values_view)), dict[str, int])
+    assert_type(next(reversed(values_view)), dict[str, int])
+    assert_type(next(iter(items_view)), tuple[str, dict[str, int]])
+    assert_type(next(reversed(items_view)), tuple[str, dict[str, int]])
+    assert_type(values_view.mapping, MappingProxyType[str, dict[str, int]])
+    assert_type(items_view.mapping, MappingProxyType[str, dict[str, int]])
+    assert list(values_view) == [{"x": 1}, {"y": 2}]
+    assert list(items_view) == [("a", {"x": 1}), ("b", {"y": 2})]
 
 
 def test_mutable_proxy_dict_values_refresh_cached_var() -> None:
