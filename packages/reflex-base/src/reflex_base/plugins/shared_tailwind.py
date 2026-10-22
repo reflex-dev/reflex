@@ -161,7 +161,7 @@ export default {{
     theme: {json.dumps(theme or {})},
     {f"darkMode: {json.dumps(dark_mode)}," if dark_mode is not None else ""}
     {f"corePlugins: {json.dumps(core_plugins)}," if core_plugins is not None else ""}
-    {f"importants: {json.dumps(important)}," if important is not None else ""}
+    {f"important: {json.dumps(important)}," if important is not None else ""}
     {f"prefix: {json.dumps(prefix)}," if prefix is not None else ""}
     {f"separator: {json.dumps(separator)}," if separator is not None else ""}
     {f"presets: [{', '.join(f'preset{i}' for i in range(1, len(presets) + 1))}]," if presets else ""}

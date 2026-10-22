@@ -2103,7 +2103,8 @@ def _decode_asgi_headers(headers: Iterable[tuple[bytes, bytes]]) -> dict[str, st
 
     ASGI keeps a repeated header as separate pairs, so their values are combined in
     order: cookies with "; " (RFC 9113 section 8.2.3), any other field with ", "
-    (RFC 9110 section 5.3).
+    (RFC 9110 section 5.3). Header values that are not valid UTF-8 are decoded as
+    Latin-1.
 
     Args:
         headers: Raw (name, value) byte pairs from the ASGI scope.
@@ -2114,7 +2115,10 @@ def _decode_asgi_headers(headers: Iterable[tuple[bytes, bytes]]) -> dict[str, st
     decoded: dict[str, str] = {}
     for raw_name, raw_value in headers:
         name = raw_name.decode()
-        value = raw_value.decode()
+        try:
+            value = raw_value.decode()
+        except UnicodeDecodeError:
+            value = raw_value.decode("latin-1")
         if name in decoded:
             decoded[name] += ("; " if name == "cookie" else ", ") + value
         else:
@@ -2283,16 +2287,16 @@ class EventNamespace(AsyncNamespace):
         except (KeyError, IndexError):
             client_ip = environ.get("REMOTE_ADDR", "0.0.0.0")
 
-        # Unroll reverse proxy forwarded headers.
-        client_ip = (
-            headers
-            .get(
-                "x-forwarded-for",
-                client_ip,
-            )
-            .partition(",")[0]
-            .strip()
-        )
+        # X-Forwarded-For is client-controlled unless the request arrived through
+        # a configured chain of trusted reverse proxies.
+        trusted_proxy_hops = get_config().trusted_proxy_hops
+        if trusted_proxy_hops:
+            forwarded_for = headers.get("x-forwarded-for", "")
+            forwarded_ips = [
+                ip.strip() for ip in forwarded_for.split(",") if ip.strip()
+            ]
+            if len(forwarded_ips) >= trusted_proxy_hops:
+                client_ip = forwarded_ips[-trusted_proxy_hops]
         return {
             constants.RouteVar.SESSION_ID: sid,
             constants.RouteVar.HEADERS: headers,
