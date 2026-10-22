@@ -702,6 +702,9 @@ class CompileContext(BaseContext):
     auto_memo_components: dict[tuple[str, str | None], Any] = dataclasses.field(
         default_factory=dict
     )
+    # The auto memo tags the app root imports, including those a page also
+    # uses (filled when the app root is built).
+    app_root_memo_keys: set[str] = dataclasses.field(default_factory=set)
 
     def compile(
         self,
@@ -741,6 +744,7 @@ class CompileContext(BaseContext):
         self.stateful_routes.clear()
         self.memoize_wrappers.clear()
         self.auto_memo_components.clear()
+        self.app_root_memo_keys.clear()
 
         recorder = page_source_recorder
         for page in self.pages:

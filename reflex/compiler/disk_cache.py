@@ -321,23 +321,29 @@ def _memo_keys(page_ctx: PageContext) -> list[str]:
     return sorted(tag for tag, _ in page_ctx.memo_uses)
 
 
-def _uses_radix(root_component: object) -> bool:
-    """Whether a rendered tree holds a Radix Themes component.
+def _uses_radix(page_ctx: PageContext) -> bool:
+    """Whether a compiled page holds a Radix Themes component.
 
     The implicit ``RadixThemesPlugin`` enables itself when it compiles one;
-    a page reused from disk is not compiled, so the manifest remembers.
+    a page reused from disk is not compiled, so the manifest remembers. The
+    page's auto memos are walked too: memoization replaces a stateful Radix
+    component in the page tree with its wrapper.
 
     Args:
-        root_component: The page's root component.
+        page_ctx: The compiled page context.
 
     Returns:
-        True when the tree enables Radix Themes.
+        True when the page enables Radix Themes.
     """
     from reflex_components_radix.themes.base import RadixThemesComponent
 
     return any(
         issubclass(cls, RadixThemesComponent)
-        for cls in page_cache.component_tree_classes(root_component)
+        for root in (
+            page_ctx.root_component,
+            *(definition.component for definition in page_ctx.memo_uses.values()),
+        )
+        for cls in page_cache.component_tree_classes(root)
     )
 
 
@@ -393,7 +399,7 @@ def _manifest_page_entry(
         # no page uses any more.
         "memo_keys": _memo_keys(page_ctx),
         # Whether the page enables the implicit Radix Themes plugin.
-        "radix": _uses_radix(page_ctx.root_component),
+        "radix": _uses_radix(page_ctx),
     }
 
 
@@ -772,9 +778,6 @@ def write_manifest(
                 files[path] = entry
                 globals_[label] = path
 
-        page_memo_keys = {
-            tag for entry in pages_data.values() for tag in entry["memo_keys"]
-        }
         entry_file = page_cache._app_entrypoint_file(root)
         manifest = {
             "schema": _SCHEMA,
@@ -807,7 +810,7 @@ def write_manifest(
             "module_states": module_states,
             # The app root's inputs: the merged app wraps (by digest, in
             # insertion order) and the bundled libraries (see
-            # ``_app_root_change``), plus the memo files only the root uses.
+            # ``_app_root_change``), plus the memo files the root uses.
             "app_root": {
                 "wraps": {
                     _wrap_key_str(key): _wrap_digest(component)
@@ -816,11 +819,7 @@ def write_manifest(
                 "libraries": sorted(
                     RegistrationContext.ensure_context().bundled_libraries
                 ),
-                "memo_keys": sorted(
-                    tag
-                    for tag, _ in compile_ctx.auto_memo_components
-                    if tag not in page_memo_keys
-                ),
+                "memo_keys": sorted(compile_ctx.app_root_memo_keys),
             },
         }
         _write(manifest)
@@ -1052,7 +1051,11 @@ def partition_pages(
     misses: list[PageDefinition] = []
     for page in pages:
         deps = manifest_pages[page.route]["deps"]
-        if changed_hint is not None and changed_hint.isdisjoint(deps):
+        if (
+            changed_hint is not None
+            and changed_hint.isdisjoint(deps)
+            and page_cache.VOLATILE_DEP not in deps
+        ):
             continue
         if not validator.unchanged(deps):
             misses.append(page)

@@ -605,7 +605,6 @@ def test_reset_first_party_keeps_surviving_module_states(tmp_path):
 
 
 @pytest.mark.skipif(not hasattr(os, "fork"), reason="requires os.fork (POSIX)")
-@pytest.mark.skipif(not hasattr(os, "fork"), reason="requires os.fork (POSIX)")
 def test_reset_first_party_keeps_dynamic_states_surviving_modules_created(tmp_path):
     """A dynamic state a surviving module created at import stays registered.
 
@@ -672,6 +671,7 @@ def test_reset_first_party_keeps_dynamic_states_surviving_modules_created(tmp_pa
     assert out == b"1"
 
 
+@pytest.mark.skipif(not hasattr(os, "fork"), reason="requires os.fork (POSIX)")
 def test_reset_first_party_drops_memos_of_purged_modules(tmp_path):
     """A purged module's memos leave the registry; the module re-registers them.
 
@@ -734,6 +734,7 @@ def test_reset_first_party_drops_memos_of_purged_modules(tmp_path):
     assert out == b"1"
 
 
+@pytest.mark.skipif(not hasattr(os, "fork"), reason="requires os.fork (POSIX)")
 def test_reset_first_party_purges_modules_and_registries(tmp_path):
     """``_reset_first_party`` purges first-party modules and clears registries.
 

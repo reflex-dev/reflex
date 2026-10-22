@@ -513,6 +513,19 @@ def test_partition_pages_detects_changed_source(tmp_path):
     assert {p.route for p in miss} == {"/b"}
 
 
+def test_partition_pages_rebuilds_a_volatile_page_whatever_the_hint(tmp_path):
+    """A volatile page misses even when the watcher reports only other files."""
+    pages = [_FakePage(route="/a", component=_page_a)]
+    x = tmp_path / "x.py"
+    x.write_text("X = 1\n")
+    m = _manifest(
+        {"/a": {"deps": [str(x), page_cache.VOLATILE_DEP], "registration": "recorded"}},
+        files={str(x): page_cache.file_entry(str(x))},
+    )
+    miss = disk_cache.partition_pages(pages, m, _validator(m), {str(tmp_path / "y.py")})
+    assert [p.route for p in miss] == ["/a"]
+
+
 def test_pages_mismatch_names_the_change(tmp_path):
     """The page registry is an input of every page, so any change is global."""
     pages = [
@@ -2524,8 +2537,72 @@ def test_incremental_miss_drops_the_memo_no_page_uses(
     assert compiler_utils._read_memo_manifest(web) == {new_relative}
 
 
+def test_incremental_miss_keeps_the_memo_the_app_root_shares(
+    tmp_path, monkeypatch, preserve_memo_registries
+):
+    """A memo the app root also imports survives the page dropping it."""
+    from reflex.compiler import compiler
+    from reflex.compiler import utils as compiler_utils
+
+    web = _use_tmp_web_dir(tmp_path, monkeypatch)
+    app = rx.App()
+    app.add_page(_page_shared_one, route="/one")
+    pages = list(app._unevaluated_pages.values())
+    route_one = pages[0].route
+    ctx = _compile(pages)
+    shared = _memo_file_of(ctx.compiled_pages[route_one])
+    # An app wrap rendering the same stateful subtree imports the same memo.
+    compiler._memoize_stateful_app_wraps(
+        rx.fragment(rx.el.p(_MemoCacheState.value, class_name="shared")), ctx
+    )
+    memo_files, _ = compiler.compile_memo_components(ctx.auto_memo_components.values())
+    assert [Path(path) for path, _ in memo_files] == [shared]
+    for mpath, mcode in memo_files:
+        compiler_utils.write_file(compiler_utils.resolve_path_of_web_dir(mpath), mcode)
+    compiler_utils.prune_stale_memo_files(path for path, _ in memo_files)
+    disk_cache.write_manifest(ctx, pages, ctx.all_imports, root=tmp_path)
+    _stub_externals(app, monkeypatch)
+    manifest_path = web / disk_cache._MANIFEST_FILE
+    manifest = json.loads(manifest_path.read_text())
+    assert (
+        manifest["app_root"]["memo_keys"] == manifest["pages"][route_one]["memo_keys"]
+    )
+    monkeypatch.setitem(_SHARED_MEMO, "edit_one", True)
+    _stale_dep(manifest, route_one, str(tmp_path / "data.md"))
+    manifest_path.write_text(json.dumps(manifest))
+    assert (
+        disk_cache.try_incremental_rebuild(
+            app, compiler_plugins=[], prerender_routes=False, root=tmp_path
+        )
+        is True
+    )
+    assert shared.exists()
+
+
 def _page_radix() -> Component:
     return rx.el.div(rx.button("Radix"), _footer())
+
+
+def _page_memoized_radix() -> Component:
+    return rx.el.div(
+        rx.text("x", color=_MemoCacheState.value, on_click=rx.console_log("c"))
+    )
+
+
+def test_memoized_radix_component_is_recorded_as_radix(tmp_path, monkeypatch):
+    """A Radix component auto-memoization moved out of the page tree counts."""
+    from reflex_components_radix.plugin import RadixThemesPlugin
+
+    web = _use_tmp_web_dir(tmp_path, monkeypatch)
+    app = rx.App()
+    app.add_page(_page_memoized_radix, route="/m")
+    pages = list(app._unevaluated_pages.values())
+    ctx = _compile(pages, plugins=[RadixThemesPlugin.create_implicit()])
+    page_ctx = ctx.compiled_pages[pages[0].route]
+    assert page_ctx.memo_uses, "the Radix text must be auto-memoized"
+    disk_cache.write_manifest(ctx, pages, ctx.all_imports, root=tmp_path)
+    manifest = json.loads((web / disk_cache._MANIFEST_FILE).read_text())
+    assert manifest["pages"][pages[0].route]["radix"] is True
 
 
 def test_reused_radix_page_keeps_the_implicit_plugin_enabled(tmp_path, monkeypatch):

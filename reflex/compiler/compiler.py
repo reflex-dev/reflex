@@ -1162,6 +1162,7 @@ def _build_app_root(
             hydrate_fallback_definition.export_name, None
         ] = hydrate_fallback_definition
         hydrate_fallback_export = hydrate_fallback_definition.export_name
+        compile_ctx.app_root_memo_keys.add(hydrate_fallback_export)
     return app_root, hydrate_fallback_export
 
 
@@ -1198,6 +1199,7 @@ def _memoize_stateful_app_wraps(
         page_context=page_context,
         compile_context=compile_context,
     )
+    compile_context.app_root_memo_keys.update(tag for tag, _ in page_context.memo_uses)
     if not isinstance(compiled_root, Component):
         msg = "Compiled app root must be a Component."
         raise TypeError(msg)
