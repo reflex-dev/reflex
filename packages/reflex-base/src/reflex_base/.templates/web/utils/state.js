@@ -1830,13 +1830,16 @@ export const pyFlatMap = (arr, fn) =>
 /**
  * Key a set element by value, so structured elements (tuples, dataclasses)
  * compare the way Python compares them rather than by object identity.
- * Primitives are their own key; objects are keyed by their JSON with a
- * prefix that no primitive string can carry.
+ * Numbers, booleans and null are their own key; strings and objects get
+ * distinct prefixes so a string can never share a key with an object's JSON.
  * @param {*} x The set element.
  * @returns {*} The key of the element.
  */
-export const pySetKey = (x) =>
-  x !== null && typeof x === "object" ? "\0" + JSON.stringify(x) : x;
+export const pySetKey = (x) => {
+  if (typeof x === "string") return "s" + x;
+  if (x !== null && typeof x === "object") return "o" + JSON.stringify(x);
+  return x;
+};
 
 /**
  * Check whether a set (as an array) contains an element.
@@ -1891,15 +1894,14 @@ export const pySetDifference = (a, b) => {
 };
 
 /**
- * The elements in exactly one of a and b.
+ * The elements in exactly one of a and b, without duplicates even when an
+ * operand is a plain array that holds some.
  * @param {Array} a The first set.
  * @param {Array} b The second set.
  * @returns {Array} The symmetric difference.
  */
-export const pySetSymmetricDifference = (a, b) => [
-  ...pySetDifference(a, b),
-  ...pySetDifference(b, a),
-];
+export const pySetSymmetricDifference = (a, b) =>
+  pySetUnion(pySetDifference(a, b), pySetDifference(b, a));
 
 /**
  * Whether every element of a is in b.

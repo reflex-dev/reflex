@@ -91,6 +91,16 @@ def SetOperationsApp():
                 SetOperationsState.points.intersection({(3, 4)}).length(),
                 id="points_intersection_length",
             ),
+            # A plain list operand may hold duplicates; the result is still a set.
+            rx.text(
+                SetOperationsState.points.symmetric_difference([
+                    (3, 4),
+                    (5, 6),
+                    (5, 6),
+                ]).length(),
+                id="points_symmetric_difference_length",
+            ),
+            rx.text(SetOperationsState.points.contains("o[1,2]"), id="has_key_string"),
             # An unset optional set renders no children instead of failing.
             rx.foreach(
                 SetOperationsState.maybe,
@@ -164,6 +174,8 @@ def test_set_operations(set_operations_app: AppHarness, page: Page):
     expect(page.locator("id=has_point")).to_have_text("true")
     expect(page.locator("id=points_union_length")).to_have_text("3")
     expect(page.locator("id=points_intersection_length")).to_have_text("1")
+    expect(page.locator("id=points_symmetric_difference_length")).to_have_text("2")
+    expect(page.locator("id=has_key_string")).to_have_text("false")
 
     expect(page.locator(".maybe")).to_have_count(0)
     page.locator("id=set_maybe").click()
