@@ -7,7 +7,7 @@ import os
 import time
 import uuid
 from collections import Counter
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, AsyncIterator
 from types import ModuleType
 from typing import Any
 from unittest.mock import AsyncMock, Mock
@@ -424,6 +424,7 @@ async def test_oplock_contention_queue(
     state_manager_redis: StateManagerRedis,
     root_state: type[RedisTestState],
     event_log: list[dict[str, Any]],
+    monkeypatch: pytest.MonkeyPatch,
 ):
     """Test the oplock contention queue.
 
@@ -431,6 +432,7 @@ async def test_oplock_contention_queue(
         state_manager_redis: The StateManagerRedis to test.
         root_state: The root state class.
         event_log: The redis event log.
+        monkeypatch: The pytest monkeypatch fixture.
     """
     token = str(uuid.uuid4())
 
@@ -445,7 +447,6 @@ async def test_oplock_contention_queue(
     state_manager_2._oplock_enabled = True
 
     modify_started = asyncio.Event()
-    modify_2_started = asyncio.Event()
     modify_1_continue = asyncio.Event()
     modify_2_continue = asyncio.Event()
 
@@ -460,7 +461,6 @@ async def test_oplock_contention_queue(
 
     async def modify_2():
         await modify_started.wait()
-        modify_2_started.set()
         async with state_manager_2.modify_state(
             BaseStateToken(ident=token, cls=root_state),
         ) as new_state:
@@ -470,7 +470,6 @@ async def test_oplock_contention_queue(
 
     async def modify_3():
         await modify_started.wait()
-        modify_2_started.set()
         async with state_manager_2.modify_state(
             BaseStateToken(ident=token, cls=root_state),
         ) as new_state:
@@ -481,8 +480,34 @@ async def test_oplock_contention_queue(
     task_1 = asyncio.create_task(modify_1())
     task_2 = asyncio.create_task(modify_2())
     task_3 = asyncio.create_task(modify_3())
+    lock_key = state_manager_2._lock_key(BaseStateToken(ident=token, cls=root_state))
+    queued_waiters = 0
+    both_waiters_queued = asyncio.Event()
+    original_lock_waiter = StateManagerRedis._lock_waiter
 
-    await modify_2_started.wait()
+    @contextlib.asynccontextmanager
+    async def track_lock_waiter(
+        manager: StateManagerRedis, key: bytes
+    ) -> AsyncIterator[asyncio.Event]:
+        nonlocal queued_waiters
+        async with original_lock_waiter(manager, key) as lock_released_event:
+            if manager is state_manager_2 and key == lock_key:
+                queued_waiters += 1
+                if queued_waiters == 2:
+                    both_waiters_queued.set()
+            yield lock_released_event
+
+    monkeypatch.setattr(StateManagerRedis, "_lock_waiter", track_lock_waiter)
+
+    # Do not release the lock until both modifications have joined its queue.
+    try:
+        await asyncio.wait_for(both_waiters_queued.wait(), timeout=5)
+    except TimeoutError:
+        for task in (task_1, task_2, task_3):
+            task.cancel()
+        await asyncio.gather(task_1, task_2, task_3, return_exceptions=True)
+        await state_manager_2.close()
+        raise
 
     # Let modify 1 complete
     modify_1_continue.set()
