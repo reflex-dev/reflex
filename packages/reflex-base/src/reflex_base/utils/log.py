@@ -511,15 +511,20 @@ def supervise_output(args: list[str]) -> int:
         int | signal.Handlers | Callable[[int, FrameType | None], Any] | None,
     ] = {}
 
-    def forward_signal(signum: int, frame: FrameType | None) -> None:
-        """Forward shutdown signals, queueing them until the child exists."""
-        if proc is None:
-            pending_signals.append(signum)
-        elif proc.poll() is None:
+    def forward_to_child(signum: int) -> None:
+        """Forward one signal to the running child process group."""
+        if proc is not None and proc.poll() is None:
             with contextlib.suppress(ProcessLookupError):
                 killpg = getattr(os, "killpg", None)
                 if callable(killpg):
                     killpg(proc.pid, signum)
+
+    def forward_signal(signum: int, frame: FrameType | None) -> None:
+        """Forward shutdown signals, queueing them until the child exists."""
+        if proc is None:
+            pending_signals.append(signum)
+        else:
+            forward_to_child(signum)
         previous_handler = previous_handlers.get(signum)
         # The default SIGINT handler raises KeyboardInterrupt before the child exits.
         if (
@@ -561,7 +566,7 @@ def supervise_output(args: list[str]) -> int:
         if os.name != "posix":
             signal.signal(signal.SIGTERM, lambda *_: proc.terminate())
         for signum in pending_signals:
-            forward_signal(signum, None)
+            forward_to_child(signum)
         pending_signals.clear()
         while True:
             try:

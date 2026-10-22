@@ -1239,6 +1239,12 @@ from reflex_base.utils import log
 
 if not log.is_output_supervised():
     mode, marker, ready = sys.argv[1:]
+
+    def previous_handler(signum, frame):
+        with Path(f"{marker}.handler").open("a") as handler_calls:
+            handler_calls.write("x")
+
+    signal.signal(signal.SIGINT, previous_handler)
     if mode == "setup":
         real_popen = log.subprocess.Popen
 
@@ -1296,6 +1302,7 @@ def test_supervise_output_does_not_double_forward_terminal_sigint(tmp_path):
         assert proc.wait(timeout=10) == 0
 
     assert marker.read_text() == "1"
+    assert Path(f"{marker}.handler").read_text() == "x"
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="SIGINT is POSIX-only")
@@ -1316,6 +1323,7 @@ def test_supervise_output_forwards_sigint_during_setup(tmp_path):
         assert proc.wait(timeout=10) == 0
 
     assert marker.read_text() == "1"
+    assert Path(f"{marker}.handler").read_text() == "x"
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="SIGHUP is POSIX-only")
