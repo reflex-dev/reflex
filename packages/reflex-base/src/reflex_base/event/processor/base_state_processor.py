@@ -23,8 +23,10 @@ from reflex_base.event.context import EventContext
 from reflex_base.event.processor.event_processor import EventProcessor, EventQueueEntry
 from reflex_base.event.processor.future import EventFuture
 from reflex_base.registry import RegisteredEventHandler
+from reflex_base.utils.form import form_data_as_dict, transform_form_data
 from reflex_base.utils.format import format_event_handler
 from reflex_base.utils.serializers import deserializers
+from reflex_base.utils.types import is_non_string_sequence
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +86,7 @@ def _check_valid_yield(events: Any, handler_name: str = "unknown") -> Any:
     if events is None or _is_valid_type(events):
         return events
 
-    if not (isinstance(events, Sequence) and not isinstance(events, (str, bytes))):
+    if not is_non_string_sequence(events):
         events = [events]
 
     try:
@@ -121,6 +123,7 @@ def _transform_event_arg(value: Any, hinted_args: Any) -> Any:
     Raises:
         ValueError: If a string value is received for an int or float type and cannot be converted.
     """
+    value = transform_form_data(value, hinted_args)
     if hinted_args is Any:
         return value
     if types.is_union(hinted_args):
@@ -184,6 +187,34 @@ def _transform_event_payload(
             msg = f"Error transforming event argument '{arg}' with value '{value}' and type hint '{hinted_args}'"
             raise ValueError(msg) from ex
     return transformed
+
+
+def _prepare_event_payload(
+    handler: EventHandler, payload: Mapping[str, Any]
+) -> dict[str, Any]:
+    """Transform an event payload for a handler's annotations.
+
+    Args:
+        handler: The event handler.
+        payload: The event payload.
+
+    Returns:
+        The transformed payload or, when it cannot be transformed, the original
+        payload with any form data as a dict.
+    """
+    try:
+        # Resolved hints are cached on the handler, empty for an unannotated one;
+        # fall back for ones that were not resolvable at registration (None),
+        # raising again if still unresolved.
+        type_hints = handler._type_hints
+        if type_hints is None:
+            type_hints = types.get_type_hints(handler.fn)
+        return _transform_event_payload(payload, type_hints)
+    except Exception as ex:
+        logger.warning(
+            f"Error transforming event payload for handler {handler.fn.__qualname__}: {ex}"
+        )
+        return {arg: form_data_as_dict(value) for arg, value in payload.items()}
 
 
 async def _route_events(ctx: EventContext, events: Sequence[Event]) -> None:
@@ -302,20 +333,7 @@ async def process_event(
     """
     fn = handler.fn
     handler_name = fn.__qualname__
-
-    try:
-        # Resolved hints are cached on the handler, empty for an unannotated one;
-        # fall back for ones that were not resolvable at registration (None),
-        # raising again if still unresolved.
-        type_hints = handler._type_hints
-        if type_hints is None:
-            type_hints = types.get_type_hints(fn)
-        payload = _transform_event_payload(payload, type_hints)
-    except Exception as ex:
-        # No transformation was possible, continue with the original payload
-        logger.warning(
-            f"Error transforming event payload for handler {handler_name}: {ex}"
-        )
+    payload = _prepare_event_payload(handler, payload)
 
     # Handle async functions.
     if handler._is_coroutine_function:
@@ -375,7 +393,8 @@ class BaseStateEventProcessor(EventProcessor):
     frontend.
     """
 
-    async def _rehydrate(self, root_state: BaseState):
+    @staticmethod
+    async def _rehydrate(root_state: BaseState):
         """Rehydrate the state by calling the hydrate event handler.
 
         Args:
@@ -523,6 +542,10 @@ class BaseStateEventProcessor(EventProcessor):
         # background task's own state changes are emitted (and cleaned) by its
         # `async with self` context exits, which re-acquire the lock.
         proxy = StateProxy(substate)
+        # Leave the tree loaded under the lock to the proxy, which replaces it on
+        # `async with self`. A manager like redis loads a fresh tree for every
+        # lock, so these locals would pin an extra copy for the whole task.
+        del state, substate, root_state
         handler_error: BaseException | None = None
         try:
             await process_event(

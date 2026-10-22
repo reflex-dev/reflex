@@ -18,6 +18,9 @@ Use `reflex deploy` for the managed workflow. Follow this page when you need to 
 - Moving from managed hosting also requires transferring persistent data, secrets, domains, and any external service configuration.
 - You operate the servers, TLS, monitoring, backups, and updates in a self-hosted environment.
 
+For multiple backend replicas, regional state, durable jobs, and recovery tests,
+see [Scaling Reflex Apps](/docs/hosting/scaling/).
+
 ## Managed vs. self-hosted
 
 | Deployment choice | Managed (`reflex deploy`) | Self-hosted |
@@ -44,8 +47,8 @@ Production mode compiles the app, builds an optimized static frontend, and
 serves it together with the backend (event websocket, `/ping`, `/_upload`)
 from a single server on port `3000`. Pass `--frontend-port` or
 `--backend-port` to listen on a different port. When redis is configured,
-the server runs `2 * cpu_count + 1` worker processes; set `GRANIAN_WORKERS`
-to override this.
+the server runs up to 8 backend workers by default (`2 * cpu_count + 1`, capped at 8).
+When using Granian, set `GRANIAN_WORKERS` to override the default, including to use more workers.
 
 The frontend and backend can also run as separate processes, for example to
 serve the frontend from a CDN and scale the backend independently. The
@@ -142,6 +145,16 @@ It is also possible to export the components without zipping. To do
 this, use the `--no-zip` parameter. This provides the frontend in the
 `.web/build/client/` directory and the backend can be found in the root directory of
 the project.
+
+Production exports that share a `.web` directory wait for one another from
+compilation through ZIP creation, on macOS, Linux, and Windows. Backend-only
+exports wait too, since they archive `.web/backend`, but never create `.web`.
+Production and preview startup hold the same lock while compiling and building
+and release it before serving. The lock lives in Reflex's per-user data
+directory (`REFLEX_DIR`), not in `.web`, so commands coordinate only when they
+share that directory. Initialization, development hot reload, and other tools
+writing to `.web` are outside this lock, so avoid running them during an
+export.
 
 The export also writes a pre-compressed `.gz` copy of the compressible text
 assets (JS, CSS, HTML, JSON, SVG, and similar), so configure the static host

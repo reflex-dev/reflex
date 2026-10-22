@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import copy
 import dataclasses
 import datetime
 import enum
 import functools
+import gc
 import inspect
 import io
 import json
@@ -13,14 +15,16 @@ import logging
 import math
 import os
 import pickle
+import subprocess
 import sys
 import threading
 from collections import namedtuple
 from collections.abc import AsyncGenerator, Callable, Mapping
 from hashlib import md5
+from pathlib import Path
 from textwrap import dedent
 from types import MethodType, ModuleType
-from typing import Any, ClassVar, Literal, TypeVar, cast
+from typing import Any, ClassVar, ForwardRef, Literal, TypeVar, cast
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -34,6 +38,7 @@ from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import Event, EventHandler
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils import format, types
 from reflex_base.utils.exceptions import (
     InvalidLockWarningThresholdError,
@@ -74,7 +79,9 @@ from reflex.state import (
     OnLoadInternalState,
     State,
     StateUpdate,
+    _frontend_schema,
     _load_events_for_page,
+    all_base_state_classes,
     is_serializable,
     state_snapshot_hashes,
 )
@@ -1858,16 +1865,13 @@ async def test_uncached_async_computed_var_unchanged_omitted_from_delta():
     assert await aus._get_resolved_delta() == {}
 
 
-# Withholding an async var can only close the wrapper coroutine; the getter
-# coroutine it holds is then collected unawaited, which a filter cannot reach
-# and this test is not about.
-@pytest.mark.filterwarnings(
-    "ignore:coroutine '.*_awaitable_result' was never awaited:RuntimeWarning",
-)
 @pytest.mark.parametrize("mode", ["dropped", "replaced"])
 @pytest.mark.parametrize("is_async", [False, True])
 async def test_uncached_var_withheld_by_delta_override_is_resent(
-    mode: str, is_async: bool, monkeypatch: pytest.MonkeyPatch
+    mode: str,
+    is_async: bool,
+    monkeypatch: pytest.MonkeyPatch,
+    recwarn: pytest.WarningsRecorder,
 ):
     """An uncached var withheld by a `get_delta` override is sent once released.
 
@@ -1881,6 +1885,7 @@ async def test_uncached_var_withheld_by_delta_override_is_resent(
         mode: Whether the override drops the key or replaces its value.
         is_async: Whether the uncached var is an async one.
         monkeypatch: Pytest monkeypatch fixture.
+        recwarn: Fixture capturing warnings from withheld coroutines.
     """
 
     class WithheldState(BaseState):
@@ -1964,6 +1969,8 @@ async def test_uncached_var_withheld_by_delta_override_is_resent(
     if mode == "replaced":
         restored[full_name][key] = "secret-1"
     assert await state._get_resolved_delta() == restored
+    gc.collect()
+    assert not [warning for warning in recwarn if warning.category is RuntimeWarning]
 
 
 async def test_uncached_computed_var_recorded_only_once_delivered():
@@ -5661,6 +5668,246 @@ def test_deserialize_previous_schema_format(type_name: str):
             BaseState._deserialize(data)
 
 
+class FrontendSchemaRoot(BaseState):
+    """Root of a tree whose frontend schema the tests below hash."""
+
+    value: Field[int] = field(default=1)
+
+
+class FrontendSchemaChild(FrontendSchemaRoot):
+    """A substate with a base var, a computed var and an event handler."""
+
+    name: Field[str] = field(default="")
+
+    @computed_var
+    def shout(self) -> str:
+        """The name, shouted.
+
+        Returns:
+            The upper-cased name.
+        """
+        return self.name.upper()
+
+    @rx.event
+    def bump(self):
+        """Do nothing: only the handler's name reaches the frontend."""
+
+
+_FRONTEND_SCHEMA_SCRIPT = """
+import reflex as rx
+from reflex.state import BaseState
+
+class Root(BaseState):
+    value: int = 1
+
+class Child(Root):
+    name: str = ""
+
+    @rx.var
+    def shout(self) -> str:
+        return self.name.upper()
+
+    @rx.event
+    def bump(self):
+        pass
+
+print(Root._to_frontend_schema())
+"""
+
+
+def test_frontend_schema_is_stable_across_processes(tmp_path: Path):
+    """The same state tree hashes to the same value in two fresh interpreters.
+
+    Args:
+        tmp_path: pytest fixture for a temporary directory.
+    """
+    script = tmp_path / "frontend_schema.py"
+    script.write_text(_FRONTEND_SCHEMA_SCRIPT)
+    hashes = [
+        subprocess.run(
+            [sys.executable, str(script)],
+            capture_output=True,
+            text=True,
+            check=True,
+            cwd=tmp_path,
+        ).stdout.strip()
+        for _ in range(2)
+    ]
+    assert hashes[0] == hashes[1]
+    # A hash is one fixed-size token: the frontend sends it on every connect.
+    assert len(hashes[0]) == 32
+
+
+def _frontend_schema_with(*patches: contextlib.AbstractContextManager) -> str:
+    """Hash the FrontendSchemaRoot tree while the given patches apply.
+
+    Args:
+        patches: Context managers that change the tree in place.
+
+    Returns:
+        The frontend schema hash under those changes.
+    """
+    with contextlib.ExitStack() as stack:
+        for p in patches:
+            stack.enter_context(p)
+        _frontend_schema.cache_clear()
+        try:
+            return FrontendSchemaRoot._to_frontend_schema()
+        finally:
+            _frontend_schema.cache_clear()
+
+
+def test_frontend_schema_ignores_defaults():
+    """A changed default keeps the compiled frontend compatible."""
+    schema = FrontendSchemaRoot._to_frontend_schema()
+    assert FrontendSchemaRoot._to_frontend_schema() is schema
+
+    name_field = FrontendSchemaChild.get_fields()["name"]
+    assert (
+        _frontend_schema_with(patch.multiple(name_field, default="changed")) == schema
+    )
+    assert (
+        _frontend_schema_with(
+            patch.multiple(
+                name_field,
+                default=dataclasses.MISSING,
+                default_factory=lambda: "factory",
+            )
+        )
+        == schema
+    )
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        "state_renamed",
+        "state_moved",
+        "var_added",
+        "var_renamed",
+        "var_retyped",
+        "computed_var_added",
+        "computed_var_renamed",
+        "computed_var_retyped",
+        "event_handler_added",
+        "event_handler_renamed",
+    ],
+)
+def test_frontend_schema_changes_with_tree_vars_and_handlers(change: str):
+    """Each change the compiled frontend depends on changes the hash.
+
+    Args:
+        change: The change applied to the state tree.
+    """
+    child = FrontendSchemaChild
+    schema = FrontendSchemaRoot._to_frontend_schema()
+    name_field = child.get_fields()["name"]
+    shout = child.computed_vars["shout"]
+
+    def renamed(mapping: Mapping[str, Any], old: str, new: str):
+        """Patch ``mapping`` with key ``old`` renamed to ``new``.
+
+        Args:
+            mapping: The class-level dict to patch.
+            old: The key to rename.
+            new: Its new name.
+
+        Returns:
+            The patch context manager.
+        """
+        values = {k: v for k, v in mapping.items() if k != old}
+        return patch.dict(mapping, {**values, new: mapping[old]}, clear=True)
+
+    patches: list[contextlib.AbstractContextManager] = {
+        "state_renamed": [
+            patch.object(child, "get_full_name", classmethod(lambda cls: "renamed"))
+        ],
+        "state_moved": [
+            patch.object(child, "get_full_name", classmethod(lambda cls: "other.child"))
+        ],
+        "var_added": [
+            patch.dict(child.base_vars, {"extra": child.base_vars["name"]}),
+            patch.dict(child.get_fields(), {"extra": name_field}),
+        ],
+        "var_renamed": [
+            renamed(child.base_vars, "name", "renamed"),
+            renamed(child.get_fields(), "name", "renamed"),
+        ],
+        "var_retyped": [patch.multiple(name_field, type_=int)],
+        "computed_var_added": [patch.dict(child.computed_vars, {"extra": shout})],
+        "computed_var_renamed": [renamed(child.computed_vars, "shout", "renamed")],
+        "computed_var_retyped": [
+            patch.dict(child.computed_vars, {"shout": shout._replace(_var_type=int)})
+        ],
+        "event_handler_added": [
+            patch.dict(child.event_handlers, {"extra": child.event_handlers["bump"]})
+        ],
+        "event_handler_renamed": [renamed(child.event_handlers, "bump", "renamed")],
+    }[change]
+    assert _frontend_schema_with(*patches) != schema
+    # The tree is back as it was once the patches are gone.
+    assert FrontendSchemaRoot._to_frontend_schema() == schema
+
+
+def test_frontend_schema_changes_when_state_added():
+    """Defining a new substate invalidates the cached hash without a manual clear."""
+    schema = FrontendSchemaRoot._to_frontend_schema()
+
+    class FrontendSchemaAdded(FrontendSchemaRoot):
+        pass
+
+    try:
+        assert FrontendSchemaRoot._to_frontend_schema() != schema
+    finally:
+        _forget_state(FrontendSchemaAdded)
+    assert FrontendSchemaRoot._to_frontend_schema() == schema
+
+
+def _forget_state(state: type[BaseState]) -> None:
+    """Remove a substate defined by a test from the registry and the caches.
+
+    Args:
+        state: The substate to forget.
+    """
+    context = RegistrationContext.get()
+    parent = state.get_parent_state()
+    assert parent is not None
+    context.get_substates(parent).discard(state)
+    context.base_states.pop(state.get_full_name(), None)
+    all_base_state_classes.pop(state.get_full_name(), None)
+    _frontend_schema.cache_clear()
+
+
+def test_frontend_schema_is_per_registration_context():
+    """Apps in one process run on forked contexts: each hashes its own tree."""
+    schema = FrontendSchemaRoot._to_frontend_schema()
+    token = RegistrationContext.set(RegistrationContext.get().fork())
+    try:
+
+        class FrontendSchemaForked(FrontendSchemaRoot):
+            pass
+
+        forked = FrontendSchemaRoot._to_frontend_schema()
+        assert forked != schema
+        assert FrontendSchemaRoot._to_frontend_schema() == forked
+    finally:
+        RegistrationContext.reset(token)
+    # The original context never saw the forked state, cached or not.
+    assert FrontendSchemaRoot._to_frontend_schema() == schema
+
+
+def test_frontend_schema_leaves_out_backend_vars():
+    """Backend-only vars never reach the frontend, so they do not affect the hash."""
+    schema = FrontendSchemaRoot._to_frontend_schema()
+    backend_shout = FrontendSchemaChild.computed_vars["shout"]._replace(backend=True)
+    assert (
+        _frontend_schema_with(
+            patch.dict(FrontendSchemaChild.computed_vars, {"_hidden": backend_shout})
+        )
+        == schema
+    )
+
+
 def test_reset_client_storage_uses_declared_factories():
     """Hydration evaluates declared factories for all browser storage types."""
     calls = []
@@ -7075,3 +7322,93 @@ def test_undeclared_double_underscore_name_is_rejected(clean_registration_contex
         with pytest.raises(SetUndefinedStateVarError):
             setattr(state, name, 1)
     assert not state.dirty_vars
+
+
+_NO_DEFAULT = object()
+
+
+@pytest.mark.parametrize(
+    ("name", "annotation", "default"),
+    [
+        ("items", "list[MissingItem]", []),
+        ("items", "dict[str, MissingItem]", {}),
+        ("items", "MissingItem | None", None),
+        ("items", "list[MissingItem]", _NO_DEFAULT),
+        ("items", "dict[str, MissingItem]", _NO_DEFAULT),
+        ("items", "MissingItem | None", _NO_DEFAULT),
+        ("items", "MissingItem", _NO_DEFAULT),
+        ("items", "MissingItem", None),
+        ("items", list[ForwardRef("MissingItem")], []),
+        ("_items", "list[MissingItem]", []),
+    ],
+    ids=[
+        "list",
+        "dict",
+        "optional",
+        "list-no-default",
+        "dict-no-default",
+        "optional-no-default",
+        "bare-no-default",
+        "bare-none-default",
+        "nested-forward-ref",
+        "backend",
+    ],
+)
+def test_var_annotation_with_undefined_name_raises_name_error(
+    name: str, annotation: Any, default: Any
+) -> None:
+    """An annotation naming an undefined symbol raises a NameError naming it.
+
+    With postponed annotations the unresolved annotation used to reach var
+    typing as a ForwardRef and fail with an unrelated TypeError or
+    AttributeError, whether or not the var has a default. On Python 3.14 an
+    annotation is evaluated lazily, and an undefined name inside a generic
+    stays a nested ForwardRef.
+
+    Args:
+        name: The name of the var.
+        annotation: The annotation, which names a symbol that does not exist.
+        default: The default value of the var, or _NO_DEFAULT for none.
+    """
+    namespace: dict[str, Any] = {
+        "__module__": __name__,
+        "__annotations__": {name: annotation},
+    }
+    if default is not _NO_DEFAULT:
+        namespace[name] = default
+
+    with pytest.raises(NameError, match="MissingItem"):
+        type("UndefinedNameState", (BaseState,), namespace)
+
+
+@pytest.mark.parametrize(
+    ("name", "annotation", "value"),
+    [
+        ("cache", "ClassVar[MissingItem]", _NO_DEFAULT),
+        ("__client", "MissingItem | None", None),
+        ("total", "MissingItem", property(lambda self: 0)),
+    ],
+    ids=["classvar", "private", "descriptor"],
+)
+def test_non_var_annotation_with_undefined_name_is_allowed(
+    name: str, annotation: str, value: Any
+) -> None:
+    """An annotation that declares no var is not resolved, so its symbol may be undefined.
+
+    A symbol imported only under TYPE_CHECKING is undefined at runtime.
+
+    Args:
+        name: The name of the attribute.
+        annotation: The annotation, which names a symbol that does not exist.
+        value: The value of the attribute, or _NO_DEFAULT for none.
+    """
+    namespace: dict[str, Any] = {
+        "__module__": __name__,
+        "__annotations__": {name: annotation},
+    }
+    if value is not _NO_DEFAULT:
+        namespace[name] = value
+
+    state = type("UndefinedNonVarState", (BaseState,), namespace)
+
+    assert name not in state.get_fields()
