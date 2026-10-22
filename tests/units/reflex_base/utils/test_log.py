@@ -1388,7 +1388,7 @@ def test_truncate_json_record_bounds_serialization_retries(monkeypatch):
         calls += 1
         return original_dumps(*args, **kwargs)
 
-    monkeypatch.setattr(log.json, "dumps", count_dumps)
+    monkeypatch.setattr(json, "dumps", count_dumps)
     bounded = log._truncate_json_record(record + b" ", max_bytes)
 
     assert len(bounded) <= max_bytes
