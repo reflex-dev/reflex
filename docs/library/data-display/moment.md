@@ -185,6 +185,40 @@ rx.vstack(
 )
 ```
 
+### Shared defaults
+
+Wrap components in `rx.moment_provider` to give them a shared `locale`,
+`format`, `timezone`, `local`, `parse`, `element`, `filters`, or `renderers`
+default. A prop set on a component overrides the provider. Components outside
+the provider keep English. Set `pool=True` to update all descendants from one
+timer that ticks every `interval` milliseconds.
+
+```python demo exec
+def moment_provider_example():
+    return rx.moment_provider(
+        rx.moment("2024-03-14"),
+        rx.moment("2024-03-14", locale="en"),
+        locale="fr",
+        format="D MMM YYYY",
+        timezone="Europe/Paris",
+    )
+```
+
+### Additional react-moment 2.x options
+
+`rx.moment` also supports the `utc`, `calendar`, `from_`, `to`, `ago`, `element`,
+`fallback`, `filters`, and `renderers` options from `react-moment` 2.x. In Python,
+`from_` maps to the JavaScript `from` prop. `filters` and `renderers` accept
+JavaScript function values:
+
+```python
+rx.moment(
+    "2024-03-14",
+    format="MMMM",
+    filters=[rx.Var("(content) => content.toUpperCase()")],
+)
+```
+
 ### Timezones
 
 You can also set dates to display in a specific timezone:
@@ -213,27 +247,6 @@ Starting with `reflex-components-moment` 0.9.4, this includes static dates and
 It fires again when the component remounts, such as after a reload or route navigation.
 React Strict Mode can invoke the mount event twice in development, so handlers with
 side effects should account for repeated calls.
-
-### Additional react-moment 2.x options
-
-`rx.moment` also supports the `utc`, `calendar`, `from_`, `to`, `ago`, `element`,
-`fallback`, `filters`, and `renderers` options from `react-moment` 2.x. In Python,
-`from_` maps to the JavaScript `from` prop. `filters` and `renderers` accept
-JavaScript function values.
-
-The old singular `filter` prop was removed by `react-moment` 2.x; use `filters`
-instead. Shared defaults are configured with `rx.moment_provider`, not a
-`settings` prop on `rx.moment`:
-
-```python demo exec
-def moment_provider_example():
-    return rx.moment_provider(
-        rx.moment("2024-03-14"),
-        locale="fr",
-        format="D MMM YYYY",
-        timezone="Europe/Paris",
-    )
-```
 
 Connect an event handler with the `on_change` prop:
 

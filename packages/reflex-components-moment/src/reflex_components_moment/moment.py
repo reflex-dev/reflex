@@ -35,7 +35,15 @@ class MomentDelta:
 def _locale_timezone_imports(
     locale: Var[str] | None, timezone: Var[str] | None
 ) -> ImportDict:
-    """Return the locale and timezone imports required by Moment props."""
+    """Return the locale and timezone imports required by Moment props.
+
+    Args:
+        locale: The locale prop, if set.
+        timezone: The timezone prop, if set.
+
+    Returns:
+        The locale and timezone module imports.
+    """
     imports: ImportDict = {}
     if isinstance(locale, LiteralVar):
         if locale._var_value != "en":
@@ -56,9 +64,6 @@ class MomentProvider(Component):
 
     pool: Var[bool] = field(doc="Use one timer for all descendant Moment components.")
     interval: Var[int] = field(doc="The interval in milliseconds for the pooled timer.")
-    moment: Var[Any] = field(
-        doc="The moment.js instance used by descendant components."
-    )
     locale: Var[str] = field(doc="The default locale for descendant Moment components.")
     local: Var[bool] = field(doc="Display descendant dates in local time by default.")
     format: Var[str] = field(doc="The default date format for descendants.")
@@ -75,14 +80,12 @@ class MomentProvider(Component):
     timezone: Var[str] = field(doc="The default timezone for descendant components.")
 
     def add_imports(self) -> ImportDict:
-        """Import the provider and modules required by its defaults.
+        """Import the locale and timezone modules required by the defaults.
 
         Returns:
-            Imports for the provider, locale, and timezone modules.
+            The locale and timezone module imports.
         """
-        imports: ImportDict = {"react-moment@2.0.2": ImportVar(tag="MomentProvider")}
-        imports.update(_locale_timezone_imports(self.locale, self.timezone))
-        return imports
+        return _locale_timezone_imports(self.locale, self.timezone)
 
 
 class Moment(NoSSRComponent, MemoizationLeaf):
@@ -90,7 +93,6 @@ class Moment(NoSSRComponent, MemoizationLeaf):
 
     tag: str | None = "Moment"
     is_default = True
-    _rename_props = {"from_": "from"}
     library: str | None = "react-moment@2.0.2"
     lib_dependencies: list[str] = ["moment@2.31.0"]
 
@@ -205,37 +207,12 @@ class Moment(NoSSRComponent, MemoizationLeaf):
     tz: Var[str] = field(doc="Display the date in the given timezone.")
 
     locale: Var[str] = field(
-        doc="The locale for this component. Defaults to the nearest MomentProvider locale or English.",
+        doc="The locale for this component. Defaults to the nearest rx.moment_provider locale, or English.",
     )
 
     on_change: EventHandler[passthrough_event_spec(str)] = field(
         doc="Fires when the component mounts and when the date changes, including when interval is 0. React Strict Mode can invoke the mount event twice in development."
     )
-
-    @classmethod
-    def create(cls, *children, **props) -> Moment:
-        """Create a Moment component.
-
-        Args:
-            *children: The date value to render.
-            **props: The props passed to the component.
-
-        Returns:
-            The Moment component.
-
-        Raises:
-            TypeError: If a removed or unsupported configuration prop is used.
-        """
-        if "filter" in props:
-            msg = "The `filter` prop was removed in react-moment 2.x; use `filters` instead."
-            raise TypeError(msg)
-        if "form_at" in props:
-            msg = "`form_at` is not a react-moment prop; use `format` to format the date or `from_` to show a relative interval."
-            raise TypeError(msg)
-        if "settings" in props:
-            msg = "`settings` is not a react-moment 2.x prop; use rx.moment_provider(...) with shared defaults or set props on each Moment."
-            raise TypeError(msg)
-        return super().create(*children, **props)
 
     def add_imports(self) -> ImportDict:
         """Add the imports for the Moment component.
@@ -243,19 +220,21 @@ class Moment(NoSSRComponent, MemoizationLeaf):
         Returns:
             The import dict for the component.
         """
-        imports: ImportDict = {
-            "moment@2.31.0": ImportVar(tag="moment", is_default=True)
-        }
-        imports.update(_locale_timezone_imports(self.locale, self.tz))
+        imports = _locale_timezone_imports(self.locale, self.tz)
         if self.duration is not None or self.duration_from_now is not None:
             imports["moment-duration-format@2.3.2"] = ImportVar(tag=None)
 
         return imports
 
-    def add_custom_code(self) -> list[str]:
-        """Set Moment's global fallback locale after locale modules are loaded.
+    @staticmethod
+    def _get_app_wrap_components() -> dict[tuple[int, str], Component]:
+        """Wrap the app in an English MomentProvider.
+
+        Moment components without a locale read it from the nearest provider,
+        so they never fall back to moment's global locale, which every locale
+        module import changes.
 
         Returns:
-            Module-level code that keeps unprovided Moment instances in English.
+            The root MomentProvider.
         """
-        return ['moment.locale("en");']
+        return {(10, "MomentProvider"): MomentProvider.create(locale="en")}
