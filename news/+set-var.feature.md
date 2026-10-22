@@ -1,0 +1,1 @@
+Add `rx.vars.SetVar` for `set[T]` and `frozenset[T]` state vars and literals, with set operations (`contains`, `union`, `intersection`, `issubset`, ...) and `to_array()` for list operations and `rx.foreach`. Array operations used directly on a set var are deprecated.
