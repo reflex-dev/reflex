@@ -278,7 +278,7 @@ class AccordionItem(AccordionComponent):
             "width": "100%",
             "margin_top": "1px",
             "border_top": divider_style,
-            "&:first-child": {
+            "&:first-of-type": {
                 "margin_top": 0,
                 "border_top": 0,
                 "border_top_left_radius": "var(--radius-4)",
@@ -292,7 +292,7 @@ class AccordionItem(AccordionComponent):
                 "position": "relative",
                 "z_index": 1,
             },
-            _inherited_variant_selector("ghost", "&:first-child"): {
+            _inherited_variant_selector("ghost", "&:first-of-type"): {
                 "border_radius": 0,
                 "border_top": divider_style,
             },
