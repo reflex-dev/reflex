@@ -10,6 +10,7 @@ from .plotly import (
     PlotlyGeo,
     PlotlyGl2d,
     PlotlyGl3d,
+    PlotlyMap,
     PlotlyMapbox,
     PlotlyStrict,
 )
@@ -25,6 +26,7 @@ class PlotlyNamespace(ComponentNamespace):
     gl2d = PlotlyGl2d.create
     gl3d = PlotlyGl3d.create
     finance = PlotlyFinance.create
+    map = PlotlyMap.create
     mapbox = PlotlyMapbox.create
     strict = PlotlyStrict.create
 
