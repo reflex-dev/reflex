@@ -1331,16 +1331,19 @@ def test_supervise_output_truncates_oversized_records_as_valid_json(tmp_path):
 
 def test_truncate_json_record_preserves_exception_and_extra_fields():
     """Oversized JSON keeps bounded traceback and custom fields."""
-    record = json.dumps(
-        {
-            "timestamp": "2026-10-15T00:00:00+00:00",
-            "level": "error",
-            "logger": "test",
-            "message": "message " + "m" * 500,
-            "exception": "Traceback (most recent call last):\n" + "frame\n" * 500,
-            "request_id": "request-" + "r" * 500,
-        }
-    ).encode() + b"\n"
+    record = (
+        json.dumps(
+            {
+                "timestamp": "2026-10-15T00:00:00+00:00",
+                "level": "error",
+                "logger": "test",
+                "message": "message " + "m" * 500,
+                "exception": "Traceback (most recent call last):\n" + "frame\n" * 500,
+                "request_id": "request-" + "r" * 500,
+            }
+        ).encode()
+        + b"\n"
+    )
 
     bounded = log._truncate_json_record(record, 256)
     [decoded] = [json.loads(bounded)]
@@ -1350,6 +1353,73 @@ def test_truncate_json_record_preserves_exception_and_extra_fields():
     assert decoded["exception"].startswith("Traceback (")
     assert decoded["request_id"].startswith("request-")
     assert decoded["message"].startswith("message ")
+
+
+def test_truncate_json_record_handles_deeply_nested_values():
+    """Deep JSON values do not exhaust Python recursion while truncating."""
+    nested: object = "leaf"
+    for _ in range(600):
+        nested = {"nested": nested}
+    record = json.dumps({"nested": nested, "message": "x" * 10000}).encode() + b"\n"
+
+    bounded = log._truncate_json_record(record, 16384)
+    [decoded] = [json.loads(bounded)]
+    value = decoded["nested"]
+    for _ in range(600):
+        value = value["nested"]
+
+    assert value == "leaf"
+    assert decoded["message"].startswith("x")
+    assert decoded["truncated"] is True
+    assert len(bounded) <= 16384
+
+
+def test_truncate_json_record_bounds_serialization_retries(monkeypatch):
+    """Near-limit records require logarithmically bounded sizing attempts."""
+    max_bytes = 512
+    base = json.dumps({"message": ""})
+    message = "x" * (max_bytes - len(base.encode()) - 1)
+    record = json.dumps({"message": message}).encode() + b"\n"
+    assert len(record) == max_bytes
+
+    original_dumps = json.dumps
+    calls = 0
+
+    def count_dumps(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        return original_dumps(*args, **kwargs)
+
+    monkeypatch.setattr(log.json, "dumps", count_dumps)
+    bounded = log._truncate_json_record(record + b" ", max_bytes)
+
+    assert len(bounded) <= max_bytes
+    assert calls <= 10
+
+
+def test_truncate_json_record_normalizes_non_finite_numbers():
+    """Oversized JSON does not emit the non-standard NaN or Infinity tokens."""
+    record = (
+        json.dumps(
+            {
+                "message": "x" * 1000,
+                "measurements": [float("nan"), float("inf"), -float("inf")],
+            }
+        ).encode()
+        + b"\n"
+    )
+
+    bounded = log._truncate_json_record(record, 256)
+    [decoded] = [
+        json.loads(
+            bounded,
+            parse_constant=lambda value: pytest.fail(
+                f"non-standard JSON token: {value}"
+            ),
+        )
+    ]
+
+    assert decoded["measurements"] == [None, None, None]
 
 
 _SIGTERM_DURING_DRAIN_SCRIPT = """

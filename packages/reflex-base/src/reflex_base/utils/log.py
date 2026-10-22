@@ -25,6 +25,7 @@ import datetime
 import functools
 import json
 import logging
+import math
 import os
 import re
 import shutil
@@ -412,32 +413,90 @@ def _truncate_json_record(record: bytes, max_bytes: int) -> bytes:
     content = record.removesuffix(b"\n")
     try:
         payload = json.loads(content)
-    except (UnicodeDecodeError, ValueError):
+    except (RecursionError, UnicodeDecodeError, ValueError):
         payload = {}
     if not isinstance(payload, dict):
         payload = {}
     marker = "...[truncated]"
 
-    def truncate_strings(value: Any, max_chars: int) -> Any:
-        if isinstance(value, str):
-            return value if len(value) <= max_chars else value[:max_chars] + marker
-        if isinstance(value, dict):
-            return {
-                key: truncate_strings(item, max_chars) for key, item in value.items()
-            }
-        if isinstance(value, list):
-            return [truncate_strings(item, max_chars) for item in value]
-        return value
-
     payload["truncated"] = True
-    max_chars = max_bytes
-    while True:
-        result = json.dumps(truncate_strings(payload, max_chars)).encode() + b"\n"
+
+    def truncate_strings(max_chars: int) -> dict[str, Any]:
+        """Copy JSON values iteratively, bounding strings and normalizing floats.
+
+        Args:
+            max_chars: Maximum output length for each string.
+
+        Returns:
+            A copy of the record with bounded strings and standard JSON numbers.
+        """
+        truncated: dict[str, Any] = {}
+        pending: list[tuple[Any, Any]] = [(payload, truncated)]
+        while pending:
+            source, destination = pending.pop()
+            if isinstance(source, dict):
+                for key, value in source.items():
+                    if isinstance(value, dict):
+                        child: dict[str, Any] = {}
+                        destination[key] = child
+                        pending.append((value, child))
+                    elif isinstance(value, list):
+                        child_list: list[Any] = []
+                        destination[key] = child_list
+                        pending.append((value, child_list))
+                    elif isinstance(value, str) and len(value) > max_chars:
+                        if max_chars <= len(marker):
+                            destination[key] = marker[:max_chars]
+                        else:
+                            destination[key] = value[: max_chars - len(marker)] + marker
+                    elif isinstance(value, float) and not math.isfinite(value):
+                        destination[key] = None
+                    else:
+                        destination[key] = value
+            else:
+                for value in source:
+                    if isinstance(value, dict):
+                        child = {}
+                        destination.append(child)
+                        pending.append((value, child))
+                    elif isinstance(value, list):
+                        child_list = []
+                        destination.append(child_list)
+                        pending.append((value, child_list))
+                    elif isinstance(value, str) and len(value) > max_chars:
+                        if max_chars <= len(marker):
+                            destination.append(marker[:max_chars])
+                        else:
+                            destination.append(
+                                value[: max_chars - len(marker)] + marker
+                            )
+                    elif isinstance(value, float) and not math.isfinite(value):
+                        destination.append(None)
+                    else:
+                        destination.append(value)
+        return truncated
+
+    low, high = 0, max_bytes
+    best: bytes | None = None
+    while low <= high:
+        max_chars = (low + high) // 2
+        try:
+            result = (
+                json.dumps(truncate_strings(max_chars), allow_nan=False).encode()
+                + b"\n"
+            )
+        except (RecursionError, ValueError):
+            return (
+                b'{"level":"warning","message":"[record truncated]","truncated":true}\n'
+            )
         if len(result) <= max_bytes:
-            return result
-        if max_chars == 0:
-            break
-        max_chars = max(0, min(max_chars - 1, max_chars * max_bytes // len(result)))
+            best = result
+            low = max_chars + 1
+        else:
+            high = max_chars - 1
+
+    if best is not None:
+        return best
 
     return b'{"level":"warning","message":"[record truncated]","truncated":true}\n'
 
