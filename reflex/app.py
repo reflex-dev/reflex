@@ -387,6 +387,9 @@ def _is_location_specifier(specifier: str) -> bool:
     )
 
 
+_DEFAULT_PORTS = {"http": 80, "https": 443}
+
+
 def _cors_allowed_origins() -> list[str]:
     """Resolve the origins the backend accepts cross-origin requests from.
 
@@ -403,8 +406,15 @@ def _cors_allowed_origins() -> list[str]:
         return list(config.cors_allowed_origins)
     if not config.deploy_url:
         return []
+    # Match the browser's Origin serialization: lowercase host, no default port.
     parts = urllib.parse.urlsplit(config.deploy_url)
-    return [f"{parts.scheme}://{parts.netloc}"]
+    host = parts.hostname or ""
+    if ":" in host:
+        host = f"[{host}]"
+    port = parts.port
+    if port is None or port == _DEFAULT_PORTS.get(parts.scheme):
+        return [f"{parts.scheme}://{host}"]
+    return [f"{parts.scheme}://{host}:{port}"]
 
 
 @dataclasses.dataclass()
