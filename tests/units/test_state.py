@@ -24,7 +24,7 @@ from hashlib import md5
 from pathlib import Path
 from textwrap import dedent
 from types import MethodType, ModuleType
-from typing import Any, ClassVar, Literal, TypeVar, cast
+from typing import Any, ClassVar, ForwardRef, Literal, TypeVar, cast
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -7322,3 +7322,93 @@ def test_undeclared_double_underscore_name_is_rejected(clean_registration_contex
         with pytest.raises(SetUndefinedStateVarError):
             setattr(state, name, 1)
     assert not state.dirty_vars
+
+
+_NO_DEFAULT = object()
+
+
+@pytest.mark.parametrize(
+    ("name", "annotation", "default"),
+    [
+        ("items", "list[MissingItem]", []),
+        ("items", "dict[str, MissingItem]", {}),
+        ("items", "MissingItem | None", None),
+        ("items", "list[MissingItem]", _NO_DEFAULT),
+        ("items", "dict[str, MissingItem]", _NO_DEFAULT),
+        ("items", "MissingItem | None", _NO_DEFAULT),
+        ("items", "MissingItem", _NO_DEFAULT),
+        ("items", "MissingItem", None),
+        ("items", list[ForwardRef("MissingItem")], []),
+        ("_items", "list[MissingItem]", []),
+    ],
+    ids=[
+        "list",
+        "dict",
+        "optional",
+        "list-no-default",
+        "dict-no-default",
+        "optional-no-default",
+        "bare-no-default",
+        "bare-none-default",
+        "nested-forward-ref",
+        "backend",
+    ],
+)
+def test_var_annotation_with_undefined_name_raises_name_error(
+    name: str, annotation: Any, default: Any
+) -> None:
+    """An annotation naming an undefined symbol raises a NameError naming it.
+
+    With postponed annotations the unresolved annotation used to reach var
+    typing as a ForwardRef and fail with an unrelated TypeError or
+    AttributeError, whether or not the var has a default. On Python 3.14 an
+    annotation is evaluated lazily, and an undefined name inside a generic
+    stays a nested ForwardRef.
+
+    Args:
+        name: The name of the var.
+        annotation: The annotation, which names a symbol that does not exist.
+        default: The default value of the var, or _NO_DEFAULT for none.
+    """
+    namespace: dict[str, Any] = {
+        "__module__": __name__,
+        "__annotations__": {name: annotation},
+    }
+    if default is not _NO_DEFAULT:
+        namespace[name] = default
+
+    with pytest.raises(NameError, match="MissingItem"):
+        type("UndefinedNameState", (BaseState,), namespace)
+
+
+@pytest.mark.parametrize(
+    ("name", "annotation", "value"),
+    [
+        ("cache", "ClassVar[MissingItem]", _NO_DEFAULT),
+        ("__client", "MissingItem | None", None),
+        ("total", "MissingItem", property(lambda self: 0)),
+    ],
+    ids=["classvar", "private", "descriptor"],
+)
+def test_non_var_annotation_with_undefined_name_is_allowed(
+    name: str, annotation: str, value: Any
+) -> None:
+    """An annotation that declares no var is not resolved, so its symbol may be undefined.
+
+    A symbol imported only under TYPE_CHECKING is undefined at runtime.
+
+    Args:
+        name: The name of the attribute.
+        annotation: The annotation, which names a symbol that does not exist.
+        value: The value of the attribute, or _NO_DEFAULT for none.
+    """
+    namespace: dict[str, Any] = {
+        "__module__": __name__,
+        "__annotations__": {name: annotation},
+    }
+    if value is not _NO_DEFAULT:
+        namespace[name] = value
+
+    state = type("UndefinedNonVarState", (BaseState,), namespace)
+
+    assert name not in state.get_fields()
