@@ -62,6 +62,20 @@ def _mark_replacement_state_touched(cached_state: object, state: object) -> None
         _mark_state_tree_touched(state)
 
 
+def _drop_cached_var_values(state: BaseState) -> None:
+    """Drop the computed var values cached in a state read from disk.
+
+    A state is only read from disk when it is not in memory, typically after
+    the backend restarted, as on a hot reload that may have changed the code.
+    Its fields are kept, and its computed vars are computed again when read.
+
+    Args:
+        state: The state read from disk.
+    """
+    for computed_var in state.computed_vars.values():
+        computed_var.mark_dirty(instance=state)
+
+
 @dataclasses.dataclass
 class StateManagerDisk(StateManager):
     """A state manager that stores states on disk."""
@@ -180,6 +194,7 @@ class StateManagerDisk(StateManager):
             if instance is not None:
                 # Ensure all substates exist, even if they weren't serialized previously.
                 instance.substates = fresh_instance.substates
+                _drop_cached_var_values(instance)
             else:
                 instance = fresh_instance
             state.substates[substate.get_name()] = instance
@@ -222,6 +237,7 @@ class StateManagerDisk(StateManager):
             else:
                 # Ensure all substates exist, even if they were not serialized previously.
                 root_state.substates = fresh_root_state.substates
+                _drop_cached_var_values(root_state)
             await self.populate_substates(token, root_state, root_state)
             self.states[token.cache_key] = root_state
             return cast(TOKEN_TYPE, root_state)
