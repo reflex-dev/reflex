@@ -2421,21 +2421,24 @@ def test_get_leaf_vars_sorts_every_cached_operation() -> None:
     Classes are compared by name: a ``slots=True`` dataclass is a rebuilt copy
     of the class first defined, and the discarded original stays in
     ``__subclasses__`` until it is garbage collected.
+
+    The walk stops at classes defined outside Reflex: an installed package's
+    var subclass gets a ``*CastedVar`` generated in ``reflex_base.vars.base``,
+    which would otherwise be counted as one of Reflex's own operations.
     """
 
     def subclasses(cls: type) -> set[type]:
-        return set(cls.__subclasses__()).union(
-            *(subclasses(sub) for sub in cls.__subclasses__())
-        )
+        own = {
+            sub
+            for sub in cls.__subclasses__()
+            if sub.__module__.startswith(("reflex_base.", "reflex."))
+        }
+        return own.union(*(subclasses(sub) for sub in own))
 
     def names(classes: Iterable[type]) -> set[str]:
         return {f"{cls.__module__}.{cls.__qualname__}" for cls in classes}
 
-    operations = {
-        cls
-        for cls in subclasses(CachedVarOperation)
-        if cls.__module__.startswith(("reflex_base.", "reflex."))
-    }
+    operations = subclasses(CachedVarOperation)
 
     assert names(operations) == names({
         CustomVarOperation,
