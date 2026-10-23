@@ -1,0 +1,33 @@
+[pass] big_300k_roundtrip: {"ls_len": 300000, "reload_hydrate_s": 0.42}
+[pass] big_oversize_reported_once: {"n_ws_opens": 1, "open_gaps": [], "n_connect_frames_sent": 0, "hydration_errors": ["Hydration payload (1100569 characters) exceeds the server limit (1000000 characters). Reduce browser storage data and reload."], "n_console_errors": 1, "hydrated": "false", "size": 1100000}
+[pass] big_oversize_toast_shown_and_stays: {"first_toast": ["Hydration payload (1100569 characters) exceeds the server limit (1000000 characters). Reduce browser storage data and reload."], "toast_at_s": 0.4, "final_toasts": ["Hydration payload (1100569 characters) exceeds the server limit (1000000 characters). Reduce browser storage data and reload."]}
+[pass] big_recovery_after_shrink: {"big_len": "len:100", "ws_opens_after": 1, "toasts": []}
+[pass] big_click_after_recovery: {}
+[pass] shared_initial: {"t1": ["pref-default", "pref-default", "plain-default"], "t2": ["pref-default", "pref-default", "plain-default"], "other": ["other-default", "other-default"]}
+[FAIL] shared_set_a_syncs_all_in_other_tab: {"t1": ["from-a", "pref-default", "plain-default"], "t2": ["from-a", "from-a", "from-a"], "ls": "from-a"}
+[FAIL] shared_set_plain_syncs_all_in_other_tab: {"t1": ["from-plain", "from-plain", "from-plain"], "t2": ["from-a", "from-a", "from-plain"]}
+[FAIL] shared_typed_b_syncs_all: {"t1": ["typed-b", "typed-b", "typed-b"], "t2": ["from-a", "typed-b", "from-plain"]}
+[FAIL] shared_other_name_unaffected: {"t1": ["typed-b", "typed-b", "typed-b"], "t2": ["from-a", "typed-b", "from-plain"], "other2": "from-other"}
+[pass] shared_quiet_after: {"frames_in_2s": 0, "total_frames": 30}
+[pass] shared_new_tab_sees_value: {"t3": ["typed-b", "typed-b", "typed-b"]}
+[pass] cv_storage_dependents_once_per_load: {"evals": {"sib_len": 1, "tok_len": 1, "uncached": 4}, "shown": ["tok_len:8", "sib_len:6", "unc:6"]}
+[pass] cv_storage_dependents_once_per_load_2: {"evals": {"sib_len": 1, "tok_len": 1, "uncached": 4}}
+[FAIL] typed_defaults: {"summary": {"ann_ls": ["ls-d", "LocalStorage"], "ann_ck": ["ck-d", "Cookie"], "ann_ss": ["ss-d", "SessionStorage"], "ann_opt": ["opt-d", "LocalStorage"], "ann_fld": ["fld-d", "LocalStorage"], "n_int": ["3", "LocalStorage"], "n_bool": ["true", "Cookie"], "j_dict": ["{\"a\": 1}", "LocalStorage"]}, "console": []}
+[FAIL] typed_write_w1: {"summary": {"ann_ls": ["ls-w1", "str"], "ann_ck": ["ck-w1", "str"], "ann_ss": ["ss-w1", "str"], "ann_opt": ["opt-w1", "str"], "ann_fld": ["fld-w1", "str"], "n_int": [2, "int"], "n_bool": [true, "bool"], "j_dict": ["{'s': 'w1'}", "MutableProxy"]}, "storage": {"ls": {"hnet_ann_opt": "opt-w1", "hnet_int": "2", "hnet_ann_fld": "fld-w1", "hnet_ann_ls": "ls-w1", "hnet_json": "[object Object]"}, "ss": {"hnet_ann_ss": "ss-w1"}, "ck": "hnet_bool=true; hnet_ann_ck=ck-w1"}}
+[FAIL] typed_reload_hydrates_w1: {"summary": {"ann_ls": ["ls-w1", "str"], "ann_ck": ["ck-w1", "str"], "ann_ss": ["ss-w1", "str"], "ann_opt": ["opt-w1", "str"], "ann_fld": ["fld-w1", "str"], "n_int": ["2", "str"], "n_bool": ["true", "str"], "j_dict": ["[object Object]", "str"]}, "shown": ["ls-w1", "2", "\"true\"", "\"[object Object]\""]}
+[pass] typed_opt_none_roundtrip: {"after_none": [null, "NoneType"], "ls_after_none": "null", "after_reload": ["null", "str"]}
+[FAIL] typed_reload_hydrates_w2: {"summary": {"ann_ls": ["ls-w2", "str"], "ann_ck": ["ck-w2", "str"], "ann_ss": ["ss-w2", "str"], "ann_opt": ["opt-w2", "str"], "ann_fld": ["fld-w2", "str"], "n_int": ["2", "str"], "n_bool": ["false", "str"], "j_dict": ["[object Object]", "str"]}}
+[pass] typed_console_clean: {"anomalies": {"console_err_warn": [], "pageerrors": [], "failed": [], "http_errors": []}}
+[pass] ovr_good_persists: {"tok_ok": "ok:True:good-1", "tok": "[good-1]"}
+[pass] ovr_bad_sanitised_dependents_follow: {"tok_ok": "ok:False:", "tok": "[]", "plain_dep": "plain:sanitised", "ls": "", "calls": "{\"calls\": 3, \"dep_evals\": 41}"}
+[pass] ovr_after_sanitise_reload: {"tok_ok": "ok:False:", "tok": "[]", "ls": ""}
+[pass] ovr_event_bad_sanitised: {"tok_ok": "ok:False:", "tok": "[]", "plain_dep": "plain:sanitised", "ls": ""}
+[pass] cs_push_before_reader_no_error: {"errors": []}
+[pass] cs_late_reader_sees_pushed: {"flag": "flag=[pushed-on-load]", "count": "count=5"}
+[pass] cs_late_reader_follows_set_back_to_default: {"flag": "flag=[initial]"}
+[pass] cs_reader_mounted_after_set_then_default: {"flag": "flag=[initial]"}
+[pass] cs_push_none_and_backend: {"flag": "flag=[]"}
+[pass] cs_count_int: {"count": "count=6"}
+[pass] cs_gate_push_during_onload: {"flag": "flag=[pushed-on-load]", "errors": []}
+[pass] cs_gate_set_default: {"flag": "flag=[initial]"}
+SUMMARY 24/32 pass; fail=['shared_set_a_syncs_all_in_other_tab', 'shared_set_plain_syncs_all_in_other_tab', 'shared_typed_b_syncs_all', 'shared_other_name_unaffected', 'typed_defaults', 'typed_write_w1', 'typed_reload_hydrates_w1', 'typed_reload_hydrates_w2']

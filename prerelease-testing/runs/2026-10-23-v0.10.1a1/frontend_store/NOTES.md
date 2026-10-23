@@ -136,3 +136,36 @@ Cannot find module '@tailwindcss/postcss'` (vite error overlay on every page; CS
 no longer lists `@tailwindcss/postcss` / `tailwindcss` (plugin dev deps pruned, node_modules pruned by bun) but
 `.web/postcss.config.js` still says `plugins: { "@tailwindcss/postcss": {} }` (the plugin's modify task ran once
 and the base template is only written when `.web` is created). Baseline on 0.10.0: see below.
+
+React Compiler, continued:
+- prod (3225): `drive_share` 48/48 (hydrate 242 ms), `drive_js` pass, `drive_hooks` 23/23; the client bundle imports
+  `react/compiler-runtime` (`useMemoCache`) in `components-*.js`, `context-*.js`, `entry.client-*.js`.
+- toggling OFF again (dev run without the env var): `.web/package.json` and `vite.config.js` lose the babel /
+  compiler entries, `node_modules/babel-plugin-react-compiler` is removed (`@babel/core` stays as a transitive dep).
+- compiler-off `vite.config.js` on 0.10.1a1 is byte-identical to 0.10.0's (`compiled_snapshots/{prev_dev,new_dev}`).
+
+Stale `postcss.config.js` baseline on 0.10.0 (`fs_app_prev`, plugin on → off): identical breakage
+(`vite-error-overlay` on `/js`, 3× "Failed to load PostCSS config" in the log) → pre-existing, **not a regression**.
+Same run also gives the #7573 baseline: with `TailwindV4Plugin(config={"important": True})` 0.10.0 renders
+`#styled` blue (`importants:` ignored), 0.10.1a1 red; `tailwind_config_js_template(important=True)` prints
+`importants: true,` on prev and `important: true,` on new.
+
+### bigstate (#7441 / reflex#7429): BIG_N=1500 dormant substates, 50 read on the page
+
+```
+cd $W/bigstate && BIG_N=1500 BIG_READ=50 ../serve.sh start new $W/bigstate dev 3226 8226 big_new_dev
+$PW ../drive_big.py --url http://localhost:3226/ --read 50 --out ../logs/big_new_dev_1500.json
+```
+0.10.1a1 dev: load 1.3 s, hydrated 2.1 s, 50 values correct, 3-substate event 97 ms and correct, single-substate
+event 50 ms, reload+hydrate 322 ms, no page errors, no stack overflow.
+0.10.0 dev, same app (`bigstate_prev`, `EXPECT_VENV=prev`): page never hydrates, 0 values rendered,
+`pageerror: Maximum call stack size exceeded` (`[vite] (client) [Unhandled error] RangeError: Maximum call stack`)
+→ reflex#7429 reproduced on 0.10.0 and **fixed** on 0.10.1a1.
+0.10.1a1 prod (`BIG_N=1500 BIG_READ=50 ../serve.sh start new $W/bigstate prod 3226 3226 big_new_prod`): prerender ok,
+load 144 ms, hydrated 392 ms, events 99 / 64 ms, reload+hydrate 213 ms, 50/50 values, no errors.
+
+Third-party use of the removed `StateContexts` export: GitHub code search (`StateContexts org:reflex-dev`,
+`"useContext(StateContexts"` across GitHub) finds only compiled `.web` outputs, the nextpy fork and
+reflex's own old templates — no published component package hand-writes it. reflex-enterprise 0.9.8 imports only
+`ColorModeContext` from `$/utils/context` (still exported) and passes `VarData(position=...)` in dnd.py /
+combobox.py (now a deprecation warning, see the enterprise item).

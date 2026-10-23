@@ -36,3 +36,47 @@ $WORK/src/scripts/run_area.sh quick > $WORK/area_quick.txt 2>&1     # trimmed co
 
 `area_quick.txt` exit 0 (14.5 min). Area results: `results/area/*.txt`, `results/{f002,f003,sync,stamp,rtr}/`.
 
+## 2. Hunt: the `hnet` app (`hnet/`), driver `probes/hnet_drive.py`, runner `legs.sh`
+
+`hnet` pages: `/ip` (#7614 + headers), `/big` (#7551/#7605), `/shared` (#7545), `/cv` (#7568), `/typed` (#7603),
+`/ovr` (#7572), `/cs` + `/gate` (#7407); `/whoami` is a plain Starlette route (`api_transformer`) returning
+`request.client` and `X-Forwarded-For`. `rxconfig.py` maps `HNET_HOPS` to `trusted_proxy_hops`.
+Rerun one leg: `export SB=... WORK=$SB/apps/hydration_net; cd $WORK && ./legs.sh <leg>` (legs listed in `legs.sh`;
+outputs in `results/hnet/`, copied here under `hnet_results/`).
+
+### 2.1 Leg `dev_h0` (new, dev 3142/8142, `trusted_proxy_hops` default 0, browser websocket via `xff_proxy.py` 8143)
+`legs.sh dev_h0` -> `hnet_results/dev-h0.scen.txt`, `dev-h0.ip.txt`, `dev-h0.whoami.txt`, `dev-h0.server.log`.
+
+| check | result |
+|---|---|
+| `/ip` in the browser through the proxy (the proxy connects from 127.0.0.2 and appends the browser's 127.0.0.1 to XFF) | frontend `router.session.client_ip` = **127.0.0.2** (the proxy, i.e. the connection peer); computed var, `on_load`, click and **upload** handlers all record `ip=127.0.0.2`, `x-forwarded-for=127.0.0.1`, `asgi-scope-client=127.0.0.2` — XFF ignored with hops=0, consistent on every path |
+| `/whoami` (HTTP API route, user code) direct / via proxy with spoofed `X-Forwarded-For: 6.6.6.6` | `client=127.0.0.1, xff=null` / `client=127.0.0.2, xff="6.6.6.6, 127.0.0.1"`: reflex does not touch XFF on HTTP routes (user code decides) |
+| #7551/#7605 `big`: 300k LocalStorage | roundtrip ok, reload hydrates in 0.42 s |
+| #7551 `big`: 1.1 MB LocalStorage, reload, observe 12 s | **one** console error `Hydration payload (1100569 characters) exceeds the server limit (1000000 characters). Reduce browser storage data and reload.`; toast with that text at 0.4 s and still there at 12 s; **1 websocket open, 0 CONNECT frames sent**, `is_hydrated` stays false; after shrinking storage + reload: hydrates, 1 open, toast gone, click works (screenshot `hnet_results/big_oversize.png`). 0.10.0 (F-008): 600+ opens / 22 s, never hydrates, no error — **fixed** |
+| #7545 `shared`: ComponentState `Pref` used twice + `Plain.shared`, all `sync=True` on storage name `hnet_shared`, two tabs | every write in tab A (button in instance a, button in the plain state, typed input in instance b) makes **all three** vars converge in tab B (`from-a`/`from-plain`/`typed-b`), localStorage holds the value, a third tab boots with all three equal, 0 frames in the 2 s quiet window (30 frames total), `hnet_other` unaffected. In the **writing** tab only the var that was written changes (no `storage` event fires in the writing tab) — see the prev comparison |
+| #7568 `cv`: cached `Store.tok_len` (same state) and async cached `Sib.sib_len` (sibling, via `get_state`) over `LocalStorage`+`Cookie`; eval counters reset, reload, snapshot | `tok_len` evaluated **1**x per load, `sib_len` **1**x (uncached var 4x); values right (`tok_len:8`, `sib_len:6`); twice |
+| #7603 `typed`: `ann_ls: rx.LocalStorage`, `ann_ck: rx.Cookie`, `ann_ss: rx.SessionStorage`, `ann_opt: rx.LocalStorage \| None`, `ann_fld: rx.Field[rx.LocalStorage]` | defaults shown, writes reach storage (`hnet_ann_ls=ls-w1`, cookie `hnet_ann_ck=ck-w1`, sessionStorage `hnet_ann_ss=ss-w1`), reload hydrates all five as plain `str` values; **no** `Expected field 'Typed.ann_*'` line in the server log, browser console clean; `ann_opt = None` writes the string `null` to localStorage and hydrates back as the string `"null"` (pre-existing shape, info) |
+| `typed` non-str storage vars `n_int: int = rx.LocalStorage("3")`, `n_bool: bool = rx.Cookie("true")`, `j_dict: dict = rx.LocalStorage('{"a": 1}')` | server log: `Expected field 'Typed.n_int' to receive type int, but got '3' of type LocalStorage` (+ bool, dict) **41x each in one leg** (every state instantiation), plus `got '2' of type str` at every hydrate; after a write the dict is stored as `[object Object]`; after reload all three hydrate as **strings** (`"2"`, `"true"`, `"[object Object]"`). Compared with 0.10.0 below |
+| #7572 `ovr`: `get_delta` override (`@rx.state._override_base_method`) that assigns `self.tok = ""` + `self.plain = "sanitised"` for a non-`good-` token before `super().get_delta()` | stored `bad-x` + reload: `tok_ok` (cached dependent) = `ok:False:`, `plain_dep` = `plain:sanitised`, `tok` = `[]`, localStorage corrected to `""`; same after another reload and through an event |
+| #7407 `cs` / `gate`: global `rx._x.client_state` readers behind `rx.cond` / behind `is_hydrated`; `on_load` pushes before any reader mounts | no `_client_state_set... is not a function` error; late reader shows `pushed-on-load` and `count=5`; set `clicked` -> hide -> show -> set default: reader shows `initial`; `push(None)` -> `[]`; backend push -> `from-backend`; gate page reader gets the on_load push |
+
+### 2.2 #7614 / #7588 / #7602 — raw websocket header matrix (`xff_matrix.sh` over `probes/ws_probe.py`)
+`ws_probe.py` hand-rolls the HTTP upgrade (raw header bytes, duplicates, non-UTF-8) and the socket.io CONNECT with
+reflex's hydrate event, then sends `IPState.rec(tag)` and reads back the handler's `router_snap` (client_ip, raw
+headers). "direct" = probe -> backend (peer 127.0.0.1); "via proxy" = probe bound to 127.0.0.3 -> `xff_proxy.py`
+(appends the peer to XFF like nginx `$proxy_add_x_forwarded_for`, connects out from 127.0.0.2) -> backend.
+Full tables: `hnet_results/<leg>.matrix.txt`; per-case JSON (every frame) in `$WORK/results/xff/<leg>/`.
+
+**hops = 0 (default), leg `dev_h0m`** — every case resolves to the connection peer: direct `ip=127.0.0.1`, via proxy
+`ip=127.0.0.2` (the proxy), regardless of `X-Forwarded-For: 6.6.6.6`, chains, two XFF lines, whitespace/garbage,
+IPv6, `[v6]:port`, `X-Real-IP`, `Forwarded:`; `asgi-scope-client` always = the peer.
+- #7588: two `Cookie` lines (`a=1` / `b=2; c=3`) -> `router.headers.cookie` = `a=1; b=2; c=3` (both `.cookie` and
+  `raw_headers["cookie"]`); two `X-Dup` lines -> `one, two`; two XFF lines -> `6.6.6.6, 7.7.7.7`.
+- #7602: `X-Bad: \xff\xfe\x80` -> `ÿþ` (latin-1), `Cookie: a=\xe9` + `Cookie: z=9` -> `z=9; a=é`, non-UTF-8 XFF
+  line -> `7.7.7.7, éè`: connection accepted, handler runs, nothing in the server log. A non-UTF-8 header **name**
+  (`X-N\xe9me`, and the UTF-8 `X-Néme`) is refused by granian with **HTTP 400** before reflex sees it (not a reflex
+  path; same on 0.10.0).
+- `X-Forwarded-For:` with an empty value is dropped by the server (header absent in `raw_headers`).
+- d12: three cookie secrets + `Authorization` reach the backend handler (`cookie_attr` has all three) — the frontend
+  side of this is the #7360 rtr run above (0 secrets in frames/DOM).
+
