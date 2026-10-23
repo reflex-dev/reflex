@@ -1,0 +1,40 @@
+{
+  "url": "http://localhost:3051/",
+  "title": "",
+  "clean": false,
+  "load_error": null,
+  "actions_performed": [],
+  "action_error": "TimeoutError: Page.click: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator(\"#flip\")\n",
+  "screenshot_error": null,
+  "read_error": null,
+  "console": [
+    {
+      "type": "log",
+      "text": "Warning: column.type is undefined for column.title=Name"
+    },
+    {
+      "type": "log",
+      "text": "Warning: column.type is undefined for column.title=Name"
+    },
+    {
+      "type": "log",
+      "text": "Warning: column.type is undefined for column.title=Name"
+    },
+    {
+      "type": "log",
+      "text": "Warning: column.type is undefined for column.title=Name"
+    },
+    {
+      "type": "log",
+      "text": "Warning: column.type is undefined for column.title=Name"
+    },
+    {
+      "type": "error",
+      "text": "%o\n\n%s\n\n%s\n TypeError: Cannot read properties of undefined (reading 'includes')\n    at truncateString (http://localhost:3051/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=ef8c3d46:5100:11)\n    at drawTextCell (http://localhost:3051/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=ef8c3d46:5131:29)\n    at Object.draw (http://localhost:3051/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=ef8c3d46:15596:3)\n    at drawCell (http://localhost:3051/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=ef8c3d46:7095:10)\n    at http://localhost:3051/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=ef8c3d46:7017:18\n    at walkRowsInCol (http://localhost:3051/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=ef8c3d46:6473:27)\n    at http://localhost:3051/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=ef8c3d46:6894:3\n    at walkColumns (http://localhost:3051/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=ef8c3d46:6494:7)\n    at drawCells (http://localhost:3051/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=ef8c3d46:6861:2)\n    at drawGrid (http://localhost:3051/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=ef8c3d46:9501:16) The above error occurred in the <ForwardRef(DataGrid)> component. React will try to recreate this component tree from scratch using the error boundary you provided, C."
+    }
+  ],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_4xx_5xx": [],
+  "body_text": "An error occurred while rendering this page.\n\nThis is an error with the application itself. Refreshing the page might help.\n\nTypeError: Cannot read properties of undefined (reading 'includes')\nTypeError: Cannot read properties of undefined (reading 'includes')\n    at truncateString (http://localhost:3051/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=ef8c3d46:5100:11)\n    at drawTextCell (http://localhost:3051/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=ef8c3d46:5131:29)\n    at Object.draw (http://localhost:3051/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=ef8c3d46:15596:3)\n    at drawCell (http://localhost:3051/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=ef8c3d46:7095:10)\n    at http://localhost:3051/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=ef8c3d46:7017:18\n    at walkRowsInCol (http://localhost:3051/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=ef8c3d46:6473:27)\n    at http://localhost:3051/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=ef8c3d46:6894:3\n    at walkColumns (http://localhost:3051/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=ef8c3d46:6494:7)\n    at drawCells (http://localhost:3051/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=ef8c3d46:6861:2)\n    at drawGrid (http://localhost:3051/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=ef8c3d46:9501:16)\nCopy\nBuilt with"
+}

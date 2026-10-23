@@ -1,0 +1,287 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/7eb9e30f-e96c-5de5-9b0e-4a12be91e0f3/scratchpad
+/prt/envs/pipgraph/lib/python3.12/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='mixed', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', 
+trusted_proxy_hops=0, db_url=None, async_db_url=None, redis_url=None, 
+telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+react_compiler=False, frontend_compression_formats=['gzip'], 
+frontend_packages=[], frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'app_name', 'loglevel', 'telemetry_enabled', 
+'plugins'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[SitemapPlugin(trailing_slash='preserve'), 
+TailwindV4Plugin(config={'plugins': ['@tailwindcss/typography@0.5.20']}), 
+RadixThemesPlugin(theme={"name": "RadixThemesTheme", "props": 
+["accentColor:\"blue\"", "css:{...theme.styles.global[':root'], 
+...theme.styles.global.body}"], "children": []})], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+'--version']
+Debug: [Reflex 0.10.1a1 with Python 3.12.3 (PATH: 
+/tmp/claude-0/-home-user-reflex/7eb9e30f-e96c-5de5-9b0e-4a12be91e0f3/scratchpad/
+prt/envs/pipgraph/bin/python)]
+Debug: [Node 22.22.0 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.4 (Minimum: 1.4.4) (PATH: 
+/root/.local/share/reflex/bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.5 LTS]
+Debug: Using package installer at: ['/root/.local/share/reflex/bun/bin/bun', 
+'/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.local/share/reflex/bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3051
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8051
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Frontend port: 3051 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Frontend port: 3051 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Frontend port: 3051 is not in use.
+Debug: Checking if Backend port: 8051 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Backend port: 8051 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Backend port: 8051 is not in use.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: [timing] Compile pages: 0.04s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', '-D', '@emotion/react@11.14.0', '@react-router/dev@8.4.0',
+'postcss@8.5.30', 'postcss-import@17.0.1', 'tailwindcss@4.3.0', 
+'@react-router/fs-routes@8.4.0', '@tailwindcss/typography@0.5.20', 
+'@tailwindcss/postcss@4.3.0', 'vite@8.3.4', 'autoprefixer@10.6.1']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.4 (38afee6c8)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [127]
+Debug: Saved lockfile
+Debug: 
+Debug: installed @emotion/react@11.14.0
+Debug: installed @react-router/dev@8.4.0 with binaries:
+Debug:  - react-router
+Debug: installed postcss@8.5.30
+Debug: installed postcss-import@17.0.1
+Debug: installed tailwindcss@4.3.0
+Debug: installed @react-router/fs-routes@8.4.0
+Debug: installed @tailwindcss/typography@0.5.20
+Debug: installed @tailwindcss/postcss@4.3.0
+Debug: installed vite@8.3.4 with binaries:
+Debug:  - vite
+Debug: installed autoprefixer@10.6.1 with binaries:
+Debug:  - autoprefixer
+Debug: 
+Debug: 143 packages installed [2.60s]
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', '@glideapps/glide-data-grid@6.0.3', 
+'@react-router/node@8.4.0', 'isbot@5.2.2', 'react@19.3.1', 
+'react-syntax-highlighter@16.1.1', 'react-dom@19.3.1', 'lodash@4.18.1', 
+'@radix-ui/themes@3.3.0', 'react-error-boundary@6.1.6', 'react-router@8.4.0', 
+'lucide-react@1.26.0', 'sonner@2.0.8', 'react-helmet@6.1.0', 
+'react-responsive-carousel@3.2.23', 'socket.io-client@4.8.4', 
+'universal-cookie@8.1.2', 'mergician@v2.0.2']
+Debug: Installing frontend packages
+Debug: bun add v1.4.4 (38afee6c8)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [264]
+Debug: Saved lockfile
+Debug: 
+Debug: installed @glideapps/glide-data-grid@6.0.3
+Debug: installed @react-router/node@8.4.0
+Debug: installed isbot@5.2.2
+Debug: installed react@19.3.1
+Debug: installed react-syntax-highlighter@16.1.1
+Debug: installed react-dom@19.3.1
+Debug: installed lodash@4.18.1
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed react-error-boundary@6.1.6
+Debug: installed react-router@8.4.0
+Debug: installed lucide-react@1.26.0
+Debug: installed sonner@2.0.8
+Debug: installed react-helmet@6.1.0
+Debug: installed react-responsive-carousel@3.2.23
+Debug: installed socket.io-client@4.8.4
+Debug: installed universal-cookie@8.1.2
+Debug: installed mergician@2.0.2
+Debug: 
+Debug: 158 packages installed [2.61s]
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/7eb9e30f-e96c-5de5-9b0e-4a12be91e0f3/scratchpad/
+prt/apps/mixed/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/7eb9e30f-e96c-5de5-9b0e-4a12be91e0f3/scratchpad/
+prt/apps/mixed/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 5.24s
+Debug: [timing] Write to Disk: 0.00s
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Using Granian for backend
+Debug: Reload paths: 
+['/tmp/claude-0/-home-user-reflex/7eb9e30f-e96c-5de5-9b0e-4a12be91e0f3/scratchpa
+d/prt/apps/mixed/requirements.txt', 
+'/tmp/claude-0/-home-user-reflex/7eb9e30f-e96c-5de5-9b0e-4a12be91e0f3/scratchpad
+/prt/apps/mixed/init.log', 
+'/tmp/claude-0/-home-user-reflex/7eb9e30f-e96c-5de5-9b0e-4a12be91e0f3/scratchpad
+/prt/apps/mixed/assets', 
+'/tmp/claude-0/-home-user-reflex/7eb9e30f-e96c-5de5-9b0e-4a12be91e0f3/scratchpad
+/prt/apps/mixed/mixed', 
+'/tmp/claude-0/-home-user-reflex/7eb9e30f-e96c-5de5-9b0e-4a12be91e0f3/scratchpad
+/prt/apps/mixed/CLAUDE.md', 
+'/tmp/claude-0/-home-user-reflex/7eb9e30f-e96c-5de5-9b0e-4a12be91e0f3/scratchpad
+/prt/apps/mixed/logs', 
+'/tmp/claude-0/-home-user-reflex/7eb9e30f-e96c-5de5-9b0e-4a12be91e0f3/scratchpad
+/prt/apps/mixed/AGENTS.md', 
+'/tmp/claude-0/-home-user-reflex/7eb9e30f-e96c-5de5-9b0e-4a12be91e0f3/scratchpad
+/prt/apps/mixed/rxconfig.py']
+[INFO] Starting granian (main PID: 1777)
+[INFO] Listening at: http://0.0.0.0:8051
+[INFO] Spawning worker-1 with PID: 1818
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug:   ➜  Local:   http://localhost:3051/
+App running at: http://localhost:3051/
+Backend running at: http://0.0.0.0:8051
+Debug:   ➜  Network: http://192.0.2.2:3051/  eth0
+Debug: 10:22:56 PM [vite] (client) [optimizer] bundling dependencies...
+Debug: 10:23:07 PM [vite] (ssr) connected.
+Debug: 10:24:07 PM [vite] (client) [console.error] TypeError: Cannot read 
+properties of undefined (reading 'includes')
+Debug:     at truncateString 
+(http://localhost:3051/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=e
+f8c3d46:5100:11)
+Debug:     at drawTextCell 
+(http://localhost:3051/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=e
+f8c3d46:5131:29)
+Debug:     at Object.draw 
+(http://localhost:3051/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=e
+f8c3d46:15596:3)
+Debug:     at drawCell 
+(http://localhost:3051/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=e
+f8c3d46:7095:10)
+Debug:     at 
+http://localhost:3051/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=ef
+8c3d46:7017:18
+[Reflex Frontend Exception]
+ TypeError: Cannot read properties of undefined (reading 'includes')
+TypeError: Cannot read properties of undefined (reading 'includes')
+    at truncateString 
+(http://localhost:3051/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=e
+f8c3d46:5100:11)
+    at drawTextCell 
+(http://localhost:3051/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=e
+f8c3d46:5131:29)
+    at Object.draw 
+(http://localhost:3051/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=e
+f8c3d46:15596:3)
+    at drawCell 
+(http://localhost:3051/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=e
+f8c3d46:7095:10)
+    at 
+http://localhost:3051/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=ef
+8c3d46:7017:18
+    at walkRowsInCol 
+(http://localhost:3051/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=e
+f8c3d46:6473:27)
+    at 
+http://localhost:3051/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=ef
+8c3d46:6894:3
+    at walkColumns 
+(http://localhost:3051/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=e
+f8c3d46:6494:7)
+    at drawCells 
+(http://localhost:3051/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=e
+f8c3d46:6861:2)
+    at drawGrid 
+(http://localhost:3051/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=e
+f8c3d46:9501:16)
+
+Debug:     at walkRowsInCol 
+(http://localhost:3051/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=e
+f8c3d46:6473:27)
+Debug:     at 
+http://localhost:3051/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=ef
+8c3d46:6894:3
+Debug:     at walkColumns 
+(http://localhost:3051/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=e
+f8c3d46:6494:7)
+Debug:     at drawCells 
+(http://localhost:3051/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=e
+f8c3d46:6861:2)
+Debug:     at drawGrid 
+(http://localhost:3051/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=e
+f8c3d46:9501:16)
+Debug: 
+Debug: The above error occurred in the <ForwardRef(DataGrid)> component.
+Debug: 
+Debug: React will try to recreate this component tree from scratch using the 
+error boundary you provided, C.
+Debug: 
+[INFO] Changes detected, reloading workers..
+[INFO] Added: /tmp/claude-0/-home-user-reflex/7eb9e30f-e96c-5de5-9b0e-4a12be91e0f3/scratchpad/prt/apps/mixed/mixed/mixed.py
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[INFO] Stopped worker-1
+[INFO] Spawning worker-1 with PID: 2109
+Debug: Registered lifespan task: _setup_event_processor
+Debug: [timing] Compile pages: 0.06s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+Debug: Using cached value for _install_frontend_packages with payload: 
+['@glideapps/glide-data-grid@6.0.3', '@radix-ui/themes@3.3.0', 'lodash@4.18.1', 
+'lucide-react@1.26.0', 'react-error-boundary@6.1.6', 
+'react-responsive-carousel@3.2.23', 'react-syntax-highlighter@16.1.1', 
+'sonner@2.0.8'],['@tailwindcss/postcss@4.3.0', '@tailwindcss/typography@0.5.20',
+'tailwindcss@4.3.0'],True,['/root/.local/share/reflex/bun/bin/bun', 
+'/opt/node22/bin/npm'],[('@react-router/node', '8.4.0'), ('isbot', '5.2.2'), 
+('mergician', 'v2.0.2'), ('react', '19.3.1'), ('react-dom', '19.3.1'), 
+('react-helmet', '6.1.0'), ('react-router', '8.4.0'), ('socket.io-client', 
+'4.8.4'), ('universal-cookie', '8.1.2')],[('@emotion/react', '11.14.0'), 
+('@react-router/dev', '8.4.0'), ('@react-router/fs-routes', '8.4.0'), 
+('autoprefixer', '10.6.1'), ('postcss', '8.5.30'), ('postcss-import', '17.0.1'),
+('vite', '8.3.4')],[]
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/7eb9e30f-e96c-5de5-9b0e-4a12be91e0f3/scratchpad/
+prt/apps/mixed/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/7eb9e30f-e96c-5de5-9b0e-4a12be91e0f3/scratchpad/
+prt/apps/mixed/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.01s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug: 10:24:48 PM [vite] (client) hmr update /utils/context.jsx
+Debug: 10:24:48 PM [vite] (client) hmr update /utils/context.jsx
+Debug: 10:24:48 PM [vite] (client) hmr update /utils/context.jsx, 
+/styles/__reflex_global_styles.css?direct
+Debug: 10:24:48 PM [vite] (ssr) page reload utils/context.jsx
+Debug: 10:24:48 PM [vite] (ssr) program reload
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Debug: error: script "dev" was terminated by signal SIGTERM (Polite quit 
+request)
+Info: Reflex app stopped.

@@ -1,0 +1,58 @@
+== reflex
+0.10.1a1
+   granian[reload]>=2.7.4
+   reflex-base==0.10.1a1
+   reflex-components-code>=0.10.0
+   reflex-components-core>=0.10.0
+   reflex-components-dataeditor>=0.10.0
+   reflex-components-gridjs>=0.10.0
+   reflex-components-lucide>=1.1.0
+   reflex-components-markdown>=0.10.0
+   reflex-components-moment>=0.10.1a1
+   reflex-components-plotly>=0.10.0
+   reflex-components-radix>=0.10.1a1
+   reflex-components-react-player>=0.10.0
+   reflex-components-recharts>=0.10.0
+   reflex-components-sonner>=0.10.0
+   reflex-hosting-cli!=0.1.73a1,>=0.2.0
+   greenlet>=3.3; extra == 'db'
+   pydantic<3.0,>=2.12.0; extra == 'db'
+   sqlmodel>=0.0.24; extra == 'db'
+   reflex-base[pydantic]; extra == 'pydantic'
+   uvicorn<1.0,>=0.34.0; extra == 'testing'
+== reflex-base
+0.10.1a1
+   pydantic<3.0,>=2.12.0; extra == 'pydantic'
+== reflex-components-core
+0.10.1a1
+   reflex-base>=0.10.1a1
+   reflex-components-lucide>=1.1.0
+   reflex-components-sonner>=0.10.0
+== reflex-components-radix
+0.10.1a1
+   reflex-base>=0.10.1a1
+   reflex-components-core>=0.10.1a1
+   reflex-components-lucide>=1.1.0
+== reflex-components-lucide
+1.1.1a1
+   reflex-base>=0.10.0
+== reflex-hosting-cli
+0.2.1a1
+   reflex-build-sdk[httpx]!=0.1.2,<0.1.2.post,>=0.1.1a1
+granian 2.8.5
+reflex 0.10.1a1
+reflex-base 0.10.1a1
+reflex-build-sdk 0.1.1a1
+reflex-components-code 0.10.1a1
+reflex-components-core 0.10.1a1
+reflex-components-dataeditor 0.10.1a1
+reflex-components-gridjs 0.10.0
+reflex-components-lucide 1.1.1a1
+reflex-components-markdown 0.10.0
+reflex-components-moment 0.10.1a1
+reflex-components-plotly 0.10.0
+reflex-components-radix 0.10.1a1
+reflex-components-react-player 0.10.0
+reflex-components-recharts 0.10.0
+reflex-components-sonner 0.10.0
+reflex-hosting-cli 0.2.1a1

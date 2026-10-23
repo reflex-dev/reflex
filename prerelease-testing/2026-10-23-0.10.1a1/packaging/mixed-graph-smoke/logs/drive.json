@@ -1,0 +1,20 @@
+{
+  "url": "http://localhost:3051/",
+  "title": "Mixed | Index",
+  "clean": true,
+  "load_error": null,
+  "actions_performed": [
+    "click: '#flip'",
+    "wait: 500",
+    "click: '#flip'",
+    "wait: 500"
+  ],
+  "action_error": null,
+  "screenshot_error": null,
+  "read_error": null,
+  "console": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_4xx_5xx": [],
+  "body_text": "mixed graph smoke\nflip\nprint('x')"
+}
