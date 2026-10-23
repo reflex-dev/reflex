@@ -1,0 +1,166 @@
+{
+ "label": "hot-prev",
+ "venv": "prev",
+ "extra_env": {},
+ "checks": [
+  {
+   "name": "backend_up",
+   "ok": true,
+   "detail": "4.9s"
+  },
+  {
+   "name": "frontend_up",
+   "ok": true,
+   "detail": "3.3s"
+  },
+  {
+   "name": "1_baseline_bump",
+   "ok": true,
+   "detail": "label: v1 h1 pid=18345 env=m1 cfg=none"
+  },
+  {
+   "name": "2_reload_after_handler_edit",
+   "ok": true,
+   "detail": "new worker 18605 after 0.36s"
+  },
+  {
+   "name": "2_handler_edit_visible",
+   "ok": true,
+   "detail": "label: v2 h1 pid=18605 env=m1 cfg=none"
+  },
+  {
+   "name": "2_count_after_reload",
+   "ok": true,
+   "detail": "count: 2 (dev: state survives reload? count was 1 before edit)"
+  },
+  {
+   "name": "3_reload_after_helper_edit",
+   "ok": true,
+   "detail": "new worker 18640 after 0.68s"
+  },
+  {
+   "name": "3_helper_edit_visible",
+   "ok": true,
+   "detail": "label: v2 h2 pid=18640 env=m1 cfg=none"
+  },
+  {
+   "name": "4_reload_after_add_page_state",
+   "ok": true,
+   "detail": "new worker 18738 after 0.28s"
+  },
+  {
+   "name": "4_new_var_renders",
+   "ok": true,
+   "detail": "added: added-default"
+  },
+  {
+   "name": "4_new_page_renders",
+   "ok": true,
+   "detail": "msg: about-default"
+  },
+  {
+   "name": "4_new_state_handler_works",
+   "ok": true,
+   "detail": "msg: hello 7 pid=18738"
+  },
+  {
+   "name": "5_broken_backend_refuses_fast",
+   "ok": true,
+   "detail": "[{\"t\": 2.5, \"ping\": \"refused\", \"ping_s\": 0.0, \"tcp\": \"refused\"}, {\"t\": 3.0, \"ping\": \"refused\", \"ping_s\": 0.0, \"tcp\": \"refused\"}, {\"t\": 3.5, \"ping\": \"refused\", \"ping_s\": 0.0, \"tcp\": \"refused\"}, {\"t\": 4.0, \"ping\": \"refused\", \"ping_s\": 0.0, \"tcp\": \"refused\"}, {\"t\": 4.5, \"ping\": \"refused\", \"ping_s\": 0.0, \"tcp\": \"refused\"}, {\"t\": 5.0, \"ping\": \"refused\", \"ping_s\": 0.0, \"tcp\": \"refused\"}]"
+  },
+  {
+   "name": "5_syntax_error_logged",
+   "ok": true,
+   "detail": "SyntaxError in server log: True"
+  },
+  {
+   "name": "5_recovers_after_fix",
+   "ok": true,
+   "detail": "200 after 0.5s"
+  },
+  {
+   "name": "5_new_code_served",
+   "ok": true,
+   "detail": "{'pid': 18835, 'app_version': 'v3'}"
+  },
+  {
+   "name": "5_browser_sees_v3",
+   "ok": true,
+   "detail": "label: v3 h2 pid=18835 env=m1 cfg=none"
+  },
+  {
+   "name": "6_rxconfig_edit_picked_up",
+   "ok": false,
+   "detail": "reload=True (0.36s) label='label: v3 h2 pid=18847 env=m1 cfg=none'"
+  },
+  {
+   "name": "7_final_handler_edit",
+   "ok": true,
+   "detail": "'label: v4 h2 pid=19021 env=m1 cfg=none' reload 0.34s"
+  },
+  {
+   "name": "console_clean",
+   "ok": false,
+   "detail": "error: Cannot process state update: no dispatch function for substate(s) \"reflex___state____state.hotapp___hotapp____about_state\". Try refreshing the page or clearing your browser cache. This error usually indicates a mismatch between frontend and backend state definitions. If you are the developer of this app, rebuild the frontend and check that api_url is correct. | warning: WebSocket connection"
+  }
+ ],
+ "timeline": [
+  [
+   0.0,
+   "edit hotapp.py: 'app = rx.App()\\n' -> 'from starlette.applications im'"
+  ],
+  [
+   12.09,
+   "edit hotapp.py: 'APP_VERSION = \"v1\"' -> 'APP_VERSION = \"v2\"'"
+  ],
+  [
+   12.74,
+   "edit helper.py: 'HELPER_VERSION = \"h1\"' -> 'HELPER_VERSION = \"h2\"'"
+  ],
+  [
+   15.47,
+   "edit hotapp.py: '# MARKER: new pages / states g' -> 'class AboutState(rx.State):\\n  '"
+  ],
+  [
+   15.48,
+   "edit hotapp.py: '    pid: int = 0\\n' -> '    pid: int = 0\\n    added: st'"
+  ],
+  [
+   15.48,
+   "edit hotapp.py: 'rx.text(\"pid: \", State.pid, id' -> 'rx.text(\"pid: \", State.pid, id'"
+  ],
+  [
+   19.58,
+   "edit hotapp.py: 'APP_VERSION = \"v2\"' -> 'APP_VERSION = \"v3\"\\nthis is a s'"
+  ],
+  [
+   25.08,
+   "edit hotapp.py: 'APP_VERSION = \"v3\"\\nthis is a s' -> 'APP_VERSION = \"v3\"\\n'"
+  ],
+  [
+   26.24,
+   "edit rxconfig.py: '    app_name=\"hotapp\",\\n' -> '    app_name=\"hotapp\",\\n    qa_'"
+  ],
+  [
+   41.7,
+   "edit hotapp.py: 'APP_VERSION = \"v3\"' -> 'APP_VERSION = \"v4\"'"
+  ]
+ ],
+ "pass": 18,
+ "fail": 2,
+ "stop": {
+  "rc": 0,
+  "seconds": 0.62,
+  "leftovers": "",
+  "ping_after": "refused"
+ },
+ "log": {
+  "unexpected_exit": 1,
+  "tracebacks": 1,
+  "spawning_worker": 8,
+  "errors": [
+   "SyntaxError: invalid syntax",
+   "[ERROR] Unexpected exit from worker-1"
+  ]
+ }
+}

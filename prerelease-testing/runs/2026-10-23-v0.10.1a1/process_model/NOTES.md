@@ -57,4 +57,73 @@ NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1 $SB/envs/driver/bin/py
 | console | clean except the favicon 404 | same |
 | SIGTERM to the supervisor | exits in 1.3-2.0 s, 0 leftovers, no "Unexpected exit" | (see below) |
 | SIGINT to the supervisor | exits < 1 s, 0 leftovers | |
-| `kill -9` one worker | **the whole server shuts down**: `[ERROR] Unexpected exit from worker-1` → `Shutting down granian` → all 8 workers stopped → `Reflex app stopped`; port closed (granian default `respawn_failed_workers=False`) | same (see below) |
+| `kill -9` one worker | **the whole server shuts down**: `[ERROR] Unexpected exit from worker-1` → `Shutting down granian` → all 8 workers stopped → `Reflex app stopped`; port closed (granian default `respawn_failed_workers=False`) | identical (worker-1 killed → all 9 stopped → app stopped) |
+
+Both versions behave the same here because `_run_prod` compiles the app in the CLI process (`_compile_app(avoid_dirty_check=False)`),
+so on Python 3.12 (Linux default `fork`) 0.10.0 already forked workers from a process holding the imported app. Note
+`start_method_at_import` is `None` on 0.10.1a1 too: the import happens during the compile, before `run_granian_backend_prod`
+sets the start method, so the "set before the preload" comment in `exec.py` only applies to `--backend-only`.
+
+### 2. Prod **backend-only** + Redis (`reflex run --env prod --backend-only --backend-port 8201`) — the container deployment path
+`scripts/probe_run.sh <venv> <label> prod-be 8201` (start, wait, tree, whoami x60, SIGTERM). Results `out/whoami-*.json`, `out/tree-*.json`.
+| | new 0.10.1a1 (fork, default) | prev 0.10.0 |
+|---|---|---|
+| `/ping` up | 2.2 s wall | 3.2 s wall |
+| workers | 8 | 9 |
+| tree PSS (python) | **200 MB** (8 workers ~21 MB + supervisor) | **693 MB** (9 workers ~70 MB each: every worker imports the app) |
+| app imported in worker | 0/8 (preloaded in supervisor pid) | **9/9** |
+| import-time `threading.Thread` ticker alive in worker | **0/8** (counter frozen) | 9/9, advancing |
+| import-time `threading.Timer` chain | dead in workers | alive in every worker |
+| import-time `QueueListener` logging thread | **0/8 alive** → every `qlog.info()` from a worker is silently lost | 9/9 alive |
+| module-level `random.random()` / `uuid4()` / `secrets.token_hex()` | **1 distinct value across 8 workers** | 9 distinct (one per worker) |
+| user `random.Random()` instance first draw | **identical in all 8 workers** | 9 distinct |
+| global `random.random()` after fork | distinct per worker | distinct |
+| lifespan task | once per worker | once per worker |
+| SIGTERM | 1.5 s, 0 leftovers, 0 "Unexpected exit" | 2.5 s, 0 leftovers |
+→ This is the #7079 behaviour change in its documented form ("Set `REFLEX_BACKEND_START_METHOD=spawn` for apps that are not
+fork-safe"); 0.10.0 ran module-level code once per worker in this mode, 0.10.1a1 runs it once in the supervisor. See ISSUE-1.
+
+### 3. `REFLEX_BACKEND_START_METHOD` matrix, `GRANIAN_WORKERS`, memory manager (backend-only prod, new unless noted)
+| run | workers | up | PSS python | imported in worker | threads alive | distinct module random | notes |
+|---|---|---|---|---|---|---|---|
+| `fork` (default, Redis) | 8 | 2.2 s | 200 MB | 0/8 | 0/8 | 1 | `start_method` in worker = fork |
+| `spawn` (Redis) | 8 | 4.3 s | 701 MB | 8/8 | 8/8 | 8 | workers import the app; = 0.10.0 behaviour (0.10.0: 693 MB) |
+| `forkserver` (Redis) | 8 | 4.3 s | 701 MB | 8/8 | 8/8 | 8 | +1 forkserver process in the tree (10 procs) |
+| `bogus` (invalid) | — | fails at once | — | — | — | — | `EnvironmentVarValueError: Invalid literal value: 'bogus' for REFLEX_BACKEND_START_METHOD, expected one of ('fork', 'spawn', 'forkserver')`, then `Info: Reflex app stopped.` rc≠0 — clear (traceback printed) |
+| `GRANIAN_WORKERS=12` (Redis) | **12** | 2.1 s | 243 MB | 0/12 | 0/12 | 1 | override above the cap honoured |
+| memory manager (no Redis) | 1 | 2.1 s | 106 MB | 0/1 | 0/1 | 1 | prev: 1 worker, 120 MB, imported in worker, threads alive |
+All runs: SIGTERM exit 1.5-3.0 s, 0 leftovers, 0 `Unexpected exit`, 0 tracebacks (`logs/new-be-*.trimmed.log`).
+
+### 4. Dev hot reload (#7113) — `scripts/hot_reload.py <venv> <appdir> 3202 8202 out/hot-<label>.json [--env K=V]`
+Fresh copy of `apps/hotapp` (+ a `/api/pid` route injected by the driver), `reflex run --loglevel debug`, Chromium on `/`.
+Sequence: bump → edit handler constant (v2) → edit `helper.py` (h2) → add a state var + `/about` page with a new state →
+break `hotapp.py` (SyntaxError), probe the backend port 6x while broken (CLI-16) → fix → edit `rxconfig.py` (`qa_marker`) →
+edit again (v4) → SIGTERM. Results `out/hot-*.json`, full server logs `out/hot-*.json.server.log`.
+| check | new (fork, default) | new `REFLEX_STRICT_HOT_RELOAD=1` (spawn) | prev 0.10.0 (fork) |
+|---|---|---|---|
+| backend up | 4.5 s | 3.7 s | see json |
+| worker replaced after a handler edit | 0.30 s | 1.66 s | |
+| helper-module edit visible | yes (0.41 s) | yes (1.47 s) | |
+| new var + new page + new state | render and work (0.33 s) | work (1.29 s) | |
+| **CLI-16** port while the module is broken | `refused` instantly on all 6 probes (0.00 s), no hang; recovers 0.5 s after the fix | refused instantly; recovers 1.2 s | |
+| `rxconfig.py` edit | worker restarts (0.28 s) but **`cfg=none`: the forked worker keeps the supervisor's cached `rxconfig` module** | **picked up** (`cfg=cfg2`) | |
+| console warnings during reloads | #7553 "built for another version ... state schema" banner + #7435 "Skipping state update for unknown substate(s) ... about_state" while the frontend rebuilds after the add-page edit (transient, page recovers) | same two warnings | |
+| SIGTERM | exits 0.27 s, 0 leftovers, port refused | 0.86 s, one momentary `<defunct>` python | |
+| `Unexpected exit from worker-1` in the log | once, immediately after the SyntaxError crash (a real crash); **none at shutdown** (#7538 OK) | same | |
+| state (`count`) across reloads | kept (2 after the first reload) | kept | |
+prev 0.10.0 (fork): identical to new/fork — reloads 0.28-0.68 s, CLI-16 refused instantly, recovers 0.5 s, `rxconfig.py` edit NOT
+picked up (`cfg=none`) → the rxconfig limitation is pre-existing (the supervisor imports `rxconfig` and the forked worker keeps
+the cached module; 0.10.0 on Python 3.12 forks too). prev's console shows the old *error* `Cannot process state update: no
+dispatch function for substate(s) ... about_state` during the add-page reload where new shows the #7435 *warning*.
+new + Redis (`--env REFLEX_REDIS_URL=redis://localhost:8219`, `out/hot-new-redis.json`): same results as new/memory (18/20,
+reloads 0.27-0.33 s, CLI-16 refused instantly, rxconfig not picked up).
+
+### 5. #7052 atomic + locked `reflex.json` writes — `scripts/json_lock_probe.py <venv> <workdir> 8 40 [--reflex-dir DIR]`
+8 spawned processes x 40 `path_ops.update_json_file(<workdir>/reflex.json, {unique_key: pid})` (installed reflex) + a reader
+re-parsing the file every 2 ms. `out/jsonlock-results.txt`.
+| | keys present / 320 | reader invalid parses | tmp files left | |
+|---|---|---|---|---|
+| new, default `REFLEX_DIR` (`~/.local/share/reflex/locks` sidecar) | **320 / 320** | 0 / 296 reads | none | 1.1 s |
+| prev 0.10.0 | a writer crashes: `json.decoder.JSONDecodeError: Extra data: line 1 column 470` (read-modify-write race on a partial file) | | | the bug #7052 fixes |
+| new, `REFLEX_DIR/locks` is a regular file (lock dir cannot be created) | 121 / 320 (updates overwrite each other) | 0 / 176 | none | documented fallback: "writes remain atomic but concurrent updates may overwrite each other"; logged at debug only |
+| new, read-only `REFLEX_DIR` (`chattr +i`) | 99 / 320 | 0 | none | same documented fallback |

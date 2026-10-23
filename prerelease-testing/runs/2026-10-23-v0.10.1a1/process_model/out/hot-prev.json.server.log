@@ -1,0 +1,506 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/prev/lib/python3.12/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='hotapp', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'app_name', 'loglevel', 'telemetry_enabled', 
+'plugins'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[SitemapPlugin(trailing_slash='preserve'), 
+TailwindV4Plugin(config={'plugins': ['@tailwindcss/typography@0.5.20']}), 
+RadixThemesPlugin(theme={"name": "RadixThemesTheme", "props": 
+["accentColor:\"blue\"", "css:{...theme.styles.global[':root'], 
+...theme.styles.global.body}"], "children": []})], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+'--version']
+Debug: [Reflex 0.10.0 with Python 3.12.3 (PATH: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs
+/prev/bin/python)]
+Debug: [Node 22.22.0 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.4 (Minimum: 1.4.0) (PATH: 
+/root/.local/share/reflex/bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.5 LTS]
+Debug: Using package installer at: ['/root/.local/share/reflex/bun/bin/bun', 
+'/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.local/share/reflex/bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/prev/lib/python3.12/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='hotapp', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'app_name', 'loglevel', 'telemetry_enabled', 
+'plugins'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[SitemapPlugin(trailing_slash='preserve'), 
+TailwindV4Plugin(config={'plugins': ['@tailwindcss/typography@0.5.20']}), 
+RadixThemesPlugin(theme={"name": "RadixThemesTheme", "props": 
+["accentColor:\"blue\"", "css:{...theme.styles.global[':root'], 
+...theme.styles.global.body}"], "children": []})], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+'--version']
+Debug: [Reflex 0.10.0 with Python 3.12.3 (PATH: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs
+/prev/bin/python)]
+Debug: [Node 22.22.0 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.4 (Minimum: 1.4.0) (PATH: 
+/root/.local/share/reflex/bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.5 LTS]
+Debug: Using package installer at: ['/root/.local/share/reflex/bun/bin/bun', 
+'/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.local/share/reflex/bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────────── Initializing hotapp ──────────────────────────────
+Debug: Creating /root/.local/share/reflex
+Debug: Ensuring reflex installation id.
+Debug: Creating /root/.local/share/reflex
+Debug: Validating frontend dependencies.
+Debug: Installing or validating bun.
+Debug: Running command: [PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+'--version']
+Debug: Skipping bun installation as it is already installed.
+Info: Initializing the web directory.
+Debug: Copying 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs
+/prev/lib/python3.12/site-packages/reflex_base/.templates/web to .web
+Debug: Restoring lockfiles.
+Debug: Initializing the web directory.
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/process_model/run/hotapp-prev/reflex.lock/package.json
+Debug: Initializing the bun config file.
+Debug: Using cached value for _get_best_registry with payload: constant
+Debug: Initializing the .npmrc file.
+Debug: Initializing the public directory.
+Debug: Initializing the react-router.config.js file.
+Debug: Initializing the vite.config.js file.
+Debug: Initializing the reflex.json file.
+Debug: Setting project hash to 113974542093480803559878611126628379293.
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.437 seconds
+Debug: Latest version of reflex: 0.10.0
+Debug: Creating .gitignore
+Debug: Appending reflex== to requirements.txt
+Success: Initialized hotapp. Install dependencies from `requirements.txt` with 
+`uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3202
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8202
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Frontend port: 3202 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Frontend port: 3202 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Frontend port: 3202 is not in use.
+Debug: Checking if Backend port: 8202 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Backend port: 8202 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Backend port: 8202 is not in use.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: [timing] Compile pages: 0.04s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', '-d', '@tailwindcss/typography@0.5.20', 
+'autoprefixer@10.6.1', 'vite@8.3.2', 'postcss@8.5.29', 
+'@react-router/dev@8.4.0', 'tailwindcss@4.3.0', '@emotion/react@11.14.0', 
+'@react-router/fs-routes@8.4.0', '@tailwindcss/postcss@4.3.0', 
+'postcss-import@17.0.0']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.4 (38afee6c8)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [113]
+Debug: Saved lockfile
+Debug: 
+Debug: installed @tailwindcss/typography@0.5.20
+Debug: installed autoprefixer@10.6.1 with binaries:
+Debug:  - autoprefixer
+Debug: installed vite@8.3.2 with binaries:
+Debug:  - vite
+Debug: installed postcss@8.5.29
+Debug: installed @react-router/dev@8.4.0 with binaries:
+Debug:  - react-router
+Debug: installed tailwindcss@4.3.0
+Debug: installed @emotion/react@11.14.0
+Debug: installed @react-router/fs-routes@8.4.0
+Debug: installed @tailwindcss/postcss@4.3.0
+Debug: installed postcss-import@17.0.0
+Debug: 
+Debug: 143 packages installed [1.80s]
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', '@radix-ui/themes@3.3.0', 'react-dom@19.3.0', 
+'isbot@5.2.2', '@react-router/node@8.4.0', 'universal-cookie@8.1.2', 
+'react-router@8.4.0', 'react-helmet@6.1.0', 'lucide-react@1.26.0', 
+'sonner@2.0.8', 'react-error-boundary@6.1.6', 'mergician@v2.0.2', 
+'react@19.3.0', 'socket.io-client@4.8.4']
+Debug: Installing frontend packages
+Debug: bun add v1.4.4 (38afee6c8)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [13]
+Debug: Saved lockfile
+Debug: 
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed react-dom@19.3.0
+Debug: installed isbot@5.2.2
+Debug: installed @react-router/node@8.4.0
+Debug: installed universal-cookie@8.1.2
+Debug: installed react-router@8.4.0
+Debug: installed react-helmet@6.1.0
+Debug: installed lucide-react@1.26.0
+Debug: installed sonner@2.0.8
+Debug: installed react-error-boundary@6.1.6
+Debug: installed mergician@2.0.2
+Debug: installed react@19.3.0
+Debug: installed socket.io-client@4.8.4
+Debug: 
+Debug: 99 packages installed [719.00ms]
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/process_model/run/hotapp-prev/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/process_model/run/hotapp-prev/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 2.56s
+Debug: [timing] Write to Disk: 0.01s
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Using Granian for backend
+Debug: Reload paths: 
+['/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/ap
+ps/process_model/run/hotapp-prev/requirements.txt', 
+'/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/app
+s/process_model/run/hotapp-prev/hotapp', 
+'/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/app
+s/process_model/run/hotapp-prev/rxconfig.py']
+[INFO] Starting granian (main PID: 18267)
+[INFO] Listening at: http://0.0.0.0:8202
+[INFO] Spawning worker-1 with PID: 18345
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug:   ➜  Local:   http://localhost:3202/
+App running at: http://localhost:3202/
+Backend running at: http://0.0.0.0:8202
+Debug:   ➜  Network: http://192.0.2.2:3202/  eth0
+Debug: 9:13:31 PM [vite] (ssr) connected.
+[INFO] Changes detected, reloading workers..
+[INFO] Modified: /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/process_model/run/hotapp-prev/hotapp/hotapp.py
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 3 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 3 items
+[INFO] Stopped worker-1
+[INFO] Spawning worker-1 with PID: 18605
+Debug: Registered lifespan task: _setup_event_processor
+Debug: [timing] Compile pages: 0.06s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+Debug: Using cached value for _install_frontend_packages with payload: 
+['@radix-ui/themes@3.3.0', 'lucide-react@1.26.0', 'react-error-boundary@6.1.6', 
+'sonner@2.0.8'],['@tailwindcss/postcss@4.3.0', '@tailwindcss/typography@0.5.20',
+'tailwindcss@4.3.0'],True,['/root/.local/share/reflex/bun/bin/bun', 
+'/opt/node22/bin/npm'],[('@react-router/node', '8.4.0'), ('isbot', '5.2.2'), 
+('mergician', 'v2.0.2'), ('react', '19.3.0'), ('react-dom', '19.3.0'), 
+('react-helmet', '6.1.0'), ('react-router', '8.4.0'), ('socket.io-client', 
+'4.8.4'), ('universal-cookie', '8.1.2')],[('@emotion/react', '11.14.0'), 
+('@react-router/dev', '8.4.0'), ('@react-router/fs-routes', '8.4.0'), 
+('autoprefixer', '10.6.1'), ('postcss', '8.5.29'), ('postcss-import', '17.0.0'),
+('vite', '8.3.2')],[]
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/process_model/run/hotapp-prev/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/process_model/run/hotapp-prev/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.01s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug: 9:13:37 PM [vite] (client) hmr update /app/routes/_index.jsx
+Debug: 9:13:37 PM [vite] (client) hmr update /app/routes/_index.jsx, 
+/styles/__reflex_global_styles.css?direct
+[INFO] Changes detected, reloading workers..
+[INFO] Modified: /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/process_model/run/hotapp-prev/hotapp/helper.py
+[INFO] Stopping worker-1
+
+thread 'tokio-rt-worker' (18608) panicked at /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-0.30.1/src/internal/state.rs:364:9:
+Cannot drop pointer into Python heap without the thread being attached.
+stack backtrace:
+note: Some details are omitted, run with `RUST_BACKTRACE=full` for a verbose backtrace.
+[INFO] Stopped worker-1
+[INFO] Spawning worker-1 with PID: 18640
+Debug: Registered lifespan task: _setup_event_processor
+Debug: [timing] Compile pages: 0.04s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+Debug: Using cached value for _install_frontend_packages with payload: 
+['@radix-ui/themes@3.3.0', 'lucide-react@1.26.0', 'react-error-boundary@6.1.6', 
+'sonner@2.0.8'],['@tailwindcss/postcss@4.3.0', '@tailwindcss/typography@0.5.20',
+'tailwindcss@4.3.0'],True,['/root/.local/share/reflex/bun/bin/bun', 
+'/opt/node22/bin/npm'],[('@react-router/node', '8.4.0'), ('isbot', '5.2.2'), 
+('mergician', 'v2.0.2'), ('react', '19.3.0'), ('react-dom', '19.3.0'), 
+('react-helmet', '6.1.0'), ('react-router', '8.4.0'), ('socket.io-client', 
+'4.8.4'), ('universal-cookie', '8.1.2')],[('@emotion/react', '11.14.0'), 
+('@react-router/dev', '8.4.0'), ('@react-router/fs-routes', '8.4.0'), 
+('autoprefixer', '10.6.1'), ('postcss', '8.5.29'), ('postcss-import', '17.0.0'),
+('vite', '8.3.2')],[]
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/process_model/run/hotapp-prev/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/process_model/run/hotapp-prev/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.01s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+[INFO] Changes detected, reloading workers..
+[INFO] Modified: /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/process_model/run/hotapp-prev/hotapp/hotapp.py
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[INFO] Stopped worker-1
+[INFO] Spawning worker-1 with PID: 18738
+Debug: Registered lifespan task: _setup_event_processor
+Debug: [timing] Compile pages: 0.04s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 20/19 0:00:00
+Debug: Using cached value for _install_frontend_packages with payload: 
+['@radix-ui/themes@3.3.0', 'lucide-react@1.26.0', 'react-error-boundary@6.1.6', 
+'sonner@2.0.8'],['@tailwindcss/postcss@4.3.0', '@tailwindcss/typography@0.5.20',
+'tailwindcss@4.3.0'],True,['/root/.local/share/reflex/bun/bin/bun', 
+'/opt/node22/bin/npm'],[('@react-router/node', '8.4.0'), ('isbot', '5.2.2'), 
+('mergician', 'v2.0.2'), ('react', '19.3.0'), ('react-dom', '19.3.0'), 
+('react-helmet', '6.1.0'), ('react-router', '8.4.0'), ('socket.io-client', 
+'4.8.4'), ('universal-cookie', '8.1.2')],[('@emotion/react', '11.14.0'), 
+('@react-router/dev', '8.4.0'), ('@react-router/fs-routes', '8.4.0'), 
+('autoprefixer', '10.6.1'), ('postcss', '8.5.29'), ('postcss-import', '17.0.0'),
+('vite', '8.3.2')],[]
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/process_model/run/hotapp-prev/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/process_model/run/hotapp-prev/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.00s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+[Reflex Frontend Exception]
+ [SID: 9A78Qs2Mp2jnNKhMAAAB] State update failed: no dispatch function for 
+substate(s) 'reflex___state____state.hotapp___hotapp____about_state'. This 
+indicates a frontend/backend state mismatch. Rebuild the frontend or check that 
+api_url points to the matching backend.
+
+Debug: 9:13:40 PM [vite] (client) [console.error] Cannot process state update: 
+no dispatch function for substate(s) 
+"reflex___state____state.hotapp___hotapp____about_state". Try refreshing the 
+page or clearing your browser cache. This error usually indicates a mismatch 
+between frontend and backend state definitions. If you are the developer of this
+app, rebuild the frontend and check that api_url is correct.
+Debug: 9:13:40 PM [vite] (client) hmr update /app_components/hotapp/hotapp.jsx
+Debug: 9:13:40 PM [vite] (client) hmr update /app_components/hotapp/hotapp.jsx, 
+/styles/__reflex_global_styles.css?direct
+Debug: 9:13:40 PM [vite] (client) hmr update 
+/styles/__reflex_global_styles.css?direct
+Debug: 9:13:40 PM [vite] (client) hmr update /utils/context.jsx
+Debug: 9:13:40 PM [vite] (client) hmr update /utils/context.jsx
+Debug: 9:13:40 PM [vite] (client) hmr update /utils/context.jsx, 
+/styles/__reflex_global_styles.css?direct
+Debug: 9:13:40 PM [vite] (ssr) page reload utils/context.jsx
+Debug: 9:13:40 PM [vite] (ssr) program reload
+Debug: 9:13:40 PM [vite] (client) hmr update 
+/styles/__reflex_global_styles.css?direct
+Debug: 9:13:40 PM [vite] (client) hmr update /app/routes/_index.jsx
+Debug: 9:13:40 PM [vite] (client) hmr update /app/routes/_index.jsx, 
+/styles/__reflex_global_styles.css?direct
+Debug: 9:13:40 PM [react-router] Config changed.
+Debug: 9:13:40 PM [vite] (client) hmr invalidate 
+/app_components/hotapp/hotapp.jsx Could not Fast Refresh (new export)
+Debug: 9:13:40 PM [vite] (client) hmr update /app/routes/_index.jsx
+Debug: 9:13:40 PM [vite] (client) hmr update 
+/styles/__reflex_global_styles.css?direct
+Debug: 9:13:41 PM [vite] (client) hmr update 
+/styles/__reflex_global_styles.css?direct
+Debug: 9:13:41 PM [vite] (client) hmr update 
+/styles/__reflex_global_styles.css?direct
+Debug: 9:13:41 PM [vite] (client) hmr update 
+/styles/__reflex_global_styles.css?direct
+Debug: 9:13:41 PM [vite] (client) hmr update 
+/styles/__reflex_global_styles.css?direct
+Debug: 9:13:41 PM [vite] (client) hmr update 
+/styles/__reflex_global_styles.css?direct
+Debug: 9:13:41 PM [vite] (client) hmr update 
+/styles/__reflex_global_styles.css?direct
+Debug: 9:13:41 PM [vite] (client) hmr invalidate /utils/context.jsx Could not 
+Fast Refresh. Learn more at 
+https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#cons
+istent-components-exports
+Debug: 9:13:41 PM [vite] (client) hmr update /app/root.jsx, 
+/utils/components/Errorboundary_errorboundary_a7facd581506cbdc89fa19e0ccc9659b.j
+sx, /app_components/reflex/compiler/compiler.jsx, 
+/app_components/reflex/app.jsx, /app_components/hotapp/hotapp.jsx
+[INFO] Changes detected, reloading workers..
+[INFO] Modified: /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/process_model/run/hotapp-prev/hotapp/hotapp.py
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 4 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 4 items
+[INFO] Stopped worker-1
+[INFO] Spawning worker-1 with PID: 18764
+Process granian-worker:
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/usr/lib/python3.12/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/prev/lib/python3.12/site-packages/granian/server/mp.py", line 92, in wrapped
+    callback = callback_loader()
+               ^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/prev/lib/python3.12/site-packages/granian/_internal.py", line 65, in load_target
+    module = load_module(path)
+             ^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/prev/lib/python3.12/site-packages/granian/_internal.py", line 47, in load_module
+    __import__(module_name)
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/process_model/run/hotapp-prev/hotapp/hotapp.py", line 14
+    this is a syntax error
+              ^^^^^^
+SyntaxError: invalid syntax
+[ERROR] Unexpected exit from worker-1
+[INFO] Changes detected, reloading workers..
+[INFO] Modified: /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/process_model/run/hotapp-prev/hotapp/hotapp.py
+[INFO] Stopped worker-1
+[INFO] Spawning worker-1 with PID: 18835
+Debug: Registered lifespan task: _setup_event_processor
+Debug: [timing] Compile pages: 0.06s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 20/19 0:00:00
+Debug: Using cached value for _install_frontend_packages with payload: 
+['@radix-ui/themes@3.3.0', 'lucide-react@1.26.0', 'react-error-boundary@6.1.6', 
+'sonner@2.0.8'],['@tailwindcss/postcss@4.3.0', '@tailwindcss/typography@0.5.20',
+'tailwindcss@4.3.0'],True,['/root/.local/share/reflex/bun/bin/bun', 
+'/opt/node22/bin/npm'],[('@react-router/node', '8.4.0'), ('isbot', '5.2.2'), 
+('mergician', 'v2.0.2'), ('react', '19.3.0'), ('react-dom', '19.3.0'), 
+('react-helmet', '6.1.0'), ('react-router', '8.4.0'), ('socket.io-client', 
+'4.8.4'), ('universal-cookie', '8.1.2')],[('@emotion/react', '11.14.0'), 
+('@react-router/dev', '8.4.0'), ('@react-router/fs-routes', '8.4.0'), 
+('autoprefixer', '10.6.1'), ('postcss', '8.5.29'), ('postcss-import', '17.0.0'),
+('vite', '8.3.2')],[]
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/process_model/run/hotapp-prev/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/process_model/run/hotapp-prev/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.01s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug: 9:13:50 PM [vite] (client) hmr update /app/routes/_index.jsx
+Debug: 9:13:50 PM [vite] (client) hmr update /app/routes/_index.jsx, 
+/styles/__reflex_global_styles.css?direct
+[INFO] Changes detected, reloading workers..
+[INFO] Modified: /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/process_model/run/hotapp-prev/rxconfig.py
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 3 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 3 items
+[INFO] Stopped worker-1
+[INFO] Spawning worker-1 with PID: 18847
+Debug: Registered lifespan task: _setup_event_processor
+Debug: [timing] Compile pages: 0.07s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 20/19 0:00:00
+Debug: Using cached value for _install_frontend_packages with payload: 
+['@radix-ui/themes@3.3.0', 'lucide-react@1.26.0', 'react-error-boundary@6.1.6', 
+'sonner@2.0.8'],['@tailwindcss/postcss@4.3.0', '@tailwindcss/typography@0.5.20',
+'tailwindcss@4.3.0'],True,['/root/.local/share/reflex/bun/bin/bun', 
+'/opt/node22/bin/npm'],[('@react-router/node', '8.4.0'), ('isbot', '5.2.2'), 
+('mergician', 'v2.0.2'), ('react', '19.3.0'), ('react-dom', '19.3.0'), 
+('react-helmet', '6.1.0'), ('react-router', '8.4.0'), ('socket.io-client', 
+'4.8.4'), ('universal-cookie', '8.1.2')],[('@emotion/react', '11.14.0'), 
+('@react-router/dev', '8.4.0'), ('@react-router/fs-routes', '8.4.0'), 
+('autoprefixer', '10.6.1'), ('postcss', '8.5.29'), ('postcss-import', '17.0.0'),
+('vite', '8.3.2')],[]
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/process_model/run/hotapp-prev/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/process_model/run/hotapp-prev/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.01s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+[INFO] Changes detected, reloading workers..
+[INFO] Modified: /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/process_model/run/hotapp-prev/hotapp/hotapp.py
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[INFO] Stopped worker-1
+[INFO] Spawning worker-1 with PID: 19021
+Debug: Registered lifespan task: _setup_event_processor
+Debug: [timing] Compile pages: 0.04s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 20/19 0:00:00
+Debug: Using cached value for _install_frontend_packages with payload: 
+['@radix-ui/themes@3.3.0', 'lucide-react@1.26.0', 'react-error-boundary@6.1.6', 
+'sonner@2.0.8'],['@tailwindcss/postcss@4.3.0', '@tailwindcss/typography@0.5.20',
+'tailwindcss@4.3.0'],True,['/root/.local/share/reflex/bun/bin/bun', 
+'/opt/node22/bin/npm'],[('@react-router/node', '8.4.0'), ('isbot', '5.2.2'), 
+('mergician', 'v2.0.2'), ('react', '19.3.0'), ('react-dom', '19.3.0'), 
+('react-helmet', '6.1.0'), ('react-router', '8.4.0'), ('socket.io-client', 
+'4.8.4'), ('universal-cookie', '8.1.2')],[('@emotion/react', '11.14.0'), 
+('@react-router/dev', '8.4.0'), ('@react-router/fs-routes', '8.4.0'), 
+('autoprefixer', '10.6.1'), ('postcss', '8.5.29'), ('postcss-import', '17.0.0'),
+('vite', '8.3.2')],[]
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/process_model/run/hotapp-prev/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/process_model/run/hotapp-prev/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.01s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug: 9:14:06 PM [vite] (client) hmr update /app/routes/_index.jsx
+Debug: 9:14:06 PM [vite] (client) hmr update /app/routes/_index.jsx, 
+/styles/__reflex_global_styles.css?direct
+[INFO] Shutting down granian
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 3 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 3 items
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Debug: error: script "dev" exited with code 143
+Info: Reflex app stopped.

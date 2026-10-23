@@ -1,0 +1,43 @@
+{
+ "label": "noinit-new-dev",
+ "checks": [
+  {
+   "name": "hydrated",
+   "ok": true,
+   "detail": "hydrated: yes"
+  },
+  {
+   "name": "on_load_delta_rendered",
+   "ok": true,
+   "detail": "loaded: loaded pid=20534"
+  },
+  {
+   "name": "click_updates_state",
+   "ok": true,
+   "detail": "count: 2"
+  },
+  {
+   "name": "substate_handler",
+   "ok": true,
+   "detail": "note: note 2"
+  },
+  {
+   "name": "reload_keeps_state",
+   "ok": true,
+   "detail": "count: 2"
+  },
+  {
+   "name": "console_clean",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "no_dispatch_error_absent",
+   "ok": true,
+   "detail": ""
+  }
+ ],
+ "console": [],
+ "pass": 7,
+ "fail": 0
+}
