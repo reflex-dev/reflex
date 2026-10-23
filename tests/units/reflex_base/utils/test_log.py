@@ -1066,6 +1066,20 @@ def test_output_pump_write_snapshots_use_a_consistent_cutoff(monkeypatch):
     assert pump.writing_snapshot() == (25.0, 10.0)
 
 
+def test_output_pump_batches_pipe_records_without_truncating(monkeypatch):
+    """Normal pipe output is batched only at complete record boundaries."""
+    pump = log._OutputPump(0, 1, "info", "stdout")
+    pump._atomic_write_limit = 8
+    writes = []
+    monkeypatch.setattr(log, "_write_all", lambda fd, data: writes.append(data))
+
+    pump._write_records(b"one\ntwo\nthree\n")
+
+    assert writes == [b"one\ntwo\n", b"three\n"]
+    assert all(len(write) <= pump._atomic_write_limit for write in writes)
+    assert b"".join(writes) == b"one\ntwo\nthree\n"
+
+
 _STALLED_CONSUMER_SCRIPT = """
 import os
 import subprocess

@@ -560,15 +560,52 @@ class _OutputPump(threading.Thread):
             self._write_state = (elapsed, started)
         # Keep reading when the consumer is gone: a full pipe blocks the child.
         with contextlib.suppress(OSError):
-            if self._shutdown_requested.is_set():
-                for record in data.splitlines(keepends=True):
-                    if self._atomic_write_limit is not None:
-                        record = _truncate_json_record(record, self._atomic_write_limit)
-                    _write_all(self.write_fd, record)
-            else:
+            if self._atomic_write_limit is None:
                 _write_all(self.write_fd, data)
+            else:
+                self._write_records(data)
         with self._write_lock:
             self._write_state = (elapsed + time.monotonic() - started, None)
+
+    def _write_records(self, data: bytes) -> None:
+        """Write complete records in batches no larger than the pipe limit.
+
+        Args:
+            data: The complete JSON records to write.
+        """
+        limit = self._atomic_write_limit
+        assert limit is not None
+        records = data.splitlines(keepends=True)
+        batch = bytearray()
+        for index, record in enumerate(records):
+            if self._shutdown_requested.is_set():
+                if batch:
+                    _write_all(self.write_fd, bytes(batch))
+                self._write_shutdown_records(records[index:])
+                return
+            if len(record) > limit:
+                if batch:
+                    _write_all(self.write_fd, bytes(batch))
+                    batch.clear()
+                _write_all(self.write_fd, record)
+            else:
+                if len(batch) + len(record) > limit:
+                    _write_all(self.write_fd, bytes(batch))
+                    batch.clear()
+                batch.extend(record)
+        if batch:
+            _write_all(self.write_fd, bytes(batch))
+
+    def _write_shutdown_records(self, records: list[bytes]) -> None:
+        """Write shutdown records individually, truncating oversized lines.
+
+        Args:
+            records: Complete JSON records to write during shutdown.
+        """
+        for record in records:
+            if self._atomic_write_limit is not None:
+                record = _truncate_json_record(record, self._atomic_write_limit)
+            _write_all(self.write_fd, record)
 
     def writing_snapshot(self) -> tuple[float, float]:
         """Capture the current time and cumulative write duration together.
