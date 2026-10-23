@@ -1,6 +1,7 @@
 import copy
 import random
 import re
+from collections.abc import Callable
 from contextlib import nullcontext
 from dataclasses import dataclass
 from typing import Any, ClassVar, TypedDict
@@ -22,6 +23,7 @@ from reflex_base.event import (
 )
 from reflex_base.style import Style
 from reflex_base.utils.exceptions import (
+    BackendVarFormatError,
     ChildrenTypeError,
     EventFnArgMismatchError,
     EventHandlerArgTypeMismatchError,
@@ -804,6 +806,31 @@ def test_component_create_backend_var_prop():
 
     with pytest.raises(TypeError, match=r"got value Field\(default='3'"):
         rx.heading("x", size=BackendPropState._size)  # pyright: ignore[reportArgumentType]
+
+
+class BackendSrcState(BaseState):
+    """A state with a backend var, for untyped prop misuse tests."""
+
+    _src: str = "a.png"
+
+
+@pytest.mark.parametrize(
+    "create",
+    [lambda f: rx.image(src=f), lambda f: rx.data_table(data=f)],
+    ids=["image_src", "data_table_data"],
+)
+def test_component_render_backend_var_prop_raises_format_error(
+    create: Callable[[Any], Component],
+):
+    """A backend var passed to an untyped prop raises the backend var format error.
+
+    Args:
+        create: Creates a component with the backend var as a prop.
+    """
+    with pytest.raises(
+        BackendVarFormatError, match=r"Backend var 'BackendSrcState\._src' exists only"
+    ):
+        create(BackendSrcState._src).render()
 
 
 def test_component_create_backend_var_class_name():

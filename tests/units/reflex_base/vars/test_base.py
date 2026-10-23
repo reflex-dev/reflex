@@ -1460,16 +1460,45 @@ def test_untyped_var_item_access_reports_backend_var_key():
         Var(_js_expr="x")[Model._secret]  # pyright: ignore[reportIndexIssue]
 
 
-def test_backend_field_literal_var_reports_repr():
-    """Creating a LiteralVar from a backend var reports its repr, not a format error."""
+@pytest.mark.parametrize(
+    "use",
+    [
+        LiteralVar.create,
+        lambda f: str(Var.create([f])),
+        lambda f: str(Var.create({"a": f})),
+        lambda f: Var.create([f])._get_all_var_data(),
+        lambda f: Var.create({"a": f})._get_all_var_data(),
+    ],
+    ids=["literal", "list", "dict", "list_var_data", "dict_var_data"],
+)
+def test_backend_field_literal_var_raises_format_error(
+    use: typing.Callable[[Any], Any],
+):
+    """A backend var inside a LiteralVar raises the backend var format error.
+
+    Args:
+        use: Turns the backend field into a LiteralVar, or reads its var data.
+    """
 
     class Model(EvenMoreBasicBaseState):
         _secret: int = 42
 
     with pytest.raises(
-        TypeError, match=r"Tried to create a LiteralVar from Field\(default=42"
+        BackendVarFormatError, match=r"Backend var 'Model\._secret' exists only"
     ):
-        LiteralVar.create(Model._secret)
+        use(Model._secret)
+
+
+def test_mixin_field_literal_var_raises_format_error():
+    """A mixin's field inside a LiteralVar says to use the including state."""
+
+    class Mixin(EvenMoreBasicBaseState, mixin=True):
+        count: int = 0
+
+    with pytest.raises(
+        BackendVarFormatError, match=r"Var 'Mixin\.count' is declared on a mixin state"
+    ):
+        str(Var.create([Mixin.count]))
 
 
 def test_mistyped_backend_field_value_logs_repr(caplog: pytest.LogCaptureFixture):
