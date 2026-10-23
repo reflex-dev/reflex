@@ -1,6 +1,6 @@
 import dataclasses
 from collections.abc import Sequence
-from typing import Annotated, Any, Literal, assert_type
+from typing import Annotated, Any, Literal, Union, assert_type
 
 import pytest
 from reflex_base.utils.exceptions import VarAttributeError
@@ -378,3 +378,139 @@ def test_annotated_var_type_is_unwrapped() -> None:
     assert isinstance(var, ObjectVar)
     assert var._var_type is Base
     assert var.quantity._var_type is int
+
+
+def test_plain_property_on_pydantic_model_raises() -> None:
+    """Plain Pydantic properties are not included in serialized state."""
+
+    class Item(pydantic.BaseModel):
+        name: str = "solo"
+
+        @property
+        def label(self) -> str:
+            return f"{self.name}!"
+
+        @pydantic.computed_field
+        @property
+        def tag(self) -> str:
+            return f"#{self.name}"
+
+    class ItemState(rx.State):
+        item: rx.Field[Item] = rx.field(Item())
+
+    with pytest.raises(VarAttributeError, match="computed_field"):
+        _ = ItemState.item.label
+
+    assert ItemState.item.name._var_type is str
+    assert ItemState.item.tag._var_type is str
+
+
+def test_plain_property_on_dataclass_raises() -> None:
+    """Plain dataclass properties are not included in serialized state."""
+
+    @dataclasses.dataclass
+    class Point:
+        x: int = 1
+
+        @property
+        def double(self) -> int:
+            return self.x * 2
+
+    class PointState(rx.State):
+        point: rx.Field[Point] = rx.field(Point())
+
+    with pytest.raises(
+        VarAttributeError,
+        match="declared dataclass fields",
+    ):
+        _ = PointState.point.double
+
+    assert PointState.point.x._var_type is int
+
+
+def test_plain_property_on_pydantic_model_with_custom_serializer() -> None:
+    """Plain properties remain accessible when a custom serializer can include them."""
+
+    class Item(pydantic.BaseModel):
+        name: str = "solo"
+
+        @property
+        def label(self) -> str:
+            return f"{self.name}!"
+
+        @pydantic.model_serializer
+        def serialize_model(self) -> dict[str, str]:
+            return {
+                "name": self.name,
+                "label": self.label,
+            }
+
+    class ItemState(rx.State):
+        item: rx.Field[Item] = rx.field(Item())
+
+    assert Item().model_dump() == {"name": "solo", "label": "solo!"}
+    assert ItemState.item.label._var_type is str
+
+
+def test_plain_property_on_union_of_pydantic_models_raises() -> None:
+    """Plain properties are rejected when either union branch omits them."""
+
+    class ItemA(pydantic.BaseModel):
+        name: str = "a"
+
+        @property
+        def label(self) -> str:
+            return f"{self.name}!"
+
+    class ItemB(pydantic.BaseModel):
+        name: str = "b"
+
+        @property
+        def label(self) -> str:
+            return f"{self.name}?"
+
+    class UnionState(rx.State):
+        item: rx.Field[ItemA | ItemB] = rx.field(ItemA())
+
+    with pytest.raises(VarAttributeError, match="union type"):
+        _ = UnionState.item.label
+
+
+def test_unserialized_property_checks_union_branches() -> None:
+    """The property guard detects an unserialized property in either branch."""
+
+    from reflex_base.utils import types
+
+    class ItemA(pydantic.BaseModel):
+        @property
+        def label(self) -> str:
+            return "a"
+
+    class ItemB(pydantic.BaseModel):
+        @property
+        def label(self) -> str:
+            return "b"
+
+    assert types.is_unserialized_property(ItemA, "label")
+    assert types.is_unserialized_property(ItemB, "label")
+    assert types.is_unserialized_property(ItemA | ItemB, "label")
+
+
+def test_plain_property_on_typing_union_raises() -> None:
+    """Plain properties are rejected on typing.Union model types."""
+
+    class ItemA(pydantic.BaseModel):
+        @property
+        def label(self) -> str:
+            return "a"
+
+    class ItemB(pydantic.BaseModel):
+        @property
+        def label(self) -> str:
+            return "b"
+
+    class UnionState(rx.State):
+        item: rx.Field[Union[ItemA, ItemB]] = rx.field(ItemA())  # noqa: UP007
+
+    with pytest.raises(VarAttributeError, match="union type"):
+        _ = UnionState.item.label
