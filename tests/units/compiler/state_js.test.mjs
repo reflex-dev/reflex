@@ -345,30 +345,27 @@ test("queued on_load is kept when navigation follows auth capture", async () => 
   ]);
 });
 
-test(
-  "queued on_load is discarded when only the hash changes after auth capture",
-  async () => {
-    const stateName = "reflex___state____root";
-    const app = await setup({ deferConnectAck: true, stateName });
-    app.window.location = new URL("http://localhost:3000/other?query=value#top");
-    app.flush();
-    await app.connect();
-    const socket = app.socket.current;
+test("queued on_load is discarded when only the hash changes after auth capture", async () => {
+  const stateName = "reflex___state____root";
+  const app = await setup({ deferConnectAck: true, stateName });
+  app.window.location = new URL("http://localhost:3000/other?query=value#top");
+  app.flush();
+  await app.connect();
+  const socket = app.socket.current;
 
-    app.window.location = new URL("http://localhost:3000/other?query=value");
-    const onLoadEvent = { name: app.onLoadInternalEvent, payload: {} };
-    await app.module.namespace.queueEvents(
-      [onLoadEvent],
-      app.socket,
-      false,
-      () => {},
-      { current: {} },
-    );
-    await socket.finishConnectAck();
+  app.window.location = new URL("http://localhost:3000/other?query=value");
+  const onLoadEvent = { name: app.onLoadInternalEvent, payload: {} };
+  await app.module.namespace.queueEvents(
+    [onLoadEvent],
+    app.socket,
+    false,
+    () => {},
+    { current: {} },
+  );
+  await socket.finishConnectAck();
 
-    assert.deepEqual(JSON.parse(JSON.stringify(socket.events)), []);
-  },
-);
+  assert.deepEqual(JSON.parse(JSON.stringify(socket.events)), []);
+});
 
 test("the size check encodes a CONNECT packet once and leaves other packets alone", async () => {
   const app = await connectWith("websocket", {}, 1_000_000);
