@@ -1,0 +1,44 @@
+{
+  "results": [
+    {
+      "name": "no-op event renders nothing (page/memo render count unchanged)",
+      "status": "pass",
+      "details": "{\"memo_child\": 0, \"memo_page\": 0, \"memo_scalar\": 0}"
+    },
+    {
+      "name": "unrelated-field update does not re-render memo_child(list/dict)",
+      "status": "pass",
+      "details": "{\"memo_child\": 0, \"memo_page\": 0, \"memo_scalar\": 2}"
+    },
+    {
+      "name": "unrelated-field update does re-render memo_scalar",
+      "status": "pass",
+      "details": "{\"memo_child\": 0, \"memo_page\": 0, \"memo_scalar\": 2}"
+    },
+    {
+      "name": "value-identical list reassignment keeps identity (memo_child not re-rendered)",
+      "status": "fail",
+      "details": "{\"memo_child\": 2, \"memo_page\": 0, \"memo_scalar\": 0}"
+    },
+    {
+      "name": "real list change re-renders memo_child",
+      "status": "pass",
+      "details": "{\"memo_child\": 2, \"memo_page\": 0, \"memo_scalar\": 0} memo items: one,two,three,item3\n\nmemo meta a=1"
+    },
+    {
+      "name": "dict value change re-renders memo_child",
+      "status": "pass",
+      "details": "{\"memo_child\": 2, \"memo_page\": 0, \"memo_scalar\": 0} memo items: one,two,three,item3\n\nmemo meta a=2"
+    },
+    {
+      "name": "unrelated update after real changes still skips memo_child",
+      "status": "pass",
+      "details": "{\"memo_child\": 0, \"memo_page\": 0, \"memo_scalar\": 2}"
+    }
+  ],
+  "console_problems": [],
+  "console_all": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_4xx_5xx": []
+}

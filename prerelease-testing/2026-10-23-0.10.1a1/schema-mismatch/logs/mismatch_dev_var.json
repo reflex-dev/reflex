@@ -1,0 +1,186 @@
+{
+ "console": [
+  {
+   "t": 1.393,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "t": 1.65,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "t": 1.722,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "t": 1.904,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "t": 1.985,
+   "type": "warning",
+   "text": "This page was built for another version of the app than the backend it connected to (state schema d29adae5a051f36dafa3d2ce3c5e3601, backend bf1aeee2b85d6f0f1d92c4a0e50be263). Reload the page if it stays out of date once the frontend rebuilds."
+  },
+  {
+   "t": 6.03,
+   "type": "warning",
+   "text": "This page was built for another version of the app than the backend it connected to (state schema d29adae5a051f36dafa3d2ce3c5e3601, backend bf1aeee2b85d6f0f1d92c4a0e50be263). Reload the page if it stays out of date once the frontend rebuilds."
+  }
+ ],
+ "pageerrors": [],
+ "failed": [],
+ "responses_bad": [],
+ "ws": [
+  {
+   "t": 1.715,
+   "event": "open",
+   "url": "ws://localhost:3223/?token=pKq3f3I5U7no"
+  },
+  {
+   "t": 1.721,
+   "event": "open",
+   "url": "ws://localhost:8223/_event/?token=faf9f96b-5063-4d4a-f093-8e4c11f37cd7&EIO=4&transport=websocket"
+  },
+  {
+   "t": 1.722,
+   "event": "recv",
+   "payload": "{\"type\":\"connected\"}"
+  },
+  {
+   "t": 1.723,
+   "event": "recv",
+   "payload": "0{\"sid\":\"UcI8eD0pp1zQmhmXAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "t": 1.977,
+   "event": "sent",
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"df3b3a177be2edda\",\"d029e8db883816fc\",\"cdcfbc4926d5cd71\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"4909236056576409\",\"6fcc2b3de48a0194\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}},\"state_schema\":\"d29adae5a051f36dafa3d2ce3c5e3601\"}"
+  },
+  {
+   "t": 1.983,
+   "event": "recv",
+   "payload": "42/_event,[\"state_mismatch\",{\"backend\":\"bf1aeee2b85d6f0f1d92c4a0e50be263\",\"reload_cooldown_ms\":10000}]"
+  },
+  {
+   "t": 1.985,
+   "event": "recv",
+   "payload": "40/_event,{\"sid\":\"KML2I9o2fzKuqpMdAAAB\"}"
+  },
+  {
+   "t": 1.986,
+   "event": "sent",
+   "payload": "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"warn\",\"message\":\"This page was built for another version of the app than the backend it connected to (state schema d29adae5a051f36dafa3d2ce3c5e3601, backend bf1aeee2b85d6f0f1d92c4a0e50be263). Reload the page if it stays out of date once the frontend rebuilds.\"}}}"
+  },
+  {
+   "t": 1.986,
+   "event": "recv",
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8223\",\"origin\":\"http://localhost:3223\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"kz3NjMLTUNyfiRbsgpn/2Q==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers"
+  },
+  {
+   "t": 1.986,
+   "event": "recv",
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "t": 5.859,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.schemaapp___schemaapp____state.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "t": 5.863,
+   "event": "recv",
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.schemaapp___schemaapp____state\":{\"count_rx_state_\":1,\"doubled_rx_state_\":2}}}]"
+  },
+  {
+   "t": 5.939,
+   "event": "close",
+   "url": "ws://localhost:8223/_event/?token=faf9f96b-5063-4d4a-f093-8e4c11f37cd7&EIO=4&transport=websocket"
+  },
+  {
+   "t": 5.94,
+   "event": "open",
+   "url": "ws://localhost:8223/_event/?token=faf9f96b-5063-4d4a-f093-8e4c11f37cd7&EIO=4&transport=websocket"
+  },
+  {
+   "t": 6.019,
+   "event": "recv",
+   "payload": "0{\"sid\":\"wN9D3MUeE7OakFe7AAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "t": 6.02,
+   "event": "sent",
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}},\"state_schema\":\"d29adae5a051f36dafa3d2ce3c5e3601\"}"
+  },
+  {
+   "t": 6.023,
+   "event": "recv",
+   "payload": "42/_event,[\"state_mismatch\",{\"backend\":\"bf1aeee2b85d6f0f1d92c4a0e50be263\",\"reload_cooldown_ms\":10000}]"
+  },
+  {
+   "t": 6.029,
+   "event": "recv",
+   "payload": "40/_event,{\"sid\":\"DxUwNY6wprkBSv8TAAAB\"}"
+  },
+  {
+   "t": 6.03,
+   "event": "sent",
+   "payload": "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"warn\",\"message\":\"This page was built for another version of the app than the backend it connected to (state schema d29adae5a051f36dafa3d2ce3c5e3601, backend bf1aeee2b85d6f0f1d92c4a0e50be263). Reload the page if it stays out of date once the frontend rebuilds.\"}}}"
+  },
+  {
+   "t": 6.032,
+   "event": "recv",
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8223\",\"origin\":\"http://localhost:3223\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"g1XYIJD4EhIfUVpgrwB1Zw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\""
+  },
+  {
+   "t": 6.033,
+   "event": "recv",
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  }
+ ],
+ "loads": [
+  {
+   "t": 1.717,
+   "url": "http://localhost:3223/"
+  }
+ ],
+ "n_requests": 47,
+ "anomalies": [
+  "console.warning: This page was built for another version of the app than the backend it connected to (state schema d29adae5a051f36dafa3d2ce3c5e3601, backend bf1aeee2b85d6f0f1d92c4a0e50be263). Reload the page if it stays out of date once the frontend rebuilds.",
+  "console.warning: This page was built for another version of the app than the backend it connected to (state schema d29adae5a051f36dafa3d2ce3c5e3601, backend bf1aeee2b85d6f0f1d92c4a0e50be263). Reload the page if it stays out of date once the frontend rebuilds."
+ ],
+ "results": {
+  "connect_frames": [
+   {
+    "t": 1.977,
+    "event": "sent",
+    "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"df3b3a177be2edda\",\"d029e8db883816fc\",\"cdcfbc4926d5cd71\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"4909236056576409\",\"6fcc2b3de48a0194\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}},\"state_schema\":\"d29adae5a051f36dafa3d2ce3c5e3601\"}"
+   }
+  ],
+  "connect_has_state_schema": true,
+  "mismatch_frames": [
+   {
+    "t": 1.983,
+    "event": "recv",
+    "payload": "42/_event,[\"state_mismatch\",{\"backend\":\"bf1aeee2b85d6f0f1d92c4a0e50be263\",\"reload_cooldown_ms\":10000}]"
+   }
+  ],
+  "loads": [
+   {
+    "t": 1.717,
+    "url": "http://localhost:3223/"
+   }
+  ],
+  "banner_visible_after_load": false,
+  "banner_text": null,
+  "last_reloaded_key": null,
+  "count_after_click": "count: 1",
+  "anomalies": [
+   "console.warning: This page was built for another version of the app than the backend it connected to (state schema d29adae5a051f36dafa3d2ce3c5e3601, backend bf1aeee2b85d6f0f1d92c4a0e50be263). Reload the page if it stays out of date once the frontend rebuilds.",
+   "console.warning: This page was built for another version of the app than the backend it connected to (state schema d29adae5a051f36dafa3d2ce3c5e3601, backend bf1aeee2b85d6f0f1d92c4a0e50be263). Reload the page if it stays out of date once the frontend rebuilds."
+  ]
+ }
+}

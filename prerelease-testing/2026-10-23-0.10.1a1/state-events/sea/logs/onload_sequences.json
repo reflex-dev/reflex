@@ -1,0 +1,87 @@
+{
+  "results": [
+    {
+      "name": "on_load tuple runs both events",
+      "status": "pass",
+      "details": "'A.log: A.load_tuple_a' 'B.log: B.load_tuple_b'"
+    },
+    {
+      "name": "on_click tuple (A.h1, B.h2)",
+      "status": "pass",
+      "details": "A.log: A.h1 / B.log: B.h2"
+    },
+    {
+      "name": "handler returns tuple (A.h1, B.h2)",
+      "status": "pass",
+      "details": "A.log: A.returns_tuple|A.h1"
+    },
+    {
+      "name": "handler returns list[EventSpec] var",
+      "status": "pass",
+      "details": "A.log: A.returns_typed_list|A.h1|A.h1"
+    },
+    {
+      "name": "event_sequence(single) returned",
+      "status": "pass",
+      "details": "A.log: A.returns_event_sequence_single"
+    },
+    {
+      "name": "event_sequence(tuple) returned",
+      "status": "pass",
+      "details": "B.log: B.h2"
+    },
+    {
+      "name": "generator yielding tuple then list",
+      "status": "pass",
+      "details": "A.log: A.returns_generator_tuple|A.h1 / counter: 1"
+    },
+    {
+      "name": "on_load list (client nav)",
+      "status": "pass",
+      "details": "A.log: A.load_list_a"
+    },
+    {
+      "name": "on_load single event (client nav)",
+      "status": "pass",
+      "details": "B.log:"
+    },
+    {
+      "name": "on_load typed list[EventSpec] (client nav)",
+      "status": "pass",
+      "details": "A.log: A.load_tuple_a"
+    },
+    {
+      "name": "on_load full load /list",
+      "status": "pass",
+      "details": "A.log: A.load_list_a / B.log: B.load_list_b"
+    },
+    {
+      "name": "on_load full load /single",
+      "status": "pass",
+      "details": "A.log: A.load_single / B.log:"
+    },
+    {
+      "name": "on_load full load /typed",
+      "status": "pass",
+      "details": "A.log: A.load_tuple_a / B.log: B.load_tuple_b"
+    }
+  ],
+  "console_problems": [],
+  "console_all": [
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation"
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation"
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation"
+    }
+  ],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_4xx_5xx": []
+}

@@ -1,0 +1,48 @@
+{
+  "results": [
+    {
+      "name": "yield streaming shows intermediate ticks",
+      "status": "pass",
+      "details": "26 distinct tick values seen"
+    },
+    {
+      "name": "stream + background race: final shared == 25 + 300 (no lost updates)",
+      "status": "pass",
+      "details": "shared: 325"
+    },
+    {
+      "name": "background finished flag",
+      "status": "pass",
+      "details": "bg_running: false"
+    },
+    {
+      "name": "info: stream/bg markers after abrupt close",
+      "status": "pass",
+      "details": "{'bg_race_done': 1, 'bg_race_tick': 30, 'stream_done': 1, 'stream_tick': 25}"
+    },
+    {
+      "name": "background task completes after client closed mid-stream",
+      "status": "pass",
+      "details": "{'bg_race_done': 1, 'bg_race_tick': 30, 'stream_done': 1, 'stream_tick': 25}"
+    }
+  ],
+  "console_problems": [
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    }
+  ],
+  "console_all": [
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on pagehide"
+    }
+  ],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_4xx_5xx": []
+}

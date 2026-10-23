@@ -1,0 +1,62 @@
+{
+  "results": [
+    {
+      "name": "slow chain completes when client stays",
+      "status": "pass",
+      "details": "{'bg_done': 1, 'bg_start': 1, 's1_done': 1, 's1_start': 1, 's2_done': 1, 's2_start': 1, 's3_done': 1, 's3_start': 1}"
+    },
+    {
+      "name": "closing tab mid-chain stops later chain steps (s2/s3 never start)",
+      "status": "fail",
+      "details": "{'bg_done': 1, 'bg_start': 1, 's1_done': 1, 's1_start': 1, 's2_done': 1, 's2_start': 1, 's3_done': 1, 's3_start': 1}"
+    },
+    {
+      "name": "background task started from on_load survives disconnect",
+      "status": "pass",
+      "details": "{'bg_done': 1, 'bg_start': 1, 's1_done': 1, 's1_start': 1, 's2_done': 1, 's2_start': 1, 's3_done': 1, 's3_start': 1}"
+    },
+    {
+      "name": "info: s1 marker state after close",
+      "status": "pass",
+      "details": "s1_done=1 (did the in-flight handler run to completion?)"
+    },
+    {
+      "name": "client-side navigation mid-chain cancels remaining steps (s3 never starts)",
+      "status": "pass",
+      "details": "{'bg_start': 1, 's1_done': 1, 's1_start': 1, 's2_start': 1}"
+    },
+    {
+      "name": "bg task survives navigation",
+      "status": "fail",
+      "details": "{'bg_start': 1, 's1_done': 1, 's1_start': 1, 's2_start': 1}"
+    },
+    {
+      "name": "early close: no s2/s3 after the client is gone",
+      "status": "fail",
+      "details": "{'bg_done': 1, 'bg_start': 1, 's1_done': 1, 's1_start': 1, 's2_done': 1, 's2_start': 1, 's3_done': 1, 's3_start': 1}"
+    },
+    {
+      "name": "reload mid-chain: exactly one chain finishes (s3_done == 1), two s1 starts",
+      "status": "pass",
+      "details": "{'bg_done': 1, 'bg_start': 2, 's1_done': 1, 's1_start': 2, 's2_done': 1, 's2_start': 1, 's3_done': 1, 's3_start': 1}"
+    }
+  ],
+  "console_problems": [],
+  "console_all": [
+    {
+      "type": "log",
+      "text": "Disconnect websocket on pagehide"
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on pagehide"
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation"
+    }
+  ],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_4xx_5xx": []
+}

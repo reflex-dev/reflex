@@ -1,0 +1,13 @@
+schema_before = d29adae5a051f36dafa3d2ce3c5e3601
+hot_var_rendered_after_s = 1.0
+mismatch_warnings_after_edit = 1
+console_after_edit = ['warning: This page was built for another version of the app than the backend it connected to (state schema d29adae5a051f36dafa3d2ce3c5e3601, backend 8a5f44e3ba487819b0b4']
+loads = [{'t': 2.152, 'url': 'http://localhost:3223/'}]
+banner_present = False
+connect_frames_total = 2
+mismatch_frames_total = 1
+schema_after = 8a5f44e3ba487819b0b4aa0bd61c5875
+count_after = count: 2
+mismatch_warnings_after_revert = 1
+loads_final = 1
+anomalies = ['console.warning: This page was built for another version of the app than the backend it connected to (state schema d29adae5a051f36dafa3d2ce3c5e3601, backend 8a5f44e3ba487819b0b4aa0bd61c5875). Reload the page if it stays out of date once the frontend rebuilds.', 'console.warning: This page was built for another version of the app than the backend it connected to (state schema 8a5f44e3ba487819b0b4aa0bd61c5875, backend d29adae5a051f36dafa3d2ce3c5e3601). Reload the page if it stays out of date once the frontend rebuilds.']

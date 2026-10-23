@@ -1,0 +1,39 @@
+http_attempts_in_window = 0
+ws_opens_in_window = 23
+ws_open_gaps = [0.044, 0.208, 0.402, 0.605, 0.806, 1.012, 1.207, 1.431, 1.678, 1.911, 2.194, 2.188, 2.408, 3.448, 4.502, 6.278, 4.604, 6.803, 3.582, 5.225, 3.997, 4.066]
+toast_text = Cannot connect to server: websocket error.
+Check if server is reachable at ws://localhost:8221/_event
+body_text_snippet = Cannot connect to server: websocket error.
+Check if server is reachable at ws://localhost:8221/_event
+home
+about
+errors
+schema-mismatch test app
+
+count: 0
+
+doubled: 0
+
+increment
+ping
+
+note:
+
+alpha
+
+beta
+
+add item
+
+count is small
+
+sub
+
+toggle sub
+Built with Reflex
+backend_pid = 16038
+recovered = True
+recovery_seconds = 23.9
+toast_after_recovery = 
+anomalies = ["console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=24443c46-566e-4212-a3af-f2845fb0ac02&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED", 'console.error: Failed to load resource: the server responded with a status of 404 (Not Found)', "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=24443c46-566e-4212-a3af-f2845fb0ac02&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED", "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=24443c46-566e-4212-a3af-f2845fb0ac02&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED", "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=24443c46-566e-4212-a3af-f2845fb0ac02&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED", "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=24443c46-566e-4212-a3af-f2845fb0ac02&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED", "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=24443c46-566e-4212-a3af-f2845fb0ac02&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED", "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=24443c46-566e-4212-a3af-f2845fb0ac02&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED", "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=24443c46-566e-4212-a3af-f2845fb0ac02&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED", "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=24443c46-566e-4212-a3af-f2845fb0ac02&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED", "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=24443c46-566e-4212-a3af-f2845fb0ac02&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED", "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=24443c46-566e-4212-a3af-f2845fb0ac02&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED", "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=24443c46-566e-4212-a3af-f2845fb0ac02&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED", "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=24443c46-566e-4212-a3af-f2845fb0ac02&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED", "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=24443c46-566e-4212-a3af-f2845fb0ac02&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED", "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=24443c46-566e-4212-a3af-f2845fb0ac02&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED", "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=24443c46-566e-4212-a3af-f2845fb0ac02&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED", "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=24443c46-566e-4212-a3af-f2845fb0ac02&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED", "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=24443c46-566e-4212-a3af-f2845fb0ac02&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED", "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=24443c46-566e-4212-a3af-f2845fb0ac02&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED", "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=24443c46-566e-4212-a3af-f2845fb0ac02&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED", "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=24443c46-566e-4212-a3af-f2845fb0ac02&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED", "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=24443c46-566e-4212-a3af-f2845fb0ac02&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED", "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=24443c46-566e-4212-a3af-f2845fb0ac02&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"]
+n_anomalies = 24

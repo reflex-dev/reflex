@@ -1,0 +1,290 @@
+{
+ "console": [
+  {
+   "t": 0.184,
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  }
+ ],
+ "pageerrors": [
+  "0.36 plain string",
+  "1.89 Cannot read properties of undefined (reading 'name')",
+  "3.43 Cannot read properties of undefined (reading 'name')",
+  "4.97 Cannot read properties of null (reading 'name')",
+  "4.99 Cannot read properties of null (reading 'name')",
+  "5.01 Cannot read properties of null (reading 'name')",
+  "5.02 Cannot read properties of null (reading 'name')",
+  "5.04 Cannot read properties of null (reading 'name')",
+  "5.06 Cannot read properties of null (reading 'name')",
+  "5.07 Cannot read properties of null (reading 'name')",
+  "5.09 Cannot read properties of null (reading 'name')",
+  "5.11 Cannot read properties of null (reading 'name')",
+  "5.12 Cannot read properties of null (reading 'name')",
+  "5.14 Cannot read properties of null (reading 'name')",
+  "5.16 Cannot read properties of null (reading 'name')",
+  "5.17 Cannot read properties of null (reading 'name')",
+  "5.19 Cannot read properties of null (reading 'name')",
+  "5.21 Cannot read properties of null (reading 'name')",
+  "5.22 Cannot read properties of null (reading 'name')",
+  "5.24 Cannot read properties of null (reading 'name')",
+  "5.26 Cannot read properties of null (reading 'name')",
+  "5.27 Cannot read properties of null (reading 'name')",
+  "5.29 Cannot read properties of null (reading 'name')",
+  "5.31 Cannot read properties of null (reading 'name')",
+  "5.33 Cannot read properties of null (reading 'name')",
+  "5.34 Cannot read properties of null (reading 'name')",
+  "5.36 Cannot read properties of null (reading 'name')",
+  "5.37 Cannot read properties of null (reading 'name')",
+  "5.39 Cannot read properties of null (reading 'name')",
+  "5.41 Cannot read properties of null (reading 'name')",
+  "5.42 Cannot read properties of null (reading 'name')",
+  "5.44 Cannot read properties of null (reading 'name')",
+  "5.46 Cannot read properties of null (reading 'name')",
+  "5.47 Cannot read properties of null (reading 'name')",
+  "5.49 Cannot read properties of null (reading 'name')",
+  "5.51 Cannot read properties of null (reading 'name')",
+  "5.52 Cannot read properties of null (reading 'name')",
+  "5.54 Cannot read properties of null (reading 'name')",
+  "5.56 Cannot read properties of null (reading 'name')",
+  "5.57 Cannot read properties of null (reading 'name')",
+  "5.59 Cannot read properties of null (reading 'name')",
+  "5.61 Cannot read properties of null (reading 'name')",
+  "5.62 Cannot read properties of null (reading 'name')",
+  "5.64 Cannot read properties of null (reading 'name')",
+  "5.66 Cannot read properties of null (reading 'name')",
+  "5.67 Cannot read properties of null (reading 'name')",
+  "5.69 Cannot read properties of null (reading 'name')",
+  "5.71 Cannot read properties of null (reading 'name')",
+  "5.72 Cannot read properties of null (reading 'name')",
+  "5.74 Cannot read properties of null (reading 'name')",
+  "5.76 Cannot read properties of null (reading 'name')",
+  "5.77 Cannot read properties of null (reading 'name')",
+  "6.51 real error"
+ ],
+ "failed": [],
+ "responses_bad": [],
+ "ws": [
+  {
+   "t": 0.141,
+   "event": "open",
+   "url": "ws://localhost:8222/_event/?token=80dee82b-2e8b-404a-f3c6-4bd8dce3067f&EIO=4&transport=websocket"
+  },
+  {
+   "t": 0.171,
+   "event": "recv",
+   "payload": "0{\"sid\":\"zBigdv29_ADFqEY3AAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "t": 0.215,
+   "event": "sent",
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"df3b3a177be2edda\",\"d029e8db883816fc\",\"cdcfbc4926d5cd71\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"4909236056576409\",\"6fcc2b3de48a0194\"]},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}}"
+  },
+  {
+   "t": 0.217,
+   "event": "recv",
+   "payload": "40/_event,{\"sid\":\"-88i9VDtii3q2ov6AAAD\"}"
+  },
+  {
+   "t": 0.221,
+   "event": "recv",
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8222\",\"origin\":\"http://localhost:3222\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"RJ9iDtXNJQeMvwda3+DZRA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers"
+  },
+  {
+   "t": 0.222,
+   "event": "recv",
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "t": 0.296,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.schemaapp___schemaapp____state.increment\",\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 0.298,
+   "event": "recv",
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.schemaapp___schemaapp____state\":{\"count_rx_state_\":1,\"doubled_rx_state_\":2}}}]"
+  },
+  {
+   "t": 0.358,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"undefined: undefined\\nundefined\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 1.892,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"TypeError: Cannot read properties of undefined (reading 'name')\\nTypeError: Cannot read properties of undefined (reading 'name')\\n    at window.onerror (http://localhost:3222/assets/text-field-BAGPsXgP.js:2:17373)\\n    at eval (eval at applyEvent (http://localhost:3222/assets/text-field-BAGPsXgP.js:2:8698), <anonymous>:1:8)\\n    at applyEvent (http://localhost:3222/assets/text-field-BAGPsXgP.js:2:8698)\\n    at processEvent (http://localhost:3222/ass"
+  },
+  {
+   "t": 3.43,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"TypeError: Cannot read properties of undefined (reading 'name')\\nTypeError: Cannot read properties of undefined (reading 'name')\\n    at window.onerror (http://localhost:3222/assets/text-field-BAGPsXgP.js:2:17373)\\n    at eval (eval at applyEvent (http://localhost:3222/assets/text-field-BAGPsXgP.js:2:8698), <anonymous>:1:8)\\n    at applyEvent (http://localhost:3222/assets/text-field-BAGPsXgP.js:2:8698)\\n    at processEvent (http://localhost:3222/ass"
+  },
+  {
+   "t": 6.507,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"Error: real error\\nError: real error\\n    at eval (eval at applyEvent (http://localhost:3222/assets/text-field-BAGPsXgP.js:2:8698), <anonymous>:1:26)\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 8.039,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"Error: rejected\\nError: rejected\\n    at eval (eval at applyEvent (http://localhost:3222/assets/text-field-BAGPsXgP.js:2:8698), <anonymous>:1:16)\\n    at applyEvent (http://localhost:3222/assets/text-field-BAGPsXgP.js:2:8698)\\n    at processEvent (http://localhost:3222/assets/text-field-BAGPsXgP.js:2:10422)\\n    at queueEvents (http://localhost:3222/assets/text-field-BAGPsXgP.js:2:10152)\\n    at http://localhost:3222/assets/text-field-BAGPsXgP.js:2:"
+  },
+  {
+   "t": 9.647,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.schemaapp___schemaapp____state.increment\",\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 9.656,
+   "event": "recv",
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.schemaapp___schemaapp____state\":{\"count_rx_state_\":2,\"doubled_rx_state_\":4}}}]"
+  }
+ ],
+ "loads": [
+  {
+   "t": 0.129,
+   "url": "http://localhost:3222/errors/"
+  }
+ ],
+ "n_requests": 13,
+ "anomalies": [
+  "console.error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "pageerror: 0.36 plain string",
+  "pageerror: 1.89 Cannot read properties of undefined (reading 'name')",
+  "pageerror: 3.43 Cannot read properties of undefined (reading 'name')",
+  "pageerror: 4.97 Cannot read properties of null (reading 'name')",
+  "pageerror: 4.99 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.01 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.02 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.04 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.06 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.07 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.09 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.11 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.12 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.14 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.16 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.17 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.19 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.21 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.22 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.24 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.26 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.27 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.29 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.31 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.33 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.34 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.36 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.37 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.39 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.41 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.42 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.44 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.46 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.47 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.49 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.51 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.52 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.54 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.56 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.57 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.59 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.61 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.62 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.64 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.66 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.67 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.69 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.71 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.72 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.74 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.76 Cannot read properties of null (reading 'name')",
+  "pageerror: 5.77 Cannot read properties of null (reading 'name')",
+  "pageerror: 6.51 real error"
+ ],
+ "results": {
+  "throw-string": {
+   "exceptions_logged": 1,
+   "console": []
+  },
+  "empty-errorevent": {
+   "exceptions_logged": 1,
+   "console": []
+  },
+  "message-errorevent": {
+   "exceptions_logged": 1,
+   "console": []
+  },
+  "ro-loop": {
+   "exceptions_logged": 0,
+   "console": []
+  },
+  "throw-error": {
+   "exceptions_logged": 1,
+   "console": []
+  },
+  "reject": {
+   "exceptions_logged": 1,
+   "console": []
+  },
+  "count_after": "count: 2",
+  "anomalies": [
+   "console.error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+   "pageerror: 0.36 plain string",
+   "pageerror: 1.89 Cannot read properties of undefined (reading 'name')",
+   "pageerror: 3.43 Cannot read properties of undefined (reading 'name')",
+   "pageerror: 4.97 Cannot read properties of null (reading 'name')",
+   "pageerror: 4.99 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.01 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.02 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.04 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.06 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.07 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.09 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.11 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.12 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.14 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.16 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.17 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.19 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.21 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.22 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.24 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.26 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.27 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.29 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.31 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.33 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.34 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.36 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.37 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.39 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.41 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.42 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.44 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.46 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.47 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.49 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.51 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.52 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.54 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.56 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.57 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.59 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.61 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.62 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.64 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.66 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.67 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.69 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.71 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.72 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.74 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.76 Cannot read properties of null (reading 'name')",
+   "pageerror: 5.77 Cannot read properties of null (reading 'name')",
+   "pageerror: 6.51 real error"
+  ],
+  "exception_log": "2026-10-23T23:03:53.087517 Exception: Exception('undefined: undefined\\nundefined')\n---\n2026-10-23T23:03:54.618808 Exception: Exception(\"TypeError: Cannot read properties of undefined (reading 'name')\\nTypeError: Cannot read properties of undefined (reading 'name')\\n    at window.onerror (http://localhost:3222/assets/text-field-BAGPsXgP.js:2:17373)\\n    at eval (eval at applyEvent (http://localhost:3222/assets/text-field-BAGPsXgP.js:2:8698), <anonymous>:1:8)\\n    at applyEvent (http://localhost:3222/assets/text-field-BAGPsXgP.js:2:8698)\\n    at processEvent (http://localhost:3222/assets/text-field-BAGPsXgP.js:2:10422)\\n    at queueEvents (http://localhost:3222/assets/text-field-BAGPsXgP.js:2:10152)\\n    at http://localhost:3222/assets/text-field-BAGPsXgP.js:2:17110\\n    at b (http://localhost:3222/assets/text-field-BAGPsXgP.js:2:14380)\\n    at applyEventActions (http://localhost:3222/assets/text-field-BAGPsXgP.js:2:14499)\\n    at Object.addEvents (http://localhost:3222/assets/text-field-BAGPsXgP.js:2:17088)\\n    at addEvents (http://localhost:3222/assets/text-field-BAGPsXgP.js:4:8391)\")\n---\n2026-10-23T23:03:56.159504 Exception: Exception(\"TypeError: Cannot read properties of undefined (reading 'name')\\nTypeError: Cannot read properties of undefined (reading 'name')\\n    at window.onerror (http://localhost:3222/assets/text-field-BAGPsXgP.js:2:17373)\\n    at eval (eval at applyEvent (http://localhost:3222/assets/text-field-BAGPsXgP.js:2:8698), <anonymous>:1:8)\\n    at applyEvent (http://localhost:3222/assets/text-field-BAGPsXgP.js:2:8698)\\n    at processEvent (http://localhost:3222/assets/text-field-BAGPsXgP.js:2:10422)\\n    at queueEvents (http://localhost:3222/assets/text-field-BAGPsXgP.js:2:10152)\\n    at http://localhost:3222/assets/text-field-BAGPsXgP.js:2:17110\\n    at b (http://localhost:3222/assets/text-field-BAGPsXgP.js:2:14380)\\n    at applyEventActions (http://localhost:3222/assets/text-field-BAGPsXgP.js:2:14499)\\n    at Object.addEvents (http://localhost:3222/assets/text-field-BAGPsXgP.js:2:17088)\\n    at addEvents (http://localhost:3222/assets/text-field-BAGPsXgP.js:4:8391)\")\n---\n2026-10-23T23:03:59.236161 Exception: Exception('Error: real error\\nError: real error\\n    at eval (eval at applyEvent (http://localhost:3222/assets/text-field-BAGPsXgP.js:2:8698), <anonymous>:1:26)')\n---\n2026-10-23T23:04:00.769244 Exception: Exception('Error: rejected\\nError: rejected\\n    at eval (eval at applyEvent (http://localhost:3222/assets/text-field-BAGPsXgP.js:2:8698), <anonymous>:1:16)\\n    at applyEvent (http://localhost:3222/assets/text-field-BAGPsXgP.js:2:8698)\\n    at processEvent (http://localhost:3222/assets/text-field-BAGPsXgP.js:2:10422)\\n    at queueEvents (http://localhost:3222/assets/text-field-BAGPsXgP.js:2:10152)\\n    at http://localhost:3222/assets/text-field-BAGPsXgP.js:2:17110\\n    at b (http://localhost:3222/assets/text-field-BAGPsXgP.js:2:14380)\\n    at applyEventActions (http://localhost:3222/assets/text-field-BAGPsXgP.js:2:14499)\\n    at Object.addEvents (http://localhost:3222/assets/text-field-BAGPsXgP.js:2:17088)\\n    at addEvents (http://localhost:3222/assets/text-field-BAGPsXgP.js:4:8391)\\n    at http://localhost:3222/assets/schemaapp-g5a57e1D.js:17:595')\n---\n"
+ }
+}

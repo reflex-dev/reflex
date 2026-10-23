@@ -1,0 +1,469 @@
+{
+ "console": [
+  {
+   "t": 0.199,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "t": 0.213,
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+   "t": 0.263,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "t": 0.467,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "t": 0.869,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "t": 1.475,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "t": 2.28,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "t": 3.29,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "t": 4.505,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "t": 5.923,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "t": 7.563,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "t": 9.458,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "t": 11.667,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "t": 13.844,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "t": 16.236,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "t": 18.809,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "t": 24.709,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "t": 30.712,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  }
+ ],
+ "pageerrors": [],
+ "failed": [],
+ "responses_bad": [],
+ "ws": [
+  {
+   "t": 0.198,
+   "event": "open",
+   "url": "ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket"
+  },
+  {
+   "t": 0.199,
+   "event": "error",
+   "err": "Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "t": 0.202,
+   "event": "close",
+   "url": "ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket"
+  },
+  {
+   "t": 0.262,
+   "event": "open",
+   "url": "ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket"
+  },
+  {
+   "t": 0.262,
+   "event": "error",
+   "err": "Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "t": 0.263,
+   "event": "close",
+   "url": "ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket"
+  },
+  {
+   "t": 0.466,
+   "event": "open",
+   "url": "ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket"
+  },
+  {
+   "t": 0.467,
+   "event": "error",
+   "err": "Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "t": 0.467,
+   "event": "close",
+   "url": "ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket"
+  },
+  {
+   "t": 0.868,
+   "event": "open",
+   "url": "ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket"
+  },
+  {
+   "t": 0.869,
+   "event": "error",
+   "err": "Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "t": 0.87,
+   "event": "close",
+   "url": "ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket"
+  },
+  {
+   "t": 1.474,
+   "event": "open",
+   "url": "ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket"
+  },
+  {
+   "t": 1.475,
+   "event": "error",
+   "err": "Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "t": 1.475,
+   "event": "close",
+   "url": "ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket"
+  },
+  {
+   "t": 2.279,
+   "event": "open",
+   "url": "ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket"
+  },
+  {
+   "t": 2.28,
+   "event": "error",
+   "err": "Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "t": 2.28,
+   "event": "close",
+   "url": "ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket"
+  },
+  {
+   "t": 3.29,
+   "event": "open",
+   "url": "ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket"
+  },
+  {
+   "t": 3.29,
+   "event": "error",
+   "err": "Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "t": 3.29,
+   "event": "close",
+   "url": "ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket"
+  },
+  {
+   "t": 4.504,
+   "event": "open",
+   "url": "ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket"
+  },
+  {
+   "t": 4.504,
+   "event": "error",
+   "err": "Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "t": 4.505,
+   "event": "close",
+   "url": "ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket"
+  },
+  {
+   "t": 5.922,
+   "event": "open",
+   "url": "ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket"
+  },
+  {
+   "t": 5.923,
+   "event": "error",
+   "err": "Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "t": 5.923,
+   "event": "close",
+   "url": "ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket"
+  },
+  {
+   "t": 7.562,
+   "event": "open",
+   "url": "ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket"
+  },
+  {
+   "t": 7.563,
+   "event": "error",
+   "err": "Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "t": 7.564,
+   "event": "close",
+   "url": "ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket"
+  },
+  {
+   "t": 9.458,
+   "event": "open",
+   "url": "ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket"
+  },
+  {
+   "t": 9.458,
+   "event": "error",
+   "err": "Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "t": 9.459,
+   "event": "close",
+   "url": "ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket"
+  },
+  {
+   "t": 11.667,
+   "event": "open",
+   "url": "ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket"
+  },
+  {
+   "t": 11.667,
+   "event": "error",
+   "err": "Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "t": 11.668,
+   "event": "close",
+   "url": "ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket"
+  },
+  {
+   "t": 13.843,
+   "event": "open",
+   "url": "ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket"
+  },
+  {
+   "t": 13.843,
+   "event": "error",
+   "err": "Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "t": 13.844,
+   "event": "close",
+   "url": "ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket"
+  },
+  {
+   "t": 16.236,
+   "event": "open",
+   "url": "ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket"
+  },
+  {
+   "t": 16.236,
+   "event": "error",
+   "err": "Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "t": 16.237,
+   "event": "close",
+   "url": "ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket"
+  },
+  {
+   "t": 18.808,
+   "event": "open",
+   "url": "ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket"
+  },
+  {
+   "t": 18.809,
+   "event": "error",
+   "err": "Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "t": 18.809,
+   "event": "close",
+   "url": "ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket"
+  },
+  {
+   "t": 24.708,
+   "event": "open",
+   "url": "ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket"
+  },
+  {
+   "t": 24.709,
+   "event": "error",
+   "err": "Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "t": 24.709,
+   "event": "close",
+   "url": "ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket"
+  },
+  {
+   "t": 30.712,
+   "event": "open",
+   "url": "ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket"
+  },
+  {
+   "t": 30.712,
+   "event": "error",
+   "err": "Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "t": 30.712,
+   "event": "close",
+   "url": "ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket"
+  },
+  {
+   "t": 32.67,
+   "event": "open",
+   "url": "ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket"
+  },
+  {
+   "t": 32.683,
+   "event": "recv",
+   "payload": "0{\"sid\":\"9uJEDGPm1Z_fDFEKAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "t": 32.684,
+   "event": "sent",
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}},\"state_schema\":\"d29adae5a051f36dafa3d2ce3c5e3601\"}"
+  },
+  {
+   "t": 32.686,
+   "event": "recv",
+   "payload": "40/_event,{\"sid\":\"mmMxv7v2iP1gpDMeAAAB\"}"
+  },
+  {
+   "t": 32.686,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.schemaapp___schemaapp____state.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "t": 32.69,
+   "event": "recv",
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8221\",\"origin\":\"http://localhost:3221\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"/EdaaX+k+9ckvgZYOifTVw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\""
+  },
+  {
+   "t": 32.693,
+   "event": "recv",
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "t": 32.693,
+   "event": "recv",
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.schemaapp___schemaapp____state\":{\"count_rx_state_\":1,\"doubled_rx_state_\":2}}}]"
+  }
+ ],
+ "loads": [
+  {
+   "t": 0.175,
+   "url": "http://localhost:3221/"
+  }
+ ],
+ "n_requests": 12,
+ "anomalies": [
+  "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+  "console.error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+  "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+  "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+  "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+  "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+  "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+  "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+  "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+  "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+  "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+  "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+  "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+  "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+  "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+  "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+  "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+ ],
+ "results": {
+  "http_attempts_in_window": 0,
+  "ws_opens_in_window": 16,
+  "ws_open_gaps": [
+   0.064,
+   0.204,
+   0.402,
+   0.606,
+   0.805,
+   1.011,
+   1.214,
+   1.418,
+   1.64,
+   1.896,
+   2.209,
+   2.176,
+   2.393,
+   2.572,
+   5.9
+  ],
+  "toast_text": "Cannot connect to server: websocket error.\nCheck if server is reachable at ws://localhost:8221/_event",
+  "body_text_snippet": "Cannot connect to server: websocket error.\nCheck if server is reachable at ws://localhost:8221/_event\nhome\nabout\nerrors\nschema-mismatch test app\n\ncount: 0\n\ndoubled: 0\n\nincrement\nping\n\nnote:\n\nalpha\n\nbeta\n\nadd item\n\ncount is small\n\nsub\n\ntoggle sub\nBuilt with Reflex",
+  "backend_pid": 17476,
+  "recovered": true,
+  "recovery_seconds": 2.4,
+  "toast_after_recovery": "",
+  "anomalies": [
+   "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "console.error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+   "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "console.error: WebSocket connection to 'ws://localhost:8221/_event/?token=0d214f60-d647-47af-8f22-2b448838dcc4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  ],
+  "n_anomalies": 18
+ }
+}

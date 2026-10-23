@@ -1,0 +1,44 @@
+{
+  "results": [
+    {
+      "name": "big-state page renders values from substates",
+      "status": "pass",
+      "details": "load_err=None body='2500 substates, 300 shown\\n\\nclicks: 0\\n\\nroot click\\nbump Sub7\\nbump Sub2499\\n\\nready\\n\\ns0=0 state-0\\n\\ns1=1 state-1\\n\\ns2=2 state-2' page_errors=[]"
+    },
+    {
+      "name": "event on substate 7 updates UI",
+      "status": "pass",
+      "details": "s7=8 state-7"
+    },
+    {
+      "name": "event on last substate updates UI",
+      "status": "pass",
+      "details": "last=2500"
+    },
+    {
+      "name": "root click round-trip",
+      "status": "pass",
+      "details": "56 ms"
+    },
+    {
+      "name": "other page renders",
+      "status": "pass",
+      "details": "v1000=1000"
+    },
+    {
+      "name": "client nav back keeps state",
+      "status": "pass",
+      "details": "s7=8 state-7"
+    }
+  ],
+  "console_problems": [],
+  "console_all": [
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation"
+    }
+  ],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_4xx_5xx": []
+}

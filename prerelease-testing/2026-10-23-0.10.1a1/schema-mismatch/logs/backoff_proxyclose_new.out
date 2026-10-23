@@ -1,0 +1,35 @@
+http_attempts_in_window = 0
+ws_opens_in_window = 20
+ws_open_gaps = [0.285, 0.409, 0.608, 0.809, 1.01, 1.211, 1.411, 1.618, 1.819, 2.012, 2.02, 2.009, 2.01, 2.008, 2.012, 2.008, 2.006, 2.011, 2.015]
+toast_text = Cannot connect to server: connection closed before connecting (transport close).
+Check if server is reachable at ws://localhost:8221/_event
+body_text_snippet = Cannot connect to server: connection closed before connecting (transport close).
+Check if server is reachable at ws://localhost:8221/_event
+home
+about
+errors
+schema-mismatch test app
+
+count: 0
+
+doubled: 0
+
+increment
+ping
+
+note:
+
+alpha
+
+beta
+
+add item
+
+count is small
+
+sub
+
+toggle sub
+Built with Reflex
+anomalies = ['console.error: Failed to load resource: the server responded with a status of 404 (Not Found)']
+n_anomalies = 1

@@ -1,0 +1,61 @@
+{
+  "results": [
+    {
+      "name": "page hydrated with mismatched backend",
+      "status": "pass",
+      "details": "A.log: A.load_tuple_a"
+    },
+    {
+      "name": "events still work after unknown-substate deltas",
+      "status": "pass",
+      "details": "counter: 1"
+    },
+    {
+      "name": "frontend warns about unknown substate exactly once per connection",
+      "status": "pass",
+      "details": "1 warnings: ['Skipping state update for unknown substate(s): no dispatch function for \"reflex___state____state.sea___sea____hidden\". T']"
+    },
+    {
+      "name": "no console errors",
+      "status": "pass",
+      "details": "[] []"
+    },
+    {
+      "name": "new connection reports the unknown substate again (once)",
+      "status": "pass",
+      "details": "2 total warnings"
+    },
+    {
+      "name": "events work after reload",
+      "status": "pass",
+      "details": "counter: 2"
+    }
+  ],
+  "console_problems": [
+    {
+      "type": "warning",
+      "text": "This page was built for another version of the app than the backend it connected to (state schema 648528e78c532fac9285245499281834, backend 69903fa7045c3c2000cf6e67b80d78c5). Reload the page if it stays out of date once the frontend rebuilds."
+    },
+    {
+      "type": "warning",
+      "text": "This page was built for another version of the app than the backend it connected to (state schema 648528e78c532fac9285245499281834, backend 69903fa7045c3c2000cf6e67b80d78c5). Reload the page if it stays out of date once the frontend rebuilds."
+    }
+  ],
+  "console_all": [
+    {
+      "type": "warning",
+      "text": "This page was built for another version of the app than the backend it connected to (state schema 648528e78c532fac9285245499281834, backend 69903fa7045c3c2000cf6e67b80d78c5). Reload the page if it stays out of date once the frontend rebuilds."
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation"
+    },
+    {
+      "type": "warning",
+      "text": "This page was built for another version of the app than the backend it connected to (state schema 648528e78c532fac9285245499281834, backend 69903fa7045c3c2000cf6e67b80d78c5). Reload the page if it stays out of date once the frontend rebuilds."
+    }
+  ],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_4xx_5xx": []
+}

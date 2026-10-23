@@ -1,0 +1,59 @@
+{
+  "results": [
+    {
+      "name": "dict initial total",
+      "status": "pass",
+      "details": "total: 33"
+    },
+    {
+      "name": "mutation via dict.values() updates UI + cached var",
+      "status": "pass",
+      "details": "total: 35 alpha_x: 2 data: {\"alpha\":{\"x\":2,\"y\":2},\"beta\":{\"x\":11,\"y\":20}}"
+    },
+    {
+      "name": "mutation via dict.items() updates UI + cached var",
+      "status": "pass",
+      "details": "total: 136 alpha.y: 102"
+    },
+    {
+      "name": "adding a key to inner dict via values() updates UI",
+      "status": "fail",
+      "details": "data: {\"alpha\":{\"x\":2,\"y\":102,\"z\":7},\"beta\":{\"x\":11,\"y\":21,\"z\":7}}"
+    },
+    {
+      "name": "mutation via list(dict.values()) updates UI",
+      "status": "pass",
+      "details": "total: 2150"
+    },
+    {
+      "name": "bump seed on page without the async var (check server log for RuntimeWarning)",
+      "status": "pass",
+      "details": "seed: 3 on /"
+    },
+    {
+      "name": "async uncached var computed on page2 after nav",
+      "status": "pass",
+      "details": "doubled: 6"
+    },
+    {
+      "name": "async uncached var recomputed on event",
+      "status": "pass",
+      "details": "doubled: 8"
+    },
+    {
+      "name": "async var correct after full reload",
+      "status": "pass",
+      "details": "doubled: 10"
+    }
+  ],
+  "console_problems": [],
+  "console_all": [
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation"
+    }
+  ],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_4xx_5xx": []
+}

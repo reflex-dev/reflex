@@ -1,0 +1,382 @@
+{
+ "console": [
+  {
+   "t": 0.204,
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  }
+ ],
+ "pageerrors": [
+  "0.41 plain string",
+  "6.54 real error"
+ ],
+ "failed": [],
+ "responses_bad": [],
+ "ws": [
+  {
+   "t": 0.13,
+   "event": "open",
+   "url": "ws://localhost:8221/_event/?token=b7cf1e30-b1e1-41d2-b359-c8fb35bd5da3&EIO=4&transport=websocket"
+  },
+  {
+   "t": 0.184,
+   "event": "recv",
+   "payload": "0{\"sid\":\"eHJ5AXFp3oI6UIg9AAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "t": 0.243,
+   "event": "sent",
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"df3b3a177be2edda\",\"d029e8db883816fc\",\"cdcfbc4926d5cd71\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"4909236056576409\",\"6fcc2b3de48a0194\"]},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}},\"state_schema\":\"d29adae5a051f36dafa3d2ce3c5e3601\"}"
+  },
+  {
+   "t": 0.261,
+   "event": "recv",
+   "payload": "40/_event,{\"sid\":\"HJW2szk22bKGJwovAAAB\"}"
+  },
+  {
+   "t": 0.263,
+   "event": "recv",
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8221\",\"origin\":\"http://localhost:3221\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"diMXo4bZrustXCdssW1m/A==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers"
+  },
+  {
+   "t": 0.263,
+   "event": "recv",
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "t": 0.312,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.schemaapp___schemaapp____state.increment\",\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 0.323,
+   "event": "recv",
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.schemaapp___schemaapp____state\":{\"count_rx_state_\":1,\"doubled_rx_state_\":2}}}]"
+  },
+  {
+   "t": 0.405,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"undefined: undefined\\nundefined\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 1.929,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"\\n    at :0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 3.466,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at :0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.004,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.021,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.037,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.056,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.071,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.088,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.104,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.122,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.138,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.154,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.171,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.187,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.205,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.221,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.238,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.254,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.271,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.288,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.304,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.321,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.338,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.357,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.371,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.387,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.405,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.421,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.439,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.455,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.471,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.488,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.507,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.522,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.538,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.554,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.57,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.588,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.604,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.621,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.637,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.654,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.671,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.687,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.704,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.72,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.737,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.754,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.772,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.787,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 5.804,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 6.539,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"Error: real error\\nError: real error\\n    at eval (eval at applyEvent (http://localhost:3221/assets/text-field-B8fr02eH.js:2:10165), <anonymous>:1:26)\",\"component_stack\":\"\"},\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 8.07,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"Error: rejected\\nError: rejected\\n    at eval (eval at applyEvent (http://localhost:3221/assets/text-field-B8fr02eH.js:2:10165), <anonymous>:1:16)\\n    at applyEvent (http://localhost:3221/assets/text-field-B8fr02eH.js:2:10165)\\n    at processEvent (http://localhost:3221/assets/text-field-B8fr02eH.js:2:11845)\\n    at queueEvents (http://localhost:3221/assets/text-field-B8fr02eH.js:2:11639)\\n    at http://localhost:3221/assets/text-field-B8fr02eH.js:"
+  },
+  {
+   "t": 9.676,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.schemaapp___schemaapp____state.increment\",\"router_data\":{\"pathname\":\"/errors/\",\"asPath\":\"/errors/\"}}]"
+  },
+  {
+   "t": 9.688,
+   "event": "recv",
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.schemaapp___schemaapp____state\":{\"count_rx_state_\":2,\"doubled_rx_state_\":4}}}]"
+  }
+ ],
+ "loads": [
+  {
+   "t": 0.127,
+   "url": "http://localhost:3221/errors/"
+  }
+ ],
+ "n_requests": 13,
+ "anomalies": [
+  "console.error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "pageerror: 0.41 plain string",
+  "pageerror: 6.54 real error"
+ ],
+ "results": {
+  "throw-string": {
+   "exceptions_logged": 1,
+   "console": []
+  },
+  "empty-errorevent": {
+   "exceptions_logged": 1,
+   "console": []
+  },
+  "message-errorevent": {
+   "exceptions_logged": 1,
+   "console": []
+  },
+  "ro-loop": {
+   "exceptions_logged": 49,
+   "console": []
+  },
+  "throw-error": {
+   "exceptions_logged": 1,
+   "console": []
+  },
+  "reject": {
+   "exceptions_logged": 1,
+   "console": []
+  },
+  "count_after": "count: 2",
+  "anomalies": [
+   "console.error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+   "pageerror: 0.41 plain string",
+   "pageerror: 6.54 real error"
+  ],
+  "exception_log": "2026-10-23T22:59:41.930840 Exception: Exception('undefined: undefined\\nundefined')\n---\n2026-10-23T22:59:43.454525 Exception: Exception('\\n    at :0:0')\n---\n2026-10-23T22:59:44.990467 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at :0:0')\n---\n2026-10-23T22:59:46.529141 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:46.545962 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:46.562082 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:46.581357 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:46.595929 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:46.612388 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:46.629357 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:46.645606 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:46.662458 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:46.679106 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:46.695834 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:46.712753 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:46.729225 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:46.745947 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:46.762850 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:46.779435 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:46.795995 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:46.812566 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:46.831736 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:46.845749 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:46.862750 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:46.879507 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:46.895736 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:46.912158 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:46.929289 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:46.946135 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:46.962864 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:46.979038 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:46.995355 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:47.012505 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:47.029847 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:47.046443 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:47.062362 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:47.079481 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:47.095709 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:47.112242 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:47.129208 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:47.145564 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:47.162207 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:47.179094 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:47.195655 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:47.212300 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:47.228508 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:47.245695 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:47.262424 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:47.278981 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:47.296070 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:47.312163 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:47.329374 Exception: Exception('ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3221/errors/:0:0')\n---\n2026-10-23T22:59:48.063100 Exception: Exception('Error: real error\\nError: real error\\n    at eval (eval at applyEvent (http://localhost:3221/assets/text-field-B8fr02eH.js:2:10165), <anonymous>:1:26)')\n---\n2026-10-23T22:59:49.595836 Exception: Exception('Error: rejected\\nError: rejected\\n    at eval (eval at applyEvent (http://localhost:3221/assets/text-field-B8fr02eH.js:2:10165), <anonymous>:1:16)\\n    at applyEvent (http://localhost:3221/assets/text-field-B8fr02eH.js:2:10165)\\n    at processEvent (http://localhost:3221/assets/text-field-B8fr02eH.js:2:11845)\\n    at queueEvents (http://localhost:3221/assets/text-field-B8fr02eH.js:2:11639)\\n    at http://localhost:3221/assets/text-field-B8fr02eH.js:2:20594\\n    at b (http://localhost:3221/assets/text-field-B8fr02eH.js:2:17864)\\n    at applyEventActions (http://localhost:3221/assets/text-field-B8fr02eH.js:2:17983)\\n    at Object.addEvents (http://localhost:3221/assets/text-field-B8fr02eH.js:2:20572)\\n    at addEvents (http://localhost:3221/assets/text-field-B8fr02eH.js:5:8286)\\n    at http://localhost:3221/assets/schemaapp-D1dBTGWc.js:17:595')\n---\n"
+ }
+}

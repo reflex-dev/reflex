@@ -1,0 +1,16 @@
+{
+  "results": [
+    {
+      "name": "big-state page renders values from substates",
+      "status": "fail",
+      "details": "load_err=None body='' page_errors=['Maximum call stack size exceeded']"
+    }
+  ],
+  "console_problems": [],
+  "console_all": [],
+  "page_errors": [
+    "Maximum call stack size exceeded"
+  ],
+  "failed_requests": [],
+  "http_4xx_5xx": []
+}

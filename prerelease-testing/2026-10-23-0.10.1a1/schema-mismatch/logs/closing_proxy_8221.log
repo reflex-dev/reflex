@@ -1,0 +1,41 @@
+   0.001 listening on 8221
+   3.532 ws #1 open path=/_event/?token=5d85b125-5660-4154-e3b2-bb225badfaf4&EIO=4&transport=websocket
+   3.618 ws #1 got '40/_event,{"event":{"name":"reflex___state____state.hydrate_and_load","payload":' -> closing transport
+   3.827 ws #2 open path=/_event/?token=5d85b125-5660-4154-e3b2-bb225badfaf4&EIO=4&transport=websocket
+   3.830 ws #2 got '40/_event,{"event":{"name":"reflex___state____state.hydrate_and_load","router_da' -> closing transport
+   4.236 ws #3 open path=/_event/?token=5d85b125-5660-4154-e3b2-bb225badfaf4&EIO=4&transport=websocket
+   4.240 ws #3 got '40/_event,{"event":{"name":"reflex___state____state.hydrate_and_load","router_da' -> closing transport
+   4.845 ws #4 open path=/_event/?token=5d85b125-5660-4154-e3b2-bb225badfaf4&EIO=4&transport=websocket
+   4.849 ws #4 got '40/_event,{"event":{"name":"reflex___state____state.hydrate_and_load","router_da' -> closing transport
+   5.653 ws #5 open path=/_event/?token=5d85b125-5660-4154-e3b2-bb225badfaf4&EIO=4&transport=websocket
+   5.657 ws #5 got '40/_event,{"event":{"name":"reflex___state____state.hydrate_and_load","router_da' -> closing transport
+   6.662 ws #6 open path=/_event/?token=5d85b125-5660-4154-e3b2-bb225badfaf4&EIO=4&transport=websocket
+   6.668 ws #6 got '40/_event,{"event":{"name":"reflex___state____state.hydrate_and_load","router_da' -> closing transport
+   7.874 ws #7 open path=/_event/?token=5d85b125-5660-4154-e3b2-bb225badfaf4&EIO=4&transport=websocket
+   7.879 ws #7 got '40/_event,{"event":{"name":"reflex___state____state.hydrate_and_load","router_da' -> closing transport
+   9.285 ws #8 open path=/_event/?token=5d85b125-5660-4154-e3b2-bb225badfaf4&EIO=4&transport=websocket
+   9.290 ws #8 got '40/_event,{"event":{"name":"reflex___state____state.hydrate_and_load","router_da' -> closing transport
+  10.902 ws #9 open path=/_event/?token=5d85b125-5660-4154-e3b2-bb225badfaf4&EIO=4&transport=websocket
+  10.908 ws #9 got '40/_event,{"event":{"name":"reflex___state____state.hydrate_and_load","router_da' -> closing transport
+  12.721 ws #10 open path=/_event/?token=5d85b125-5660-4154-e3b2-bb225badfaf4&EIO=4&transport=websocket
+  12.726 ws #10 got '40/_event,{"event":{"name":"reflex___state____state.hydrate_and_load","router_da' -> closing transport
+  14.733 ws #11 open path=/_event/?token=5d85b125-5660-4154-e3b2-bb225badfaf4&EIO=4&transport=websocket
+  14.738 ws #11 got '40/_event,{"event":{"name":"reflex___state____state.hydrate_and_load","router_da' -> closing transport
+  16.750 ws #12 open path=/_event/?token=5d85b125-5660-4154-e3b2-bb225badfaf4&EIO=4&transport=websocket
+  16.758 ws #12 got '40/_event,{"event":{"name":"reflex___state____state.hydrate_and_load","router_da' -> closing transport
+  18.764 ws #13 open path=/_event/?token=5d85b125-5660-4154-e3b2-bb225badfaf4&EIO=4&transport=websocket
+  18.770 ws #13 got '40/_event,{"event":{"name":"reflex___state____state.hydrate_and_load","router_da' -> closing transport
+  20.773 ws #14 open path=/_event/?token=5d85b125-5660-4154-e3b2-bb225badfaf4&EIO=4&transport=websocket
+  20.775 ws #14 got '40/_event,{"event":{"name":"reflex___state____state.hydrate_and_load","router_da' -> closing transport
+  22.780 ws #15 open path=/_event/?token=5d85b125-5660-4154-e3b2-bb225badfaf4&EIO=4&transport=websocket
+  22.785 ws #15 got '40/_event,{"event":{"name":"reflex___state____state.hydrate_and_load","router_da' -> closing transport
+  24.789 ws #16 open path=/_event/?token=5d85b125-5660-4154-e3b2-bb225badfaf4&EIO=4&transport=websocket
+  24.796 ws #16 got '40/_event,{"event":{"name":"reflex___state____state.hydrate_and_load","router_da' -> closing transport
+  26.802 ws #17 open path=/_event/?token=5d85b125-5660-4154-e3b2-bb225badfaf4&EIO=4&transport=websocket
+  26.804 ws #17 got '40/_event,{"event":{"name":"reflex___state____state.hydrate_and_load","router_da' -> closing transport
+  28.808 ws #18 open path=/_event/?token=5d85b125-5660-4154-e3b2-bb225badfaf4&EIO=4&transport=websocket
+  28.811 ws #18 got '40/_event,{"event":{"name":"reflex___state____state.hydrate_and_load","router_da' -> closing transport
+  30.819 ws #19 open path=/_event/?token=5d85b125-5660-4154-e3b2-bb225badfaf4&EIO=4&transport=websocket
+  30.826 ws #19 got '40/_event,{"event":{"name":"reflex___state____state.hydrate_and_load","router_da' -> closing transport
+  32.835 ws #20 open path=/_event/?token=5d85b125-5660-4154-e3b2-bb225badfaf4&EIO=4&transport=websocket
+  32.838 ws #20 got '40/_event,{"event":{"name":"reflex___state____state.hydrate_and_load","router_da' -> closing transport

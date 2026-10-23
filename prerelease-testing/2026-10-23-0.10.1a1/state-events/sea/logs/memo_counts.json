@@ -1,0 +1,37 @@
+{
+  "after_load": {
+    "memo_page": 2,
+    "memo_child": 2,
+    "memo_scalar": 2
+  },
+  "noop_event": {
+    "memo_child": 0,
+    "memo_scalar": 0,
+    "memo_page": 0
+  },
+  "unrelated_update": {
+    "memo_child": 0,
+    "memo_scalar": 2,
+    "memo_page": 0
+  },
+  "value_identical_list_reassign": {
+    "memo_child": 0,
+    "memo_scalar": 0,
+    "memo_page": 0
+  },
+  "append_item": {
+    "memo_child": 2,
+    "memo_scalar": 0,
+    "memo_page": 0
+  },
+  "bump_meta": {
+    "memo_child": 2,
+    "memo_scalar": 0,
+    "memo_page": 0
+  },
+  "unrelated_update_2": {
+    "memo_child": 0,
+    "memo_scalar": 2,
+    "memo_page": 0
+  }
+}

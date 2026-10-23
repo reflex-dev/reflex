@@ -1,0 +1,535 @@
+{
+ "console": [
+  {
+   "t": 1.716,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "t": 2.071,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "t": 2.176,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "t": 2.356,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "t": 3.097,
+   "type": "warning",
+   "text": "This page was built for another version of the app than the backend it connected to (state schema d29adae5a051f36dafa3d2ce3c5e3601, backend 8a5f44e3ba487819b0b4aa0bd61c5875). Reload the page if it stays out of date once the frontend rebuilds."
+  },
+  {
+   "t": 3.315,
+   "type": "debug",
+   "text": "[vite] invalidate /app_components/schemaapp/schemaapp.jsx: Could not Fast Refresh (new export)"
+  },
+  {
+   "t": 3.317,
+   "type": "debug",
+   "text": "[vite] hot updated: /app_components/schemaapp/schemaapp.jsx"
+  },
+  {
+   "t": 3.329,
+   "type": "debug",
+   "text": "[vite] hot updated: /app_components/schemaapp/schemaapp.jsx"
+  },
+  {
+   "t": 3.34,
+   "type": "debug",
+   "text": "[vite] invalidate /utils/context.jsx: Could not Fast Refresh. Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports"
+  },
+  {
+   "t": 3.34,
+   "type": "debug",
+   "text": "[vite] hot updated: /utils/context.jsx"
+  },
+  {
+   "t": 3.344,
+   "type": "debug",
+   "text": "[vite] hot updated: /utils/context.jsx"
+  },
+  {
+   "t": 3.344,
+   "type": "debug",
+   "text": "[vite] hot updated: /utils/context.jsx"
+  },
+  {
+   "t": 3.472,
+   "type": "debug",
+   "text": "[vite] hot updated: /app/routes/_index.jsx"
+  },
+  {
+   "t": 3.483,
+   "type": "debug",
+   "text": "[vite] hot updated: /app/routes/_index.jsx"
+  },
+  {
+   "t": 3.528,
+   "type": "debug",
+   "text": "[vite] hot updated: /app/routes/_index.jsx"
+  },
+  {
+   "t": 3.623,
+   "type": "debug",
+   "text": "[vite] hot updated: /app/root.jsx"
+  },
+  {
+   "t": 3.624,
+   "type": "debug",
+   "text": "[vite] hot updated: /app_components/reflex/compiler/compiler.jsx"
+  },
+  {
+   "t": 3.624,
+   "type": "debug",
+   "text": "[vite] hot updated: /app_components/reflex/app.jsx"
+  },
+  {
+   "t": 3.624,
+   "type": "debug",
+   "text": "[vite] hot updated: /utils/components/Errorboundary_errorboundary_71c9c4d90c1a40b6ed86624e52613ee3.jsx"
+  },
+  {
+   "t": 3.625,
+   "type": "debug",
+   "text": "[vite] hot updated: /app_components/schemaapp/schemaapp.jsx"
+  },
+  {
+   "t": 15.801,
+   "type": "warning",
+   "text": "This page was built for another version of the app than the backend it connected to (state schema 8a5f44e3ba487819b0b4aa0bd61c5875, backend d29adae5a051f36dafa3d2ce3c5e3601). Reload the page if it stays out of date once the frontend rebuilds."
+  },
+  {
+   "t": 15.962,
+   "type": "debug",
+   "text": "[vite] invalidate /app_components/schemaapp/schemaapp.jsx: Could not Fast Refresh (export removed)"
+  },
+  {
+   "t": 15.962,
+   "type": "debug",
+   "text": "[vite] hot updated: /app_components/schemaapp/schemaapp.jsx"
+  },
+  {
+   "t": 16.02,
+   "type": "debug",
+   "text": "[vite] hot updated: /app_components/schemaapp/schemaapp.jsx"
+  },
+  {
+   "t": 16.031,
+   "type": "debug",
+   "text": "[vite] invalidate /utils/context.jsx: Could not Fast Refresh. Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports"
+  },
+  {
+   "t": 16.031,
+   "type": "debug",
+   "text": "[vite] hot updated: /utils/context.jsx"
+  },
+  {
+   "t": 16.037,
+   "type": "debug",
+   "text": "[vite] hot updated: /utils/context.jsx"
+  },
+  {
+   "t": 16.037,
+   "type": "debug",
+   "text": "[vite] hot updated: /utils/context.jsx"
+  },
+  {
+   "t": 16.141,
+   "type": "debug",
+   "text": "[vite] hot updated: /app/routes/_index.jsx"
+  },
+  {
+   "t": 16.15,
+   "type": "debug",
+   "text": "[vite] hot updated: /app/routes/_index.jsx"
+  },
+  {
+   "t": 16.16,
+   "type": "debug",
+   "text": "[vite] hot updated: /app/routes/_index.jsx"
+  },
+  {
+   "t": 16.243,
+   "type": "debug",
+   "text": "[vite] hot updated: /app/root.jsx"
+  },
+  {
+   "t": 16.243,
+   "type": "debug",
+   "text": "[vite] hot updated: /app_components/reflex/compiler/compiler.jsx"
+  },
+  {
+   "t": 16.244,
+   "type": "debug",
+   "text": "[vite] hot updated: /app_components/reflex/app.jsx"
+  },
+  {
+   "t": 16.244,
+   "type": "debug",
+   "text": "[vite] hot updated: /utils/components/Errorboundary_errorboundary_71c9c4d90c1a40b6ed86624e52613ee3.jsx"
+  },
+  {
+   "t": 16.244,
+   "type": "debug",
+   "text": "[vite] hot updated: /app_components/schemaapp/schemaapp.jsx"
+  }
+ ],
+ "pageerrors": [],
+ "failed": [],
+ "responses_bad": [],
+ "ws": [
+  {
+   "t": 2.151,
+   "event": "open",
+   "url": "ws://localhost:3223/?token=mfXlcojk4Cx1"
+  },
+  {
+   "t": 2.154,
+   "event": "open",
+   "url": "ws://localhost:8223/_event/?token=fc03d189-238d-4477-ff8d-969fc1a76561&EIO=4&transport=websocket"
+  },
+  {
+   "t": 2.176,
+   "event": "recv",
+   "payload": "{\"type\":\"connected\"}"
+  },
+  {
+   "t": 2.177,
+   "event": "recv",
+   "payload": "0{\"sid\":\"hhwNmXgFBFb86tbNAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "t": 2.436,
+   "event": "sent",
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"df3b3a177be2edda\",\"d029e8db883816fc\",\"cdcfbc4926d5cd71\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"4909236056576409\",\"6fcc2b3de48a0194\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}},\"state_schema\":\"d29adae5a051f36dafa3d2ce3c5e3601\"}"
+  },
+  {
+   "t": 2.454,
+   "event": "recv",
+   "payload": "40/_event,{\"sid\":\"1sl9D8nDkTBMMV5bAAAB\"}"
+  },
+  {
+   "t": 2.464,
+   "event": "recv",
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8223\",\"origin\":\"http://localhost:3223\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"qTVKJAI+chRJ+L0MFVGWRQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers"
+  },
+  {
+   "t": 2.464,
+   "event": "recv",
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "t": 2.686,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.schemaapp___schemaapp____state.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "t": 2.693,
+   "event": "recv",
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.schemaapp___schemaapp____state\":{\"count_rx_state_\":1,\"doubled_rx_state_\":2}}}]"
+  },
+  {
+   "t": 2.88,
+   "event": "close",
+   "url": "ws://localhost:8223/_event/?token=fc03d189-238d-4477-ff8d-969fc1a76561&EIO=4&transport=websocket"
+  },
+  {
+   "t": 2.881,
+   "event": "open",
+   "url": "ws://localhost:8223/_event/?token=fc03d189-238d-4477-ff8d-969fc1a76561&EIO=4&transport=websocket"
+  },
+  {
+   "t": 3.085,
+   "event": "recv",
+   "payload": "0{\"sid\":\"IX6GSnt1-WgDtEYpAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "t": 3.086,
+   "event": "sent",
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}},\"state_schema\":\"d29adae5a051f36dafa3d2ce3c5e3601\"}"
+  },
+  {
+   "t": 3.089,
+   "event": "recv",
+   "payload": "42/_event,[\"state_mismatch\",{\"backend\":\"8a5f44e3ba487819b0b4aa0bd61c5875\",\"reload_cooldown_ms\":10000}]"
+  },
+  {
+   "t": 3.095,
+   "event": "recv",
+   "payload": "40/_event,{\"sid\":\"67hR-LYM07OBb8SUAAAB\"}"
+  },
+  {
+   "t": 3.097,
+   "event": "sent",
+   "payload": "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"warn\",\"message\":\"This page was built for another version of the app than the backend it connected to (state schema d29adae5a051f36dafa3d2ce3c5e3601, backend 8a5f44e3ba487819b0b4aa0bd61c5875). Reload the page if it stays out of date once the frontend rebuilds.\"}}}"
+  },
+  {
+   "t": 3.105,
+   "event": "recv",
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8223\",\"origin\":\"http://localhost:3223\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"ItRDCbDXWdkGFWJd1ItrAQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\""
+  },
+  {
+   "t": 3.106,
+   "event": "recv",
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "t": 3.106,
+   "event": "recv",
+   "payload": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":null}}"
+  },
+  {
+   "t": 3.118,
+   "event": "recv",
+   "payload": "{\"type\":\"update\",\"updates\":[{\"type\":\"js-update\",\"timestamp\":1792797066749,\"path\":\"/app_components/schemaapp/schemaapp.jsx\",\"acceptedPath\":\"/app_components/schemaapp/schemaapp.jsx\",\"explicitImportRequired\":false,\"isWithinCircularImport\":false}]}"
+  },
+  {
+   "t": 3.119,
+   "event": "recv",
+   "payload": "{\"type\":\"update\",\"updates\":[{\"type\":\"js-update\",\"timestamp\":1792797066748,\"path\":\"/app_components/schemaapp/schemaapp.jsx\",\"acceptedPath\":\"/app_components/schemaapp/schemaapp.jsx\",\"explicitImportRequired\":false,\"isWithinCircularImport\":false}]}"
+  },
+  {
+   "t": 3.119,
+   "event": "recv",
+   "payload": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":null}}"
+  },
+  {
+   "t": 3.12,
+   "event": "recv",
+   "payload": "{\"type\":\"update\",\"updates\":[{\"type\":\"js-update\",\"timestamp\":1792797066758,\"path\":\"/utils/context.jsx\",\"acceptedPath\":\"/utils/context.jsx\",\"explicitImportRequired\":false,\"isWithinCircularImport\":false}]}"
+  },
+  {
+   "t": 3.12,
+   "event": "recv",
+   "payload": "{\"type\":\"update\",\"updates\":[{\"type\":\"js-update\",\"timestamp\":1792797066759,\"path\":\"/utils/context.jsx\",\"acceptedPath\":\"/utils/context.jsx\",\"explicitImportRequired\":false,\"isWithinCircularImport\":false}]}"
+  },
+  {
+   "t": 3.12,
+   "event": "recv",
+   "payload": "{\"type\":\"update\",\"updates\":[{\"type\":\"js-update\",\"timestamp\":1792797066757,\"path\":\"/utils/context.jsx\",\"acceptedPath\":\"/utils/context.jsx\",\"explicitImportRequired\":false,\"isWithinCircularImport\":false}]}"
+  },
+  {
+   "t": 3.27,
+   "event": "recv",
+   "payload": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":{\"id\":\"routes/_index\",\"parentId\":\"root\",\"index\":true,\"url\":\"/app/routes/_index.jsx\",\"module\":\"/app/routes/_index.jsx?import\",\"hasAction\":false,\"hasClientAction\":false,\"hasLoader\":false,\"hasClientLoader\":false,\"hasClientMiddleware\":false,\"hasDefaultExport\":true,\"hasErrorBoundary\":false,\"imports\":[]}}}"
+  },
+  {
+   "t": 3.271,
+   "event": "recv",
+   "payload": "{\"type\":\"update\",\"updates\":[{\"type\":\"js-update\",\"timestamp\":1792797066910,\"path\":\"/app/routes/_index.jsx\",\"acceptedPath\":\"/app/routes/_index.jsx\",\"explicitImportRequired\":false,\"isWithinCircularImport\":false}]}"
+  },
+  {
+   "t": 3.271,
+   "event": "recv",
+   "payload": "{\"type\":\"update\",\"updates\":[{\"type\":\"js-update\",\"timestamp\":1792797066745,\"path\":\"/app/routes/_index.jsx\",\"acceptedPath\":\"/app/routes/_index.jsx\",\"explicitImportRequired\":false,\"isWithinCircularImport\":false}]}"
+  },
+  {
+   "t": 3.315,
+   "event": "sent",
+   "payload": "{\"type\":\"custom\",\"event\":\"vite:invalidate\",\"data\":{\"path\":\"/app_components/schemaapp/schemaapp.jsx\",\"message\":\"Could not Fast Refresh (new export)\",\"firstInvalidatedBy\":\"/app_components/schemaapp/schemaapp.jsx\"}}"
+  },
+  {
+   "t": 3.32,
+   "event": "recv",
+   "payload": "{\"type\":\"update\",\"updates\":[{\"type\":\"js-update\",\"timestamp\":1792797066757,\"path\":\"/app/routes/_index.jsx\",\"acceptedPath\":\"/app/routes/_index.jsx\",\"explicitImportRequired\":false,\"isWithinCircularImport\":false,\"firstInvalidatedBy\":\"/app_components/schemaapp/schemaapp.jsx\"}]}"
+  },
+  {
+   "t": 3.34,
+   "event": "sent",
+   "payload": "{\"type\":\"custom\",\"event\":\"vite:invalidate\",\"data\":{\"path\":\"/utils/context.jsx\",\"message\":\"Could not Fast Refresh. Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports\",\"firstInvalidatedBy\":\"/utils/context.jsx\"}}"
+  },
+  {
+   "t": 3.341,
+   "event": "recv",
+   "payload": "{\"type\":\"update\",\"updates\":[{\"type\":\"js-update\",\"timestamp\":1792797066757,\"path\":\"/app/root.jsx\",\"acceptedPath\":\"/app/root.jsx\",\"explicitImportRequired\":false,\"isWithinCircularImport\":false,\"firstInvalidatedBy\":\"/utils/context.jsx\"},{\"type\":\"js-update\",\"timestamp\":1792797066757,\"path\":\"/app_components/reflex/compiler/compiler.jsx\",\"acceptedPath\":\"/app_components/reflex/compiler/compiler.jsx\",\"explicitImportRequired\":false,\"isWithinCircularImport\":false,\"firstInvalidatedBy\":\"/utils/context.jsx\"},{\"type\":\"js-update\",\"timestamp\":1792797066757,\"path\":\"/app_components/reflex/app.jsx\",\"acceptedPath\""
+  },
+  {
+   "t": 3.504,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "t": 3.524,
+   "event": "recv",
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "t": 13.785,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.schemaapp___schemaapp____state.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "t": 13.794,
+   "event": "recv",
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.schemaapp___schemaapp____state\":{\"count_rx_state_\":2,\"doubled_rx_state_\":4}}}]"
+  },
+  {
+   "t": 15.536,
+   "event": "close",
+   "url": "ws://localhost:8223/_event/?token=fc03d189-238d-4477-ff8d-969fc1a76561&EIO=4&transport=websocket"
+  },
+  {
+   "t": 15.536,
+   "event": "open",
+   "url": "ws://localhost:8223/_event/?token=fc03d189-238d-4477-ff8d-969fc1a76561&EIO=4&transport=websocket"
+  },
+  {
+   "t": 15.786,
+   "event": "recv",
+   "payload": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":null}}"
+  },
+  {
+   "t": 15.788,
+   "event": "recv",
+   "payload": "{\"type\":\"update\",\"updates\":[{\"type\":\"js-update\",\"timestamp\":1792797079429,\"path\":\"/app_components/schemaapp/schemaapp.jsx\",\"acceptedPath\":\"/app_components/schemaapp/schemaapp.jsx\",\"explicitImportRequired\":false,\"isWithinCircularImport\":false}]}"
+  },
+  {
+   "t": 15.789,
+   "event": "recv",
+   "payload": "{\"type\":\"update\",\"updates\":[{\"type\":\"js-update\",\"timestamp\":1792797079428,\"path\":\"/app_components/schemaapp/schemaapp.jsx\",\"acceptedPath\":\"/app_components/schemaapp/schemaapp.jsx\",\"explicitImportRequired\":false,\"isWithinCircularImport\":false}]}"
+  },
+  {
+   "t": 15.794,
+   "event": "recv",
+   "payload": "0{\"sid\":\"N6Ahi9kkCDph27jzAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "t": 15.795,
+   "event": "sent",
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}},\"state_schema\":\"8a5f44e3ba487819b0b4aa0bd61c5875\"}"
+  },
+  {
+   "t": 15.797,
+   "event": "recv",
+   "payload": "42/_event,[\"state_mismatch\",{\"backend\":\"d29adae5a051f36dafa3d2ce3c5e3601\",\"reload_cooldown_ms\":10000}]"
+  },
+  {
+   "t": 15.801,
+   "event": "recv",
+   "payload": "40/_event,{\"sid\":\"KPwYTe50fYKt7aNpAAAB\"}"
+  },
+  {
+   "t": 15.802,
+   "event": "sent",
+   "payload": "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"warn\",\"message\":\"This page was built for another version of the app than the backend it connected to (state schema 8a5f44e3ba487819b0b4aa0bd61c5875, backend d29adae5a051f36dafa3d2ce3c5e3601). Reload the page if it stays out of date once the frontend rebuilds.\"}}}"
+  },
+  {
+   "t": 15.803,
+   "event": "recv",
+   "payload": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":null}}"
+  },
+  {
+   "t": 15.806,
+   "event": "recv",
+   "payload": "{\"type\":\"update\",\"updates\":[{\"type\":\"js-update\",\"timestamp\":1792797079445,\"path\":\"/utils/context.jsx\",\"acceptedPath\":\"/utils/context.jsx\",\"explicitImportRequired\":false,\"isWithinCircularImport\":false}]}"
+  },
+  {
+   "t": 15.806,
+   "event": "recv",
+   "payload": "{\"type\":\"update\",\"updates\":[{\"type\":\"js-update\",\"timestamp\":1792797079446,\"path\":\"/utils/context.jsx\",\"acceptedPath\":\"/utils/context.jsx\",\"explicitImportRequired\":false,\"isWithinCircularImport\":false}]}"
+  },
+  {
+   "t": 15.807,
+   "event": "recv",
+   "payload": "{\"type\":\"update\",\"updates\":[{\"type\":\"js-update\",\"timestamp\":1792797079444,\"path\":\"/utils/context.jsx\",\"acceptedPath\":\"/utils/context.jsx\",\"explicitImportRequired\":false,\"isWithinCircularImport\":false}]}"
+  },
+  {
+   "t": 15.808,
+   "event": "recv",
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8223\",\"origin\":\"http://localhost:3223\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"sfBT078eqGy3XmS4GWRoLw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\""
+  },
+  {
+   "t": 15.809,
+   "event": "recv",
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "t": 15.929,
+   "event": "recv",
+   "payload": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":{\"id\":\"routes/_index\",\"parentId\":\"root\",\"index\":true,\"url\":\"/app/routes/_index.jsx\",\"module\":\"/app/routes/_index.jsx?import\",\"hasAction\":false,\"hasClientAction\":false,\"hasLoader\":false,\"hasClientLoader\":false,\"hasClientMiddleware\":false,\"hasDefaultExport\":true,\"hasErrorBoundary\":false,\"imports\":[]}}}"
+  },
+  {
+   "t": 15.929,
+   "event": "recv",
+   "payload": "{\"type\":\"update\",\"updates\":[{\"type\":\"js-update\",\"timestamp\":1792797079565,\"path\":\"/app/routes/_index.jsx\",\"acceptedPath\":\"/app/routes/_index.jsx\",\"explicitImportRequired\":false,\"isWithinCircularImport\":false}]}"
+  },
+  {
+   "t": 15.93,
+   "event": "recv",
+   "payload": "{\"type\":\"update\",\"updates\":[{\"type\":\"js-update\",\"timestamp\":1792797079425,\"path\":\"/app/routes/_index.jsx\",\"acceptedPath\":\"/app/routes/_index.jsx\",\"explicitImportRequired\":false,\"isWithinCircularImport\":false}]}"
+  },
+  {
+   "t": 15.961,
+   "event": "sent",
+   "payload": "{\"type\":\"custom\",\"event\":\"vite:invalidate\",\"data\":{\"path\":\"/app_components/schemaapp/schemaapp.jsx\",\"message\":\"Could not Fast Refresh (export removed)\",\"firstInvalidatedBy\":\"/app_components/schemaapp/schemaapp.jsx\"}}"
+  },
+  {
+   "t": 15.965,
+   "event": "recv",
+   "payload": "{\"type\":\"update\",\"updates\":[{\"type\":\"js-update\",\"timestamp\":1792797079444,\"path\":\"/app/routes/_index.jsx\",\"acceptedPath\":\"/app/routes/_index.jsx\",\"explicitImportRequired\":false,\"isWithinCircularImport\":false,\"firstInvalidatedBy\":\"/app_components/schemaapp/schemaapp.jsx\"}]}"
+  },
+  {
+   "t": 16.03,
+   "event": "sent",
+   "payload": "{\"type\":\"custom\",\"event\":\"vite:invalidate\",\"data\":{\"path\":\"/utils/context.jsx\",\"message\":\"Could not Fast Refresh. Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports\",\"firstInvalidatedBy\":\"/utils/context.jsx\"}}"
+  },
+  {
+   "t": 16.031,
+   "event": "recv",
+   "payload": "{\"type\":\"update\",\"updates\":[{\"type\":\"js-update\",\"timestamp\":1792797079444,\"path\":\"/app/root.jsx\",\"acceptedPath\":\"/app/root.jsx\",\"explicitImportRequired\":false,\"isWithinCircularImport\":false,\"firstInvalidatedBy\":\"/utils/context.jsx\"},{\"type\":\"js-update\",\"timestamp\":1792797079444,\"path\":\"/app_components/reflex/compiler/compiler.jsx\",\"acceptedPath\":\"/app_components/reflex/compiler/compiler.jsx\",\"explicitImportRequired\":false,\"isWithinCircularImport\":false,\"firstInvalidatedBy\":\"/utils/context.jsx\"},{\"type\":\"js-update\",\"timestamp\":1792797079444,\"path\":\"/app_components/reflex/app.jsx\",\"acceptedPath\""
+  },
+  {
+   "t": 16.183,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "t": 16.192,
+   "event": "recv",
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  }
+ ],
+ "loads": [
+  {
+   "t": 2.152,
+   "url": "http://localhost:3223/"
+  }
+ ],
+ "n_requests": 75,
+ "anomalies": [
+  "console.warning: This page was built for another version of the app than the backend it connected to (state schema d29adae5a051f36dafa3d2ce3c5e3601, backend 8a5f44e3ba487819b0b4aa0bd61c5875). Reload the page if it stays out of date once the frontend rebuilds.",
+  "console.warning: This page was built for another version of the app than the backend it connected to (state schema 8a5f44e3ba487819b0b4aa0bd61c5875, backend d29adae5a051f36dafa3d2ce3c5e3601). Reload the page if it stays out of date once the frontend rebuilds."
+ ],
+ "results": {
+  "schema_before": "d29adae5a051f36dafa3d2ce3c5e3601",
+  "hot_var_rendered_after_s": 1.0,
+  "mismatch_warnings_after_edit": 1,
+  "console_after_edit": [
+   "warning: This page was built for another version of the app than the backend it connected to (state schema d29adae5a051f36dafa3d2ce3c5e3601, backend 8a5f44e3ba487819b0b4"
+  ],
+  "loads": [
+   {
+    "t": 2.152,
+    "url": "http://localhost:3223/"
+   }
+  ],
+  "banner_present": false,
+  "connect_frames_total": 2,
+  "mismatch_frames_total": 1,
+  "schema_after": "8a5f44e3ba487819b0b4aa0bd61c5875",
+  "count_after": "count: 2",
+  "mismatch_warnings_after_revert": 1,
+  "loads_final": 1,
+  "anomalies": [
+   "console.warning: This page was built for another version of the app than the backend it connected to (state schema d29adae5a051f36dafa3d2ce3c5e3601, backend 8a5f44e3ba487819b0b4aa0bd61c5875). Reload the page if it stays out of date once the frontend rebuilds.",
+   "console.warning: This page was built for another version of the app than the backend it connected to (state schema 8a5f44e3ba487819b0b4aa0bd61c5875, backend d29adae5a051f36dafa3d2ce3c5e3601). Reload the page if it stays out of date once the frontend rebuilds."
+  ]
+ }
+}

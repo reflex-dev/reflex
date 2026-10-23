@@ -1,0 +1,354 @@
+{
+ "console": [
+  {
+   "t": 0.214,
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+   "t": 0.288,
+   "type": "log",
+   "text": "Disconnect websocket on pagehide"
+  },
+  {
+   "t": 0.388,
+   "type": "warning",
+   "text": "This page was built for another version of the app than the backend it connected to (state schema d29adae5a051f36dafa3d2ce3c5e3601, backend bf1aeee2b85d6f0f1d92c4a0e50be263). Reload the page to get the new version."
+  },
+  {
+   "t": 5.195,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "t": 5.27,
+   "type": "warning",
+   "text": "This page was built for another version of the app than the backend it connected to (state schema d29adae5a051f36dafa3d2ce3c5e3601, backend bf1aeee2b85d6f0f1d92c4a0e50be263). Reload the page to get the new version."
+  },
+  {
+   "t": 13.329,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "t": 13.398,
+   "type": "log",
+   "text": "Disconnect websocket on pagehide"
+  },
+  {
+   "t": 13.46,
+   "type": "warning",
+   "text": "This page was built for another version of the app than the backend it connected to (state schema d29adae5a051f36dafa3d2ce3c5e3601, backend bf1aeee2b85d6f0f1d92c4a0e50be263). Reload the page to get the new version."
+  }
+ ],
+ "pageerrors": [],
+ "failed": [],
+ "responses_bad": [],
+ "ws": [
+  {
+   "t": 0.166,
+   "event": "open",
+   "url": "ws://localhost:8221/_event/?token=e6a23e5c-77d8-4122-bffe-62383cdb087d&EIO=4&transport=websocket"
+  },
+  {
+   "t": 0.207,
+   "event": "recv",
+   "payload": "0{\"sid\":\"DPMXYuNOlfW5pwhdAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "t": 0.263,
+   "event": "sent",
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"df3b3a177be2edda\",\"d029e8db883816fc\",\"cdcfbc4926d5cd71\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"4909236056576409\",\"6fcc2b3de48a0194\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}},\"state_schema\":\"d29adae5a051f36dafa3d2ce3c5e3601\"}"
+  },
+  {
+   "t": 0.266,
+   "event": "recv",
+   "payload": "42/_event,[\"state_mismatch\",{\"backend\":\"bf1aeee2b85d6f0f1d92c4a0e50be263\",\"reload_cooldown_ms\":3000}]"
+  },
+  {
+   "t": 0.272,
+   "event": "recv",
+   "payload": "40/_event,{\"sid\":\"cLkpJs2mt9dyvyFQAAAB\"}"
+  },
+  {
+   "t": 0.278,
+   "event": "recv",
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8221\",\"origin\":\"http://localhost:3221\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"VIacPe9NmNIBl0diyNx3cA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers"
+  },
+  {
+   "t": 0.278,
+   "event": "recv",
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "t": 0.288,
+   "event": "sent",
+   "payload": "41/_event,"
+  },
+  {
+   "t": 0.291,
+   "event": "close",
+   "url": "ws://localhost:8221/_event/?token=e6a23e5c-77d8-4122-bffe-62383cdb087d&EIO=4&transport=websocket"
+  },
+  {
+   "t": 0.362,
+   "event": "open",
+   "url": "ws://localhost:8221/_event/?token=e6a23e5c-77d8-4122-bffe-62383cdb087d&EIO=4&transport=websocket"
+  },
+  {
+   "t": 0.365,
+   "event": "recv",
+   "payload": "0{\"sid\":\"A_weCtmhJRzymcifAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "t": 0.377,
+   "event": "sent",
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"df3b3a177be2edda\",\"d029e8db883816fc\",\"cdcfbc4926d5cd71\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"4909236056576409\",\"6fcc2b3de48a0194\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}},\"state_schema\":\"d29adae5a051f36dafa3d2ce3c5e3601\"}"
+  },
+  {
+   "t": 0.385,
+   "event": "recv",
+   "payload": "42/_event,[\"state_mismatch\",{\"backend\":\"bf1aeee2b85d6f0f1d92c4a0e50be263\",\"reload_cooldown_ms\":3000}]"
+  },
+  {
+   "t": 0.387,
+   "event": "recv",
+   "payload": "40/_event,{\"sid\":\"M-iaboSfr4Z_0oD6AAAD\"}"
+  },
+  {
+   "t": 0.389,
+   "event": "recv",
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8221\",\"origin\":\"http://localhost:3221\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"g8Sfnt/lwTwzgcfKjHHg7A==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers"
+  },
+  {
+   "t": 0.389,
+   "event": "recv",
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "t": 4.35,
+   "event": "sent",
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.schemaapp___schemaapp____state.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "t": 4.355,
+   "event": "recv",
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.schemaapp___schemaapp____state\":{\"doubled_rx_state_\":2,\"count_rx_state_\":1}}}]"
+  },
+  {
+   "t": 5.2,
+   "event": "sent",
+   "payload": "41/_event,"
+  },
+  {
+   "t": 5.2,
+   "event": "close",
+   "url": "ws://localhost:8221/_event/?token=e6a23e5c-77d8-4122-bffe-62383cdb087d&EIO=4&transport=websocket"
+  },
+  {
+   "t": 5.25,
+   "event": "open",
+   "url": "ws://localhost:8221/_event/?token=e6a23e5c-77d8-4122-bffe-62383cdb087d&EIO=4&transport=websocket"
+  },
+  {
+   "t": 5.259,
+   "event": "recv",
+   "payload": "0{\"sid\":\"P7X72jwKT4bvj3plAAAE\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "t": 5.266,
+   "event": "sent",
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"df3b3a177be2edda\",\"d029e8db883816fc\",\"cdcfbc4926d5cd71\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"4909236056576409\",\"6fcc2b3de48a0194\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}},\"state_schema\":\"d29adae5a051f36dafa3d2ce3c5e3601\"}"
+  },
+  {
+   "t": 5.268,
+   "event": "recv",
+   "payload": "42/_event,[\"state_mismatch\",{\"backend\":\"bf1aeee2b85d6f0f1d92c4a0e50be263\",\"reload_cooldown_ms\":3000}]"
+  },
+  {
+   "t": 5.269,
+   "event": "recv",
+   "payload": "40/_event,{\"sid\":\"Qh0-MSf6P5iERmzHAAAF\"}"
+  },
+  {
+   "t": 5.271,
+   "event": "recv",
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8221\",\"origin\":\"http://localhost:3221\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"YGwFOowGeKh3REqJBQwMaA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers"
+  },
+  {
+   "t": 5.272,
+   "event": "recv",
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "t": 13.33,
+   "event": "sent",
+   "payload": "41/_event,"
+  },
+  {
+   "t": 13.33,
+   "event": "close",
+   "url": "ws://localhost:8221/_event/?token=e6a23e5c-77d8-4122-bffe-62383cdb087d&EIO=4&transport=websocket"
+  },
+  {
+   "t": 13.365,
+   "event": "open",
+   "url": "ws://localhost:8221/_event/?token=e6a23e5c-77d8-4122-bffe-62383cdb087d&EIO=4&transport=websocket"
+  },
+  {
+   "t": 13.37,
+   "event": "recv",
+   "payload": "0{\"sid\":\"t0XKR1pt02cHPYbfAAAG\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "t": 13.378,
+   "event": "sent",
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"df3b3a177be2edda\",\"d029e8db883816fc\",\"cdcfbc4926d5cd71\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"4909236056576409\",\"6fcc2b3de48a0194\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}},\"state_schema\":\"d29adae5a051f36dafa3d2ce3c5e3601\"}"
+  },
+  {
+   "t": 13.382,
+   "event": "recv",
+   "payload": "42/_event,[\"state_mismatch\",{\"backend\":\"bf1aeee2b85d6f0f1d92c4a0e50be263\",\"reload_cooldown_ms\":3000}]"
+  },
+  {
+   "t": 13.386,
+   "event": "recv",
+   "payload": "40/_event,{\"sid\":\"e0L8ivYBh0Y0NbIrAAAH\"}"
+  },
+  {
+   "t": 13.391,
+   "event": "recv",
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8221\",\"origin\":\"http://localhost:3221\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"RCg5XjWEdx7TXZRwCPg3tA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers"
+  },
+  {
+   "t": 13.391,
+   "event": "recv",
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "t": 13.398,
+   "event": "sent",
+   "payload": "41/_event,"
+  },
+  {
+   "t": 13.403,
+   "event": "close",
+   "url": "ws://localhost:8221/_event/?token=e6a23e5c-77d8-4122-bffe-62383cdb087d&EIO=4&transport=websocket"
+  },
+  {
+   "t": 13.443,
+   "event": "open",
+   "url": "ws://localhost:8221/_event/?token=e6a23e5c-77d8-4122-bffe-62383cdb087d&EIO=4&transport=websocket"
+  },
+  {
+   "t": 13.452,
+   "event": "recv",
+   "payload": "0{\"sid\":\"kLfZ3mEAwFNdY4msAAAI\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "t": 13.453,
+   "event": "sent",
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"df3b3a177be2edda\",\"d029e8db883816fc\",\"cdcfbc4926d5cd71\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"4909236056576409\",\"6fcc2b3de48a0194\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}},\"state_schema\":\"d29adae5a051f36dafa3d2ce3c5e3601\"}"
+  },
+  {
+   "t": 13.456,
+   "event": "recv",
+   "payload": "42/_event,[\"state_mismatch\",{\"backend\":\"bf1aeee2b85d6f0f1d92c4a0e50be263\",\"reload_cooldown_ms\":3000}]"
+  },
+  {
+   "t": 13.459,
+   "event": "recv",
+   "payload": "40/_event,{\"sid\":\"9LojBzo2c1RtBEJIAAAJ\"}"
+  },
+  {
+   "t": 13.462,
+   "event": "recv",
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8221\",\"origin\":\"http://localhost:3221\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"ycQwCmJ8Xn+8pXHOvpb3+w==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers"
+  },
+  {
+   "t": 13.462,
+   "event": "recv",
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  }
+ ],
+ "loads": [
+  {
+   "t": 0.163,
+   "url": "http://localhost:3221/"
+  },
+  {
+   "t": 0.344,
+   "url": "http://localhost:3221/"
+  },
+  {
+   "t": 5.248,
+   "url": "http://localhost:3221/"
+  },
+  {
+   "t": 13.362,
+   "url": "http://localhost:3221/"
+  },
+  {
+   "t": 13.438,
+   "url": "http://localhost:3221/"
+  }
+ ],
+ "n_requests": 60,
+ "anomalies": [
+  "console.error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "console.warning: This page was built for another version of the app than the backend it connected to (state schema d29adae5a051f36dafa3d2ce3c5e3601, backend bf1aeee2b85d6f0f1d92c4a0e50be263). Reload the page to get the new version.",
+  "console.warning: This page was built for another version of the app than the backend it connected to (state schema d29adae5a051f36dafa3d2ce3c5e3601, backend bf1aeee2b85d6f0f1d92c4a0e50be263). Reload the page to get the new version.",
+  "console.warning: This page was built for another version of the app than the backend it connected to (state schema d29adae5a051f36dafa3d2ce3c5e3601, backend bf1aeee2b85d6f0f1d92c4a0e50be263). Reload the page to get the new version."
+ ],
+ "results": {
+  "connect_frames": [
+   {
+    "t": 0.263,
+    "event": "sent",
+    "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"df3b3a177be2edda\",\"d029e8db883816fc\",\"cdcfbc4926d5cd71\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"4909236056576409\",\"6fcc2b3de48a0194\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}},\"state_schema\":\"d29adae5a051f36dafa3d2ce3c5e3601\"}"
+   },
+   {
+    "t": 0.377,
+    "event": "sent",
+    "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"df3b3a177be2edda\",\"d029e8db883816fc\",\"cdcfbc4926d5cd71\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"4909236056576409\",\"6fcc2b3de48a0194\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}},\"state_schema\":\"d29adae5a051f36dafa3d2ce3c5e3601\"}"
+   }
+  ],
+  "connect_has_state_schema": true,
+  "mismatch_frames": [
+   {
+    "t": 0.266,
+    "event": "recv",
+    "payload": "42/_event,[\"state_mismatch\",{\"backend\":\"bf1aeee2b85d6f0f1d92c4a0e50be263\",\"reload_cooldown_ms\":3000}]"
+   },
+   {
+    "t": 0.385,
+    "event": "recv",
+    "payload": "42/_event,[\"state_mismatch\",{\"backend\":\"bf1aeee2b85d6f0f1d92c4a0e50be263\",\"reload_cooldown_ms\":3000}]"
+   }
+  ],
+  "loads": [
+   {
+    "t": 0.163,
+    "url": "http://localhost:3221/"
+   },
+   {
+    "t": 0.344,
+    "url": "http://localhost:3221/"
+   }
+  ],
+  "banner_visible_after_load": true,
+  "banner_text": "A new version of this app is available.\nReload",
+  "last_reloaded_key": "1792796321418",
+  "count_after_click": "count: 1",
+  "loads_after_banner_click": 1,
+  "banner_visible_after_banner_reload": true,
+  "loads_after_cooldown_nav": 2,
+  "banner_after_cooldown_nav": true,
+  "anomalies": [
+   "console.error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+   "console.warning: This page was built for another version of the app than the backend it connected to (state schema d29adae5a051f36dafa3d2ce3c5e3601, backend bf1aeee2b85d6f0f1d92c4a0e50be263). Reload the page to get the new version.",
+   "console.warning: This page was built for another version of the app than the backend it connected to (state schema d29adae5a051f36dafa3d2ce3c5e3601, backend bf1aeee2b85d6f0f1d92c4a0e50be263). Reload the page to get the new version.",
+   "console.warning: This page was built for another version of the app than the backend it connected to (state schema d29adae5a051f36dafa3d2ce3c5e3601, backend bf1aeee2b85d6f0f1d92c4a0e50be263). Reload the page to get the new version."
+  ]
+ }
+}
