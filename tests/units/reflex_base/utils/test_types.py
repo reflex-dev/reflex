@@ -5,6 +5,8 @@ import json
 import subprocess
 import sys
 import typing
+import warnings
+from collections import UserList
 from collections.abc import Callable, Sequence
 from typing import (
     Annotated,
@@ -27,8 +29,11 @@ from reflex_base.utils.types import (
     Scope,
     Send,
     _isinstance,
+    get_attribute_access_type,
+    get_field_type,
     get_required_typed_dict_keys,
     get_typed_dict_field_types,
+    is_non_string_sequence,
     resolve_type_alias,
     typehint_issubclass,
 )
@@ -43,6 +48,101 @@ from typing_extensions import (
 P = ParamSpec("P")
 Ts = TypeVarTuple("Ts")
 Handlers = TypeAliasType("Handlers", tuple[Callable[P, int], *Ts], type_params=(P, Ts))
+
+
+@pytest.fixture(params=["pydantic", "pydantic.v1"], ids=["v2", "v1"])
+def base_model(request: pytest.FixtureRequest) -> type:
+    """Provide the model base for supported Pydantic versions.
+
+    Args:
+        request: The fixture request selecting the Pydantic module.
+
+    Returns:
+        The selected model base class.
+    """
+    if request.param == "pydantic.v1" and sys.version_info >= (3, 14):
+        pytest.skip("Pydantic v1 does not support Python 3.14 or newer.")
+    return pytest.importorskip(request.param).BaseModel
+
+
+@pytest.mark.parametrize("getter", [get_field_type, get_attribute_access_type])
+@pytest.mark.parametrize(
+    ("field_name", "expected"),
+    [("name", str), ("size", int | None), ("labels", list[str]), ("missing", None)],
+)
+def test_pydantic_field_types_without_deprecation(
+    base_model, getter, field_name, expected
+):
+    """Resolve inherited Pydantic fields without using deprecated v2 APIs."""
+
+    class Parent(base_model):
+        name: str
+
+    class Item(Parent):
+        size: int | None = None
+        labels: list[str] = []
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", DeprecationWarning)
+        assert getter(Item, field_name) == expected
+
+
+def test_pydantic_property_type_without_deprecation(base_model):
+    """Keep property annotations ahead of model field introspection."""
+
+    class Item(base_model):
+        @property
+        def label(self) -> str:
+            """The display label."""
+            return "item"
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", DeprecationWarning)
+        assert get_attribute_access_type(Item, "label") is str
+
+
+@pytest.mark.parametrize("getter", [get_field_type, get_attribute_access_type])
+def test_empty_pydantic_model_without_deprecation(getter):
+    """An empty v2 field mapping must not fall back to deprecated attributes."""
+    pydantic = pytest.importorskip("pydantic")
+
+    class Item(pydantic.BaseModel):
+        pass
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", DeprecationWarning)
+        assert getter(Item, "missing") is None
+
+
+@pytest.mark.parametrize("getter", [get_field_type, get_attribute_access_type])
+def test_field_types_with_unrelated_model_fields_method(getter):
+    """Ignore ordinary methods that share the Pydantic metadata name."""
+
+    class Item:
+        count: int
+
+        def model_fields(self):
+            """An unrelated method."""
+
+    assert getter(Item, "count") is int
+    assert getter(Item, "missing") is None
+
+
+@pytest.mark.parametrize("getter", [get_field_type, get_attribute_access_type])
+def test_legacy_pydantic_field_types_with_model_fields_method(getter):
+    """Keep v1 metadata when a model has an unrelated model_fields method."""
+    if sys.version_info >= (3, 14):
+        pytest.skip("Pydantic v1 does not support Python 3.14 or newer.")
+    base_model = pytest.importorskip("pydantic.v1").BaseModel
+
+    class Item(base_model):
+        count: int
+
+        def model_fields(self):
+            """An unrelated method."""
+
+    assert getter(Item, "count") is int
+    assert getter(Item, "missing") is None
 
 
 def test_types_import_keeps_optional_orm_lazy():
@@ -301,6 +401,29 @@ def test_isinstance_unwraps_annotated() -> None:
     assert not _isinstance(
         {"a": "x"}, dict[str, Annotated[int, "meta"]], nested=2, treat_var_as_type=False
     )
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        ([1], True),
+        ((1,), True),
+        (UserList([1]), True),
+        (range(1), True),
+        ("ab", False),
+        (b"ab", False),
+        ({"a": 1}, False),
+        (1, False),
+    ],
+)
+def test_is_non_string_sequence(value: object, expected: bool) -> None:
+    """Any sequence counts except a str or bytes, which hold characters, not items.
+
+    Args:
+        value: The value to check.
+        expected: Whether the value counts as a sequence.
+    """
+    assert is_non_string_sequence(value) is expected
 
 
 class _OptionalBase(TypedDict, total=False):
