@@ -2086,7 +2086,6 @@ def create_passthrough_component_memo(
     source_module: str | None = None,
     *,
     snapshot: bool = False,
-    params: tuple[MemoParam, ...] = (),
 ) -> tuple[
     Callable[..., MemoComponent],
     MemoComponentDefinition,
@@ -2111,10 +2110,6 @@ def create_passthrough_component_memo(
             included, instead of substituting a ``{children}`` hole. A loop
             item is wrapped this way so every hook in its subtree runs inside
             the item component, below the scope the loop provides around it.
-        params: Extra parameters the wrapper declares besides ``children``,
-            typically copies of an enclosing ``@rx.memo``'s parameters that the
-            body references. Each keeps its placeholder identifier, so the body
-            resolves it from the wrapper's own signature.
 
     Returns:
         The callable memo wrapper and its component definition.
@@ -2132,7 +2127,7 @@ def create_passthrough_component_memo(
 
     captured_hole_child: list[Component] = []
 
-    def render_body(children: Var[Component]) -> Component:
+    def passthrough(children: Var[Component]) -> Component:
         new_component = copy(component)
         if render_snapshot:
             return new_component
@@ -2165,16 +2160,8 @@ def create_passthrough_component_memo(
         object.__setattr__(new_component, "_get_all_refs", component._get_all_refs)
         return new_component
 
-    def threaded_passthrough(children: Var[Component], **_threaded: Any) -> Component:
-        # The threaded parameters arrive as placeholders the body already
-        # references by identifier, so their values go unused.
-        return render_body(children)
-
-    passthrough: Callable[..., Component] = (
-        threaded_passthrough if params else render_body
-    )
     # The compiler owns this fixed signature; no user annotations need resolving.
-    params = (*_PASSTHROUGH_PARAMS, *params)
+    params = _PASSTHROUGH_PARAMS
     rest_target_fields: set[str] = set()
     preview = _evaluate_component_body(passthrough, params, rest_target_fields)
     tag = memo_tag(preview)
@@ -2219,21 +2206,6 @@ def create_passthrough_component_memo(
     )
 
     return _create_component_wrapper(definition), definition
-
-
-def with_component_body(
-    definition: MemoComponentDefinition, component: Component
-) -> MemoComponentDefinition:
-    """Copy a component memo definition with an already-built body.
-
-    Args:
-        definition: The definition to copy.
-        component: The body to compile in place of the definition's own.
-
-    Returns:
-        The definition with ``component`` as its body.
-    """
-    return dataclasses.replace(definition, _component=_LazyBody.ready(component))
 
 
 def create_component_memo(component: Component, name: str) -> MemoComponentDefinition:

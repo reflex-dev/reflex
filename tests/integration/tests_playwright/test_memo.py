@@ -206,44 +206,64 @@ def MemoApp():
         )
 
     @rx.memo
+    def memo_row(
+        item: rx.Var[str],
+        position: rx.Var[int],
+        label: rx.Var[str],
+        on_pick: rx.EventHandler[rx.event.passthrough_event_spec(str)],
+    ) -> rx.Component:
+        """One row of ``memo_rows``, with client state of its own.
+
+        Args:
+            item: The loop item.
+            position: The loop index.
+            label: A prefix the row renders.
+            on_pick: Called with the row's item.
+
+        Returns:
+            The row.
+        """
+        opened = rx.client_state(False, prefix="memoopened")
+        return rx.hstack(
+            rx.el.button(
+                "toggle",
+                id=f"memo-toggle-{position}",
+                on_click=opened.set(~opened.value),
+            ),
+            rx.el.button("pick", id=f"memo-pick-{position}", on_click=on_pick(item)),
+            rx.text(
+                rx.cond(opened.value, f"{label}:open:{item}", f"{label}:closed:{item}"),
+                id=f"memo-status-{position}",
+            ),
+        )
+
+    @rx.memo
     def memo_rows(
         label: rx.Var[str],
         on_pick: rx.EventHandler[rx.event.passthrough_event_spec(str)],
     ) -> rx.Component:
         """Loop over the order inside an explicitly memoized container.
 
-        An explicit memo takes its whole body as one component. Each row still
-        has to get its own client state scope, and the row uses the memo's
-        own parameters too, which only the memo's signature declares.
+        An explicit memo body compiles as one component and is not walked, so
+        a loop inside it keeps its item inline. Per-item client state in that
+        position needs an ``@rx.memo`` item function, which owns its state.
 
         Args:
             label: A prefix every row renders.
-            on_pick: Called with the row's item.
+            on_pick: Called with the picked row's item.
 
         Returns:
             The rows.
         """
-
-        def row(item: rx.Var[str], position: rx.Var[int]) -> rx.Component:
-            opened = rx.client_state(False, prefix="memoopened")
-            return rx.hstack(
-                rx.el.button(
-                    "toggle",
-                    id=f"memo-toggle-{position}",
-                    on_click=opened.set(~opened.value),
+        return rx.box(
+            rx.foreach(
+                MemoState.order,
+                lambda item, position: memo_row(
+                    item=item, position=position, label=label, on_pick=on_pick
                 ),
-                rx.el.button(
-                    "pick", id=f"memo-pick-{position}", on_click=on_pick(item)
-                ),
-                rx.text(
-                    rx.cond(
-                        opened.value, f"{label}:open:{item}", f"{label}:closed:{item}"
-                    ),
-                    id=f"memo-status-{position}",
-                ),
-            )
-
-        return rx.box(rx.foreach(MemoState.order, row), id="memo-rows")
+            ),
+            id="memo-rows",
+        )
 
     @rx.memo
     def derived_count(divisor: rx.Var[int]) -> rx.Component:
@@ -560,12 +580,12 @@ def test_foreach_item_client_state_is_per_item(
 def test_foreach_inside_an_explicit_memo_keeps_client_state_per_item(
     memo_app: AppHarness, page: Page
 ) -> None:
-    """A loop inside an ``@rx.memo`` body still scopes client state per item.
+    """An ``@rx.memo`` item function scopes client state per item in a memo.
 
-    The memo body compiles as one component, so without the item rendering
-    through a component of its own every row's ``useClientState`` hoisted
-    above the loop and shared one slot. The row also renders the memo's
-    parameter, which has to keep flowing into the item component.
+    The memo body compiles as one component that is never walked, so a loop
+    inside it renders its item inline; an ``@rx.memo`` item function is the
+    supported way to give each row its own state there. The rows also use the
+    outer memo's parameters, passed down as ordinary props.
 
     Args:
         memo_app: Running app harness.
@@ -582,8 +602,8 @@ def test_foreach_inside_an_explicit_memo_keeps_client_state_per_item(
     expect(page.locator("#memo-status-0")).to_have_text(":closed:row-a")
     expect(page.locator("#memo-status-2")).to_have_text(":closed:row-c")
 
-    # The memo's own parameters still reach every row: the label as a value,
-    # the handler as a callback the row invokes with its own item.
+    # The outer memo's parameters reach every row: the label as a value, the
+    # handler as a callback the row invokes with its own item.
     page.locator("#memo-input").fill("tag")
     expect(page.locator("#memo-status-0")).to_have_text("tag:closed:row-a")
     expect(page.locator("#memo-status-1")).to_have_text("tag:open:row-b")

@@ -244,9 +244,6 @@ def todo_list():
 
 Client state works the same way: an unnamed `rx.client_state` var in a
 `foreach` body is per item, the way `useState` would be in a React list.
-Every item renders as a component of its own, so this holds wherever the
-loop sits -- on a page, inside an `@rx.memo` body, or inside another loop's
-item.
 
 ```python
 def expandable_row(item: rx.Var[str]) -> rx.Component:
@@ -256,6 +253,28 @@ def expandable_row(item: rx.Var[str]) -> rx.Component:
         rx.cond(expanded.value, rx.text(f"details for {item}")),
     )
 ```
+
+One exception: the body of an explicit `@rx.memo` component is compiled as a
+single component and not split up, so a `foreach` inside it renders its item
+inline and an `rx.client_state` var declared in that item function is shared
+by every item. To keep per-item state inside a memo, make the item function an
+`@rx.memo` component of its own; each rendered instance then owns its state:
+
+```python
+@rx.memo
+def expandable_row(item: rx.Var[str]) -> rx.Component:
+    expanded = rx.client_state(False)  # one per rendered instance
+    return rx.vstack(
+        rx.button(item, on_click=expanded.set(lambda prev: ~prev)),
+        rx.cond(expanded.value, rx.text(f"details for {item}")),
+    )
+
+
+@rx.memo
+def expandable_list(items: rx.Var[list[str]]) -> rx.Component:
+    return rx.vstack(rx.foreach(items, lambda item: expandable_row(item=item)))
+```
+
 
 The default can be the loop item or index, which seeds each row from its own
 value:

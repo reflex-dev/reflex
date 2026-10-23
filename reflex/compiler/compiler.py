@@ -26,7 +26,6 @@ from reflex_base.components.memo import (
     MemoFunctionDefinition,
     create_component_memo,
     reset_memo_component_classes,
-    with_component_body,
 )
 from reflex_base.config import get_config
 from reflex_base.constants.compiler import PageNames, ResetStylesheet
@@ -526,48 +525,8 @@ _MEMO_BASE_IMPORTS: dict[str, list[ImportVar]] = {
 }
 
 
-def _walk_memo_body(
-    definition: MemoComponentDefinition, compile_context: CompileContext
-) -> MemoComponentDefinition:
-    """Render the loops in an explicitly declared memo body item by item.
-
-    A page's tree is walked by the memoize plugin before its hooks are
-    collected, so a loop renders each item through its own component. An
-    ``@rx.memo`` body is compiled straight from the definition and used to
-    skip that walk, leaving every hook in the body -- including a loop item's
-    ``useClientState`` -- hoisted above the loop that provides its scope, so
-    all items shared one slot. Walk the body in loop-items-only mode: loops at
-    any depth get per-item components, nothing else is wrapped (a wrapper would
-    move references to the memo's parameters out of their scope), and the item
-    components register on ``compile_context`` to compile alongside.
-
-    Args:
-        definition: The memo definition.
-        compile_context: The compile context collecting generated wrappers.
-
-    Returns:
-        The definition, with its body replaced when the walk changed it.
-    """
-    body = definition.component
-    page_context = PageContext(
-        name=definition.export_name,
-        route=f"/{constants.PageNames.APP_ROOT}/{definition.export_name}",
-        root_component=body,
-        source_module=definition.source_module,
-        memoize_loop_items_only=True,
-        enclosing_memo_params=definition.params,
-    )
-    walked = CompilerHooks(plugins=(MemoizeStatefulPlugin(),)).compile_component(
-        body, page_context=page_context, compile_context=compile_context
-    )
-    if walked is body or not isinstance(walked, Component):
-        return definition
-    return with_component_body(definition, walked)
-
-
 def _compile_memo_components(
     memos: Iterable[MemoDefinition] = (),
-    compile_context: CompileContext | None = None,
 ) -> tuple[list[tuple[str, str]], dict[str, list[ImportVar]]]:
     """Compile memos grouped by their source module's mirrored output path.
 
@@ -577,23 +536,13 @@ def _compile_memo_components(
     unsafe module names) fall back to one file per memo at
     ``.web/utils/components/<name>.jsx`` that page-side code imports directly.
 
-    Explicit memo bodies are auto-memoized first (see :func:`_walk_memo_body`),
-    and every definition that registers on ``compile_context`` while compiling
-    -- a loop item, a stateful subtree inside a body -- is compiled in the same
-    pass, however deeply it was found.
-
     Args:
         memos: The memos to compile.
-        compile_context: The compile context generated wrappers register on.
-            Defaults to a private one, so callers compiling a definition on its
-            own still get its nested wrappers.
 
     Returns:
         A list of ``(path, code)`` pairs to write and the aggregated imports
         across all memo modules.
     """
-    if compile_context is None:
-        compile_context = CompileContext(pages=())
     output_files: list[tuple[str, str]] = []
     aggregate_imports: dict[str, list[ImportVar]] = {}
     unmirrored_files: list[tuple[str, str]] = []
@@ -614,14 +563,8 @@ def _compile_memo_components(
         ))
         _extend_imports_in_place(aggregate_imports, file_imports)
 
-    pending = collections.deque(memos)
-    registered = compile_context.auto_memo_components
-    seen_keys = set(registered)
-    while pending:
-        memo = pending.popleft()
+    for memo in memos:
         if isinstance(memo, MemoComponentDefinition):
-            if not memo.auto_memo_wrapper:
-                memo = _walk_memo_body(memo, compile_context)
             memo_render, memo_imports = utils.compile_experimental_component_memo(memo)
             segments = memo_paths.module_to_mirrored_segments(memo.source_module)
             if segments is None:
@@ -639,14 +582,6 @@ def _compile_memo_components(
                 )
             else:
                 groups[segments].add_function(memo_render, memo_imports)
-        # Compiling a body can register wrappers for the subtrees it isolated.
-        # A key is only ever added or rebound to a definition rendering the
-        # same body, so new keys are the only ones left to compile.
-        if len(registered) > len(seen_keys):
-            for key, definition in registered.items():
-                if key not in seen_keys:
-                    seen_keys.add(key)
-                    pending.append(definition)
 
     if groups:
         _extend_imports_in_place(aggregate_imports, _MEMO_BASE_IMPORTS)
@@ -899,20 +834,17 @@ def compile_page_from_context(page_ctx: PageContext) -> tuple[str, str]:
 
 def compile_memo_components(
     memos: Iterable[MemoDefinition] = (),
-    compile_context: CompileContext | None = None,
 ) -> tuple[list[tuple[str, str]], dict[str, list[ImportVar]]]:
     """Compile the memos into one module per memo.
 
     Args:
         memos: The memos to compile.
-        compile_context: The compile context generated wrappers register on;
-            see :func:`_compile_memo_components`.
 
     Returns:
         A list of ``(path, code)`` pairs (one per memo module) alongside the
         aggregated imports across all memo modules.
     """
-    return _compile_memo_components(memos, compile_context)
+    return _compile_memo_components(memos)
 
 
 def purge_web_pages_dir():
@@ -1474,7 +1406,6 @@ def compile_app(
             *MEMOS.values(),
             *compile_ctx.auto_memo_components.values(),
         ),
-        compile_context=compile_ctx,
     )
     compile_results.extend(memo_component_files)
     all_imports = utils.merge_imports(all_imports, memo_components_imports)

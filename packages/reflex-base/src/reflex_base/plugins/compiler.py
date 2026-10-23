@@ -605,13 +605,6 @@ class PageContext(BaseContext):
     # the matching ``leave_component``. Non-empty iff we are inside such a
     # subtree.
     memoize_suppressor_stack: list[int] = dataclasses.field(default_factory=list)
-    # Set while auto-memoizing an explicit ``@rx.memo`` body: only loop items
-    # are rendered through components of their own, since any other wrapper
-    # would move references to the memo's own parameters out of their scope.
-    memoize_loop_items_only: bool = False
-    # The parameters of the ``@rx.memo`` whose body is being walked, so a loop
-    # item that references one can receive it as a prop.
-    enclosing_memo_params: tuple[Any, ...] = ()
     # Maps both the user-owned original's ``id()`` and the clone's ``id()`` to
     # the page-local clone. Lets the walker and plugins rebind children, style,
     # or event_triggers on a page-local copy without mutating a user-owned

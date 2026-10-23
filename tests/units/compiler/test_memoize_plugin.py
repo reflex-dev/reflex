@@ -22,7 +22,6 @@ from reflex_base.components.memoize_helpers import (
 )
 from reflex_base.constants.compiler import MemoizationDisposition, MemoizationMode
 from reflex_base.constants.state import FIELD_MARKER
-from reflex_base.event import passthrough_event_spec
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
 from reflex_base.utils import memo_paths
 from reflex_base.utils.imports import ImportVar
@@ -3425,134 +3424,41 @@ def _module_named(modules: dict[str, str], python_name: str) -> str:
     return block
 
 
-def _loop_item_modules(modules: dict[str, str], loop_var: str) -> list[str]:
-    """Pick the modules that read a loop var from its item scope.
+def test_memo_item_function_inside_an_explicit_memo_scopes_client_state_per_item() -> (
+    None
+):
+    """An ``@rx.memo`` item function keeps client state per item inside a memo.
 
-    Args:
-        modules: Compiled memo modules by export name.
-        loop_var: The loop var identifier.
-
-    Returns:
-        The modules declaring ``useScopedValue`` for the var.
-    """
-    return [
-        block
-        for block in modules.values()
-        if f'const {loop_var} = useScopedValue("{loop_var}")' in block
-    ]
-
-
-def test_foreach_inside_an_explicit_memo_scopes_client_state_per_item() -> None:
-    """Per-item client state inside an ``@rx.memo`` body is still per item.
-
-    Regression: an explicit memo body compiles without the page walk that
-    splits loop consumers, so the item's ``useClientState`` hoisted above the
-    ``.map`` and every row shared one slot seeded with ``undefined``. The item
-    now renders as its own component below its ``ScopedValues`` provider, so
-    its hooks run inside the item.
+    An explicit memo body is compiled as one component and never walked, so a
+    loop inside it renders its item inline and any ``useClientState`` in the
+    item hoists above the ``.map``, where every item shares one slot. The
+    supported way to scope it per item is an ``@rx.memo`` item function: the
+    loop then mounts an instance per item, and the instance owns its state.
     """
     from reflex.compiler.compiler import compile_memo_components
 
     @rx.memo
-    def shared_rows() -> Component:
-        return rx.foreach(["a", "b"], lambda item: rx.text(rx.client_state(item).value))
-
-    ctx = CompileContext(pages=[])
-    files, _imports = compile_memo_components(
-        memos=(shared_rows._definition,), compile_context=ctx
-    )
-    modules = _module_by_export(files)
-
-    body = _module_named(modules, "SharedRows")
-    assert "Array.prototype.map" in body
-    # Nothing per item is declared in the module that renders the loop ...
-    assert "useClientState(" not in body
-    assert "useScopedValue(" not in body
-    # ... the item component owns both the loop var read and the slot binding.
-    (item,) = _loop_item_modules(modules, f"item{FIELD_MARKER}")
-    assert f"useClientState(item{FIELD_MARKER}," in item
-    assert "Array.prototype.map" not in item
-    # The loop renders that component inside each item's provider.
-    item_export = next(name for name, block in modules.items() if block is item)
-    assert _loop_item_export(body) == item_export
-
-
-def test_loop_item_inside_an_explicit_memo_receives_the_memo_params() -> None:
-    """A loop item that uses the memo's own parameters gets them as props.
-
-    Only the memo's signature declares its parameters, so an item moved into a
-    component of its own would lose them. The ones the item references are
-    declared on the item component and passed through: values and event
-    handlers as props, ``children`` as the item's children.
-    """
-    from reflex.compiler.compiler import compile_memo_components
+    def memo_row(item: rx.Var[str], label: rx.Var[str]) -> Component:
+        return rx.text(label, rx.client_state(item).value)
 
     @rx.memo
-    def framed(
-        children: rx.Component,
-        title: rx.Var[str],
-        on_pick: rx.EventHandler[passthrough_event_spec(str)],
-    ) -> Component:
+    def rows(label: rx.Var[str]) -> Component:
         return rx.foreach(
             SpecialFormMemoState.items,
-            lambda item: rx.box(
-                title,
-                children,
-                rx.text(rx.client_state(item).value),
-                on_click=on_pick(item),
-            ),
+            lambda item: memo_row(item=item, label=label),
         )
 
-    ctx = CompileContext(pages=[])
     files, _imports = compile_memo_components(
-        memos=(framed._definition,), compile_context=ctx
+        memos=(rows._definition, memo_row._definition)
     )
     modules = _module_by_export(files)
 
-    body = _module_named(modules, "Framed")
-    item_export = _loop_item_export(body)
-    item = modules[item_export]
-    # The item declares what it uses, and the loop passes it along.
-    assert "({children, title:titleRxMemo, onPick:onPickRxMemo, ...rest})" in item
-    assert re.search(
-        rf"jsx\({item_export},\{{onPick:.*onPickRxMemo\(_ev_0\).*title:titleRxMemo\}},children\)",
-        body,
-    ), body
-    # Inside the item, every reference resolves from its own signature.
-    assert "useClientState(item_rx_state_," in item
-    assert "onPickRxMemo(item_rx_state_)" in item
-    assert "titleRxMemo,children," in item
-
-
-def test_nested_foreach_inside_an_explicit_memo_scopes_each_level() -> None:
-    """The per-item isolation holds at every nesting depth under a memo.
-
-    Converting a container to ``@rx.memo`` must not collapse the scopes of the
-    loops below it, however deep: each loop's item renders in its own
-    component, so the inner loop's client state is per cell.
-    """
-    from reflex.compiler.compiler import compile_memo_components
-
-    @rx.memo
-    def grid() -> Component:
-        return rx.box(
-            rx.foreach(
-                [["a", "b"], ["c"]],
-                lambda row: rx.foreach(
-                    row, lambda cell: rx.text(rx.client_state(cell).value)
-                ),
-            )
-        )
-
-    ctx = CompileContext(pages=[])
-    files, _imports = compile_memo_components(
-        memos=(grid._definition,), compile_context=ctx
-    )
-    modules = _module_by_export(files)
-
-    assert "useClientState(" not in _module_named(modules, "Grid")
-    (row_item,) = _loop_item_modules(modules, f"row{FIELD_MARKER}")
-    (cell_item,) = _loop_item_modules(modules, f"cell{FIELD_MARKER}")
-    assert "useClientState(" not in row_item
-    assert f"useClientState(cell{FIELD_MARKER}," in cell_item
-    assert "Array.prototype.map" not in cell_item
+    body = _module_named(modules, "Rows")
+    row = _module_named(modules, "MemoRow")
+    row_export = next(name for name, block in modules.items() if block is row)
+    # The slot binding lives in the per-item instance, not above the loop.
+    assert "useClientState(" not in body
+    assert f"useClientState(item{FIELD_MARKER}," not in body
+    assert "useClientState(itemRxMemo," in row
+    # The loop mounts the row with its item and the memo's own parameter.
+    assert f"jsx({row_export},{{item:item{FIELD_MARKER},label:labelRxMemo}}" in body

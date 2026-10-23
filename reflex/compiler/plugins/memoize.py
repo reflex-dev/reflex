@@ -22,8 +22,6 @@ from __future__ import annotations
 
 import dataclasses
 import functools
-import inspect
-import re
 from typing import Any
 
 from reflex_base.components.app_wraps import (
@@ -31,7 +29,7 @@ from reflex_base.components.app_wraps import (
     collect_var_app_wraps_in_subtree,
 )
 from reflex_base.components.component import BaseComponent, Component
-from reflex_base.components.memo import MemoParamKind, create_passthrough_component_memo
+from reflex_base.components.memo import create_passthrough_component_memo
 from reflex_base.components.memoize_helpers import (
     MemoizationStrategy,
     _is_structural_memoization_child,
@@ -207,33 +205,6 @@ def _should_memoize(component: Component) -> bool:
     return bool(component.event_triggers)
 
 
-def _referenced_memo_params(
-    component: Component, params: tuple[Any, ...]
-) -> tuple[Any, ...]:
-    """Pick the enclosing memo's parameters a subtree references.
-
-    Placeholders render as bare identifiers with nothing else marking them, so
-    the rendered subtree and its hooks are searched for each one.
-
-    Args:
-        component: The subtree about to move into its own module.
-        params: The enclosing ``@rx.memo``'s parameters.
-
-    Returns:
-        The parameters whose placeholder the subtree mentions.
-    """
-    if not params:
-        return ()
-    text = "\n".join((str(component.render()), *component._get_all_hooks()))
-    # Keyword-only on the item, so the body evaluator hands them to the
-    # wrapper function's catch-all rather than as extra positionals.
-    return tuple(
-        dataclasses.replace(param, parameter_kind=inspect.Parameter.KEYWORD_ONLY)
-        for param in params
-        if re.search(rf"\b{re.escape(param.placeholder_name)}\b", text)
-    )
-
-
 @functools.cache
 def _memoize_only_hooks() -> CompilerHooks:
     """Return a hook chain that runs auto-memoization and nothing else.
@@ -319,13 +290,6 @@ class MemoizeStatefulPlugin(Plugin):
             return None
         if page_context.memoize_suppressor_stack:
             return None
-        if page_context.memoize_loop_items_only and (
-            is_snapshot_boundary(comp)
-            or get_memoization_strategy(comp) is not MemoizationStrategy.SNAPSHOT
-        ):
-            # Inside an explicit memo body only loops are rewritten; walking on
-            # still reaches the loops nested below this component.
-            return None
         if not is_snapshot_boundary(comp):
             if get_memoization_strategy(comp) is not MemoizationStrategy.SNAPSHOT:
                 return None
@@ -405,7 +369,7 @@ class MemoizeStatefulPlugin(Plugin):
             # Already handled (and sealed) in ``enter_component``.
             return None
 
-        if page_context.memoize_loop_items_only or not _should_memoize(comp):
+        if not _should_memoize(comp):
             return None
 
         # The collector plugin runs at HookOrder.POST — *after* this plugin
@@ -447,7 +411,7 @@ class MemoizeStatefulPlugin(Plugin):
         # The loop stays inline when it is not wrapped itself; the walker
         # applies the returned children, so the item component must be kept.
         inline = (comp, tuple(comp.children))
-        if page_context.memoize_loop_items_only or not _should_memoize(comp):
+        if not _should_memoize(comp):
             return inline
 
         wrapper = self._build_wrapper(comp, page_context, compile_context)
@@ -472,10 +436,12 @@ class MemoizeStatefulPlugin(Plugin):
         in, so an item body rendered inline in the ``.map`` callback has its
         ``useScopedValue`` and ``useClientState`` hoisted above the loop, where
         every item resolves one shared slot. Wrapping the item in its own
-        component fixes the placement wherever the loop sits -- a page, an
-        explicit ``@rx.memo`` body, or another loop's item -- and keeps the
-        item's subtree memoizing recursively, since the sealed walk runs over
-        the body first.
+        component fixes the placement wherever the walk reaches the loop -- a
+        page or another loop's item -- and keeps the item's subtree memoizing
+        recursively, since the sealed walk runs over the body first. An
+        explicit ``@rx.memo`` body is never walked, so a loop inside one keeps
+        its item inline; there, an ``@rx.memo`` item function is the way to
+        give each item its own scope.
 
         Args:
             comp: The loop component.
@@ -497,34 +463,13 @@ class MemoizeStatefulPlugin(Plugin):
         if not isinstance(item, Component):
             return comp
         item = fix_event_triggers_for_memo(item, page_context)
-        # An item inside an explicit memo body may reference that memo's
-        # parameters, which only its signature declares. Declare the ones the
-        # item uses on the item component too and pass them through, so each
-        # placeholder identifier still resolves in the item's own module.
-        threaded = _referenced_memo_params(item, page_context.enclosing_memo_params)
-        # The memo's ``children`` render under the identifier the item's own
-        # children slot already declares, so they travel as its children (as a
-        # component, since the walker visits the wrapper's children).
-        children = [
-            Bare.create(param.make_placeholder())
-            for param in threaded
-            if param.kind is MemoParamKind.CHILDREN
-        ]
-        threaded = tuple(
-            param for param in threaded if param.kind is not MemoParamKind.CHILDREN
-        )
         wrapper_factory, definition = create_passthrough_component_memo(
-            item,
-            source_module=page_context.source_module,
-            snapshot=True,
-            params=threaded,
+            item, source_module=page_context.source_module, snapshot=True
         )
         tag = definition.export_name
         compile_context.memoize_wrappers[tag] = None
         compile_context.auto_memo_components[tag, definition.source_module] = definition
-        wrapper = wrapper_factory(
-            *children, **{param.name: param.make_placeholder() for param in threaded}
-        )
+        wrapper = wrapper_factory()
         # ``Foreach.render`` lifts the item's key onto the provider it yields,
         # so the stand-in has to carry it; refs stay reachable for form
         # handlers walking the loop, as with any other wrapper.

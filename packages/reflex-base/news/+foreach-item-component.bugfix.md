@@ -1,1 +1,1 @@
-Each `rx.foreach` item now renders through a component of its own, so per-item `rx.client_state` vars stay per item when the loop sits inside an `@rx.memo` body (at any depth) instead of all items sharing one value.
+Each `rx.foreach` item on a page now renders through a component of its own, so hooks in the item body run inside the item's scope however the subtree is memoized. Inside an explicit `@rx.memo` body a loop still renders its item inline; use an `@rx.memo` item function there to keep `rx.client_state` per item.
