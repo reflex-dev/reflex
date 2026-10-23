@@ -345,9 +345,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=PYTHON_TYPES):
                     )
                     raise VarAttributeError(msg)
                 return hybrid_var
-            if types.is_unserialized_property(
-                fixed_type, name, descriptor
-            ):
+            if types.is_unserialized_property(fixed_type, name, descriptor):
                 if dataclasses.is_dataclass(fixed_type):
                     msg = (
                         f"The property '{name}' on dataclass "

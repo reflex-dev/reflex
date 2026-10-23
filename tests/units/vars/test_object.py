@@ -379,6 +379,7 @@ def test_annotated_var_type_is_unwrapped() -> None:
     assert var._var_type is Base
     assert var.quantity._var_type is int
 
+
 def test_plain_property_on_pydantic_model_raises() -> None:
     """Plain Pydantic properties are not included in serialized state."""
 
@@ -400,7 +401,6 @@ def test_plain_property_on_pydantic_model_raises() -> None:
     with pytest.raises(VarAttributeError, match="computed_field"):
         _ = ItemState.item.label
 
-    # Regular fields and computed fields remain accessible.
     assert ItemState.item.name._var_type is str
     assert ItemState.item.tag._var_type is str
 
@@ -425,5 +425,4 @@ def test_plain_property_on_dataclass_raises() -> None:
     ):
         _ = PointState.point.double
 
-    # Declared dataclass fields remain accessible.
     assert PointState.point.x._var_type is int

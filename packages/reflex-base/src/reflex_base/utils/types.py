@@ -971,6 +971,7 @@ def get_attribute_descriptor(cls: GenericType, name: str) -> Any:
     except NotImplementedError:
         return None
 
+
 def is_unserialized_property(
     cls: GenericType,
     name: str,
@@ -1010,17 +1011,12 @@ def is_unserialized_property(
 
     serializer = serializers.get_serializer(cls)
 
-    # Dataclasses are serialized from their declared fields by the
-    # default serializer, not from arbitrary properties.
     if dataclasses.is_dataclass(cls):
         if serializer is not None:
             return False
 
-        return name not in {
-            field.name for field in dataclasses.fields(cls)
-        }
+        return name not in {field.name for field in dataclasses.fields(cls)}
 
-    # Pydantic models serialize model fields and computed fields.
     model_fields = getattr(cls, "model_fields", None)
     if not isinstance(model_fields, dict):
         model_fields = getattr(cls, "__fields__", None)
@@ -1028,7 +1024,6 @@ def is_unserialized_property(
     if not isinstance(model_fields, dict):
         return False
 
-    # Don't diagnose classes whose custom serializer may include properties.
     default_serializers = tuple(
         default
         for default in (
@@ -1043,6 +1038,7 @@ def is_unserialized_property(
     computed_fields = getattr(cls, "model_computed_fields", {}) or {}
 
     return name not in model_fields and name not in computed_fields
+
 
 def get_attribute_access_type(
     cls: GenericType, name: str, descriptor: Any = _NO_DESCRIPTOR
