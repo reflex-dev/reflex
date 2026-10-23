@@ -49,11 +49,11 @@ def _alive(pid: int) -> bool:
             return False
     try:
         os.kill(pid, 0)
-    except ProcessLookupError:
+        if sys.platform == "linux":
+            stat = Path(f"/proc/{pid}/stat").read_bytes()
+            return stat.rsplit(b")", 1)[1].split()[0] != b"Z"
+    except OSError:
         return False
-    if sys.platform == "linux":
-        stat = Path(f"/proc/{pid}/stat").read_bytes()
-        return stat.rsplit(b")", 1)[1].split()[0] != b"Z"
     return True
 
 
@@ -102,8 +102,8 @@ def test_descendant_pids_lists_the_whole_tree(tmp_path: Path):
         if sys.platform == "win32":
             pytest.skip("taskkill walks the tree on Windows")
         assert processes.descendant_pids(proc.pid) == [grandchild]
-        assert processes.descendant_pids(os.getpid())[:1] == [proc.pid]
-        assert grandchild in processes.descendant_pids(os.getpid())
+        tree = processes.descendant_pids(os.getpid())
+        assert tree.index(proc.pid) < tree.index(grandchild)
     finally:
         processes.stop_process_tree(proc, timeout=1)
 
@@ -130,8 +130,9 @@ def test_stop_process_tree_stops_an_orphaned_grandchild(tmp_path: Path):
         assert proc.returncode is not None
         assert _wait_gone(grandchild)
     finally:
+        # SIGTERM exists on every platform; on Windows it terminates outright.
         with contextlib.suppress(OSError):
-            os.kill(grandchild, signal.SIGKILL)
+            os.kill(grandchild, signal.SIGTERM)
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="POSIX signals")

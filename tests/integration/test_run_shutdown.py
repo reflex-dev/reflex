@@ -103,11 +103,11 @@ def _alive(pid: int) -> bool:
     """
     try:
         os.kill(pid, 0)
-    except ProcessLookupError:
+        if sys.platform == "linux":
+            stat = Path(f"/proc/{pid}/stat").read_bytes()
+            return stat.rsplit(b")", 1)[1].split()[0] != b"Z"
+    except OSError:
         return False
-    if sys.platform == "linux":
-        stat = Path(f"/proc/{pid}/stat").read_bytes()
-        return stat.rsplit(b")", 1)[1].split()[0] != b"Z"
     return True
 
 
@@ -120,11 +120,12 @@ def _describe(pid: int) -> str:
     Returns:
         The PID with its command line where available.
     """
-    cmdline = Path(f"/proc/{pid}/cmdline")
-    if not cmdline.exists():
+    try:
+        command = Path(f"/proc/{pid}/cmdline").read_bytes()
+    except OSError:
         return str(pid)
-    command = cmdline.read_bytes().replace(b"\0", b" ").decode(errors="replace")
-    return f"{pid} {command[:80]}"
+    text = command.replace(b"\0", b" ").decode(errors="replace")
+    return f"{pid} {text[:80]}"
 
 
 class _RunningApp:

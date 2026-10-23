@@ -656,9 +656,14 @@ class _Shutdown:
             self._timer = threading.Timer(_STOP_DEADLINE_SECONDS, self._kill)
             self._timer.daemon = True
             self._timer.start()
-        if signum is not None:
-            # On Windows only SIGTERM gets here, which Popen maps to TerminateProcess.
+        if signum is None:
+            return
+        if os.name == "posix":
             self.proc.send_signal(signum)
+        else:
+            # Windows has no graceful signal: terminating only the command
+            # would leave its workers behind, so the whole tree goes at once.
+            self._kill()
 
     def _kill(self):
         """Stop the command tree once the deadline passed."""

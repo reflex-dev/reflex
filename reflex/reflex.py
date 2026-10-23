@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import signal
 import sys
-from collections.abc import Callable
+from collections.abc import Callable, Generator
 from contextlib import contextmanager, nullcontext
 from importlib import import_module
 from importlib.util import find_spec
@@ -408,7 +408,7 @@ def _compile_app_worker(
 
 
 @contextmanager
-def _shutdown_signals():
+def _shutdown_signals() -> Generator[Callable[[], None], None, None]:
     """Turn the first SIGINT or SIGTERM into a clean unwind and ignore repeats.
 
     The first signal raises in the main thread so the run body unwinds into
@@ -418,27 +418,29 @@ def _shutdown_signals():
     handlers while it serves; this covers the time before and after.
 
     Yields:
-        Control to the run body. On Windows there is nothing to install.
+        A function the run body calls when its cleanup begins, so a signal
+        arriving only then is ignored as well.
     """
-    if sys.platform == "win32":
-        yield
-        return
     stopping = False
 
-    def stop(signum: int, frame: FrameType | None) -> None:
+    def begin_cleanup() -> None:
         nonlocal stopping
+        stopping = True
+
+    def stop(signum: int, frame: FrameType | None) -> None:
         if stopping:
             return
-        stopping = True
+        begin_cleanup()
         if signum == signal.SIGINT:
             raise KeyboardInterrupt
         raise SystemExit(0)
 
+    # Windows never delivers SIGTERM, but Ctrl-C arrives as SIGINT there too.
     previous = {
         sig: signal.signal(sig, stop) for sig in (signal.SIGINT, signal.SIGTERM)
     }
     try:
-        yield
+        yield begin_cleanup
     finally:
         for sig, handler in previous.items():
             signal.signal(sig, handler)
@@ -501,7 +503,7 @@ def _run_dev(
 
     try:
         with (
-            _shutdown_signals(),
+            _shutdown_signals() as begin_cleanup,
             processes.run_concurrently_context(
                 *commands, interrupt_on_failure=not frontend_only
             ) as tasks,
@@ -517,6 +519,7 @@ def _run_dev(
                         running_mode.has_frontend(),
                     )
             finally:
+                begin_cleanup()
                 stop_frontend()
     finally:
         stop_frontend()
