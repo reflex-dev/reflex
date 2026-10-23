@@ -722,13 +722,19 @@ def test_compile_contexts_embeds_frontend_state_schema():
 
     schema = SchemaContextRoot._to_frontend_schema()
     assert f'export const stateSchema = "{schema}"' in code
+    on_load_internal_event = (
+        f"{SchemaContextRoot.get_full_name()}.{constants.CompileVars.ON_LOAD_INTERNAL}"
+    )
+    assert f"export const on_load_internal_event = '{on_load_internal_event}'" in code
     start = code.index("registerApp({")
     assert "stateSchema," in code[start : code.index("});", start)]
+    assert "on_load_internal_event," in code[start : code.index("});", start)]
     assert SchemaContextChild.get_full_name() in code
 
     # Without state there is nothing to compare, and nothing to connect with.
     _, code = compiler.compile_contexts(None, None)
     assert "export const stateSchema = null" in code
+    assert "export const on_load_internal_event = undefined" in code
 
 
 @pytest.mark.parametrize(
