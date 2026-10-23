@@ -1021,7 +1021,11 @@ def is_unserialized_property(
     if not isinstance(model_fields, dict):
         model_fields = getattr(cls, "__fields__", None)
 
-    if not isinstance(model_fields, dict):
+        if not isinstance(model_fields, dict):
+            return False
+
+    pydantic_decorators = getattr(cls, "__pydantic_decorators__", None)
+    if getattr(pydantic_decorators, "model_serializers", None):
         return False
 
     default_serializers = tuple(
