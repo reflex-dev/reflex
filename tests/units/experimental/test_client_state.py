@@ -69,3 +69,28 @@ def test_legacy_path_warns(caplog: pytest.LogCaptureFixture) -> None:
     caplog.clear()
     rx.client_state(0, name="quiet")
     assert "deprecat" not in caplog.text.lower()
+
+
+@pytest.mark.parametrize("legacy_call", ["factory", "create"])
+def test_legacy_unnamed_var_stays_global(legacy_call: str) -> None:
+    """An unnamed legacy var without ``global_ref=False`` is still global.
+
+    The old API generated a name and defaulted ``global_ref`` to true, so
+    ``rx._x.client_state(default=...)`` was reachable from the backend. Scoping
+    it would make every existing ``push``/``retrieve`` on it raise.
+    """
+    from reflex.experimental.client_state import ClientStateVar
+
+    cs = (
+        rx._x.client_state(default="initial")
+        if legacy_call == "factory"
+        else ClientStateVar.create(default="initial")
+    )
+    other = rx._x.client_state(default="initial")
+
+    assert cs._is_global
+    assert cs._state_name != other._state_name
+    # The backend-facing accessors require a global var; these must not raise.
+    cs.push("x")
+    cs.retrieve()
+    assert cs.global_value is not None

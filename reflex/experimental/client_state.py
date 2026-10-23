@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from reflex_base.client_state import _DEFAULT_NAME_PREFIX, _name_counter
 from reflex_base.client_state import ClientStateVar as _ClientStateVar
 from reflex_base.client_state import NoValue as NoValue
 from reflex_base.utils import console
@@ -38,18 +39,25 @@ def _deprecate(feature_name: str) -> None:
 def _legacy_name(var_name: str | None, global_ref: bool | Any) -> str | None:
     """Map the legacy ``(var_name, global_ref)`` pair onto the new scoping rules.
 
-    ``global_ref=False`` meant "anonymous": the name was never a store key, so
-    dropping it reproduces that exactly.
+    ``global_ref`` defaulted to true and an omitted ``var_name`` was generated,
+    so an unnamed legacy var was still global and reachable from the backend.
+    Only ``global_ref=False`` meant "anonymous": that name was never a store
+    key, so dropping it reproduces that exactly.
 
     Args:
         var_name: The legacy name.
         global_ref: The legacy global flag, or ``NoValue`` when not given.
 
     Returns:
-        The name to create the var with.
+        The name to create the var with: ``None`` scopes it, anything else
+        makes it global.
     """
     if global_ref is not NoValue and not global_ref:
         return None
+    if var_name is None:
+        # The shared counter keeps a generated global name from colliding with
+        # a generated scoped one.
+        return f"{_DEFAULT_NAME_PREFIX}{next(_name_counter)}"
     return var_name
 
 
