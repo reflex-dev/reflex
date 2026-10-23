@@ -1,0 +1,1 @@
+Fixed a polling-transport stall where a page whose connection event exceeded `REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE` never hydrated and never retried: the backend now drains the oversized request body before rejecting it, so the client finishes sending and can reconnect.

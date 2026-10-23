@@ -50,6 +50,8 @@ from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.core.upload import selected_files
 from reflex_components_radix.themes.typography.text import Text
 from reflex_otel import ReflexInstrumentor
+from socketio import ASGIApp as EngineIOApp
+from socketio import AsyncServer
 from starlette.applications import Starlette
 from starlette.datastructures import FormData, Headers, UploadFile
 from starlette.exceptions import HTTPException
@@ -67,6 +69,7 @@ from reflex.app import (
     EventNamespace,
     _ContextMiddleware,
     _decode_asgi_headers,
+    _DrainOversizedBodyMiddleware,
     _sio_dumps,
     _sio_loads,
     default_overlay_component,
@@ -5795,3 +5798,238 @@ def test_write_stateful_pages_marker_concurrent_readers_see_valid_json(
         for future in readers:
             future.result()
     assert json.loads(marker.read_text()) == routes
+
+
+def _polling_engine_app(max_size: int):
+    """Build the socket ASGI app the way ``App._setup_state`` mounts it.
+
+    Args:
+        max_size: Value for engine.io's ``max_http_buffer_size``.
+
+    Returns:
+        A (socket.io ASGI app, engine.io server) pair for a fresh engine.io
+        server.
+    """
+    sio = AsyncServer(
+        async_mode="asgi",
+        max_http_buffer_size=max_size,
+        async_handlers=False,
+    )
+    return EngineIOApp(sio, socketio_path=""), sio.eio
+
+
+async def _asgi_http_call(
+    app, method: str, query_string: str, body: bytes = b"", chunk_size: int = 65536
+):
+    """Drive one HTTP request through an ASGI app with a chunked body.
+
+    Args:
+        app: The ASGI app to call.
+        method: The HTTP method.
+        query_string: The raw query string.
+        body: The request body.
+        chunk_size: Size of each http.request message body chunk.
+
+    Returns:
+        A tuple of (status, response body, request bytes consumed from receive).
+    """
+    chunks = [body[i : i + chunk_size] for i in range(0, len(body), chunk_size)] or [
+        b""
+    ]
+    sent = []
+    consumed = 0
+    index = 0
+
+    async def receive():  # noqa: RUF029
+        """Yield the request body one chunk at a time, then disconnect.
+
+        Returns:
+            http.request messages for each chunk, then http.disconnect.
+        """
+        nonlocal consumed, index
+        if index < len(chunks):
+            chunk = chunks[index]
+            index += 1
+            consumed += len(chunk)
+            return {
+                "type": "http.request",
+                "body": chunk,
+                "more_body": index < len(chunks),
+            }
+        return {"type": "http.disconnect"}
+
+    async def send(message):  # noqa: RUF029
+        """Record an outgoing ASGI message.
+
+        Args:
+            message: The ASGI message sent by the app.
+        """
+        sent.append(message)
+
+    headers = []
+    if method == "POST":
+        headers.append((b"content-length", str(len(body)).encode()))
+    scope = {
+        "type": "http",
+        "asgi": {"version": "3.0"},
+        "http_version": "1.1",
+        "method": method,
+        "scheme": "http",
+        "path": "/",
+        "raw_path": b"/",
+        "query_string": query_string.encode(),
+        "root_path": "",
+        "headers": headers,
+        "client": ("127.0.0.1", 12345),
+        "server": ("127.0.0.1", 8000),
+    }
+    await app(scope, receive, send)
+    status = next(m["status"] for m in sent if m["type"] == "http.response.start")
+    response_body = b"".join(
+        m.get("body", b"") for m in sent if m["type"] == "http.response.body"
+    )
+    return status, response_body, consumed
+
+
+async def test_engineio_rejects_oversized_polling_post_without_draining_body():
+    """Document the engine.io behavior _DrainOversizedBodyMiddleware works around.
+
+    engine.io rejects a polling POST larger than max_http_buffer_size with 400
+    without reading the request body, stranding the client mid-send.
+    """
+    app, _ = _polling_engine_app(max_size=100)
+    status, response_body, _ = await _asgi_http_call(
+        app, "GET", "EIO=4&transport=polling"
+    )
+    assert status == 200
+    sid = re.search(r'"sid":"([^"]+)"', response_body.decode())
+    assert sid is not None
+
+    # A real polling client always has a poll in flight; park one so the
+    # server can deliver its CLOSE packet when it rejects the POST.
+    poll_task = asyncio.create_task(
+        _asgi_http_call(app, "GET", f"EIO=4&transport=polling&sid={sid.group(1)}")
+    )
+    await asyncio.sleep(0.1)
+
+    big_body = b"x" * 1000
+    status, _, consumed = await asyncio.wait_for(
+        _asgi_http_call(
+            app,
+            "POST",
+            f"EIO=4&transport=polling&sid={sid.group(1)}",
+            big_body,
+            chunk_size=100,
+        ),
+        timeout=10,
+    )
+    poll_status, _, _ = await asyncio.wait_for(poll_task, timeout=5)
+    assert status == 400
+    assert poll_status == 200
+    assert consumed < len(big_body)
+
+
+async def test_drain_oversized_body_middleware_drains_and_rejects_oversized_post():
+    """Oversized polling POST bodies are drained so the client can finish sending."""
+    socket_app, eio = _polling_engine_app(max_size=100)
+    app = _DrainOversizedBodyMiddleware(socket_app, max_size=100, eio=eio)
+    status, response_body, _ = await _asgi_http_call(
+        app, "GET", "EIO=4&transport=polling"
+    )
+    assert status == 200
+    sid = re.search(r'"sid":"([^"]+)"', response_body.decode())
+    assert sid is not None
+
+    # A real polling client always has a poll in flight; park one so the
+    # server can deliver its CLOSE packet when it rejects the POST.
+    poll_task = asyncio.create_task(
+        _asgi_http_call(app, "GET", f"EIO=4&transport=polling&sid={sid.group(1)}")
+    )
+    await asyncio.sleep(0.1)
+
+    big_body = b"x" * 1000
+    status, _, consumed = await asyncio.wait_for(
+        _asgi_http_call(
+            app,
+            "POST",
+            f"EIO=4&transport=polling&sid={sid.group(1)}",
+            big_body,
+            chunk_size=100,
+        ),
+        timeout=10,
+    )
+    poll_status, _, _ = await asyncio.wait_for(poll_task, timeout=5)
+    assert status == 400
+    assert poll_status == 200
+    assert consumed == len(big_body)
+
+    # The reconnect handshake is served normally after the rejected POST.
+    status, _, _ = await _asgi_http_call(app, "GET", "EIO=4&transport=polling")
+    assert status == 200
+
+
+async def test_drain_oversized_body_middleware_answers_post_without_parked_poll():
+    """The oversized POST is answered even when no poll is in flight.
+
+    The engine.io client sends the CONNECT POST and the first poll GET at the
+    same time, so the POST can be rejected before any poll is parked. The
+    rejection must not wait for a poll to consume the session CLOSE packet.
+    """
+    socket_app, eio = _polling_engine_app(max_size=100)
+    app = _DrainOversizedBodyMiddleware(socket_app, max_size=100, eio=eio)
+    status, response_body, _ = await _asgi_http_call(
+        app, "GET", "EIO=4&transport=polling"
+    )
+    assert status == 200
+    sid = re.search(r'"sid":"([^"]+)"', response_body.decode())
+    assert sid is not None
+
+    # No poll is parked: the engine.io client races the CONNECT POST against
+    # the first poll GET, so the POST can arrive first.
+    big_body = b"x" * 1000
+    status, response_body, consumed = await asyncio.wait_for(
+        _asgi_http_call(
+            app,
+            "POST",
+            f"EIO=4&transport=polling&sid={sid.group(1)}",
+            big_body,
+            chunk_size=100,
+        ),
+        timeout=10,
+    )
+    assert status == 400
+    assert response_body == b'"Bad Request"'
+    assert consumed == len(big_body)
+
+    # A later poll learns the session is gone instead of the POST hanging.
+    poll_status, _, _ = await asyncio.wait_for(
+        _asgi_http_call(app, "GET", f"EIO=4&transport=polling&sid={sid.group(1)}"),
+        timeout=5,
+    )
+    assert poll_status == 400
+
+
+async def test_drain_oversized_body_middleware_passes_regular_requests_through():
+    """Requests within the size limit reach the downstream app untouched."""
+    received = []
+
+    async def echo_app(scope, receive, send):
+        """Echo app that records the first request body and replies 200.
+
+        Args:
+            scope: The ASGI connection scope.
+            receive: The ASGI receive callable.
+            send: The ASGI send callable.
+        """
+        received.append(await receive())
+        await send({"type": "http.response.start", "status": 200, "headers": []})
+        await send({"type": "http.response.body", "body": b"ok"})
+
+    app = _DrainOversizedBodyMiddleware(echo_app, max_size=100)
+    status, response_body, _ = await _asgi_http_call(app, "POST", "", b"hello")
+    assert status == 200
+    assert response_body == b"ok"
+    assert received[0]["body"] == b"hello"
+
+    status, _, _ = await _asgi_http_call(app, "GET", "", b"")
+    assert status == 200
