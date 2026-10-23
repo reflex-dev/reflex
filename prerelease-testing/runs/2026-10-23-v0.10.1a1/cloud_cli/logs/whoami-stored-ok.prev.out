@@ -1,0 +1,7 @@
+email               qa@example.invalid
+user_id             00000000-0000-0000-0000-000000000001
+org_id              00000000-0000-0000-0000-000000000002
+tier                Pro
+is_service_account  False
+token_source        config file
+token_fingerprint   sha256:835b8b572c5a64a1

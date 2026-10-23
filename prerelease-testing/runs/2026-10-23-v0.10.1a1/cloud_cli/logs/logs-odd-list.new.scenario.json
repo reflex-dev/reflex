@@ -1,0 +1,1 @@
+{"responses":{"GET apps/00000000-0000-0000-0000-000000000a01/logsv2":[{"status":200,"json":[[{"ns":1,"timestamp":"2026-10-23T12:00:00+00:00","name":"cliapp","message":["a","list"]}],null]}]}}

@@ -155,3 +155,93 @@ the fixture tree in `app/README.md`, `frontend_compression_formats=["gzip","brot
   that is NOT excluded makes `_zip` walk it with `followlinks=True`, resolve the path back to `big_excluded/...` and
   write every file twice — Python warns `UserWarning: Duplicate name: 'big_excluded/marker.txt'` and the zip holds
   duplicate entries (`compare_archives.py` flags them). See ISSUES.
+
+### #7463 scaling-conflict retries, #7452 provider lookup skip — PASS (behavior), with one visibility finding
+Two harnesses, same stub scenarios (`logs/<label>.<venv>.scenario.json` holds each one):
+- `deploy_matrix.sh` → `run_driver.sh` → `deploy_driver.py`: calls `reflex_cli.v2.cli.deploy()` (the function
+  `reflex deploy` runs) with a canned export that copies the archives captured above, so a scenario costs seconds
+  instead of a frontend build. Labels `d01…d18`, new on :8260, prev on :8261.
+- `logs/real-matrix.sh`: the real `reflex deploy --no-interactive --app-id … --token good-token` for the key cases,
+  labels `r01…r13`, new on :8262, prev on :8263.
+Evidence per scenario: `logs/<label>.<venv>.{out,err,rc,requests.json}`; the request log shows how many
+`POST /api/v1/deployments` submissions were sent, whether their `X-Request-ID` and form body were identical, how many
+`deployments/reserve` + `PUT` uploads happened, and whether `GET …/provider-accounts/gcp/status` was requested.
+
+| scenario (stub) | new 0.2.1a1 | prev 0.2.0 |
+|---|---|---|
+| d01/r01 submit 409 `x-reflex-error-code: app_scaling` ×2 then 200 | 3 submissions, ONE request id, identical bodies, 1 reserve, 2 uploads (no re-upload), exit 0 after ~31 s (two 15 s waits) | 1 submission, `deployment failed: The scale is finishing.`, exit 1 |
+| d02 legacy `app_busy` + exact "the app is currently being scaled; wait for the scale to finish, then deploy again" | retried once, exit 0 | fails |
+| d03 `app_busy` "a deployment is already in progress for this app" | no retry, `deployment failed: …` exit 1 | same |
+| d04 500 carrying `app_scaling` | no retry, exit 1 | same |
+| d05 connection dropped on the submit (uncertain write) | no retry, `deployment failed: POST … failed: Server disconnected without sending a response.` exit 1 | same |
+| d06 `app_scaling` forever | 12 submissions, one request id, 165 s, then `deployment failed: The scale is finishing.` exit 1 | 1 submission |
+| d17 429 (`Retry-After: 1`) then `app_scaling` then 200 | 3 submissions, one request id, exit 0 (SDK's safe retry and the scaling wait share the budget) | 2 submissions (SDK retry only), exit 1 |
+| d07/r07 `--min-instances 1 --max-instances 2`, bounds 409 `instance_bounds_scale_conflict` ×2 then ok | 3 bounds POSTs, then the deploy continues, exit 0 (~31 s) | `set instance bounds failed: The scale is finishing.` exit 1 |
+| d18 bounds 409 scaling forever | 8 bounds POSTs over 106 s, then `set instance bounds failed: …` exit 1 | 1 |
+| d08/r08 bounds 500 | `Warning: Could not confirm the instance bounds of 'cliapp'; they may or may not have been applied. Check the app in the Reflex Cloud dashboard before relying on its scaling.` + `set instance bounds failed: internal`, exit 1, no submit | only the failed line |
+| d09/r09 bounds 200 with body `"ok"` (undecodable) | `Warning: The server reported success setting the instance bounds of 'cliapp', but its response could not be decoded. The bounds may have changed even though this deploy stopped. …` + `set instance bounds failed: Unexpected response body … expected InstanceBoundsChange object, got str at $` | only the failed line |
+| d10 bounds 400 | `set instance bounds failed: min_instances must be <= max_instances`, no warning | same |
+| d11/r11 bounds connection dropped | `Warning: Could not confirm …` + failed line | only the failed line |
+| d12/r12 bounds ok, then submit 409 busy | `Warning: The new instance bounds were applied to 'cliapp' and will be used by its next deployment, even though this deploy failed.` + `deployment failed: …` | same (pre-existing warning) |
+| d13/r13 `REFLEX_CLOUD_BACKEND_URL=http://127.0.0.1:8260/proxy/v2` + d01 | every request under `/proxy/v2/api/v1/…`, retry works | fails (no retry) |
+| d14 same with a trailing slash `/proxy/v2/` | retry works | fails |
+| d15 prefix + bounds retry | works | fails |
+| d16 driver with `interactive=True` (positive control for #7452) | `GET …/provider-accounts/gcp/status` IS requested (1) | 1 |
+| every non-interactive deploy (d01–d15, r01–r13, deploy-real, deploy-excl) | gcp status requests: 0 | 1 in every prev run |
+
+#7452 confirmed: the non-interactive deploy no longer sends `GET /api/v1/orgs/{org}/provider-accounts/gcp/status`
+(every prev run sends it right after `GET apps/{id}`); the interactive path still does.
+
+**Visibility finding (see ISSUES):** with the REAL `reflex deploy`, the progress line
+`Info: App is being scaled; waiting 15 seconds before retrying deployment (scaling retry 1/11).` is NOT printed at
+the default log level (`r01-scaling-retry2.new.out`: 0 lines mentioning "scaled"), nor with `--loglevel info`
+(`r01-scaling-retry2-info.new.out`), nor `--loglevel warning`; it IS printed with `--loglevel debug`
+(`r01-scaling-retry2-debug.new.out` lines 482–494, followed by `Info:/Success: deployment completed successfully`).
+The same holds for the bounds retry line and for `deployment completed successfully` itself — at the default level a
+successful `reflex deploy` ends with "follow along with the deployment with the following command" and exits 0 with
+no success line (both versions: `deploy-excl.{new,prev}.out` have 0 `Info:`/`Success:` lines, the `--loglevel debug`
+runs have them). The driver harness, which skips the real export, prints the lines at INFO (`d01-scaling-retry2.new.out`
+lines 5/7/16/17), which points at the export step: `reflex/hosting.py` calls
+`export(..., loglevel=get_config().loglevel.subprocess_level())` and `reflex/utils/export.py` line 50 applies it with
+`console.set_log_level(loglevel)` to the whole process; `LogLevel.DEFAULT.subprocess_level()` is WARNING, so everything
+the hosting CLI logs below WARNING after the export is dropped. Why `--loglevel info` is also hidden was not pinned
+down (timeboxed). Pre-existing mechanism (prev hides its success line the same way), but it makes the new progress
+messages invisible to a default invocation: a user sees the "uploading the build" bar sit at 100 % for up to 165 s.
+
+### Odd `apps logs` records (both versions identical)
+`message` as a JSON list → exit 1, `Unexpected response body from GET …/logsv2?order=newest_first: matched no member of
+the union (expected string, got list; expected object, got list) at $[0][0].message` (also with `--json`: empty stdout);
+missing `timestamp` → `missing required field 'timestamp' at $[0][0]`; empty page → `Warning: No logs found for the
+specified criteria.` exit 0; a cursor → second page fetched (2 requests), new prints `t2 [INFO] page1` / `t1 [INFO]
+page2`; 500 → 3 attempts (SDK retries GET), `log store down`, exit 1.
+
+### Re-verifications
+- CLI-28 (reflex#7432, "initial rejected token with --no-interactive omits the `reflex login` hint"): FIXED in
+  0.2.1a1 — `plist-401-env.new.err`, `plist-stored-401.new.err`, `plist-401-opt.new.err` all carry the `reflex login`
+  guidance; prev 0.2.0 (`*.prev.err`) still omits it (positive control).
+- CLI-11 (reflex#7092, `cloud regions/vmtypes --json` exit 0 with `[]` after a 403): FIXED (already in 0.2.0 via
+  #7207, still fixed): both versions exit 1 with empty stdout and `forbidden` on stderr
+  (`regions-403-json.*`, `vmtypes-403-json.*`); the happy path prints the JSON list. The `cloud config --json` half of
+  CLI-11 was not re-checked.
+
+### Pre-existing export/deploy robustness (both versions, context, NOT regressions)
+- Directory symlink inside the app that is not excluded → duplicate zip entries + `UserWarning: Duplicate name`
+  (`deploy-real.*.err`, `compare_archives.txt`).
+- Symlink pointing OUTSIDE the app directory (`ln -s ../outside_target link_outside`) → `reflex export --backend-only`
+  (and therefore `reflex deploy`) crashes with `ValueError: '/…/outside_target/file.txt' is not in the subpath of
+  '/…/app-new'` from `reflex/utils/build.py` `_zip` → `file.relative_to(root_directory)` (new line 164, prev line 121),
+  exit 1, leaving a truncated `backend.zip` behind (`logs/export-symlink-outside.{new,prev}.err`).
+
+## Rerun recipe (summary)
+```bash
+cd $SB/apps/cloud_cli            # scripts from DEST/scripts, app from DEST/app (+ fixture tree per app/README.md)
+$SB/envs/driver/bin/python -I fake_cp.py --port 8260 --state-dir state &      # one stub per venv/port
+CP_PORT=8260 ./run_cli.sh new whoami-401-env REFLEX_ACCESS_TOKEN=x -- cloud whoami   # with SCENARIO='{...}' as in logs/*.scenario.json
+CP_PORT=8260 ./run_cli.sh new deploy-real -- deploy --no-interactive --app-id 00000000-0000-0000-0000-000000000a01 --token good-token
+mkdir -p archives/new && cp state/uploads/*/*.zip archives/new/          # then:
+CP_PORT=8260 ./deploy_matrix.sh new [label]                              # retry matrix via the driver
+bash logs/real-matrix.sh new 8260                                        # key cases via the real CLI
+python3 -I compare_archives.py archives/new archives/prev
+./release_matrix.sh new                                                  # reflex-release + towncrier (repo copy in ./repo)
+```
+Cleanup: `kill $(cat state*/fake_cp.pid | cut -d= -f2)`; the apps' `.web/` and `node_modules/` were deleted after the run.

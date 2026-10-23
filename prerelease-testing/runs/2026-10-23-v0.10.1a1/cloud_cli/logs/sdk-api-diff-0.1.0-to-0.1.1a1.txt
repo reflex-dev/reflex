@@ -1,0 +1,18 @@
+319c319
+<  "dist_version": "0.1.0",
+---
+>  "dist_version": "0.1.1a1",
+534c534,535
+<     "TransportError"
+---
+>     "TransportError",
+>     "default_transport"
+664a666,669
+>     },
+>     "default_transport": {
+>      "kind": "function",
+>      "signature": "() -> 'Transport'"
+3367c3372
+<      "signature": "(*, default=<dataclasses._MISSING_TYPE object at 0x7fcd7ca68710>, default_factory=<dataclasses._MISSING_TYPE object at 0x7fcd7ca68710>, init=True, repr=True, hash=None, compare=True, metadata=None, kw_only=<dataclasses._MISSING_TYPE object at 0x7fcd7ca68710>)"
+---
+>      "signature": "(*, default=<dataclasses._MISSING_TYPE object at 0x7f16df9ac6b0>, default_factory=<dataclasses._MISSING_TYPE object at 0x7f16df9ac6b0>, init=True, repr=True, hash=None, compare=True, metadata=None, kw_only=<dataclasses._MISSING_TYPE object at 0x7f16df9ac6b0>)"

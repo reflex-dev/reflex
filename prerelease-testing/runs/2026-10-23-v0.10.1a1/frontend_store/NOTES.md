@@ -33,3 +33,36 @@ PW="env NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1 $SB/envs/drive
 ## Log
 
 (filled in as the run proceeds)
+
+### fs_app on 0.10.1a1 — dev (3220/8220) and prod (single port 3221, `FS_TW_IMPORTANT=1`)
+
+```
+cd $W/fs_app
+FS_TRUTH=$W/truth/t.json ../serve.sh start new $W/fs_app dev 3220 8220 new_dev        # ../serve.sh wait http://localhost:3220/
+$PW ../drive_share.py --url http://localhost:3220/ --truth $W/truth/t.json --out ../logs/share_new_dev.json
+$PW ../drive_js.py    --url http://localhost:3220 --out ../logs/js_new_dev.json
+$PW ../drive_hooks.py --url http://localhost:3220 --out ../logs/hooks_new_dev.json     # after drive_share (both write the truth file)
+$PW ../drive_hmr.py   --url http://localhost:3220 --app fs_app/fs_app.py --out ../logs/hmr_new_dev.json
+FS_TRUTH=$W/truth/t.json FS_TW_IMPORTANT=1 ../serve.sh start new $W/fs_app prod 3221 3221 new_prod   # same drivers on :3221
+```
+
+| check | dev | prod |
+|---|---|---|
+| `drive_share`: 48 ops, DOM == `State.dict()` after every op (lists append/pop/pop0/insert/sort/reverse/clear/reset, equal-but-new element, nested dict add/update/**delete key**/reorder, dict→None→dict, list↔dict var, list of lists, nested dataclass in list, pydantic in list, datetime, set, tuple, 5000-int list fill/mutate/append/pop0, same value twice, no-op, 6 ops in one handler, two substates + 4-deep inheritance chain in one event, background task 5 deltas) | pass (0 diffs, 0 console, 0 pageerrors, hydrate 615 ms) | pass (0 diffs; only console noise is the favicon 404) |
+| memo card render counters (`data-renders`): unchanged cards keep identity and do NOT re-render (e.g. `replace_equal` → 0 cards re-render; `bump0` → only the mutated card; nested/matrix/blob ops → 0 cards) | pass (sharing works) | pass |
+| `drive_js`: Unicode `len/[i]/[-1]/[a:b]/[-3:]/[::2]` on `"héllo 👋🏽 wörld é 𝔘𝔫𝔦"` (emoji + skin tone, combining mark, surrogate pairs) and on `"ab"` (out-of-range index renders ""), `None` string length → 0 then 2, `(-x)**2`, `-(x**2)`, `(x-5)**2`, `(-x)**3`, `Var(-2)**x` | pass (31/31) | pass |
+| dict props: `style={"padding": x.to_string()+"px"}` → 4px; `custom_attrs` dict → JSON attr (#7587) | pass | pass |
+| #7544 error events without an Error object: `ErrorEvent` without `error`, `window.onerror(msg,url,1,2)` and a real thrown Error all reach `handle_frontend_exception` (`[Reflex Frontend Exception]` ×3 in the backend log), no secondary TypeError | pass | pass |
+| #7573 tailwind `important`: `.web/tailwind.config.js` has `important: true`; `.text-red-500` beats inline `color: blue` (computed oklch red) | n/a | pass |
+| `drive_hooks`: hooks in declaration order (`useStateContext` → `hr_doubled` → `hr_plain` → `hr_pos` → `hr_pos_pre`, see `compiled/new_dev/app/routes/[hooks]._index.jsx`), `VarData(position=)` compiles + works + logs `DeprecationWarning: VarData(position=...) has been deprecated in version 0.10.1`, `add_custom_code` ran once, `window_event_listener` resize/keydown, `clipboard` paste, `call_script` callback, two `ComponentState` instances independent, global `client_state` set / late reader behind cond / set back to default / `push()` → late reader, memo with object prop + internal state read (0 re-renders on unrelated var; updates on prop rename and on state), `/dyn/[pid]` reads router + other substates, client-side nav back to `/` | pass (23/23) | pass |
+| `drive_hmr` (dev): append a NEW substate used by `/hooks` → element renders after the reload, events on the new and old substates work, no page errors; the default-only change propagates; revert works | pass; 2 transient `state schema` console warnings (dev warns only, by design) + 1 `Skipping state update for unknown substate` while the backend restarted before Vite served the rebuilt bundle | — |
+| uncontrolled input across the hot reload | value reset (Vite "Could not Fast Refresh /utils/context.jsx" → tree remount). Compare prev. | — |
+| local (`global_ref=False`) `rx._x.client_state` whose reader span and writer input land in different auto-memoized components: reader never updates | 'loc' (compare prev) | same |
+
+Notes: my first prod build failed in prerender with `ReferenceError: window is not defined` — that was my own
+`add_custom_code` writing `window` at module scope (SSR evaluates it); guarded with `typeof window`.
+`ssr_probe.mjs` (run with node inside `.web/`) renders the built server bundle for a route and prints the
+real exception, which the react-router prerender log hides behind "Received a 500".
+
+#7405 (`probe_cdn.py`, backend only): `ImportVar(tag, package_path="/fa")` on an unbundled lib →
+new `https://cdn.jsdelivr.net/npm/react-icons/fa/+esm`, prev `https://cdn.jsdelivr.net/npm/react-icons/+esm/fa` → fixed.

@@ -1,0 +1,1 @@
+{"responses":{"POST authenticate/me":[{"status":429,"json":{"detail":"slow down"},"headers":{"Retry-After":"1"}}]}}

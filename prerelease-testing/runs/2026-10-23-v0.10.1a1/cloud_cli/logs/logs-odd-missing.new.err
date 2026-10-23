@@ -1,0 +1,3 @@
+Unexpected response body from GET 
+http://127.0.0.1:8263/api/v1/apps/00000000-0000-0000-0000-000000000a01/logsv2?or
+der=newest_first: missing required field 'timestamp' at $[0][0]

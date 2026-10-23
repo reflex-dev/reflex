@@ -127,3 +127,18 @@ re-parsing the file every 2 ms. `out/jsonlock-results.txt`.
 | prev 0.10.0 | a writer crashes: `json.decoder.JSONDecodeError: Extra data: line 1 column 470` (read-modify-write race on a partial file) | | | the bug #7052 fixes |
 | new, `REFLEX_DIR/locks` is a regular file (lock dir cannot be created) | 121 / 320 (updates overwrite each other) | 0 / 176 | none | documented fallback: "writes remain atomic but concurrent updates may overwrite each other"; logged at debug only |
 | new, read-only `REFLEX_DIR` (`chattr +i`) | 99 / 320 | 0 | none | same documented fallback |
+
+### 6. STATE-36 / #7304 — app package without `__init__.py` (`apps/noinit`, `scripts/drive_noinit.py`)
+`serve.sh start <venv> $PM/noinit noinit-<v>-<mode> dev 3204:8204` (prod: `prod 8204`), then
+`drive_noinit.py http://localhost:3204 out/noinit-<label>.json`: hydrated, on_load delta, 2 clicks, substate handler, reload, console.
+| | new dev | new prod | prev dev (positive control) |
+|---|---|---|---|
+| result | **7/7 pass**, console clean, no "no dispatch function" | **7/7 pass** | **0/7**: `hydrated: no`, no on_load delta, clicks do nothing; console `Cannot process state update: no dispatch function for substate(s) "reflex___state____state.noinit____state", "...noinit____other"`; server log `[Reflex Frontend Exception] ... State update failed: no dispatch function` (`logs/noinit-prev-dev.trimmed.log`) |
+→ STATE-36 **fixed** (#7304 loads the backend app by its configured module name instead of a file path; granian no longer
+derives `noinit` instead of `noinit.noinit`). Note the merged change is the module-name target only; the PR text's "raises a
+clear error pointing at the missing file" is not what shipped (and is not needed: the layout now simply works).
+
+### 7. Telemetry enabled (default for users) + backend-only prod, new
+`REFLEX_TELEMETRY_ENABLED=true scripts/probe_run.sh new new-be-telemetry prod-be 8201`: up in 2.2 s (same as with telemetry off),
+8 forked workers, no "spawning workers" fallback in the debug log, 0 tracebacks. The `_shutdown_executor` drain did not delay
+startup in this sandbox (outbound HTTPS goes through a proxy, so the posthog send does not stall on DNS here).

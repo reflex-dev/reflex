@@ -1,0 +1,19 @@
+[d01-scaling-retry2/prev] rc=1 elapsed=1.1s
+[d02-legacy-busy-detail/prev] rc=1 elapsed=1.0s
+[d03-busy-other/prev] rc=1 elapsed=1.1s
+[d04-submit-500/prev] rc=1 elapsed=1.0s
+[d05-submit-drop/prev] rc=1 elapsed=1.0s
+[d07-bounds-retry2/prev] rc=1 elapsed=0.9s
+[d08-bounds-500/prev] rc=1 elapsed=0.9s
+[d09-bounds-undecodable/prev] rc=1 elapsed=1.0s
+[d10-bounds-400/prev] rc=1 elapsed=1.0s
+[d11-bounds-drop/prev] rc=1 elapsed=0.9s
+[d12-bounds-ok-submit-busy/prev] rc=1 elapsed=1.1s
+[d13-prefix-scaling-retry/prev] rc=1 elapsed=1.0s
+[d14-prefix-slash-scaling/prev] rc=1 elapsed=0.9s
+[d15-prefix-bounds-retry/prev] rc=1 elapsed=0.9s
+[d16-interactive-gcp-probe/prev] rc=0 elapsed=1.1s
+[d17-submit-429-then-ok/prev] rc=1 elapsed=2.1s
+[d18-bounds-scaling-exhaust/prev] rc=1 elapsed=0.9s
+[d06-submit-scaling-exhaust/prev] rc=1 elapsed=1.0s
+DONE

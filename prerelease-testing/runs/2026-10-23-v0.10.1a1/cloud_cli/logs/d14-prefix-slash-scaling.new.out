@@ -1,0 +1,7 @@
+uploading the build ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.6/2.6 MB 1.2 GB/s 0:00:00
+deployment progress can now be viewed on the website: 
+http://127.0.0.1:8260/proxy/v2//project/00000000-0000-0000-0000-00000000aa01/app
+/00000000-0000-0000-0000-000000000a01/
+you are now safe to exit this command.
+follow along with the deployment with the following command: 
+  reflex cloud apps status 00000000-0000-0000-0000-00000000d001 --watch

@@ -1,0 +1,15 @@
+venv ok: 0.10.1a1 hosting-cli 0.2.1a1 build-sdk 0.1.1a1
+[r01-scaling-retry2/new] rc=0 elapsed=41.2s
+venv ok: 0.10.1a1 hosting-cli 0.2.1a1 build-sdk 0.1.1a1
+[r07-bounds-retry2/new] rc=0 elapsed=42.8s
+venv ok: 0.10.1a1 hosting-cli 0.2.1a1 build-sdk 0.1.1a1
+[r08-bounds-500/new] rc=1 elapsed=9.1s
+venv ok: 0.10.1a1 hosting-cli 0.2.1a1 build-sdk 0.1.1a1
+[r09-bounds-undecodable/new] rc=1 elapsed=10.8s
+venv ok: 0.10.1a1 hosting-cli 0.2.1a1 build-sdk 0.1.1a1
+[r11-bounds-drop/new] rc=1 elapsed=10.2s
+venv ok: 0.10.1a1 hosting-cli 0.2.1a1 build-sdk 0.1.1a1
+[r12-bounds-ok-submit-busy/new] rc=1 elapsed=9.3s
+venv ok: 0.10.1a1 hosting-cli 0.2.1a1 build-sdk 0.1.1a1
+[r13-prefix-scaling-retry/new] rc=0 elapsed=24.5s
+DONE

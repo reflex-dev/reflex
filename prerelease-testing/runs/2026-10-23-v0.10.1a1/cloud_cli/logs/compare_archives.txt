@@ -1,0 +1,53 @@
+=== backend.zip: new 20 entries (714388 B), prev 20 entries (714383 B)
+  DUPLICATE entry names in new: ['big_excluded/marker.txt', 'big_excluded/nested/blob.bin']
+  DUPLICATE entry names in prev: ['big_excluded/marker.txt', 'big_excluded/nested/blob.bin']
+  compression method changed on 0 entries (prev -> new):
+  content differs on 3 entries (expected for built JS/CSS): ['assets/big.txt', 'big_excluded/nested/blob.bin', 'requirements.txt']
+  new: 1 pre-compressed sidecars, methods {'DEFLATED': 1}
+  prev: 1 pre-compressed sidecars, methods {'DEFLATED': 1}
+=== frontend.zip: new 63 entries (1865948 B), prev 63 entries (1857075 B)
+  only in new (33): ['assets/_404_._index-Dfwd_-i3.js', 'assets/_404_._index-Dfwd_-i3.js.br', 'assets/_404_._index-Dfwd_-i3.js.gz', 'assets/_about_._index-CTBQfW8X.js', 'assets/_about_._index-CTBQfW8X.js.br', 'assets/_about_._index-CTBQfW8X.js.gz', 'assets/_index-BC7miuDO.js', 'assets/_index-BC7miuDO.js.br', 'assets/_index-BC7miuDO.js.gz', 'assets/components-BkVO-4Gy.js', 'assets/components-BkVO-4Gy.js.br', 'assets/components-BkVO-4Gy.js.gz', 'assets/container-DPxAg1Kq.js', 'assets/container-DPxAg1Kq.js.br', 'assets/container-DPxAg1Kq.js.gz', 'assets/emotion-react.browser.esm-Df3cQleM.js', 'assets/emotion-react.browser.esm-Df3cQleM.js.br', 'assets/emotion-react.browser.esm-Df3cQleM.js.gz', 'assets/entry.client-BcBPaK_9.js', 'assets/entry.client-BcBPaK_9.js.br', 'assets/entry.client-BcBPaK_9.js.gz', 'assets/errorBoundaries-DN6tktrp.js', 'assets/errorBoundaries-DN6tktrp.js.br', 'assets/errorBoundaries-DN6tktrp.js.gz', 'assets/manifest-2db765a1.js', 'assets/manifest-2db765a1.js.br', 'assets/manifest-2db765a1.js.gz', 'assets/root-CL2GG-C-.js', 'assets/root-CL2GG-C-.js.br', 'assets/root-CL2GG-C-.js.gz', 'assets/text-D9sZIoeC.js', 'assets/text-D9sZIoeC.js.br', 'assets/text-D9sZIoeC.js.gz']
+  only in prev (33): ['assets/_404_._index-C7XBTEZw.js', 'assets/_404_._index-C7XBTEZw.js.br', 'assets/_404_._index-C7XBTEZw.js.gz', 'assets/_about_._index-BNC1yfbh.js', 'assets/_about_._index-BNC1yfbh.js.br', 'assets/_about_._index-BNC1yfbh.js.gz', 'assets/_index-DtwbHDWl.js', 'assets/_index-DtwbHDWl.js.br', 'assets/_index-DtwbHDWl.js.gz', 'assets/components-B1lk-uNG.js', 'assets/components-B1lk-uNG.js.br', 'assets/components-B1lk-uNG.js.gz', 'assets/container-B94ZRa0Z.js', 'assets/container-B94ZRa0Z.js.br', 'assets/container-B94ZRa0Z.js.gz', 'assets/emotion-react.browser.esm-BWx_GQoE.js', 'assets/emotion-react.browser.esm-BWx_GQoE.js.br', 'assets/emotion-react.browser.esm-BWx_GQoE.js.gz', 'assets/entry.client-DHnc7vQ9.js', 'assets/entry.client-DHnc7vQ9.js.br', 'assets/entry.client-DHnc7vQ9.js.gz', 'assets/errorBoundaries-DRF1Uvuo.js', 'assets/errorBoundaries-DRF1Uvuo.js.br', 'assets/errorBoundaries-DRF1Uvuo.js.gz', 'assets/manifest-b16c2dfc.js', 'assets/manifest-b16c2dfc.js.br', 'assets/manifest-b16c2dfc.js.gz', 'assets/root-BktC9xU5.js', 'assets/root-BktC9xU5.js.br', 'assets/root-BktC9xU5.js.gz', 'assets/text-BwXi6y3P.js', 'assets/text-BwXi6y3P.js.br', 'assets/text-BwXi6y3P.js.gz']
+  compression method changed on 18 entries (prev -> new):
+    404.html.br: DEFLATED -> STORED  (size 1091, stored 1123 -> 1091)
+    404.html.gz: DEFLATED -> STORED  (size 1387, stored 1392 -> 1387)
+    __spa-fallback.html.br: DEFLATED -> STORED  (size 1091, stored 1123 -> 1091)
+    __spa-fallback.html.gz: DEFLATED -> STORED  (size 1387, stored 1392 -> 1387)
+    about.html.br: DEFLATED -> STORED  (size 1817, stored 1792 -> 1817)
+    about.html.gz: DEFLATED -> STORED  (size 2220, stored 2224 -> 2220)
+    about/index.html.br: DEFLATED -> STORED  (size 1817, stored 1792 -> 1817)
+    about/index.html.gz: DEFLATED -> STORED  (size 2220, stored 2224 -> 2220)
+    assets/__reflex_global_styles-NccINl-w.css.br: DEFLATED -> STORED  (size 50374, stored 49740 -> 50374)
+    assets/__reflex_global_styles-NccINl-w.css.gz: DEFLATED -> STORED  (size 82575, stored 78855 -> 82575)
+    assets/reflex-env-PbA3ybpN.js.br: DEFLATED -> STORED  (size 184, stored 189 -> 184)
+    assets/reflex-env-PbA3ybpN.js.gz: DEFLATED -> STORED  (size 213, stored 218 -> 213)
+    big.txt.br: DEFLATED -> STORED  (size 305391, stored 305489 -> 305391)
+    big.txt.gz: DEFLATED -> STORED  (size 306644, stored 306741 -> 306644)
+    index.html.br: DEFLATED -> STORED  (size 1960, stored 1965 -> 1960)
+    index.html.gz: DEFLATED -> STORED  (size 2373, stored 2380 -> 2373)
+    sub/repetitive.txt.br: DEFLATED -> STORED  (size 26, stored 29 -> 26)
+    sub/repetitive.txt.gz: DEFLATED -> STORED  (size 96, stored 55 -> 96)
+  content differs on 18 entries (expected for built JS/CSS): ['404.html', '404.html.br', '404.html.gz', '__spa-fallback.html', '__spa-fallback.html.br', '__spa-fallback.html.gz', 'about.html', 'about.html.br', 'about.html.gz', 'about/index.html', 'about/index.html.br', 'about/index.html.gz'] ...
+  new: 40 pre-compressed sidecars, methods {'STORED': 40}
+  prev: 40 pre-compressed sidecars, methods {'DEFLATED': 40}
+=== backend.zip full entry list (new):
+  DEFLATED       17  requirements.txt
+  DEFLATED       11  CLAUDE.md
+  DEFLATED      500  hardlink_source.py
+  DEFLATED        2  hardlink_source_excluded_marker
+  DEFLATED      500  hardlink_alias.py
+  DEFLATED     2361  AGENTS.md
+  DEFLATED      119  rxconfig.py
+  DEFLATED      175  reflex.lock/package.json
+  DEFLATED     4286  assets/favicon.ico
+  DEFLATED   405264  assets/big.txt
+  DEFLATED       67  assets/logo.png
+  DEFLATED      111  assets/sub/repetitive.txt.gz
+  DEFLATED    24000  assets/sub/repetitive.txt
+  DEFLATED        2  notvenv/keep.py
+  DEFLATED      500  cliapp/cliapp.py
+  DEFLATED        0  cliapp/__init__.py
+  DEFLATED        9  big_excluded/marker.txt
+  DEFLATED   200000  big_excluded/nested/blob.bin
+  DEFLATED        9  big_excluded/marker.txt
+  DEFLATED   200000  big_excluded/nested/blob.bin

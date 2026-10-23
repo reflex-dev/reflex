@@ -1,0 +1,1 @@
+{"responses":{"POST apps/00000000-0000-0000-0000-000000000a01/instance_bounds":[{"status":400,"json":{"detail":"min_instances must be <= max_instances"}}]}}

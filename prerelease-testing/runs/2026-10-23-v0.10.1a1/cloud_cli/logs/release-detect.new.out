@@ -1,0 +1,49 @@
+::notice::hatch-reflex-pyi v0.10.0 is a final version but branch '' cannot publish finals (only main or r/hotfix/** branches can); skipping.
+::notice::reflex-base v0.10.1a1 is a prerelease version but branch '' cannot publish prereleases (only r/pre-* or r/hotfix/** branches can); skipping.
+::notice::reflex-build-sdk v0.1.1a1 is a prerelease version but branch '' cannot publish prereleases (only r/pre-* or r/hotfix/** branches can); skipping.
+::notice::reflex-components-code v0.10.1a1 is a prerelease version but branch '' cannot publish prereleases (only r/pre-* or r/hotfix/** branches can); skipping.
+::notice::reflex-components-core v0.10.1a1 is a prerelease version but branch '' cannot publish prereleases (only r/pre-* or r/hotfix/** branches can); skipping.
+::notice::reflex-components-dataeditor v0.10.1a1 is a prerelease version but branch '' cannot publish prereleases (only r/pre-* or r/hotfix/** branches can); skipping.
+::notice::reflex-components-gridjs v0.10.0 is a final version but branch '' cannot publish finals (only main or r/hotfix/** branches can); skipping.
+::notice::reflex-components-lucide v1.1.1a1 is a prerelease version but branch '' cannot publish prereleases (only r/pre-* or r/hotfix/** branches can); skipping.
+::notice::reflex-components-markdown v0.10.0 is a final version but branch '' cannot publish finals (only main or r/hotfix/** branches can); skipping.
+::notice::reflex-components-moment v0.10.1a1 is a prerelease version but branch '' cannot publish prereleases (only r/pre-* or r/hotfix/** branches can); skipping.
+::notice::reflex-components-plotly v0.10.0 is a final version but branch '' cannot publish finals (only main or r/hotfix/** branches can); skipping.
+::notice::reflex-components-radix v0.10.1a1 is a prerelease version but branch '' cannot publish prereleases (only r/pre-* or r/hotfix/** branches can); skipping.
+::notice::reflex-components-react-player v0.10.0 is a final version but branch '' cannot publish finals (only main or r/hotfix/** branches can); skipping.
+::notice::reflex-components-recharts v0.10.0 is a final version but branch '' cannot publish finals (only main or r/hotfix/** branches can); skipping.
+::notice::reflex-components-sonner v0.10.0 is a final version but branch '' cannot publish finals (only main or r/hotfix/** branches can); skipping.
+::notice::reflex-docgen v0.10.0 is a final version but branch '' cannot publish finals (only main or r/hotfix/** branches can); skipping.
+::notice::reflex-hosting-cli v0.2.1a1 is a prerelease version but branch '' cannot publish prereleases (only r/pre-* or r/hotfix/** branches can); skipping.
+::notice::reflex-otel v0.2.0 is a final version but branch '' cannot publish finals (only main or r/hotfix/** branches can); skipping.
+::notice::reflex-release v0.2.1a1 is a prerelease version but branch '' cannot publish prereleases (only r/pre-* or r/hotfix/** branches can); skipping.
+## Changelog release check
+
+Branch: ``
+
+| Package | Newest changelog version | Status |
+|---|---|---|
+| `reflex` | `0.10.1a1` | already tagged `v0.10.1a1` |
+| `hatch-reflex-pyi` | `0.10.0` | skipped: branch rule |
+| `reflex-base` | `0.10.1a1` | skipped: branch rule |
+| `reflex-build-sdk` | `0.1.1a1` | skipped: branch rule |
+| `reflex-components-code` | `0.10.1a1` | skipped: branch rule |
+| `reflex-components-core` | `0.10.1a1` | skipped: branch rule |
+| `reflex-components-dataeditor` | `0.10.1a1` | skipped: branch rule |
+| `reflex-components-gridjs` | `0.10.0` | skipped: branch rule |
+| `reflex-components-lucide` | `1.1.1a1` | skipped: branch rule |
+| `reflex-components-markdown` | `0.10.0` | skipped: branch rule |
+| `reflex-components-moment` | `0.10.1a1` | skipped: branch rule |
+| `reflex-components-plotly` | `0.10.0` | skipped: branch rule |
+| `reflex-components-radix` | `0.10.1a1` | skipped: branch rule |
+| `reflex-components-react-player` | `0.10.0` | skipped: branch rule |
+| `reflex-components-recharts` | `0.10.0` | skipped: branch rule |
+| `reflex-components-sonner` | `0.10.0` | skipped: branch rule |
+| `reflex-docgen` | `0.10.0` | skipped: branch rule |
+| `reflex-hosting-cli` | `0.2.1a1` | skipped: branch rule |
+| `reflex-otel` | `0.2.0` | skipped: branch rule |
+| `reflex-release` | `0.2.1a1` | skipped: branch rule |
+packages=[]
+any=false
+last_packages=[]
+any_last=false

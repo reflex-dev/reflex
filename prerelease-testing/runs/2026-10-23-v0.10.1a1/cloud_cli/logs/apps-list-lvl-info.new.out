@@ -1,0 +1,7 @@
+Info: Listing apps for project 'qa-project' 
+(00000000-0000-0000-0000-00000000aa01)
+                                                                          
+  id                                     name     description   provider  
+ ──────────────────────────────────────────────────────────────────────── 
+  00000000-0000-0000-0000-000000000a01   cliapp   qa app        fly       
+                                                                          

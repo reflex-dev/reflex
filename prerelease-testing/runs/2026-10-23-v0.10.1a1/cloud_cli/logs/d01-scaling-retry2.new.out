@@ -1,0 +1,17 @@
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Info: App is being scaled; waiting 15 seconds before retrying deployment 
+(scaling retry 1/11).
+Info: App is being scaled; waiting 15 seconds before retrying deployment 
+(scaling retry 2/11).
+uploading the build ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.6/2.6 MB 1.0 GB/s 0:00:00
+deployment progress can now be viewed on the website: 
+http://127.0.0.1:8260/project/00000000-0000-0000-0000-00000000aa01/app/00000000-
+0000-0000-0000-000000000a01/
+you are now safe to exit this command.
+follow along with the deployment with the following command: 
+  reflex cloud apps status 00000000-0000-0000-0000-00000000d001 --watch
+Info: deployment completed successfully
+Success: deployment completed successfully

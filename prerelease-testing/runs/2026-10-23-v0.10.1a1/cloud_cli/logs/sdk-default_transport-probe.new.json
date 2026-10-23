@@ -1,0 +1,24 @@
+{
+ "_defaults_names": [
+  "AsyncTransport",
+  "NoReturn",
+  "Transport",
+  "_raise_missing",
+  "annotations",
+  "async_default_transport",
+  "default_transport",
+  "find_spec"
+ ],
+ "async_default_transport_public": false,
+ "distinct_instances": true,
+ "doc": "Create the transport ``ReflexBuild`` uses when none is passed in.",
+ "has_default_transport": true,
+ "has_send_close": true,
+ "in___all__": true,
+ "returns": "HttpxTransport",
+ "signature": "() -> 'Transport'",
+ "wrapped_request_error": "APIConnectionError: GET http://127.0.0.1:1/api/v1/deployments/regions failed: [Errno 111] Connection",
+ "wrapped_saw": [
+  "http://127.0.0.1:1/api/v1/deployments/regions"
+ ]
+}

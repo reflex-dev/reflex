@@ -1,0 +1,100 @@
+grep: packages/reflex-workflow/CHANGELOG.md: No such file or directory
+--- detect --ref-name r/pre-2026.10.23-40018338326
+rc=0
+--- plan --action continued-prerelease --packages reflex-hosting-cli,reflex-release (GITHUB_REF_NAME=r/pre-2026.10.23-40018338326)
+rc=0
+--- GITHUB_OUTPUT after plan:
+packages=[]
+any=false
+last_packages=[]
+any_last=false
+releases=[{"package": "reflex-hosting-cli", "current": "0.2.1a1", "next": "0.2.1a2", "tag": "reflex-hosting-cli-v0.2.1a2"}, {"package": "reflex-release", "current": "0.2.1a1", "next": "0.2.1a2", "tag": "reflex-release-v0.2.1a2"}]
+--- materialize
+rc=0
+reflex-hosting-cli: renamed news fragment +qa-logs-format.feature.md -> 4242.feature.md
+reflex-hosting-cli: renamed news fragment +qa-misc.misc.md -> 4242.misc.md
+Loading template...
+Finding news fragments...
+Rendering news fragments...
+Writing to newsfile...
+Staging newsfile...
+Removing the following files:
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/cloud_cli/repo/packages/reflex-hosting-cli/news/7777.bugfix.md
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/cloud_cli/repo/packages/reflex-hosting-cli/news/4242.misc.md
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/cloud_cli/repo/packages/reflex-hosting-cli/news/4242.feature.md
+Removing news fragments...
+Done!
+reflex-release: renamed news fragment +qa-towncrier.misc.md -> 4242.misc.md
+Loading template...
+Finding news fragments...
+Rendering news fragments...
+Writing to newsfile...
+Staging newsfile...
+Removing the following files:
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/cloud_cli/repo/packages/reflex-release/news/4242.misc.md
+Removing news fragments...
+Done!
+M  packages/reflex-hosting-cli/CHANGELOG.md
+D  packages/reflex-hosting-cli/news/+qa-logs-format.feature.md
+D  packages/reflex-hosting-cli/news/+qa-misc.misc.md
+D  packages/reflex-hosting-cli/news/7777.bugfix.md
+M  packages/reflex-release/CHANGELOG.md
+D  packages/reflex-release/news/+qa-towncrier.misc.md
+--- untracked after materialize:
+--- changelog head (reflex-hosting-cli):
+## v0.2.1a2 (2026-10-23)
+
+### Features
+
+- `reflex cloud apps logs` prints `timestamp [LEVEL] message` lines. Example:
+
+  ```bash
+  reflex cloud apps logs <app-id> --loglevel error
+  ```
+
+  - bullet one with `code`
+  - bullet two with a [link](https://example.invalid)
+
+  ([#4242](https://github.com/reflex-dev/reflex/issues/4242))
+
+### Bug Fixes
+
+- Fix *something* with **emphasis** and a second sentence. Unicode: héllo 日本語 🚀. ([#7777](https://github.com/reflex-dev/reflex/issues/7777))
+
+### Miscellaneous
+
+- Internal cleanup. ([#4242](https://github.com/reflex-dev/reflex/issues/4242))
+
+
+## v0.2.1a1 (2026-10-23)
+
+### Bug Fixes
+
+- The `reflex cloud project list` table shows the project tier name instead of the full tier object. Use `--json` to get the full tier. ([#7340](https://github.com/reflex-dev/reflex/issues/7340))
+- Print `reflex cloud apps logs` lines as readable `timestamp [LEVEL] message` text instead of Python dicts. `--json` still prints the structured records, and `--loglevel` no longer hides the log lines. ([#7390](https://github.com/reflex-dev/reflex/issues/7390))
+- Show `reflex login` guidance when initial authentication rejects an access token, including instructions to replace or remove an explicit `REFLEX_ACCESS_TOKEN` or `--token` override.
+  When `reflex cloud whoami` or a noninteractive cloud command cannot validate a token due to a temporary service or connection failure, suggest retrying instead of replacing credentials. ([#7434](https://github.com/reflex-dev/reflex/issues/7434))
+- `reflex deploy` now waits and retries confirmed scaling conflicts with progress messages, reusing the uploaded build and preserving support for custom backend URL prefixes. It stops on unrelated failures and uncertain writes, and warns when bounds may remain changed after a failed deployment, including server errors and unreadable success responses. ([#7463](https://github.com/reflex-dev/reflex/issues/7463))
+- Authentication validation now reports the HTTP status when the control plane refuses the request, and only suggests trying again later for failures that may succeed on retry (timeouts, HTTP 429 and server errors). ([#7546](https://github.com/reflex-dev/reflex/issues/7546))
+
+### Performance
+
+- Speed up non-interactive deploys by skipping the provider availability request used only for the interactive provider prompt. ([#7452](https://github.com/reflex-dev/reflex/issues/7452))
+
+
+--- changelog head (reflex-release):
+## v0.2.1a2 (2026-10-23)
+
+### Miscellaneous
+
+- Rendered with the installed towncrier. ([#4242](https://github.com/reflex-dev/reflex/issues/4242))
+
+
+## v0.2.1a1 (2026-10-23)
+
+### Miscellaneous
+
+- Allow towncrier 26. ([#7645](https://github.com/reflex-dev/reflex/issues/7645))
+--- news dirs after:
+ls: cannot access 'packages/reflex-release/news': No such file or directory
+packages/reflex-hosting-cli/news:
