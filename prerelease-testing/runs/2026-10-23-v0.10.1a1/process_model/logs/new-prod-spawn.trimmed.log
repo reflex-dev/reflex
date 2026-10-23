@@ -1,0 +1,181 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value api_url with env var 
+API_URL=http://localhost:8200
+Debug: Overriding config value redis_url with env var REDIS_URL=***
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/new/lib/python3.12/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='forkapp', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8200', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', 
+trusted_proxy_hops=0, db_url='sqlite:///forkapp.db', async_db_url=None, 
+redis_url='redis://localhost:8219', telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+react_compiler=False, frontend_compression_formats=['gzip'], 
+frontend_packages=[], frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'loglevel', 'telemetry_enabled', 'app_name', 'api_url',
+'plugins', 'redis_url', 'db_url'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[SitemapPlugin(trailing_slash='preserve'), 
+TailwindV4Plugin(config={'plugins': ['@tailwindcss/typography@0.5.20']}), 
+RadixThemesPlugin(theme={"name": "RadixThemesTheme", "props": 
+["accentColor:\"blue\"", "css:{...theme.styles.global[':root'], 
+...theme.styles.global.body}"], "children": []})], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+'--version']
+Debug: [Reflex 0.10.1a1 with Python 3.12.3 (PATH: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs
+/new/bin/python)]
+Debug: [Node 22.22.0 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.4 (Minimum: 1.4.4) (PATH: 
+/root/.local/share/reflex/bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.5 LTS]
+Debug: Using package installer at: ['/root/.local/share/reflex/bun/bin/bun', 
+'/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.local/share/reflex/bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/new/lib/python3.12/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='forkapp', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8200', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', 
+trusted_proxy_hops=0, db_url='sqlite:///forkapp.db', async_db_url=None, 
+redis_url='redis://localhost:8219', telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+... [trimmed] ...
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8200
+Debug: Overriding config value api_url with env var 
+API_URL=http://localhost:8200
+Debug: Overriding config value redis_url with env var REDIS_URL=***
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+Warning: Database is not initialized, run reflex db init first.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Registered lifespan task: lifespan_task
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+Debug: Started lifespan task: lifespan_task as coroutine
+[INFO] Started worker-3
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Registered lifespan task: lifespan_task
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+Debug: Started lifespan task: lifespan_task as coroutine
+[INFO] Started worker-2
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Registered lifespan task: lifespan_task
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+Debug: Started lifespan task: lifespan_task as coroutine
+[INFO] Started worker-4
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Registered lifespan task: lifespan_task
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+Debug: Started lifespan task: lifespan_task as coroutine
+[INFO] Started worker-1
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Registered lifespan task: lifespan_task
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+Debug: Started lifespan task: lifespan_task as coroutine
+[INFO] Started worker-6
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Registered lifespan task: lifespan_task
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+Debug: Started lifespan task: lifespan_task as coroutine
+[INFO] Started worker-5
+[INFO] Shutting down granian
+[INFO] Stopping worker-2
+[INFO] Stopping worker-3
+[INFO] Stopping worker-7
+[INFO] Stopping worker-5
+[INFO] Stopping worker-4
+Debug: Canceling lifespan task: <Task pending 
+name='reflex_lifespan_task|lifespan_task|1792791171.947321' 
+coro=<lifespan_task() running at 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/process_model/forkapp/forkapp/forkapp.py:120> wait_for=<Future pending 
+cb=[Task.task_wakeup()]> cb=[_report_task_result() at 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs
+/new/lib/python3.12/site-packages/reflex/app_mixins/lifespan.py:48]>
+Debug: Canceling lifespan task: <Task pending 
+name='reflex_lifespan_task|lifespan_task|1792791170.8915584' 
+coro=<lifespan_task() running at 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/process_model/forkapp/forkapp/forkapp.py:120> wait_for=<Future pending 
+cb=[Task.task_wakeup()]> cb=[_report_task_result() at 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs
+/new/lib/python3.12/site-packages/reflex/app_mixins/lifespan.py:48]>
+Debug: Canceling lifespan task: <Task pending 
+name='reflex_lifespan_task|lifespan_task|1792791171.7999966' 
+coro=<lifespan_task() running at 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/process_model/forkapp/forkapp/forkapp.py:120> wait_for=<Future pending 
+cb=[Task.task_wakeup()]> cb=[_report_task_result() at 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs
+/new/lib/python3.12/site-packages/reflex/app_mixins/lifespan.py:48]>
+[INFO] Stopping worker-6
+[INFO] Stopping worker-1
+[INFO] Stopping worker-8
+Debug: Canceling lifespan task: <Task pending 
+name='reflex_lifespan_task|lifespan_task|1792791170.6206763' 
+coro=<lifespan_task() running at 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/process_model/forkapp/forkapp/forkapp.py:120> wait_for=<Future pending 
+cb=[Task.task_wakeup()]> cb=[_report_task_result() at 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs
+/new/lib/python3.12/site-packages/reflex/app_mixins/lifespan.py:48]>
+Debug: Canceling lifespan task: <Task pending 
+name='reflex_lifespan_task|lifespan_task|1792791171.2227738' 
+coro=<lifespan_task() running at 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/process_model/forkapp/forkapp/forkapp.py:120> wait_for=<Future pending 
+cb=[Task.task_wakeup()]> cb=[_report_task_result() at 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs
+/new/lib/python3.12/site-packages/reflex/app_mixins/lifespan.py:48]>
+Debug: Canceling lifespan task: <Task pending 
+name='reflex_lifespan_task|lifespan_task|1792791171.7748353' 
+coro=<lifespan_task() running at 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/process_model/forkapp/forkapp/forkapp.py:120> wait_for=<Future pending 
+cb=[Task.task_wakeup()]> cb=[_report_task_result() at 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs
+/new/lib/python3.12/site-packages/reflex/app_mixins/lifespan.py:48]>
+Debug: Canceling lifespan task: <Task pending 
+name='reflex_lifespan_task|lifespan_task|1792791171.9057145' 
+coro=<lifespan_task() running at 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/process_model/forkapp/forkapp/forkapp.py:120> wait_for=<Future pending 
+cb=[Task.task_wakeup()]> cb=[_report_task_result() at 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs
+/new/lib/python3.12/site-packages/reflex/app_mixins/lifespan.py:48]>
+Debug: Canceling lifespan task: <Task pending 
+name='reflex_lifespan_task|lifespan_task|1792791171.861239' 
+coro=<lifespan_task() running at 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/process_model/forkapp/forkapp/forkapp.py:120> wait_for=<Future pending 
+cb=[Task.task_wakeup()]> cb=[_report_task_result() at 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs
+/new/lib/python3.12/site-packages/reflex/app_mixins/lifespan.py:48]>
+[INFO] Stopped worker-1
+[INFO] Stopped worker-2
+[INFO] Stopped worker-3
+[INFO] Stopped worker-4
+[INFO] Stopped worker-5
+[INFO] Stopped worker-6
+[INFO] Stopped worker-7
+[INFO] Stopped worker-8
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

@@ -1,0 +1,38 @@
+{
+ "cmd": "run --json --frontend-port 3210 --backend-port 8210",
+ "venv": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/new",
+ "chatty": true,
+ "signal": "TERM-pid",
+ "slow_rate": 6.0,
+ "pause": 4.0,
+ "marks": {
+  "up": 2.72,
+  "pause_start": 5.73,
+  "signal": 9.73,
+  "signal_wall": "21:34:00.417Z",
+  "exit": 40.39
+ },
+ "signal_to_eof_s": NaN,
+ "signal_to_exit_s": 30.66,
+ "returncode": 0,
+ "lines_total": 1080,
+ "lines_after_signal": 217,
+ "invalid_json": 1,
+ "invalid_samples": [
+  {
+   "t": 49.85,
+   "err": "Extra data: line 2 column 1 (char 357)",
+   "line": "{\"timestamp\": \"2026-10-23T21:34:00.418816+00:00\", \"level\": \"info\", \"logger\": \"stdout\", \"message\": \"QA-SEQ 0001075 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx... [len 731]"
+  }
+ ],
+ "last_line_valid_json": false,
+ "seq_first": 0,
+ "seq_max_received": 1074,
+ "seq_written_at_signal": "1291",
+ "seq_written_final": "1299",
+ "lost_tail": 225,
+ "seq_gaps": [],
+ "last_line": "{\"timestamp\": \"2026-10-23T21:34:00.418816+00:00\", \"level\": \"info\", \"logger\": \"stdout\", \"message\": \"QA-SEQ 0001075 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+ "last_non_seq_lines": [],
+ "leftover_after_exit": ""
+}

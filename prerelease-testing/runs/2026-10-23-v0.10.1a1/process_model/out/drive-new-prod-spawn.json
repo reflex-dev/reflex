@@ -1,0 +1,180 @@
+{
+ "label": "new-prod-spawn",
+ "base": "http://localhost:8200",
+ "clients": 4,
+ "checks": [
+  {
+   "name": "tokens_present",
+   "ok": true,
+   "detail": "4 tokens"
+  },
+  {
+   "name": "onload_pids",
+   "ok": true,
+   "detail": "socket worker pids: [31998, 32008, 32012]"
+  },
+  {
+   "name": "evt04_poke_delivered",
+   "ok": true,
+   "detail": "4/4 delivered, 3/4 cross-worker; client0: socket_pid=32012 poke_pid=32002 -> 'poked: 1 by 32002'; client1: socket_pid=32008 poke_pid=32008 -> 'poked: 1 by 32008'; client2: socket_pid=32008 poke_pid=32004 -> 'poked: 1 by 32004'; client3: socket_pid=31998 poke_pid=32004 -> 'poked: 1 by 32004'"
+  },
+  {
+   "name": "evt04_second_round",
+   "ok": true,
+   "detail": "4/4"
+  },
+  {
+   "name": "inc_client0",
+   "ok": true,
+   "detail": "count: 2"
+  },
+  {
+   "name": "inc_client1",
+   "ok": true,
+   "detail": "count: 2"
+  },
+  {
+   "name": "inc_client2",
+   "ok": true,
+   "detail": "count: 2"
+  },
+  {
+   "name": "inc_client3",
+   "ok": true,
+   "detail": "count: 2"
+  },
+  {
+   "name": "note_client0",
+   "ok": true,
+   "detail": "rows: 295"
+  },
+  {
+   "name": "note_client1",
+   "ok": true,
+   "detail": "rows: 296"
+  },
+  {
+   "name": "note_client2",
+   "ok": true,
+   "detail": "rows: 297"
+  },
+  {
+   "name": "note_client3",
+   "ok": true,
+   "detail": "rows: 298"
+  },
+  {
+   "name": "bg_client0",
+   "ok": true,
+   "detail": "bg: bg-done pid=32012 ticks=40"
+  },
+  {
+   "name": "bg_client1",
+   "ok": true,
+   "detail": "bg: bg-done pid=32008 ticks=40"
+  },
+  {
+   "name": "bg_client2",
+   "ok": true,
+   "detail": "bg: bg-done pid=32008 ticks=40"
+  },
+  {
+   "name": "bg_client3",
+   "ok": true,
+   "detail": "bg: bg-done pid=31998 ticks=37"
+  },
+  {
+   "name": "fetch_client0",
+   "ok": true,
+   "detail": "fetch: fetch 200 pid=32010"
+  },
+  {
+   "name": "fetch_client1",
+   "ok": true,
+   "detail": "fetch: fetch 200 pid=32004"
+  },
+  {
+   "name": "fetch_client2",
+   "ok": true,
+   "detail": "fetch: fetch 200 pid=32004"
+  },
+  {
+   "name": "fetch_client3",
+   "ok": true,
+   "detail": "fetch: fetch 200 pid=32000"
+  },
+  {
+   "name": "reload_keeps_count",
+   "ok": true,
+   "detail": "count: 2"
+  },
+  {
+   "name": "console_clean_client0",
+   "ok": false,
+   "detail": "error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+   "name": "console_clean_client1",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "console_clean_client2",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "console_clean_client3",
+   "ok": true,
+   "detail": ""
+  }
+ ],
+ "tokens": [
+  "7ef8f9fd-b026-476a-ec01-f53bfd30ce46",
+  "922272e2-a040-4a21-8afe-3b793dd19c4b",
+  "662373e0-c623-42f4-e1e9-f5f2634b6ced",
+  "f4ddcea9-d194-4e2d-8b3d-04b150e7c8b4"
+ ],
+ "socket_pids": [
+  32012,
+  32008,
+  32008,
+  31998
+ ],
+ "poke_pids": [
+  32002,
+  32008,
+  32004,
+  32004
+ ],
+ "pass": 24,
+ "fail": 1,
+ "logs": [
+  {
+   "console": [
+    "error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+   ],
+   "errors": [],
+   "failed": [],
+   "http_err": []
+  },
+  {
+   "console": [],
+   "errors": [],
+   "failed": [],
+   "http_err": []
+  },
+  {
+   "console": [],
+   "errors": [],
+   "failed": [],
+   "http_err": []
+  },
+  {
+   "console": [],
+   "errors": [],
+   "failed": [],
+   "http_err": []
+  }
+ ]
+}

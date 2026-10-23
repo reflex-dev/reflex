@@ -14,6 +14,8 @@ cp "$PM"/scripts/* "$DEST/scripts/"
 cp "$PM"/out/*.json "$DEST/out/" 2>/dev/null
 cp "$PM"/out/*.log "$DEST/out/" 2>/dev/null
 cp "$PM"/out/*.txt "$DEST/out/" 2>/dev/null
+for f in "$PM"/lifecycle/out/jsondrain/*.json; do [ -f "$f" ] && cp "$f" "$DEST/out/jsondrain-$(basename "$f")"; done
+for f in "$PM"/lifecycle/logs/*.log; do [ -f "$f" ] && { head -40 "$f"; echo "... [trimmed] ..."; tail -60 "$f"; } > "$DEST/logs/lifecycle-$(basename "$f" .log).trimmed.log"; done
 # trimmed server logs: keep the first 60 and last 120 lines of each
 for f in "$PM"/logs/*.log; do
   b=$(basename "$f" .log)

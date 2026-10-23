@@ -191,7 +191,7 @@ lines/s exit ~6-7 s, 0 lost; TERM-pid at 6 lines/s exits at the 30 s cap with a 
 | INT-group:40 | exit 6.5 s rc 0, 1139 lines, 0 invalid, last line valid, 0 lost, 0 gaps, no leftovers | a3: ~6-7 s, 0 lost |
 | TERM-pid:40 | exit 7.1 s rc 0, 1257 lines, 0 invalid, 0 lost, no leftovers | a3: ~6-7 s, 0 lost |
 | TERM-pid:6 (A3-08 / CLI-27) | exits at the 30 s cap (30.66 s) rc 0, **last record truncated** (`invalid_json 1`, "Extra data"), 225 records lost | **unchanged** (a3: same; filed-open reflex#7510) |
-| INT-pid:40 (A3-07 / CLI-26, #7558) | (below) | a3/0.10.0: never exits (killed at the cap) |
+| INT-pid:40 (A3-07 / CLI-26, #7558) | **exits 8.9 s after a pid-only SIGINT**, rc 0, 786 lines, 0 invalid, 0 gaps, no leftovers → **fixed** | a3/0.10.0: never exits (killed at the cap); prev control below |
 
 ### 7. Telemetry enabled (default for users) + backend-only prod, new
 `REFLEX_TELEMETRY_ENABLED=true scripts/probe_run.sh new new-be-telemetry prod-be 8201`: up in 2.2 s (same as with telemetry off),
