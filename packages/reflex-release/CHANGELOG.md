@@ -1,3 +1,10 @@
+## v0.2.1a1 (2026-10-23)
+
+### Miscellaneous
+
+- Allow towncrier 26. ([#7645](https://github.com/reflex-dev/reflex/issues/7645))
+
+
 ## v0.2.0 (2026-10-08)
 
 ### Breaking Changes

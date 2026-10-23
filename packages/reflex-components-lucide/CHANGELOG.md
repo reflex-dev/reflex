@@ -1,3 +1,10 @@
+## v1.1.1a1 (2026-10-23)
+
+### Bug Fixes
+
+- Preserve imports required by icon props and expose the correct Lucide module through `import_var`. ([#7604](https://github.com/reflex-dev/reflex/issues/7604))
+
+
 ## v1.1.0 (2026-10-08)
 
 ### Breaking Changes

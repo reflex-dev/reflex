@@ -2,6 +2,13 @@
 
 <!-- towncrier release notes start -->
 
+## v0.1.1a1 (2026-10-23)
+
+### Features
+
+- Expose `reflex_build_sdk.transports.default_transport()` so transport wrappers can preserve the SDK's choice of HTTP library. ([#7463](https://github.com/reflex-dev/reflex/issues/7463))
+
+
 ## v0.1.0 (2026-10-08)
 
 ### Breaking Changes

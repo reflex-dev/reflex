@@ -1,3 +1,10 @@
+## v0.10.1a1 (2026-10-23)
+
+### Bug Fixes
+
+- Expose the `utc`, `calendar`, `from_`, `to`, `ago`, `element`, `fallback`, `filters`, and `renderers` options of `react-moment` 2.x, which previously rendered as CSS, and add `moment_provider` for shared defaults and pooled timers. ([#7591](https://github.com/reflex-dev/reflex/issues/7591))
+
+
 ## v0.10.0 (2026-10-08)
 
 ### Breaking Changes
