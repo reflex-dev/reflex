@@ -45,6 +45,7 @@ from rich.text import Text
 from reflex_base.constants import LogLevel
 from reflex_base.constants.base import Reflex
 from reflex_base.utils.decorator import once
+from reflex_base.utils.processes import stop_process_tree
 
 if TYPE_CHECKING:
     from collections.abc import Hashable, Iterator
@@ -275,8 +276,14 @@ _DRAIN_IDLE_SECONDS = 0.5
 # Maximum drain time after the child exits, excluding time forwarding output.
 _DRAIN_MAX_SECONDS = 5
 
+# Seconds after the first shutdown signal before the command tree is killed.
+_STOP_DEADLINE_SECONDS = 15
+
 # Stop shutdown after 30 seconds even when a consumer blocks every write.
 _DRAIN_WALL_SECONDS = 30
+
+# Seconds a reader gets to finish the record it is writing when the drain ends.
+_DRAIN_RECORD_GRACE_SECONDS = 2
 
 # Line ends in child output; a lone ``\r`` ends a progress-bar update.
 _LINE_END = re.compile(rb"\r\n|\r|\n")
@@ -377,7 +384,14 @@ def _write_all(fd: int, data: bytes):
 class _OutputPump(threading.Thread):
     """Reader thread that turns one child output pipe into JSON lines."""
 
-    def __init__(self, read_fd: int, write_fd: int, level: str, name: str):
+    def __init__(
+        self,
+        read_fd: int,
+        write_fd: int,
+        level: str,
+        name: str,
+        stopping: threading.Event | None = None,
+    ):
         """Create the reader.
 
         Args:
@@ -385,12 +399,17 @@ class _OutputPump(threading.Thread):
             write_fd: The file descriptor to write JSON lines to.
             level: The record level for plain lines.
             name: The logger name for the records.
+            stopping: Set once shutdown was requested; from then on records
+                are written one at a time so a cutoff lands between them.
         """
         super().__init__(name=f"reflex-output-{name}", daemon=True)
         self.read_fd = read_fd
         self.write_fd = write_fd
         self.level = level
         self.logger_name = name
+        self.stopping = stopping or threading.Event()
+        # Set by drain() when time is up: finish the current record, drop the rest.
+        self._dropping = False
         # When the reader started waiting for data; None while it works.
         self.idle_since: float | None = None
         # Cumulative write time and the start of any ongoing write.
@@ -426,13 +445,21 @@ class _OutputPump(threading.Thread):
             final: Whether the output ended.
         """
         data = _to_records(lines, traceback, self.level, self.logger_name, final)
+        if not data or self._dropping:
+            return
+        # One write per batch while the command runs; one per record once it
+        # is stopping, so the drain can end between two complete records.
+        records = data.splitlines(keepends=True) if self.stopping.is_set() else (data,)
         with self._write_lock:
             elapsed, _ = self._write_state
             started = time.monotonic()
             self._write_state = (elapsed, started)
         # Keep reading when the consumer is gone: a full pipe blocks the child.
         with contextlib.suppress(OSError):
-            _write_all(self.write_fd, data)
+            for record in records:
+                if self._dropping:
+                    break
+                _write_all(self.write_fd, record)
         with self._write_lock:
             self._write_state = (elapsed + time.monotonic() - started, None)
 
@@ -453,7 +480,9 @@ class _OutputPump(threading.Thread):
         Returns early when the reader sat idle for a while after the exit, or
         when the drain took too long. Time spent forwarding output does not
         count toward the active limit. A separate wall deadline bounds shutdown
-        even when a consumer stops reading.
+        even when a consumer stops reading. A record being written when time
+        is up gets a short grace to complete, so a consumer that still reads
+        never sees a cut record.
 
         Args:
             exited_at: The monotonic time of the pump's snapshot after child exit.
@@ -474,7 +503,12 @@ class _OutputPump(threading.Thread):
                     and now - max(idle_since, exited_at) > _DRAIN_IDLE_SECONDS
                 )
             ):
-                return
+                break
+        self._dropping = True
+        with self._write_lock:
+            writing = self._write_state[1] is not None
+        if writing:
+            self.join(_DRAIN_RECORD_GRACE_SECONDS)
 
 
 def supervise_output(args: list[str]) -> int:
@@ -484,6 +518,11 @@ def supervise_output(args: list[str]) -> int:
     it starts inherits. Reader threads write each line to this process's
     stdout and stderr as a JSON record: lines that already are JSON log
     records pass through, and a Python traceback becomes one record.
+
+    Shutdown is bounded from the first SIGINT or SIGTERM: each one is passed
+    on to the command, its whole process tree is killed if it is still
+    running ``_STOP_DEADLINE_SECONDS`` later, and the output drain ends by
+    ``_DRAIN_WALL_SECONDS`` after the request, between two records.
 
     Args:
         args: The command to run.
@@ -507,31 +546,119 @@ def supervise_output(args: list[str]) -> int:
     # blocked on it waits for that read on Windows.
     out_read, out_write = os.pipe()
     err_read, err_write = os.pipe()
+    # The command stays in this process group: a terminal Ctrl-C or a group
+    # kill from a service manager reaches it and its workers directly.
     proc = subprocess.Popen(args, stdout=out_write, stderr=err_write, env=env)
     os.close(out_write)
     os.close(err_write)
+    shutdown = _Shutdown(proc)
     pumps = [
-        _OutputPump(out_read, 1, "info", "stdout"),
-        _OutputPump(err_read, 2, "warning", "stderr"),
+        _OutputPump(out_read, 1, "info", "stdout", shutdown.stopping),
+        _OutputPump(err_read, 2, "warning", "stderr", shutdown.stopping),
     ]
     for pump in pumps:
         pump.start()
-    signal.signal(signal.SIGTERM, lambda *_: proc.terminate())
-    while True:
-        try:
-            returncode = proc.wait()
-            break
-        except KeyboardInterrupt:
-            # A terminal Ctrl-C reaches the child too, a SIGINT sent only to
-            # this process does not. The child handles a repeated interrupt.
-            if sys.platform != "win32":
-                proc.send_signal(signal.SIGINT)
-    wall_deadline = time.monotonic() + _DRAIN_WALL_SECONDS
+    # SIGTERM only on Windows, where Ctrl-C arrives as KeyboardInterrupt.
+    handled = (
+        (signal.SIGTERM, signal.SIGINT) if os.name == "posix" else (signal.SIGTERM,)
+    )
+    previous = {signum: signal.signal(signum, shutdown.on_signal) for signum in handled}
+    try:
+        while True:
+            try:
+                returncode = proc.wait()
+                break
+            except KeyboardInterrupt:
+                # The command shares the console and received the Ctrl-C too.
+                shutdown.request(None)
+        # From here on the readers write record by record (see _OutputPump).
+        shutdown.stopping.set()
+        requested_at = shutdown.requested_at
+        _drain_pumps(
+            pumps,
+            (requested_at if requested_at is not None else time.monotonic())
+            + _DRAIN_WALL_SECONDS,
+        )
+        # A child killed by a signal reports -signum; shells report 128 + signum.
+        return returncode if returncode >= 0 else 128 - returncode
+    finally:
+        shutdown.cancel()
+        for signum, handler in previous.items():
+            signal.signal(signum, handler)
+
+
+def _drain_pumps(pumps: list[_OutputPump], wall_deadline: float):
+    """Drain the readers after the command exited.
+
+    Args:
+        pumps: The reader threads.
+        wall_deadline: The monotonic time by which the drain ends.
+    """
     snapshots = [pump.writing_snapshot() for pump in pumps]
     for pump, (exited_at, writing_at_exit) in zip(pumps, snapshots, strict=True):
-        pump.drain(exited_at, writing_at_exit, wall_deadline)
-    # A child killed by a signal reports -signum; shells report 128 + signum.
-    return returncode if returncode >= 0 else 128 - returncode
+        while True:
+            try:
+                pump.drain(exited_at, writing_at_exit, wall_deadline)
+                break
+            except KeyboardInterrupt:
+                # A repeated Windows Ctrl-C does not cut the drain short.
+                continue
+
+
+class _Shutdown:
+    """Bounded shutdown of the supervised command.
+
+    Every shutdown signal is passed on to the command, which decides what a
+    repeat means. The first one also starts a deadline after which the whole
+    command tree is killed, so a command that never finishes stopping, or one
+    blocked on a full output pipe, cannot keep the supervisor alive.
+    """
+
+    def __init__(self, proc: subprocess.Popen):
+        """Create the shutdown tracker.
+
+        Args:
+            proc: The supervised command.
+        """
+        self.proc = proc
+        self.stopping = threading.Event()
+        self.requested_at: float | None = None
+        self._timer: threading.Timer | None = None
+
+    def on_signal(self, signum: int, _frame: FrameType | None):
+        """Handle a shutdown signal.
+
+        Args:
+            signum: The signal number.
+            _frame: The interrupted frame.
+        """
+        self.request(signum)
+
+    def request(self, signum: int | None):
+        """Pass a shutdown request on to the command and arm the deadline.
+
+        Args:
+            signum: The signal to forward, or None when the command already
+                received it (a Windows console Ctrl-C).
+        """
+        if self.requested_at is None:
+            self.requested_at = time.monotonic()
+            self.stopping.set()
+            self._timer = threading.Timer(_STOP_DEADLINE_SECONDS, self._kill)
+            self._timer.daemon = True
+            self._timer.start()
+        if signum is not None:
+            # On Windows only SIGTERM gets here, which Popen maps to TerminateProcess.
+            self.proc.send_signal(signum)
+
+    def _kill(self):
+        """Stop the command tree once the deadline passed."""
+        stop_process_tree(self.proc, timeout=1)
+
+    def cancel(self):
+        """Disarm the deadline once the command exited."""
+        if self._timer is not None:
+            self._timer.cancel()
 
 
 class JsonHandler(logging.Handler):

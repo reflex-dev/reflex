@@ -1,0 +1,1 @@
+`reflex run` now stops the whole frontend process tree on SIGINT or SIGTERM, including a dev server left behind by `npm run`, and a second Ctrl-C can no longer interrupt that cleanup. An exit the CLI asked for is no longer reported as a frontend failure.

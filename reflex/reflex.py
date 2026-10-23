@@ -18,6 +18,7 @@ from reflex_base import constants
 from reflex_base.config import get_config, reload_config
 from reflex_base.environment import environment
 from reflex_base.utils import console, log
+from reflex_base.utils.processes import stop_process_tree
 
 from reflex.utils.cli_options import log_options
 
@@ -407,20 +408,40 @@ def _compile_app_worker(
 
 
 @contextmanager
-def _frontend_sigterm_handler(enabled: bool):
-    """Exit cleanly on SIGTERM for a frontend-only run."""
-    if not enabled:
+def _shutdown_signals():
+    """Turn the first SIGINT or SIGTERM into a clean unwind and ignore repeats.
+
+    The first signal raises in the main thread so the run body unwinds into
+    its cleanup. Later signals, such as the second delivery a terminal Ctrl-C
+    produces next to the one the output supervisor forwards, are ignored so
+    they cannot interrupt that cleanup. The backend server installs its own
+    handlers while it serves; this covers the time before and after.
+
+    Yields:
+        Control to the run body. On Windows there is nothing to install.
+    """
+    if sys.platform == "win32":
         yield
         return
+    stopping = False
 
-    def stop_frontend(signum: int, frame: FrameType | None) -> None:
+    def stop(signum: int, frame: FrameType | None) -> None:
+        nonlocal stopping
+        if stopping:
+            return
+        stopping = True
+        if signum == signal.SIGINT:
+            raise KeyboardInterrupt
         raise SystemExit(0)
 
-    previous = signal.signal(signal.SIGTERM, stop_frontend)
+    previous = {
+        sig: signal.signal(sig, stop) for sig in (signal.SIGINT, signal.SIGTERM)
+    }
     try:
         yield
     finally:
-        signal.signal(signal.SIGTERM, previous)
+        for sig, handler in previous.items():
+            signal.signal(sig, handler)
 
 
 def _run_dev(
@@ -472,14 +493,15 @@ def _run_dev(
     def stop_frontend() -> None:
         with exec._frontend_process_lock:
             exec._frontend_shutting_down = True
-            if (process := exec.frontend_process) is not None:
-                if process.poll() is None:
-                    process.terminate()
-                exec.frontend_process = None
+            process, exec.frontend_process = exec.frontend_process, None
+        if process is not None:
+            # The package manager in front of the dev server does not always
+            # pass a signal on, so the whole tree below it is stopped.
+            stop_process_tree(process, timeout=exec._FRONTEND_STOP_TIMEOUT)
 
     try:
         with (
-            _frontend_sigterm_handler(frontend_only and sys.platform != "win32"),
+            _shutdown_signals(),
             processes.run_concurrently_context(
                 *commands, interrupt_on_failure=not frontend_only
             ) as tasks,
@@ -494,10 +516,6 @@ def _run_dev(
                         config.loglevel.subprocess_level(),
                         running_mode.has_frontend(),
                     )
-                    # The windows uvicorn bug workaround
-                    # https://github.com/reflex-dev/reflex/issues/2335
-                    if constants.IS_WINDOWS and exec.frontend_process:
-                        exec.kill(exec.frontend_process.pid)
             finally:
                 stop_frontend()
     finally:

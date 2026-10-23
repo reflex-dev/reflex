@@ -970,8 +970,13 @@ rx._run_dev(MODE,3000,PORT,"127.0.0.1")
 @pytest.mark.skipif(sys.platform == "win32", reason="POSIX signals")
 @pytest.mark.parametrize("mode", ["frontend", "fullstack"])
 @pytest.mark.parametrize("sig", ["SIGTERM", "SIGINT"])
-def test_no_tty_run_stops_frontend(tmp_path, mode, sig):
-    """Headless runs stop the frontend on SIGTERM or SIGINT."""
+@pytest.mark.parametrize("forwards", [True, False], ids=["forwarding", "orphaning"])
+def test_no_tty_run_stops_frontend(tmp_path, mode, sig, forwards):
+    """Headless runs stop the frontend on SIGTERM or SIGINT.
+
+    The frontend stand-in either passes SIGTERM on to its own child, as bun
+    does, or exits without it, as ``npm run`` does; the child must stop either way.
+    """
     pids = tmp_path / "children"
     driver = tmp_path / "driver.py"
     driver.write_text(
@@ -981,7 +986,7 @@ from reflex.utils import build, exec as exec_mod, telemetry
 def frontend(*args):
     code = "import signal,subprocess,sys,time\\n" + \
         "p=subprocess.Popen([sys.executable,'-c','import time;time.sleep(60)'])\\n" + \
-        "signal.signal(signal.SIGTERM, lambda *a: (p.terminate(), sys.exit(0)))\\n" + \
+        ("signal.signal(signal.SIGTERM, lambda *a: (p.terminate(), sys.exit(0)))\\n" if FORWARDS else "") + \
         "print(p.pid,flush=True);time.sleep(60)\\n"
     p = subprocess.Popen([sys.executable,"-c",code],stdout=subprocess.PIPE,text=True)
     grandchild = int(p.stdout.readline())
@@ -1008,6 +1013,7 @@ from reflex_base import constants
 rx._run_dev(MODE,3000,PORT,"127.0.0.1")
 """
         .replace("PIDS", repr(str(pids)))
+        .replace("FORWARDS", repr(forwards))
         .replace(
             "MODE",
             "constants.RunningMode.FRONTEND_ONLY"
@@ -1038,11 +1044,14 @@ rx._run_dev(MODE,3000,PORT,"127.0.0.1")
             time.sleep(0.01)
         assert child is not None, "frontend did not start"
         assert grandchild is not None, "frontend grandchild did not start"
+        started = time.monotonic()
         os.kill(launcher.pid, getattr(signal, sig))
         try:
             returncode = launcher.wait(timeout=DEFAULT_TIMEOUT)
         except subprocess.TimeoutExpired:
             pytest.fail("no-TTY launcher hung after signal")
+        # Stopping the tree takes one SIGTERM round, well below the kill timeout.
+        assert time.monotonic() - started < 4
         if sig == "SIGINT":
             assert returncode in (0, -signal.SIGINT)
         else:

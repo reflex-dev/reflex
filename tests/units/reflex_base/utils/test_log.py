@@ -1172,6 +1172,206 @@ def test_supervise_output_forwards_shutdown_signal(tmp_path, signum):
         assert proc.wait(timeout=10) == 128 + signum
 
 
+def _kill_supervised(proc: subprocess.Popen, tmp_path: Path):
+    """Kill and reap a test supervisor and the child it recorded in child.pid.
+
+    Args:
+        proc: The supervisor process.
+        tmp_path: The directory holding the child's PID file.
+    """
+    if proc.poll() is None:
+        proc.kill()
+        proc.wait(timeout=5)
+    pid_file = tmp_path / "child.pid"
+    if pid_file.exists():
+        with contextlib.suppress(OSError, ValueError):
+            os.kill(int(pid_file.read_text()), signal.SIGKILL)
+
+
+_CHATTY_CLEANUP_SCRIPT = """
+import os
+import signal
+import sys
+import time
+from pathlib import Path
+
+from reflex_base.utils import log
+
+log._STOP_DEADLINE_SECONDS = 1
+log._DRAIN_WALL_SECONDS = 1
+if not log.is_output_supervised():
+    sys.exit(log.supervise_output([sys.executable, __file__]))
+Path("child.pid").write_text(str(os.getpid()))
+def cleanup(*_):
+    for i in range(2000):
+        print(f"cleanup {i:05d} " + "x" * 200, flush=True)
+    raise SystemExit(0)
+signal.signal(signal.SIGINT, cleanup)
+print("ready", flush=True)
+while True:
+    time.sleep(0.05)
+"""
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="PID-targeted signals")
+def test_supervise_output_bounds_shutdown_when_the_consumer_stops_reading(tmp_path):
+    """A command blocked on a full pipe during cleanup is killed at the deadline."""
+    script = tmp_path / "chatty_cleanup.py"
+    script.write_text(_CHATTY_CLEANUP_SCRIPT)
+    with subprocess.Popen(
+        [sys.executable, str(script)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        cwd=tmp_path,
+        env={**os.environ, "REFLEX_LOG_JSON": "true"},
+    ) as proc:
+        try:
+            assert proc.stdout is not None
+            assert json.loads(proc.stdout.readline())["message"] == "ready"
+            # Nothing reads stdout from here on.
+            started = time.monotonic()
+            proc.send_signal(signal.SIGINT)
+            # The deadline sends SIGTERM to the tree first, then SIGKILL.
+            assert proc.wait(timeout=15) in (128 + signal.SIGTERM, 128 + signal.SIGKILL)
+            assert time.monotonic() - started < 8
+        finally:
+            _kill_supervised(proc, tmp_path)
+
+
+_SECOND_INTERRUPT_SCRIPT = """
+import signal
+import sys
+import time
+
+from reflex_base.utils import log
+
+if not log.is_output_supervised():
+    sys.exit(log.supervise_output([sys.executable, __file__]))
+count = 0
+def interrupted(*_):
+    global count
+    count += 1
+    print(f"SIGINT #{count}", flush=True)
+    if count == 2:
+        raise SystemExit(0)
+signal.signal(signal.SIGINT, interrupted)
+print("ready", flush=True)
+while True:
+    time.sleep(0.05)
+"""
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="PID-targeted signals")
+def test_supervise_output_forwards_every_shutdown_signal(tmp_path):
+    """A repeated signal reaches the command; it decides what a repeat means."""
+    script = tmp_path / "second_interrupt.py"
+    script.write_text(_SECOND_INTERRUPT_SCRIPT)
+    with subprocess.Popen(
+        [sys.executable, str(script)],
+        stdout=subprocess.PIPE,
+        env={**os.environ, "REFLEX_LOG_JSON": "true"},
+    ) as proc:
+        try:
+            assert proc.stdout is not None
+            assert json.loads(proc.stdout.readline())["message"] == "ready"
+            proc.send_signal(signal.SIGINT)
+            time.sleep(0.3)
+            proc.send_signal(signal.SIGINT)
+            assert proc.wait(timeout=10) == 0
+            messages = [json.loads(line)["message"] for line in proc.stdout]
+            assert messages == ["SIGINT #1", "SIGINT #2"]
+        finally:
+            _kill_supervised(proc, tmp_path)
+
+
+_DEAF_SCRIPT = """
+import os
+import signal
+import sys
+import time
+from pathlib import Path
+
+from reflex_base.utils import log
+
+log._STOP_DEADLINE_SECONDS = 0.5
+if not log.is_output_supervised():
+    sys.exit(log.supervise_output([sys.executable, __file__]))
+Path("child.pid").write_text(str(os.getpid()))
+signal.signal(signal.SIGINT, signal.SIG_IGN)
+signal.signal(signal.SIGTERM, signal.SIG_IGN)
+print("ready", flush=True)
+time.sleep(30)
+"""
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="PID-targeted signals")
+def test_supervise_output_kills_a_command_that_ignores_shutdown(tmp_path):
+    """A command that never stops on its own is killed when the deadline passes."""
+    script = tmp_path / "deaf.py"
+    script.write_text(_DEAF_SCRIPT)
+    with subprocess.Popen(
+        [sys.executable, str(script)],
+        stdout=subprocess.PIPE,
+        cwd=tmp_path,
+        env={**os.environ, "REFLEX_LOG_JSON": "true"},
+    ) as proc:
+        try:
+            assert proc.stdout is not None
+            assert json.loads(proc.stdout.readline())["message"] == "ready"
+            started = time.monotonic()
+            proc.send_signal(signal.SIGTERM)
+            assert proc.wait(timeout=10) == 128 + signal.SIGKILL
+            assert 0.5 <= time.monotonic() - started < 5
+        finally:
+            _kill_supervised(proc, tmp_path)
+
+
+_SLOW_CONSUMER_SCRIPT = """
+import sys
+
+from reflex_base.utils import log
+
+log._DRAIN_WALL_SECONDS = 0.5
+if not log.is_output_supervised():
+    sys.exit(log.supervise_output([sys.executable, __file__]))
+for i in range(300):
+    print(f"line {i:04d} " + "x" * 1000, flush=True)
+"""
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="needs a small pipe buffer")
+def test_supervise_output_drain_ends_between_records(tmp_path):
+    """When the drain gives up on a slow consumer, the stream ends at a record boundary."""
+    import fcntl
+
+    script = tmp_path / "slow_consumer.py"
+    script.write_text(_SLOW_CONSUMER_SCRIPT)
+    with subprocess.Popen(
+        [sys.executable, str(script)],
+        stdout=subprocess.PIPE,
+        env={**os.environ, "REFLEX_LOG_JSON": "true"},
+    ) as proc:
+        assert proc.stdout is not None
+        fd = proc.stdout.fileno()
+        fcntl.fcntl(fd, fcntl.F_SETPIPE_SZ, 4096)
+        chunks = []
+        deadline = time.monotonic() + 20
+        # Read about 40 KB/s: far slower than the writer, faster than the grace.
+        while time.monotonic() < deadline:
+            chunk = os.read(fd, 4096)
+            if not chunk:
+                break
+            chunks.append(chunk)
+            time.sleep(0.1)
+        assert proc.wait(timeout=10) == 0
+    output = b"".join(chunks)
+    assert output.endswith(b"\n")
+    records = [json.loads(line) for line in output.splitlines()]
+    assert all(record["message"].startswith("line ") for record in records)
+    # The wall deadline cut the stream, so the boundary was actually enforced.
+    assert len(records) < 300
+
+
 def test_output_pump_survives_a_gone_consumer():
     """The reader keeps draining the child when its consumer closed the stream."""
     child_read, child_write = os.pipe()
