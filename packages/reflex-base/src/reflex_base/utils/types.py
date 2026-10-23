@@ -971,6 +971,78 @@ def get_attribute_descriptor(cls: GenericType, name: str) -> Any:
     except NotImplementedError:
         return None
 
+def is_unserialized_property(
+    cls: GenericType,
+    name: str,
+    descriptor: Any = _NO_DESCRIPTOR,
+) -> bool:
+    """Check whether a property is omitted by the default object serializer.
+
+    Args:
+        cls: The type being inspected.
+        name: The attribute name.
+        descriptor: A previously resolved descriptor, if available.
+
+    Returns:
+        Whether the property is omitted by the default serializer.
+    """
+    if is_union(cls):
+        return any(
+            is_unserialized_property(arg, name)
+            for arg in get_args(cls)
+            if arg is not type(None)
+        )
+
+    cls = get_origin(cls) or cls
+    if not isinstance(cls, type):
+        return False
+
+    attr = (
+        get_attribute_descriptor(cls, name)
+        if descriptor is _NO_DESCRIPTOR
+        else descriptor
+    )
+
+    if not isinstance(attr, property):
+        return False
+
+    from reflex_base.utils import serializers
+
+    serializer = serializers.get_serializer(cls)
+
+    # Dataclasses are serialized from their declared fields by the
+    # default serializer, not from arbitrary properties.
+    if dataclasses.is_dataclass(cls):
+        if serializer is not None:
+            return False
+
+        return name not in {
+            field.name for field in dataclasses.fields(cls)
+        }
+
+    # Pydantic models serialize model fields and computed fields.
+    model_fields = getattr(cls, "model_fields", None)
+    if not isinstance(model_fields, dict):
+        model_fields = getattr(cls, "__fields__", None)
+
+    if not isinstance(model_fields, dict):
+        return False
+
+    # Don't diagnose classes whose custom serializer may include properties.
+    default_serializers = tuple(
+        default
+        for default in (
+            getattr(serializers, "serialize_base_model", None),
+            serializers.serialize_sqlmodel,
+        )
+        if default is not None
+    )
+    if serializer not in default_serializers:
+        return False
+
+    computed_fields = getattr(cls, "model_computed_fields", {}) or {}
+
+    return name not in model_fields and name not in computed_fields
 
 def get_attribute_access_type(
     cls: GenericType, name: str, descriptor: Any = _NO_DESCRIPTOR

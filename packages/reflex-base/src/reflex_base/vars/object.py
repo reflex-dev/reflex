@@ -345,6 +345,26 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=PYTHON_TYPES):
                     )
                     raise VarAttributeError(msg)
                 return hybrid_var
+            if types.is_unserialized_property(
+                fixed_type, name, descriptor
+            ):
+                if dataclasses.is_dataclass(fixed_type):
+                    msg = (
+                        f"The property '{name}' on dataclass "
+                        f"'{fixed_type.__name__}' is not included in "
+                        "serialized state. Only declared dataclass fields "
+                        "are serialized."
+                    )
+                else:
+                    msg = (
+                        f"The property '{name}' on Pydantic model "
+                        f"'{fixed_type.__name__}' is not included in "
+                        "serialized state. Use "
+                        "`@pydantic.computed_field` to include the "
+                        "computed value in model_dump()."
+                    )
+
+                raise VarAttributeError(msg)
             attribute_type = get_attribute_access_type(var_type, name, descriptor)
         elif is_typeddict(fixed_type) or fixed_type in types.UnionTypes:
             attribute_type = get_attribute_access_type(var_type, name)

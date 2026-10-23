@@ -378,3 +378,52 @@ def test_annotated_var_type_is_unwrapped() -> None:
     assert isinstance(var, ObjectVar)
     assert var._var_type is Base
     assert var.quantity._var_type is int
+
+def test_plain_property_on_pydantic_model_raises() -> None:
+    """Plain Pydantic properties are not included in serialized state."""
+
+    class Item(pydantic.BaseModel):
+        name: str = "solo"
+
+        @property
+        def label(self) -> str:
+            return f"{self.name}!"
+
+        @pydantic.computed_field
+        @property
+        def tag(self) -> str:
+            return f"#{self.name}"
+
+    class ItemState(rx.State):
+        item: rx.Field[Item] = rx.field(Item())
+
+    with pytest.raises(VarAttributeError, match="computed_field"):
+        _ = ItemState.item.label
+
+    # Regular fields and computed fields remain accessible.
+    assert ItemState.item.name._var_type is str
+    assert ItemState.item.tag._var_type is str
+
+
+def test_plain_property_on_dataclass_raises() -> None:
+    """Plain dataclass properties are not included in serialized state."""
+
+    @dataclasses.dataclass
+    class Point:
+        x: int = 1
+
+        @property
+        def double(self) -> int:
+            return self.x * 2
+
+    class PointState(rx.State):
+        point: rx.Field[Point] = rx.field(Point())
+
+    with pytest.raises(
+        VarAttributeError,
+        match="declared dataclass fields",
+    ):
+        _ = PointState.point.double
+
+    # Declared dataclass fields remain accessible.
+    assert PointState.point.x._var_type is int
