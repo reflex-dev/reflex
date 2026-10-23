@@ -16,7 +16,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import undefer
 
-from reflex_workflow import model
+from reflex_workflow import model, otel
 from reflex_workflow.engine import handles, notify, rows
 from reflex_workflow.engine.runtime import Runtime
 from reflex_workflow.model import (
@@ -250,9 +250,13 @@ def after_failure(
         The scheduling columns, and the outcome to record.
     """
     if spec is not None and attempts <= spec.retries:
+        next_args = stored
+        if otel.enabled:
+            # The retry links to this attempt.
+            next_args = otel.stamp(dict(stored or {}))
         return {
             "next_step": current,
-            "next_args": stored,
+            "next_args": next_args,
             "wake_at": func.now() + backoff_for(spec, attempts),
             "waiting_for": None,
         }, "retry"
@@ -537,6 +541,7 @@ async def wake_on_schedule(
     try:
         values["wake_at"] = repeat(now)
     except Exception as err:
+        otel.record_failure(err)
         error = f"{type(err).__name__}: {err}"[:2000]
         values |= stop() | {"last_error": error, "pending_event": null()}
         return error
@@ -720,15 +725,76 @@ async def execute(
     current = row.next_step
     if current is None:
         return "stale"
-    # A claim that took a held event left its key among the arguments; it is not
+    # A claim that took a held event left its key among the arguments, and the
+    # scheduling that stored them may have left its trace context; neither is
     # one of the step's, and a retry of the step does not take the event again.
     stored = row.next_args
-    taken = None
-    if stored is not None and TAKEN_KEY in stored:
+    taken = traceparent = None
+    if stored is not None and (TAKEN_KEY in stored or otel.TRACE_KEY in stored):
         stored = dict(stored)
-        taken = stored.pop(TAKEN_KEY)
-    claimed = attempts = row.attempts
+        taken = stored.pop(TAKEN_KEY, None)
+        traceparent = stored.pop(otel.TRACE_KEY, None)
     spec = cls.__workflow_steps__.get(current)
+    with otel.step_span(
+        cls.__tablename__,
+        current,
+        row.attempts + 1,
+        spec.lane if spec is not None else None,
+        traceparent,
+    ):
+        outcome = await run_attempt(
+            runtime,
+            cls,
+            row,
+            pk,
+            version,
+            held,
+            current,
+            spec,
+            stored,
+            taken,
+            before,
+            columns,
+        )
+        otel.record_outcome(outcome)
+        return outcome
+
+
+async def run_attempt(
+    runtime: Runtime,
+    cls: type[Workflow],
+    row: Workflow,
+    pk: list[Any],
+    version: int,
+    held: Lease,
+    current: str,
+    spec: Step[Any, Any] | None,
+    stored: dict[str, Any] | None,
+    taken: str | None,
+    before: dict[str, Any],
+    columns: list[str],
+) -> str:
+    """Run the claimed row's step and commit its result if the row hasn't moved.
+
+    Args:
+        runtime: The running engine.
+        cls: The workflow class.
+        row: The detached row, as it was claimed.
+        pk: The row's primary key values.
+        version: The row version that was claimed.
+        held: The lease the claim holds, kept up to date by renewals.
+        current: The step's name.
+        spec: The step, when its class still declares it.
+        stored: The step's arguments.
+        taken: The key of the event this attempt runs, if it runs one with a key.
+        before: The row's user columns before the step ran.
+        columns: The names of the row's user columns.
+
+    Returns:
+        The outcome: ok, retry, failed, or fenced.
+    """
+    factory = runtime.session_factory
+    claimed = attempts = row.attempts
     repeat: Schedule | None = None
     scheduled: Scheduled | None = None
     began = time.monotonic()
@@ -749,6 +815,7 @@ async def execute(
         outcome = "ok"
         attempt = attempts + 1
     except Exception as err:
+        otel.record_failure(err)
         # Nothing the step asked for stands, so nothing it asked for is done.
         repeat, scheduled = None, None
         attempts += 1
@@ -817,6 +884,7 @@ async def execute(
                 await session.rollback()
                 raise
     except Exception as err:
+        otel.record_failure(err)
         logger.exception(
             "reflex_workflow could not commit a step of %s", cls.__qualname__
         )
