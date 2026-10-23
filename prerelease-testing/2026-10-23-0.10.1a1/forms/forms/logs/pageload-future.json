@@ -1,0 +1,15 @@
+{
+  "url": "http://localhost:3100/future",
+  "title": "Forms | Future",
+  "clean": true,
+  "load_error": null,
+  "actions_performed": [],
+  "action_error": null,
+  "screenshot_error": null,
+  "read_error": null,
+  "console": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_4xx_5xx": [],
+  "body_text": "TypedDict + from __future__ import annotations\nagree\nextras\nSubmit future\n\nsubmissions: 0\n\nhome"
+}

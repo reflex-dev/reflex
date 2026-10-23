@@ -1,0 +1,270 @@
+{
+  "base": "http://localhost:3100",
+  "observed": {
+    "index.untyped": {
+      "dark": true,
+      "first": "Ann",
+      "group": "g3",
+      "hobby": "c",
+      "notes": "line1\nline2",
+      "pick": "y",
+      "radio": "r2",
+      "range[]": "60",
+      "range_slider": "20",
+      "remember": true,
+      "second": "typed-second"
+    },
+    "index.chained": {
+      "dark": true,
+      "first": "Ann",
+      "group": "g3",
+      "hobby": "c",
+      "notes": "line1\nline2",
+      "pick": "y",
+      "radio": "r2",
+      "range[]": "60",
+      "range_slider": "20",
+      "remember": true,
+      "second": "typed-second"
+    },
+    "index.display": "first=Ann\n\nsecond=typed-second\n\nremember=True\n\ndark=True\n\nhobby=c\n\npick=y\n\nnotes=line1 line2\n\nrange[]=60\n\nradio=r2\n\ngroup=g3\n\nrange_slider=20",
+    "index.toast_visible": true,
+    "index.remember_shape": "True",
+    "index.second_after_reset": "",
+    "index.remember_after_reset": "false",
+    "index.untyped_second_submit": {
+      "dark": false,
+      "first": "Ann",
+      "group": "g3",
+      "hobby": "b",
+      "notes": "line1\nline2",
+      "pick": "y",
+      "radio": "r2",
+      "range[]": "60",
+      "range_slider": "20",
+      "remember": false,
+      "second": ""
+    },
+    "index.dict": {
+      "hobby": "h3",
+      "solo": "only"
+    },
+    "index.fd_items": [
+      [
+        "hobby",
+        "h1"
+      ],
+      [
+        "hobby",
+        "h2"
+      ],
+      [
+        "hobby",
+        "h3"
+      ],
+      [
+        "solo",
+        "only"
+      ],
+      [
+        "range[]",
+        "1"
+      ],
+      [
+        "range[]",
+        "9"
+      ]
+    ],
+    "index.fd_getlist": [
+      "h1",
+      "h2",
+      "h3"
+    ],
+    "index.fd_dict": {
+      "hobby": "h3",
+      "range[]": "9",
+      "solo": "only"
+    },
+    "index.fd_chained": {
+      "hobby": "h3",
+      "range[]": "9",
+      "solo": "only"
+    },
+    "typed.first": {
+      "bio": "bio text",
+      "color": [
+        "blue"
+      ],
+      "controlled": "ctrl-edited",
+      "controlled_input": "ctrl-edited",
+      "foreach_val": [
+        "f1",
+        "f2",
+        "f3"
+      ],
+      "hobby": [
+        "h1",
+        "h3"
+      ],
+      "name": "Bob",
+      "opt_flag": null,
+      "opt_list": null,
+      "range": [
+        "10",
+        "30"
+      ],
+      "size": "m",
+      "strflag": false,
+      "subscribe": false,
+      "toggled": true
+    },
+    "typed.types": {
+      "bio": "str",
+      "color": "list",
+      "controlled": "str",
+      "controlled_input": "str",
+      "foreach_val": "list",
+      "hobby": "list",
+      "name": "str",
+      "opt_flag": "NoneType",
+      "opt_list": "NoneType",
+      "range": "list",
+      "size": "str",
+      "strflag": "bool",
+      "subscribe": "bool",
+      "toggled": "bool"
+    },
+    "typed.error": "KeyError 'hidden_req'",
+    "typed.second": {
+      "bio": "bio text",
+      "color": [
+        "blue"
+      ],
+      "controlled": "ctrl-edited",
+      "controlled_input": "ctrl-edited",
+      "foreach_val": [
+        "f1",
+        "f2",
+        "f3"
+      ],
+      "hidden_req": "now visible",
+      "hobby": [
+        "h1",
+        "h3"
+      ],
+      "name": "Bob",
+      "opt_flag": null,
+      "opt_list": null,
+      "range": [
+        "10",
+        "30"
+      ],
+      "size": "m",
+      "strflag": false,
+      "subscribe": true,
+      "toggled": true
+    },
+    "future": {
+      "agree": true,
+      "extras": null,
+      "maybe_flag": null,
+      "title": "hello"
+    },
+    "future.keys": "agree,extras,maybe_flag,title",
+    "future.second": {
+      "agree": false,
+      "extras": null,
+      "maybe_flag": null,
+      "title": "hello"
+    },
+    "deprecated": {
+      "cb": true,
+      "cbid_only": true,
+      "disabled_id": "d",
+      "only_id": "idval",
+      "slider_id": "5",
+      "sub_id": "go",
+      "sw": false,
+      "ta_only": "ta",
+      "the_id": "both",
+      "the_name": "both"
+    },
+    "controlled.autocomplete#ac-email": "email",
+    "controlled.autocomplete#ac-off": "off",
+    "controlled.autocomplete#ac-true": "on",
+    "controlled.autocomplete#ac-false": "off",
+    "controlled.cg_state": "cg=b,a,c changes=2",
+    "controlled.cc_state": "cc=y,x changes=1",
+    "controlled.submit": {
+      "ac_email": "a@b.c",
+      "ac_false": "",
+      "ac_off": "",
+      "ac_true": "",
+      "bool_false": "",
+      "cc": [
+        "x",
+        "y"
+      ],
+      "cc_root": "x",
+      "cg": [
+        "a",
+        "b",
+        "c"
+      ],
+      "cg_root": "a",
+      "email": "a@b.c",
+      "off_field": "",
+      "on_field": "",
+      "rc": "q"
+    },
+    "cs.alpha": {
+      "checks": [
+        "c1"
+      ],
+      "flag": true,
+      "flag_alpha": true,
+      "item": "alpha"
+    },
+    "cs.beta": {
+      "checks": [
+        "c1",
+        "c2"
+      ],
+      "flag": false,
+      "flag_beta": false,
+      "item": "beta"
+    },
+    "cs.alpha_n": "n=1",
+    "cs.beta_n": "n=1"
+  },
+  "mismatches": [],
+  "console": [
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation"
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation"
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation"
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation"
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation"
+    }
+  ],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_4xx_5xx": []
+}

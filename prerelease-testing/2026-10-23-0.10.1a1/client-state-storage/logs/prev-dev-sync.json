@@ -1,0 +1,72 @@
+{
+ "console": [
+  {
+   "page": "tabB",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "tabA",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  }
+ ],
+ "errors": [],
+ "failed": [],
+ "ws_opens": [
+  {
+   "page": "tabA",
+   "t": 2001.27433027,
+   "url": "ws://localhost:8142/_event/?token=f0a9df06-81cf-412a-a2ba-245cdc721a91&EIO=4&transport=websocket"
+  },
+  {
+   "page": "tabB",
+   "t": 2001.84173429,
+   "url": "ws://localhost:8142/_event/?token=0da22aa8-ea31-48d9-af0e-2b46f07f9050&EIO=4&transport=websocket"
+  },
+  {
+   "page": "tabB",
+   "t": 2022.352899241,
+   "url": "ws://localhost:8142/_event/?token=0da22aa8-ea31-48d9-af0e-2b46f07f9050&EIO=4&transport=websocket"
+  },
+  {
+   "page": "tabA",
+   "t": 2022.71851397,
+   "url": "ws://localhost:8142/_event/?token=f0a9df06-81cf-412a-a2ba-245cdc721a91&EIO=4&transport=websocket"
+  }
+ ],
+ "results": {
+  "info_same_tab_sharing_name": {
+   "ok": true,
+   "detail": "{'#out-a': 'a=hello', '#out-b': 'b=', '#out-n': 'n='}"
+  },
+  "sync_all_sharing_vars_tabB_after_edit_a": {
+   "ok": false,
+   "detail": "{'#out-a': 'a=hello', '#out-b': 'b=', '#out-n': 'n='}"
+  },
+  "sync_all_sharing_vars_tabA_after_edit_b": {
+   "ok": false,
+   "detail": "{'#out-a': 'a=world', '#out-b': 'b=', '#out-n': 'n='}"
+  },
+  "sync_other_var": {
+   "ok": true,
+   "detail": "other=o1"
+  },
+  "cookie_visible_in_tabB_after_reload": {
+   "ok": true,
+   "detail": "cookie=c1"
+  },
+  "session_not_shared_tabB": {
+   "ok": true,
+   "detail": "sess="
+  },
+  "session_persists_tabA_reload": {
+   "ok": true,
+   "detail": "sess=s1"
+  },
+  "info_localStorage": {
+   "ok": true,
+   "detail": "{\"shared\":\"world\",\"other\":\"o1\"}"
+  }
+ }
+}

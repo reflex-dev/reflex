@@ -1,0 +1,11 @@
+after load: []
+'#remember' -> [('warning', 'Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a contr')]
+'#dark' -> []
+'text=hobby c' -> [('warning', 'Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a contr')]
+'text=hobby a' -> []
+'text=g2' -> []
+---typed
+after load: []
+'#subscribe' -> [('warning', 'Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a contr')]
+'text=h2' -> [('warning', 'Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a contr')]
+'text=red' -> []

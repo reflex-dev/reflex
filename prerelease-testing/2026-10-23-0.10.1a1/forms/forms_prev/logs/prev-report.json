@@ -1,0 +1,224 @@
+{
+  "base": "http://localhost:3101",
+  "observed": {
+    "index.untyped": {
+      "dark": true,
+      "first": "Ann",
+      "group": "g3",
+      "hobby": "c",
+      "notes": "line1\nline2",
+      "pick": "y",
+      "radio": "r2",
+      "range[]": "60",
+      "range_slider": "20",
+      "remember": true,
+      "second": "typed-second"
+    },
+    "index.chained": {
+      "dark": true,
+      "first": "Ann",
+      "group": "g3",
+      "hobby": "c",
+      "notes": "line1\nline2",
+      "pick": "y",
+      "radio": "r2",
+      "range[]": "60",
+      "range_slider": "20",
+      "remember": true,
+      "second": "typed-second"
+    },
+    "index.display": "first=Ann\n\nsecond=typed-second\n\nremember=True\n\ndark=True\n\nhobby=c\n\npick=y\n\nnotes=line1 line2\n\nrange[]=60\n\nradio=r2\n\ngroup=g3\n\nrange_slider=20",
+    "index.toast_visible": false,
+    "index.remember_shape": "True",
+    "index.second_after_reset": "",
+    "index.remember_after_reset": "false",
+    "index.untyped_second_submit": {
+      "dark": false,
+      "first": "Ann",
+      "group": "g3",
+      "hobby": "b",
+      "notes": "line1\nline2",
+      "pick": "y",
+      "radio": "r2",
+      "range[]": "60",
+      "range_slider": "20",
+      "remember": false,
+      "second": ""
+    },
+    "index.dict": {
+      "hobby": "h3",
+      "solo": "only"
+    },
+    "index.fd_items": [
+      [
+        "hobby",
+        "h3"
+      ],
+      [
+        "solo",
+        "only"
+      ],
+      [
+        "range[]",
+        "9"
+      ]
+    ],
+    "index.fd_getlist": "h3",
+    "index.fd_dict": {
+      "hobby": "h3",
+      "range[]": "9",
+      "solo": "only"
+    },
+    "index.fd_chained": {
+      "hobby": "h3",
+      "range[]": "9",
+      "solo": "only"
+    },
+    "typed.first": {
+      "bio": "bio text",
+      "color": "blue",
+      "controlled": "ctrl-edited",
+      "controlled_input": "ctrl-edited",
+      "foreach_val": "f3",
+      "hobby": "h3",
+      "name": "Bob",
+      "range[]": "30",
+      "size": "m",
+      "strflag": "false",
+      "subscribe": false,
+      "toggled": true
+    },
+    "typed.types": {
+      "bio": "str",
+      "color": "str",
+      "controlled": "str",
+      "controlled_input": "str",
+      "foreach_val": "str",
+      "hobby": "str",
+      "name": "str",
+      "range[]": "str",
+      "size": "str",
+      "strflag": "str",
+      "subscribe": "bool",
+      "toggled": "bool"
+    },
+    "typed.error": "KeyError 'hidden_req'",
+    "typed.second": {
+      "bio": "bio text",
+      "color": "blue",
+      "controlled": "ctrl-edited",
+      "controlled_input": "ctrl-edited",
+      "foreach_val": "f3",
+      "hidden_req": "now visible",
+      "hobby": "h3",
+      "name": "Bob",
+      "range[]": "30",
+      "size": "m",
+      "strflag": "false",
+      "subscribe": true,
+      "toggled": true
+    },
+    "future": {
+      "agree": true,
+      "title": "hello"
+    },
+    "future.keys": "agree,title",
+    "future.second": {
+      "agree": false,
+      "title": "hello"
+    },
+    "deprecated": {
+      "cb": true,
+      "cbid_only": true,
+      "disabled_id": "d",
+      "only_id": "idval",
+      "slider_id": "5",
+      "sub_id": "go",
+      "sw": false,
+      "ta_only": "ta",
+      "the_id": "both",
+      "the_name": "both"
+    },
+    "controlled.autocomplete#ac-email": null,
+    "controlled.autocomplete#ac-off": null,
+    "controlled.autocomplete#ac-true": null,
+    "controlled.autocomplete#ac-false": null,
+    "cs.alpha": {
+      "checks": "c1",
+      "flag": "on",
+      "flag_alpha": true,
+      "item": "alpha"
+    },
+    "cs.beta": {
+      "checks": "c2",
+      "flag_beta": false,
+      "item": "beta"
+    },
+    "cs.alpha_n": "n=1",
+    "cs.beta_n": "n=1"
+  },
+  "mismatches": [
+    "untyped: toast shown: ",
+    "FormData getlist hobby == [h1,h2,h3]: h3",
+    "FormData multi_items in order: [['hobby', 'h3'], ['solo', 'only'], ['range[]', '9']]",
+    "FormData range[] has two entries: [['hobby', 'h3'], ['solo', 'only'], ['range[]', '9']]",
+    "typed: hobby list [h1,h3]: h3",
+    "typed: color (Annotated list) == ['blue']: blue",
+    "typed: range == ['10','30'] from range[]: None",
+    "typed: range[] key removed: ['bio', 'color', 'controlled', 'controlled_input', 'foreach_val', 'hobby', 'name', 'range[]', 'size', 'strflag', 'subscribe', 'toggled']",
+    "typed: opt_list None: <absent>",
+    "typed: opt_flag None: <absent>",
+    "typed: strflag 'false' -> False: false",
+    "typed: foreach_val [f1,f2,f3]: f3",
+    "future: extras None: <absent>",
+    "future: maybe_flag None: <absent>",
+    "autocomplete email: None",
+    "autocomplete off: None",
+    "autocomplete True->on: None",
+    "autocomplete False->off: None",
+    "controlled: runner failed: TimeoutError: Page.wait_for_function: Timeout 10000ms exceeded.",
+    "cs alpha item/flag: {'checks': 'c1', 'flag': 'on', 'flag_alpha': True, 'item': 'alpha'}",
+    "cs beta item/flag/checks: {'checks': 'c2', 'flag_beta': False, 'item': 'beta'}"
+  ],
+  "console": [
+    {
+      "type": "warning",
+      "text": "Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component."
+    },
+    {
+      "type": "warning",
+      "text": "Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component."
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation"
+    },
+    {
+      "type": "warning",
+      "text": "Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component."
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation"
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation"
+    },
+    {
+      "type": "error",
+      "text": "Received `%s` for a non-boolean attribute `%s`.\n\nIf you want to write it to the DOM, pass a string instead: %s=\"%s\" or %s={value.toString()}. true autoComplete autoComplete true autoComplete"
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation"
+    },
+    {
+      "type": "warning",
+      "text": "Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component."
+    }
+  ],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_4xx_5xx": []
+}

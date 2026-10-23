@@ -1,0 +1,143 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+Debug: Overriding config value state_manager_mode with env var 
+STATE_MANAGER_MODE=memory
+Debug: Overriding config value redis_token_expiration with env var 
+REDIS_TOKEN_EXPIRATION=3
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/7eb9e30f-e96c-5de5-9b0e-4a12be91e0f3/scratchpad
+/prt/envs/prev/lib/python3.11/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='csapp', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.MEMORY: 'memory'>, 
+redis_lock_expiration=10000, redis_lock_warning_threshold=1000, 
+redis_token_expiration=3, _non_default_attributes={'plugins', 
+'redis_token_expiration', 'telemetry_enabled', 'loglevel', 'state_manager_mode',
+'app_name'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[SitemapPlugin(trailing_slash='preserve'), 
+TailwindV4Plugin(config={'plugins': ['@tailwindcss/typography@0.5.20']}), 
+RadixThemesPlugin(theme={"name": "RadixThemesTheme", "props": 
+["accentColor:\"blue\"", "css:{...theme.styles.global[':root'], 
+...theme.styles.global.body}"], "children": []})], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+'--version']
+Debug: [Reflex 0.10.0 with Python 3.11.17 (PATH: 
+/tmp/claude-0/-home-user-reflex/7eb9e30f-e96c-5de5-9b0e-4a12be91e0f3/scratchpad/
+prt/envs/prev/bin/python)]
+Debug: [Node 22.22.0 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.4 (Minimum: 1.4.0) (PATH: 
+/root/.local/share/reflex/bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.5 LTS]
+Debug: Using package installer at: ['/root/.local/share/reflex/bun/bin/bun', 
+'/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.local/share/reflex/bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3142
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8142
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Frontend port: 3142 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Frontend port: 3142 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Frontend port: 3142 is not in use.
+Debug: Checking if Backend port: 8142 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Backend port: 8142 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Backend port: 8142 is not in use.
+Warning: `rx._x` contains experimental features and might be removed at any time
+in the future.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: [timing] Compile pages: 0.11s
+Debug: [timing] Copy assets: 0.00s
+[EVAL] derived #1 shared_a=''
+[EVAL] derived_cookie #1
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 26/25 0:00:00
+Debug: Using cached value for _install_frontend_packages with payload: 
+['@radix-ui/themes@3.3.0', 'lucide-react@1.26.0', 'react-debounce-input@3.3.0', 
+'react-error-boundary@6.1.6', 'sonner@2.0.8'],['@tailwindcss/postcss@4.3.0', 
+'@tailwindcss/typography@0.5.20', 
+'tailwindcss@4.3.0'],True,['/root/.local/share/reflex/bun/bin/bun', 
+'/opt/node22/bin/npm'],[('@react-router/node', '8.4.0'), ('isbot', '5.2.2'), 
+('mergician', 'v2.0.2'), ('react', '19.3.0'), ('react-dom', '19.3.0'), 
+('react-helmet', '6.1.0'), ('react-router', '8.4.0'), ('socket.io-client', 
+'4.8.4'), ('universal-cookie', '8.1.2')],[('@emotion/react', '11.14.0'), 
+('@react-router/dev', '8.4.0'), ('@react-router/fs-routes', '8.4.0'), 
+('autoprefixer', '10.6.1'), ('postcss', '8.5.29'), ('postcss-import', '17.0.0'),
+('vite', '8.3.2')],[]
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/7eb9e30f-e96c-5de5-9b0e-4a12be91e0f3/scratchpad/
+prt/apps/client-state-storage/app-prev/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/7eb9e30f-e96c-5de5-9b0e-4a12be91e0f3/scratchpad/
+prt/apps/client-state-storage/app-prev/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.00s
+Debug: [timing] Write to Disk: 0.00s
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Using Granian for backend
+Debug: Reload paths: 
+['/tmp/claude-0/-home-user-reflex/7eb9e30f-e96c-5de5-9b0e-4a12be91e0f3/scratchpa
+d/prt/apps/client-state-storage/app-prev/requirements.txt', 
+'/tmp/claude-0/-home-user-reflex/7eb9e30f-e96c-5de5-9b0e-4a12be91e0f3/scratchpad
+/prt/apps/client-state-storage/app-prev/csapp', 
+'/tmp/claude-0/-home-user-reflex/7eb9e30f-e96c-5de5-9b0e-4a12be91e0f3/scratchpad
+/prt/apps/client-state-storage/app-prev/assets', 
+'/tmp/claude-0/-home-user-reflex/7eb9e30f-e96c-5de5-9b0e-4a12be91e0f3/scratchpad
+/prt/apps/client-state-storage/app-prev/rxconfig.py']
+[INFO] Starting granian (main PID: 7678)
+[INFO] Listening at: http://0.0.0.0:8142
+[INFO] Spawning worker-1 with PID: 7698
+Warning: `rx._x` contains experimental features and might be removed at any time
+in the future.
+Debug: Registered lifespan task: _setup_event_processor
+[EVAL] derived #1 shared_a=''
+[EVAL] derived_cookie #1
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug:   ➜  Local:   http://localhost:3142/
+App running at: http://localhost:3142/
+Backend running at: http://0.0.0.0:8142
+Debug:   ➜  Network: http://192.0.2.2:3142/  eth0
+Debug: 10:42:44 PM [vite] (ssr) connected.
+[EVAL] derived #2 shared_a=''
+[EVAL] derived_cookie #2
+[EXPIRE] on_load #1
+DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+RouterData.url instead. It will be completely removed in 1.0. 
+(csapp/csapp.py:254)
+[EXPIRE] bg done; count=0 router=''
+[EVAL] derived #3 shared_a=''
+[EVAL] derived_cookie #3
+[EXPIRE] on_load #1
+[EVAL] derived #4 shared_a=''
+[EVAL] derived_cookie #4
+[EXPIRE] on_load #2
+[EXPIRE] bg done; count=0 router=''
+[INFO] Stopping worker-1
+[ERROR] Unexpected exit from worker-1
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Debug: error: script "dev" exited with code 143
+Info: Reflex app stopped.

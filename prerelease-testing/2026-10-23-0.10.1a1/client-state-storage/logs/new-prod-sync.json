@@ -1,0 +1,77 @@
+{
+ "console": [
+  {
+   "page": "tabA",
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+   "page": "tabB",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "tabA",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  }
+ ],
+ "errors": [],
+ "failed": [],
+ "ws_opens": [
+  {
+   "page": "tabA",
+   "t": 1905.60934618,
+   "url": "ws://localhost:3141/_event/?token=6e83ed77-e374-42b7-b087-5766002fcecf&EIO=4&transport=websocket"
+  },
+  {
+   "page": "tabB",
+   "t": 1905.921810082,
+   "url": "ws://localhost:3141/_event/?token=e6b22686-5c5f-46a7-bb3b-4a2edfa67ec0&EIO=4&transport=websocket"
+  },
+  {
+   "page": "tabB",
+   "t": 1910.274343524,
+   "url": "ws://localhost:3141/_event/?token=e6b22686-5c5f-46a7-bb3b-4a2edfa67ec0&EIO=4&transport=websocket"
+  },
+  {
+   "page": "tabA",
+   "t": 1910.494563945,
+   "url": "ws://localhost:3141/_event/?token=6e83ed77-e374-42b7-b087-5766002fcecf&EIO=4&transport=websocket"
+  }
+ ],
+ "results": {
+  "info_same_tab_sharing_name": {
+   "ok": true,
+   "detail": "{'#out-a': 'a=hello', '#out-b': 'b=', '#out-n': 'n='}"
+  },
+  "sync_all_sharing_vars_tabB_after_edit_a": {
+   "ok": true,
+   "detail": "{'#out-a': 'a=hello', '#out-b': 'b=hello', '#out-n': 'n=hello'}"
+  },
+  "sync_all_sharing_vars_tabA_after_edit_b": {
+   "ok": true,
+   "detail": "{'#out-a': 'a=world', '#out-b': 'b=world', '#out-n': 'n=world'}"
+  },
+  "sync_other_var": {
+   "ok": true,
+   "detail": "other=o1"
+  },
+  "cookie_visible_in_tabB_after_reload": {
+   "ok": true,
+   "detail": "cookie=c1"
+  },
+  "session_not_shared_tabB": {
+   "ok": true,
+   "detail": "sess="
+  },
+  "session_persists_tabA_reload": {
+   "ok": true,
+   "detail": "sess=s1"
+  },
+  "info_localStorage": {
+   "ok": true,
+   "detail": "{\"shared\":\"world\",\"other\":\"o1\"}"
+  }
+ }
+}

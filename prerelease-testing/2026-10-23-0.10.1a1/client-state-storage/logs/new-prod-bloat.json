@@ -1,0 +1,77 @@
+{
+ "console": [
+  {
+   "page": "bloat",
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+   "page": "bloat",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "bloat",
+   "type": "error",
+   "text": "Hydration payload (1100504 characters) exceeds the server limit (1000000 characters). Reduce browser storage data and reload."
+  },
+  {
+   "page": "bloat",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  }
+ ],
+ "errors": [],
+ "failed": [],
+ "ws_opens": [
+  {
+   "page": "bloat",
+   "t": 1918.953806206,
+   "url": "ws://localhost:3141/_event/?token=ed3b4f79-fe8e-437c-b408-92728b69d0fd&EIO=4&transport=websocket"
+  },
+  {
+   "page": "bloat",
+   "t": 1949.346638206,
+   "url": "ws://localhost:3141/_event/?token=ed3b4f79-fe8e-437c-b408-92728b69d0fd&EIO=4&transport=websocket"
+  },
+  {
+   "page": "bloat",
+   "t": 1950.042364715,
+   "url": "ws://localhost:3141/_event/?token=ed3b4f79-fe8e-437c-b408-92728b69d0fd&EIO=4&transport=websocket"
+  }
+ ],
+ "results": {
+  "bloat_written_to_localstorage": {
+   "ok": true,
+   "detail": "1100000"
+  },
+  "bloat_toast_shown": {
+   "ok": true,
+   "detail": "Hydration payload (1100504 characters) exceeds the server limit (1000000 characters). Reduce browser storage data and reload."
+  },
+  "bloat_no_reconnect_loop_30s": {
+   "ok": true,
+   "detail": "ws opens in 30s: 1"
+  },
+  "bloat_toast_persists_30s": {
+   "ok": true,
+   "detail": "True"
+  },
+  "bloat_not_hydrated": {
+   "ok": true,
+   "detail": "false"
+  },
+  "info_toast_close_buttons": {
+   "ok": true,
+   "detail": 1
+  },
+  "bloat_recover_after_shrink": {
+   "ok": true,
+   "detail": "len=0"
+  },
+  "bloat_500k_hydrates": {
+   "ok": true,
+   "detail": "len=500000"
+  }
+ }
+}

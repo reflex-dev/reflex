@@ -1,0 +1,85 @@
+{
+ "console": [
+  {
+   "page": "expire",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  }
+ ],
+ "errors": [],
+ "failed": [],
+ "ws_opens": [
+  {
+   "page": "expire",
+   "t": 2120.942869973,
+   "url": "ws://localhost:8142/_event/?token=99ff03c9-5136-40b9-d42f-96dea672b397&EIO=4&transport=websocket"
+  },
+  {
+   "page": "expire",
+   "t": 2133.710030544,
+   "url": "ws://localhost:8142/_event/?token=99ff03c9-5136-40b9-d42f-96dea672b397&EIO=4&transport=websocket"
+  }
+ ],
+ "results": {
+  "info_state_after_bg_rehydrate": {
+   "ok": true,
+   "detail": "{'#count': 'count=2', '#bg-result': 'bg=done after 8s (count=0)', '#loads': 'loads=1', '#out-note': 'note=keepme', '#hydrated': 'true', '#token': '99ff03c9-5136-40b9-d42f-96dea672b397'}"
+  },
+  "expire_count_reset_after_rehydrate": {
+   "ok": false,
+   "detail": "count=2"
+  },
+  "expire_storage_kept": {
+   "ok": true,
+   "detail": "note=keepme"
+  },
+  "expire_route_kept": {
+   "ok": true,
+   "detail": "http://localhost:3142/expire"
+  },
+  "expire_token_kept": {
+   "ok": true,
+   "detail": "99ff03c9-5136-40b9-d42f-96dea672b397 -> 99ff03c9-5136-40b9-d42f-96dea672b397"
+  },
+  "expire_localstorage_kept": {
+   "ok": true,
+   "detail": "keepme"
+  },
+  "info_state_after_next_event": {
+   "ok": true,
+   "detail": "{'#count': 'count=1', '#loads': 'loads=1', '#out-note': 'note='}"
+  },
+  "expire_next_event_runs_on_load": {
+   "ok": true,
+   "detail": "loads=1"
+  },
+  "expire_next_event_applies": {
+   "ok": true,
+   "detail": "count=1"
+  },
+  "expire_token_restored_after_next_event": {
+   "ok": true,
+   "detail": "99ff03c9-5136-40b9-d42f-96dea672b397 -> '99ff03c9-5136-40b9-d42f-96dea672b397'"
+  },
+  "expire_storage_rendered_after_next_event": {
+   "ok": false,
+   "detail": "rendered 'note=' while localStorage='keepme'"
+  },
+  "info_state_after_reload": {
+   "ok": true,
+   "detail": "{'#count': 'count=1', '#loads': 'loads=2', '#out-note': 'note=keepme', '#token': '99ff03c9-5136-40b9-d42f-96dea672b397'}"
+  },
+  "expire_reload_restores_storage": {
+   "ok": true,
+   "detail": "note=keepme"
+  },
+  "info_state_bg_with_activity": {
+   "ok": true,
+   "detail": "{'#count': 'count=4', '#bg-result': 'bg=done after 8s (count=0)', '#out-note': 'note=keepme'}"
+  },
+  "expire_no_rehydrate_when_tree_kept_alive": {
+   "ok": true,
+   "detail": "count=4"
+  }
+ }
+}

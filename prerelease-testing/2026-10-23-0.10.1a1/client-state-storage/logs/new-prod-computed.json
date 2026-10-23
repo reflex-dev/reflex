@@ -1,0 +1,46 @@
+{
+ "console": [
+  {
+   "page": "computed",
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+   "page": "computed",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  }
+ ],
+ "errors": [],
+ "failed": [],
+ "ws_opens": [
+  {
+   "page": "computed",
+   "t": 1913.594249298,
+   "url": "ws://localhost:3141/_event/?token=fdfa53cd-0815-41e4-f64c-9e9f7f38e8cb&EIO=4&transport=websocket"
+  },
+  {
+   "page": "computed",
+   "t": 1913.862083834,
+   "url": "ws://localhost:3141/_event/?token=fdfa53cd-0815-41e4-f64c-9e9f7f38e8cb&EIO=4&transport=websocket"
+  }
+ ],
+ "results": {
+  "computed_evals_per_full_reload": {
+   "ok": true,
+   "detail": "derived=1 derived_cookie=1"
+  },
+  "info_computed_evals_after_client_nav": {
+   "ok": true,
+   "detail": "derived=2 derived_cookie=0"
+  },
+  "computed_not_reevaluated_on_unrelated_event": {
+   "ok": true,
+   "detail": "derived=0 derived_cookie=0"
+  },
+  "computed_one_eval_per_dep_change": {
+   "ok": true,
+   "detail": "derived=1 derived_cookie=0"
+  }
+ }
+}

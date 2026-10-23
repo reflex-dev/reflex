@@ -1,0 +1,2 @@
+prev ERROR: Form field mismatch for on_submit handler `S.h`.  The handler expects form data matching `Total` with required fields:   - "nick"   - "tags"   - "title"  Fields missing from the form:   - "nick"   - "tags"  Matching fields present in the form:   - "title"  Hint: Add controls with matching static `name` or `id` values, or make the TypedDict fields optional.
+shared OK: form with only 'title' compiles

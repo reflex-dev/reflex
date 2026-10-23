@@ -1,0 +1,70 @@
+{
+ "console": [
+  {
+   "page": "cs",
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  }
+ ],
+ "errors": [],
+ "failed": [],
+ "ws_opens": [
+  {
+   "page": "cs",
+   "t": 1899.376322413,
+   "url": "ws://localhost:3141/_event/?token=cd398d51-e43c-4d0e-973d-31e860bb6f6f&EIO=4&transport=websocket"
+  },
+  {
+   "page": "cs2",
+   "t": 1902.202775558,
+   "url": "ws://localhost:3141/_event/?token=13cf1874-62c1-4f58-ed6d-b46e40d81e29&EIO=4&transport=websocket"
+  },
+  {
+   "page": "cs3",
+   "t": 1903.980767552,
+   "url": "ws://localhost:3141/_event/?token=ef5c3275-0d1c-4dac-b70a-11f2b81b7c24&EIO=4&transport=websocket"
+  }
+ ],
+ "results": {
+  "push_before_mount_from_on_load": {
+   "ok": true,
+   "detail": "pushed-on-load-1"
+  },
+  "late_reader_default": {
+   "ok": true,
+   "detail": "initial"
+  },
+  "push_before_mount_from_background": {
+   "ok": true,
+   "detail": "pushed-from-bg"
+  },
+  "all_readers_clicked": {
+   "ok": true,
+   "detail": "{'#always-reader': 'clicked', '#memo-reader': 'clicked', '#late-reader': 'clicked'} ['a=clicked', 'b=clicked', 'c=clicked']"
+  },
+  "push_none_renders_empty": {
+   "ok": true,
+   "detail": "''"
+  },
+  "late_reader_set_back_to_default": {
+   "ok": true,
+   "detail": "{'#always-reader': 'initial', '#memo-reader': 'initial', '#late-reader': 'initial'}"
+  },
+  "info_value_after_client_nav": {
+   "ok": true,
+   "detail": "second-reader='clicked' (informational: per-page useState)"
+  },
+  "info_value_back_on_index": {
+   "ok": true,
+   "detail": "always-reader='clicked-second'"
+  },
+  "on_load_push_after_nav_back": {
+   "ok": true,
+   "detail": "pushed-on-load-2"
+  },
+  "second_page_direct": {
+   "ok": true,
+   "detail": ""
+  }
+ }
+}

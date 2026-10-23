@@ -1,0 +1,64 @@
+{
+ "console": [],
+ "errors": [],
+ "failed": [],
+ "ws_opens": [
+  {
+   "page": "cs",
+   "t": 1274.691896373,
+   "url": "ws://localhost:8140/_event/?token=803104d7-2dbb-498f-cd05-11325579b513&EIO=4&transport=websocket"
+  },
+  {
+   "page": "cs2",
+   "t": 1277.761066609,
+   "url": "ws://localhost:8140/_event/?token=f210842b-ac65-4014-a3c3-3744f076e3a1&EIO=4&transport=websocket"
+  },
+  {
+   "page": "cs3",
+   "t": 1279.988835947,
+   "url": "ws://localhost:8140/_event/?token=3f40b6c6-4eda-422d-8d99-22e4b87573ba&EIO=4&transport=websocket"
+  }
+ ],
+ "results": {
+  "push_before_mount_from_on_load": {
+   "ok": true,
+   "detail": "pushed-on-load-1"
+  },
+  "late_reader_default": {
+   "ok": true,
+   "detail": "initial"
+  },
+  "push_before_mount_from_background": {
+   "ok": true,
+   "detail": "pushed-from-bg"
+  },
+  "all_readers_clicked": {
+   "ok": true,
+   "detail": "{'#always-reader': 'clicked', '#memo-reader': 'clicked', '#late-reader': 'clicked'} ['a=clicked', 'b=clicked', 'c=clicked']"
+  },
+  "push_none_renders_empty": {
+   "ok": true,
+   "detail": "''"
+  },
+  "late_reader_set_back_to_default": {
+   "ok": true,
+   "detail": "{'#always-reader': 'initial', '#memo-reader': 'initial', '#late-reader': 'initial'}"
+  },
+  "info_value_after_client_nav": {
+   "ok": true,
+   "detail": "second-reader='clicked' (informational: per-page useState)"
+  },
+  "info_value_back_on_index": {
+   "ok": true,
+   "detail": "always-reader='clicked-second'"
+  },
+  "on_load_push_after_nav_back": {
+   "ok": true,
+   "detail": "pushed-on-load-2"
+  },
+  "second_page_direct": {
+   "ok": true,
+   "detail": ""
+  }
+ }
+}

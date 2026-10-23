@@ -1,0 +1,15 @@
+{
+  "url": "http://localhost:3100/typed",
+  "title": "Forms | Typed",
+  "clean": true,
+  "load_error": null,
+  "actions_performed": [],
+  "action_error": null,
+  "screenshot_error": null,
+  "read_error": null,
+  "console": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_4xx_5xx": [],
+  "body_text": "TypedDict (no future annotations)\nsubscribe\nh1\nh2\nh3\nred\nblue\nopt_list (unchecked)\ns\nm\nl\nfalse\ntrue\nfalse\noff\n0\nyes\nSubmit typed\ntoggle hidden\n\nhome"
+}

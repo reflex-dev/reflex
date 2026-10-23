@@ -1,0 +1,106 @@
+{
+  "base": "http://localhost:3100",
+  "observed": {
+    "typed.first": {
+      "bio": "bio text",
+      "color": [
+        "blue"
+      ],
+      "controlled": "ctrl-edited",
+      "controlled_input": "ctrl-edited",
+      "foreach_val": [
+        "f1",
+        "f2",
+        "f3"
+      ],
+      "hobby": [
+        "h1",
+        "h3"
+      ],
+      "name": "Bob",
+      "opt_flag": null,
+      "opt_list": null,
+      "range": [
+        "10",
+        "30"
+      ],
+      "size": "m",
+      "strflag": false,
+      "subscribe": false,
+      "toggled": true
+    },
+    "typed.types": {
+      "bio": "str",
+      "color": "list",
+      "controlled": "str",
+      "controlled_input": "str",
+      "foreach_val": "list",
+      "hobby": "list",
+      "name": "str",
+      "opt_flag": "NoneType",
+      "opt_list": "NoneType",
+      "range": "list",
+      "size": "str",
+      "strflag": "bool",
+      "subscribe": "bool",
+      "toggled": "bool"
+    },
+    "typed.error": "KeyError 'hidden_req'",
+    "typed.second": {
+      "bio": "bio text",
+      "color": [
+        "blue"
+      ],
+      "controlled": "ctrl-edited",
+      "controlled_input": "ctrl-edited",
+      "foreach_val": [
+        "f1",
+        "f2",
+        "f3"
+      ],
+      "hidden_req": "now visible",
+      "hobby": [
+        "h1",
+        "h3"
+      ],
+      "name": "Bob",
+      "opt_flag": null,
+      "opt_list": null,
+      "range": [
+        "10",
+        "30"
+      ],
+      "size": "m",
+      "strflag": false,
+      "subscribe": true,
+      "toggled": true
+    },
+    "future": {
+      "agree": true,
+      "extras": null,
+      "maybe_flag": null,
+      "title": "hello"
+    },
+    "future.keys": "agree,extras,maybe_flag,title",
+    "future.second": {
+      "agree": false,
+      "extras": null,
+      "maybe_flag": null,
+      "title": "hello"
+    }
+  },
+  "mismatches": [],
+  "console": [
+    {
+      "type": "warning",
+      "text": "Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component."
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation"
+    }
+  ],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_4xx_5xx": []
+}

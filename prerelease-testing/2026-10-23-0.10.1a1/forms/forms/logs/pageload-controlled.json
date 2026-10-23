@@ -1,0 +1,15 @@
+{
+  "url": "http://localhost:3100/controlled",
+  "title": "Forms | Controlled",
+  "clean": true,
+  "load_error": null,
+  "actions_performed": [],
+  "action_error": null,
+  "screenshot_error": null,
+  "read_error": null,
+  "console": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_4xx_5xx": [],
+  "body_text": "controlled checkbox_group / checkbox_cards / auto_complete\na\nb\nc\nx\ny\np\nq\nSubmit ctrl\n\ncg=b changes=0\n\ncc=y changes=0\n\nhome"
+}

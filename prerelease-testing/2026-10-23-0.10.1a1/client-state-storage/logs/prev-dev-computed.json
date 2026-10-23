@@ -1,0 +1,46 @@
+{
+ "console": [
+  {
+   "page": "computed",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "computed",
+   "type": "log",
+   "text": "_call_script TypeError: refs._client_state_setPushedcs is not a function\n    at eval (eval at applyEvent (http://localhost:3142/utils/state.js:523:13), <anonymous>:1:41)\n    at applyEvent (http://localhost:3142/utils/state.js:523:41)\n    at processEvent (http://localhost:3142/utils/state.js:695:13)\n    at queueEvents (http://localhost:3142/utils/state.js:659:9)\n    at Socket.<anonymous> (http://localhost:3142/utils/state.js:937:9)\n    at Emitter.emit (http://localhost:3142/node_modules/.vite/deps/socket__io-client.js?v=9e260810:320:70)\n    at Socket.emitEvent (http://localhost:3142/node_modules/.vite/deps/socket__io-client.js?v=9e260810:3053:14)\n    at Socket.onevent (http://localhost:3142/node_modules/.vite/deps/socket__io-client.js?v=9e260810:3045:28)\n    at Socket.onpacket (http://localhost:3142/node_modules/.vite/deps/socket__io-client.js?v=9e260810:3020:10)\n    at Emitter.emit (http://localhost:3142/node_modules/.vite/deps/socket__io-client.js?v=9e260810:320:70)"
+  }
+ ],
+ "errors": [],
+ "failed": [],
+ "ws_opens": [
+  {
+   "page": "computed",
+   "t": 2025.887956399,
+   "url": "ws://localhost:8142/_event/?token=79a7cca7-e0c0-414e-e866-2725cb860860&EIO=4&transport=websocket"
+  },
+  {
+   "page": "computed",
+   "t": 2026.462332638,
+   "url": "ws://localhost:8142/_event/?token=79a7cca7-e0c0-414e-e866-2725cb860860&EIO=4&transport=websocket"
+  }
+ ],
+ "results": {
+  "computed_evals_per_full_reload": {
+   "ok": false,
+   "detail": "derived=2 derived_cookie=1"
+  },
+  "info_computed_evals_after_client_nav": {
+   "ok": true,
+   "detail": "derived=2 derived_cookie=0"
+  },
+  "computed_not_reevaluated_on_unrelated_event": {
+   "ok": true,
+   "detail": "derived=0 derived_cookie=0"
+  },
+  "computed_one_eval_per_dep_change": {
+   "ok": true,
+   "detail": "derived=1 derived_cookie=0"
+  }
+ }
+}

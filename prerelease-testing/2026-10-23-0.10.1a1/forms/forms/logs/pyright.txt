@@ -1,0 +1,25 @@
+ Downloaded pyright
+Installed 3 packages in 154ms
+/tmp/claude-0/-home-user-reflex/7eb9e30f-e96c-5de5-9b0e-4a12be91e0f3/scratchpad/prt/apps/forms/forms/forms.py
+  /tmp/claude-0/-home-user-reflex/7eb9e30f-e96c-5de5-9b0e-4a12be91e0f3/scratchpad/prt/apps/forms/forms/forms.py:55:40 - error: Argument of type "FormData" cannot be assigned to parameter "value" of type "dict[Unknown, Unknown] | Var[dict[Unknown, Unknown]]" in function "__call__"
+    Type "FormData" is not assignable to type "dict[Unknown, Unknown] | Var[dict[Unknown, Unknown]]"
+      "FormData[str, str]" is not assignable to "dict[Unknown, Unknown]"
+      "FormData[str, str]" is not assignable to "Var[dict[Unknown, Unknown]]" (reportArgumentType)
+  /tmp/claude-0/-home-user-reflex/7eb9e30f-e96c-5de5-9b0e-4a12be91e0f3/scratchpad/prt/apps/forms/forms/forms.py:343:53 - error: Argument of type "Literal[True]" cannot be assigned to parameter "auto_complete" of type "Var[str] | str | None" in function "__call__"
+    Type "Literal[True]" is not assignable to type "Var[str] | str | None"
+      "Literal[True]" is not assignable to "Var[str]"
+      "Literal[True]" is not assignable to "str"
+      "Literal[True]" is not assignable to "None" (reportArgumentType)
+  /tmp/claude-0/-home-user-reflex/7eb9e30f-e96c-5de5-9b0e-4a12be91e0f3/scratchpad/prt/apps/forms/forms/forms.py:344:55 - error: Argument of type "Literal[False]" cannot be assigned to parameter "auto_complete" of type "Var[str] | str | None" in function "__call__"
+    Type "Literal[False]" is not assignable to type "Var[str] | str | None"
+      "Literal[False]" is not assignable to "Var[str]"
+      "Literal[False]" is not assignable to "str"
+      "Literal[False]" is not assignable to "None" (reportArgumentType)
+  /tmp/claude-0/-home-user-reflex/7eb9e30f-e96c-5de5-9b0e-4a12be91e0f3/scratchpad/prt/apps/forms/forms/forms.py:348:49 - error: Cannot access attribute "join" for class "list[str]"
+    Attribute "join" is unknown (reportAttributeAccessIssue)
+  /tmp/claude-0/-home-user-reflex/7eb9e30f-e96c-5de5-9b0e-4a12be91e0f3/scratchpad/prt/apps/forms/forms/forms.py:349:49 - error: Cannot access attribute "join" for class "list[str]"
+    Attribute "join" is unknown (reportAttributeAccessIssue)
+/tmp/claude-0/-home-user-reflex/7eb9e30f-e96c-5de5-9b0e-4a12be91e0f3/scratchpad/prt/apps/forms/forms/typed_future.py
+  /tmp/claude-0/-home-user-reflex/7eb9e30f-e96c-5de5-9b0e-4a12be91e0f3/scratchpad/prt/apps/forms/forms/typed_future.py:64:34 - error: Cannot access attribute "join" for class "list[str]"
+    Attribute "join" is unknown (reportAttributeAccessIssue)
+6 errors, 0 warnings, 0 informations

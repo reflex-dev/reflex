@@ -1,0 +1,92 @@
+=== index
+index.untyped: {"dark": true, "first": "Ann", "group": "g3", "hobby": "c", "notes": "line1\nline2", "pick": "y", "radio": "r2", "range[]": "60", "range_slider": "20", "remember": true, "second": "typed-second"}
+index.chained: {'dark': True, 'first': 'Ann', 'group': 'g3', 'hobby': 'c', 'notes': 'line1\nline2', 'pick': 'y', 'radio': 'r2', 'range[]': '60', 'range_slider': '20', 'remember': True, 'second': 'typed-second'}
+  ok   untyped: remember checked (True per PR text, 'on' per changelog) 
+  ok   untyped: dark switch checked (True or 'on') 
+  ok   untyped: hobby is last value 'c' (dict) 
+  ok   untyped: second typed 
+  ok   untyped: pick=='y' 
+  ok   untyped: radio=='r2' 
+  ok   untyped: group present 
+  ok   untyped: range keys 
+  ok   untyped: toast shown 
+  ok   untyped: chained handler got dict with same keys 
+  ok   reset_on_submit cleared second 
+remember after reset: false
+index.untyped(2): {"dark": false, "first": "Ann", "group": "g3", "hobby": "b", "notes": "line1\nline2", "pick": "y", "radio": "r2", "range[]": "60", "range_slider": "20", "remember": false, "second": ""}
+  ok   after reset: remember unchecked (False via id ref, or absent) 
+  ok   after reset: hobby back to default last 'b' 
+index.dict: {"hobby": "h3", "solo": "only"}
+  ok   dict: hobby last 'h3' 
+index.fd_items: [["hobby", "h1"], ["hobby", "h2"], ["hobby", "h3"], ["solo", "only"], ["range[]", "1"], ["range[]", "9"]]
+index.fd_getlist: ['h1', 'h2', 'h3']
+index.fd_dict: {'hobby': 'h3', 'range[]': '9', 'solo': 'only'}
+index.fd_chained: {'hobby': 'h3', 'range[]': '9', 'solo': 'only'}
+  ok   FormData getlist hobby == [h1,h2,h3] 
+  ok   FormData multi_items in order 
+  ok   FormData dict() keeps last 
+  ok   FormData range[] has two entries 
+  ok   FormData -> dict chained handler has last values 
+=== typed
+typed: {"bio": "bio text", "color": ["blue"], "controlled": "ctrl-edited", "controlled_input": "ctrl-edited", "foreach_val": ["f1", "f2", "f3"], "hobby": ["h1", "h3"], "name": "Bob", "opt_flag": null, "opt_list": null, "range": ["10", "30"], "size": "m", "strflag": false, "subscribe": false, "toggled": true}
+typed types: {'bio': 'str', 'color': 'list', 'controlled': 'str', 'controlled_input': 'str', 'foreach_val': 'list', 'hobby': 'list', 'name': 'str', 'opt_flag': 'NoneType', 'opt_list': 'NoneType', 'range': 'list', 'size': 'str', 'strflag': 'bool', 'subscribe': 'bool', 'toggled': 'bool'}
+typed error: KeyError 'hidden_req'
+  ok   typed: subscribe False (unchecked) 
+  ok   typed: toggled True (switch checked) 
+  ok   typed: hobby list [h1,h3] 
+  ok   typed: color (Annotated list) == ['blue'] 
+  ok   typed: range == ['10','30'] from range[] 
+  ok   typed: range[] key removed 
+  ok   typed: size 'm' 
+  ok   typed: bio present 
+  ok   typed: missing_opt_list left out 
+  ok   typed: opt_list None 
+  ok   typed: opt_flag None 
+  ok   typed: strflag 'false' -> False 
+  ok   typed: controlled value edited 
+  ok   typed: foreach_val [f1,f2,f3] 
+  ok   typed: hidden_req (cond-hidden Required str) absent -> KeyError 
+typed(2): {"bio": "bio text", "color": ["blue"], "controlled": "ctrl-edited", "controlled_input": "ctrl-edited", "foreach_val": ["f1", "f2", "f3"], "hidden_req": "now visible", "hobby": ["h1", "h3"], "name": "Bob", "opt_flag": null, "opt_list": null, "range": ["10", "30"], "size": "m", "strflag": false, "subscribe": true, "toggled": true}
+  ok   typed2: subscribe True 
+  ok   typed2: hidden_req present 
+=== future
+future: {"agree": true, "extras": null, "maybe_flag": null, "title": "hello"} agree,extras,maybe_flag,title
+  ok   future: title present 
+  ok   future: agree True (Annotated bool, Required) 
+  ok   future: nickname left out 
+  ok   future: tags (Annotated NotRequired list) left out 
+  ok   future: extras None 
+  ok   future: maybe_flag None 
+future(2): {"agree": false, "extras": null, "maybe_flag": null, "title": "hello"}
+  ok   future2: agree False when unchecked 
+=== deprecated
+deprecated: {"cb": true, "cbid_only": true, "disabled_id": "d", "only_id": "idval", "slider_id": "5", "sub_id": "go", "sw": false, "ta_only": "ta", "the_id": "both", "the_name": "both"}
+=== controlled
+#ac-email autocomplete= email
+#ac-off autocomplete= off
+#ac-true autocomplete= on
+#ac-false autocomplete= off
+  ok   autocomplete email 
+  ok   autocomplete off 
+  ok   autocomplete True->on 
+  ok   autocomplete False->off 
+cg state initial: cg=b changes=0 | cc=y changes=0
+cg state: cg=b,a,c changes=2 | cc=y,x changes=1
+  ok   cg controlled state has a,b,c 
+controlled submit: {"ac_email": "a@b.c", "ac_false": "", "ac_off": "", "ac_true": "", "bool_false": "", "cc": ["x", "y"], "cc_root": "x", "cg": ["a", "b", "c"], "cg_root": "a", "email": "a@b.c", "off_field": "", "on_field": "", "rc": "q"}
+  ok   controlled cg submitted as list of 3 
+  ok   controlled cc submitted [x,y] 
+  ok   radio_cards rc 'q' 
+=== cs
+cs alpha: {"checks": ["c1"], "flag": true, "flag_alpha": true, "item": "alpha"} n=1
+cs beta: {"checks": ["c1", "c2"], "flag": false, "flag_beta": false, "item": "beta"} n=1
+  ok   cs alpha item/flag 
+  ok   cs beta item/flag/checks 
+  ok   cs independent counters 
+  [console error] Failed to load resource: the server responded with a status of 404 (Not Found)
+  [console log] Disconnect websocket on page navigation
+  [console log] Disconnect websocket on page navigation
+  [console log] Disconnect websocket on page navigation
+  [console log] Disconnect websocket on page navigation
+  [console log] Disconnect websocket on page navigation
+RESULT: ANOMALIES: 0 mismatches, 1 console problems, 0 page errors

@@ -1,0 +1,15 @@
+{
+  "url": "http://localhost:3100/",
+  "title": "Forms | Index",
+  "clean": true,
+  "load_error": null,
+  "actions_performed": [],
+  "action_error": null,
+  "screenshot_error": null,
+  "read_error": null,
+  "console": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_4xx_5xx": [],
+  "body_text": "forms cluster: dict / untyped / FormData\nremember\nhobby a\nhobby b\nhobby c\ny\nx\ny\nz\nr1\nr2\ng1\ng2\ng3\nSubmit untyped\n\ncount: 0\n\nSubmit dict\nSubmit FormData\ntyped\nfuture\ndeprecated\ncontrolled\ncs"
+}

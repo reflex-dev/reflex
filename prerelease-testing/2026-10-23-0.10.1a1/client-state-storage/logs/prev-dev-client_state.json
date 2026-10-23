@@ -1,0 +1,80 @@
+{
+ "console": [
+  {
+   "page": "cs",
+   "type": "log",
+   "text": "_call_script TypeError: refs._client_state_setPushedcs is not a function\n    at eval (eval at applyEvent (http://localhost:3142/utils/state.js:523:13), <anonymous>:1:41)\n    at applyEvent (http://localhost:3142/utils/state.js:523:41)\n    at processEvent (http://localhost:3142/utils/state.js:695:13)\n    at queueEvents (http://localhost:3142/utils/state.js:659:9)\n    at Socket.<anonymous> (http://localhost:3142/utils/state.js:937:9)\n    at Emitter.emit (http://localhost:3142/node_modules/.vite/deps/socket__io-client.js?v=9e260810:320:70)\n    at Socket.emitEvent (http://localhost:3142/node_modules/.vite/deps/socket__io-client.js?v=9e260810:3053:14)\n    at Socket.onevent (http://localhost:3142/node_modules/.vite/deps/socket__io-client.js?v=9e260810:3045:28)\n    at Socket.onpacket (http://localhost:3142/node_modules/.vite/deps/socket__io-client.js?v=9e260810:3020:10)\n    at Emitter.emit (http://localhost:3142/node_modules/.vite/deps/socket__io-client.js?v=9e260810:320:70)"
+  },
+  {
+   "page": "cs",
+   "type": "log",
+   "text": "_call_script TypeError: refs._client_state_setPushedbgcs is not a function\n    at eval (eval at applyEvent (http://localhost:3142/utils/state.js:523:13), <anonymous>:1:43)\n    at applyEvent (http://localhost:3142/utils/state.js:523:41)\n    at processEvent (http://localhost:3142/utils/state.js:695:13)\n    at queueEvents (http://localhost:3142/utils/state.js:659:9)\n    at Socket.<anonymous> (http://localhost:3142/utils/state.js:937:9)\n    at Emitter.emit (http://localhost:3142/node_modules/.vite/deps/socket__io-client.js?v=9e260810:320:70)\n    at Socket.emitEvent (http://localhost:3142/node_modules/.vite/deps/socket__io-client.js?v=9e260810:3053:14)\n    at Socket.onevent (http://localhost:3142/node_modules/.vite/deps/socket__io-client.js?v=9e260810:3045:28)\n    at Socket.onpacket (http://localhost:3142/node_modules/.vite/deps/socket__io-client.js?v=9e260810:3020:10)\n    at Emitter.emit (http://localhost:3142/node_modules/.vite/deps/socket__io-client.js?v=9e260810:320:70)"
+  },
+  {
+   "page": "cs2",
+   "type": "log",
+   "text": "_call_script TypeError: refs._client_state_setPushedcs is not a function\n    at eval (eval at applyEvent (http://localhost:3142/utils/state.js:523:13), <anonymous>:1:41)\n    at applyEvent (http://localhost:3142/utils/state.js:523:41)\n    at processEvent (http://localhost:3142/utils/state.js:695:13)\n    at queueEvents (http://localhost:3142/utils/state.js:659:9)\n    at Socket.<anonymous> (http://localhost:3142/utils/state.js:937:9)\n    at Emitter.emit (http://localhost:3142/node_modules/.vite/deps/socket__io-client.js?v=9e260810:320:70)\n    at Socket.emitEvent (http://localhost:3142/node_modules/.vite/deps/socket__io-client.js?v=9e260810:3053:14)\n    at Socket.onevent (http://localhost:3142/node_modules/.vite/deps/socket__io-client.js?v=9e260810:3045:28)\n    at Socket.onpacket (http://localhost:3142/node_modules/.vite/deps/socket__io-client.js?v=9e260810:3020:10)\n    at Emitter.emit (http://localhost:3142/node_modules/.vite/deps/socket__io-client.js?v=9e260810:320:70)"
+  }
+ ],
+ "errors": [],
+ "failed": [],
+ "ws_opens": [
+  {
+   "page": "cs",
+   "t": 1994.123047778,
+   "url": "ws://localhost:8142/_event/?token=33fc4894-1fa7-41db-ab9c-96b0cca7ccd2&EIO=4&transport=websocket"
+  },
+  {
+   "page": "cs2",
+   "t": 1997.182309878,
+   "url": "ws://localhost:8142/_event/?token=178dfbae-426d-4f6d-9a0c-bd9900682887&EIO=4&transport=websocket"
+  },
+  {
+   "page": "cs3",
+   "t": 1999.2671495,
+   "url": "ws://localhost:8142/_event/?token=ab8e5058-0618-468c-9d5b-57998fde90b5&EIO=4&transport=websocket"
+  }
+ ],
+ "results": {
+  "push_before_mount_from_on_load": {
+   "ok": false,
+   "detail": "not-pushed"
+  },
+  "late_reader_default": {
+   "ok": true,
+   "detail": "initial"
+  },
+  "push_before_mount_from_background": {
+   "ok": false,
+   "detail": "bg-not-pushed"
+  },
+  "all_readers_clicked": {
+   "ok": true,
+   "detail": "{'#always-reader': 'clicked', '#memo-reader': 'clicked', '#late-reader': 'clicked'} ['a=clicked', 'b=clicked', 'c=clicked']"
+  },
+  "push_none_renders_empty": {
+   "ok": true,
+   "detail": "''"
+  },
+  "late_reader_set_back_to_default": {
+   "ok": false,
+   "detail": "{'#always-reader': 'initial', '#memo-reader': 'initial', '#late-reader': 'clicked'}"
+  },
+  "info_value_after_client_nav": {
+   "ok": true,
+   "detail": "second-reader='clicked' (informational: per-page useState)"
+  },
+  "info_value_back_on_index": {
+   "ok": true,
+   "detail": "always-reader='clicked-second'"
+  },
+  "on_load_push_after_nav_back": {
+   "ok": true,
+   "detail": "pushed-on-load-2"
+  },
+  "second_page_direct": {
+   "ok": true,
+   "detail": ""
+  }
+ }
+}

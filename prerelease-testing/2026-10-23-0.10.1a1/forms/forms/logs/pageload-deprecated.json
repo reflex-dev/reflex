@@ -1,0 +1,15 @@
+{
+  "url": "http://localhost:3100/deprecated",
+  "title": "Forms | Deprecated",
+  "clean": true,
+  "load_error": null,
+  "actions_performed": [],
+  "action_error": null,
+  "screenshot_error": null,
+  "read_error": null,
+  "console": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_4xx_5xx": [],
+  "body_text": "id-only / id != name / checkbox id == name\ncb\ncbid\nb\na\nb\nSubmit dep\nhome"
+}
