@@ -108,6 +108,13 @@ the exported `render_docgen_document` helper directly.
 
 Add `defer` to a `python demo exec` fence to mount a heavy preview as it approaches the viewport. The example's source code remains in the initial HTML; the preview reserves 450px of height and stays mounted once shown. This is useful for pages containing many Plotly charts.
 
+### Component search
+
+The shared search matches complete `rx.*` identifiers to words in documentation
+titles: `rx.button` searches for `button`, `rx.radio_group` for `radio group`,
+and `rx.alert_dialog.root` for `alert dialog root`. The input keeps the original
+text. Ordinary search phrases are sent unchanged.
+
 ## Marketing footer
 
 Use the marketing site's responsive five-column directory footer in another

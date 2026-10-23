@@ -42,6 +42,7 @@ def test_shared_site_styles_plugin_emits_package_css():
         Path("public/icons/search.svg"),
         Path("public/components/marketing-date.jsx"),
         Path("public/homepage/lib/use-isomorphic-layout-effect.ts"),
+        Path("public/components/search-query.mjs"),
     ]
     assert all(content.strip() for _path, content in assets)
     assert "ph-conversations-widget" in assets[1][1]
