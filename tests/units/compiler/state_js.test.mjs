@@ -34,6 +34,7 @@ async function setup({
   const microtasks = [];
   const timers = new Map();
   const firstHydrates = [];
+  const onLoadInternalEvent = `${stateName}.test_on_load_internal`;
   const updates = [];
   const consoleErrors = [];
   let connectErrors = [];
@@ -203,6 +204,7 @@ async function setup({
         },
         initialState: stateful ? { root: {}, child: {} } : {},
         onLoadInternalEvent() {},
+        on_load_internal_event: onLoadInternalEvent,
         state_name: stateName,
         stateSchema: { version: "test" },
         clientStorage,
@@ -242,6 +244,7 @@ async function setup({
     sockets,
     timers,
     firstHydrates,
+    onLoadInternalEvent,
     window,
     localStorage,
     socket,
@@ -315,10 +318,7 @@ test("queued on_load is kept when navigation follows auth capture", async () => 
   assert.equal(socket.auth.event.router_data.asPath, "/page?query=value");
 
   app.window.location = new URL("http://localhost:3000/other?query=value");
-  const onLoadEvent = {
-    name: `${stateName}.reflex___state____on_load_internal_state.on_load_internal`,
-    payload: {},
-  };
+  const onLoadEvent = { name: app.onLoadInternalEvent, payload: {} };
   await app.module.namespace.queueEvents(
     [onLoadEvent],
     app.socket,
@@ -344,6 +344,31 @@ test("queued on_load is kept when navigation follows auth capture", async () => 
     },
   ]);
 });
+
+test(
+  "queued on_load is discarded when only the hash changes after auth capture",
+  async () => {
+    const stateName = "reflex___state____root";
+    const app = await setup({ deferConnectAck: true, stateName });
+    app.window.location = new URL("http://localhost:3000/other?query=value#top");
+    app.flush();
+    await app.connect();
+    const socket = app.socket.current;
+
+    app.window.location = new URL("http://localhost:3000/other?query=value");
+    const onLoadEvent = { name: app.onLoadInternalEvent, payload: {} };
+    await app.module.namespace.queueEvents(
+      [onLoadEvent],
+      app.socket,
+      false,
+      () => {},
+      { current: {} },
+    );
+    await socket.finishConnectAck();
+
+    assert.deepEqual(JSON.parse(JSON.stringify(socket.events)), []);
+  },
+);
 
 test("the size check encodes a CONNECT packet once and leaves other packets alone", async () => {
   const app = await connectWith("websocket", {}, 1_000_000);

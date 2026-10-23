@@ -22,8 +22,6 @@ const EVENTURL = env.EVENT;
 
 // Socket event names (must match reflex_base/constants/event.py SocketEvent)
 const CLIENT_ERROR_EVENT = "client_error";
-const ON_LOAD_INTERNAL_EVENT =
-  "reflex___state____on_load_internal_state.on_load_internal";
 const STATE_MISMATCH_EVENT = "state_mismatch";
 
 // sessionStorage key with the time of the last automatic reload (must match
@@ -721,6 +719,12 @@ const withRouterData = (event, params) => {
   return event;
 };
 
+const currentRouteKey = () => {
+  const loc = locationRef.current ?? window.location;
+  const liveLoc = env.MOUNT_TARGET ? loc : window.location;
+  return loc.pathname + (liveLoc.search ?? "");
+};
+
 /**
  * Send an event to the server via REST.
  * @param event The current event.
@@ -928,7 +932,7 @@ export const connect = async (
   // land on another backend version.
   const bootAuth = (first) => (callback) => {
     const boot_event = withRouterData(app.initialEvents(first)[0], params);
-    bootRoute = boot_event.router_data.asPath;
+    bootRoute = currentRouteKey();
     recordSentStorageValues(boot_event);
     // Instrumentation hook (installed by reflex-otel): may add a traceparent.
     window.__reflex_otel?.onEventSend?.(boot_event);
@@ -1072,11 +1076,9 @@ export const connect = async (
     // The connection auth event already loads its route. Discard navigation
     // on_load events queued during the handshake only if that route is still
     // current; otherwise the queued event is needed to load the newer route.
-    if (bootRoute === withRouterData({}, params).router_data.asPath) {
+    if (bootRoute === currentRouteKey()) {
       for (let i = event_queue.length - 1; i >= 0; i--) {
-        if (
-          event_queue[i]?.name === `${app.state_name}.${ON_LOAD_INTERNAL_EVENT}`
-        ) {
+        if (event_queue[i].name === app.on_load_internal_event) {
           event_queue.splice(i, 1);
         }
       }

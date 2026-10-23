@@ -73,8 +73,7 @@ def test_navigation_before_socket_connect_uses_current_route(
     page.goto(f"{frontend_url}/slow")
     expect(page.get_by_role("link", name="Other")).to_be_visible()
     if not sockets:
-        with page.expect_websocket(timeout=60000):
-            page.wait_for_timeout(100)
+        page.wait_for_event("websocket", timeout=60000)
     assert len(sockets) == 1, page_errors
 
     page.get_by_role("link", name="Other").click()
