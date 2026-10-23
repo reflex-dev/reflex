@@ -4340,6 +4340,14 @@ class Field(Generic[FIELD_TYPE]):
         Raises:
             BackendVarFormatError: Always; the field has no frontend var.
         """
+        raise self._no_frontend_var_error()
+
+    def _no_frontend_var_error(self) -> BackendVarFormatError:
+        """Build the error for using the field where a frontend var is needed.
+
+        Returns:
+            The error naming the field and how to use it in the UI instead.
+        """
         path = f"{self._owner.__name__}.{self._name}" if self._owner else None
         name = f"'{path}'" if path else repr(self)
         if self._backend:
@@ -4358,7 +4366,7 @@ class Field(Generic[FIELD_TYPE]):
             )
         else:
             msg = f"{name} has no frontend var, so it cannot be used in the UI."
-        raise BackendVarFormatError(msg)
+        return BackendVarFormatError(msg)
 
     def _get_raw(self, instance: Any) -> FIELD_TYPE | None:
         """Get the value on a state instance, never wrapped in a proxy.
