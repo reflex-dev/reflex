@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, Generic, cast
 
 from reflex_base.environment import state_manager_disk_debounce
+from reflex_base.utils.exceptions import StateSchemaMismatchError
 from typing_extensions import Unpack, override
 
 from reflex.istate.manager import (
@@ -146,6 +147,11 @@ class StateManagerDisk(StateManager):
     async def load_state(self, token: StateToken[TOKEN_TYPE]) -> TOKEN_TYPE | None:
         """Load a state object based on the provided token.
 
+        A missing state file returns None without logging. A state file that
+        cannot be loaded also returns None: one whose stored schema no longer
+        matches the state class is logged at debug level, one that cannot be
+        read or unpickled as a warning.
+
         Args:
             token: The token used to identify the state object.
 
@@ -158,8 +164,24 @@ class StateManagerDisk(StateManager):
             try:
                 with token_path.open(mode="rb") as file:
                     return token.deserialize(fp=file)
-            except Exception:
-                pass
+            except Exception as err:
+                # BaseState also reports a file it cannot unpickle as a schema
+                # mismatch, chained to the unpickling error.
+                if isinstance(err, StateSchemaMismatchError) and err.__cause__ is None:
+                    logger.debug(
+                        "Discarding persisted state for %s from %s: it no longer "
+                        "matches the state class.",
+                        token,
+                        token_path,
+                    )
+                    return None
+                logger.warning(
+                    "Failed to load persisted state for %s from %s, starting "
+                    "from a fresh state.",
+                    token,
+                    token_path,
+                    exc_info=True,
+                )
         return None
 
     async def populate_substates(

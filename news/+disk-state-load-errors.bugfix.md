@@ -1,0 +1,1 @@
+The disk state manager now logs a warning when an existing persisted state file cannot be read or unpickled, instead of silently starting from a fresh state. A file whose stored schema no longer matches the state class is still reset, and logged at debug level.
