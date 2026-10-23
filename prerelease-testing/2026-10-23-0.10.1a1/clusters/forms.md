@@ -1,0 +1,21 @@
+# Cluster `forms` — form data, FormData/TypedDict, controlled form controls
+
+## Changelog lines (verbatim)
+- (reflex #7386) Form `on_submit` handlers can annotate their form data as `rx.form.FormData` to receive every value of fields that share a name, in submission order; a `dict` annotation still keeps each name's last value. In a `TypedDict` annotation, a `list[str]` field collects every value of its name and a `bool` field is `False` when nothing was submitted, such as for an unchecked checkbox, or when the value is false-like, such as `"false"`, `"off"` or `"0"`; for `list[str] | None` and `bool | None` fields an unsubmitted value is `None`, and an unsubmitted `NotRequired` field is left out. In a `TypedDict`, a list field `range` also collects the `range[]` values a two-thumb `rx.slider(name="range")` submits.
+- (reflex-base #7386) `TypedDict` form data honors `Required` and `NotRequired`, including inside `Annotated`, in modules using `from __future__ import annotations`: a `NotRequired` field no longer needs a matching form control.
+- (reflex-components-core #7386, DEPRECATION) Submitting a form control's value under its `id` is deprecated and will be removed in 0.11; form data will then hold only what each control submits under its `name`. Compiling a form whose `on_submit` handler takes the form data now warns about each value-bearing control that has a static `id` but no `name`; give it a `name`. A control whose `id` differs from its `name` also stops adding a field keyed by its `id`, and a checkbox or switch whose `id` equals its `name` submits `"on"` or nothing instead of `True` or `False`; read it as a `bool` field of a `TypedDict` to keep a bool.
+- (reflex-components-core #7386) Forms now see the `name` of a controlled input (one with `value` and `on_change`), so a `TypedDict` submit handler requiring that field no longer fails to compile.
+- (reflex-components-radix #7386) Expose `FormData` on the form namespace as `rx.form.FormData`. The `rx.form` stub now declares the namespace as a class, so `rx.form.FormData[str, str]` works in type annotations; calls such as `rx.form(...)` and `rx.form.root(...)` type the same as before.
+- (reflex-components-radix #7345) `checkbox_group` and `checkbox_cards` now support a controlled `value` with `on_value_change`, and the native form props that `radio_group` and `radio_cards` already have.
+- (reflex-components-radix #7418) `rx.input`'s `auto_complete` now takes the HTML autocomplete value, such as `"off"` or `"email"`, which used to raise a `TypeError`. A bool still works and now becomes `"on"` or `"off"`.
+
+## What to build
+One or two multi-page form apps, dev and prod. Handlers annotated three ways: untyped/`dict`, `rx.form.FormData[str, str]`, and a `TypedDict` (with `Required`/`NotRequired`, `Annotated`, `list[str]`, `bool`, `bool | None`, `list[str] | None`, and `from __future__ import annotations` in one module and not in another). Controls: checkbox (checked/unchecked), switch, multiple checkboxes sharing a name, checkbox_group/checkbox_cards (uncontrolled with `name`, and controlled `value`+`on_value_change`), radio_group/radio_cards with `name`, select, two-thumb slider `name="range"`, text_area, controlled `rx.input(value=..., on_change=...)`, inputs with `id` only (expect the compile-time deprecation warning — capture it), `id != name`, `id == name` on a checkbox.
+
+## Combine it with
+- `rx.foreach` generating inputs with the same `name`; `rx.cond` hiding a required control.
+- Submit via Enter key vs button; `reset_on_submit=True`; `on_submit` chaining `yield` into another handler and a `rx.toast`.
+- Baseline every surprising form-data shape against 0.10.0 (`$SB/envs/prev`) — the id-deprecation changes behavior on purpose, so document the before/after precisely and check it matches the changelog sentence by sentence.
+- Form inside `rx.ComponentState`; form data var displayed back via `rx.foreach` over dict items.
+- `auto_complete="off"`, `"email"`, `True`, `False` — check the rendered DOM attribute in the browser.
+- Run pyright (`uv tool run pyright` or `uvx pyright`) against your app using the shared venv's python (`--pythonpath $SB/envs/shared/bin/python`) to check the `rx.form.FormData[str, str]` annotation and `rx.form(...)` calls type-check.

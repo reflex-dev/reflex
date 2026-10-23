@@ -1,0 +1,17 @@
+# Cluster `schema-mismatch` — state schema hash, version-mismatch reload/banner, frontend error reporting
+
+## Changelog lines (verbatim)
+- (reflex #7553) Detect a frontend built for another version of the app when it connects to the backend. The compiled frontend now carries a hash of the state tree (state names, frontend vars and event handler names) and sends it on every socket connect. On a mismatch, a production page reloads once (sharing the `REFLEX_AUTO_RELOAD_COOLDOWN` with the reload on frontend errors) and otherwise shows a "new version available" banner with a reload button; in dev mode it only logs a console warning. Load balancers serving several backend versions still need sticky sessions.
+- (reflex-base #7553) The compiled context module exports `stateSchema`, a hash of the state tree the frontend was built for, and the frontend sends it in the socket.io CONNECT `auth` payload under the `state_schema` key. The backend answers a mismatch with the new `state_mismatch` socket event; in production, the frontend then reloads once per cooldown window or shows a "new version available" banner, while in development it only warns in the console.
+- (reflex-base #7544) A frontend error event that carries no `Error` object, such as the benign `ResizeObserver loop` notification, no longer throws inside `window.onerror` and is now reported to `handle_frontend_exception`.
+- (reflex-base #7605) Retry with backoff and show the connection error when the server or a proxy closes the connection before it is established, instead of reconnecting in a tight loop.
+
+## What to build
+A small two-page app. Build it in prod (`reflex export --frontend-only` or `reflex run --env prod`), then change the state tree (rename an event handler / add a var) in the backend only and serve the OLD frontend build against the NEW backend: e.g. `reflex run --env prod --backend-only` for the new backend plus serving the old `.web/build/client` statically (python -m http.server from the driver venv, or run the old frontend via `reflex run --frontend-only` from a copied app dir with the old source). Observe: socket CONNECT auth payload contains `state_schema` (Playwright network/websocket frame capture), `state_mismatch` event received, one reload, then the banner on the second mismatch within the cooldown, banner button works. Dev mode: only a console warning. Check `REFLEX_AUTO_RELOAD_COOLDOWN` affects it.
+Also: a page that triggers a `ResizeObserver loop completed with undelivered notifications` (resize observer that mutates layout in callback) and a page that calls `rx.call_script("throw 'plain string'")` and `window.dispatchEvent(new ErrorEvent('error', {}))`; confirm `handle_frontend_exception` receives them and the console shows no secondary TypeError from `window.onerror`.
+Backoff: start the frontend with the backend down (or a proxy that closes connections); count connection attempts over 60 s in the network log and confirm the connection-error toast appears; then start the backend and confirm recovery. Compare the reconnect pattern to 0.10.0.
+
+## Combine it with
+- Changes that do NOT alter the schema (changing a handler body) must not trigger a mismatch — verify hash stability across rebuilds.
+- Two backend workers (`GRANIAN_WORKERS=2` with redis unavailable is not valid; just note the sticky-sessions caveat) — skip if no redis.
+- Confirm the `stateSchema` export exists in the compiled `.web` context module and that dev `reflex run` hot reload after adding a var does not produce a stale-schema loop.
