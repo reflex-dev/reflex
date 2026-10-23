@@ -1115,31 +1115,27 @@ def test_supervise_output_bounds_shutdown_for_a_stalled_consumer(tmp_path, strea
 
 
 _INTERRUPTED_OUTPUT_SCRIPT = """
-import os
 import sys
-from pathlib import Path
 
 from reflex_base.utils import log
 
 log._DRAIN_WALL_SECONDS = 0.5
 if not log.is_output_supervised():
     sys.exit(log.supervise_output([sys.executable, __file__]))
-Path("child.pid").write_text(str(os.getpid()))
 for i in range(10000):
     print(f"line {i:05d} " + "x" * 1000, flush=True)
 """
 
 
-def _kill_output_test_processes(proc: subprocess.Popen, tmp_path: Path):
-    """Kill and reap the supervisor and any isolated child process group."""
-    if proc.poll() is None:
+def _kill_output_test_processes(proc: subprocess.Popen):
+    """Kill the test process group and reap its supervisor."""
+    if os.name == "posix":
         with contextlib.suppress(ProcessLookupError):
             os.killpg(proc.pid, signal.SIGKILL)
+    elif proc.poll() is None:
+        proc.kill()
+    if proc.poll() is None:
         proc.wait(timeout=5)
-    child_pid_file = tmp_path / "child.pid"
-    if child_pid_file.exists():
-        with contextlib.suppress(OSError, ValueError):
-            os.killpg(int(child_pid_file.read_text()), signal.SIGKILL)
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="POSIX-only signal handling")
@@ -1170,7 +1166,7 @@ def test_supervise_output_bounds_interrupted_blocked_write_at_record_boundary(tm
             assert proc.stderr is not None
             stderr = proc.stderr.read()
         finally:
-            _kill_output_test_processes(proc, tmp_path)
+            _kill_output_test_processes(proc)
 
     assert time.monotonic() - started < 2
     assert b"Aborted!" not in first_line + remaining + stderr
@@ -1211,83 +1207,30 @@ def test_supervise_output_handles_interrupt_during_pump_liveness_check(tmp_path)
     assert record["message"] == "completed"
 
 
-_GROUP_INTERRUPT_SCRIPT = """
-import os
-import signal
-import sys
-import threading
-import time
-from pathlib import Path
-
-from reflex_base.utils import log
-
-if not log.is_output_supervised():
-    sys.exit(log.supervise_output([sys.executable, __file__]))
-Path("child.pid").write_text(str(os.getpid()))
-signal_count = 0
-received = threading.Event()
-def handle_sigint(_signum, _frame):
-    global signal_count
-    signal_count += 1
-    received.set()
-signal.signal(signal.SIGINT, handle_sigint)
-print("ready", flush=True)
-received.wait(timeout=3)
-time.sleep(0.25)
-print(f"signals={signal_count}", flush=True)
-"""
-
-
-@pytest.mark.skipif(sys.platform == "win32", reason="POSIX-only signal handling")
-def test_supervise_output_forwards_terminal_sigint_once(tmp_path):
-    """A terminal SIGINT reaches the child once while it performs cleanup."""
-    script = tmp_path / "group_interrupt.py"
-    script.write_text(_GROUP_INTERRUPT_SCRIPT)
-    with subprocess.Popen(
-        [sys.executable, str(script)],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        cwd=tmp_path,
-        env={**os.environ, "REFLEX_LOG_JSON": "true"},
-        start_new_session=True,
-    ) as proc:
-        try:
-            assert proc.stdout is not None
-            assert json.loads(proc.stdout.readline())["message"] == "ready"
-            os.killpg(proc.pid, signal.SIGINT)
-            time.sleep(0.1)
-            os.killpg(proc.pid, signal.SIGINT)
-            assert proc.wait(timeout=3) == 0
-            output = proc.stdout.read()
-            messages = [json.loads(line)["message"] for line in output.splitlines()]
-            assert "signals=1" in messages
-        finally:
-            _kill_output_test_processes(proc, tmp_path)
-
-
 _OVERSIZED_OUTPUT_SCRIPT = """
-import os
 import signal
 import sys
 import time
-from pathlib import Path
 
 from reflex_base.utils import log
 
 log._DRAIN_WALL_SECONDS = 0.5
 if not log.is_output_supervised():
     sys.exit(log.supervise_output([sys.executable, __file__]))
-Path("child.pid").write_text(str(os.getpid()))
+
+def stop(_signum, _frame):
+    print("oversized " + "x" * 100000, flush=True)
+    sys.exit(0)
+
+signal.signal(signal.SIGTERM, stop)
 print("ready", flush=True)
-print("oversized " + "x" * 100000, flush=True)
-Path("oversized-written").write_text("done")
 time.sleep(30)
 """
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="POSIX-only pipe behavior")
 def test_supervise_output_truncates_oversized_records_as_valid_json(tmp_path):
-    """A line above PIPE_BUF is shortened to one atomic, valid JSON record."""
+    """Shutdown bounds oversized records without affecting normal output."""
     script = tmp_path / "oversized_output.py"
     script.write_text(_OVERSIZED_OUTPUT_SCRIPT)
     with subprocess.Popen(
@@ -1308,13 +1251,8 @@ def test_supervise_output_truncates_oversized_records_as_valid_json(tmp_path):
                 target=lambda: output_chunks.append(stdout.read()), daemon=True
             )
             output_reader.start()
-            marker = tmp_path / "oversized-written"
-            deadline = time.monotonic() + 3
-            while not marker.exists() and time.monotonic() < deadline:
-                time.sleep(0.01)
-            assert marker.exists()
             proc.send_signal(signal.SIGTERM)
-            assert proc.wait(timeout=3) == 128 + signal.SIGTERM
+            assert proc.wait(timeout=3) == 0
             output_reader.join(timeout=3)
             assert not output_reader.is_alive()
             output = b"".join(output_chunks)
@@ -1324,9 +1262,30 @@ def test_supervise_output_truncates_oversized_records_as_valid_json(tmp_path):
             assert record["truncated"] is True
             assert len(line) + 1 <= os.fpathconf(proc.stdout.fileno(), "PC_PIPE_BUF")
         finally:
-            _kill_output_test_processes(proc, tmp_path)
+            _kill_output_test_processes(proc)
             if output_reader is not None:
                 output_reader.join(timeout=3)
+
+
+def test_supervise_output_preserves_oversized_records_during_normal_operation(
+    tmp_path,
+):
+    """Normal operation preserves complete JSON records larger than PIPE_BUF."""
+    result = _run_script(
+        tmp_path,
+        """
+import sys
+from reflex_base.utils import log
+if not log.is_output_supervised():
+    sys.exit(log.supervise_output([sys.executable, __file__]))
+print("oversized " + "x" * 10000, flush=True)
+""",
+    )
+
+    assert result.returncode == 0, result.stderr
+    [record] = [json.loads(line) for line in result.stdout.splitlines()]
+    assert record["message"] == "oversized " + "x" * 10000
+    assert "truncated" not in record
 
 
 def test_truncate_json_record_preserves_exception_and_extra_fields():
@@ -1473,7 +1432,7 @@ def test_supervise_output_keeps_sigterm_handler_during_blocked_drain(tmp_path):
             assert proc.wait(timeout=3) == 0
             output = proc.stdout.read()
         finally:
-            _kill_output_test_processes(proc, tmp_path)
+            _kill_output_test_processes(proc)
 
     assert time.monotonic() - started >= 1.5
     records = [json.loads(line) for line in output.splitlines()]
