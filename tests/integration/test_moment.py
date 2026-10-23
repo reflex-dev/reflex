@@ -20,6 +20,14 @@ def MomentApp():
 
         locale: str = "fr"
 
+    @rx.memo
+    def memoized_provider_moment():
+        return rx.moment(
+            "2024-03-14T15:09:26",
+            format="dddd D MMMM YYYY",
+            id="moment-provider-memo-locale",
+        )
+
     @app.add_page
     def index():
         return rx.vstack(
@@ -58,6 +66,17 @@ def MomentApp():
                 locale=State.locale,
                 id="moment-reactive-locale",
             ),
+            rx.moment_provider(
+                rx.box(
+                    rx.moment(
+                        "2024-03-14T15:09:26",
+                        format="dddd D MMMM YYYY",
+                        id="moment-provider-locale",
+                    )
+                ),
+                memoized_provider_moment(),
+                locale="fr",
+            ),
             rx.link("Plain page", href="/plain", id="plain-link"),
         )
 
@@ -75,9 +94,22 @@ def MomentApp():
             ),
             rx.moment("2020-01-01", from_now=True, id="plain-relative"),
             rx.link("Home", href="/", id="home-link"),
+            rx.link("Provider page", href="/provider", id="provider-link"),
+        )
+
+    def provider():
+        """Render a provider locale whose moments compile outside the page module.
+
+        Returns:
+            The page that loads a foreign locale only through a provider.
+        """
+        return rx.vstack(
+            rx.moment_provider(memoized_provider_moment(), locale="fr"),
+            rx.link("Plain page", href="/plain", id="provider-plain-link"),
         )
 
     app.add_page(plain, route="/plain")
+    app.add_page(provider, route="/provider")
 
 
 @pytest.fixture(scope="module")
@@ -147,6 +179,18 @@ def test_moment_locales_are_isolated(driver: WebDriver) -> None:
             == "jeudi 14 mars 2024"
         )
     )
+    AppHarness.expect(
+        lambda: (
+            driver.find_element(By.ID, "moment-provider-locale").text
+            == "jeudi 14 mars 2024"
+        )
+    )
+    AppHarness.expect(
+        lambda: (
+            driver.find_element(By.ID, "moment-provider-memo-locale").text
+            == "jeudi 14 mars 2024"
+        )
+    )
     driver.find_element(By.ID, "plain-link").click()
     AppHarness.expect(
         lambda: (
@@ -169,4 +213,40 @@ def test_moment_locales_are_isolated(driver: WebDriver) -> None:
             driver.find_element(By.ID, "moment-default-locale").text
             == "Thursday 14 March 2024"
         )
+    )
+
+
+def test_moment_provider_locale_does_not_leak(
+    moment_app: AppHarness, driver: WebDriver
+) -> None:
+    """A provider locale stays inside the provider across client-side navigation.
+
+    The page load starts on a route that has not loaded the French locale module.
+
+    Args:
+        moment_app: The running Moment app harness.
+        driver: The browser connected to the Moment app.
+    """
+    assert moment_app.frontend_url is not None
+    driver.get(moment_app.frontend_url.rstrip("/") + "/plain")
+    AppHarness.expect(
+        lambda: (
+            driver.find_element(By.ID, "plain-date").text == "Thursday 14 March 2024"
+        )
+    )
+    driver.find_element(By.ID, "provider-link").click()
+    AppHarness.expect(
+        lambda: (
+            driver.find_element(By.ID, "moment-provider-memo-locale").text
+            == "jeudi 14 mars 2024"
+        )
+    )
+    driver.find_element(By.ID, "provider-plain-link").click()
+    AppHarness.expect(
+        lambda: (
+            driver.find_element(By.ID, "plain-date").text == "Thursday 14 March 2024"
+        )
+    )
+    AppHarness.expect(
+        lambda: driver.find_element(By.ID, "plain-relative").text.endswith("ago")
     )

@@ -24,7 +24,7 @@ from hashlib import md5
 from pathlib import Path
 from textwrap import dedent
 from types import MethodType, ModuleType
-from typing import Any, ClassVar, Literal, TypeVar, cast
+from typing import Any, ClassVar, ForwardRef, Literal, TypeVar, cast
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -79,6 +79,7 @@ from reflex.state import (
     OnLoadInternalState,
     State,
     StateUpdate,
+    _apply_client_storage_vars,
     _frontend_schema,
     _load_events_for_page,
     all_base_state_classes,
@@ -5908,6 +5909,79 @@ def test_frontend_schema_leaves_out_backend_vars():
     )
 
 
+@pytest.mark.parametrize("value", ["", "dark"])
+@pytest.mark.parametrize(
+    "var_name",
+    [
+        "cookie",
+        "local",
+        "session",
+        "field_cookie",
+        "field_local",
+        "field_session",
+        "optional",
+        "storage_union",
+        "plain",
+    ],
+)
+async def test_storage_annotations_accept_browser_strings(
+    var_name: str,
+    value: str,
+    caplog: pytest.LogCaptureFixture,
+    clean_registration_context: RegistrationContext,
+):
+    """Browser strings satisfy storage annotations during hydration and later writes.
+
+    Args:
+        var_name: The browser storage var to update.
+        value: The value sent by the browser.
+        caplog: Captured log records.
+        clean_registration_context: An isolated state registry.
+    """
+
+    class StorageAnnotationState(State):
+        cookie: rx.Cookie = rx.Cookie("light", name="cookie", path="/settings")
+        local: rx.LocalStorage = rx.LocalStorage("light", name="local", sync=True)
+        session: rx.SessionStorage = rx.SessionStorage("light", name="session")
+        field_cookie: rx.Field[rx.Cookie] = rx.field(rx.Cookie("light"))
+        field_local: rx.Field[rx.LocalStorage] = rx.field(rx.LocalStorage("light"))
+        field_session: rx.Field[rx.SessionStorage] = rx.field(
+            rx.SessionStorage("light")
+        )
+        plain: str = rx.LocalStorage("light", name="plain")
+        optional: rx.Field[rx.LocalStorage | None] = rx.field(rx.LocalStorage("light"))
+        storage_union: rx.Cookie | rx.SessionStorage = rx.Cookie("light")
+
+    root = State()
+    state = await root.get_state(StorageAnnotationState)
+    declared = StorageAnnotationState.get_fields()[var_name].default
+    assert isinstance(declared, (rx.Cookie, rx.LocalStorage, rx.SessionStorage))
+    options = declared.options()
+
+    with caplog.at_level(logging.ERROR):
+        applied = await _apply_client_storage_vars(
+            root,
+            {
+                f"{StorageAnnotationState.get_full_name()}.{var_name}{FIELD_MARKER}": value
+            },
+        )
+        assert applied == [(state, var_name)]
+        assert getattr(state, var_name) == value
+        assert var_name in state.dirty_vars
+        assert not caplog.records
+
+        setattr(state, var_name, "changed")
+        assert getattr(state, var_name) == "changed"
+        assert not caplog.records
+
+        setattr(state, var_name, 42)
+        assert len(caplog.records) == 1
+        assert "Expected field" in caplog.records[0].getMessage()
+
+    assert StorageAnnotationState.get_fields()[var_name].default is declared
+    assert declared.options() == options
+
+
 def test_reset_client_storage_uses_declared_factories():
     """Hydration evaluates declared factories for all browser storage types."""
     calls = []
@@ -7322,3 +7396,93 @@ def test_undeclared_double_underscore_name_is_rejected(clean_registration_contex
         with pytest.raises(SetUndefinedStateVarError):
             setattr(state, name, 1)
     assert not state.dirty_vars
+
+
+_NO_DEFAULT = object()
+
+
+@pytest.mark.parametrize(
+    ("name", "annotation", "default"),
+    [
+        ("items", "list[MissingItem]", []),
+        ("items", "dict[str, MissingItem]", {}),
+        ("items", "MissingItem | None", None),
+        ("items", "list[MissingItem]", _NO_DEFAULT),
+        ("items", "dict[str, MissingItem]", _NO_DEFAULT),
+        ("items", "MissingItem | None", _NO_DEFAULT),
+        ("items", "MissingItem", _NO_DEFAULT),
+        ("items", "MissingItem", None),
+        ("items", list[ForwardRef("MissingItem")], []),
+        ("_items", "list[MissingItem]", []),
+    ],
+    ids=[
+        "list",
+        "dict",
+        "optional",
+        "list-no-default",
+        "dict-no-default",
+        "optional-no-default",
+        "bare-no-default",
+        "bare-none-default",
+        "nested-forward-ref",
+        "backend",
+    ],
+)
+def test_var_annotation_with_undefined_name_raises_name_error(
+    name: str, annotation: Any, default: Any
+) -> None:
+    """An annotation naming an undefined symbol raises a NameError naming it.
+
+    With postponed annotations the unresolved annotation used to reach var
+    typing as a ForwardRef and fail with an unrelated TypeError or
+    AttributeError, whether or not the var has a default. On Python 3.14 an
+    annotation is evaluated lazily, and an undefined name inside a generic
+    stays a nested ForwardRef.
+
+    Args:
+        name: The name of the var.
+        annotation: The annotation, which names a symbol that does not exist.
+        default: The default value of the var, or _NO_DEFAULT for none.
+    """
+    namespace: dict[str, Any] = {
+        "__module__": __name__,
+        "__annotations__": {name: annotation},
+    }
+    if default is not _NO_DEFAULT:
+        namespace[name] = default
+
+    with pytest.raises(NameError, match="MissingItem"):
+        type("UndefinedNameState", (BaseState,), namespace)
+
+
+@pytest.mark.parametrize(
+    ("name", "annotation", "value"),
+    [
+        ("cache", "ClassVar[MissingItem]", _NO_DEFAULT),
+        ("__client", "MissingItem | None", None),
+        ("total", "MissingItem", property(lambda self: 0)),
+    ],
+    ids=["classvar", "private", "descriptor"],
+)
+def test_non_var_annotation_with_undefined_name_is_allowed(
+    name: str, annotation: str, value: Any
+) -> None:
+    """An annotation that declares no var is not resolved, so its symbol may be undefined.
+
+    A symbol imported only under TYPE_CHECKING is undefined at runtime.
+
+    Args:
+        name: The name of the attribute.
+        annotation: The annotation, which names a symbol that does not exist.
+        value: The value of the attribute, or _NO_DEFAULT for none.
+    """
+    namespace: dict[str, Any] = {
+        "__module__": __name__,
+        "__annotations__": {name: annotation},
+    }
+    if value is not _NO_DEFAULT:
+        namespace[name] = value
+
+    state = type("UndefinedNonVarState", (BaseState,), namespace)
+
+    assert name not in state.get_fields()
