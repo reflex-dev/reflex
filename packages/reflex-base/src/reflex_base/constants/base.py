@@ -38,6 +38,8 @@ class Dirs(SimpleNamespace):
     COMPONENTS_PATH = UTILS + "/components"
     # The name of the contexts file.
     CONTEXTS_PATH = UTILS + "/context"
+    # The name of the client state file.
+    CLIENT_STATE_PATH = UTILS + "/client_state"
     # The name of the output directory.
     BUILD_DIR = "build"
     # The name of the static files directory.

@@ -46,6 +46,7 @@ export async function createQueueRuntime(
       useParams: () => ({}),
     },
     "$/utils/context": app,
+    "$/utils/client_state": { CLIENT_STATE_REF: "__client_state" },
     "$/utils/context-registry": {
       app,
       eventLoop: { addEvents: unused },
