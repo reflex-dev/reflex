@@ -7,6 +7,7 @@ import os
 import signal
 import subprocess
 import sys
+import threading
 import time
 from pathlib import Path
 from unittest import mock
@@ -1065,6 +1066,20 @@ def test_output_pump_write_snapshots_use_a_consistent_cutoff(monkeypatch):
     assert pump.writing_snapshot() == (25.0, 10.0)
 
 
+def test_output_pump_batches_pipe_records_without_truncating(monkeypatch):
+    """Normal pipe output is batched only at complete record boundaries."""
+    pump = log._OutputPump(0, 1, "info", "stdout")
+    pump._atomic_write_limit = 8
+    writes = []
+    monkeypatch.setattr(log, "_write_all", lambda fd, data: writes.append(data))
+
+    pump._write_records(b"one\ntwo\nthree\n")
+
+    assert writes == [b"one\ntwo\n", b"three\n"]
+    assert all(len(write) <= pump._atomic_write_limit for write in writes)
+    assert b"".join(writes) == b"one\ntwo\nthree\n"
+
+
 _STALLED_CONSUMER_SCRIPT = """
 import os
 import subprocess
@@ -1111,6 +1126,334 @@ def test_supervise_output_bounds_shutdown_for_a_stalled_consumer(tmp_path, strea
             if pid_file.exists():
                 with contextlib.suppress(OSError):
                     os.kill(int(pid_file.read_text()), signal.SIGTERM)
+
+
+_INTERRUPTED_OUTPUT_SCRIPT = """
+import sys
+
+from reflex_base.utils import log
+
+log._DRAIN_WALL_SECONDS = 0.5
+if not log.is_output_supervised():
+    sys.exit(log.supervise_output([sys.executable, __file__]))
+for i in range(10000):
+    print(f"line {i:05d} " + "x" * 1000, flush=True)
+"""
+
+
+def _kill_output_test_processes(proc: subprocess.Popen):
+    """Kill the test process group and reap its supervisor."""
+    if os.name == "posix":
+        with contextlib.suppress(ProcessLookupError):
+            os.killpg(proc.pid, signal.SIGKILL)
+    elif proc.poll() is None:
+        proc.kill()
+    if proc.poll() is None:
+        proc.wait(timeout=5)
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX-only signal handling")
+def test_supervise_output_bounds_interrupted_blocked_write_at_record_boundary(tmp_path):
+    """Repeated Ctrl-C cannot hang shutdown or leave a partial JSON line."""
+    script = tmp_path / "interrupted_output.py"
+    script.write_text(_INTERRUPTED_OUTPUT_SCRIPT)
+    with subprocess.Popen(
+        [sys.executable, str(script)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        cwd=tmp_path,
+        env={**os.environ, "REFLEX_LOG_JSON": "true"},
+        start_new_session=True,
+    ) as proc:
+        try:
+            assert proc.stdout is not None
+            first_line = proc.stdout.readline()
+            assert json.loads(first_line)["message"].startswith("line 00000 ")
+
+            started = time.monotonic()
+            proc.send_signal(signal.SIGINT)
+            time.sleep(0.1)
+            with contextlib.suppress(ProcessLookupError):
+                proc.send_signal(signal.SIGINT)
+            assert proc.wait(timeout=3) == 128 + signal.SIGINT
+            remaining = proc.stdout.read()
+            assert proc.stderr is not None
+            stderr = proc.stderr.read()
+        finally:
+            _kill_output_test_processes(proc)
+
+    assert time.monotonic() - started < 2
+    assert b"Aborted!" not in first_line + remaining + stderr
+    records = [json.loads(line) for line in (first_line + remaining).splitlines()]
+    assert records
+    assert all(record["message"].startswith("line ") for record in records)
+    assert all(json.loads(line) for line in stderr.splitlines())
+
+
+_PUMP_DRAIN_INTERRUPT_SCRIPT = """
+import sys
+
+from reflex_base.utils import log
+
+if not log.is_output_supervised():
+    original_is_alive = log._OutputPump.is_alive
+    interrupted = False
+
+    def interrupt_once(pump):
+        global interrupted
+        if pump.name == "reflex-output-stdout" and not interrupted:
+            interrupted = True
+            raise KeyboardInterrupt
+        return original_is_alive(pump)
+
+    log._OutputPump.is_alive = interrupt_once
+    sys.exit(log.supervise_output([sys.executable, __file__]))
+print("completed", flush=True)
+"""
+
+
+def test_supervise_output_handles_interrupt_during_pump_liveness_check(tmp_path):
+    """A Ctrl-C during pump liveness checking cannot skip the bounded drain."""
+    result = _run_script(tmp_path, _PUMP_DRAIN_INTERRUPT_SCRIPT)
+
+    assert result.returncode == 0, result.stderr
+    [record] = [json.loads(line) for line in result.stdout.splitlines()]
+    assert record["message"] == "completed"
+
+
+_OVERSIZED_OUTPUT_SCRIPT = """
+import signal
+import sys
+import time
+
+from reflex_base.utils import log
+
+log._DRAIN_WALL_SECONDS = 0.5
+if not log.is_output_supervised():
+    sys.exit(log.supervise_output([sys.executable, __file__]))
+
+def stop(_signum, _frame):
+    print("oversized " + "x" * 100000, flush=True)
+    sys.exit(0)
+
+signal.signal(signal.SIGTERM, stop)
+print("ready", flush=True)
+time.sleep(30)
+"""
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX-only pipe behavior")
+def test_supervise_output_truncates_oversized_records_as_valid_json(tmp_path):
+    """Shutdown bounds oversized records without affecting normal output."""
+    script = tmp_path / "oversized_output.py"
+    script.write_text(_OVERSIZED_OUTPUT_SCRIPT)
+    with subprocess.Popen(
+        [sys.executable, str(script)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        cwd=tmp_path,
+        env={**os.environ, "REFLEX_LOG_JSON": "true"},
+        start_new_session=True,
+    ) as proc:
+        output_reader: threading.Thread | None = None
+        try:
+            assert proc.stdout is not None
+            assert json.loads(proc.stdout.readline())["message"] == "ready"
+            output_chunks: list[bytes] = []
+            stdout = proc.stdout
+            output_reader = threading.Thread(
+                target=lambda: output_chunks.append(stdout.read()), daemon=True
+            )
+            output_reader.start()
+            proc.send_signal(signal.SIGTERM)
+            assert proc.wait(timeout=3) == 0
+            output_reader.join(timeout=3)
+            assert not output_reader.is_alive()
+            output = b"".join(output_chunks)
+            [line] = output.splitlines()
+            [record] = [json.loads(line)]
+            assert record["message"].startswith("oversized ")
+            assert record["truncated"] is True
+            assert len(line) + 1 <= os.fpathconf(proc.stdout.fileno(), "PC_PIPE_BUF")
+        finally:
+            _kill_output_test_processes(proc)
+            if output_reader is not None:
+                output_reader.join(timeout=3)
+
+
+def test_supervise_output_preserves_oversized_records_during_normal_operation(
+    tmp_path,
+):
+    """Normal operation preserves complete JSON records larger than PIPE_BUF."""
+    result = _run_script(
+        tmp_path,
+        """
+import sys
+from reflex_base.utils import log
+if not log.is_output_supervised():
+    sys.exit(log.supervise_output([sys.executable, __file__]))
+print("oversized " + "x" * 10000, flush=True)
+""",
+    )
+
+    assert result.returncode == 0, result.stderr
+    [record] = [json.loads(line) for line in result.stdout.splitlines()]
+    assert record["message"] == "oversized " + "x" * 10000
+    assert "truncated" not in record
+
+
+def test_truncate_json_record_preserves_exception_and_extra_fields():
+    """Oversized JSON keeps bounded traceback and custom fields."""
+    record = (
+        json.dumps({
+            "timestamp": "2026-10-15T00:00:00+00:00",
+            "level": "error",
+            "logger": "test",
+            "message": "message " + "m" * 500,
+            "exception": "Traceback (most recent call last):\n" + "frame\n" * 500,
+            "request_id": "request-" + "r" * 500,
+        }).encode()
+        + b"\n"
+    )
+
+    bounded = log._truncate_json_record(record, 256)
+    [decoded] = [json.loads(bounded)]
+
+    assert len(bounded) <= 256
+    assert decoded["truncated"] is True
+    assert decoded["exception"].startswith("Traceback (")
+    assert decoded["request_id"].startswith("request-")
+    assert decoded["message"].startswith("message ")
+
+
+def test_truncate_json_record_handles_deeply_nested_values():
+    """Deep JSON values do not exhaust Python recursion while truncating."""
+    nested: object = "leaf"
+    for _ in range(600):
+        nested = {"nested": nested}
+    record = json.dumps({"nested": nested, "message": "x" * 10000}).encode() + b"\n"
+
+    bounded = log._truncate_json_record(record, 16384)
+    [decoded] = [json.loads(bounded)]
+    value = decoded["nested"]
+    for _ in range(600):
+        value = value["nested"]
+
+    assert value == "leaf"
+    assert decoded["message"].startswith("x")
+    assert decoded["truncated"] is True
+    assert len(bounded) <= 16384
+
+
+def test_truncate_json_record_bounds_serialization_retries(monkeypatch):
+    """Near-limit records require logarithmically bounded sizing attempts."""
+    max_bytes = 512
+    base = json.dumps({"message": ""})
+    message = "x" * (max_bytes - len(base.encode()) - 1)
+    record = json.dumps({"message": message}).encode() + b"\n"
+    assert len(record) == max_bytes
+
+    original_dumps = json.dumps
+    calls = 0
+
+    def count_dumps(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        return original_dumps(*args, **kwargs)
+
+    monkeypatch.setattr(json, "dumps", count_dumps)
+    bounded = log._truncate_json_record(record + b" ", max_bytes)
+
+    assert len(bounded) <= max_bytes
+    assert calls <= 10
+
+
+def test_truncate_json_record_normalizes_non_finite_numbers():
+    """Oversized JSON does not emit the non-standard NaN or Infinity tokens."""
+    record = (
+        json.dumps({
+            "message": "x" * 1000,
+            "measurements": [float("nan"), float("inf"), -float("inf")],
+        }).encode()
+        + b"\n"
+    )
+
+    bounded = log._truncate_json_record(record, 256)
+    [decoded] = [
+        json.loads(
+            bounded,
+            parse_constant=lambda value: pytest.fail(
+                f"non-standard JSON token: {value}"
+            ),
+        )
+    ]
+
+    assert decoded["measurements"] == [None, None, None]
+
+
+_SIGTERM_DURING_DRAIN_SCRIPT = """
+import signal
+import sys
+import time
+from pathlib import Path
+
+from reflex_base.utils import log
+
+log._DRAIN_WALL_SECONDS = 2
+if not log.is_output_supervised():
+    sys.exit(log.supervise_output([sys.executable, __file__]))
+def handle_sigterm(_signum, _frame):
+    print("filler " + "x" * 500, flush=True)
+    print("oversized " + "x" * 100000, flush=True)
+    Path("child-finished").write_text("done")
+    raise SystemExit(0)
+signal.signal(signal.SIGTERM, handle_sigterm)
+print("ready", flush=True)
+time.sleep(30)
+"""
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="Linux pipe sizing required")
+def test_supervise_output_keeps_sigterm_handler_during_blocked_drain(tmp_path):
+    """A second SIGTERM cannot interrupt an in-progress bounded JSON drain."""
+    import fcntl
+
+    script = tmp_path / "sigterm_during_drain.py"
+    script.write_text(_SIGTERM_DURING_DRAIN_SCRIPT)
+    with subprocess.Popen(
+        [sys.executable, str(script)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        cwd=tmp_path,
+        env={**os.environ, "REFLEX_LOG_JSON": "true"},
+        start_new_session=True,
+    ) as proc:
+        try:
+            assert proc.stdout is not None
+            fcntl.fcntl(proc.stdout.fileno(), fcntl.F_SETPIPE_SZ, 4096)
+            assert json.loads(proc.stdout.readline())["message"] == "ready"
+            started = time.monotonic()
+            proc.send_signal(signal.SIGTERM)
+            marker = tmp_path / "child-finished"
+            deadline = time.monotonic() + 1
+            while not marker.exists() and time.monotonic() < deadline:
+                time.sleep(0.01)
+            assert marker.exists()
+            time.sleep(0.1)
+            proc.send_signal(signal.SIGTERM)
+            time.sleep(0.1)
+            assert proc.poll() is None
+            assert proc.wait(timeout=3) == 0
+            output = proc.stdout.read()
+        finally:
+            _kill_output_test_processes(proc)
+
+    assert time.monotonic() - started >= 1.5
+    records = [json.loads(line) for line in output.splitlines()]
+    assert records
+    assert all(
+        record["message"].startswith(("filler ", "oversized ")) for record in records
+    )
 
 
 _LINGERING_SCRIPT = """

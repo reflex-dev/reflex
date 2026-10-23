@@ -25,10 +25,12 @@ import datetime
 import functools
 import json
 import logging
+import math
 import os
 import re
 import shutil
 import signal
+import stat
 import subprocess
 import sys
 import threading
@@ -36,7 +38,7 @@ import time
 from collections.abc import Generator
 from pathlib import Path
 from types import FrameType, ModuleType
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from rich.console import Console
 from rich.errors import MarkupError
@@ -374,6 +376,126 @@ def _write_all(fd: int, data: bytes):
         view = view[os.write(fd, view) :]
 
 
+def _pipe_atomic_write_limit(fd: int) -> int | None:
+    """Return the atomic-write limit when ``fd`` targets a pipe.
+
+    Args:
+        fd: The output file descriptor.
+
+    Returns:
+        The pipe's atomic-write limit, or None for non-pipe outputs.
+    """
+    if os.name != "posix":
+        return None
+    try:
+        if not stat.S_ISFIFO(os.fstat(fd).st_mode):
+            return None
+    except OSError:
+        return None
+    try:
+        return os.fpathconf(fd, "PC_PIPE_BUF")
+    except (AttributeError, OSError, ValueError):
+        return 512
+
+
+def _bound_json_value(value: Any, max_chars: int, marker: str) -> tuple[Any, bool]:
+    """Bound a JSON value and report whether it needs traversal.
+
+    Args:
+        value: The JSON value to copy.
+        max_chars: Maximum output length for each string.
+        marker: Suffix used to indicate a shortened string.
+
+    Returns:
+        The bounded value and whether it is a container to traverse.
+    """
+    if isinstance(value, dict):
+        return {}, True
+    if isinstance(value, list):
+        return [], True
+    if isinstance(value, str) and len(value) > max_chars:
+        if max_chars <= len(marker):
+            return marker[:max_chars], False
+        return value[: max_chars - len(marker)] + marker, False
+    if isinstance(value, float) and not math.isfinite(value):
+        return None, False
+    return value, False
+
+
+def _copy_bounded_json(payload: dict[str, Any], max_chars: int) -> dict[str, Any]:
+    """Iteratively copy JSON values with bounded strings and finite numbers.
+
+    Args:
+        payload: The JSON object to copy.
+        max_chars: Maximum output length for each string.
+
+    Returns:
+        A copy with bounded strings and normalized non-finite floats.
+    """
+    marker = "...[truncated]"
+    bounded: dict[str, Any] = {}
+    pending: list[tuple[Any, Any]] = [(payload, bounded)]
+    while pending:
+        source, destination = pending.pop()
+        items = source.items() if isinstance(source, dict) else enumerate(source)
+        for key, value in items:
+            child, is_container = _bound_json_value(value, max_chars, marker)
+            if isinstance(destination, dict):
+                destination[key] = child
+            else:
+                destination.append(child)
+            if is_container:
+                pending.append((value, child))
+    return bounded
+
+
+def _truncate_json_record(record: bytes, max_bytes: int) -> bytes:
+    """Truncate an oversized JSON line while keeping it valid JSON.
+
+    Args:
+        record: A JSON record, optionally ending in a newline.
+        max_bytes: Maximum encoded size including the newline.
+
+    Returns:
+        The original record if it fits, otherwise a shortened valid record.
+    """
+    if len(record) <= max_bytes:
+        return record
+    try:
+        payload = json.loads(record.removesuffix(b"\n"))
+    except (RecursionError, UnicodeDecodeError, ValueError):
+        payload = {}
+    if not isinstance(payload, dict):
+        payload = {}
+    payload["truncated"] = True
+
+    low, high = 0, max_bytes
+    best: bytes | None = None
+    while low <= high:
+        max_chars = (low + high) // 2
+        try:
+            result = (
+                json.dumps(
+                    _copy_bounded_json(payload, max_chars), allow_nan=False
+                ).encode()
+                + b"\n"
+            )
+        except (RecursionError, ValueError):
+            return (
+                b'{"level":"warning","message":"[record truncated]","truncated":true}\n'
+            )
+        if len(result) <= max_bytes:
+            best = result
+            low = max_chars + 1
+        else:
+            high = max_chars - 1
+
+    if best is not None:
+        return best
+
+    return b'{"level":"warning","message":"[record truncated]","truncated":true}\n'
+
+
 class _OutputPump(threading.Thread):
     """Reader thread that turns one child output pipe into JSON lines."""
 
@@ -391,11 +513,17 @@ class _OutputPump(threading.Thread):
         self.write_fd = write_fd
         self.level = level
         self.logger_name = name
+        self._atomic_write_limit = _pipe_atomic_write_limit(write_fd)
         # When the reader started waiting for data; None while it works.
         self.idle_since: float | None = None
         # Cumulative write time and the start of any ongoing write.
         self._write_state: tuple[float, float | None] = (0.0, None)
         self._write_lock = threading.Lock()
+        self._shutdown_requested = threading.Event()
+
+    def request_shutdown(self):
+        """Use bounded record writes for output produced during shutdown."""
+        self._shutdown_requested.set()
 
     def run(self):
         """Forward the pipe until every writer closed it."""
@@ -432,9 +560,52 @@ class _OutputPump(threading.Thread):
             self._write_state = (elapsed, started)
         # Keep reading when the consumer is gone: a full pipe blocks the child.
         with contextlib.suppress(OSError):
-            _write_all(self.write_fd, data)
+            if self._atomic_write_limit is None:
+                _write_all(self.write_fd, data)
+            else:
+                self._write_records(data)
         with self._write_lock:
             self._write_state = (elapsed + time.monotonic() - started, None)
+
+    def _write_records(self, data: bytes) -> None:
+        """Write complete records in batches no larger than the pipe limit.
+
+        Args:
+            data: The complete JSON records to write.
+        """
+        limit = self._atomic_write_limit
+        assert limit is not None
+        records = data.splitlines(keepends=True)
+        batch = bytearray()
+        for index, record in enumerate(records):
+            if self._shutdown_requested.is_set():
+                if batch:
+                    _write_all(self.write_fd, bytes(batch))
+                self._write_shutdown_records(records[index:])
+                return
+            if len(record) > limit:
+                if batch:
+                    _write_all(self.write_fd, bytes(batch))
+                    batch.clear()
+                _write_all(self.write_fd, record)
+            else:
+                if len(batch) + len(record) > limit:
+                    _write_all(self.write_fd, bytes(batch))
+                    batch.clear()
+                batch.extend(record)
+        if batch:
+            _write_all(self.write_fd, bytes(batch))
+
+    def _write_shutdown_records(self, records: list[bytes]) -> None:
+        """Write shutdown records individually, truncating oversized lines.
+
+        Args:
+            records: Complete JSON records to write during shutdown.
+        """
+        for record in records:
+            if self._atomic_write_limit is not None:
+                record = _truncate_json_record(record, self._atomic_write_limit)
+            _write_all(self.write_fd, record)
 
     def writing_snapshot(self) -> tuple[float, float]:
         """Capture the current time and cumulative write duration together.
@@ -477,19 +648,48 @@ class _OutputPump(threading.Thread):
                 return
 
 
-def supervise_output(args: list[str]) -> int:
-    """Run a command and turn everything it and its descendants print into JSON records.
+class _ShutdownController:
+    """Forward shutdown signals and enforce one deadline for the child."""
 
-    The command runs with its stdout and stderr on pipes, which every process
-    it starts inherits. Reader threads write each line to this process's
-    stdout and stderr as a JSON record: lines that already are JSON log
-    records pass through, and a Python traceback becomes one record.
+    def __init__(self, proc: subprocess.Popen, pumps: list[_OutputPump]):
+        self.proc = proc
+        self.pumps = pumps
+        self.requested_at: float | None = None
+        self.timer: threading.Timer | None = None
 
-    Args:
-        args: The command to run.
+    def request(self, signum: int, _frame: FrameType | None):
+        """Start the deadline once and forward every signal to the child."""
+        if self.requested_at is None:
+            self.requested_at = time.monotonic()
+            for pump in self.pumps:
+                pump.request_shutdown()
+            self.timer = threading.Timer(_DRAIN_WALL_SECONDS, self._kill_child)
+            self.timer.daemon = True
+            self.timer.start()
+        try:
+            if os.name == "posix":
+                self.proc.send_signal(signum)
+            else:
+                self.proc.terminate()
+        except OSError:
+            pass
+
+    def _kill_child(self):
+        """Stop the child when the shutdown deadline expires."""
+        with contextlib.suppress(OSError):
+            self.proc.kill()
+
+    def cancel(self):
+        """Cancel the deadline timer after the output has drained."""
+        if self.timer is not None:
+            self.timer.cancel()
+
+
+def _supervised_environment() -> dict[str, str]:
+    """Build the environment used by a supervised child process.
 
     Returns:
-        The command's exit code.
+        The child environment with supervisor metadata and UTF-8 output.
     """
     for stream in (sys.stdout, sys.stderr):
         if stream is not None:
@@ -497,14 +697,60 @@ def supervise_output(args: list[str]) -> int:
     # The readers decode UTF-8; Python otherwise uses the locale encoding.
     # A configured error handler is kept.
     _, _, errors = os.environ.get("PYTHONIOENCODING", "").partition(":")
-    env = {
+    return {
         "PYTHONUNBUFFERED": "1",
         **os.environ,
         _SUPERVISED_ENV_VAR: str(os.getpid()),
         "PYTHONIOENCODING": f"utf-8:{errors}" if errors else "utf-8",
     }
-    # Raw pipes that only the readers close: closing a pipe while a reader is
-    # blocked on it waits for that read on Windows.
+
+
+def _wait_for_child(proc: subprocess.Popen, shutdown: _ShutdownController) -> int:
+    """Wait for the child while honoring repeated Ctrl-C on Windows.
+
+    Returns:
+        The child's exit code.
+    """
+    while True:
+        try:
+            return proc.wait()
+        except KeyboardInterrupt:
+            shutdown.request(signal.SIGINT, None)
+
+
+def _drain_output_pumps(
+    pumps: list[_OutputPump], shutdown: _ShutdownController
+) -> None:
+    """Drain child output within the normal or interrupted shutdown deadline."""
+    wall_deadline = (
+        shutdown.requested_at if shutdown.requested_at is not None else time.monotonic()
+    ) + _DRAIN_WALL_SECONDS
+    snapshots = [pump.writing_snapshot() for pump in pumps]
+    for pump, (exited_at, writing_at_exit) in zip(pumps, snapshots, strict=True):
+        while True:
+            try:
+                if not pump.is_alive():
+                    break
+                pump.drain(exited_at, writing_at_exit, wall_deadline)
+                break
+            except KeyboardInterrupt:
+                shutdown.request(signal.SIGINT, None)
+
+
+def supervise_output(args: list[str]) -> int:
+    """Run a command and turn its output into JSON records.
+
+    The command's output is read from pipes and written to this process's
+    stdout and stderr. Existing JSON records pass through, and a Python
+    traceback becomes one record.
+
+    Args:
+        args: The command to run.
+
+    Returns:
+        The command's exit code.
+    """
+    env = _supervised_environment()
     out_read, out_write = os.pipe()
     err_read, err_write = os.pipe()
     proc = subprocess.Popen(args, stdout=out_write, stderr=err_write, env=env)
@@ -514,24 +760,26 @@ def supervise_output(args: list[str]) -> int:
         _OutputPump(out_read, 1, "info", "stdout"),
         _OutputPump(err_read, 2, "warning", "stderr"),
     ]
-    for pump in pumps:
-        pump.start()
-    signal.signal(signal.SIGTERM, lambda *_: proc.terminate())
-    while True:
-        try:
-            returncode = proc.wait()
-            break
-        except KeyboardInterrupt:
-            # A terminal Ctrl-C reaches the child too, a SIGINT sent only to
-            # this process does not. The child handles a repeated interrupt.
-            if sys.platform != "win32":
-                proc.send_signal(signal.SIGINT)
-    wall_deadline = time.monotonic() + _DRAIN_WALL_SECONDS
-    snapshots = [pump.writing_snapshot() for pump in pumps]
-    for pump, (exited_at, writing_at_exit) in zip(pumps, snapshots, strict=True):
-        pump.drain(exited_at, writing_at_exit, wall_deadline)
-    # A child killed by a signal reports -signum; shells report 128 + signum.
-    return returncode if returncode >= 0 else 128 - returncode
+    shutdown = _ShutdownController(proc, pumps)
+    previous_handlers = {}
+    try:
+        previous_handlers[signal.SIGTERM] = signal.signal(
+            signal.SIGTERM, shutdown.request
+        )
+        if os.name == "posix":
+            previous_handlers[signal.SIGINT] = signal.signal(
+                signal.SIGINT, shutdown.request
+            )
+        for pump in pumps:
+            pump.start()
+        returncode = _wait_for_child(proc, shutdown)
+        _drain_output_pumps(pumps, shutdown)
+        # A child killed by a signal reports -signum; shells report 128 + signum.
+        return returncode if returncode >= 0 else 128 - returncode
+    finally:
+        shutdown.cancel()
+        for signum, handler in previous_handlers.items():
+            signal.signal(signum, handler)
 
 
 class JsonHandler(logging.Handler):
