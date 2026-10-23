@@ -241,6 +241,8 @@ def ClientStateLateMountApp():
     flag = rx.client_state("", name="flag")
     # Only ever written from the frontend; the reader mounts afterwards.
     shared = rx.client_state("initial", name="shared")
+    # Only ever written by backend pushes, before any component reads it.
+    pushed = rx.client_state("initial", name="pushed")
 
     class LateMountState(rx.State):
         mounted: bool = False
@@ -250,6 +252,14 @@ def ClientStateLateMountApp():
         @rx.event
         def reveal(self):
             self.show = True
+
+        @rx.event
+        def push_value(self):
+            return pushed.push("pushed")
+
+        @rx.event
+        def push_none(self):
+            return pushed.push(None)
 
         @rx.event(background=True)
         async def go(self):
@@ -285,8 +295,24 @@ def ClientStateLateMountApp():
                 id="token",
             ),
             rx.el.button("set", on_click=shared.set("clicked"), id="setter"),
+            rx.el.button("reset", on_click=shared.set("initial"), id="resetter"),
             rx.el.button("reveal", on_click=LateMountState.reveal, id="reveal"),
             rx.cond(LateMountState.show, rx.el.div(shared.value, id="late-reader")),
+        )
+
+    def push_before_mount() -> rx.Component:
+        return rx.el.div(
+            rx.input(
+                value=LateMountState.router.session.client_token,
+                read_only=True,
+                id="token",
+            ),
+            rx.el.button("push", on_click=LateMountState.push_value, id="pusher"),
+            rx.el.button(
+                "push none", on_click=LateMountState.push_none, id="none-pusher"
+            ),
+            rx.el.button("reveal", on_click=LateMountState.reveal, id="reveal"),
+            rx.cond(LateMountState.show, rx.el.div(pushed.value, id="pushed-reader")),
         )
 
     def backend_default_page() -> rx.Component:
@@ -304,6 +330,35 @@ def ClientStateLateMountApp():
     app.add_page(index, route="/")
     app.add_page(setter_first, route="/setter-first")
     app.add_page(backend_default_page, route="/backend-default")
+    app.add_page(push_before_mount, route="/push-before-mount")
+
+
+def _script_errors(page: Page) -> list[str]:
+    """Record errors raised by scripts the backend runs on the page.
+
+    The frontend catches these and only logs them, so they never reach
+    ``pageerror``.
+
+    Args:
+        page: Playwright page.
+
+    Returns:
+        A list that is appended to as errors are logged.
+    """
+    errors: list[str] = []
+    page.on(
+        "console",
+        lambda message: (
+            errors.append(message.text)
+            if message.text.startswith((
+                "_call_script",
+                "_call_function",
+                "_client_state",
+            ))
+            else None
+        ),
+    )
+    return errors
 
 
 def _page_errors(page: Page) -> list[str]:
@@ -423,3 +478,69 @@ def test_setter_only_sibling_with_backend_default(
     page.click("#setter")
     expect(page.locator("#backend-reader")).to_have_value("changed")
     assert errors == []
+
+
+def test_late_reader_follows_a_set_back_to_the_default(
+    client_state_late_mount_app: AppHarness, page: Page
+) -> None:
+    """A reader that mounts after a frontend set still follows a set back to the default.
+
+    Ported from reflex-dev/reflex#7407. Under the old design the late reader's
+    ``useState`` started from the default, and React skips a state update equal to
+    the current state, so setting the default again left it showing the stale
+    value. A late consumer here binds to the one existing slot instead.
+
+    Args:
+        client_state_late_mount_app: Running app harness.
+        page: Playwright page.
+    """
+    assert client_state_late_mount_app.frontend_url is not None
+    errors = _page_errors(page)
+    page.goto(
+        client_state_late_mount_app.frontend_url.removesuffix("/") + "/setter-first"
+    )
+    expect(page.locator("#token")).not_to_have_value("")
+
+    page.click("#setter")
+    page.click("#reveal")
+    expect(page.locator("#late-reader")).to_have_text("clicked")
+    page.click("#resetter")
+    expect(page.locator("#late-reader")).to_have_text("initial")
+    assert errors == []
+
+
+@pytest.mark.parametrize(
+    ("pusher", "expected"),
+    [("#pusher", "pushed"), ("#none-pusher", "")],
+    ids=["value", "none"],
+)
+def test_push_before_any_reader_mounts(
+    client_state_late_mount_app: AppHarness, page: Page, pusher: str, expected: str
+) -> None:
+    """A backend push lands before any component using the var has mounted.
+
+    Ported from reflex-dev/reflex#7407. The store claims the slot on write, so
+    the first consumer to mount binds to the pushed value rather than seeding the
+    default -- and a pushed ``None`` is a value, not a missing slot.
+
+    Args:
+        client_state_late_mount_app: Running app harness.
+        page: Playwright page.
+        pusher: The button that pushes.
+        expected: The text the late reader shows.
+    """
+    assert client_state_late_mount_app.frontend_url is not None
+    errors = _page_errors(page)
+    script_errors = _script_errors(page)
+    page.goto(
+        client_state_late_mount_app.frontend_url.removesuffix("/")
+        + "/push-before-mount"
+    )
+    expect(page.locator("#token")).not_to_have_value("")
+    expect(page.locator("#pushed-reader")).to_have_count(0)
+
+    page.click(pusher)
+    page.click("#reveal")
+    expect(page.locator("#pushed-reader")).to_have_text(expected)
+    assert errors == []
+    assert script_errors == []

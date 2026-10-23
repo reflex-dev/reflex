@@ -6,7 +6,7 @@ import logging
 import signal
 import sys
 from collections.abc import Callable
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from importlib import import_module
 from importlib.util import find_spec
 from pathlib import Path
@@ -277,6 +277,11 @@ def _init(
         reflex_build_redirect()
         return
 
+    # For an existing app, validate the configured app name rather than the
+    # name of the directory that happens to contain it.
+    if not name and constants.Config.FILE.exists():
+        name = get_config().app_name
+
     # Validate the app name.
     app_name = prerequisites.validate_app_name(name)
     console.rule(f"[bold]Initializing {app_name}")
@@ -365,6 +370,7 @@ def _compile_app(*, avoid_dirty_check: bool = True):
     if exec.should_use_granian() and avoid_dirty_check:
         import concurrent.futures
 
+        exec.set_dev_start_method()
         with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
             compile_future = executor.submit(
                 _compile_app_worker, app_task, args, kwargs
@@ -508,21 +514,26 @@ def _run_preview(running_mode: constants.RunningMode, port: int, host: str):
     """
     import atexit
 
-    from reflex.utils import build, exec, processes, telemetry
+    from reflex.utils import build, exec, path_ops, prerequisites, processes, telemetry
 
     config = get_config()
 
-    config._set_persistent(frontend_port=port, backend_port=port)
+    with (
+        path_ops.file_lock(prerequisites.get_web_dir())
+        if running_mode.has_frontend()
+        else nullcontext()
+    ):
+        config._set_persistent(frontend_port=port, backend_port=port)
 
-    # Mount the compiled frontend into the dev backend so no Vite server is needed.
-    environment.REFLEX_MOUNT_FRONTEND_COMPILED_APP.set(
-        running_mode.has_frontend() and running_mode.has_backend()
-    )
+        # Mount the compiled frontend into the dev backend so no Vite server is needed.
+        environment.REFLEX_MOUNT_FRONTEND_COMPILED_APP.set(
+            running_mode.has_frontend() and running_mode.has_backend()
+        )
 
-    if running_mode.has_frontend():
-        # Compile the app and produce the initial frontend build.
-        _compile_app()
-        build.setup_frontend_prod(Path.cwd())
+        if running_mode.has_frontend():
+            # Compile the app and produce the initial frontend build.
+            _compile_app()
+            build.setup_frontend_prod(Path.cwd())
 
     # Post a telemetry event.
     telemetry.send("run-preview")
@@ -547,21 +558,27 @@ def _run_preview(running_mode: constants.RunningMode, port: int, host: str):
 def _run_prod(running_mode: constants.RunningMode, port: int, host: str):
     import atexit
 
-    from reflex.utils import build, exec, processes, telemetry
+    from reflex.utils import build, exec, path_ops, prerequisites, processes, telemetry
 
     config = get_config()
 
-    config._set_persistent(frontend_port=port, backend_port=port)
+    with (
+        path_ops.file_lock(prerequisites.get_web_dir())
+        if running_mode.has_frontend()
+        else nullcontext()
+    ):
+        config._set_persistent(frontend_port=port, backend_port=port)
 
-    if running_mode.has_frontend():
-        # Get the app module.
-        _compile_app(avoid_dirty_check=False)
-        build.setup_frontend_prod(Path.cwd())
+        if running_mode.has_frontend():
+            # Get the app module.
+            _compile_app(avoid_dirty_check=False)
+            build.setup_frontend_prod(Path.cwd())
 
     _skip_compile()
 
-    # Post a telemetry event.
-    telemetry.send("run-prod")
+    # Post a telemetry event. Sent synchronously: on Linux the backend forks its
+    # workers from this process, which must hold no telemetry thread by then.
+    telemetry._process_event("run-prod", config.telemetry_enabled)
 
     # Display custom message when there is a keyboard interrupt.
     atexit.register(processes.atexit_handler)
@@ -1139,6 +1156,37 @@ def rename(new_name: str):
     # Reload so we read rxconfig.py from the current directory, not a cached one.
     reload_config()
     rename_app(new_name, get_config().loglevel)
+
+
+_COMPONENT_REMOVED = (
+    "`reflex component` was removed in Reflex 0.10. Wrap React components "
+    "directly in your app (https://reflex.dev/docs/wrapping-react/overview/) "
+    "and start reusable component packages from the component template: "
+    "https://github.com/reflex-dev/component-template"
+)
+
+
+@cli.command(
+    name="component",
+    hidden=True,
+    help=_COMPONENT_REMOVED,
+    context_settings={"ignore_unknown_options": True},
+)
+@click.argument("args", nargs=-1, type=click.UNPROCESSED)
+def component(args: tuple[str, ...]):
+    """Point users of the removed component CLI at its replacement.
+
+    Accepts any subcommand and flags so `reflex component init`, `build`,
+    `share`, and `install` all land here instead of a "No such command" error.
+
+    Args:
+        args: The removed subcommand and its flags, ignored.
+
+    Raises:
+        Exit: Always, after reporting where the component workflow moved.
+    """
+    logger.error(_COMPONENT_REMOVED)
+    raise click.exceptions.Exit(1)
 
 
 cli.add_command(

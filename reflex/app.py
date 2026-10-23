@@ -28,6 +28,7 @@ from collections.abc import (
     Sequence,
 )
 from contextvars import Token
+from datetime import timedelta
 from pathlib import Path
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, overload
@@ -51,7 +52,14 @@ from reflex_base.registry import RegistrationContext
 from reflex_base.telemetry_context import CompileTrigger, TelemetryContext
 from reflex_base.utils import memo_paths
 from reflex_base.utils.imports import ImportVar
-from reflex_base.utils.types import ASGIApp, Message, Receive, Scope, Send
+from reflex_base.utils.types import (
+    ASGIApp,
+    Message,
+    Receive,
+    Scope,
+    Send,
+    is_non_string_sequence,
+)
 from reflex_base.vars.dep_tracking import is_dependency
 from reflex_components_core.base.error_boundary import ErrorBoundary
 from reflex_components_core.base.fragment import Fragment
@@ -1159,7 +1167,11 @@ class App(MiddlewareMixin, LifespanMixin):
             state.setup_dynamic_args(prepared.route_args)
 
         self._load_events[page.route] = (
-            (page.on_load if isinstance(page.on_load, list) else [page.on_load])
+            (
+                list(page.on_load)
+                if is_non_string_sequence(page.on_load)
+                else [page.on_load]
+            )
             if page.on_load is not None
             else []
         )
@@ -1843,7 +1855,11 @@ class App(MiddlewareMixin, LifespanMixin):
         """Modify the state out of band.
 
         Args:
-            token: The token to modify the state for.
+            token: The token to modify the state for. Use
+                ``rx.BaseStateToken(ident=client_token, cls=StateClass)``.
+                Deprecated string tokens must include the state path in the
+                format ``<client_token>_<state_full_name>``; a bare client token
+                is not supported.
             background: Whether the modification is happening in a background task.
             previous_dirty_vars: Vars that are considered dirty from a previous operation.
 
@@ -1852,6 +1868,8 @@ class App(MiddlewareMixin, LifespanMixin):
 
         Raises:
             RuntimeError: If the app has not been initialized yet.
+            ValueError: If a legacy string token has no state path or its state
+                class cannot be found.
         """
         if self.event_namespace is None:
             msg = "App has not been initialized yet."
@@ -2083,13 +2101,29 @@ def _sio_loads(data: str | bytes, **kwargs: Any) -> Any:
 def _decode_asgi_headers(headers: Iterable[tuple[bytes, bytes]]) -> dict[str, str]:
     """Decode raw ASGI scope header pairs into a str-keyed dict.
 
+    ASGI keeps a repeated header as separate pairs, so their values are combined in
+    order: cookies with "; " (RFC 9113 section 8.2.3), any other field with ", "
+    (RFC 9110 section 5.3). Header values that are not valid UTF-8 are decoded as
+    Latin-1.
+
     Args:
         headers: Raw (name, value) byte pairs from the ASGI scope.
 
     Returns:
         A dict mapping decoded header names to decoded values.
     """
-    return {k.decode("utf-8"): v.decode("utf-8") for (k, v) in headers}
+    decoded: dict[str, str] = {}
+    for raw_name, raw_value in headers:
+        name = raw_name.decode()
+        try:
+            value = raw_value.decode()
+        except UnicodeDecodeError:
+            value = raw_value.decode("latin-1")
+        if name in decoded:
+            decoded[name] += ("; " if name == "cookie" else ", ") + value
+        else:
+            decoded[name] = value
+    return decoded
 
 
 class EventNamespace(AsyncNamespace):
@@ -2167,11 +2201,35 @@ class EventNamespace(AsyncNamespace):
         if isinstance(self._token_manager, RedisTokenManager):
             # Make sure this instance is watching for updates from other instances.
             self._token_manager.ensure_lost_and_found_task(self.emit_update)
-        boot_event = (
-            auth.get(constants.CompileVars.CONNECT_AUTH_EVENT)
-            if isinstance(auth, dict)
-            else None
-        )
+        boot_event = frontend_schema = None
+        if isinstance(auth, dict):
+            boot_event = auth.get(constants.CompileVars.CONNECT_AUTH_EVENT)
+            frontend_schema = auth.get(constants.CompileVars.CONNECT_AUTH_STATE_SCHEMA)
+        # A frontend compiled for another state tree is told so before it
+        # hydrates; an older frontend sends no hash and is left alone. The
+        # backend hash is cached on the state class, so this is one lookup.
+        if (
+            frontend_schema is not None
+            and self.app._state is not None
+            and frontend_schema
+            != (backend_schema := self.app._state._to_frontend_schema())
+        ):
+            logger.warning(
+                "Frontend state schema "
+                f"{format.sanitize_client_log_value(frontend_schema, max_length=64)} "
+                f"for session {sid} does not match the backend state schema "
+                f"{backend_schema}: the frontend was built for another version of "
+                "the app and is told to reload."
+            )
+            await self.emit(
+                str(constants.SocketEvent.STATE_MISMATCH),
+                {
+                    "backend": backend_schema,
+                    "reload_cooldown_ms": auto_reload_cooldown()
+                    // timedelta(milliseconds=1),
+                },
+                to=sid,
+            )
         query_params = urllib.parse.parse_qs(environ.get("QUERY_STRING", ""))
         token_list = query_params.get("token", [])
         if token_list:
@@ -2229,16 +2287,16 @@ class EventNamespace(AsyncNamespace):
         except (KeyError, IndexError):
             client_ip = environ.get("REMOTE_ADDR", "0.0.0.0")
 
-        # Unroll reverse proxy forwarded headers.
-        client_ip = (
-            headers
-            .get(
-                "x-forwarded-for",
-                client_ip,
-            )
-            .partition(",")[0]
-            .strip()
-        )
+        # X-Forwarded-For is client-controlled unless the request arrived through
+        # a configured chain of trusted reverse proxies.
+        trusted_proxy_hops = get_config().trusted_proxy_hops
+        if trusted_proxy_hops:
+            forwarded_for = headers.get("x-forwarded-for", "")
+            forwarded_ips = [
+                ip.strip() for ip in forwarded_for.split(",") if ip.strip()
+            ]
+            if len(forwarded_ips) >= trusted_proxy_hops:
+                client_ip = forwarded_ips[-trusted_proxy_hops]
         return {
             constants.RouteVar.SESSION_ID: sid,
             constants.RouteVar.HEADERS: headers,
@@ -2261,6 +2319,14 @@ class EventNamespace(AsyncNamespace):
         # Get token before cleaning up
         disconnect_token = self.sid_to_token.get(sid)
         if disconnect_token:
+            socket_record = self._token_manager.token_to_socket.get(disconnect_token)
+            if (
+                socket_record is not None
+                and socket_record.sid == sid
+                and socket_record.instance_id == self._token_manager.instance_id
+                and (processor := self.app._event_processor) is not None
+            ):
+                processor._on_disconnect(disconnect_token)
             # Use async cleanup through token manager
             task = asyncio.create_task(
                 self._token_manager.disconnect_token(disconnect_token, sid),
@@ -2464,8 +2530,8 @@ class EventNamespace(AsyncNamespace):
         if error_type == constants.ClientErrorType.DISPATCH_MISSING:
             substate = format.sanitize_client_log_value(data.get("substate", ""))
             report = (
-                f"[SID: {sid}] State update failed: "
-                f"no dispatch function for substate(s) '{substate}'. "
+                f"[SID: {sid}] Skipped state update for unknown substate(s) "
+                f"'{substate}': no dispatch function registered. "
                 "This indicates a frontend/backend state mismatch. "
                 "Rebuild the frontend or check that api_url points to the matching backend."
             )

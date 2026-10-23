@@ -1002,30 +1002,115 @@ import sys
 from reflex_base.utils import log
 
 if not log.is_output_supervised():
-    sys.exit(log.supervise_output([sys.executable, __file__]))
+    sys.exit(log.supervise_output([sys.executable, __file__, *sys.argv[1:]]))
 for i in range(200):
-    print(f"line {i:03d} " + "x" * 1000)
+    print(f"line {i:03d} " + "x" * 1000, file=getattr(sys, sys.argv[1]))
 """
 
 
-def test_supervise_output_drains_everything_for_a_slow_consumer(tmp_path):
+@pytest.mark.parametrize("drain_max_seconds", [log._DRAIN_MAX_SECONDS, 0.05])
+@pytest.mark.parametrize("stream", ["stdout", "stderr"])
+def test_supervise_output_drains_everything_for_a_slow_consumer(
+    tmp_path, drain_max_seconds, stream
+):
     """Output still in the pipes at exit reaches a consumer that reads late."""
     script = tmp_path / "burst.py"
-    script.write_text(_BURST_SCRIPT)
+    script.write_text(
+        f"from reflex_base.utils import log\n"
+        f"log._DRAIN_MAX_SECONDS = {drain_max_seconds}\n" + _BURST_SCRIPT
+    )
     with subprocess.Popen(
-        [sys.executable, str(script)],
-        stdout=subprocess.PIPE,
+        [sys.executable, str(script), stream],
+        stdout=subprocess.PIPE if stream == "stdout" else None,
+        stderr=subprocess.PIPE if stream == "stderr" else None,
         env={**os.environ, "REFLEX_LOG_JSON": "true"},
     ) as proc:
-        assert proc.stdout is not None
+        output = proc.stdout if stream == "stdout" else proc.stderr
+        assert output is not None
         lines = []
         # A consumer slower than the writer keeps the pipes full at exit.
-        for line in proc.stdout:
+        for line in output:
             lines.append(line)
             time.sleep(0.015)
         proc.wait(timeout=30)
+    assert proc.returncode == 0
     assert len(lines) == 200
     assert json.loads(lines[-1])["message"].startswith("line 199 ")
+
+
+def test_output_pump_write_snapshots_use_a_consistent_cutoff(monkeypatch):
+    """Snapshots measure a blocked or completed write at their own cutoff."""
+    pump = log._OutputPump(0, 1, "info", "stdout")
+    snapshots = []
+
+    def write(fd, data):
+        """Capture a snapshot while the simulated write is in progress.
+
+        Args:
+            fd: The output file descriptor.
+            data: The bytes to write.
+
+        Returns:
+            The number of bytes written.
+        """
+        snapshots.append(pump.writing_snapshot())
+        return len(data)
+
+    monkeypatch.setattr(
+        time, "monotonic", mock.Mock(side_effect=[10.0, 15.0, 20.0, 25.0])
+    )
+    monkeypatch.setattr(os, "write", write)
+    pump._write([b"line"], [], final=False)
+    assert snapshots == [(15.0, 5.0)]
+    assert pump.writing_snapshot() == (25.0, 10.0)
+
+
+_STALLED_CONSUMER_SCRIPT = """
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+from reflex_base.utils import log
+
+log._DRAIN_WALL_SECONDS = 0.5
+if not log.is_output_supervised():
+    sys.exit(log.supervise_output([sys.executable, __file__]))
+writer = subprocess.Popen([
+    sys.executable,
+    "-c",
+    "import os\\nwhile True:\\n    os.write(int(os.environ['TEST_OUTPUT_FD']), (b'x' * 1023 + b'\\\\n') * 64)",
+])
+Path("writer.pid").write_text(str(writer.pid))
+"""
+
+
+@pytest.mark.parametrize("stream_fd", [1, 2])
+def test_supervise_output_bounds_shutdown_for_a_stalled_consumer(tmp_path, stream_fd):
+    """A lingering writer and an unread output pipe cannot prevent shutdown."""
+    script = tmp_path / "stalled.py"
+    script.write_text(_STALLED_CONSUMER_SCRIPT)
+    with subprocess.Popen(
+        [sys.executable, str(script)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        cwd=tmp_path,
+        env={
+            **os.environ,
+            "REFLEX_LOG_JSON": "true",
+            "TEST_OUTPUT_FD": str(stream_fd),
+        },
+    ) as proc:
+        try:
+            assert proc.wait(timeout=5) == 0
+        finally:
+            if proc.poll() is None:
+                proc.kill()
+                proc.wait(timeout=5)
+            pid_file = tmp_path / "writer.pid"
+            if pid_file.exists():
+                with contextlib.suppress(OSError):
+                    os.kill(int(pid_file.read_text()), signal.SIGTERM)
 
 
 _LINGERING_SCRIPT = """
@@ -1053,7 +1138,7 @@ def test_supervise_output_does_not_wait_for_lingering_descendants(tmp_path):
     assert elapsed < 10
 
 
-_SIGTERM_SCRIPT = """
+_SLEEP_SCRIPT = """
 import sys
 import time
 
@@ -1066,11 +1151,16 @@ time.sleep(30)
 """
 
 
-@pytest.mark.skipif(sys.platform == "win32", reason="SIGTERM is POSIX-only")
-def test_supervise_output_forwards_sigterm(tmp_path):
-    """Terminating the supervisor terminates the command and reports the signal."""
-    script = tmp_path / "sigterm.py"
-    script.write_text(_SIGTERM_SCRIPT)
+@pytest.mark.skipif(
+    sys.platform == "win32", reason="PID-targeted signals are POSIX-only"
+)
+@pytest.mark.parametrize(
+    "signum", [signal.SIGTERM, signal.SIGINT], ids=["sigterm", "sigint"]
+)
+def test_supervise_output_forwards_shutdown_signal(tmp_path, signum):
+    """A signal sent to the supervisor's PID stops the command and is reported."""
+    script = tmp_path / "sleep.py"
+    script.write_text(_SLEEP_SCRIPT)
     with subprocess.Popen(
         [sys.executable, str(script)],
         stdout=subprocess.PIPE,
@@ -1078,8 +1168,8 @@ def test_supervise_output_forwards_sigterm(tmp_path):
     ) as proc:
         assert proc.stdout is not None
         assert json.loads(proc.stdout.readline())["message"] == "ready"
-        proc.send_signal(signal.SIGTERM)
-        assert proc.wait(timeout=10) == 128 + signal.SIGTERM
+        proc.send_signal(signum)
+        assert proc.wait(timeout=10) == 128 + signum
 
 
 def test_output_pump_survives_a_gone_consumer():

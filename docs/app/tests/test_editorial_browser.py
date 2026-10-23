@@ -60,6 +60,33 @@ def test_article_theme_preserves_live_example_styles_and_events(page: Page):
     expect(value).to_have_text(str(before + 1))
 
 
+@pytest.mark.parametrize("width", [320, 390])
+def test_wide_demo_starts_inside_its_scroll_container(page: Page, width: int):
+    """A fixed-width example must not lose its left edge on a narrow screen."""
+    page.set_viewport_size({"width": width, "height": 900})
+    page.goto(f"{PREVIEW_URL}/docs/library/media/video/", wait_until="networkidle")
+    preview = page.locator(".docs-demo-preview")
+    video = preview.locator("youtube-video")
+    expect(video).to_be_attached()
+    assert video.bounding_box()["x"] >= preview.bounding_box()["x"]
+    assert preview.evaluate("el => el.scrollWidth > el.clientWidth")
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+
+
+@pytest.mark.parametrize("width", [320, 390])
+def test_long_component_names_wrap_inside_the_reading_column(page: Page, width: int):
+    """API identifiers must not create a second horizontal page scroller."""
+    page.set_viewport_size({"width": width, "height": 900})
+    page.goto(
+        f"{PREVIEW_URL}/docs/library/overlay/dropdown-menu/", wait_until="networkidle"
+    )
+    column = page.locator(".docs-reading-column")
+    assert column.evaluate("el => el.scrollWidth <= el.clientWidth")
+    assert page.locator(".docs-heading").evaluate_all(
+        "els => els.every(el => el.getBoundingClientRect().right <= innerWidth - 20)"
+    )
+
+
 def test_low_level_form_example_has_valid_inline_result_markup(page: Page):
     """Inline submitted values must not cause the browser to repair nested paragraphs."""
     errors = []

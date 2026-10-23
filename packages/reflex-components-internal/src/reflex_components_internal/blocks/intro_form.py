@@ -6,9 +6,10 @@ This module provides a comprehensive intro form that validates company emails.
 from typing import Any
 
 import reflex as rx
-from reflex.event import EventType, IndividualEventType
+from reflex.event import EventType, event_sequence
 from reflex.vars.base import get_unique_variable_name
 from reflex_components_internal.blocks.telemetry.posthog import (
+    PHONE_NUMBER_KEY,
     track_intro_form_posthog_submission,
 )
 from reflex_components_internal.components.base.button import button
@@ -290,9 +291,7 @@ def intro_form(
     prefix = id_prefix or get_unique_variable_name()
     email_id = f"{prefix}_user_email"
 
-    extra: list[IndividualEventType[dict[str, Any]]] = (
-        on_submit if isinstance(on_submit, list) else [on_submit] if on_submit else []
-    )
+    extra = event_sequence(on_submit) if on_submit is not None else []
 
     form = rx.el.form(
         rx.el.div(
@@ -313,7 +312,7 @@ def intro_form(
                     rx.Var(get_element_value(email_id))
                 ),
             ),
-            input_field("Phone number", "+1234567890", "phone_number", "tel", True),
+            input_field("Phone number", "+1234567890", PHONE_NUMBER_KEY, "tel", True),
             class_name="grid grid-cols-2 gap-4",
         ),
         rx.el.div(

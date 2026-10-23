@@ -364,7 +364,7 @@ def test_special_form_memo_wrappers_render_structural_body(
     """Generated memo wrappers for special forms render the structural body.
 
     The memo body must subscribe to the state the special form references
-    (via ``useContext(StateContexts...)``), and the page must not — otherwise
+    (via ``useStateContext(...)``), and the page must not — otherwise
     the state-dependent render has leaked into page scope.
     """
     from reflex.compiler.compiler import compile_memo_components
@@ -400,7 +400,7 @@ def test_special_form_memo_wrappers_render_structural_body(
     )
     memo_code = "\n".join(code for _, code in memo_files)
 
-    state_wiring = "useContext(StateContexts"
+    state_wiring = "useStateContext("
     page_output = page_ctx.output_code
     assert page_output is not None
     assert state_wiring in memo_code
@@ -629,8 +629,8 @@ def test_user_memo_with_stateful_prop_is_auto_memoized() -> None:
 
     page_output = page_ctx.output_code
     assert page_output is not None
-    assert "useContext(StateContexts" not in page_output
-    assert not any("useContext(StateContexts" in hook for hook in page_ctx.hooks)
+    assert "useStateContext(" not in page_output
+    assert not any("useStateContext(" in hook for hook in page_ctx.hooks)
 
     (definition,) = ctx.auto_memo_components.values()
     assert isinstance(definition, MemoComponentDefinition)
@@ -648,7 +648,7 @@ def test_user_memo_with_stateful_prop_is_auto_memoized() -> None:
     wrapper_code = next(
         code for path, code in memo_files if definition.export_name in path
     )
-    assert "useContext(StateContexts" in wrapper_code
+    assert "useStateContext(" in wrapper_code
     assert f"jsx({wrapped.tag}," in wrapper_code
 
 
@@ -723,7 +723,7 @@ def test_user_memo_children_render_in_page_scope() -> None:
 
     page_output = page_ctx.output_code
     assert page_output is not None
-    assert "useContext(StateContexts" not in page_output
+    assert "useStateContext(" not in page_output
     assert 'jsx(Plain,{},"static child")' in page_output
 
     wrapper_definition = next(
@@ -2126,7 +2126,7 @@ def test_accordion_trigger_with_stateful_cond_is_memoized() -> None:
 
     output = page_ctx.output_code
     assert output is not None
-    assert "useContext(StateContexts" not in output, (
+    assert "useStateContext(" not in output, (
         "State read leaked into the page module — the trigger's stateful cond "
         "should be captured inside the snapshot wrapper instead.\n"
         f"Page output snippet: {output[:2000]}"
@@ -2251,6 +2251,7 @@ def test_form_memo_preserves_control_refs(form_factory) -> None:
     ]
     assert len(forms) == 1
     form_hooks = "\n".join(forms[0].add_hooks())
+    assert "getFormData($form, " in form_hooks
     for field_id in ("plain_field", "debounced_field", "unset_field"):
         assert f'getRefValue(refs["ref_{field_id}"])' in form_hooks
     assert 'getRefValue(refs["ref_label"])' not in form_hooks
@@ -2298,7 +2299,7 @@ def test_snapshot_boundary_memo_body_subscribes_state_in_body_not_page() -> None
     """State subscription wiring lives in the memo body, not in the page module.
 
     The whole point of memoization is to isolate state reads from the page.
-    This asserts that ``useContext(StateContexts…)`` (state subscription)
+    This asserts that ``useStateContext(...)`` (state subscription)
     appears in the memo module and NOT in the page output, confirming the
     state read landed inside the snapshot wrapper.
     """
@@ -2314,12 +2315,12 @@ def test_snapshot_boundary_memo_body_subscribes_state_in_body_not_page() -> None
     ctx, page_ctx = _compile_single_page(lambda: trigger)
     memo_code = _compile_memo_module_text(ctx)
 
-    assert "useContext(StateContexts" in memo_code, (
+    assert "useStateContext(" in memo_code, (
         "Snapshot wrapper should subscribe to state inside the memo body."
     )
     page_output = page_ctx.output_code
     assert page_output is not None
-    assert "useContext(StateContexts" not in page_output, (
+    assert "useStateContext(" not in page_output, (
         "State subscription should NOT appear in the page module — it must be "
         "isolated inside the snapshot wrapper.\n"
         f"Page output:\n{page_output[:2000]}"
@@ -2491,7 +2492,7 @@ def test_void_element_with_only_stateful_prop_memoizes_via_snapshot() -> None:
     assert len(ctx.memoize_wrappers) == 1
     output = page_ctx.output_code
     assert output is not None
-    assert "useContext(StateContexts" not in output
+    assert "useStateContext(" not in output
 
 
 @pytest.mark.parametrize(
@@ -2722,7 +2723,7 @@ def test_real_recursive_false_components_with_stateful_descendants_snapshot_wrap
     )
     page_output = page_ctx.output_code
     assert page_output is not None
-    assert "useContext(StateContexts" not in page_output, (
+    assert "useStateContext(" not in page_output, (
         "Stateful descendant under a real snapshot boundary leaked to page output.\n"
         f"Page output snippet: {page_output[:2000]}"
     )

@@ -1,8 +1,8 @@
 """Tests for reflex_base.vars.base state metaclass field handling."""
 
-import asyncio
 import dataclasses
 import datetime
+import decimal
 import enum
 import gc
 import logging
@@ -15,14 +15,18 @@ import traceback
 import typing
 import weakref
 from abc import ABC, abstractmethod
-from collections.abc import Callable, Iterator
+from collections.abc import Iterable, Iterator, Sequence
 from pathlib import Path
-from typing import Any, ClassVar, Generic, Literal, Protocol, Self, TypeVar
+from typing import Any, ClassVar, Literal, Self, TypeVar
+from unittest import mock
 
 import pytest
 from reflex_base import constants
+from reflex_base.components.component import LiteralComponentVar
 from reflex_base.constants import RouteArgType
+from reflex_base.constants.colors import Color
 from reflex_base.environment import _load_dotenv_from_files, environment
+from reflex_base.event import LiteralEventChainVar, LiteralEventVar
 from reflex_base.utils import serializers
 from reflex_base.utils.exceptions import (
     BackendVarFormatError,
@@ -38,490 +42,52 @@ from reflex_base.vars.base import (
     GLOBAL_CACHE,
     BaseStateMeta,
     CachedVarOperation,
+    CustomVarOperation,
     EvenMoreBasicBaseState,
     Field,
     LiteralVar,
+    StateOperation,
     Var,
     VarData,
     _global_vars,
+    _is_tree_state,
     _linearize_bases,
     _type_check_depth,
+    _validate_state_name,
     cached_property,
     cached_property_no_lock,
     computed_var,
     field,
+    get_leaf_vars,
     var_operation,
     var_operation_return,
 )
+from reflex_base.vars.color import LiteralColorVar
+from reflex_base.vars.function import (
+    ArgsFunctionOperation,
+    ArgsFunctionOperationBuilder,
+    FunctionStringVar,
+    FunctionVar,
+    VarOperationCall,
+)
 from reflex_base.vars.number import NumberVar
-from reflex_base.vars.object import ObjectVar
-from reflex_base.vars.sequence import ArrayVar, StringVar
+from reflex_base.vars.object import LiteralObjectVar, ObjectItemOperation, ObjectVar
+from reflex_base.vars.sequence import (
+    ArraySliceOperation,
+    ArrayVar,
+    ConcatVarOperation,
+    LiteralArrayVar,
+    LiteralRangeVar,
+    StringVar,
+)
 from typing_extensions import TypeAliasType, TypeVarTuple
 
+import reflex as rx
+from reflex.istate.data import ReflexURLCastedVar, RouterDataVar
 from reflex.istate.proxy import MutableProxy
 from reflex.state import BaseState, State, _override_base_method
 
 _MARKER_ATTR = "_marker"
-
-
-@pytest.mark.parametrize("mutable", [False, True])
-@pytest.mark.parametrize("name", ["_value", "value"])
-def test_class_assignment_preserves_field(mutable: bool, name: str):
-    """Changing a default preserves its descriptor and instance tracking.
-
-    Args:
-        mutable: Whether the default is mutable.
-        name: The backend or frontend field name.
-    """
-
-    class ConfigState(BaseState):
-        _value: str | list[str] | None = None
-        value: str | list[str] | None = None
-
-    declared = ConfigState.get_fields()[name]
-    original = ConfigState()
-    assert getattr(original, name) is None
-    replacement = ["configured"] if mutable else "configured"
-    setattr(ConfigState, name, replacement)
-    assert ConfigState.__dict__[name] is declared
-    assert getattr(original, name) is None
-
-    first = ConfigState()
-    second = ConfigState()
-    assert getattr(first, name) == getattr(second, name) == replacement
-    restored = ConfigState()
-    restored.__setstate__(pickle.loads(pickle.dumps(first.__getstate__())))
-    assert getattr(restored, name) == replacement
-
-    first._clean()
-    setattr(first, name, "changed")
-    assert name in first.dirty_vars
-    assert first._was_touched
-    first.reset()
-    assert getattr(first, name) == replacement
-    if mutable:
-        getattr(first, name).append("session-only")
-        assert getattr(second, name) == replacement == ["configured"]
-
-
-@pytest.mark.parametrize("name", ["_value", "value"])
-@pytest.mark.parametrize("inherited", [False, True])
-def test_class_assignment_sets_default_factory(name: str, inherited: bool):
-    """Validate a factory once and retain its descriptor for future defaults.
-
-    Args:
-        name: The backend or frontend field name.
-        inherited: Whether to configure the factory through a subclass.
-    """
-
-    class ConfigState(BaseState):
-        _value: list[str] = ["old"]
-        value: list[str] = ["old"]
-
-    class Child(ConfigState):
-        pass
-
-    declared = ConfigState.get_fields()[name]
-    original = ConfigState()
-    assert getattr(original, name) == ["old"]
-    calls = []
-
-    def factory() -> list[str]:
-        """Record calls and return a fresh mutable default.
-
-        Returns:
-            An independent configured value.
-        """
-        calls.append(True)
-        return ["new"]
-
-    setattr(Child if inherited else ConfigState, name, factory)
-    assert calls == [True]
-    assert ConfigState.get_fields()[name] is Child.get_fields()[name] is declared
-    assert ConfigState.__dict__[name] is declared
-    assert declared.default is dataclasses.MISSING
-    assert declared.default_factory is factory
-    assert name not in Child.__dict__
-    assert getattr(original, name) == ["old"]
-
-    first, second = ConfigState(), ConfigState()
-    assert getattr(first, name) == getattr(second, name) == ["new"]
-    assert calls == [True] * 3
-    getattr(first, name).append("session")
-    assert getattr(second, name) == ["new"]
-    first.reset()
-    assert getattr(first, name) == ["new"]
-    assert calls == [True] * 4
-
-
-def test_class_assignment_unwraps_mutable_proxy():
-    """A proxied value read from a state instance becomes a plain default."""
-
-    class ConfigState(BaseState):
-        items: list[str] = []
-
-    source = ConfigState()
-    source.items.append("a")
-    assert isinstance(source.items, MutableProxy)
-    ConfigState.items = source.items
-    declared = ConfigState.get_fields()["items"]
-    held = declared.default_factory.args[0]  # pyright: ignore[reportFunctionMemberAccess, reportOptionalMemberAccess]
-    assert type(held) is list
-    assert held == ["a"]
-    fresh = ConfigState()
-    assert fresh.items == ["a"]
-    fresh.items.append("b")
-    assert source.items == ["a"]
-    ref = weakref.ref(source)
-    del source
-    gc.collect()
-    assert ref() is None
-
-
-def test_class_assignment_keeps_accepted_callables():
-    """A callable the field's annotation accepts is the default, not a factory."""
-    calls = []
-
-    def handler(value: int = 0) -> int:
-        """Record a call that assignment must never make.
-
-        Args:
-            value: The argument a factory could not supply.
-
-        Returns:
-            The argument.
-        """
-        calls.append(value)
-        return value
-
-    class ConfigState(BaseState):
-        _handler: Callable[[int], int] | None = None
-        _factory: Callable[[], int] = int
-        _anything: Any = None
-
-    for name in ("_handler", "_factory", "_anything"):
-        setattr(ConfigState, name, handler)
-        assert getattr(ConfigState(), name) is handler
-    assert calls == []
-
-
-def test_class_assignment_accepts_type_parameter_defaults():
-    """A field annotated with a type parameter checks a default against its bound."""
-
-    class Reader(Protocol):
-        def read(self) -> str: ...
-
-    class FileReader:
-        def read(self) -> str:
-            """Read a fixed value.
-
-            Returns:
-                The value.
-            """
-            return "read"
-
-    E = TypeVar("E")
-    N = TypeVar("N", bound=int)
-    R = TypeVar("R", bound=Reader)
-
-    class GenericState(BaseState, Generic[E, N, R]):
-        _value: E = None  # pyright: ignore[reportAssignmentType]
-        _count: N = 0  # pyright: ignore[reportAssignmentType]
-        _reader: R | None = None
-
-    class IntState(GenericState[int, int, FileReader]):
-        pass
-
-    GenericState._reader = FileReader()  # pyright: ignore[reportAttributeAccessIssue, reportGeneralTypeIssues]
-    assert IntState()._reader.read() == "read"  # pyright: ignore[reportOptionalMemberAccess]
-
-    IntState._value = 5  # pyright: ignore[reportAttributeAccessIssue]
-    assert IntState()._value == 5
-    GenericState._value = "text"  # pyright: ignore[reportAttributeAccessIssue, reportGeneralTypeIssues]
-    assert IntState()._value == "text"
-    with pytest.raises(TypeError, match="Invalid default"):
-        GenericState._count = "text"  # pyright: ignore[reportAttributeAccessIssue, reportGeneralTypeIssues]
-    GenericState._count = 5  # pyright: ignore[reportAttributeAccessIssue, reportGeneralTypeIssues]
-    assert IntState()._count == 5
-
-
-@pytest.mark.parametrize("name", ["_value", "value"])
-@pytest.mark.parametrize(
-    "failure", ["wrong_type", "raises", "needs_argument", "var", "field"]
-)
-def test_class_assignment_rejects_invalid_factory(name: str, failure: str):
-    """A failed factory validation cannot change an existing default.
-
-    Args:
-        name: The backend or frontend field name.
-        failure: The invalid result or invocation failure to test.
-    """
-
-    class ConfigState(BaseState):
-        _value: str = "old"
-        value: str = "old"
-
-    calls = []
-    error = RuntimeError("factory failed")
-
-    def factory() -> Any:
-        """Return an invalid value or raise during validation.
-
-        Returns:
-            An invalid default.
-
-        Raises:
-            RuntimeError: When testing a failing factory invocation.
-        """
-        calls.append(True)
-        if failure == "raises":
-            raise error
-        if failure == "var":
-            return ConfigState.value
-        if failure == "field":
-            return field("new")
-        return 1
-
-    def needs_argument(value: str) -> str:
-        """Require an argument that a default factory cannot supply.
-
-        Args:
-            value: A required argument.
-
-        Returns:
-            The argument.
-        """
-        return value
-
-    declared = ConfigState.get_fields()[name]
-    previous_default, previous_factory = declared.default, declared.default_factory
-    expected = {
-        "wrong_type": "Invalid default",
-        "raises": "Default factory.*failed",
-        "needs_argument": "Default factory.*failed",
-        "var": r"ClassVar\[rx.Var\]",
-        "field": "computed var",
-    }[failure]
-    with pytest.raises(TypeError, match=expected) as exc:
-        setattr(
-            ConfigState,
-            name,
-            needs_argument if failure == "needs_argument" else factory,
-        )
-    if failure == "raises":
-        assert exc.value.__cause__ is error
-    assert ConfigState.get_fields()[name] is declared
-    assert declared.default is previous_default
-    assert declared.default_factory is previous_factory
-    assert getattr(ConfigState(), name) == "old"
-    assert calls == ([] if failure == "needs_argument" else [True])
-
-
-@pytest.mark.parametrize("name", ["_value", "value"])
-def test_class_assignment_closes_coroutine_probe(name: str):
-    """Close a validation coroutine while retaining supported future defaults.
-
-    Args:
-        name: The coroutine-typed backend or string-typed frontend field name.
-    """
-
-    class ConfigState(BaseState):
-        _value: typing.Coroutine[Any, Any, str] | None = None
-        value: str = "old"
-
-    probes = []
-
-    async def result() -> str:
-        """Return a value when a coroutine default is awaited.
-
-        Returns:
-            The configured value.
-        """
-        await asyncio.sleep(0)
-        return "new"
-
-    def factory() -> typing.Coroutine[Any, Any, str]:
-        """Record the created coroutine so its cleanup can be checked.
-
-        Returns:
-            A new coroutine.
-        """
-        coroutine = result()
-        probes.append(coroutine)
-        return coroutine
-
-    if name == "value":
-        with pytest.raises(TypeError, match="Invalid default"):
-            setattr(ConfigState, name, factory)
-        assert ConfigState().value == "old"
-    else:
-        setattr(ConfigState, name, factory)
-        coroutine = ConfigState()._value
-        assert coroutine is not None
-        assert asyncio.run(coroutine) == "new"
-    assert probes[0].cr_frame is None
-
-
-@pytest.mark.parametrize("name", ["_value", "value"])
-@pytest.mark.parametrize("replacement", ["wrong", ["wrong"], None])
-def test_class_assignment_rejects_invalid_default(name: str, replacement: Any):
-    """Invalid defaults cannot change the declared field or its configuration.
-
-    Args:
-        name: The backend or frontend field name.
-        replacement: A value incompatible with the field's type.
-    """
-
-    class ConfigState(BaseState):
-        _value: list[int] = []
-        value: list[int] = []
-
-    declared = ConfigState.get_fields()[name]
-    original_factory = declared.default_factory
-    with pytest.raises(TypeError, match=r"Invalid default.*list\[int\]"):
-        setattr(ConfigState, name, replacement)
-    assert ConfigState.get_fields()[name] is declared
-    assert declared.default_factory is original_factory
-    assert getattr(ConfigState(), name) == []
-
-
-@pytest.mark.parametrize("name", ["_value", "value", "server_value"])
-@pytest.mark.parametrize("inherited", [False, True])
-@pytest.mark.parametrize(
-    "kind",
-    [
-        "var",
-        "literal",
-        "bound_field",
-        "field",
-        "factory_field",
-        "raw_field",
-    ],
-)
-def test_class_assignment_rejects_vars_and_fields(
-    name: str, kind: str, inherited: bool
-):
-    """Reject every Var and Field assignment without changing field bindings.
-
-    Args:
-        name: The backend or frontend field name.
-        kind: The Var or Field to assign.
-        inherited: Whether to assign through an inheriting state.
-    """
-
-    class SourceState(BaseState):
-        _source: str = "source"
-        source: str = "source"
-
-    class ConfigState(BaseState):
-        _value: Any = "old"
-        value: str = "old"
-        server_value: str = field(default="old", is_var=False)
-
-    class Child(ConfigState):
-        pass
-
-    calls = []
-
-    def factory() -> str:
-        """Record an unexpected evaluation of a rejected factory.
-
-        Returns:
-            A valid default that must never be requested.
-        """
-        calls.append(True)
-        return "new"
-
-    replacement = {
-        "var": SourceState.source,
-        "literal": Var.create("literal"),
-        "bound_field": SourceState.get_fields()["_source"],
-        "field": field("new"),
-        "factory_field": field(default_factory=factory),
-        "raw_field": Field(default="new"),
-    }[kind]
-    declared = ConfigState.get_fields()[name]
-    advice = "computed var" if "field" in kind else "ClassVar\\[rx.Var\\]"
-    with pytest.raises(TypeError, match=advice):
-        setattr(Child if inherited else ConfigState, name, replacement)
-    assert ConfigState.get_fields()[name] is declared
-    assert Child.get_fields()[name] is declared
-    assert ConfigState.__dict__[name] is declared
-    assert name not in Child.__dict__
-    assert declared._owner is ConfigState
-    assert getattr(ConfigState(), name) == "old"
-    assert SourceState()._source == "source"
-    assert calls == []
-
-
-def test_class_assignment_allows_optional_defaults_and_var_classvars():
-    """Optional defaults and explicit shared Var references remain supported."""
-
-    class ConfigState(BaseState):
-        value: Field[int | None] = field(default=1)
-        reference: ClassVar[Var] = Var.create("old")
-
-    ConfigState.reference = ConfigState.value
-    ConfigState.value = None
-    assert ConfigState().value is None
-    assert ConfigState.reference is ConfigState.value
-
-
-def test_class_assignment_preserves_shadowing_classvar():
-    """A ClassVar shadowing an inherited field remains ordinary configuration."""
-
-    class Parent(BaseState):
-        _value: str = "old"
-
-    class Child(Parent):
-        _value: ClassVar[str] = "child"  # pyright: ignore[reportIncompatibleVariableOverride]
-
-    Child._value = "new"
-    assert Child._value == "new"
-    assert Parent()._value == "old"
-
-
-def test_backend_class_assignment_replaces_default_factory():
-    """A class assignment replaces a factory without evaluating it."""
-    calls = []
-
-    def factory():
-        """Count default-factory evaluations.
-
-        Returns:
-            The original default.
-        """
-        calls.append(True)
-        return "old"
-
-    class ConfigState(BaseState):
-        _value: Any = field(default_factory=factory, is_var=False)
-
-    ConfigState._value = "new"
-    assert calls == []
-    assert ConfigState()._value == "new"
-    assert calls == []
-
-
-def test_backend_class_assignment_inherited_field_and_classvar():
-    """Assignments update the owning field, while ClassVars remain ordinary attrs."""
-
-    class Parent(BaseState):
-        _value: str = "old"
-        _config: ClassVar[str] = "old"
-
-    class Child(Parent):
-        pass
-
-    declared = Parent.get_fields()["_value"]
-    Child._value = "new"
-    assert "_value" not in Child.__dict__
-    assert Child.get_fields()["_value"] is declared
-    assert Parent()._value == "new"
-    assert Child()._value == "new"
-    Child._config = "child"
-    assert Parent._config == "old"
-    assert Child._config == "child"
 
 
 def test_custom_field_attr_survives_annotated_rebuild():
@@ -812,6 +378,21 @@ def test_var_data_field_name_reports_the_first_field():
     assert VarData(field_name="a").field_name == "a"
     assert VarData(field_dependencies={"s": ("a", "b")}).field_name == "a"
     assert VarData().field_name == ""
+
+
+def test_var_data_position_is_deprecated_and_ignored():
+    """Hooks of different positions merge, in order, instead of raising."""
+    with mock.patch("reflex_base.utils.console.deprecate") as deprecate:
+        internal = VarData(
+            hooks=["const a = 1"], position=constants.Hooks.HookPosition.INTERNAL
+        )
+        post = VarData(
+            hooks=["const b = a"], position=constants.Hooks.HookPosition.POST_TRIGGER
+        )
+    assert deprecate.call_count == 2
+    merged = VarData.merge(internal, post)
+    assert merged is not None
+    assert merged.hooks == ("const a = 1", "const b = a")
 
 
 def test_serializer_attribute_error_is_not_masked() -> None:
@@ -1282,22 +863,30 @@ def test_reserved_annotation_only(clean_registration_context):
             _init_bookkeeping: int
 
 
-@pytest.mark.parametrize("state_mixin", [False, True])
-def test_reserved_mixin_var(state_mixin: bool, clean_registration_context):
-    """Reject collisions from both ordinary Python mixins and state mixins.
+def test_reserved_mixin_var(clean_registration_context):
+    """Reject a reserved var from an ordinary Python mixin where a state inherits it.
 
     Args:
-        state_mixin: Whether the mixin subclasses BaseState.
+        clean_registration_context: An isolated state registry.
+    """
+    mixin = type("Mixin", (), {"__module__": __name__, "_get_root_state": 7})
+    with pytest.raises(StateValueError, match="_get_root_state"):
+        type("MixedState", (mixin, BaseState), {"__module__": __name__})
+
+
+def test_reserved_state_mixin_var(clean_registration_context):
+    """Reject a reserved var where a state mixin declares it.
+
+    Args:
         clean_registration_context: An isolated state registry.
     """
     with pytest.raises(StateValueError, match="_get_root_state"):
-        mixin = type(
+        type(
             "Mixin",
-            (BaseState,) if state_mixin else (),
+            (BaseState,),
             {"__module__": __name__, "_get_root_state": 7},
-            **({"mixin": True} if state_mixin else {}),
+            mixin=True,
         )
-        type("MixedState", (mixin, BaseState), {"__module__": __name__})
 
 
 @pytest.mark.parametrize("state_mixin", [False, True])
@@ -1619,6 +1208,31 @@ def test_state_roots_do_not_share_reserved_names():
             alpha: int = 3
 
 
+def test_only_states_below_a_root_are_tree_states():
+    """Treat neither a root nor a state outside any root's hierarchy as a tree state."""
+
+    class Rootless(EvenMoreBasicBaseState):
+        pass
+
+    class Root(EvenMoreBasicBaseState, state_root=True):
+        pass
+
+    class Child(Root):
+        pass
+
+    assert Rootless._reflex_state_root is None
+    assert not _is_tree_state(Rootless)
+    assert not _is_tree_state(Root)
+    assert _is_tree_state(Child)
+
+
+def test_no_root_reserves_no_names():
+    """Accept any name for a state outside every root's hierarchy."""
+    _validate_state_name(None, "_get_root_state", 7)
+    with pytest.raises(StateValueError, match="_get_root_state"):
+        _validate_state_name(BaseState, "_get_root_state", 7)
+
+
 def test_inherited_field_on_plain_model():
     """An inherited field of a model without a state tree reads from the model itself."""
 
@@ -1788,6 +1402,33 @@ def test_backend_field_format_raises(name: str):
         f"{getattr(Model, name)}px"
 
 
+@pytest.mark.parametrize("mixin", [False, True])
+@pytest.mark.parametrize(("name", "default"), [("_secret", 42), ("bookkeeping", 0)])
+def test_backend_field_format_error_names_the_fix(name: str, default: int, mixin: bool):
+    """The backend var format error names the var and how to use it in the UI.
+
+    Args:
+        name: The backend field to format, underscore-prefixed or is_var=False.
+        default: The default value of that field.
+        mixin: Whether the field is declared on a mixin.
+    """
+
+    class Model(EvenMoreBasicBaseState, mixin=mixin):
+        _secret: int = 42
+        bookkeeping: int = field(default=0, is_var=False)
+
+    with pytest.raises(BackendVarFormatError) as exc_info:
+        f"{getattr(Model, name)}px"
+
+    message = str(exc_info.value)
+    assert f"Backend var 'Model.{name}' exists only on the server" in message
+    assert f"Use Model.{name}.default_value() for its default value" in message
+    assert "declare it as ClassVar[...]" in message
+    assert "use a regular state var" in message
+    # The suggested call returns the default.
+    assert getattr(Model, name).default_value() == default
+
+
 def test_mixin_field_format_raises():
     """A mixin's frontend field has no Var, and the error says to use the including state."""
 
@@ -1860,6 +1501,246 @@ def test_classvar_over_inherited_field_is_not_a_field():
 
     assert Child.get_fields()["count"] is Parent.get_fields()["count"]
     assert "count" not in Child.base_vars
+
+
+@pytest.mark.parametrize("name", ["value", "_value"])
+def test_class_assignment_over_a_var_raises(name: str):
+    """Assigning a state var on its class or a subclass raises and keeps the var.
+
+    Args:
+        name: A frontend or a backend var.
+    """
+
+    class Parent(BaseState):
+        value: int = 0
+        _value: int = 0
+
+    class Child(Parent):
+        pass
+
+    declared = Parent.get_fields()[name]
+    for cls in (Parent, Child):
+        with pytest.raises(
+            TypeError, match=f"'{name}' is a state var of {Parent.__name__}"
+        ):
+            setattr(cls, name, 5)
+    assert Parent.__dict__[name] is declared
+    assert name not in Child.__dict__
+    assert declared.default == 0
+
+
+def test_class_assignment_error_names_the_declaring_state():
+    """The error through a substate points at the state declaring the var."""
+
+    class Parent(BaseState):
+        count: int = 0
+
+    class Child(Parent):
+        pass
+
+    parent, child = Parent.__name__, Child.__name__
+    with pytest.raises(TypeError) as exc_info:
+        Child.count = 9  # pyright: ignore[reportAttributeAccessIssue]
+    message = str(exc_info.value)
+    assert message.startswith(
+        f"'count' is a state var of {parent}, inherited by {child}; assigning "
+        f"it on {child} would replace the var."
+    )
+    assert f"{parent}.__fields__['count'].set_default(...)" in message
+    assert "every state that inherits it" in message
+    assert f"{child}.__fields__" not in message
+
+    with pytest.raises(TypeError) as exc_info:
+        Parent.count = 9
+    message = str(exc_info.value)
+    assert message.startswith(
+        f"'count' is a state var of {parent}; assigning it on the class would "
+        "replace the var."
+    )
+    assert "every state that inherits it" not in message
+
+
+def test_class_assignment_error_names_the_state_mixing_in_a_var():
+    """A state mixing in a var owns its copy, so the error names that state."""
+
+    class Mixin(State, mixin=True):
+        count: int = 0
+
+    class Mixed(Mixin, State):
+        pass
+
+    class Child(Mixed):
+        pass
+
+    mixin, mixed, child = Mixin.__name__, Mixed.__name__, Child.__name__
+    for cls, owner, declared in (
+        (Mixin, mixin, mixin),
+        (Mixed, mixed, mixed),
+        (Child, mixed, f"{mixed}, inherited by {child}"),
+    ):
+        with pytest.raises(TypeError) as exc_info:
+            cls.count = 9
+        message = str(exc_info.value)
+        assert message.startswith(f"'count' is a state var of {declared}; "), cls
+        assert f"{owner}.__fields__['count'].set_default(...)" in message
+    assert Mixed.get_fields()["count"] is not Mixin.get_fields()["count"]
+
+
+def test_class_assignment_error_suggests_set_default():
+    """The error suggests set_default for a mutable and an immutable value alike."""
+
+    class S(BaseState):
+        items: list[str] = []
+
+    for value in (["a"], ("a",)):
+        with pytest.raises(TypeError) as exc_info:
+            S.items = value  # pyright: ignore[reportAttributeAccessIssue]
+        assert f"{S.__name__}.__fields__['items'].set_default(...)" in str(
+            exc_info.value
+        )
+
+
+def test_field_set_default():
+    """set_default copies a mutable default per instance and keeps one kind of default."""
+
+    class S(BaseState):
+        count: int = 0
+        items: list[str] = []
+        maybe: list[str] | None = None
+        stamp: list[int] = []
+
+    fields = S.get_fields()
+    fields["count"].set_default(5)
+    assert (fields["count"].default, fields["count"].default_factory) == (5, None)
+    assert S().count == 5
+
+    # A mutable default replaces a set default with a factory copying the value
+    # as it was when set.
+    value = ["a"]
+    fields["maybe"].set_default(value)
+    assert fields["maybe"].default is dataclasses.MISSING
+    first, second = S(), S()
+    assert first.maybe is not value
+    assert first.maybe is not None
+    first.maybe.append("changed")
+    value.append("changed")
+    assert second.maybe == ["a"]
+    assert S().maybe == ["a"]
+
+    # An immutable default, here passed by keyword, replaces a factory.
+    fields["items"].set_default(default=("x",))
+    assert fields["items"].default == ("x",)
+    assert fields["items"].default_factory is None
+    assert S().items == ("x",)
+
+    # A factory replaces a set default and is called for each instance.
+    calls = iter(range(10))
+    fields["count"].set_default(default_factory=lambda: next(calls))
+    assert fields["count"].default is dataclasses.MISSING
+    assert (S().count, S().count) == (0, 1)
+
+    # None is a default value, and a None factory counts as not given.
+    fields["maybe"].set_default(None, default_factory=None)
+    assert (fields["maybe"].default, fields["maybe"].default_factory) == (None, None)
+    assert S().maybe is None
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "message"),
+    [
+        ({}, "requires a default or a default_factory"),
+        ({"default_factory": None}, "requires a default or a default_factory"),
+        ({"default": 1, "default_factory": lambda: 1}, "not both"),
+    ],
+    ids=["neither", "factory_none", "both"],
+)
+def test_field_set_default_takes_exactly_one(kwargs: dict[str, Any], message: str):
+    """set_default needs exactly one of default and default_factory.
+
+    Args:
+        kwargs: The arguments passed to set_default.
+        message: The expected error message.
+    """
+
+    class S(BaseState):
+        count: int = 0
+
+    field = S.get_fields()["count"]
+    with pytest.raises(TypeError, match=message):
+        field.set_default(**kwargs)
+    assert (field.default, field.default_factory) == (0, None)
+
+
+def test_class_assignment_of_other_attributes_is_allowed():
+    """ClassVars, including one over an inherited var, and new names stay assignable."""
+
+    class Parent(BaseState):
+        _value: str = "old"
+        _config: ClassVar[str] = "old"
+
+    class Child(Parent):
+        _value: ClassVar[str] = "child"  # pyright: ignore[reportIncompatibleVariableOverride]
+
+    Child._value = "new"
+    Parent._config = "new"
+    Parent.extra = 1  # pyright: ignore[reportAttributeAccessIssue]
+    assert (Child._value, Parent._config, Parent.extra) == ("new", "new", 1)  # pyright: ignore[reportAttributeAccessIssue]
+    assert Parent.get_fields()["_value"].default == "old"
+
+
+def test_var_default_patches_round_trip():
+    """A test patches a var's default on its field, or deletes the var to replace it."""
+
+    class Svc(BaseState):
+        _limit: int = 5
+
+    declared = Svc.get_fields()["_limit"]
+    with mock.patch.object(declared, "default", 99):
+        assert Svc()._limit == 99
+    assert Svc()._limit == 5
+
+    with pytest.MonkeyPatch.context() as monkeypatch:
+        monkeypatch.delattr(Svc, "_limit")
+        monkeypatch.setattr(Svc, "_limit", 99, raising=False)
+        assert Svc._limit == 99
+    assert Svc.__dict__["_limit"] is declared
+    assert Svc()._limit == 5
+
+    # Patching the class attribute itself raises, and its cleanup restores nothing.
+    with (
+        pytest.raises(TypeError, match="'_limit' is a state var of Svc"),
+        mock.patch.object(Svc, "_limit", 99),
+    ):
+        pass
+    assert Svc.__dict__["_limit"] is declared
+    assert Svc()._limit == 5
+
+
+def test_inherited_var_patch_raises_type_error():
+    """Patching or deleting a var through a state that inherits it names the var."""
+
+    class Parent(BaseState):
+        value: int = 0
+
+    class Child(Parent):
+        pass
+
+    declared = Parent.get_fields()["value"]
+    # The patch's cleanup deletes the attribute it failed to set on Child.
+    with (
+        pytest.raises(
+            TypeError,
+            match=f"'value' is a state var of {Parent.__name__}, inherited by "
+            f"{Child.__name__}",
+        ),
+        mock.patch.object(Child, "value", 99),
+    ):
+        pass
+    with pytest.raises(TypeError, match=f"deleting it on {Child.__name__}"):
+        del Child.value
+    assert Parent.__dict__["value"] is declared
+    assert "value" not in Child.__dict__
+    assert Child().value == 0
 
 
 def test_computed_var_type_mismatch_is_logged_once_per_value(
@@ -2382,3 +2263,199 @@ def test_new_default_for_inherited_private_field_stays_a_field():
         assert child_field.default == 2
         assert isinstance(vars(child)["__counter__"], Field)
         assert child().__counter__ == 2
+
+
+def _identical(leaves: Sequence[Var], *expected: Var) -> bool:
+    """Check that the leaves are exactly the given var objects, in order.
+
+    ``Var.__eq__`` builds a var, so lists of vars cannot be compared directly.
+
+    Args:
+        leaves: The leaves returned.
+        *expected: The vars the compound var was built from.
+
+    Returns:
+        Whether each leaf is the expected var object.
+    """
+    return len(leaves) == len(expected) and all(
+        leaf is var for leaf, var in zip(leaves, expected, strict=True)
+    )
+
+
+def test_get_leaf_vars_returns_a_leaf_alone() -> None:
+    var = Var(_js_expr="state.a")
+    (same,) = get_leaf_vars(var)
+    assert same is var
+
+
+def test_get_leaf_vars_dissolves_literals() -> None:
+    """A constant literal reads nothing; a container or a color what it holds.
+
+    A raw item is converted the way the renderer does, so an f-string with a
+    var inside a list still reads that var. Any other literal value stays
+    whole, since what it reads is not known.
+    """
+    a = Var(_js_expr="state.a")
+    b = Var(_js_expr="state.b").to(int)
+
+    assert get_leaf_vars(LiteralVar.create(1)) == []
+    assert get_leaf_vars(LiteralVar.create("text")) == []
+    assert get_leaf_vars(LiteralVar.create(decimal.Decimal("1.5"))) == []
+    assert get_leaf_vars(LiteralVar.create(range(3))) == []
+    assert get_leaf_vars(LiteralVar.create(datetime.datetime(2020, 1, 1))) == []
+    assert get_leaf_vars(LiteralVar.create({1, 2})) == []
+    assert _identical(get_leaf_vars(LiteralVar.create([1, a, [b]])), a, b)
+    assert _identical(get_leaf_vars(LiteralVar.create({"k": a, b: 2})), a, b)
+    assert _identical(get_leaf_vars(LiteralVar.create({a})), a)
+    assert _identical(get_leaf_vars(LiteralVar.create([f"{a}-x"])), a)
+    # A var that is the whole of a formatted string is decoded into a new object.
+    (decoded,) = get_leaf_vars(LiteralVar.create([f"{a}"]))
+    assert decoded is not a
+    assert decoded.equals(a)
+    assert _identical(get_leaf_vars(LiteralVar.create(Color("red", shade=b))), b)
+    event = LiteralVar.create(rx.console_log(a))
+    (same,) = get_leaf_vars(event)
+    assert same is event
+
+
+def test_get_leaf_vars_unwraps_operations_and_casts() -> None:
+    """Operands come back in order, through nested operations and casts, once."""
+    a = Var(_js_expr="state.a").to(int)
+    b = Var(_js_expr="state.b").to(int)
+
+    assert _identical(get_leaf_vars((a + 1) * b), a, b)
+    assert _identical(get_leaf_vars((a + b).to(str)), a, b)
+    assert _identical(get_leaf_vars(a + a), a)
+    # A cast of a leaf is the leaf, as the caller holds it.
+    assert _identical(get_leaf_vars(a), a)
+
+
+def test_get_leaf_vars_reads_through_a_function_body() -> None:
+    """A function reads what its body reads, other than its own parameters."""
+    items = Var(_js_expr="state.items").to(list[str])
+    outer = Var(_js_expr="outer").to(str)
+
+    assert _identical(get_leaf_vars(items.filter(lambda item: item == "r")), items)
+    assert _identical(
+        get_leaf_vars(items.filter(lambda item: item == outer)), items, outer
+    )
+    nested = items.map(lambda item: items.filter(lambda other: other == item))
+    assert _identical(get_leaf_vars(nested), items)
+    rest = Var(_js_expr="rest").to(list[str])
+    spread = ArgsFunctionOperation.create((), rest[0] + outer, rest="rest")
+    assert _identical(get_leaf_vars(spread), outer)
+    colored = items.map(lambda item: Color(outer, shade=item.to(int)))
+    assert _identical(get_leaf_vars(colored), items, outer)
+    priced = items.map(lambda item: item.length() + decimal.Decimal("1.5"))
+    assert _identical(get_leaf_vars(priced), items)
+    # A cast around a function reads like the function.
+    x = Var(_js_expr="x").to(int)
+    cast = ArgsFunctionOperation.create(("x",), x + items.length()).to(FunctionVar)
+    assert _identical(get_leaf_vars(cast), items)
+    # A named function is a leaf.
+    fn = FunctionStringVar.create("fn")
+    assert _identical(get_leaf_vars(fn), fn)
+
+
+def test_get_leaf_vars_keeps_a_function_whole_when_a_leaf_reads_a_parameter() -> None:
+    """A body leaf that is not a parameter itself may still read one.
+
+    Hoisting it out of the function would name something bound only inside.
+    """
+    items = Var(_js_expr="state.items").to(list[str])
+    other = Var(_js_expr="state.other").to(list[str])
+
+    built = items.map(lambda item: Var(_js_expr=f"{item}.length").to(int))
+    array, function = get_leaf_vars(built)
+    assert array is items
+    assert isinstance(function, FunctionVar)
+
+    closing = items.map(lambda item: other.map(lambda o: rx.console_log(item)))
+    array, function = get_leaf_vars(closing)
+    assert array is items
+    assert isinstance(function, FunctionVar)
+
+
+def test_get_leaf_vars_keeps_a_function_with_an_opaque_body_whole() -> None:
+    """A literal kept whole may read the parameters; the function stays whole."""
+    items = Var(_js_expr="state.items").to(list[str])
+
+    array, function = get_leaf_vars(items.map(lambda item: rx.console_log(item)))
+
+    assert str(array) == "state.items"
+    assert isinstance(function, FunctionVar)
+
+
+def test_get_leaf_vars_converts_raw_operands() -> None:
+    """A raw operand is rendered through LiteralVar.create, so it is read that way."""
+    a = Var(_js_expr="state.a")
+    n = Var(_js_expr="state.n").to(int)
+    fn = FunctionStringVar.create("fn")
+
+    call = fn.call(Color("red", shade=n), [a, 1], f"{a}-x")
+    assert _identical(get_leaf_vars(call), fn, n, a)
+
+
+def test_get_leaf_vars_unwraps_operations_with_their_own_fields() -> None:
+    """Operations outside ``var_operation`` keep their operands in fields."""
+    items = Var(_js_expr="state.items").to(list[str])
+    n = Var(_js_expr="state.n").to(int)
+    obj = Var(_js_expr="state.obj").to(dict[str, str])
+    key = Var(_js_expr="state.key").to(str)
+    fn = FunctionStringVar.create("fn")
+
+    assert _identical(get_leaf_vars(items[1:]), items)
+    assert _identical(get_leaf_vars(items[n:][0]), items, n)
+    assert _identical(get_leaf_vars(obj[key]), obj, key)
+    assert _identical(get_leaf_vars(key + "-" + key.upper()), key)
+    assert _identical(get_leaf_vars(fn.call(n, items[0])), fn, n, items)
+
+
+def test_get_leaf_vars_sorts_every_cached_operation() -> None:
+    """Each cached operation is sorted on purpose.
+
+    A new operation class has to be added here after deciding whether every
+    value it holds in a field is one it reads, so the generic unwrapping applies,
+    or whether it needs its own branch or is a leaf.
+
+    Classes are compared by name: a ``slots=True`` dataclass is a rebuilt copy
+    of the class first defined, and the discarded original stays in
+    ``__subclasses__`` until it is garbage collected.
+    """
+
+    def subclasses(cls: type) -> set[type]:
+        return set(cls.__subclasses__()).union(
+            *(subclasses(sub) for sub in cls.__subclasses__())
+        )
+
+    def names(classes: Iterable[type]) -> set[str]:
+        return {f"{cls.__module__}.{cls.__qualname__}" for cls in classes}
+
+    operations = {
+        cls
+        for cls in subclasses(CachedVarOperation)
+        if cls.__module__.startswith(("reflex_base.", "reflex."))
+    }
+
+    assert names(operations) == names({
+        CustomVarOperation,
+        ArraySliceOperation,
+        ObjectItemOperation,
+        ConcatVarOperation,
+        VarOperationCall,
+        ReflexURLCastedVar,
+        RouterDataVar,
+        # Literals read what their value holds, or nothing for a constant.
+        LiteralArrayVar,
+        LiteralObjectVar,
+        LiteralColorVar,
+        LiteralRangeVar,
+        # Functions read their body minus their parameters.
+        ArgsFunctionOperation,
+        ArgsFunctionOperationBuilder,
+        # Leaves: a state field access, and literals of other values.
+        StateOperation,
+        LiteralComponentVar,
+        LiteralEventVar,
+        LiteralEventChainVar,
+    })
