@@ -534,7 +534,10 @@ def test_state_var_default_brings_its_state_wiring() -> None:
     cs = client_state(ClientStateDefaultState.seed, name="seeded_from_state")
 
     hooks = _hooks_ending_with_client_state(cs)
-    assert any("useContext(StateContexts" in hook for hook in hooks[:-1])
+    # The state's context declaration precedes the ``useClientState`` line that
+    # reads the field off it, whatever hook the state layer renders it with.
+    declared = [hook.split(" = ")[0].removeprefix("const ") for hook in hooks[:-1]]
+    assert any(f"useClientState({name}.seed" in hooks[-1] for name in declared), hooks
 
     # Every accessor compiled into its own memo body needs the state context
     # too, or a setter-only sibling emits ``useClientState(<state>.seed)`` with
