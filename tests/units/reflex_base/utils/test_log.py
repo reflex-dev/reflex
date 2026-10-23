@@ -1339,11 +1339,9 @@ for i in range(300):
 """
 
 
-@pytest.mark.skipif(sys.platform != "linux", reason="needs a small pipe buffer")
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX pipe semantics")
 def test_supervise_output_drain_ends_between_records(tmp_path):
     """When the drain gives up on a slow consumer, the stream ends at a record boundary."""
-    import fcntl
-
     script = tmp_path / "slow_consumer.py"
     script.write_text(_SLOW_CONSUMER_SCRIPT)
     with subprocess.Popen(
@@ -1353,7 +1351,6 @@ def test_supervise_output_drain_ends_between_records(tmp_path):
     ) as proc:
         assert proc.stdout is not None
         fd = proc.stdout.fileno()
-        fcntl.fcntl(fd, fcntl.F_SETPIPE_SZ, 4096)
         chunks = []
         deadline = time.monotonic() + 20
         # Read about 40 KB/s: far slower than the writer, faster than the grace.

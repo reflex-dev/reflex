@@ -10,6 +10,7 @@ import sys
 import time
 from pathlib import Path
 
+import psutil
 import pytest
 from reflex_base.utils import processes
 
@@ -41,8 +42,6 @@ def _alive(pid: int) -> bool:
         Whether the process exists (a zombie counts as gone).
     """
     if sys.platform == "win32":
-        import psutil
-
         try:
             return psutil.Process(pid).status() != psutil.STATUS_ZOMBIE
         except psutil.NoSuchProcess:
