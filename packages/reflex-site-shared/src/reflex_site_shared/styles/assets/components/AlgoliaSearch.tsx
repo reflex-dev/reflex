@@ -22,6 +22,8 @@ import React, {
 } from "react";
 import { createPortal } from "react-dom";
 
+import { normalizeSearchQuery } from "./search-query.mjs";
+
 const ALGOLIA_APP_ID = "WLK9YABRW4";
 const ALGOLIA_SEARCH_API_KEY = "7abb638647d3aa25e7a6d29dfdca2212";
 const ALGOLIA_INDEX_NAME = "reflex_dev_wlk9yabrw4_pages";
@@ -439,10 +441,6 @@ export function AlgoliaSearch() {
     requestRef.current = controller;
     const timer = window.setTimeout(async () => {
       try {
-        // Match component identifiers to the words used in page titles.
-        const searchQuery = /^rx\.[a-z]\w*(?:\.[a-z]\w*)*$/i.test(trimmedQuery)
-          ? trimmedQuery.slice(3).replace(/[_.]+/g, " ")
-          : trimmedQuery;
         const response = await fetch(ALGOLIA_SEARCH_ENDPOINT, {
           method: "POST",
           headers: {
@@ -451,7 +449,7 @@ export function AlgoliaSearch() {
             "X-Algolia-Application-Id": ALGOLIA_APP_ID,
           },
           body: JSON.stringify({
-            query: searchQuery,
+            query: normalizeSearchQuery(trimmedQuery),
             hitsPerPage: 10,
             attributesToRetrieve: [
               "objectID",
