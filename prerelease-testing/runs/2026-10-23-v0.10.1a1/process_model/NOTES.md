@@ -52,6 +52,19 @@ upgrade guide / changelog do not mention the PRNG / module-constant sharing. `sp
 memory cost (701 MB vs 200 MB PSS for 8 workers).
 Repro: section 2 (`scripts/probe_run.sh new new-be-fork prod-be 8201` vs `prev`), `out/whoami-{new,prev}-be-fork.json`.
 
+### Observations (context, not regressions)
+- `kill -9` of ONE prod worker stops the WHOLE server on both versions (granian's default `respawn_failed_workers=False`:
+  `[ERROR] Unexpected exit from worker-N` → `Shutting down granian` → `Reflex app stopped`, port closed). With a process
+  supervisor this is a full restart; without one, an OOM-killed worker takes the site down. Same on 0.10.0 → context.
+- `rxconfig.py` edits are not picked up by dev hot reload with the default `fork` worker (0.10.0 and 0.10.1a1 alike, Python
+  3.12 and 3.14); `REFLEX_STRICT_HOT_RELOAD=1` (spawn) picks them up at ~1.3-1.7 s per reload instead of ~0.3 s.
+- During the hot reload that adds a page/state, the browser logs the #7553 "built for another version ... state schema"
+  warning and the #7435 "Skipping state update for unknown substate(s)" warning until the frontend rebuilds (0.10.0 logged
+  the old `Cannot process state update: no dispatch function` *error* there). Transient; the page recovers.
+- `reflex export --zip-dest-dir <missing dir>` → `FileNotFoundError` traceback (both versions).
+- `reflex run --json` + pid-only SIGINT now stops the app (A3-07 fixed); the 30 s drain cap still truncates the last JSON
+  record for a slow consumer (A3-08 unchanged); npm + SIGTERM without a TTY still orphans node (F-007 unchanged).
+
 ## Results
 
 ### 1. Prod + Redis, full stack (`reflex run --env prod --frontend-port 8200 --backend-port 8200`)
@@ -191,7 +204,21 @@ lines/s exit ~6-7 s, 0 lost; TERM-pid at 6 lines/s exits at the 30 s cap with a 
 | INT-group:40 | exit 6.5 s rc 0, 1139 lines, 0 invalid, last line valid, 0 lost, 0 gaps, no leftovers | a3: ~6-7 s, 0 lost |
 | TERM-pid:40 | exit 7.1 s rc 0, 1257 lines, 0 invalid, 0 lost, no leftovers | a3: ~6-7 s, 0 lost |
 | TERM-pid:6 (A3-08 / CLI-27) | exits at the 30 s cap (30.66 s) rc 0, **last record truncated** (`invalid_json 1`, "Extra data"), 225 records lost | **unchanged** (a3: same; filed-open reflex#7510) |
-| INT-pid:40 (A3-07 / CLI-26, #7558) | **exits 8.9 s after a pid-only SIGINT**, rc 0, 786 lines, 0 invalid, 0 gaps, no leftovers → **fixed** | a3/0.10.0: never exits (killed at the cap); prev control below |
+| INT-pid:40 (A3-07 / CLI-26, #7558) | **exits 8.9 s after a pid-only SIGINT**, rc 0, 786 lines, 0 invalid, 0 gaps, no leftovers → **fixed** | **prev control: never exits** (`returncode TIMEOUT` at the 40 s EOF cap + 20 s wait cap, 473 records lost, leftover server processes killed by the harness) |
+
+Independent A3-07 reproduction (`lifecycle/probes/vu_reader.py --venv new --app <copy of apps/chatty> --fp 3214 --bp 8214 --json
+--sig INT --target pid`, `out/vu-new-INT-pid.json`): inner `python -m reflex run` exits 0.49 s after the pid-only SIGINT, the
+top process 0.63 s, rc 0, EOF clean (5 complete JSON lines, 0 truncated), no leftovers, ports free → #7558 works.
+
+F-007 / CLI-15 (`FP=3212 BP=8212 W=$PM bash bin/f007.sh new`, `lifecycle/logs/f007-new-npm{1,0}.log`): npm → `RESULT: reflex CLI
+STILL RUNNING 30s after SIGTERM`, orphan `node` holding 3212; bun → `RESULT: reflex CLI exited`, ports free. **Unchanged** (filed-open reflex#7485).
+
+### 9. #7453 concurrent prod frontend work on one `.web` — `scripts/export_concurrent.sh <venv>` (`out/export-concurrency.txt`, `logs/export-<venv>-*.log`)
+Fresh copy of forkapp in `run/export-<venv>`; warm-up export; A: two `reflex export --frontend-only --env prod` started 2 s apart;
+B: an export SIGKILLed 6 s in (mid vite build), then another export; C: `reflex run --env prod` on 8203 + an export 2 s later.
+Observation on both versions: `--zip-dest-dir <dir>` must already exist, otherwise the export ends with a traceback
+`FileNotFoundError: ... <dir>/frontend.zip` (`build._zip` opens the zip without creating the directory) — pre-existing, not #7453.
+RESULTS: (table below, filled in after the rerun with the directory created)
 
 ### 7. Telemetry enabled (default for users) + backend-only prod, new
 `REFLEX_TELEMETRY_ENABLED=true scripts/probe_run.sh new new-be-telemetry prod-be 8201`: up in 2.2 s (same as with telemetry off),
