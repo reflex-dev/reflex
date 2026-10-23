@@ -612,7 +612,7 @@ class PageContext(BaseContext):
     )
     # Snapshot candidates whose subtree contains only part of a shared local
     # hook scope, computed once when the root component is visited.
-    memoize_shared_scope_split_ids: set[int] | None = None
+    memoize_shared_scope_split_ids: set[int] = dataclasses.field(default_factory=set)
     # Maps both the user-owned original's ``id()`` and the clone's ``id()`` to
     # the page-local clone. Lets the walker and plugins rebind children, style,
     # or event_triggers on a page-local copy without mutating a user-owned

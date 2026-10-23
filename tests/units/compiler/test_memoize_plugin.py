@@ -2,7 +2,7 @@
 
 import dataclasses
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, cast
@@ -1764,19 +1764,44 @@ def test_shared_scope_prepass_caches_reused_component_subtrees(
     root = rx.box(reader, reader)
     page_ctx = PageContext(name="test", route="/", root_component=root)
     plugin = MemoizeStatefulPlugin()
+    descendant_walks: dict[int, int] = {}
+    iter_descendants = memoize_plugin._iter_component_descendants
 
-    def unexpected_uncached_walk(*_args: Any, **_kwargs: Any) -> None:
-        pytest.fail("Acyclic shared-scope scans should use cached counts")
+    def count_descendant_walks(
+        component: Component, var_data: tuple[VarData, ...]
+    ) -> Iterator[Component]:
+        descendant_walks[id(component)] = descendant_walks.get(id(component), 0) + 1
+        yield from iter_descendants(component, var_data)
 
     monkeypatch.setattr(
-        memoize_plugin, "_subtree_requires_shared_scope", unexpected_uncached_walk
+        memoize_plugin, "_iter_component_descendants", count_descendant_walks
     )
 
     plugin.enter_component(root, page_context=page_ctx, compile_context=None)
 
     assert page_ctx.memoize_shared_scope_counts[local._id_name] == 2
-    assert page_ctx.memoize_shared_scope_split_ids is not None
     assert id(reader) in page_ctx.memoize_shared_scope_split_ids
+    assert id(root) not in page_ctx.memoize_shared_scope_split_ids
+    assert descendant_walks[id(reader)] == 1
+
+
+def test_shared_scope_prepass_treats_cycles_as_empty_recursive_branches() -> None:
+    """A malformed cyclic component graph does not trigger a second traversal."""
+    from reflex.experimental.client_state import ClientStateVar
+
+    local = ClientStateVar.create("cycle_scope", default="initial", global_ref=False)
+    first = rx.text(local.value)
+    second = rx.text(local.value)
+    root = rx.box(first, second)
+    root.children.append(root)
+    page_ctx = PageContext(name="test", route="/", root_component=root)
+
+    MemoizeStatefulPlugin().enter_component(
+        root, page_context=page_ctx, compile_context=None
+    )
+
+    assert page_ctx.memoize_shared_scope_counts[local._id_name] == 2
+    assert {id(first), id(second)} <= page_ctx.memoize_shared_scope_split_ids
     assert id(root) not in page_ctx.memoize_shared_scope_split_ids
 
 
@@ -1796,7 +1821,6 @@ def test_styled_local_client_state_subtree_uses_original_split_id() -> None:
     plugin.enter_component(root, page_context=page_ctx, compile_context=None)
     styled_clone = page_ctx.own(styled)
 
-    assert page_ctx.memoize_shared_scope_split_ids is not None
     assert id(styled) in page_ctx.memoize_shared_scope_split_ids
     assert id(styled_clone) not in page_ctx.memoize_shared_scope_split_ids
     assert page_ctx._owned_original_ids[id(styled_clone)] == id(styled)
@@ -1823,7 +1847,6 @@ def test_app_style_local_client_state_is_in_shared_scope_prepass() -> None:
     plugin.enter_component(root, page_context=page_ctx, compile_context=None)
 
     assert page_ctx.memoize_shared_scope_counts[local._id_name] == 2
-    assert page_ctx.memoize_shared_scope_split_ids is not None
     assert id(styled) in page_ctx.memoize_shared_scope_split_ids
 
 
