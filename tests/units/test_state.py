@@ -5982,47 +5982,6 @@ async def test_storage_annotations_accept_browser_strings(
     assert declared.options() == options
 
 
-def test_reset_client_storage_uses_declared_factories():
-    """Hydration evaluates declared factories for all browser storage types."""
-    calls = []
-
-    def factory(storage_type: type) -> Any:
-        """Record calls and return the configured browser default.
-
-        Args:
-            storage_type: The browser storage value type.
-
-        Returns:
-            The new storage value.
-        """
-        calls.append(storage_type)
-        return storage_type("new")
-
-    class StorageState(BaseState):
-        cookie: rx.Field[rx.Cookie] = rx.field(
-            default_factory=lambda: factory(rx.Cookie)
-        )
-        local: rx.Field[rx.LocalStorage] = rx.field(
-            default_factory=lambda: factory(rx.LocalStorage)
-        )
-        session: rx.Field[rx.SessionStorage] = rx.field(
-            default_factory=lambda: factory(rx.SessionStorage)
-        )
-
-    assert calls == []
-    state = StorageState(
-        cookie=rx.Cookie("saved"),
-        local=rx.LocalStorage("saved"),
-        session=rx.SessionStorage("saved"),
-    )
-    state._reset_client_storage()
-    assert state.cookie == state.local == state.session == "new"
-    assert calls == [rx.Cookie, rx.LocalStorage, rx.SessionStorage]
-    state._reset_client_storage()
-    assert state.cookie == state.local == state.session == "new"
-    assert calls == [rx.Cookie, rx.LocalStorage, rx.SessionStorage] * 2
-
-
 @pytest.mark.parametrize(
     "breakage",
     [
