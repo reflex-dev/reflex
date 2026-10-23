@@ -25,5 +25,11 @@ export SB=... WORK=$SB/apps/hydration_net NEW=new PREV=prev \
 $WORK/src/scripts/run_area.sh quick > $WORK/area_quick.txt 2>&1     # trimmed copy: area_quick.txt
 ```
 
-(results filled in below as the legs complete)
+| leg | control (must fail) | new (0.10.1a1) | verdict |
+|---|---|---|---|
+| probe `cs_storage_default_probe.py` | — | `assign_*` #7516 TypeError, `field_plain`/`field_none` ordinary, `field_storage` LocalStorage `box_pref_dark` | = 0.10.0 |
+| HYD-01 / F-002 `run_f002.sh <v> prod ... 3140 3140` | 0.10.0a1: fresh profile's localStorage holds `cu_ls, wt_ls, wu_ls, wu_sync` (+ SS, cookies) after the first load; v2 returning visitor keeps `wu-light` (stale default) | fresh x2 and same-build returning: localStorage only `theme=system`; v2 returning + fresh show `*-dark-v2` / `wu-sync-v2`; sync tabs converge on `sync-from-tabA` | **fixed, unchanged vs 0.10.0** |
+| HYD-02 / F-003 `run_cv.sh <v> dev ... 3142 8142 <vars> PYTHONHASHSEED=4` | 0.10.0a1 a/b/g: `reload [l='bad']` (browser keeps the bad token through reload/probe/noop) | `CVSTORE MATCHES cvstore_dev.summary.txt` (a–j, 0-byte diff vs the 0.10.0 expected file; b keeps N-016) | **fixed, unchanged** |
+| HYD-08 / A3-11 `run_storm.sh <v> dev 3 3142 8142 S 6` | 0.10.0a3 Part S: **0/3 storms on this box** (README recorded 3/4 on a quieter machine — Part S is timing dependent; see the Part R control below) | 0/3 storms, 59–65 frames, 0 in the quiet window, all 7 tabs + localStorage `s5` | pass (control via Part R) |
+| HYD-09 / A3-12 `run_stamp2.sh <v> dev 3142 8142 2 1 6` | 0.10.0a3: run 1 **storm** (1,108,630 frames, 306k/299k per 5 s window, tabs split `36382b-1`/`2a91e1-1`); run 2 quiet (timing) | (below) | |
 
