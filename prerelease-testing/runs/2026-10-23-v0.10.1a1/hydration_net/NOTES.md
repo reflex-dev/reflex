@@ -80,3 +80,17 @@ IPv6, `[v6]:port`, `X-Real-IP`, `Forwarded:`; `asgi-scope-client` always = the p
 - d12: three cookie secrets + `Authorization` reach the backend handler (`cookie_attr` has all three) — the frontend
   side of this is the #7360 rtr run above (0 secrets in frames/DOM).
 
+**hops = 1 (`HNET_HOPS=1`), leg `dev_h1`** — via the proxy every spoof resolves to the real client **127.0.0.3**
+(`6.6.6.6, 127.0.0.3`, `6.6.6.6, 7.7.7.7, 127.0.0.3`, two spoofed lines + the proxy's line, IPv6 spoof, `X-Real-IP`
+ignored); the browser through the proxy shows `client_ip=127.0.0.1` (its real address at the proxy) on the
+frontend, in the computed var and in on_load / click / upload handlers. **Direct** connections with hops=1 are the
+documented footgun: `X-Forwarded-For: 6.6.6.6` -> `ip=6.6.6.6`, chain -> rightmost `7.7.7.7`, and
+`X-Forwarded-For: not an ip!! <script>` -> `client_ip="not an ip!! <script>"` (no syntactic validation of the
+entry; 0.10.0 took the leftmost entry with the same lack of validation).
+**hops = 2 behind ONE proxy, leg `dev_h2`** (over-configured) — `6.6.6.6, 127.0.0.3` -> `ip=6.6.6.6`: the client
+controls the result (as the docs warn: set hops to the real number of proxies); a chain shorter than hops
+(`127.0.0.3` alone) falls back to the connection peer `127.0.0.2` (the proxy), never to the forwarded entry.
+**Separate XFF lines (`xff_proxy.py --mode line`), hops=1, leg `dev_line`** — the proxy adds its own
+`X-Forwarded-For: 127.0.0.3` line after the client's spoofed line(s); #7588 joins them in order and hops=1 takes the
+rightmost -> `127.0.0.3` in every case.
+
