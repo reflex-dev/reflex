@@ -80,6 +80,7 @@ from reflex_base.vars.sequence import (
     LiteralRangeVar,
     StringVar,
 )
+from reflex_base.vars.set import LiteralSetVar
 from typing_extensions import TypeAliasType, TypeVarTuple
 
 import reflex as rx
@@ -2304,9 +2305,11 @@ def test_get_leaf_vars_dissolves_literals() -> None:
     assert get_leaf_vars(LiteralVar.create(range(3))) == []
     assert get_leaf_vars(LiteralVar.create(datetime.datetime(2020, 1, 1))) == []
     assert get_leaf_vars(LiteralVar.create({1, 2})) == []
+    assert get_leaf_vars(LiteralVar.create(frozenset({1, 2}))) == []
     assert _identical(get_leaf_vars(LiteralVar.create([1, a, [b]])), a, b)
     assert _identical(get_leaf_vars(LiteralVar.create({"k": a, b: 2})), a, b)
     assert _identical(get_leaf_vars(LiteralVar.create({a})), a)
+    assert _identical(get_leaf_vars(LiteralVar.create(frozenset({a}))), a)
     assert _identical(get_leaf_vars(LiteralVar.create([f"{a}-x"])), a)
     # A var that is the whole of a formatted string is decoded into a new object.
     (decoded,) = get_leaf_vars(LiteralVar.create([f"{a}"]))
@@ -2447,6 +2450,7 @@ def test_get_leaf_vars_sorts_every_cached_operation() -> None:
         RouterDataVar,
         # Literals read what their value holds, or nothing for a constant.
         LiteralArrayVar,
+        LiteralSetVar,
         LiteralObjectVar,
         LiteralColorVar,
         LiteralRangeVar,
