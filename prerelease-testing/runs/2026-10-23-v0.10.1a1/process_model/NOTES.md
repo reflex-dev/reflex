@@ -186,7 +186,12 @@ EVT-04 4/4 delivered (3/4 cross-worker), SIGTERM clean, 0 tracebacks. `out/drive
 (A3-07 = CLI-26 `--json` ignores a pid-only SIGINT, A3-08 = CLI-27 30 s drain cap truncates the last record). Results in
 `lifecycle/out/jsondrain/<label>-<sig>-r<rate>.json` (copied to `out/`). Expected on 0.10.0 (README): INT-group/TERM-pid at 40
 lines/s exit ~6-7 s, 0 lost; TERM-pid at 6 lines/s exits at the 30 s cap with a truncated last record; INT-pid never exits.
-RESULTS: see table below (filled in after the runs).
+| spec | new 0.10.1a1 | prev 0.10.0 / a3 record |
+|---|---|---|
+| INT-group:40 | exit 6.5 s rc 0, 1139 lines, 0 invalid, last line valid, 0 lost, 0 gaps, no leftovers | a3: ~6-7 s, 0 lost |
+| TERM-pid:40 | exit 7.1 s rc 0, 1257 lines, 0 invalid, 0 lost, no leftovers | a3: ~6-7 s, 0 lost |
+| TERM-pid:6 (A3-08 / CLI-27) | exits at the 30 s cap (30.66 s) rc 0, **last record truncated** (`invalid_json 1`, "Extra data"), 225 records lost | **unchanged** (a3: same; filed-open reflex#7510) |
+| INT-pid:40 (A3-07 / CLI-26, #7558) | (below) | a3/0.10.0: never exits (killed at the cap) |
 
 ### 7. Telemetry enabled (default for users) + backend-only prod, new
 `REFLEX_TELEMETRY_ENABLED=true scripts/probe_run.sh new new-be-telemetry prod-be 8201`: up in 2.2 s (same as with telemetry off),
