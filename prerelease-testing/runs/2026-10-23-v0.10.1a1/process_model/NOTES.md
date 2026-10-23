@@ -88,8 +88,8 @@ Repro: section 2 (`scripts/probe_run.sh new new-be-fork prod-be 8201` vs `prev`)
 | EVT-04 (6 clients, `POST /api/poke/<token>` from arbitrary workers) | **6/6 delivered, 6/6 cross-worker** (2 rounds) | 6/6, 6/6 cross-worker |
 | inc / note(db) / bg / fetch(self httpx) / reload per client | 6/6 each | 6/6 each |
 | console | clean except the favicon 404 | same |
-| SIGTERM to the supervisor | exits in 1.3-2.0 s, 0 leftovers, no "Unexpected exit" | (see below) |
-| SIGINT to the supervisor | exits < 1 s, 0 leftovers | |
+| SIGTERM to the supervisor | exits in 1.3-2.0 s, 0 leftovers, no "Unexpected exit" | 2.5 s (backend-only run), 0 leftovers |
+| SIGINT to the supervisor | exits < 1 s, 0 leftovers | < 1 s, 0 leftovers |
 | `kill -9` one worker | **the whole server shuts down**: `[ERROR] Unexpected exit from worker-1` → `Shutting down granian` → all 8 workers stopped → `Reflex app stopped`; port closed (granian default `respawn_failed_workers=False`) | identical (worker-1 killed → all 9 stopped → app stopped) |
 
 Both versions behave the same here because `_run_prod` compiles the app in the CLI process (`_compile_app(avoid_dirty_check=False)`),
@@ -218,7 +218,24 @@ Fresh copy of forkapp in `run/export-<venv>`; warm-up export; A: two `reflex exp
 B: an export SIGKILLed 6 s in (mid vite build), then another export; C: `reflex run --env prod` on 8203 + an export 2 s later.
 Observation on both versions: `--zip-dest-dir <dir>` must already exist, otherwise the export ends with a traceback
 `FileNotFoundError: ... <dir>/frontend.zip` (`build._zip` opens the zip without creating the directory) — pre-existing, not #7453.
-RESULTS: (table below, filled in after the rerun with the directory created)
+| phase | new 0.10.1a1 | prev 0.10.0 |
+|---|---|---|
+| warm-up export | rc 0, 9.4 s | rc 0, 8.7 s |
+| A: export1 / export2 (+2 s) | export1 0→8.7 s; **export2 2→16.3 s (waited for export1's `.web` lock, then built: serialized)**; both `frontend.zip` valid (`unzip -t` OK, 29 files) | export1 0→9.2 s; export2 2→11.0 s (ran concurrently, no lock); both zips happened to be valid in this run |
+| B: `kill -9` an export 6 s into its vite build, then export again | no leftover processes; 46 sidecar lock files remain in `~/.local/share/reflex/locks` (by design, flock released by death); the next export runs immediately (7.2→16.0 s, no wait) and its zip is valid | same (no locks to begin with) |
+| C: `reflex run --env prod` + export 2 s later | export 2→16.6 s (serialized behind the run's compile/build), run up at 16.7 s, index 200, 3 referenced assets 200, zip valid, 0 tracebacks | export 2→11.2 s (parallel), run up 11.3 s, index 200, zip valid |
+→ #7453 does what it says: the second frontend job waits for the first; a SIGKILLed holder does not block the next one.
+
+## Not covered
+- Uvicorn/gunicorn backend path (not affected by #7079/#7113); macOS/Windows (spawn default); Python 3.11/3.13/3.15.
+- A prod app that fails at import under the preload (supervisor-side traceback vs worker crash) — not exercised.
+- Postgres (sandbox has sqlite only): the shared pre-fork sqlalchemy pool was exercised on sqlite only (288 concurrent writes, 0 errors).
+- `reflex export` / `run` concurrency from two different users or a read-only `.web`; Windows `msvcrt` locking.
+- HYD-07 / F-017 (Redis restart token reassignment) — not re-run here (hydration item).
+
+## Cleanup
+All servers stopped (SIGTERM/SIGINT via `serve.sh stop`; the export and lifecycle harnesses kill their own trees), Redis 8219
+stopped, no listener on 3200-3219 / 8200-8219, every `.web/` and `node_modules/` under `$PM` deleted (11 MB left).
 
 ### 7. Telemetry enabled (default for users) + backend-only prod, new
 `REFLEX_TELEMETRY_ENABLED=true scripts/probe_run.sh new new-be-telemetry prod-be 8201`: up in 2.2 s (same as with telemetry off),

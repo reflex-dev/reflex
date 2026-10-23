@@ -1,0 +1,4 @@
+state.js md5: caea5520
+hydration_net-0.10.0a3 dev /stamp n=6 run 1: {"path": "/stamp", "n": 6, "converged": false, "storm": true, "windows_5s": [306121, 299108], "frames_total": 1108630, "finals": ["36382b-1", "36382b-1", "2a91e1-1", "36382b-1", "36382b-1", "2a91e1-1"], "storage_events": [150760, 151122, 150881, 151129, 151007, 151966]}
+hydration_net-0.10.0a3 dev /stamp n=6 run 2: {"path": "/stamp", "n": 6, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 77, "finals": ["198f06-1", "198f06-1", "198f06-1", "198f06-1", "198f06-1", "198f06-1"], "storage_events": [5, 5, 5, 5, 5, 5]}
+hydration_net-0.10.0a3 dev /same n=6 run 1: {"path": "/same", "n": 6, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 49, "finals": ["same", "same", "same", "same", "same", "same"], "storage_events": [0, 1, 1, 1, 1, 1]}

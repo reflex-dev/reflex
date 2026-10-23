@@ -89,3 +89,50 @@ The three `FS_*=0` gates exist because on 0.10.0 each of these breaks a whole pa
 | `drive_js` Unicode | 7 FAILs: `len`=26 (UTF-16 units), `[6]`/`[7]`/`[-1]` = lone surrogates (`�`), slices cut surrogate pairs → #7518 fixed on new |
 | `drive_js` error events | `window.onerror` without an Error object throws `TypeError: Cannot read properties of undefined (reading 'name')` inside `state.js` (`_call_script TypeError...`) → #7544 fixed on new (the real `Error` still reached the backend) |
 | `drive_hooks` | 1 FAIL: global `client_state` late reader keeps `2` after `set_value(0)` → #7407 fixed on new. Local (`global_ref=False`) client_state reader also stays `'loc'` on 0.10.0 → not a regression. Memo unrelated-var re-renders = 0 on both. |
+
+### Hot reload with a NEW substate (dev): 0.10.1a1 vs 0.10.0
+
+`drive_hmr.py` opens `/hooks`, appends `HmrState` + a page using it to the app source, waits, then reverts.
+- 0.10.1a1: new element renders ~5 s after the edit, events on the new substate work, old substates and the
+  two `ComponentState` instances keep working, no page errors. Console: 2 transient "built for another version"
+  warnings (one per backend restart, dev warns only) + 1 "Skipping state update for unknown substate" from the
+  reconnect that happened before Vite served the rebuilt bundle. After the revert the page keeps working.
+- 0.10.0: the new element appears, but the first delta naming the new substate hits the old fatal path
+  (`Cannot process state update: no dispatch function for substate(s) ...hmr_state`), `#hydrated` stays
+  `false`, the websocket closes and the session is dead until a manual reload (also after the revert).
+  → #7435/#7441 improve this; not a regression.
+- Both versions: the uncontrolled `<input>` loses its value across the reload (Vite "Could not Fast Refresh
+  /utils/context.jsx", the tree remounts) — same on 0.10.0 (`hmr_prev_dev`), not a regression. A default-only
+  change of the new state's var does not show for the existing session (dev state persists across backend
+  restarts) — expected.
+
+### Schema hash probe (`probe_schema.py`, backend only, schema_app)
+
+Stable across `PYTHONHASHSEED` and across page-evaluation order; default-only change keeps the hash;
+renamed handler / extra substate change it. Evaluating a page twice in one process (ComponentState
+instance counter → extra `Tally_nN` classes) changes it, and so does evaluating a subset of the
+ComponentState pages — see the schema_app section for whether real process layouts hit this.
+
+### React Compiler (#7234) — `REFLEX_REACT_COMPILER=1`, fs_app, dev 3224/8224 and prod 3225
+
+- Wiring: `.web/package.json` gains `@babel/core 7.29.7` + `babel-plugin-react-compiler 1.0.0` (devDependencies),
+  `vite.config.js` imports `./vite-plugin-react-compiler.js` and lists `reactCompiler()` first; `utils/state.js` is
+  not transformed (correct).
+- dev: `drive_share` 48/48 (hydrate 1.9 s vs 0.6 s off), `drive_js` all pass, `drive_hooks` 23/23, `drive_hmr` pass
+  (ComponentState keeps working after the hot reload).
+- **Coverage observation**: served `app/routes/*.jsx` modules contain **no** `_c(` / `react/compiler-runtime`
+  (index, hooks, js routes: 0), `app_components/fs_app/fs_app.jsx` has 60 `_c(` calls, `root.jsx` 1.
+  `rc_probe.mjs` (babel + the plugin, run inside `.web/`) shows why: the compiler bails out with
+  `CompileError: This value cannot be modified` on `refs["ref_a"] = ref_a` and `Cannot access refs during render`
+  on a `useRef` passed as `ref` — reflex hoists `const ref_x = useRef(null); refs["ref_x"] = ref_x;` into every
+  component that renders an element with an `id`, so page components are silently skipped
+  (`panicThreshold: "none"`). The docs say the compiler covers `app/`, `app_components/`, `utils/components/`.
+
+### Stale `postcss.config.js` after removing the tailwind plugin (found by accident, compiler run)
+
+Sequence on 0.10.1a1 in one `.web`: run with `plugins=[TailwindV4Plugin(...)]` → run again **without** the
+plugin → `[vite] Internal server error: Failed to load PostCSS config ... Loading PostCSS Plugin failed:
+Cannot find module '@tailwindcss/postcss'` (vite error overlay on every page; CSS 500). `.web/package.json`
+no longer lists `@tailwindcss/postcss` / `tailwindcss` (plugin dev deps pruned, node_modules pruned by bun) but
+`.web/postcss.config.js` still says `plugins: { "@tailwindcss/postcss": {} }` (the plugin's modify task ran once
+and the base template is only written when `.web` is created). Baseline on 0.10.0: see below.

@@ -1,0 +1,4 @@
+state.js md5: de8ccd2b
+new dev /stamp n=6 run 1: {"path": "/stamp", "n": 6, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 87, "finals": ["d300ed-1", "d300ed-1", "d300ed-1", "d300ed-1", "d300ed-1", "d300ed-1"], "storage_events": [6, 6, 6, 5, 6, 6]}
+new dev /stamp n=6 run 2: {"path": "/stamp", "n": 6, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 87, "finals": ["4ba929-1", "4ba929-1", "4ba929-1", "4ba929-1", "4ba929-1", "4ba929-1"], "storage_events": [6, 6, 6, 6, 5, 6]}
+new dev /same n=6 run 1: {"path": "/same", "n": 6, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 48, "finals": ["same", "same", "same", "same", "same", "same"], "storage_events": [1, 0, 1, 1, 1, 1]}

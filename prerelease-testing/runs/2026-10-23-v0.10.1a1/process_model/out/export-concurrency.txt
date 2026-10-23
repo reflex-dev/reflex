@@ -1,0 +1,56 @@
+### export-new venv=new locks=/root/.local/share/reflex/locks
+warmup: export0 rc=0 start=0.0 end=9.4 zip=frontend.zip 
+--- Phase A: two concurrent exports (2 s apart)
+export1 rc=0 start=0.0 end=8.7 zip=frontend.zip 
+export2 rc=0 start=2.0 end=16.3 zip=frontend.zip 
+zip1: frontend.zip OK   1842959                     29 files
+zip2: frontend.zip OK   1842964                     29 files
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+--- Phase B: kill -9 an export mid-build, then export again
+kill -9 export3 pid=8347 at 6.0s (children: 8371 )
+leftover processes with cwd /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/process_model/run/export-new: 
+lock files now: 46; any flock holder? 0
+export4 rc=0 start=7.2 end=16.0 zip=frontend.zip 
+zip4 OK
+--- Phase C: reflex run --env prod + export 2 s later
+export5 rc=0 start=2.0 end=16.6 zip=frontend.zip 
+run up at 16.7s: index 200 ping 200
+zip5 OK   1842953                     29 files
+asset assets/manifest-c423a8dd.js -> 200
+asset assets/entry.client-BcBPaK_9.js -> 200
+asset assets/components-BkVO-4Gy.js -> 200
+run exited
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/process_model/logs/export-new-run.log:0
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/process_model/logs/export-new-5.log:0
+##### prev
+### export-prev venv=prev locks=/root/.local/share/reflex/locks
+warmup: export0 rc=0 start=0.0 end=8.7 zip=frontend.zip 
+--- Phase A: two concurrent exports (2 s apart)
+export1 rc=0 start=0.0 end=9.2 zip=frontend.zip 
+export2 rc=0 start=2.0 end=11.0 zip=frontend.zip 
+zip1: frontend.zip OK   1837541                     29 files
+zip2: frontend.zip OK   1837550                     29 files
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+--- Phase B: kill -9 an export mid-build, then export again
+kill -9 export3 pid=9290 at 6.0s (children: 9299 )
+leftover processes with cwd /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/process_model/run/export-prev: 
+lock files now: 46; any flock holder? 0
+export4 rc=0 start=7.2 end=15.4 zip=frontend.zip 
+zip4 OK
+--- Phase C: reflex run --env prod + export 2 s later
+export5 rc=0 start=2.0 end=11.2 zip=frontend.zip 
+run up at 11.3s: index 200 ping 200
+zip5 OK   1837543                     29 files
+asset assets/manifest-35f253c1.js -> 200
+asset assets/entry.client-DHnc7vQ9.js -> 200
+asset assets/components-B1lk-uNG.js -> 200
+run exited
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/process_model/logs/export-prev-run.log:0
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/process_model/logs/export-prev-5.log:0
+##### EXPORT DONE

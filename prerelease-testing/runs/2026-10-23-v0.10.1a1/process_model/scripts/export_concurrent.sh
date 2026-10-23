@@ -16,6 +16,7 @@ ts() { date +%s.%N; }
 run_export() { # run_export <n> <extra args>
   local n=$1; shift
   local t0; t0=$(ts)
+  mkdir -p "$A/zip$n"  # reflex export does not create --zip-dest-dir (FileNotFoundError on both versions)
   (cd "$A" && "$RX" export --frontend-only --env prod --zip-dest-dir "$A/zip$n" --loglevel debug "$@" > "$PM/logs/$label-$n.log" 2>&1); local rc=$?
   echo "export$n rc=$rc start=$(printf '%.1f' "$(echo "$t0 - $T0" | bc)") end=$(printf '%.1f' "$(echo "$(ts) - $T0" | bc)") zip=$(ls "$A/zip$n" 2>/dev/null | tr '\n' ' ')"
 }
@@ -32,6 +33,7 @@ for n in 1 2; do z=$(ls "$A/zip$n"/*.zip 2>/dev/null | head -1); if [ -n "$z" ];
 grep -h -i "lock\|wait" "$PM/logs/$label-1.log" "$PM/logs/$label-2.log" | grep -v "lockfile\|bun.lock\|reflex.lock\|package-lock" | head -5 | cut -c1-200
 echo "--- Phase B: kill -9 an export mid-build, then export again"
 T0=$(ts)
+mkdir -p "$A/zip3"
 (cd "$A" && exec "$RX" export --frontend-only --env prod --zip-dest-dir "$A/zip3" --loglevel debug > "$PM/logs/$label-3.log" 2>&1) & p3=$!
 sleep 6; echo "kill -9 export3 pid=$p3 at $(printf '%.1f' "$(echo "$(ts) - $T0" | bc)")s (children: $(pgrep -P $p3 | tr '\n' ' '))"; pkill -9 -P $p3; kill -9 $p3 2>/dev/null; wait $p3 2>/dev/null
 sleep 1; echo "leftover processes with cwd $A: $(for p in $(pgrep -f "$A"); do echo -n "$p "; done)"; pkill -9 -f "$A" 2>/dev/null
