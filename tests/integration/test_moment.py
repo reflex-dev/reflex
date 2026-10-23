@@ -18,6 +18,8 @@ def MomentApp():
     class State(rx.State):
         """State used to wait for the browser connection before asserting output."""
 
+        locale: str = "fr"
+
     @rx.memo
     def memoized_provider_moment():
         return rx.moment(
@@ -57,6 +59,12 @@ def MomentApp():
                 format="dddd D MMMM YYYY",
                 locale="fr",
                 id="moment-french",
+            ),
+            rx.moment(
+                "2024-03-14T15:09:26",
+                format="dddd D MMMM YYYY",
+                locale=State.locale,
+                id="moment-reactive-locale",
             ),
             rx.moment_provider(
                 rx.box(
@@ -164,6 +172,12 @@ def test_moment_locales_are_isolated(driver: WebDriver) -> None:
     )
     AppHarness.expect(
         lambda: driver.find_element(By.ID, "moment-french").text == "jeudi 14 mars 2024"
+    )
+    AppHarness.expect(
+        lambda: (
+            driver.find_element(By.ID, "moment-reactive-locale").text
+            == "jeudi 14 mars 2024"
+        )
     )
     AppHarness.expect(
         lambda: (
