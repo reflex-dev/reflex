@@ -1,6 +1,7 @@
 """Tests for the shared keyword-only Algolia search."""
 
 import json
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -66,6 +67,26 @@ console.log(JSON.stringify(normalizeSearchQuery(JSON.parse(process.argv[2]))));
         check=True,
     )
     assert json.loads(result.stdout) == expected_query
+
+
+def test_algolia_search_wires_normalization_into_requests() -> None:
+    """Normalize requests through the published helper while keeping raw cache keys."""
+    assets = dict(SharedSiteStylesPlugin().get_static_assets())
+    source = assets[Path("public/components/AlgoliaSearch.tsx")]
+
+    assert re.search(
+        r"import\s*\{\s*normalizeSearchQuery\s*,?\s*\}\s*from\s*"
+        r"[\"']\./search-query\.mjs[\"']",
+        source,
+    )
+    assert re.search(
+        r"\bquery\s*:\s*normalizeSearchQuery\s*\(\s*trimmedQuery\s*,?\s*\)",
+        source,
+    )
+    assert re.search(
+        r"\bconst\s+cacheKey\s*=\s*trimmedQuery\.toLocaleLowerCase\(\s*\)",
+        source,
+    )
 
 
 def test_algolia_search_uses_local_keyword_only_component() -> None:
