@@ -1,9 +1,105 @@
 """Tests for the shared keyword-only Algolia search."""
 
+import json
+import shutil
+import subprocess
 from pathlib import Path
 
+import pytest
 from reflex_site_shared.components.algolia import AlgoliaSearch, Search
 from reflex_site_shared.plugins import SharedSiteStylesPlugin
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node missing")
+@pytest.mark.parametrize(
+    ("query", "expected_query"),
+    [
+        ("rx.button", "button"),
+        ("rx.input", "input"),
+        ("rx.radio_group", "radio group"),
+        ("rx.data_table", "data table"),
+        ("rx.alert_dialog.root", "alert dialog root"),
+        ("rx.scroll_area", "scroll area"),
+        ("  rx.button  ", "button"),
+        ("RX.BUTTON", "BUTTON"),
+        ("button", "button"),
+        ("radio group", "radio group"),
+        ("on_click", "on_click"),
+        ("how to style rx.button", "how to style rx.button"),
+        ("example.rx.button", "example.rx.button"),
+        ("https://rx.button", "https://rx.button"),
+        ("rx.", "rx."),
+    ],
+)
+def test_algolia_search_normalizes_component_queries(
+    query: str, expected_query: str
+) -> None:
+    """Send component names as title words while preserving input and cache keys.
+
+    Args:
+        query: User-entered search text.
+        expected_query: Query sent to Algolia.
+    """
+    assets = dict(SharedSiteStylesPlugin().get_static_assets())
+    source = assets[Path("public/components/AlgoliaSearch.tsx")]
+    # Execute the request effect with a fake timer and transport, without React.
+    effect = source.rsplit("useEffect(() => {", 1)[1].split("}, [isOpen, query]);", 1)[
+        0
+    ]
+    effect = effect.replace(" as AlgoliaResponse", "")
+    script = """
+const query = JSON.parse(process.argv[1]);
+const isOpen = true;
+const MIN_QUERY_LENGTH = 2;
+const MAX_CACHED_QUERIES = 50;
+const SEARCH_DEBOUNCE_MS = 350;
+const ALGOLIA_SEARCH_ENDPOINT = "https://search.invalid/query";
+const ALGOLIA_APP_ID = "test";
+const ALGOLIA_SEARCH_API_KEY = "test";
+const cacheRef = { current: new Map() };
+const requestRef = { current: null };
+const state = {};
+const setHits = (value) => { state.hits = value; };
+const setNbHits = (value) => { state.nbHits = value; };
+const setStatus = (value) => { state.status = value; };
+const setResultsQuery = (value) => { state.resultsQuery = value; };
+const setActiveIndex = (value) => { state.activeIndex = value; };
+const normalizeHits = (hits) => hits;
+const requests = [];
+const fetch = async (url, options) => {
+  requests.push(JSON.parse(options.body));
+  return { ok: true, json: async () => ({ hits: [], nbHits: 0 }) };
+};
+let runTimer;
+const window = { setTimeout: (callback) => { runTimer = callback; } };
+const runEffect = () => {
+"""
+    script += effect
+    script += """
+};
+runEffect();
+await runTimer();
+runEffect();
+console.log(JSON.stringify({
+  requests,
+  query,
+  cacheKeys: [...cacheRef.current.keys()],
+  state,
+}));
+"""
+    result = subprocess.run(
+        ["node", "--input-type=module", "--eval", script, json.dumps(query)],
+        capture_output=True,
+        encoding="utf-8",
+        timeout=10,
+        check=True,
+    )
+    output = json.loads(result.stdout)
+    assert [request["query"] for request in output["requests"]] == [expected_query]
+    assert output["query"] == query
+    assert output["cacheKeys"] == [query.strip().lower()]
+    assert output["state"]["resultsQuery"] == query.strip().lower()
+    assert output["state"]["status"] == "ready"
 
 
 def test_algolia_search_uses_local_keyword_only_component() -> None:

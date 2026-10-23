@@ -439,6 +439,10 @@ export function AlgoliaSearch() {
     requestRef.current = controller;
     const timer = window.setTimeout(async () => {
       try {
+        // Match component identifiers to the words used in page titles.
+        const searchQuery = /^rx\.[a-z]\w*(?:\.[a-z]\w*)*$/i.test(trimmedQuery)
+          ? trimmedQuery.slice(3).replace(/[_.]+/g, " ")
+          : trimmedQuery;
         const response = await fetch(ALGOLIA_SEARCH_ENDPOINT, {
           method: "POST",
           headers: {
@@ -447,7 +451,7 @@ export function AlgoliaSearch() {
             "X-Algolia-Application-Id": ALGOLIA_APP_ID,
           },
           body: JSON.stringify({
-            query: trimmedQuery,
+            query: searchQuery,
             hitsPerPage: 10,
             attributesToRetrieve: [
               "objectID",
