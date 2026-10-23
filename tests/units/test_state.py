@@ -80,7 +80,9 @@ from reflex.state import (
     State,
     StateUpdate,
     _frontend_schema,
+    _get_client_storage_delta,
     _load_events_for_page,
+    _override_base_method,
     all_base_state_classes,
     is_serializable,
     state_snapshot_hashes,
@@ -7412,3 +7414,54 @@ def test_non_var_annotation_with_undefined_name_is_allowed(
     state = type("UndefinedNonVarState", (BaseState,), namespace)
 
     assert name not in state.get_fields()
+
+
+async def test_hydration_replay_preserves_shared_cleanup_marks(
+    monkeypatch: pytest.MonkeyPatch, clean_registration_context: RegistrationContext
+):
+    """A single shared cleanup records snapshot and correction writes for fanout.
+
+    Args:
+        monkeypatch: Restore root metadata changed by defining a shared state.
+        clean_registration_context: Isolate the temporary shared state class.
+    """
+    links = State.get_fields()["_reflex_internal_links"]
+    monkeypatch.setattr(links, "default", links.default)
+    monkeypatch.setattr(links, "default_factory", links.default_factory)
+    monkeypatch.setattr(
+        State, "_always_dirty_substates", State._always_dirty_substates.copy()
+    )
+    clean_calls = 0
+
+    class StorageState(rx.SharedState):
+        value: str = rx.LocalStorage("")
+        snapshot_write: str = "initial"
+
+        @_override_base_method
+        def get_delta(self):
+            """Normalize a backend storage value before returning its delta.
+
+            Returns:
+                The base delta.
+            """
+            if "value" in self.dirty_vars and self.value == "stale":
+                self.value = "fresh"
+            return super().get_delta()
+
+        @_override_base_method
+        def _clean(self):
+            """Count the cleanup calls that capture shared fanout marks."""
+            nonlocal clean_calls
+            clean_calls += 1
+            super()._clean()
+
+    root = State.get_root_state()(_reflex_internal_init=True)
+    storage = await root.get_state(StorageState)
+    storage.snapshot_write = "snapshot"
+    storage.value = "stale"
+    storage._previous_dirty_vars = set()
+    await _get_client_storage_delta(root, [(storage, "value")])
+    assert clean_calls == 1
+    assert storage.value == "fresh"
+    assert storage._previous_dirty_vars >= {"snapshot_write", "value"}
+    assert not storage.dirty_vars

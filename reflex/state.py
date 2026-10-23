@@ -1862,16 +1862,25 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             return await value
         return value
 
-    def _mark_dirty_computed_vars(self, var_names: Iterable[str] | None = None) -> None:
-        """Invalidate the computed vars depending on changed vars of this state, transitively.
+    def _mark_dirty_computed_vars(
+        self, var_names: Iterable[str] | None = None, *, invalidate: bool = True
+    ) -> None:
+        """Mark the computed vars depending on changed vars of this state dirty, transitively.
 
+        Invalidates their cached values, so that the next read recomputes them.
         Uncached and expired computed vars recompute on access, so they count as
         changed along with any var.
 
         Args:
             var_names: The changed vars of this state; all its dirty vars if omitted.
+            invalidate: Whether the dependents' caches are invalidated. False marks
+                them for delivery only, leaving their caches and the uncached and
+                expired computed vars alone, so that an unchanged value is sent
+                as it is rather than recomputed.
         """
-        if self._always_dirty_computed_vars or self._interval_computed_var_names:
+        if invalidate and (
+            self._always_dirty_computed_vars or self._interval_computed_var_names
+        ):
             recomputed = (
                 self._always_dirty_computed_vars | self._expired_computed_vars()
             )
@@ -1900,7 +1909,8 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
                 else:
                     target = state._get_root_state().get_substate(state_name.split("."))
                     target._mark_ancestors_dirty()
-                target.computed_vars[cvar_name].mark_dirty(instance=target)
+                if invalidate:
+                    target.computed_vars[cvar_name].mark_dirty(instance=target)
                 target.dirty_vars.add(cvar_name)
                 if cvar_name in target._var_dependencies:
                     pending.append((target, cvar_name))
@@ -2509,20 +2519,8 @@ async def _get_client_storage_delta(
     # Include cached storage dependents in the one public traversal, even when
     # their branch is visited before the override changes the storage value.
     # Mark delivery only: unchanged caches still hold the snapshot's values.
-    pending = list(applied)
-    seen: set[tuple[str, str]] = set()
-    while pending:
-        state, name = pending.pop()
-        for dependent in state._var_dependencies.get(name, ()):
-            if dependent in seen:
-                continue
-            seen.add(dependent)
-            state_name, cvar_name = dependent
-            target = root.get_substate(state_name.split("."))
-            target.dirty_vars.add(cvar_name)
-            target._mark_ancestors_dirty()
-            pending.append((target, cvar_name))
     for state, name in applied:
+        state._mark_dirty_computed_vars((name,), invalidate=False)
         state.dirty_vars.add(name)
         state._mark_ancestors_dirty()
     token = _replay_client_storage.set(True)
