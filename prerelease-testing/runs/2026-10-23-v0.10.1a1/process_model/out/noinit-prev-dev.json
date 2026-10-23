@@ -1,0 +1,46 @@
+{
+ "label": "noinit-prev-dev",
+ "checks": [
+  {
+   "name": "hydrated",
+   "ok": false,
+   "detail": "hydrated: no"
+  },
+  {
+   "name": "on_load_delta_rendered",
+   "ok": false,
+   "detail": "loaded:"
+  },
+  {
+   "name": "click_updates_state",
+   "ok": false,
+   "detail": "count: 0"
+  },
+  {
+   "name": "substate_handler",
+   "ok": false,
+   "detail": "note:"
+  },
+  {
+   "name": "reload_keeps_state",
+   "ok": false,
+   "detail": "count: 0"
+  },
+  {
+   "name": "console_clean",
+   "ok": false,
+   "detail": "error: Cannot process state update: no dispatch function for substate(s) \"reflex___state____state.noinit____state\", \"reflex___state____state.noinit____state.noinit____other\". Try refreshing the page or clearing your browser cache. This error usually indicates a mismatch between frontend and backend "
+  },
+  {
+   "name": "no_dispatch_error_absent",
+   "ok": false,
+   "detail": ""
+  }
+ ],
+ "console": [
+  "error: Cannot process state update: no dispatch function for substate(s) \"reflex___state____state.noinit____state\", \"reflex___state____state.noinit____state.noinit____other\". Try refreshing the page or clearing your browser cache. This error usually indicates a mismatch between frontend and backend state definitions. If you are the developer of this app, rebuild the frontend and check that api_url is correct.",
+  "error: Cannot process state update: no dispatch function for substate(s) \"reflex___state____state.noinit____state\", \"reflex___state____state.noinit____state.noinit____other\". Try refreshing the page or clearing your browser cache. This error usually indicates a mismatch between frontend and backend state definitions. If you are the developer of this app, rebuild the frontend and check that api_url is correct."
+ ],
+ "pass": 0,
+ "fail": 7
+}

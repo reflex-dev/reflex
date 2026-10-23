@@ -66,3 +66,26 @@ real exception, which the react-router prerender log hides behind "Received a 50
 
 #7405 (`probe_cdn.py`, backend only): `ImportVar(tag, package_path="/fa")` on an unbundled lib →
 new `https://cdn.jsdelivr.net/npm/react-icons/fa/+esm`, prev `https://cdn.jsdelivr.net/npm/react-icons/+esm/fa` → fixed.
+
+### Baseline: the same app on 0.10.0 (`fs_app_prev/`, dev 3222/8222)
+
+```
+cp -r $W/fs_app/fs_app $W/fs_app/rxconfig.py $W/fs_app_prev/
+EXPECT_VENV=prev FS_NEGSQ=0 FS_NONELEN=0 FS_POSITIONED=0 FS_TRUTH=$W/truth/t.json ../serve.sh start prev $W/fs_app_prev dev 3222 8222 prev_dev
+$PW ../drive_share.py --url http://localhost:3222/ --truth $W/truth/t.json --out ../logs/share_prev_dev.json
+$PW ../drive_js.py --url http://localhost:3222 --negsq 0 --nonelen 0 --out ../logs/js_prev_dev.json
+$PW ../drive_hooks.py --url http://localhost:3222 --positioned 0 --out ../logs/hooks_prev_dev.json
+```
+
+The three `FS_*=0` gates exist because on 0.10.0 each of these breaks a whole page (positive controls, all fixed on 0.10.1a1):
+- `rx.Var.create(-2) ** x` → `[PARSE_ERROR] A unary expression with the '-' operator cannot be used as the left operand of an exponentiation` in the shared `app_components/fs_app/fs_app.jsx` → **every page** of the app fails to load in dev (`Failed to fetch dynamically imported module`) (#7565).
+- `JsState.n.length()` with `n: str | None = None` → `TypeError: Cannot read properties of null (reading 'split')` → `/js` crashes (#7518).
+- a hook with `VarData(position=PRE_TRIGGER)` reading one with `POST_TRIGGER` → `ReferenceError: Cannot access 'hr_pos' before initialization` → `/hooks` crashes (#7586 bucket ordering; compiled order was `hr_pos_pre` before `hr_pos`).
+
+| check | 0.10.0 result |
+|---|---|
+| `drive_share` 48 ops | pass (0 diffs) — same correctness as new |
+| memo card render counters | **every** card re-renders on every ShareState update (e.g. `replace_equal`, `bump0`, `rename_last` → all 3 cards); on new only the changed card. Identity sharing is new behaviour, correctness unchanged. |
+| `drive_js` Unicode | 7 FAILs: `len`=26 (UTF-16 units), `[6]`/`[7]`/`[-1]` = lone surrogates (`�`), slices cut surrogate pairs → #7518 fixed on new |
+| `drive_js` error events | `window.onerror` without an Error object throws `TypeError: Cannot read properties of undefined (reading 'name')` inside `state.js` (`_call_script TypeError...`) → #7544 fixed on new (the real `Error` still reached the backend) |
+| `drive_hooks` | 1 FAIL: global `client_state` late reader keeps `2` after `set_value(0)` → #7407 fixed on new. Local (`global_ref=False`) client_state reader also stays `'loc'` on 0.10.0 → not a regression. Memo unrelated-var re-renders = 0 on both. |

@@ -1,0 +1,181 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/prev/lib/python3.12/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='noinit', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'telemetry_enabled', 'plugins', 'app_name', 
+'loglevel'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[SitemapPlugin(trailing_slash='preserve'), 
+TailwindV4Plugin(config={'plugins': ['@tailwindcss/typography@0.5.20']}), 
+RadixThemesPlugin(theme={"name": "RadixThemesTheme", "props": 
+["accentColor:\"blue\"", "css:{...theme.styles.global[':root'], 
+...theme.styles.global.body}"], "children": []})], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+'--version']
+Debug: [Reflex 0.10.0 with Python 3.12.3 (PATH: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs
+/prev/bin/python)]
+Debug: [Node 22.22.0 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.4 (Minimum: 1.4.0) (PATH: 
+/root/.local/share/reflex/bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.5 LTS]
+Debug: Using package installer at: ['/root/.local/share/reflex/bun/bin/bun', 
+'/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.local/share/reflex/bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/prev/lib/python3.12/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='noinit', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+... [trimmed] ...
+Debug: + react-dom@19.3.1
+Debug: + react-error-boundary@6.1.6
+Debug: + react-helmet@6.1.0
+Debug: + react-router@8.4.0
+Debug: + socket.io-client@4.8.4
+Debug: + sonner@2.0.8
+Debug: + universal-cookie@8.1.2
+Debug: 
+Debug: 241 packages installed [86.00ms]
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', '-d', '@emotion/react@11.14.0', 
+'@tailwindcss/postcss@4.3.0', 'tailwindcss@4.3.0', 'vite@8.3.2', 
+'@tailwindcss/typography@0.5.20', '@react-router/dev@8.4.0', 
+'@react-router/fs-routes@8.4.0', 'postcss@8.5.29', 'postcss-import@17.0.0', 
+'autoprefixer@10.6.1']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.4 (38afee6c8)
+Debug: Saved lockfile
+Debug: 
+Debug: installed @emotion/react@11.14.0
+Debug: installed @tailwindcss/postcss@4.3.0
+Debug: installed tailwindcss@4.3.0
+Debug: installed vite@8.3.2 with binaries:
+Debug:  - vite
+Debug: installed @tailwindcss/typography@0.5.20
+Debug: installed @react-router/dev@8.4.0 with binaries:
+Debug:  - react-router
+Debug: installed @react-router/fs-routes@8.4.0
+Debug: installed postcss@8.5.29
+Debug: installed postcss-import@17.0.0
+Debug: installed autoprefixer@10.6.1 with binaries:
+Debug:  - autoprefixer
+Debug: 
+Debug: 10 packages installed [26.00ms]
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', 'react-helmet@6.1.0', 'mergician@v2.0.2', 
+'react-error-boundary@6.1.6', 'sonner@2.0.8', '@radix-ui/themes@3.3.0', 
+'react-dom@19.3.0', 'react-router@8.4.0', '@react-router/node@8.4.0', 
+'lucide-react@1.26.0', 'isbot@5.2.2', 'react@19.3.0', 'socket.io-client@4.8.4', 
+'universal-cookie@8.1.2']
+Debug: Installing frontend packages
+Debug: bun add v1.4.4 (38afee6c8)
+Debug: Saved lockfile
+Debug: 
+Debug: installed react-helmet@6.1.0
+Debug: installed mergician@2.0.2
+Debug: installed react-error-boundary@6.1.6
+Debug: installed sonner@2.0.8
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed react-dom@19.3.0
+Debug: installed react-router@8.4.0
+Debug: installed @react-router/node@8.4.0
+Debug: installed lucide-react@1.26.0
+Debug: installed isbot@5.2.2
+Debug: installed react@19.3.0
+Debug: installed socket.io-client@4.8.4
+Debug: installed universal-cookie@8.1.2
+Debug: 
+Debug: 13 packages installed [21.00ms]
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/process_model/noinit/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/process_model/noinit/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.18s
+Debug: [timing] Write to Disk: 0.00s
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Using Granian for backend
+Debug: Reload paths: 
+['/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/ap
+ps/process_model/noinit/noinit/noinit.py']
+[INFO] Starting granian (main PID: 21148)
+[INFO] Listening at: http://0.0.0.0:8204
+[INFO] Spawning worker-1 with PID: 21200
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug:   ➜  Local:   http://localhost:3204/
+App running at: http://localhost:3204/
+Backend running at: http://0.0.0.0:8204
+Debug:   ➜  Network: http://192.0.2.2:3204/  eth0
+Debug: 9:17:15 PM [vite] (ssr) connected.
+[Reflex Frontend Exception]
+ [SID: ejhMm9qjb9TVFDkOAAAB] State update failed: no dispatch function for 
+substate(s) 'reflex___state____state.noinit____state, 
+reflex___state____state.noinit____state.noinit____other'. This indicates a 
+frontend/backend state mismatch. Rebuild the frontend or check that api_url 
+points to the matching backend.
+
+Debug: 9:17:21 PM [vite] (client) [console.error] Cannot process state update: 
+no dispatch function for substate(s) "reflex___state____state.noinit____state", 
+"reflex___state____state.noinit____state.noinit____other". Try refreshing the 
+page or clearing your browser cache. This error usually indicates a mismatch 
+between frontend and backend state definitions. If you are the developer of this
+app, rebuild the frontend and check that api_url is correct.
+Debug: 9:18:36 PM [vite] (client) [console.error] Cannot process state update: 
+no dispatch function for substate(s) "reflex___state____state.noinit____state", 
+"reflex___state____state.noinit____state.noinit____other". Try refreshing the 
+page or clearing your browser cache. This error usually indicates a mismatch 
+between frontend and backend state definitions. If you are the developer of this
+app, rebuild the frontend and check that api_url is correct.
+[Reflex Frontend Exception]
+ [SID: 4o3LWvJNqQ62mwKAAAAD] State update failed: no dispatch function for 
+substate(s) 'reflex___state____state.noinit____state, 
+reflex___state____state.noinit____state.noinit____other'. This indicates a 
+frontend/backend state mismatch. Rebuild the frontend or check that api_url 
+points to the matching backend.
+
+[INFO] Shutting down granian
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Debug: error: script "dev" exited with code 143
+Info: Reflex app stopped.

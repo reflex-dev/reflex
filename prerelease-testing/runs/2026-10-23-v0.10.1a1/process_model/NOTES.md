@@ -32,6 +32,26 @@ NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1 $SB/envs/driver/bin/py
 ```
 (Same with `prev` for the baseline.)
 
+## Issues (details in the sections below)
+
+### ISSUE-1 (medium, regression for `--backend-only` / Python 3.14; documented as intentional): import-time threads are silently dead in forked prod workers, module-level values and user PRNG instances are shared
+`reflex run --env prod --backend-only` (0.10.1a1, Linux, default `fork`) imports the app once in the supervisor and forks the
+workers. Every thread the module started at import (`threading.Thread`, `threading.Timer`, `logging.handlers.QueueListener`,
+APScheduler-style schedulers) exists only in the supervisor: in each worker `Thread.is_alive()` is False, counters never
+advance, and **every record logged through a `QueueHandler` from a worker is dropped** (`out/forkapp-new-queued.log` holds one
+line, from the supervisor; the direct `FileHandler` file holds all 30 worker lines). Module-level `random.random()`, `uuid4()`,
+`secrets.token_hex()` evaluate once (identical in all 8 workers) and a user-created `random.Random()` instance yields the same
+sequence in every worker (`distinct_first_prng_now: 1`). On 0.10.0 the same command ran the module once per worker
+(`imported_in_worker 9/9`, threads alive 9/9, 9 distinct values) — on Python 3.12 and 3.14 alike. Full-stack
+`reflex run --env prod` on Python 3.12 already behaved like this on 0.10.0 (the CLI process imports the app for the compile
+and forks), so the regression is limited to `--backend-only` (the documented container path) and to Python 3.14 (forkserver
+before). Nothing is logged. The changelog and `docs/hosting/self-hosting.md` say "set `REFLEX_BACKEND_START_METHOD=spawn`
+for apps that are not fork-safe, for example ones that open database connections or start threads at import time", so this
+is a known trade-off; reported because the failure mode is silent (logging via a queue listener vanishes) and because the
+upgrade guide / changelog do not mention the PRNG / module-constant sharing. `spawn` restores 0.10.0 behaviour at 0.10.0's
+memory cost (701 MB vs 200 MB PSS for 8 workers).
+Repro: section 2 (`scripts/probe_run.sh new new-be-fork prod-be 8201` vs `prev`), `out/whoami-{new,prev}-be-fork.json`.
+
 ## Results
 
 ### 1. Prod + Redis, full stack (`reflex run --env prod --frontend-port 8200 --backend-port 8200`)
@@ -137,6 +157,36 @@ re-parsing the file every 2 ms. `out/jsonlock-results.txt`.
 → STATE-36 **fixed** (#7304 loads the backend app by its configured module name instead of a file path; granian no longer
 derives `noinit` instead of `noinit.noinit`). Note the merged change is the module-name target only; the PR text's "raises a
 clear error pointing at the missing file" is not what shipped (and is not needed: the layout now simply works).
+
+### 7a. Python 3.14 (where #7079 / #7113 change the most: the interpreter default is `forkserver`)
+Venvs `$SB/envs/process_model-py314-{new,prev}` (`uv --no-config venv --python 3.14` + `reflex[db]==<ver> 'pydantic<2.15'`, Python 3.14.6).
+Backend-only prod + Redis (`probe_run.sh process_model-py314-<v> py314-<v>-be-fork prod-be 8201`):
+| | new 0.10.1a1 | prev 0.10.0 |
+|---|---|---|
+| tree | supervisor (35 MB) + 8 forked workers (~26 MB each) = **252 MB PSS**, 9 procs | supervisor 56 MB + resource tracker 7 MB + forkserver 109 MB + 9 workers ~100 MB each = **981 MB PSS**, 11 procs |
+| `/ping` up | 8.3 s | 9.6 s |
+| app imported in worker / threads alive / QueueListener alive | 0/8 / 0/8 / 0/8 | 9/9 / 9/9 / 9/9 (`start_method` in worker: spawn-style via forkserver) |
+| SIGTERM | 2.0 s, clean | 4.0 s, clean |
+So on 3.14 the behaviour change is the same as on 3.12 `--backend-only` (ISSUE-1), with a 4x memory win.
+
+Dev on 3.14 (`serve.sh start process_model-py314-<v> $PM/hotapp py314-<v>-devbe dev-be 8205`, `out/tree-py314-*-devbe.json`):
+new = 2 python processes (supervisor 51 MB + forked worker 51 MB PSS, 102 MB total); prev = 3 (supervisor 43 MB + a 1-thread
+multiprocessing helper 9 MB + worker 64 MB, 116 MB). Hot-reload sequence on py3.14 new (`out/hot-py314-new.json`): 18/20,
+identical to 3.12 (reloads 0.3-0.58 s, CLI-16 refused instantly, recovers 0.4 s, rxconfig edit not picked up, the two
+transient #7553/#7435 warnings), SIGTERM 0.26 s clean.
+
+### 7b. Full-stack prod with `REFLEX_BACKEND_START_METHOD=spawn` (new) — the documented opt-out
+`REFLEX_BACKEND_START_METHOD=spawn REFLEX_REDIS_URL=... serve.sh start new $PM/forkapp new-prod-spawn prod 8200`: up in 17 s,
+index 200 (the compiled frontend is mounted in spawned workers too: `EnvVar.set` writes `os.environ`), 8 workers each importing
+the app (`imported_in_worker 8/8`, ticker/QueueListener alive 8/8, 8 distinct module values), drive 24/25 (favicon 404 only),
+EVT-04 4/4 delivered (3/4 cross-worker), SIGTERM clean, 0 tracebacks. `out/drive-new-prod-spawn.json`, `out/whoami-new-prod-spawn.json`.
+
+### 8. Lifecycle fixtures (`fixtures/upgrade/lifecycle`, staged at `$PM/lifecycle` with `$PM/bin/env.sh`)
+`cd $PM/lifecycle && FP=3210 BP=8210 QA_EOF_CAP=40 QA_WAIT_CAP=20 W=$PM bash bin/json_matrix.sh <label> <venv> INT-group:40 TERM-pid:40 TERM-pid:6 INT-pid:40`
+(A3-07 = CLI-26 `--json` ignores a pid-only SIGINT, A3-08 = CLI-27 30 s drain cap truncates the last record). Results in
+`lifecycle/out/jsondrain/<label>-<sig>-r<rate>.json` (copied to `out/`). Expected on 0.10.0 (README): INT-group/TERM-pid at 40
+lines/s exit ~6-7 s, 0 lost; TERM-pid at 6 lines/s exits at the 30 s cap with a truncated last record; INT-pid never exits.
+RESULTS: see table below (filled in after the runs).
 
 ### 7. Telemetry enabled (default for users) + backend-only prod, new
 `REFLEX_TELEMETRY_ENABLED=true scripts/probe_run.sh new new-be-telemetry prod-be 8201`: up in 2.2 s (same as with telemetry off),
