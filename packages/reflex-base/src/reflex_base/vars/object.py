@@ -336,6 +336,10 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=PYTHON_TYPES):
             fixed_type, Mapping
         ):
             if not is_union_type:
+                # Resolve the raw descriptor once and reuse it. A HybridProperty resolves to a
+                # frontend Var with this object var substituted as `self` (e.g. `State.info.a_b`);
+                # any other descriptor is passed to `get_attribute_access_type` so the class
+                # lookup is not repeated.
                 descriptor = types.get_attribute_descriptor(fixed_type, name)
                 if isinstance(descriptor, HybridProperty):
                     hybrid_var = descriptor._get_var(self)
