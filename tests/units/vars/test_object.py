@@ -1,6 +1,6 @@
 import dataclasses
 from collections.abc import Sequence
-from typing import Annotated, Any, Literal, assert_type
+from typing import Annotated, Any, Literal, Union, assert_type
 
 import pytest
 from reflex_base.utils.exceptions import VarAttributeError
@@ -494,3 +494,23 @@ def test_unserialized_property_checks_union_branches() -> None:
     assert types.is_unserialized_property(ItemA, "label")
     assert types.is_unserialized_property(ItemB, "label")
     assert types.is_unserialized_property(ItemA | ItemB, "label")
+
+
+def test_plain_property_on_typing_union_raises() -> None:
+    """Plain properties are rejected on typing.Union model types."""
+
+    class ItemA(pydantic.BaseModel):
+        @property
+        def label(self) -> str:
+            return "a"
+
+    class ItemB(pydantic.BaseModel):
+        @property
+        def label(self) -> str:
+            return "b"
+
+    class UnionState(rx.State):
+        item: rx.Field[Union[ItemA, ItemB]] = rx.field(ItemA())
+
+    with pytest.raises(VarAttributeError, match="union type"):
+        _ = UnionState.item.label

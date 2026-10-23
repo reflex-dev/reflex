@@ -330,26 +330,24 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=PYTHON_TYPES):
 
         fixed_type = get_origin(var_type) or var_type
         descriptor = None
+        is_union_type = types.is_union(var_type)
 
-        if isinstance(fixed_type, type) and not safe_issubclass(fixed_type, Mapping):
-            # Resolve the raw descriptor once and reuse it. A HybridProperty resolves to a
-            # frontend Var with this object var substituted as `self` (e.g. `State.info.a_b`);
-            # any other descriptor is passed to `get_attribute_access_type` so the class
-            # lookup is not repeated.
-            descriptor = types.get_attribute_descriptor(fixed_type, name)
-            if isinstance(descriptor, HybridProperty):
-                hybrid_var = descriptor._get_var(self)
-                if hybrid_var is None:
-                    msg = (
-                        f"The hybrid property '{name}' of {fixed_type.__name__} has no "
-                        f"frontend value, so it cannot be accessed on `{self!s}`."
-                    )
-                    raise VarAttributeError(msg)
-                return hybrid_var
+        if (isinstance(fixed_type, type) or is_union_type) and not safe_issubclass(
+            fixed_type, Mapping
+        ):
+            if not is_union_type:
+                descriptor = types.get_attribute_descriptor(fixed_type, name)
+                if isinstance(descriptor, HybridProperty):
+                    hybrid_var = descriptor._get_var(self)
+                    if hybrid_var is None:
+                        msg = (
+                            f"The hybrid property '{name}' of {fixed_type.__name__} has no "
+                            f"frontend value, so it cannot be accessed on `{self!s}`."
+                        )
+                        raise VarAttributeError(msg)
+                    return hybrid_var
 
             if types.is_unserialized_property(var_type, name):
-                is_union_type = types.is_union(var_type)
-
                 property_types = get_args(var_type) if is_union_type else (fixed_type,)
 
                 property_type = next(
