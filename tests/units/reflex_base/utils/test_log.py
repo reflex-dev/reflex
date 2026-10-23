@@ -1480,3 +1480,23 @@ def test_supervise_output_child_environment(tmp_path):
         "False",
         "utf-8 backslashreplace",
     ]
+
+
+def test_output_pump_writes_in_atomic_chunks(monkeypatch):
+    """Records are grouped into writes no larger than PIPE_BUF, one record minimum."""
+    import select
+
+    writes: list[bytes] = []
+    monkeypatch.setattr(log, "_write_all", lambda _fd, data: writes.append(data))
+    pump = log._OutputPump(0, 1, "info", "stdout")
+    lines = [b"x" * 100] * 200 + [b"y" * (2 * select.PIPE_BUF)] + [b"z"]
+
+    pump._write(lines, [], final=False)
+
+    assert len(writes) > 3
+    small, big, last = writes[:-2], writes[-2], writes[-1]
+    assert all(len(chunk) <= select.PIPE_BUF for chunk in small)
+    assert all(chunk.endswith(b"\n") for chunk in writes)
+    assert json.loads(big)["message"] == "y" * (2 * select.PIPE_BUF)
+    assert json.loads(last)["message"] == "z"
+    assert b"".join(writes).count(b"\n") == 202

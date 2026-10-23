@@ -83,14 +83,26 @@ def _alive(pid: int) -> bool:
         pid: The process ID.
 
     Returns:
-        Whether a signal could still be delivered to the process.
+        Whether the process still runs; an exited process nobody reaped yet
+        counts as gone.
     """
+    # An orphan is reparented to this process when it is PID 1 or a
+    # subreaper, in which case only this process can reap it.
+    with contextlib.suppress(ChildProcessError):
+        if os.waitpid(pid, os.WNOHANG)[0]:
+            return False
     try:
         os.kill(pid, 0)
     except ProcessLookupError:
         return False
     except PermissionError:
         return True
+    if sys.platform == "linux":
+        try:
+            stat = (_PROC / str(pid) / "stat").read_bytes()
+        except OSError:
+            return False
+        return stat[stat.rfind(b")") + 1 :].split()[0] != b"Z"
     return True
 
 
@@ -130,7 +142,10 @@ def stop_process_tree(process: subprocess.Popen, timeout: float = 5.0):
 
     On POSIX the process and its descendants get SIGTERM, then SIGKILL if any
     of them is still alive after ``timeout`` seconds; a descendant started
-    during the wait is caught by a second look before the kill. On Windows
+    during the wait is caught by a second look before the kill, as long as
+    the process itself still runs. A process that forks while handling
+    SIGTERM and exits before that fork is seen leaves it behind: without a
+    process group of its own, descendant discovery is best effort. On Windows
     ``taskkill /T /F`` ends the whole tree at once. The process is reaped
     either way, so ``process.returncode`` is set afterwards.
 

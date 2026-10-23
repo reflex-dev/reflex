@@ -27,6 +27,7 @@ import json
 import logging
 import os
 import re
+import select
 import shutil
 import signal
 import subprocess
@@ -318,7 +319,7 @@ def _is_json_record(line: bytes) -> bool:
 
 def _to_records(
     lines: list[bytes], traceback: list[str], level: str, name: str, final: bool
-) -> bytes:
+) -> list[bytes]:
     """Convert raw output lines to JSON lines.
 
     Lines that already are JSON log records pass through unchanged. A Python
@@ -333,7 +334,7 @@ def _to_records(
         final: Whether the output ended, so an open traceback is emitted too.
 
     Returns:
-        The JSON lines, each ending with a newline.
+        The JSON records, each ending with a newline.
     """
     timestamp = datetime.datetime.now(tz=datetime.UTC).isoformat()
     out: list[bytes] = []
@@ -366,7 +367,32 @@ def _to_records(
             record(line)
     if final and traceback:
         record(traceback[-1].strip(), "error", "\n".join(traceback) + "\n")
-    return b"".join(line + b"\n" for line in out)
+    return [line + b"\n" for line in out]
+
+
+def _atomic_chunks(records: list[bytes]) -> Iterator[bytes]:
+    """Group records into writes no larger than the pipe's atomic write size.
+
+    A write of at most ``PIPE_BUF`` bytes enters a pipe whole or not at all,
+    so a reader thread that is abandoned mid-write can never leave a partial
+    record behind; only a single record above that size can be cut.
+
+    Args:
+        records: The JSON records, each ending with a newline.
+
+    Yields:
+        Chunks of consecutive records.
+    """
+    chunk: list[bytes] = []
+    size = 0
+    for record in records:
+        if chunk and size + len(record) > select.PIPE_BUF:
+            yield b"".join(chunk)
+            chunk, size = [], 0
+        chunk.append(record)
+        size += len(record)
+    if chunk:
+        yield b"".join(chunk)
 
 
 def _write_all(fd: int, data: bytes):
@@ -384,14 +410,7 @@ def _write_all(fd: int, data: bytes):
 class _OutputPump(threading.Thread):
     """Reader thread that turns one child output pipe into JSON lines."""
 
-    def __init__(
-        self,
-        read_fd: int,
-        write_fd: int,
-        level: str,
-        name: str,
-        stopping: threading.Event | None = None,
-    ):
+    def __init__(self, read_fd: int, write_fd: int, level: str, name: str):
         """Create the reader.
 
         Args:
@@ -399,16 +418,13 @@ class _OutputPump(threading.Thread):
             write_fd: The file descriptor to write JSON lines to.
             level: The record level for plain lines.
             name: The logger name for the records.
-            stopping: Set once shutdown was requested; from then on records
-                are written one at a time so a cutoff lands between them.
         """
         super().__init__(name=f"reflex-output-{name}", daemon=True)
         self.read_fd = read_fd
         self.write_fd = write_fd
         self.level = level
         self.logger_name = name
-        self.stopping = stopping or threading.Event()
-        # Set by drain() when time is up: finish the current record, drop the rest.
+        # Set by drain() when time is up: finish the current write, drop the rest.
         self._dropping = False
         # When the reader started waiting for data; None while it works.
         self.idle_since: float | None = None
@@ -444,22 +460,19 @@ class _OutputPump(threading.Thread):
             traceback: The lines of a traceback still being collected.
             final: Whether the output ended.
         """
-        data = _to_records(lines, traceback, self.level, self.logger_name, final)
-        if not data or self._dropping:
+        records = _to_records(lines, traceback, self.level, self.logger_name, final)
+        if not records or self._dropping:
             return
-        # One write per batch while the command runs; one per record once it
-        # is stopping, so the drain can end between two complete records.
-        records = data.splitlines(keepends=True) if self.stopping.is_set() else (data,)
         with self._write_lock:
             elapsed, _ = self._write_state
             started = time.monotonic()
             self._write_state = (elapsed, started)
         # Keep reading when the consumer is gone: a full pipe blocks the child.
         with contextlib.suppress(OSError):
-            for record in records:
+            for chunk in _atomic_chunks(records):
                 if self._dropping:
                     break
-                _write_all(self.write_fd, record)
+                _write_all(self.write_fd, chunk)
         with self._write_lock:
             self._write_state = (elapsed + time.monotonic() - started, None)
 
@@ -480,9 +493,9 @@ class _OutputPump(threading.Thread):
         Returns early when the reader sat idle for a while after the exit, or
         when the drain took too long. Time spent forwarding output does not
         count toward the active limit. A separate wall deadline bounds shutdown
-        even when a consumer stops reading. A record being written when time
-        is up gets a short grace to complete, so a consumer that still reads
-        never sees a cut record.
+        even when a consumer stops reading. A write in progress when time is
+        up gets a short grace to complete; writes never exceed the pipe's
+        atomic size, so an abandoned one cannot leave a partial record.
 
         Args:
             exited_at: The monotonic time of the pump's snapshot after child exit.
@@ -553,8 +566,8 @@ def supervise_output(args: list[str]) -> int:
     os.close(err_write)
     shutdown = _Shutdown(proc)
     pumps = [
-        _OutputPump(out_read, 1, "info", "stdout", shutdown.stopping),
-        _OutputPump(err_read, 2, "warning", "stderr", shutdown.stopping),
+        _OutputPump(out_read, 1, "info", "stdout"),
+        _OutputPump(err_read, 2, "warning", "stderr"),
     ]
     for pump in pumps:
         pump.start()
@@ -571,8 +584,6 @@ def supervise_output(args: list[str]) -> int:
             except KeyboardInterrupt:
                 # The command shares the console and received the Ctrl-C too.
                 shutdown.request(None)
-        # From here on the readers write record by record (see _OutputPump).
-        shutdown.stopping.set()
         requested_at = shutdown.requested_at
         _drain_pumps(
             pumps,
@@ -621,7 +632,6 @@ class _Shutdown:
             proc: The supervised command.
         """
         self.proc = proc
-        self.stopping = threading.Event()
         self.requested_at: float | None = None
         self._timer: threading.Timer | None = None
 
@@ -643,7 +653,6 @@ class _Shutdown:
         """
         if self.requested_at is None:
             self.requested_at = time.monotonic()
-            self.stopping.set()
             self._timer = threading.Timer(_STOP_DEADLINE_SECONDS, self._kill)
             self._timer.daemon = True
             self._timer.start()

@@ -151,3 +151,15 @@ def test_stop_process_tree_on_an_exited_process(tmp_path: Path):
     proc.wait()
     processes.stop_process_tree(proc, timeout=1)
     assert proc.returncode == 0
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX process states")
+def test_alive_treats_an_unreaped_child_as_gone():
+    """A zombie no longer runs, so waiting for it would only waste the timeout."""
+    proc = subprocess.Popen([sys.executable, "-c", "pass"])
+    deadline = time.monotonic() + 5
+    while processes._alive(proc.pid) and time.monotonic() < deadline:
+        time.sleep(0.02)
+    assert not processes._alive(proc.pid)
+    # _alive reaped the zombie, which is what happens to orphans under PID 1.
+    assert proc.poll() in (0, None)
