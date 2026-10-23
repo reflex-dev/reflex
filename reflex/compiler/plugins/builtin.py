@@ -468,7 +468,7 @@ def default_page_plugins(
     chain: list[Plugin] = [*plugins, DefaultPagePlugin()]
     if style is not None:
         chain.append(ApplyStylePlugin(style=style))
-    chain.extend((DefaultCollectorPlugin(), MemoizeStatefulPlugin()))
+    chain.extend((DefaultCollectorPlugin(), MemoizeStatefulPlugin(style=style)))
     return tuple(chain)
 
 
