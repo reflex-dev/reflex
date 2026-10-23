@@ -649,24 +649,31 @@ class _ShutdownController:
 
 
 def _supervised_environment() -> dict[str, str]:
-    """Build the environment used by a supervised child process."""
+    """Build the environment used by a supervised child process.
+
+    Returns:
+        The child environment with supervisor metadata and UTF-8 output.
+    """
     for stream in (sys.stdout, sys.stderr):
         if stream is not None:
             stream.flush()
     # The readers decode UTF-8; Python otherwise uses the locale encoding.
     # A configured error handler is kept.
     _, _, errors = os.environ.get("PYTHONIOENCODING", "").partition(":")
-    env = {
+    return {
         "PYTHONUNBUFFERED": "1",
         **os.environ,
         _SUPERVISED_ENV_VAR: str(os.getpid()),
         "PYTHONIOENCODING": f"utf-8:{errors}" if errors else "utf-8",
     }
-    return env
 
 
 def _wait_for_child(proc: subprocess.Popen, shutdown: _ShutdownController) -> int:
-    """Wait for the child while honoring repeated Ctrl-C on Windows."""
+    """Wait for the child while honoring repeated Ctrl-C on Windows.
+
+    Returns:
+        The child's exit code.
+    """
     while True:
         try:
             return proc.wait()
@@ -674,7 +681,9 @@ def _wait_for_child(proc: subprocess.Popen, shutdown: _ShutdownController) -> in
             shutdown.request(signal.SIGINT, None)
 
 
-def _drain_output_pumps(pumps: list[_OutputPump], shutdown: _ShutdownController):
+def _drain_output_pumps(
+    pumps: list[_OutputPump], shutdown: _ShutdownController
+) -> None:
     """Drain child output within the normal or interrupted shutdown deadline."""
     wall_deadline = (
         shutdown.requested_at if shutdown.requested_at is not None else time.monotonic()
