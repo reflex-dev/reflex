@@ -800,6 +800,19 @@ def test_format_ref(input, output):
     assert format.format_ref(input) == output
 
 
+def test_format_ref_names_an_f_string_var_by_its_expression_and_type():
+    """A Var in an f-string id gives a ref name free of its run-dependent hash."""
+    first = format.format_ref(f"zone-{Var(_js_expr='item', _var_type=str)}")
+    same = format.format_ref(f"zone-{Var(_js_expr='item', _var_type=str)}")
+    other_type = format.format_ref(f"zone-{Var(_js_expr='item', _var_type=int)}")
+
+    assert first == same
+    assert first != other_type
+    assert first.startswith("ref_zone_")
+    assert first.endswith("item")
+    assert str(hash(Var(_js_expr="item", _var_type=str))) not in first
+
+
 @pytest.mark.parametrize(
     ("input", "output"),
     [

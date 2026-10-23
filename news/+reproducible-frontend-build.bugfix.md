@@ -1,0 +1,1 @@
+Two production builds of the same app are now identical: the frontend no longer bundles `.web/reflex.json`, whose project hash and last run time renamed every script at each build, and reads the Reflex version from `env.json` instead.
