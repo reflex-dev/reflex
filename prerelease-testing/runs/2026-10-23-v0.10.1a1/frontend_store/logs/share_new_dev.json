@@ -1,0 +1,598 @@
+{
+ "url": "http://localhost:3220/",
+ "hydrate_ms": 615,
+ "results": [
+  {
+   "op": "append",
+   "ok": true,
+   "step": 1,
+   "ms": 263,
+   "diffs": [],
+   "card_renders": {
+    "1": "2",
+    "2": "2",
+    "3": "2",
+    "4": "2"
+   }
+  },
+  {
+   "op": "pop",
+   "ok": true,
+   "step": 2,
+   "ms": 203,
+   "diffs": [],
+   "card_renders": {
+    "1": "2",
+    "2": "2",
+    "3": "2"
+   }
+  },
+  {
+   "op": "pop0",
+   "ok": true,
+   "step": 3,
+   "ms": 195,
+   "diffs": [],
+   "card_renders": {
+    "2": "4",
+    "3": "4"
+   }
+  },
+  {
+   "op": "insert1",
+   "ok": true,
+   "step": 4,
+   "ms": 202,
+   "diffs": [],
+   "card_renders": {
+    "2": "4",
+    "5": "6",
+    "3": "2"
+   }
+  },
+  {
+   "op": "sort_qty",
+   "ok": true,
+   "step": 5,
+   "ms": 223,
+   "diffs": [],
+   "card_renders": {
+    "5": "6",
+    "2": "8",
+    "3": "2"
+   }
+  },
+  {
+   "op": "sort_qty_desc",
+   "ok": true,
+   "step": 6,
+   "ms": 208,
+   "diffs": [],
+   "card_renders": {
+    "3": "8",
+    "2": "8",
+    "5": "4"
+   }
+  },
+  {
+   "op": "reverse",
+   "ok": true,
+   "step": 7,
+   "ms": 207,
+   "diffs": [],
+   "card_renders": {
+    "5": "10",
+    "2": "8",
+    "3": "6"
+   }
+  },
+  {
+   "op": "replace_equal",
+   "ok": true,
+   "step": 8,
+   "ms": 207,
+   "diffs": [],
+   "card_renders": {
+    "5": "10",
+    "2": "8",
+    "3": "6"
+   }
+  },
+  {
+   "op": "bump0",
+   "ok": true,
+   "step": 9,
+   "ms": 207,
+   "diffs": [],
+   "card_renders": {
+    "5": "12",
+    "2": "8",
+    "3": "6"
+   }
+  },
+  {
+   "op": "tag0",
+   "ok": true,
+   "step": 10,
+   "ms": 219,
+   "diffs": [],
+   "card_renders": {
+    "5": "14",
+    "2": "8",
+    "3": "6"
+   }
+  },
+  {
+   "op": "meta0",
+   "ok": true,
+   "step": 11,
+   "ms": 202,
+   "diffs": [],
+   "card_renders": {
+    "5": "16",
+    "2": "8",
+    "3": "6"
+   }
+  },
+  {
+   "op": "meta0_del",
+   "ok": true,
+   "step": 12,
+   "ms": 212,
+   "diffs": [],
+   "card_renders": {
+    "5": "18",
+    "2": "8",
+    "3": "6"
+   }
+  },
+  {
+   "op": "rename_last",
+   "ok": true,
+   "step": 13,
+   "ms": 215,
+   "diffs": [],
+   "card_renders": {
+    "5": "18",
+    "2": "8",
+    "3": "8"
+   }
+  },
+  {
+   "op": "same_twice",
+   "ok": true,
+   "step": 14,
+   "ms": 217,
+   "diffs": [],
+   "card_renders": {
+    "5": "18",
+    "2": "8",
+    "3": "8"
+   }
+  },
+  {
+   "op": "noop",
+   "ok": true,
+   "step": 15,
+   "ms": 216,
+   "diffs": [],
+   "card_renders": {
+    "5": "18",
+    "2": "8",
+    "3": "8"
+   }
+  },
+  {
+   "op": "nested_add",
+   "ok": true,
+   "step": 16,
+   "ms": 214,
+   "diffs": [],
+   "card_renders": {
+    "5": "18",
+    "2": "8",
+    "3": "8"
+   }
+  },
+  {
+   "op": "nested_upd",
+   "ok": true,
+   "step": 17,
+   "ms": 216,
+   "diffs": [],
+   "card_renders": {
+    "5": "18",
+    "2": "8",
+    "3": "8"
+   }
+  },
+  {
+   "op": "nested_del_inner",
+   "ok": true,
+   "step": 18,
+   "ms": 218,
+   "diffs": [],
+   "card_renders": {
+    "5": "18",
+    "2": "8",
+    "3": "8"
+   }
+  },
+  {
+   "op": "nested_del",
+   "ok": true,
+   "step": 19,
+   "ms": 215,
+   "diffs": [],
+   "card_renders": {
+    "5": "18",
+    "2": "8",
+    "3": "8"
+   }
+  },
+  {
+   "op": "nested_reset",
+   "ok": true,
+   "step": 20,
+   "ms": 215,
+   "diffs": [],
+   "card_renders": {
+    "5": "18",
+    "2": "8",
+    "3": "8"
+   }
+  },
+  {
+   "op": "nested_reorder",
+   "ok": true,
+   "step": 21,
+   "ms": 216,
+   "diffs": [],
+   "card_renders": {
+    "5": "18",
+    "2": "8",
+    "3": "8"
+   }
+  },
+  {
+   "op": "set_same_nested",
+   "ok": true,
+   "step": 22,
+   "ms": 202,
+   "diffs": [],
+   "card_renders": {
+    "5": "18",
+    "2": "8",
+    "3": "8"
+   }
+  },
+  {
+   "op": "blob_none",
+   "ok": true,
+   "step": 23,
+   "ms": 212,
+   "diffs": [],
+   "card_renders": {
+    "5": "18",
+    "2": "8",
+    "3": "8"
+   }
+  },
+  {
+   "op": "blob_dict",
+   "ok": true,
+   "step": 24,
+   "ms": 200,
+   "diffs": [],
+   "card_renders": {
+    "5": "18",
+    "2": "8",
+    "3": "8"
+   }
+  },
+  {
+   "op": "poly_obj",
+   "ok": true,
+   "step": 25,
+   "ms": 295,
+   "diffs": [],
+   "card_renders": {
+    "5": "18",
+    "2": "8",
+    "3": "8"
+   }
+  },
+  {
+   "op": "poly_arr",
+   "ok": true,
+   "step": 26,
+   "ms": 202,
+   "diffs": [],
+   "card_renders": {
+    "5": "18",
+    "2": "8",
+    "3": "8"
+   }
+  },
+  {
+   "op": "matrix_mut",
+   "ok": true,
+   "step": 27,
+   "ms": 201,
+   "diffs": [],
+   "card_renders": {
+    "5": "18",
+    "2": "8",
+    "3": "8"
+   }
+  },
+  {
+   "op": "matrix_row",
+   "ok": true,
+   "step": 28,
+   "ms": 215,
+   "diffs": [],
+   "card_renders": {
+    "5": "18",
+    "2": "8",
+    "3": "8"
+   }
+  },
+  {
+   "op": "matrix_pop_inner",
+   "ok": true,
+   "step": 29,
+   "ms": 216,
+   "diffs": [],
+   "card_renders": {
+    "5": "18",
+    "2": "8",
+    "3": "8"
+   }
+  },
+  {
+   "op": "bases_mut",
+   "ok": true,
+   "step": 30,
+   "ms": 199,
+   "diffs": [],
+   "card_renders": {
+    "5": "18",
+    "2": "8",
+    "3": "8"
+   }
+  },
+  {
+   "op": "bases_replace",
+   "ok": true,
+   "step": 31,
+   "ms": 201,
+   "diffs": [],
+   "card_renders": {
+    "5": "18",
+    "2": "8",
+    "3": "8"
+   }
+  },
+  {
+   "op": "pyd_mut",
+   "ok": true,
+   "step": 32,
+   "ms": 216,
+   "diffs": [],
+   "card_renders": {
+    "5": "18",
+    "2": "8",
+    "3": "8"
+   }
+  },
+  {
+   "op": "when_tick",
+   "ok": true,
+   "step": 33,
+   "ms": 198,
+   "diffs": [],
+   "card_renders": {
+    "5": "18",
+    "2": "8",
+    "3": "8"
+   }
+  },
+  {
+   "op": "tags_add",
+   "ok": true,
+   "step": 34,
+   "ms": 201,
+   "diffs": [],
+   "card_renders": {
+    "5": "18",
+    "2": "8",
+    "3": "8"
+   }
+  },
+  {
+   "op": "tags_rm",
+   "ok": true,
+   "step": 35,
+   "ms": 214,
+   "diffs": [],
+   "card_renders": {
+    "5": "18",
+    "2": "8",
+    "3": "8"
+   }
+  },
+  {
+   "op": "pair_swap",
+   "ok": true,
+   "step": 36,
+   "ms": 200,
+   "diffs": [],
+   "card_renders": {
+    "5": "18",
+    "2": "8",
+    "3": "8"
+   }
+  },
+  {
+   "op": "big_fill",
+   "ok": true,
+   "step": 37,
+   "ms": 399,
+   "diffs": [],
+   "card_renders": {
+    "5": "18",
+    "2": "8",
+    "3": "8"
+   }
+  },
+  {
+   "op": "big_mut_mid",
+   "ok": true,
+   "step": 38,
+   "ms": 312,
+   "diffs": [],
+   "card_renders": {
+    "5": "18",
+    "2": "8",
+    "3": "8"
+   }
+  },
+  {
+   "op": "big_append",
+   "ok": true,
+   "step": 39,
+   "ms": 297,
+   "diffs": [],
+   "card_renders": {
+    "5": "18",
+    "2": "8",
+    "3": "8"
+   }
+  },
+  {
+   "op": "big_pop0",
+   "ok": true,
+   "step": 40,
+   "ms": 315,
+   "diffs": [],
+   "card_renders": {
+    "5": "18",
+    "2": "8",
+    "3": "8"
+   }
+  },
+  {
+   "op": "both",
+   "ok": true,
+   "step": 41,
+   "ms": 305,
+   "diffs": [],
+   "card_renders": {
+    "5": "18",
+    "2": "8",
+    "3": "8"
+   }
+  },
+  {
+   "op": "deep_bump",
+   "ok": true,
+   "step": 42,
+   "ms": 318,
+   "diffs": [],
+   "card_renders": {
+    "5": "18",
+    "2": "8",
+    "3": "8"
+   }
+  },
+  {
+   "op": "many",
+   "ok": true,
+   "step": 43,
+   "ms": 302,
+   "diffs": [],
+   "card_renders": {
+    "6": "20",
+    "3": "10",
+    "2": "10",
+    "5": "2"
+   }
+  },
+  {
+   "op": "clear",
+   "ok": true,
+   "step": 44,
+   "ms": 321,
+   "diffs": [],
+   "card_renders": {}
+  },
+  {
+   "op": "reset",
+   "ok": true,
+   "step": 45,
+   "ms": 306,
+   "diffs": [],
+   "card_renders": {
+    "1": "2",
+    "2": "2",
+    "3": "2"
+   }
+  },
+  {
+   "op": "bg_run",
+   "ok": true,
+   "step": 50,
+   "ms": 555,
+   "diffs": [],
+   "card_renders": {
+    "1": "8",
+    "2": "2",
+    "3": "2",
+    "4": "2",
+    "5": "2",
+    "6": "2",
+    "7": "2",
+    "8": "2"
+   }
+  },
+  {
+   "op": "pop",
+   "ok": true,
+   "step": 51,
+   "ms": 371,
+   "diffs": [],
+   "card_renders": {
+    "1": "8",
+    "2": "2",
+    "3": "2",
+    "4": "2",
+    "5": "2",
+    "6": "2",
+    "7": "2"
+   }
+  },
+  {
+   "op": "append",
+   "ok": true,
+   "step": 52,
+   "ms": 292,
+   "diffs": [],
+   "card_renders": {
+    "1": "8",
+    "2": "2",
+    "3": "2",
+    "4": "2",
+    "5": "2",
+    "6": "2",
+    "7": "2",
+    "9": "2"
+   }
+  }
+ ],
+ "n_fail": 0,
+ "console": [],
+ "pageerrors": [],
+ "requestfailed": [],
+ "http_errors": []
+}

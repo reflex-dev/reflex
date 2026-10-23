@@ -1,0 +1,182 @@
+{
+ "checks": [
+  {
+   "name": "js len",
+   "ok": false,
+   "got": "26",
+   "want": "21"
+  },
+  {
+   "name": "js at0",
+   "ok": true,
+   "got": "h",
+   "want": "h"
+  },
+  {
+   "name": "js at6",
+   "ok": false,
+   "got": "�",
+   "want": "👋"
+  },
+  {
+   "name": "js at7",
+   "ok": false,
+   "got": "�",
+   "want": "🏽"
+  },
+  {
+   "name": "js atm1",
+   "ok": false,
+   "got": "�",
+   "want": "𝔦"
+  },
+  {
+   "name": "js sl_1_4",
+   "ok": true,
+   "got": "éll",
+   "want": "éll"
+  },
+  {
+   "name": "js sl_6_8",
+   "ok": false,
+   "got": "👋",
+   "want": "👋🏽"
+  },
+  {
+   "name": "js sl_m3",
+   "ok": false,
+   "got": "�𝔦",
+   "want": "𝔘𝔫𝔦"
+  },
+  {
+   "name": "js sl_step2",
+   "ok": false,
+   "got": "hlo�� öl ́���",
+   "want": "hlo👋 öl ́𝔘𝔦"
+  },
+  {
+   "name": "js neg_of_sq",
+   "ok": true,
+   "got": "-9",
+   "want": "-9"
+  },
+  {
+   "name": "js m5_sq",
+   "ok": true,
+   "got": "4",
+   "want": "4"
+  },
+  {
+   "name": "js len",
+   "ok": true,
+   "got": "2",
+   "want": "2"
+  },
+  {
+   "name": "js at0",
+   "ok": true,
+   "got": "a",
+   "want": "a"
+  },
+  {
+   "name": "js at6",
+   "ok": true,
+   "got": "",
+   "want": ""
+  },
+  {
+   "name": "js at7",
+   "ok": true,
+   "got": "",
+   "want": ""
+  },
+  {
+   "name": "js atm1",
+   "ok": true,
+   "got": "b",
+   "want": "b"
+  },
+  {
+   "name": "js sl_1_4",
+   "ok": true,
+   "got": "b",
+   "want": "b"
+  },
+  {
+   "name": "js sl_6_8",
+   "ok": true,
+   "got": "",
+   "want": ""
+  },
+  {
+   "name": "js sl_m3",
+   "ok": true,
+   "got": "ab",
+   "want": "ab"
+  },
+  {
+   "name": "js sl_step2",
+   "ok": true,
+   "got": "a",
+   "want": "a"
+  },
+  {
+   "name": "js neg_of_sq",
+   "ok": true,
+   "got": "-16",
+   "want": "-16"
+  },
+  {
+   "name": "js m5_sq",
+   "ok": true,
+   "got": "1",
+   "want": "1"
+  },
+  {
+   "name": "style padding from var",
+   "ok": true,
+   "got": "4px",
+   "want": "4px"
+  },
+  {
+   "name": "data-dict attr",
+   "ok": true,
+   "got": "{\"a\":[1,2],\"b\":{\"c\":\"d\"}}",
+   "want": "{\"a\":[1,2],\"b\":{\"c\":\"d\"}}"
+  },
+  {
+   "name": "styled color (tailwind important?)",
+   "ok": true,
+   "got": "rgb(0, 0, 255)",
+   "want": "info"
+  },
+  {
+   "name": "no secondary TypeError from error event without Error",
+   "ok": false,
+   "got": [
+    "Cannot read properties of undefined (reading 'name')"
+   ],
+   "want": []
+  },
+  {
+   "name": "page errors seen during error-event test",
+   "ok": true,
+   "got": [
+    "Cannot read properties of undefined (reading 'name')",
+    "boom-with-object"
+   ],
+   "want": "info"
+  }
+ ],
+ "n_fail": 8,
+ "console": [
+  {
+   "type": "log",
+   "text": "_call_script TypeError: Cannot read properties of undefined (reading 'name')\n    at window.onerror (http://localhost:3222/utils/state.js:1288:23)\n    at eval (eval at applyEvent (http://localhost:3222/utils/state.js:522:13), <anonymous>:1:8)\n    at applyEvent (http://localhost:3222/utils/state.js:522:13)\n    at processEvent (http://localhost:3222/utils/state.js:695:13)\n    at queueEvents (http://localhost:3222/utils/state.js:659:9)\n    at http://localhost:3222/utils/state.js:1271:13\n    at invokeTarget (http://localhost:3222/utils/state.js:1013:30)\n    at applyEventActions (http://localhost:3222/utils/state.js:1025:10)\n    at Object.addEvents (http://localhost:3222/utils/state.js:1270:12)\n    at addEvents (http://localhost:3222/utils/context.jsx:287:20)"
+  }
+ ],
+ "pageerrors": [
+  "Cannot read properties of undefined (reading 'name')",
+  "boom-with-object"
+ ]
+}

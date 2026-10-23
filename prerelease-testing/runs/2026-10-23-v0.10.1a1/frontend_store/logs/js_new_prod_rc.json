@@ -1,0 +1,232 @@
+{
+ "checks": [
+  {
+   "name": "js len",
+   "ok": true,
+   "got": "21",
+   "want": "21"
+  },
+  {
+   "name": "js at0",
+   "ok": true,
+   "got": "h",
+   "want": "h"
+  },
+  {
+   "name": "js at6",
+   "ok": true,
+   "got": "👋",
+   "want": "👋"
+  },
+  {
+   "name": "js at7",
+   "ok": true,
+   "got": "🏽",
+   "want": "🏽"
+  },
+  {
+   "name": "js atm1",
+   "ok": true,
+   "got": "𝔦",
+   "want": "𝔦"
+  },
+  {
+   "name": "js sl_1_4",
+   "ok": true,
+   "got": "éll",
+   "want": "éll"
+  },
+  {
+   "name": "js sl_6_8",
+   "ok": true,
+   "got": "👋🏽",
+   "want": "👋🏽"
+  },
+  {
+   "name": "js sl_m3",
+   "ok": true,
+   "got": "𝔘𝔫𝔦",
+   "want": "𝔘𝔫𝔦"
+  },
+  {
+   "name": "js sl_step2",
+   "ok": true,
+   "got": "hlo👋 öl ́𝔘𝔦",
+   "want": "hlo👋 öl ́𝔘𝔦"
+  },
+  {
+   "name": "js neg_sq",
+   "ok": true,
+   "got": "9",
+   "want": "9"
+  },
+  {
+   "name": "js neg_of_sq",
+   "ok": true,
+   "got": "-9",
+   "want": "-9"
+  },
+  {
+   "name": "js m5_sq",
+   "ok": true,
+   "got": "4",
+   "want": "4"
+  },
+  {
+   "name": "js neg_cube",
+   "ok": true,
+   "got": "-27",
+   "want": "-27"
+  },
+  {
+   "name": "js lit_neg_base",
+   "ok": true,
+   "got": "-8",
+   "want": "-8"
+  },
+  {
+   "name": "js none_len",
+   "ok": true,
+   "got": "0",
+   "want": "0"
+  },
+  {
+   "name": "js len",
+   "ok": true,
+   "got": "2",
+   "want": "2"
+  },
+  {
+   "name": "js at0",
+   "ok": true,
+   "got": "a",
+   "want": "a"
+  },
+  {
+   "name": "js at6",
+   "ok": true,
+   "got": "",
+   "want": ""
+  },
+  {
+   "name": "js at7",
+   "ok": true,
+   "got": "",
+   "want": ""
+  },
+  {
+   "name": "js atm1",
+   "ok": true,
+   "got": "b",
+   "want": "b"
+  },
+  {
+   "name": "js sl_1_4",
+   "ok": true,
+   "got": "b",
+   "want": "b"
+  },
+  {
+   "name": "js sl_6_8",
+   "ok": true,
+   "got": "",
+   "want": ""
+  },
+  {
+   "name": "js sl_m3",
+   "ok": true,
+   "got": "ab",
+   "want": "ab"
+  },
+  {
+   "name": "js sl_step2",
+   "ok": true,
+   "got": "a",
+   "want": "a"
+  },
+  {
+   "name": "js neg_sq",
+   "ok": true,
+   "got": "16",
+   "want": "16"
+  },
+  {
+   "name": "js neg_of_sq",
+   "ok": true,
+   "got": "-16",
+   "want": "-16"
+  },
+  {
+   "name": "js m5_sq",
+   "ok": true,
+   "got": "1",
+   "want": "1"
+  },
+  {
+   "name": "js neg_cube",
+   "ok": true,
+   "got": "-64",
+   "want": "-64"
+  },
+  {
+   "name": "js lit_neg_base",
+   "ok": true,
+   "got": "16",
+   "want": "16"
+  },
+  {
+   "name": "js none_len",
+   "ok": true,
+   "got": "0",
+   "want": "0"
+  },
+  {
+   "name": "js none_len after set",
+   "ok": true,
+   "got": "2",
+   "want": "2"
+  },
+  {
+   "name": "style padding from var",
+   "ok": true,
+   "got": "4px",
+   "want": "4px"
+  },
+  {
+   "name": "data-dict attr",
+   "ok": true,
+   "got": "{\"a\":[1,2],\"b\":{\"c\":\"d\"}}",
+   "want": "{\"a\":[1,2],\"b\":{\"c\":\"d\"}}"
+  },
+  {
+   "name": "styled color (tailwind important?)",
+   "ok": true,
+   "got": "oklch(0.637 0.237 25.331)",
+   "want": "info"
+  },
+  {
+   "name": "no secondary TypeError from error event without Error",
+   "ok": true,
+   "got": [],
+   "want": []
+  },
+  {
+   "name": "page errors seen during error-event test",
+   "ok": true,
+   "got": [
+    "boom-with-object"
+   ],
+   "want": "info"
+  }
+ ],
+ "n_fail": 0,
+ "console": [
+  {
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  }
+ ],
+ "pageerrors": [
+  "boom-with-object"
+ ]
+}

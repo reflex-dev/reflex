@@ -1,0 +1,31 @@
+{
+  "url": "http://localhost:3222/js",
+  "title": "",
+  "clean": false,
+  "load_error": null,
+  "actions_performed": [
+    "wait: 6000",
+    "eval -> \"An error occurred while rendering this page.\\n\\nThis is an error with the application itself. Refreshing the page might help.\\n\\nTypeError: Cannot read properties of null (reading 'split')\\nTypeError: Cannot read properties of null (reading 'split')\\n    at Bare (http://localhost:3222/app_components/fs_app/fs_app.jsx?t=1792790703624:2098:77)\\n    at Object.react_stack_bottom_frame (http://localhost:3222/\""
+  ],
+  "action_error": null,
+  "screenshot_error": null,
+  "read_error": null,
+  "console": [
+    {
+      "type": "error",
+      "text": "%o\n\n%s\n\n%s\n TypeError: Cannot read properties of null (reading 'split')\n    at Bare (http://localhost:3222/app_components/fs_app/fs_app.jsx?t=1792790703624:2098:77)\n    at Object.react_stack_bottom_frame (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:14140:12)\n    at renderWithHooks (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:4398:19)\n    at updateFunctionComponent (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:5773:16)\n    at updateSimpleMemoComponent (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:5631:11)\n    at updateMemoComponent (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:5606:290)\n    at beginWork (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:6459:21)\n    at runWithFiberInDEV (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:942:66)\n    at performUnitOfWork (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:9146:92)\n    at workLoopSync (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:9042:37) The above error occurred in the <Bare> component. React will try to recreate this component tree from scratch using the error boundary you provided, C."
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation"
+    },
+    {
+      "type": "error",
+      "text": "%o\n\n%s\n\n%s\n TypeError: Cannot read properties of null (reading 'split')\n    at Bare (http://localhost:3222/app_components/fs_app/fs_app.jsx?t=1792790703624:2098:77)\n    at Object.react_stack_bottom_frame (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:14140:12)\n    at renderWithHooks (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:4398:19)\n    at updateFunctionComponent (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:5773:16)\n    at updateSimpleMemoComponent (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:5631:11)\n    at updateMemoComponent (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:5606:290)\n    at beginWork (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:6459:21)\n    at runWithFiberInDEV (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:942:66)\n    at performUnitOfWork (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:9146:92)\n    at workLoopSync (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:9042:37) The above error occurred in the <Bare> component. React will try to recreate this component tree from scratch using the error boundary you provided, C."
+    }
+  ],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_4xx_5xx": [],
+  "body_text": "An error occurred while rendering this page.\n\nThis is an error with the application itself. Refreshing the page might help.\n\nTypeError: Cannot read properties of null (reading 'split')\nTypeError: Cannot read properties of null (reading 'split')\n    at Bare (http://localhost:3222/app_components/fs_app/fs_app.jsx?t=1792790703624:2098:77)\n    at Object.react_stack_bottom_frame (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:14140:12)\n    at renderWithHooks (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:4398:19)\n    at updateFunctionComponent (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:5773:16)\n    at updateSimpleMemoComponent (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:5631:11)\n    at updateMemoComponent (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:5606:290)\n    at beginWork (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:6459:21)\n    at runWithFiberInDEV (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:942:66)\n    at performUnitOfWork (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:9146:92)\n    at workLoopSync (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:9042:37)\nCopy\nBuilt with"
+}
