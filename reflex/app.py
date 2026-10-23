@@ -398,8 +398,9 @@ class _DrainOversizedBodyMiddleware:
             max_size: The maximum accepted body size; larger POST bodies are drained
                 and rejected.
             eio: The engine.io server, used to close the rejected session without
-                waiting for its send queue. Optional; when omitted the session is
-                left to engine.io's own cleanup.
+                waiting for its send queue. Optional; the rejected request never
+                reaches engine.io, so when omitted the session is left open and
+                expires on engine.io's own timeout.
         """
         self.app = app
         self.max_size = max_size

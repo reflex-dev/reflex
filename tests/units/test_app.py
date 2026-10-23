@@ -5887,7 +5887,7 @@ async def test_drain_oversized_body_middleware_answers_post_without_parked_poll(
     # No poll is parked: the engine.io client races the CONNECT POST against
     # the first poll GET, so the POST can arrive first.
     big_body = b"x" * 1000
-    status, _, consumed = await asyncio.wait_for(
+    status, response_body, consumed = await asyncio.wait_for(
         _asgi_http_call(
             app,
             "POST",
@@ -5898,6 +5898,7 @@ async def test_drain_oversized_body_middleware_answers_post_without_parked_poll(
         timeout=10,
     )
     assert status == 400
+    assert response_body == b'"Bad Request"'
     assert consumed == len(big_body)
 
     # A later poll learns the session is gone instead of the POST hanging.
