@@ -86,11 +86,17 @@ def _write_cached_procedure_file(payload: str, cache_file: Path, value: object):
 def _read_cached_procedure_file(cache_file: Path) -> tuple[str | None, object]:
     import pickle
 
-    if cache_file.exists():
-        with cache_file.open("rb") as f:
-            return pickle.loads(f.read())
-
-    return None, None
+    if not cache_file.exists():
+        return None, None
+    with cache_file.open("rb") as f:
+        data = f.read()
+    try:
+        payload, value = pickle.loads(data)
+    except Exception as err:
+        # A truncated or stale pickle is a cache miss.
+        logger.debug(f"Ignoring invalid procedure cache {cache_file}: {err}")
+        return None, None
+    return payload, value
 
 
 P = ParamSpec("P")
