@@ -1,3 +1,14 @@
+## v0.10.1a1 (2026-10-23)
+
+### Bug Fixes
+
+- `rx.data_editor` columns backed by state now get the same defaults as literal columns: `type` defaults to `"str"`, `id` to the lowercased `title`, and a column may be given as just its title string. The column dicts passed to `columns` are no longer modified in place. ([#7607](https://github.com/reflex-dev/reflex/issues/7607))
+
+### Performance
+
+- Faster redraws for `rx.data_editor` grids whose `columns` or `data` come from state. ([#7607](https://github.com/reflex-dev/reflex/issues/7607))
+
+
 ## v0.10.0 (2026-10-08)
 
 ### Breaking Changes
