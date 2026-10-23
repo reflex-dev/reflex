@@ -1,0 +1,361 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value redis_url with env var REDIS_URL=***
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/process_model-py314-prev/lib/python3.14/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='forkapp', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', 
+db_url='sqlite:///forkapp.db', async_db_url=None, 
+redis_url='redis://localhost:8739', telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'plugins', 'redis_url', 'loglevel', 'db_url', 
+'app_name', 'telemetry_enabled'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[SitemapPlugin(trailing_slash='preserve'), 
+TailwindV4Plugin(config={'plugins': ['@tailwindcss/typography@0.5.20']}), 
+RadixThemesPlugin(theme={"name": "RadixThemesTheme", "props": 
+["accentColor:\"blue\"", "css:{...theme.styles.global[':root'], 
+...theme.styles.global.body}"], "children": []})], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+'--version']
+Debug: [Reflex 0.10.0 with Python 3.14.6 (PATH: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs
+/process_model-py314-prev/bin/python)]
+Debug: [Node 22.22.0 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.4 (Minimum: 1.4.0) (PATH: 
+/root/.local/share/reflex/bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.5 LTS]
+Debug: Using package installer at: ['/root/.local/share/reflex/bun/bin/bun', 
+'/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.local/share/reflex/bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8723
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Backend_only port: 8723 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Backend_only port: 8723 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Backend_only port: 8723 is not in use.
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:8723/
+Debug: Using Granian for backend
+[WARNING] Configured number of workers appears to be higher than the amount of CPU cores available. Mind that such value might actually decrease the overall throughput of the server. Consider using 4 workers and tune threads configuration instead
+[INFO] Starting granian (main PID: 20554)
+[INFO] Listening at: http://0.0.0.0:8723
+[INFO] Spawning worker-1 with PID: 20566
+[INFO] Spawning worker-2 with PID: 20568
+[INFO] Spawning worker-3 with PID: 20570
+[INFO] Spawning worker-4 with PID: 20572
+[INFO] Spawning worker-5 with PID: 20574
+[INFO] Spawning worker-6 with PID: 20576
+[INFO] Spawning worker-7 with PID: 20578
+[INFO] Spawning worker-8 with PID: 20580
+[INFO] Spawning worker-9 with PID: 20582
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+use database ORM layer, like sqlalchemy or SQLModel. It will be completely 
+removed in 1.0.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/process_model-py314-prev/lib/python3.14/site-packages/pydantic/_internal/_mode
+l_construction.py:133)
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+use database ORM layer, like sqlalchemy or SQLModel. It will be completely 
+removed in 1.0.0. (forkapp/forkapp.py:97)
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=8723
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8723
+Debug: Overriding config value redis_url with env var REDIS_URL=***
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+Warning: Database is not initialized, run reflex db init first.
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+use database ORM layer, like sqlalchemy or SQLModel. It will be completely 
+removed in 1.0.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/process_model-py314-prev/lib/python3.14/site-packages/pydantic/_internal/_mode
+l_construction.py:133)
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+use database ORM layer, like sqlalchemy or SQLModel. It will be completely 
+removed in 1.0.0. (forkapp/forkapp.py:97)
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Registered lifespan task: lifespan_task
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+Debug: Started lifespan task: lifespan_task as coroutine
+[INFO] Started worker-9
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=8723
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8723
+Debug: Overriding config value redis_url with env var REDIS_URL=***
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+Warning: Database is not initialized, run reflex db init first.
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+use database ORM layer, like sqlalchemy or SQLModel. It will be completely 
+removed in 1.0.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/process_model-py314-prev/lib/python3.14/site-packages/pydantic/_internal/_mode
+l_construction.py:133)
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+use database ORM layer, like sqlalchemy or SQLModel. It will be completely 
+removed in 1.0.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/process_model-py314-prev/lib/python3.14/site-packages/pydantic/_internal/_mode
+l_construction.py:133)
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+use database ORM layer, like sqlalchemy or SQLModel. It will be completely 
+removed in 1.0.0. (forkapp/forkapp.py:97)
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+use database ORM layer, like sqlalchemy or SQLModel. It will be completely 
+removed in 1.0.0. (forkapp/forkapp.py:97)
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+use database ORM layer, like sqlalchemy or SQLModel. It will be completely 
+removed in 1.0.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/process_model-py314-prev/lib/python3.14/site-packages/pydantic/_internal/_mode
+l_construction.py:133)
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+use database ORM layer, like sqlalchemy or SQLModel. It will be completely 
+removed in 1.0.0. (forkapp/forkapp.py:97)
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+use database ORM layer, like sqlalchemy or SQLModel. It will be completely 
+removed in 1.0.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/process_model-py314-prev/lib/python3.14/site-packages/pydantic/_internal/_mode
+l_construction.py:133)
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=8723
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8723
+Debug: Overriding config value redis_url with env var REDIS_URL=***
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+use database ORM layer, like sqlalchemy or SQLModel. It will be completely 
+removed in 1.0.0. (forkapp/forkapp.py:97)
+Warning: Database is not initialized, run reflex db init first.
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=8723
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8723
+Debug: Overriding config value redis_url with env var REDIS_URL=***
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+Warning: Database is not initialized, run reflex db init first.
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=8723
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8723
+Debug: Overriding config value redis_url with env var REDIS_URL=***
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+Warning: Database is not initialized, run reflex db init first.
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+use database ORM layer, like sqlalchemy or SQLModel. It will be completely 
+removed in 1.0.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/process_model-py314-prev/lib/python3.14/site-packages/pydantic/_internal/_mode
+l_construction.py:133)
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=8723
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8723
+Debug: Overriding config value redis_url with env var REDIS_URL=***
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+Warning: Database is not initialized, run reflex db init first.
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+use database ORM layer, like sqlalchemy or SQLModel. It will be completely 
+removed in 1.0.0. (forkapp/forkapp.py:97)
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+use database ORM layer, like sqlalchemy or SQLModel. It will be completely 
+removed in 1.0.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/process_model-py314-prev/lib/python3.14/site-packages/pydantic/_internal/_mode
+l_construction.py:133)
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=8723
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8723
+Debug: Overriding config value redis_url with env var REDIS_URL=***
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+Warning: Database is not initialized, run reflex db init first.
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+use database ORM layer, like sqlalchemy or SQLModel. It will be completely 
+removed in 1.0.0. (forkapp/forkapp.py:97)
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Registered lifespan task: lifespan_task
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+Debug: Started lifespan task: lifespan_task as coroutine
+[INFO] Started worker-4
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+use database ORM layer, like sqlalchemy or SQLModel. It will be completely 
+removed in 1.0.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/process_model-py314-prev/lib/python3.14/site-packages/pydantic/_internal/_mode
+l_construction.py:133)
+Debug: Registered lifespan task: _setup_event_processor
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+use database ORM layer, like sqlalchemy or SQLModel. It will be completely 
+removed in 1.0.0. (forkapp/forkapp.py:97)
+Debug: Registered lifespan task: lifespan_task
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+Debug: Started lifespan task: lifespan_task as coroutine
+[INFO] Started worker-8
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Registered lifespan task: lifespan_task
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=8723
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8723
+Debug: Overriding config value redis_url with env var REDIS_URL=***
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+Debug: Started lifespan task: lifespan_task as coroutine
+[INFO] Started worker-6
+Warning: Database is not initialized, run reflex db init first.
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=8723
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8723
+Debug: Overriding config value redis_url with env var REDIS_URL=***
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+Warning: Database is not initialized, run reflex db init first.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Registered lifespan task: lifespan_task
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+Debug: Started lifespan task: lifespan_task as coroutine
+[INFO] Started worker-5
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Registered lifespan task: lifespan_task
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+Debug: Started lifespan task: lifespan_task as coroutine
+[INFO] Started worker-1
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Registered lifespan task: lifespan_task
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+Debug: Started lifespan task: lifespan_task as coroutine
+[INFO] Started worker-3
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Registered lifespan task: lifespan_task
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+Debug: Started lifespan task: lifespan_task as coroutine
+[INFO] Started worker-2
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Registered lifespan task: lifespan_task
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+Debug: Started lifespan task: lifespan_task as coroutine
+[INFO] Started worker-7
+[INFO] Shutting down granian
+[INFO] Stopping worker-1
+[INFO] Stopping worker-4
+[INFO] Stopping worker-8
+[INFO] Stopping worker-2
+[INFO] Stopping worker-9
+[INFO] Stopping worker-3
+[INFO] Stopping worker-5
+Debug: Canceling lifespan task: <Task pending 
+name='reflex_lifespan_task|lifespan_task|1792792555.8139749' 
+coro=<lifespan_task() running at 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_pm1/forkapp/forkapp/forkapp.py:120> wait_for=<Future pending 
+cb=[Task.task_wakeup()]> cb=[_report_task_result() at 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs
+/process_model-py314-prev/lib/python3.14/site-packages/reflex/app_mixins/lifespa
+n.py:48]>
+Debug: Canceling lifespan task: <Task pending 
+name='reflex_lifespan_task|lifespan_task|1792792555.4933417' 
+coro=<lifespan_task() running at 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_pm1/forkapp/forkapp/forkapp.py:120> wait_for=<Future pending 
+cb=[Task.task_wakeup()]> cb=[_report_task_result() at 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs
+/process_model-py314-prev/lib/python3.14/site-packages/reflex/app_mixins/lifespa
+n.py:48]>
+[INFO] Stopping worker-6
+Debug: Canceling lifespan task: <Task pending 
+name='reflex_lifespan_task|lifespan_task|1792792555.565513' 
+coro=<lifespan_task() running at 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_pm1/forkapp/forkapp/forkapp.py:120> wait_for=<Future pending 
+cb=[Task.task_wakeup()]> cb=[_report_task_result() at 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs
+/process_model-py314-prev/lib/python3.14/site-packages/reflex/app_mixins/lifespa
+n.py:48]>
+[INFO] Stopping worker-7
+Debug: Canceling lifespan task: <Task pending 
+name='reflex_lifespan_task|lifespan_task|1792792555.6468108' 
+coro=<lifespan_task() running at 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_pm1/forkapp/forkapp/forkapp.py:120> wait_for=<Future pending 
+cb=[Task.task_wakeup()]> cb=[_report_task_result() at 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs
+/process_model-py314-prev/lib/python3.14/site-packages/reflex/app_mixins/lifespa
+n.py:48]>
+Debug: Canceling lifespan task: <Task pending 
+name='reflex_lifespan_task|lifespan_task|1792792555.803815' 
+coro=<lifespan_task() running at 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_pm1/forkapp/forkapp/forkapp.py:120> wait_for=<Future pending 
+cb=[Task.task_wakeup()]> cb=[_report_task_result() at 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs
+/process_model-py314-prev/lib/python3.14/site-packages/reflex/app_mixins/lifespa
+n.py:48]>
+Debug: Canceling lifespan task: <Task pending 
+name='reflex_lifespan_task|lifespan_task|1792792555.8318465' 
+coro=<lifespan_task() running at 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_pm1/forkapp/forkapp/forkapp.py:120> wait_for=<Future pending 
+cb=[Task.task_wakeup()]> cb=[_report_task_result() at 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs
+/process_model-py314-prev/lib/python3.14/site-packages/reflex/app_mixins/lifespa
+n.py:48]>
+Debug: Canceling lifespan task: <Task pending 
+name='reflex_lifespan_task|lifespan_task|1792792554.6617072' 
+coro=<lifespan_task() running at 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_pm1/forkapp/forkapp/forkapp.py:120> wait_for=<Future pending 
+cb=[Task.task_wakeup()]> cb=[_report_task_result() at 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs
+/process_model-py314-prev/lib/python3.14/site-packages/reflex/app_mixins/lifespa
+n.py:48]>
+Debug: Canceling lifespan task: <Task pending 
+name='reflex_lifespan_task|lifespan_task|1792792555.9917939' 
+coro=<lifespan_task() running at 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_pm1/forkapp/forkapp/forkapp.py:120> wait_for=<Future pending 
+cb=[Task.task_wakeup()]> cb=[_report_task_result() at 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs
+/process_model-py314-prev/lib/python3.14/site-packages/reflex/app_mixins/lifespa
+n.py:48]>
+Debug: Canceling lifespan task: <Task pending 
+name='reflex_lifespan_task|lifespan_task|1792792555.8770256' 
+coro=<lifespan_task() running at 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_pm1/forkapp/forkapp/forkapp.py:120> wait_for=<Future pending 
+cb=[Task.task_wakeup()]> cb=[_report_task_result() at 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs
+/process_model-py314-prev/lib/python3.14/site-packages/reflex/app_mixins/lifespa
+n.py:48]>
+[INFO] Stopped worker-1
+[INFO] Stopped worker-2
+[INFO] Stopped worker-3
+[INFO] Stopped worker-4
+[INFO] Stopped worker-5
+[INFO] Stopped worker-6
+[INFO] Stopped worker-7
+[INFO] Stopped worker-8
+[INFO] Stopped worker-9
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

@@ -1,0 +1,17 @@
+#### prev full-stack prod 8720 21:51:17
+## prev-prod-full venv=prev mode=prod port=8720 pid=14853 alive=yes up after 9s: http://localhost:8720/ping (9.3s wall)
+SUMMARY {"n_procs": 10, "n_python": 10, "pss_total_kb": 213058, "pss_python_kb": 213058, "rss_python_kb": 999668}
+SUMMARY {"workers_seen": 9, "errors": 0, "distinct_module_random": 1, "distinct_module_uuid": 1, "distinct_first_random_now": 9, "distinct_first_prng_now": 1, "imported_in_worker": 0, "ticker_advancing": 0, "ticker_alive": 0, "timer_advancing": 0, "lifespan_ran_in_worker": 9, "qlistener_alive": 0, "start_methods": ["fork"]}
+prev-prod-full exited 2.5s after SIGTERM
+no leftovers in pgid 14853
+workers spawned: 9; unexpected-exit: 0; tracebacks: 0; spawning-instead: 9
+index: 000 (after stop, expect 000)
+#### new full-stack prod 8720 21:51:31
+## new-prod-full venv=new mode=prod port=8720 pid=15286 alive=yes up after 9s: http://localhost:8720/ping (9.3s wall)
+SUMMARY {"n_procs": 9, "n_python": 9, "pss_total_kb": 201997, "pss_python_kb": 201997, "rss_python_kb": 893040}
+SUMMARY {"workers_seen": 8, "errors": 0, "distinct_module_random": 1, "distinct_module_uuid": 1, "distinct_first_random_now": 8, "distinct_first_prng_now": 1, "imported_in_worker": 0, "ticker_advancing": 0, "ticker_alive": 0, "timer_advancing": 0, "lifespan_ran_in_worker": 8, "qlistener_alive": 0, "start_methods": ["fork"]}
+new-prod-full exited 2.0s after SIGTERM
+no leftovers in pgid 15286
+workers spawned: 8; unexpected-exit: 0; tracebacks: 0; spawning-instead: 8
+index: 000 (after stop, expect 000)
+#### done 21:51:46

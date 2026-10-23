@@ -1,0 +1,132 @@
+{
+ "rows": [
+  {
+   "pid": 18761,
+   "ppid": 1,
+   "pgid": 18761,
+   "state": "S",
+   "threads": 13,
+   "cmd": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/process_model-py314-prev/bin/python /tmp/claude-0/-home-user/bd1e0d91",
+   "depth": 0,
+   "rss_kb": 126852,
+   "pss_kb": 104773
+  },
+  {
+   "pid": 18958,
+   "ppid": 18761,
+   "pgid": 18761,
+   "state": "S",
+   "threads": 1,
+   "cmd": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/process_model-py314-prev/bin/python -c from multiprocessing.resource_",
+   "depth": 1,
+   "rss_kb": 14968,
+   "pss_kb": 7170
+  },
+  {
+   "pid": 18959,
+   "ppid": 18761,
+   "pgid": 18761,
+   "state": "S",
+   "threads": 7,
+   "cmd": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/process_model-py314-prev/bin/python -c from multiprocessing.spawn imp",
+   "depth": 1,
+   "rss_kb": 119336,
+   "pss_kb": 96322
+  },
+  {
+   "pid": 18961,
+   "ppid": 18761,
+   "pgid": 18761,
+   "state": "S",
+   "threads": 7,
+   "cmd": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/process_model-py314-prev/bin/python -c from multiprocessing.spawn imp",
+   "depth": 1,
+   "rss_kb": 119372,
+   "pss_kb": 96321
+  },
+  {
+   "pid": 18963,
+   "ppid": 18761,
+   "pgid": 18761,
+   "state": "S",
+   "threads": 8,
+   "cmd": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/process_model-py314-prev/bin/python -c from multiprocessing.spawn imp",
+   "depth": 1,
+   "rss_kb": 122864,
+   "pss_kb": 99916
+  },
+  {
+   "pid": 18965,
+   "ppid": 18761,
+   "pgid": 18761,
+   "state": "S",
+   "threads": 7,
+   "cmd": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/process_model-py314-prev/bin/python -c from multiprocessing.spawn imp",
+   "depth": 1,
+   "rss_kb": 119412,
+   "pss_kb": 96351
+  },
+  {
+   "pid": 18967,
+   "ppid": 18761,
+   "pgid": 18761,
+   "state": "S",
+   "threads": 7,
+   "cmd": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/process_model-py314-prev/bin/python -c from multiprocessing.spawn imp",
+   "depth": 1,
+   "rss_kb": 119224,
+   "pss_kb": 96302
+  },
+  {
+   "pid": 18969,
+   "ppid": 18761,
+   "pgid": 18761,
+   "state": "S",
+   "threads": 7,
+   "cmd": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/process_model-py314-prev/bin/python -c from multiprocessing.spawn imp",
+   "depth": 1,
+   "rss_kb": 119308,
+   "pss_kb": 96329
+  },
+  {
+   "pid": 18971,
+   "ppid": 18761,
+   "pgid": 18761,
+   "state": "S",
+   "threads": 7,
+   "cmd": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/process_model-py314-prev/bin/python -c from multiprocessing.spawn imp",
+   "depth": 1,
+   "rss_kb": 119412,
+   "pss_kb": 96416
+  },
+  {
+   "pid": 18973,
+   "ppid": 18761,
+   "pgid": 18761,
+   "state": "S",
+   "threads": 7,
+   "cmd": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/process_model-py314-prev/bin/python -c from multiprocessing.spawn imp",
+   "depth": 1,
+   "rss_kb": 119240,
+   "pss_kb": 96310
+  },
+  {
+   "pid": 18975,
+   "ppid": 18761,
+   "pgid": 18761,
+   "state": "S",
+   "threads": 7,
+   "cmd": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/process_model-py314-prev/bin/python -c from multiprocessing.spawn imp",
+   "depth": 1,
+   "rss_kb": 119232,
+   "pss_kb": 96295
+  }
+ ],
+ "summary": {
+  "n_procs": 11,
+  "n_python": 11,
+  "pss_total_kb": 982505,
+  "pss_python_kb": 982505,
+  "rss_python_kb": 1219220
+ }
+}

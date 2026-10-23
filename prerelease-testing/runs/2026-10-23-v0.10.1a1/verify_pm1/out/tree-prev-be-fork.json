@@ -1,0 +1,121 @@
+{
+ "rows": [
+  {
+   "pid": 14039,
+   "ppid": 1,
+   "pgid": 14039,
+   "state": "S",
+   "threads": 10,
+   "cmd": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/prev/bin/python /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a916",
+   "depth": 0,
+   "rss_kb": 55556,
+   "pss_kb": 30267
+  },
+  {
+   "pid": 14050,
+   "ppid": 14039,
+   "pgid": 14039,
+   "state": "S",
+   "threads": 7,
+   "cmd": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/prev/bin/python /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a916",
+   "depth": 1,
+   "rss_kb": 103132,
+   "pss_kb": 73169
+  },
+  {
+   "pid": 14052,
+   "ppid": 14039,
+   "pgid": 14039,
+   "state": "S",
+   "threads": 7,
+   "cmd": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/prev/bin/python /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a916",
+   "depth": 1,
+   "rss_kb": 103136,
+   "pss_kb": 73168
+  },
+  {
+   "pid": 14054,
+   "ppid": 14039,
+   "pgid": 14039,
+   "state": "S",
+   "threads": 7,
+   "cmd": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/prev/bin/python /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a916",
+   "depth": 1,
+   "rss_kb": 103152,
+   "pss_kb": 73171
+  },
+  {
+   "pid": 14056,
+   "ppid": 14039,
+   "pgid": 14039,
+   "state": "S",
+   "threads": 7,
+   "cmd": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/prev/bin/python /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a916",
+   "depth": 1,
+   "rss_kb": 103156,
+   "pss_kb": 73172
+  },
+  {
+   "pid": 14058,
+   "ppid": 14039,
+   "pgid": 14039,
+   "state": "S",
+   "threads": 8,
+   "cmd": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/prev/bin/python /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a916",
+   "depth": 1,
+   "rss_kb": 106380,
+   "pss_kb": 75310
+  },
+  {
+   "pid": 14060,
+   "ppid": 14039,
+   "pgid": 14039,
+   "state": "S",
+   "threads": 7,
+   "cmd": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/prev/bin/python /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a916",
+   "depth": 1,
+   "rss_kb": 103144,
+   "pss_kb": 73152
+  },
+  {
+   "pid": 14062,
+   "ppid": 14039,
+   "pgid": 14039,
+   "state": "S",
+   "threads": 7,
+   "cmd": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/prev/bin/python /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a916",
+   "depth": 1,
+   "rss_kb": 103184,
+   "pss_kb": 73183
+  },
+  {
+   "pid": 14064,
+   "ppid": 14039,
+   "pgid": 14039,
+   "state": "S",
+   "threads": 7,
+   "cmd": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/prev/bin/python /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a916",
+   "depth": 1,
+   "rss_kb": 103156,
+   "pss_kb": 73149
+  },
+  {
+   "pid": 14066,
+   "ppid": 14039,
+   "pgid": 14039,
+   "state": "S",
+   "threads": 7,
+   "cmd": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/prev/bin/python /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a916",
+   "depth": 1,
+   "rss_kb": 103184,
+   "pss_kb": 73193
+  }
+ ],
+ "summary": {
+  "n_procs": 10,
+  "n_python": 10,
+  "pss_total_kb": 690934,
+  "pss_python_kb": 690934,
+  "rss_python_kb": 987180
+ }
+}
