@@ -50,6 +50,14 @@ from a single server on port `3000`. Pass `--frontend-port` or
 the server runs up to 8 backend workers by default (`2 * cpu_count + 1`, capped at 8).
 When using Granian, set `GRANIAN_WORKERS` to override the default, including to use more workers.
 
+On Linux, backend workers are forked from a supervisor process that has already
+imported the app, so they share its memory instead of each importing the app
+again. Set `REFLEX_BACKEND_START_METHOD=spawn` (or `forkserver`) for apps that
+are not fork-safe, for example ones that open database connections or start
+threads at import time. The same variable applies to the `reflex run`
+development backend, where `REFLEX_STRICT_HOT_RELOAD=1` also switches to
+spawned workers so environment variable changes are picked up on hot reload.
+
 The frontend and backend can also run as separate processes, for example to
 serve the frontend from a CDN and scale the backend independently. The
 frontend-only server only serves static files, so tell it where the backend
