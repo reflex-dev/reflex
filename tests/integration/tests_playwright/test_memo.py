@@ -206,6 +206,46 @@ def MemoApp():
         )
 
     @rx.memo
+    def memo_rows(
+        label: rx.Var[str],
+        on_pick: rx.EventHandler[rx.event.passthrough_event_spec(str)],
+    ) -> rx.Component:
+        """Loop over the order inside an explicitly memoized container.
+
+        An explicit memo takes its whole body as one component. Each row still
+        has to get its own client state scope, and the row uses the memo's
+        own parameters too, which only the memo's signature declares.
+
+        Args:
+            label: A prefix every row renders.
+            on_pick: Called with the row's item.
+
+        Returns:
+            The rows.
+        """
+
+        def row(item: rx.Var[str], position: rx.Var[int]) -> rx.Component:
+            opened = rx.client_state(False, prefix="memoopened")
+            return rx.hstack(
+                rx.el.button(
+                    "toggle",
+                    id=f"memo-toggle-{position}",
+                    on_click=opened.set(~opened.value),
+                ),
+                rx.el.button(
+                    "pick", id=f"memo-pick-{position}", on_click=on_pick(item)
+                ),
+                rx.text(
+                    rx.cond(
+                        opened.value, f"{label}:open:{item}", f"{label}:closed:{item}"
+                    ),
+                    id=f"memo-status-{position}",
+                ),
+            )
+
+        return rx.box(rx.foreach(MemoState.order, row), id="memo-rows")
+
+    @rx.memo
     def derived_count(divisor: rx.Var[int]) -> rx.Component:
         """Compute a filtered count from state in the generated component.
 
@@ -259,6 +299,7 @@ def MemoApp():
                 rx.foreach(MemoState.order, scoped_row),
                 id="scoped-rows",
             ),
+            memo_rows(label=MemoState.last_value, on_pick=MemoState.set_last_value),
             nested_grid(),
             shadowed_grid(),
             rx.el.button(
@@ -514,6 +555,41 @@ def test_foreach_item_client_state_is_per_item(
     # The other rows are untouched: each item owns its own slot.
     expect(page.locator("#scoped-status-0")).to_have_text("closed:row-a")
     expect(page.locator("#scoped-status-2")).to_have_text("closed:row-c")
+
+
+def test_foreach_inside_an_explicit_memo_keeps_client_state_per_item(
+    memo_app: AppHarness, page: Page
+) -> None:
+    """A loop inside an ``@rx.memo`` body still scopes client state per item.
+
+    The memo body compiles as one component, so without the item rendering
+    through a component of its own every row's ``useClientState`` hoisted
+    above the loop and shared one slot. The row also renders the memo's
+    parameter, which has to keep flowing into the item component.
+
+    Args:
+        memo_app: Running app harness.
+        page: Playwright page.
+    """
+    _load_page(page, memo_app)
+
+    expect(page.locator("#memo-status-0")).to_have_text(":closed:row-a")
+    expect(page.locator("#memo-status-1")).to_have_text(":closed:row-b")
+
+    page.locator("#memo-toggle-1").click()
+
+    expect(page.locator("#memo-status-1")).to_have_text(":open:row-b")
+    expect(page.locator("#memo-status-0")).to_have_text(":closed:row-a")
+    expect(page.locator("#memo-status-2")).to_have_text(":closed:row-c")
+
+    # The memo's own parameters still reach every row: the label as a value,
+    # the handler as a callback the row invokes with its own item.
+    page.locator("#memo-input").fill("tag")
+    expect(page.locator("#memo-status-0")).to_have_text("tag:closed:row-a")
+    expect(page.locator("#memo-status-1")).to_have_text("tag:open:row-b")
+    page.locator("#memo-pick-2").click()
+    expect(page.locator("#memo-last-value")).to_have_text("row-c")
+    expect(page.locator("#memo-status-1")).to_have_text("row-c:open:row-b")
 
 
 def test_foreach_item_client_state_seeded_from_the_loop_index(

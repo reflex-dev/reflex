@@ -39,7 +39,9 @@ def scoped_loop_var(name: str, var_type: GenericType) -> Var:
     the module that renders the loop itself the declaration sits above the
     ``.map`` and would read nothing -- the parameter shadows it for everything
     inside the callback, which is exactly the scope where the parameter is the
-    real value. Anywhere else there is no parameter, and the context read wins.
+    real value. The item body renders through a component of its own, so that
+    module holds only what the callback itself evaluates, such as the per-item
+    key. Anywhere else there is no parameter, and the context read wins.
 
     Args:
         name: The name the value is provided under.

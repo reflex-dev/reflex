@@ -1,0 +1,1 @@
+Each `rx.foreach` item now renders through a component of its own, so per-item `rx.client_state` vars stay per item when the loop sits inside an `@rx.memo` body (at any depth) instead of all items sharing one value.

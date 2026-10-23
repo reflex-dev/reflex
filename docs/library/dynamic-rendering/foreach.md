@@ -244,6 +244,9 @@ def todo_list():
 
 Client state works the same way: an unnamed `rx.client_state` var in a
 `foreach` body is per item, the way `useState` would be in a React list.
+Every item renders as a component of its own, so this holds wherever the
+loop sits -- on a page, inside an `@rx.memo` body, or inside another loop's
+item.
 
 ```python
 def expandable_row(item: rx.Var[str]) -> rx.Component:
