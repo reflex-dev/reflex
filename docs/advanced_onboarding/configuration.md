@@ -87,7 +87,7 @@ The imported module must still define `app` at module level.
 
 ## CORS
 
-The backend only accepts cross-origin requests from origins listed in `cors_allowed_origins`. The default, `["*"]`, allows any origin — convenient in development, but in production restrict it to the origins your frontend is actually served from (typically the origin of `deploy_url`):
+The backend only accepts cross-origin requests from origins listed in `cors_allowed_origins`. By default any origin is allowed in dev mode, while in prod mode only the origin of `deploy_url` is allowed, so set `deploy_url` to where your frontend is served from. Set `cors_allowed_origins` explicitly when the frontend is reachable from several origins, or to `["*"]` to allow any origin in production:
 
 ```python
 config = rx.Config(
