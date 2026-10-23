@@ -87,7 +87,10 @@ async function createConnection(
           getElementById: (id) =>
             body.children.find((node) => node.id === id) ?? null,
         },
-        localStorage: { setItem: (key, value) => saved.set(key, value) },
+        localStorage: {
+          getItem: (key) => saved.get(key) ?? null,
+          setItem: (key, value) => saved.set(key, String(value)),
+        },
         sessionStorage,
       },
       "socket.io-client": { default: () => socket },
