@@ -242,8 +242,7 @@ def _get_style_scope_keys(style: ComponentStyle | None) -> dict[Any, tuple[str, 
         if not isinstance(key, type) and not callable(key):
             continue
         var_data = Style(style_props)._var_data
-        if var_data is not None and var_data.shared_scope_keys:
-            scope_keys[key] = var_data.shared_scope_keys
+        scope_keys[key] = var_data.shared_scope_keys if var_data is not None else ()
     return scope_keys
 
 

@@ -1850,6 +1850,26 @@ def test_app_style_local_client_state_is_in_shared_scope_prepass() -> None:
     assert id(styled) in page_ctx.memoize_shared_scope_split_ids
 
 
+def test_component_style_override_without_scope_keys_takes_precedence() -> None:
+    """An empty create-specific style overrides a type-level style scope."""
+    from reflex.experimental.client_state import ClientStateVar
+
+    local = ClientStateVar.create("style_override", default="initial", global_ref=False)
+    styled = rx.auto_scroll()
+    root = rx.box(rx.text(local.value), styled)
+    plugin = MemoizeStatefulPlugin(
+        style={
+            type(styled): {"color": local.value},
+            styled.create: {"color": "red"},
+        }
+    )
+    page_ctx = PageContext(name="test", route="/", root_component=root)
+
+    plugin.enter_component(root, page_context=page_ctx, compile_context=None)
+
+    assert local._id_name not in page_ctx.memoize_shared_scope_counts
+
+
 def test_debounce_input_memo_renders_react_debounce_wrapper() -> None:
     """``rx.input(value=..., on_change=..., debounce_timeout=N)`` memoizes via DebounceInput.
 
