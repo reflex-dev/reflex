@@ -4,8 +4,14 @@ from __future__ import annotations
 
 import dataclasses
 import datetime
+from typing import Any
 
-from reflex_base.components.component import MemoizationLeaf, NoSSRComponent, field
+from reflex_base.components.component import (
+    Component,
+    MemoizationLeaf,
+    NoSSRComponent,
+    field,
+)
 from reflex_base.event import EventHandler, passthrough_event_spec
 from reflex_base.utils.imports import ImportDict, ImportVar
 from reflex_base.vars.base import LiteralVar, Var
@@ -24,6 +30,100 @@ class MomentDelta:
     minutes: int | None = dataclasses.field(default=None)
     seconds: int | None = dataclasses.field(default=None)
     milliseconds: int | None = dataclasses.field(default=None)
+
+
+def _locale_module(locale: Var[str] | None) -> str | None:
+    """Return the moment locale module that a locale prop requires.
+
+    Args:
+        locale: The locale prop, if set.
+
+    Returns:
+        The locale module, or None when the built-in English locale suffices.
+    """
+    if isinstance(locale, LiteralVar):
+        if locale._var_value == "en":
+            return None
+        return f"moment/locale/{locale._var_value}"
+    return None if locale is None else "moment/min/locales"
+
+
+def _locale_timezone_imports(
+    locale: Var[str] | None, timezone: Var[str] | None
+) -> ImportDict:
+    """Return the locale and timezone imports required by Moment props.
+
+    Args:
+        locale: The locale prop, if set.
+        timezone: The timezone prop, if set.
+
+    Returns:
+        The locale and timezone module imports, plus moment itself for
+        _restore_global_locale when a locale module is imported.
+    """
+    imports: ImportDict = {}
+    if (module := _locale_module(locale)) is not None:
+        imports[""] = module
+        imports["moment@2.31.0"] = ImportVar(tag="moment", is_default=True)
+    if timezone is not None:
+        imports["moment-timezone@0.6.5"] = ""
+    return imports
+
+
+def _restore_global_locale(locale: Var[str] | None) -> list[str]:
+    """Return code that resets moment's global locale after a locale import.
+
+    Importing a locale module also makes it moment's global locale, which
+    Moment components without a locale or provider use.
+
+    Args:
+        locale: The locale prop, if set.
+
+    Returns:
+        The reset code, or nothing when no locale module is imported.
+    """
+    return [] if _locale_module(locale) is None else ['moment.locale("en");']
+
+
+class MomentProvider(Component):
+    """Provide shared defaults and timer pooling for descendant Moment components."""
+
+    tag: str | None = "MomentProvider"
+    library: str | None = "react-moment@2.0.2"
+    lib_dependencies: list[str] = ["moment@2.31.0"]
+
+    pool: Var[bool] = field(doc="Use one timer for all descendant Moment components.")
+    interval: Var[int] = field(doc="The interval in milliseconds for the pooled timer.")
+    locale: Var[str] = field(doc="The default locale for descendant Moment components.")
+    local: Var[bool] = field(doc="Display descendant dates in local time by default.")
+    format: Var[str] = field(doc="The default date format for descendants.")
+    parse: Var[str | list[str]] = field(
+        doc="The default date parse format for descendants."
+    )
+    filters: Var[list[Var[Any]]] = field(
+        doc="JavaScript content filters applied to descendant Moment components."
+    )
+    renderers: Var[list[Var[Any]]] = field(
+        doc="JavaScript content renderers tried for descendant Moment components."
+    )
+    element: Var[str] = field(doc="The default HTML element for descendant components.")
+    timezone: Var[str] = field(doc="The default timezone for descendant components.")
+
+    def add_imports(self) -> ImportDict:
+        """Import the locale and timezone modules required by the defaults.
+
+        Returns:
+            The locale and timezone module imports.
+        """
+        return _locale_timezone_imports(self.locale, self.timezone)
+
+    def add_custom_code(self) -> list[str]:
+        """Keep moment's global locale English after the locale import.
+
+        Returns:
+            The global locale reset, if a locale module is imported.
+        """
+        return _restore_global_locale(self.locale)
 
 
 class Moment(NoSSRComponent, MemoizationLeaf):
@@ -48,6 +148,40 @@ class Moment(NoSSRComponent, MemoizationLeaf):
 
     parse: Var[str | list[str]] = field(
         doc=" Use the parse attribute to tell moment how to parse the given date when non-standard. Accepts a single format string or a list of formats to try."
+    )
+
+    utc: Var[bool] = field(doc="Parses and displays the date in UTC.")
+
+    calendar: Var[bool | dict[str, str]] = field(
+        doc="Displays the date using Moment's calendar format, optionally with custom calendar strings."
+    )
+
+    from_: Var[
+        str | datetime.datetime | datetime.date | datetime.time | datetime.timedelta
+    ] = field(doc="Displays the interval from this date to the component's date.")
+
+    to: Var[
+        str | datetime.datetime | datetime.date | datetime.time | datetime.timedelta
+    ] = field(doc="Displays the interval from the component's date to this date.")
+
+    ago: Var[bool] = field(
+        doc='Omits the "ago" or "in" suffix from relative-time output.'
+    )
+
+    element: Var[str] = field(
+        doc="The HTML element used to render the formatted date (defaults to time)."
+    )
+
+    fallback: Var[str | int] = field(
+        doc="Content to render when the date input is invalid."
+    )
+
+    filters: Var[list[Var[Any]]] = field(
+        doc="JavaScript functions applied in order to the rendered content."
+    )
+
+    renderers: Var[list[Var[Any]]] = field(
+        doc="JavaScript renderer functions tried before the built-in output modes."
     )
 
     add: Var[MomentDelta] = field(
@@ -111,8 +245,7 @@ class Moment(NoSSRComponent, MemoizationLeaf):
     tz: Var[str] = field(doc="Display the date in the given timezone.")
 
     locale: Var[str] = field(
-        default=Var.create("en"),
-        doc="The locale for this component. Defaults to English independently of other Moment components.",
+        doc="The locale for this component. Defaults to the nearest rx.moment_provider locale, or English.",
     )
 
     on_change: EventHandler[passthrough_event_spec(str)] = field(
@@ -125,19 +258,16 @@ class Moment(NoSSRComponent, MemoizationLeaf):
         Returns:
             The import dict for the component.
         """
-        imports = {}
-
-        if isinstance(self.locale, LiteralVar):
-            # English is built into Moment and has no separate locale module.
-            if self.locale._var_value != "en":
-                imports[""] = f"moment/locale/{self.locale._var_value}"
-        elif self.locale is not None:
-            # If the user is using a variable for the locale, we can't know the
-            # value at compile time so import all locales available.
-            imports[""] = "moment/min/locales"
-        if self.tz is not None:
-            imports["moment-timezone@0.6.5"] = ""
+        imports = _locale_timezone_imports(self.locale, self.tz)
         if self.duration is not None or self.duration_from_now is not None:
             imports["moment-duration-format@2.3.2"] = ImportVar(tag=None)
 
         return imports
+
+    def add_custom_code(self) -> list[str]:
+        """Keep moment's global locale English after the locale import.
+
+        Returns:
+            The global locale reset, if a locale module is imported.
+        """
+        return _restore_global_locale(self.locale)

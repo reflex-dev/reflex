@@ -198,7 +198,9 @@ async def test_state_proxy_releases_lock_when_rehydrate_fails(
         msg = "Simulated rehydrate failure"
         raise RuntimeError(msg)
 
-    monkeypatch.setattr(BaseStateEventProcessor, "_rehydrate", failing_rehydrate)
+    monkeypatch.setattr(
+        BaseStateEventProcessor, "_rehydrate_snapshot", failing_rehydrate
+    )
     with pytest.raises(RuntimeError, match="Simulated rehydrate failure"):
         async with state_proxy:
             pass

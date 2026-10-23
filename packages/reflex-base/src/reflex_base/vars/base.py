@@ -2199,7 +2199,7 @@ def figure_out_type(value: Any) -> types.GenericType:
     Returns:
         The type of the value.
     """
-    if isinstance(value, (list, set, frozenset, tuple, Mapping, Var)):
+    if isinstance(value, (list, set, tuple, Mapping, Var)):
         if isinstance(value, Var):
             return value._var_type
         if has_args(value_type := type(value)):
@@ -2208,11 +2208,8 @@ def figure_out_type(value: Any) -> types.GenericType:
             if not value:
                 return Sequence[NoReturn]
             return Sequence[unionize(*{figure_out_type(v) for v in value[:100]})]
-        if isinstance(value, (set, frozenset)):
-            element_type = unionize(*{figure_out_type(v) for v in value})
-            if isinstance(value, frozenset):
-                return frozenset[element_type]
-            return set[element_type]
+        if isinstance(value, set):
+            return set[unionize(*{figure_out_type(v) for v in value})]
         if isinstance(value, tuple):
             if not value:
                 return tuple[NoReturn, ...]
@@ -4500,25 +4497,40 @@ class Field(Generic[FIELD_TYPE]):
         owner: Any,
     ) -> ArrayVar[SEQUENCE_TYPE]: ...
 
+    # The bounds of these type variables admit `None` (for computed vars of an
+    # optional object). Matched against `Field[X | None]`, a `self` union of
+    # `Field[T]` and `Field[T | None]` lets a checker solve `T` to `X | None`, so
+    # the optional overload comes first, on its own.
     @overload
     def __get__(
-        self: Field[MAPPING_TYPE] | Field[MAPPING_TYPE | None],
-        instance: None,
-        owner: Any,
+        self: Field[MAPPING_TYPE | None], instance: None, owner: Any
     ) -> ObjectVar[MAPPING_TYPE]: ...
 
     @overload
     def __get__(
-        self: Field[SQLA_TYPE] | Field[SQLA_TYPE | None], instance: None, owner: Any
+        self: Field[MAPPING_TYPE], instance: None, owner: Any
+    ) -> ObjectVar[MAPPING_TYPE]: ...
+
+    @overload
+    def __get__(
+        self: Field[SQLA_TYPE | None], instance: None, owner: Any
+    ) -> ObjectVar[SQLA_TYPE]: ...
+
+    @overload
+    def __get__(
+        self: Field[SQLA_TYPE], instance: None, owner: Any
     ) -> ObjectVar[SQLA_TYPE]: ...
 
     if TYPE_CHECKING:
 
         @overload
         def __get__(
-            self: Field[DATACLASS_TYPE] | Field[DATACLASS_TYPE | None],
-            instance: None,
-            owner: Any,
+            self: Field[DATACLASS_TYPE | None], instance: None, owner: Any
+        ) -> ObjectVar[DATACLASS_TYPE]: ...
+
+        @overload
+        def __get__(
+            self: Field[DATACLASS_TYPE], instance: None, owner: Any
         ) -> ObjectVar[DATACLASS_TYPE]: ...
 
     @overload
@@ -4694,11 +4706,14 @@ def _reserved_state_members(root: BaseStateMeta) -> dict[str, Any]:
     return members
 
 
-def _validate_state_name(root: BaseStateMeta, name: str, value: Any = None) -> None:
+def _validate_state_name(
+    root: BaseStateMeta | None, name: str, value: Any = None
+) -> None:
     """Reject declarations that replace framework methods or bookkeeping.
 
     Args:
-        root: The state class whose namespace is reserved.
+        root: The state class whose namespace is reserved, or None for a state
+            outside any hierarchy, which reserves nothing.
         name: The declared or dynamically registered name.
         value: The raw class declaration, when available.
 
@@ -4706,6 +4721,8 @@ def _validate_state_name(root: BaseStateMeta, name: str, value: Any = None) -> N
         StateValueError: If a declaration uses a reserved name.
         EventHandlerShadowsBuiltInStateMethodError: If a method overrides a builtin.
     """
+    if root is None:
+        return
     members = _reserved_state_members(root)
     if name not in members:
         return
@@ -4982,13 +4999,28 @@ def _is_tree_state(cls: Any) -> bool:
     return (
         isinstance(cls, BaseStateMeta)
         and not cls._mixin
-        and getattr(cls, "_reflex_state_root", cls) is not cls
+        and (root := cls._reflex_state_root) is not None
+        and root is not cls
     )
 
 
 @dataclass_transform(kw_only_default=True, field_specifiers=(field,))
 class BaseStateMeta(ABCMeta):
-    """Meta class for BaseState."""
+    """Metaclass of every state class, including ``rx.State``.
+
+    ``type(rx.State) is BaseStateMeta`` is a supported contract: a downstream
+    metaclass that customizes state classes must derive from this one.
+
+    It understands two class keywords:
+
+    - ``state_root=True`` makes the class the root of a state hierarchy; its
+      members are reserved and its subclasses may not shadow them.
+    - ``mixin=True`` marks a state mixin, which is never instantiated. A class
+      whose state bases are all mixins is a mixin too.
+
+    ``_reflex_state_root`` is a reserved name: it holds the root of the class's
+    hierarchy (the class itself on a root), or None outside any hierarchy.
+    """
 
     if TYPE_CHECKING:
         __inherited_fields__: Mapping[str, Field]
@@ -4998,9 +5030,9 @@ class BaseStateMeta(ABCMeta):
         # Whether this state class is a mixin and should not be instantiated.
         _mixin: bool = False
 
-        # The state declared with ``state_root=True`` that this class descends
-        # from; its namespace is reserved for the whole hierarchy.
-        _reflex_state_root: BaseStateMeta
+    # The state declared with ``state_root=True`` that this class descends
+    # from; its namespace is reserved for the whole hierarchy. None outside one.
+    _reflex_state_root: BaseStateMeta | None = None
 
     def __setattr__(cls, name: str, value: Any) -> None:
         """Set a class attribute, refusing to replace a state var.
@@ -5071,15 +5103,14 @@ class BaseStateMeta(ABCMeta):
             The new class.
         """
         lookup_order = _linearize_bases(bases)
-        for base in bases:
-            root = getattr(base, "_reflex_state_root", None)
-            if root is not None:
-                _validate_state_declaration(root, lookup_order, namespace)
-                break
-
         state_bases = [
             base for base in bases if issubclass(base, EvenMoreBasicBaseState)
         ]
+        for base in state_bases:
+            if (root := base._reflex_state_root) is not None:
+                _validate_state_declaration(root, lookup_order, namespace)
+                break
+
         mixin = mixin or (
             bool(state_bases) and all(base._mixin for base in state_bases)
         )
