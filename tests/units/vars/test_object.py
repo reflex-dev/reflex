@@ -510,7 +510,7 @@ def test_plain_property_on_typing_union_raises() -> None:
             return "b"
 
     class UnionState(rx.State):
-        item: rx.Field[Union[ItemA, ItemB]] = rx.field(ItemA())
+        item: rx.Field[Union[ItemA, ItemB]] = rx.field(ItemA())  # noqa: UP007
 
     with pytest.raises(VarAttributeError, match="union type"):
         _ = UnionState.item.label
