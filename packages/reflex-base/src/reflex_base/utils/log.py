@@ -289,6 +289,10 @@ _DRAIN_RECORD_GRACE_SECONDS = 2
 # Line ends in child output; a lone ``\r`` ends a progress-bar update.
 _LINE_END = re.compile(rb"\r\n|\r|\n")
 
+# Largest write a POSIX pipe accepts whole or not at all. Windows has no such
+# constant and no such guarantee; the Linux value keeps writes small there.
+_PIPE_BUF = getattr(select, "PIPE_BUF", 4096)
+
 
 def is_output_supervised() -> bool:
     """Check whether this process runs under supervise_output().
@@ -373,9 +377,9 @@ def _to_records(
 def _atomic_chunks(records: list[bytes]) -> Iterator[bytes]:
     """Group records into writes no larger than the pipe's atomic write size.
 
-    A write of at most ``PIPE_BUF`` bytes enters a pipe whole or not at all,
-    so a reader thread that is abandoned mid-write can never leave a partial
-    record behind; only a single record above that size can be cut.
+    A write of at most ``PIPE_BUF`` bytes enters a POSIX pipe whole or not at
+    all, so a reader thread that is abandoned mid-write can never leave a
+    partial record behind; only a single record above that size can be cut.
 
     Args:
         records: The JSON records, each ending with a newline.
@@ -386,7 +390,7 @@ def _atomic_chunks(records: list[bytes]) -> Iterator[bytes]:
     chunk: list[bytes] = []
     size = 0
     for record in records:
-        if chunk and size + len(record) > select.PIPE_BUF:
+        if chunk and size + len(record) > _PIPE_BUF:
             yield b"".join(chunk)
             chunk, size = [], 0
         chunk.append(record)
@@ -535,7 +539,10 @@ def supervise_output(args: list[str]) -> int:
     Shutdown is bounded from the first SIGINT or SIGTERM: each one is passed
     on to the command, its whole process tree is killed if it is still
     running ``_STOP_DEADLINE_SECONDS`` later, and the output drain ends by
-    ``_DRAIN_WALL_SECONDS`` after the request, between two records.
+    ``_DRAIN_WALL_SECONDS`` after the request. Output goes out in writes of
+    at most ``PIPE_BUF`` bytes, so on a pipe a record up to that size is
+    never cut; a larger one can be when its consumer is slower than the
+    grace the drain allows.
 
     Args:
         args: The command to run.
