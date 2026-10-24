@@ -100,3 +100,28 @@ stale `{"p1_corrected": 3, "p2_corrected": 3, "p3_logged_out": 3, "p4_logged_out
 w_literal=2h/6c; s8 memo grids 2h/6c x2; s11 detail headers `['Count','Value']` x2 (4h/8c); s12 3 badges; boot = 1
 `hydrate_and_load` in the socket.io connect auth (now with a `state_schema` key, #7553; no schema-mismatch reload), deltas
 root-only; 0 page errors; console = AG Grid trial banner only. **identical to the a5 / 0.10.0 SUMMARY → still fixed.**
+
+### Enterprise demos (checkout demos = v0.9.8) — `grid/bin/seq_grid.sh new-ent new 2` (prod 3608, account stub) and `own/demo_hooks_run.sh <venv> <label> <dev|prod>` (dnd + mantine, dev 3609/8609)
+| demo | new-ent prod | new-ent dev | prev-ent prod | prev-ent dev |
+|---|---|---|---|---|
+| dnd (`scripts/drive_dnd.py`: basic/foreach/kanban pointer drags, is_over colour, on_drop toasts, column/item reorder, LocalStorage persistence, 2nd context) | **27/27**, 0 console/page errors | **27/27**, 0 errors | 27/27 | 27/27 |
+| mantine (`drive_mantine.py`: dates, pill, tags-input, /qa-mantine overlay incl. the combobox page) | **23/23**, **0 page errors** | **23/23**, 0 page errors | 23/23 + 1 page error `Cannot read properties of null (reading 'name')` (N-028 / CMP-51) | 23/23 + 1 page error (N-028) |
+| flow (`drive_flow.py`) | 21/22: only `index lists 6 flow demos` (driver counts the "Built with Reflex" link; expectation bug). The N-026 reload check PASSED this time (known race, ENT-31 open) | — | — | — |
+| map (`smoke_routes.py` 4 routes) | 4/4 (54 OSM tile requests blocked by the sandbox proxy, known) | — | — | — |
+Server tracebacks: 0 in every run. Logs `work/grid/logs/<demo>-<mode>-<label>.log`, driver output `work/grid/out/<demo>_<mode>_<label>.txt`.
+- **N-028 / CMP-51 changed → fixed**: the mantine page error (`window.onerror` with a null error object, reflex#7482) reproduces
+  on prev-ent (0.10.0: 1 page error in prod AND dev) and is gone on 0.10.1a1 (#7587 "error events without Error").
+
+### Hook ordering (#7586) — rxe 0.9.8 `VarData(position=POST_TRIGGER)` (dnd.py:144/356/588) and `PRE_TRIGGER` (combobox.py:139)
+- Drivers above: every dnd drag/drop/monitor interaction (collected_params.is_over colouring, on_drop event chains with
+  `DndState.set_card_pos(pos)`, kanban on_end toasts, column reorder) and the mantine combobox (`combobox.toggleDropdown()`
+  from an on_click, `/qa-mantine`) work identically in dev and prod on new-ent and prev-ent: 0 ReferenceError, 0 page errors.
+- `own/probes/hook_order.py <.web> <label>` (static scan of the compiled `app_components/dnd/*.jsx` + `mantine/qa_mantine.jsx`
+  for hook statements referencing identifiers declared later in the same component): new-ent 56 hook calls / 4 dnd files,
+  **0 use-before-declare**; the `useDrop` specs reference no memoized trigger (the on_drop chains are inlined `addEvents(...)`
+  calls), kanban's `useDrop` references only the earlier shared-store state read; `useCombobox()` has no refs. Same on prev-ent.
+  So rxe's POST/PRE_TRIGGER positions were already moot and ignoring them changes nothing for these components.
+- Loudness: dev + prod compile prints 3 blocks `DeprecationWarning: VarData(position=...) has been deprecated in version
+  0.10.1. ... (…/reflex_enterprise/components/dnd/dnd.py:144 | :356 | :588)` once per compiling process for an app using
+  `rxe.dnd` (1 block for `rxe.mantine.combobox`); it names the rxe file, so a user can see it is not their code. Not
+  repeated per request. prev-ent: 0. rxe needs to drop the argument before reflex 1.0 (removal).

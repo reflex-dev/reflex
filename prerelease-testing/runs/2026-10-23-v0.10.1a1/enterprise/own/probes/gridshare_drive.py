@@ -67,7 +67,7 @@ def main():
         p.on("console", lambda m: m.type == "error" and not m.text.startswith("***") and errors.append(f"console: {m.text[:200]}"))
         p.goto(BASE + "/", wait_until="networkidle")
         p.wait_for_selector("#ga .ag-row, [id=ga] .ag-row", timeout=30000)
-        p.locator("#reset").click(); settle(p, "", 5); p.wait_for_timeout(500)
+        p.locator("#reset_rows").click(); settle(p, "", 5); p.wait_for_timeout(500)
         verify(p, "initial")
         for op in ["bump_first", "sort_price", "reverse", "add_row", "remove_first", "rename_all", "sort_price", "bump_first"]:
             p.locator(f"#{op}").click()

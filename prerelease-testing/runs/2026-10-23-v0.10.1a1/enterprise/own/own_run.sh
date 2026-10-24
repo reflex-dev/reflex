@@ -4,7 +4,7 @@
 # hyd15:     fixture grid/src/entr app in dev on 3612/8612, driver probes/hyd15_drive.py (touches the app module for a hot reload)
 set -u
 SB=${SB:?}; export WORK=$SB/apps/enterprise/work; F=$SB/apps/enterprise/src; . "$F/lib.sh"; fx_sync grid; GW=$WORK/grid; B=$F/grid/bin; O=$SB/apps/enterprise/own
-V=$1; APP=$2; M=$3; L=$4
+V=$1; APP=$2; M=$3; L=$4; mkdir -p "$O/out"
 case $APP in
   gridshare) SRC=$O/gridshare; P=3611;;
   hyd15) SRC=$F/grid/src/entr; P=3612;;

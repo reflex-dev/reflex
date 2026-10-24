@@ -55,7 +55,7 @@ class GS(rx.State):
         self.log.append("swap_cols")
 
     @rx.event
-    def reset(self):
+    def reset_rows(self):
         self.rows = [dict(r) for r in START]
         self.cols = [{"field": "uid"}, {"field": "name"}, {"field": "price", "editable": True}]
         self.log = []
@@ -80,7 +80,7 @@ class GS(rx.State):
 def index():
     return rx.vstack(
         rx.hstack(
-            *[rx.button(n, id=n, on_click=getattr(GS, n)) for n in ("bump_first", "sort_price", "reverse", "add_row", "remove_first", "rename_all", "swap_cols", "reset")],
+            *[rx.button(n, id=n, on_click=getattr(GS, n)) for n in ("bump_first", "sort_price", "reverse", "add_row", "remove_first", "rename_all", "swap_cols", "reset_rows")],
         ),
         rx.text("total=", GS.total, id="total"),
         rx.text(GS.rows_json, id="json"),

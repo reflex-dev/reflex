@@ -1,0 +1,20 @@
+65:Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+72:Debug: Installing frontend development dependencies
+79:ad/qa/apps/upgrade_packaging/hotreload/app-npm/.web/.npmrc
+82:Debug: npm verbose title npm add @react-router/dev@8.4.0 postcss-import@17.0.0 
+1875:/upgrade_packaging/hotreload/app-npm/.web/node_modules/@tailwindcss/oxide-wasm32
+1880:s/upgrade_packaging/hotreload/app-npm/.web/node_modules/@tailwindcss/oxide-wasm3
+2062:/upgrade_packaging/hotreload/app-npm/.web/node_modules/@rolldown/binding-win32-x
+2067:s/upgrade_packaging/hotreload/app-npm/.web/node_modules/@rolldown/binding-win32-
+2072:/upgrade_packaging/hotreload/app-npm/.web/node_modules/@rolldown/binding-win32-a
+2077:s/upgrade_packaging/hotreload/app-npm/.web/node_modules/@rolldown/binding-win32-
+2082:/upgrade_packaging/hotreload/app-npm/.web/node_modules/@rolldown/binding-openhar
+2087:s/upgrade_packaging/hotreload/app-npm/.web/node_modules/@rolldown/binding-openha
+2092:/upgrade_packaging/hotreload/app-npm/.web/node_modules/@rolldown/binding-linux-x
+2097:s/upgrade_packaging/hotreload/app-npm/.web/node_modules/@rolldown/binding-linux-
+2102:/upgrade_packaging/hotreload/app-npm/.web/node_modules/@rolldown/binding-linux-s
+2107:s/upgrade_packaging/hotreload/app-npm/.web/node_modules/@rolldown/binding-linux-
+2112:/upgrade_packaging/hotreload/app-npm/.web/node_modules/@rolldown/binding-linux-p
+2117:s/upgrade_packaging/hotreload/app-npm/.web/node_modules/@rolldown/binding-linux-
+2122:/upgrade_packaging/hotreload/app-npm/.web/node_modules/@rolldown/binding-linux-a
+2127:s/upgrade_packaging/hotreload/app-npm/.web/node_modules/@rolldown/binding-linux-

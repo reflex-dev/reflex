@@ -26,14 +26,15 @@ hdrs = {}
 for h in a.hdr:
     k, _, v = h.partition(":")
     hdrs[k.strip()] = v.strip()
-c = httpx.Client(base_url=a.base, timeout=30, trust_env=False)
+B = a.base.rstrip("/")
+c = httpx.Client(timeout=30, trust_env=False)
 out = {"tag": a.tag, "hdrs": hdrs}
-r = c.post("/_reflex/auth/token", headers=hdrs)
+r = c.post(B + "/_reflex/auth/token", headers=hdrs)
 out["token_status"] = r.status_code
 tok = r.json().get("access_token") if r.status_code == 200 else None
 out["token_len"] = len(tok or "")
 H = {"Authorization": f"Bearer {tok}", **hdrs}
-r = c.post(f"/_reflex/event/{IPSTATE}/rec", headers={**H, "Cookie": "qa_cookie=COOKIEVALUE123"}, json={"tag": a.tag})
+r = c.post(f"{B}/_reflex/event/{IPSTATE}/rec", headers={**H, "Cookie": "qa_cookie=COOKIEVALUE123"}, json={"tag": a.tag})
 out["event_status"] = r.status_code
 out["event_ct"] = r.headers.get("content-type")
 seen = None
@@ -54,7 +55,7 @@ for ln in lines:
 out["seen_raw"] = seen
 snap = json.loads(seen[-1]) if seen else None
 out["snap"] = snap
-rs = c.post("/_reflex/retrieve_state", headers=H)
+rs = c.post(B + "/_reflex/retrieve_state", headers=H)
 out["retrieve_status"] = rs.status_code
 txt = rs.text
 out["retrieve_len"] = len(txt)

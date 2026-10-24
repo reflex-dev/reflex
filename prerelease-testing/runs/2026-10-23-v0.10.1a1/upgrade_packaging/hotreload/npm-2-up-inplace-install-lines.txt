@@ -1,0 +1,6 @@
+151:Debug: Removing unused frontend packages
+161:Debug: npm verbose title npm remove @emotion/react @react-router/dev 
+893:Debug: Installing frontend development dependencies
+903:Debug: npm verbose title npm add @tailwindcss/typography@0.5.20 
+3866:Debug: Installing frontend packages
+3876:Debug: npm verbose title npm add react-dom@19.3.1 socket.io-client@4.8.4 

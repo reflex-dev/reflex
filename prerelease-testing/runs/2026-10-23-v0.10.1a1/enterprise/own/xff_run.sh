@@ -29,13 +29,7 @@ OUT=$O/out/xff_$L.txt; : > "$OUT"
   for c in "ws_none|" "ws_spoof_one|X-Forwarded-For: 6.6.6.6" "ws_spoof_chain|X-Forwarded-For: 6.6.6.6, 7.7.7.7"; do
     n=${c%%|*}; h=${c#*|}; args=(); [ -n "$h" ] && args=(--hdr "$h")
     res=$($NP "$DRV" ws_probe.py --port 8610 --version "$VER" --tag "$n" --out "$O/out/xff_${L}_$n.json" "${args[@]}" 2>&1 | tail -1)
-    "$DRV" -I -c '
-import json,sys
-n,raw=sys.argv[1],sys.argv[2]
-try: d=json.loads(raw)
-except Exception: print(f"{n:28} RAW {raw[:300]}"); sys.exit()
-s=d["seen"][-1] if d["seen"] else {}
-print(f"{n:28} status={str(d.get(\"status\"))[:12]} ip={s.get(\"ip\")!s:14} xff={s.get(\"x-forwarded-for\")!r:30} asc={s.get(\"asgi-scope-client\")} ctok_len={s.get(\"client_token_len\")} sid_len={s.get(\"session_id_len\")} err={d.get(\"errors\")[:1]}")' "$n" "$res"
+    "$DRV" -I ws_summ.py "$n" "$res"
   done
 } 2>&1 | tee -a "$OUT"
 kill -TERM -- -$PGID 2>/dev/null; for i in $(seq 1 15); do pgrep -g $PGID >/dev/null || break; sleep 1; done; pgrep -g $PGID >/dev/null && kill -KILL -- -$PGID 2>/dev/null

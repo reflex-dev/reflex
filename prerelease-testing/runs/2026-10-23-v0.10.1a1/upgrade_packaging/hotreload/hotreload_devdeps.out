@@ -1,0 +1,49 @@
+=== package manager: bun
+init (prev) rc=0
+--- bun-1-prev (upgrade_packaging-pure-prev)
+up after 4s
+  installs during startup: 2
+  installs after a source-only hot reload: 0 (reload lines: 15)
+  installs after a second reload (touch): 0
+  frontend still 200: 200
+  deps: 13 devDeps: ['@emotion/react', '@react-router/dev', '@react-router/fs-routes', '@tailwindcss/postcss', '@tailwindcss/typography', 'autoprefixer', 'postcss', 'postcss-import', 'tailwindcss', 'vite']
+--- bun-2-up-inplace (new)
+up after 4s
+  installs during startup: 2
+  installs after a source-only hot reload: 0 (reload lines: 18)
+  installs after a second reload (touch): 0
+  frontend still 200: 200
+  deps: 13 devDeps: ['@emotion/react', '@react-router/dev', '@react-router/fs-routes', '@tailwindcss/postcss', '@tailwindcss/typography', 'autoprefixer', 'postcss', 'postcss-import', 'tailwindcss', 'vite']
+--- bun-3-cold-new (new)
+up after 4s
+  installs during startup: 2
+  installs after a source-only hot reload: 0 (reload lines: 18)
+  installs after a second reload (touch): 0
+  frontend still 200: 200
+  deps: 13 devDeps: ['@emotion/react', '@react-router/dev', '@react-router/fs-routes', '@tailwindcss/postcss', '@tailwindcss/typography', 'autoprefixer', 'postcss', 'postcss-import', 'tailwindcss', 'vite']
+  in-place vs cold package.json (normalized): 0 differing lines
+=== package manager: npm
+init (prev) rc=0
+--- npm-1-prev (upgrade_packaging-pure-prev)
+up after 34s
+  installs during startup: 2
+  installs after a source-only hot reload: 2 (reload lines: 817)
+  installs after a second reload (touch): 2
+  frontend still 200: 200
+  deps: 23 devDeps: []
+--- npm-2-up-inplace (new)
+up after 13s
+  installs during startup: 2
+  installs after a source-only hot reload: 0 (reload lines: 208)
+  installs after a second reload (touch): 0
+  frontend still 200: 200
+  deps: 13 devDeps: ['@emotion/react', '@react-router/dev', '@react-router/fs-routes', '@tailwindcss/postcss', '@tailwindcss/typography', 'autoprefixer', 'postcss', 'postcss-import', 'tailwindcss', 'vite']
+--- npm-3-cold-new (new)
+up after 10s
+  installs during startup: 2
+  installs after a source-only hot reload: 0 (reload lines: 276)
+  installs after a second reload (touch): 0
+  frontend still 200: 200
+  deps: 13 devDeps: ['@emotion/react', '@react-router/dev', '@react-router/fs-routes', '@tailwindcss/postcss', '@tailwindcss/typography', 'autoprefixer', 'postcss', 'postcss-import', 'tailwindcss', 'vite']
+  in-place vs cold package.json (normalized): 0 differing lines
+=== done 02:16:31

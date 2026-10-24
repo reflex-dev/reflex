@@ -213,3 +213,23 @@ occur at page load on BOTH versions (timestamps = hydration, before any interact
 app, so they are context, not a regression (probably the second, literal editor `columns=[{"title": "Lit"}, …]`,
 `data=[["x", 1]]`, `height="120px"`). The React warning `Checkbox is changing from uncontrolled to controlled` after the
 form submit is also on both versions.
+
+## 11. #7566 `-D` dev dependencies: existing `.web` migration and source-only hot reloads (`bin/hotreload_devdeps.sh`, 3480/8480)
+
+Blank app initialised by 0.10.0, run with 0.10.0 → stopped → run with 0.10.1a1 on the SAME `.web` → stopped → `rm -rf
+.web` → 0.10.1a1 cold; after each start a source-only edit of the app module and a second `touch`, counting
+"Installing frontend packages / development dependencies / Applying overrides" blocks (`hotreload/hotreload_devdeps.out`,
+`hotreload/*.package.json`).
+
+| package manager | 0.10.0 | 0.10.1a1 in place on the 0.10.0 `.web` | 0.10.1a1 cold |
+|---|---|---|---|
+| bun (default) | devDependencies already correct (bun reads `-d` as `--dev`); 2 installs at startup, **0** per hot reload | 2 at startup, **0** per reload; package.json normalized == cold | 0 per reload |
+| npm (`REFLEX_USE_NPM=1`) | **`devDependencies: []`, all 23 packages under `dependencies`; every source-only hot reload reinstalls (2 install blocks per reload)** — the bug #7566 fixes | startup migrates the file ("Removing unused frontend packages" for the misplaced entries, then `npm add -D …`): 13 deps / 10 devDeps, **0 installs per reload** | 13 / 10, 0 per reload; normalized package.json identical to the in-place one |
+
+→ #7566 fixed with npm; positive control reproduces on 0.10.0; an existing npm `.web` is migrated on the first
+0.10.1a1 start.
+| pip312 (stock pip graph: reflex/base/core/radix/moment a1 + code 0.10.0, dataeditor 0.10.0, lucide 1.1.0) | 22/23 | same 4 at load | the FAIL is the shiki transformer: **code 0.10.0 keeps bug #7430** under base a1; `format_data_editor_column` deprecation logged (dataeditor 0.10.0 under base a1); everything else (forms, keydown, paste, icons incl. dynamic, moment a1, data_editor typed) identical to `new` |
+| prev (reverse: reflex/base/core/radix/dataeditor 0.10.0 + code/moment 0.10.1a1, lucide 1.1.1a1) | **23/23** | same 4 at load | code a1's shiki transformer fix, lucide a1 `import_var` deep imports (static + dynamic icon) and moment a1 all work under reflex-base 0.10.0; no new warnings |
+
+Prod (`--env prod`, single port 3470): `new` untyped **23/23** (the same 4 glide load errors, favicon 404); `pip312`
+untyped crashes like dev (dataeditor 0.10.0 + untyped state column); `pip312` typed: see `mixed/logs/run-mixed-pip312-typed-prod.out`.

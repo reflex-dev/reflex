@@ -3,7 +3,7 @@
 # infra (Redis 8629 + mock IdP 8638) must be running (auth/bin/infra.sh start). dev: 3620/8620; prod: 8621 (1 worker, account stub).
 set -u
 SB=${SB:?}; export WORK=$SB/apps/enterprise/work; F=$SB/apps/enterprise/src; . "$F/lib.sh"; fx_sync auth; E=$WORK/auth; B=$F/auth/bin
-V=$1; L=$2; R=${3:-1}; M=${4:-dev}; O=$SB/apps/enterprise/own
+V=$1; L=$2; R=${3:-1}; M=${4:-dev}; O=$SB/apps/enterprise/own; mkdir -p "$O/out"
 fx_app auth vauth vauth_$L
 if [ "$M" = prod ]; then GRANIAN_WORKERS=1 "$B/start_app.sh" "$V" vauth_$L prod "$E/logs/pl-$L-prod.server.log"; U=http://localhost:8621; "$B/wait_ready.sh" $U/ $U 600
 else "$B/start_app.sh" "$V" vauth_$L dev "$E/logs/pl-$L-dev.server.log"; U=http://localhost:3620; "$B/wait_ready.sh" $U/ http://localhost:8620 420; fi

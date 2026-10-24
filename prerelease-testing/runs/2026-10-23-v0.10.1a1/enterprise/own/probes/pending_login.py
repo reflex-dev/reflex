@@ -133,8 +133,6 @@ def sc_dblclick(ctx, p, r):
 def sc_logout_keep(ctx, p, r):
     # log in fully first, then log out, then start a login, go back, log out again?? -> simpler: pending login survives a logout click
     first = start_login(p)
-    p.go_back()
-    expect(p.get_by_role("button", name=LOGIN_BTN)).to_be_visible(timeout=30000)
     # a full login in this tab, then logout (which used to overwrite app_state), then finish the earlier pending page
     second = click_again(p)
     authorize(p)

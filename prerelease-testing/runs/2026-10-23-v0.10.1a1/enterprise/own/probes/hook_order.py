@@ -18,7 +18,7 @@ HOOKS = re.compile(r"\b(use[A-Z]\w*)\s*\(")  # every hook call; late refs are wh
 DECL = re.compile(r"^\s*(?:const|let|var)\s+(?:\[\s*)?([A-Za-z_$][\w$]*)")
 IDENT = re.compile(r"[A-Za-z_$][\w$]*")
 files = []
-for pat in ("app/routes/**/*.jsx", "app/routes/**/*.js", "app/**/*.jsx", "utils/**/*.js", "components/**/*.jsx"):
+for pat in ("app/routes/**/*.jsx", "app/routes/**/*.js", "app/**/*.jsx", "app_components/**/*.jsx", "app_components/**/*.js", "utils/**/*.js", "components/**/*.jsx"):
     for f in web.glob(pat):
         if any(s in str(f.relative_to(web)) for s in subs) or any(s in f.read_text(errors="replace")[:200000] for s in ("useDrop(", "useDrag(", "useCombobox(")):
             files.append(f)
