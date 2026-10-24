@@ -1610,14 +1610,24 @@ export const useEventLoop = (
 
     // e is StorageEvent
     const handleStorage = (e) => {
-      const state_keys = storage_to_state_map.get(e.key);
       // Session storage changes in same-origin frames raise storage events too.
-      if (state_keys && e.storageArea === localStorage) {
-        // The value is read when the event is sent: see syncLocalStorageEvent.
-        addEvents(
-          [ReflexEvent(SYNC_LOCAL_STORAGE, { key: e.key, state_keys })],
-          e,
-        );
+      if (e.storageArea !== localStorage) {
+        return;
+      }
+      // A clear() event has no key and affects every synced storage name.
+      const entries =
+        e.key === null
+          ? storage_to_state_map.entries()
+          : [[e.key, storage_to_state_map.get(e.key)]];
+      const events = [];
+      for (const [key, state_keys] of entries) {
+        if (state_keys) {
+          // Read the value when sent, just like individual-key updates.
+          events.push(ReflexEvent(SYNC_LOCAL_STORAGE, { key, state_keys }));
+        }
+      }
+      if (events.length) {
+        addEvents(events, e);
       }
     };
 
