@@ -135,3 +135,67 @@ Server log: 0 tracebacks; 2 × `Error processing write queue: StateSerialization
 Can't pickle local object 'lambda_cols.<locals>.<lambda>' ...")` (1 before, 1 after the reload) = the disk state manager
 refusing to persist the fixture's deliberately-unpicklable `VState.lam_cols` default (python lambdas in column defs); the
 hydrate delta itself still reached the browser (grids rendered). Compared with prev-ent in queue3.
+- Final run (after the fixed driver, `own/out/hyd15_new2.txt` / `hyd15_prev.txt`): new-ent **9/9**, prev-ent **9/9** — every grid
+  has headers + cells + lambda-renderer badges before and after the hot reload, identical. The 2 `StateSerializationError`
+  write-queue lines also appear on prev-ent (disk state manager vs the fixture's unpicklable lambda default): **pre-existing,
+  not a regression. HYD-15 / CMP-05 still fixed** (bundled-library metadata survives the forked reload worker).
+
+### Client IP end to end — REST half (`own/out/xff_<label>.txt`, rerun with the stdlib `rest_probe.py`; route `/_reflex/event/hnet___hnet___ip_state/rec`)
+| run | XFF header on the REST call | `router.session.client_ip` in the handler (REST) | same header on the websocket |
+|---|---|---|---|
+| new-ent, REFLEX_TRUSTED_PROXY_HOPS=0 | none / `6.6.6.6` / `6.6.6.6, 7.7.7.7` / `not an ip <script>` | `127.0.0.1` / **`6.6.6.6`** / **`6.6.6.6`** (leftmost) / **`not an ip <script>`** | `127.0.0.1` in every case |
+| new-ent, REFLEX_TRUSTED_PROXY_HOPS=1 | same | `127.0.0.1` / `6.6.6.6` / **`6.6.6.6`** (leftmost, not the rightmost `7.7.7.7`) / junk verbatim | `127.0.0.1` / `6.6.6.6` / `7.7.7.7` |
+| prev-ent (0.10.0) | same | identical to new (leftmost) | leftmost `6.6.6.6` (0.10.0 behaviour) |
+So with reflex 0.10.1a1 the SAME handler sees a spoofed IP when invoked through rxe's REST event API (any caller, no proxy
+needed) and the real peer over the websocket; with `trusted_proxy_hops=1` the two surfaces disagree on a chain. rxe itself
+keys nothing on this value (rate limiters use `client_ip_from_scope` with their own hops, audit has no IP, MCP sessions get
+`0.0.0.0`); only user handlers reading `router.session.client_ip` are affected. Pre-existing in rxe (same on 0.10.0), but
+0.10.1a1's #7614 makes the inconsistency user-visible: a user who enables `trusted_proxy_hops` now gets correct values on
+the websocket and still-spoofable ones on the REST API. ENT-16 check in the same run: `/_reflex/retrieve_state` and the
+event ndjson return `"client_token": ""` and `"session_id": ""` (redacted, both versions), the bearer token never appears,
+`authorization` is stripped from the router headers. Observation (both versions, low): the REST responses carry the
+caller's OWN raw `cookie` header inside `rx_router_headers` (the websocket path redacts it per #7360) — the token-bound
+session belongs to that caller, so no cross-caller exposure.
+
+### Positive controls
+- **ENT-29 / N-025**: `grid/bin/run.sh enterprise-ctrl-rxe96 aggrid_min prod 3601 aggrid_min_ctrlrxe96_prod` (reflex 0.10.0 +
+  rxe **0.9.6**): `[FAIL] load 1/2: grid with column_defs=State var shows its columns: {'state_cols': [], 'literal_cols':
+  ['Make', 'Price']}` — the bug reproduces (State-valued column defs render no columns on a prerendered prod route),
+  while new-ent (rxe 0.9.8) passes 4/4. Control valid.
+- **ENT-30 / N-032**: `auth/bin/seq_ent_auth.sh enterprise-ctrl-a3 ctrla3 1` (reflex **0.10.0a3** + rxe 0.9.8) does NOT
+  reproduce (stale/away/xtab 3/3) — #7493 already landed in 0.10.0a3 (history a4: "fixed in a3"). Re-done with
+  `enterprise-ctrl-a2` (reflex 0.10.0a2 + rxe 0.9.8): see below.
+
+### #7360 / ENT-16 deep links — `auth/bin/seq_deeplink.sh new-ent new dev` (vauthd, dev + Redis, 3 reps)
+A deep link with query, B dynamic route, C anonymous client nav, D signed-in client nav, E reload, F logout, G anonymous
+boot: **3/3 each** (`work/auth/logs/new-dl-dev-redis-deeplink.json`); G: no `cookie` key in the anonymous frontend's
+`rx_router_headers` raw keys, `G_anon_fe_cookie == ""`; every audit `page_load` record on the right route (0 stale router
+views: `/vault` 9 redirected_to_login + 12 allowed, `/item/abc`, `/item/xyz`, `/vault2`). = the 0.10.0 record.
+
+### MCP — `own/mcp_run.sh new-ent new` (entauth dev + Redis; clients in `enterprise-drv`) and the a4 matrix (`seq_ent_auth.sh new-ent new 3`)
+- `check_mcp_anon.py --rate`: 42 recorded checks, **0 failing**; `root_redaction: True` (`reflex://state/vars/reflex___state____state`
+  returns `"client_token": ""`); rate limit / 429 token grants / 2x20 parallel bumps / upload tickets / background tool all pass;
+  server log: 2 tracebacks = the known anonymous protected-resource read (`mcp/server/fastmcp/.../read_resource`), as recorded.
+- a4 matrix (dev, memory): auth-full **22/22**, reload-repeat **3/3**, auth-min-default **4/4**, iframe-repeat **3/3**,
+  auth-min-extra **4/4** = **36/36**; "MCP OAuth discovery, registration, browser consent, PKCE, protected event, code replay
+  and refresh rotation passed"; "Anonymous MCP token rejection, events, computed reads, redaction and session isolation
+  passed"; 0 tracebacks in all four server logs. = record.
+- `check_mcp_oauth_redis.py` (entauth + Redis): **exit 1** at its first browser step — "no code from partial consent":
+  after the IdP login the browser sat on the app's `/login` page ("Sign in / Login with Generic", screenshot
+  `work/auth/screenshots/new-mcp-partial-stuck.png`) instead of `/agent-consent`, although the server logged "Auth callback
+  succeeded; user logged in, redirecting to '/agent-consent?…'" (`entauth-mcp-new.log`). This script was last run on the a3
+  pass (fixtures README: "not re-run on 0.10.0"), so compared against prev-ent (same rxe 0.9.8) below.
+
+### N-033 / ENT-07 (rxe#262, open) — `auth/bin/seq_n033.sh new-ent new` (vauth prod, Redis, DEFAULT granian workers)
+Fresh server `post_sync.sh` 27 POSTs: **27/27 405** across the cold worker pids; 6 full logins: **2/6 keep their token
+cookies** (`new-prod-redis-dw-logins.json`); storm: failed-sync logins burst ~480 syncs / 5 s then log out. **Unchanged**
+(record: 27/27 405, ~3/6 logins, storm) — #7079's preloaded-supervisor fork did not change the lazy per-worker route
+registration. Not re-reported.
+
+### AG Grid demo — `grid/bin/ag_demo.sh enterprise-demo-new prod new` (prod 3606, sqlite, account stub)
+smoke **20/20** routes; coldefs **7/7**; features **46/47** (the known `clipboard gold row0->row4` driver assumption);
+model **24/29** (the 5 known pre-existing SSRM/infinite text-filter blank rows + `met` string → SQLite DateTime); 2 server
+tracebacks = the known `wrapper.py on_add → session.commit` DateTime failure. = record. Covers cell edits → State,
+fill handle, immutable in-place update (`row_id_key` bump u-2), prepend, memo grid, ComponentState grids, tree/pivot/master-detail.
+
+### #277 in prod — `own/pl_run.sh new-ent newp 1 prod` (vauth prod 8621, 1 worker): A/B/C/D **4/4 pass** (B lands on `/vault/`).
