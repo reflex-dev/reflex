@@ -1,0 +1,12 @@
+SERVED app/_document.js                                                       bytes=6222    _c(=0   runtime=0
+SERVED app/entry.client.js                                                    bytes=1590    _c(=0   runtime=0
+SERVED app/root.jsx                                                           bytes=14160   _c(=1   runtime=1
+SERVED app/routes.js                                                          bytes=1177    _c(=0   runtime=0
+SERVED app/routes/[404]._index.jsx                                            bytes=4359    _c(=0   runtime=0
+SERVED app/routes/[widget].$[selected_user_param]._index.jsx                  bytes=8132    _c(=0   runtime=0
+SERVED app/routes/_index.jsx                                                  bytes=11347   _c(=0   runtime=0
+SERVED app_components/github_stats/github_stats.jsx                           bytes=38594   _c(=6   runtime=1
+SERVED app_components/github_stats/widget.jsx                                 bytes=19866   _c(=4   runtime=1
+SERVED app_components/reflex/app.jsx                                          bytes=13386   _c(=1   runtime=1
+SERVED app_components/reflex/compiler/compiler.jsx                            bytes=5250    _c(=0   runtime=0
+SERVED utils/components/Errorboundary_errorboundary_71c9c4d90c1a40b6ed86624e52613ee3.jsx bytes=19174   _c(=1   runtime=1

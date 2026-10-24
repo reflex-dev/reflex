@@ -1,0 +1,227 @@
+  ok   app/root.jsx fn=ReflexProviders@L22
+  BAIL app/routes/[dyn].$[pid]._index.jsx fn=Component@L11 line=12 :: Immutability: This value cannot be modified
+       const ref_hydrated = useRef(null); refs["ref_hydrated"] = ref_hydrated;
+  BAIL app/routes/[hooks]._index.jsx fn=Component@L12 line=13 :: Immutability: This value cannot be modified
+       const ref_hydrated = useRef(null); refs["ref_hydrated"] = ref_hydrated;
+  BAIL app/routes/[js]._index.jsx fn=Component@L10 line=11 :: Immutability: This value cannot be modified
+       const ref_hydrated = useRef(null); refs["ref_hydrated"] = ref_hydrated;
+  BAIL app/routes/_index.jsx fn=Component@L11 line=12 :: Immutability: This value cannot be modified
+       const ref_hydrated = useRef(null); refs["ref_hydrated"] = ref_hydrated;
+  BAIL app_components/fs_app/fs_app.jsx fn=ItemCard_6901234b@L17 line=18 :: Refs: Cannot access refs during render
+       const wnkiegyk = useRef(0); wnkiegyk.current += 1;
+  BAIL app_components/fs_app/fs_app.jsx fn=MemoReader_6901234b@L28 line=29 :: Refs: Cannot access refs during render
+       const zbxordmc = useRef(0); zbxordmc.current += 1;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_b37aabebc4a6618ab49113f0c3f323b2_6901234b@L62 line=63 :: Immutability: This value cannot be modified
+       const ref_op_append = useRef(null); refs["ref_op_append"] = ref_op_append;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_7d7c921d8ab6cb3590a2d1bf6107ced8_6901234b@L74 line=75 :: Immutability: This value cannot be modified
+       const ref_op_pop = useRef(null); refs["ref_op_pop"] = ref_op_pop;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_74a95895fec50c9e7ea7974f853ea5cd_6901234b@L86 line=87 :: Immutability: This value cannot be modified
+       const ref_op_pop0 = useRef(null); refs["ref_op_pop0"] = ref_op_pop0;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_1b9b8bf9b5eeefc4a77fbd37d1a82a36_6901234b@L98 line=99 :: Immutability: This value cannot be modified
+       const ref_op_insert1 = useRef(null); refs["ref_op_insert1"] = ref_op_insert1;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_85b182c6e12b72186d7f85a314dbc08a_6901234b@L110 line=111 :: Immutability: This value cannot be modified
+       const ref_op_sort_qty = useRef(null); refs["ref_op_sort_qty"] = ref_op_sort_qty;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_c3f8518f6dc6210ff3a75fe1b9514468_6901234b@L122 line=123 :: Immutability: This value cannot be modified
+       const ref_op_sort_qty_desc = useRef(null); refs["ref_op_sort_qty_desc"] = ref_op_sort_qty_desc;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_b8fed10d3ef881955af1b6981e16c7b7_6901234b@L134 line=135 :: Immutability: This value cannot be modified
+       const ref_op_reverse = useRef(null); refs["ref_op_reverse"] = ref_op_reverse;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_122ef236d18acc2394161e0f09ea2555_6901234b@L146 line=147 :: Immutability: This value cannot be modified
+       const ref_op_clear = useRef(null); refs["ref_op_clear"] = ref_op_clear;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_2bc184805e2c792dd80e82a647eff3a9_6901234b@L158 line=159 :: Immutability: This value cannot be modified
+       const ref_op_reset = useRef(null); refs["ref_op_reset"] = ref_op_reset;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_b00c390ae4adc7baa5594caa52fa6474_6901234b@L170 line=171 :: Immutability: This value cannot be modified
+       const ref_op_replace_equal = useRef(null); refs["ref_op_replace_equal"] = ref_op_replace_equal;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_8ff0a3c00e6ad6e3f9828f009ad15f35_6901234b@L182 line=183 :: Immutability: This value cannot be modified
+       const ref_op_bump0 = useRef(null); refs["ref_op_bump0"] = ref_op_bump0;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_a69dea6e2a83cb1f4b9da8a15a8f057e_6901234b@L194 line=195 :: Immutability: This value cannot be modified
+       const ref_op_tag0 = useRef(null); refs["ref_op_tag0"] = ref_op_tag0;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_9af87eb8c9484a6e72b119fbb6cc294e_6901234b@L206 line=207 :: Immutability: This value cannot be modified
+       const ref_op_meta0 = useRef(null); refs["ref_op_meta0"] = ref_op_meta0;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_1f4dba0735267bebaf9d75e65d9addf9_6901234b@L218 line=219 :: Immutability: This value cannot be modified
+       const ref_op_meta0_del = useRef(null); refs["ref_op_meta0_del"] = ref_op_meta0_del;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_7e7e7834641cb1b8afe40c20da31ff22_6901234b@L230 line=231 :: Immutability: This value cannot be modified
+       const ref_op_rename_last = useRef(null); refs["ref_op_rename_last"] = ref_op_rename_last;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_6b548850fbf4b594da841508cccf765f_6901234b@L242 line=243 :: Immutability: This value cannot be modified
+       const ref_op_nested_add = useRef(null); refs["ref_op_nested_add"] = ref_op_nested_add;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_bc609a4d6bbd4c281af12fd56c2e0025_6901234b@L254 line=255 :: Immutability: This value cannot be modified
+       const ref_op_nested_upd = useRef(null); refs["ref_op_nested_upd"] = ref_op_nested_upd;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_0196a911be088d2b71885c462c9b0b12_6901234b@L266 line=267 :: Immutability: This value cannot be modified
+       const ref_op_nested_del = useRef(null); refs["ref_op_nested_del"] = ref_op_nested_del;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_e99f39c1edbe7ef11a9b4591e796fd1f_6901234b@L278 line=279 :: Immutability: This value cannot be modified
+       const ref_op_nested_del_inner = useRef(null); refs["ref_op_nested_del_inner"] = ref_op_nested_del_inner;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_9829bc233bed8750d725a1c7ee7662d3_6901234b@L290 line=291 :: Immutability: This value cannot be modified
+       const ref_op_nested_reset = useRef(null); refs["ref_op_nested_reset"] = ref_op_nested_reset;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_0c9553e402fa99fac11d8fd327e7a239_6901234b@L302 line=303 :: Immutability: This value cannot be modified
+       const ref_op_nested_reorder = useRef(null); refs["ref_op_nested_reorder"] = ref_op_nested_reorder;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_31c136b3a25cc64a267fc5be1743d4c0_6901234b@L314 line=315 :: Immutability: This value cannot be modified
+       const ref_op_blob_none = useRef(null); refs["ref_op_blob_none"] = ref_op_blob_none;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_03d3ca4f2ce574804e892c1ede5fea18_6901234b@L326 line=327 :: Immutability: This value cannot be modified
+       const ref_op_blob_dict = useRef(null); refs["ref_op_blob_dict"] = ref_op_blob_dict;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_c0b03a7afe8e5d9ed64388530d1e0071_6901234b@L338 line=339 :: Immutability: This value cannot be modified
+       const ref_op_poly_obj = useRef(null); refs["ref_op_poly_obj"] = ref_op_poly_obj;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_93040ccc83af85b40c24e791ef312390_6901234b@L350 line=351 :: Immutability: This value cannot be modified
+       const ref_op_poly_arr = useRef(null); refs["ref_op_poly_arr"] = ref_op_poly_arr;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_4aa0183dfa8fc43503054c94bda3e6a4_6901234b@L362 line=363 :: Immutability: This value cannot be modified
+       const ref_op_matrix_mut = useRef(null); refs["ref_op_matrix_mut"] = ref_op_matrix_mut;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_dd15a02400a63725a68ffdf5c8b248bc_6901234b@L374 line=375 :: Immutability: This value cannot be modified
+       const ref_op_matrix_row = useRef(null); refs["ref_op_matrix_row"] = ref_op_matrix_row;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_3ab3b4e2df8a548efeddcfc889f02c33_6901234b@L386 line=387 :: Immutability: This value cannot be modified
+       const ref_op_matrix_pop_inner = useRef(null); refs["ref_op_matrix_pop_inner"] = ref_op_matrix_pop_inner;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_cd7639efa0d17421a83796e25cb5609a_6901234b@L398 line=399 :: Immutability: This value cannot be modified
+       const ref_op_bases_mut = useRef(null); refs["ref_op_bases_mut"] = ref_op_bases_mut;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_871182ab775dee17922a71a95e239fb3_6901234b@L410 line=411 :: Immutability: This value cannot be modified
+       const ref_op_bases_replace = useRef(null); refs["ref_op_bases_replace"] = ref_op_bases_replace;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_4bacbb29e2c33e7c5ddefe686525a143_6901234b@L422 line=423 :: Immutability: This value cannot be modified
+       const ref_op_pyd_mut = useRef(null); refs["ref_op_pyd_mut"] = ref_op_pyd_mut;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_4a2c9ecdf27128350b731a40e24aedbd_6901234b@L434 line=435 :: Immutability: This value cannot be modified
+       const ref_op_when_tick = useRef(null); refs["ref_op_when_tick"] = ref_op_when_tick;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_0ec244e7c45c1ef15f8458c31f41be1f_6901234b@L446 line=447 :: Immutability: This value cannot be modified
+       const ref_op_tags_add = useRef(null); refs["ref_op_tags_add"] = ref_op_tags_add;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_461a31ddadbac38bb9d81f501720781d_6901234b@L458 line=459 :: Immutability: This value cannot be modified
+       const ref_op_tags_rm = useRef(null); refs["ref_op_tags_rm"] = ref_op_tags_rm;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_6791ec5a59647a881410c6a2cd19e2f4_6901234b@L470 line=471 :: Immutability: This value cannot be modified
+       const ref_op_pair_swap = useRef(null); refs["ref_op_pair_swap"] = ref_op_pair_swap;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_0a23342b6955b42a42c013cc37588655_6901234b@L482 line=483 :: Immutability: This value cannot be modified
+       const ref_op_big_fill = useRef(null); refs["ref_op_big_fill"] = ref_op_big_fill;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_6077c92eb2ce77dbb69a077af3dfe19a_6901234b@L494 line=495 :: Immutability: This value cannot be modified
+       const ref_op_big_mut_mid = useRef(null); refs["ref_op_big_mut_mid"] = ref_op_big_mut_mid;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_a91a022a1aaf5a05ff3e732b23a48fcd_6901234b@L506 line=507 :: Immutability: This value cannot be modified
+       const ref_op_big_append = useRef(null); refs["ref_op_big_append"] = ref_op_big_append;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_a40d388c6f4a6eb8219afff2aebe19d8_6901234b@L518 line=519 :: Immutability: This value cannot be modified
+       const ref_op_big_pop0 = useRef(null); refs["ref_op_big_pop0"] = ref_op_big_pop0;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_445caddbd716df572d6fc040a52ed6d7_6901234b@L530 line=531 :: Immutability: This value cannot be modified
+       const ref_op_same_twice = useRef(null); refs["ref_op_same_twice"] = ref_op_same_twice;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_109c7a6e1ecf3c9674cf853fbff3d2e0_6901234b@L542 line=543 :: Immutability: This value cannot be modified
+       const ref_op_set_same_nested = useRef(null); refs["ref_op_set_same_nested"] = ref_op_set_same_nested;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_cdd27fecf664f41017cccab2752bceae_6901234b@L554 line=555 :: Immutability: This value cannot be modified
+       const ref_op_noop = useRef(null); refs["ref_op_noop"] = ref_op_noop;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_b4e746b98878f9e3bb1cc049f670d5fa_6901234b@L566 line=567 :: Immutability: This value cannot be modified
+       const ref_op_many = useRef(null); refs["ref_op_many"] = ref_op_many;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_de89dd69016dba5dfa89850693c6dbaa_6901234b@L578 line=579 :: Immutability: This value cannot be modified
+       const ref_op_bg_run = useRef(null); refs["ref_op_bg_run"] = ref_op_bg_run;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_fcd00f6720e5ed538a5d9b0d0a75d187_6901234b@L590 line=591 :: Immutability: This value cannot be modified
+       const ref_op_both = useRef(null); refs["ref_op_both"] = ref_op_both;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_9257a37cacb6d7cc300e63ba326064c3_6901234b@L602 line=603 :: Immutability: This value cannot be modified
+       const ref_op_deep_bump = useRef(null); refs["ref_op_deep_bump"] = ref_op_deep_bump;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_7d6655727195ab8b4851e69a0b42fb95_6901234b@L911 line=912 :: Immutability: This value cannot be modified
+       const ref_inc = useRef(null); refs["ref_inc"] = ref_inc;
+  BAIL app_components/fs_app/fs_app.jsx fn=Windoweventlistener_fragment_b90a222b24fdfed72e6de22fc75bbd08_6901234b@L934 line=936 :: UseMemo: Expected the first argument to be an inline function expression
+       const on_resize_6d4662ad51759f30599075d2b4575dc6 = useCallback(on_resize_f3c94edb2aa15fd98b044637af6d907f, [addEvents, R
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_22aeecfc174ec82e73f434a3acb49c9d_6901234b@L1009 line=1010 :: Immutability: This value cannot be modified
+       const ref_call_script = useRef(null); refs["ref_call_script"] = ref_call_script;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_d9b2064daf3e9ab9983ee6899f7d3791_6901234b@L1076 line=1081 :: Todo: (BuildHIR::lowerExpression) Handle ??= operators in AssignmentExpression
+       refs['_client_state_cs_count'] ??= cs_count
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_9a3eaef03ad007ade9eaac7b674e2b84_6901234b@L1096 line=1101 :: Todo: (BuildHIR::lowerExpression) Handle ??= operators in AssignmentExpression
+       refs['_client_state_cs_count'] ??= cs_count
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_acc4908a274211ace82f6524fe3b53f4_6901234b@L1116 line=1117 :: Immutability: This value cannot be modified
+       const ref_cs_push = useRef(null); refs["ref_cs_push"] = ref_cs_push;
+  BAIL app_components/fs_app/fs_app.jsx fn=Bare_comp_c68fcc574dee02500b0275bb2141eb1f_6901234b@L1128 line=1132 :: Todo: (BuildHIR::lowerExpression) Handle ??= operators in AssignmentExpression
+       refs['_client_state_cs_count'] ??= cs_count
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_3bc9028373c0b0a723f4bad34ef7a3b2_6901234b@L1146 line=1147 :: Immutability: This value cannot be modified
+       const ref_toggle_reader = useRef(null); refs["ref_toggle_reader"] = ref_toggle_reader;
+  BAIL app_components/fs_app/fs_app.jsx fn=Input_input_2440b0eaa20a2d90b141c8e467c467a3_6901234b@L1169 line=1170 :: Immutability: This value cannot be modified
+       const ref_cs_local_in = useRef(null); refs["ref_cs_local_in"] = ref_cs_local_in;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_c0cc1ccc5aed9ac4c4d360a79348cc81_6901234b@L1206 line=1207 :: Immutability: This value cannot be modified
+       const ref_unrelated = useRef(null); refs["ref_unrelated"] = ref_unrelated;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_dc5ae07800dfc6675fed03156cbb6859_6901234b@L1218 line=1219 :: Immutability: This value cannot be modified
+       const ref_rename_thing = useRef(null); refs["ref_rename_thing"] = ref_rename_thing;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_c0dd2befa04559cd5499008c18f786fc_6901234b@L1406 line=1407 :: Immutability: This value cannot be modified
+       const ref_set2 = useRef(null); refs["ref_set2"] = ref_set2;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_2ec1ec6c63480316e9a95eed20936859_6901234b@L1418 line=1419 :: Immutability: This value cannot be modified
+       const ref_set_n = useRef(null); refs["ref_set_n"] = ref_set_n;
+  BAIL app_components/fs_app/fs_app.jsx fn=Div_div_34e9485df39160465ccfbf7a0381c977_6901234b@L1430 line=1431 :: Immutability: This value cannot be modified
+       const ref_styled = useRef(null); refs["ref_styled"] = ref_styled;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_24797daf59230d9765cc7516f30cc083_6901234b@L1442 line=1443 :: Immutability: This value cannot be modified
+       const ref_err_noobj = useRef(null); refs["ref_err_noobj"] = ref_err_noobj;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_1430405544b1d7a7e1e09a510b5425f3_6901234b@L1454 line=1455 :: Immutability: This value cannot be modified
+       const ref_err_obj = useRef(null); refs["ref_err_obj"] = ref_err_obj;
+  BAIL app_components/fs_app/fs_app.jsx fn=Button_button_7f29ba66af2557282556099771310e36_6901234b@L1466 line=1467 :: Immutability: This value cannot be modified
+       const ref_err_onerror_direct = useRef(null); refs["ref_err_onerror_direct"] = ref_err_onerror_direct;
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_665f745778168654dea45467396ba2f9_6901234b@L40
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_c25dc1e2f1553604e0dad52c8e861f79_6901234b@L51
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_7e61c5e29ad7c766117d17591f904ccf_6901234b@L614
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_e2ca4bcf34be5cae4c704e49f5b39542_6901234b@L625
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_8dbb446ee50c13320438a146b0227b10_6901234b@L636
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_8320082e6d3f79859273b645488b7390_6901234b@L647
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_decbf530577ec60d9567df1052cc0d57_6901234b@L658
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_4bcaae3420958b67528a7f7afa0d1c7e_6901234b@L669
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_a493e9187eb0dcd4de0094e01d89d0f2_6901234b@L680
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_57202fe5325e055d1a795f0147361808_6901234b@L691
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_2cca73a4c28fad0a301df0bdffbf26c9_6901234b@L702
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_8869dd3dee27d658c84afd9d28197118_6901234b@L713
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_7dcbd112a2642485e4626e6ab24049dc_6901234b@L724
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_50a7868efe4785cd1fc0461cd62a7b97_6901234b@L735
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_fe421595b67ce9ae0a29bfdf5b8220b1_6901234b@L746
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_3fe21e8c253d2066e00815db2d25336b_6901234b@L757
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_e8ba700adb239b0f7229f764f489c478_6901234b@L768
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_91c19eac4eab2ea9ef7c6a498898bc08_6901234b@L779
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_ec257811fed8ba3f28733f4a0cde13b8_6901234b@L790
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_633aa3cac5afbf1b4b2d4236a91a0c87_6901234b@L801
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_f439a454360dfd41182f34476657c572_6901234b@L812
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_f67041036ce9851dfabb3e4861bca4a5_6901234b@L823
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_e66f5bc86a09bbbadd3013a87ac486e7_6901234b@L834
+  ok   app_components/fs_app/fs_app.jsx fn=Foreach_comp_48855b616f3c297afa889b9bb27347b4_6901234b@L845
+  ok   app_components/fs_app/fs_app.jsx fn=Foreach_comp_76810b2576c6a214005d0f7fb227baf8_6901234b@L856
+  ok   app_components/fs_app/fs_app.jsx fn=Foreach_comp_4451669c055b3685a95d51fce8764c9a_6901234b@L867
+  ok   app_components/fs_app/fs_app.jsx fn=Foreach_comp_e77905f7ad26e5a9f046b5f1b3420f2b_6901234b@L878
+  ok   app_components/fs_app/fs_app.jsx fn=Foreach_comp_6b00e3b6a2bc6141bc22f3f9f6e88a9d_6901234b@L889
+  ok   app_components/fs_app/fs_app.jsx fn=Foreach_comp_a4b3bb3d48c2e9b3e04c92d6bf3986d8_6901234b@L900
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_cbf27c2029c76c91120feaffcfb2c7b7_6901234b@L923
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_9ab2f610ef1dbf24b1355405411097f0_6901234b@L964
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_16c24008a98643a5354452f6489bca04_6901234b@L975
+  ok   app_components/fs_app/fs_app.jsx fn=Clipboard_fragment_1c0685c3ce706a79d029da3833af7600_6901234b@L986
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_de3f9e590165ca44f775a9deb3d9c078_6901234b@L998
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_3d8778eb21c3c73aae68600ced18f9cf_6901234b@L1021
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_a9f6f3bbfa71426d296dbe6a8f22d959_6901234b@L1032
+  ok   app_components/fs_app/fs_app.jsx fn=Button_button_ce1daa172550762d057f7a144a6b1e29_6901234b@L1043
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_74c4b14a9c680f709edbece3e6e5598b_6901234b@L1054
+  ok   app_components/fs_app/fs_app.jsx fn=Button_button_9efa66734a6fb346adf7e44e40fba3a6_6901234b@L1065
+  ok   app_components/fs_app/fs_app.jsx fn=Cond_comp_6d03cb44978743eb349f406eb9a3aa50_6901234b@L1158
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_2815e50bf592e7e17ca541d2ec4278e5_6901234b@L1183
+  ok   app_components/fs_app/fs_app.jsx fn=Memocomponent_memoreader_6901234b_1c4d8131cc1080a8c95e76a0150e8d3d_6901234b@L1195
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_6433fd7319dee20b56150a9680ff0a3a_6901234b@L1230
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_7a269ac0dc45c354a742ab172dcb221f_6901234b@L1241
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_71313ac4f3b63683fdd333a7dd122593_6901234b@L1252
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_ecb612daddda938947269518e83a6212_6901234b@L1263
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_44333f9a2c56f42e6c7156e4cf41ca0e_6901234b@L1274
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_eedff6634b811a2801bce1d5cfd36476_6901234b@L1285
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_a37df2b81d3d19b8b23a166db36e7901_6901234b@L1296
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_7ca94ed979761027b73327607ddb6d8c_6901234b@L1307
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_4ac2c53a62b36e11ce2f1165e90f72bd_6901234b@L1318
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_f0b8e3d8802e56eb2f1cc60e40788040_6901234b@L1329
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_7f8856f607da1d4f9050dff03c2f0b31_6901234b@L1340
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_f2c1a796116b22b4b83644fd81e1e310_6901234b@L1351
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_4b500cf0956faa78c58c801c2d5e56a7_6901234b@L1362
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_8a22149fdb83a083efaf7a15acb2692a_6901234b@L1373
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_ddeb0bc4e8698f6a73b684cebe5b1509_6901234b@L1384
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_42376dccab1d86655ab615ac2ceaea4e_6901234b@L1395
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_c618857639990cc381403886793c95d2_6901234b@L1478
+  ok   app_components/fs_app/fs_app.jsx fn=Bare_comp_1b348aae7e7f98fa4cfc873bccf7d62d_6901234b@L1489
+  ok   app_components/reflex/app.jsx fn=DefaultOverlayComponents_04c36749@L17
+  BAIL app_components/reflex/compiler/compiler.jsx fn=MemoizedToastProvider_18b15038@L16 line=18 :: Immutability: This value cannot be modified
+       refs['__toast'] = toast
+  ok   utils/components/Errorboundary_errorboundary_71c9c4d90c1a40b6ed86624e52613ee3.jsx fn=Errorboundary_errorboundary_71c9c4d90c1a40b6ed86624e52613ee3@L15
+
+## fs_app/.web : 14 files in scope
+file | functions | compiled | bailed | skipped | _c( calls | has id: | has refs[ | bailed fns
+app/_document.js | 0 | 0 | 0 | 0 | 0 | false | false | 
+app/entry.client.embed.js | 0 | 0 | 0 | 0 | 0 | false | false | 
+app/entry.client.js | 0 | 0 | 0 | 0 | 0 | false | false | 
+app/root.jsx | 1 | 1 | 0 | 0 | 1 | false | false | 
+app/routes.js | 0 | 0 | 0 | 0 | 0 | false | false | 
+app/routes/[404]._index.jsx | 0 | 0 | 0 | 0 | 0 | false | false | 
+app/routes/[dyn].$[pid]._index.jsx | 1 | 0 | 1 | 0 | 0 | true | true | Component@L11
+app/routes/[hooks]._index.jsx | 1 | 0 | 1 | 0 | 0 | true | true | Component@L12
+app/routes/[js]._index.jsx | 1 | 0 | 1 | 0 | 0 | true | true | Component@L10
+app/routes/_index.jsx | 1 | 0 | 1 | 0 | 0 | true | true | Component@L11
+app_components/fs_app/fs_app.jsx | 125 | 60 | 65 | 0 | 39 | true | true | ItemCard_6901234b@L17,MemoReader_6901234b@L28,Button_button_b37aabebc4a6618ab49113f0c3f323b2_6901234b@L62,Button_button_7d7c921d8ab6cb3590a2d1bf6107ced8_6901234b@L74,Button_button_74a95895fec50c9e7ea7974f853ea5cd_6901234b@L86,Button_button_1b9b8bf9b5eeefc4a77fbd37d1a82a36_6901234b@L98
+app_components/reflex/app.jsx | 1 | 1 | 0 | 0 | 1 | true | true | 
+app_components/reflex/compiler/compiler.jsx | 1 | 0 | 1 | 0 | 0 | false | true | MemoizedToastProvider_18b15038@L16
+utils/components/Errorboundary_errorboundary_71c9c4d90c1a40b6ed86624e52613ee3.jsx | 1 | 1 | 0 | 0 | 1 | false | false | 
+
+TOTAL functions=133 compiled=63 bailed=70
+bail-out reasons:
+  64  Immutability: This value cannot be modified
+  3  Todo: (BuildHIR::lowerExpression) Handle ??= operators in AssignmentExpression
+  2  Refs: Cannot access refs during render
+  1  UseMemo: Expected the first argument to be an inline function expression

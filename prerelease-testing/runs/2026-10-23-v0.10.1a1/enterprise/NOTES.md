@@ -199,3 +199,12 @@ tracebacks = the known `wrapper.py on_add → session.commit` DateTime failure. 
 fill handle, immutable in-place update (`row_id_key` bump u-2), prepend, memo grid, ComponentState grids, tree/pivot/master-detail.
 
 ### #277 in prod — `own/pl_run.sh new-ent newp 1 prod` (vauth prod 8621, 1 worker): A/B/C/D **4/4 pass** (B lands on `/vault/`).
+- **ENT-30 / N-032 control (valid)**: `auth/bin/seq_ent_auth.sh enterprise-ctrl-a2 ctrla2 1` (reflex **0.10.0a2** + rxe 0.9.8,
+  dev + Redis): stale `{"p1_corrected": 0, "p2_corrected": 0, "p3_logged_out": 0, "p4_logged_out": 3} of 3`, away **0/3**,
+  xtab **0/3 logged out, accepted-after-logout 3/3** — the bug reproduces with the same rxe, so the 3/3 results on 0.10.1a1
+  (dev + prod) are the reflex fix (#7493) holding. **still fixed.**
+- `check_mcp_oauth_redis.py` on prev-ent (`own/mcp_run.sh prev-ent prev`, reflex 0.10.0 + rxe 0.9.8): the SAME
+  "no code from partial consent" failure (stuck on `/login` after the IdP login) → not a 0.10.1a1 regression; either rxe
+  0.9.8 (#277 changed the post-login redirect logic) or driver drift since the a3 record. The a4-matrix consent flow
+  (`check_mcp_oauth.py`, auth_min app, memory manager) passes on 0.10.1a1, so a memory-manager run of this script was added
+  (queue5) to tell Redis-specific from script-specific.

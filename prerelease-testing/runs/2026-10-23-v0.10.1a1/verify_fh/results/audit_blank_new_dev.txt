@@ -1,0 +1,27 @@
+  ok   app/root.jsx fn=ReflexProviders@L26
+  BAIL app_components/blankapp/blankapp.jsx fn=Cond_comp_ca57bf910541d8ab66114abd37794349_dbc62322@L16 line=19 :: Todo: Unexpected terminal kind `optional` for ternary test block
+       ((resolvedColorMode?.valueOf?.() === "light"?.valueOf?.())?(children?.at?.(0)):(children?.at?.(1)))
+  ok   app_components/blankapp/blankapp.jsx fn=Iconbutton_iconbutton_db18ecf04859f231c6e13b4d7e4be22d_dbc62322@L27
+  ok   app_components/reflex/app.jsx fn=DefaultOverlayComponents_04c36749@L17
+  BAIL app_components/reflex/compiler/compiler.jsx fn=MemoizedToastProvider_18b15038@L16 line=18 :: Immutability: This value cannot be modified
+       refs['__toast'] = toast
+  ok   utils/components/Errorboundary_errorboundary_71c9c4d90c1a40b6ed86624e52613ee3.jsx fn=Errorboundary_errorboundary_71c9c4d90c1a40b6ed86624e52613ee3@L15
+
+## blankapp/.web : 11 files in scope
+file | functions | compiled | bailed | skipped | _c( calls | has id: | has refs[ | bailed fns
+app/_document.js | 0 | 0 | 0 | 0 | 0 | false | false | 
+app/entry.client.embed.js | 0 | 0 | 0 | 0 | 0 | false | false | 
+app/entry.client.js | 0 | 0 | 0 | 0 | 0 | false | false | 
+app/root.jsx | 1 | 1 | 0 | 0 | 1 | false | false | 
+app/routes.js | 0 | 0 | 0 | 0 | 0 | false | false | 
+app/routes/[404]._index.jsx | 0 | 0 | 0 | 0 | 0 | false | false | 
+app/routes/_index.jsx | 0 | 0 | 0 | 0 | 0 | false | false | 
+app_components/blankapp/blankapp.jsx | 2 | 1 | 1 | 0 | 1 | false | false | Cond_comp_ca57bf910541d8ab66114abd37794349_dbc62322@L16
+app_components/reflex/app.jsx | 1 | 1 | 0 | 0 | 1 | true | true | 
+app_components/reflex/compiler/compiler.jsx | 1 | 0 | 1 | 0 | 0 | false | true | MemoizedToastProvider_18b15038@L16
+utils/components/Errorboundary_errorboundary_71c9c4d90c1a40b6ed86624e52613ee3.jsx | 1 | 1 | 0 | 0 | 1 | false | false | 
+
+TOTAL functions=6 compiled=4 bailed=2
+bail-out reasons:
+  1  Todo: Unexpected terminal kind `optional` for ternary test block
+  1  Immutability: This value cannot be modified

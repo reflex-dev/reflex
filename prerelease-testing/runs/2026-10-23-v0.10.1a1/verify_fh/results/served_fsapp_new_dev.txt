@@ -1,0 +1,13 @@
+SERVED app/_document.js                                                       bytes=6222    _c(=0   runtime=0
+SERVED app/entry.client.js                                                    bytes=1590    _c(=0   runtime=0
+SERVED app/root.jsx                                                           bytes=12468   _c(=1   runtime=1
+SERVED app/routes.js                                                          bytes=1177    _c(=0   runtime=0
+SERVED app/routes/[404]._index.jsx                                            bytes=4309    _c(=0   runtime=0
+SERVED app/routes/[dyn].$[pid]._index.jsx                                     bytes=9263    _c(=0   runtime=0
+SERVED app/routes/[hooks]._index.jsx                                          bytes=26035   _c(=0   runtime=0
+SERVED app/routes/[js]._index.jsx                                             bytes=23757   _c(=0   runtime=0
+SERVED app/routes/_index.jsx                                                  bytes=51209   _c(=0   runtime=0
+SERVED app_components/fs_app/fs_app.jsx                                       bytes=388733  _c(=60  runtime=1
+SERVED app_components/reflex/app.jsx                                          bytes=13336   _c(=1   runtime=1
+SERVED app_components/reflex/compiler/compiler.jsx                            bytes=5200    _c(=0   runtime=0
+SERVED utils/components/Errorboundary_errorboundary_71c9c4d90c1a40b6ed86624e52613ee3.jsx bytes=19154   _c(=1   runtime=1

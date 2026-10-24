@@ -1,0 +1,7 @@
+effect_plain_call                  compiled= true | CompileSuccess
+effect_iife_rest                   compiled= false | CompileError: Expected temporaries to be promoted to named identifiers in an earlier pass
+effect_iife_norest                 compiled= true | CompileSuccess
+handler_arrow_rest_prop            compiled= false | 
+callback_iife_rest                 compiled= false | CompileError: Expected temporaries to be promoted to named identifiers in an earlier pass
+callback_direct                    compiled= true | CompileSuccess
+iife_rest_outside_hook_in_handler  compiled= false | 

@@ -1,0 +1,6 @@
+plain_div                compiled= false | 
+useRef_as_ref_prop       compiled= false | CompileError: Cannot access refs during render
+refs_assign_only         compiled= false | CompileError: This value cannot be modified
+refs_assign_and_ref      compiled= false | CompileError: This value cannot be modified
+refs_read_in_handler     compiled= false | 
+refs_assign_in_effect    compiled= false | CompileError: Cannot access refs during render

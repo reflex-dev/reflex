@@ -1,0 +1,177 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+Debug: Overriding config value react_compiler with env var REACT_COMPILER=1
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/new/lib/python3.12/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='blankapp', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', 
+trusted_proxy_hops=0, db_url=None, async_db_url=None, redis_url=None, 
+telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+react_compiler=True, frontend_compression_formats=['gzip'], 
+frontend_packages=[], frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'react_compiler', 'app_name', 'plugins', 'loglevel', 
+'telemetry_enabled'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[SitemapPlugin(trailing_slash='preserve'), 
+TailwindV4Plugin(config={'plugins': ['@tailwindcss/typography@0.5.20']}), 
+RadixThemesPlugin(theme={"name": "RadixThemesTheme", "props": 
+["accentColor:\"blue\"", "css:{...theme.styles.global[':root'], 
+...theme.styles.global.body}"], "children": []})], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+'--version']
+Debug: [Reflex 0.10.1a1 with Python 3.12.3 (PATH: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs
+/new/bin/python)]
+Debug: [Node 22.22.0 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.4 (Minimum: 1.4.4) (PATH: 
+/root/.local/share/reflex/bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.5 LTS]
+Debug: Using package installer at: ['/root/.local/share/reflex/bun/bin/bun', 
+'/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.local/share/reflex/bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3700
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8700
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Frontend port: 3700 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Frontend port: 3700 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Frontend port: 3700 is not in use.
+Debug: Checking if Backend port: 8700 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Backend port: 8700 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Backend port: 8700 is not in use.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: [timing] Compile pages: 0.31s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', '-D', '@react-router/fs-routes@8.4.0', 'vite@8.3.4', 
+'postcss-import@17.0.1', '@react-router/dev@8.4.0', 'tailwindcss@4.3.0', 
+'@tailwindcss/typography@0.5.20', '@babel/core@7.29.7', 'postcss@8.5.30', 
+'babel-plugin-react-compiler@1.0.0', '@tailwindcss/postcss@4.3.0', 
+'@emotion/react@11.14.0', 'autoprefixer@10.6.1']
+Debug: Installing frontend development dependencies
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [13]
+Debug: Saved lockfile
+Debug: 
+Debug:  - vite
+Debug:  - react-router
+Debug:  - autoprefixer
+Debug: 
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', '@react-router/node@8.4.0', 'react-dom@19.3.1', 
+'react-helmet@6.1.0', 'lucide-react@1.26.0', 'sonner@2.0.8', 
+'universal-cookie@8.1.2', 'isbot@5.2.2', 'mergician@v2.0.2', 
+'socket.io-client@4.8.4', 'react@19.3.1', 'react-router@8.4.0', 
+'@radix-ui/themes@3.3.0', 'react-error-boundary@6.1.6']
+Debug: Installing frontend packages
+Debug: Saved lockfile
+Debug: 
+Debug: 
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_fh/blankapp/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_fh/blankapp/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 3.04s
+Debug: [timing] Write to Disk: 0.00s
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Using Granian for backend
+Debug: Reload paths: 
+['/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/ap
+ps/verify_fh/blankapp/blankapp', 
+'/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/app
+s/verify_fh/blankapp/requirements.txt', 
+'/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/app
+s/verify_fh/blankapp/assets', 
+'/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/app
+s/verify_fh/blankapp/rxconfig.py']
+[INFO] Starting granian (main PID: 3320)
+[INFO] Listening at: http://0.0.0.0:8700
+[INFO] Spawning worker-1 with PID: 3366
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug:   ➜  Local:   http://localhost:3700/
+App running at: http://localhost:3700/
+Backend running at: http://0.0.0.0:8700
+Debug:   ➜  Network: http://192.0.2.2:3700/  eth0
+Debug: 6:39:09 AM [vite] Internal server error: Failed to resolve import 
+"$/app/__reflex_embed_manifest" from "app/entry.client.embed.js". Does the file 
+exist?
+Debug:   Plugin: vite:import-analysis
+Debug:   File: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_fh/blankapp/.web/app/entry.client.embed.js:32:13
+Debug:   22 |      // unrelated) and react-router hooks like useLoaderData 
+resolve. The route
+Debug:   23 |      // table is generated at compile time into 
+__reflex_embed_manifest.js.
+Debug:   24 |  ...css"), import("react-router"), import("$/app/root"), 
+import("$/app/__reflex_embed_manifest")]).then(([, reactRoute...
+Debug:      |                                                                 ^
+Debug:   25 |        const {
+Debug:   26 |          createMemoryRouter,
+Debug:       at TransformPluginContext._formatLog 
+(file:///tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/qa/apps/verify_fh/blankapp/.web/node_modules/vite/dist/node/chunks/node.js:8766
+:39)
+Debug:       at TransformPluginContext.error 
+(file:///tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/qa/apps/verify_fh/blankapp/.web/node_modules/vite/dist/node/chunks/node.js:8763
+:14)
+Debug:       at normalizeUrl 
+(file:///tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/qa/apps/verify_fh/blankapp/.web/node_modules/vite/dist/node/chunks/node.js:2663
+2:18)
+Debug:       at async 
+file:///tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+qa/apps/verify_fh/blankapp/.web/node_modules/vite/dist/node/chunks/node.js:26702
+:30
+Debug:       at async Promise.all (index 7)
+Debug:       at async TransformPluginContext.transform 
+(file:///tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/qa/apps/verify_fh/blankapp/.web/node_modules/vite/dist/node/chunks/node.js:2666
+8:4)
+Debug:       at async EnvironmentPluginContainer.transform 
+(file:///tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/qa/apps/verify_fh/blankapp/.web/node_modules/vite/dist/node/chunks/node.js:8545
+:14)
+Debug:       at async loadAndTransform 
+(file:///tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/qa/apps/verify_fh/blankapp/.web/node_modules/vite/dist/node/chunks/node.js:2018
+4:26)
+Debug: 6:39:10 AM [vite] (client) dependencies optimized: 
+@react-router/dev/routes, @react-router/fs-routes
+Debug: 6:39:10 AM [vite] (client) optimized dependencies changed. reloading
+[INFO] Stopping worker-1
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Debug: error: script "dev" exited with code 143
+Info: Reflex app stopped.

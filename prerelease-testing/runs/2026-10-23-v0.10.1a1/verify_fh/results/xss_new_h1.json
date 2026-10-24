@@ -1,0 +1,26 @@
+{
+ "payload": "<img src=x onerror=\"window.__pwned=1\">",
+ "console": [
+  "log: 💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+  "debug: [vite] connecting...",
+  "debug: [vite] connected.",
+  "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+ ],
+ "pageerrors": [],
+ "f_ip_text": "<img src=x onerror=\"window.__pwned=1\">",
+ "f_ip_innerHTML": "&lt;img src=x onerror=\"window.__pwned=1\"&gt;",
+ "f_ip_child_elements": 0,
+ "cv_ip_text": "<img src=x onerror=\"window.__pwned=1\">",
+ "handler_snapshot_ip": "<img src=x onerror=\"window.__pwned=1\">",
+ "img_elements_in_doc": 0,
+ "script_elements_with_payload": 0,
+ "window.__pwned": 0,
+ "title": "Hnet | Ip",
+ "verdict": {
+  "rendered_verbatim_as_text": true,
+  "escaped_in_html": true,
+  "no_child_elements": true,
+  "payload_did_not_execute": true,
+  "same_string_in_computed_var_and_handler": true
+ }
+}

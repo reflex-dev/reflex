@@ -1,0 +1,42 @@
+  ok   app/root.jsx fn=ReflexProviders@L26
+  BAIL app_components/quiz/quiz.jsx fn=Cond_comp_ca57bf910541d8ab66114abd37794349_bbe5cab0@L22 line=25 :: Todo: Unexpected terminal kind `optional` for ternary test block
+       ((resolvedColorMode?.valueOf?.() === "light"?.valueOf?.())?(children?.at?.(0)):(children?.at?.(1)))
+  BAIL app_components/quiz/quiz.jsx fn=Codeblock_prismasynclight_ded1930ddff869de9ca0960bbb504ec8_bbe5cab0@L57 line=60 :: Todo: Unexpected terminal kind `optional` for ternary test block
+       jsx(SyntaxHighlighter,{...mergeSlotProps(rest, ({ children:"a = [10, 20]\nb = a\nb += [30, 40]\nprint(a)", language:"pyt
+  BAIL app_components/quiz/quiz.jsx fn=Foreach_comp_71121e13019a2f584b2d837215afba45_bbe5cab0@L168 line=171 :: Todo: Unexpected terminal kind `optional` for ternary test block
+       Array.prototype.map.call(reflex___state____state__quiz___quiz____state.answers_rx_state_ ?? [],((__rx_state_,i_rx_state_
+  ok   app_components/quiz/quiz.jsx fn=Iconbutton_iconbutton_db18ecf04859f231c6e13b4d7e4be22d_bbe5cab0@L33
+  ok   app_components/quiz/quiz.jsx fn=Radiogrouproot_radiogroup__root_6faf12bb15d90588a8ec6b9a3c8fae78_bbe5cab0@L45
+  ok   app_components/quiz/quiz.jsx fn=Radiogrouproot_radiogroup__root_c47c68e963db26a7ff07f9b65932d433_bbe5cab0@L68
+  ok   app_components/quiz/quiz.jsx fn=Checkbox_checkbox_236d1890f573f7107207eb750769f1ac_bbe5cab0@L80
+  ok   app_components/quiz/quiz.jsx fn=Checkbox_checkbox_312d6b1f040fed9e9896d97f5c3dd99d_bbe5cab0@L91
+  ok   app_components/quiz/quiz.jsx fn=Checkbox_checkbox_ab1d80e62a6a2d1eb66bb2c1f6b59a06_bbe5cab0@L102
+  ok   app_components/quiz/quiz.jsx fn=Checkbox_checkbox_8301a2e2c0c83878afc8997605659020_bbe5cab0@L113
+  ok   app_components/quiz/quiz.jsx fn=Checkbox_checkbox_4568e5773fc2efedadd6aa9040db46eb_bbe5cab0@L124
+  ok   app_components/quiz/quiz.jsx fn=Button_button_8068a02fb616d9af5f03ed97906a5034_bbe5cab0@L135
+  ok   app_components/quiz/quiz.jsx fn=Bare_comp_40acf14b7f12cafc2cd23e208d64d412_bbe5cab0@L146
+  ok   app_components/quiz/quiz.jsx fn=Progress_progress_cfdbd2e88e74adede93532f1b11837e7_bbe5cab0@L157
+  ok   app_components/reflex/app.jsx fn=DefaultOverlayComponents_04c36749@L17
+  BAIL app_components/reflex/compiler/compiler.jsx fn=MemoizedToastProvider_18b15038@L16 line=18 :: Immutability: This value cannot be modified
+       refs['__toast'] = toast
+  ok   utils/components/Errorboundary_errorboundary_71c9c4d90c1a40b6ed86624e52613ee3.jsx fn=Errorboundary_errorboundary_71c9c4d90c1a40b6ed86624e52613ee3@L15
+
+## quiz/.web : 12 files in scope
+file | functions | compiled | bailed | skipped | _c( calls | has id: | has refs[ | bailed fns
+app/_document.js | 0 | 0 | 0 | 0 | 0 | false | false | 
+app/entry.client.embed.js | 0 | 0 | 0 | 0 | 0 | false | false | 
+app/entry.client.js | 0 | 0 | 0 | 0 | 0 | false | false | 
+app/root.jsx | 1 | 1 | 0 | 0 | 1 | false | false | 
+app/routes.js | 0 | 0 | 0 | 0 | 0 | false | false | 
+app/routes/[404]._index.jsx | 0 | 0 | 0 | 0 | 0 | false | false | 
+app/routes/[result]._index.jsx | 0 | 0 | 0 | 0 | 0 | false | false | 
+app/routes/_index.jsx | 0 | 0 | 0 | 0 | 0 | false | false | 
+app_components/quiz/quiz.jsx | 14 | 11 | 3 | 0 | 7 | false | false | Cond_comp_ca57bf910541d8ab66114abd37794349_bbe5cab0@L22,Codeblock_prismasynclight_ded1930ddff869de9ca0960bbb504ec8_bbe5cab0@L57,Foreach_comp_71121e13019a2f584b2d837215afba45_bbe5cab0@L168
+app_components/reflex/app.jsx | 1 | 1 | 0 | 0 | 1 | true | true | 
+app_components/reflex/compiler/compiler.jsx | 1 | 0 | 1 | 0 | 0 | false | true | MemoizedToastProvider_18b15038@L16
+utils/components/Errorboundary_errorboundary_71c9c4d90c1a40b6ed86624e52613ee3.jsx | 1 | 1 | 0 | 0 | 1 | false | false | 
+
+TOTAL functions=18 compiled=14 bailed=4
+bail-out reasons:
+  3  Todo: Unexpected terminal kind `optional` for ternary test block
+  1  Immutability: This value cannot be modified

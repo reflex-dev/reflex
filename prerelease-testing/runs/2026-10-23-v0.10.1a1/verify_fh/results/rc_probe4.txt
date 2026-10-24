@@ -1,0 +1,5 @@
+cond_as_generated                  compiled= false | CompileError: Unexpected terminal kind `optional` for ternary test block
+cond_no_optional_in_test           compiled= true | CompileSuccess
+cond_optional_test_plain_branches  compiled= false | CompileSuccess
+cond_optional_test_hoisted         compiled= true | CompileSuccess
+cond_state_var_isTrue              compiled= true | CompileSuccess
