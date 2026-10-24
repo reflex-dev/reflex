@@ -20,3 +20,15 @@ Re-verified: PKG-09, PKG-08, PKG-13, F-006 fixed; PKG-05 changed (see UP-3); PKG
 F-019 unchanged.
 Context (both versions): 4 glide-data-grid TypeErrors at page load in the mixed app.
 Not covered: nba example (CSV blocked), remote templates, non-Redis rollback.
+
+## Verifier (verify_up/NOTES.md)
+- UP-1 NARROWED → low for the release (alpha-train sdist builds only; stubs only, runtime unaffected); the hook design
+  is a medium robustness item. Mechanism confirmed: sdist hook deps `reflex-base` / `reflex-components-core` unpinned →
+  build env gets the newest FINAL base (0.10.0); hook unlinks the shipped .pyi and regenerates with base 0.10.0's
+  pyi_generator, which logs import failures and continues (rc 0; visible only with -v). Failing imports are all new
+  base symbols (get_required_typed_dict_keys, ClientErrorType.HYDRATION_PAYLOAD_TOO_LARGE, get_leaf_vars,
+  reflex_base.utils.form). At 0.10.1 final the newest base is 0.10.1, so isolated sdist builds will be complete; a
+  future base that REMOVES a symbol would silently drop that module's stub. code / moment / lucide / reflex unaffected.
+  Fix direction: pin hook deps to the runtime floors and/or set PYI_GENERATOR_RAISE_FAILED_IMPORTS=1 in the hook.
+- UP-2 CONFIRMED, low, not a regression (PKG-04 changed: 0.10.0 failed differently). Alpha-only; workaround
+  `uv pip install ... -b build-constraints.txt`; the final sdist carries no pre-release specifiers.

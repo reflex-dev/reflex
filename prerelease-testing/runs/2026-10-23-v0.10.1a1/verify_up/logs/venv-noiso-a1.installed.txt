@@ -1,0 +1,7 @@
+ + hatch-reflex-pyi==0.10.0
+ + hatchling==1.32.4
+ + reflex-base==0.10.1a1
+ + reflex-components-core==0.10.1a1
+ + reflex-components-lucide==1.1.1a1
+ + reflex-components-sonner==0.10.0
+ + ruff==0.17.2

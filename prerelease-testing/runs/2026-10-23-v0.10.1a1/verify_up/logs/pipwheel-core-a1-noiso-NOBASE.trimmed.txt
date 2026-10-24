@@ -1,0 +1,3 @@
+## pipwheel-core-a1-noiso-NOBASE (trimmed: build-env resolution of reflex-base + pyi_generator errors; full log was 11 lines)
+9:  Created wheel for reflex-components-core: filename=reflex_components_core-0.10.1a1-py3-none-any.whl size=180748 sha256=b8847c07b6afafc64530a202338363c66fbedf2b6d74f42026ab6d9d19f63374
+11:Successfully built reflex-components-core

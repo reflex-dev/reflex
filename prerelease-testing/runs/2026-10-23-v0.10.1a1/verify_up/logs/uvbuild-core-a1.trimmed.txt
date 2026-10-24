@@ -1,0 +1,20 @@
+## uv build -v core a1 (trimmed; full log 444 lines)
+50:DEBUG Selecting: hatch-reflex-pyi==0.10.0 [compatible] (hatch_reflex_pyi-0.10.0-py3-none-any.whl)
+153:DEBUG Selecting: hatch-reflex-pyi==0.10.0 [compatible] (hatch_reflex_pyi-0.10.0-py3-none-any.whl)
+174:DEBUG Selecting: reflex-base==0.10.0 [compatible] (reflex_base-0.10.0-py3-none-any.whl)
+294:ERROR:pyi_generator:Failed to import reflex_components_core.el.elements.forms
+312:ImportError: cannot import name 'get_required_typed_dict_keys' from 'reflex_base.utils.types' (/root/.cache/uv/builds-v0/.tmpGd8iyr/lib/python3.14/site-packages/reflex_base/utils/types.py)
+313:ERROR:pyi_generator:Failed to import reflex_components_core.base.error_boundary
+338:ImportError: cannot import name 'get_required_typed_dict_keys' from 'reflex_base.utils.types' (/root/.cache/uv/builds-v0/.tmpGd8iyr/lib/python3.14/site-packages/reflex_base/utils/types.py)
+339:ERROR:pyi_generator:Failed to import reflex_components_core.core.upload
+359:ImportError: cannot import name 'get_required_typed_dict_keys' from 'reflex_base.utils.types' (/root/.cache/uv/builds-v0/.tmpGd8iyr/lib/python3.14/site-packages/reflex_base/utils/types.py)
+360:ERROR:pyi_generator:Failed to import reflex_components_core.core.banner
+377:AttributeError: type object 'ClientErrorType' has no attribute 'HYDRATION_PAYLOAD_TOO_LARGE'
+399:INFO:pyi_generator:Wrote reflex_components_core/core/helmet.py
+400:INFO:pyi_generator:Wrote reflex_components_core/core/debounce.py
+401:INFO:pyi_generator:Wrote reflex_components_core/core/__init__.py
+403:INFO:pyi_generator:Wrote reflex_components_core/core/clipboard.py
+404:INFO:pyi_generator:Wrote reflex_components_core/core/auto_scroll.py
+405:INFO:pyi_generator:Wrote reflex_components_core/core/window_events.py
+407:INFO:pyi_generator:Wrote reflex_components_core/core/html.py
+408:INFO:pyi_generator:Wrote reflex_components_core/core/sticky.py

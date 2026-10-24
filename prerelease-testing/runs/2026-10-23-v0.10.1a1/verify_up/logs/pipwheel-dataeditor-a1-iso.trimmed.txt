@@ -1,0 +1,7 @@
+## pipwheel-dataeditor-a1-iso (trimmed: build-env resolution of reflex-base + pyi_generator errors; full log was 160 lines)
+64:  Collecting reflex-base
+158:  Created wheel for reflex-components-dataeditor: filename=reflex_components_dataeditor-0.10.1a1-py3-none-any.whl size=8187 sha256=987926ed3bf5dfa77efb57babdeb648ef4a43582a64d7eb3f3d37d4381e476bb
+137:  ERROR:pyi_generator:Failed to import reflex_components_dataeditor.dataeditor
+152:  ImportError: cannot import name 'get_leaf_vars' from 'reflex_base.vars' (/tmp/pip-build-env-0elnyqb9/normal/lib/python3.12/site-packages/reflex_base/vars/__init__.py)
+112:  Using cached reflex_base-0.10.0-py3-none-any.whl (403 kB)
+160:Successfully built reflex-components-dataeditor
