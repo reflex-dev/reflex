@@ -1,0 +1,27 @@
+## new-h1 venv=new-ent REFLEX_TRUSTED_PROXY_HOPS=1 XFF_RXE_HOPS=0 2026-10-24T02:19:09Z
+## REST (rxe EventHandlerAPIPlugin) -> 8610
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/enterprise/own/probes/rest_probe.py", line 30, in <module>
+    c = httpx.Client(timeout=30, trust_env=False)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: Client.__init__() got an unexpected keyword argument 'timeout'
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/enterprise/own/probes/rest_probe.py", line 30, in <module>
+    c = httpx.Client(timeout=30, trust_env=False)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: Client.__init__() got an unexpected keyword argument 'timeout'
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/enterprise/own/probes/rest_probe.py", line 30, in <module>
+    c = httpx.Client(timeout=30, trust_env=False)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: Client.__init__() got an unexpected keyword argument 'timeout'
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/enterprise/own/probes/rest_probe.py", line 30, in <module>
+    c = httpx.Client(timeout=30, trust_env=False)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: Client.__init__() got an unexpected keyword argument 'timeout'
+## websocket (reflex core) -> 8610
+ws_none                      status=HTTP/1.1 101 ip=127.0.0.1      xff=None                           asc=127.0.0.1 ctok_len=36 sid_len=20 err=[]
+ws_spoof_one                 status=HTTP/1.1 101 ip=6.6.6.6        xff='6.6.6.6'                      asc=127.0.0.1 ctok_len=36 sid_len=20 err=[]
+ws_spoof_chain               status=HTTP/1.1 101 ip=7.7.7.7        xff='6.6.6.6, 7.7.7.7'             asc=127.0.0.1 ctok_len=36 sid_len=20 err=[]
+stopped; tracebacks=0 xff-warnings=0

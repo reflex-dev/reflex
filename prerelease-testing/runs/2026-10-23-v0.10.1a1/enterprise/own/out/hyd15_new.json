@@ -1,0 +1,584 @@
+{
+ "checks": [
+  {
+   "name": "before-reload /lit: every grid has headers and cells",
+   "ok": false,
+   "info": {
+    "grids": [
+     {
+      "headers": [
+       "L:make",
+       "L:price",
+       "L:double",
+       "L:tip",
+       "L:memo",
+       "L:trace"
+      ],
+      "cells": 0,
+      "badges": 8
+     },
+     {
+      "headers": [
+       "Group",
+       "Make",
+       "sum(Price)"
+      ],
+      "cells": 0,
+      "badges": 0
+     }
+    ],
+    "hydrated": "n/a"
+   }
+  },
+  {
+   "name": "before-reload /var: every grid has headers and cells",
+   "ok": false,
+   "info": {
+    "grids": [
+     {
+      "headers": [
+       "J:make",
+       "J:price",
+       "J:double",
+       "J:arrow"
+      ],
+      "cells": 0,
+      "badges": 0
+     },
+     {
+      "headers": [
+       "S:make",
+       "S:price",
+       "S:double",
+       "S:tip",
+       "S:memo",
+       "S:trace"
+      ],
+      "cells": 0,
+      "badges": 6
+     },
+     {
+      "headers": [
+       "L:make",
+       "L:price",
+       "L:double",
+       "L:tip",
+       "L:memo",
+       "L:trace"
+      ],
+      "cells": 0,
+      "badges": 6
+     },
+     {
+      "headers": [
+       "C:make",
+       "C:price"
+      ],
+      "cells": 0,
+      "badges": 0
+     },
+     {
+      "headers": [
+       "Group",
+       "G:make",
+       "sum(G:price)"
+      ],
+      "cells": 0,
+      "badges": 0
+     }
+    ],
+    "hydrated": "n/a"
+   }
+  },
+  {
+   "name": "before-reload /detail2: every grid has headers and cells",
+   "ok": false,
+   "info": {
+    "grids": [
+     {
+      "headers": [
+       "Id",
+       "Name"
+      ],
+      "cells": 0,
+      "badges": 0
+     },
+     {
+      "headers": [
+       "Id",
+       "Name"
+      ],
+      "cells": 0,
+      "badges": 0
+     }
+    ],
+    "hydrated": "n/a"
+   }
+  },
+  {
+   "name": "before-reload /memo2: every grid has headers and cells",
+   "ok": false,
+   "info": {
+    "grids": [
+     {
+      "headers": [
+       "S:make",
+       "S:price",
+       "S:double",
+       "S:tip",
+       "S:memo",
+       "S:trace"
+      ],
+      "cells": 0,
+      "badges": 6
+     }
+    ],
+    "hydrated": "n/a"
+   }
+  },
+  {
+   "name": "after-hot-reload /lit: every grid has headers and cells",
+   "ok": false,
+   "info": {
+    "grids": [
+     {
+      "headers": [
+       "L:make",
+       "L:price",
+       "L:double",
+       "L:tip",
+       "L:memo",
+       "L:trace"
+      ],
+      "cells": 0,
+      "badges": 8
+     },
+     {
+      "headers": [
+       "Group",
+       "Make",
+       "sum(Price)"
+      ],
+      "cells": 0,
+      "badges": 0
+     }
+    ],
+    "hydrated": "n/a"
+   }
+  },
+  {
+   "name": "after-hot-reload /var: every grid has headers and cells",
+   "ok": false,
+   "info": {
+    "grids": [
+     {
+      "headers": [
+       "J:make",
+       "J:price",
+       "J:double",
+       "J:arrow"
+      ],
+      "cells": 0,
+      "badges": 0
+     },
+     {
+      "headers": [
+       "S:make",
+       "S:price",
+       "S:double",
+       "S:tip",
+       "S:memo",
+       "S:trace"
+      ],
+      "cells": 0,
+      "badges": 6
+     },
+     {
+      "headers": [
+       "L:make",
+       "L:price",
+       "L:double",
+       "L:tip",
+       "L:memo",
+       "L:trace"
+      ],
+      "cells": 0,
+      "badges": 6
+     },
+     {
+      "headers": [
+       "C:make",
+       "C:price"
+      ],
+      "cells": 0,
+      "badges": 0
+     },
+     {
+      "headers": [
+       "Group",
+       "G:make",
+       "sum(G:price)"
+      ],
+      "cells": 0,
+      "badges": 0
+     }
+    ],
+    "hydrated": "n/a"
+   }
+  },
+  {
+   "name": "after-hot-reload /detail2: every grid has headers and cells",
+   "ok": false,
+   "info": {
+    "grids": [
+     {
+      "headers": [
+       "Id",
+       "Name"
+      ],
+      "cells": 0,
+      "badges": 0
+     },
+     {
+      "headers": [
+       "Id",
+       "Name"
+      ],
+      "cells": 0,
+      "badges": 0
+     }
+    ],
+    "hydrated": "n/a"
+   }
+  },
+  {
+   "name": "after-hot-reload /memo2: every grid has headers and cells",
+   "ok": false,
+   "info": {
+    "grids": [
+     {
+      "headers": [
+       "S:make",
+       "S:price",
+       "S:double",
+       "S:tip",
+       "S:memo",
+       "S:trace"
+      ],
+      "cells": 0,
+      "badges": 6
+     }
+    ],
+    "hydrated": "n/a"
+   }
+  },
+  {
+   "name": "grids identical before/after hot reload",
+   "ok": true,
+   "info": {
+    "before": {
+     "/lit": [
+      {
+       "headers": [
+        "L:make",
+        "L:price",
+        "L:double",
+        "L:tip",
+        "L:memo",
+        "L:trace"
+       ],
+       "cells": 0,
+       "badges": 8
+      },
+      {
+       "headers": [
+        "Group",
+        "Make",
+        "sum(Price)"
+       ],
+       "cells": 0,
+       "badges": 0
+      }
+     ],
+     "/var": [
+      {
+       "headers": [
+        "J:make",
+        "J:price",
+        "J:double",
+        "J:arrow"
+       ],
+       "cells": 0,
+       "badges": 0
+      },
+      {
+       "headers": [
+        "S:make",
+        "S:price",
+        "S:double",
+        "S:tip",
+        "S:memo",
+        "S:trace"
+       ],
+       "cells": 0,
+       "badges": 6
+      },
+      {
+       "headers": [
+        "L:make",
+        "L:price",
+        "L:double",
+        "L:tip",
+        "L:memo",
+        "L:trace"
+       ],
+       "cells": 0,
+       "badges": 6
+      },
+      {
+       "headers": [
+        "C:make",
+        "C:price"
+       ],
+       "cells": 0,
+       "badges": 0
+      },
+      {
+       "headers": [
+        "Group",
+        "G:make",
+        "sum(G:price)"
+       ],
+       "cells": 0,
+       "badges": 0
+      }
+     ],
+     "/detail2": [
+      {
+       "headers": [
+        "Id",
+        "Name"
+       ],
+       "cells": 0,
+       "badges": 0
+      },
+      {
+       "headers": [
+        "Id",
+        "Name"
+       ],
+       "cells": 0,
+       "badges": 0
+      }
+     ],
+     "/memo2": [
+      {
+       "headers": [
+        "S:make",
+        "S:price",
+        "S:double",
+        "S:tip",
+        "S:memo",
+        "S:trace"
+       ],
+       "cells": 0,
+       "badges": 6
+      }
+     ]
+    },
+    "after": {
+     "/lit": [
+      {
+       "headers": [
+        "L:make",
+        "L:price",
+        "L:double",
+        "L:tip",
+        "L:memo",
+        "L:trace"
+       ],
+       "cells": 0,
+       "badges": 8
+      },
+      {
+       "headers": [
+        "Group",
+        "Make",
+        "sum(Price)"
+       ],
+       "cells": 0,
+       "badges": 0
+      }
+     ],
+     "/var": [
+      {
+       "headers": [
+        "J:make",
+        "J:price",
+        "J:double",
+        "J:arrow"
+       ],
+       "cells": 0,
+       "badges": 0
+      },
+      {
+       "headers": [
+        "S:make",
+        "S:price",
+        "S:double",
+        "S:tip",
+        "S:memo",
+        "S:trace"
+       ],
+       "cells": 0,
+       "badges": 6
+      },
+      {
+       "headers": [
+        "L:make",
+        "L:price",
+        "L:double",
+        "L:tip",
+        "L:memo",
+        "L:trace"
+       ],
+       "cells": 0,
+       "badges": 6
+      },
+      {
+       "headers": [
+        "C:make",
+        "C:price"
+       ],
+       "cells": 0,
+       "badges": 0
+      },
+      {
+       "headers": [
+        "Group",
+        "G:make",
+        "sum(G:price)"
+       ],
+       "cells": 0,
+       "badges": 0
+      }
+     ],
+     "/detail2": [
+      {
+       "headers": [
+        "Id",
+        "Name"
+       ],
+       "cells": 0,
+       "badges": 0
+      },
+      {
+       "headers": [
+        "Id",
+        "Name"
+       ],
+       "cells": 0,
+       "badges": 0
+      }
+     ],
+     "/memo2": [
+      {
+       "headers": [
+        "S:make",
+        "S:price",
+        "S:double",
+        "S:tip",
+        "S:memo",
+        "S:trace"
+       ],
+       "cells": 0,
+       "badges": 6
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "errors": [
+  "console: * All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+  "console: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+  "console: * All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+  "console: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+  "console: * All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+  "console: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+  "console: * All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+  "console: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+  "console: * All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+  "console: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+  "console: * All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+  "console: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+  "console: * All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+  "console: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+  "console: * All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+  "console: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+  "console: * All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+  "console: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+  "console: * All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+  "console: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+  "console: * All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+  "console: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+  "console: * All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+  "console: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+  "console: * All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+  "console: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+  "console: * All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+  "console: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+  "console: * All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+  "console: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+  "console: * All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+  "console: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+  "console: * All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+  "console: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+  "console: * All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+  "console: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+  "console: * All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+  "console: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+  "console: * All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+  "console: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+  "console: * All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+  "console: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+  "console: * All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+  "console: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+  "console: * All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+  "console: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+  "console: * All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+  "console: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+  "console: * All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+  "console: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+  "console: * All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+  "console: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+  "console: * All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+  "console: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+  "console: * All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+  "console: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+  "console: * All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+  "console: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+  "console: * All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+  "console: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+  "console: * All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+  "console: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+  "console: * All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+  "console: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+  "console: * All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+  "console: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+  "console: * All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+  "console: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+  "console: * All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+  "console: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+  "console: * All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+  "console: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+  "console: * All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+  "console: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+  "console: * All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+  "console: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+  "console: * All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+  "console: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+  "console: * All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+  "console: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *"
+ ]
+}

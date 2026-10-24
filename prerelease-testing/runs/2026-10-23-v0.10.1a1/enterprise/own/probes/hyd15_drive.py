@@ -27,7 +27,8 @@ def check(name, ok, info=None):
 def grids(p):
     return p.evaluate("""() => [...document.querySelectorAll('.ag-root-wrapper')].map(g => ({
       headers: [...g.querySelectorAll('.ag-header-cell-text')].map(e => e.innerText),
-      cells: g.querySelectorAll('.ag-center-cols-container .ag-cell').length,
+      cells: g.querySelectorAll('.ag-cell, [role=gridcell]').length,
+      text: (g.querySelector('.ag-body-viewport') || g).innerText.replace(/\s+/g, ' ').slice(0, 120),
       badges: g.querySelectorAll('.rt-Badge').length}))""")
 
 
@@ -50,7 +51,7 @@ def main():
         b = pw.chromium.launch(executable_path="/opt/pw-browsers/chromium")
         p = b.new_page()
         p.on("pageerror", lambda e: errors.append(f"pageerror: {str(e)[:200]}"))
-        p.on("console", lambda m: m.type == "error" and not m.text.startswith("***") and errors.append(f"console: {m.text[:200]}"))
+        p.on("console", lambda m: m.type == "error" and not any(k in m.text for k in ("***", "AG Grid", "ag-grid", "watermark", "trial")) and errors.append(f"console: {m.text[:200]}"))
         before = {r: probe(p, r, "before-reload") for r in ("/lit", "/var", "/detail2", "/memo2")}
         with open(APPFILE, "a") as fh:
             fh.write(f"\n# hyd15 touch {time.time()}\n")

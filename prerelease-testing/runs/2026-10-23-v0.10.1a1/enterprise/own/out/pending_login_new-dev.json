@@ -1,0 +1,62 @@
+[
+ {
+  "name": "A two_starts #1",
+  "state_first": "DMUbq_V8id5H",
+  "state_second": "DMUbq_V8id5H",
+  "pair_reused": true,
+  "ok": true,
+  "errors": [
+   "console: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+   "console: Failed to load resource: the server responded with a status of 404 (NOT FOUND)",
+   "console: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+   "console: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "final_url": "http://localhost:3620/vault"
+ },
+ {
+  "name": "B other_tab #1",
+  "different_pairs": true,
+  "restarted": true,
+  "restart_state_is_own": true,
+  "ok": true,
+  "final_url_t2": "http://localhost:3620/vault",
+  "errors": [
+   "console: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "final_url": "http://localhost:8638/oauth2/authorize?client_id=vauth-client&redirect_uri=http%3A%2F%2Flocalhost%3A3620%2Fcallback&scope=openid+email+profile&state=BKcy8Qze1peYPI8MR7UbGCQyxYyMEwNSA-jx7hFozkzHwC31Z8OZuykGP-FnPUFlroAC-ELpvl9yWmrPhVIq6Q&code_challenge=IaPizSOQJb1CH93dJoO2svToITxWC7iz6FVLiRybHp8&code_challenge_method=S256&response_type=code&response_mode=query"
+ },
+ {
+  "name": "C dblclick #1",
+  "state": "iKf_jyln-eei",
+  "ok": true,
+  "errors": [
+   "console: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "final_url": "http://localhost:3620/vault"
+ },
+ {
+  "name": "D logout_keep #1",
+  "login2_ok": true,
+  "after_logout_path": "/oauth2/end_session",
+  "state_third_new": true,
+  "ok": true,
+  "errors": [
+   "console: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+   "console: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+   "console: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+   "console: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "final_url": "http://localhost:3620/vault"
+ },
+ {
+  "name": "E hot_reload",
+  "login_ok": true,
+  "after_reload_signed_in": true,
+  "clicks_after": "1",
+  "ok": true,
+  "errors": [
+   "console: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "final_url": "http://localhost:3620/vault"
+ }
+]

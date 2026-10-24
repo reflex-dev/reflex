@@ -125,3 +125,13 @@ Server tracebacks: 0 in every run. Logs `work/grid/logs/<demo>-<mode>-<label>.lo
   0.10.1. ... (…/reflex_enterprise/components/dnd/dnd.py:144 | :356 | :588)` once per compiling process for an app using
   `rxe.dnd` (1 block for `rxe.mantine.combobox`); it names the rxe file, so a user can see it is not their code. Not
   repeated per request. prev-ent: 0. rxe needs to drop the argument before reflex 1.0 (removal).
+
+### HYD-15 / CMP-05 (re-verify item 13) — `own/own_run.sh new-ent hyd15 dev new` (entr fixture in DEV on 3612/8612, hot reload)
+Driver `own/probes/hyd15_drive.py`: /lit, /var, /detail2, /memo2 before and after touching `entr/entr.py` (backend reload
+"Changes detected, reloading workers" → forked reload worker, #7113). First run: every grid rendered its headers AND its
+lambda-renderer badges (/lit 8 `rx.badge` cells, /var + /memo2 6) before and after the hot reload, identical — the driver's
+`cells` counter was wrong (`.ag-center-cols-container .ag-cell` = 0 in AG Grid 36), fixed and re-run in queue3.
+Server log: 0 tracebacks; 2 × `Error processing write queue: StateSerializationError("... v_state due to unpicklable object ...
+Can't pickle local object 'lambda_cols.<locals>.<lambda>' ...")` (1 before, 1 after the reload) = the disk state manager
+refusing to persist the fixture's deliberately-unpicklable `VState.lam_cols` default (python lambdas in column defs); the
+hydrate delta itself still reached the browser (grids rendered). Compared with prev-ent in queue3.

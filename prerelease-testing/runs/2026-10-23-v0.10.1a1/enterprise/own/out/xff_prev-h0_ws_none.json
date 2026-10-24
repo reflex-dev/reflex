@@ -1,0 +1,73 @@
+{
+ "args": [
+  "--port",
+  "8610",
+  "--version",
+  "0.10.0",
+  "--tag",
+  "ws_none",
+  "--out",
+  "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/enterprise/own/out/xff_prev-h0_ws_none.json"
+ ],
+ "frames_in": [
+  "0{\"sid\":\"Ja3B2vKZCFwgfFKuAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+  "40/_event,{\"sid\":\"Wo5MiOxERvLsWoB2AAAB\"}",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"127.0.0.1:8610\",\"origin\":\"http://localhost:8610\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"\",\"cache_control\":\"\",\"user_agent\":\"ws_probe/1\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"vmI1AYPMS3IAzAuYdbbTog==\",\"sec_websocket_extensions\":\"\",\"accept_encoding\":\"\",\"accept_language\":\"\",\"raw_headers\":{\"asgi-scope-client\":\"127.0.0.1\",\"connection\":\"Upgrade\",\"host\":\"127.0.0.1:8610\",\"origin\":\"http://localhost:8610\",\"sec-websocket-key\":\"vmI1AYPMS3IAzAuYdbbTog==\",\"s",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.hnet___hnet___ip_state\":{\"seen_rx_state_\":[\"{\\\"asgi-scope-client\\\": \\\"127.0.0.1\\\", \\\"authorization\\\": null, \\\"client_token_len\\\": 36, \\\"cookie\\\": null, \\\"cookie_attr\\\": \\\"\\\", \\\"forwarded\\\": null, \\\"ip\\\": \\\"127.0.0.1\\\", \\\"pid\\\": 16589, \\\"raw_n\\\": 9, \\\"session_id_len\\\": 20, \\\"tag\\\": \\\"on_load\\\", \\\"x-dup\\\": null, \\\"x-forwarded-for\\\": null, \\\"x-real-ip\\\": null}\"]}}}]",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.hnet___hnet___ip_state\":{\"seen_rx_state_\":[\"{\\\"asgi-scope-client\\\": \\\"127.0.0.1\\\", \\\"authorization\\\": null, \\\"client_token_len\\\": 36, \\\"cookie\\\": null, \\\"cookie_attr\\\": \\\"\\\", \\\"forwarded\\\": null, \\\"ip\\\": \\\"127.0.0.1\\\", \\\"pid\\\": 16589, \\\"raw_n\\\": 9, \\\"session_id_len\\\": 20, \\\"tag\\\": \\\"on_load\\\", \\\"x-dup\\\": null, \\\"x-forwarded-for\\\": null, \\\"x-real-ip\\\": null}\",\"{\\\"asgi-scope-client\\\": \\\"127.0.0.1\\\", \\\"authorization\\\": null, \\\"client_token_len\\\": 36, \\\"cookie\\\": null, \\\"cookie_attr\\\": \\\"\\\", \\\"forwarded\\\": null, \\\"ip\\\": \\\"127.0.0.1\\\", \\\"pid\\\": "
+ ],
+ "seen": [
+  "{\"asgi-scope-client\": \"127.0.0.1\", \"authorization\": null, \"client_token_len\": 36, \"cookie\": null, \"cookie_attr\": \"\", \"forwarded\": null, \"ip\": \"127.0.0.1\", \"pid\": 16589, \"raw_n\": 9, \"session_id_len\": 20, \"tag\": \"on_load\", \"x-dup\": null, \"x-forwarded-for\": null, \"x-real-ip\": null}",
+  "{\"asgi-scope-client\": \"127.0.0.1\", \"authorization\": null, \"client_token_len\": 36, \"cookie\": null, \"cookie_attr\": \"\", \"forwarded\": null, \"ip\": \"127.0.0.1\", \"pid\": 16589, \"raw_n\": 9, \"session_id_len\": 20, \"tag\": \"ws_none\", \"x-dup\": null, \"x-forwarded-for\": null, \"x-real-ip\": null}"
+ ],
+ "errors": [],
+ "token": "fd12cf86-a012-4c4e-bf3a-2555de06b898",
+ "local": [
+  "127.0.0.1",
+  33036
+ ],
+ "upgrade_status": "HTTP/1.1 101 Switching Protocols",
+ "open": {
+  "sid": "Ja3B2vKZCFwgfFKuAAAA",
+  "upgrades": [],
+  "pingTimeout": 120000,
+  "pingInterval": 25000,
+  "maxPayload": 1000000
+ },
+ "seen_parsed": [
+  {
+   "asgi-scope-client": "127.0.0.1",
+   "authorization": null,
+   "client_token_len": 36,
+   "cookie": null,
+   "cookie_attr": "",
+   "forwarded": null,
+   "ip": "127.0.0.1",
+   "pid": 16589,
+   "raw_n": 9,
+   "session_id_len": 20,
+   "tag": "on_load",
+   "x-dup": null,
+   "x-forwarded-for": null,
+   "x-real-ip": null
+  },
+  {
+   "asgi-scope-client": "127.0.0.1",
+   "authorization": null,
+   "client_token_len": 36,
+   "cookie": null,
+   "cookie_attr": "",
+   "forwarded": null,
+   "ip": "127.0.0.1",
+   "pid": 16589,
+   "raw_n": 9,
+   "session_id_len": 20,
+   "tag": "ws_none",
+   "x-dup": null,
+   "x-forwarded-for": null,
+   "x-real-ip": null
+  }
+ ]
+}

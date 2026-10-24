@@ -1,0 +1,482 @@
+{
+ "label": "dnd_demo_prevent",
+ "report": {
+  "app_components/dnd/basic.jsx": [
+   {
+    "fn_line": 20,
+    "hook": "useDrag",
+    "line": 21,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 34,
+    "hook": "useContext",
+    "line": 35,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 48,
+    "hook": "useCallback",
+    "line": 49,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 48,
+    "hook": "useContext",
+    "line": 50,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 63,
+    "hook": "useContext",
+    "line": 64,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 77,
+    "hook": "useContext",
+    "line": 78,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 77,
+    "hook": "useCallback",
+    "line": 79,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 92,
+    "hook": "useCallback",
+    "line": 93,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 92,
+    "hook": "useDrop",
+    "line": 94,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 92,
+    "hook": "useContext",
+    "line": 95,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 108,
+    "hook": "useCallback",
+    "line": 109,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 108,
+    "hook": "useDrop",
+    "line": 110,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 108,
+    "hook": "useContext",
+    "line": 111,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 124,
+    "hook": "useCallback",
+    "line": 125,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 124,
+    "hook": "useDrop",
+    "line": 126,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 124,
+    "hook": "useContext",
+    "line": 127,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 140,
+    "hook": "useCallback",
+    "line": 141,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 140,
+    "hook": "useDrop",
+    "line": 142,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 140,
+    "hook": "useContext",
+    "line": 143,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 156,
+    "hook": "useContext",
+    "line": 157,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   }
+  ],
+  "app_components/dnd/dnd.jsx": [
+   {
+    "fn_line": 20,
+    "hook": "useContext",
+    "line": 21,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 34,
+    "hook": "useCallback",
+    "line": 35,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 34,
+    "hook": "useContext",
+    "line": 36,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 49,
+    "hook": "useContext",
+    "line": 50,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 63,
+    "hook": "useContext",
+    "line": 64,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 63,
+    "hook": "useCallback",
+    "line": 65,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 78,
+    "hook": "useContext",
+    "line": 79,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 92,
+    "hook": "useContext",
+    "line": 93,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   }
+  ],
+  "app_components/dnd/foreach.jsx": [
+   {
+    "fn_line": 20,
+    "hook": "useDrag",
+    "line": 21,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 34,
+    "hook": "useDrop",
+    "line": 35,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 34,
+    "hook": "useContext",
+    "line": 36,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 49,
+    "hook": "useContext",
+    "line": 50,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 63,
+    "hook": "useCallback",
+    "line": 64,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 63,
+    "hook": "useContext",
+    "line": 65,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 78,
+    "hook": "useContext",
+    "line": 79,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 92,
+    "hook": "useContext",
+    "line": 93,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 92,
+    "hook": "useCallback",
+    "line": 94,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 107,
+    "hook": "useContext",
+    "line": 108,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 121,
+    "hook": "useContext",
+    "line": 122,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   }
+  ],
+  "app_components/dnd/kanban.jsx": [
+   {
+    "fn_line": 35,
+    "hook": "useDrag",
+    "line": 36,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 49,
+    "hook": "useContext",
+    "line": 50,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 49,
+    "hook": "useDrop",
+    "line": 51,
+    "refs": [
+     "reflex___state____state__dnd___kanban____kanban_state"
+    ],
+    "use_before_declare": [],
+    "ref_lines": {
+     "reflex___state____state__dnd___kanban____kanban_state": 50
+    }
+   },
+   {
+    "fn_line": 64,
+    "hook": "useContext",
+    "line": 65,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 64,
+    "hook": "useDrop",
+    "line": 66,
+    "refs": [
+     "reflex___state____state__dnd___kanban____kanban_state"
+    ],
+    "use_before_declare": [],
+    "ref_lines": {
+     "reflex___state____state__dnd___kanban____kanban_state": 65
+    }
+   },
+   {
+    "fn_line": 79,
+    "hook": "useContext",
+    "line": 80,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 79,
+    "hook": "useCallback",
+    "line": 82,
+    "refs": [
+     "$form",
+     "form_data"
+    ],
+    "use_before_declare": [],
+    "ref_lines": {
+     "$form": 83,
+     "form_data": 85
+    }
+   },
+   {
+    "fn_line": 108,
+    "hook": "useDrag",
+    "line": 109,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 122,
+    "hook": "useContext",
+    "line": 123,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 136,
+    "hook": "useCallback",
+    "line": 137,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 136,
+    "hook": "useContext",
+    "line": 138,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 151,
+    "hook": "useContext",
+    "line": 152,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 165,
+    "hook": "useContext",
+    "line": 166,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 165,
+    "hook": "useCallback",
+    "line": 167,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 180,
+    "hook": "useContext",
+    "line": 181,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 194,
+    "hook": "useCallback",
+    "line": 197,
+    "refs": [
+     "$form",
+     "form_data"
+    ],
+    "use_before_declare": [],
+    "ref_lines": {
+     "$form": 198,
+     "form_data": 200
+    }
+   },
+   {
+    "fn_line": 223,
+    "hook": "useContext",
+    "line": 224,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   }
+  ]
+ },
+ "bad": {}
+}

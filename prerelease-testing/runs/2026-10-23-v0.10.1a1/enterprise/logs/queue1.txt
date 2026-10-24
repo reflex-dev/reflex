@@ -1,0 +1,341 @@
+
+##### pending_login new dev 01:57:25
+PONG
+oidc pid 21905 redis pid 21904
+started pid/pgid 22012 (new-ent vauth_new dev mgr=redis workers=default) log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/enterprise/work/auth/logs/pl-new-dev.server.log
+ready after 4s
+tee: /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/enterprise/own/out/pending_login_new-dev.txt: No such file or directory
+[PASS] A two_starts #1: {"state_first": "8FJ7P3cNIcDV", "state_second": "8FJ7P3cNIcDV", "pair_reused": true, "ok": true, "errors": ["console: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED", "console: Failed to load resource: the server responded with a status of 404 (NOT FOUND)", "console: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED", "console: Failed to load resource: 
+[PASS] B other_tab #1: {"different_pairs": true, "restarted": true, "restart_state_is_own": true, "ok": true, "final_url_t2": "http://localhost:3620/vault", "errors": ["console: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"], "final_url": "http://localhost:8638/oauth2/authorize?client_id=vauth-client&redirect_uri=http%3A%2F%2Flocalhost%3A3620%2Fcallback&scope=openid+email+profile&sta
+[PASS] C dblclick #1: {"state": "jVVtOJlZfx3h", "ok": true, "errors": ["console: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"], "final_url": "http://localhost:3620/vault"}
+[FAIL] D logout_keep #1: {"exception": "AssertionError: Locator expected to be visible\nActual value: None\nError: element(s) not found \nCall log:\n  - Expect \"to_be_visible\" get_by_role(\"button\", name=\"Login with Generic\") with timeout 30000ms\n  - waiting for get_by_role(\"button\", name=\"Login with Generic\")\n", "ok": false, "errors": ["console: Failed to load resource: net::ERR_TUNNEL
+[PASS] A two_starts #2: {"state_first": "5t_a9ahbgyZm", "state_second": "5t_a9ahbgyZm", "pair_reused": true, "ok": true, "errors": ["console: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED", "console: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED", "console: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"], "final_url": "http://localhost:3620/vault"}
+[PASS] B other_tab #2: {"different_pairs": true, "restarted": true, "restart_state_is_own": true, "ok": true, "final_url_t2": "http://localhost:3620/vault", "errors": ["console: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"], "final_url": "http://localhost:8638/oauth2/authorize?client_id=vauth-client&redirect_uri=http%3A%2F%2Flocalhost%3A3620%2Fcallback&scope=openid+email+profile&sta
+[PASS] C dblclick #2: {"state": "8x9JeOKXxhnp", "ok": true, "errors": ["console: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"], "final_url": "http://localhost:3620/vault"}
+[FAIL] D logout_keep #2: {"exception": "AssertionError: Locator expected to be visible\nActual value: None\nError: element(s) not found \nCall log:\n  - Expect \"to_be_visible\" get_by_role(\"button\", name=\"Login with Generic\") with timeout 30000ms\n  - waiting for get_by_role(\"button\", name=\"Login with Generic\")\n", "ok": false, "errors": ["console: Failed to load resource: net::ERR_TUNNEL
+[PASS] E hot_reload: {"login_ok": true, "after_reload_signed_in": true, "clicks_after": "1", "ok": true, "errors": ["console: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"], "final_url": "http://localhost:3620/vault"}
+SUMMARY new-dev pending_login: 7/9 pass; page/console errors: 14
+stopped
+server log: tracebacks=2 'state mismatch'=6 restart=0 recovered=0
+stopped-infra
+
+##### xff new-h0 01:59:03
+    print(f"{n:28} status={str(d.get(\"status\"))[:12]} ip={s.get(\"ip\")!s:14} xff={s.get(\"x-forwarded-for\")!r:30} asc={s.get(\"asgi-scope-client\")} ctok_len={s.get(\"client_token_len\")} sid_len={s.get(\"session_id_len\")} err={d.get(\"errors\")[:1]}")
+                                      ^
+SyntaxError: unexpected character after line continuation character
+  File "<string>", line 7
+    print(f"{n:28} status={str(d.get(\"status\"))[:12]} ip={s.get(\"ip\")!s:14} xff={s.get(\"x-forwarded-for\")!r:30} asc={s.get(\"asgi-scope-client\")} ctok_len={s.get(\"client_token_len\")} sid_len={s.get(\"session_id_len\")} err={d.get(\"errors\")[:1]}")
+                                      ^
+SyntaxError: unexpected character after line continuation character
+  File "<string>", line 7
+    print(f"{n:28} status={str(d.get(\"status\"))[:12]} ip={s.get(\"ip\")!s:14} xff={s.get(\"x-forwarded-for\")!r:30} asc={s.get(\"asgi-scope-client\")} ctok_len={s.get(\"client_token_len\")} sid_len={s.get(\"session_id_len\")} err={d.get(\"errors\")[:1]}")
+                                      ^
+SyntaxError: unexpected character after line continuation character
+stopped; tracebacks=0 xff-warnings=0
+
+##### xff new-h1 01:59:20
+    print(f"{n:28} status={str(d.get(\"status\"))[:12]} ip={s.get(\"ip\")!s:14} xff={s.get(\"x-forwarded-for\")!r:30} asc={s.get(\"asgi-scope-client\")} ctok_len={s.get(\"client_token_len\")} sid_len={s.get(\"session_id_len\")} err={d.get(\"errors\")[:1]}")
+                                      ^
+SyntaxError: unexpected character after line continuation character
+  File "<string>", line 7
+    print(f"{n:28} status={str(d.get(\"status\"))[:12]} ip={s.get(\"ip\")!s:14} xff={s.get(\"x-forwarded-for\")!r:30} asc={s.get(\"asgi-scope-client\")} ctok_len={s.get(\"client_token_len\")} sid_len={s.get(\"session_id_len\")} err={d.get(\"errors\")[:1]}")
+                                      ^
+SyntaxError: unexpected character after line continuation character
+  File "<string>", line 7
+    print(f"{n:28} status={str(d.get(\"status\"))[:12]} ip={s.get(\"ip\")!s:14} xff={s.get(\"x-forwarded-for\")!r:30} asc={s.get(\"asgi-scope-client\")} ctok_len={s.get(\"client_token_len\")} sid_len={s.get(\"session_id_len\")} err={d.get(\"errors\")[:1]}")
+                                      ^
+SyntaxError: unexpected character after line continuation character
+stopped; tracebacks=0 xff-warnings=0
+
+##### xff prev-h0 01:59:37
+    print(f"{n:28} status={str(d.get(\"status\"))[:12]} ip={s.get(\"ip\")!s:14} xff={s.get(\"x-forwarded-for\")!r:30} asc={s.get(\"asgi-scope-client\")} ctok_len={s.get(\"client_token_len\")} sid_len={s.get(\"session_id_len\")} err={d.get(\"errors\")[:1]}")
+                                      ^
+SyntaxError: unexpected character after line continuation character
+  File "<string>", line 7
+    print(f"{n:28} status={str(d.get(\"status\"))[:12]} ip={s.get(\"ip\")!s:14} xff={s.get(\"x-forwarded-for\")!r:30} asc={s.get(\"asgi-scope-client\")} ctok_len={s.get(\"client_token_len\")} sid_len={s.get(\"session_id_len\")} err={d.get(\"errors\")[:1]}")
+                                      ^
+SyntaxError: unexpected character after line continuation character
+  File "<string>", line 7
+    print(f"{n:28} status={str(d.get(\"status\"))[:12]} ip={s.get(\"ip\")!s:14} xff={s.get(\"x-forwarded-for\")!r:30} asc={s.get(\"asgi-scope-client\")} ctok_len={s.get(\"client_token_len\")} sid_len={s.get(\"session_id_len\")} err={d.get(\"errors\")[:1]}")
+                                      ^
+SyntaxError: unexpected character after line continuation character
+stopped; tracebacks=0 xff-warnings=0
+
+##### n032 prod new 01:59:54
+started pid/pgid 26827 (new-ent vauth_new prod mgr=redis workers=1) log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/enterprise/work/auth/logs/new-prod-redis-1w.server.log
+ready after 6s
+SUMMARY new-prod-redis-1w stale: {"p1_corrected": 3, "p2_corrected": 3, "p3_logged_out": 3, "p4_logged_out": 3} of 3
+SUMMARY new-prod-redis-1w away: tab1 logged out after Back 3/3
+SUMMARY new-prod-redis-1w xtab: tab1 logged out 3/3; accepted-after-logout 0/3
+rep 0: race(tab1 re-wrote old hash)=True empty-hash writes=[('tab2', 0.05), ('tab2', 0.09), ('tab2', 0.6)] tab2 sent reconcile=True -> tab1_logged_out=True
+rep 1: race(tab1 re-wrote old hash)=False empty-hash writes=[('tab2', 0.04), ('tab2', 0.06)] tab2 sent reconcile=False -> tab1_logged_out=True
+rep 2: race(tab1 re-wrote old hash)=True empty-hash writes=[('tab2', 0.04), ('tab2', 0.05), ('tab2', 0.47)] tab2 sent reconcile=True -> tab1_logged_out=True
+SUMMARY new-prod-redis-1w loads: see per-step counts above
+stopped
+stopped-infra
+server log: tracebacks=0 TypeError=0
+
+##### grid new 12 02:05:19
+### entv prod new-ent 02:05:19
+[start.sh] venv=new-ent reflex=0.10.1a1 reflex-base=0.10.1a1 reflex-enterprise=0.9.8 reflex_from=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/new-ent/lib/python3.12/site-packages/reflex/__init__.py
+started pid=447 pgid=447
+ready after 10s (frontend 200, /ping 200)
+driver exit=0
+reserved ports free
+     error: * All AG Grid Enterprise features are unlocked for trial.                                                                  *
+     error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *
+     error: ****************************************************************************************************************************
+[s13_dynamic_route_full_load] grids(headers,cells,badges)={'w_state': (2, 6, 0)} probes={'probe-gridstate_cols': 'gridstate_cols|HAS_REFLEX|[{"field":"make"},{"field":"price"}]'} counts={'gridstate_cols': 1} reflexSetAt=138.29999999981374 cellRenders
+   t=137.3 ws_out {"nsp": "/_event", "auth_keys": ["event", "state_schema"], "auth_mentions_hydrate_and_load": true, "auth_event_name": "reflex___state____state.hydrate_and_load"}
+   t=156.5 delta substates=['reflex___state____state']
+   t=157.2 delta substates=['reflex___state____state']
+   console errors/warnings: 7; pageerrors: 0
+     error: ****************************************************************************************************************************
+     error: ************************************************ AG Grid Enterprise License ************************************************
+     error: ************************************************** License Key Not Found ***************************************************
+     error: * All AG Grid Enterprise features are unlocked for trial.                                                                  *
+     error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *
+     error: ****************************************************************************************************************************
+[s10_full_load_second_context] grids(headers,cells,badges)={'w_state': (2, 6, 0), 'w_literal': (2, 6, 0)} probes={'probe-gridstate_cols': 'gridstate_cols|NO_REFLEX|[{"field":"make"},{"field":"price"}]', 'probe-literal': 'literal|NO_REFLEX|"lit"'} cou
+   t=235 ws_out {"nsp": "/_event", "auth_keys": ["event", "state_schema"], "auth_mentions_hydrate_and_load": true, "auth_event_name": "reflex___state____state.hydrate_and_load"}
+   t=338.7 delta substates=['reflex___state____state']
+   t=339.8 delta substates=['reflex___state____state']
+   console errors/warnings: 14; pageerrors: 0
+     error: ****************************************************************************************************************************
+     error: ************************************************ AG Grid Enterprise License ************************************************
+     error: ************************************************** License Key Not Found ***************************************************
+     error: * All AG Grid Enterprise features are unlocked for trial.                                                                  *
+     error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *
+     error: ****************************************************************************************************************************
+### aggrid_min prod new-ent 02:07:21
+[start.sh] venv=new-ent reflex=0.10.1a1 reflex-base=0.10.1a1 reflex-enterprise=0.9.8 reflex_from=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/new-ent/lib/python3.12/site-packages/reflex/__init__.py
+started pid=3581 pgid=3581
+ready after 8s (frontend 200, /ping 200)
+driver exit=0
+reserved ports free
+ "console_benign": 0,
+ "console_errors": 1,
+ "console_warnings": 0,
+ "page_errors": 0,
+ "failed_requests": 0,
+ "http_errors": 0
+}
+  console_errors: {"t": 0.84, "ctx": "min", "type": "error", "text": "Failed to load resource: the server responded with a status of 404 (Not Found)", "url": "http://localhost:3601/", "location": {"url": "http://localhost:3601/favicon.ico", "line": 0
+server tracebacks: entv=0 aggrid_min=0
+### demo dnd prod new-ent 02:07:41
+[start.sh] venv=new-ent reflex=0.10.1a1 reflex-base=0.10.1a1 reflex-enterprise=0.9.8 reflex_from=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/new-ent/lib/python3.12/site-packages/reflex/__init__.py
+started pid=3941 pgid=3941
+ready after 8s (frontend 200, /ping 200)
+driver exit=0 27 pass / 0 fail
+"console_errors":0,"console_warnings":0,"page_errors":0,"failed_requests":0,"http_errors":0
+server tracebacks: 0
+reserved ports free
+### demo flow prod new-ent 02:08:34
+[start.sh] venv=new-ent reflex=0.10.1a1 reflex-base=0.10.1a1 reflex-enterprise=0.9.8 reflex_from=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/new-ent/lib/python3.12/site-packages/reflex/__init__.py
+started pid=4687 pgid=4687
+ready after 8s (frontend 200, /ping 200)
+driver exit=0 21 pass / 1 fail
+[FAIL] index lists 6 flow demos: ['Add Node on Edge Drop Demo', 'Connection Limit Demo', 'Custom Node Demo', 'Drag Handle Demo', 'Intersections', 'Feature Overview', 'Built with Reflex']
+"console_errors":0,"console_warnings":0,"page_errors":0,"failed_requests":0,"http_errors":0
+server tracebacks: 0
+reserved ports free
+### demo mantine prod new-ent 02:09:23
+[start.sh] venv=new-ent reflex=0.10.1a1 reflex-base=0.10.1a1 reflex-enterprise=0.9.8 reflex_from=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/new-ent/lib/python3.12/site-packages/reflex/__init__.py
+started pid=5570 pgid=5570
+ready after 12s (frontend 200, /ping 200)
+driver exit=0 23 pass / 0 fail
+"console_errors":0,"console_warnings":0,"page_errors":0,"failed_requests":0,"http_errors":0
+server tracebacks: 0
+reserved ports free
+### demo map prod new-ent 02:10:04
+[start.sh] venv=new-ent reflex=0.10.1a1 reflex-base=0.10.1a1 reflex-enterprise=0.9.8 reflex_from=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/new-ent/lib/python3.12/site-packages/reflex/__init__.py
+started pid=6384 pgid=6384
+ready after 8s (frontend 200, /ping 200)
+driver exit=0 4 pass / 0 fail
+"console_errors":54,"console_warnings":0,"page_errors":0,"failed_requests":54,"http_errors":0
+server tracebacks: 0
+reserved ports free
+### grid done 02:10:29
+
+##### demos dev new 02:10:29
+### demo dnd dev new-ent (new) 02:10:29
+[start.sh] venv=new-ent reflex=0.10.1a1 reflex-base=0.10.1a1 reflex-enterprise=0.9.8 reflex_from=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/new-ent/lib/python3.12/site-packages/reflex/__init__.py
+started pid=6821 pgid=6821
+ready after 4s (frontend 200, /ping 200)
+driver exit=0 27 pass / 0 fail
+"console_errors":0,"console_warnings":0,"page_errors":0,"failed_requests":0,"http_errors":0
+server tracebacks: 0
+reserved ports free
+deprecation lines in server log: position=3 HookPosition=0 total-deprecated=25 vite-public-warn=0
+      8 annotations has been deprecated in version 0.9.3. Add a return annotation `-> 
+      6 has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` 
+      3 DeprecationWarning: VarData(position=...) has been deprecated in version 0.10.1.
+      2 deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or `-> 
+      2 been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or 
+SUMMARY dnd-dev-new hook_order: 0 hook calls in 0 files; use-before-declare in 0 files
+### demo mantine dev new-ent (new) 02:11:25
+[start.sh] venv=new-ent reflex=0.10.1a1 reflex-base=0.10.1a1 reflex-enterprise=0.9.8 reflex_from=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/new-ent/lib/python3.12/site-packages/reflex/__init__.py
+started pid=8459 pgid=8459
+ready after 6s (frontend 200, /ping 200)
+driver exit=0 23 pass / 0 fail
+"console_errors":0,"console_warnings":0,"page_errors":0,"failed_requests":0,"http_errors":0
+server tracebacks: 0
+reserved ports free
+deprecation lines in server log: position=1 HookPosition=0 total-deprecated=3 vite-public-warn=2
+      1 DeprecationWarning: VarData(position=...) has been deprecated in version 0.10.1.
+      1 DeprecationWarning: Passing strings to disable_plugins has been deprecated in 
+      1 DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+SUMMARY mantine-dev-new hook_order: 4 hook calls in 1 files; use-before-declare in 0 files
+
+##### hook_order prod new 02:12:08
+SUMMARY dnd-prod-new hook_order: 0 hook calls in 0 files; use-before-declare in 0 files
+SUMMARY mantine-prod-new hook_order: 4 hook calls in 1 files; use-before-declare in 0 files
+
+##### demos prod prev 02:12:08
+### demo dnd prod prev-ent (prev) 02:12:08
+[start.sh] venv=prev-ent reflex=0.10.0 reflex-base=0.10.0 reflex-enterprise=0.9.8 reflex_from=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/prev-ent/lib/python3.12/site-packages/reflex/__init__.py
+started pid=9438 pgid=9438
+ready after 8s (frontend 200, /ping 200)
+driver exit=0 27 pass / 0 fail
+"console_errors":0,"console_warnings":0,"page_errors":0,"failed_requests":0,"http_errors":0
+server tracebacks: 0
+reserved ports free
+deprecation lines in server log: position=0 HookPosition=0 total-deprecated=13 vite-public-warn=0
+      4 annotations has been deprecated in version 0.9.3. Add a return annotation `-> 
+      3 has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` 
+      2 DeprecationWarning: Passing base-component prop(s) `key` to `@rx.memo` 
+      1 deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or `-> 
+      1 been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or 
+SUMMARY dnd-prod-prev hook_order: 0 hook calls in 0 files; use-before-declare in 0 files
+### demo mantine prod prev-ent (prev) 02:13:01
+[start.sh] venv=prev-ent reflex=0.10.0 reflex-base=0.10.0 reflex-enterprise=0.9.8 reflex_from=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/prev-ent/lib/python3.12/site-packages/reflex/__init__.py
+started pid=10484 pgid=10484
+ready after 10s (frontend 200, /ping 200)
+driver exit=0 23 pass / 0 fail
+"console_errors":0,"console_warnings":0,"page_errors":1,"failed_requests":0,"http_errors":0
+server tracebacks: 0
+reserved ports free
+deprecation lines in server log: position=0 HookPosition=0 total-deprecated=2 vite-public-warn=0
+      1 DeprecationWarning: Passing strings to disable_plugins has been deprecated in 
+      1 DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+SUMMARY mantine-prod-prev hook_order: 4 hook calls in 1 files; use-before-declare in 0 files
+
+##### demos dev prev 02:13:40
+### demo dnd dev prev-ent (prev) 02:13:40
+[start.sh] venv=prev-ent reflex=0.10.0 reflex-base=0.10.0 reflex-enterprise=0.9.8 reflex_from=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/prev-ent/lib/python3.12/site-packages/reflex/__init__.py
+started pid=11222 pgid=11222
+ready after 4s (frontend 200, /ping 200)
+driver exit=0 27 pass / 0 fail
+"console_errors":0,"console_warnings":0,"page_errors":0,"failed_requests":0,"http_errors":0
+server tracebacks: 0
+reserved ports free
+deprecation lines in server log: position=0 HookPosition=0 total-deprecated=22 vite-public-warn=0
+      8 annotations has been deprecated in version 0.9.3. Add a return annotation `-> 
+      6 has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` 
+      2 deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or `-> 
+      2 been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or 
+      2 DeprecationWarning: `@rx.memo` on `target_foreach` without explicit annotations 
+SUMMARY dnd-dev-prev hook_order: 0 hook calls in 0 files; use-before-declare in 0 files
+### demo mantine dev prev-ent (prev) 02:14:43
+[start.sh] venv=prev-ent reflex=0.10.0 reflex-base=0.10.0 reflex-enterprise=0.9.8 reflex_from=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/prev-ent/lib/python3.12/site-packages/reflex/__init__.py
+started pid=12061 pgid=12061
+ready after 4s (frontend 200, /ping 200)
+driver exit=0 23 pass / 0 fail
+"console_errors":0,"console_warnings":0,"page_errors":1,"failed_requests":0,"http_errors":0
+server tracebacks: 0
+reserved ports free
+deprecation lines in server log: position=0 HookPosition=0 total-deprecated=2 vite-public-warn=2
+      1 DeprecationWarning: Passing strings to disable_plugins has been deprecated in 
+      1 DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+SUMMARY mantine-dev-prev hook_order: 4 hook calls in 1 files; use-before-declare in 0 files
+
+##### gridshare new 02:15:23
+[start.sh] venv=new-ent reflex=0.10.1a1 reflex-base=0.10.1a1 reflex-enterprise=0.9.8 reflex_from=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/new-ent/lib/python3.12/site-packages/reflex/__init__.py
+started pid=12662 pgid=12662
+server exited
+supported by protocol
+Debug: Checking if Frontend port: 3611 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Frontend port: 3611 is not in use.
+Debug: Checking if Backend port: 8611 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Backend port: 8611 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Backend port: 8611 is not in use.
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/new-ent/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 427, in compile_or_validate_app
+    get_compiled_app(
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/new-ent/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 336, in get_compiled_app
+    app, app_module = get_and_validate_app(
+                      ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/new-ent/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 303, in get_and_validate_app
+    app_module = get_app(reload=reload)
+                 ^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/new-ent/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 263, in get_app
+    __import__(module, fromlist=(constants.CompileVars.APP,))
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/enterprise/work/grid/runs/gridshare_newent/gridshare/gridshare.py", line 15, in <module>
+    class GS(rx.State):
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/new-ent/lib/python3.12/site-packages/reflex_base/vars/base.py", line 5086, in __new__
+    _validate_state_declaration(root, lookup_order, namespace)
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/new-ent/lib/python3.12/site-packages/reflex_base/vars/base.py", line 4755, in _validate_state_declaration
+    _validate_state_name(root, member, namespace.get(member))
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/new-ent/lib/python3.12/site-packages/reflex_base/vars/base.py", line 4709, in _validate_state_name
+    raise EventHandlerShadowsBuiltInStateMethodError(msg)
+reflex_base.utils.exceptions.EventHandlerShadowsBuiltInStateMethodError: The event handler name `reset` shadows a builtin State method; use a different name instead
+reserved ports free
+
+##### gridshare prev 02:15:26
+[start.sh] venv=prev-ent reflex=0.10.0 reflex-base=0.10.0 reflex-enterprise=0.9.8 reflex_from=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/prev-ent/lib/python3.12/site-packages/reflex/__init__.py
+started pid=12778 pgid=12778
+server exited
+supported by protocol
+Debug: Checking if Frontend port: 3611 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Frontend port: 3611 is not in use.
+Debug: Checking if Backend port: 8611 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Backend port: 8611 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Backend port: 8611 is not in use.
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/prev-ent/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 427, in compile_or_validate_app
+    get_compiled_app(
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/prev-ent/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 336, in get_compiled_app
+    app, app_module = get_and_validate_app(
+                      ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/prev-ent/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 303, in get_and_validate_app
+    app_module = get_app(reload=reload)
+                 ^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/prev-ent/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 263, in get_app
+    __import__(module, fromlist=(constants.CompileVars.APP,))
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/enterprise/work/grid/runs/gridshare_prevent/gridshare/gridshare.py", line 15, in <module>
+    class GS(rx.State):
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/prev-ent/lib/python3.12/site-packages/reflex_base/vars/base.py", line 4871, in __new__
+    _validate_state_declaration(root, lookup_order, namespace)
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/prev-ent/lib/python3.12/site-packages/reflex_base/vars/base.py", line 4563, in _validate_state_declaration
+    _validate_state_name(root, member, namespace.get(member))
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/prev-ent/lib/python3.12/site-packages/reflex_base/vars/base.py", line 4517, in _validate_state_name
+    raise EventHandlerShadowsBuiltInStateMethodError(msg)
+reflex_base.utils.exceptions.EventHandlerShadowsBuiltInStateMethodError: The event handler name `reset` shadows a builtin State method; use a different name instead
+reserved ports free
+
+##### hyd15 new 02:15:30
+[start.sh] venv=new-ent reflex=0.10.1a1 reflex-base=0.10.1a1 reflex-enterprise=0.9.8 reflex_from=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/new-ent/lib/python3.12/site-packages/reflex/__init__.py
+started pid=12881 pgid=12881
+ready after 6s (frontend 200, /ping 200)
+driver exit=0
+[FAIL] before-reload /lit: every grid has headers and cells: {"grids": [{"headers": ["L:make", "L:price", "L:double", "L:tip", "L:memo", "L:trace"], "cells": 0, "badges": 8}, {"headers": ["Group", "Make", "sum(Price)"], "cells": 0, "badges": 0}], "hydrated": "n/a"}
+[FAIL] before-reload /var: every grid has headers and cells: {"grids": [{"headers": ["J:make", "J:price", "J:double", "J:arrow"], "cells": 0, "badges": 0}, {"headers": ["S:make", "S:price", "S:double", "S:tip", "S:memo", "S:trace"], "cells": 0, "badges": 6}, {"headers": ["L:make", "L:price", "L:doub
+[FAIL] before-reload /detail2: every grid has headers and cells: {"grids": [{"headers": ["Id", "Name"], "cells": 0, "badges": 0}, {"headers": ["Id", "Name"], "cells": 0, "badges": 0}], "hydrated": "n/a"}
+[FAIL] before-reload /memo2: every grid has headers and cells: {"grids": [{"headers": ["S:make", "S:price", "S:double", "S:tip", "S:memo", "S:trace"], "cells": 0, "badges": 6}], "hydrated": "n/a"}
+[FAIL] after-hot-reload /lit: every grid has headers and cells: {"grids": [{"headers": ["L:make", "L:price", "L:double", "L:tip", "L:memo", "L:trace"], "cells": 0, "badges": 8}, {"headers": ["Group", "Make", "sum(Price)"], "cells": 0, "badges": 0}], "hydrated": "n/a"}
+[FAIL] after-hot-reload /var: every grid has headers and cells: {"grids": [{"headers": ["J:make", "J:price", "J:double", "J:arrow"], "cells": 0, "badges": 0}, {"headers": ["S:make", "S:price", "S:double", "S:tip", "S:memo", "S:trace"], "cells": 0, "badges": 6}, {"headers": ["L:make", "L:price", "L:d
+[FAIL] after-hot-reload /detail2: every grid has headers and cells: {"grids": [{"headers": ["Id", "Name"], "cells": 0, "badges": 0}, {"headers": ["Id", "Name"], "cells": 0, "badges": 0}], "hydrated": "n/a"}
+[FAIL] after-hot-reload /memo2: every grid has headers and cells: {"grids": [{"headers": ["S:make", "S:price", "S:double", "S:tip", "S:memo", "S:trace"], "cells": 0, "badges": 6}], "hydrated": "n/a"}
+SUMMARY new hyd15: 1/9 pass; errors=['console: * All AG Grid Enterprise features are unlocked for trial.                                                                  *', 'console: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                          
+server log: tracebacks=0 errors=293 reload=2
+reserved ports free
+
+##### QUEUE1 DONE 02:18:45

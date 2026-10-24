@@ -233,3 +233,33 @@ Blank app initialised by 0.10.0, run with 0.10.0 → stopped → run with 0.10.1
 
 Prod (`--env prod`, single port 3470): `new` untyped **23/23** (the same 4 glide load errors, favicon 404); `pip312`
 untyped crashes like dev (dataeditor 0.10.0 + untyped state column); `pip312` typed: see `mixed/logs/run-mixed-pip312-typed-prod.out`.
+`pip312` typed prod: 22/23 (the shiki FAIL again), 4 glide load errors, favicon 404 — i.e. the stock-pip graph builds and
+serves in prod. `pure-prev` typed re-run WITH `__init__.py` (`mixed-pureprev-typed2-dev`): 22/23, identical to the first
+typed run. `deapp` with the untyped first column on `new` (`DEAPP_UNTYPED=1`): 0 page errors across append / reassign /
+column append / reset / reload (#7607 holds under mutation); `deapp` on `pure-prev` WITH `__init__.py`: state updates
+apply and 0 page errors (confirms the inert buttons of the first baseline run were the missing-`__init__.py` symptom).
+
+## 12. Summary of findings (details above)
+
+1. **sdist-built wheels lose `.pyi` stubs on the 0.10.1a1 train** (§4): isolated builds of the core / dataeditor / radix
+   sdists resolve the hook's unpinned `reflex-base` to 0.10.0 and silently drop 4 / 1 / 1 stubs. Regression vs the
+   0.10.0 sdists (all stubs). Fix direction: pin the `[tool.hatch.build.hooks.reflex-pyi].dependencies` siblings to the
+   same floors as the runtime deps (or ship the stubs from the sdist instead of regenerating).
+2. **`uv pip install --no-binary reflex reflex==0.10.1a1` cannot build the sdist** (§4): the build hook requires the
+   runtime deps and uv's build env refuses the pre-release floors. Alpha-only; `--prerelease=allow` does not propagate.
+3. **Stock pip users of 0.10.1a1 do not receive the component fixes of this train** (§1, §10): `pip install
+   reflex==0.10.1a1` / `pip install -U reflex==0.10.1a1` (no `--pre`) keep reflex-components-code 0.10.0 (shiki
+   transformers #7437 still broken), dataeditor 0.10.0 (untyped state-backed columns still crash, #7596/#7607; the new
+   `format_data_editor_column` deprecation at least says "Upgrade reflex-components-dataeditor") and lucide 1.1.0,
+   because the reflex wheel floors them at `>=0.10.0` / `>=1.1.0`. PKG-05 pattern; relevant for the final 0.10.1 if the
+   floors stay (`pip install -U reflex` never moves an already-satisfied sibling).
+4. Context (not regressions): 4 glide `reading '0'` errors at load in the mixed app on both versions; `Checkbox is
+   changing from uncontrolled to controlled` on both; `rx.asession` without greenlet points at `sqlalchemy[asyncio]`
+   rather than `reflex[db]`; reflex-chat 0.0.2a1 triggers the new #7386 id-based form field deprecation.
+
+Everything else (install matrix 3.11-3.15 pip + uv, migrations, #7440, Bun 1.4.4, #7556, in-place upgrades of
+form-designer / twitter+Redis (+rollback) / github-stats / upload, package.json diffs, #7566 bun + npm, third-party
+import sweep + auth demos, smoke per Python, docs #7646, #7304) passed with 0.10.0 controls where applicable.
+
+Cleanup: `bin/cleanup.sh` (kills listeners on 3460-3499/8460-8499, deletes `.web`/`node_modules`/run copies and every
+`$SB/envs/upgrade_packaging-*` venv).

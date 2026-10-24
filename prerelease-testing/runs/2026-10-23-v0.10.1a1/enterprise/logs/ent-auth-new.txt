@@ -1,0 +1,53 @@
+PONG
+oidc pid 7422 redis pid 7421
+### part 1 vauth_new dev redis 01:43:54
+OK
+started pid/pgid 7740 (new-ent vauth_new dev mgr=redis workers=default) log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/enterprise/work/auth/logs/new-dev-redis.server.log
+VENV_GUARD venv=new-ent reflex 0.10.1a1 reflex-base 0.10.1a1 reflex-enterprise 0.9.8 file /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/new-ent/lib/python3.12/site-packages/reflex/__init__.py
+ready after 16s
+{"rep": 1, "p1_boot_events": ["hydrate_and_load", "reconcile_tokens_after_sync"], "p1_boot_vars": [{"latest_access_token_hash_ls_rx_state_": "bogus-360368"}], "p1_after": "", "p1_corrected": true, "p1_cookie_syncs": [200, 200], "p2_login": true, "p2_real": "ea2e72caf45583e2...", "p2_boot_events": ["
+{"rep": 2, "p1_boot_events": ["hydrate_and_load", "reconcile_tokens_after_sync"], "p1_boot_vars": [{"latest_access_token_hash_ls_rx_state_": "bogus-910259"}], "p1_after": "", "p1_corrected": true, "p1_cookie_syncs": [200, 200], "p2_login": true, "p2_real": "9ace5893dce6dde8...", "p2_boot_events": ["
+SUMMARY new-dev-redis stale: {"p1_corrected": 3, "p2_corrected": 3, "p3_logged_out": 3, "p4_logged_out": 3} of 3
+wrote /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/enterprise/work/auth/logs/new-dev-redis-stale.json
+{"rep": 1, "login": true, "tab2_logged_in": true, "cookies_after_logout": [], "ls_hash_after_logout": "", "tab1_back_url": "http://localhost:3620/vault", "tab1_boot_events": ["hydrate_and_load", "reconcile_tokens_after_sync"], "tab1_who": "", "tab1_add": ["0", null, []], "tab1_path_final": "/login",
+{"rep": 2, "login": true, "tab2_logged_in": true, "cookies_after_logout": [], "ls_hash_after_logout": "", "tab1_back_url": "http://localhost:3620/vault", "tab1_boot_events": ["hydrate_and_load", "reconcile_tokens_after_sync"], "tab1_who": "", "tab1_add": ["0", null, []], "tab1_path_final": "/login",
+SUMMARY new-dev-redis away: tab1 logged out after Back 3/3
+wrote /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/enterprise/work/auth/logs/new-dev-redis-away.json
+{"rep": 1, "login": true, "tab1_hash_after_login": "cac54cee0bc8f470...", "cookies_after_login": ["_oidc_generic_access_token_data_partitioned", "_oidc_generic_granted_scopes_partitioned", "_oidc_generic_id_token_partitioned", "_oidc_generic_refresh_token_partitioned"], "tab2_logged_in": true, "t_lo
+{"rep": 2, "login": true, "tab1_hash_after_login": "e79c91e47da060c4...", "cookies_after_login": ["_oidc_generic_access_token_data_partitioned", "_oidc_generic_granted_scopes_partitioned", "_oidc_generic_id_token_partitioned", "_oidc_generic_refresh_token_partitioned"], "tab2_logged_in": true, "t_lo
+SUMMARY new-dev-redis xtab: tab1 logged out 3/3; accepted-after-logout 0/3
+wrote /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/enterprise/work/auth/logs/new-dev-redis-xtab.json
+rep 0: race(tab1 re-wrote old hash)=False empty-hash writes=[('tab2', 0.03), ('tab2', 0.05)] tab2 sent reconcile=False -> tab1_logged_out=True
+rep 1: race(tab1 re-wrote old hash)=False empty-hash writes=[('tab2', 0.05), ('tab2', 0.07)] tab2 sent reconcile=False -> tab1_logged_out=True
+rep 2: race(tab1 re-wrote old hash)=True empty-hash writes=[('tab2', 0.05), ('tab2', 0.09), ('tab2', 1.05)] tab2 sent reconcile=True -> tab1_logged_out=True
+{"rep": 1, "steps": {"tab1 reload 0": {"sent:hydrate_and_load": 1, "tab1_who": "alice", "tab1_path": "/vault"}, "tab1 reload 1": {"sent:hydrate_and_load": 1, "tab1_who": "alice", "tab1_path": "/vault"}, "tab1 reload 2": {"sent:hydrate_and_load": 1, "tab1_who": "alice", "tab1_path": "/vault"}, "tab2 
+SUMMARY new-dev-redis loads: see per-step counts above
+wrote /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/enterprise/work/auth/logs/new-dev-redis-hunt-loads.json
+{"rep": 1, "alice_login": true, "alice_after_reload": ["alice", "1", ["click1:alice"]], "after_logout": {"who": "", "hash": "", "cookies": []}, "bob_login": true, "bob_view": ["bob", "0", []], "hash_changed": true, "bob_after_reload": ["bob", "/vault"], "bob_entries": ["click1:bob"], "newtab": ["bob
+SUMMARY new-dev-redis relogin: ok 2/2
+wrote /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/enterprise/work/auth/logs/new-dev-redis-hunt-relogin.json
+stopped
+server log new-dev-redis: tracebacks=0 TypeError=0
+### part 2 entauth_new dev redis 01:52:08
+OK
+started pid=15957 pgid=15957
+ready after 7s
+{"case": "cycle", "label": "new-dev-redis", "page_errors": [], "failed_requests": [{"url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css", "failure": "net::ERR_TUNNEL_CONNECTION_FAILED", "method": "GET"}, {"url": "http://localhost:8620/_reflex/cookies/sync", "failure": "net::ERR_ABO
+{"case": "pubnav", "label": "new-dev-redis", "page_errors": [], "failed_requests": [{"url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css", "failure": "net::ERR_TUNNEL_CONNECTION_FAILED", "method": "GET"}, {"url": "http://localhost:8620/_reflex/cookies/sync", "failure": "net::ERR_AB
+{"case": "twotab", "label": "new-dev-redis", "page_errors": [], "failed_requests": [{"url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css", "failure": "net::ERR_TUNNEL_CONNECTION_FAILED", "method": "GET"}, {"url": "http://localhost:8620/_reflex/cookies/sync", "failure": "net::ERR_AB
+{"case": "xtab", "label": "new-dev-redis", "page_errors": [], "failed_requests": [{"url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css", "failure": "net::ERR_TUNNEL_CONNECTION_FAILED", "method": "GET"}, {"url": "http://localhost:8620/_reflex/cookies/sync", "failure": "net::ERR_ABOR
+ALL_PASSED
+{"i": 3, "tab1_logged_out": true, "ls_hash_6s_after_logout_empty": true, "tab1_sync_req_cookies": [[], []]}
+{"i": 4, "tab1_logged_out": true, "ls_hash_6s_after_logout_empty": true, "tab1_sync_req_cookies": [[], []]}
+TAB1_LOGGED_OUT 5 / 5
+{"case": "loggedin_boot", "i": 2, "ls_real_prefix": "40c511e18753", "ls_after_boot_prefix": "40c511e18753", "reconcile_sent": 1, "cookie_syncs": 1, "hash_ls_writes": ["40c511e18753"], "sent": ["40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_", "reconcile_tokens_after_sync"], "corre
+{"case": "live_update", "i": 2, "ls_after": "", "reconcile_sent": 1, "cookie_syncs": 2, "hash_ls_writes": ["deadbeefdead", ""], "sent": ["update_vars_internal", "reconcile_tokens_after_sync", "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_"], "corrected": true, "console_errors": [
+CORRECTED {"anon_boot": [3, 3], "loggedin_boot": [3, 3], "live_update": [3, 3]}
+{"scenario": "garbage_public", "label": "new-dev-redis", "samples_public": [[0.5, "/", "anonymous |  | initial-secret |  | 0 |  | var-placeholder |  | public:0 |  | admin-placeholder |  | async-admin-placehol"], [1.0, "/", "anonymous |  | initial-secret |  | 0 |  | var-placeholder |  | public:0 |  |
+{"scenario": "garbage_id_refresh", "label": "new-dev-redis", "id_cookie_replaced": true, "n_id_cookies": 2, "samples": [[0.5, "/dashboard", "dashboard-content |  | Alice Admin |  | alice@example.com |  | generic |  | force refresh | go public | list |  | initia"], [1.0, "/dashboard", "dashboard-cont
+{"scenario": "garbage_all_after_login", "label": "new-dev-redis", "samples": [[0.5, "/dashboard", "dashboard-content |  | Alice Admin |  | alice@example.com |  | generic |  | force refresh | go public | list |  | reveal"], [1.0, "/dashboard", "dashboard-content |  | Alice Admin |  | alice@example.co
+SUMMARY {'reload_writes': True, 'newtab_writes': True, 'garbage_protected': False, 'garbage_public': False, 'garbage_id_refresh': False, 'garbage_all_after_login': True}
+stopped
+server log entauth new: tracebacks=0 TypeError=0
+stopped-infra
+### ent auth done 01:57:25
