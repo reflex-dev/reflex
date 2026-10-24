@@ -1,0 +1,39 @@
+## enterprise-drv 01:42:29
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+Using Python 3.12.3 environment at: envs/enterprise-drv
+mcp==1.30.0
+playwright==1.63.0
+pydantic==2.14.1
+reflex==0.10.1a1
+reflex-base==0.10.1a1
+reflex-enterprise==0.9.8
+## enterprise-drv exit=0 01:43:01
+## enterprise-ctrl-a3 01:43:01
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+Using Python 3.12.3 environment at: envs/enterprise-ctrl-a3
+mcp==1.30.0
+pydantic==2.14.1
+reflex==0.10.0a3
+reflex-base==0.10.0a3
+reflex-enterprise==0.9.8
+## enterprise-ctrl-a3 exit=0 01:43:05
+## enterprise-ctrl-rxe96 01:43:05
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+Using Python 3.12.3 environment at: envs/enterprise-ctrl-rxe96
+mcp==1.30.0
+pydantic==2.14.1
+reflex==0.10.0
+reflex-base==0.10.0
+reflex-enterprise==0.9.6
+## enterprise-ctrl-rxe96 exit=0 01:43:06
+## enterprise-demo-new 01:43:06
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+Using Python 3.12.3 environment at: envs/enterprise-demo-new
+faker==36.2.2
+mcp==1.30.0
+pydantic==2.14.1
+reflex==0.10.1a1
+reflex-base==0.10.1a1
+reflex-enterprise==0.9.8
+## enterprise-demo-new exit=0 01:43:11
+ALL_DONE
