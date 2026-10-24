@@ -1,0 +1,14 @@
+OK   h_any
+EXC  h_dataclass: EventHandlerArgTypeMismatchError: Event handler on_submit expects dict[str, typing.Any] for argument form_data but got <class '__main__.DC'> as annotated in S.h_dataclass instead.
+OK   h_dict_bare
+OK   h_dict_str_any
+OK   h_dict_str_str
+OK   h_mapping
+OK   h_mutmapping
+OK   h_none
+OK   h_object
+OK   h_optdict
+OK   h_optional_dict
+EXC  h_pydantic: EventHandlerArgTypeMismatchError: Event handler on_submit expects dict[str, typing.Any] for argument form_data but got <class '__main__.Pyd'> as annotated in S.h_pydantic instead.
+EXC  h_str: EventHandlerArgTypeMismatchError: Event handler on_submit expects dict[str, typing.Any] for argument form_data but got <class 'str'> as annotated in S.h_str instead.
+OK   h_td_total_false

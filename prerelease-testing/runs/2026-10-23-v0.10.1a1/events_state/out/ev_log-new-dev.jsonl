@@ -1,0 +1,34 @@
+{"who": "slow_load", "step": 1, "loads": 1, "t": 1792806811.57}
+{"who": "slow_load", "step": 1, "loads": 1, "t": 1792806820.232}
+{"who": "plain_slow_load", "step": "start", "t": 1792806828.658}
+{"who": "plain_slow_load", "step": "end", "t": 1792806831.161}
+{"who": "exp.on_load", "loads": 1, "t": 1792806839.697}
+{"who": "long_task", "step": "started", "count": 1, "t": 1792806839.864}
+{"who": "long_task", "step": "done", "count": 11, "loads": 1, "pref": "chosen", "t": 1792806841.869}
+{"who": "long_task", "step": "started", "count": 12, "t": 1792806842.416}
+{"who": "long_task", "step": "done", "count": 10, "loads": 0, "pref": "unset", "t": 1792806850.424}
+{"who": "exp.on_load", "loads": 1, "t": 1792806853.089}
+{"who": "start_bg", "step": "dispatch", "t": 1792806916.513}
+{"who": "slow_load", "step": 1, "loads": 1, "t": 1792806916.517}
+{"who": "start_bg", "step": "dispatch", "t": 1792806925.373}
+{"who": "slow_load", "step": 1, "loads": 1, "t": 1792806925.386}
+{"who": "plain_slow_load", "step": "start", "t": 1792806933.947}
+{"who": "plain_slow_load", "step": "end", "t": 1792806936.449}
+{"who": "exp.on_load", "loads": 1, "t": 1792806945.499}
+{"who": "long_task", "step": "started", "count": 1, "t": 1792806946.114}
+{"who": "long_task", "step": "done", "count": 11, "loads": 1, "pref": "chosen", "t": 1792806948.119}
+{"who": "long_task", "step": "started", "count": 12, "t": 1792806948.747}
+{"who": "long_task", "step": "done", "count": 10, "loads": 0, "pref": "unset", "t": 1792806956.765}
+{"who": "exp.on_load", "loads": 1, "t": 1792806959.327}
+{"who": "exp.on_load", "loads": 2, "t": 1792806962.245}
+{"who": "start_bg", "step": "dispatch", "t": 1792807008.589}
+{"who": "slow_load", "step": 1, "loads": 1, "t": 1792807008.598}
+{"who": "start_bg", "step": "dispatch", "t": 1792807017.228}
+{"who": "slow_load", "step": 1, "loads": 1, "t": 1792807017.232}
+{"who": "plain_slow_load", "step": "start", "t": 1792807025.451}
+{"who": "plain_slow_load", "step": "end", "t": 1792807027.954}
+{"who": "bg_from_load", "step": 1, "t": 1792807037.656}
+{"who": "bg_from_load", "step": 2, "t": 1792807038.661}
+{"who": "bg_from_load", "step": 3, "t": 1792807039.665}
+{"who": "bg_from_load", "step": 4, "t": 1792807040.669}
+{"who": "bg_from_load", "step": "done", "t": 1792807040.674}

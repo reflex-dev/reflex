@@ -1,0 +1,600 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='formsapp', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', 
+trusted_proxy_hops=0, db_url=None, async_db_url=None, redis_url=None, 
+telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+react_compiler=False, frontend_compression_formats=['gzip'], 
+frontend_packages=[], frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'telemetry_enabled', 'app_name', 'loglevel'}, 
+env_file=None, state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[SitemapPlugin(trailing_slash='preserve')], 
+disable_plugins=[], transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+'--version']
+Debug: [Reflex 0.10.1a1 with Python 3.12.3 (PATH: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs
+/events_state-new/bin/python)]
+Debug: [Node 22.22.0 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.4 (Minimum: 1.4.4) (PATH: 
+/root/.local/share/reflex/bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.5 LTS]
+Debug: Using package installer at: ['/root/.local/share/reflex/bun/bin/bun', 
+'/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.local/share/reflex/bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3300
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8300
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Frontend port: 3300 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Frontend port: 3300 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Frontend port: 3300 is not in use.
+Debug: Checking if Backend port: 8300 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Backend port: 8300 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Backend port: 8300 is not in use.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+DeprecationWarning: Submitting the form control with id 'io_email' by its `id` 
+has been deprecated in version 0.10.1. Form data will only include controls with
+a `name`. Set `name='io_email'` to keep submitting its value; a checkbox or 
+switch then submits 'on' or nothing rather than True or False, so read it as a 
+`bool` field of a TypedDict to keep a bool. It will be completely removed in 
+0.11.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_components_core/el/elemen
+ts/forms.py:517)
+DeprecationWarning: Submitting the form control with id 'io_ta' by its `id` has 
+been deprecated in version 0.10.1. Form data will only include controls with a 
+`name`. Set `name='io_ta'` to keep submitting its value; a checkbox or switch 
+then submits 'on' or nothing rather than True or False, so read it as a `bool` 
+field of a TypedDict to keep a bool. It will be completely removed in 0.11.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_components_core/el/elemen
+ts/forms.py:517)
+DeprecationWarning: Submitting the form control with id 'io_cb' by its `id` has 
+been deprecated in version 0.10.1. Form data will only include controls with a 
+`name`. Set `name='io_cb'` to keep submitting its value; a checkbox or switch 
+then submits 'on' or nothing rather than True or False, so read it as a `bool` 
+field of a TypedDict to keep a bool. It will be completely removed in 0.11.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_components_core/el/elemen
+ts/forms.py:517)
+DeprecationWarning: Submitting the form control with id 'io_sw' by its `id` has 
+been deprecated in version 0.10.1. Form data will only include controls with a 
+`name`. Set `name='io_sw'` to keep submitting its value; a checkbox or switch 
+then submits 'on' or nothing rather than True or False, so read it as a `bool` 
+field of a TypedDict to keep a bool. It will be completely removed in 0.11.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_components_core/el/elemen
+ts/forms.py:517)
+DeprecationWarning: Submitting the form control with id 'io_rg' by its `id` has 
+been deprecated in version 0.10.1. Form data will only include controls with a 
+`name`. Set `name='io_rg'` to keep submitting its value; a checkbox or switch 
+then submits 'on' or nothing rather than True or False, so read it as a `bool` 
+field of a TypedDict to keep a bool. It will be completely removed in 0.11.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_components_core/el/elemen
+ts/forms.py:517)
+DeprecationWarning: Submitting the form control with id 'io_sl' by its `id` has 
+been deprecated in version 0.10.1. Form data will only include controls with a 
+`name`. Set `name='io_sl'` to keep submitting its value; a checkbox or switch 
+then submits 'on' or nothing rather than True or False, so read it as a `bool` 
+field of a TypedDict to keep a bool. It will be completely removed in 0.11.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_components_core/el/elemen
+ts/forms.py:517)
+DeprecationWarning: Submitting the form control with id 'io_hid' by its `id` has
+been deprecated in version 0.10.1. Form data will only include controls with a 
+`name`. Set `name='io_hid'` to keep submitting its value; a checkbox or switch 
+then submits 'on' or nothing rather than True or False, so read it as a `bool` 
+field of a TypedDict to keep a bool. It will be completely removed in 0.11.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_components_core/el/elemen
+ts/forms.py:517)
+DeprecationWarning: Submitting the form control with id 'io_hcb' by its `id` has
+been deprecated in version 0.10.1. Form data will only include controls with a 
+`name`. Set `name='io_hcb'` to keep submitting its value; a checkbox or switch 
+then submits 'on' or nothing rather than True or False, so read it as a `bool` 
+field of a TypedDict to keep a bool. It will be completely removed in 0.11.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_components_core/el/elemen
+ts/forms.py:517)
+DeprecationWarning: Submitting the form control with id 'io_hcb_checked' by its 
+`id` has been deprecated in version 0.10.1. Form data will only include controls
+with a `name`. Set `name='io_hcb_checked'` to keep submitting its value; a 
+checkbox or switch then submits 'on' or nothing rather than True or False, so 
+read it as a `bool` field of a TypedDict to keep a bool. It will be completely 
+removed in 0.11.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_components_core/el/elemen
+ts/forms.py:517)
+DeprecationWarning: Submitting the form control with id 'rangeid' by its `id` 
+has been deprecated in version 0.10.1. Form data will only include controls with
+a `name`. Set `name='rangeid'` to keep submitting its value; a checkbox or 
+switch then submits 'on' or nothing rather than True or False, so read it as a 
+`bool` field of a TypedDict to keep a bool. It will be completely removed in 
+0.11.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_components_core/el/elemen
+ts/forms.py:517)
+DeprecationWarning: Submitting the form control with id 'ctrl2' by its `id` has 
+been deprecated in version 0.10.1. Form data will only include controls with a 
+`name`. Set `name='ctrl2'` to keep submitting its value; a checkbox or switch 
+then submits 'on' or nothing rather than True or False, so read it as a `bool` 
+field of a TypedDict to keep a bool. It will be completely removed in 0.11.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_components_core/el/elemen
+ts/forms.py:517)
+DeprecationWarning: Submitting the form control with id 'which_id' by its `id` 
+has been deprecated in version 0.10.1. Form data will only include controls with
+a `name`. Set `name='which_id'` to keep submitting its value; a checkbox or 
+switch then submits 'on' or nothing rather than True or False, so read it as a 
+`bool` field of a TypedDict to keep a bool. It will be completely removed in 
+0.11.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_components_core/el/elemen
+ts/forms.py:517)
+DeprecationWarning: Submitting the form control with id 'b' by its `id` has been
+deprecated in version 0.10.1. Form data will only include controls with a 
+`name`. Set `name='b'` to keep submitting its value; a checkbox or switch then 
+submits 'on' or nothing rather than True or False, so read it as a `bool` field 
+of a TypedDict to keep a bool. It will be completely removed in 0.11.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_components_core/el/elemen
+ts/forms.py:517)
+DeprecationWarning: Submitting the form control with id 'femail' by its `id` has
+been deprecated in version 0.10.1. Form data will only include controls with a 
+`name`. Set `name='femail'` to keep submitting its value; a checkbox or switch 
+then submits 'on' or nothing rather than True or False, so read it as a `bool` 
+field of a TypedDict to keep a bool. It will be completely removed in 0.11.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_components_core/el/elemen
+ts/forms.py:517)
+DeprecationWarning: Submitting the form control with id 'uid' by its `id` has 
+been deprecated in version 0.10.1. Form data will only include controls with a 
+`name`. Set `name='uid'` to keep submitting its value; a checkbox or switch then
+submits 'on' or nothing rather than True or False, so read it as a `bool` field 
+of a TypedDict to keep a bool. It will be completely removed in 0.11.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_components_core/el/elemen
+ts/forms.py:517)
+DeprecationWarning: Submitting the form control with id 'lid' by its `id` has 
+been deprecated in version 0.10.1. Form data will only include controls with a 
+`name`. Set `name='lid'` to keep submitting its value; a checkbox or switch then
+submits 'on' or nothing rather than True or False, so read it as a `bool` field 
+of a TypedDict to keep a bool. It will be completely removed in 0.11.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_components_core/el/elemen
+ts/forms.py:517)
+DeprecationWarning: Submitting the form control with id 'hsel_id' by its `id` 
+has been deprecated in version 0.10.1. Form data will only include controls with
+a `name`. Set `name='hsel_id'` to keep submitting its value; a checkbox or 
+switch then submits 'on' or nothing rather than True or False, so read it as a 
+`bool` field of a TypedDict to keep a bool. It will be completely removed in 
+0.11.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_components_core/el/elemen
+ts/forms.py:517)
+DeprecationWarning: Submitting the form control with id 'idonly' by its `id` has
+been deprecated in version 0.10.1. Form data will only include controls with a 
+`name`. Set `name='idonly'` to keep submitting its value; a checkbox or switch 
+then submits 'on' or nothing rather than True or False, so read it as a `bool` 
+field of a TypedDict to keep a bool. It will be completely removed in 0.11.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_components_core/el/elemen
+ts/forms.py:517)
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_components_radix/plugin.p
+y:76)
+Debug: [timing] Compile pages: 1.66s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 20/19 0:00:02
+Debug: Using cached value for _install_frontend_packages with payload: 
+['@radix-ui/react-form@0.3.0', '@radix-ui/themes@3.3.0', 'lucide-react@1.26.0', 
+'react-debounce-input@3.3.0', 'react-error-boundary@6.1.6', 
+'sonner@2.0.8'],[],True,['/root/.local/share/reflex/bun/bin/bun', 
+'/opt/node22/bin/npm'],[('@react-router/node', '8.4.0'), ('isbot', '5.2.2'), 
+('mergician', 'v2.0.2'), ('react', '19.3.1'), ('react-dom', '19.3.1'), 
+('react-helmet', '6.1.0'), ('react-router', '8.4.0'), ('socket.io-client', 
+'4.8.4'), ('universal-cookie', '8.1.2')],[('@emotion/react', '11.14.0'), 
+('@react-router/dev', '8.4.0'), ('@react-router/fs-routes', '8.4.0'), 
+('autoprefixer', '10.6.1'), ('postcss', '8.5.30'), ('postcss-import', '17.0.1'),
+('vite', '8.3.4')],[]
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/events_state/formsapp/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/events_state/formsapp/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.09s
+Debug: [timing] Write to Disk: 0.19s
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: Using Granian for backend
+Debug: Reload paths: 
+['/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/ap
+ps/events_state/formsapp/requirements.txt', 
+'/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/app
+s/events_state/formsapp/formsapp', 
+'/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/app
+s/events_state/formsapp/rxconfig.py']
+[INFO] Starting granian (main PID: 828)
+[INFO] Listening at: http://0.0.0.0:8300
+[INFO] Spawning worker-1 with PID: 890
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug: $ react-router dev --host
+Debug:   ➜  Local:   http://localhost:3300/
+App running at: http://localhost:3300/
+Backend running at: http://0.0.0.0:8300
+Debug:   ➜  Network: http://192.0.2.2:3300/  eth0
+Warning: Received event data as a string. This generally should not happen and 
+may indicate a bug. Event data: {"token": 
+"cf6da6d5-a1d8-4228-9bff-a2996204189a", "name": 
+"reflex___state____state.formsapp___formsapp____state.store", "payload": 
+{"form": "ok_env", "form_data": {"__reflex_form_data__": [["a", "1"], ["a", 
+"2"]]}}, "router_data": {"pathname": "/legacy", "asPath": "/legacy"}}
+Warning: Received event data as a string. This generally should not happen and 
+may indicate a bug. Event data: {"token": 
+"cf6da6d5-a1d8-4228-9bff-a2996204189a", "name": 
+"reflex___state____state.formsapp___formsapp____state.store", "payload": 
+{"form": "bad_str", "form_data": {"__reflex_form_data__": "not-a-list"}}, 
+"router_data": {"pathname": "/legacy", "asPath": "/legacy"}}
+Warning: Error transforming event payload for handler State.store: Error 
+transforming event argument 'form_data' with value '{'__reflex_form_data__': 
+'not-a-list'}' and type hint '<class 'dict'>'
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 184, in _transform_event_payload
+    transformed[arg] = _transform_event_arg(value, hinted_args)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 126, in _transform_event_arg
+    value = transform_form_data(value, hinted_args)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/utils/form.py", line
+358, in transform_form_data
+    return dict(entries)
+           ^^^^^^^^^^^^^
+ValueError: dictionary update sequence element #0 has length 1; 2 is required
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 211, in _prepare_event_payload
+    return _transform_event_payload(payload, type_hints)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 187, in _transform_event_payload
+    raise ValueError(msg) from ex
+ValueError: Error transforming event argument 'form_data' with value 
+'{'__reflex_form_data__': 'not-a-list'}' and type hint '<class 'dict'>'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/even
+t_processor.py", line 960, in _resolve_future
+    future.result()
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/even
+t_processor.py", line 949, in _resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/even
+t_processor.py", line 748, in _process_event_queue_entry
+    await self._execute_event(
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 600, in _execute_event
+    await process_event(
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 335, in process_event
+    payload = _prepare_event_payload(handler, payload)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 216, in _prepare_event_payload
+    return {arg: form_data_as_dict(value) for arg, value in payload.items()}
+                 ^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/utils/form.py", line
+377, in form_data_as_dict
+    return value if entries is None else dict(entries)
+                                         ^^^^^^^^^^^^^
+ValueError: dictionary update sequence element #0 has length 1; 2 is required
+
+
+Warning: Received event data as a string. This generally should not happen and 
+may indicate a bug. Event data: {"token": 
+"cf6da6d5-a1d8-4228-9bff-a2996204189a", "name": 
+"reflex___state____state.formsapp___formsapp____state.store", "payload": 
+{"form": "bad_int", "form_data": {"__reflex_form_data__": 5}}, "router_data": 
+{"pathname": "/legacy", "asPath": "/legacy"}}
+Warning: Error transforming event payload for handler State.store: Error 
+transforming event argument 'form_data' with value '{'__reflex_form_data__': 5}'
+and type hint '<class 'dict'>'
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 184, in _transform_event_payload
+    transformed[arg] = _transform_event_arg(value, hinted_args)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 126, in _transform_event_arg
+    value = transform_form_data(value, hinted_args)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/utils/form.py", line
+358, in transform_form_data
+    return dict(entries)
+           ^^^^^^^^^^^^^
+TypeError: 'int' object is not iterable
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 211, in _prepare_event_payload
+    return _transform_event_payload(payload, type_hints)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 187, in _transform_event_payload
+    raise ValueError(msg) from ex
+ValueError: Error transforming event argument 'form_data' with value 
+'{'__reflex_form_data__': 5}' and type hint '<class 'dict'>'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/even
+t_processor.py", line 960, in _resolve_future
+    future.result()
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/even
+t_processor.py", line 949, in _resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/even
+t_processor.py", line 748, in _process_event_queue_entry
+    await self._execute_event(
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 600, in _execute_event
+    await process_event(
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 335, in process_event
+    payload = _prepare_event_payload(handler, payload)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 216, in _prepare_event_payload
+    return {arg: form_data_as_dict(value) for arg, value in payload.items()}
+                 ^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/utils/form.py", line
+377, in form_data_as_dict
+    return value if entries is None else dict(entries)
+                                         ^^^^^^^^^^^^^
+TypeError: 'int' object is not iterable
+
+
+Warning: Received event data as a string. This generally should not happen and 
+may indicate a bug. Event data: {"token": 
+"cf6da6d5-a1d8-4228-9bff-a2996204189a", "name": 
+"reflex___state____state.formsapp___formsapp____state.store", "payload": 
+{"form": "bad_pairs", "form_data": {"__reflex_form_data__": [["only-one"]]}}, 
+"router_data": {"pathname": "/legacy", "asPath": "/legacy"}}
+Warning: Error transforming event payload for handler State.store: Error 
+transforming event argument 'form_data' with value '{'__reflex_form_data__': 
+[['only-one']]}' and type hint '<class 'dict'>'
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 184, in _transform_event_payload
+    transformed[arg] = _transform_event_arg(value, hinted_args)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 126, in _transform_event_arg
+    value = transform_form_data(value, hinted_args)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/utils/form.py", line
+358, in transform_form_data
+    return dict(entries)
+           ^^^^^^^^^^^^^
+ValueError: dictionary update sequence element #0 has length 1; 2 is required
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 211, in _prepare_event_payload
+    return _transform_event_payload(payload, type_hints)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 187, in _transform_event_payload
+    raise ValueError(msg) from ex
+ValueError: Error transforming event argument 'form_data' with value 
+'{'__reflex_form_data__': [['only-one']]}' and type hint '<class 'dict'>'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/even
+t_processor.py", line 960, in _resolve_future
+    future.result()
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/even
+t_processor.py", line 949, in _resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/even
+t_processor.py", line 748, in _process_event_queue_entry
+    await self._execute_event(
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 600, in _execute_event
+    await process_event(
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 335, in process_event
+    payload = _prepare_event_payload(handler, payload)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 216, in _prepare_event_payload
+    return {arg: form_data_as_dict(value) for arg, value in payload.items()}
+                 ^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/utils/form.py", line
+377, in form_data_as_dict
+    return value if entries is None else dict(entries)
+                                         ^^^^^^^^^^^^^
+ValueError: dictionary update sequence element #0 has length 1; 2 is required
+
+
+Warning: Received event data as a string. This generally should not happen and 
+may indicate a bug. Event data: {"token": 
+"cf6da6d5-a1d8-4228-9bff-a2996204189a", "name": 
+"reflex___state____state.formsapp___formsapp____state.store", "payload": 
+{"form": "bad_triple", "form_data": {"__reflex_form_data__": [[1, 2, 3]]}}, 
+"router_data": {"pathname": "/legacy", "asPath": "/legacy"}}
+Warning: Error transforming event payload for handler State.store: Error 
+transforming event argument 'form_data' with value '{'__reflex_form_data__': 
+[[1, 2, 3]]}' and type hint '<class 'dict'>'
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 184, in _transform_event_payload
+    transformed[arg] = _transform_event_arg(value, hinted_args)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 126, in _transform_event_arg
+    value = transform_form_data(value, hinted_args)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/utils/form.py", line
+358, in transform_form_data
+    return dict(entries)
+           ^^^^^^^^^^^^^
+ValueError: dictionary update sequence element #0 has length 3; 2 is required
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 211, in _prepare_event_payload

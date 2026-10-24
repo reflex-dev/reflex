@@ -1,5 +1,14 @@
 # events_state — reflex 0.10.1a1 vs 0.10.0 (2026-10-23/24)
 
+**Summary**: no regression found in what existing apps receive from forms (24/25 dict-handler forms byte-identical on
+dev and prod; the one changed case is a deliberate #7386 rule that CHANGELOG does not mention), the new FormData /
+TypedDict API behaves as documented, all re-verified registry items stay fixed (EVT-06, STATE-05, STATE-11…21, CMP-01,
+EVT-02), #7500 / #7636 / #7443 / #7547 / #7402 / #7606 verified fixed vs 0.10.0. Findings: a malformed form envelope
+sent over the socket escapes the fallback branch (traceback per message, low); #7410 still leaves one
+`RuntimeWarning: coroutine '_drop_unchanged_delta_value' was never awaited` (low); the `group_id_eq_name` dict-handler
+change is undocumented (low); #7585 rehydrate leaves browser-storage vars at their defaults until a reload (pre-existing
+end state, docs). Details and rerun commands below; raw outputs in `out/`, trimmed server logs in `logs/`.
+
 Item: #7386 forms, #7402 #7401 #7415 #7585 #7447 #7500 #7636 #7592 #7410 #7443 #7547 #7626 #7606 (+ #7622 revert),
 re-verify EVT-06, STATE-05, STATE-11…19, STATE-20/21, CMP-01, EVT-02. Ports 3300-3319 / 8300-8319 (Redis 8319).
 
@@ -166,3 +175,42 @@ the py3.14 venvs `process_model-py314-{new,prev}`)
   a non-Var input raises AttributeError (`'list' object has no attribute '_hash_key'`).
 - **#7622 revert**: a `frozenset[int]` state var raises `VarTypeError: State vars must be of a serializable type …`
   on BOTH 0.10.0 and 0.10.1a1 (identical; #7622 was never released). See the probe for `Var.create(frozenset)`.
+- **#7402 / #7401**: `rx.button(on_click=(a, b))`, `fix_events((a, b))`, a handler returning a tuple, a generator
+  yielding a tuple, `add_page(on_load=(a, b))` all accepted on new (0.10.0: `ValueError: Invalid event chain` / `TypeError`
+  for the tuple forms, except `add_page(on_load=tuple)` which 0.10.0 already accepted); `event_sequence` wraps a single
+  handler/spec/str/None in a list and passes other sequences through; a `set` or a generator is still rejected as an
+  event chain (both). `EState.a` is an `EventHandler` whether read from the class or a dataclass field (`is` identical),
+  an instance read gives a bound method — identical on both (the #7401 change is type-stub only).
+
+## 5. evapp (Redis, `REFLEX_REDIS_TOKEN_EXPIRATION=4` — an int, the `4s` suffix form is rejected for this setting)
+```bash
+redis-server --port 8319 --save '' --appendonly no --daemonize yes --pidfile $W/pids/redis.pid
+REFLEX_REDIS_URL=redis://localhost:8319 REFLEX_REDIS_TOKEN_EXPIRATION=4 bash run_app.sh events_state-new $W/evapp ev-new 3302 8302 --loglevel debug
+NO_PROXY=... $SB/envs/driver/bin/python drive_ev.py http://localhost:3302 out/ev-new-dev.json $W/evapp/ev_log.jsonl   # all scenarios
+NO_PROXY=... $SB/envs/driver/bin/python drive_bgclose.py http://localhost:3302 $W/evapp/ev_log.jsonl                # click-started bg task + tab close
+# same with events_state-prev -> out/ev-prev-dev.*; server-side step log in out/ev_log-*.jsonl, server logs in logs/ev-*.log
+```
+| scenario | 0.10.1a1 | 0.10.0 |
+|---|---|---|
+| EVT-06 `/filtered`: `@rx.var(cache=False)` withheld by a `@rx.state._override_base_method get_delta`, then released | tick 100 → (withheld, stays 100 while n=2) → release: **200** → bump: **300**. PASS | PASS (same) |
+| #7410 in the real app: the withheld async var `atick` | server log: `RuntimeWarning: coroutine '_drop_unchanged_delta_value' was never awaited` (1 per withheld delta) | 2 warnings (`_awaitable_result` + `_drop_unchanged_delta_value`) |
+| #7415 `/onload`, on_load=[start_bg (returns a background task), slow_load (4 yields × 1.2 s)]; leave after 0.7 s by client-side navigation | chain stops after step 1; the chained background task never starts; nothing else runs in the next 14 s | same on navigation (chain superseded) |
+| … leave by closing the tab | chain stops after step 1; chained bg task never starts; log quiet | chain runs to `done` (4.8 s, lock-held warning), then the bg task re-enters the EXPIRED session and **the page's on_load chain re-runs (`start_bg`, `slow_load 1..done`) every ~5 s for the rest of the run** (`loads` reached 12; 60+ records in `out/ev_log-prev-dev.jsonl`): a closed tab keeps a self-sustaining loop alive on 0.10.0 |
+| `/onload_plain`: a single `await asyncio.sleep(2.5)`, no yield; close at 0.3 s | `start` logged, `end` NEVER logged: cancelled mid-await (a partially-run on_load is possible: anything before the await happened, anything after is skipped, state changes discarded) | `start` and `end` |
+| `/onload_bg`: the on_load IS a `@rx.event(background=True)` task (4 × 1 s); close or navigate at 0.3 s | no step ever logged: cancelled before its first write | runs to `done` (and loops as above) |
+| #7415 claim "independent background events continue": `/expire` → click `start8` (bg task sleeping 8 s) → close tab | `long_task done` logged 8 s later on a fresh (expired) state, no on_load re-run, log quiet afterwards | same |
+| #7585 `/expire`: bg task sleeps 8 s (> 4 s expiry) then writes; tab open | UI immediately shows the rehydrated FRESH tree: status=done count=10 (was 12) loads=0 **pref=unset** although `localStorage.ev_pref` is still `chosen`; route kept; next event (`manual`) → on_load runs (loads=1) but pref stays `unset`; only a reload restores pref=chosen (loads=2) | UI keeps the stale values (count=10, loads=1, pref=chosen) until the next event, after which loads=1 and **pref=unset** too; reload restores it |
+| #7500 `/dictviews`: `for v in self.d.values(): v.append(..)` / `.items()` | summary `a=2;b=2` → `a=3;b=3`, d updated. PASS | UI and cached var stale until an unrelated `__setitem__` event (FAIL, as filed in STATE-25) |
+| `on_submit=State.store("x_" + it)` inside `rx.foreach` (`/foreach_arg`) | `ReferenceError: it_rx_state_ is not defined` on submit (page error + `[Reflex Frontend Exception]`) | same (pre-existing) |
+
+Observations: (1) #7585's "keeps its route and browser storage" is true of the browser, but the rehydrated backend state
+does not get the browser-storage values back (`rx.LocalStorage` var shows its default until a full reload) — same end
+state as 0.10.0 after its next event, so not a regression; worth a docs note. (2) #7415 makes any on_load with awaits
+cancellable at every await point (CancelledError inside user code, writes after the cancellation point lost; a DB
+transaction opened before it is left to the driver's cancellation handling) — intended, but a hazard for apps that do
+side effects in on_load; the 0.10.0 alternative (shown above) was a runaway loop in the expired-session case.
+(3) #7447 memory: not measured (NOT_COVERED).
+
+## 6. Cleanup
+All servers (`stop_app.sh`), redis (pid file), browsers closed; `.web/`, `node_modules/`, `.states/`, `uploaded_files/`
+removed from `$W/formsapp` and `$W/evapp`; ports 3300-3302 / 8300-8302 / 8319 verified free.

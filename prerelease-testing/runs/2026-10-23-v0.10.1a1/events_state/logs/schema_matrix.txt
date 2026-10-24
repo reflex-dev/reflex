@@ -1,0 +1,29 @@
++ SCHEMA_DEFAULT=0 events_state-new save
+reflex 0.10.1a1 default=0: saved count=42 schema=bbd147dc3cdaec5701080b994dc1875a
+saved=events_state-new           loader=events_state-new           d0 -> reflex 0.10.1a1 default=0: LOADED count=42 label='saved' _secret='be'
+saved=events_state-new           loader=events_state-new           d5 -> reflex 0.10.1a1 default=5: LOADED count=42 label='saved' _secret='be'
+saved=events_state-new           loader=events_state-prev          d0 -> reflex 0.10.0 default=0: LOADED count=42 label='saved' _secret='be'
+saved=events_state-new           loader=events_state-prev          d5 -> reflex 0.10.0 default=5: LOADED count=42 label='saved' _secret='be'
++ SCHEMA_DEFAULT=0 events_state-prev save
+reflex 0.10.0 default=0: saved count=42 schema=bbd147dc3cdaec5701080b994dc1875a
+saved=events_state-prev          loader=events_state-new           d0 -> reflex 0.10.1a1 default=0: LOADED count=42 label='saved' _secret='be'
+saved=events_state-prev          loader=events_state-new           d5 -> reflex 0.10.1a1 default=5: LOADED count=42 label='saved' _secret='be'
+saved=events_state-prev          loader=events_state-prev          d0 -> reflex 0.10.0 default=0: LOADED count=42 label='saved' _secret='be'
+saved=events_state-prev          loader=events_state-prev          d5 -> reflex 0.10.0 default=5: LOADED count=42 label='saved' _secret='be'
++ pickle contents
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/events_state/cs_work/run/n004/schema/out/saved-events_state-new.bin: schema=bbd147dc3cdaec5701080b994dc1875a class=schema_mod.SchemaState
+   '_secret'                = 'be'
+   'count'                  = 42
+   'label'                  = 'saved'
+   contains 'dirty_vars': False
+   contains 'dirty_substates': False
+   contains '_backend_vars': False
+   contains '_replaced_defaults': False
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/events_state/cs_work/run/n004/schema/out/saved-events_state-prev.bin: schema=bbd147dc3cdaec5701080b994dc1875a class=schema_mod.SchemaState
+   '_secret'                = 'be'
+   'count'                  = 42
+   'label'                  = 'saved'
+   contains 'dirty_vars': False
+   contains 'dirty_substates': False
+   contains '_backend_vars': False
+   contains '_replaced_defaults': False

@@ -1,0 +1,5 @@
+onload_navigate {"steps_before_leave": "s1", "url_after": "http://localhost:3302/", "slow_load_steps_logged": [1], "bg_steps_logged": []}
+onload_close {"steps_before_leave": "s1", "slow_load_steps_logged": [1], "bg_steps_logged": []}
+onload_plain_close {"steps_before_leave": "plain-end", "slow_load_steps_logged": ["start", "end"], "bg_steps_logged": []}
+expire {"loads_initial": "1", "pref": "chosen", "short_task": {"status": "done", "count": "11"}, "long_started": {"status": "started", "count": "12"}, "after_long": {"status": "done", "count": "10", "loads": "0", "pref": "unset", "url": "http://localhost:3302/expire"}, "storage_ev_pref": "chosen", "after_next_event": {"status": "manual", "count": "10", "loads": "1", "pref": "unset", "url": "http://localhost:3302/expire"}, "after_reload": {"status": "manual", "count": "10", "loads": "2", "pref": "chosen"}}
+console: ['[log] Disconnect websocket on pagehide', '[log] Disconnect websocket on pagehide', '[log] Disconnect websocket on pagehide', '[log] Disconnect websocket on pagehide'] errors: []

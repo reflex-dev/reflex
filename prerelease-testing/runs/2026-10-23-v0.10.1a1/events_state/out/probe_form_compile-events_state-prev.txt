@@ -1,0 +1,28 @@
+rx.form.FormData not available: 'FormNamespace' object has no attribute 'FormData'
+EXC  TypedDict all required present: EventHandlerValueError: Form field mismatch for on_submit handler `S.signup`. ... (19 lines)
+EXC  TypedDict missing 'email' (compile error expected): EventHandlerValueError: Form field mismatch for on_submit handler `S.signup`. ... (19 lines)
+EXC  TypedDict missing list+bool fields only: EventHandlerValueError: Form field mismatch for on_submit handler `S.signup`. ... (19 lines)
+EXC  TypedDict 'email' provided by id only: EventHandlerValueError: Form field mismatch for on_submit handler `S.signup`. ... (19 lines)
+EXC  TypedDict 'email' provided by radix form.field name (control has no name): EventHandlerValueError: Form field mismatch for on_submit handler `S.signup`. ... (19 lines)
+OK   TypedDict missing but form has an id (validation skipped)
+OK   TypedDict missing but a dynamic name (validation skipped)
+OK   TypedDict missing but in foreach (dynamic)
+EXC  TypedDict missing + handler in a list chain: EventHandlerValueError: Form field mismatch for on_submit handler `S.signup`. ... (19 lines)
+EXC  TypedDict missing + lambda wrapper: EventHandlerValueError: Form field mismatch for on_submit handler `S.signup`. ... (19 lines)
+EXC  TypedDict missing + controlled input provides it (DebounceInput name): EventHandlerArgTypeMismatchError: Event handler on_change expects <class 'str'> for argument form_data but got <class 'dict'> as annotated in S.plain instead.
+OK   TypedDict with TYPE_CHECKING-only field type (Decimal)
+EXC  TypedDict list field filled by tags[] controls: EventHandlerValueError: Form field mismatch for on_submit handler `S.bracketed`. ... (12 lines)
+OK   generic TypedDict specialization
+OK   generic TypedDict plain subclass (typing_extensions)
+EXC  handler annotated int (wrong type): TypeError: Could not compare types ~FORM_SUBMIT_MAPPING and <class 'int'> for argument form_data of S.wrong_type for on_submit.
+EXC  handler annotated list[str] (wrong type): EventHandlerArgTypeMismatchError: Event handler on_submit expects dict[str, typing.Any] for argument form_data but got list[str] as annotated in S.listarg instead.
+EXC  handler with two params, no partial: EventFnArgMismatchError: Event on_submit only provides 1 arguments, but S.two_args requires at least 2 arguments to be passed to the event handler. ... (2 lines)
+OK   deprecation: id-only control + dict handler
+OK   deprecation: id-only control + NO form-data handler (no warning expected)
+OK   deprecation: id-only control + prevent_default only
+OK   deprecation: id-only button/submit (no warning expected)
+OK   deprecation: id-only rx.upload inside form
+OK   deprecation: id-only disabled input (skipped)
+OK   deprecation: id-only input in rx.cond
+OK   deprecation: id-only in memo'd child
+OK   deprecation: same id twice (dedupe)

@@ -1,0 +1,16 @@
+== writer=events_state-new reader=events_state-new
+reflex 0.10.1a1 save: found user='' count=5 history=[] _visits=0 child.note='fresh' | files=2
+reflex 0.10.1a1 step: found user='alice' count=6 history=['0.10.1a1:6:v1'] _visits=1 child.note='by 0.10.1a1' | files=2
+reflex 0.10.1a1 load: found user='alice' count=7 history=['0.10.1a1:6:v1', '0.10.1a1:7:v2'] _visits=2 child.note='by 0.10.1a1' | files=2
+== writer=events_state-new reader=events_state-prev
+reflex 0.10.1a1 save: found user='' count=5 history=[] _visits=0 child.note='fresh' | files=2
+reflex 0.10.0 step: found user='alice' count=6 history=['0.10.1a1:6:v1'] _visits=1 child.note='by 0.10.1a1' | files=2
+reflex 0.10.1a1 load: found user='alice' count=7 history=['0.10.1a1:6:v1', '0.10.0:7:v2'] _visits=2 child.note='by 0.10.0' | files=2
+== writer=events_state-prev reader=events_state-new
+reflex 0.10.0 save: found user='' count=5 history=[] _visits=0 child.note='fresh' | files=2
+reflex 0.10.1a1 step: found user='alice' count=6 history=['0.10.0:6:v1'] _visits=1 child.note='by 0.10.0' | files=2
+reflex 0.10.0 load: found user='alice' count=7 history=['0.10.0:6:v1', '0.10.1a1:7:v2'] _visits=2 child.note='by 0.10.1a1' | files=2
+== writer=events_state-prev reader=events_state-prev
+reflex 0.10.0 save: found user='' count=5 history=[] _visits=0 child.note='fresh' | files=2
+reflex 0.10.0 step: found user='alice' count=6 history=['0.10.0:6:v1'] _visits=1 child.note='by 0.10.0' | files=2
+reflex 0.10.0 load: found user='alice' count=7 history=['0.10.0:6:v1', '0.10.0:7:v2'] _visits=2 child.note='by 0.10.0' | files=2

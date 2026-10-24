@@ -1,0 +1,22 @@
+SAME reflex_ag_grid                   expected=('error', ["ModuleNotFoundError: No module named 'reflex.base'"]) this=('error', ["ModuleNotFoundError: No module named 'reflex.base'"]) warn expected=0 this=0
+SAME reflex_audio_capture             expected=('ok', []) this=('ok', []) warn expected=0 this=0
+SAME reflex_calendar                  expected=('ok', []) this=('ok', []) warn expected=0 this=0
+SAME reflex_chakra                    expected=('error', ["ImportError: cannot import name '_issubclass' from 'reflex.utils.types' (<venv>/lib/python3.12/site-packages/reflex/utils/types.py)"]) this=('error', ["ImportError: cannot import name '_issubclass' from 'reflex.utils.types' (<venv>/lib/python3.12/site-packages/reflex/utils/types.py)"]) warn expected=0 this=0
+SAME reflex_chat                      expected=('ok', []) this=('ok', []) warn expected=0 this=0
+SAME reflex_clerk                     expected=('ok', []) this=('ok', []) warn expected=1 this=1
+SAME reflex_dynoselect                expected=('ok', []) this=('ok', []) warn expected=0 this=0
+SAME reflex_global_hotkey             expected=('ok', []) this=('ok', []) warn expected=0 this=0
+SAME reflex_google_auth               expected=('ok', []) this=('ok', []) warn expected=0 this=0
+SAME reflex_google_recaptcha_v2       expected=('ok', []) this=('ok', []) warn expected=0 this=0
+SAME reflex_image_zoom                expected=('ok', []) this=('ok', []) warn expected=0 this=0
+SAME reflex_intersection_observer     expected=('ok', []) this=('ok', []) warn expected=0 this=0
+SAME reflex_local_auth                expected=('ok', []) this=('ok', []) warn expected=0 this=0
+SAME reflex_magic_link_auth           expected=('ok', []) this=('ok', []) warn expected=0 this=0
+SAME reflex_monaco                    expected=('ok', []) this=('ok', []) warn expected=0 this=0
+SAME reflex_motion                    expected=('ok', []) this=('ok', []) warn expected=0 this=0
+SAME reflex_pyplot                    expected=('ok', []) this=('ok', []) warn expected=0 this=0
+SAME reflex_qrcode                    expected=('ok', []) this=('ok', []) warn expected=0 this=0
+SAME reflex_simpleicons               expected=('ok', []) this=('ok', []) warn expected=0 this=0
+SAME reflex_type_animation            expected=('ok', []) this=('ok', []) warn expected=0 this=0
+SAME reflex_webcam                    expected=('ok', []) this=('ok', []) warn expected=0 this=0
+SAME rx_color_picker                  expected=('ok', []) this=('ok', []) warn expected=0 this=0

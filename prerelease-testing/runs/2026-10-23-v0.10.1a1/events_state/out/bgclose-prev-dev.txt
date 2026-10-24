@@ -1,0 +1,2 @@
+status before close: started loads: 1
+server records after click+close: [('exp.on_load', None, None, 1), ('long_task', 'started', 1, None), ('long_task', 'done', 10, 0)]

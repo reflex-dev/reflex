@@ -1,0 +1,10 @@
+### chain start 01:55:33
+twr rc=0 01:57:48
+gh rc=0 01:59:27
+upload rc=0 01:59:59
+nba rc=1 02:00:09
+smoke rc=0 02:02:04
+port=3470 pid=28541 pgid=28493 cmd=node /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/mixed/run/mixed-pureprev-dev/.web/node_modules/.bin/reac
+port=8470 pid=28493 pgid=28493 cmd=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/upgrade_packaging-pure-prev/bin/python /tmp/claude-0/-home-user/bd1e0d91-2710-5
+port=8470 pid=28570 pgid=28493 cmd=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/upgrade_packaging-pure-prev/bin/python /tmp/claude-0/-home-user/bd1e0d91-2710-5
+### chain done 02:02:05

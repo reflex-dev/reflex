@@ -1,0 +1,76 @@
+uv reflex==0.10.1a1 rc=1 installed=importlib.metadata.PackageNotFoundError: No package metadata was found for reflex built=[] files=0 pyi=0 diff-vs-wheel=125
+1,125d0
+< ../../../bin/reflex
+< reflex/__init__.py
+< reflex/__init__.pyi
+< reflex/__main__.py
+< reflex/_upload.py
+  --- tail of /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/sdist/logs/sdist-uv-reflex.log
+    │   `reflex-components-markdown>=0.10.0`,
+    │   `reflex-components-moment>=0.10.1a1`,
+    │   `reflex-components-plotly>=0.10.0`, `reflex-components-radix>=0.10.1a1`,
+    │   `reflex-components-react-player>=0.10.0`,
+    │   `reflex-components-recharts>=0.10.0`, `reflex-components-sonner>=0.10.0`,
+    │   `reflex-hosting-cli!=0.1.73a1, >=0.2.0`, `rich>=13, <16`,
+    │   `starlette>=1.3.1`, `typing-extensions>=4.13.0`, `wrapt>=1.17.0, <2.6`
+    ╰─▶ Because only reflex-components-core<0.10.1a1 is available
+        and reflex-components-radix>=0.10.1a1 depends on
+        reflex-components-core>=0.10.1a1, we can conclude that
+        reflex-components-radix>=0.10.1a1 cannot be used.
+        And because you require reflex-components-radix>=0.10.1a1, we can
+        conclude that your requirements are unsatisfiable.
+  
+  hint: `reflex-components-core` was requested with a pre-release marker (e.g., reflex-components-core>=0.10.1a1), but build environments can't opt into pre-releases automatically.  Add `reflex-components-core>=0.10.1a1` to `build-system.requires`, `[tool.uv.extra-build-dependencies]`, or supply it via `uv build --build-constraint`.pip reflex==0.10.1a1 rc=0 installed=0.10.1a1 built=[Building wheel for reflex (pyproject.toml);Building wheel for reflex (pyproject.toml);] files=125 pyi=3 diff-vs-wheel=0
+uv reflex-base==0.10.1a1 rc=0 installed=0.10.1a1 built=[Built reflex-base==0.10.1a1;] files=111 pyi=0 diff-vs-wheel=0
+pip reflex-base==0.10.1a1 rc=0 installed=0.10.1a1 built=[Building wheel for reflex-base (pyproject.toml);Building wheel for reflex-base (pyproject.toml);] files=111 pyi=0 diff-vs-wheel=0
+uv reflex-components-code==0.10.1a1 rc=0 installed=0.10.1a1 built=[Built reflex-components-code==0.10.1a1;] files=5 pyi=2 diff-vs-wheel=0
+pip reflex-components-code==0.10.1a1 rc=0 installed=0.10.1a1 built=[Building wheel for reflex-components-code (pyproject.toml);Building wheel for reflex-components-code (pyproject.toml);] files=5 pyi=2 diff-vs-wheel=0
+uv reflex-components-core==0.10.1a1 rc=0 installed=0.10.1a1 built=[Built reflex-components-core==0.10.1a1;] files=80 pyi=32 diff-vs-wheel=4
+13d12
+< reflex_components_core/base/error_boundary.pyi
+30d28
+< reflex_components_core/core/banner.pyi
+50d47
+< reflex_components_core/core/upload.pyi
+pip reflex-components-core==0.10.1a1 rc=0 installed=0.10.1a1 built=[Building wheel for reflex-components-core (pyproject.toml);Building wheel for reflex-components-core (pyproject.toml);] files=80 pyi=32 diff-vs-wheel=4
+13d12
+< reflex_components_core/base/error_boundary.pyi
+30d28
+< reflex_components_core/core/banner.pyi
+50d47
+< reflex_components_core/core/upload.pyi
+uv reflex-components-dataeditor==0.10.1a1 rc=0 installed=0.10.1a1 built=[Built reflex-components-dataeditor==0.10.1a1;] files=2 pyi=0 diff-vs-wheel=1
+3d2
+< reflex_components_dataeditor/dataeditor.pyi
+pip reflex-components-dataeditor==0.10.1a1 rc=0 installed=0.10.1a1 built=[Building wheel for reflex-components-dataeditor (pyproject.toml);Building wheel for reflex-components-dataeditor (pyproject.toml);] files=2 pyi=0 diff-vs-wheel=1
+3d2
+< reflex_components_dataeditor/dataeditor.pyi
+uv reflex-components-moment==0.10.1a1 rc=0 installed=0.10.1a1 built=[Built reflex-components-moment==0.10.1a1;] files=3 pyi=1 diff-vs-wheel=0
+pip reflex-components-moment==0.10.1a1 rc=0 installed=0.10.1a1 built=[Building wheel for reflex-components-moment (pyproject.toml);Building wheel for reflex-components-moment (pyproject.toml);] files=3 pyi=1 diff-vs-wheel=0
+uv reflex-components-radix==0.10.1a1 rc=0 installed=0.10.1a1 built=[Built reflex-components-radix==0.10.1a1;] files=132 pyi=64 diff-vs-wheel=1
+16d15
+< reflex_components_radix/primitives/form.pyi
+pip reflex-components-radix==0.10.1a1 rc=0 installed=0.10.1a1 built=[Building wheel for reflex-components-radix (pyproject.toml);Building wheel for reflex-components-radix (pyproject.toml);] files=132 pyi=64 diff-vs-wheel=1
+16d15
+< reflex_components_radix/primitives/form.pyi
+uv reflex-components-lucide==1.1.1a1 rc=0 installed=1.1.1a1 built=[Built reflex-components-lucide==1.1.1a1;] files=3 pyi=1 diff-vs-wheel=0
+pip reflex-components-lucide==1.1.1a1 rc=0 installed=1.1.1a1 built=[Building wheel for reflex-components-lucide (pyproject.toml);Building wheel for reflex-components-lucide (pyproject.toml);] files=3 pyi=1 diff-vs-wheel=0
+uv reflex-hosting-cli==0.2.1a1 rc=0 installed=0.2.1a1 built=[Built reflex-hosting-cli==0.2.1a1;] files=32 pyi=0 diff-vs-wheel=0
+pip reflex-hosting-cli==0.2.1a1 rc=0 installed=0.2.1a1 built=[Building wheel for reflex-hosting-cli (pyproject.toml);Building wheel for reflex-hosting-cli (pyproject.toml);] files=32 pyi=0 diff-vs-wheel=0
+uv reflex-release==0.2.1a1 rc=0 installed=0.2.1a1 built=[Built reflex-release==0.2.1a1;] files=19 pyi=0 diff-vs-wheel=19
+0a1,19
+> ../../../bin/reflex-release
+> reflex_release/__init__.py
+> reflex_release/__main__.py
+> reflex_release/actions.py
+> reflex_release/changelog.py
+pip reflex-release==0.2.1a1 rc=0 installed=0.2.1a1 built=[Building wheel for reflex-release (pyproject.toml);Building wheel for reflex-release (pyproject.toml);] files=19 pyi=0 diff-vs-wheel=19
+0a1,19
+> ../../../bin/reflex-release
+> reflex_release/__init__.py
+> reflex_release/__main__.py
+> reflex_release/actions.py
+> reflex_release/changelog.py
+uv reflex-build-sdk==0.1.1a1 rc=0 installed=0.1.1a1 built=[Built reflex-build-sdk==0.1.1a1;] files=41 pyi=0 diff-vs-wheel=0
+pip reflex-build-sdk==0.1.1a1 rc=0 installed=0.1.1a1 built=[Building wheel for reflex-build-sdk (pyproject.toml);Building wheel for reflex-build-sdk (pyproject.toml);] files=41 pyi=0 diff-vs-wheel=0
+=== sdist matrix done 01:52:14

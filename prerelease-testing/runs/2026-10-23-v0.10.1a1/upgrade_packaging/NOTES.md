@@ -95,10 +95,69 @@ absent) and the same at 0.10.0 (`logs/nogreenlet-*.json`).
   `uv pip install --no-binary reflex reflex==0.10.1a1` fails to resolve `build-system.requires`
   (`sdist/logs/sdist-uv-reflex.log`). Alpha-train specific; a final release with final floors would not hit it.
 - **Stub regression**: the wheel that pip/uv build from the 0.10.1a1 sdist is missing `.pyi` stubs that the published wheel
-  (and the sdist archive itself) contain: reflex-components-core 33/36 (`base/error_boundary.pyi`, `core/banner.pyi`,
-  `core/upload.pyi` missing), reflex-components-dataeditor 0/1 (`dataeditor.pyi`), reflex-components-radix 64/65
+  (and the sdist archive itself) contain: reflex-components-core 32/36 (`base/error_boundary.pyi`, `core/banner.pyi`,
+  `core/upload.pyi`, `el/elements/forms.pyi` missing), reflex-components-dataeditor 0/1 (`dataeditor.pyi`), reflex-components-radix 64/65
   (`primitives/form.pyi`). Control: the 0.10.0 sdists build with all 36 / 1 / 65 stubs. Root cause (reproduced): the
   `[tool.hatch.build.hooks.reflex-pyi].dependencies` list names `reflex-base` (and core/lucide/sonner) **unpinned**, so the
   isolated build env resolves **reflex-base 0.10.0** (stable) while building a1 sources; hatch-reflex-pyi regenerates the
   stubs against it and silently drops the modules that need base 0.10.1a1 (rc 0, no warning). Building the same sdist in a
   non-isolated env with reflex-base 0.10.1a1 yields all 36 stubs; with reflex-base 0.10.0 only 32.
+
+## 5. In-place upgrades of reflex-examples apps 0.10.0 -> 0.10.1a1 (`up/`)
+
+Base venvs: `bash $W/up/bin/build_base_venvs.sh fd:form-designer twr:twitter-redis gh:github-stats upload:upload nba:nba`
+(= `-r requirements.txt 'reflex==0.10.0'`, no prerelease flag → pure 0.10.0 train). Upgrade step = the fixture's
+`uv pip install --prerelease=allow -U 'reflex[db]==0.10.1a1' 'pydantic<2.15'` in the same venv / app dir / `.web` /
+`reflex.lock` / db / Chromium profile. Outputs: `up/seq_*.out`, `up/pkg/` (package.json snapshots + diffs), `up/freeze/`.
+
+| app | base 0.10.0 | in place 0.10.1a1 | prod | cold (`rm -rf .web`) | notes |
+|---|---|---|---|---|---|
+| form-designer (reflex[db] + reflex-local-auth 0.5.0), `seq_fd.sh` 3490/8490 | full 18/0/2, entry 14/0/1 | 12/0/1, entry 14/0/1; first load keeps `_auth_token`, 0 changing storage writes | 12/0/1, 15/0/0; `/edit/form/1` `/form/1` `/responses/1` 200, `/nope` 404, `/login` 307 | 12/0/1 | == fixture expectation; `makemigrations` after upgrade: no new revision (2 files) |
+| twitter prod + Redis, `seq_twr.sh` P=3498 RP=8499 | 19/0/2 (9 granian workers) | stale tab 8/0/3, old pickled sessions 12/0/2 (no re-login), new users 19/0/2; **8 workers** (#7542 cap) | — | — | rollback to the 0.10.0 freeze on the same Redis: 10/2/2 — both "FAIL"s are the driver expecting sessions to reset (they survive a 0.10.1a1 → 0.10.0 rollback: same pickle schema), no crash; F-019 `Frontend version 0.10.0 … does not match` log line only |
+| github-stats (httpx, GraphQL stub), `seq_gh.sh` 3492/8492/8498 | 14/0/2 | 12/0/2 (LocalStorage users/stats restored) | 13/0/1 | 14/0/2 | == fixture expectation; anomalies pre-existing (React value-without-onChange, widget theme) |
+| upload (react-dropzone, hostile names, 12 MB sha256 roundtrip, throttled upload + cancel), `seq_app.sh upload` 3486/8486 | 21/0/0 | 21/0/0 | — | 21/0/0 | `up/seq_upload2.out`; first run hit a fixture bug (`drive_upload.py` uses `run.expected_bad`, missing from `harness.py`): `harness.py` patched (test code, copy in `up/harness.py.patched`), re-run |
+| nba (pandas/plotly) | SKIPPED | | | | the fixture's nba patch reads `nba_local.csv` which `stage.sh` does not provide and media.geeksforgeeks.org is unreachable from the sandbox |
+
+`.web/package.json` diff base → in place (every app, `up/pkg/*-up.from-*-base.package.diff`): only `react` / `react-dom`
+19.3.0 → **19.3.1**, `vite` 8.3.2 → **8.3.4**, `postcss` 8.5.29 → **8.5.30**, `postcss-import` 17.0.0 → **17.0.1**, and
+where used `@radix-ui/react-accordion` 1.2.20 → 1.3.1, `@radix-ui/react-form` 0.1.16 → 0.3.0, `react-syntax-highlighter`
+16.1.1 → 16.1.2 (form-designer). Nothing else moves. In place vs cold: byte-different only because bun pretty-prints the
+file it rewrites in place while a cold init leaves reflex's single-line render; **normalized JSON is identical**
+(`fd-up` vs `fd-cold`: equal). `reflex.lock/package.json == .web/package.json` after every run. `.web` file list in place
+vs cold: identical; in place vs base: the Errorboundary component hash changes and `.web/vite-plugin-react-compiler.js`
+appears (#7234). With bun (default) 0.10.0 already wrote `devDependencies` (bun reads `-d` as `--dev`), so no migration
+is needed there; the npm case (#7566) is in §7.
+Server logs: no new warnings on 0.10.1a1 beyond the fixture's known-benign set (pydantic serializer warning in
+form-designer, `script "dev" exited with code 143`, granian worker-count warning with Redis, F-019 stale-tab line).
+
+## 6. Blank-app smoke per Python (`smoke/bin/seq_smoke.sh new upgrade_packaging-n001-pip311 upgrade_packaging-n001-uv315`, 3488/8488)
+
+`reflex init --template blank` rc 0 (no npmmirror fallback), dev 6/1 (the FAIL is the known SPA fallback: dev answers unknown
+routes with 200 on every version), prod 6/0/1 (`/ping` 200, `/sitemap.xml` 200, `/nope` 404, favicon 404 benign) on
+3.12 (new), 3.11 (pip) and 3.15 (uv). Generated `.web/package.json` identical across the three (md5 8df058ca).
+
+## 7. Third-party sweep (`tp/`)
+
+`TP_EXTRA='pydantic<2.15' bash $W/tp/bin/build_venv.sh` (0.10.1a1 + the 22 pinned packages + authlib +
+google-api-python-client): resolves, `uv pip check` clean. `tp/probes/import_sweep.py` vs `tp/expected/import_sweep.json`:
+**22/22 SAME** (reflex-chakra `_issubclass` ImportError and community reflex-ag-grid `reflex.base` fail as on every version
+since 0.9.12; reflex-clerk 1 authlib warning). New on 0.10.1a1 while importing: reflex-chat's `rx.el.input(id='Chat_n1')`
+now logs the #7386 deprecation "Submitting the form control with id 'Chat_n1' by its `id` has been deprecated in version
+0.10.1 … It will be completely removed in 0.11.0" (downstream package will need `name=`). Auth demos: see §9.
+
+## 8. Docs #7646
+
+`docs/hosting/self-hosting.md` at `v0.10.1a1` documents `REFLEX_BACKEND_START_METHOD` (fork/spawn/forkserver) and
+`REFLEX_STRICT_HOT_RELOAD` for the Granian backend; both env vars exist in `reflex_base/environment.py` at the tag
+(`REFLEX_BACKEND_START_METHOD: EnvVar[Literal["fork","spawn","forkserver"] | None]`). CHANGELOG top entry lists the
+packaging items (#7411, #7440, #7566, #7554/#7556, #7639) and matches the observed behaviour.
+
+## 9. Third-party auth demos on 0.10.1a1 (`tp/bin/seq_tp.sh upgrade_packaging-tp new`, `tp/bin/run_google.sh`) — PASS
+
+- reflex-local-auth 0.5.0 demo dev (3463/8463), prod (8467), prod + Redis (8469): **36/38 each**, 0 differing checks and 0
+  console-anomaly differences vs `tp/expected/local_auth-*.json`, 0 tracebacks / TypeErrors in the server logs (the 2
+  known failures are the `_validate_fields` subclass-override pair).
+- reflex-magic-link-auth 0.2.2 demo dev + prod (`ML_FORCE_DEV=1`): **10/11 each**, 0 differing (known `/check-your-email`
+  bounce), per-IP OTP rate limit trips at attempt 6 as expected.
+- reflex-google-auth 0.2.0 demo dev: **12/13** (the driver's "key discoverable" check), 0 differing; the 11 console
+  anomalies are the sandbox's blocked Google endpoints (`net::ERR_TUNNEL_CONNECTION_FAILED`), as on every pass.

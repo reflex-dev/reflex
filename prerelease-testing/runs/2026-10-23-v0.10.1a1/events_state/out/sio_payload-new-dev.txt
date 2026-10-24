@@ -1,0 +1,50 @@
+after connect: events [('event', '{"delta": {"reflex___state____state": {"is_hydrated_rx_state_": false, "rx_router_headers_rx_state_": {"host": "localhos'), ('event', '{"delta": {"reflex___state____state": {"is_hydrated_rx_state_": true}}}')]
+--- valid envelope -> dict handler
+    sent payload={"form": "ok_env", "form_data": {"__reflex_form_data__": [["a", "1"], ["a", "2"]]}}
+    received 1: event: {"delta": {"reflex___state____state.formsapp___formsapp____state": {"results_json_rx_state_": "{\"ok_env\": \"{\\\"form\\\": \\\"ok_env\\\", \\\"type\\\": \\\"dict\\\", \\\"data\\\": {\\\"a\\\": \\\"2\\\"}}\"}", "seq_rx_state_": 1, "results_rx_state_": {"ok_en
+    connected: True
+--- envelope value is a string
+    sent payload={"form": "bad_str", "form_data": {"__reflex_form_data__": "not-a-list"}}
+    received 1: event: {"events": [{"name": "_call_function", "router_data": {}, "payload": {"function": "(() => (isTrue(refs['__toast']) ? (refs['__toast']?.[\"error\"](\"An error occurred.\", ({ [\"description\"] : \"ValueError: dictionary update sequence element #0 has length 1; 
+    connected: True
+--- envelope value is an int
+    sent payload={"form": "bad_int", "form_data": {"__reflex_form_data__": 5}}
+    received 1: event: {"events": [{"name": "_call_function", "router_data": {}, "payload": {"function": "(() => (isTrue(refs['__toast']) ? (refs['__toast']?.[\"error\"](\"An error occurred.\", ({ [\"description\"] : \"TypeError: 'int' object is not iterable\\nSee logs for details.\
+    connected: True
+--- envelope pairs of length 1
+    sent payload={"form": "bad_pairs", "form_data": {"__reflex_form_data__": [["only-one"]]}}
+    received 1: event: {"events": [{"name": "_call_function", "router_data": {}, "payload": {"function": "(() => (isTrue(refs['__toast']) ? (refs['__toast']?.[\"error\"](\"An error occurred.\", ({ [\"description\"] : \"ValueError: dictionary update sequence element #0 has length 1; 
+    connected: True
+--- envelope pairs of length 3
+    sent payload={"form": "bad_triple", "form_data": {"__reflex_form_data__": [[1, 2, 3]]}}
+    received 1: event: {"events": [{"name": "_call_function", "router_data": {}, "payload": {"function": "(() => (isTrue(refs['__toast']) ? (refs['__toast']?.[\"error\"](\"An error occurred.\", ({ [\"description\"] : \"ValueError: dictionary update sequence element #0 has length 3; 
+    connected: True
+--- envelope key unhashable
+    sent payload={"form": "bad_unhashable", "form_data": {"__reflex_form_data__": [[["x"], "v"]]}}
+    received 1: event: {"events": [{"name": "_call_function", "router_data": {}, "payload": {"function": "(() => (isTrue(refs['__toast']) ? (refs['__toast']?.[\"error\"](\"An error occurred.\", ({ [\"description\"] : \"TypeError: unhashable type: 'list'\\nSee logs for details.\", [\
+    connected: True
+--- unannotated handler, bad envelope
+    sent payload={"form": "any_bad", "form_data": {"__reflex_form_data__": "zzz"}}
+    received 1: event: {"events": [{"name": "_call_function", "router_data": {}, "payload": {"function": "(() => (isTrue(refs['__toast']) ? (refs['__toast']?.[\"error\"](\"An error occurred.\", ({ [\"description\"] : \"ValueError: dictionary update sequence element #0 has length 1; 
+    connected: True
+--- plain dict after the bad ones
+    sent payload={"form": "after", "form_data": {"a": "still-works"}}
+    received 1: event: {"delta": {"reflex___state____state.formsapp___formsapp____state": {"results_json_rx_state_": "{\"after\": \"{\\\"form\\\": \\\"after\\\", \\\"type\\\": \\\"dict\\\", \\\"data\\\": {\\\"a\\\": \\\"still-works\\\"}}\", \"ok_env\": \"{\\\"form\\\": \\\"ok_env\\\
+    connected: True
+--- envelope nested one level down (should be untouched)
+    sent payload={"form": "nested", "form_data": {"x": {"__reflex_form_data__": "zzz"}}}
+    received 1: event: {"delta": {"reflex___state____state.formsapp___formsapp____state": {"results_json_rx_state_": "{\"after\": \"{\\\"form\\\": \\\"after\\\", \\\"type\\\": \\\"dict\\\", \\\"data\\\": {\\\"a\\\": \\\"still-works\\\"}}\", \"nested\": \"{\\\"form\\\": \\\"nested\\\
+    connected: True
+--- EVT-02: client_error with no payload
+    sent payload={}
+    received 0: 
+    connected: True
+--- client_error with a payload
+    sent payload={"stack": "x"}
+    received 0: 
+    connected: True
+--- plain dict after client_error
+    sent payload={"form": "after2", "form_data": {"a": "still-works-2"}}
+    received 1: event: {"delta": {"reflex___state____state.formsapp___formsapp____state": {"results_json_rx_state_": "{\"after\": \"{\\\"form\\\": \\\"after\\\", \\\"type\\\": \\\"dict\\\", \\\"data\\\": {\\\"a\\\": \\\"still-works\\\"}}\", \"after2\": \"{\\\"form\\\": \\\"after2\\\
+    connected: True
+done; events seen: 13

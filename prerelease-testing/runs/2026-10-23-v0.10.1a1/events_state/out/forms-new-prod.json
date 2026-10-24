@@ -1,0 +1,1313 @@
+{
+ "base": "http://localhost:3301",
+ "pages": {
+  "/legacy": {
+   "id_only": {
+    "steps": [
+     [
+      "fill",
+      "input.rt-TextFieldInput",
+      "em@x"
+     ],
+     [
+      "fill",
+      "textarea",
+      "ta-text"
+     ],
+     [
+      "click",
+      "button[role=checkbox]"
+     ],
+     [
+      "click",
+      "button[role=switch]"
+     ],
+     [
+      "rselect",
+      "b"
+     ],
+     [
+      "clicknth",
+      "button[role=radio]",
+      1
+     ],
+     [
+      "slide",
+      0,
+      5
+     ],
+     [
+      "check",
+      "#io_hcb"
+     ]
+    ],
+    "error": null,
+    "ws_sent": [
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"id_only\",\"form_data\":{\"__reflex_form_data__\":[[\"io_email\",\"em@x\"],[\"io_ta\",\"ta-text\"],[\"io_cb\",true],[\"io_sw\",true],[\"io_rg\",\"r2\"],[\"io_sl\",\"35\"],[\"io_hid\",\"hv\"],[\"io_hcb\",true],[\"io_hcb_checked\",true]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]"
+    ],
+    "results": {
+     "id_only": {
+      "form": "id_only",
+      "type": "dict",
+      "data": {
+       "io_email": "em@x",
+       "io_ta": "ta-text",
+       "io_cb": true,
+       "io_sw": true,
+       "io_rg": "r2",
+       "io_sl": "35",
+       "io_hid": "hv",
+       "io_hcb": true,
+       "io_hcb_checked": true
+      }
+     }
+    }
+   },
+   "name_only": {
+    "steps": [
+     [
+      "fill",
+      "input.rt-TextFieldInput",
+      "em@x"
+     ],
+     [
+      "fill",
+      "textarea",
+      "ta-text"
+     ],
+     [
+      "click",
+      "button[role=checkbox]"
+     ],
+     [
+      "click",
+      "button[role=switch]"
+     ],
+     [
+      "rselect",
+      "b"
+     ],
+     [
+      "clicknth",
+      "button[role=radio]",
+      1
+     ],
+     [
+      "slide",
+      0,
+      5
+     ],
+     [
+      "check",
+      "input[name=hcb]"
+     ]
+    ],
+    "error": null,
+    "ws_sent": [
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"name_only\",\"form_data\":{\"__reflex_form_data__\":[[\"email\",\"em@x\"],[\"ta\",\"ta-text\"],[\"cb\",\"on\"],[\"sw\",\"on\"],[\"sel\",\"b\"],[\"rg\",\"r2\"],[\"sl\",\"35\"],[\"hid\",\"hv\"],[\"hcb\",\"on\"],[\"hcb_checked\",\"on\"]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]"
+    ],
+    "results": {
+     "name_only": {
+      "form": "name_only",
+      "type": "dict",
+      "data": {
+       "email": "em@x",
+       "ta": "ta-text",
+       "cb": "on",
+       "sw": "on",
+       "sel": "b",
+       "rg": "r2",
+       "sl": "35",
+       "hid": "hv",
+       "hcb": "on",
+       "hcb_checked": "on"
+      }
+     }
+    }
+   },
+   "id_eq_name": {
+    "steps": [
+     [
+      "fill",
+      "input.rt-TextFieldInput",
+      "em@x"
+     ],
+     [
+      "fill",
+      "textarea",
+      "ta-text"
+     ],
+     [
+      "click",
+      "button[role=checkbox]"
+     ],
+     [
+      "click",
+      "button[role=switch]"
+     ],
+     [
+      "rselect",
+      "b"
+     ],
+     [
+      "clicknth",
+      "button[role=radio]",
+      1
+     ],
+     [
+      "slide",
+      0,
+      5
+     ],
+     [
+      "check",
+      "#ien_hcb"
+     ]
+    ],
+    "error": null,
+    "ws_sent": [
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"id_eq_name\",\"form_data\":{\"__reflex_form_data__\":[[\"ien_email\",\"em@x\"],[\"ien_ta\",\"ta-text\"],[\"ien_cb\",true],[\"ien_sw\",true],[\"ien_sel\",\"b\"],[\"ien_rg\",\"r2\"],[\"ien_sl\",\"35\"],[\"ien_hid\",\"hv\"],[\"ien_hcb\",true],[\"ien_hcb_checked\",true]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]"
+    ],
+    "results": {
+     "id_eq_name": {
+      "form": "id_eq_name",
+      "type": "dict",
+      "data": {
+       "ien_email": "em@x",
+       "ien_ta": "ta-text",
+       "ien_cb": true,
+       "ien_sw": true,
+       "ien_sel": "b",
+       "ien_rg": "r2",
+       "ien_sl": "35",
+       "ien_hid": "hv",
+       "ien_hcb": true,
+       "ien_hcb_checked": true
+      }
+     }
+    }
+   },
+   "id_ne_name": {
+    "steps": [
+     [
+      "fill",
+      "input.rt-TextFieldInput",
+      "x-typed"
+     ],
+     [
+      "click",
+      "button[role=checkbox]"
+     ],
+     [
+      "click",
+      "button[role=switch]"
+     ],
+     [
+      "check",
+      "#hcbid"
+     ],
+     [
+      "slide",
+      0,
+      5
+     ]
+    ],
+    "error": null,
+    "ws_sent": [
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"id_ne_name\",\"form_data\":{\"__reflex_form_data__\":[[\"namex\",\"x-typed\"],[\"cbname\",\"on\"],[\"swname\",\"on\"],[\"hcbname\",\"on\"],[\"slname\",\"35\"],[\"idx\",\"x-typed\"],[\"cbid\",true],[\"swid\",true],[\"hcbid\",true],[\"slid\",\"35\"]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]"
+    ],
+    "results": {
+     "id_ne_name": {
+      "form": "id_ne_name",
+      "type": "dict",
+      "data": {
+       "namex": "x-typed",
+       "cbname": "on",
+       "swname": "on",
+       "hcbname": "on",
+       "slname": "35",
+       "idx": "x-typed",
+       "cbid": true,
+       "swid": true,
+       "hcbid": true,
+       "slid": "35"
+      }
+     }
+    }
+   },
+   "groups": {
+    "steps": [
+     [
+      "clicknth",
+      "button[role=checkbox]",
+      0
+     ],
+     [
+      "clicknth",
+      "button[role=checkbox]",
+      2
+     ],
+     [
+      "check",
+      "input[name=topping][value=cheese]"
+     ],
+     [
+      "check",
+      "input[name=topping][value=olives]"
+     ],
+     [
+      "clicknth",
+      "button[role=radio]",
+      1
+     ],
+     [
+      "check",
+      "input[name=hr][value=x2]"
+     ],
+     [
+      "nselect",
+      "select[name=hsel]",
+      [
+       "o1",
+       "o3"
+      ]
+     ]
+    ],
+    "error": null,
+    "ws_sent": [
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"groups\",\"form_data\":{\"__reflex_form_data__\":[[\"cg\",\"c1\"],[\"cg\",\"c3\"],[\"topping\",\"cheese\"],[\"topping\",\"olives\"],[\"rg\",\"r2\"],[\"hr\",\"x2\"],[\"rep\",\"rep-first\"],[\"rep\",\"rep-second\"],[\"hsel\",\"o1\"],[\"hsel\",\"o3\"]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]"
+    ],
+    "results": {
+     "groups": {
+      "form": "groups",
+      "type": "dict",
+      "data": {
+       "cg": "c3",
+       "topping": "olives",
+       "rg": "r2",
+       "hr": "x2",
+       "rep": "rep-second",
+       "hsel": "o3"
+      }
+     }
+    }
+   },
+   "group_id_eq_name": {
+    "steps": [
+     [
+      "clicknth",
+      "button[role=checkbox]",
+      0
+     ],
+     [
+      "clicknth",
+      "button[role=checkbox]",
+      2
+     ],
+     [
+      "check",
+      "#topping"
+     ],
+     [
+      "check",
+      "input[name=topping][value=olives]"
+     ]
+    ],
+    "error": null,
+    "ws_sent": [
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"group_id_eq_name\",\"form_data\":{\"__reflex_form_data__\":[[\"cg\",\"c1\"],[\"cg\",\"c3\"],[\"topping\",\"cheese\"],[\"topping\",\"olives\"]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]"
+    ],
+    "results": {
+     "group_id_eq_name": {
+      "form": "group_id_eq_name",
+      "type": "dict",
+      "data": {
+       "cg": "c3",
+       "topping": "olives"
+      }
+     }
+    }
+   },
+   "sliders": {
+    "steps": [
+     [
+      "slide",
+      0,
+      5
+     ],
+     [
+      "slide",
+      1,
+      3
+     ],
+     [
+      "slide",
+      2,
+      2
+     ],
+     [
+      "slide",
+      3,
+      1
+     ],
+     [
+      "slide",
+      4,
+      1
+     ],
+     [
+      "slide",
+      5,
+      1
+     ],
+     [
+      "slide",
+      6,
+      1
+     ]
+    ],
+    "error": null,
+    "ws_sent": [
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"sliders\",\"form_data\":{\"__reflex_form_data__\":[[\"sl\",\"35\"],[\"range[]\",\"23\"],[\"range[]\",\"82\"],[\"range2[]\",\"21\"],[\"range2[]\",\"81\"],[\"rangeid\",\"21\"],[\"range2\",\"21\"]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]"
+    ],
+    "results": {
+     "sliders": {
+      "form": "sliders",
+      "type": "dict",
+      "data": {
+       "sl": "35",
+       "range[]": "82",
+       "range2[]": "81",
+       "rangeid": "21",
+       "range2": "21"
+      }
+     }
+    }
+   },
+   "controlled": {
+    "steps": [
+     [
+      "fill",
+      "input[name=ctrl]",
+      "c1-typed"
+     ],
+     [
+      "fill",
+      "#ctrl2",
+      "c2-typed"
+     ],
+     [
+      "fill",
+      "#ctrl3",
+      "c3-typed"
+     ],
+     [
+      "fill",
+      "input[name=ctrl4]",
+      "c4-typed"
+     ],
+     [
+      "fill",
+      "textarea",
+      "ta-typed"
+     ],
+     [
+      "wait",
+      600
+     ]
+    ],
+    "error": null,
+    "ws_sent": [
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"controlled\",\"form_data\":{\"__reflex_form_data__\":[[\"ctrl\",\"c1-typed\"],[\"ctrl3\",\"c3-typed\"],[\"ctrl4\",\"c4-typed\"],[\"ta_ctrl\",\"ta-typed\"],[\"num\",\"5\"],[\"empty\",\"\"],[\"ctrl2\",\"c2-typed\"],[\"disabled_id\",\"dis\"]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]"
+    ],
+    "results": {
+     "controlled": {
+      "form": "controlled",
+      "type": "dict",
+      "data": {
+       "ctrl": "c1-typed",
+       "ctrl3": "c3-typed",
+       "ctrl4": "c4-typed",
+       "ta_ctrl": "ta-typed",
+       "num": "5",
+       "empty": "",
+       "ctrl2": "c2-typed",
+       "disabled_id": "dis"
+      }
+     }
+    }
+   },
+   "reset": {
+    "steps": [
+     [
+      "fill",
+      "input.rt-TextFieldInput",
+      "will-reset"
+     ],
+     [
+      "click",
+      "button[role=checkbox]"
+     ]
+    ],
+    "error": null,
+    "ws_sent": [
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"reset\",\"form_data\":{\"__reflex_form_data__\":[[\"r1\",\"will-reset\"],[\"rcb\",\"on\"]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]"
+    ],
+    "results": {
+     "reset": {
+      "form": "reset",
+      "type": "dict",
+      "data": {
+       "r1": "will-reset",
+       "rcb": "on"
+      }
+     }
+    },
+    "after_reset": {
+     "input": "",
+     "checkbox": "false"
+    }
+   },
+   "foreach": {
+    "steps": [],
+    "error": null,
+    "ws_sent": [
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"foreach\",\"form_data\":{\"__reflex_form_data__\":[[\"item\",\"alpha\"],[\"which\",\"alpha\"],[\"which_id\",\"beta\"]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]",
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"foreach\",\"form_data\":{\"__reflex_form_data__\":[[\"item\",\"beta\"],[\"which\",\"beta\"],[\"which_id\",\"beta\"]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]"
+    ],
+    "results": {
+     "foreach": {
+      "form": "foreach",
+      "type": "dict",
+      "data": {
+       "item": "beta",
+       "which": "beta",
+       "which_id": "beta"
+      }
+     }
+    }
+   },
+   "el_form": {
+    "steps": [],
+    "error": null,
+    "ws_sent": [
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"el_form\",\"form_data\":{\"__reflex_form_data__\":[[\"a\",\"A\"],[\"c\",\"C\"],[\"b\",\"B\"]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]"
+    ],
+    "results": {
+     "el_form": {
+      "form": "el_form",
+      "type": "dict",
+      "data": {
+       "a": "A",
+       "c": "C",
+       "b": "B"
+      }
+     }
+    }
+   },
+   "radix_root": {
+    "steps": [
+     [
+      "fill",
+      "input[type=email]",
+      "f@x.io"
+     ],
+     [
+      "fill",
+      "input[name=explicit]",
+      "expl"
+     ]
+    ],
+    "error": null,
+    "ws_sent": [
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"radix_root\",\"form_data\":{\"__reflex_form_data__\":[[\"email\",\"f@x.io\"],[\"agree\",\"agreed\"],[\"explicit\",\"expl\"],[\"femail\",\"f@x.io\"]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]"
+    ],
+    "results": {
+     "radix_root": {
+      "form": "radix_root",
+      "type": "dict",
+      "data": {
+       "email": "f@x.io",
+       "agree": "agreed",
+       "explicit": "expl",
+       "femail": "f@x.io"
+      }
+     }
+    }
+   },
+   "dynamic": {
+    "steps": [
+     [
+      "click",
+      "button[role=checkbox]"
+     ]
+    ],
+    "error": null,
+    "ws_sent": [
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"dynamic\",\"form_data\":{\"__reflex_form_data__\":[[\"dyn_field\",\"dyn-value\"],[\"h\",\"dyn-hidden\"],[\"dyn_field_cb\",\"on\"]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]"
+    ],
+    "results": {
+     "dynamic": {
+      "form": "dynamic",
+      "type": "dict",
+      "data": {
+       "dyn_field": "dyn-value",
+       "h": "dyn-hidden",
+       "dyn_field_cb": "on"
+      }
+     }
+    }
+   },
+   "unannotated": {
+    "steps": [
+     [
+      "click",
+      "button[role=checkbox]"
+     ]
+    ],
+    "error": null,
+    "ws_sent": [
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store_any\",\"payload\":{\"form\":\"unannotated\",\"form_data\":{\"__reflex_form_data__\":[[\"u\",\"U\"],[\"ucb\",\"on\"],[\"uid\",\"UID\"]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]"
+    ],
+    "results": {
+     "unannotated": {
+      "form": "unannotated",
+      "type": "dict",
+      "data": {
+       "u": "U",
+       "ucb": "on",
+       "uid": "UID"
+      }
+     }
+    }
+   },
+   "dict_any": {
+    "steps": [],
+    "error": null,
+    "ws_sent": [
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store_dict_any\",\"payload\":{\"form\":\"dict_any\",\"form_data\":{\"__reflex_form_data__\":[[\"u\",\"U\"],[\"uid\",\"UID\"]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]"
+    ],
+    "results": {
+     "dict_any": {
+      "form": "dict_any",
+      "type": "dict",
+      "data": {
+       "u": "U",
+       "uid": "UID"
+      }
+     }
+    }
+   },
+   "lambda": {
+    "steps": [],
+    "error": null,
+    "ws_sent": [
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"lambda\",\"form_data\":{\"__reflex_form_data__\":[[\"l\",\"L\"],[\"lid\",\"LID\"]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]"
+    ],
+    "results": {
+     "lambda": {
+      "form": "lambda",
+      "type": "dict",
+      "data": {
+       "l": "L",
+       "lid": "LID"
+      }
+     }
+    }
+   },
+   "chain": {
+    "steps": [],
+    "error": null,
+    "ws_sent": [
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.chain_first\",\"payload\":{\"form_data\":{\"__reflex_form_data__\":[[\"ch\",\"CH\"],[\"topping\",\"a\"],[\"topping\",\"b\"]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]",
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.after_submit\",\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]"
+    ],
+    "results": {
+     "chain_first": {
+      "form": "chain_first",
+      "type": "dict",
+      "data": {
+       "ch": "CH",
+       "topping": "b"
+      }
+     },
+     "chain_second": {
+      "form": "chain_second",
+      "type": "dict",
+      "data": {
+       "ch": "CH",
+       "topping": "b"
+      }
+     }
+    }
+   },
+   "file": {
+    "steps": [
+     [
+      "file",
+      "input[type=file]"
+     ]
+    ],
+    "error": null,
+    "ws_sent": [
+     "451-/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"file\",\"form_data\":{\"__reflex_form_data__\":[[\"ftext\",\"with-file\"],[\"f\",{\"_placeholder\":true,\"num\":0}],[\"topping\",\"a\"],[\"topping\",\"b\"]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]"
+    ],
+    "results": {
+     "file": {
+      "form": "file",
+      "type": "dict",
+      "data": {
+       "ftext": "with-file",
+       "f": "<bytes:b'#!/bin/bash\\n# Usage: wait_up.sh <url> [timeout_s] [pidfile] -- poll until HTTP 200\\nURL=$1; T=${2:-400}; PIDF=${3:-}\\nfor i in $(seq 1 $T); do\\n  code=$(curl --noproxy \\'*\\' -s -o /dev/null -w \\'%{http_code}\\' \"$URL\")\\n  if [ \"$code\" = \"200\" ]; then echo \"UP after ${i}s ($URL)\"; exit 0; fi\\n  if [ -n \"$PIDF\" ] && ! kill -0 \"$(cat $PIDF)\" 2>/dev/null; then echo \"SERVER DIED after ${i}s\"; exit 2; fi\\n  sleep 1\\ndone\\necho \"NOT UP after ${T}s last=$code\"; exit 1\\n'>",
+       "topping": "b"
+      }
+     }
+    }
+   },
+   "selects": {
+    "steps": [
+     [
+      "rselect",
+      "i2"
+     ],
+     [
+      "nselect",
+      "select[name=hsel_single]",
+      [
+       "o1"
+      ]
+     ],
+     [
+      "nselect",
+      "#hsel_id",
+      [
+       "o1"
+      ]
+     ],
+     [
+      "clicknth",
+      "button[role=radio]",
+      0
+     ]
+    ],
+    "error": null,
+    "ws_sent": [
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"selects\",\"form_data\":{\"__reflex_form_data__\":[[\"sel2\",\"i2\"],[\"hsel_single\",\"o1\"],[\"rc\",\"rc1\"],[\"hsel_id\",\"o1\"]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]"
+    ],
+    "results": {
+     "selects": {
+      "form": "selects",
+      "type": "dict",
+      "data": {
+       "sel2": "i2",
+       "hsel_single": "o1",
+       "rc": "rc1",
+       "hsel_id": "o1"
+      }
+     }
+    }
+   },
+   "brackets": {
+    "steps": [],
+    "error": null,
+    "ws_sent": [
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"brackets\",\"form_data\":{\"__reflex_form_data__\":[[\"tags[]\",\"t1\"],[\"tags[]\",\"t2\"],[\"single[]\",\"s1\"]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]"
+    ],
+    "results": {
+     "brackets": {
+      "form": "brackets",
+      "type": "dict",
+      "data": {
+       "tags[]": "t2",
+       "single[]": "s1"
+      }
+     }
+    }
+   },
+   "mapping": {
+    "steps": [],
+    "error": null,
+    "ws_sent": [
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store_mapping\",\"payload\":{\"form\":\"mapping\",\"form_data\":{\"__reflex_form_data__\":[[\"a\",\"A\"],[\"a\",\"A2\"]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]"
+    ],
+    "results": {
+     "mapping": {
+      "form": "mapping",
+      "type": "dict",
+      "data": {
+       "a": "A2"
+      }
+     }
+    }
+   },
+   "optdict": {
+    "steps": [],
+    "error": null,
+    "ws_sent": [
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store_optdict\",\"payload\":{\"form\":\"optdict\",\"form_data\":{\"__reflex_form_data__\":[[\"a\",\"A\"],[\"a\",\"A2\"]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]"
+    ],
+    "results": {
+     "optdict": {
+      "form": "optdict",
+      "type": "dict",
+      "data": {
+       "a": "A2"
+      }
+     }
+    }
+   },
+   "anyarg": {
+    "steps": [],
+    "error": null,
+    "ws_sent": [
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store_anyarg\",\"payload\":{\"form\":\"anyarg\",\"form_data\":{\"__reflex_form_data__\":[[\"a\",\"A\"],[\"a\",\"A2\"]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]"
+    ],
+    "results": {
+     "anyarg": {
+      "form": "anyarg",
+      "type": "dict",
+      "data": {
+       "a": "A2"
+      }
+     }
+    }
+   }
+  },
+  "/new": {
+   "formdata": {
+    "steps": [
+     [
+      "check",
+      "input[name=topping][value=cheese]"
+     ],
+     [
+      "check",
+      "input[name=topping][value=olives]"
+     ],
+     [
+      "slide",
+      0,
+      2
+     ],
+     [
+      "slide",
+      1,
+      1
+     ],
+     [
+      "clicknth",
+      "button[role=checkbox]",
+      0
+     ],
+     [
+      "clicknth",
+      "button[role=checkbox]",
+      1
+     ],
+     [
+      "clicknth",
+      "button[role=checkbox]",
+      3
+     ]
+    ],
+    "error": null,
+    "ws_sent": [
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.formsapp___newforms____new_state.formdata\",\"payload\":{\"form_data\":{\"__reflex_form_data__\":[[\"topping\",\"cheese\"],[\"topping\",\"olives\"],[\"range[]\",\"22\"],[\"range[]\",\"81\"],[\"a\",\"A\"],[\"cbboth\",true],[\"cg\",\"c1\"],[\"cg\",\"c3\"],[\"rep\",\"rep1\"],[\"rep\",\"rep2\"],[\"idonly\",\"IDONLY\"]]}},\"router_data\":{\"pathname\":\"/new/\",\"asPath\":\"/new/\"}}]"
+    ],
+    "results": {
+     "formdata": {
+      "form": "formdata",
+      "type": "FormData",
+      "data": "<FormData:FormData([('topping', 'cheese'), ('topping', 'olives'), ('range[]', '22'), ('range[]', '81'), ('a', 'A'), ('cbboth', True), ('cg', 'c1'), ('cg', 'c3'), ('rep', 'rep1'), ('rep', 'rep2'), ('idonly', 'IDONLY')])>",
+      "multi_items": [
+       [
+        "topping",
+        "cheese"
+       ],
+       [
+        "topping",
+        "olives"
+       ],
+       [
+        "range[]",
+        "22"
+       ],
+       [
+        "range[]",
+        "81"
+       ],
+       [
+        "a",
+        "A"
+       ],
+       [
+        "cbboth",
+        true
+       ],
+       [
+        "cg",
+        "c1"
+       ],
+       [
+        "cg",
+        "c3"
+       ],
+       [
+        "rep",
+        "rep1"
+       ],
+       [
+        "rep",
+        "rep2"
+       ],
+       [
+        "idonly",
+        "IDONLY"
+       ]
+      ],
+      "getlist_topping": [
+       "cheese",
+       "olives"
+      ],
+      "getAll_range": [
+       "22",
+       "81"
+      ],
+      "index_topping": "olives",
+      "as_dict": {
+       "topping": "olives",
+       "range[]": "81",
+       "a": "A",
+       "cbboth": true,
+       "cg": "c3",
+       "rep": "rep2",
+       "idonly": "IDONLY"
+      },
+      "len": 7,
+      "keys": [
+       "topping",
+       "range[]",
+       "a",
+       "cbboth",
+       "cg",
+       "rep",
+       "idonly"
+      ]
+     }
+    }
+   },
+   "formdata_optional": {
+    "steps": [],
+    "error": null,
+    "ws_sent": [
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.formsapp___newforms____new_state.formdata_optional\",\"payload\":{\"form_data\":{\"__reflex_form_data__\":[[\"rep\",\"rep1\"],[\"rep\",\"rep2\"]]}},\"router_data\":{\"pathname\":\"/new/\",\"asPath\":\"/new/\"}}]"
+    ],
+    "results": {
+     "formdata_optional": {
+      "form": "formdata_optional",
+      "type": "FormData",
+      "data": "<FormData:FormData([('rep', 'rep1'), ('rep', 'rep2')])>",
+      "multi_items": [
+       [
+        "rep",
+        "rep1"
+       ],
+       [
+        "rep",
+        "rep2"
+       ]
+      ]
+     }
+    }
+   },
+   "passon": {
+    "steps": [],
+    "error": null,
+    "ws_sent": [
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.formsapp___newforms____new_state.formdata_passon\",\"payload\":{\"form_data\":{\"__reflex_form_data__\":[[\"tags\",\"t1\"],[\"tags\",\"t2\"],[\"single[]\",\"s1\"]]}},\"router_data\":{\"pathname\":\"/new/\",\"asPath\":\"/new/\"}}]"
+    ],
+    "results": {
+     "chain_first": {
+      "form": "chain_first",
+      "type": "dict",
+      "data": {
+       "ch": "CH",
+       "topping": "b"
+      }
+     },
+     "chain_second": {
+      "form": "chain_second",
+      "type": "dict",
+      "data": {
+       "ch": "CH",
+       "topping": "b"
+      }
+     },
+     "passon_dict": {
+      "form": "passon_dict",
+      "type": "dict",
+      "data": {
+       "tags": "t2",
+       "single[]": "s1"
+      }
+     },
+     "passon_fd": {
+      "form": "passon_fd",
+      "type": "FormData",
+      "data": "<FormData:FormData([('tags', 't1'), ('tags', 't2'), ('single[]', 's1')])>",
+      "multi_items": [
+       [
+        "tags",
+        "t1"
+       ],
+       [
+        "tags",
+        "t2"
+       ],
+       [
+        "single[]",
+        "s1"
+       ]
+      ]
+     },
+     "passon_fd2": {
+      "form": "passon_fd2",
+      "type": "FormData",
+      "data": "<FormData:FormData([('tags', 't1'), ('tags', 't2'), ('single[]', 's1')])>",
+      "multi_items": [
+       [
+        "tags",
+        "t1"
+       ],
+       [
+        "tags",
+        "t2"
+       ],
+       [
+        "single[]",
+        "s1"
+       ]
+      ]
+     },
+     "passon_td": {
+      "form": "passon_td",
+      "type": "dict",
+      "data": {
+       "tags": [
+        "t1",
+        "t2"
+       ],
+       "single": [
+        "s1"
+       ]
+      }
+     }
+    }
+   },
+   "typed": {
+    "steps": [
+     [
+      "check",
+      "input[name=toppings][value=cheese]"
+     ],
+     [
+      "check",
+      "input[name=toppings][value=olives]"
+     ],
+     [
+      "clicknth",
+      "button[role=checkbox]",
+      0
+     ],
+     [
+      "clicknth",
+      "button[role=switch]",
+      0
+     ],
+     [
+      "check",
+      "input[name=opt_list]"
+     ],
+     [
+      "slide",
+      0,
+      1
+     ],
+     [
+      "slide",
+      1,
+      1
+     ]
+    ],
+    "error": null,
+    "ws_sent": [
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.formsapp___newforms____new_state.typed\",\"payload\":{\"form_data\":{\"__reflex_form_data__\":[[\"name\",\"Ann\"],[\"toppings\",\"cheese\"],[\"toppings\",\"olives\"],[\"agree\",\"on\"],[\"sw\",\"on\"],[\"opt_list\",\"ol1\"],[\"note\",\"\"],[\"range[]\",\"21\"],[\"range[]\",\"81\"],[\"ann\",\"ANN\"],[\"req_ann\",\"REQ\"],[\"count\",\"7\"],[\"hidden_false\",\"false\"],[\"sel_bool\",\"no\"],[\"lit\",\"zzz\"],[\"cg\",\"c2\"]]}},\"router_data\":{\"pathname\":\"/new/\",\"asPath\":\"/new/\"}}]"
+    ],
+    "results": {
+     "typed": {
+      "form": "typed",
+      "type": "dict",
+      "data": {
+       "name": "Ann",
+       "toppings": [
+        "cheese",
+        "olives"
+       ],
+       "agree": true,
+       "sw": true,
+       "opt_list": [
+        "ol1"
+       ],
+       "note": "",
+       "ann": "ANN",
+       "req_ann": "REQ",
+       "count": "7",
+       "hidden_false": false,
+       "sel_bool": false,
+       "lit": "zzz",
+       "cg": [
+        "c2"
+       ],
+       "maybe": null,
+       "range": [
+        "21",
+        "81"
+       ]
+      },
+      "py_types": {
+       "name": "str",
+       "toppings": "list",
+       "agree": "bool",
+       "sw": "bool",
+       "opt_list": "list",
+       "note": "str",
+       "ann": "str",
+       "req_ann": "str",
+       "count": "str",
+       "hidden_false": "bool",
+       "sel_bool": "bool",
+       "lit": "str",
+       "cg": "list",
+       "maybe": "NoneType",
+       "range": "list"
+      }
+     }
+    }
+   },
+   "typed_tags": {
+    "steps": [],
+    "error": null,
+    "ws_sent": [
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.formsapp___newforms____new_state.typed_tags\",\"payload\":{\"form_data\":{\"__reflex_form_data__\":[[\"tags[]\",\"t1\"],[\"tags[]\",\"t2\"],[\"single[]\",\"s1\"]]}},\"router_data\":{\"pathname\":\"/new/\",\"asPath\":\"/new/\"}}]"
+    ],
+    "results": {
+     "typed_tags": {
+      "form": "typed_tags",
+      "type": "dict",
+      "data": {
+       "tags": [
+        "t1",
+        "t2"
+       ],
+       "single": [
+        "s1"
+       ]
+      }
+     }
+    }
+   },
+   "typed_generic": {
+    "steps": [],
+    "error": null,
+    "ws_sent": [
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.formsapp___newforms____new_state.typed_generic\",\"payload\":{\"form_data\":{\"__reflex_form_data__\":[[\"v\",\"v1\"],[\"v\",\"v2\"]]}},\"router_data\":{\"pathname\":\"/new/\",\"asPath\":\"/new/\"}}]"
+    ],
+    "results": {
+     "typed_generic": {
+      "form": "typed_generic",
+      "type": "dict",
+      "data": {
+       "v": [
+        "v1",
+        "v2"
+       ],
+       "other": false
+      },
+      "py_types": {
+       "v": "list",
+       "other": "bool"
+      }
+     }
+    }
+   },
+   "typed_dynamic": {
+    "steps": [],
+    "error": null,
+    "ws_sent": [
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.formsapp___newforms____new_state.typed_dynamic\",\"payload\":{\"form_data\":{\"__reflex_form_data__\":[[\"dyn_field\",\"dyn\"]]}},\"router_data\":{\"pathname\":\"/new/\",\"asPath\":\"/new/\"}}]"
+    ],
+    "results": {
+     "typed_dynamic": {
+      "form": "typed_dynamic",
+      "type": "dict",
+      "data": {
+       "dyn_field": "dyn",
+       "tags": [],
+       "single": []
+      }
+     }
+    }
+   },
+   "cg_controlled": {
+    "steps": [
+     [
+      "clicknth",
+      "button[role=checkbox]",
+      0
+     ],
+     [
+      "wait",
+      1500
+     ]
+    ],
+    "error": null,
+    "ws_sent": [
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"cg_controlled\",\"form_data\":{\"__reflex_form_data__\":[[\"cg\",\"c1\"],[\"cg\",\"c2\"]]}},\"router_data\":{\"pathname\":\"/new/\",\"asPath\":\"/new/\"}}]"
+    ],
+    "results": {
+     "cg_controlled": {
+      "form": "cg_controlled",
+      "type": "dict",
+      "data": {
+       "cg": "c2"
+      }
+     }
+    },
+    "cg_value_text": "cg_value=[\"c2\",\"c1\"]"
+   }
+  },
+  "/future": {
+   "future": {
+    "steps": [
+     [
+      "check",
+      "input[name=toppings]"
+     ],
+     [
+      "clicknth",
+      "button[role=checkbox]",
+      0
+     ]
+    ],
+    "error": null,
+    "ws_sent": [
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.formsapp___td_future____future_state.typed_future\",\"payload\":{\"form_data\":{\"__reflex_form_data__\":[[\"name\",\"Fut\"],[\"toppings\",\"x\"],[\"agree\",\"on\"],[\"req_ann\",\"RA\"]]}},\"router_data\":{\"pathname\":\"/future/\",\"asPath\":\"/future/\"}}]"
+    ],
+    "results": {
+     "future": {
+      "form": "future",
+      "type": "dict",
+      "data": {
+       "name": "Fut",
+       "toppings": [
+        "x"
+       ],
+       "agree": true,
+       "req_ann": "RA",
+       "maybe": null
+      },
+      "py_types": {
+       "name": "str",
+       "toppings": "list",
+       "agree": "bool",
+       "req_ann": "str",
+       "maybe": "NoneType"
+      }
+     }
+    }
+   },
+   "future_fd": {
+    "steps": [],
+    "error": null,
+    "ws_sent": [
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.formsapp___td_future____future_state.fd_future\",\"payload\":{\"form_data\":{\"__reflex_form_data__\":[[\"rep\",\"r1\"],[\"rep\",\"r2\"]]}},\"router_data\":{\"pathname\":\"/future/\",\"asPath\":\"/future/\"}}]"
+    ],
+    "results": {
+     "future_fd": {
+      "form": "future_fd",
+      "type": "FormData",
+      "data": "<FormData:FormData([('rep', 'r1'), ('rep', 'r2')])>",
+      "multi_items": [
+       [
+        "rep",
+        "r1"
+       ],
+       [
+        "rep",
+        "r2"
+       ]
+      ],
+      "getlist": [
+       "r1",
+       "r2"
+      ]
+     }
+    }
+   }
+  }
+ },
+ "console": [
+  "[error] Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "[log] Disconnect websocket on page navigation",
+  "[log] Disconnect websocket on page navigation"
+ ],
+ "errors": [],
+ "ws_sent": [
+  "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"1ee78ac48de10e24\",\"d029e8db883816fc\",\"c036a6c1ed0a5850\",\"bf21a9e8fbc5a384\",\"fab4667b560594f7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}},\"state_schema\":\"8147bd27eca7fe254deae3f9b5e73c75\"}",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"id_only\",\"form_data\":{\"__reflex_form_data__\":[[\"io_email\",\"em@x\"],[\"io_ta\",\"ta-text\"],[\"io_cb\",true],[\"io_sw\",true],[\"io_rg\",\"r2\"],[\"io_sl\",\"35\"],[\"io_hid\",\"hv\"],[\"io_hcb\",true],[\"io_hcb_checked\",true]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"name_only\",\"form_data\":{\"__reflex_form_data__\":[[\"email\",\"em@x\"],[\"ta\",\"ta-text\"],[\"cb\",\"on\"],[\"sw\",\"on\"],[\"sel\",\"b\"],[\"rg\",\"r2\"],[\"sl\",\"35\"],[\"hid\",\"hv\"],[\"hcb\",\"on\"],[\"hcb_checked\",\"on\"]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"id_eq_name\",\"form_data\":{\"__reflex_form_data__\":[[\"ien_email\",\"em@x\"],[\"ien_ta\",\"ta-text\"],[\"ien_cb\",true],[\"ien_sw\",true],[\"ien_sel\",\"b\"],[\"ien_rg\",\"r2\"],[\"ien_sl\",\"35\"],[\"ien_hid\",\"hv\"],[\"ien_hcb\",true],[\"ien_hcb_checked\",true]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"id_ne_name\",\"form_data\":{\"__reflex_form_data__\":[[\"namex\",\"x-typed\"],[\"cbname\",\"on\"],[\"swname\",\"on\"],[\"hcbname\",\"on\"],[\"slname\",\"35\"],[\"idx\",\"x-typed\"],[\"cbid\",true],[\"swid\",true],[\"hcbid\",true],[\"slid\",\"35\"]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"groups\",\"form_data\":{\"__reflex_form_data__\":[[\"cg\",\"c1\"],[\"cg\",\"c3\"],[\"topping\",\"cheese\"],[\"topping\",\"olives\"],[\"rg\",\"r2\"],[\"hr\",\"x2\"],[\"rep\",\"rep-first\"],[\"rep\",\"rep-second\"],[\"hsel\",\"o1\"],[\"hsel\",\"o3\"]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"group_id_eq_name\",\"form_data\":{\"__reflex_form_data__\":[[\"cg\",\"c1\"],[\"cg\",\"c3\"],[\"topping\",\"cheese\"],[\"topping\",\"olives\"]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"sliders\",\"form_data\":{\"__reflex_form_data__\":[[\"sl\",\"35\"],[\"range[]\",\"23\"],[\"range[]\",\"82\"],[\"range2[]\",\"21\"],[\"range2[]\",\"81\"],[\"rangeid\",\"21\"],[\"range2\",\"21\"]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.set_ctrl\",\"payload\":{\"v\":\"c1-typed\"},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.set_ctrl2\",\"payload\":{\"v\":\"c2-typed\"},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.set_ctrl3\",\"payload\":{\"v\":\"c3-typed\"},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.set_ctrl4\",\"payload\":{\"v\":\"c4-typed\"},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.set_ta_ctrl\",\"payload\":{\"v\":\"ta-typed\"},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"controlled\",\"form_data\":{\"__reflex_form_data__\":[[\"ctrl\",\"c1-typed\"],[\"ctrl3\",\"c3-typed\"],[\"ctrl4\",\"c4-typed\"],[\"ta_ctrl\",\"ta-typed\"],[\"num\",\"5\"],[\"empty\",\"\"],[\"ctrl2\",\"c2-typed\"],[\"disabled_id\",\"dis\"]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"reset\",\"form_data\":{\"__reflex_form_data__\":[[\"r1\",\"will-reset\"],[\"rcb\",\"on\"]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"foreach\",\"form_data\":{\"__reflex_form_data__\":[[\"item\",\"alpha\"],[\"which\",\"alpha\"],[\"which_id\",\"beta\"]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"foreach\",\"form_data\":{\"__reflex_form_data__\":[[\"item\",\"beta\"],[\"which\",\"beta\"],[\"which_id\",\"beta\"]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"el_form\",\"form_data\":{\"__reflex_form_data__\":[[\"a\",\"A\"],[\"c\",\"C\"],[\"b\",\"B\"]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"radix_root\",\"form_data\":{\"__reflex_form_data__\":[[\"email\",\"f@x.io\"],[\"agree\",\"agreed\"],[\"explicit\",\"expl\"],[\"femail\",\"f@x.io\"]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"dynamic\",\"form_data\":{\"__reflex_form_data__\":[[\"dyn_field\",\"dyn-value\"],[\"h\",\"dyn-hidden\"],[\"dyn_field_cb\",\"on\"]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store_any\",\"payload\":{\"form\":\"unannotated\",\"form_data\":{\"__reflex_form_data__\":[[\"u\",\"U\"],[\"ucb\",\"on\"],[\"uid\",\"UID\"]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store_dict_any\",\"payload\":{\"form\":\"dict_any\",\"form_data\":{\"__reflex_form_data__\":[[\"u\",\"U\"],[\"uid\",\"UID\"]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"lambda\",\"form_data\":{\"__reflex_form_data__\":[[\"l\",\"L\"],[\"lid\",\"LID\"]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.chain_first\",\"payload\":{\"form_data\":{\"__reflex_form_data__\":[[\"ch\",\"CH\"],[\"topping\",\"a\"],[\"topping\",\"b\"]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.after_submit\",\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]",
+  "451-/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"file\",\"form_data\":{\"__reflex_form_data__\":[[\"ftext\",\"with-file\"],[\"f\",{\"_placeholder\":true,\"num\":0}],[\"topping\",\"a\"],[\"topping\",\"b\"]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"selects\",\"form_data\":{\"__reflex_form_data__\":[[\"sel2\",\"i2\"],[\"hsel_single\",\"o1\"],[\"rc\",\"rc1\"],[\"hsel_id\",\"o1\"]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"brackets\",\"form_data\":{\"__reflex_form_data__\":[[\"tags[]\",\"t1\"],[\"tags[]\",\"t2\"],[\"single[]\",\"s1\"]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store_mapping\",\"payload\":{\"form\":\"mapping\",\"form_data\":{\"__reflex_form_data__\":[[\"a\",\"A\"],[\"a\",\"A2\"]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store_optdict\",\"payload\":{\"form\":\"optdict\",\"form_data\":{\"__reflex_form_data__\":[[\"a\",\"A\"],[\"a\",\"A2\"]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store_anyarg\",\"payload\":{\"form\":\"anyarg\",\"form_data\":{\"__reflex_form_data__\":[[\"a\",\"A\"],[\"a\",\"A2\"]]}},\"router_data\":{\"pathname\":\"/legacy/\",\"asPath\":\"/legacy/\"}}]",
+  "41/_event,",
+  "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"1ee78ac48de10e24\",\"d029e8db883816fc\",\"c036a6c1ed0a5850\",\"bf21a9e8fbc5a384\",\"fab4667b560594f7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/new/\",\"asPath\":\"/new/\"}},\"state_schema\":\"8147bd27eca7fe254deae3f9b5e73c75\"}",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.formsapp___newforms____new_state.formdata\",\"payload\":{\"form_data\":{\"__reflex_form_data__\":[[\"topping\",\"cheese\"],[\"topping\",\"olives\"],[\"range[]\",\"22\"],[\"range[]\",\"81\"],[\"a\",\"A\"],[\"cbboth\",true],[\"cg\",\"c1\"],[\"cg\",\"c3\"],[\"rep\",\"rep1\"],[\"rep\",\"rep2\"],[\"idonly\",\"IDONLY\"]]}},\"router_data\":{\"pathname\":\"/new/\",\"asPath\":\"/new/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.formsapp___newforms____new_state.formdata_optional\",\"payload\":{\"form_data\":{\"__reflex_form_data__\":[[\"rep\",\"rep1\"],[\"rep\",\"rep2\"]]}},\"router_data\":{\"pathname\":\"/new/\",\"asPath\":\"/new/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.formsapp___newforms____new_state.formdata_passon\",\"payload\":{\"form_data\":{\"__reflex_form_data__\":[[\"tags\",\"t1\"],[\"tags\",\"t2\"],[\"single[]\",\"s1\"]]}},\"router_data\":{\"pathname\":\"/new/\",\"asPath\":\"/new/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.formsapp___newforms____new_state.typed\",\"payload\":{\"form_data\":{\"__reflex_form_data__\":[[\"name\",\"Ann\"],[\"toppings\",\"cheese\"],[\"toppings\",\"olives\"],[\"agree\",\"on\"],[\"sw\",\"on\"],[\"opt_list\",\"ol1\"],[\"note\",\"\"],[\"range[]\",\"21\"],[\"range[]\",\"81\"],[\"ann\",\"ANN\"],[\"req_ann\",\"REQ\"],[\"count\",\"7\"],[\"hidden_false\",\"false\"],[\"sel_bool\",\"no\"],[\"lit\",\"zzz\"],[\"cg\",\"c2\"]]}},\"router_data\":{\"pathname\":\"/new/\",\"asPath\":\"/new/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.formsapp___newforms____new_state.typed_tags\",\"payload\":{\"form_data\":{\"__reflex_form_data__\":[[\"tags[]\",\"t1\"],[\"tags[]\",\"t2\"],[\"single[]\",\"s1\"]]}},\"router_data\":{\"pathname\":\"/new/\",\"asPath\":\"/new/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.formsapp___newforms____new_state.typed_generic\",\"payload\":{\"form_data\":{\"__reflex_form_data__\":[[\"v\",\"v1\"],[\"v\",\"v2\"]]}},\"router_data\":{\"pathname\":\"/new/\",\"asPath\":\"/new/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.formsapp___newforms____new_state.typed_dynamic\",\"payload\":{\"form_data\":{\"__reflex_form_data__\":[[\"dyn_field\",\"dyn\"]]}},\"router_data\":{\"pathname\":\"/new/\",\"asPath\":\"/new/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.formsapp___newforms____new_state.set_cg_value\",\"payload\":{\"v\":[\"c2\",\"c1\"]},\"router_data\":{\"pathname\":\"/new/\",\"asPath\":\"/new/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"cg_controlled\",\"form_data\":{\"__reflex_form_data__\":[[\"cg\",\"c1\"],[\"cg\",\"c2\"]]}},\"router_data\":{\"pathname\":\"/new/\",\"asPath\":\"/new/\"}}]",
+  "41/_event,",
+  "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"1ee78ac48de10e24\",\"d029e8db883816fc\",\"c036a6c1ed0a5850\",\"bf21a9e8fbc5a384\",\"fab4667b560594f7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/future/\",\"asPath\":\"/future/\"}},\"state_schema\":\"8147bd27eca7fe254deae3f9b5e73c75\"}",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.formsapp___td_future____future_state.typed_future\",\"payload\":{\"form_data\":{\"__reflex_form_data__\":[[\"name\",\"Fut\"],[\"toppings\",\"x\"],[\"agree\",\"on\"],[\"req_ann\",\"RA\"]]}},\"router_data\":{\"pathname\":\"/future/\",\"asPath\":\"/future/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.formsapp___td_future____future_state.fd_future\",\"payload\":{\"form_data\":{\"__reflex_form_data__\":[[\"rep\",\"r1\"],[\"rep\",\"r2\"]]}},\"router_data\":{\"pathname\":\"/future/\",\"asPath\":\"/future/\"}}]"
+ ]
+}

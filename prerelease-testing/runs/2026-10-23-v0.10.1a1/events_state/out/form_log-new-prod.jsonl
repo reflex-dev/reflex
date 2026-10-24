@@ -1,0 +1,38 @@
+{"form": "id_only", "type": "dict", "data": {"io_email": "em@x", "io_ta": "ta-text", "io_cb": true, "io_sw": true, "io_rg": "r2", "io_sl": "35", "io_hid": "hv", "io_hcb": true, "io_hcb_checked": true}}
+{"form": "name_only", "type": "dict", "data": {"email": "em@x", "ta": "ta-text", "cb": "on", "sw": "on", "sel": "b", "rg": "r2", "sl": "35", "hid": "hv", "hcb": "on", "hcb_checked": "on"}}
+{"form": "id_eq_name", "type": "dict", "data": {"ien_email": "em@x", "ien_ta": "ta-text", "ien_cb": true, "ien_sw": true, "ien_sel": "b", "ien_rg": "r2", "ien_sl": "35", "ien_hid": "hv", "ien_hcb": true, "ien_hcb_checked": true}}
+{"form": "id_ne_name", "type": "dict", "data": {"namex": "x-typed", "cbname": "on", "swname": "on", "hcbname": "on", "slname": "35", "idx": "x-typed", "cbid": true, "swid": true, "hcbid": true, "slid": "35"}}
+{"form": "groups", "type": "dict", "data": {"cg": "c3", "topping": "olives", "rg": "r2", "hr": "x2", "rep": "rep-second", "hsel": "o3"}}
+{"form": "group_id_eq_name", "type": "dict", "data": {"cg": "c3", "topping": "olives"}}
+{"form": "sliders", "type": "dict", "data": {"sl": "35", "range[]": "82", "range2[]": "81", "rangeid": "21", "range2": "21"}}
+{"form": "controlled", "type": "dict", "data": {"ctrl": "c1-typed", "ctrl3": "c3-typed", "ctrl4": "c4-typed", "ta_ctrl": "ta-typed", "num": "5", "empty": "", "ctrl2": "c2-typed", "disabled_id": "dis"}}
+{"form": "reset", "type": "dict", "data": {"r1": "will-reset", "rcb": "on"}}
+{"form": "foreach", "type": "dict", "data": {"item": "alpha", "which": "alpha", "which_id": "beta"}}
+{"form": "foreach", "type": "dict", "data": {"item": "beta", "which": "beta", "which_id": "beta"}}
+{"form": "el_form", "type": "dict", "data": {"a": "A", "c": "C", "b": "B"}}
+{"form": "radix_root", "type": "dict", "data": {"email": "f@x.io", "agree": "agreed", "explicit": "expl", "femail": "f@x.io"}}
+{"form": "dynamic", "type": "dict", "data": {"dyn_field": "dyn-value", "h": "dyn-hidden", "dyn_field_cb": "on"}}
+{"form": "unannotated", "type": "dict", "data": {"u": "U", "ucb": "on", "uid": "UID"}}
+{"form": "dict_any", "type": "dict", "data": {"u": "U", "uid": "UID"}}
+{"form": "lambda", "type": "dict", "data": {"l": "L", "lid": "LID"}}
+{"form": "chain_first", "type": "dict", "data": {"ch": "CH", "topping": "b"}}
+{"form": "chain_second", "type": "dict", "data": {"ch": "CH", "topping": "b"}}
+{"form": "file", "type": "dict", "data": {"ftext": "with-file", "f": "<bytes:b'#!/bin/bash\\n# Usage: wait_up.sh <url> [timeout_s] [pidfile] -- poll until HTTP 200\\nURL=$1; T=${2:-400}; PIDF=${3:-}\\nfor i in $(seq 1 $T); do\\n  code=$(curl --noproxy \\'*\\' -s -o /dev/null -w \\'%{http_code}\\' \"$URL\")\\n  if [ \"$code\" = \"200\" ]; then echo \"UP after ${i}s ($URL)\"; exit 0; fi\\n  if [ -n \"$PIDF\" ] && ! kill -0 \"$(cat $PIDF)\" 2>/dev/null; then echo \"SERVER DIED after ${i}s\"; exit 2; fi\\n  sleep 1\\ndone\\necho \"NOT UP after ${T}s last=$code\"; exit 1\\n'>", "topping": "b"}}
+{"form": "selects", "type": "dict", "data": {"sel2": "i2", "hsel_single": "o1", "rc": "rc1", "hsel_id": "o1"}}
+{"form": "brackets", "type": "dict", "data": {"tags[]": "t2", "single[]": "s1"}}
+{"form": "mapping", "type": "dict", "data": {"a": "A2"}}
+{"form": "optdict", "type": "dict", "data": {"a": "A2"}}
+{"form": "anyarg", "type": "dict", "data": {"a": "A2"}}
+{"form": "formdata", "type": "FormData", "data": "<FormData:FormData([('topping', 'cheese'), ('topping', 'olives'), ('range[]', '22'), ('range[]', '81'), ('a', 'A'), ('cbboth', True), ('cg', 'c1'), ('cg', 'c3'), ('rep', 'rep1'), ('rep', 'rep2'), ('idonly', 'IDONLY')])>", "multi_items": [["topping", "cheese"], ["topping", "olives"], ["range[]", "22"], ["range[]", "81"], ["a", "A"], ["cbboth", true], ["cg", "c1"], ["cg", "c3"], ["rep", "rep1"], ["rep", "rep2"], ["idonly", "IDONLY"]], "getlist_topping": ["cheese", "olives"], "getAll_range": ["22", "81"], "index_topping": "olives", "as_dict": {"topping": "olives", "range[]": "81", "a": "A", "cbboth": true, "cg": "c3", "rep": "rep2", "idonly": "IDONLY"}, "len": 7, "keys": ["topping", "range[]", "a", "cbboth", "cg", "rep", "idonly"]}
+{"form": "formdata_optional", "type": "FormData", "data": "<FormData:FormData([('rep', 'rep1'), ('rep', 'rep2')])>", "multi_items": [["rep", "rep1"], ["rep", "rep2"]]}
+{"form": "passon_fd", "type": "FormData", "data": "<FormData:FormData([('tags', 't1'), ('tags', 't2'), ('single[]', 's1')])>", "multi_items": [["tags", "t1"], ["tags", "t2"], ["single[]", "s1"]]}
+{"form": "passon_dict", "type": "dict", "data": {"tags": "t2", "single[]": "s1"}}
+{"form": "passon_td", "type": "dict", "data": {"tags": ["t1", "t2"], "single": ["s1"]}}
+{"form": "passon_fd2", "type": "FormData", "data": "<FormData:FormData([('tags', 't1'), ('tags', 't2'), ('single[]', 's1')])>", "multi_items": [["tags", "t1"], ["tags", "t2"], ["single[]", "s1"]]}
+{"form": "typed", "type": "dict", "data": {"name": "Ann", "toppings": ["cheese", "olives"], "agree": true, "sw": true, "opt_list": ["ol1"], "note": "", "ann": "ANN", "req_ann": "REQ", "count": "7", "hidden_false": false, "sel_bool": false, "lit": "zzz", "cg": ["c2"], "maybe": null, "range": ["21", "81"]}, "py_types": {"name": "str", "toppings": "list", "agree": "bool", "sw": "bool", "opt_list": "list", "note": "str", "ann": "str", "req_ann": "str", "count": "str", "hidden_false": "bool", "sel_bool": "bool", "lit": "str", "cg": "list", "maybe": "NoneType", "range": "list"}}
+{"form": "typed_tags", "type": "dict", "data": {"tags": ["t1", "t2"], "single": ["s1"]}}
+{"form": "typed_generic", "type": "dict", "data": {"v": ["v1", "v2"], "other": false}, "py_types": {"v": "list", "other": "bool"}}
+{"form": "typed_dynamic", "type": "dict", "data": {"dyn_field": "dyn", "tags": [], "single": []}}
+{"form": "cg_controlled", "type": "dict", "data": {"cg": "c2"}}
+{"form": "future", "type": "dict", "data": {"name": "Fut", "toppings": ["x"], "agree": true, "req_ann": "RA", "maybe": null}, "py_types": {"name": "str", "toppings": "list", "agree": "bool", "req_ann": "str", "maybe": "NoneType"}}
+{"form": "future_fd", "type": "FormData", "data": "<FormData:FormData([('rep', 'r1'), ('rep', 'r2')])>", "multi_items": [["rep", "r1"], ["rep", "r2"]], "getlist": ["r1", "r2"]}

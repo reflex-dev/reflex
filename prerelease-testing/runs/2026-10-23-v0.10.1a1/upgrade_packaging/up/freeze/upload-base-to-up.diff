@@ -1,0 +1,41 @@
+1a2
+> annotated-types==0.8.0
+14a16,17
+> pydantic==2.14.1
+> pydantic-core==2.50.1
+20,25c23,28
+< reflex==0.10.0
+< reflex-base==0.10.0
+< reflex-build-sdk==0.1.0
+< reflex-components-code==0.10.0
+< reflex-components-core==0.10.0
+< reflex-components-dataeditor==0.10.0
+---
+> reflex==0.10.1a1
+> reflex-base==0.10.1a1
+> reflex-build-sdk==0.1.1a1
+> reflex-components-code==0.10.1a1
+> reflex-components-core==0.10.1a1
+> reflex-components-dataeditor==0.10.1a1
+27c30
+< reflex-components-lucide==1.1.0
+---
+> reflex-components-lucide==1.1.1a1
+29c32
+< reflex-components-moment==0.10.0
+---
+> reflex-components-moment==0.10.1a1
+31c34
+< reflex-components-radix==0.10.0
+---
+> reflex-components-radix==0.10.1a1
+35c38
+< reflex-hosting-cli==0.2.0
+---
+> reflex-hosting-cli==0.2.1a1
+39a43
+> typing-inspection==0.4.4
+41c45
+< wrapt==2.5.1
+---
+> wrapt==2.5.2rc1

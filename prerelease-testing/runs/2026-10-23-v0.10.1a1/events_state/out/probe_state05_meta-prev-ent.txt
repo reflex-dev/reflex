@@ -1,0 +1,11 @@
+type(rx.State) is BaseStateMeta: True <class 'reflex_base.vars.base.BaseStateMeta'>
+type(rx.ComponentState): <class 'reflex_base.vars.base.BaseStateMeta'>
+custom metaclass OK: <class '__main__.MyMeta'> [('Plugged', {}), ('SubPlugged', {})] instance x/y: 1 y root: <class 'reflex.state.BaseState'>
+mixin=True: True UsesMix fields: ['is_hydrated', 'own', 'router_data', 'rx_router_headers', 'rx_router_page', 'rx_router_route_id', 'rx_router_session', 'rx_router_url', 'shared']
+mixin instantiation rejected: ReflexRuntimeError Mix is a state mixin and cannot be instantiated directly.
+state_root FAILED: ImportError cannot import name 'BaseState' from 'reflex_base.vars.base' (/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/prev-ent/lib/python3.12/site-packages/reflex_base/vars/base.py)
+reserved _reflex_state_root assignment rejected: StateValueError State name `_reflex_state_root` is reserved by BaseState; use a different name instead.
+rxe modules imported: 113, failed: 1
+   FAIL ('reflex_enterprise.testing.plugin', "ModuleNotFoundError: No module named 'pytest'")
+deprecation warnings during rxe import: 0
+rxe State subclass OK: <class 'reflex_base.vars.base.BaseStateMeta'>

@@ -1,0 +1,46 @@
+OK   TypedDict all required present
+EXC  TypedDict missing 'email' (compile error expected): EventHandlerValueError: Form field mismatch for on_submit handler `S.signup`. ... (17 lines)
+EXC  TypedDict missing list+bool fields only: EventHandlerValueError: Form field mismatch for on_submit handler `S.signup`. ... (17 lines)
+OK   TypedDict 'email' provided by id only
+EXC  TypedDict 'email' provided by radix form.field name (control has no name): EventHandlerValueError: Form field mismatch for on_submit handler `S.signup`. ... (17 lines)
+OK   TypedDict missing but form has an id (validation skipped)
+OK   TypedDict missing but a dynamic name (validation skipped)
+OK   TypedDict missing but in foreach (dynamic)
+EXC  TypedDict missing + handler in a list chain: EventHandlerValueError: Form field mismatch for on_submit handler `S.signup`. ... (17 lines)
+EXC  TypedDict missing + lambda wrapper: EventHandlerValueError: Form field mismatch for on_submit handler `S.signup`. ... (17 lines)
+OK   TypedDict missing + controlled input provides it (DebounceInput name)
+OK   TypedDict with TYPE_CHECKING-only field type (Decimal)
+OK   TypedDict list field filled by tags[] controls
+OK   generic TypedDict specialization
+OK   generic TypedDict plain subclass (typing_extensions)
+EXC  handler annotated int (wrong type): EventHandlerArgTypeMismatchError: Event handler on_submit expects dict[str, typing.Any] for argument form_data but got <class 'int'> as annotated in S.wrong_type instead.
+EXC  handler annotated list[str] (wrong type): EventHandlerArgTypeMismatchError: Event handler on_submit expects dict[str, typing.Any] for argument form_data but got list[str] as annotated in S.listarg instead.
+EXC  handler with two params, no partial: EventFnArgMismatchError: Event on_submit only provides 1 arguments, but S.two_args requires at least 2 arguments to be passed to the event handler. ... (2 lines)
+OK   deprecation: id-only control + dict handler
+OK   deprecation: id-only control + NO form-data handler (no warning expected)
+OK   deprecation: id-only control + prevent_default only
+OK   deprecation: id-only button/submit (no warning expected)
+OK   deprecation: id-only rx.upload inside form
+OK   deprecation: id-only disabled input (skipped)
+OK   deprecation: id-only input in rx.cond
+OK   deprecation: id-only in memo'd child
+OK   deprecation: same id twice (dedupe)
+OK   FormData[str,str] handler
+OK   FormData | None handler
+OK   bare FormData handler
+OK   FormData[str,Any] handler
+EXC  FormData[int,str] handler (wrong key type): EventHandlerArgTypeMismatchError: Event handler on_submit expects dict[str, typing.Any] for argument form_data but got reflex_base.utils.form.FormData[int, str] as annotated in S2.fd_wrongk inst
+FormData repr FormData([('a', '1'), ('a', '2'), ('b', 'x')]) len 2 a= 2 getlist ['1', '2'] eq dict True pickle-roundtrip True
+immutable: FormData is immutable
+transform dict ann: {'a': '2', 'r[]': '2'}
+transform no ann: {'a': '2'}
+transform Bracketed: {'tags': ['1', '2']}
+transform Signup empty: {'tags': [], 'agree': False}
+transform Signup bool strings: [True, True, False, False, False, True, False, True, True, True]
+envelope with 'not-a-list' -> EXC ValueError dictionary update sequence element #0 has length 1; 2 is required
+envelope with 5 -> EXC TypeError 'int' object is not iterable
+envelope with [['a']] -> EXC ValueError dictionary update sequence element #0 has length 1; 2 is required
+envelope with [[1, 2, 3]] -> EXC ValueError dictionary update sequence element #0 has length 3; 2 is required
+envelope with {'a': 1} -> {'a': 1}
+envelope with None -> {'__reflex_form_data__': None}
+envelope with [['a', 'b']] -> {'a': 'b'}

@@ -1,0 +1,22 @@
+=== A. pip: 0.10.0 -> 0.10.1a1
+  base rc=0
+  dry-run without --pre: Would install reflex-0.10.1a1 reflex-base-0.10.1a1 reflex-components-core-0.10.1a1 reflex-components-moment-0.10.1a1 reflex-components-radix-0.10.1a1
+  upgrade rc=0
+  diff ip-pip-base -> ip-pip-up: < reflex-base==0.10.0 > reflex-base==0.10.1a1 < reflex-components-core==0.10.0 > reflex-components-core==0.10.1a1 < reflex-components-moment==0.10.0 > reflex-components-moment==0.10.1a1 < reflex-components-radix==0.10.0 > reflex-components-radix==0.10.1a1 < reflex==0.10.0 > reflex==0.10.1a1 
+  pip check: No broken requirements found.
+=== B. uv: 0.10.0 -> 0.10.1a1
+  uv dry-run without a prerelease flag: hint: `reflex-base` was requested with a pre-release marker (e.g., reflex-base==0.10.1a1), but pre-releases weren't enabled (try: `--prerelease=allow`) 
+  uv dry-run without -U:  - reflex==0.10.0  + reflex==0.10.1a1  - reflex-base==0.10.0  + reflex-base==0.10.1a1  - reflex-components-core==0.10.0  + reflex-components-core==0.10.1a1  - reflex-components-moment==0.10.0  + reflex-components-moment==0.10.1a1  - reflex-components-radix==0.10.0  + reflex-components-radix==0.10.1a1 
+  diff ip-uv-base -> ip-uv-up: < reflex-base==0.10.0 < reflex-build-sdk==0.1.0 < reflex-components-code==0.10.0 < reflex-components-core==0.10.0 < reflex-components-dataeditor==0.10.0 > reflex-base==0.10.1a1 > reflex-build-sdk==0.1.1a1 > reflex-components-code==0.10.1a1 > reflex-components-core==0.10.1a1 > reflex-components-dataeditor==0.10.1a1 < reflex-components-lucide==1.1.0 > reflex-components-lucide==1.1.1a1 < reflex-components-moment==0.10.0 > reflex-components-moment==0.10.1a1 < reflex-components-radix==0.10.0 > reflex-components-radix==0.10.1a1 < reflex-hosting-cli==0.2.0 < reflex==0.10.0 > reflex-hosting-cli==0.2.1a1 > reflex==0.10.1a1 < wrapt==2.5.1 > wrapt==2.5.2rc1 
+  pip check: No broken requirements found.
+=== C. pip: reflex[db]==0.10.0 -> reflex==0.10.1a1 (no extra) -> reflex[db]==0.10.1a1
+  import reflex.model OK
+  import reflex.model OK
+  diff ip-pipdb-base -> ip-pipdb-noextra: < reflex-base==0.10.0 > reflex-base==0.10.1a1 < reflex-components-core==0.10.0 > reflex-components-core==0.10.1a1 < reflex-components-moment==0.10.0 > reflex-components-moment==0.10.1a1 < reflex-components-radix==0.10.0 > reflex-components-radix==0.10.1a1 < reflex==0.10.0 > reflex==0.10.1a1 
+  import reflex.model OK
+  diff ip-pipdb-noextra -> ip-pipdb-db: 
+  pip check: No broken requirements found.
+=== D. fresh pip install reflex==0.10.1a1, with and without --pre
+  diff ip-fresh -> ip-freshnopre: < reflex-build-sdk==0.1.1a1 < reflex-components-code==0.10.1a1 > reflex-build-sdk==0.1.0 > reflex-components-code==0.10.0 < reflex-components-dataeditor==0.10.1a1 > reflex-components-dataeditor==0.10.0 < reflex-components-lucide==1.1.1a1 > reflex-components-lucide==1.1.0 < reflex-hosting-cli==0.2.1a1 > reflex-hosting-cli==0.2.0 < wrapt==2.5.2rc1 > wrapt==2.5.1 
+  pre-releases in the graph: reflex-base==0.10.1a1 reflex-components-core==0.10.1a1 reflex-components-moment==0.10.1a1 reflex-components-radix==0.10.1a1 reflex==0.10.1a1 
+  pip check: No broken requirements found.

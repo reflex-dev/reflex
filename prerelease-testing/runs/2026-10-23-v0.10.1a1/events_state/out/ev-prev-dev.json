@@ -1,0 +1,961 @@
+{
+ "base": "http://localhost:3302",
+ "console": [
+  "[log] Disconnect websocket on pagehide",
+  "[log] Disconnect websocket on pagehide",
+  "[log] Disconnect websocket on pagehide",
+  "[log] Disconnect websocket on pagehide",
+  "[log] Disconnect websocket on pagehide",
+  "[log] Disconnect websocket on pagehide",
+  "[log] Disconnect websocket on pagehide",
+  "[log] Disconnect websocket on pagehide",
+  "[log] Disconnect websocket on pagehide"
+ ],
+ "errors": [
+  "it_rx_state_ is not defined"
+ ],
+ "scenarios": {
+  "filtered": {
+   "initial": {
+    "n": "0",
+    "tick": "0"
+   },
+   "after_bump1": {
+    "n": "1",
+    "tick": "100"
+   },
+   "after_bump2_withheld": {
+    "n": "2",
+    "tick": "100"
+   },
+   "after_release": {
+    "n": "2",
+    "tick": "200"
+   },
+   "after_bump3": {
+    "n": "3",
+    "tick": "300"
+   },
+   "verdict": "PASS"
+  },
+  "onload_navigate": {
+   "steps_before_leave": "s1",
+   "url_after": "http://localhost:3302/",
+   "server_log_after_leave": [
+    {
+     "who": "start_bg",
+     "step": "dispatch",
+     "t": 1792807248.744
+    },
+    {
+     "who": "slow_load",
+     "step": 1,
+     "loads": 1,
+     "t": 1792807248.749
+    }
+   ],
+   "slow_load_steps_logged": [
+    1
+   ],
+   "bg_steps_logged": []
+  },
+  "onload_close": {
+   "steps_before_leave": "s1",
+   "server_log_after_leave": [
+    {
+     "who": "start_bg",
+     "step": "dispatch",
+     "t": 1792807257.533
+    },
+    {
+     "who": "slow_load",
+     "step": 1,
+     "loads": 1,
+     "t": 1792807257.538
+    },
+    {
+     "who": "slow_load",
+     "step": 2,
+     "loads": 1,
+     "t": 1792807258.74
+    },
+    {
+     "who": "slow_load",
+     "step": 3,
+     "loads": 1,
+     "t": 1792807259.943
+    },
+    {
+     "who": "slow_load",
+     "step": 4,
+     "loads": 1,
+     "t": 1792807261.145
+    },
+    {
+     "who": "slow_load",
+     "step": "done",
+     "loads": 1,
+     "t": 1792807262.348
+    },
+    {
+     "who": "start_bg",
+     "step": "dispatch",
+     "t": 1792807262.363
+    },
+    {
+     "who": "slow_load",
+     "step": 1,
+     "loads": 2,
+     "t": 1792807262.367
+    },
+    {
+     "who": "bg_from_load",
+     "step": 1,
+     "t": 1792807263.359
+    },
+    {
+     "who": "bg_from_load",
+     "step": 1,
+     "t": 1792807263.366
+    },
+    {
+     "who": "slow_load",
+     "step": 2,
+     "loads": 2,
+     "t": 1792807263.569
+    },
+    {
+     "who": "slow_load",
+     "step": 3,
+     "loads": 2,
+     "t": 1792807264.771
+    }
+   ],
+   "slow_load_steps_logged": [
+    1,
+    2,
+    3,
+    4,
+    "done",
+    1,
+    2,
+    3
+   ],
+   "bg_steps_logged": [
+    1,
+    1
+   ]
+  },
+  "onload_plain_close": {
+   "steps_before_leave": "",
+   "server_log_after_leave": [
+    {
+     "who": "slow_load",
+     "step": 4,
+     "loads": 2,
+     "t": 1792807265.973
+    },
+    {
+     "who": "plain_slow_load",
+     "step": "start",
+     "t": 1792807267.119
+    },
+    {
+     "who": "slow_load",
+     "step": "done",
+     "loads": 2,
+     "t": 1792807267.19
+    },
+    {
+     "who": "start_bg",
+     "step": "dispatch",
+     "t": 1792807267.202
+    },
+    {
+     "who": "slow_load",
+     "step": 1,
+     "loads": 3,
+     "t": 1792807267.208
+    },
+    {
+     "who": "bg_from_load",
+     "step": 2,
+     "t": 1792807268.198
+    },
+    {
+     "who": "bg_from_load",
+     "step": 2,
+     "t": 1792807268.199
+    },
+    {
+     "who": "bg_from_load",
+     "step": 1,
+     "t": 1792807268.208
+    },
+    {
+     "who": "slow_load",
+     "step": 2,
+     "loads": 3,
+     "t": 1792807268.417
+    },
+    {
+     "who": "slow_load",
+     "step": 3,
+     "loads": 3,
+     "t": 1792807269.62
+    },
+    {
+     "who": "plain_slow_load",
+     "step": "end",
+     "t": 1792807269.621
+    },
+    {
+     "who": "slow_load",
+     "step": 4,
+     "loads": 3,
+     "t": 1792807270.829
+    },
+    {
+     "who": "slow_load",
+     "step": "done",
+     "loads": 3,
+     "t": 1792807272.032
+    },
+    {
+     "who": "start_bg",
+     "step": "dispatch",
+     "t": 1792807272.044
+    },
+    {
+     "who": "slow_load",
+     "step": 1,
+     "loads": 4,
+     "t": 1792807272.051
+    },
+    {
+     "who": "bg_from_load",
+     "step": 3,
+     "t": 1792807273.037
+    },
+    {
+     "who": "bg_from_load",
+     "step": 3,
+     "t": 1792807273.038
+    },
+    {
+     "who": "bg_from_load",
+     "step": 2,
+     "t": 1792807273.04
+    },
+    {
+     "who": "bg_from_load",
+     "step": 1,
+     "t": 1792807273.051
+    },
+    {
+     "who": "slow_load",
+     "step": 2,
+     "loads": 4,
+     "t": 1792807273.252
+    },
+    {
+     "who": "slow_load",
+     "step": 3,
+     "loads": 4,
+     "t": 1792807274.455
+    }
+   ],
+   "slow_load_steps_logged": [
+    4,
+    "start",
+    "done",
+    1,
+    2,
+    3,
+    "end",
+    4,
+    "done",
+    1,
+    2,
+    3
+   ],
+   "bg_steps_logged": [
+    2,
+    2,
+    1,
+    3,
+    3,
+    2,
+    1
+   ]
+  },
+  "onload_bg_close": {
+   "steps_before_leave": "",
+   "server_log_after_leave": [
+    {
+     "who": "slow_load",
+     "step": 4,
+     "loads": 4,
+     "t": 1792807275.657
+    },
+    {
+     "who": "bg_from_load",
+     "step": 1,
+     "t": 1792807276.677
+    },
+    {
+     "who": "slow_load",
+     "step": "done",
+     "loads": 4,
+     "t": 1792807276.859
+    },
+    {
+     "who": "start_bg",
+     "step": "dispatch",
+     "t": 1792807276.874
+    },
+    {
+     "who": "slow_load",
+     "step": 1,
+     "loads": 5,
+     "t": 1792807276.876
+    },
+    {
+     "who": "bg_from_load",
+     "step": 2,
+     "t": 1792807277.683
+    },
+    {
+     "who": "bg_from_load",
+     "step": 4,
+     "t": 1792807277.866
+    },
+    {
+     "who": "bg_from_load",
+     "step": 4,
+     "t": 1792807277.867
+    },
+    {
+     "who": "bg_from_load",
+     "step": 3,
+     "t": 1792807277.868
+    },
+    {
+     "who": "bg_from_load",
+     "step": 2,
+     "t": 1792807277.87
+    },
+    {
+     "who": "bg_from_load",
+     "step": 1,
+     "t": 1792807277.876
+    },
+    {
+     "who": "slow_load",
+     "step": 2,
+     "loads": 5,
+     "t": 1792807278.077
+    },
+    {
+     "who": "bg_from_load",
+     "step": 3,
+     "t": 1792807278.69
+    },
+    {
+     "who": "slow_load",
+     "step": 3,
+     "loads": 5,
+     "t": 1792807279.28
+    },
+    {
+     "who": "bg_from_load",
+     "step": 4,
+     "t": 1792807279.695
+    },
+    {
+     "who": "bg_from_load",
+     "step": "done",
+     "t": 1792807279.697
+    },
+    {
+     "who": "slow_load",
+     "step": 4,
+     "loads": 5,
+     "t": 1792807280.483
+    },
+    {
+     "who": "slow_load",
+     "step": "done",
+     "loads": 5,
+     "t": 1792807281.685
+    },
+    {
+     "who": "bg_from_load",
+     "step": "done",
+     "t": 1792807281.693
+    },
+    {
+     "who": "bg_from_load",
+     "step": "done",
+     "t": 1792807281.695
+    },
+    {
+     "who": "start_bg",
+     "step": "dispatch",
+     "t": 1792807281.704
+    },
+    {
+     "who": "slow_load",
+     "step": 1,
+     "loads": 6,
+     "t": 1792807281.707
+    },
+    {
+     "who": "bg_from_load",
+     "step": 4,
+     "t": 1792807282.699
+    },
+    {
+     "who": "bg_from_load",
+     "step": 3,
+     "t": 1792807282.7
+    },
+    {
+     "who": "bg_from_load",
+     "step": 2,
+     "t": 1792807282.7
+    },
+    {
+     "who": "bg_from_load",
+     "step": 1,
+     "t": 1792807282.707
+    },
+    {
+     "who": "slow_load",
+     "step": 2,
+     "loads": 6,
+     "t": 1792807282.909
+    }
+   ],
+   "slow_load_steps_logged": [
+    4,
+    "done",
+    1,
+    2,
+    3,
+    4,
+    "done",
+    1,
+    2
+   ],
+   "bg_steps_logged": [
+    1,
+    2,
+    4,
+    4,
+    3,
+    2,
+    1,
+    3,
+    4,
+    "done",
+    "done",
+    "done",
+    4,
+    3,
+    2,
+    1
+   ]
+  },
+  "onload_bg_navigate": {
+   "steps_before_leave": "",
+   "url_after": "http://localhost:3302/",
+   "server_log_after_leave": [
+    {
+     "who": "slow_load",
+     "step": 3,
+     "loads": 6,
+     "t": 1792807284.111
+    },
+    {
+     "who": "slow_load",
+     "step": 4,
+     "loads": 6,
+     "t": 1792807285.313
+    },
+    {
+     "who": "slow_load",
+     "step": "done",
+     "loads": 6,
+     "t": 1792807286.519
+    },
+    {
+     "who": "bg_from_load",
+     "step": "done",
+     "t": 1792807286.524
+    },
+    {
+     "who": "start_bg",
+     "step": "dispatch",
+     "t": 1792807286.533
+    },
+    {
+     "who": "slow_load",
+     "step": 1,
+     "loads": 7,
+     "t": 1792807286.535
+    },
+    {
+     "who": "bg_from_load",
+     "step": 4,
+     "t": 1792807287.528
+    },
+    {
+     "who": "bg_from_load",
+     "step": 3,
+     "t": 1792807287.529
+    },
+    {
+     "who": "bg_from_load",
+     "step": 2,
+     "t": 1792807287.529
+    },
+    {
+     "who": "bg_from_load",
+     "step": 1,
+     "t": 1792807287.536
+    },
+    {
+     "who": "slow_load",
+     "step": 2,
+     "loads": 7,
+     "t": 1792807287.737
+    },
+    {
+     "who": "slow_load",
+     "step": 3,
+     "loads": 7,
+     "t": 1792807288.939
+    },
+    {
+     "who": "slow_load",
+     "step": 4,
+     "loads": 7,
+     "t": 1792807290.141
+    },
+    {
+     "who": "slow_load",
+     "step": "done",
+     "loads": 7,
+     "t": 1792807291.344
+    },
+    {
+     "who": "bg_from_load",
+     "step": "done",
+     "t": 1792807291.349
+    },
+    {
+     "who": "start_bg",
+     "step": "dispatch",
+     "t": 1792807291.357
+    },
+    {
+     "who": "slow_load",
+     "step": 1,
+     "loads": 8,
+     "t": 1792807291.359
+    },
+    {
+     "who": "bg_from_load",
+     "step": 4,
+     "t": 1792807292.352
+    },
+    {
+     "who": "bg_from_load",
+     "step": 3,
+     "t": 1792807292.354
+    },
+    {
+     "who": "bg_from_load",
+     "step": 2,
+     "t": 1792807292.354
+    },
+    {
+     "who": "bg_from_load",
+     "step": 1,
+     "t": 1792807292.361
+    }
+   ],
+   "slow_load_steps_logged": [
+    3,
+    4,
+    "done",
+    1,
+    2,
+    3,
+    4,
+    "done",
+    1
+   ],
+   "bg_steps_logged": [
+    "done",
+    4,
+    3,
+    2,
+    1,
+    "done",
+    4,
+    3,
+    2,
+    1
+   ]
+  },
+  "expire": {
+   "loads_initial": "1",
+   "pref": "chosen",
+   "short_task": {
+    "status": "done",
+    "count": "11"
+   },
+   "long_started": {
+    "status": "started",
+    "count": "12"
+   },
+   "after_long": {
+    "status": "done",
+    "count": "10",
+    "loads": "1",
+    "pref": "chosen",
+    "url": "http://localhost:3302/expire"
+   },
+   "storage_ev_pref": "chosen",
+   "after_next_event": {
+    "status": "manual",
+    "count": "10",
+    "loads": "1",
+    "pref": "unset",
+    "url": "http://localhost:3302/expire"
+   },
+   "after_reload": {
+    "status": "manual",
+    "count": "10",
+    "loads": "2",
+    "pref": "chosen"
+   },
+   "server_log": [
+    {
+     "who": "slow_load",
+     "step": 2,
+     "loads": 8,
+     "t": 1792807292.567
+    },
+    {
+     "who": "exp.on_load",
+     "loads": 1,
+     "t": 1792807293.248
+    },
+    {
+     "who": "long_task",
+     "step": "started",
+     "count": 1,
+     "t": 1792807293.484
+    },
+    {
+     "who": "slow_load",
+     "step": 3,
+     "loads": 8,
+     "t": 1792807293.775
+    },
+    {
+     "who": "slow_load",
+     "step": 4,
+     "loads": 8,
+     "t": 1792807294.979
+    },
+    {
+     "who": "long_task",
+     "step": "done",
+     "count": 11,
+     "loads": 1,
+     "pref": "chosen",
+     "t": 1792807295.488
+    },
+    {
+     "who": "long_task",
+     "step": "started",
+     "count": 12,
+     "t": 1792807296.101
+    },
+    {
+     "who": "slow_load",
+     "step": "done",
+     "loads": 8,
+     "t": 1792807296.181
+    },
+    {
+     "who": "bg_from_load",
+     "step": "done",
+     "t": 1792807296.186
+    },
+    {
+     "who": "start_bg",
+     "step": "dispatch",
+     "t": 1792807296.196
+    },
+    {
+     "who": "slow_load",
+     "step": 1,
+     "loads": 9,
+     "t": 1792807296.2
+    },
+    {
+     "who": "bg_from_load",
+     "step": 4,
+     "t": 1792807297.189
+    },
+    {
+     "who": "bg_from_load",
+     "step": 3,
+     "t": 1792807297.191
+    },
+    {
+     "who": "bg_from_load",
+     "step": 2,
+     "t": 1792807297.192
+    },
+    {
+     "who": "bg_from_load",
+     "step": 1,
+     "t": 1792807297.2
+    },
+    {
+     "who": "slow_load",
+     "step": 2,
+     "loads": 9,
+     "t": 1792807297.401
+    },
+    {
+     "who": "slow_load",
+     "step": 3,
+     "loads": 9,
+     "t": 1792807298.604
+    },
+    {
+     "who": "slow_load",
+     "step": 4,
+     "loads": 9,
+     "t": 1792807299.805
+    },
+    {
+     "who": "slow_load",
+     "step": "done",
+     "loads": 9,
+     "t": 1792807301.008
+    },
+    {
+     "who": "bg_from_load",
+     "step": "done",
+     "t": 1792807301.056
+    },
+    {
+     "who": "start_bg",
+     "step": "dispatch",
+     "t": 1792807301.067
+    },
+    {
+     "who": "slow_load",
+     "step": 1,
+     "loads": 10,
+     "t": 1792807301.07
+    },
+    {
+     "who": "bg_from_load",
+     "step": 4,
+     "t": 1792807302.06
+    },
+    {
+     "who": "bg_from_load",
+     "step": 3,
+     "t": 1792807302.06
+    },
+    {
+     "who": "bg_from_load",
+     "step": 2,
+     "t": 1792807302.063
+    },
+    {
+     "who": "bg_from_load",
+     "step": 1,
+     "t": 1792807302.07
+    },
+    {
+     "who": "slow_load",
+     "step": 2,
+     "loads": 10,
+     "t": 1792807302.272
+    },
+    {
+     "who": "slow_load",
+     "step": 3,
+     "loads": 10,
+     "t": 1792807303.475
+    },
+    {
+     "who": "long_task",
+     "step": "done",
+     "count": 10,
+     "loads": 0,
+     "pref": "unset",
+     "t": 1792807304.105
+    },
+    {
+     "who": "slow_load",
+     "step": 4,
+     "loads": 10,
+     "t": 1792807304.678
+    },
+    {
+     "who": "slow_load",
+     "step": "done",
+     "loads": 10,
+     "t": 1792807305.88
+    },
+    {
+     "who": "bg_from_load",
+     "step": "done",
+     "t": 1792807305.885
+    },
+    {
+     "who": "start_bg",
+     "step": "dispatch",
+     "t": 1792807305.895
+    },
+    {
+     "who": "slow_load",
+     "step": 1,
+     "loads": 11,
+     "t": 1792807305.898
+    },
+    {
+     "who": "exp.on_load",
+     "loads": 1,
+     "t": 1792807306.767
+    },
+    {
+     "who": "bg_from_load",
+     "step": 4,
+     "t": 1792807306.889
+    },
+    {
+     "who": "bg_from_load",
+     "step": 3,
+     "t": 1792807306.89
+    },
+    {
+     "who": "bg_from_load",
+     "step": 2,
+     "t": 1792807306.89
+    },
+    {
+     "who": "bg_from_load",
+     "step": 1,
+     "t": 1792807306.898
+    },
+    {
+     "who": "slow_load",
+     "step": 2,
+     "loads": 11,
+     "t": 1792807307.099
+    },
+    {
+     "who": "slow_load",
+     "step": 3,
+     "loads": 11,
+     "t": 1792807308.301
+    },
+    {
+     "who": "slow_load",
+     "step": 4,
+     "loads": 11,
+     "t": 1792807309.504
+    },
+    {
+     "who": "exp.on_load",
+     "loads": 2,
+     "t": 1792807309.563
+    },
+    {
+     "who": "slow_load",
+     "step": "done",
+     "loads": 11,
+     "t": 1792807310.708
+    },
+    {
+     "who": "bg_from_load",
+     "step": "done",
+     "t": 1792807310.713
+    },
+    {
+     "who": "start_bg",
+     "step": "dispatch",
+     "t": 1792807310.721
+    },
+    {
+     "who": "slow_load",
+     "step": 1,
+     "loads": 12,
+     "t": 1792807310.723
+    },
+    {
+     "who": "bg_from_load",
+     "step": 4,
+     "t": 1792807311.717
+    },
+    {
+     "who": "bg_from_load",
+     "step": 3,
+     "t": 1792807311.717
+    },
+    {
+     "who": "bg_from_load",
+     "step": 2,
+     "t": 1792807311.718
+    },
+    {
+     "who": "bg_from_load",
+     "step": 1,
+     "t": 1792807311.724
+    },
+    {
+     "who": "slow_load",
+     "step": 2,
+     "loads": 12,
+     "t": 1792807311.925
+    }
+   ]
+  },
+  "dictviews": {
+   "initial": {
+    "summary": "a=1;b=1",
+    "d": "{\"a\":[\"a0\"],\"b\":[\"b0\"]}"
+   },
+   "after_values": {
+    "summary": "a=1;b=1",
+    "d": "{\"a\":[\"a0\"],\"b\":[\"b0\"]}"
+   },
+   "after_items": {
+    "summary": "a=1;b=1",
+    "d": "{\"a\":[\"a0\"],\"b\":[\"b0\"]}"
+   },
+   "after_setitem": {
+    "summary": "a=3;b=2",
+    "d": "{\"a\":[\"a0\",\"a\",\"s\"],\"b\":[\"b0\",\"b\"]}"
+   },
+   "verdict": "FAIL (UI stale after view mutation)"
+  },
+  "foreach_arg": {
+   "page_errors": [],
+   "got": ""
+  }
+ }
+}

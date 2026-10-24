@@ -1,0 +1,105 @@
+reflex.Model has been deprecated in version 0.9.2. Directly use database ORM layer, like sqlalchemy or SQLModel. It will be completely removed in 1.0.0. (/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/process_model-py314-new/lib/python3.14/site-packages/pydantic/_internal/_model_construction.py:133)
+Passing a string to modify_state has been deprecated in version 0.9.0. Use rx.BaseStateToken(ident=token, cls=state_cls) instead of the legacy string format. It will be completely removed in 1.0. (probe_state_misc.py:280)
+Attempting to send delta to disconnected client 'tok1'
+ArrayVar.foreach has been deprecated in version 0.9.7. Use ArrayVar.map instead. It will be completely removed in 1.0. (probe_state_misc.py:340)
+ArrayVar.foreach has been deprecated in version 0.9.7. Use ArrayVar.map instead. It will be completely removed in 1.0. (probe_state_misc.py:341)
+reflex 0.10.1a1 python 3.14.6
+
+== #7500 mutation through dict views / other paths marks the var dirty
+DIRTY  for v in d.values(): v.append: dirty=['d'] delta_keys=['d', 'total'] d={'a': [1, 1], 'b': [2, 1]} total_in_delta=5
+DIRTY  for k, v in d.items(): v.append: dirty=['d'] delta_keys=['d', 'total'] d={'a': [1, 2], 'b': [2, 2]} total_in_delta=7
+DIRTY  list(d.values())[0].append: dirty=['d'] delta_keys=['d', 'total'] d={'a': [1, 3], 'b': [2]} total_in_delta=6
+DIRTY  d.get('a').append: dirty=['d'] delta_keys=['d', 'total'] d={'a': [1, 4], 'b': [2]} total_in_delta=7
+DIRTY  d.setdefault('z', []).append (new key): dirty=['d'] delta_keys=['d', 'total'] d={'a': [1], 'b': [2], 'z': [5]} total_in_delta=8
+DIRTY  d.setdefault('a', []).append (existing key): dirty=['d'] delta_keys=['d', 'total'] d={'a': [1, 6], 'b': [2]} total_in_delta=9
+DIRTY  nd['x']['n'] = 7: dirty=['nd'] delta_keys=['nd'] d={'a': [1], 'b': [2]} total_in_delta=None
+DIRTY  for inner in nd.values(): inner['n'] = 8: dirty=['nd'] delta_keys=['nd'] d={'a': [1], 'b': [2]} total_in_delta=None
+DIRTY  for x in lod: x['v'] = 9: dirty=['lod'] delta_keys=['lod'] d={'a': [1], 'b': [2]} total_in_delta=None
+DIRTY  lod[0]['v'] = 10: dirty=['lod'] delta_keys=['lod'] d={'a': [1], 'b': [2]} total_in_delta=None
+DIRTY  next(iter(d.values())).append: dirty=['d'] delta_keys=['d', 'total'] d={'a': [1, 11], 'b': [2]} total_in_delta=14
+DIRTY  reversed(d.values()) first .append: dirty=['d'] delta_keys=['d', 'total'] d={'a': [1], 'b': [2, 14]} total_in_delta=17
+DIRTY  [*d.values()][0].append: dirty=['d'] delta_keys=['d', 'total'] d={'a': [1, 15], 'b': [2]} total_in_delta=18
+DIRTY  dict(d)['a'].append (shallow copy): dirty=['d'] delta_keys=['d', 'total'] d={'a': [1, 16], 'b': [2]} total_in_delta=19
+MISSED d.copy()['a'].append: dirty=[] delta_keys=[] d={'a': [1, 18], 'b': [2]} total_in_delta=None
+DIRTY  {**d}['a'].append: dirty=['d'] delta_keys=['d', 'total'] d={'a': [1, 20], 'b': [2]} total_in_delta=23
+DIRTY  sorted(d.values(), key=len)[0].append: dirty=['d'] delta_keys=['d', 'total'] d={'a': [1, 17], 'b': [2]} total_in_delta=20
+DIRTY  max(d.values(), key=len).append: dirty=['d'] delta_keys=['d', 'total'] d={'a': [1, 19], 'b': [2]} total_in_delta=22
+DIRTY  d.values().mapping['a'].append: dirty=['d'] delta_keys=['d', 'total'] d={'a': [1, 21], 'b': [2]} total_in_delta=24
+MISSED for v in d.values(): v += [22] (augmented): dirty=[] delta_keys=[] d={'a': [1, 22], 'b': [2, 22]} total_in_delta=None
+DIRTY  d.items() -> dict(items)['a'].append: dirty=['d'] delta_keys=['d', 'total'] d={'a': [1, 23], 'b': [2]} total_in_delta=26
+MISSED values() view repr/len/contains only (no mutation): dirty=[] delta_keys=[] d={'a': [1], 'b': [2]} total_in_delta=None
+DIRTY  v = d.pop('b'); v.append (pop marks dirty): dirty=['d'] delta_keys=['d', 'total'] d={'a': [1]} total_in_delta=1
+DIRTY  d.popitem()[1].append: dirty=['d'] delta_keys=['d', 'total'] d={'a': [1]} total_in_delta=1
+DIRTY  for v in lod (list) -> v.update: dirty=['lod'] delta_keys=['lod'] d={'a': [1], 'b': [2]} total_in_delta=None
+MISSED v = d['a']; v += [1] (iadd on proxy, no setitem): dirty=[] delta_keys=[] d={'a': [1, 1], 'b': [2]} total_in_delta=None
+DIRTY  d['a'] += [1] (setitem path): dirty=['d'] delta_keys=['d', 'total'] d={'a': MutableProxy([1, 1]), 'b': [2]} total_in_delta=4
+DIRTY  lod += [{}] (iadd on top-level proxy): dirty=['lod'] delta_keys=['lod'] d={'a': [1], 'b': [2]} total_in_delta=None
+
+== #7636 / #7592 rx.Model / pydantic models as handler args and state vars: deprecation warnings
+pydantic.v1 not available in this pydantic: 2.14.1
+warnings during MState definition: []
+h_model  {'m': {'name': 'a', 'qty': 1}}                               -> {'m': "Item:name='a' qty=1 id=None"}                                   warnings=0 [] []
+h_model  {'m': {'name': 'a', 'qty': 1, 'id': 5, 'extra': 'ignored?'}} -> {'m': "Item:id=5 name='a' qty=1"}                                      warnings=0 [] []
+h_pyd    {'m': {'name': 'b', 'qty': 2}}                               -> {'m': "PydItem:name='b' qty=2"}                                        warnings=0 [] []
+h_v1     {'m': {'name': 'c', 'qty': 3}}                               -> {'m': "V1Item:name='c' qty=3"}                                         warnings=0 [] []
+h_dc     {'m': {'name': 'd', 'qty': 4}}                               -> {'m': "DCItem:DCItem(name='d', qty=4)"}                                warnings=0 [] []
+h_list   {'ms': [{'name': 'e', 'qty': 5}, {'name': 'f', 'qty': 6}]}   -> {'ms': "list:[{'name': 'e', 'qty': 5}, {'name': 'f', 'qty': 6}]"}      warnings=0 [] []
+h_opt    {'m': {'name': 'g', 'qty': 7}}                               -> {'m': "Item:name='g' qty=7 id=None"}                                   warnings=0 [] []
+h_opt    {'m': None}                                                  -> {'m': 'NoneType:None'}                                                 warnings=0 [] []
+warnings for model state vars (assign, get_delta, var access): 0 [] []
+delta item: {'item_name_rx_state_': 'z', 'items_rx_state_': "[Item(name='l', id=None, qty=0)]", 'v1item_rx_state_': "name='v' qty=0", 'pitem_rx_state_': "name='p' qty=0", 'item_rx_state_': "name='z' qty=9 id=None"}
+
+== #7410 async uncached computed var withheld by a get_delta override (no 'never awaited' warning expected)
+withhold=False: delta keys=['av', 'n', 'sv'] warnings=[]
+withhold=True: delta keys=['n'] warnings=[('RuntimeWarning', "coroutine '_drop_unchanged_delta_value' was never awaited")]
+
+== #7443 App.modify_state legacy string tokens
+  bare client token                EXC ValueError: Invalid legacy state token: no state found for the state path. Expected '<client_token>_<state_full_name>'. Use rx.BaseStateToken(ident=client_token,    deprecations=0
+  token + unknown path             EXC ValueError: Invalid legacy state token: no state found for the state path. Expected '<client_token>_<state_full_name>'. Use rx.BaseStateToken(ident=client_token,    deprecations=0
+  token + root path                OK -> State   deprecations=0
+  token + substate path            OK -> State   deprecations=0
+  token + root path + bogus child  EXC ValueError: Invalid legacy state token: no state found for the state path. Expected '<client_token>_<state_full_name>'. Use rx.BaseStateToken(ident=client_token,    deprecations=0
+  empty string                     EXC ValueError: Invalid legacy state token: no state found for the state path. Expected '<client_token>_<state_full_name>'. Use rx.BaseStateToken(ident=client_token,    deprecations=0
+  BaseStateToken                   OK -> State   deprecations=0
+
+== #7547 undefined names in state var annotations
+EXC  future: items: list[Item] = []: NameError: name 'Item' is not defined
+EXC  future: items: list[Item] (no default): NameError: name 'Item' is not defined
+EXC  future: backend _items: list[Item] = []: NameError: name 'Item' is not defined
+EXC  future: rx.Field[Item] = rx.field(None): NameError: name 'rx' is not defined
+EXC  future: computed var -> Item: NameError: name 'Item' is not defined
+EXC  no future: items: list['Item'] = []: NameError: name 'Item' is not defined
+EXC  no future: items: 'list[Item]' = []: NameError: name 'Item' is not defined
+EXC  no future: items: list[Item] = [] (plain NameError at class body): NameError: name 'Item' is not defined
+EXC  future: attribute of undefined module: x: mod.Thing = None: NameError: name 'mod' is not defined
+OK   future: handler arg annotation undefined (class created)
+
+== #7606 get_leaf_vars
+OK   items[1:]: ['tate____main_____l_state.items_rx_state_']
+OK   items.join(','): ['tate____main_____l_state.items_rx_state_']
+OK   count + 1: ['tate____main_____l_state.count_rx_state_']
+OK   literal 3: []
+OK   literal [count, 1]: ['tate____main_____l_state.count_rx_state_']
+OK   d['k']: ['___state____main_____l_state.d_rx_state_']
+OK   count.to(str): ['tate____main_____l_state.count_rx_state_']
+OK   items.foreach(lambda x: x.upper()): ['tate____main_____l_state.items_rx_state_']
+OK   items.foreach(lambda x: x + name): ['tate____main_____l_state.items_rx_state_', 'state____main_____l_state.name_rx_state_']
+OK   cond(count > 1, name, items[0]): ['tate____main_____l_state.count_rx_state_', 'state____main_____l_state.name_rx_state_', 'tate____main_____l_state.items_rx_state_']
+OK   raw python list: []
+EXC  non-var input: AttributeError: 'list' object has no attribute '_hash_key'
+
+== #7622 revert: frozenset as array literal
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/events_state/probe_state_misc.py", line 350, in <module>
+    class FState(rx.State):
+        fs: frozenset[int] = frozenset({1, 2})
+        st: set[int] = {1, 2}
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/process_model-py314-new/lib/python3.14/site-packages/reflex_base/vars/base.py", line 5131, in __new__
+    new_cls = super().__new__(cls, name, bases, namespace)
+  File "<frozen abc>", line 106, in __new__
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/process_model-py314-new/lib/python3.14/site-packages/reflex/state.py", line 799, in __init_subclass__
+    cls._init_var(name, prop)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/process_model-py314-new/lib/python3.14/site-packages/reflex/state.py", line 1305, in _init_var
+    raise VarTypeError(msg)
+reflex_base.utils.exceptions.VarTypeError: State vars must be of a serializable type. Valid types include strings, numbers, booleans, lists, dictionaries, dataclasses, datetime objects, and pydantic models. Found var "reflex___state____state____main_____f_state.fs_rx_state_" with type frozenset[int].

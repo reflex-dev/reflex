@@ -1,0 +1,9 @@
+.gitignore
+CHANGELOG.md
+PKG-INFO
+README.md
+news/.gitkeep
+pyproject.toml
+src/reflex_components_dataeditor/__init__.py
+src/reflex_components_dataeditor/dataeditor.py
+src/reflex_components_dataeditor/dataeditor.pyi
