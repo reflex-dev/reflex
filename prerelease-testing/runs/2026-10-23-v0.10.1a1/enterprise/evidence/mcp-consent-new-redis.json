@@ -1,0 +1,95 @@
+{
+ "label": "new-redis",
+ "nav": [
+  [
+   0.77,
+   "http://localhost:3620/agent-consent?txn=bL_uURxFtauyqX-lFWPJjnWS7bdfMoQIEpkom0gvO5c"
+  ],
+  [
+   2.14,
+   "http://localhost:3620/agent-consent?txn=bL_uURxFtauyqX-lFWPJjnWS7bdfMoQIEpkom0gvO5c"
+  ],
+  [
+   2.31,
+   "http://localhost:3620/login?redirect_to=%2Fagent-consent%3Ftxn%3DbL_uURxFtauyqX-lFWPJjnWS7bdfMoQIEpkom0gvO5c"
+  ],
+  [
+   2.42,
+   "http://localhost:8638/oauth2/authorize?client_id=reflex-integration-test&redirect_uri=http%3A%2F%2Flocalhost%3A3620%2Fcallback&scope=openid+email+profile&state="
+  ],
+  [
+   2.75,
+   "http://localhost:3620/callback?code=Y7Gkh7Sm8z8ogmen5QzBqDbOh6wVd8zn3CQH5BuiELrDIejd&state=sxAcCvp_XDWSznHrG2eYGhhN9E1ZOefxytVlpUq8-yFXV_UCIStto8hHc_rz1-b8qKzog"
+  ],
+  [
+   3.06,
+   "http://localhost:3620/callback?code=Y7Gkh7Sm8z8ogmen5QzBqDbOh6wVd8zn3CQH5BuiELrDIejd&state=sxAcCvp_XDWSznHrG2eYGhhN9E1ZOefxytVlpUq8-yFXV_UCIStto8hHc_rz1-b8qKzog"
+  ],
+  [
+   3.19,
+   "http://localhost:3620/agent-consent?txn=bL_uURxFtauyqX-lFWPJjnWS7bdfMoQIEpkom0gvO5c"
+  ]
+ ],
+ "ws_sent": [
+  [
+   2.17,
+   "hydrate_and_load"
+  ],
+  [
+   2.23,
+   "check_if_iframed"
+  ],
+  [
+   2.27,
+   "check_if_iframed_cb"
+  ],
+  [
+   2.32,
+   "on_load_internal"
+  ],
+  [
+   2.38,
+   "redirect_to_login"
+  ],
+  [
+   3.08,
+   "hydrate_and_load"
+  ],
+  [
+   3.14,
+   "update_access_token_hash_in_browser"
+  ],
+  [
+   3.21,
+   "update_vars_internal"
+  ],
+  [
+   3.21,
+   "on_load_internal"
+  ]
+ ],
+ "console": [
+  [
+   2.65,
+   "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ]
+ ],
+ "http_errors": [],
+ "login_url": "http://localhost:3620/login?redirect_to=%2Fagent-consent%3Ftxn%3DbL_uURxFtauyqX-lFWPJjnWS7bdfMoQIEpkom0gvO5c",
+ "final_url": "http://localhost:3620/agent-consent?txn=bL_uURxFtauyqX-lFWPJjnWS7bdfMoQIEpkom0gvO5c",
+ "final_text": "Authorize MCP access\n\nconsent probe is asking to act as you in this app.\n\nThe authorization code will be sent to localhost:8638.\n\nNo specific scopes were requested.\n\nGrant this client permission to:\n\nprofile:read\n\nRead the test profile\n\nitems:write\n\nModify the agent items\n\nOnly the ticked permission",
+ "approve_buttons": 1,
+ "cookies": [
+  "_oidc_generic_access_token_data_partitioned",
+  "_oidc_generic_granted_scopes_partitioned",
+  "_oidc_generic_id_token_partitioned",
+  "_oidc_generic_refresh_token_partitioned"
+ ],
+ "session_storage": {
+  "token": "2ed1e8cf-7912-4a66-ae5c-f39dcbf1c9d9",
+  "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.code_verifier_rx_state_": "FvRfcEZ17jTNDbcb7vXpJaDAjVAPeSXTR6WaF3_b",
+  "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.app_state_rx_state_": "sxAcCvp_XDWSznHrG2eYGhhN9E1ZOefxytVlpUq8",
+  "react-router-scroll-positions": "{\"default\":0,\"ivfqs6rj\":0}",
+  "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.redirect_to_url_rx_state_": "/agent-consent?txn=bL_uURxFtauyqX-lFWPJj"
+ }
+}

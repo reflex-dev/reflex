@@ -1,0 +1,1133 @@
+[
+ {
+  "rep": 1,
+  "A": {
+   "start": "/vault?x=1&y=two%20words",
+   "at_login": true,
+   "login_url": "http://localhost:3620/login?redirect_to=%2Fvault%3Fx%3D1%26y%3Dtwo%2520words",
+   "redirect_to": "/vault?x=1&y=two%20words",
+   "redirect_to_ok": true,
+   "back": true,
+   "final_url": "http://localhost:3620/vault?x=1&y=two%20words",
+   "diag": {
+    "who": "alice",
+    "n_loads": "1",
+    "d_url": "http://localhost:3620/vault?x=1&y=two%20words",
+    "d_path": "/vault",
+    "d_query": "{\"x\": \"1\", \"y\": \"two words\"}",
+    "d_params": "{\"x\": \"1\", \"y\": \"two words\"}",
+    "d_cookies": "",
+    "d_rawck": "False",
+    "d_tok": "True",
+    "d_sid": "True",
+    "d_host": "http://localhost:3620",
+    "d_log": "1:/vault?x=1&y=two%20words",
+    "clicks": "0"
+   },
+   "final_query_ok": true,
+   "onload_query_ok": true,
+   "onload_path_ok": true,
+   "onload_params_ok": true,
+   "server_sees_oidc_cookies": false,
+   "origin_ok": true,
+   "entry": "click1:alice@/vault",
+   "entry_ok": true,
+   "ok": true,
+   "leaks": [],
+   "router_frames": [
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"qd/50OSFUkP7sQ5XaASi+Q==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"qd/50OSFUkP7sQ5XaASi+Q==\",\"sec-websocket-protocol\":\"0.10.1a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/vault\",\"raw_path\":\"/vault?x=1&y=two%20words\",\"full_path\":\"http://localhost:3620/vault\",\"full_raw_path\":\"http://localhost:3620/vault?x=1&y=two%20words\",\"params\":{\"x\":\"1\",\"y\":\"two words\"}},\"rx_router_route_id_rx_state_\":\"/vault\",\"rx_router_session_rx_state_\":{\"client_token\":\"d8293e7e-3520-46d8-e422-01276457a1a9\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"dxsOnjpueTs9jhndAAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/vault\",\"query\":\"x=1&y=two%20words\",\"query_parameters\":{\"x\":\"1\",\"y\":\"two words\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/vault?x=1&y=two%20words\"},\"is_hydrated_rx_state_\":false},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"origin_rx_state_\":\"http://localhost:3620\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/vault\",\"raw_path\":\"/vault?redirect_to=%2Fvault%3Fx%3D1%26y%3Dtwo%2520words\",\"full_path\":\"http://localhost:3620/vault\",\"full_raw_path\":\"http://localhost:3620/vault?redirect_to=%2Fvault%3Fx%3D1%26y%3Dtwo%2520words\",\"params\":{\"redirect_to\":\"/vault?x=1&y=two%20words\"}},\"item_rx_state_\":\"\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/vault\",\"query\":\"redirect_to=%2Fvault%3Fx%3D1%26y%3Dtwo%2520words\",\"query_parameters\":{\"redirect_to\":\"/vault?x=1&y=two%20words\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/vault?redirect_to=%2Fvault%3Fx%3D1%26y%3Dtwo%2520words\"}},\"reflex___state____state.reflex_enterprise___auth___oidc___state____is_iframed_state\":{\"checked_this_session_rx_state_\":true},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"origin_rx_state_\":\"http://localhost:3620\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/login\",\"raw_path\":\"/login?redirect_to=%2Fvault%3Fx%3D1%26y%3Dtwo%2520words\",\"full_path\":\"http://localhost:3620/login\",\"full_raw_path\":\"http://localhost:3620/login?redirect_to=%2Fvault%3Fx%3D1%26y%3Dtwo%2520words\",\"params\":{\"redirect_to\":\"/vault?x=1&y=two%20words\"}},\"is_hydrated_rx_state_\":false,\"item_rx_state_\":\"\",\"rx_router_route_id_rx_state_\":\"/login\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/login\",\"query\":\"redirect_to=%2Fvault%3Fx%3D1%26y%3Dtwo%2520words\",\"query_parameters\":{\"redirect_to\":\"/vault?x=1&y=two%20words\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/login?redirect_to=%2Fvault%3Fx%3D1%26y%3Dtwo%2520words\"}},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"origin_rx_state_\":\"http://localhost:3620\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"4LG/C5/Cq1fTO40JArQATQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"4LG/C5/Cq1fTO40JArQATQ==\",\"sec-websocket-protocol\":\"0.10.1a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/callback\",\"raw_path\":\"/callback?code=Sggst1EQgDqC4nMRvUfV7HD8obY00UyySkzODbpDyTyzMP23&state=pAtH9YklPf2tUS_JLBNIOtnEGnzpmJRDKhaZpyDO_gWQxPxP1xr-QEvx6NO43DPBL9nlO7ZyF0m8N9q2xa68aQ\",\"full_path\":\"http://localhost:3620/callback\",\"full_raw_path\":\"http://localhost:3620/callback?code=Sggst1EQgDqC4nMRvUfV7HD8obY00UyySkzODbpDyTyzMP23&state=pAtH9YklPf2tUS_JLBNIOtnEGnzpmJRDKhaZpyDO_gWQxPxP1xr-QEvx6NO43DPBL9nlO7ZyF0m8N9q2xa68aQ\",\"params\":{\"code\":\"Sggst1EQgDqC4nMRvUfV7HD8obY00UyySkzODbpDyTyzMP23\",\"state\":\"pAtH9YklPf2tUS_JLBNIOtnEGnzpmJRDKhaZpyDO_gWQxPxP1xr-QEvx6NO43DPBL9nlO7ZyF0m8N9q2xa68aQ\"}},\"rx_router_route_id_rx_state_\":\"/callback\",\"rx_router_session_rx_state_\":{\"client_token\":\"d8293e7e-3520-46d8-e422-01276457a1a9\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"9umdaxp25H-d3i0jAAAD\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/callback\",\"query\":\"code=Sggst1EQgDqC4nMRvUfV7HD8obY00UyySkzODbpDyTyzMP23&state=pAtH9YklPf2tUS_JLBNIOtnEGnzpmJRDKhaZpyDO_gWQxPxP1xr-QEvx6NO43DPBL9nlO7ZyF0m8N9q2xa68aQ\",\"query_parameters\":{\"code\":\"Sggst1EQgDqC4nMRvUfV7HD8obY00UyySkzODbpDyTyzMP23\",\"state\":\"pAtH9YklPf2tUS_JLBNIOtnEGnzpmJRDKhaZpyDO_gWQxPxP1xr-QEvx6NO43DPBL9nlO7ZyF0m8N9q2xa68aQ\"},\"fragment\":\"\",\"href\":\"http:",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"\",\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/vault\",\"raw_path\":\"/vault?x=1&y=two%20words\",\"full_path\":\"http://localhost:3620/vault\",\"full_raw_path\":\"http://localhost:3620/vault?x=1&y=two%20words\",\"params\":{\"x\":\"1\",\"y\":\"two words\"}},\"rx_router_route_id_rx_state_\":\"/vault\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/vault\",\"query\":\"x=1&y=two%20words\",\"query_parameters\":{\"x\":\"1\",\"y\":\"two words\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/vault?x=1&y=two%20words\"}},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"app_state_rx_state_\":\"pAtH9YklPf2tUS_JLBNIOtnEGnzpmJRDKhaZpyDO_gWQxPxP1xr-QEvx6NO43DPBL9nlO7ZyF0m8N9q2xa68aQ\",\"code_verifier_rx_state_\":\"q97f2V6tvawemYYvGMHfgGgn0-7ZzokIl9ws0fXO1RW8tLaI7jrsjwmGfHxRAeVFTxScR7Q80grSAeUqoTGLOA\",\"origin_rx_state_\":\"http://localhost:3620\",\"redirect_to_url_rx_state_\":\"/vault?x=1&y=two%20words\",\"latest_access_token_hash_ls_rx_state_\":\"0bfa061732345afe9ede9dc6101951d2adba00accf82e5ba96db8324414d933f\"}}}]"
+   ]
+  },
+  "B": {
+   "start": "/item/abc?z=9",
+   "at_login": true,
+   "login_url": "http://localhost:3620/login?redirect_to=%2Fitem%2Fabc%3Fz%3D9",
+   "redirect_to": "/item/abc?z=9",
+   "redirect_to_ok": true,
+   "back": true,
+   "final_url": "http://localhost:3620/item/abc?z=9",
+   "diag": {
+    "who": "alice",
+    "n_loads": "1",
+    "d_url": "http://localhost:3620/item/abc?z=9",
+    "d_path": "/item/abc",
+    "d_query": "{\"z\": \"9\"}",
+    "d_params": "{\"item\": \"abc\", \"z\": \"9\"}",
+    "d_cookies": "",
+    "d_rawck": "False",
+    "d_tok": "True",
+    "d_sid": "True",
+    "d_host": "http://localhost:3620",
+    "d_log": "1:/item/abc?z=9",
+    "clicks": "0"
+   },
+   "final_query_ok": true,
+   "onload_query_ok": true,
+   "onload_path_ok": true,
+   "onload_params_ok": true,
+   "server_sees_oidc_cookies": false,
+   "origin_ok": true,
+   "entry": "click1:alice@/item/abc",
+   "entry_ok": true,
+   "ok": true,
+   "leaks": [],
+   "router_frames": [
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"abc\",\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"M1Qd9r1N3plvaHrozHdZYA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"M1Qd9r1N3plvaHrozHdZYA==\",\"sec-websocket-protocol\":\"0.10.1a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/item/[item]\",\"raw_path\":\"/item/abc?z=9\",\"full_path\":\"http://localhost:3620/item/[item]\",\"full_raw_path\":\"http://localhost:3620/item/abc?z=9\",\"params\":{\"z\":\"9\",\"item\":\"abc\"}},\"rx_router_route_id_rx_state_\":\"/item/[item]\",\"rx_router_session_rx_state_\":{\"client_token\":\"335d1c73-20d8-4e15-b466-ebf5b1873acb\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"-hjaNqtwmkibFjUYAAAF\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/item/abc\",\"query\":\"z=9\",\"query_parameters\":{\"z\":\"9\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/item/abc?z=9\"},\"is_hydrated_rx_state_\":false},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"origin_rx_state_\":\"http://localhost:3620\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/item/[item]\",\"raw_path\":\"/item/abc?redirect_to=%2Fitem%2Fabc%3Fz%3D9\",\"full_path\":\"http://localhost:3620/item/[item]\",\"full_raw_path\":\"http://localhost:3620/item/abc?redirect_to=%2Fitem%2Fabc%3Fz%3D9\",\"params\":{\"redirect_to\":\"/item/abc?z=9\",\"item\":\"abc\"}},\"item_rx_state_\":\"abc\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/item/abc\",\"query\":\"redirect_to=%2Fitem%2Fabc%3Fz%3D9\",\"query_parameters\":{\"redirect_to\":\"/item/abc?z=9\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/item/abc?redirect_to=%2Fitem%2Fabc%3Fz%3D9\"}},\"reflex___state____state.reflex_enterprise___auth___oidc___state____is_iframed_state\":{\"checked_this_session_rx_state_\":true},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"origin_rx_state_\":\"http://localhost:3620\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/login\",\"raw_path\":\"/login?redirect_to=%2Fitem%2Fabc%3Fz%3D9\",\"full_path\":\"http://localhost:3620/login\",\"full_raw_path\":\"http://localhost:3620/login?redirect_to=%2Fitem%2Fabc%3Fz%3D9\",\"params\":{\"redirect_to\":\"/item/abc?z=9\"}},\"is_hydrated_rx_state_\":false,\"item_rx_state_\":\"\",\"rx_router_route_id_rx_state_\":\"/login\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/login\",\"query\":\"redirect_to=%2Fitem%2Fabc%3Fz%3D9\",\"query_parameters\":{\"redirect_to\":\"/item/abc?z=9\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/login?redirect_to=%2Fitem%2Fabc%3Fz%3D9\"}},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"origin_rx_state_\":\"http://localhost:3620\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"senDd2t6oeo1QFjAMfXHlg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"senDd2t6oeo1QFjAMfXHlg==\",\"sec-websocket-protocol\":\"0.10.1a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/callback\",\"raw_path\":\"/callback?code=hUv5cfZMbdSXEBNf1akXO7dJTY9kWKE6N36oVqmrV0VY5nfC&state=i-_jpl74woySwmKyKjTmOHhLcFn7-DLEfxMLlRN_k208lKuloXvthaxbPmVZC7NTcerD0HVmGvBHLJEI8dY7fg\",\"full_path\":\"http://localhost:3620/callback\",\"full_raw_path\":\"http://localhost:3620/callback?code=hUv5cfZMbdSXEBNf1akXO7dJTY9kWKE6N36oVqmrV0VY5nfC&state=i-_jpl74woySwmKyKjTmOHhLcFn7-DLEfxMLlRN_k208lKuloXvthaxbPmVZC7NTcerD0HVmGvBHLJEI8dY7fg\",\"params\":{\"code\":\"hUv5cfZMbdSXEBNf1akXO7dJTY9kWKE6N36oVqmrV0VY5nfC\",\"state\":\"i-_jpl74woySwmKyKjTmOHhLcFn7-DLEfxMLlRN_k208lKuloXvthaxbPmVZC7NTcerD0HVmGvBHLJEI8dY7fg\"}},\"rx_router_route_id_rx_state_\":\"/callback\",\"rx_router_session_rx_state_\":{\"client_token\":\"335d1c73-20d8-4e15-b466-ebf5b1873acb\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"Pm5fIi_iOwTNzyPcAAAH\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/callback\",\"query\":\"code=hUv5cfZMbdSXEBNf1akXO7dJTY9kWKE6N36oVqmrV0VY5nfC&state=i-_jpl74woySwmKyKjTmOHhLcFn7-DLEfxMLlRN_k208lKuloXvthaxbPmVZC7NTcerD0HVmGvBHLJEI8dY7fg\",\"query_parameters\":{\"code\":\"hUv5cfZMbdSXEBNf1akXO7dJTY9kWKE6N36oVqmrV0VY5nfC\",\"state\":\"i-_jpl74woySwmKyKjTmOHhLcFn7-DLEfxMLlRN_k208lKuloXvthaxbPmVZC7NTcerD0HVmGvBHLJEI8dY7fg\"},\"fragment\":\"\",\"href\":\"http:",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"abc\",\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/item/[item]\",\"raw_path\":\"/item/abc?z=9\",\"full_path\":\"http://localhost:3620/item/[item]\",\"full_raw_path\":\"http://localhost:3620/item/abc?z=9\",\"params\":{\"z\":\"9\",\"item\":\"abc\"}},\"rx_router_route_id_rx_state_\":\"/item/[item]\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/item/abc\",\"query\":\"z=9\",\"query_parameters\":{\"z\":\"9\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/item/abc?z=9\"}},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"app_state_rx_state_\":\"i-_jpl74woySwmKyKjTmOHhLcFn7-DLEfxMLlRN_k208lKuloXvthaxbPmVZC7NTcerD0HVmGvBHLJEI8dY7fg\",\"code_verifier_rx_state_\":\"nJ4SE75pOWa-H1Wx1I-fqs0CRI7E9GXq0gCRF_zt2du0rCqT75AJhQnOXBeiVi9Gpe-W2N4gccbKBBf0Y2DtBg\",\"origin_rx_state_\":\"http://localhost:3620\",\"redirect_to_url_rx_state_\":\"/item/abc?z=9\",\"latest_access_token_hash_ls_rx_state_\":\"3afe76388733feed64a23ebacddf0d0b514657ee8efc92bd26070cb98d1b5d47\"}}}]"
+   ]
+  },
+  "CDEFG": {
+   "G_anon_fe_cookie": "",
+   "G_anon_fe_raw_keys": "accept-encoding,accept-language,asgi-scope-client,cache-control,connection,host,origin,pragma,sec-websocket-extensions,sec-websocket-key,sec-websocket-protocol,sec-websocket-version,upgrade,user-agent",
+   "C_redirect": {
+    "at_login": true,
+    "login_url": "http://localhost:3620/login?redirect_to=%2Fvault%3Fx%3Dnav",
+    "redirect_to": "/vault?x=nav"
+   },
+   "C_redirect_to_ok": true,
+   "C_navs": [
+    "http://localhost:3620/",
+    "http://localhost:3620/",
+    "http://localhost:3620/vault?x=nav",
+    "http://localhost:3620/login?redirect_to=%2Fvault%3Fx%3Dnav"
+   ],
+   "C_back": true,
+   "C_final_url": "http://localhost:3620/vault?x=nav",
+   "C_diag": {
+    "who": "alice",
+    "n_loads": "1",
+    "d_url": "http://localhost:3620/vault?x=nav",
+    "d_path": "/vault",
+    "d_query": "{\"x\": \"nav\"}",
+    "d_params": "{\"x\": \"nav\"}",
+    "d_cookies": "",
+    "d_rawck": "False",
+    "d_tok": "True",
+    "d_sid": "True",
+    "d_host": "http://localhost:3620",
+    "d_log": "1:/vault?x=nav",
+    "clicks": "0"
+   },
+   "C_ok": true,
+   "D_steps": [
+    {
+     "to": "/",
+     "path_ok": true,
+     "fe_cookie": "",
+     "fe_raw_keys": "accept-encoding,accept-language,asgi-scope-client,cache-control,connection,host,origin,pragma,sec-websocket-extensions,sec-websocket-key,sec-websocket-protocol,sec-websocket-version,upgrade,user-agent",
+     "who": "alice",
+     "click_url": "http://localhost:3620/",
+     "click_cookies_has_oidc": false
+    },
+    {
+     "to": "/vault2",
+     "path_ok": true,
+     "url": "http://localhost:3620/vault2?q=5&r=a%20b",
+     "diag": {
+      "who": "alice",
+      "n_loads": "2",
+      "d_url": "http://localhost:3620/vault2?q=5&r=a%20b",
+      "d_path": "/vault2",
+      "d_query": "{\"q\": \"5\", \"r\": \"a b\"}",
+      "d_params": "{\"q\": \"5\", \"r\": \"a b\"}",
+      "d_cookies": "",
+      "d_rawck": "False",
+      "d_tok": "True",
+      "d_sid": "True",
+      "d_host": "http://localhost:3620",
+      "d_log": "1:/vault?x=nav | 2:/vault2?q=5&r=a%20b",
+      "clicks": "0"
+     },
+     "n_loads_before": null,
+     "onload_ok": true,
+     "server_sees_oidc_cookies": false
+    },
+    {
+     "to": "/item/xyz",
+     "path_ok": true,
+     "url": "http://localhost:3620/item/xyz?k=1",
+     "diag": {
+      "who": "alice",
+      "n_loads": "3",
+      "d_url": "http://localhost:3620/item/xyz?k=1",
+      "d_path": "/item/xyz",
+      "d_query": "{\"k\": \"1\"}",
+      "d_params": "{\"item\": \"xyz\", \"k\": \"1\"}",
+      "d_cookies": "",
+      "d_rawck": "False",
+      "d_tok": "True",
+      "d_sid": "True",
+      "d_host": "http://localhost:3620",
+      "d_log": "1:/vault?x=nav | 2:/vault2?q=5&r=a%20b | 3:/item/xyz?k=1",
+      "clicks": "0"
+     },
+     "n_loads_before": "2",
+     "onload_ok": true,
+     "server_sees_oidc_cookies": false
+    },
+    {
+     "to": "/vault",
+     "path_ok": true,
+     "url": "http://localhost:3620/vault?x=nav",
+     "diag": {
+      "who": "alice",
+      "n_loads": "4",
+      "d_url": "http://localhost:3620/vault?x=nav",
+      "d_path": "/vault",
+      "d_query": "{\"x\": \"nav\"}",
+      "d_params": "{\"x\": \"nav\"}",
+      "d_cookies": "",
+      "d_rawck": "False",
+      "d_tok": "True",
+      "d_sid": "True",
+      "d_host": "http://localhost:3620",
+      "d_log": "1:/vault?x=nav | 2:/vault2?q=5&r=a%20b | 3:/item/xyz?k=1 | 4:/vault?x=nav",
+      "clicks": "0"
+     },
+     "n_loads_before": "3",
+     "onload_ok": true,
+     "server_sees_oidc_cookies": false
+    }
+   ],
+   "D_ok": true,
+   "E_diag": {
+    "who": "alice",
+    "n_loads": "6",
+    "d_url": "http://localhost:3620/item/xyz?k=1",
+    "d_path": "/item/xyz",
+    "d_query": "{\"k\": \"1\"}",
+    "d_params": "{\"item\": \"xyz\", \"k\": \"1\"}",
+    "d_cookies": "_oidc_generic_access_token_data_partitioned,_oidc_generic_granted_scopes_partitioned,_oidc_generic_id_token_partitioned,_oidc_generic_refresh_token_partitioned",
+    "d_rawck": "True",
+    "d_tok": "True",
+    "d_sid": "True",
+    "d_host": "http://localhost:3620",
+    "d_log": "1:/vault?x=nav | 2:/vault2?q=5&r=a%20b | 3:/item/xyz?k=1 | 4:/vault?x=nav | 5:/item/xyz?k=1 | 6:/item/xyz?k=1",
+    "clicks": "0"
+   },
+   "E_server_sees_oidc_cookies_after_reload": true,
+   "E_ok": true,
+   "F_cookies_before": [
+    "_oidc_generic_access_token_data_partitioned",
+    "_oidc_generic_granted_scopes_partitioned",
+    "_oidc_generic_id_token_partitioned",
+    "_oidc_generic_refresh_token_partitioned"
+   ],
+   "F_after_logout_url": "http://localhost:8638/oauth2/end_session?state=E11tLiQqrJ5P994tIN2m8iRi-ZjnG3Gy-8QR-Sslvx44qSwRvKUBeq-efAyObNX7oXFILBPJS_KnS6y_ItZ-9Q&id_token_hint=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6Ikh6dHgzWjQyWGN5ODFxWWgwd1ZWZXFiSE9HT2hiMXRvSmVSQk5tSFd5VjgifQ.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0Ojg2MzgiLCJleHAiOjE3OTI4MTI1NjgsImlhdCI6MTc5MjgwODk2OCwiYXV0aF90aW1lIjoxNzkyODA4OTY4LCJhdWQiOlsidmF1dGgtY2xpZW50Il0sImF0X2hhc2giOiJzbHBqczBrajN4Ymc5eUswVk9BelJnIiwibmFtZSI6IkFsaWNlIEFkbWluIiwiZW1haWwiOiJhbGljZUBleGFtcGxlLmNvbSIsImdyb3VwcyI6WyJhZG1pbnMiLCJzdGFmZiJdLCJzdWIiOiJhbGljZSJ9.jI4IYDd1dHjcIR0lWY-in0dUqf_bc7oCPmsySfAQYWah36SO0GytWSKvzt5pFDG10ypLYa7euQydO3Hn5fPyej8TS6Yr6e-rKgGT0Wop8Cs5oMi2RkwJ1-ZTztuabEkG9tCH7BpoUyrc4Q5qvzC751WLxQe3kTmZmho-66vyuPurO4u1tXVqGpMta7BcJFynUK5Vyem2y5h0GTmDqPiJOsS4MWTPrmxnKaeGp3lFaWOP8NcJZko-JM0ZXn9vLV_BWgXEkNWi4Wq4n9hGzJHNCj2NjMX_rcangStsHpFg8oQniHpjfFK4XNIjcYfe_nfTG0xQWkgbvOpw41oL-JrXDg&post_logout_redirect_uri=http%3A%2F%2Flocalhost%3A3620%2F",
+   "F_navs": [
+    "http://localhost:8638/oauth2/end_session?state=E11tLiQqrJ5P994tIN2m8iRi-ZjnG3Gy-8QR-Sslvx44qSwRvKUBeq-efAyObNX7oXFILBPJS_KnS6y_ItZ-9Q&id_token_hint=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6Ikh6dHgzWjQyWGN5ODFxWWgwd1ZWZXFiSE9HT2hiMXRvSmVSQk5tSFd5VjgifQ.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0Ojg2MzgiLCJleHAiOjE3OTI4MTI1NjgsImlhdCI6MTc5MjgwODk2OCwiYXV0aF90aW1lIjoxNzkyODA4OTY4LCJhdWQiOlsidmF1dGgtY2xpZW50Il0sImF0X2hhc2giOiJzbHBqczBrajN4Ymc5eUswVk9BelJnIiwibmFtZSI6IkFsaWNlIEFkbWluIiwiZW1haWwiOiJhbGljZUBleGFtcGxlLmNvbSIsImdyb3VwcyI6WyJhZG1pbnMiLCJzdGFmZiJdLCJzdWIiOiJhbGljZSJ9.jI4IYDd1dHjcIR0lWY-in0dUqf_bc7oCPmsySfAQYWah36SO0GytWSKvzt5pFDG10ypLYa7euQydO3Hn5fPyej8TS6Yr6e-rKgGT0Wop8Cs5oMi2RkwJ1-ZTztuabEkG9tCH7BpoUyrc4Q5qvzC751WLxQe3kTmZmho-66vyuPurO4u1tXVqGpMta7BcJFynUK5Vyem2y5h0GTmDqPiJOsS4MWTPrmxnKaeGp3lFaWOP8NcJZko-JM0ZXn9vLV_BWgXEkNWi4Wq4n9hGzJHNCj2NjMX_rcangStsHpFg8oQniHpjfFK4XNIjcYfe_nfTG0xQWkgbvOpw41oL-JrXDg&post_logout_redirect_uri=http%3A%2F%2Flocalhost%3A3620%2F"
+   ],
+   "F_cookies_after": [],
+   "F_revisit": {
+    "at_login": true,
+    "login_url": "http://localhost:3620/login?redirect_to=%2Fvault",
+    "redirect_to": "/vault"
+   },
+   "F_ok": true,
+   "G_leaks": [
+    {
+     "kind": "elsewhere",
+     "why": [
+      "elsewhere VALUE _oidc_generic_granted_scopes_partitioned httpOnly=True"
+     ],
+     "where": [
+      "dTlQLifd75-viUEw\",\"code_verifier_rx_state_\":\"L3wJkF64tCTGp9IpHBj_4MLmKOJBDdXBUh10KH34gq4HvhkBbp671iDHqb2nkvbEpD0ID1mOHLZk-F-EBMun9Q\",\"granted_scopes_rx_state_\":<VALUE>"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"xyz\",\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86"
+    },
+    {
+     "kind": "elsewhere",
+     "why": [
+      "elsewhere VALUE _oidc_generic_granted_scopes_partitioned httpOnly=True"
+     ],
+     "where": [
+      "dTlQLifd75-viUEw\",\"code_verifier_rx_state_\":\"L3wJkF64tCTGp9IpHBj_4MLmKOJBDdXBUh10KH34gq4HvhkBbp671iDHqb2nkvbEpD0ID1mOHLZk-F-EBMun9Q\",\"granted_scopes_rx_state_\":<VALUE>"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"xyz\",\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86"
+    },
+    {
+     "kind": "elsewhere",
+     "why": [
+      "elsewhere VALUE _oidc_generic_granted_scopes_partitioned httpOnly=True"
+     ],
+     "where": [
+      "dTlQLifd75-viUEw\",\"code_verifier_rx_state_\":\"L3wJkF64tCTGp9IpHBj_4MLmKOJBDdXBUh10KH34gq4HvhkBbp671iDHqb2nkvbEpD0ID1mOHLZk-F-EBMun9Q\",\"granted_scopes_rx_state_\":<VALUE>"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+    },
+    {
+     "kind": "elsewhere",
+     "why": [
+      "elsewhere VALUE _oidc_generic_id_token_partitioned httpOnly=True"
+     ],
+     "where": [
+      "irect_url:\\\"http://localhost:8638/oauth2/end_session?state=E11tLiQqrJ5P994tIN2m8iRi-ZjnG3Gy-8QR-Sslvx44qSwRvKUBeq-efAyObNX7oXFILBPJS_KnS6y_ItZ-9Q&id_token_hint=<VALUE>"
+     ],
+     "frame": "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_script\",\"router_data\":{},\"payload\":{\"javascript_code\":\"(globalThis.__reflexCookieSyncChain = Promise.resolve(globalThis.__reflexCookieSyncChain).catch(() => {}).then(() => (((url, options) => fetch(url, {...options, headers: {...options.headers, 'X-Reflex"
+    },
+    {
+     "kind": "elsewhere",
+     "why": [
+      "elsewhere VALUE _oidc_generic_id_token_partitioned httpOnly=True"
+     ],
+     "where": [
+      "d\":{\"path\":\"http://localhost:8638/oauth2/end_session?state=E11tLiQqrJ5P994tIN2m8iRi-ZjnG3Gy-8QR-Sslvx44qSwRvKUBeq-efAyObNX7oXFILBPJS_KnS6y_ItZ-9Q&id_token_hint=<VALUE>"
+     ],
+     "frame": "42/_event,[\"event\",{\"events\":[{\"name\":\"_redirect\",\"router_data\":{},\"payload\":{\"path\":\"http://localhost:8638/oauth2/end_session?state=E11tLiQqrJ5P994tIN2m8iRi-ZjnG3Gy-8QR-Sslvx44qSwRvKUBeq-efAyObNX7oXFILBPJS_KnS6y_ItZ-9Q&id_token_hint=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6Ikh6dHgzWjQyWGN5ODFxWW"
+    }
+   ],
+   "router_frames": [
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"m9w0IpkcP5bqSUT6vdYemg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"m9w0IpkcP5bqSUT6vdYemg==\",\"sec-websocket-protocol\":\"0.10.1a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3620/index\",\"full_raw_path\":\"http://localhost:3620/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"a56cd950-2dc6-4364-cec6-61beeaddae34\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"Sk7B4EiGxteFmNmWAAAJ\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3620/\"},\"is_hydrated_rx_state_\":false},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"origin_rx_state_\":\"http://localhost:3620\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/vault\",\"raw_path\":\"/vault?x=nav\",\"full_path\":\"http://localhost:3620/vault\",\"full_raw_path\":\"http://localhost:3620/vault?x=nav\",\"params\":{\"x\":\"nav\"}},\"is_hydrated_rx_state_\":false,\"item_rx_state_\":\"\",\"rx_router_route_id_rx_state_\":\"/vault\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/vault\",\"query\":\"x=nav\",\"query_parameters\":{\"x\":\"nav\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/vault?x=nav\"}},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"origin_rx_state_\":\"http://localhost:3620\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/vault\",\"raw_path\":\"/vault?redirect_to=%2Fvault%3Fx%3Dnav\",\"full_path\":\"http://localhost:3620/vault\",\"full_raw_path\":\"http://localhost:3620/vault?redirect_to=%2Fvault%3Fx%3Dnav\",\"params\":{\"redirect_to\":\"/vault?x=nav\"}},\"item_rx_state_\":\"\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/vault\",\"query\":\"redirect_to=%2Fvault%3Fx%3Dnav\",\"query_parameters\":{\"redirect_to\":\"/vault?x=nav\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/vault?redirect_to=%2Fvault%3Fx%3Dnav\"}},\"reflex___state____state.reflex_enterprise___auth___oidc___state____is_iframed_state\":{\"checked_this_session_rx_state_\":true},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"origin_rx_state_\":\"http://localhost:3620\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/login\",\"raw_path\":\"/login?redirect_to=%2Fvault%3Fx%3Dnav\",\"full_path\":\"http://localhost:3620/login\",\"full_raw_path\":\"http://localhost:3620/login?redirect_to=%2Fvault%3Fx%3Dnav\",\"params\":{\"redirect_to\":\"/vault?x=nav\"}},\"is_hydrated_rx_state_\":false,\"item_rx_state_\":\"\",\"rx_router_route_id_rx_state_\":\"/login\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/login\",\"query\":\"redirect_to=%2Fvault%3Fx%3Dnav\",\"query_parameters\":{\"redirect_to\":\"/vault?x=nav\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/login?redirect_to=%2Fvault%3Fx%3Dnav\"}},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"origin_rx_state_\":\"http://localhost:3620\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"pE0BIpMWpXKrV99XyDb6zg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"pE0BIpMWpXKrV99XyDb6zg==\",\"sec-websocket-protocol\":\"0.10.1a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/callback\",\"raw_path\":\"/callback?code=Y0SXSmsk5gw9yZZB5CrdxYVS1TVyflYMbKV7bJnbU3EEQAk0&state=Ud692FjyUJ22JEvGr9WBcd3GP9isuC4tjkfAokDYPpAi-h1fSjVGAls000o_Z2Bup0T41TdTlQLifd75-viUEw\",\"full_path\":\"http://localhost:3620/callback\",\"full_raw_path\":\"http://localhost:3620/callback?code=Y0SXSmsk5gw9yZZB5CrdxYVS1TVyflYMbKV7bJnbU3EEQAk0&state=Ud692FjyUJ22JEvGr9WBcd3GP9isuC4tjkfAokDYPpAi-h1fSjVGAls000o_Z2Bup0T41TdTlQLifd75-viUEw\",\"params\":{\"code\":\"Y0SXSmsk5gw9yZZB5CrdxYVS1TVyflYMbKV7bJnbU3EEQAk0\",\"state\":\"Ud692FjyUJ22JEvGr9WBcd3GP9isuC4tjkfAokDYPpAi-h1fSjVGAls000o_Z2Bup0T41TdTlQLifd75-viUEw\"}},\"rx_router_route_id_rx_state_\":\"/callback\",\"rx_router_session_rx_state_\":{\"client_token\":\"a56cd950-2dc6-4364-cec6-61beeaddae34\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"xofPuHp1Jf7Ruo2WAAAL\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/callback\",\"query\":\"code=Y0SXSmsk5gw9yZZB5CrdxYVS1TVyflYMbKV7bJnbU3EEQAk0&state=Ud692FjyUJ22JEvGr9WBcd3GP9isuC4tjkfAokDYPpAi-h1fSjVGAls000o_Z2Bup0T41TdTlQLifd75-viUEw\",\"query_parameters\":{\"code\":\"Y0SXSmsk5gw9yZZB5CrdxYVS1TVyflYMbKV7bJnbU3EEQAk0\",\"state\":\"Ud692FjyUJ22JEvGr9WBcd3GP9isuC4tjkfAokDYPpAi-h1fSjVGAls000o_Z2Bup0T41TdTlQLifd75-viUEw\"},\"fragment\":\"\",\"href\":\"http:",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"\",\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/vault\",\"raw_path\":\"/vault?x=nav\",\"full_path\":\"http://localhost:3620/vault\",\"full_raw_path\":\"http://localhost:3620/vault?x=nav\",\"params\":{\"x\":\"nav\"}},\"rx_router_route_id_rx_state_\":\"/vault\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/vault\",\"query\":\"x=nav\",\"query_parameters\":{\"x\":\"nav\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/vault?x=nav\"}},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"app_state_rx_state_\":\"Ud692FjyUJ22JEvGr9WBcd3GP9isuC4tjkfAokDYPpAi-h1fSjVGAls000o_Z2Bup0T41TdTlQLifd75-viUEw\",\"code_verifier_rx_state_\":\"L3wJkF64tCTGp9IpHBj_4MLmKOJBDdXBUh10KH34gq4HvhkBbp671iDHqb2nkvbEpD0ID1mOHLZk-F-EBMun9Q\",\"origin_rx_state_\":\"http://localhost:3620\",\"redirect_to_url_rx_state_\":\"/vault?x=nav\",\"latest_access_token_hash_ls_rx_state_\":\"b25a63b34923df16e0f722b454e033469214e958c67f2be1c57fad4bbbf1c4a1\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"\",\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3620/index\",\"full_raw_path\":\"http://localhost:3620/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3620/\"}},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"app_state_rx_state_\":\"Ud692FjyUJ22JEvGr9WBcd3GP9isuC4tjkfAokDYPpAi-h1fSjVGAls000o_Z2Bup0T41TdTlQLifd75-viUEw\",\"code_verifier_rx_state_\":\"L3wJkF64tCTGp9IpHBj_4MLmKOJBDdXBUh10KH34gq4HvhkBbp671iDHqb2nkvbEpD0ID1mOHLZk-F-EBMun9Q\",\"origin_rx_state_\":\"http://localhost:3620\",\"redirect_to_url_rx_state_\":\"/vault?x=nav\",\"latest_access_token_hash_ls_rx_state_\":\"b25a63b34923df16e0f722b454e033469214e958c67f2be1c57fad4bbbf1c4a1\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"\",\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/vault2\",\"raw_path\":\"/vault2?q=5&r=a%20b\",\"full_path\":\"http://localhost:3620/vault2\",\"full_raw_path\":\"http://localhost:3620/vault2?q=5&r=a%20b\",\"params\":{\"q\":\"5\",\"r\":\"a b\"}},\"rx_router_route_id_rx_state_\":\"/vault2\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/vault2\",\"query\":\"q=5&r=a%20b\",\"query_parameters\":{\"q\":\"5\",\"r\":\"a b\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/vault2?q=5&r=a%20b\"}},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"app_state_rx_state_\":\"Ud692FjyUJ22JEvGr9WBcd3GP9isuC4tjkfAokDYPpAi-h1fSjVGAls000o_Z2Bup0T41TdTlQLifd75-viUEw\",\"code_verifier_rx_state_\":\"L3wJkF64tCTGp9IpHBj_4MLmKOJBDdXBUh10KH34gq4HvhkBbp671iDHqb2nkvbEpD0ID1mOHLZk-F-EBMun9Q\",\"origin_rx_state_\":\"http://localhost:3620\",\"redirect_to_url_rx_state_\":\"/vault?x=nav\",\"latest_access_token_hash_ls_rx_state_\":\"b25a63b34923df16e0f722b454e033469214e958c67f2be1c57fad4bbbf1c4a1\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"xyz\",\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/item/[item]\",\"raw_path\":\"/item/xyz?k=1\",\"full_path\":\"http://localhost:3620/item/[item]\",\"full_raw_path\":\"http://localhost:3620/item/xyz?k=1\",\"params\":{\"k\":\"1\",\"item\":\"xyz\"}},\"rx_router_route_id_rx_state_\":\"/item/[item]\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/item/xyz\",\"query\":\"k=1\",\"query_parameters\":{\"k\":\"1\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/item/xyz?k=1\"}},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"app_state_rx_state_\":\"Ud692FjyUJ22JEvGr9WBcd3GP9isuC4tjkfAokDYPpAi-h1fSjVGAls000o_Z2Bup0T41TdTlQLifd75-viUEw\",\"code_verifier_rx_state_\":\"L3wJkF64tCTGp9IpHBj_4MLmKOJBDdXBUh10KH34gq4HvhkBbp671iDHqb2nkvbEpD0ID1mOHLZk-F-EBMun9Q\",\"origin_rx_state_\":\"http://localhost:3620\",\"redirect_to_url_rx_state_\":\"/vault?x=nav\",\"latest_access_token_hash_ls_rx_state_\":\"b25a63b34923df16e0f722b454e033469214e958c67f2be1c57fad4bbbf1c4a1\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"\",\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/vault\",\"raw_path\":\"/vault?x=nav\",\"full_path\":\"http://localhost:3620/vault\",\"full_raw_path\":\"http://localhost:3620/vault?x=nav\",\"params\":{\"x\":\"nav\"}},\"rx_router_route_id_rx_state_\":\"/vault\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/vault\",\"query\":\"x=nav\",\"query_parameters\":{\"x\":\"nav\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/vault?x=nav\"}},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"app_state_rx_state_\":\"Ud692FjyUJ22JEvGr9WBcd3GP9isuC4tjkfAokDYPpAi-h1fSjVGAls000o_Z2Bup0T41TdTlQLifd75-viUEw\",\"code_verifier_rx_state_\":\"L3wJkF64tCTGp9IpHBj_4MLmKOJBDdXBUh10KH34gq4HvhkBbp671iDHqb2nkvbEpD0ID1mOHLZk-F-EBMun9Q\",\"origin_rx_state_\":\"http://localhost:3620\",\"redirect_to_url_rx_state_\":\"/vault?x=nav\",\"latest_access_token_hash_ls_rx_state_\":\"b25a63b34923df16e0f722b454e033469214e958c67f2be1c57fad4bbbf1c4a1\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"xyz\",\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"QptahqJIRq33Mmrox7Vlgw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"QptahqJIRq33Mmrox7Vlgw==\",\"sec-websocket-protocol\":\"0.10.1a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/item/[item]\",\"raw_path\":\"/item/xyz?k=1\",\"full_path\":\"http://localhost:3620/item/[item]\",\"full_raw_path\":\"http://localhost:3620/item/xyz?k=1\",\"params\":{\"k\":\"1\",\"item\":\"xyz\"}},\"rx_router_route_id_rx_state_\":\"/item/[item]\",\"rx_router_session_rx_state_\":{\"client_token\":\"a56cd950-2dc6-4364-cec6-61beeaddae34\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"33dIDOFjyTki2vfpAAAN\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/item/xyz\",\"query\":\"k=1\",\"query_parameters\":{\"k\":\"1\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/item/xyz?k=1\"},\"is_hydrated_rx_state_\":false},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"app_state_rx_state_\":\"Ud692FjyUJ22JEvGr9WBcd3GP9isuC4tjkfAokDYPpAi-h1fSjVGAls000o_Z2Bup0T41TdTlQLifd75-viUEw\",\"code_verifier_rx_state_\":\"L3wJkF64tCTGp9IpHBj_4MLmKOJBDdXBUh10KH34gq4HvhkBbp671iDHqb2nkvbEpD0ID1mOHLZk-F-EBMun9Q\",\"granted_scopes_rx_state_\":\"openid email profile\",\"has_any_token_rx_state_\":true,\"last_error_txid_rx_state_\":\"58fde8f623eb4921b1d660bf5eace3f9\",\"latest_access_token_hash_ls_rx_state_\":\"b25a63b34923df16e0f722b454e033469214e958c67f2be1c57fad4bbbf1c4a1\",\"origin_rx_state_\":\"http://localhost:3620\",\"",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"xyz\",\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"LaGQ4M8gIeU2Ube86iMi6w==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"LaGQ4M8gIeU2Ube86iMi6w==\",\"sec-websocket-protocol\":\"0.10.1a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/item/[item]\",\"raw_path\":\"/item/xyz?k=1\",\"full_path\":\"http://localhost:3620/item/[item]\",\"full_raw_path\":\"http://localhost:3620/item/xyz?k=1\",\"params\":{\"k\":\"1\",\"item\":\"xyz\"}},\"rx_router_route_id_rx_state_\":\"/item/[item]\",\"rx_router_session_rx_state_\":{\"client_token\":\"a56cd950-2dc6-4364-cec6-61beeaddae34\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"LXc4IX4JzFDZvC45AAAP\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/item/xyz\",\"query\":\"k=1\",\"query_parameters\":{\"k\":\"1\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/item/xyz?k=1\"},\"is_hydrated_rx_state_\":false},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"app_state_rx_state_\":\"Ud692FjyUJ22JEvGr9WBcd3GP9isuC4tjkfAokDYPpAi-h1fSjVGAls000o_Z2Bup0T41TdTlQLifd75-viUEw\",\"code_verifier_rx_state_\":\"L3wJkF64tCTGp9IpHBj_4MLmKOJBDdXBUh10KH34gq4HvhkBbp671iDHqb2nkvbEpD0ID1mOHLZk-F-EBMun9Q\",\"granted_scopes_rx_state_\":\"openid email profile\",\"has_any_token_rx_state_\":true,\"last_error_txid_rx_state_\":\"58fde8f623eb4921b1d660bf5eace3f9\",\"latest_access_token_hash_ls_rx_state_\":\"b25a63b34923df16e0f722b454e033469214e958c67f2be1c57fad4bbbf1c4a1\",\"origin_rx_state_\":\"http://localhost:3620\",\""
+   ],
+   "G_ok": true
+  },
+  "events": [
+   {
+    "tab": "deep",
+    "kind": "requestfailed",
+    "url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
+    "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "deep",
+    "kind": "console",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "deep",
+    "kind": "console",
+    "type": "error",
+    "text": "Failed to load resource: the server responded with a status of 404 (NOT FOUND)"
+   },
+   {
+    "tab": "deep",
+    "kind": "requestfailed",
+    "url": "http://localhost:8620/_reflex/cookies/sync",
+    "failure": "net::ERR_ABORTED"
+   },
+   {
+    "tab": "deep",
+    "kind": "requestfailed",
+    "url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
+    "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "deep",
+    "kind": "console",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "deep",
+    "kind": "requestfailed",
+    "url": "http://localhost:8620/_reflex/cookies/sync",
+    "failure": "net::ERR_ABORTED"
+   },
+   {
+    "tab": "nav",
+    "kind": "requestfailed",
+    "url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
+    "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "nav",
+    "kind": "console",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "nav",
+    "kind": "requestfailed",
+    "url": "http://localhost:8620/_reflex/cookies/sync",
+    "failure": "net::ERR_ABORTED"
+   },
+   {
+    "tab": "nav",
+    "kind": "requestfailed",
+    "url": "http://localhost:8620/_reflex/cookies/sync",
+    "failure": "net::ERR_ABORTED"
+   },
+   {
+    "tab": "nav",
+    "kind": "requestfailed",
+    "url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
+    "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "nav",
+    "kind": "console",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+   }
+  ]
+ },
+ {
+  "rep": 2,
+  "A": {
+   "start": "/vault?x=1&y=two%20words",
+   "at_login": true,
+   "login_url": "http://localhost:3620/login?redirect_to=%2Fvault%3Fx%3D1%26y%3Dtwo%2520words",
+   "redirect_to": "/vault?x=1&y=two%20words",
+   "redirect_to_ok": true,
+   "back": true,
+   "final_url": "http://localhost:3620/vault?x=1&y=two%20words",
+   "diag": {
+    "who": "alice",
+    "n_loads": "1",
+    "d_url": "http://localhost:3620/vault?x=1&y=two%20words",
+    "d_path": "/vault",
+    "d_query": "{\"x\": \"1\", \"y\": \"two words\"}",
+    "d_params": "{\"x\": \"1\", \"y\": \"two words\"}",
+    "d_cookies": "",
+    "d_rawck": "False",
+    "d_tok": "True",
+    "d_sid": "True",
+    "d_host": "http://localhost:3620",
+    "d_log": "1:/vault?x=1&y=two%20words",
+    "clicks": "0"
+   },
+   "final_query_ok": true,
+   "onload_query_ok": true,
+   "onload_path_ok": true,
+   "onload_params_ok": true,
+   "server_sees_oidc_cookies": false,
+   "origin_ok": true,
+   "entry": "click1:alice@/vault",
+   "entry_ok": true,
+   "ok": true,
+   "leaks": [],
+   "router_frames": [
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"rfxgbxnnSKaT8hS1NIFN0g==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"rfxgbxnnSKaT8hS1NIFN0g==\",\"sec-websocket-protocol\":\"0.10.1a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/vault\",\"raw_path\":\"/vault?x=1&y=two%20words\",\"full_path\":\"http://localhost:3620/vault\",\"full_raw_path\":\"http://localhost:3620/vault?x=1&y=two%20words\",\"params\":{\"x\":\"1\",\"y\":\"two words\"}},\"rx_router_route_id_rx_state_\":\"/vault\",\"rx_router_session_rx_state_\":{\"client_token\":\"aaf6a543-7500-43ca-a5b4-2add88c9945e\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"16TW57HJa1FmGFuBAAAV\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/vault\",\"query\":\"x=1&y=two%20words\",\"query_parameters\":{\"x\":\"1\",\"y\":\"two words\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/vault?x=1&y=two%20words\"},\"is_hydrated_rx_state_\":false},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"origin_rx_state_\":\"http://localhost:3620\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/vault\",\"raw_path\":\"/vault?redirect_to=%2Fvault%3Fx%3D1%26y%3Dtwo%2520words\",\"full_path\":\"http://localhost:3620/vault\",\"full_raw_path\":\"http://localhost:3620/vault?redirect_to=%2Fvault%3Fx%3D1%26y%3Dtwo%2520words\",\"params\":{\"redirect_to\":\"/vault?x=1&y=two%20words\"}},\"item_rx_state_\":\"\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/vault\",\"query\":\"redirect_to=%2Fvault%3Fx%3D1%26y%3Dtwo%2520words\",\"query_parameters\":{\"redirect_to\":\"/vault?x=1&y=two%20words\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/vault?redirect_to=%2Fvault%3Fx%3D1%26y%3Dtwo%2520words\"}},\"reflex___state____state.reflex_enterprise___auth___oidc___state____is_iframed_state\":{\"checked_this_session_rx_state_\":true},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"origin_rx_state_\":\"http://localhost:3620\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/login\",\"raw_path\":\"/login?redirect_to=%2Fvault%3Fx%3D1%26y%3Dtwo%2520words\",\"full_path\":\"http://localhost:3620/login\",\"full_raw_path\":\"http://localhost:3620/login?redirect_to=%2Fvault%3Fx%3D1%26y%3Dtwo%2520words\",\"params\":{\"redirect_to\":\"/vault?x=1&y=two%20words\"}},\"is_hydrated_rx_state_\":false,\"item_rx_state_\":\"\",\"rx_router_route_id_rx_state_\":\"/login\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/login\",\"query\":\"redirect_to=%2Fvault%3Fx%3D1%26y%3Dtwo%2520words\",\"query_parameters\":{\"redirect_to\":\"/vault?x=1&y=two%20words\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/login?redirect_to=%2Fvault%3Fx%3D1%26y%3Dtwo%2520words\"}},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"origin_rx_state_\":\"http://localhost:3620\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"lXXx+je66StgbY0idFsVdA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"lXXx+je66StgbY0idFsVdA==\",\"sec-websocket-protocol\":\"0.10.1a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/callback\",\"raw_path\":\"/callback?code=2CVL3f3wNWkGNMafIgeYPM0fTuMlOJlAsd9teIJ4Xm5Zskx1&state=gtIcJjDFO0wYvPcih_4n4jB_L9SNJTsLdcPuCQBA84ax-C99u9AzPuSwNJT7cAvHydFKvkl8ZCF2MZ4XakrW6w\",\"full_path\":\"http://localhost:3620/callback\",\"full_raw_path\":\"http://localhost:3620/callback?code=2CVL3f3wNWkGNMafIgeYPM0fTuMlOJlAsd9teIJ4Xm5Zskx1&state=gtIcJjDFO0wYvPcih_4n4jB_L9SNJTsLdcPuCQBA84ax-C99u9AzPuSwNJT7cAvHydFKvkl8ZCF2MZ4XakrW6w\",\"params\":{\"code\":\"2CVL3f3wNWkGNMafIgeYPM0fTuMlOJlAsd9teIJ4Xm5Zskx1\",\"state\":\"gtIcJjDFO0wYvPcih_4n4jB_L9SNJTsLdcPuCQBA84ax-C99u9AzPuSwNJT7cAvHydFKvkl8ZCF2MZ4XakrW6w\"}},\"rx_router_route_id_rx_state_\":\"/callback\",\"rx_router_session_rx_state_\":{\"client_token\":\"aaf6a543-7500-43ca-a5b4-2add88c9945e\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"4bY621Onq4jv-Xk-AAAX\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/callback\",\"query\":\"code=2CVL3f3wNWkGNMafIgeYPM0fTuMlOJlAsd9teIJ4Xm5Zskx1&state=gtIcJjDFO0wYvPcih_4n4jB_L9SNJTsLdcPuCQBA84ax-C99u9AzPuSwNJT7cAvHydFKvkl8ZCF2MZ4XakrW6w\",\"query_parameters\":{\"code\":\"2CVL3f3wNWkGNMafIgeYPM0fTuMlOJlAsd9teIJ4Xm5Zskx1\",\"state\":\"gtIcJjDFO0wYvPcih_4n4jB_L9SNJTsLdcPuCQBA84ax-C99u9AzPuSwNJT7cAvHydFKvkl8ZCF2MZ4XakrW6w\"},\"fragment\":\"\",\"href\":\"http:",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"\",\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/vault\",\"raw_path\":\"/vault?x=1&y=two%20words\",\"full_path\":\"http://localhost:3620/vault\",\"full_raw_path\":\"http://localhost:3620/vault?x=1&y=two%20words\",\"params\":{\"x\":\"1\",\"y\":\"two words\"}},\"rx_router_route_id_rx_state_\":\"/vault\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/vault\",\"query\":\"x=1&y=two%20words\",\"query_parameters\":{\"x\":\"1\",\"y\":\"two words\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/vault?x=1&y=two%20words\"}},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"app_state_rx_state_\":\"gtIcJjDFO0wYvPcih_4n4jB_L9SNJTsLdcPuCQBA84ax-C99u9AzPuSwNJT7cAvHydFKvkl8ZCF2MZ4XakrW6w\",\"code_verifier_rx_state_\":\"8Po3IQuv0DfLmDnYwtO5CgoSN_uAd7fGBdZZ_HrEnFV9KxC5Q7xcgRARn0Ajjoy56DT_-n0N1T51IZziXBesYA\",\"origin_rx_state_\":\"http://localhost:3620\",\"redirect_to_url_rx_state_\":\"/vault?x=1&y=two%20words\",\"latest_access_token_hash_ls_rx_state_\":\"4ebbfe37e5b1890d98b8be1fa27034ca4d49262c071b90be5702a60a847cf259\"}}}]"
+   ]
+  },
+  "B": {
+   "start": "/item/abc?z=9",
+   "at_login": true,
+   "login_url": "http://localhost:3620/login?redirect_to=%2Fitem%2Fabc%3Fz%3D9",
+   "redirect_to": "/item/abc?z=9",
+   "redirect_to_ok": true,
+   "back": true,
+   "final_url": "http://localhost:3620/item/abc?z=9",
+   "diag": {
+    "who": "alice",
+    "n_loads": "1",
+    "d_url": "http://localhost:3620/item/abc?z=9",
+    "d_path": "/item/abc",
+    "d_query": "{\"z\": \"9\"}",
+    "d_params": "{\"item\": \"abc\", \"z\": \"9\"}",
+    "d_cookies": "",
+    "d_rawck": "False",
+    "d_tok": "True",
+    "d_sid": "True",
+    "d_host": "http://localhost:3620",
+    "d_log": "1:/item/abc?z=9",
+    "clicks": "0"
+   },
+   "final_query_ok": true,
+   "onload_query_ok": true,
+   "onload_path_ok": true,
+   "onload_params_ok": true,
+   "server_sees_oidc_cookies": false,
+   "origin_ok": true,
+   "entry": "click1:alice@/item/abc",
+   "entry_ok": true,
+   "ok": true,
+   "leaks": [],
+   "router_frames": [
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"abc\",\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"gikuoz82WmeJGt6+2CGLaA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"gikuoz82WmeJGt6+2CGLaA==\",\"sec-websocket-protocol\":\"0.10.1a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/item/[item]\",\"raw_path\":\"/item/abc?z=9\",\"full_path\":\"http://localhost:3620/item/[item]\",\"full_raw_path\":\"http://localhost:3620/item/abc?z=9\",\"params\":{\"z\":\"9\",\"item\":\"abc\"}},\"rx_router_route_id_rx_state_\":\"/item/[item]\",\"rx_router_session_rx_state_\":{\"client_token\":\"0eccf87c-5431-4751-c0a9-2e6dd5b48b84\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"wtseBYl9CstjQ-sQAAAZ\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/item/abc\",\"query\":\"z=9\",\"query_parameters\":{\"z\":\"9\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/item/abc?z=9\"},\"is_hydrated_rx_state_\":false},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"origin_rx_state_\":\"http://localhost:3620\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/item/[item]\",\"raw_path\":\"/item/abc?redirect_to=%2Fitem%2Fabc%3Fz%3D9\",\"full_path\":\"http://localhost:3620/item/[item]\",\"full_raw_path\":\"http://localhost:3620/item/abc?redirect_to=%2Fitem%2Fabc%3Fz%3D9\",\"params\":{\"redirect_to\":\"/item/abc?z=9\",\"item\":\"abc\"}},\"item_rx_state_\":\"abc\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/item/abc\",\"query\":\"redirect_to=%2Fitem%2Fabc%3Fz%3D9\",\"query_parameters\":{\"redirect_to\":\"/item/abc?z=9\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/item/abc?redirect_to=%2Fitem%2Fabc%3Fz%3D9\"}},\"reflex___state____state.reflex_enterprise___auth___oidc___state____is_iframed_state\":{\"checked_this_session_rx_state_\":true},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"origin_rx_state_\":\"http://localhost:3620\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/login\",\"raw_path\":\"/login?redirect_to=%2Fitem%2Fabc%3Fz%3D9\",\"full_path\":\"http://localhost:3620/login\",\"full_raw_path\":\"http://localhost:3620/login?redirect_to=%2Fitem%2Fabc%3Fz%3D9\",\"params\":{\"redirect_to\":\"/item/abc?z=9\"}},\"is_hydrated_rx_state_\":false,\"item_rx_state_\":\"\",\"rx_router_route_id_rx_state_\":\"/login\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/login\",\"query\":\"redirect_to=%2Fitem%2Fabc%3Fz%3D9\",\"query_parameters\":{\"redirect_to\":\"/item/abc?z=9\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/login?redirect_to=%2Fitem%2Fabc%3Fz%3D9\"}},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"origin_rx_state_\":\"http://localhost:3620\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"tC1BLM6OVwlU3ESM5BetoA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"tC1BLM6OVwlU3ESM5BetoA==\",\"sec-websocket-protocol\":\"0.10.1a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/callback\",\"raw_path\":\"/callback?code=JoqOhTzEOFzUSl9g0qCtnksvoH93bn2hgmXhQPKjHb1vFkzR&state=qqrYb_IUoYQPB4k1PlMSIOO1hhwzVZs4y8cl66Z0ZqVnkhRrzUSKcPB67n6jejp4CI2Pw1ZVesjemBodEObbZg\",\"full_path\":\"http://localhost:3620/callback\",\"full_raw_path\":\"http://localhost:3620/callback?code=JoqOhTzEOFzUSl9g0qCtnksvoH93bn2hgmXhQPKjHb1vFkzR&state=qqrYb_IUoYQPB4k1PlMSIOO1hhwzVZs4y8cl66Z0ZqVnkhRrzUSKcPB67n6jejp4CI2Pw1ZVesjemBodEObbZg\",\"params\":{\"code\":\"JoqOhTzEOFzUSl9g0qCtnksvoH93bn2hgmXhQPKjHb1vFkzR\",\"state\":\"qqrYb_IUoYQPB4k1PlMSIOO1hhwzVZs4y8cl66Z0ZqVnkhRrzUSKcPB67n6jejp4CI2Pw1ZVesjemBodEObbZg\"}},\"rx_router_route_id_rx_state_\":\"/callback\",\"rx_router_session_rx_state_\":{\"client_token\":\"0eccf87c-5431-4751-c0a9-2e6dd5b48b84\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"aAB0bj4WPkCacO4VAAAb\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/callback\",\"query\":\"code=JoqOhTzEOFzUSl9g0qCtnksvoH93bn2hgmXhQPKjHb1vFkzR&state=qqrYb_IUoYQPB4k1PlMSIOO1hhwzVZs4y8cl66Z0ZqVnkhRrzUSKcPB67n6jejp4CI2Pw1ZVesjemBodEObbZg\",\"query_parameters\":{\"code\":\"JoqOhTzEOFzUSl9g0qCtnksvoH93bn2hgmXhQPKjHb1vFkzR\",\"state\":\"qqrYb_IUoYQPB4k1PlMSIOO1hhwzVZs4y8cl66Z0ZqVnkhRrzUSKcPB67n6jejp4CI2Pw1ZVesjemBodEObbZg\"},\"fragment\":\"\",\"href\":\"http:",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"abc\",\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/item/[item]\",\"raw_path\":\"/item/abc?z=9\",\"full_path\":\"http://localhost:3620/item/[item]\",\"full_raw_path\":\"http://localhost:3620/item/abc?z=9\",\"params\":{\"z\":\"9\",\"item\":\"abc\"}},\"rx_router_route_id_rx_state_\":\"/item/[item]\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/item/abc\",\"query\":\"z=9\",\"query_parameters\":{\"z\":\"9\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/item/abc?z=9\"}},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"app_state_rx_state_\":\"qqrYb_IUoYQPB4k1PlMSIOO1hhwzVZs4y8cl66Z0ZqVnkhRrzUSKcPB67n6jejp4CI2Pw1ZVesjemBodEObbZg\",\"code_verifier_rx_state_\":\"kkUqdkemhduae-zekcKQAUilbEPZ0QXgmQjU3C0mZZTja7K_oHPMVLYzQPXGtgj8NZ2LmrZJpC5okZHjexVbMA\",\"origin_rx_state_\":\"http://localhost:3620\",\"redirect_to_url_rx_state_\":\"/item/abc?z=9\",\"latest_access_token_hash_ls_rx_state_\":\"b7d2be2cf79c08f877f16257da1f5c7e9f8c3a676e67980163732f2e0ea69f38\"}}}]"
+   ]
+  },
+  "CDEFG": {
+   "G_anon_fe_cookie": "",
+   "G_anon_fe_raw_keys": "accept-encoding,accept-language,asgi-scope-client,cache-control,connection,host,origin,pragma,sec-websocket-extensions,sec-websocket-key,sec-websocket-protocol,sec-websocket-version,upgrade,user-agent",
+   "C_redirect": {
+    "at_login": true,
+    "login_url": "http://localhost:3620/login?redirect_to=%2Fvault%3Fx%3Dnav",
+    "redirect_to": "/vault?x=nav"
+   },
+   "C_redirect_to_ok": true,
+   "C_navs": [
+    "http://localhost:3620/",
+    "http://localhost:3620/",
+    "http://localhost:3620/vault?x=nav",
+    "http://localhost:3620/login?redirect_to=%2Fvault%3Fx%3Dnav"
+   ],
+   "C_back": true,
+   "C_final_url": "http://localhost:3620/vault?x=nav",
+   "C_diag": {
+    "who": "alice",
+    "n_loads": "1",
+    "d_url": "http://localhost:3620/vault?x=nav",
+    "d_path": "/vault",
+    "d_query": "{\"x\": \"nav\"}",
+    "d_params": "{\"x\": \"nav\"}",
+    "d_cookies": "",
+    "d_rawck": "False",
+    "d_tok": "True",
+    "d_sid": "True",
+    "d_host": "http://localhost:3620",
+    "d_log": "1:/vault?x=nav",
+    "clicks": "0"
+   },
+   "C_ok": true,
+   "D_steps": [
+    {
+     "to": "/",
+     "path_ok": true,
+     "fe_cookie": "",
+     "fe_raw_keys": "accept-encoding,accept-language,asgi-scope-client,cache-control,connection,host,origin,pragma,sec-websocket-extensions,sec-websocket-key,sec-websocket-protocol,sec-websocket-version,upgrade,user-agent",
+     "who": "alice",
+     "click_url": "http://localhost:3620/",
+     "click_cookies_has_oidc": false
+    },
+    {
+     "to": "/vault2",
+     "path_ok": true,
+     "url": "http://localhost:3620/vault2?q=5&r=a%20b",
+     "diag": {
+      "who": "alice",
+      "n_loads": "2",
+      "d_url": "http://localhost:3620/vault2?q=5&r=a%20b",
+      "d_path": "/vault2",
+      "d_query": "{\"q\": \"5\", \"r\": \"a b\"}",
+      "d_params": "{\"q\": \"5\", \"r\": \"a b\"}",
+      "d_cookies": "",
+      "d_rawck": "False",
+      "d_tok": "True",
+      "d_sid": "True",
+      "d_host": "http://localhost:3620",
+      "d_log": "1:/vault?x=nav | 2:/vault2?q=5&r=a%20b",
+      "clicks": "0"
+     },
+     "n_loads_before": null,
+     "onload_ok": true,
+     "server_sees_oidc_cookies": false
+    },
+    {
+     "to": "/item/xyz",
+     "path_ok": true,
+     "url": "http://localhost:3620/item/xyz?k=1",
+     "diag": {
+      "who": "alice",
+      "n_loads": "3",
+      "d_url": "http://localhost:3620/item/xyz?k=1",
+      "d_path": "/item/xyz",
+      "d_query": "{\"k\": \"1\"}",
+      "d_params": "{\"item\": \"xyz\", \"k\": \"1\"}",
+      "d_cookies": "",
+      "d_rawck": "False",
+      "d_tok": "True",
+      "d_sid": "True",
+      "d_host": "http://localhost:3620",
+      "d_log": "1:/vault?x=nav | 2:/vault2?q=5&r=a%20b | 3:/item/xyz?k=1",
+      "clicks": "0"
+     },
+     "n_loads_before": "2",
+     "onload_ok": true,
+     "server_sees_oidc_cookies": false
+    },
+    {
+     "to": "/vault",
+     "path_ok": true,
+     "url": "http://localhost:3620/vault?x=nav",
+     "diag": {
+      "who": "alice",
+      "n_loads": "4",
+      "d_url": "http://localhost:3620/vault?x=nav",
+      "d_path": "/vault",
+      "d_query": "{\"x\": \"nav\"}",
+      "d_params": "{\"x\": \"nav\"}",
+      "d_cookies": "",
+      "d_rawck": "False",
+      "d_tok": "True",
+      "d_sid": "True",
+      "d_host": "http://localhost:3620",
+      "d_log": "1:/vault?x=nav | 2:/vault2?q=5&r=a%20b | 3:/item/xyz?k=1 | 4:/vault?x=nav",
+      "clicks": "0"
+     },
+     "n_loads_before": "3",
+     "onload_ok": true,
+     "server_sees_oidc_cookies": false
+    }
+   ],
+   "D_ok": true,
+   "E_diag": {
+    "who": "alice",
+    "n_loads": "6",
+    "d_url": "http://localhost:3620/item/xyz?k=1",
+    "d_path": "/item/xyz",
+    "d_query": "{\"k\": \"1\"}",
+    "d_params": "{\"item\": \"xyz\", \"k\": \"1\"}",
+    "d_cookies": "_oidc_generic_access_token_data_partitioned,_oidc_generic_granted_scopes_partitioned,_oidc_generic_id_token_partitioned,_oidc_generic_refresh_token_partitioned",
+    "d_rawck": "True",
+    "d_tok": "True",
+    "d_sid": "True",
+    "d_host": "http://localhost:3620",
+    "d_log": "1:/vault?x=nav | 2:/vault2?q=5&r=a%20b | 3:/item/xyz?k=1 | 4:/vault?x=nav | 5:/item/xyz?k=1 | 6:/item/xyz?k=1",
+    "clicks": "0"
+   },
+   "E_server_sees_oidc_cookies_after_reload": true,
+   "E_ok": true,
+   "F_cookies_before": [
+    "_oidc_generic_access_token_data_partitioned",
+    "_oidc_generic_granted_scopes_partitioned",
+    "_oidc_generic_id_token_partitioned",
+    "_oidc_generic_refresh_token_partitioned"
+   ],
+   "F_after_logout_url": "http://localhost:8638/oauth2/end_session?state=8Sl7n6UqlTq6wJcg45Lef8a1g6GIx5YIquVxj8pkaARzq-jeCKjVcSyS0zPQ6i0ERPbZsR_2V-zr0ghr7os--Q&id_token_hint=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6Ikh6dHgzWjQyWGN5ODFxWWgwd1ZWZXFiSE9HT2hiMXRvSmVSQk5tSFd5VjgifQ.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0Ojg2MzgiLCJleHAiOjE3OTI4MTI1ODcsImlhdCI6MTc5MjgwODk4NywiYXV0aF90aW1lIjoxNzkyODA4OTg3LCJhdWQiOlsidmF1dGgtY2xpZW50Il0sImF0X2hhc2giOiJ1dzhLQkJpaVpyRVBLMjJSdXBWamZBIiwibmFtZSI6IkFsaWNlIEFkbWluIiwiZW1haWwiOiJhbGljZUBleGFtcGxlLmNvbSIsImdyb3VwcyI6WyJhZG1pbnMiLCJzdGFmZiJdLCJzdWIiOiJhbGljZSJ9.oXJD3xvonpHUGBfA9hqY1ovtgTayTMvLmoFjCjAFllHxtlXQiDoNN668psfZeSsjGzMzWou131xEqQWARpzKxIMMUPx8o6hnMVofAmfUQBgZtcoCMlgRVA5PKRB9T0IjjZrXb9dXj7wpi7Ti-tgvzC5f6OnKOWjuggy3dkmcbulNWGqu9T9ly9-ixnrue-j7eYSPlu6oOTjizs8MPK5Z4iiD_RtfES2E48dZ1Gj5UkRfgK2verrtX76KeG7FmQRp0rR5QWoqroA492MZEThZXi67H_dhCBPWo-ix1TIoIHNYK-AsHi3ZC2fObBljifj9wovX-pej-xW9PbdhdJ4iHQ&post_logout_redirect_uri=http%3A%2F%2Flocalhost%3A3620%2F",
+   "F_navs": [
+    "http://localhost:8638/oauth2/end_session?state=8Sl7n6UqlTq6wJcg45Lef8a1g6GIx5YIquVxj8pkaARzq-jeCKjVcSyS0zPQ6i0ERPbZsR_2V-zr0ghr7os--Q&id_token_hint=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6Ikh6dHgzWjQyWGN5ODFxWWgwd1ZWZXFiSE9HT2hiMXRvSmVSQk5tSFd5VjgifQ.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0Ojg2MzgiLCJleHAiOjE3OTI4MTI1ODcsImlhdCI6MTc5MjgwODk4NywiYXV0aF90aW1lIjoxNzkyODA4OTg3LCJhdWQiOlsidmF1dGgtY2xpZW50Il0sImF0X2hhc2giOiJ1dzhLQkJpaVpyRVBLMjJSdXBWamZBIiwibmFtZSI6IkFsaWNlIEFkbWluIiwiZW1haWwiOiJhbGljZUBleGFtcGxlLmNvbSIsImdyb3VwcyI6WyJhZG1pbnMiLCJzdGFmZiJdLCJzdWIiOiJhbGljZSJ9.oXJD3xvonpHUGBfA9hqY1ovtgTayTMvLmoFjCjAFllHxtlXQiDoNN668psfZeSsjGzMzWou131xEqQWARpzKxIMMUPx8o6hnMVofAmfUQBgZtcoCMlgRVA5PKRB9T0IjjZrXb9dXj7wpi7Ti-tgvzC5f6OnKOWjuggy3dkmcbulNWGqu9T9ly9-ixnrue-j7eYSPlu6oOTjizs8MPK5Z4iiD_RtfES2E48dZ1Gj5UkRfgK2verrtX76KeG7FmQRp0rR5QWoqroA492MZEThZXi67H_dhCBPWo-ix1TIoIHNYK-AsHi3ZC2fObBljifj9wovX-pej-xW9PbdhdJ4iHQ&post_logout_redirect_uri=http%3A%2F%2Flocalhost%3A3620%2F"
+   ],
+   "F_cookies_after": [],
+   "F_revisit": {
+    "at_login": true,
+    "login_url": "http://localhost:3620/login?redirect_to=%2Fvault",
+    "redirect_to": "/vault"
+   },
+   "F_ok": true,
+   "G_leaks": [
+    {
+     "kind": "elsewhere",
+     "why": [
+      "elsewhere VALUE _oidc_generic_granted_scopes_partitioned httpOnly=True"
+     ],
+     "where": [
+      "QTwUXHZSe746nJ-w\",\"code_verifier_rx_state_\":\"HPodsJFY3z51FWO6uMZ-blCLTmEqQFxLv0ZMDKfm1NhPiABvvCNswcV0oQQHI2YHO_vJ96Wl1KwUAfNv71T5Kg\",\"granted_scopes_rx_state_\":<VALUE>"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"xyz\",\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86"
+    },
+    {
+     "kind": "elsewhere",
+     "why": [
+      "elsewhere VALUE _oidc_generic_granted_scopes_partitioned httpOnly=True"
+     ],
+     "where": [
+      "QTwUXHZSe746nJ-w\",\"code_verifier_rx_state_\":\"HPodsJFY3z51FWO6uMZ-blCLTmEqQFxLv0ZMDKfm1NhPiABvvCNswcV0oQQHI2YHO_vJ96Wl1KwUAfNv71T5Kg\",\"granted_scopes_rx_state_\":<VALUE>"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"xyz\",\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86"
+    },
+    {
+     "kind": "elsewhere",
+     "why": [
+      "elsewhere VALUE _oidc_generic_granted_scopes_partitioned httpOnly=True"
+     ],
+     "where": [
+      "QTwUXHZSe746nJ-w\",\"code_verifier_rx_state_\":\"HPodsJFY3z51FWO6uMZ-blCLTmEqQFxLv0ZMDKfm1NhPiABvvCNswcV0oQQHI2YHO_vJ96Wl1KwUAfNv71T5Kg\",\"granted_scopes_rx_state_\":<VALUE>"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+    },
+    {
+     "kind": "elsewhere",
+     "why": [
+      "elsewhere VALUE _oidc_generic_id_token_partitioned httpOnly=True"
+     ],
+     "where": [
+      "irect_url:\\\"http://localhost:8638/oauth2/end_session?state=8Sl7n6UqlTq6wJcg45Lef8a1g6GIx5YIquVxj8pkaARzq-jeCKjVcSyS0zPQ6i0ERPbZsR_2V-zr0ghr7os--Q&id_token_hint=<VALUE>"
+     ],
+     "frame": "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_script\",\"router_data\":{},\"payload\":{\"javascript_code\":\"(globalThis.__reflexCookieSyncChain = Promise.resolve(globalThis.__reflexCookieSyncChain).catch(() => {}).then(() => (((url, options) => fetch(url, {...options, headers: {...options.headers, 'X-Reflex"
+    },
+    {
+     "kind": "elsewhere",
+     "why": [
+      "elsewhere VALUE _oidc_generic_id_token_partitioned httpOnly=True"
+     ],
+     "where": [
+      "d\":{\"path\":\"http://localhost:8638/oauth2/end_session?state=8Sl7n6UqlTq6wJcg45Lef8a1g6GIx5YIquVxj8pkaARzq-jeCKjVcSyS0zPQ6i0ERPbZsR_2V-zr0ghr7os--Q&id_token_hint=<VALUE>"
+     ],
+     "frame": "42/_event,[\"event\",{\"events\":[{\"name\":\"_redirect\",\"router_data\":{},\"payload\":{\"path\":\"http://localhost:8638/oauth2/end_session?state=8Sl7n6UqlTq6wJcg45Lef8a1g6GIx5YIquVxj8pkaARzq-jeCKjVcSyS0zPQ6i0ERPbZsR_2V-zr0ghr7os--Q&id_token_hint=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6Ikh6dHgzWjQyWGN5ODFxWW"
+    }
+   ],
+   "router_frames": [
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"mOL7z4BQ9HwtBqxtTv93dg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"mOL7z4BQ9HwtBqxtTv93dg==\",\"sec-websocket-protocol\":\"0.10.1a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3620/index\",\"full_raw_path\":\"http://localhost:3620/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"d6749fae-be1a-4747-cbf5-45412d57aa3c\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"yWDCgTSmnQ1rs3IPAAAd\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3620/\"},\"is_hydrated_rx_state_\":false},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"origin_rx_state_\":\"http://localhost:3620\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/vault\",\"raw_path\":\"/vault?x=nav\",\"full_path\":\"http://localhost:3620/vault\",\"full_raw_path\":\"http://localhost:3620/vault?x=nav\",\"params\":{\"x\":\"nav\"}},\"is_hydrated_rx_state_\":false,\"item_rx_state_\":\"\",\"rx_router_route_id_rx_state_\":\"/vault\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/vault\",\"query\":\"x=nav\",\"query_parameters\":{\"x\":\"nav\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/vault?x=nav\"}},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"origin_rx_state_\":\"http://localhost:3620\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/vault\",\"raw_path\":\"/vault?redirect_to=%2Fvault%3Fx%3Dnav\",\"full_path\":\"http://localhost:3620/vault\",\"full_raw_path\":\"http://localhost:3620/vault?redirect_to=%2Fvault%3Fx%3Dnav\",\"params\":{\"redirect_to\":\"/vault?x=nav\"}},\"item_rx_state_\":\"\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/vault\",\"query\":\"redirect_to=%2Fvault%3Fx%3Dnav\",\"query_parameters\":{\"redirect_to\":\"/vault?x=nav\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/vault?redirect_to=%2Fvault%3Fx%3Dnav\"}},\"reflex___state____state.reflex_enterprise___auth___oidc___state____is_iframed_state\":{\"checked_this_session_rx_state_\":true},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"origin_rx_state_\":\"http://localhost:3620\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/login\",\"raw_path\":\"/login?redirect_to=%2Fvault%3Fx%3Dnav\",\"full_path\":\"http://localhost:3620/login\",\"full_raw_path\":\"http://localhost:3620/login?redirect_to=%2Fvault%3Fx%3Dnav\",\"params\":{\"redirect_to\":\"/vault?x=nav\"}},\"is_hydrated_rx_state_\":false,\"item_rx_state_\":\"\",\"rx_router_route_id_rx_state_\":\"/login\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/login\",\"query\":\"redirect_to=%2Fvault%3Fx%3Dnav\",\"query_parameters\":{\"redirect_to\":\"/vault?x=nav\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/login?redirect_to=%2Fvault%3Fx%3Dnav\"}},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"origin_rx_state_\":\"http://localhost:3620\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"STikge6yvei2CTV/h5dgWA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"STikge6yvei2CTV/h5dgWA==\",\"sec-websocket-protocol\":\"0.10.1a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/callback\",\"raw_path\":\"/callback?code=VVp41IAQN6zi0hNjrTzdu6rKJkTYGgT1ls9kOx4Fnp2mrnoo&state=7gQsSqkMIgJwVDQOQXIsEbZwDKkxqishdIViR_2-b5gpWUxaceypesLzjxI4Xfy-nbXzFLQTwUXHZSe746nJ-w\",\"full_path\":\"http://localhost:3620/callback\",\"full_raw_path\":\"http://localhost:3620/callback?code=VVp41IAQN6zi0hNjrTzdu6rKJkTYGgT1ls9kOx4Fnp2mrnoo&state=7gQsSqkMIgJwVDQOQXIsEbZwDKkxqishdIViR_2-b5gpWUxaceypesLzjxI4Xfy-nbXzFLQTwUXHZSe746nJ-w\",\"params\":{\"code\":\"VVp41IAQN6zi0hNjrTzdu6rKJkTYGgT1ls9kOx4Fnp2mrnoo\",\"state\":\"7gQsSqkMIgJwVDQOQXIsEbZwDKkxqishdIViR_2-b5gpWUxaceypesLzjxI4Xfy-nbXzFLQTwUXHZSe746nJ-w\"}},\"rx_router_route_id_rx_state_\":\"/callback\",\"rx_router_session_rx_state_\":{\"client_token\":\"d6749fae-be1a-4747-cbf5-45412d57aa3c\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"KF4DZ2mm8Z3gYprzAAAf\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/callback\",\"query\":\"code=VVp41IAQN6zi0hNjrTzdu6rKJkTYGgT1ls9kOx4Fnp2mrnoo&state=7gQsSqkMIgJwVDQOQXIsEbZwDKkxqishdIViR_2-b5gpWUxaceypesLzjxI4Xfy-nbXzFLQTwUXHZSe746nJ-w\",\"query_parameters\":{\"code\":\"VVp41IAQN6zi0hNjrTzdu6rKJkTYGgT1ls9kOx4Fnp2mrnoo\",\"state\":\"7gQsSqkMIgJwVDQOQXIsEbZwDKkxqishdIViR_2-b5gpWUxaceypesLzjxI4Xfy-nbXzFLQTwUXHZSe746nJ-w\"},\"fragment\":\"\",\"href\":\"http:",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"\",\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/vault\",\"raw_path\":\"/vault?x=nav\",\"full_path\":\"http://localhost:3620/vault\",\"full_raw_path\":\"http://localhost:3620/vault?x=nav\",\"params\":{\"x\":\"nav\"}},\"rx_router_route_id_rx_state_\":\"/vault\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/vault\",\"query\":\"x=nav\",\"query_parameters\":{\"x\":\"nav\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/vault?x=nav\"}},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"app_state_rx_state_\":\"7gQsSqkMIgJwVDQOQXIsEbZwDKkxqishdIViR_2-b5gpWUxaceypesLzjxI4Xfy-nbXzFLQTwUXHZSe746nJ-w\",\"code_verifier_rx_state_\":\"HPodsJFY3z51FWO6uMZ-blCLTmEqQFxLv0ZMDKfm1NhPiABvvCNswcV0oQQHI2YHO_vJ96Wl1KwUAfNv71T5Kg\",\"origin_rx_state_\":\"http://localhost:3620\",\"redirect_to_url_rx_state_\":\"/vault?x=nav\",\"latest_access_token_hash_ls_rx_state_\":\"bb0f0a0418a266b10f2b6d91ba95637c739cb897958d20572aa7dfb11591e1fe\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"\",\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3620/index\",\"full_raw_path\":\"http://localhost:3620/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3620/\"}},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"app_state_rx_state_\":\"7gQsSqkMIgJwVDQOQXIsEbZwDKkxqishdIViR_2-b5gpWUxaceypesLzjxI4Xfy-nbXzFLQTwUXHZSe746nJ-w\",\"code_verifier_rx_state_\":\"HPodsJFY3z51FWO6uMZ-blCLTmEqQFxLv0ZMDKfm1NhPiABvvCNswcV0oQQHI2YHO_vJ96Wl1KwUAfNv71T5Kg\",\"origin_rx_state_\":\"http://localhost:3620\",\"redirect_to_url_rx_state_\":\"/vault?x=nav\",\"latest_access_token_hash_ls_rx_state_\":\"bb0f0a0418a266b10f2b6d91ba95637c739cb897958d20572aa7dfb11591e1fe\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"\",\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/vault2\",\"raw_path\":\"/vault2?q=5&r=a%20b\",\"full_path\":\"http://localhost:3620/vault2\",\"full_raw_path\":\"http://localhost:3620/vault2?q=5&r=a%20b\",\"params\":{\"q\":\"5\",\"r\":\"a b\"}},\"rx_router_route_id_rx_state_\":\"/vault2\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/vault2\",\"query\":\"q=5&r=a%20b\",\"query_parameters\":{\"q\":\"5\",\"r\":\"a b\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/vault2?q=5&r=a%20b\"}},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"app_state_rx_state_\":\"7gQsSqkMIgJwVDQOQXIsEbZwDKkxqishdIViR_2-b5gpWUxaceypesLzjxI4Xfy-nbXzFLQTwUXHZSe746nJ-w\",\"code_verifier_rx_state_\":\"HPodsJFY3z51FWO6uMZ-blCLTmEqQFxLv0ZMDKfm1NhPiABvvCNswcV0oQQHI2YHO_vJ96Wl1KwUAfNv71T5Kg\",\"origin_rx_state_\":\"http://localhost:3620\",\"redirect_to_url_rx_state_\":\"/vault?x=nav\",\"latest_access_token_hash_ls_rx_state_\":\"bb0f0a0418a266b10f2b6d91ba95637c739cb897958d20572aa7dfb11591e1fe\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"xyz\",\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/item/[item]\",\"raw_path\":\"/item/xyz?k=1\",\"full_path\":\"http://localhost:3620/item/[item]\",\"full_raw_path\":\"http://localhost:3620/item/xyz?k=1\",\"params\":{\"k\":\"1\",\"item\":\"xyz\"}},\"rx_router_route_id_rx_state_\":\"/item/[item]\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/item/xyz\",\"query\":\"k=1\",\"query_parameters\":{\"k\":\"1\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/item/xyz?k=1\"}},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"app_state_rx_state_\":\"7gQsSqkMIgJwVDQOQXIsEbZwDKkxqishdIViR_2-b5gpWUxaceypesLzjxI4Xfy-nbXzFLQTwUXHZSe746nJ-w\",\"code_verifier_rx_state_\":\"HPodsJFY3z51FWO6uMZ-blCLTmEqQFxLv0ZMDKfm1NhPiABvvCNswcV0oQQHI2YHO_vJ96Wl1KwUAfNv71T5Kg\",\"origin_rx_state_\":\"http://localhost:3620\",\"redirect_to_url_rx_state_\":\"/vault?x=nav\",\"latest_access_token_hash_ls_rx_state_\":\"bb0f0a0418a266b10f2b6d91ba95637c739cb897958d20572aa7dfb11591e1fe\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"\",\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/vault\",\"raw_path\":\"/vault?x=nav\",\"full_path\":\"http://localhost:3620/vault\",\"full_raw_path\":\"http://localhost:3620/vault?x=nav\",\"params\":{\"x\":\"nav\"}},\"rx_router_route_id_rx_state_\":\"/vault\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/vault\",\"query\":\"x=nav\",\"query_parameters\":{\"x\":\"nav\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/vault?x=nav\"}},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"app_state_rx_state_\":\"7gQsSqkMIgJwVDQOQXIsEbZwDKkxqishdIViR_2-b5gpWUxaceypesLzjxI4Xfy-nbXzFLQTwUXHZSe746nJ-w\",\"code_verifier_rx_state_\":\"HPodsJFY3z51FWO6uMZ-blCLTmEqQFxLv0ZMDKfm1NhPiABvvCNswcV0oQQHI2YHO_vJ96Wl1KwUAfNv71T5Kg\",\"origin_rx_state_\":\"http://localhost:3620\",\"redirect_to_url_rx_state_\":\"/vault?x=nav\",\"latest_access_token_hash_ls_rx_state_\":\"bb0f0a0418a266b10f2b6d91ba95637c739cb897958d20572aa7dfb11591e1fe\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"xyz\",\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"TnSU11PGQNVWe4tGpiQKfg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"TnSU11PGQNVWe4tGpiQKfg==\",\"sec-websocket-protocol\":\"0.10.1a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/item/[item]\",\"raw_path\":\"/item/xyz?k=1\",\"full_path\":\"http://localhost:3620/item/[item]\",\"full_raw_path\":\"http://localhost:3620/item/xyz?k=1\",\"params\":{\"k\":\"1\",\"item\":\"xyz\"}},\"rx_router_route_id_rx_state_\":\"/item/[item]\",\"rx_router_session_rx_state_\":{\"client_token\":\"d6749fae-be1a-4747-cbf5-45412d57aa3c\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"VZwEZmnHW6d37nTKAAAh\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/item/xyz\",\"query\":\"k=1\",\"query_parameters\":{\"k\":\"1\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/item/xyz?k=1\"},\"is_hydrated_rx_state_\":false},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"app_state_rx_state_\":\"7gQsSqkMIgJwVDQOQXIsEbZwDKkxqishdIViR_2-b5gpWUxaceypesLzjxI4Xfy-nbXzFLQTwUXHZSe746nJ-w\",\"code_verifier_rx_state_\":\"HPodsJFY3z51FWO6uMZ-blCLTmEqQFxLv0ZMDKfm1NhPiABvvCNswcV0oQQHI2YHO_vJ96Wl1KwUAfNv71T5Kg\",\"granted_scopes_rx_state_\":\"openid email profile\",\"has_any_token_rx_state_\":true,\"last_error_txid_rx_state_\":\"f371d0fb262d4ae687952cf6a4c710a1\",\"latest_access_token_hash_ls_rx_state_\":\"bb0f0a0418a266b10f2b6d91ba95637c739cb897958d20572aa7dfb11591e1fe\",\"origin_rx_state_\":\"http://localhost:3620\",\"",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"xyz\",\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"Ulnsq3KQa6wbADLKRWljUg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"Ulnsq3KQa6wbADLKRWljUg==\",\"sec-websocket-protocol\":\"0.10.1a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/item/[item]\",\"raw_path\":\"/item/xyz?k=1\",\"full_path\":\"http://localhost:3620/item/[item]\",\"full_raw_path\":\"http://localhost:3620/item/xyz?k=1\",\"params\":{\"k\":\"1\",\"item\":\"xyz\"}},\"rx_router_route_id_rx_state_\":\"/item/[item]\",\"rx_router_session_rx_state_\":{\"client_token\":\"d6749fae-be1a-4747-cbf5-45412d57aa3c\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"wVT8liGeiOqnk3kXAAAj\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/item/xyz\",\"query\":\"k=1\",\"query_parameters\":{\"k\":\"1\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/item/xyz?k=1\"},\"is_hydrated_rx_state_\":false},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"app_state_rx_state_\":\"7gQsSqkMIgJwVDQOQXIsEbZwDKkxqishdIViR_2-b5gpWUxaceypesLzjxI4Xfy-nbXzFLQTwUXHZSe746nJ-w\",\"code_verifier_rx_state_\":\"HPodsJFY3z51FWO6uMZ-blCLTmEqQFxLv0ZMDKfm1NhPiABvvCNswcV0oQQHI2YHO_vJ96Wl1KwUAfNv71T5Kg\",\"granted_scopes_rx_state_\":\"openid email profile\",\"has_any_token_rx_state_\":true,\"last_error_txid_rx_state_\":\"f371d0fb262d4ae687952cf6a4c710a1\",\"latest_access_token_hash_ls_rx_state_\":\"bb0f0a0418a266b10f2b6d91ba95637c739cb897958d20572aa7dfb11591e1fe\",\"origin_rx_state_\":\"http://localhost:3620\",\""
+   ],
+   "G_ok": true
+  },
+  "events": [
+   {
+    "tab": "deep",
+    "kind": "requestfailed",
+    "url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
+    "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "deep",
+    "kind": "console",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "deep",
+    "kind": "requestfailed",
+    "url": "http://localhost:8620/_reflex/cookies/sync",
+    "failure": "net::ERR_ABORTED"
+   },
+   {
+    "tab": "deep",
+    "kind": "requestfailed",
+    "url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
+    "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "deep",
+    "kind": "console",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "deep",
+    "kind": "requestfailed",
+    "url": "http://localhost:8620/_reflex/cookies/sync",
+    "failure": "net::ERR_ABORTED"
+   },
+   {
+    "tab": "nav",
+    "kind": "requestfailed",
+    "url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
+    "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "nav",
+    "kind": "console",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "nav",
+    "kind": "requestfailed",
+    "url": "http://localhost:8620/_reflex/cookies/sync",
+    "failure": "net::ERR_ABORTED"
+   },
+   {
+    "tab": "nav",
+    "kind": "requestfailed",
+    "url": "http://localhost:8620/_reflex/cookies/sync",
+    "failure": "net::ERR_ABORTED"
+   },
+   {
+    "tab": "nav",
+    "kind": "requestfailed",
+    "url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
+    "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "nav",
+    "kind": "console",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+   }
+  ]
+ },
+ {
+  "rep": 3,
+  "A": {
+   "start": "/vault?x=1&y=two%20words",
+   "at_login": true,
+   "login_url": "http://localhost:3620/login?redirect_to=%2Fvault%3Fx%3D1%26y%3Dtwo%2520words",
+   "redirect_to": "/vault?x=1&y=two%20words",
+   "redirect_to_ok": true,
+   "back": true,
+   "final_url": "http://localhost:3620/vault?x=1&y=two%20words",
+   "diag": {
+    "who": "alice",
+    "n_loads": "1",
+    "d_url": "http://localhost:3620/vault?x=1&y=two%20words",
+    "d_path": "/vault",
+    "d_query": "{\"x\": \"1\", \"y\": \"two words\"}",
+    "d_params": "{\"x\": \"1\", \"y\": \"two words\"}",
+    "d_cookies": "",
+    "d_rawck": "False",
+    "d_tok": "True",
+    "d_sid": "True",
+    "d_host": "http://localhost:3620",
+    "d_log": "1:/vault?x=1&y=two%20words",
+    "clicks": "0"
+   },
+   "final_query_ok": true,
+   "onload_query_ok": true,
+   "onload_path_ok": true,
+   "onload_params_ok": true,
+   "server_sees_oidc_cookies": false,
+   "origin_ok": true,
+   "entry": "click1:alice@/vault",
+   "entry_ok": true,
+   "ok": true,
+   "leaks": [],
+   "router_frames": [
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"CO8v8ffAww+BxKH1TbI3IA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"CO8v8ffAww+BxKH1TbI3IA==\",\"sec-websocket-protocol\":\"0.10.1a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/vault\",\"raw_path\":\"/vault?x=1&y=two%20words\",\"full_path\":\"http://localhost:3620/vault\",\"full_raw_path\":\"http://localhost:3620/vault?x=1&y=two%20words\",\"params\":{\"x\":\"1\",\"y\":\"two words\"}},\"rx_router_route_id_rx_state_\":\"/vault\",\"rx_router_session_rx_state_\":{\"client_token\":\"b35f6f61-7b57-40bd-ba2a-51f6499aef95\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"Oom36lvyQbPPLtwaAAAp\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/vault\",\"query\":\"x=1&y=two%20words\",\"query_parameters\":{\"x\":\"1\",\"y\":\"two words\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/vault?x=1&y=two%20words\"},\"is_hydrated_rx_state_\":false},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"origin_rx_state_\":\"http://localhost:3620\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/vault\",\"raw_path\":\"/vault?redirect_to=%2Fvault%3Fx%3D1%26y%3Dtwo%2520words\",\"full_path\":\"http://localhost:3620/vault\",\"full_raw_path\":\"http://localhost:3620/vault?redirect_to=%2Fvault%3Fx%3D1%26y%3Dtwo%2520words\",\"params\":{\"redirect_to\":\"/vault?x=1&y=two%20words\"}},\"item_rx_state_\":\"\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/vault\",\"query\":\"redirect_to=%2Fvault%3Fx%3D1%26y%3Dtwo%2520words\",\"query_parameters\":{\"redirect_to\":\"/vault?x=1&y=two%20words\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/vault?redirect_to=%2Fvault%3Fx%3D1%26y%3Dtwo%2520words\"}},\"reflex___state____state.reflex_enterprise___auth___oidc___state____is_iframed_state\":{\"checked_this_session_rx_state_\":true},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"origin_rx_state_\":\"http://localhost:3620\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/login\",\"raw_path\":\"/login?redirect_to=%2Fvault%3Fx%3D1%26y%3Dtwo%2520words\",\"full_path\":\"http://localhost:3620/login\",\"full_raw_path\":\"http://localhost:3620/login?redirect_to=%2Fvault%3Fx%3D1%26y%3Dtwo%2520words\",\"params\":{\"redirect_to\":\"/vault?x=1&y=two%20words\"}},\"is_hydrated_rx_state_\":false,\"item_rx_state_\":\"\",\"rx_router_route_id_rx_state_\":\"/login\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/login\",\"query\":\"redirect_to=%2Fvault%3Fx%3D1%26y%3Dtwo%2520words\",\"query_parameters\":{\"redirect_to\":\"/vault?x=1&y=two%20words\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/login?redirect_to=%2Fvault%3Fx%3D1%26y%3Dtwo%2520words\"}},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"origin_rx_state_\":\"http://localhost:3620\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"1V2ZUs5vdxiZYvn7WmYfkA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"1V2ZUs5vdxiZYvn7WmYfkA==\",\"sec-websocket-protocol\":\"0.10.1a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/callback\",\"raw_path\":\"/callback?code=IakytEhvmwOBv3jrshl8Mmlcb9xkIwWrOPo0Jd22Oontyvcn&state=Y3li3h3PZ_lPT38_lulmIJcJK8JSlwaubI8tQVT_EvcTAwnuGeymAcuKHg_3-B-4_zgWIwjLriJ_L0sOi3ZLAQ\",\"full_path\":\"http://localhost:3620/callback\",\"full_raw_path\":\"http://localhost:3620/callback?code=IakytEhvmwOBv3jrshl8Mmlcb9xkIwWrOPo0Jd22Oontyvcn&state=Y3li3h3PZ_lPT38_lulmIJcJK8JSlwaubI8tQVT_EvcTAwnuGeymAcuKHg_3-B-4_zgWIwjLriJ_L0sOi3ZLAQ\",\"params\":{\"code\":\"IakytEhvmwOBv3jrshl8Mmlcb9xkIwWrOPo0Jd22Oontyvcn\",\"state\":\"Y3li3h3PZ_lPT38_lulmIJcJK8JSlwaubI8tQVT_EvcTAwnuGeymAcuKHg_3-B-4_zgWIwjLriJ_L0sOi3ZLAQ\"}},\"rx_router_route_id_rx_state_\":\"/callback\",\"rx_router_session_rx_state_\":{\"client_token\":\"b35f6f61-7b57-40bd-ba2a-51f6499aef95\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"yMUR5pIiUXCPjvpaAAAr\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/callback\",\"query\":\"code=IakytEhvmwOBv3jrshl8Mmlcb9xkIwWrOPo0Jd22Oontyvcn&state=Y3li3h3PZ_lPT38_lulmIJcJK8JSlwaubI8tQVT_EvcTAwnuGeymAcuKHg_3-B-4_zgWIwjLriJ_L0sOi3ZLAQ\",\"query_parameters\":{\"code\":\"IakytEhvmwOBv3jrshl8Mmlcb9xkIwWrOPo0Jd22Oontyvcn\",\"state\":\"Y3li3h3PZ_lPT38_lulmIJcJK8JSlwaubI8tQVT_EvcTAwnuGeymAcuKHg_3-B-4_zgWIwjLriJ_L0sOi3ZLAQ\"},\"fragment\":\"\",\"href\":\"http:",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"\",\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/vault\",\"raw_path\":\"/vault?x=1&y=two%20words\",\"full_path\":\"http://localhost:3620/vault\",\"full_raw_path\":\"http://localhost:3620/vault?x=1&y=two%20words\",\"params\":{\"x\":\"1\",\"y\":\"two words\"}},\"rx_router_route_id_rx_state_\":\"/vault\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/vault\",\"query\":\"x=1&y=two%20words\",\"query_parameters\":{\"x\":\"1\",\"y\":\"two words\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/vault?x=1&y=two%20words\"}},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"app_state_rx_state_\":\"Y3li3h3PZ_lPT38_lulmIJcJK8JSlwaubI8tQVT_EvcTAwnuGeymAcuKHg_3-B-4_zgWIwjLriJ_L0sOi3ZLAQ\",\"code_verifier_rx_state_\":\"EVHFZHPuwXafbnFlloUYayhbykvbesTcqYZ1SVq-h_yKf-NzMY-dJIo5AESwSsS23WJZ3pj4CkpUYbzbhKsk7A\",\"origin_rx_state_\":\"http://localhost:3620\",\"redirect_to_url_rx_state_\":\"/vault?x=1&y=two%20words\",\"latest_access_token_hash_ls_rx_state_\":\"fda2dddb2d7288e928b7638884b530b0e4d0a0e47dace139a2dd7fa4e4575965\"}}}]"
+   ]
+  },
+  "B": {
+   "start": "/item/abc?z=9",
+   "at_login": true,
+   "login_url": "http://localhost:3620/login?redirect_to=%2Fitem%2Fabc%3Fz%3D9",
+   "redirect_to": "/item/abc?z=9",
+   "redirect_to_ok": true,
+   "back": true,
+   "final_url": "http://localhost:3620/item/abc?z=9",
+   "diag": {
+    "who": "alice",
+    "n_loads": "1",
+    "d_url": "http://localhost:3620/item/abc?z=9",
+    "d_path": "/item/abc",
+    "d_query": "{\"z\": \"9\"}",
+    "d_params": "{\"item\": \"abc\", \"z\": \"9\"}",
+    "d_cookies": "",
+    "d_rawck": "False",
+    "d_tok": "True",
+    "d_sid": "True",
+    "d_host": "http://localhost:3620",
+    "d_log": "1:/item/abc?z=9",
+    "clicks": "0"
+   },
+   "final_query_ok": true,
+   "onload_query_ok": true,
+   "onload_path_ok": true,
+   "onload_params_ok": true,
+   "server_sees_oidc_cookies": false,
+   "origin_ok": true,
+   "entry": "click1:alice@/item/abc",
+   "entry_ok": true,
+   "ok": true,
+   "leaks": [],
+   "router_frames": [
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"abc\",\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"OVtco5vNdmJj6cG8prh1LA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"OVtco5vNdmJj6cG8prh1LA==\",\"sec-websocket-protocol\":\"0.10.1a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/item/[item]\",\"raw_path\":\"/item/abc?z=9\",\"full_path\":\"http://localhost:3620/item/[item]\",\"full_raw_path\":\"http://localhost:3620/item/abc?z=9\",\"params\":{\"z\":\"9\",\"item\":\"abc\"}},\"rx_router_route_id_rx_state_\":\"/item/[item]\",\"rx_router_session_rx_state_\":{\"client_token\":\"42367600-ed43-49d6-b9b0-4905ef66923c\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"i46dmHwF7y2ybE7uAAAt\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/item/abc\",\"query\":\"z=9\",\"query_parameters\":{\"z\":\"9\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/item/abc?z=9\"},\"is_hydrated_rx_state_\":false},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"origin_rx_state_\":\"http://localhost:3620\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/item/[item]\",\"raw_path\":\"/item/abc?redirect_to=%2Fitem%2Fabc%3Fz%3D9\",\"full_path\":\"http://localhost:3620/item/[item]\",\"full_raw_path\":\"http://localhost:3620/item/abc?redirect_to=%2Fitem%2Fabc%3Fz%3D9\",\"params\":{\"redirect_to\":\"/item/abc?z=9\",\"item\":\"abc\"}},\"item_rx_state_\":\"abc\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/item/abc\",\"query\":\"redirect_to=%2Fitem%2Fabc%3Fz%3D9\",\"query_parameters\":{\"redirect_to\":\"/item/abc?z=9\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/item/abc?redirect_to=%2Fitem%2Fabc%3Fz%3D9\"}},\"reflex___state____state.reflex_enterprise___auth___oidc___state____is_iframed_state\":{\"checked_this_session_rx_state_\":true},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"origin_rx_state_\":\"http://localhost:3620\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/login\",\"raw_path\":\"/login?redirect_to=%2Fitem%2Fabc%3Fz%3D9\",\"full_path\":\"http://localhost:3620/login\",\"full_raw_path\":\"http://localhost:3620/login?redirect_to=%2Fitem%2Fabc%3Fz%3D9\",\"params\":{\"redirect_to\":\"/item/abc?z=9\"}},\"is_hydrated_rx_state_\":false,\"item_rx_state_\":\"\",\"rx_router_route_id_rx_state_\":\"/login\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/login\",\"query\":\"redirect_to=%2Fitem%2Fabc%3Fz%3D9\",\"query_parameters\":{\"redirect_to\":\"/item/abc?z=9\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/login?redirect_to=%2Fitem%2Fabc%3Fz%3D9\"}},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"origin_rx_state_\":\"http://localhost:3620\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"GgErg3PR6THRtPt8YLfqoQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"GgErg3PR6THRtPt8YLfqoQ==\",\"sec-websocket-protocol\":\"0.10.1a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/callback\",\"raw_path\":\"/callback?code=eTx1IS5lmKxdC5ZSJY04XMi6ELOk5NRK6DV49bx2jlTPfuqi&state=eOJWtHz5FxfFXFXGNvsu3PlVAeduHjEg5N9tue316XS3Nd7YSz8SJp3wefRV-hge0QC_fCXasIL0Z78BBubgVw\",\"full_path\":\"http://localhost:3620/callback\",\"full_raw_path\":\"http://localhost:3620/callback?code=eTx1IS5lmKxdC5ZSJY04XMi6ELOk5NRK6DV49bx2jlTPfuqi&state=eOJWtHz5FxfFXFXGNvsu3PlVAeduHjEg5N9tue316XS3Nd7YSz8SJp3wefRV-hge0QC_fCXasIL0Z78BBubgVw\",\"params\":{\"code\":\"eTx1IS5lmKxdC5ZSJY04XMi6ELOk5NRK6DV49bx2jlTPfuqi\",\"state\":\"eOJWtHz5FxfFXFXGNvsu3PlVAeduHjEg5N9tue316XS3Nd7YSz8SJp3wefRV-hge0QC_fCXasIL0Z78BBubgVw\"}},\"rx_router_route_id_rx_state_\":\"/callback\",\"rx_router_session_rx_state_\":{\"client_token\":\"42367600-ed43-49d6-b9b0-4905ef66923c\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"wh0I1qbQgENshH8TAAAv\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/callback\",\"query\":\"code=eTx1IS5lmKxdC5ZSJY04XMi6ELOk5NRK6DV49bx2jlTPfuqi&state=eOJWtHz5FxfFXFXGNvsu3PlVAeduHjEg5N9tue316XS3Nd7YSz8SJp3wefRV-hge0QC_fCXasIL0Z78BBubgVw\",\"query_parameters\":{\"code\":\"eTx1IS5lmKxdC5ZSJY04XMi6ELOk5NRK6DV49bx2jlTPfuqi\",\"state\":\"eOJWtHz5FxfFXFXGNvsu3PlVAeduHjEg5N9tue316XS3Nd7YSz8SJp3wefRV-hge0QC_fCXasIL0Z78BBubgVw\"},\"fragment\":\"\",\"href\":\"http:",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"abc\",\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/item/[item]\",\"raw_path\":\"/item/abc?z=9\",\"full_path\":\"http://localhost:3620/item/[item]\",\"full_raw_path\":\"http://localhost:3620/item/abc?z=9\",\"params\":{\"z\":\"9\",\"item\":\"abc\"}},\"rx_router_route_id_rx_state_\":\"/item/[item]\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/item/abc\",\"query\":\"z=9\",\"query_parameters\":{\"z\":\"9\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/item/abc?z=9\"}},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"app_state_rx_state_\":\"eOJWtHz5FxfFXFXGNvsu3PlVAeduHjEg5N9tue316XS3Nd7YSz8SJp3wefRV-hge0QC_fCXasIL0Z78BBubgVw\",\"code_verifier_rx_state_\":\"ejsxJSVHrjRCzzIxkjKt_iRgaeDly3c3m7TNsHS-ZNXJcPu_USEHbkrTFwkK923JNY4DYj6t1eAkkynOVYFYTQ\",\"origin_rx_state_\":\"http://localhost:3620\",\"redirect_to_url_rx_state_\":\"/item/abc?z=9\",\"latest_access_token_hash_ls_rx_state_\":\"05e753dc4ab0cd8b1a23fd77b204a6d708a31a28d7ba6dc54e517b0b2313c35b\"}}}]"
+   ]
+  },
+  "CDEFG": {
+   "G_anon_fe_cookie": "",
+   "G_anon_fe_raw_keys": "accept-encoding,accept-language,asgi-scope-client,cache-control,connection,host,origin,pragma,sec-websocket-extensions,sec-websocket-key,sec-websocket-protocol,sec-websocket-version,upgrade,user-agent",
+   "C_redirect": {
+    "at_login": true,
+    "login_url": "http://localhost:3620/login?redirect_to=%2Fvault%3Fx%3Dnav",
+    "redirect_to": "/vault?x=nav"
+   },
+   "C_redirect_to_ok": true,
+   "C_navs": [
+    "http://localhost:3620/",
+    "http://localhost:3620/",
+    "http://localhost:3620/vault?x=nav",
+    "http://localhost:3620/login?redirect_to=%2Fvault%3Fx%3Dnav"
+   ],
+   "C_back": true,
+   "C_final_url": "http://localhost:3620/vault?x=nav",
+   "C_diag": {
+    "who": "alice",
+    "n_loads": "1",
+    "d_url": "http://localhost:3620/vault?x=nav",
+    "d_path": "/vault",
+    "d_query": "{\"x\": \"nav\"}",
+    "d_params": "{\"x\": \"nav\"}",
+    "d_cookies": "",
+    "d_rawck": "False",
+    "d_tok": "True",
+    "d_sid": "True",
+    "d_host": "http://localhost:3620",
+    "d_log": "1:/vault?x=nav",
+    "clicks": "0"
+   },
+   "C_ok": true,
+   "D_steps": [
+    {
+     "to": "/",
+     "path_ok": true,
+     "fe_cookie": "",
+     "fe_raw_keys": "accept-encoding,accept-language,asgi-scope-client,cache-control,connection,host,origin,pragma,sec-websocket-extensions,sec-websocket-key,sec-websocket-protocol,sec-websocket-version,upgrade,user-agent",
+     "who": "alice",
+     "click_url": "http://localhost:3620/",
+     "click_cookies_has_oidc": false
+    },
+    {
+     "to": "/vault2",
+     "path_ok": true,
+     "url": "http://localhost:3620/vault2?q=5&r=a%20b",
+     "diag": {
+      "who": "alice",
+      "n_loads": "2",
+      "d_url": "http://localhost:3620/vault2?q=5&r=a%20b",
+      "d_path": "/vault2",
+      "d_query": "{\"q\": \"5\", \"r\": \"a b\"}",
+      "d_params": "{\"q\": \"5\", \"r\": \"a b\"}",
+      "d_cookies": "",
+      "d_rawck": "False",
+      "d_tok": "True",
+      "d_sid": "True",
+      "d_host": "http://localhost:3620",
+      "d_log": "1:/vault?x=nav | 2:/vault2?q=5&r=a%20b",
+      "clicks": "0"
+     },
+     "n_loads_before": null,
+     "onload_ok": true,
+     "server_sees_oidc_cookies": false
+    },
+    {
+     "to": "/item/xyz",
+     "path_ok": true,
+     "url": "http://localhost:3620/item/xyz?k=1",
+     "diag": {
+      "who": "alice",
+      "n_loads": "3",
+      "d_url": "http://localhost:3620/item/xyz?k=1",
+      "d_path": "/item/xyz",
+      "d_query": "{\"k\": \"1\"}",
+      "d_params": "{\"item\": \"xyz\", \"k\": \"1\"}",
+      "d_cookies": "",
+      "d_rawck": "False",
+      "d_tok": "True",
+      "d_sid": "True",
+      "d_host": "http://localhost:3620",
+      "d_log": "1:/vault?x=nav | 2:/vault2?q=5&r=a%20b | 3:/item/xyz?k=1",
+      "clicks": "0"
+     },
+     "n_loads_before": "2",
+     "onload_ok": true,
+     "server_sees_oidc_cookies": false
+    },
+    {
+     "to": "/vault",
+     "path_ok": true,
+     "url": "http://localhost:3620/vault?x=nav",
+     "diag": {
+      "who": "alice",
+      "n_loads": "4",
+      "d_url": "http://localhost:3620/vault?x=nav",
+      "d_path": "/vault",
+      "d_query": "{\"x\": \"nav\"}",
+      "d_params": "{\"x\": \"nav\"}",
+      "d_cookies": "",
+      "d_rawck": "False",
+      "d_tok": "True",
+      "d_sid": "True",
+      "d_host": "http://localhost:3620",
+      "d_log": "1:/vault?x=nav | 2:/vault2?q=5&r=a%20b | 3:/item/xyz?k=1 | 4:/vault?x=nav",
+      "clicks": "0"
+     },
+     "n_loads_before": "3",
+     "onload_ok": true,
+     "server_sees_oidc_cookies": false
+    }
+   ],
+   "D_ok": true,
+   "E_diag": {
+    "who": "alice",
+    "n_loads": "6",
+    "d_url": "http://localhost:3620/item/xyz?k=1",
+    "d_path": "/item/xyz",
+    "d_query": "{\"k\": \"1\"}",
+    "d_params": "{\"item\": \"xyz\", \"k\": \"1\"}",
+    "d_cookies": "_oidc_generic_access_token_data_partitioned,_oidc_generic_granted_scopes_partitioned,_oidc_generic_id_token_partitioned,_oidc_generic_refresh_token_partitioned",
+    "d_rawck": "True",
+    "d_tok": "True",
+    "d_sid": "True",
+    "d_host": "http://localhost:3620",
+    "d_log": "1:/vault?x=nav | 2:/vault2?q=5&r=a%20b | 3:/item/xyz?k=1 | 4:/vault?x=nav | 5:/item/xyz?k=1 | 6:/item/xyz?k=1",
+    "clicks": "0"
+   },
+   "E_server_sees_oidc_cookies_after_reload": true,
+   "E_ok": true,
+   "F_cookies_before": [
+    "_oidc_generic_access_token_data_partitioned",
+    "_oidc_generic_granted_scopes_partitioned",
+    "_oidc_generic_id_token_partitioned",
+    "_oidc_generic_refresh_token_partitioned"
+   ],
+   "F_after_logout_url": "http://localhost:8638/oauth2/end_session?state=ebfbislZlCNlQht3D0WfLiclWPJ6nBQKy6RuiOeF2eyaF26OfPaeLcOGY5q1k3sL8yJOAaiZOiiUMSR4E9btBg&id_token_hint=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6Ikh6dHgzWjQyWGN5ODFxWWgwd1ZWZXFiSE9HT2hiMXRvSmVSQk5tSFd5VjgifQ.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0Ojg2MzgiLCJleHAiOjE3OTI4MTI2MDksImlhdCI6MTc5MjgwOTAwOSwiYXV0aF90aW1lIjoxNzkyODA5MDA5LCJhdWQiOlsidmF1dGgtY2xpZW50Il0sImF0X2hhc2giOiItcHRBTGRKb1RqWDVqVDBiVHRGc2pBIiwibmFtZSI6IkFsaWNlIEFkbWluIiwiZW1haWwiOiJhbGljZUBleGFtcGxlLmNvbSIsImdyb3VwcyI6WyJhZG1pbnMiLCJzdGFmZiJdLCJzdWIiOiJhbGljZSJ9.ftdtfuZ2Ed_VtbBvss0rUs6N7J19tHBPxPC27Xot-dnqVTB1GJ_2wfiS67_rUq78V1Hhb6HI1M22-BCPGeALI_Y-C_NbNL0LzzFGaXvzYL6BuwUOx8JLCIocP4LEkHKLu_UPY_kgD8xvEipTMNFfXq1iPihTiy9iLiiDZ-QytRKjs7lpQVYA210sIc3_mVW1jHKcIMD4SpM1ItT_-l3wMMYXYyghWho5ZoNQYJCLfv0lVxjv8VspLslKEyJl7iPClAHbsGXtYgZyGCxWKFJL3GTKI0S7Q0F30OCXIl47Bom6EPZHaXiaygX-8WJo1d7BCiILMdHX7lNYy2Wwz93oiA&post_logout_redirect_uri=http%3A%2F%2Flocalhost%3A3620%2F",
+   "F_navs": [
+    "http://localhost:8638/oauth2/end_session?state=ebfbislZlCNlQht3D0WfLiclWPJ6nBQKy6RuiOeF2eyaF26OfPaeLcOGY5q1k3sL8yJOAaiZOiiUMSR4E9btBg&id_token_hint=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6Ikh6dHgzWjQyWGN5ODFxWWgwd1ZWZXFiSE9HT2hiMXRvSmVSQk5tSFd5VjgifQ.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0Ojg2MzgiLCJleHAiOjE3OTI4MTI2MDksImlhdCI6MTc5MjgwOTAwOSwiYXV0aF90aW1lIjoxNzkyODA5MDA5LCJhdWQiOlsidmF1dGgtY2xpZW50Il0sImF0X2hhc2giOiItcHRBTGRKb1RqWDVqVDBiVHRGc2pBIiwibmFtZSI6IkFsaWNlIEFkbWluIiwiZW1haWwiOiJhbGljZUBleGFtcGxlLmNvbSIsImdyb3VwcyI6WyJhZG1pbnMiLCJzdGFmZiJdLCJzdWIiOiJhbGljZSJ9.ftdtfuZ2Ed_VtbBvss0rUs6N7J19tHBPxPC27Xot-dnqVTB1GJ_2wfiS67_rUq78V1Hhb6HI1M22-BCPGeALI_Y-C_NbNL0LzzFGaXvzYL6BuwUOx8JLCIocP4LEkHKLu_UPY_kgD8xvEipTMNFfXq1iPihTiy9iLiiDZ-QytRKjs7lpQVYA210sIc3_mVW1jHKcIMD4SpM1ItT_-l3wMMYXYyghWho5ZoNQYJCLfv0lVxjv8VspLslKEyJl7iPClAHbsGXtYgZyGCxWKFJL3GTKI0S7Q0F30OCXIl47Bom6EPZHaXiaygX-8WJo1d7BCiILMdHX7lNYy2Wwz93oiA&post_logout_redirect_uri=http%3A%2F%2Flocalhost%3A3620%2F"
+   ],
+   "F_cookies_after": [],
+   "F_revisit": {
+    "at_login": true,
+    "login_url": "http://localhost:3620/login?redirect_to=%2Fvault",
+    "redirect_to": "/vault"
+   },
+   "F_ok": true,
+   "G_leaks": [
+    {
+     "kind": "elsewhere",
+     "why": [
+      "elsewhere VALUE _oidc_generic_granted_scopes_partitioned httpOnly=True"
+     ],
+     "where": [
+      "eUh6z7nn-GwQ4unQ\",\"code_verifier_rx_state_\":\"lUYcGcu-ICPRpqMWTvgwfxc5j8Qzw3gCoydxvW4wqa0RzMbphIE5SU9rXh6PONh0SNplvcFZ2wj6-uNuVA04SA\",\"granted_scopes_rx_state_\":<VALUE>"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"xyz\",\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86"
+    },
+    {
+     "kind": "elsewhere",
+     "why": [
+      "elsewhere VALUE _oidc_generic_granted_scopes_partitioned httpOnly=True"
+     ],
+     "where": [
+      "eUh6z7nn-GwQ4unQ\",\"code_verifier_rx_state_\":\"lUYcGcu-ICPRpqMWTvgwfxc5j8Qzw3gCoydxvW4wqa0RzMbphIE5SU9rXh6PONh0SNplvcFZ2wj6-uNuVA04SA\",\"granted_scopes_rx_state_\":<VALUE>"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"xyz\",\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86"
+    },
+    {
+     "kind": "elsewhere",
+     "why": [
+      "elsewhere VALUE _oidc_generic_granted_scopes_partitioned httpOnly=True"
+     ],
+     "where": [
+      "eUh6z7nn-GwQ4unQ\",\"code_verifier_rx_state_\":\"lUYcGcu-ICPRpqMWTvgwfxc5j8Qzw3gCoydxvW4wqa0RzMbphIE5SU9rXh6PONh0SNplvcFZ2wj6-uNuVA04SA\",\"granted_scopes_rx_state_\":<VALUE>"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+    },
+    {
+     "kind": "elsewhere",
+     "why": [
+      "elsewhere VALUE _oidc_generic_id_token_partitioned httpOnly=True"
+     ],
+     "where": [
+      "irect_url:\\\"http://localhost:8638/oauth2/end_session?state=ebfbislZlCNlQht3D0WfLiclWPJ6nBQKy6RuiOeF2eyaF26OfPaeLcOGY5q1k3sL8yJOAaiZOiiUMSR4E9btBg&id_token_hint=<VALUE>"
+     ],
+     "frame": "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_script\",\"router_data\":{},\"payload\":{\"javascript_code\":\"(globalThis.__reflexCookieSyncChain = Promise.resolve(globalThis.__reflexCookieSyncChain).catch(() => {}).then(() => (((url, options) => fetch(url, {...options, headers: {...options.headers, 'X-Reflex"
+    },
+    {
+     "kind": "elsewhere",
+     "why": [
+      "elsewhere VALUE _oidc_generic_id_token_partitioned httpOnly=True"
+     ],
+     "where": [
+      "d\":{\"path\":\"http://localhost:8638/oauth2/end_session?state=ebfbislZlCNlQht3D0WfLiclWPJ6nBQKy6RuiOeF2eyaF26OfPaeLcOGY5q1k3sL8yJOAaiZOiiUMSR4E9btBg&id_token_hint=<VALUE>"
+     ],
+     "frame": "42/_event,[\"event\",{\"events\":[{\"name\":\"_redirect\",\"router_data\":{},\"payload\":{\"path\":\"http://localhost:8638/oauth2/end_session?state=ebfbislZlCNlQht3D0WfLiclWPJ6nBQKy6RuiOeF2eyaF26OfPaeLcOGY5q1k3sL8yJOAaiZOiiUMSR4E9btBg&id_token_hint=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6Ikh6dHgzWjQyWGN5ODFxWW"
+    }
+   ],
+   "router_frames": [
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"gDkZnVPKj9Kg97Tq9PDvUg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"gDkZnVPKj9Kg97Tq9PDvUg==\",\"sec-websocket-protocol\":\"0.10.1a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3620/index\",\"full_raw_path\":\"http://localhost:3620/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"c1767b91-317d-434a-909c-776fb001cfe8\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"9HW1AiVgBB642ACMAAAx\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3620/\"},\"is_hydrated_rx_state_\":false},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"origin_rx_state_\":\"http://localhost:3620\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/vault\",\"raw_path\":\"/vault?x=nav\",\"full_path\":\"http://localhost:3620/vault\",\"full_raw_path\":\"http://localhost:3620/vault?x=nav\",\"params\":{\"x\":\"nav\"}},\"is_hydrated_rx_state_\":false,\"item_rx_state_\":\"\",\"rx_router_route_id_rx_state_\":\"/vault\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/vault\",\"query\":\"x=nav\",\"query_parameters\":{\"x\":\"nav\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/vault?x=nav\"}},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"origin_rx_state_\":\"http://localhost:3620\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/vault\",\"raw_path\":\"/vault?redirect_to=%2Fvault%3Fx%3Dnav\",\"full_path\":\"http://localhost:3620/vault\",\"full_raw_path\":\"http://localhost:3620/vault?redirect_to=%2Fvault%3Fx%3Dnav\",\"params\":{\"redirect_to\":\"/vault?x=nav\"}},\"item_rx_state_\":\"\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/vault\",\"query\":\"redirect_to=%2Fvault%3Fx%3Dnav\",\"query_parameters\":{\"redirect_to\":\"/vault?x=nav\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/vault?redirect_to=%2Fvault%3Fx%3Dnav\"}},\"reflex___state____state.reflex_enterprise___auth___oidc___state____is_iframed_state\":{\"checked_this_session_rx_state_\":true},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"origin_rx_state_\":\"http://localhost:3620\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/login\",\"raw_path\":\"/login?redirect_to=%2Fvault%3Fx%3Dnav\",\"full_path\":\"http://localhost:3620/login\",\"full_raw_path\":\"http://localhost:3620/login?redirect_to=%2Fvault%3Fx%3Dnav\",\"params\":{\"redirect_to\":\"/vault?x=nav\"}},\"is_hydrated_rx_state_\":false,\"item_rx_state_\":\"\",\"rx_router_route_id_rx_state_\":\"/login\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/login\",\"query\":\"redirect_to=%2Fvault%3Fx%3Dnav\",\"query_parameters\":{\"redirect_to\":\"/vault?x=nav\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/login?redirect_to=%2Fvault%3Fx%3Dnav\"}},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"origin_rx_state_\":\"http://localhost:3620\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"H4YOd8cMFCtyiQrwHyj0Fw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"H4YOd8cMFCtyiQrwHyj0Fw==\",\"sec-websocket-protocol\":\"0.10.1a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/callback\",\"raw_path\":\"/callback?code=F1BBURoe5scdAQRgBFJsFa9YlMmhOyCh8Tp8zq3DtsRP9Qea&state=dBieztvA_J_QQNydJA59rYeRHRojdasF_bM2OztQ6HRyXm8yEln0SObQgqccPIp0BFk47MeUh6z7nn-GwQ4unQ\",\"full_path\":\"http://localhost:3620/callback\",\"full_raw_path\":\"http://localhost:3620/callback?code=F1BBURoe5scdAQRgBFJsFa9YlMmhOyCh8Tp8zq3DtsRP9Qea&state=dBieztvA_J_QQNydJA59rYeRHRojdasF_bM2OztQ6HRyXm8yEln0SObQgqccPIp0BFk47MeUh6z7nn-GwQ4unQ\",\"params\":{\"code\":\"F1BBURoe5scdAQRgBFJsFa9YlMmhOyCh8Tp8zq3DtsRP9Qea\",\"state\":\"dBieztvA_J_QQNydJA59rYeRHRojdasF_bM2OztQ6HRyXm8yEln0SObQgqccPIp0BFk47MeUh6z7nn-GwQ4unQ\"}},\"rx_router_route_id_rx_state_\":\"/callback\",\"rx_router_session_rx_state_\":{\"client_token\":\"c1767b91-317d-434a-909c-776fb001cfe8\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"5IxBtpi1FixUlZjbAAAz\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/callback\",\"query\":\"code=F1BBURoe5scdAQRgBFJsFa9YlMmhOyCh8Tp8zq3DtsRP9Qea&state=dBieztvA_J_QQNydJA59rYeRHRojdasF_bM2OztQ6HRyXm8yEln0SObQgqccPIp0BFk47MeUh6z7nn-GwQ4unQ\",\"query_parameters\":{\"code\":\"F1BBURoe5scdAQRgBFJsFa9YlMmhOyCh8Tp8zq3DtsRP9Qea\",\"state\":\"dBieztvA_J_QQNydJA59rYeRHRojdasF_bM2OztQ6HRyXm8yEln0SObQgqccPIp0BFk47MeUh6z7nn-GwQ4unQ\"},\"fragment\":\"\",\"href\":\"http:",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"\",\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/vault\",\"raw_path\":\"/vault?x=nav\",\"full_path\":\"http://localhost:3620/vault\",\"full_raw_path\":\"http://localhost:3620/vault?x=nav\",\"params\":{\"x\":\"nav\"}},\"rx_router_route_id_rx_state_\":\"/vault\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/vault\",\"query\":\"x=nav\",\"query_parameters\":{\"x\":\"nav\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/vault?x=nav\"}},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"app_state_rx_state_\":\"dBieztvA_J_QQNydJA59rYeRHRojdasF_bM2OztQ6HRyXm8yEln0SObQgqccPIp0BFk47MeUh6z7nn-GwQ4unQ\",\"code_verifier_rx_state_\":\"lUYcGcu-ICPRpqMWTvgwfxc5j8Qzw3gCoydxvW4wqa0RzMbphIE5SU9rXh6PONh0SNplvcFZ2wj6-uNuVA04SA\",\"origin_rx_state_\":\"http://localhost:3620\",\"redirect_to_url_rx_state_\":\"/vault?x=nav\",\"latest_access_token_hash_ls_rx_state_\":\"fa9b402dd2684e35f98d3d1b4ed16c8c1c29cd6c7ccaf2e7a7e1631a1089ac1a\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"\",\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3620/index\",\"full_raw_path\":\"http://localhost:3620/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3620/\"}},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"app_state_rx_state_\":\"dBieztvA_J_QQNydJA59rYeRHRojdasF_bM2OztQ6HRyXm8yEln0SObQgqccPIp0BFk47MeUh6z7nn-GwQ4unQ\",\"code_verifier_rx_state_\":\"lUYcGcu-ICPRpqMWTvgwfxc5j8Qzw3gCoydxvW4wqa0RzMbphIE5SU9rXh6PONh0SNplvcFZ2wj6-uNuVA04SA\",\"origin_rx_state_\":\"http://localhost:3620\",\"redirect_to_url_rx_state_\":\"/vault?x=nav\",\"latest_access_token_hash_ls_rx_state_\":\"fa9b402dd2684e35f98d3d1b4ed16c8c1c29cd6c7ccaf2e7a7e1631a1089ac1a\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"\",\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/vault2\",\"raw_path\":\"/vault2?q=5&r=a%20b\",\"full_path\":\"http://localhost:3620/vault2\",\"full_raw_path\":\"http://localhost:3620/vault2?q=5&r=a%20b\",\"params\":{\"q\":\"5\",\"r\":\"a b\"}},\"rx_router_route_id_rx_state_\":\"/vault2\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/vault2\",\"query\":\"q=5&r=a%20b\",\"query_parameters\":{\"q\":\"5\",\"r\":\"a b\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/vault2?q=5&r=a%20b\"}},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"app_state_rx_state_\":\"dBieztvA_J_QQNydJA59rYeRHRojdasF_bM2OztQ6HRyXm8yEln0SObQgqccPIp0BFk47MeUh6z7nn-GwQ4unQ\",\"code_verifier_rx_state_\":\"lUYcGcu-ICPRpqMWTvgwfxc5j8Qzw3gCoydxvW4wqa0RzMbphIE5SU9rXh6PONh0SNplvcFZ2wj6-uNuVA04SA\",\"origin_rx_state_\":\"http://localhost:3620\",\"redirect_to_url_rx_state_\":\"/vault?x=nav\",\"latest_access_token_hash_ls_rx_state_\":\"fa9b402dd2684e35f98d3d1b4ed16c8c1c29cd6c7ccaf2e7a7e1631a1089ac1a\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"xyz\",\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/item/[item]\",\"raw_path\":\"/item/xyz?k=1\",\"full_path\":\"http://localhost:3620/item/[item]\",\"full_raw_path\":\"http://localhost:3620/item/xyz?k=1\",\"params\":{\"k\":\"1\",\"item\":\"xyz\"}},\"rx_router_route_id_rx_state_\":\"/item/[item]\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/item/xyz\",\"query\":\"k=1\",\"query_parameters\":{\"k\":\"1\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/item/xyz?k=1\"}},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"app_state_rx_state_\":\"dBieztvA_J_QQNydJA59rYeRHRojdasF_bM2OztQ6HRyXm8yEln0SObQgqccPIp0BFk47MeUh6z7nn-GwQ4unQ\",\"code_verifier_rx_state_\":\"lUYcGcu-ICPRpqMWTvgwfxc5j8Qzw3gCoydxvW4wqa0RzMbphIE5SU9rXh6PONh0SNplvcFZ2wj6-uNuVA04SA\",\"origin_rx_state_\":\"http://localhost:3620\",\"redirect_to_url_rx_state_\":\"/vault?x=nav\",\"latest_access_token_hash_ls_rx_state_\":\"fa9b402dd2684e35f98d3d1b4ed16c8c1c29cd6c7ccaf2e7a7e1631a1089ac1a\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"\",\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/vault\",\"raw_path\":\"/vault?x=nav\",\"full_path\":\"http://localhost:3620/vault\",\"full_raw_path\":\"http://localhost:3620/vault?x=nav\",\"params\":{\"x\":\"nav\"}},\"rx_router_route_id_rx_state_\":\"/vault\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/vault\",\"query\":\"x=nav\",\"query_parameters\":{\"x\":\"nav\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/vault?x=nav\"}},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"app_state_rx_state_\":\"dBieztvA_J_QQNydJA59rYeRHRojdasF_bM2OztQ6HRyXm8yEln0SObQgqccPIp0BFk47MeUh6z7nn-GwQ4unQ\",\"code_verifier_rx_state_\":\"lUYcGcu-ICPRpqMWTvgwfxc5j8Qzw3gCoydxvW4wqa0RzMbphIE5SU9rXh6PONh0SNplvcFZ2wj6-uNuVA04SA\",\"origin_rx_state_\":\"http://localhost:3620\",\"redirect_to_url_rx_state_\":\"/vault?x=nav\",\"latest_access_token_hash_ls_rx_state_\":\"fa9b402dd2684e35f98d3d1b4ed16c8c1c29cd6c7ccaf2e7a7e1631a1089ac1a\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"xyz\",\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"EFjIAKGjp8sRy/O96LuReA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"EFjIAKGjp8sRy/O96LuReA==\",\"sec-websocket-protocol\":\"0.10.1a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/item/[item]\",\"raw_path\":\"/item/xyz?k=1\",\"full_path\":\"http://localhost:3620/item/[item]\",\"full_raw_path\":\"http://localhost:3620/item/xyz?k=1\",\"params\":{\"k\":\"1\",\"item\":\"xyz\"}},\"rx_router_route_id_rx_state_\":\"/item/[item]\",\"rx_router_session_rx_state_\":{\"client_token\":\"c1767b91-317d-434a-909c-776fb001cfe8\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"HqtbvChC_hgPSe5DAAA1\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/item/xyz\",\"query\":\"k=1\",\"query_parameters\":{\"k\":\"1\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/item/xyz?k=1\"},\"is_hydrated_rx_state_\":false},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"app_state_rx_state_\":\"dBieztvA_J_QQNydJA59rYeRHRojdasF_bM2OztQ6HRyXm8yEln0SObQgqccPIp0BFk47MeUh6z7nn-GwQ4unQ\",\"code_verifier_rx_state_\":\"lUYcGcu-ICPRpqMWTvgwfxc5j8Qzw3gCoydxvW4wqa0RzMbphIE5SU9rXh6PONh0SNplvcFZ2wj6-uNuVA04SA\",\"granted_scopes_rx_state_\":\"openid email profile\",\"has_any_token_rx_state_\":true,\"last_error_txid_rx_state_\":\"2b28584f062840838dc4a580fc7d67c4\",\"latest_access_token_hash_ls_rx_state_\":\"fa9b402dd2684e35f98d3d1b4ed16c8c1c29cd6c7ccaf2e7a7e1631a1089ac1a\",\"origin_rx_state_\":\"http://localhost:3620\",\"",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"xyz\",\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"h8iNJK8B8R6L2ax//c0AcA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"h8iNJK8B8R6L2ax//c0AcA==\",\"sec-websocket-protocol\":\"0.10.1a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3620\",\"path\":\"/item/[item]\",\"raw_path\":\"/item/xyz?k=1\",\"full_path\":\"http://localhost:3620/item/[item]\",\"full_raw_path\":\"http://localhost:3620/item/xyz?k=1\",\"params\":{\"k\":\"1\",\"item\":\"xyz\"}},\"rx_router_route_id_rx_state_\":\"/item/[item]\",\"rx_router_session_rx_state_\":{\"client_token\":\"c1767b91-317d-434a-909c-776fb001cfe8\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"W2YcB2k-4eVGpgpcAAA3\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/item/xyz\",\"query\":\"k=1\",\"query_parameters\":{\"k\":\"1\"},\"fragment\":\"\",\"href\":\"http://localhost:3620/item/xyz?k=1\"},\"is_hydrated_rx_state_\":false},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"app_state_rx_state_\":\"dBieztvA_J_QQNydJA59rYeRHRojdasF_bM2OztQ6HRyXm8yEln0SObQgqccPIp0BFk47MeUh6z7nn-GwQ4unQ\",\"code_verifier_rx_state_\":\"lUYcGcu-ICPRpqMWTvgwfxc5j8Qzw3gCoydxvW4wqa0RzMbphIE5SU9rXh6PONh0SNplvcFZ2wj6-uNuVA04SA\",\"granted_scopes_rx_state_\":\"openid email profile\",\"has_any_token_rx_state_\":true,\"last_error_txid_rx_state_\":\"2b28584f062840838dc4a580fc7d67c4\",\"latest_access_token_hash_ls_rx_state_\":\"fa9b402dd2684e35f98d3d1b4ed16c8c1c29cd6c7ccaf2e7a7e1631a1089ac1a\",\"origin_rx_state_\":\"http://localhost:3620\",\""
+   ],
+   "G_ok": true
+  },
+  "events": [
+   {
+    "tab": "deep",
+    "kind": "requestfailed",
+    "url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
+    "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "deep",
+    "kind": "console",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "deep",
+    "kind": "requestfailed",
+    "url": "http://localhost:8620/_reflex/cookies/sync",
+    "failure": "net::ERR_ABORTED"
+   },
+   {
+    "tab": "deep",
+    "kind": "requestfailed",
+    "url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
+    "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "deep",
+    "kind": "console",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "deep",
+    "kind": "requestfailed",
+    "url": "http://localhost:8620/_reflex/cookies/sync",
+    "failure": "net::ERR_ABORTED"
+   },
+   {
+    "tab": "nav",
+    "kind": "requestfailed",
+    "url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
+    "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "nav",
+    "kind": "console",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "nav",
+    "kind": "requestfailed",
+    "url": "http://localhost:8620/_reflex/cookies/sync",
+    "failure": "net::ERR_ABORTED"
+   },
+   {
+    "tab": "nav",
+    "kind": "requestfailed",
+    "url": "http://localhost:8620/_reflex/cookies/sync",
+    "failure": "net::ERR_ABORTED"
+   },
+   {
+    "tab": "nav",
+    "kind": "requestfailed",
+    "url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
+    "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "nav",
+    "kind": "console",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+   }
+  ]
+ }
+]

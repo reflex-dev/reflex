@@ -2,7 +2,7 @@
 
 Item: radix (#7345 #7593 #7418 #7438 #7629 #7645), moment (#7591), data_editor (#7607), lucide (#7604),
 code (#7437), typing (#7406 #7413 #7419 #7403 #7401, `rx.form.FormData`, `VarData(position=)`), CMP-11, CMP-31.
-Status: IN PROGRESS — this file is updated incrementally; the structured report is in the final message.
+Status: COMPLETE (2026-10-24). All servers stopped, `.web`/`node_modules` deleted; structured report in the final message.
 
 ## Environment
 
@@ -198,3 +198,81 @@ preflight ".pyi audit: wheel == sdist" compares archive contents and cannot see 
 produced at build time. For a stable release the hook deps would resolve to the new stable only if `reflex-base`
 is published before the component packages are built by users; nothing pins them to the sibling floor
 (`reflex-base>=0.10.1.dev0` is only a runtime dependency).
+
+### E. 0.10.0 baseline (`results/drive_dev_prev.json`, `logs/drive_dev_prev.log`, `logs/dev_prev.log`; `prevapp` = the
+same app with the `NEW=False` branches, `EXPECT_VENV=components_typing-prev`, dev on 3242/8242)
+
+68/97 checks pass; every failure is the pre-fix behaviour the 0.10.1a1 changelog describes (positive controls):
+- `/radio_aschild` never renders: `Error: Primitive.div failed to slot onto its children. Expected a single React
+  element child or Slottable` (#7593 — `asChild` reached Radix). 0.10.1a1: renders, no error.
+- `/input`: `auto_complete=True/False/BoolVar` → no `autocomplete` attribute at all plus React's "Received `true`
+  for a non-boolean attribute" (#7418). 0.10.1a1: `on`/`off`.
+- `/progress`: primitive root `aria-valuenow=None data-state=indeterminate` (CMP-41 / #7438). 0.10.1a1: real values.
+- `/accordion`: 3× Emotion `The pseudo class ":first-child" is potentially unsafe when doing server-side rendering`
+  (CMP-13 / #7629). 0.10.1a1: none.
+- `/de` never renders: `TypeError: Cannot read properties of undefined (reading 'includes') at truncateString
+  (@glideapps/glide-data-grid)` — a state-backed column without `type` (#7607). 0.10.1a1: renders, editable.
+- `/icons` never renders: `ReferenceError: lucideIcons is not defined` — the same-library prop import dropped by
+  the old `_get_imports` override (#7604). 0.10.1a1: renders.
+- `/code`: `use_transformers=True` block has no `.highlighted`/`.diff` lines, notation text left in place (CMP-29 /
+  #7437). 0.10.1a1: transformed.
+- `/moment`, `/dialog`, `/slider`, `/rform`, `/radio`: identical to 0.10.1a1 (CMP-11 was already fixed in 0.9.4;
+  dialog/slider/form behaviour unchanged across the primitive bumps).
+- `/cbg` dict-handler submit on 0.10.0: `{"grp": "a", "dgrp": "d2", "cg": "a", "cg_default": "d2"}` — no entry for
+  the `id="cc"` cards root with nothing checked; 0.10.1a1 (`FormData` handler) emits `"cc": [null]` for it
+  (`drive_prod_new_cbg2.json`), and `"cg": [null]` once the group is emptied (`drive_dev_new_cbg_final.json`).
+  The id-based path is deprecated by #7386 (events_state covers the deprecation warnings); recorded as an observation.
+
+### F. Re-verification
+
+- **CMP-11** (moment locale isolation): fixed, still fixed — dev and prod, `#plain`/`#plain2`/`#english`
+  `Thursday 14 March 2024` next to `#french` `jeudi 14 mars 2024`; `from_now` sibling `7 years ago`; explicit
+  `locale="en"` compiles in prod (no `moment/locale/en` import); a provider `locale=State.var` switch leaves plain
+  siblings English. Also holds on 0.10.0 (control: fixed since 0.9.4; the 0.9.11a1 leak is not re-creatable here).
+- **CMP-31** (prod badge swallows `#portal`): fixed, still fixed — prod with the default badge (`badge: True` in the
+  DOM), `#portal` present, data_editor image overlay opens with the carousel (`1 of 2`, 4 `<img>`),
+  `shots/prod_new_de_overlay.png`.
+- CMP-41 (primitive progress ARIA): fixed by #7438 (control: 0.10.0 indeterminate).
+- CMP-13 (accordion Emotion `:first-child` SSR warning): fixed by #7629 (control: 0.10.0 logs it 3×).
+- CMP-29 (`use_transformers=True` empty list): fixed by #7437 (control: 0.10.0 renders nothing transformed).
+- CMP-15 (unsupported moment props silently CSS): fixed for the react-moment 2.x options #7591 exposes; unknown
+  props (`filter`, `settings`, `form_at`) still become CSS silently — the PR text's "actionable errors" are not in
+  the published package (compile probe `moment_bad_*`). Unchanged behaviour, low.
+- CMP-14 (duplicate `defineLocale` warnings): 1 warning per page load with a literal locale import — unchanged.
+- CMP-39 (`collapsible=True` React warning): unchanged (dev only).
+- CMP-48 (overlay stays open on Escape): not reproduced with click → Enter → Escape (overlay closes, 0 imgs left).
+- CMP-44 (React 19.3 "script tag while rendering" error on a failed route-module load): seen once in dev right
+  after a hot reload forced a Vite dep re-optimisation (`504 Outdated Optimize Dep`), unchanged context.
+
+### G. Issues and observations (details above)
+
+1. **CT-3 (medium, not a regression of runtime behaviour; packaging)** — wheels built from the 0.10.1a1 sdists carry
+   stubs regenerated by whatever `reflex-base` the isolated build env resolves (the stable 0.10.0 for a pre-release);
+   6 stubs are silently dropped (radix `primitives/form.pyi`, `dataeditor.pyi`, core `error_boundary/banner/upload/
+   el/elements/forms.pyi`) and the rest differ from the wheel. Section D; repro `pip install --no-cache-dir
+   --no-binary reflex-components-radix --no-deps reflex-components-radix==0.10.1a1` → 64 stubs, no `form.pyi`
+   (`logs/build_pipsdist2.log`: pip's isolated build env resolved the hook deps to `reflex_base-0.10.0`, `reflex_components_core-0.10.0`, `reflex_components_lucide-1.1.0`, `reflex_components_sonner-0.10.0`). Campaign note: uv on this
+   machine reused those sdist builds for later installs ("Registry requirement already cached") — 4 venvs affected,
+   including `enterprise-ctrl-a2`.
+2. **CT-1 (low)** `rx.radio_cards.root(as_child=True)` / `.item(as_child=True)`: the removed prop is now accepted
+   silently and emitted as a CSS property `asChild: true` (compile probe `rc_aschild`); no deprecation or error.
+   0.10.0 forwarded it and crashed. Not a regression; a `console.warn`/error for a removed prop would help migration.
+3. **CT-2 (low)** `rx.moment(filter=...)` / `settings=` / `form_at=`: still silently CSS, contrary to the #7591 PR
+   description ("actionable errors for the removed filter prop and the reported settings/form_at inputs").
+4. **CT-4 (low, docs)** a provider `format` overrides a child's `from_now`/`to_now` (react-moment output
+   precedence `format > from > fromNow > ...`), so `rx.moment_provider(format=...)` children cannot show relative
+   times; the docs say "a prop set on a component overrides the provider", which is true only for the same prop.
+5. **CT-5 (low, typing)** on the wheels: (a) ty types `rx.Field[rx.Model-subclass | None]` as `Var[Model | None]`
+   (pyright: `ObjectVar[Model]`), so `State.user.name` is an error under ty — #7413 covers DeclarativeBase models,
+   dataclasses and mappings, not `rx.Model`; 0.10.0 gave `ArrayVar[Model]` (worse, so an improvement, not a
+   regression). (b) `rx.input(auto_complete=True)` and `rx.data_editor(columns=["A", "B"])` / `columns=State.titles`
+   are rejected by pyright and ty although the runtime and the 0.10.1a1 changelog accept them (same on 0.10.0).
+   (c) `VarData(position=...)` / `Hooks.HookPosition` deprecation is invisible to type checkers (`reportDeprecated`
+   shows nothing); runtime warns. (d) ty rejects `rx.EventHandler[spec]` in custom components (`Non-generic class
+   EventHandler cannot be specialized`), both versions.
+6. **CT-6 (low, forms; events_state domain)** with a `FormData` handler, an `id=` on a checkbox group/cards root
+   with nothing checked contributes `"<id>": [null]` to the submitted data (0.10.0 dict handler: key absent).
+
+No regression found in the component behaviour covered by this item: every targeted fix reproduces as broken on
+0.10.0 and works on 0.10.1a1 in dev and prod; dialogs, sliders, radix form validation, accordion, progress, moment,
+data_editor, lucide and code blocks behave the same or better than on 0.10.0.

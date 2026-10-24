@@ -12,27 +12,27 @@
   "X-Forwarded-For: 6.6.6.6"
  ],
  "frames_in": [
-  "0{\"sid\":\"gKz92SSOpkDxGaTPAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
-  "40/_event,{\"sid\":\"AYgsYL8AWwVvpTNZAAAD\"}",
-  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"127.0.0.1:8610\",\"origin\":\"http://localhost:8610\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"\",\"cache_control\":\"\",\"user_agent\":\"ws_probe/1\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"ly2qYrGHH/CCmeCBKRZCGA==\",\"sec_websocket_extensions\":\"\",\"accept_encoding\":\"\",\"accept_language\":\"\",\"raw_headers\":{\"asgi-scope-client\":\"127.0.0.1\",\"connection\":\"Upgrade\",\"host\":\"127.0.0.1:8610\",\"origin\":\"http://localhost:8610\",\"sec-websocket-key\":\"ly2qYrGHH/CCmeCBKRZCGA==\",\"s",
+  "0{\"sid\":\"NvxNN_mOiua7WlibAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+  "40/_event,{\"sid\":\"jEdyBEgSZKznBuj3AAAD\"}",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"127.0.0.1:8610\",\"origin\":\"http://localhost:8610\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"\",\"cache_control\":\"\",\"user_agent\":\"ws_probe/1\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"1KnEun2wr7VBhPVws6VAVg==\",\"sec_websocket_extensions\":\"\",\"accept_encoding\":\"\",\"accept_language\":\"\",\"raw_headers\":{\"asgi-scope-client\":\"127.0.0.1\",\"connection\":\"Upgrade\",\"host\":\"127.0.0.1:8610\",\"origin\":\"http://localhost:8610\",\"sec-websocket-key\":\"1KnEun2wr7VBhPVws6VAVg==\",\"s",
   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]",
-  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.hnet___hnet___ip_state\":{\"seen_rx_state_\":[\"{\\\"asgi-scope-client\\\": \\\"127.0.0.1\\\", \\\"authorization\\\": null, \\\"client_token_len\\\": 36, \\\"cookie\\\": null, \\\"cookie_attr\\\": \\\"\\\", \\\"forwarded\\\": null, \\\"ip\\\": \\\"6.6.6.6\\\", \\\"pid\\\": 16589, \\\"raw_n\\\": 10, \\\"session_id_len\\\": 20, \\\"tag\\\": \\\"on_load\\\", \\\"x-dup\\\": null, \\\"x-forwarded-for\\\": \\\"6.6.6.6\\\", \\\"x-real-ip\\\": null}\"]}}}]",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.hnet___hnet___ip_state\":{\"seen_rx_state_\":[\"{\\\"asgi-scope-client\\\": \\\"127.0.0.1\\\", \\\"authorization\\\": null, \\\"client_token_len\\\": 36, \\\"cookie\\\": null, \\\"cookie_attr\\\": \\\"\\\", \\\"forwarded\\\": null, \\\"ip\\\": \\\"6.6.6.6\\\", \\\"pid\\\": 1758, \\\"raw_n\\\": 10, \\\"session_id_len\\\": 20, \\\"tag\\\": \\\"on_load\\\", \\\"x-dup\\\": null, \\\"x-forwarded-for\\\": \\\"6.6.6.6\\\", \\\"x-real-ip\\\": null}\"]}}}]",
   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
-  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.hnet___hnet___ip_state\":{\"seen_rx_state_\":[\"{\\\"asgi-scope-client\\\": \\\"127.0.0.1\\\", \\\"authorization\\\": null, \\\"client_token_len\\\": 36, \\\"cookie\\\": null, \\\"cookie_attr\\\": \\\"\\\", \\\"forwarded\\\": null, \\\"ip\\\": \\\"6.6.6.6\\\", \\\"pid\\\": 16589, \\\"raw_n\\\": 10, \\\"session_id_len\\\": 20, \\\"tag\\\": \\\"on_load\\\", \\\"x-dup\\\": null, \\\"x-forwarded-for\\\": \\\"6.6.6.6\\\", \\\"x-real-ip\\\": null}\",\"{\\\"asgi-scope-client\\\": \\\"127.0.0.1\\\", \\\"authorization\\\": null, \\\"client_token_len\\\": 36, \\\"cookie\\\": null, \\\"cookie_attr\\\": \\\"\\\", \\\"forwarded\\\": null, \\\"ip\\\": \\\"6.6.6.6\\\", \\\"pid"
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.hnet___hnet___ip_state\":{\"seen_rx_state_\":[\"{\\\"asgi-scope-client\\\": \\\"127.0.0.1\\\", \\\"authorization\\\": null, \\\"client_token_len\\\": 36, \\\"cookie\\\": null, \\\"cookie_attr\\\": \\\"\\\", \\\"forwarded\\\": null, \\\"ip\\\": \\\"6.6.6.6\\\", \\\"pid\\\": 1758, \\\"raw_n\\\": 10, \\\"session_id_len\\\": 20, \\\"tag\\\": \\\"on_load\\\", \\\"x-dup\\\": null, \\\"x-forwarded-for\\\": \\\"6.6.6.6\\\", \\\"x-real-ip\\\": null}\",\"{\\\"asgi-scope-client\\\": \\\"127.0.0.1\\\", \\\"authorization\\\": null, \\\"client_token_len\\\": 36, \\\"cookie\\\": null, \\\"cookie_attr\\\": \\\"\\\", \\\"forwarded\\\": null, \\\"ip\\\": \\\"6.6.6.6\\\", \\\"pid\\"
  ],
  "seen": [
-  "{\"asgi-scope-client\": \"127.0.0.1\", \"authorization\": null, \"client_token_len\": 36, \"cookie\": null, \"cookie_attr\": \"\", \"forwarded\": null, \"ip\": \"6.6.6.6\", \"pid\": 16589, \"raw_n\": 10, \"session_id_len\": 20, \"tag\": \"on_load\", \"x-dup\": null, \"x-forwarded-for\": \"6.6.6.6\", \"x-real-ip\": null}",
-  "{\"asgi-scope-client\": \"127.0.0.1\", \"authorization\": null, \"client_token_len\": 36, \"cookie\": null, \"cookie_attr\": \"\", \"forwarded\": null, \"ip\": \"6.6.6.6\", \"pid\": 16589, \"raw_n\": 10, \"session_id_len\": 20, \"tag\": \"ws_spoof_one\", \"x-dup\": null, \"x-forwarded-for\": \"6.6.6.6\", \"x-real-ip\": null}"
+  "{\"asgi-scope-client\": \"127.0.0.1\", \"authorization\": null, \"client_token_len\": 36, \"cookie\": null, \"cookie_attr\": \"\", \"forwarded\": null, \"ip\": \"6.6.6.6\", \"pid\": 1758, \"raw_n\": 10, \"session_id_len\": 20, \"tag\": \"on_load\", \"x-dup\": null, \"x-forwarded-for\": \"6.6.6.6\", \"x-real-ip\": null}",
+  "{\"asgi-scope-client\": \"127.0.0.1\", \"authorization\": null, \"client_token_len\": 36, \"cookie\": null, \"cookie_attr\": \"\", \"forwarded\": null, \"ip\": \"6.6.6.6\", \"pid\": 1758, \"raw_n\": 10, \"session_id_len\": 20, \"tag\": \"ws_spoof_one\", \"x-dup\": null, \"x-forwarded-for\": \"6.6.6.6\", \"x-real-ip\": null}"
  ],
  "errors": [],
- "token": "68c68037-0821-4988-bb00-ef30778297e7",
+ "token": "e8d2e2b2-66b4-4a29-8d6f-7b5bedf59cd6",
  "local": [
   "127.0.0.1",
-  33040
+  49606
  ],
  "upgrade_status": "HTTP/1.1 101 Switching Protocols",
  "open": {
-  "sid": "gKz92SSOpkDxGaTPAAAC",
+  "sid": "NvxNN_mOiua7WlibAAAC",
   "upgrades": [],
   "pingTimeout": 120000,
   "pingInterval": 25000,
@@ -47,7 +47,7 @@
    "cookie_attr": "",
    "forwarded": null,
    "ip": "6.6.6.6",
-   "pid": 16589,
+   "pid": 1758,
    "raw_n": 10,
    "session_id_len": 20,
    "tag": "on_load",
@@ -63,7 +63,7 @@
    "cookie_attr": "",
    "forwarded": null,
    "ip": "6.6.6.6",
-   "pid": 16589,
+   "pid": 1758,
    "raw_n": 10,
    "session_id_len": 20,
    "tag": "ws_spoof_one",

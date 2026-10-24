@@ -1,0 +1,6 @@
+Error processing write queue: StateSerializationError("Failed to serialize state
+reflex___state____state.entr___entr___v_state due to unpicklable object. This 
+state will not be persisted. Pickle error: Can't pickle local object 
+'lambda_cols.<locals>.<lambda>'. Consider `pip install 'dill>=0.3.8'` for more 
+exotic serialization support.")
+--

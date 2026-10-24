@@ -1,0 +1,50 @@
+
+##### xff rerun2 new-h0 02:44:26
+## REST (rxe EventHandlerAPIPlugin) -> 8610
+rest_none          tok=200 ev=404 ip=None         xff=None                   asc=None ctok_len=None sid_len=None cookie_in_router=None authz_in_router=None | retrieve=200 ctok_vals=[''] sid_vals=[''] tok_leak=False cookie_echo=False secret_note_visible=True
+rest_spoof_one     tok=200 ev=404 ip=None         xff=None                   asc=None ctok_len=None sid_len=None cookie_in_router=None authz_in_router=None | retrieve=200 ctok_vals=[''] sid_vals=[''] tok_leak=False cookie_echo=False secret_note_visible=True
+rest_spoof_chain   tok=200 ev=404 ip=None         xff=None                   asc=None ctok_len=None sid_len=None cookie_in_router=None authz_in_router=None | retrieve=200 ctok_vals=[''] sid_vals=[''] tok_leak=False cookie_echo=False secret_note_visible=True
+rest_spoof_junk    tok=200 ev=404 ip=None         xff=None                   asc=None ctok_len=None sid_len=None cookie_in_router=None authz_in_router=None | retrieve=200 ctok_vals=[''] sid_vals=[''] tok_leak=False cookie_echo=False secret_note_visible=True
+## websocket (reflex core) -> 8610
+ws_none                      status=HTTP/1.1 101 ip=127.0.0.1      xff=None                           asc=127.0.0.1 ctok_len=36 sid_len=20 err=[]
+ws_spoof_one                 status=HTTP/1.1 101 ip=127.0.0.1      xff='6.6.6.6'                      asc=127.0.0.1 ctok_len=36 sid_len=20 err=[]
+ws_spoof_chain               status=HTTP/1.1 101 ip=127.0.0.1      xff='6.6.6.6, 7.7.7.7'             asc=127.0.0.1 ctok_len=36 sid_len=20 err=[]
+stopped; tracebacks=0 xff-warnings=0
+
+##### xff rerun2 new-h1 02:44:43
+## REST (rxe EventHandlerAPIPlugin) -> 8610
+rest_none          tok=200 ev=404 ip=None         xff=None                   asc=None ctok_len=None sid_len=None cookie_in_router=None authz_in_router=None | retrieve=200 ctok_vals=[''] sid_vals=[''] tok_leak=False cookie_echo=False secret_note_visible=True
+rest_spoof_one     tok=200 ev=404 ip=None         xff=None                   asc=None ctok_len=None sid_len=None cookie_in_router=None authz_in_router=None | retrieve=200 ctok_vals=[''] sid_vals=[''] tok_leak=False cookie_echo=False secret_note_visible=True
+rest_spoof_chain   tok=200 ev=404 ip=None         xff=None                   asc=None ctok_len=None sid_len=None cookie_in_router=None authz_in_router=None | retrieve=200 ctok_vals=[''] sid_vals=[''] tok_leak=False cookie_echo=False secret_note_visible=True
+rest_spoof_junk    tok=200 ev=404 ip=None         xff=None                   asc=None ctok_len=None sid_len=None cookie_in_router=None authz_in_router=None | retrieve=200 ctok_vals=[''] sid_vals=[''] tok_leak=False cookie_echo=False secret_note_visible=True
+## websocket (reflex core) -> 8610
+ws_none                      status=HTTP/1.1 101 ip=127.0.0.1      xff=None                           asc=127.0.0.1 ctok_len=36 sid_len=20 err=[]
+ws_spoof_one                 status=HTTP/1.1 101 ip=6.6.6.6        xff='6.6.6.6'                      asc=127.0.0.1 ctok_len=36 sid_len=20 err=[]
+ws_spoof_chain               status=HTTP/1.1 101 ip=7.7.7.7        xff='6.6.6.6, 7.7.7.7'             asc=127.0.0.1 ctok_len=36 sid_len=20 err=[]
+stopped; tracebacks=0 xff-warnings=0
+
+##### xff rerun2 prev-h0 02:45:00
+## REST (rxe EventHandlerAPIPlugin) -> 8610
+rest_none          tok=200 ev=404 ip=None         xff=None                   asc=None ctok_len=None sid_len=None cookie_in_router=None authz_in_router=None | retrieve=200 ctok_vals=[''] sid_vals=[''] tok_leak=False cookie_echo=False secret_note_visible=True
+rest_spoof_one     tok=200 ev=404 ip=None         xff=None                   asc=None ctok_len=None sid_len=None cookie_in_router=None authz_in_router=None | retrieve=200 ctok_vals=[''] sid_vals=[''] tok_leak=False cookie_echo=False secret_note_visible=True
+rest_spoof_chain   tok=200 ev=404 ip=None         xff=None                   asc=None ctok_len=None sid_len=None cookie_in_router=None authz_in_router=None | retrieve=200 ctok_vals=[''] sid_vals=[''] tok_leak=False cookie_echo=False secret_note_visible=True
+rest_spoof_junk    tok=200 ev=404 ip=None         xff=None                   asc=None ctok_len=None sid_len=None cookie_in_router=None authz_in_router=None | retrieve=200 ctok_vals=[''] sid_vals=[''] tok_leak=False cookie_echo=False secret_note_visible=True
+## websocket (reflex core) -> 8610
+ws_none                      status=HTTP/1.1 101 ip=127.0.0.1      xff=None                           asc=127.0.0.1 ctok_len=36 sid_len=20 err=[]
+ws_spoof_one                 status=HTTP/1.1 101 ip=6.6.6.6        xff='6.6.6.6'                      asc=127.0.0.1 ctok_len=36 sid_len=20 err=[]
+ws_spoof_chain               status=HTTP/1.1 101 ip=6.6.6.6        xff='6.6.6.6, 7.7.7.7'             asc=127.0.0.1 ctok_len=36 sid_len=20 err=[]
+stopped; tracebacks=0 xff-warnings=0
+
+##### hyd15 rerun new 02:45:16
+[start.sh] venv=new-ent reflex=0.10.1a1 reflex-base=0.10.1a1 reflex-enterprise=0.9.8 reflex_from=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/new-ent/lib/python3.12/site-packages/reflex/__init__.py
+started pid=32207 pgid=32207
+ready after 4s (frontend 200, /ping 200)
+driver exit=0
+SUMMARY new2 hyd15: 9/9 pass; errors=[]
+server log: tracebacks=0 errors=292 reload=2
+reserved ports free
+
+##### hyd15 prev 02:48:29
+[start.sh] venv=prev-ent reflex=0.10.0 reflex-base=0.10.0 reflex-enterprise=0.9.8 reflex_from=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/prev-ent/lib/python3.12/site-packages/reflex/__init__.py
+started pid=32499 pgid=32499
+ready after 6s (frontend 200, /ping 200)

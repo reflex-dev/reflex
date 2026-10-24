@@ -1,0 +1,206 @@
+
+##### xff rerun new-h0 02:18:47
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: Client.__init__() got an unexpected keyword argument 'timeout'
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/enterprise/own/probes/rest_probe.py", line 30, in <module>
+    c = httpx.Client(timeout=30, trust_env=False)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: Client.__init__() got an unexpected keyword argument 'timeout'
+## websocket (reflex core) -> 8610
+ws_none                      status=HTTP/1.1 101 ip=127.0.0.1      xff=None                           asc=127.0.0.1 ctok_len=36 sid_len=20 err=[]
+ws_spoof_one                 status=HTTP/1.1 101 ip=127.0.0.1      xff='6.6.6.6'                      asc=127.0.0.1 ctok_len=36 sid_len=20 err=[]
+ws_spoof_chain               status=HTTP/1.1 101 ip=127.0.0.1      xff='6.6.6.6, 7.7.7.7'             asc=127.0.0.1 ctok_len=36 sid_len=20 err=[]
+stopped; tracebacks=0 xff-warnings=0
+
+##### xff rerun new-h1 02:19:04
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: Client.__init__() got an unexpected keyword argument 'timeout'
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/enterprise/own/probes/rest_probe.py", line 30, in <module>
+    c = httpx.Client(timeout=30, trust_env=False)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: Client.__init__() got an unexpected keyword argument 'timeout'
+## websocket (reflex core) -> 8610
+ws_none                      status=HTTP/1.1 101 ip=127.0.0.1      xff=None                           asc=127.0.0.1 ctok_len=36 sid_len=20 err=[]
+ws_spoof_one                 status=HTTP/1.1 101 ip=6.6.6.6        xff='6.6.6.6'                      asc=127.0.0.1 ctok_len=36 sid_len=20 err=[]
+ws_spoof_chain               status=HTTP/1.1 101 ip=7.7.7.7        xff='6.6.6.6, 7.7.7.7'             asc=127.0.0.1 ctok_len=36 sid_len=20 err=[]
+stopped; tracebacks=0 xff-warnings=0
+
+##### xff rerun prev-h0 02:19:21
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: Client.__init__() got an unexpected keyword argument 'timeout'
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/enterprise/own/probes/rest_probe.py", line 30, in <module>
+    c = httpx.Client(timeout=30, trust_env=False)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: Client.__init__() got an unexpected keyword argument 'timeout'
+## websocket (reflex core) -> 8610
+ws_none                      status=HTTP/1.1 101 ip=127.0.0.1      xff=None                           asc=127.0.0.1 ctok_len=36 sid_len=20 err=[]
+ws_spoof_one                 status=HTTP/1.1 101 ip=6.6.6.6        xff='6.6.6.6'                      asc=127.0.0.1 ctok_len=36 sid_len=20 err=[]
+ws_spoof_chain               status=HTTP/1.1 101 ip=6.6.6.6        xff='6.6.6.6, 7.7.7.7'             asc=127.0.0.1 ctok_len=36 sid_len=20 err=[]
+stopped; tracebacks=0 xff-warnings=0
+
+##### pending_login D rerun new dev 02:19:37
+PONG
+oidc pid 17009 redis pid 17008
+started pid/pgid 17069 (new-ent vauth_new dev mgr=redis workers=default) log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/enterprise/work/auth/logs/pl-new-dev.server.log
+ready after 4s
+[PASS] A two_starts #1: {"state_first": "DMUbq_V8id5H", "state_second": "DMUbq_V8id5H", "pair_reused": true, "ok": true, "errors": ["console: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED", "console: Failed to load resource: the server responded with a status of 404 (NOT FOUND)", "console: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED", "console: Failed to load resource: 
+[PASS] B other_tab #1: {"different_pairs": true, "restarted": true, "restart_state_is_own": true, "ok": true, "final_url_t2": "http://localhost:3620/vault", "errors": ["console: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"], "final_url": "http://localhost:8638/oauth2/authorize?client_id=vauth-client&redirect_uri=http%3A%2F%2Flocalhost%3A3620%2Fcallback&scope=openid+email+profile&sta
+[PASS] C dblclick #1: {"state": "iKf_jyln-eei", "ok": true, "errors": ["console: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"], "final_url": "http://localhost:3620/vault"}
+[PASS] D logout_keep #1: {"login2_ok": true, "after_logout_path": "/oauth2/end_session", "state_third_new": true, "ok": true, "errors": ["console: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED", "console: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED", "console: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED", "console: Failed to load resource: net::ERR_TUNNEL
+[PASS] E hot_reload: {"login_ok": true, "after_reload_signed_in": true, "clicks_after": "1", "ok": true, "errors": ["console: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"], "final_url": "http://localhost:3620/vault"}
+SUMMARY new-dev pending_login: 5/5 pass; page/console errors: 11
+stopped
+server log: tracebacks=1 'state mismatch'=3 restart=0 recovered=0
+stopped-infra
+
+##### gridshare rerun new 02:20:14
+[start.sh] venv=new-ent reflex=0.10.1a1 reflex-base=0.10.1a1 reflex-enterprise=0.9.8 reflex_from=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/new-ent/lib/python3.12/site-packages/reflex/__init__.py
+started pid=17642 pgid=17642
+ready after 6s (frontend 200, /ping 200)
+driver exit=1
+server log: tracebacks=0 errors=2 reload=1
+reserved ports free
+
+##### gridshare rerun prev 02:20:55
+[start.sh] venv=prev-ent reflex=0.10.0 reflex-base=0.10.0 reflex-enterprise=0.9.8 reflex_from=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/prev-ent/lib/python3.12/site-packages/reflex/__init__.py
+started pid=18176 pgid=18176
+ready after 6s (frontend 200, /ping 200)
+driver exit=1
+server log: tracebacks=0 errors=2 reload=1
+reserved ports free
+
+##### control N-025 rxe0.9.6 aggrid_min prod 02:21:37
+started pid=18693 pgid=18693
+ready after 12s (frontend 200, /ping 200)
+driver exit=0
+reserved ports free
+ "console_benign": 0,
+ "console_errors": 1,
+ "console_warnings": 0,
+ "page_errors": 0,
+ "failed_requests": 0,
+ "http_errors": 0
+}
+  console_errors: {"t": 0.92, "ctx": "min", "type": "error", "text": "Failed to load resource: the server responded with a status of 404 (Not Found)", "url": "http://localhost:3601/", "location": {"url": "http://localhost:3601/favicon.ico", "line": 0
+
+##### control N-032 reflex0.10.0a3 vauth dev 02:22:02
+### part 1 vauth_ctrla3 dev redis 02:22:03
+SUMMARY ctrla3-dev-redis stale: {"p1_corrected": 3, "p2_corrected": 3, "p3_logged_out": 3, "p4_logged_out": 3} of 3
+SUMMARY ctrla3-dev-redis away: tab1 logged out after Back 3/3
+SUMMARY ctrla3-dev-redis xtab: tab1 logged out 3/3; accepted-after-logout 0/3
+rep 0: race(tab1 re-wrote old hash)=False empty-hash writes=[('tab2', 0.04), ('tab2', 0.06), ('tab1', 0.07), ('tab2', 0.56), ('tab1', 8.71), ('tab1', 12.85), ('tab3', 20.25), ('tab3', 20.3)] tab2 sent reconcile=False -> tab1_logged_out=True
+rep 1: race(tab1 re-wrote old hash)=False empty-hash writes=[('tab2', 0.04), ('tab2', 0.06), ('tab1', 0.08), ('tab2', 0.51), ('tab1', 8.65), ('tab1', 12.87), ('tab3', 20.37), ('tab3', 20.44)] tab2 sent reconcile=False -> tab1_logged_out=True
+rep 2: race(tab1 re-wrote old hash)=False empty-hash writes=[('tab2', 0.04), ('tab2', 0.07), ('tab1', 0.08), ('tab2', 0.65), ('tab1', 8.85), ('tab1', 12.99), ('tab3', 20.48), ('tab3', 20.55)] tab2 sent reconcile=False -> tab1_logged_out=True
+SUMMARY ctrla3-dev-redis loads: see per-step counts above
+SUMMARY ctrla3-dev-redis relogin: ok 2/2
+server log ctrla3-dev-redis: tracebacks=0 TypeError=0
+### ent auth done 02:29:10
+
+##### deeplink new dev 02:29:10
+    3 x event_handler    allowed                route='/vault' sub=alice handler=add_entry
+    3 x event_handler    allowed                route='/vault2' sub=alice handler=on_page_load
+    9 x login_completed  success                route='/callback' sub=alice handler=None
+    9 x login_started    success                route='/login' sub=None handler=None
+    3 x logout           success                route='/vault' sub=alice handler=None
+    3 x page_load        redirected_to_login    route='/item/abc' sub=None handler=None
+    3 x page_load        allowed                route='/item/abc' sub=alice handler=None
+    9 x page_load        allowed                route='/item/xyz' sub=alice handler=None
+    9 x page_load        redirected_to_login    route='/vault' sub=None handler=None
+   12 x page_load        allowed                route='/vault' sub=alice handler=None
+    3 x page_load        allowed                route='/vault2' sub=alice handler=None
+page_load records with a non-protected route (stale router view?): 0
+stopped-infra
+### deeplink new done 02:30:23
+
+##### mcp anon+oauth new 02:30:23
+PONG
+oidc pid 25667 redis pid 25666
+OK
+started pid=25693 pgid=25693
+ready after 4s
+check_mcp_anon exit=0
+{"probe_nobearer_/_reflex/mcp": {"status": 307, "www": null, "body": ""}, "probe_nobearer_/_reflex/mcp/": {"status": 401, "www": "Bearer error=\"invalid_token\", error_description=\"Authentication required\", resource_metadata=\"http://localhost:8620/.well-known/oauth-protected-resource/_reflex/mcp\
+check_mcp_oauth_redis exit=1
+no code from partial consent: {"error": "AssertionError: Locator expected to be enabled\nActual value: None\nError: element(s) not found \nCall log:\n  - Expect \"to_be_enabled\" get_by_role(\"button\", name=\"Approve\", exact=True) with timeout 45000ms\n  - waiting for get_by_role(\"button\", name=
+stopped
+stopped-infra
+server log: tracebacks=2
+
+##### a4 matrix + MCP new 02:32:24
+{"attempt": 3, "passed": true, "final_values": {"secret": "initial-secret", "secret-view": "computed:initial-secret", "admin-view": "admin-data", "async-admin-view": "async-admin-data"}}
+ready after 7s
+{"case": "iframe_popup", "passed": true, "page_errors": [], "failed_requests": [{"url": "http://localhost:8623/_reflex/cookies/sync", "failure": "net::ERR_ABORTED"}, {"url": "http://localhost:8623/_reflex/cookies/sync", "failure": "net::ERR_ABORTED"}], "http_errors": [], "frame_observations": [{"url
+{"case": "iframe_pending_event_replay", "passed": true, "page_errors": [], "failed_requests": [{"url": "http://localhost:8623/_reflex/cookies/sync", "failure": "net::ERR_ABORTED"}, {"url": "http://localhost:8623/_reflex/cookies/sync", "failure": "net::ERR_ABORTED"}, {"url": "http://localhost:8623/_r
+{"attempt": 2, "passed": true, "frame_url": "http://localhost:3623/"}
+{"attempt": 3, "passed": true, "frame_url": "http://localhost:3623/"}
+MCP OAuth discovery, registration, browser consent, PKCE, protected event, code replay and refresh rotation passed
+ready after 4s
+{"case": "iframe_popup", "passed": true, "page_errors": [], "failed_requests": [{"url": "http://localhost:8623/_reflex/cookies/sync", "failure": "net::ERR_ABORTED"}, {"url": "http://localhost:8623/_reflex/cookies/sync", "failure": "net::ERR_ABORTED"}], "http_errors": [], "frame_observations": [{"url
+{"case": "iframe_pending_event_replay", "passed": true, "page_errors": [], "failed_requests": [{"url": "http://localhost:8623/_reflex/cookies/sync", "failure": "net::ERR_ABORTED"}, {"url": "http://localhost:8623/_reflex/cookies/sync", "failure": "net::ERR_ABORTED"}, {"url": "http://localhost:8623/_r
+Anonymous MCP token rejection, events, computed reads, redaction and session isolation passed
+A4_MATRIX_DONE
+auth-full: 22/22
+reload-repeat: 3/3
+auth-min-default: 4/4
+iframe-repeat: 3/3
+auth-min-extra: 4/4
+MCP OAuth discovery, registration, browser consent, PKCE, protected event, code replay and refresh rotation passed
+Anonymous MCP token rejection, events, computed reads, redaction and session isolation passed
+auth-full-server.log: tracebacks=0
+auth-min-default-server.log: tracebacks=0
+auth-min-extra-server.log: tracebacks=0
+mcp-anonymous-server.log: tracebacks=0
+stopped-infra
+### ent auth done 02:34:22
+
+##### n033 default workers new 02:34:22
+  28817: 405
+  28819: 400 400 400
+  28821: 400 400 400 400
+  28823: 400
+  28825: 405 405 405
+  28827: 405 405 405 405 405 405
+  28829: 400 400 400
+  28831: 400 400 400 400 400 400
+{"rep": 2, "attempts": 4, "login_syncs": [[405, "28817"]], "per_5s_[syncs,ws_events]": {"0-5s": [485, 651], "5-10s": [475, 634], "10-15s": [442, 590], "15-20s": [487, 648], "20-25s": [483, 644], "25-30s": [487, 649], "30-35s": [493, 659], "35-40s": [471, 627], "40-45s": [6, 8]}, "newtab_path": "/log
+SUMMARY new-prod-redis-dw storm: see per-5s counts above
+wrote /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/enterprise/work/auth/logs/new-prod-redis-dw-storm.json
+stopped
+stopped-infra
+server log: tracebacks=0 405s=0
+
+##### ag_demo new prod 02:38:30
+[start.sh] venv=enterprise-demo-new reflex=0.10.1a1 reflex-base=0.10.1a1 reflex-enterprise=0.9.8 reflex_from=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/enterprise-demo-new/lib/python3.12/site-packages/reflex/__init__.py
+started pid=30280 pgid=30280
+ready after 20s (frontend 200, /ping 200)
+smoke: 20 pass / 0 fail
+coldefs: 7 pass / 0 fail
+features: 46 pass / 1 fail
+[FAIL] clipboard: Ctrl+C/Ctrl+V copies gold row0 -> row4 and fires change event: {'golds': ['8', '6', '4', '1', '2'], 'toasts': []}
+model: 24 pass / 5 fail
+[FAIL] ssrm: rows render on reload right after generate (row_count_cached interval=10s): TimeoutError('Page.wait_for_function: Timeout 15000ms exceeded.')
+[FAIL] ssrm: filtered rows all match and count matches db: {'sub': 'Vinc', 'shown': 22, 'blank_rows': 21, 'db_matches': 1, 'sample': ['Vincent Hernandez', '', '', '', '']}
+[FAIL] infinite: text filter matches db: {'sub': 'Wils', 'shown': 23, 'blank_rows': 21, 'db': 2}
+[FAIL] infinite: add dialog inserts row: {'before': 50, 'after': 50, 'row': None}
+[FAIL] infinite: add dialog closes after submit: 1
+server tracebacks: 2
+reserved ports free
+
+##### pending_login new prod 02:43:54
+PONG
+oidc pid 31461 redis pid 31460
+started pid/pgid 31508 (new-ent vauth_newp prod mgr=redis workers=1) log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/enterprise/work/auth/logs/pl-newp-prod.server.log
+ready after 12s
+[PASS] A two_starts #1: {"state_first": "HVOUn77j6kEh", "state_second": "HVOUn77j6kEh", "pair_reused": true, "ok": true, "errors": ["console: Failed to load resource: the server responded with a status of 404 (Not Found)", "console: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED", "console: Failed to load resource: the server responded with a status of 404 (NOT FOUND)", "console: Faile
+[PASS] B other_tab #1: {"different_pairs": true, "restarted": true, "restart_state_is_own": true, "ok": true, "final_url_t2": "http://localhost:8621/vault/", "errors": ["console: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"], "final_url": "http://localhost:8638/oauth2/authorize?client_id=vauth-client&redirect_uri=http%3A%2F%2Flocalhost%3A8621%2Fcallback&scope=openid+email+profile&st
+[PASS] C dblclick #1: {"state": "C9cSJDPsg6WL", "ok": true, "errors": ["console: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"], "final_url": "http://localhost:8621/vault/"}
+[PASS] D logout_keep #1: {"login2_ok": true, "after_logout_path": "/oauth2/end_session", "state_third_new": true, "ok": true, "errors": ["console: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED", "console: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED", "console: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED", "console: Failed to load resource: net::ERR_TUNNEL
+SUMMARY newp-prod pending_login: 4/4 pass; page/console errors: 11
+stopped
+server log: tracebacks=1 'state mismatch'=3 restart=0 recovered=0
+stopped-infra
+
+##### QUEUE2 DONE 02:44:23

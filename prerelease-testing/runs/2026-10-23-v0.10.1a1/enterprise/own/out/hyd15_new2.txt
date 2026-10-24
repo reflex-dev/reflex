@@ -1,0 +1,12 @@
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/enterprise/own/probes/hyd15_drive.py:28: SyntaxWarning: invalid escape sequence '\s'
+  return p.evaluate("""() => [...document.querySelectorAll('.ag-root-wrapper')].map(g => ({
+[PASS] before-reload /lit: every grid has headers and cells
+[PASS] before-reload /var: every grid has headers and cells
+[PASS] before-reload /detail2: every grid has headers and cells
+[PASS] before-reload /memo2: every grid has headers and cells
+[PASS] after-hot-reload /lit: every grid has headers and cells
+[PASS] after-hot-reload /var: every grid has headers and cells
+[PASS] after-hot-reload /detail2: every grid has headers and cells
+[PASS] after-hot-reload /memo2: every grid has headers and cells
+[PASS] grids identical before/after hot reload
+SUMMARY new2 hyd15: 9/9 pass; errors=[]

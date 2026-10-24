@@ -13,6 +13,7 @@ import urllib.error
 import urllib.request
 
 IPSTATE = "reflex___state____state.hnet___hnet___ip_state"
+REST_STATE = "hnet___hnet___ip_state"  # the REST route uses the short (root-less) state name, as in the tickets demo
 ap = argparse.ArgumentParser()
 ap.add_argument("base")
 ap.add_argument("tag")
@@ -43,7 +44,7 @@ out["token_status"] = st
 tok = json.loads(txt).get("access_token") if st == 200 else None
 out["token_len"] = len(tok or "")
 H = {"Authorization": f"Bearer {tok}", **hdrs}
-st, ct, txt = post(f"/_reflex/event/{IPSTATE}/rec", {**H, "Cookie": "qa_cookie=COOKIEVALUE123"}, {"tag": a.tag})
+st, ct, txt = post(f"/_reflex/event/{REST_STATE}/rec", {**H, "Cookie": "qa_cookie=COOKIEVALUE123"}, {"tag": a.tag})
 out["event_status"], out["event_ct"] = st, ct
 seen = None
 lines = [ln for ln in txt.splitlines() if ln.strip()]

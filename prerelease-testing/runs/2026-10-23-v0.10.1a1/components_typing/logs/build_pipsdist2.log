@@ -1,0 +1,300 @@
+Using pip 26.2.2 from /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/components_typing-pipsdist2/lib/python3.12/site-packages/pip (python 3.12)
+Collecting reflex-components-radix==0.10.1a1
+  Downloading reflex_components_radix-0.10.1a1.tar.gz (117 kB)
+  Installing build dependencies: started
+  Running command installing build dependencies for reflex-components-radix
+  Using pip 26.2.2 from /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/components_typing-pipsdist2/lib/python3.12/site-packages/pip (python 3.12)
+  Collecting hatchling
+    Obtaining dependency information for hatchling from https://files.pythonhosted.org/packages/5f/80/91f51f439c05d4ec4623c22928ce16a938d6d793bf709477830823497859/hatchling-1.32.4-py3-none-any.whl.metadata
+    Using cached hatchling-1.32.4-py3-none-any.whl.metadata (3.9 kB)
+  Collecting uv-dynamic-versioning
+    Obtaining dependency information for uv-dynamic-versioning from https://files.pythonhosted.org/packages/2f/8c/98ca22d2e282d2c0a4d1fad3faece26c9cb695d23f5d255ae93398d594ca/uv_dynamic_versioning-0.14.1-py3-none-any.whl.metadata
+    Using cached uv_dynamic_versioning-0.14.1-py3-none-any.whl.metadata (3.3 kB)
+  Collecting hatch-reflex-pyi
+    Obtaining dependency information for hatch-reflex-pyi from https://files.pythonhosted.org/packages/45/99/77bd3a68be4111a3eeb5f6cfbb334168e056cc4769c0e2e94fd360ae2d5d/hatch_reflex_pyi-0.10.0-py3-none-any.whl.metadata
+    Using cached hatch_reflex_pyi-0.10.0-py3-none-any.whl.metadata (761 bytes)
+  Collecting packaging>=24.2 (from hatchling)
+    Obtaining dependency information for packaging>=24.2 from https://files.pythonhosted.org/packages/63/34/ba1c580383c9eada3711951fef0795c80b829a078d72188184bcab9dd527/packaging-26.3-py3-none-any.whl.metadata
+    Using cached packaging-26.3-py3-none-any.whl.metadata (3.5 kB)
+  Collecting pathspec>=0.10.1 (from hatchling)
+    Obtaining dependency information for pathspec>=0.10.1 from https://files.pythonhosted.org/packages/f1/d9/7fb5aa316bc299258e68c73ba3bddbc499654a07f151cba08f6153988714/pathspec-1.1.1-py3-none-any.whl.metadata
+    Using cached pathspec-1.1.1-py3-none-any.whl.metadata (14 kB)
+  Collecting pluggy>=1.0.0 (from hatchling)
+    Obtaining dependency information for pluggy>=1.0.0 from https://files.pythonhosted.org/packages/40/9e/2b38731e0fc536806f16490e1a12d7f0dc2a1235aa8cc07bcc75416a7daa/pluggy-1.7.0-py3-none-any.whl.metadata
+    Using cached pluggy-1.7.0-py3-none-any.whl.metadata (5.0 kB)
+  Collecting tomlkit>=0.11.1 (from hatchling)
+    Obtaining dependency information for tomlkit>=0.11.1 from https://files.pythonhosted.org/packages/da/46/7d84138a60a8bd796825b2d38ebe92d0d16501ca57d501b7c5d677401bbc/tomlkit-0.15.2-py3-none-any.whl.metadata
+    Using cached tomlkit-0.15.2-py3-none-any.whl.metadata (3.4 kB)
+  Collecting trove-classifiers (from hatchling)
+    Obtaining dependency information for trove-classifiers from https://files.pythonhosted.org/packages/30/81/0da8afb52a71d0a4f2bd3152357b1a441e393b286374802b9d3addab4ab5/trove_classifiers-2026.9.21.13-py3-none-any.whl.metadata
+    Using cached trove_classifiers-2026.9.21.13-py3-none-any.whl.metadata (2.4 kB)
+  Collecting dunamai~=1.26.1 (from uv-dynamic-versioning)
+    Obtaining dependency information for dunamai~=1.26.1 from https://files.pythonhosted.org/packages/cc/f4/e3be26f6301535ab4a3a940b09e55615c6286195b07fec9aa2cf8b842563/dunamai-1.26.3-py3-none-any.whl.metadata
+    Using cached dunamai-1.26.3-py3-none-any.whl.metadata (10 kB)
+  Collecting jinja2~=3.0 (from uv-dynamic-versioning)
+    Obtaining dependency information for jinja2~=3.0 from https://files.pythonhosted.org/packages/62/a1/3d680cbfd5f4b8f15abc1d571870c5fc3e594bb582bc3b64ea099db13e56/jinja2-3.1.6-py3-none-any.whl.metadata
+    Using cached jinja2-3.1.6-py3-none-any.whl.metadata (2.9 kB)
+  Collecting MarkupSafe>=2.0 (from jinja2~=3.0->uv-dynamic-versioning)
+    Obtaining dependency information for MarkupSafe>=2.0 from https://files.pythonhosted.org/packages/4f/a7/aeedb5140afa41fc74c225e9184ab96723a6e873b6ee1c9fede7283456d8/markupsafe-3.0.4-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata
+    Using cached markupsafe-3.0.4-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (2.7 kB)
+  Using cached hatchling-1.32.4-py3-none-any.whl (78 kB)
+  Using cached uv_dynamic_versioning-0.14.1-py3-none-any.whl (11 kB)
+  Using cached dunamai-1.26.3-py3-none-any.whl (27 kB)
+  Using cached jinja2-3.1.6-py3-none-any.whl (134 kB)
+  Using cached tomlkit-0.15.2-py3-none-any.whl (52 kB)
+  Using cached hatch_reflex_pyi-0.10.0-py3-none-any.whl (3.0 kB)
+  Using cached markupsafe-3.0.4-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (22 kB)
+  Using cached packaging-26.3-py3-none-any.whl (129 kB)
+  Using cached pathspec-1.1.1-py3-none-any.whl (57 kB)
+  Using cached pluggy-1.7.0-py3-none-any.whl (27 kB)
+  Using cached trove_classifiers-2026.9.21.13-py3-none-any.whl (14 kB)
+  Installing collected packages: trove-classifiers, tomlkit, pluggy, pathspec, packaging, MarkupSafe, jinja2, hatchling, dunamai, uv-dynamic-versioning, hatch-reflex-pyi
+    Creating /tmp/pip-build-env-jc88utwz/overlay/bin
+    changing mode of /tmp/pip-build-env-jc88utwz/overlay/bin/trove-classifiers to 755
+    changing mode of /tmp/pip-build-env-jc88utwz/overlay/bin/hatchling to 755
+    changing mode of /tmp/pip-build-env-jc88utwz/overlay/bin/dunamai to 755
+    changing mode of /tmp/pip-build-env-jc88utwz/overlay/bin/uv-dynamic-versioning to 755
+
+  Successfully installed MarkupSafe-3.0.4 dunamai-1.26.3 hatch-reflex-pyi-0.10.0 hatchling-1.32.4 jinja2-3.1.6 packaging-26.3 pathspec-1.1.1 pluggy-1.7.0 tomlkit-0.15.2 trove-classifiers-2026.9.21.13 uv-dynamic-versioning-0.14.1
+  Installing build dependencies: finished with status 'done'
+  Getting requirements to build wheel: started
+  Running command Getting requirements to build wheel
+  Getting requirements to build wheel: finished with status 'done'
+  Installing backend dependencies: started
+  Running command installing backend dependencies for reflex-components-radix
+  Using pip 26.2.2 from /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/components_typing-pipsdist2/lib/python3.12/site-packages/pip (python 3.12)
+  Collecting reflex-base
+    Obtaining dependency information for reflex-base from https://files.pythonhosted.org/packages/1a/0c/f26cd898c2a839ca6cc51e1846ad58e2c27bebc5c78f4066addf6abfad7a/reflex_base-0.10.0-py3-none-any.whl.metadata
+    Using cached reflex_base-0.10.0-py3-none-any.whl.metadata (879 bytes)
+  Collecting reflex-components-lucide
+    Obtaining dependency information for reflex-components-lucide from https://files.pythonhosted.org/packages/cf/3c/f3182e33bc6a61cbcc68dbaae674f0780caeccb38c3af2714879537c1404/reflex_components_lucide-1.1.0-py3-none-any.whl.metadata
+    Using cached reflex_components_lucide-1.1.0-py3-none-any.whl.metadata (690 bytes)
+  Collecting reflex-components-core
+    Obtaining dependency information for reflex-components-core from https://files.pythonhosted.org/packages/b2/71/cd2548ec8f2497b1389c4d7389594443d3b38da34ad8cedb85487de12d9d/reflex_components_core-0.10.0-py3-none-any.whl.metadata
+    Using cached reflex_components_core-0.10.0-py3-none-any.whl.metadata (895 bytes)
+  Collecting ruff
+    Obtaining dependency information for ruff from https://files.pythonhosted.org/packages/c3/d8/59894cf630d2d86882457a2a6a0a1533410c5c805bfbac6f6eb4b5aef69d/ruff-0.17.2-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata
+    Using cached ruff-0.17.2-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (20 kB)
+  Collecting reflex-components-sonner
+    Obtaining dependency information for reflex-components-sonner from https://files.pythonhosted.org/packages/a9/88/cf331bef5eed73aa07b7364f7c9dc4c9de8184d56ef9b33b06008a2e4726/reflex_components_sonner-0.10.0-py3-none-any.whl.metadata
+    Using cached reflex_components_sonner-0.10.0-py3-none-any.whl.metadata (738 bytes)
+  Collecting packaging<27,>=24.2 (from reflex-base)
+    Obtaining dependency information for packaging<27,>=24.2 from https://files.pythonhosted.org/packages/63/34/ba1c580383c9eada3711951fef0795c80b829a078d72188184bcab9dd527/packaging-26.3-py3-none-any.whl.metadata
+    Using cached packaging-26.3-py3-none-any.whl.metadata (3.5 kB)
+  Collecting platformdirs<5.0,>=4.3.7 (from reflex-base)
+    Obtaining dependency information for platformdirs<5.0,>=4.3.7 from https://files.pythonhosted.org/packages/6c/8a/1d8cb3842909dc193a73835adedf412e32e18f8ffd59f43983949622fe6f/platformdirs-4.13.5-py3-none-any.whl.metadata
+    Using cached platformdirs-4.13.5-py3-none-any.whl.metadata (5.5 kB)
+  Collecting rich<16,>=13 (from reflex-base)
+    Obtaining dependency information for rich<16,>=13 from https://files.pythonhosted.org/packages/82/3b/64d4899d73f91ba49a8c18a8ff3f0ea8f1c1d75481760df8c68ef5235bf5/rich-15.0.0-py3-none-any.whl.metadata
+    Using cached rich-15.0.0-py3-none-any.whl.metadata (18 kB)
+  Collecting typing-extensions>=4.13.0 (from reflex-base)
+    Obtaining dependency information for typing-extensions>=4.13.0 from https://files.pythonhosted.org/packages/49/d3/b8441a820a491ddfc024b0b0cf0393375b75ea13866d9c66727e54c2fc80/typing_extensions-4.16.0-py3-none-any.whl.metadata
+    Using cached typing_extensions-4.16.0-py3-none-any.whl.metadata (3.3 kB)
+  Collecting markdown-it-py>=2.2.0 (from rich<16,>=13->reflex-base)
+    Obtaining dependency information for markdown-it-py>=2.2.0 from https://files.pythonhosted.org/packages/b3/81/4da04ced5a082363ecfa159c010d200ecbd959ae410c10c0264a38cac0f5/markdown_it_py-4.2.0-py3-none-any.whl.metadata
+    Using cached markdown_it_py-4.2.0-py3-none-any.whl.metadata (7.4 kB)
+  Collecting pygments<3.0.0,>=2.13.0 (from rich<16,>=13->reflex-base)
+    Obtaining dependency information for pygments<3.0.0,>=2.13.0 from https://files.pythonhosted.org/packages/71/46/17f022dd3e953bf20a04a028a21ec746d942f8d2af30fa0f124fa0e6a684/pygments-2.21.0-py3-none-any.whl.metadata
+    Using cached pygments-2.21.0-py3-none-any.whl.metadata (2.5 kB)
+  Collecting python-multipart>=0.0.21 (from reflex-components-core)
+    Obtaining dependency information for python-multipart>=0.0.21 from https://files.pythonhosted.org/packages/e1/04/e8135ebd1ad02c56ec633277529b2602ff99ff634be76cdba5744cf554fd/python_multipart-0.0.32-py3-none-any.whl.metadata
+    Using cached python_multipart-0.0.32-py3-none-any.whl.metadata (2.1 kB)
+  Collecting starlette>=0.47.0 (from reflex-components-core)
+    Obtaining dependency information for starlette>=0.47.0 from https://files.pythonhosted.org/packages/f3/93/181df62699d9b5aca1d87e5cfda131dac87e3cdaebf668662f7206ca3470/starlette-1.9.0-py3-none-any.whl.metadata
+    Using cached starlette-1.9.0-py3-none-any.whl.metadata (6.6 kB)
+  Collecting mdurl~=0.1 (from markdown-it-py>=2.2.0->rich<16,>=13->reflex-base)
+    Obtaining dependency information for mdurl~=0.1 from https://files.pythonhosted.org/packages/b3/38/89ba8ad64ae25be8de66a6d463314cf1eb366222074cfda9ee839c56a4b4/mdurl-0.1.2-py3-none-any.whl.metadata
+    Using cached mdurl-0.1.2-py3-none-any.whl.metadata (1.6 kB)
+  Collecting anyio<5,>=4.0.0 (from starlette>=0.47.0->reflex-components-core)
+    Obtaining dependency information for anyio<5,>=4.0.0 from https://files.pythonhosted.org/packages/12/b8/4bd346e22b28902df4d651910f5242c28d84e4a5c2435ca5c3f797ed7e2e/anyio-4.15.1-py3-none-any.whl.metadata
+    Using cached anyio-4.15.1-py3-none-any.whl.metadata (4.7 kB)
+  Collecting idna>=2.8 (from anyio<5,>=4.0.0->starlette>=0.47.0->reflex-components-core)
+    Obtaining dependency information for idna>=2.8 from https://files.pythonhosted.org/packages/58/a2/bb081bab032533a855d44de1d56f8e8426114ff1ba5d1f07a438a0a654f8/idna-3.20-py3-none-any.whl.metadata
+    Using cached idna-3.20-py3-none-any.whl.metadata (7.2 kB)
+  Using cached reflex_base-0.10.0-py3-none-any.whl (403 kB)
+  Using cached packaging-26.3-py3-none-any.whl (129 kB)
+  Using cached platformdirs-4.13.5-py3-none-any.whl (32 kB)
+  Using cached rich-15.0.0-py3-none-any.whl (310 kB)
+  Using cached pygments-2.21.0-py3-none-any.whl (1.3 MB)
+  Using cached reflex_components_lucide-1.1.0-py3-none-any.whl (20 kB)
+  Using cached reflex_components_core-0.10.0-py3-none-any.whl (179 kB)
+  Using cached ruff-0.17.2-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (10.5 MB)
+  Using cached reflex_components_sonner-0.10.0-py3-none-any.whl (7.5 kB)
+  Using cached markdown_it_py-4.2.0-py3-none-any.whl (91 kB)
+  Using cached mdurl-0.1.2-py3-none-any.whl (10.0 kB)
+  Using cached python_multipart-0.0.32-py3-none-any.whl (30 kB)
+  Using cached starlette-1.9.0-py3-none-any.whl (80 kB)
+  Using cached anyio-4.15.1-py3-none-any.whl (132 kB)
+  Using cached idna-3.20-py3-none-any.whl (69 kB)
+  Using cached typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+  Installing collected packages: typing-extensions, ruff, python-multipart, pygments, platformdirs, packaging, mdurl, idna, markdown-it-py, anyio, starlette, rich, reflex-base, reflex-components-lucide, reflex-components-sonner, reflex-components-core
+    changing mode of /tmp/pip-build-env-jc88utwz/normal/bin/pygmentize to 755
+    changing mode of /tmp/pip-build-env-jc88utwz/normal/bin/idna to 755
+    changing mode of /tmp/pip-build-env-jc88utwz/normal/bin/markdown-it to 755
+
+  Successfully installed anyio-4.15.1 idna-3.20 markdown-it-py-4.2.0 mdurl-0.1.2 packaging-26.3 platformdirs-4.13.5 pygments-2.21.0 python-multipart-0.0.32 reflex-base-0.10.0 reflex-components-core-0.10.0 reflex-components-lucide-1.1.0 reflex-components-sonner-0.10.0 rich-15.0.0 ruff-0.17.2 starlette-1.9.0 typing-extensions-4.16.0
+  Installing backend dependencies: finished with status 'done'
+  Preparing metadata (pyproject.toml): started
+  Running command Preparing metadata (pyproject.toml)
+  ERROR:pyi_generator:Failed to import reflex_components_radix.primitives.form
+  Traceback (most recent call last):
+    File "/tmp/pip-build-env-jc88utwz/normal/lib/python3.12/site-packages/reflex_base/utils/pyi_generator.py", line 1657, in _scan_files
+      importlib.import_module(module_import)
+    File "/usr/lib/python3.12/importlib/__init__.py", line 90, in import_module
+      return _bootstrap._gcd_import(name[level:], package, level)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+    File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+    File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+    File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+    File "<frozen importlib._bootstrap_external>", line 995, in exec_module
+    File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+    File "/tmp/pip-install-8d9itltm/reflex-components-radix_16d0fe50951b49b59321548633df0a9d/src/reflex_components_radix/primitives/form.py", line 9, in <module>
+      from reflex_base.utils.form import FormData as _FormData
+  ModuleNotFoundError: No module named 'reflex_base.utils.form'
+  INFO:pyi_generator:Wrote reflex_components_radix/__init__.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/components/radio.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/components/scroll_area.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/components/slider.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/components/switch.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/components/aspect_ratio.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/components/dialog.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/components/checkbox_group.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/components/button.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/components/__init__.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/components/radio_group.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/components/alert_dialog.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/components/avatar.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/components/spinner.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/components/progress.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/components/popover.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/components/badge.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/components/tabs.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/components/radio_cards.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/components/select.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/components/text_field.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/components/text_area.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/components/dropdown_menu.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/components/tooltip.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/components/separator.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/components/hover_card.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/components/segmented_control.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/components/card.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/components/icon_button.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/components/callout.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/components/skeleton.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/components/data_list.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/components/checkbox_cards.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/components/inset.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/components/table.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/components/checkbox.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/__init__.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/color_mode.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/typography/__init__.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/base.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/typography/blockquote.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/typography/heading.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/typography/code.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/typography/link.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/layout/container.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/layout/box.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/layout/section.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/typography/text.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/layout/__init__.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/layout/base.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/layout/spacer.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/layout/grid.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/layout/center.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/components/context_menu.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/layout/flex.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/layout/stack.py
+  INFO:pyi_generator:Wrote reflex_components_radix/primitives/base.py
+  INFO:pyi_generator:Wrote reflex_components_radix/primitives/__init__.py
+  INFO:pyi_generator:Wrote reflex_components_radix/themes/layout/list.py
+  INFO:pyi_generator:Wrote reflex_components_radix/primitives/slider.py
+  INFO:pyi_generator:Wrote reflex_components_radix/primitives/progress.py
+  INFO:pyi_generator:Wrote reflex_components_radix/primitives/dialog.py
+  INFO:pyi_generator:Wrote reflex_components_radix/primitives/drawer.py
+  INFO:pyi_generator:Wrote reflex_components_radix/primitives/accordion.py
+  64 files reformatted
+  PYI052 Need type annotation for `DEFAULT_ANIMATION_DURATION`
+    --> reflex_components_radix/primitives/accordion.pyi:24:30
+     |
+  22 | LiteralAccordionOrientation: TypeAlias = Literal["vertical", "horizontal"]
+  23 | LiteralAccordionVariant: TypeAlias = Literal["classic", "soft", "surface", "outline", "ghost"]
+  24 | DEFAULT_ANIMATION_DURATION = 250
+     |                              ^^^
+  25 | DEFAULT_ANIMATION_EASING = "cubic-bezier(0.87, 0, 0.13, 1)"
+     |
+
+  PYI052 Need type annotation for `DEFAULT_ANIMATION_EASING`
+    --> reflex_components_radix/primitives/accordion.pyi:25:28
+     |
+  23 | LiteralAccordionVariant: TypeAlias = Literal["classic", "soft", "surface", "outline", "ghost"]
+  24 | DEFAULT_ANIMATION_DURATION = 250
+  25 | DEFAULT_ANIMATION_EASING = "cubic-bezier(0.87, 0, 0.13, 1)"
+     |                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  26 |
+  27 | class AccordionComponent(RadixPrimitiveComponent):
+     |
+
+  PYI017 Stubs should not contain assignments to attributes or multiple targets
+     --> reflex_components_radix/themes/color_mode.pyi:605:1
+      |
+  603 |       switch = staticmethod(ColorModeSwitch.create)
+  604 |
+  605 | / color_mode = color_mode_var_and_namespace = ColorModeNamespace(
+  606 | |     _js_expr=color_mode._js_expr,
+  607 | |     _var_type=color_mode._var_type,
+  608 | |     _var_data=color_mode._get_all_var_data(),
+  609 | | )
+      | |_^
+
+  PYI017 Stubs should not contain assignments to attributes or multiple targets
+     --> reflex_components_radix/themes/components/dropdown_menu.pyi:806:1
+      |
+  804 |     separator = staticmethod(DropdownMenuSeparator.create)
+  805 |
+  806 | menu = dropdown_menu = DropdownMenu()
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  PYI052 Need type annotation for `RADIX_TO_LUCIDE_SIZE`
+    --> reflex_components_radix/themes/components/icon_button.pyi:23:24
+     |
+  22 | LiteralButtonSize: TypeAlias = Literal["1", "2", "3", "4"]
+  23 | RADIX_TO_LUCIDE_SIZE = {"1": 12, "2": 24, "3": 36, "4": 48}
+     |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  24 |
+  25 | class IconButton(elements.Button, RadixLoadingProp, RadixThemesComponent):
+     |
+
+  PYI017 Stubs should not contain assignments to attributes or multiple targets
+     --> reflex_components_radix/themes/components/radio_group.pyi:562:1
+      |
+  560 |         """
+  561 |
+  562 | radio = radio_group = RadioGroup()
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  PYI052 Need type annotation for `_COUNT_VAR`
+    --> reflex_components_radix/themes/components/segmented_control.pyi:19:14
+     |
+  17 | from reflex_components_radix.themes.base import RadixThemesComponent
+  18 |
+  19 | _COUNT_VAR = "--rx-sc-count"
+     |              ^^^^^^^^^^^^^^^
+  20 | _IDX_VAR = "--rx-sc-idx"
+     |
+
+  PYI052 Need type annotation for `_IDX_VAR`
+    --> reflex_components_radix/themes/components/segmented_control.pyi:20:12
+     |
+  19 | _COUNT_VAR = "--rx-sc-count"
+  20 | _IDX_VAR = "--rx-sc-idx"
+     |            ^^^^^^^^^^^^^
+  21 |
+  22 | def on_value_change(value: Var[str | list[str]]) -> tuple[Var[str | list[str]]]: ...
+     |
+
+  PYI017 Stubs should not contain assignments to attributes or multiple targets
+     --> reflex_components_radix/themes/components/separator.pyi:165:1

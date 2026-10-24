@@ -1,0 +1,31 @@
+
+##### gridshare new r2 07:00:10
+[start.sh] venv=new-ent reflex=0.10.1a1 reflex-base=0.10.1a1 reflex-enterprise=0.9.8 reflex_from=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/new-ent/lib/python3.12/site-packages/reflex/__init__.py
+started pid=5402 pgid=5402
+ready after 4s (frontend 200, /ping 200)
+driver exit=0
+[FAIL] cell edit grid A -> 777: grid B (index ids) == state: {"state": [{"uid": "u-2", "name": "ALPHA", "price": 777}, {"uid": "u-5", "name": "BRAVO", "price": 20}, {"uid": "u-4", "name": "CHARLIE", "price": 30}, {"uid": "u-1", "name": "DELTA", "price": 41}, {"uid": "u-6", "name": "NEW6", "price": 6
+SUMMARY new-r2 gridshare: 44/45 pass; errors=[]
+server log: tracebacks=0 errors=1 reload=1
+reserved ports free
+
+##### gridshare new r3 07:00:28
+[start.sh] venv=new-ent reflex=0.10.1a1 reflex-base=0.10.1a1 reflex-enterprise=0.9.8 reflex_from=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/new-ent/lib/python3.12/site-packages/reflex/__init__.py
+started pid=5677 pgid=5677
+ready after 4s (frontend 200, /ping 200)
+driver exit=0
+[FAIL] cell edit grid A -> 777: grid B (index ids) == state: {"state": [{"uid": "u-2", "name": "ALPHA", "price": 777}, {"uid": "u-5", "name": "BRAVO", "price": 20}, {"uid": "u-4", "name": "CHARLIE", "price": 30}, {"uid": "u-1", "name": "DELTA", "price": 41}, {"uid": "u-6", "name": "NEW6", "price": 6
+SUMMARY new-r3 gridshare: 44/45 pass; errors=[]
+server log: tracebacks=0 errors=1 reload=1
+reserved ports free
+
+##### gridshare prev r2 07:00:46
+[start.sh] venv=prev-ent reflex=0.10.0 reflex-base=0.10.0 reflex-enterprise=0.9.8 reflex_from=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/prev-ent/lib/python3.12/site-packages/reflex/__init__.py
+started pid=5929 pgid=5929
+ready after 6s (frontend 200, /ping 200)
+driver exit=0
+SUMMARY prev-r2 gridshare: 45/45 pass; errors=[]
+server log: tracebacks=0 errors=1 reload=1
+reserved ports free
+
+##### QUEUE7 DONE 07:01:07

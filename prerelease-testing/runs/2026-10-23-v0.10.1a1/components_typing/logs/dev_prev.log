@@ -267,3 +267,325 @@ this plugin, add `SitemapPlugin` to the `disable_plugins` list.
 Debug: Registered lifespan task: _setup_event_processor
 Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
 [INFO] Started worker-1
+Debug:   ➜  Local:   http://localhost:3242/
+App running at: http://localhost:3242/
+Backend running at: http://0.0.0.0:8242
+Debug:   ➜  Network: http://192.0.2.2:3242/  eth0
+Debug: 6:54:31 AM [vite] (client) [optimizer] bundling dependencies...
+Debug: 6:54:33 AM [vite] (ssr) connected.
+Debug: 6:55:00 AM [vite] (client) [console.error] Error: Primitive.div failed to
+slot onto its children. Expected a single React element child or `Slottable`.
+Debug:     at Primitive.div.Slot 
+(http://localhost:3242/node_modules/.vite/deps/@radix-ui_themes.js?v=680f9654:20
+541:42)
+[Reflex Frontend Exception]
+ Error: Primitive.div failed to slot onto its children. Expected a single React 
+element child or `Slottable`.
+Error: Primitive.div failed to slot onto its children. Expected a single React 
+element child or `Slottable`.
+    at Primitive.div.Slot 
+(http://localhost:3242/node_modules/.vite/deps/@radix-ui_themes.js?v=680f9654:20
+541:42)
+    at Object.react_stack_bottom_frame 
+(http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:14
+140:12)
+    at renderWithHooks 
+(http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:43
+98:19)
+    at updateForwardRef 
+(http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:55
+95:16)
+    at beginWork 
+(http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:64
+53:21)
+    at runWithFiberInDEV 
+(http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:94
+2:66)
+    at performUnitOfWork 
+(http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:91
+46:92)
+    at workLoopSync 
+(http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:90
+42:37)
+    at renderRootSync 
+(http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:90
+26:6)
+    at performWorkOnRoot 
+(http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:87
+13:27)
+
+Debug:     at Object.react_stack_bottom_frame 
+(http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:14
+140:12)
+Debug:     at renderWithHooks 
+(http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:43
+98:19)
+Debug:     at updateForwardRef 
+(http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:55
+95:16)
+Debug:     at beginWork 
+(http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:64
+53:21)
+Debug:     at runWithFiberInDEV 
+(http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:94
+2:66)
+Debug:     at performUnitOfWork 
+(http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:91
+46:92)
+Debug:     at workLoopSync 
+(http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:90
+42:37)
+Debug:     at renderRootSync 
+(http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:90
+26:6)
+Debug:     at performWorkOnRoot 
+(http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:87
+13:27)
+Debug: 
+Debug: The above error occurred in the <Primitive.div.Slot> component.
+Debug: 
+Debug: React will try to recreate this component tree from scratch using the 
+error boundary you provided, C.
+Debug: 
+Debug: 6:56:06 AM [vite] (client) [console.error] Received `true` for a 
+non-boolean attribute `autoComplete`.
+Debug: 
+Debug: If you want to write it to the DOM, pass a string instead: 
+autoComplete="true" or autoComplete={value.toString()}.
+Debug: 6:56:13 AM [vite] (client) [console.error] Received `true` for a 
+non-boolean attribute `collapsible`.
+Debug: 
+Debug: If you want to write it to the DOM, pass a string instead: 
+collapsible="true" or collapsible={value.toString()}.
+Debug: 6:56:13 AM [vite] (client) [console.error] The pseudo class 
+":first-child" is potentially unsafe when doing server-side rendering. Try 
+changing it to ":first-of-type".
+Debug: 6:56:13 AM [vite] (client) [console.error] The pseudo class 
+":first-child" is potentially unsafe when doing server-side rendering. Try 
+changing it to ":first-of-type".
+Debug: 6:56:13 AM [vite] (client) [console.error] The pseudo class 
+":first-child" is potentially unsafe when doing server-side rendering. Try 
+changing it to ":first-of-type".
+Debug: 6:56:41 AM [vite] (client) [console.error] TypeError: Cannot read 
+properties of undefined (reading 'includes')
+Debug:     at truncateString 
+(http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4
+bdf02e1:5100:11)
+Debug:     at drawTextCell 
+(http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4
+bdf02e1:5131:29)
+Debug:     at Object.draw 
+(http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4
+bdf02e1:15596:3)
+Debug:     at drawCell 
+(http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4
+bdf02e1:7095:10)
+Debug:     at 
+http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4b
+df02e1:7017:18
+Debug:     at walkRowsInCol 
+(http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4
+bdf02e1:6473:27)
+Debug:     at 
+http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4b
+df02e1:6894:3
+Debug:     at walkColumns 
+(http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4
+bdf02e1:6494:7)
+Debug:     at drawCells 
+(http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4
+bdf02e1:6861:2)
+Debug:     at drawGrid 
+(http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4
+bdf02e1:9501:16)
+Debug: 
+Debug: The above error occurred in the <ForwardRef(DataGrid)> component.
+Debug: 
+Debug: React will try to recreate this component tree from scratch using the 
+error boundary you provided, C.
+Debug: 
+[Reflex Frontend Exception]
+ TypeError: Cannot read properties of undefined (reading 'includes')
+TypeError: Cannot read properties of undefined (reading 'includes')
+    at truncateString 
+(http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4
+bdf02e1:5100:11)
+    at drawTextCell 
+(http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4
+bdf02e1:5131:29)
+    at Object.draw 
+(http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4
+bdf02e1:15596:3)
+    at drawCell 
+(http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4
+bdf02e1:7095:10)
+    at 
+http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4b
+df02e1:7017:18
+    at walkRowsInCol 
+(http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4
+bdf02e1:6473:27)
+    at 
+http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4b
+df02e1:6894:3
+    at walkColumns 
+(http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4
+bdf02e1:6494:7)
+    at drawCells 
+(http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4
+bdf02e1:6861:2)
+    at drawGrid 
+(http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4
+bdf02e1:9501:16)
+
+Debug: 6:56:41 AM [vite] (client) [console.error] TypeError: Cannot read 
+properties of undefined (reading 'includes')
+Debug:     at truncateString 
+(http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4
+bdf02e1:5100:11)
+Debug:     at drawTextCell 
+(http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4
+bdf02e1:5131:29)
+Debug:     at Object.draw 
+(http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4
+bdf02e1:15596:3)
+Debug:     at drawCell 
+(http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4
+bdf02e1:7095:10)
+Debug:     at 
+http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4b
+df02e1:7017:18
+[Reflex Frontend Exception]
+ TypeError: Cannot read properties of undefined (reading 'includes')
+TypeError: Cannot read properties of undefined (reading 'includes')
+    at truncateString 
+(http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4
+bdf02e1:5100:11)
+    at drawTextCell 
+(http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4
+bdf02e1:5131:29)
+    at Object.draw 
+(http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4
+bdf02e1:15596:3)
+    at drawCell 
+(http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4
+bdf02e1:7095:10)
+    at 
+http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4b
+df02e1:7017:18
+    at walkRowsInCol 
+(http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4
+bdf02e1:6473:27)
+    at 
+http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4b
+df02e1:6894:3
+    at walkColumns 
+(http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4
+bdf02e1:6494:7)
+    at drawCells 
+(http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4
+bdf02e1:6861:2)
+    at drawGrid 
+(http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4
+bdf02e1:9501:16)
+
+Debug:     at walkRowsInCol 
+(http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4
+bdf02e1:6473:27)
+Debug:     at 
+http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4b
+df02e1:6894:3
+Debug:     at walkColumns 
+(http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4
+bdf02e1:6494:7)
+Debug:     at drawCells 
+(http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4
+bdf02e1:6861:2)
+Debug:     at drawGrid 
+(http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4
+bdf02e1:9501:16)
+Debug: 
+Debug: The above error occurred in the <ForwardRef(DataGrid)> component.
+Debug: 
+Debug: React will try to recreate this component tree from scratch using the 
+error boundary you provided, C.
+Debug: 
+[Reflex Frontend Exception]
+ ReferenceError: lucideIcons is not defined
+ReferenceError: lucideIcons is not defined
+    at Component 
+(http://localhost:3242/app/routes/\[icons]._index.jsx?import:267:32)
+    at Object.react_stack_bottom_frame 
+(http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:14
+140:12)
+    at renderWithHooks 
+(http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:43
+98:19)
+    at updateFunctionComponent 
+(http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:57
+73:16)
+    at beginWork 
+(http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:63
+89:20)
+    at runWithFiberInDEV 
+(http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:94
+2:66)
+    at performUnitOfWork 
+(http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:91
+46:92)
+    at workLoopSync 
+(http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:90
+42:37)
+    at renderRootSync 
+(http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:90
+26:6)
+    at performWorkOnRoot 
+(http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:87
+13:27)
+
+Debug: 6:57:34 AM [vite] (client) [console.error] ReferenceError: lucideIcons is
+not defined
+Debug:     at Component 
+(http://localhost:3242/app/routes/[icons]._index.jsx?import:267:32)
+Debug:     at Object.react_stack_bottom_frame 
+(http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:14
+140:12)
+Debug:     at renderWithHooks 
+(http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:43
+98:19)
+Debug:     at updateFunctionComponent 
+(http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:57
+73:16)
+Debug:     at beginWork 
+(http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:63
+89:20)
+Debug:     at runWithFiberInDEV 
+(http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:94
+2:66)
+Debug:     at performUnitOfWork 
+(http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:91
+46:92)
+Debug:     at workLoopSync 
+(http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:90
+42:37)
+Debug:     at renderRootSync 
+(http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:90
+26:6)
+Debug:     at performWorkOnRoot 
+(http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:87
+13:27)
+Debug: 
+Debug: The above error occurred in the <Component(icons)> component.
+Debug: 
+Debug: React will try to recreate this component tree from scratch using the 
+error boundary you provided, C.
+Debug: 
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[ERROR] Unexpected exit from worker-1
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Debug: error: script "dev" exited with code 143
+Info: Reflex app stopped.

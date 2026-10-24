@@ -15,10 +15,12 @@ assert f"/envs/{os.environ.get('DRV_VENV', 'driver')}/" in playwright.__file__, 
 BASE, LABEL = sys.argv[1].rstrip("/"), sys.argv[2]
 OUT = Path(__file__).resolve().parent.parent / "out"
 OUT.mkdir(exist_ok=True)
-JS_ROWS = """(gid) => { const c = document.querySelector('#' + gid + ' .ag-center-cols-container') || document.querySelector('[id="' + gid + '"] .ag-center-cols-container');
- if (!c) return null; const rows = [...c.querySelectorAll('.ag-row')].map(r => ({i: +r.getAttribute('row-index'), id: r.getAttribute('row-id'),
- uid: r.querySelector('[col-id=uid]')?.innerText, name: r.querySelector('[col-id=name]')?.innerText, price: r.querySelector('[col-id=price]')?.innerText}));
- rows.sort((a,b)=>a.i-b.i); return rows; }"""
+# rxe.ag_grid's `id` prop is the grid handle, not a DOM id: take the n-th .ag-root-wrapper (0 = ga, 1 = gb)
+JS_ROWS = """(idx) => { const w = document.querySelectorAll('.ag-root-wrapper')[idx]; if (!w) return null;
+ const seen = {}; for (const r of w.querySelectorAll('.ag-row')) { const i = +r.getAttribute('row-index'); if (seen[i]) continue;
+   const cell = (c) => r.querySelector('[col-id=' + c + ']'); if (!cell('uid')) continue;
+   seen[i] = {i, id: r.getAttribute('row-id'), uid: cell('uid').innerText, name: cell('name').innerText, price: cell('price').innerText}; }
+ return Object.values(seen).sort((a,b)=>a.i-b.i); }"""
 checks = []
 
 
@@ -29,8 +31,8 @@ def check(name, ok, info=None):
 
 def snapshot(p):
     state = json.loads(p.locator("#json").inner_text())
-    ga = p.evaluate(JS_ROWS, "ga")
-    gb = p.evaluate(JS_ROWS, "gb")
+    ga = p.evaluate(JS_ROWS, 0)
+    gb = p.evaluate(JS_ROWS, 1)
     fe = [t.split(":") for t in p.locator(".fe-row").all_inner_texts()]
     return state, ga, gb, fe
 
@@ -66,7 +68,7 @@ def main():
         p.on("pageerror", lambda e: errors.append(f"pageerror: {str(e)[:200]}"))
         p.on("console", lambda m: m.type == "error" and not m.text.startswith("***") and errors.append(f"console: {m.text[:200]}"))
         p.goto(BASE + "/", wait_until="networkidle")
-        p.wait_for_selector("#ga .ag-row, [id=ga] .ag-row", timeout=30000)
+        p.wait_for_selector(".ag-root-wrapper .ag-row", timeout=30000)
         p.locator("#reset_rows").click(); settle(p, "", 5); p.wait_for_timeout(500)
         verify(p, "initial")
         for op in ["bump_first", "sort_price", "reverse", "add_row", "remove_first", "rename_all", "sort_price", "bump_first"]:
@@ -74,14 +76,14 @@ def main():
             settle(p, op)
             verify(p, op)
         # cell edit in grid A: price of the first row -> 777
-        cell = p.locator("#ga .ag-row[row-index='0'] [col-id=price], [id=ga] .ag-row[row-index='0'] [col-id=price]").first
+        cell = p.locator(".ag-root-wrapper").nth(0).locator(".ag-row[row-index='0'] [col-id=price]").first
         cell.dblclick(); p.keyboard.press("Control+A"); p.keyboard.type("777"); p.keyboard.press("Enter")
         settle(p, "=777")
         verify(p, "cell edit grid A -> 777")
         p.locator("#swap_cols").click(); settle(p, "swap_cols")
-        hdr = p.evaluate("() => [...document.querySelectorAll('#ga .ag-header-cell-text, [id=ga] .ag-header-cell-text')].map(e=>e.innerText)")
-        check("swap_cols: grid A header order follows in-place list swap", hdr == ["uid", "price", "name"], hdr)
-        p.reload(wait_until="networkidle"); p.wait_for_selector("#ga .ag-row, [id=ga] .ag-row", timeout=30000); p.wait_for_timeout(800)
+        hdr = p.evaluate("() => [...document.querySelectorAll('.ag-root-wrapper')[0].querySelectorAll('.ag-header-cell-text')].map(e=>e.innerText)")
+        check("swap_cols: grid A header order follows in-place list swap", [h.lower() for h in hdr] == ["uid", "price", "name"], hdr)
+        p.reload(wait_until="networkidle"); p.wait_for_selector(".ag-root-wrapper .ag-row", timeout=30000); p.wait_for_timeout(800)
         verify(p, "after reload")
         b.close()
     ok = sum(1 for c in checks if c["ok"])

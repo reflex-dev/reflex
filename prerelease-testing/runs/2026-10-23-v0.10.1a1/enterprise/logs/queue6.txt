@@ -1,0 +1,33 @@
+
+##### gridshare new 06:56:19
+[start.sh] venv=new-ent reflex=0.10.1a1 reflex-base=0.10.1a1 reflex-enterprise=0.9.8 reflex_from=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/new-ent/lib/python3.12/site-packages/reflex/__init__.py
+started pid=3707 pgid=3707
+ready after 6s (frontend 200, /ping 200)
+driver exit=0
+[FAIL] cell edit grid A -> 777: grid B (index ids) == state: {"state": [{"uid": "u-2", "name": "ALPHA", "price": 777}, {"uid": "u-5", "name": "BRAVO", "price": 20}, {"uid": "u-4", "name": "CHARLIE", "price": 30}, {"uid": "u-1", "name": "DELTA", "price": 41}, {"uid": "u-6", "name": "NEW6", "price": 6
+SUMMARY new gridshare: 44/45 pass; errors=[]
+server log: tracebacks=0 errors=1 reload=1
+reserved ports free
+
+##### gridshare prev 06:56:42
+[start.sh] venv=prev-ent reflex=0.10.0 reflex-base=0.10.0 reflex-enterprise=0.9.8 reflex_from=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/prev-ent/lib/python3.12/site-packages/reflex/__init__.py
+started pid=4271 pgid=4271
+ready after 6s (frontend 200, /ping 200)
+driver exit=0
+SUMMARY prev gridshare: 45/45 pass; errors=[]
+server log: tracebacks=0 errors=1 reload=1
+reserved ports free
+
+##### mcp oauth redis rxe0.9.7 06:57:03
+started pid=4578 pgid=4578
+ready after 9s
+check_mcp_anon exit=0
+{"probe_nobearer_/_reflex/mcp": {"status": 307, "www": null, "body": ""}, "probe_nobearer_/_reflex/mcp/": {"status": 401, "www": "Bearer error=\"invalid_token\", error_description=\"Authentication required\", resource_metadata=\"http://localhost:8620/.well-known/oauth-protected-resource/_reflex/mcp\
+check_mcp_oauth_redis exit=0
+{"metadata_scopes": ["profile:read", "items:write"], "prm": {"status": 200, "body": {"resource": "http://localhost:8620/_reflex/mcp", "authorization_servers": ["http://localhost:8620/"], "scopes_supported": ["profile:read", "items:write"], "bearer_methods_supported": ["header"]}}, "register_a": 201,
+BROWSER_ERRORS {"partial": {"page_errors": [], "http_errors": [], "console_err": [{"type": "error", "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED", "url": "http://localhost:8638/oauth2/authorize"}]}, "deny": {"page_errors": [], "http_errors": [], "console_err": []}, "unregister
+stopped
+stopped-infra
+server log: tracebacks=2
+
+##### QUEUE6 DONE 06:58:35

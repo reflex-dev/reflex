@@ -1,0 +1,281 @@
+== cbg
+  [ok ] cbg/initial_group_value: group=a
+  [ok ] cbg/group_items_rendered: count=3
+  [ok ] cbg/item_a_checked: true
+  [ok ] cbg/item_b_disabled_attr: disabled='' data-disabled=''
+  [ok ] cbg/hidden_inputs_named_grp: count=3
+  [ok ] cbg/controlled_skipped_on_prev: prev: no value/on_value_change
+  [ok ] cbg/default_value_group_checked: D2 aria-checked=true
+  [ok ] cbg/form_submit_includes_group: submitted={"grp": "a", "dgrp": "d2", "cg": "a", "cg_default": "d2"}
+  [ok ] cbg/info_id_based_keys_in_submit: id keys present: cg=True cc=False cg_default=True :: submitted={"grp": "a", "dgrp": "d2", "cg": "a", "cg_default": "d2"}
+== radio
+  [ok ] radio/radio_cards_rendered: count=3
+  [ok ] radio/radio_cards_controlled_change: rc=2
+  [ok ] radio/radio_two_checked: true
+== radio_aschild
+  [FAIL] radio_aschild/page_loaded: #is-new missing: Page.wait_for_selector: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("#is-new") to be visible
+
+  [FAIL] radio_aschild/page_renders: <missing>
+  [FAIL] radio_aschild/three_radios_rendered: count=0
+  [FAIL] radio_aschild/root_grid_container_present: display=None
+  [ok ] radio_aschild/no_page_errors: []
+== input
+  [FAIL] input/autocomplete_ac-true: expected='on' got=None
+  [FAIL] input/autocomplete_ac-false: expected='off' got=None
+  [FAIL] input/autocomplete_ac-boolvar: expected='off' got=None
+  [ok ] input/autocomplete_ac-none: expected=None got=None
+  [ok ] input/autocomplete_ac-el: expected='off' got='off'
+  [FAIL] input/autocomplete_boolvar_toggles_to_on: ac_bool=true got=None
+== progress
+  [FAIL] progress/primitive_root_aria_initial: {'now': None, 'max': '100', 'state': 'indeterminate', 'value': None, 'role': 'progressbar'}
+  [ok ] progress/primitive_root_role_progressbar: {'now': None, 'max': '100', 'state': 'indeterminate', 'value': None, 'role': 'progressbar'}
+  [FAIL] progress/primitive_literal_aria: {'now': None, 'max': '100', 'state': 'indeterminate', 'value': None, 'role': 'progressbar'}
+  [FAIL] progress/primitive_default_aria: {'now': None, 'max': '100', 'state': 'indeterminate', 'value': None, 'role': 'progressbar'}
+  [ok ] progress/themes_progress_aria: {'now': '25', 'max': '100', 'state': 'loading', 'value': '25', 'role': 'progressbar'}
+  [FAIL] progress/primitive_root_aria_updates: pv=50 {'now': None, 'max': '100', 'state': 'indeterminate', 'value': None, 'role': 'progressbar'}
+  [ok ] progress/themes_progress_aria_updates: {'now': '50', 'max': '100', 'state': 'loading', 'value': '50', 'role': 'progressbar'}
+  [ok ] progress/primitive_indicator_transform: matrix(1, 0, 0, 1, -150, 0)
+== accordion
+  [FAIL] accordion/no_emotion_first_child_warning: The pseudo class ":first-child" is potentially unsafe when doing server-side rendering. Try changing it to ":first-of-type".
+  [ok ] accordion/triggers_rendered: count=3
+  [ok ] accordion/multiple_two_open: ['open', 'open', 'closed']
+  [ok ] accordion/content_visible: M First
+M first content
+M Second
+M second content
+M Third
+  [ok ] accordion/single_only_one_open: ['closed', 'open', 'closed']
+  [ok ] accordion/default_value_open: open
+  [ok ] accordion/first_item_styled_first_of_type: [{'btw': '0px', 'tl': '8px', 'mt': '0px'}, {'btw': '0px', 'tl': '0px', 'mt': '1px'}, {'btw': '0px', 'tl': '0px', 'mt': '1px'}]
+  [ok ] accordion/keyboard_arrow_down_moves_focus: M Second
+== dialog
+  [ok ] dialog/dialog_opens_controlled: open=true
+  [ok ] dialog/focus_trapped_in_dialog: [True, True, True, True, True, True, True]
+  [ok ] dialog/nested_dialog_opens: 
+  [ok ] dialog/escape_closes_only_nested: nested=0 outer_visible=True
+  [ok ] dialog/outer_state_still_open: open=true
+  [ok ] dialog/close_button_updates_state: open=false count=0
+  [ok ] dialog/escape_closes_outer: open=false
+  [ok ] dialog/open_count: opens=2
+  [ok ] dialog/alert_dialog_open_cancel: 
+  [ok ] dialog/drawer_opens: 
+  [ok ] dialog/drawer_closes: 
+  [ok ] dialog/popover_opens: 
+== slider
+  [ok ] slider/single_thumb_initial: 50
+  [ok ] slider/single_keyboard_dom: 53
+  [ok ] slider/single_on_change_state: single=53
+  [ok ] slider/single_on_value_commit: committed=53
+  [ok ] slider/range_two_thumbs: count=2
+  [ok ] slider/range_on_change: range=20,79
+  [ok ] slider/range_home_moves_first_thumb: range=0,79 thumb0=0
+  [ok ] slider/single_mouse_click_track: single=10
+== rform
+  [ok ] rform/value_missing_message: Email
+Email is required
+Age
+Submit
+  [ok ] rform/invalid_not_submitted: submits=0
+  [ok ] rform/type_mismatch_message: Email
+Not an email
+Age
+Submit
+  [ok ] rform/range_underflow_message: Email
+Age
+Must be 18+
+Submit
+  [ok ] rform/valid_submit_reaches_state: data={"email": "a@b.co", "age": "21", "f_email": "a@b.co", "f_age": "21"}
+  [ok ] rform/reset_on_submit: email value after submit=''
+== moment
+  [ok ] moment/cmp11_plain: Thursday 14 March 2024
+  [ok ] moment/cmp11_plain2: Thursday 14 March 2024
+  [ok ] moment/cmp11_english: Thursday 14 March 2024
+  [ok ] moment/cmp11_french: jeudi 14 mars 2024
+  [ok ] moment/cmp11_titled: Thursday 14 March 2024
+  [ok ] moment/cmp11_fromnow_english: 7 years ago
+  [ok ] moment/with_title_attr: Thursday 14 March 2024
+  [ok ] moment/info_defineLocale_warnings: 0 defineLocale messages (CMP-14 known)
+  [ok ] moment/provider_skipped_on_prev: 
+== de
+  [FAIL] de/page_loaded: #is-new missing: Page.wait_for_selector: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("#is-new") to be visible
+
+  [FAIL] de/driver_exception: TimeoutError: Page.wait_for_selector: Timeout 20000ms exceeded.
+Call log:
+  - waiting for locator("#de1-box canvas") to be visible
+
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/drive_ct.py", line 675, in main
+    TESTS[name](page, R)
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/drive_ct.py", line 493, in t_de
+    page.wait_for_selector("#de1-box canvas", timeout=20000)
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/driver/lib/python3.12/site-packages/playwright/sync_api/_generated.py", line 21370, in wait_for_selector
+    self._sync(
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/driver/lib/python3.12/site-packages/playwright/_impl/_sync_base.py", line 111, in _sync
+    return task.result()
+           ^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/driver/lib/python3.12/site-packages/playwright/_impl/_page.py", line 431, in wait_for_selector
+    return await self._main_frame.wait_for_selector(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/driver/lib/python3.12/site-packages/playwright/_impl/_frame.py", line 395, in wait_for_selector
+    await self._channel.send(
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/driver/lib/python3.12/site-packages/playwright/_impl/_connection.py", line 78, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/driver/lib/python3.12/site-packages/playwright/_impl/_connection.py", line 636, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+playwright._impl._errors.TimeoutError: Page.wait_for_selector: Timeout 20000ms exceeded.
+Call log:
+  - waiting for locator("#de1-box canvas") to be visible
+
+== icons
+  [FAIL] icons/page_loaded: #is-new missing: Page.wait_for_selector: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("#is-new") to be visible
+
+  [ok ] icons/no_page_errors_on_load: []
+  [FAIL] icons/static_icon: <missing>
+  [FAIL] icons/button_icon: <missing>
+  [FAIL] icons/badge_icon: <missing>
+  [FAIL] icons/callout_icon: <missing>
+  [FAIL] icons/input_slot_icon: count=0
+  [ok ] icons/dynamic_icon_initial: class=<missing> same_paths_as_apple=True
+  [FAIL] icons/foreach_icons: count=0
+  [FAIL] icons/driver_exception: TimeoutError: Page.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("#icon-next")
+
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/drive_ct.py", line 675, in main
+    TESTS[name](page, R)
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/drive_ct.py", line 590, in t_icons
+    page.click("#icon-next")
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/driver/lib/python3.12/site-packages/playwright/sync_api/_generated.py", line 16267, in click
+    self._sync(
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/driver/lib/python3.12/site-packages/playwright/_impl/_sync_base.py", line 111, in _sync
+    return task.result()
+           ^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/driver/lib/python3.12/site-packages/playwright/_impl/_page.py", line 891, in click
+    return await self._main_frame._click(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/driver/lib/python3.12/site-packages/playwright/_impl/_frame.py", line 598, in _click
+    await self._channel.send("click", self._timeout, locals_to_params(locals()))
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/driver/lib/python3.12/site-packages/playwright/_impl/_connection.py", line 78, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/driver/lib/python3.12/site-packages/playwright/_impl/_connection.py", line 636, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+playwright._impl._errors.TimeoutError: Page.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("#icon-next")
+
+== code
+  [FAIL] code/transformer_highlight_line: count=0
+  [FAIL] code/transformer_diff_add: count=0
+  [FAIL] code/transformer_diff_remove: count=0
+  [FAIL] code/transformer_notation_stripped: def hello(name):  # [!code highlight]
+    print("hi", name)
+    return name  # [!code ++]
+    return None  # [!code --]
+
+  [FAIL] code/transformer_highlight_styled: None
+  [ok ] code/plain_block_no_transformers: def hello(name):  # [!code highlight]
+    print("hi", name)
+    return name  # [
+  [FAIL] code/transformer_block_with_line_numbers: hl=0 buttons=1
+  [ok ] code/rsh_python_tokens: spans=35 buttons=1
+  [ok ] code/rsh_js_tokens: spans=21
+  [ok ] code/rsh_light_theme: spans=21
+  [ok ] code/markdown_code_blocks: pre=2
+  [radio_aschild] console.error: %o
+
+%s
+
+%s
+ Error: Primitive.div failed to slot onto its children. Expected a single React element child or `Slottable`.
+    at Primitive.div.Slot (http://localhost:3242/node_modules/.vite/deps/@radix-ui_themes.js?v=680f
+  [input] console.error: Received `%s` for a non-boolean attribute `%s`.
+
+If you want to write it to the DOM, pass a string instead: %s="%s" or %s={value.toString()}. true autoComplete autoComplete true autoComplete
+  [accordion] console.error: Received `%s` for a non-boolean attribute `%s`.
+
+If you want to write it to the DOM, pass a string instead: %s="%s" or %s={value.toString()}. true collapsible collapsible true collapsible
+  [accordion] console.error: The pseudo class ":first-child" is potentially unsafe when doing server-side rendering. Try changing it to ":first-of-type".
+  [accordion] console.error: The pseudo class ":first-child" is potentially unsafe when doing server-side rendering. Try changing it to ":first-of-type".
+  [accordion] console.error: The pseudo class ":first-child" is potentially unsafe when doing server-side rendering. Try changing it to ":first-of-type".
+  [de] console.error: %o
+
+%s
+
+%s
+ TypeError: Cannot read properties of undefined (reading 'includes')
+    at truncateString (http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4bdf02e1:5100:11)
+    at drawTextCell (
+  [de] console.error: %o
+
+%s
+
+%s
+ TypeError: Cannot read properties of undefined (reading 'includes')
+    at truncateString (http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4bdf02e1:5100:11)
+    at drawTextCell (
+  [icons] console.error: %o
+
+%s
+
+%s
+ ReferenceError: lucideIcons is not defined
+    at Component (http://localhost:3242/app/routes/[icons]._index.jsx?import:267:32)
+    at Object.react_stack_bottom_frame (http://localhost:3242/node_modules/.vite
+RESULT: 68/97 checks passed; is_new=False
+  FAIL radio_aschild/page_loaded: #is-new missing: Page.wait_for_selector: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("#is-new") to be visible
+
+  FAIL radio_aschild/page_renders: <missing>
+  FAIL radio_aschild/three_radios_rendered: count=0
+  FAIL radio_aschild/root_grid_container_present: display=None
+  FAIL input/autocomplete_ac-true: expected='on' got=None
+  FAIL input/autocomplete_ac-false: expected='off' got=None
+  FAIL input/autocomplete_ac-boolvar: expected='off' got=None
+  FAIL input/autocomplete_boolvar_toggles_to_on: ac_bool=true got=None
+  FAIL progress/primitive_root_aria_initial: {'now': None, 'max': '100', 'state': 'indeterminate', 'value': None, 'role': 'progressbar'}
+  FAIL progress/primitive_literal_aria: {'now': None, 'max': '100', 'state': 'indeterminate', 'value': None, 'role': 'progressbar'}
+  FAIL progress/primitive_default_aria: {'now': None, 'max': '100', 'state': 'indeterminate', 'value': None, 'role': 'progressbar'}
+  FAIL progress/primitive_root_aria_updates: pv=50 {'now': None, 'max': '100', 'state': 'indeterminate', 'value': None, 'role': 'progressbar'}
+  FAIL accordion/no_emotion_first_child_warning: The pseudo class ":first-child" is potentially unsafe when doing server-side rendering. Try changing it to ":first-of-type".
+  FAIL de/page_loaded: #is-new missing: Page.wait_for_selector: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("#is-new") to be visible
+
+  FAIL de/driver_exception: TimeoutError: Page.wait_for_selector: Timeout 20000ms exceeded.
+Call log:
+  - waiting for locator("#de1-box canvas") to be visible
+
+  FAIL icons/page_loaded: #is-new missing: Page.wait_for_selector: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("#is-new") to be visible
+
+  FAIL icons/static_icon: <missing>
+  FAIL icons/button_icon: <missing>
+  FAIL icons/badge_icon: <missing>
+  FAIL icons/callout_icon: <missing>
+  FAIL icons/input_slot_icon: count=0
+  FAIL icons/foreach_icons: count=0
+  FAIL icons/driver_exception: TimeoutError: Page.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("#icon-next")
+
+  FAIL code/transformer_highlight_line: count=0
+  FAIL code/transformer_diff_add: count=0
+  FAIL code/transformer_diff_remove: count=0
+  FAIL code/transformer_notation_stripped: def hello(name):  # [!code highlight]
+    print("hi", name)
+    return name  # [!code ++]
+    return None  # [!code --]
+
+  FAIL code/transformer_highlight_styled: None
+  FAIL code/transformer_block_with_line_numbers: hl=0 buttons=1

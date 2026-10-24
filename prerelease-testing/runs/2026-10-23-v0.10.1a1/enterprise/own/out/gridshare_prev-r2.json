@@ -1,0 +1,2303 @@
+{
+ "checks": [
+  {
+   "name": "initial: grid A (row_id_key) == state",
+   "ok": true,
+   "info": {
+    "state": [
+     {
+      "uid": "u-1",
+      "name": "delta",
+      "price": 40
+     },
+     {
+      "uid": "u-2",
+      "name": "alpha",
+      "price": 10
+     },
+     {
+      "uid": "u-3",
+      "name": "echo",
+      "price": 50
+     },
+     {
+      "uid": "u-4",
+      "name": "charlie",
+      "price": 30
+     },
+     {
+      "uid": "u-5",
+      "name": "bravo",
+      "price": 20
+     }
+    ],
+    "ga": [
+     {
+      "i": 0,
+      "id": "u-1",
+      "uid": "u-1",
+      "name": "delta",
+      "price": "40"
+     },
+     {
+      "i": 1,
+      "id": "u-2",
+      "uid": "u-2",
+      "name": "alpha",
+      "price": "10"
+     },
+     {
+      "i": 2,
+      "id": "u-3",
+      "uid": "u-3",
+      "name": "echo",
+      "price": "50"
+     },
+     {
+      "i": 3,
+      "id": "u-4",
+      "uid": "u-4",
+      "name": "charlie",
+      "price": "30"
+     },
+     {
+      "i": 4,
+      "id": "u-5",
+      "uid": "u-5",
+      "name": "bravo",
+      "price": "20"
+     }
+    ]
+   }
+  },
+  {
+   "name": "initial: grid B (index ids) == state",
+   "ok": true,
+   "info": {
+    "state": [
+     {
+      "uid": "u-1",
+      "name": "delta",
+      "price": 40
+     },
+     {
+      "uid": "u-2",
+      "name": "alpha",
+      "price": 10
+     },
+     {
+      "uid": "u-3",
+      "name": "echo",
+      "price": 50
+     },
+     {
+      "uid": "u-4",
+      "name": "charlie",
+      "price": 30
+     },
+     {
+      "uid": "u-5",
+      "name": "bravo",
+      "price": 20
+     }
+    ],
+    "gb": [
+     {
+      "i": 0,
+      "id": "0",
+      "uid": "u-1",
+      "name": "delta",
+      "price": "40"
+     },
+     {
+      "i": 1,
+      "id": "1",
+      "uid": "u-2",
+      "name": "alpha",
+      "price": "10"
+     },
+     {
+      "i": 2,
+      "id": "2",
+      "uid": "u-3",
+      "name": "echo",
+      "price": "50"
+     },
+     {
+      "i": 3,
+      "id": "3",
+      "uid": "u-4",
+      "name": "charlie",
+      "price": "30"
+     },
+     {
+      "i": 4,
+      "id": "4",
+      "uid": "u-5",
+      "name": "bravo",
+      "price": "20"
+     }
+    ]
+   }
+  },
+  {
+   "name": "initial: foreach == state",
+   "ok": true,
+   "info": {
+    "state": [
+     {
+      "uid": "u-1",
+      "name": "delta",
+      "price": 40
+     },
+     {
+      "uid": "u-2",
+      "name": "alpha",
+      "price": 10
+     },
+     {
+      "uid": "u-3",
+      "name": "echo",
+      "price": 50
+     },
+     {
+      "uid": "u-4",
+      "name": "charlie",
+      "price": 30
+     },
+     {
+      "uid": "u-5",
+      "name": "bravo",
+      "price": 20
+     }
+    ],
+    "fe": [
+     [
+      "u-1",
+      "delta",
+      "40"
+     ],
+     [
+      "u-2",
+      "alpha",
+      "10"
+     ],
+     [
+      "u-3",
+      "echo",
+      "50"
+     ],
+     [
+      "u-4",
+      "charlie",
+      "30"
+     ],
+     [
+      "u-5",
+      "bravo",
+      "20"
+     ]
+    ]
+   }
+  },
+  {
+   "name": "initial: total == sum",
+   "ok": true,
+   "info": "total=150"
+  },
+  {
+   "name": "bump_first: grid A (row_id_key) == state",
+   "ok": true,
+   "info": {
+    "state": [
+     {
+      "uid": "u-1",
+      "name": "delta",
+      "price": 41
+     },
+     {
+      "uid": "u-2",
+      "name": "alpha",
+      "price": 10
+     },
+     {
+      "uid": "u-3",
+      "name": "echo",
+      "price": 50
+     },
+     {
+      "uid": "u-4",
+      "name": "charlie",
+      "price": 30
+     },
+     {
+      "uid": "u-5",
+      "name": "bravo",
+      "price": 20
+     }
+    ],
+    "ga": [
+     {
+      "i": 0,
+      "id": "u-1",
+      "uid": "u-1",
+      "name": "delta",
+      "price": "41"
+     },
+     {
+      "i": 1,
+      "id": "u-2",
+      "uid": "u-2",
+      "name": "alpha",
+      "price": "10"
+     },
+     {
+      "i": 2,
+      "id": "u-3",
+      "uid": "u-3",
+      "name": "echo",
+      "price": "50"
+     },
+     {
+      "i": 3,
+      "id": "u-4",
+      "uid": "u-4",
+      "name": "charlie",
+      "price": "30"
+     },
+     {
+      "i": 4,
+      "id": "u-5",
+      "uid": "u-5",
+      "name": "bravo",
+      "price": "20"
+     }
+    ]
+   }
+  },
+  {
+   "name": "bump_first: grid B (index ids) == state",
+   "ok": true,
+   "info": {
+    "state": [
+     {
+      "uid": "u-1",
+      "name": "delta",
+      "price": 41
+     },
+     {
+      "uid": "u-2",
+      "name": "alpha",
+      "price": 10
+     },
+     {
+      "uid": "u-3",
+      "name": "echo",
+      "price": 50
+     },
+     {
+      "uid": "u-4",
+      "name": "charlie",
+      "price": 30
+     },
+     {
+      "uid": "u-5",
+      "name": "bravo",
+      "price": 20
+     }
+    ],
+    "gb": [
+     {
+      "i": 0,
+      "id": "0",
+      "uid": "u-1",
+      "name": "delta",
+      "price": "41"
+     },
+     {
+      "i": 1,
+      "id": "1",
+      "uid": "u-2",
+      "name": "alpha",
+      "price": "10"
+     },
+     {
+      "i": 2,
+      "id": "2",
+      "uid": "u-3",
+      "name": "echo",
+      "price": "50"
+     },
+     {
+      "i": 3,
+      "id": "3",
+      "uid": "u-4",
+      "name": "charlie",
+      "price": "30"
+     },
+     {
+      "i": 4,
+      "id": "4",
+      "uid": "u-5",
+      "name": "bravo",
+      "price": "20"
+     }
+    ]
+   }
+  },
+  {
+   "name": "bump_first: foreach == state",
+   "ok": true,
+   "info": {
+    "state": [
+     {
+      "uid": "u-1",
+      "name": "delta",
+      "price": 41
+     },
+     {
+      "uid": "u-2",
+      "name": "alpha",
+      "price": 10
+     },
+     {
+      "uid": "u-3",
+      "name": "echo",
+      "price": 50
+     },
+     {
+      "uid": "u-4",
+      "name": "charlie",
+      "price": 30
+     },
+     {
+      "uid": "u-5",
+      "name": "bravo",
+      "price": 20
+     }
+    ],
+    "fe": [
+     [
+      "u-1",
+      "delta",
+      "41"
+     ],
+     [
+      "u-2",
+      "alpha",
+      "10"
+     ],
+     [
+      "u-3",
+      "echo",
+      "50"
+     ],
+     [
+      "u-4",
+      "charlie",
+      "30"
+     ],
+     [
+      "u-5",
+      "bravo",
+      "20"
+     ]
+    ]
+   }
+  },
+  {
+   "name": "bump_first: total == sum",
+   "ok": true,
+   "info": "total=151"
+  },
+  {
+   "name": "sort_price: grid A (row_id_key) == state",
+   "ok": true,
+   "info": {
+    "state": [
+     {
+      "uid": "u-2",
+      "name": "alpha",
+      "price": 10
+     },
+     {
+      "uid": "u-5",
+      "name": "bravo",
+      "price": 20
+     },
+     {
+      "uid": "u-4",
+      "name": "charlie",
+      "price": 30
+     },
+     {
+      "uid": "u-1",
+      "name": "delta",
+      "price": 41
+     },
+     {
+      "uid": "u-3",
+      "name": "echo",
+      "price": 50
+     }
+    ],
+    "ga": [
+     {
+      "i": 0,
+      "id": "u-2",
+      "uid": "u-2",
+      "name": "alpha",
+      "price": "10"
+     },
+     {
+      "i": 1,
+      "id": "u-5",
+      "uid": "u-5",
+      "name": "bravo",
+      "price": "20"
+     },
+     {
+      "i": 2,
+      "id": "u-4",
+      "uid": "u-4",
+      "name": "charlie",
+      "price": "30"
+     },
+     {
+      "i": 3,
+      "id": "u-1",
+      "uid": "u-1",
+      "name": "delta",
+      "price": "41"
+     },
+     {
+      "i": 4,
+      "id": "u-3",
+      "uid": "u-3",
+      "name": "echo",
+      "price": "50"
+     }
+    ]
+   }
+  },
+  {
+   "name": "sort_price: grid B (index ids) == state",
+   "ok": true,
+   "info": {
+    "state": [
+     {
+      "uid": "u-2",
+      "name": "alpha",
+      "price": 10
+     },
+     {
+      "uid": "u-5",
+      "name": "bravo",
+      "price": 20
+     },
+     {
+      "uid": "u-4",
+      "name": "charlie",
+      "price": 30
+     },
+     {
+      "uid": "u-1",
+      "name": "delta",
+      "price": 41
+     },
+     {
+      "uid": "u-3",
+      "name": "echo",
+      "price": 50
+     }
+    ],
+    "gb": [
+     {
+      "i": 0,
+      "id": "0",
+      "uid": "u-2",
+      "name": "alpha",
+      "price": "10"
+     },
+     {
+      "i": 1,
+      "id": "1",
+      "uid": "u-5",
+      "name": "bravo",
+      "price": "20"
+     },
+     {
+      "i": 2,
+      "id": "2",
+      "uid": "u-4",
+      "name": "charlie",
+      "price": "30"
+     },
+     {
+      "i": 3,
+      "id": "3",
+      "uid": "u-1",
+      "name": "delta",
+      "price": "41"
+     },
+     {
+      "i": 4,
+      "id": "4",
+      "uid": "u-3",
+      "name": "echo",
+      "price": "50"
+     }
+    ]
+   }
+  },
+  {
+   "name": "sort_price: foreach == state",
+   "ok": true,
+   "info": {
+    "state": [
+     {
+      "uid": "u-2",
+      "name": "alpha",
+      "price": 10
+     },
+     {
+      "uid": "u-5",
+      "name": "bravo",
+      "price": 20
+     },
+     {
+      "uid": "u-4",
+      "name": "charlie",
+      "price": 30
+     },
+     {
+      "uid": "u-1",
+      "name": "delta",
+      "price": 41
+     },
+     {
+      "uid": "u-3",
+      "name": "echo",
+      "price": 50
+     }
+    ],
+    "fe": [
+     [
+      "u-2",
+      "alpha",
+      "10"
+     ],
+     [
+      "u-5",
+      "bravo",
+      "20"
+     ],
+     [
+      "u-4",
+      "charlie",
+      "30"
+     ],
+     [
+      "u-1",
+      "delta",
+      "41"
+     ],
+     [
+      "u-3",
+      "echo",
+      "50"
+     ]
+    ]
+   }
+  },
+  {
+   "name": "sort_price: total == sum",
+   "ok": true,
+   "info": "total=151"
+  },
+  {
+   "name": "reverse: grid A (row_id_key) == state",
+   "ok": true,
+   "info": {
+    "state": [
+     {
+      "uid": "u-3",
+      "name": "echo",
+      "price": 50
+     },
+     {
+      "uid": "u-1",
+      "name": "delta",
+      "price": 41
+     },
+     {
+      "uid": "u-4",
+      "name": "charlie",
+      "price": 30
+     },
+     {
+      "uid": "u-5",
+      "name": "bravo",
+      "price": 20
+     },
+     {
+      "uid": "u-2",
+      "name": "alpha",
+      "price": 10
+     }
+    ],
+    "ga": [
+     {
+      "i": 0,
+      "id": "u-3",
+      "uid": "u-3",
+      "name": "echo",
+      "price": "50"
+     },
+     {
+      "i": 1,
+      "id": "u-1",
+      "uid": "u-1",
+      "name": "delta",
+      "price": "41"
+     },
+     {
+      "i": 2,
+      "id": "u-4",
+      "uid": "u-4",
+      "name": "charlie",
+      "price": "30"
+     },
+     {
+      "i": 3,
+      "id": "u-5",
+      "uid": "u-5",
+      "name": "bravo",
+      "price": "20"
+     },
+     {
+      "i": 4,
+      "id": "u-2",
+      "uid": "u-2",
+      "name": "alpha",
+      "price": "10"
+     }
+    ]
+   }
+  },
+  {
+   "name": "reverse: grid B (index ids) == state",
+   "ok": true,
+   "info": {
+    "state": [
+     {
+      "uid": "u-3",
+      "name": "echo",
+      "price": 50
+     },
+     {
+      "uid": "u-1",
+      "name": "delta",
+      "price": 41
+     },
+     {
+      "uid": "u-4",
+      "name": "charlie",
+      "price": 30
+     },
+     {
+      "uid": "u-5",
+      "name": "bravo",
+      "price": 20
+     },
+     {
+      "uid": "u-2",
+      "name": "alpha",
+      "price": 10
+     }
+    ],
+    "gb": [
+     {
+      "i": 0,
+      "id": "0",
+      "uid": "u-3",
+      "name": "echo",
+      "price": "50"
+     },
+     {
+      "i": 1,
+      "id": "1",
+      "uid": "u-1",
+      "name": "delta",
+      "price": "41"
+     },
+     {
+      "i": 2,
+      "id": "2",
+      "uid": "u-4",
+      "name": "charlie",
+      "price": "30"
+     },
+     {
+      "i": 3,
+      "id": "3",
+      "uid": "u-5",
+      "name": "bravo",
+      "price": "20"
+     },
+     {
+      "i": 4,
+      "id": "4",
+      "uid": "u-2",
+      "name": "alpha",
+      "price": "10"
+     }
+    ]
+   }
+  },
+  {
+   "name": "reverse: foreach == state",
+   "ok": true,
+   "info": {
+    "state": [
+     {
+      "uid": "u-3",
+      "name": "echo",
+      "price": 50
+     },
+     {
+      "uid": "u-1",
+      "name": "delta",
+      "price": 41
+     },
+     {
+      "uid": "u-4",
+      "name": "charlie",
+      "price": 30
+     },
+     {
+      "uid": "u-5",
+      "name": "bravo",
+      "price": 20
+     },
+     {
+      "uid": "u-2",
+      "name": "alpha",
+      "price": 10
+     }
+    ],
+    "fe": [
+     [
+      "u-3",
+      "echo",
+      "50"
+     ],
+     [
+      "u-1",
+      "delta",
+      "41"
+     ],
+     [
+      "u-4",
+      "charlie",
+      "30"
+     ],
+     [
+      "u-5",
+      "bravo",
+      "20"
+     ],
+     [
+      "u-2",
+      "alpha",
+      "10"
+     ]
+    ]
+   }
+  },
+  {
+   "name": "reverse: total == sum",
+   "ok": true,
+   "info": "total=151"
+  },
+  {
+   "name": "add_row: grid A (row_id_key) == state",
+   "ok": true,
+   "info": {
+    "state": [
+     {
+      "uid": "u-3",
+      "name": "echo",
+      "price": 50
+     },
+     {
+      "uid": "u-1",
+      "name": "delta",
+      "price": 41
+     },
+     {
+      "uid": "u-4",
+      "name": "charlie",
+      "price": 30
+     },
+     {
+      "uid": "u-5",
+      "name": "bravo",
+      "price": 20
+     },
+     {
+      "uid": "u-2",
+      "name": "alpha",
+      "price": 10
+     },
+     {
+      "uid": "u-6",
+      "name": "new6",
+      "price": 600
+     }
+    ],
+    "ga": [
+     {
+      "i": 0,
+      "id": "u-3",
+      "uid": "u-3",
+      "name": "echo",
+      "price": "50"
+     },
+     {
+      "i": 1,
+      "id": "u-1",
+      "uid": "u-1",
+      "name": "delta",
+      "price": "41"
+     },
+     {
+      "i": 2,
+      "id": "u-4",
+      "uid": "u-4",
+      "name": "charlie",
+      "price": "30"
+     },
+     {
+      "i": 3,
+      "id": "u-5",
+      "uid": "u-5",
+      "name": "bravo",
+      "price": "20"
+     },
+     {
+      "i": 4,
+      "id": "u-2",
+      "uid": "u-2",
+      "name": "alpha",
+      "price": "10"
+     },
+     {
+      "i": 5,
+      "id": "u-6",
+      "uid": "u-6",
+      "name": "new6",
+      "price": "600"
+     }
+    ]
+   }
+  },
+  {
+   "name": "add_row: grid B (index ids) == state",
+   "ok": true,
+   "info": {
+    "state": [
+     {
+      "uid": "u-3",
+      "name": "echo",
+      "price": 50
+     },
+     {
+      "uid": "u-1",
+      "name": "delta",
+      "price": 41
+     },
+     {
+      "uid": "u-4",
+      "name": "charlie",
+      "price": 30
+     },
+     {
+      "uid": "u-5",
+      "name": "bravo",
+      "price": 20
+     },
+     {
+      "uid": "u-2",
+      "name": "alpha",
+      "price": 10
+     },
+     {
+      "uid": "u-6",
+      "name": "new6",
+      "price": 600
+     }
+    ],
+    "gb": [
+     {
+      "i": 0,
+      "id": "0",
+      "uid": "u-3",
+      "name": "echo",
+      "price": "50"
+     },
+     {
+      "i": 1,
+      "id": "1",
+      "uid": "u-1",
+      "name": "delta",
+      "price": "41"
+     },
+     {
+      "i": 2,
+      "id": "2",
+      "uid": "u-4",
+      "name": "charlie",
+      "price": "30"
+     },
+     {
+      "i": 3,
+      "id": "3",
+      "uid": "u-5",
+      "name": "bravo",
+      "price": "20"
+     },
+     {
+      "i": 4,
+      "id": "4",
+      "uid": "u-2",
+      "name": "alpha",
+      "price": "10"
+     },
+     {
+      "i": 5,
+      "id": "5",
+      "uid": "u-6",
+      "name": "new6",
+      "price": "600"
+     }
+    ]
+   }
+  },
+  {
+   "name": "add_row: foreach == state",
+   "ok": true,
+   "info": {
+    "state": [
+     {
+      "uid": "u-3",
+      "name": "echo",
+      "price": 50
+     },
+     {
+      "uid": "u-1",
+      "name": "delta",
+      "price": 41
+     },
+     {
+      "uid": "u-4",
+      "name": "charlie",
+      "price": 30
+     },
+     {
+      "uid": "u-5",
+      "name": "bravo",
+      "price": 20
+     },
+     {
+      "uid": "u-2",
+      "name": "alpha",
+      "price": 10
+     },
+     {
+      "uid": "u-6",
+      "name": "new6",
+      "price": 600
+     }
+    ],
+    "fe": [
+     [
+      "u-3",
+      "echo",
+      "50"
+     ],
+     [
+      "u-1",
+      "delta",
+      "41"
+     ],
+     [
+      "u-4",
+      "charlie",
+      "30"
+     ],
+     [
+      "u-5",
+      "bravo",
+      "20"
+     ],
+     [
+      "u-2",
+      "alpha",
+      "10"
+     ],
+     [
+      "u-6",
+      "new6",
+      "600"
+     ]
+    ]
+   }
+  },
+  {
+   "name": "add_row: total == sum",
+   "ok": true,
+   "info": "total=751"
+  },
+  {
+   "name": "remove_first: grid A (row_id_key) == state",
+   "ok": true,
+   "info": {
+    "state": [
+     {
+      "uid": "u-1",
+      "name": "delta",
+      "price": 41
+     },
+     {
+      "uid": "u-4",
+      "name": "charlie",
+      "price": 30
+     },
+     {
+      "uid": "u-5",
+      "name": "bravo",
+      "price": 20
+     },
+     {
+      "uid": "u-2",
+      "name": "alpha",
+      "price": 10
+     },
+     {
+      "uid": "u-6",
+      "name": "new6",
+      "price": 600
+     }
+    ],
+    "ga": [
+     {
+      "i": 0,
+      "id": "u-1",
+      "uid": "u-1",
+      "name": "delta",
+      "price": "41"
+     },
+     {
+      "i": 1,
+      "id": "u-4",
+      "uid": "u-4",
+      "name": "charlie",
+      "price": "30"
+     },
+     {
+      "i": 2,
+      "id": "u-5",
+      "uid": "u-5",
+      "name": "bravo",
+      "price": "20"
+     },
+     {
+      "i": 3,
+      "id": "u-2",
+      "uid": "u-2",
+      "name": "alpha",
+      "price": "10"
+     },
+     {
+      "i": 4,
+      "id": "u-6",
+      "uid": "u-6",
+      "name": "new6",
+      "price": "600"
+     }
+    ]
+   }
+  },
+  {
+   "name": "remove_first: grid B (index ids) == state",
+   "ok": true,
+   "info": {
+    "state": [
+     {
+      "uid": "u-1",
+      "name": "delta",
+      "price": 41
+     },
+     {
+      "uid": "u-4",
+      "name": "charlie",
+      "price": 30
+     },
+     {
+      "uid": "u-5",
+      "name": "bravo",
+      "price": 20
+     },
+     {
+      "uid": "u-2",
+      "name": "alpha",
+      "price": 10
+     },
+     {
+      "uid": "u-6",
+      "name": "new6",
+      "price": 600
+     }
+    ],
+    "gb": [
+     {
+      "i": 0,
+      "id": "0",
+      "uid": "u-1",
+      "name": "delta",
+      "price": "41"
+     },
+     {
+      "i": 1,
+      "id": "1",
+      "uid": "u-4",
+      "name": "charlie",
+      "price": "30"
+     },
+     {
+      "i": 2,
+      "id": "2",
+      "uid": "u-5",
+      "name": "bravo",
+      "price": "20"
+     },
+     {
+      "i": 3,
+      "id": "3",
+      "uid": "u-2",
+      "name": "alpha",
+      "price": "10"
+     },
+     {
+      "i": 4,
+      "id": "4",
+      "uid": "u-6",
+      "name": "new6",
+      "price": "600"
+     }
+    ]
+   }
+  },
+  {
+   "name": "remove_first: foreach == state",
+   "ok": true,
+   "info": {
+    "state": [
+     {
+      "uid": "u-1",
+      "name": "delta",
+      "price": 41
+     },
+     {
+      "uid": "u-4",
+      "name": "charlie",
+      "price": 30
+     },
+     {
+      "uid": "u-5",
+      "name": "bravo",
+      "price": 20
+     },
+     {
+      "uid": "u-2",
+      "name": "alpha",
+      "price": 10
+     },
+     {
+      "uid": "u-6",
+      "name": "new6",
+      "price": 600
+     }
+    ],
+    "fe": [
+     [
+      "u-1",
+      "delta",
+      "41"
+     ],
+     [
+      "u-4",
+      "charlie",
+      "30"
+     ],
+     [
+      "u-5",
+      "bravo",
+      "20"
+     ],
+     [
+      "u-2",
+      "alpha",
+      "10"
+     ],
+     [
+      "u-6",
+      "new6",
+      "600"
+     ]
+    ]
+   }
+  },
+  {
+   "name": "remove_first: total == sum",
+   "ok": true,
+   "info": "total=701"
+  },
+  {
+   "name": "rename_all: grid A (row_id_key) == state",
+   "ok": true,
+   "info": {
+    "state": [
+     {
+      "uid": "u-1",
+      "name": "DELTA",
+      "price": 41
+     },
+     {
+      "uid": "u-4",
+      "name": "CHARLIE",
+      "price": 30
+     },
+     {
+      "uid": "u-5",
+      "name": "BRAVO",
+      "price": 20
+     },
+     {
+      "uid": "u-2",
+      "name": "ALPHA",
+      "price": 10
+     },
+     {
+      "uid": "u-6",
+      "name": "NEW6",
+      "price": 600
+     }
+    ],
+    "ga": [
+     {
+      "i": 0,
+      "id": "u-1",
+      "uid": "u-1",
+      "name": "DELTA",
+      "price": "41"
+     },
+     {
+      "i": 1,
+      "id": "u-4",
+      "uid": "u-4",
+      "name": "CHARLIE",
+      "price": "30"
+     },
+     {
+      "i": 2,
+      "id": "u-5",
+      "uid": "u-5",
+      "name": "BRAVO",
+      "price": "20"
+     },
+     {
+      "i": 3,
+      "id": "u-2",
+      "uid": "u-2",
+      "name": "ALPHA",
+      "price": "10"
+     },
+     {
+      "i": 4,
+      "id": "u-6",
+      "uid": "u-6",
+      "name": "NEW6",
+      "price": "600"
+     }
+    ]
+   }
+  },
+  {
+   "name": "rename_all: grid B (index ids) == state",
+   "ok": true,
+   "info": {
+    "state": [
+     {
+      "uid": "u-1",
+      "name": "DELTA",
+      "price": 41
+     },
+     {
+      "uid": "u-4",
+      "name": "CHARLIE",
+      "price": 30
+     },
+     {
+      "uid": "u-5",
+      "name": "BRAVO",
+      "price": 20
+     },
+     {
+      "uid": "u-2",
+      "name": "ALPHA",
+      "price": 10
+     },
+     {
+      "uid": "u-6",
+      "name": "NEW6",
+      "price": 600
+     }
+    ],
+    "gb": [
+     {
+      "i": 0,
+      "id": "0",
+      "uid": "u-1",
+      "name": "DELTA",
+      "price": "41"
+     },
+     {
+      "i": 1,
+      "id": "1",
+      "uid": "u-4",
+      "name": "CHARLIE",
+      "price": "30"
+     },
+     {
+      "i": 2,
+      "id": "2",
+      "uid": "u-5",
+      "name": "BRAVO",
+      "price": "20"
+     },
+     {
+      "i": 3,
+      "id": "3",
+      "uid": "u-2",
+      "name": "ALPHA",
+      "price": "10"
+     },
+     {
+      "i": 4,
+      "id": "4",
+      "uid": "u-6",
+      "name": "NEW6",
+      "price": "600"
+     }
+    ]
+   }
+  },
+  {
+   "name": "rename_all: foreach == state",
+   "ok": true,
+   "info": {
+    "state": [
+     {
+      "uid": "u-1",
+      "name": "DELTA",
+      "price": 41
+     },
+     {
+      "uid": "u-4",
+      "name": "CHARLIE",
+      "price": 30
+     },
+     {
+      "uid": "u-5",
+      "name": "BRAVO",
+      "price": 20
+     },
+     {
+      "uid": "u-2",
+      "name": "ALPHA",
+      "price": 10
+     },
+     {
+      "uid": "u-6",
+      "name": "NEW6",
+      "price": 600
+     }
+    ],
+    "fe": [
+     [
+      "u-1",
+      "DELTA",
+      "41"
+     ],
+     [
+      "u-4",
+      "CHARLIE",
+      "30"
+     ],
+     [
+      "u-5",
+      "BRAVO",
+      "20"
+     ],
+     [
+      "u-2",
+      "ALPHA",
+      "10"
+     ],
+     [
+      "u-6",
+      "NEW6",
+      "600"
+     ]
+    ]
+   }
+  },
+  {
+   "name": "rename_all: total == sum",
+   "ok": true,
+   "info": "total=701"
+  },
+  {
+   "name": "sort_price: grid A (row_id_key) == state",
+   "ok": true,
+   "info": {
+    "state": [
+     {
+      "uid": "u-2",
+      "name": "ALPHA",
+      "price": 10
+     },
+     {
+      "uid": "u-5",
+      "name": "BRAVO",
+      "price": 20
+     },
+     {
+      "uid": "u-4",
+      "name": "CHARLIE",
+      "price": 30
+     },
+     {
+      "uid": "u-1",
+      "name": "DELTA",
+      "price": 41
+     },
+     {
+      "uid": "u-6",
+      "name": "NEW6",
+      "price": 600
+     }
+    ],
+    "ga": [
+     {
+      "i": 0,
+      "id": "u-2",
+      "uid": "u-2",
+      "name": "ALPHA",
+      "price": "10"
+     },
+     {
+      "i": 1,
+      "id": "u-5",
+      "uid": "u-5",
+      "name": "BRAVO",
+      "price": "20"
+     },
+     {
+      "i": 2,
+      "id": "u-4",
+      "uid": "u-4",
+      "name": "CHARLIE",
+      "price": "30"
+     },
+     {
+      "i": 3,
+      "id": "u-1",
+      "uid": "u-1",
+      "name": "DELTA",
+      "price": "41"
+     },
+     {
+      "i": 4,
+      "id": "u-6",
+      "uid": "u-6",
+      "name": "NEW6",
+      "price": "600"
+     }
+    ]
+   }
+  },
+  {
+   "name": "sort_price: grid B (index ids) == state",
+   "ok": true,
+   "info": {
+    "state": [
+     {
+      "uid": "u-2",
+      "name": "ALPHA",
+      "price": 10
+     },
+     {
+      "uid": "u-5",
+      "name": "BRAVO",
+      "price": 20
+     },
+     {
+      "uid": "u-4",
+      "name": "CHARLIE",
+      "price": 30
+     },
+     {
+      "uid": "u-1",
+      "name": "DELTA",
+      "price": 41
+     },
+     {
+      "uid": "u-6",
+      "name": "NEW6",
+      "price": 600
+     }
+    ],
+    "gb": [
+     {
+      "i": 0,
+      "id": "0",
+      "uid": "u-2",
+      "name": "ALPHA",
+      "price": "10"
+     },
+     {
+      "i": 1,
+      "id": "1",
+      "uid": "u-5",
+      "name": "BRAVO",
+      "price": "20"
+     },
+     {
+      "i": 2,
+      "id": "2",
+      "uid": "u-4",
+      "name": "CHARLIE",
+      "price": "30"
+     },
+     {
+      "i": 3,
+      "id": "3",
+      "uid": "u-1",
+      "name": "DELTA",
+      "price": "41"
+     },
+     {
+      "i": 4,
+      "id": "4",
+      "uid": "u-6",
+      "name": "NEW6",
+      "price": "600"
+     }
+    ]
+   }
+  },
+  {
+   "name": "sort_price: foreach == state",
+   "ok": true,
+   "info": {
+    "state": [
+     {
+      "uid": "u-2",
+      "name": "ALPHA",
+      "price": 10
+     },
+     {
+      "uid": "u-5",
+      "name": "BRAVO",
+      "price": 20
+     },
+     {
+      "uid": "u-4",
+      "name": "CHARLIE",
+      "price": 30
+     },
+     {
+      "uid": "u-1",
+      "name": "DELTA",
+      "price": 41
+     },
+     {
+      "uid": "u-6",
+      "name": "NEW6",
+      "price": 600
+     }
+    ],
+    "fe": [
+     [
+      "u-2",
+      "ALPHA",
+      "10"
+     ],
+     [
+      "u-5",
+      "BRAVO",
+      "20"
+     ],
+     [
+      "u-4",
+      "CHARLIE",
+      "30"
+     ],
+     [
+      "u-1",
+      "DELTA",
+      "41"
+     ],
+     [
+      "u-6",
+      "NEW6",
+      "600"
+     ]
+    ]
+   }
+  },
+  {
+   "name": "sort_price: total == sum",
+   "ok": true,
+   "info": "total=701"
+  },
+  {
+   "name": "bump_first: grid A (row_id_key) == state",
+   "ok": true,
+   "info": {
+    "state": [
+     {
+      "uid": "u-2",
+      "name": "ALPHA",
+      "price": 11
+     },
+     {
+      "uid": "u-5",
+      "name": "BRAVO",
+      "price": 20
+     },
+     {
+      "uid": "u-4",
+      "name": "CHARLIE",
+      "price": 30
+     },
+     {
+      "uid": "u-1",
+      "name": "DELTA",
+      "price": 41
+     },
+     {
+      "uid": "u-6",
+      "name": "NEW6",
+      "price": 600
+     }
+    ],
+    "ga": [
+     {
+      "i": 0,
+      "id": "u-2",
+      "uid": "u-2",
+      "name": "ALPHA",
+      "price": "11"
+     },
+     {
+      "i": 1,
+      "id": "u-5",
+      "uid": "u-5",
+      "name": "BRAVO",
+      "price": "20"
+     },
+     {
+      "i": 2,
+      "id": "u-4",
+      "uid": "u-4",
+      "name": "CHARLIE",
+      "price": "30"
+     },
+     {
+      "i": 3,
+      "id": "u-1",
+      "uid": "u-1",
+      "name": "DELTA",
+      "price": "41"
+     },
+     {
+      "i": 4,
+      "id": "u-6",
+      "uid": "u-6",
+      "name": "NEW6",
+      "price": "600"
+     }
+    ]
+   }
+  },
+  {
+   "name": "bump_first: grid B (index ids) == state",
+   "ok": true,
+   "info": {
+    "state": [
+     {
+      "uid": "u-2",
+      "name": "ALPHA",
+      "price": 11
+     },
+     {
+      "uid": "u-5",
+      "name": "BRAVO",
+      "price": 20
+     },
+     {
+      "uid": "u-4",
+      "name": "CHARLIE",
+      "price": 30
+     },
+     {
+      "uid": "u-1",
+      "name": "DELTA",
+      "price": 41
+     },
+     {
+      "uid": "u-6",
+      "name": "NEW6",
+      "price": 600
+     }
+    ],
+    "gb": [
+     {
+      "i": 0,
+      "id": "0",
+      "uid": "u-2",
+      "name": "ALPHA",
+      "price": "11"
+     },
+     {
+      "i": 1,
+      "id": "1",
+      "uid": "u-5",
+      "name": "BRAVO",
+      "price": "20"
+     },
+     {
+      "i": 2,
+      "id": "2",
+      "uid": "u-4",
+      "name": "CHARLIE",
+      "price": "30"
+     },
+     {
+      "i": 3,
+      "id": "3",
+      "uid": "u-1",
+      "name": "DELTA",
+      "price": "41"
+     },
+     {
+      "i": 4,
+      "id": "4",
+      "uid": "u-6",
+      "name": "NEW6",
+      "price": "600"
+     }
+    ]
+   }
+  },
+  {
+   "name": "bump_first: foreach == state",
+   "ok": true,
+   "info": {
+    "state": [
+     {
+      "uid": "u-2",
+      "name": "ALPHA",
+      "price": 11
+     },
+     {
+      "uid": "u-5",
+      "name": "BRAVO",
+      "price": 20
+     },
+     {
+      "uid": "u-4",
+      "name": "CHARLIE",
+      "price": 30
+     },
+     {
+      "uid": "u-1",
+      "name": "DELTA",
+      "price": 41
+     },
+     {
+      "uid": "u-6",
+      "name": "NEW6",
+      "price": 600
+     }
+    ],
+    "fe": [
+     [
+      "u-2",
+      "ALPHA",
+      "11"
+     ],
+     [
+      "u-5",
+      "BRAVO",
+      "20"
+     ],
+     [
+      "u-4",
+      "CHARLIE",
+      "30"
+     ],
+     [
+      "u-1",
+      "DELTA",
+      "41"
+     ],
+     [
+      "u-6",
+      "NEW6",
+      "600"
+     ]
+    ]
+   }
+  },
+  {
+   "name": "bump_first: total == sum",
+   "ok": true,
+   "info": "total=702"
+  },
+  {
+   "name": "cell edit grid A -> 777: grid A (row_id_key) == state",
+   "ok": true,
+   "info": {
+    "state": [
+     {
+      "uid": "u-2",
+      "name": "ALPHA",
+      "price": 777
+     },
+     {
+      "uid": "u-5",
+      "name": "BRAVO",
+      "price": 20
+     },
+     {
+      "uid": "u-4",
+      "name": "CHARLIE",
+      "price": 30
+     },
+     {
+      "uid": "u-1",
+      "name": "DELTA",
+      "price": 41
+     },
+     {
+      "uid": "u-6",
+      "name": "NEW6",
+      "price": 600
+     }
+    ],
+    "ga": [
+     {
+      "i": 0,
+      "id": "u-2",
+      "uid": "u-2",
+      "name": "ALPHA",
+      "price": "777"
+     },
+     {
+      "i": 1,
+      "id": "u-5",
+      "uid": "u-5",
+      "name": "BRAVO",
+      "price": "20"
+     },
+     {
+      "i": 2,
+      "id": "u-4",
+      "uid": "u-4",
+      "name": "CHARLIE",
+      "price": "30"
+     },
+     {
+      "i": 3,
+      "id": "u-1",
+      "uid": "u-1",
+      "name": "DELTA",
+      "price": "41"
+     },
+     {
+      "i": 4,
+      "id": "u-6",
+      "uid": "u-6",
+      "name": "NEW6",
+      "price": "600"
+     }
+    ]
+   }
+  },
+  {
+   "name": "cell edit grid A -> 777: grid B (index ids) == state",
+   "ok": true,
+   "info": {
+    "state": [
+     {
+      "uid": "u-2",
+      "name": "ALPHA",
+      "price": 777
+     },
+     {
+      "uid": "u-5",
+      "name": "BRAVO",
+      "price": 20
+     },
+     {
+      "uid": "u-4",
+      "name": "CHARLIE",
+      "price": 30
+     },
+     {
+      "uid": "u-1",
+      "name": "DELTA",
+      "price": 41
+     },
+     {
+      "uid": "u-6",
+      "name": "NEW6",
+      "price": 600
+     }
+    ],
+    "gb": [
+     {
+      "i": 0,
+      "id": "0",
+      "uid": "u-2",
+      "name": "ALPHA",
+      "price": "777"
+     },
+     {
+      "i": 1,
+      "id": "1",
+      "uid": "u-5",
+      "name": "BRAVO",
+      "price": "20"
+     },
+     {
+      "i": 2,
+      "id": "2",
+      "uid": "u-4",
+      "name": "CHARLIE",
+      "price": "30"
+     },
+     {
+      "i": 3,
+      "id": "3",
+      "uid": "u-1",
+      "name": "DELTA",
+      "price": "41"
+     },
+     {
+      "i": 4,
+      "id": "4",
+      "uid": "u-6",
+      "name": "NEW6",
+      "price": "600"
+     }
+    ]
+   }
+  },
+  {
+   "name": "cell edit grid A -> 777: foreach == state",
+   "ok": true,
+   "info": {
+    "state": [
+     {
+      "uid": "u-2",
+      "name": "ALPHA",
+      "price": 777
+     },
+     {
+      "uid": "u-5",
+      "name": "BRAVO",
+      "price": 20
+     },
+     {
+      "uid": "u-4",
+      "name": "CHARLIE",
+      "price": 30
+     },
+     {
+      "uid": "u-1",
+      "name": "DELTA",
+      "price": 41
+     },
+     {
+      "uid": "u-6",
+      "name": "NEW6",
+      "price": 600
+     }
+    ],
+    "fe": [
+     [
+      "u-2",
+      "ALPHA",
+      "777"
+     ],
+     [
+      "u-5",
+      "BRAVO",
+      "20"
+     ],
+     [
+      "u-4",
+      "CHARLIE",
+      "30"
+     ],
+     [
+      "u-1",
+      "DELTA",
+      "41"
+     ],
+     [
+      "u-6",
+      "NEW6",
+      "600"
+     ]
+    ]
+   }
+  },
+  {
+   "name": "cell edit grid A -> 777: total == sum",
+   "ok": true,
+   "info": "total=1468"
+  },
+  {
+   "name": "swap_cols: grid A header order follows in-place list swap",
+   "ok": true,
+   "info": [
+    "Uid",
+    "Price",
+    "Name"
+   ]
+  },
+  {
+   "name": "after reload: grid A (row_id_key) == state",
+   "ok": true,
+   "info": {
+    "state": [
+     {
+      "uid": "u-2",
+      "name": "ALPHA",
+      "price": 777
+     },
+     {
+      "uid": "u-5",
+      "name": "BRAVO",
+      "price": 20
+     },
+     {
+      "uid": "u-4",
+      "name": "CHARLIE",
+      "price": 30
+     },
+     {
+      "uid": "u-1",
+      "name": "DELTA",
+      "price": 41
+     },
+     {
+      "uid": "u-6",
+      "name": "NEW6",
+      "price": 600
+     }
+    ],
+    "ga": [
+     {
+      "i": 0,
+      "id": "u-2",
+      "uid": "u-2",
+      "name": "ALPHA",
+      "price": "777"
+     },
+     {
+      "i": 1,
+      "id": "u-5",
+      "uid": "u-5",
+      "name": "BRAVO",
+      "price": "20"
+     },
+     {
+      "i": 2,
+      "id": "u-4",
+      "uid": "u-4",
+      "name": "CHARLIE",
+      "price": "30"
+     },
+     {
+      "i": 3,
+      "id": "u-1",
+      "uid": "u-1",
+      "name": "DELTA",
+      "price": "41"
+     },
+     {
+      "i": 4,
+      "id": "u-6",
+      "uid": "u-6",
+      "name": "NEW6",
+      "price": "600"
+     }
+    ]
+   }
+  },
+  {
+   "name": "after reload: grid B (index ids) == state",
+   "ok": true,
+   "info": {
+    "state": [
+     {
+      "uid": "u-2",
+      "name": "ALPHA",
+      "price": 777
+     },
+     {
+      "uid": "u-5",
+      "name": "BRAVO",
+      "price": 20
+     },
+     {
+      "uid": "u-4",
+      "name": "CHARLIE",
+      "price": 30
+     },
+     {
+      "uid": "u-1",
+      "name": "DELTA",
+      "price": 41
+     },
+     {
+      "uid": "u-6",
+      "name": "NEW6",
+      "price": 600
+     }
+    ],
+    "gb": [
+     {
+      "i": 0,
+      "id": "0",
+      "uid": "u-2",
+      "name": "ALPHA",
+      "price": "777"
+     },
+     {
+      "i": 1,
+      "id": "1",
+      "uid": "u-5",
+      "name": "BRAVO",
+      "price": "20"
+     },
+     {
+      "i": 2,
+      "id": "2",
+      "uid": "u-4",
+      "name": "CHARLIE",
+      "price": "30"
+     },
+     {
+      "i": 3,
+      "id": "3",
+      "uid": "u-1",
+      "name": "DELTA",
+      "price": "41"
+     },
+     {
+      "i": 4,
+      "id": "4",
+      "uid": "u-6",
+      "name": "NEW6",
+      "price": "600"
+     }
+    ]
+   }
+  },
+  {
+   "name": "after reload: foreach == state",
+   "ok": true,
+   "info": {
+    "state": [
+     {
+      "uid": "u-2",
+      "name": "ALPHA",
+      "price": 777
+     },
+     {
+      "uid": "u-5",
+      "name": "BRAVO",
+      "price": 20
+     },
+     {
+      "uid": "u-4",
+      "name": "CHARLIE",
+      "price": 30
+     },
+     {
+      "uid": "u-1",
+      "name": "DELTA",
+      "price": 41
+     },
+     {
+      "uid": "u-6",
+      "name": "NEW6",
+      "price": 600
+     }
+    ],
+    "fe": [
+     [
+      "u-2",
+      "ALPHA",
+      "777"
+     ],
+     [
+      "u-5",
+      "BRAVO",
+      "20"
+     ],
+     [
+      "u-4",
+      "CHARLIE",
+      "30"
+     ],
+     [
+      "u-1",
+      "DELTA",
+      "41"
+     ],
+     [
+      "u-6",
+      "NEW6",
+      "600"
+     ]
+    ]
+   }
+  },
+  {
+   "name": "after reload: total == sum",
+   "ok": true,
+   "info": "total=1468"
+  }
+ ],
+ "errors": []
+}

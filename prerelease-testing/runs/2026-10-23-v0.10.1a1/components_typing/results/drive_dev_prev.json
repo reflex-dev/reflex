@@ -1,0 +1,1147 @@
+{
+ "base": "http://localhost:3242",
+ "is_new": false,
+ "checks": [
+  {
+   "page": "cbg",
+   "name": "initial_group_value",
+   "ok": true,
+   "detail": "group=a"
+  },
+  {
+   "page": "cbg",
+   "name": "group_items_rendered",
+   "ok": true,
+   "detail": "count=3"
+  },
+  {
+   "page": "cbg",
+   "name": "item_a_checked",
+   "ok": true,
+   "detail": "true"
+  },
+  {
+   "page": "cbg",
+   "name": "item_b_disabled_attr",
+   "ok": true,
+   "detail": "disabled='' data-disabled=''"
+  },
+  {
+   "page": "cbg",
+   "name": "hidden_inputs_named_grp",
+   "ok": true,
+   "detail": "count=3"
+  },
+  {
+   "page": "cbg",
+   "name": "controlled_skipped_on_prev",
+   "ok": true,
+   "detail": "prev: no value/on_value_change"
+  },
+  {
+   "page": "cbg",
+   "name": "default_value_group_checked",
+   "ok": true,
+   "detail": "D2 aria-checked=true"
+  },
+  {
+   "page": "cbg",
+   "name": "form_submit_includes_group",
+   "ok": true,
+   "detail": "submitted={\"grp\": \"a\", \"dgrp\": \"d2\", \"cg\": \"a\", \"cg_default\": \"d2\"}"
+  },
+  {
+   "page": "cbg",
+   "name": "info_id_based_keys_in_submit",
+   "ok": true,
+   "detail": "id keys present: cg=True cc=False cg_default=True :: submitted={\"grp\": \"a\", \"dgrp\": \"d2\", \"cg\": \"a\", \"cg_default\": \"d2\"}"
+  },
+  {
+   "page": "radio",
+   "name": "radio_cards_rendered",
+   "ok": true,
+   "detail": "count=3"
+  },
+  {
+   "page": "radio",
+   "name": "radio_cards_controlled_change",
+   "ok": true,
+   "detail": "rc=2"
+  },
+  {
+   "page": "radio",
+   "name": "radio_two_checked",
+   "ok": true,
+   "detail": "true"
+  },
+  {
+   "page": "radio_aschild",
+   "name": "page_loaded",
+   "ok": false,
+   "detail": "#is-new missing: Page.wait_for_selector: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"#is-new\") to be visible\n"
+  },
+  {
+   "page": "radio_aschild",
+   "name": "page_renders",
+   "ok": false,
+   "detail": "<missing>"
+  },
+  {
+   "page": "radio_aschild",
+   "name": "three_radios_rendered",
+   "ok": false,
+   "detail": "count=0"
+  },
+  {
+   "page": "radio_aschild",
+   "name": "root_grid_container_present",
+   "ok": false,
+   "detail": "display=None"
+  },
+  {
+   "page": "radio_aschild",
+   "name": "no_page_errors",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "page": "input",
+   "name": "autocomplete_ac-true",
+   "ok": false,
+   "detail": "expected='on' got=None"
+  },
+  {
+   "page": "input",
+   "name": "autocomplete_ac-false",
+   "ok": false,
+   "detail": "expected='off' got=None"
+  },
+  {
+   "page": "input",
+   "name": "autocomplete_ac-boolvar",
+   "ok": false,
+   "detail": "expected='off' got=None"
+  },
+  {
+   "page": "input",
+   "name": "autocomplete_ac-none",
+   "ok": true,
+   "detail": "expected=None got=None"
+  },
+  {
+   "page": "input",
+   "name": "autocomplete_ac-el",
+   "ok": true,
+   "detail": "expected='off' got='off'"
+  },
+  {
+   "page": "input",
+   "name": "autocomplete_boolvar_toggles_to_on",
+   "ok": false,
+   "detail": "ac_bool=true got=None"
+  },
+  {
+   "page": "progress",
+   "name": "primitive_root_aria_initial",
+   "ok": false,
+   "detail": "{'now': None, 'max': '100', 'state': 'indeterminate', 'value': None, 'role': 'progressbar'}"
+  },
+  {
+   "page": "progress",
+   "name": "primitive_root_role_progressbar",
+   "ok": true,
+   "detail": "{'now': None, 'max': '100', 'state': 'indeterminate', 'value': None, 'role': 'progressbar'}"
+  },
+  {
+   "page": "progress",
+   "name": "primitive_literal_aria",
+   "ok": false,
+   "detail": "{'now': None, 'max': '100', 'state': 'indeterminate', 'value': None, 'role': 'progressbar'}"
+  },
+  {
+   "page": "progress",
+   "name": "primitive_default_aria",
+   "ok": false,
+   "detail": "{'now': None, 'max': '100', 'state': 'indeterminate', 'value': None, 'role': 'progressbar'}"
+  },
+  {
+   "page": "progress",
+   "name": "themes_progress_aria",
+   "ok": true,
+   "detail": "{'now': '25', 'max': '100', 'state': 'loading', 'value': '25', 'role': 'progressbar'}"
+  },
+  {
+   "page": "progress",
+   "name": "primitive_root_aria_updates",
+   "ok": false,
+   "detail": "pv=50 {'now': None, 'max': '100', 'state': 'indeterminate', 'value': None, 'role': 'progressbar'}"
+  },
+  {
+   "page": "progress",
+   "name": "themes_progress_aria_updates",
+   "ok": true,
+   "detail": "{'now': '50', 'max': '100', 'state': 'loading', 'value': '50', 'role': 'progressbar'}"
+  },
+  {
+   "page": "progress",
+   "name": "primitive_indicator_transform",
+   "ok": true,
+   "detail": "matrix(1, 0, 0, 1, -150, 0)"
+  },
+  {
+   "page": "accordion",
+   "name": "no_emotion_first_child_warning",
+   "ok": false,
+   "detail": "The pseudo class \":first-child\" is potentially unsafe when doing server-side rendering. Try changing it to \":first-of-type\"."
+  },
+  {
+   "page": "accordion",
+   "name": "triggers_rendered",
+   "ok": true,
+   "detail": "count=3"
+  },
+  {
+   "page": "accordion",
+   "name": "multiple_two_open",
+   "ok": true,
+   "detail": "['open', 'open', 'closed']"
+  },
+  {
+   "page": "accordion",
+   "name": "content_visible",
+   "ok": true,
+   "detail": "M First\nM first content\nM Second\nM second content\nM Third"
+  },
+  {
+   "page": "accordion",
+   "name": "single_only_one_open",
+   "ok": true,
+   "detail": "['closed', 'open', 'closed']"
+  },
+  {
+   "page": "accordion",
+   "name": "default_value_open",
+   "ok": true,
+   "detail": "open"
+  },
+  {
+   "page": "accordion",
+   "name": "first_item_styled_first_of_type",
+   "ok": true,
+   "detail": "[{'btw': '0px', 'tl': '8px', 'mt': '0px'}, {'btw': '0px', 'tl': '0px', 'mt': '1px'}, {'btw': '0px', 'tl': '0px', 'mt': '1px'}]"
+  },
+  {
+   "page": "accordion",
+   "name": "keyboard_arrow_down_moves_focus",
+   "ok": true,
+   "detail": "M Second"
+  },
+  {
+   "page": "dialog",
+   "name": "dialog_opens_controlled",
+   "ok": true,
+   "detail": "open=true"
+  },
+  {
+   "page": "dialog",
+   "name": "focus_trapped_in_dialog",
+   "ok": true,
+   "detail": "[True, True, True, True, True, True, True]"
+  },
+  {
+   "page": "dialog",
+   "name": "nested_dialog_opens",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "page": "dialog",
+   "name": "escape_closes_only_nested",
+   "ok": true,
+   "detail": "nested=0 outer_visible=True"
+  },
+  {
+   "page": "dialog",
+   "name": "outer_state_still_open",
+   "ok": true,
+   "detail": "open=true"
+  },
+  {
+   "page": "dialog",
+   "name": "close_button_updates_state",
+   "ok": true,
+   "detail": "open=false count=0"
+  },
+  {
+   "page": "dialog",
+   "name": "escape_closes_outer",
+   "ok": true,
+   "detail": "open=false"
+  },
+  {
+   "page": "dialog",
+   "name": "open_count",
+   "ok": true,
+   "detail": "opens=2"
+  },
+  {
+   "page": "dialog",
+   "name": "alert_dialog_open_cancel",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "page": "dialog",
+   "name": "drawer_opens",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "page": "dialog",
+   "name": "drawer_closes",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "page": "dialog",
+   "name": "popover_opens",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "page": "slider",
+   "name": "single_thumb_initial",
+   "ok": true,
+   "detail": "50"
+  },
+  {
+   "page": "slider",
+   "name": "single_keyboard_dom",
+   "ok": true,
+   "detail": "53"
+  },
+  {
+   "page": "slider",
+   "name": "single_on_change_state",
+   "ok": true,
+   "detail": "single=53"
+  },
+  {
+   "page": "slider",
+   "name": "single_on_value_commit",
+   "ok": true,
+   "detail": "committed=53"
+  },
+  {
+   "page": "slider",
+   "name": "range_two_thumbs",
+   "ok": true,
+   "detail": "count=2"
+  },
+  {
+   "page": "slider",
+   "name": "range_on_change",
+   "ok": true,
+   "detail": "range=20,79"
+  },
+  {
+   "page": "slider",
+   "name": "range_home_moves_first_thumb",
+   "ok": true,
+   "detail": "range=0,79 thumb0=0"
+  },
+  {
+   "page": "slider",
+   "name": "single_mouse_click_track",
+   "ok": true,
+   "detail": "single=10"
+  },
+  {
+   "page": "rform",
+   "name": "value_missing_message",
+   "ok": true,
+   "detail": "Email\nEmail is required\nAge\nSubmit"
+  },
+  {
+   "page": "rform",
+   "name": "invalid_not_submitted",
+   "ok": true,
+   "detail": "submits=0"
+  },
+  {
+   "page": "rform",
+   "name": "type_mismatch_message",
+   "ok": true,
+   "detail": "Email\nNot an email\nAge\nSubmit"
+  },
+  {
+   "page": "rform",
+   "name": "range_underflow_message",
+   "ok": true,
+   "detail": "Email\nAge\nMust be 18+\nSubmit"
+  },
+  {
+   "page": "rform",
+   "name": "valid_submit_reaches_state",
+   "ok": true,
+   "detail": "data={\"email\": \"a@b.co\", \"age\": \"21\", \"f_email\": \"a@b.co\", \"f_age\": \"21\"}"
+  },
+  {
+   "page": "rform",
+   "name": "reset_on_submit",
+   "ok": true,
+   "detail": "email value after submit=''"
+  },
+  {
+   "page": "moment",
+   "name": "cmp11_plain",
+   "ok": true,
+   "detail": "Thursday 14 March 2024"
+  },
+  {
+   "page": "moment",
+   "name": "cmp11_plain2",
+   "ok": true,
+   "detail": "Thursday 14 March 2024"
+  },
+  {
+   "page": "moment",
+   "name": "cmp11_english",
+   "ok": true,
+   "detail": "Thursday 14 March 2024"
+  },
+  {
+   "page": "moment",
+   "name": "cmp11_french",
+   "ok": true,
+   "detail": "jeudi 14 mars 2024"
+  },
+  {
+   "page": "moment",
+   "name": "cmp11_titled",
+   "ok": true,
+   "detail": "Thursday 14 March 2024"
+  },
+  {
+   "page": "moment",
+   "name": "cmp11_fromnow_english",
+   "ok": true,
+   "detail": "7 years ago"
+  },
+  {
+   "page": "moment",
+   "name": "with_title_attr",
+   "ok": true,
+   "detail": "Thursday 14 March 2024"
+  },
+  {
+   "page": "moment",
+   "name": "info_defineLocale_warnings",
+   "ok": true,
+   "detail": "0 defineLocale messages (CMP-14 known)"
+  },
+  {
+   "page": "moment",
+   "name": "provider_skipped_on_prev",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "page": "de",
+   "name": "page_loaded",
+   "ok": false,
+   "detail": "#is-new missing: Page.wait_for_selector: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"#is-new\") to be visible\n"
+  },
+  {
+   "page": "de",
+   "name": "driver_exception",
+   "ok": false,
+   "detail": "TimeoutError: Page.wait_for_selector: Timeout 20000ms exceeded.\nCall log:\n  - waiting for locator(\"#de1-box canvas\") to be visible\n"
+  },
+  {
+   "page": "icons",
+   "name": "page_loaded",
+   "ok": false,
+   "detail": "#is-new missing: Page.wait_for_selector: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"#is-new\") to be visible\n"
+  },
+  {
+   "page": "icons",
+   "name": "no_page_errors_on_load",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "page": "icons",
+   "name": "static_icon",
+   "ok": false,
+   "detail": "<missing>"
+  },
+  {
+   "page": "icons",
+   "name": "button_icon",
+   "ok": false,
+   "detail": "<missing>"
+  },
+  {
+   "page": "icons",
+   "name": "badge_icon",
+   "ok": false,
+   "detail": "<missing>"
+  },
+  {
+   "page": "icons",
+   "name": "callout_icon",
+   "ok": false,
+   "detail": "<missing>"
+  },
+  {
+   "page": "icons",
+   "name": "input_slot_icon",
+   "ok": false,
+   "detail": "count=0"
+  },
+  {
+   "page": "icons",
+   "name": "dynamic_icon_initial",
+   "ok": true,
+   "detail": "class=<missing> same_paths_as_apple=True"
+  },
+  {
+   "page": "icons",
+   "name": "foreach_icons",
+   "ok": false,
+   "detail": "count=0"
+  },
+  {
+   "page": "icons",
+   "name": "driver_exception",
+   "ok": false,
+   "detail": "TimeoutError: Page.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"#icon-next\")\n"
+  },
+  {
+   "page": "code",
+   "name": "transformer_highlight_line",
+   "ok": false,
+   "detail": "count=0"
+  },
+  {
+   "page": "code",
+   "name": "transformer_diff_add",
+   "ok": false,
+   "detail": "count=0"
+  },
+  {
+   "page": "code",
+   "name": "transformer_diff_remove",
+   "ok": false,
+   "detail": "count=0"
+  },
+  {
+   "page": "code",
+   "name": "transformer_notation_stripped",
+   "ok": false,
+   "detail": "def hello(name):  # [!code highlight]\n    print(\"hi\", name)\n    return name  # [!code ++]\n    return None  # [!code --]\n"
+  },
+  {
+   "page": "code",
+   "name": "transformer_highlight_styled",
+   "ok": false,
+   "detail": "None"
+  },
+  {
+   "page": "code",
+   "name": "plain_block_no_transformers",
+   "ok": true,
+   "detail": "def hello(name):  # [!code highlight]\n    print(\"hi\", name)\n    return name  # ["
+  },
+  {
+   "page": "code",
+   "name": "transformer_block_with_line_numbers",
+   "ok": false,
+   "detail": "hl=0 buttons=1"
+  },
+  {
+   "page": "code",
+   "name": "rsh_python_tokens",
+   "ok": true,
+   "detail": "spans=35 buttons=1"
+  },
+  {
+   "page": "code",
+   "name": "rsh_js_tokens",
+   "ok": true,
+   "detail": "spans=21"
+  },
+  {
+   "page": "code",
+   "name": "rsh_light_theme",
+   "ok": true,
+   "detail": "spans=21"
+  },
+  {
+   "page": "code",
+   "name": "markdown_code_blocks",
+   "ok": true,
+   "detail": "pre=2"
+  }
+ ],
+ "pages": {
+  "cbg": {
+   "console": [
+    {
+     "type": "log",
+     "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    },
+    {
+     "type": "debug",
+     "text": "[vite] connecting..."
+    },
+    {
+     "type": "debug",
+     "text": "[vite] connected."
+    },
+    {
+     "type": "info",
+     "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+     "type": "log",
+     "text": "Disconnect websocket on pagehide"
+    }
+   ],
+   "pageerrors": [],
+   "failed": [],
+   "http": []
+  },
+  "radio": {
+   "console": [
+    {
+     "type": "log",
+     "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    },
+    {
+     "type": "debug",
+     "text": "[vite] connecting..."
+    },
+    {
+     "type": "debug",
+     "text": "[vite] connected."
+    },
+    {
+     "type": "info",
+     "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+     "type": "log",
+     "text": "Disconnect websocket on pagehide"
+    }
+   ],
+   "pageerrors": [],
+   "failed": [],
+   "http": []
+  },
+  "radio_aschild": {
+   "console": [
+    {
+     "type": "log",
+     "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    },
+    {
+     "type": "debug",
+     "text": "[vite] connecting..."
+    },
+    {
+     "type": "debug",
+     "text": "[vite] connected."
+    },
+    {
+     "type": "info",
+     "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+     "type": "error",
+     "text": "%o\n\n%s\n\n%s\n Error: Primitive.div failed to slot onto its children. Expected a single React element child or `Slottable`.\n    at Primitive.div.Slot (http://localhost:3242/node_modules/.vite/deps/@radix-ui_themes.js?v=680f9654:20541:42)\n    at Object.react_stack_bottom_frame (http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:14140:12)\n    at renderWithHooks (http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:4398:19)\n    at updateForwardRef (http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:5595:16)\n    at beginWork (http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:6453:21)\n    at runWithFiberInDEV (http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:942:66)\n    at performUnitOfWork (http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:9146:92)\n    at workLoopSync (http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:9042:37)\n    at renderRootSync (http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:9026:6)\n    at performWorkOnRoot (http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:8713:27) The above error occurred in the <Primitive.div.Slot> component. React will try to recreate this component tree from scratch using the error boundary you provided, C."
+    },
+    {
+     "type": "log",
+     "text": "Disconnect websocket on pagehide"
+    }
+   ],
+   "pageerrors": [],
+   "failed": [],
+   "http": []
+  },
+  "input": {
+   "console": [
+    {
+     "type": "log",
+     "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    },
+    {
+     "type": "debug",
+     "text": "[vite] connecting..."
+    },
+    {
+     "type": "debug",
+     "text": "[vite] connected."
+    },
+    {
+     "type": "info",
+     "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+     "type": "error",
+     "text": "Received `%s` for a non-boolean attribute `%s`.\n\nIf you want to write it to the DOM, pass a string instead: %s=\"%s\" or %s={value.toString()}. true autoComplete autoComplete true autoComplete"
+    },
+    {
+     "type": "log",
+     "text": "Disconnect websocket on pagehide"
+    }
+   ],
+   "pageerrors": [],
+   "failed": [],
+   "http": []
+  },
+  "progress": {
+   "console": [
+    {
+     "type": "log",
+     "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    },
+    {
+     "type": "debug",
+     "text": "[vite] connecting..."
+    },
+    {
+     "type": "debug",
+     "text": "[vite] connected."
+    },
+    {
+     "type": "info",
+     "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+     "type": "log",
+     "text": "Disconnect websocket on pagehide"
+    }
+   ],
+   "pageerrors": [],
+   "failed": [],
+   "http": []
+  },
+  "accordion": {
+   "console": [
+    {
+     "type": "log",
+     "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    },
+    {
+     "type": "debug",
+     "text": "[vite] connecting..."
+    },
+    {
+     "type": "debug",
+     "text": "[vite] connected."
+    },
+    {
+     "type": "info",
+     "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+     "type": "error",
+     "text": "Received `%s` for a non-boolean attribute `%s`.\n\nIf you want to write it to the DOM, pass a string instead: %s=\"%s\" or %s={value.toString()}. true collapsible collapsible true collapsible"
+    },
+    {
+     "type": "error",
+     "text": "The pseudo class \":first-child\" is potentially unsafe when doing server-side rendering. Try changing it to \":first-of-type\"."
+    },
+    {
+     "type": "error",
+     "text": "The pseudo class \":first-child\" is potentially unsafe when doing server-side rendering. Try changing it to \":first-of-type\"."
+    },
+    {
+     "type": "error",
+     "text": "The pseudo class \":first-child\" is potentially unsafe when doing server-side rendering. Try changing it to \":first-of-type\"."
+    },
+    {
+     "type": "log",
+     "text": "Disconnect websocket on pagehide"
+    }
+   ],
+   "pageerrors": [],
+   "failed": [],
+   "http": []
+  },
+  "dialog": {
+   "console": [
+    {
+     "type": "log",
+     "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    },
+    {
+     "type": "debug",
+     "text": "[vite] connecting..."
+    },
+    {
+     "type": "debug",
+     "text": "[vite] connected."
+    },
+    {
+     "type": "info",
+     "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+     "type": "log",
+     "text": "Disconnect websocket on pagehide"
+    }
+   ],
+   "pageerrors": [],
+   "failed": [],
+   "http": []
+  },
+  "slider": {
+   "console": [
+    {
+     "type": "log",
+     "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    },
+    {
+     "type": "debug",
+     "text": "[vite] connecting..."
+    },
+    {
+     "type": "debug",
+     "text": "[vite] connected."
+    },
+    {
+     "type": "info",
+     "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+     "type": "log",
+     "text": "Disconnect websocket on pagehide"
+    }
+   ],
+   "pageerrors": [],
+   "failed": [],
+   "http": []
+  },
+  "rform": {
+   "console": [
+    {
+     "type": "log",
+     "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    },
+    {
+     "type": "debug",
+     "text": "[vite] connecting..."
+    },
+    {
+     "type": "debug",
+     "text": "[vite] connected."
+    },
+    {
+     "type": "info",
+     "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+     "type": "log",
+     "text": "Disconnect websocket on pagehide"
+    }
+   ],
+   "pageerrors": [],
+   "failed": [],
+   "http": []
+  },
+  "moment": {
+   "console": [
+    {
+     "type": "log",
+     "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    },
+    {
+     "type": "debug",
+     "text": "[vite] connecting..."
+    },
+    {
+     "type": "debug",
+     "text": "[vite] connected."
+    },
+    {
+     "type": "info",
+     "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+     "type": "log",
+     "text": "Disconnect websocket on pagehide"
+    }
+   ],
+   "pageerrors": [],
+   "failed": [],
+   "http": []
+  },
+  "de": {
+   "console": [
+    {
+     "type": "log",
+     "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    },
+    {
+     "type": "debug",
+     "text": "[vite] connecting..."
+    },
+    {
+     "type": "debug",
+     "text": "[vite] connected."
+    },
+    {
+     "type": "info",
+     "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Name"
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Birth"
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Name"
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Birth"
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Name"
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Birth"
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Name"
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Birth"
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Name"
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Birth"
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Name"
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Birth"
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Name"
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Birth"
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Name"
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Birth"
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Name"
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Birth"
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Name"
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Birth"
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Name"
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Name"
+    },
+    {
+     "type": "error",
+     "text": "%o\n\n%s\n\n%s\n TypeError: Cannot read properties of undefined (reading 'includes')\n    at truncateString (http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4bdf02e1:5100:11)\n    at drawTextCell (http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4bdf02e1:5131:29)\n    at Object.draw (http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4bdf02e1:15596:3)\n    at drawCell (http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4bdf02e1:7095:10)\n    at http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4bdf02e1:7017:18\n    at walkRowsInCol (http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4bdf02e1:6473:27)\n    at http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4bdf02e1:6894:3\n    at walkColumns (http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4bdf02e1:6494:7)\n    at drawCells (http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4bdf02e1:6861:2)\n    at drawGrid (http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4bdf02e1:9501:16) The above error occurred in the <ForwardRef(DataGrid)> component. React will try to recreate this component tree from scratch using the error boundary you provided, C."
+    },
+    {
+     "type": "error",
+     "text": "%o\n\n%s\n\n%s\n TypeError: Cannot read properties of undefined (reading 'includes')\n    at truncateString (http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4bdf02e1:5100:11)\n    at drawTextCell (http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4bdf02e1:5131:29)\n    at Object.draw (http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4bdf02e1:15596:3)\n    at drawCell (http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4bdf02e1:7095:10)\n    at http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4bdf02e1:7017:18\n    at walkRowsInCol (http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4bdf02e1:6473:27)\n    at http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4bdf02e1:6894:3\n    at walkColumns (http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4bdf02e1:6494:7)\n    at drawCells (http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4bdf02e1:6861:2)\n    at drawGrid (http://localhost:3242/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=4bdf02e1:9501:16) The above error occurred in the <ForwardRef(DataGrid)> component. React will try to recreate this component tree from scratch using the error boundary you provided, C."
+    },
+    {
+     "type": "log",
+     "text": "Disconnect websocket on pagehide"
+    }
+   ],
+   "pageerrors": [],
+   "failed": [],
+   "http": []
+  },
+  "icons": {
+   "console": [
+    {
+     "type": "log",
+     "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    },
+    {
+     "type": "debug",
+     "text": "[vite] connecting..."
+    },
+    {
+     "type": "debug",
+     "text": "[vite] connected."
+    },
+    {
+     "type": "info",
+     "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+     "type": "error",
+     "text": "%o\n\n%s\n\n%s\n ReferenceError: lucideIcons is not defined\n    at Component (http://localhost:3242/app/routes/[icons]._index.jsx?import:267:32)\n    at Object.react_stack_bottom_frame (http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:14140:12)\n    at renderWithHooks (http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:4398:19)\n    at updateFunctionComponent (http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:5773:16)\n    at beginWork (http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:6389:20)\n    at runWithFiberInDEV (http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:942:66)\n    at performUnitOfWork (http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:9146:92)\n    at workLoopSync (http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:9042:37)\n    at renderRootSync (http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:9026:6)\n    at performWorkOnRoot (http://localhost:3242/node_modules/.vite/deps/react-dom_client.js?v=0428893f:8713:27) The above error occurred in the <Component(icons)> component. React will try to recreate this component tree from scratch using the error boundary you provided, C."
+    },
+    {
+     "type": "log",
+     "text": "Disconnect websocket on pagehide"
+    }
+   ],
+   "pageerrors": [],
+   "failed": [],
+   "http": []
+  },
+  "code": {
+   "console": [
+    {
+     "type": "log",
+     "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    },
+    {
+     "type": "debug",
+     "text": "[vite] connecting..."
+    },
+    {
+     "type": "debug",
+     "text": "[vite] connected."
+    },
+    {
+     "type": "info",
+     "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+     "type": "log",
+     "text": "Disconnect websocket on pagehide"
+    }
+   ],
+   "pageerrors": [],
+   "failed": [],
+   "http": []
+  }
+ },
+ "summary": {
+  "cbg": {
+   "console_errwarn": 0,
+   "pageerrors": 0,
+   "failed_requests": 0,
+   "http_4xx_5xx": 0
+  },
+  "radio": {
+   "console_errwarn": 0,
+   "pageerrors": 0,
+   "failed_requests": 0,
+   "http_4xx_5xx": 0
+  },
+  "radio_aschild": {
+   "console_errwarn": 1,
+   "pageerrors": 0,
+   "failed_requests": 0,
+   "http_4xx_5xx": 0
+  },
+  "input": {
+   "console_errwarn": 1,
+   "pageerrors": 0,
+   "failed_requests": 0,
+   "http_4xx_5xx": 0
+  },
+  "progress": {
+   "console_errwarn": 0,
+   "pageerrors": 0,
+   "failed_requests": 0,
+   "http_4xx_5xx": 0
+  },
+  "accordion": {
+   "console_errwarn": 4,
+   "pageerrors": 0,
+   "failed_requests": 0,
+   "http_4xx_5xx": 0
+  },
+  "dialog": {
+   "console_errwarn": 0,
+   "pageerrors": 0,
+   "failed_requests": 0,
+   "http_4xx_5xx": 0
+  },
+  "slider": {
+   "console_errwarn": 0,
+   "pageerrors": 0,
+   "failed_requests": 0,
+   "http_4xx_5xx": 0
+  },
+  "rform": {
+   "console_errwarn": 0,
+   "pageerrors": 0,
+   "failed_requests": 0,
+   "http_4xx_5xx": 0
+  },
+  "moment": {
+   "console_errwarn": 0,
+   "pageerrors": 0,
+   "failed_requests": 0,
+   "http_4xx_5xx": 0
+  },
+  "de": {
+   "console_errwarn": 2,
+   "pageerrors": 0,
+   "failed_requests": 0,
+   "http_4xx_5xx": 0
+  },
+  "icons": {
+   "console_errwarn": 1,
+   "pageerrors": 0,
+   "failed_requests": 0,
+   "http_4xx_5xx": 0
+  },
+  "code": {
+   "console_errwarn": 0,
+   "pageerrors": 0,
+   "failed_requests": 0,
+   "http_4xx_5xx": 0
+  }
+ },
+ "fail_count": 29,
+ "check_count": 97
+}

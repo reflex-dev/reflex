@@ -218,3 +218,59 @@ known race). **Unchanged**, not re-reported.
 (partial consent → scope denial, consent denial app + IdP, invalid scope, refresh/replay/revoke). So the failure is
 Redis-specific and present on reflex 0.10.0 + rxe 0.9.8 as well; compared with rxe 0.9.7 on reflex 0.10.0 below to tell
 whether rxe 0.9.8 introduced it.
+- `own/mcp_consent_run.sh` + `own/probes/mcp_consent_probe.py` (one registered client → authorization URL → IdP login →
+  20 s navigation timeline): **PASS** on new-ent + Redis, new-ent + memory AND reflex 0.10.0 + rxe **0.9.7** + Redis
+  (`work/auth/logs/mcp-consent-*.json`: `/agent-consent?txn=…` → `/login?redirect_to=…` → IdP → `/callback` →
+  `/agent-consent` with 1 Approve button, 4 token cookies). The fixture script `check_mcp_oauth_redis.py` (3 client
+  registrations incl. an invalid-scope one, fixed PKCE pair, clicks "Login with Generic" as soon as the button is visible)
+  **fails on rxe 0.9.8 with Redis** (new-ent 2/2 runs, prev-ent 1/1: stuck on `/login?redirect_to=%2Fagent-consent%3Ftxn%3D…`
+  "Sign in" for 45 s although the server logged "Auth callback succeeded … redirecting to '/agent-consent?…'") and
+  **passes on rxe 0.9.7 with Redis** (`own/mcp_run.sh enterprise-ctrl-rxe97 rxe97`: exit 0, all consent/deny/scope/refresh/
+  revoke checks) and on rxe 0.9.8 with the memory manager. Conclusion: an rxe 0.9.8 (#277) + Redis sequence/timing
+  regression in reaching the agent-consent page after login, independent of the reflex version (0.10.0 shows it too) →
+  reported as an rxe issue, not a 0.10.1a1 regression. Repro: `export SB=…; cd $SB; own/mcp_run.sh new-ent <label>` then
+  read `work/auth/logs/mcp-oauth-<label>.txt` ("no code from partial consent", `stuck_url`), screenshot
+  `work/auth/screenshots/<label>-mcp-partial-stuck.png`.
+
+### Structural sharing (#7273) with two AG Grids on one state list — `own/own_run.sh <venv> gridshare dev <label>` (own app `own/gridshare`, dev 3611/8611; driver `own/probes/gridshare_drive.py`)
+`GS.rows` (list of dicts) feeds grid A (`row_id_key="uid"`), grid B (no row id → index ids) and an `rx.foreach`; every op
+mutates the list IN PLACE on the backend (`rows[0]["price"] += 1`, `rows.sort(...)`, `reverse()`, `append`, `pop(0)`,
+per-row rename, in-place column-def swap, `on_cell_value_changed` → `r[field] = int(newValue)`), then the driver compares
+both grids' DOM rows and the foreach with the backend `rows_json`.
+| venv | runs | result |
+|---|---|---|
+| new-ent (0.10.1a1) | 3 (`gridshare_new`, `new-r2`, `new-r3`) | **44/45 each**, always the same failure: after editing grid A's price cell of row u-2 to 777 (AG Grid cell editor → `on_cell_value_changed` → backend in-place update → delta), **grid B still shows the previous value `11`** for u-2 while the backend list, grid A, the foreach and the total show 777. Every other in-place op (nested bump, sort, reverse, append, pop, rename, column swap, reload) updates both grids. |
+| prev-ent (0.10.0) | 2 | **45/45** — grid B shows 777 immediately. |
+Mechanism (hypothesis consistent with every observation): the AG Grid editor mutates the shared row object in the browser
+before the event is sent; the returning delta carries the same value, so #7273's structural sharing keeps the old
+list/object identity → grid B's `rowData` prop reference does not change and AG Grid never refreshes its index-keyed row
+model (grid A refreshes because the edit happened inside it; the foreach re-renders from the already-mutated object).
+On 0.10.0 every delta produced fresh objects. Server log 0 tracebacks, 0 console errors. Evidence: `own/out/gridshare_new*.json`
+(`checks[*].info.gb`), `own/out/gridshare_prev*.json`. Severity medium: any second consumer of a state list edited through
+an AG Grid (another grid, a chart, a memo component) stays stale until a later delta changes the list.
+
+## Tally (new-ent = reflex 0.10.1a1 + rxe 0.9.8 unless stated)
+| check | result | baseline / control |
+|---|---|---|
+| rxe import sweep + deprecated shims (ENT-01/02, CLI-03) | pass, 0 warnings, shims work + deprecate once | = prev-ent |
+| ENT-30 / N-032 dev+Redis, prod 1 worker (vdrv stale/away/xtab, hunt, entauth suites) | pass 3/3 everywhere, 0 tracebacks | control reflex 0.10.0a2 + rxe 0.9.8: 0/3 (reproduces) |
+| ENT-29 / N-025 entv s1-s13 + aggrid_min prod | pass (= a5 table), 4/4 | control rxe 0.9.6: state_cols [] (reproduces) |
+| ENT-16 / DOC-14 / #7360 (deeplink A-G, REST/MCP redaction, anonymous boot headers) | pass 3/3; client_token/session_id "" over REST + MCP; no cookie in anonymous frontend headers | = prev |
+| HYD-15 / CMP-05 entr dev hot reload (forked reload worker) | 9/9 before/after reload | prev 9/9 |
+| #277 pending-login (dev 5/5 incl. hot reload, prod 4/4) | pass | — |
+| Client IP #7614 websocket | hops=0 ignores XFF, hops=1 rightmost | prev: leftmost |
+| Client IP rxe REST event API | leftmost XFF regardless of hops (spoofable, junk verbatim) | same on prev (pre-existing in rxe) |
+| demos dnd 27/27, mantine 23/23, flow 21/22 (driver expectation), map 4/4; dev + prod; hook order 0 use-before-declare | pass | prev identical; mantine N-028 page error only on prev |
+| #7586 VarData(position=) deprecation for rxe users | 3 (dnd) / 1 (combobox) warning blocks per compile, names rxe files | prev: none |
+| AG Grid demo (smoke 20/20, coldefs 7/7, features 46/47, model 24/29) | = record | — |
+| gridshare (two grids on one in-place-mutated list) | **44/45 x3: grid B stale after a grid-A cell edit** | prev 45/45 x2 → regression |
+| a4 auth matrix 36/36 + MCP OAuth (memory) + anonymous MCP | pass | = 0.10.0 record |
+| check_mcp_anon --rate (Redis) | pass | — |
+| check_mcp_oauth_redis.py (Redis) | FAIL on rxe 0.9.8 (new 2/2 + rerun below, prev 1/1); pass rxe 0.9.7; pass memory | rxe-side, not reflex |
+| N-033 default workers | unchanged (27/27 405 cold, 2/6 logins keep cookies) | open rxe#262 |
+| N-026 flow reload A/B | 0/3 new, 0/3 prev | open rxe#269 |
+| vite "Files in the public directory" log for rxe's `$/public/external/...messageListener.js` import | Debug-level, present on prev-ent too (mantine dev prev 2 lines) | not new |
+
+Not covered: expiry matrix, prod_suite / bglive (N-034), vauthx storx / vea (A3-10, A3-09), maps app, highcharts/tickets/rxeapp
+demos, reflex-azure-auth, `REFLEX_FRONTEND_LAZY_BUNDLED_LIBRARIES` entr run, Redis multi-worker rxe prod beyond N-033,
+`react_compiler` with rxe components.
