@@ -949,23 +949,30 @@ def _record_imports() -> Iterator[_ImportRecorder]:
 # Protect sys.path from concurrent modification during config loading.
 _load_config_lock = threading.RLock()
 
-# Cached state_auto_setters so State-class creation never re-enters get_config().
+# Cached state_auto_setters so State-class creation rarely needs get_config().
 _state_auto_setters: bool | None = None
+
+# Marks the thread importing rxconfig.py, so a State defined inside it does not
+# re-enter config loading.
+_rxconfig_import = threading.local()
 
 
 def get_state_auto_setters() -> bool:
-    """Return whether state auto-setters are enabled, without importing rxconfig.
+    """Return whether state auto-setters are enabled.
 
-    Reads the value cached when the Config was built. Before any Config exists
-    (e.g. a State defined inside rxconfig.py during its import), falls back to the
-    REFLEX_STATE_AUTO_SETTERS env var, then the default (False). This never calls
-    get_config() or imports rxconfig, so it cannot re-enter config loading.
+    Reads the value cached when the Config was built. If no Config exists yet
+    (e.g. a freshly spawned backend worker importing the app module), loads it.
+    While rxconfig.py itself is importing (a State defined inside it), the config
+    cannot be loaded, so this falls back to the REFLEX_STATE_AUTO_SETTERS env var,
+    then the default (False).
 
     Returns:
         Whether state auto-setters are enabled.
     """
     if _state_auto_setters is not None:
         return _state_auto_setters
+    if not getattr(_rxconfig_import, "active", False):
+        return get_config().state_auto_setters
     env_val = os.environ.get(Config._prefixes[0] + "STATE_AUTO_SETTERS")
     if env_val and env_val.strip():
         return interpret_env_var_value(env_val, bool, "state_auto_setters")
@@ -1017,9 +1024,12 @@ def _get_config(project_root: Path | None = None) -> Config:
             if PathFinder.find_spec(constants.Config.MODULE, [cwd]) is None:
                 return Config(app_name="", _skip_plugins_checks=True)
             with _record_imports() as recorder:
+                was_importing = getattr(_rxconfig_import, "active", False)
+                _rxconfig_import.active = True
                 try:
                     rxconfig = importlib.import_module(constants.Config.MODULE)
                 finally:
+                    _rxconfig_import.active = was_importing
                     # Record even on failure so a later load from another root
                     # evicts what this one imported. Nothing is evicted here:
                     # Python already drops a module whose execution failed, and

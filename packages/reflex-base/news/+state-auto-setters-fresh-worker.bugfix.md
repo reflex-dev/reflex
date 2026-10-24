@@ -1,0 +1,1 @@
+`state_auto_setters=True` in `rxconfig.py` now generates `set_<var>` setters in a backend worker started with spawn or forkserver (the default on Python 3.14 and on Windows), and whenever the app module is imported before the config is loaded.
