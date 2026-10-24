@@ -110,7 +110,7 @@ hosting-cli 0.2.0 has no scaling retry and fails the 409 with `deployment failed
 |---|---|---|---|
 | `cc1-default.prev` (plain success, no scenario) | 0 | **none** | 0 |
 | `cc1-envinfo.prev` (`REFLEX_LOGLEVEL=info`) | 0 | `Info:` + `Success:` | 1 |
-| `cc1-debug-plain.prev` (`--loglevel debug`, no scenario) | PENDING | | |
+| `cc1-debug-plain.prev` (`--loglevel debug`, no scenario) | 0 | `Info:` + `Success:` | 1 |
 
 So the success line is hidden on 0.10.0 + 0.2.0 exactly the same way (the explorer's claim holds), and the hosting CLI
 0.2.0 does emit it when the level allows. Not a regression in 0.10.1a1; the chain `export(loglevel=
@@ -120,11 +120,88 @@ the `_log_level = LogLevel.INFO` / "write `REFLEX_LOGLEVEL` only when it changes
 `reflex_base/utils/log.py` lines 88 / 731-733. What is new in 0.10.1a1 is only that #7463 adds INFO-level progress for
 waits of up to 15 s × 11 (165 s, explorer's d06) that this pre-existing reset silences.
 
-Other post-export messages at the default level: PENDING (cc1-narr-*, cc1-bounds500)
+### Which other deploy messages are hidden (default level / `--loglevel info`), and which are not
+
+Hidden = everything the hosting CLI logs at DEBUG / INFO / SUCCESS after the export step:
+
+- the #7463 scaling waits for the submission (`cc1-default`) and, by the same `logger.info` in
+  `reflex_cli/utils/deploy.py`, for the `--min/--max-instances` bounds retry (explorer's r07/d07/d18: up to 8 × 15 s);
+- the deployment status narration while `reflex deploy` watches the deployment (`hosting.watch_deployment_status`
+  `note()` → `logger.info`). Stub scenario `GET deployments/<id>/status` → "Deployment is being built." ×2,
+  "Deployment is being provisioned.", "deployment completed successfully": `cc1-narr-default.new` prints none of
+  them (0 `Info:` lines, 4 status polls, exit 0); `cc1-narr-debug.new` prints `Info: Deployment is being built.` /
+  `Info: Deployment is being provisioned.` / `Info: deployment completed successfully` / `Success: deployment
+  completed successfully`; `cc1-narr-default.prev` identical to new (5 polls, 0 lines). In a non-TTY run the watch
+  phase is therefore completely silent until exit; in a TTY only the rich `console.status("listening to status
+  updates!")` spinner moves (not level-gated), and during the scaling waits only the elapsed-time column of the 100 %
+  upload bar ticks;
+- the final `Success: deployment completed successfully` / `build submitted for approval; it will deploy
+  automatically once an approver approves it.`;
+- any later `--json` records for the above (`cc1-json.new`).
+
+NOT hidden (so no error is swallowed; severity stays low): `logger.warning` and `logger.error` records, and level-less
+`console.print` output. `cc1-bounds500.new` (default level, `--min-instances 1 --max-instances 2`, stub
+`instance_bounds` → 500): stdout `Warning: Could not confirm the instance bounds of 'cliapp'; they may or may not have
+been applied. …`, stderr `set instance bounds failed: internal`, rc=1. `cc2-deploy.*` (below): the export failure
+`Unable to export due to: …` reaches stderr, rc=1. The explorer's r08/r09/r11/r12 `.err` files show the same for the
+other error paths. The exit code is correct in every run (0 on success, 1 on every failure).
+
+Workarounds that make the lines visible today: `REFLEX_LOGLEVEL=info reflex deploy …` (or `loglevel="info"` /
+`rx.constants.LogLevel.INFO` in `rxconfig.py`), or `--loglevel debug` (very verbose: every zipped file is listed).
+A `--loglevel info` flag is a silent no-op for this (see root cause step 2).
 
 ## CC-2 — symlinks and `reflex export` / `reflex deploy` (`reflex/utils/build.py` `_zip`)
 
-PENDING
+### Mechanism (v0.10.1a1 lines 107-165; v0.10.0 lines 64-121 are the same walk, #7450 only changed the exclusion test)
+
+`_zip` walks `os.walk(root_directory, topdown=True, followlinks=True)` and resolves each walked directory
+(`directory_path = Path(directory_path).resolve()`), so a **directory symlink** whose target lies outside the resolved
+app root produces file paths outside the root, and `file.relative_to(root_directory)` (line 164 / 121) raises
+`ValueError: '<target>/file' is not in the subpath of '<app>'`. Pruned before descent, and therefore safe: directory
+names in `directory_names_to_exclude` (`__pycache__`), anything starting with `.`, anything whose
+`<dir>/pyvenv.cfg` exists (`_looks_like_venv_directory`, backend only), and paths excluded by identity with
+`--exclude-from-backend`. File entries are joined, not resolved, so a **file symlink** is archived by content, and a
+**dangling symlink** (not a dir, so listed as a file) fails later in `zipf.write` with `FileNotFoundError`.
+
+### Matrix: `reflex export --backend-only --zip-dest-dir .` in a fresh app dir per case (`scripts/sym_matrix.sh`,
+`logs/sym-<case>.<venv>.{out,err,rc,zip.txt}`); results identical for new (0.10.1a1) and prev (0.10.0)
+
+| case | fixture | rc | result |
+|---|---|---|---|
+| c00-control | none | 0 | 4 entries |
+| c01-dirlink-rel-out | `link_outside -> ../outside_target` | 1 | `ValueError … is not in the subpath of …`, raw traceback; partial `backend.zip` left (2 of 4+ entries, valid zip, `testzip()` None) |
+| c02-dirlink-abs-out | `data -> /abs/outside_target` | 1 | same |
+| c03-nested-dirlink | `assets/shared -> /abs/outside_target` (symlink below a normal dir) | 1 | same |
+| c04-dotvenv-real | real `uv venv .venv` (`bin/python -> /usr/bin/python3.12`, `lib64 -> lib`) | 0 | `.venv` pruned (dot rule): **the realistic `.venv` case does NOT trigger it** |
+| c05-venv-nodot-real | real `uv venv venv` | 0 | pruned (`pyvenv.cfg`) |
+| c06-venvlink-out | `venv -> /abs/outside_venv` (dir symlink to a venv outside) | 0 | pruned: `pyvenv.cfg` is found through the link before descent |
+| c07-filelink-out | `link.txt -> /abs/outside_target/file.txt` | 0 | archived by content (`link.txt`, 13 bytes `outside file`) |
+| c08-dangling-link | `dangling -> /nonexistent/target` | 1 | `FileNotFoundError: [Errno 2] … '<app>/dangling'` in `zipf.write`, traceback; empty `backend.zip` (22 bytes) left. **Not in the explorer's claim** — same class, different exception |
+| c09-link-in-pycache | `__pycache__/l -> outside` | 0 | pruned by name |
+| c10-link-in-dotdir | `.hidden/l -> outside` | 0 | pruned (dot rule) |
+| c11-dirlink-excluded | c02 + `--exclude-from-backend data` | 0 | identity exclusion works: usable workaround |
+| c12-dirlink-inside | `alias -> cliapp` (target inside the app) | 0 | duplicate entries + Python `UserWarning: Duplicate name: 'cliapp/cliapp.py'` (explorer's other pre-existing note, reproduced) |
+| c13-venv-nocfg-link | hand-rolled `env/` without `pyvenv.cfg` holding `lib -> /abs/outside_venv/lib` | 1 | `ValueError` (only `pyvenv.cfg` / the dot rule protect an environment directory) |
+
+The frontend zip (`.web/_static`) is walked the same way but is produced by the build, so a user symlink is not
+expected there.
+
+### Through the real `reflex deploy` (`logs/cc2-deploy.{new,prev}.*`; `data -> <outside_target>` added to the
+initialized app for the run and removed afterwards)
+
+Both versions: rc=1 after 0.8-0.9 s, stderr `Unable to export due to: '<outside_target>/file.txt' is not in the
+subpath of '<app dir>'` (the hosting CLI's `except Exception` around the backend export; no traceback), stdout ends at
+`Zipping Backend: … 62% 8/13`; the stub saw `authenticate/me`, `GET apps/<id>`, `validate_cli`, `apps/reserve` and
+nothing else (no reserve/upload/submit), and the CLI's `TemporaryDirectory` was removed (no `backend.zip` under `/tmp`
+afterwards). So for `reflex deploy` the symptom is a clean one-line error with the offending path, not a crash; the
+raw traceback and the leftover partial `backend.zip` are specific to `reflex export`.
+
+Severity stays low: the trigger is a directory symlink (or a dangling link) in the app tree whose target leaves the
+app root — monorepo-style `common -> ../shared` / `assets/shared -> …` layouts hit it, a `.venv`/`venv` (real or
+symlinked) does not — the failure is deterministic, names the path, exits 1, and `--exclude-from-backend <link>`
+avoids it. Pre-existing and identical on 0.10.0 (not a regression).
 
 ## Cleanup
-PENDING
+Stubs killed by PID (`state-8740/fake_cp.pid`, `state-8741/fake_cp.pid`), ports 8740/8741 verified free; `app-new/.web`,
+`app-prev/.web` and `node_modules` deleted; `sym/` case dirs (incl. the throwaway venvs) deleted. Artifacts copied to
+`prerelease-testing/runs/2026-10-23-v0.10.1a1/verify_cc/` (`scripts/`, `app/`, `logs/`, this file).

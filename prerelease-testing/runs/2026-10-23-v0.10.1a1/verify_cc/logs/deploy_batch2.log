@@ -1,0 +1,13 @@
+venv ok: 0.10.1a1 hosting-cli 0.2.1a1 build-sdk 0.1.1a1
+[cc1-narr-default/new] rc=0 elapsed=12.2s
+venv ok: 0.10.1a1 hosting-cli 0.2.1a1 build-sdk 0.1.1a1
+[cc1-narr-debug/new] rc=0 elapsed=12.4s
+venv ok: 0.10.1a1 hosting-cli 0.2.1a1 build-sdk 0.1.1a1
+[cc1-bounds500/new] rc=1 elapsed=5.7s
+venv ok: 0.10.0 hosting-cli 0.2.0 build-sdk 0.1.0
+[cc1-narr-default/prev] rc=0 elapsed=11.9s
+venv ok: 0.10.1a1 hosting-cli 0.2.1a1 build-sdk 0.1.1a1
+[cc2-deploy/new] rc=1 elapsed=0.8s
+venv ok: 0.10.0 hosting-cli 0.2.0 build-sdk 0.1.0
+[cc2-deploy/prev] rc=1 elapsed=0.9s
+BATCH2-DONE

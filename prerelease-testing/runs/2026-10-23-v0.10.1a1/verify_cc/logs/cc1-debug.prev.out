@@ -1,0 +1,523 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/cloud_cli-prev/lib/python3.12/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='cliapp', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a93942
+8/scratchpad/qa/apps/verify_cc/xdg-prev/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip', 'brotli'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'telemetry_enabled', 'app_name', 
+'frontend_compression_formats', 'loglevel'}, env_file=None, 
+state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[SitemapPlugin(trailing_slash='preserve')], 
+disable_plugins=[], transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.10.0 with Python 3.12.3 (PATH: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs
+/cloud_cli-prev/bin/python)]
+Debug: [Node 22.22.0 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.5 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────────── Initializing cliapp ──────────────────────────────
+Debug: Creating 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/xdg-prev/reflex
+Debug: Ensuring reflex installation id.
+Debug: Creating 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/xdg-prev/reflex
+Debug: Validating frontend dependencies.
+Debug: Installing or validating bun.
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: Skipping bun installation as it is already installed.
+Info: Initializing the web directory.
+Debug: Copying 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs
+/cloud_cli-prev/lib/python3.12/site-packages/reflex_base/.templates/web to .web
+Debug: Restoring lockfiles.
+Debug: Initializing the web directory.
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/reflex.lock/package.json
+Debug: Initializing the bun config file.
+Debug: Getting best registry...
+Debug: Sending HTTPS request to https://registry.npmjs.org
+Debug: Received response from https://registry.npmjs.org in 0.050 seconds
+Debug: Latency of https://registry.npmjs.org: 49987
+Debug: Sending HTTPS request to https://registry.npmjs.org
+Debug: Received response from https://registry.npmjs.org in 0.029 seconds
+Debug: Latency of https://registry.npmjs.org: 28214
+Debug: Sending HTTPS request to https://registry.npmjs.org
+Debug: Received response from https://registry.npmjs.org in 0.028 seconds
+Debug: Latency of https://registry.npmjs.org: 27530
+Debug: Average latency of https://registry.npmjs.org: 35243
+Debug: Sending HTTPS request to https://registry.npmmirror.com
+Info: Failed to connect to https://registry.npmmirror.com.
+Debug: Sending HTTPS request to https://registry.npmmirror.com
+Info: Failed to connect to https://registry.npmmirror.com.
+Debug: Sending HTTPS request to https://registry.npmmirror.com
+Info: Failed to connect to https://registry.npmmirror.com.
+Debug: Average latency of https://registry.npmmirror.com: 10000000
+Debug: Best registry: https://registry.npmjs.org
+Debug: Initializing the .npmrc file.
+Debug: Initializing the public directory.
+Debug: Initializing the react-router.config.js file.
+Debug: Initializing the vite.config.js file.
+Debug: Initializing the reflex.json file.
+Debug: Project hash is already set to 306129528957720785308745959109342752059.
+Debug: Creating .gitignore
+Debug: requirements.txt already has reflex as dependency.
+Success: Initialized cliapp. Install dependencies from `requirements.txt` with 
+`uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+Debug: overriding API URL: https://cliapp-backend.example.invalid
+Debug: overriding deploy URL: https://cliapp.example.invalid
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/cloud_cli-prev/lib/python3.12/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='cliapp', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', 
+api_url='https://cliapp-backend.example.invalid', 
+deploy_url='https://cliapp.example.invalid', backend_host='0.0.0.0', 
+db_url=None, async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a93942
+8/scratchpad/qa/apps/verify_cc/xdg-prev/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip', 'brotli'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'frontend_compression_formats', 'deploy_url', 
+'telemetry_enabled', 'show_built_with_reflex', 'app_name', 'api_url', 
+'loglevel'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=False, 
+is_reflex_cloud=False, extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.10.0 with Python 3.12.3 (PATH: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs
+/cloud_cli-prev/bin/python)]
+Debug: [Node 22.22.0 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.5 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+────────────── Compiling production app and preparing for export. ──────────────
+Debug: /tmp/tmpbomqx3e6/backend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/requirements.txt
+Debug: /tmp/tmpbomqx3e6/backend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/CLAUDE.md
+Debug: /tmp/tmpbomqx3e6/backend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/AGENTS.md
+Debug: /tmp/tmpbomqx3e6/backend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/rxconfig.py
+Debug: /tmp/tmpbomqx3e6/backend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/reflex.lock/package.json
+Debug: /tmp/tmpbomqx3e6/backend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/assets/favicon.ico
+Debug: /tmp/tmpbomqx3e6/backend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/cliapp/cliapp.py
+Debug: /tmp/tmpbomqx3e6/backend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/cliapp/__init__.py
+Zipping Backend: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 8/8 0:00:00
+Debug: overriding API URL: https://cliapp-backend.example.invalid
+Debug: overriding deploy URL: https://cliapp.example.invalid
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/cloud_cli-prev/lib/python3.12/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='cliapp', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', 
+api_url='https://cliapp-backend.example.invalid', 
+deploy_url='https://cliapp.example.invalid', backend_host='0.0.0.0', 
+db_url=None, async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a93942
+8/scratchpad/qa/apps/verify_cc/xdg-prev/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip', 'brotli'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'frontend_compression_formats', 'deploy_url', 
+'telemetry_enabled', 'show_built_with_reflex', 'app_name', 'api_url', 
+'loglevel'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=False, 
+is_reflex_cloud=False, extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.10.0 with Python 3.12.3 (PATH: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs
+/cloud_cli-prev/bin/python)]
+Debug: [Node 22.22.0 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.5 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+────────────── Compiling production app and preparing for export. ──────────────
+Debug: Overriding config value api_url with env var 
+API_URL=https://cliapp-backend.example.invalid
+Debug: Overriding config value deploy_url with env var 
+DEPLOY_URL=https://cliapp.example.invalid
+Debug: Overriding config value show_built_with_reflex with env var 
+SHOW_BUILT_WITH_REFLEX=False
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/cloud_cli-prev/lib/python3.12/site-packages/reflex_components_radix/plugin.py:
+76)
+Debug: [timing] Compile pages: 0.09s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 16/15 0:00:00
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'-d', '@emotion/react@11.14.0', 'postcss-import@17.0.0', 
+'@react-router/fs-routes@8.4.0', 'postcss@8.5.29', 'vite@8.3.2', 
+'@react-router/dev@8.4.0', 'autoprefixer@10.6.1']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.2 (744846f84)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [298]
+Debug: warn: incorrect peer dependency "react-router@8.5.0"
+Debug: Saved lockfile
+Debug: 
+Debug: installed @emotion/react@11.14.0
+Debug: installed postcss-import@17.0.0
+Debug: installed @react-router/fs-routes@8.4.0
+Debug: installed postcss@8.5.29
+Debug: installed vite@8.3.2 with binaries:
+Debug:  - vite
+Debug: installed @react-router/dev@8.4.0 with binaries:
+Debug:  - react-router
+Debug: installed autoprefixer@10.6.1 with binaries:
+Debug:  - autoprefixer
+Debug: 
+Debug: 128 packages installed [4.26s]
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'sonner@2.0.8', 'isbot@5.2.2', 'mergician@v2.0.2', 'react-router@8.4.0', 
+'react-helmet@6.1.0', 'lucide-react@1.26.0', 'react-error-boundary@6.1.6', 
+'react@19.3.0', '@react-router/node@8.4.0', '@radix-ui/themes@3.3.0', 
+'universal-cookie@8.1.2', 'react-dom@19.3.0', 'socket.io-client@4.8.4']
+Debug: Installing frontend packages
+Debug: bun add v1.4.2 (744846f84)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [196]
+Debug: warn: incorrect peer dependency "react@19.3.1"
+Debug: Saved lockfile
+Debug: 
+Debug: installed sonner@2.0.8
+Debug: installed isbot@5.2.2
+Debug: installed mergician@2.0.2
+Debug: installed react-router@8.4.0
+Debug: installed react-helmet@6.1.0
+Debug: installed lucide-react@1.26.0
+Debug: installed react-error-boundary@6.1.6
+Debug: installed react@19.3.0
+Debug: installed @react-router/node@8.4.0
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed universal-cookie@8.1.2
+Debug: installed react-dom@19.3.0
+Debug: installed socket.io-client@4.8.4
+Debug: 
+Debug: 100 packages installed [4.48s]
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 8.76s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Running command: ['/root/.bun/bin/bun', 'run', 'export']
+Debug: Creating Production Build
+Debug: $ react-router build
+Debug: Using Vite Environment API
+Debug: vite v8.3.2 building client environment for production...
+Debug: transforming...
+Debug: ✓ 432 modules transformed.
+Debug: rendering chunks...
+Debug: computing gzip size...
+Debug: build/client/.vite/manifest.json                             3.28 kB │ 
+gzip:  0.63 kB
+Debug: build/client/assets/__reflex_global_styles-NccINl-w.css    698.26 kB │ 
+gzip: 84.10 kB
+Debug: build/client/assets/_about_._index-BNC1yfbh.js               0.38 kB │ 
+gzip:  0.28 kB
+Debug: build/client/assets/reflex-env-PbA3ybpN.js                   0.40 kB │ 
+gzip:  0.21 kB
+Debug: build/client/assets/_404_._index-C7XBTEZw.js                 0.41 kB │ 
+gzip:  0.29 kB
+Debug: build/client/assets/_index-BZTTXSs0.js                       0.97 kB │ 
+gzip:  0.55 kB
+Debug: build/client/assets/text-BwXi6y3P.js                         8.49 kB │ 
+gzip:  3.25 kB
+Debug: build/client/assets/emotion-react.browser.esm-BWx_GQoE.js   20.70 kB │ 
+gzip:  8.12 kB
+Debug: build/client/assets/errorBoundaries-DRF1Uvuo.js             35.89 kB │ 
+gzip: 12.42 kB
+Debug: build/client/assets/components-B1lk-uNG.js                  86.79 kB │ 
+gzip: 28.72 kB
+Debug: build/client/assets/container-D1cH_pGG.js                  113.16 kB │ 
+gzip: 33.81 kB
+Debug: build/client/assets/entry.client-DHnc7vQ9.js               210.87 kB │ 
+gzip: 66.25 kB
+Debug: build/client/assets/root-B4MdQnlf.js                       312.71 kB │ 
+gzip: 88.38 kB
+Debug: 
+Debug: ✓ built in 1.25s
+Debug: vite v8.3.2 building ssr environment for production...
+Debug: transforming...
+Debug: ⚠️ Paths with dynamic/splat params cannot be prerendered when using 
+`prerender: true`. You may want to use the `prerender()` API to prerender the 
+following paths:
+Debug:   - *
+Debug: ✓ 27 modules transformed.
+Debug: rendering chunks...
+Debug: 
+Debug: ✓ 1 asset cleaned from React Router server build.
+Debug: build/client/assets/__reflex_global_styles-NccINl-w.css
+Debug: 
+Debug: computing gzip size...
+Debug: build/server/.vite/manifest.json                           0.76 kB │ 
+gzip:  0.30 kB
+Debug: build/server/assets/__reflex_global_styles-NccINl-w.css  698.26 kB │ 
+gzip: 84.10 kB
+Debug: build/server/assets/reflex-env-PbA3ybpN.js                 0.40 kB │ 
+gzip:  0.21 kB
+Debug: build/server/index.js                                     50.50 kB │ 
+gzip: 16.03 kB
+Debug: 
+Debug: ✓ built in 387ms
+Debug: Prerender (html): / -> build/client/index.html
+Debug: Prerender (html): /about -> build/client/about/index.html
+Debug: Prerender (html): SPA Fallback -> build/client/__spa-fallback.html
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:02
+Debug: Copying .web/build/client/about/index.html to 
+.web/build/client/about.html
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), 
+PosixPath('/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratch
+pad/qa/apps/verify_cc/app-prev/.web/compress-static.js'), 
+PosixPath('/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratch
+pad/qa/apps/verify_cc/app-prev/.web/build/client'), 'gzip', 'brotli']
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/404.html.br
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/index.html.gz
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/about.html
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/__spa-fallback.html.gz
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/favicon.ico
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/404.html
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/index.html
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/404.html.gz
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/sitemap.xml
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/about.html.br
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/__spa-fallback.html
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/__spa-fallback.html.br
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/index.html.br
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/about.html.gz
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/assets/entry.client-DHnc7vQ9.js
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/assets/_about_._index-BNC1yfbh.js.br
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/assets/errorBoundaries-DRF1Uvuo.js.gz
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/assets/manifest-0746ec85.js.br
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/assets/root-B4MdQnlf.js.br
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/assets/__reflex_global_styles-NccINl-w.css
+.br
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/assets/components-B1lk-uNG.js.br
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/assets/entry.client-DHnc7vQ9.js.br
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/assets/manifest-0746ec85.js.gz
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/assets/_404_._index-C7XBTEZw.js.br
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/assets/reflex-env-PbA3ybpN.js
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/assets/text-BwXi6y3P.js
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/assets/__reflex_global_styles-NccINl-w.css
+.gz
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/assets/_404_._index-C7XBTEZw.js.gz
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/assets/container-D1cH_pGG.js.br
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/assets/_index-BZTTXSs0.js.br
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/assets/text-BwXi6y3P.js.gz
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/assets/manifest-0746ec85.js
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/assets/_about_._index-BNC1yfbh.js.gz
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/assets/_index-BZTTXSs0.js.gz
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/assets/emotion-react.browser.esm-BWx_GQoE.
+js.gz
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/assets/errorBoundaries-DRF1Uvuo.js.br
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/assets/root-B4MdQnlf.js
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/assets/reflex-env-PbA3ybpN.js.br
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/assets/_404_._index-C7XBTEZw.js
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/assets/text-BwXi6y3P.js.br
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/assets/emotion-react.browser.esm-BWx_GQoE.
+js
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/assets/container-D1cH_pGG.js.gz
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/assets/__reflex_global_styles-NccINl-w.css
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/assets/emotion-react.browser.esm-BWx_GQoE.
+js.br
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/assets/entry.client-DHnc7vQ9.js.gz
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/assets/_about_._index-BNC1yfbh.js
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/assets/errorBoundaries-DRF1Uvuo.js
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/assets/root-B4MdQnlf.js.gz
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/assets/components-B1lk-uNG.js
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/assets/_index-BZTTXSs0.js
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/assets/reflex-env-PbA3ybpN.js.gz
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/assets/components-B1lk-uNG.js.gz
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/assets/container-D1cH_pGG.js
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/about/index.html.gz
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/about/index.html
+Debug: /tmp/tmpbomqx3e6/frontend.zip: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_cc/app-prev/.web/build/client/about/index.html.br
+Zipping Frontend: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 56/56 0:00:00
+uploading the build ━━━━━━━━━━━━━━━━━━━━━━━━━━ 939.3/939.3 kB 708.6 MB/s 0:00:00

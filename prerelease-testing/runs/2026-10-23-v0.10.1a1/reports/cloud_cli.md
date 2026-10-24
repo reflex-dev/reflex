@@ -12,3 +12,14 @@ Re-verified: CLI-28 fixed; CLI-11 still fixed.
 Note: the reflex wheel requires only `reflex-hosting-cli>=0.2.0`, so an existing env upgrading reflex does not pick up
 the 0.2.1 fixes unless hosting-cli is upgraded explicitly.
 Not covered: real cloud, GCP deploy flags, `cloud config --json`, interactive login success, GitHub-writing release commands.
+
+## Verifier (verify_cc/NOTES.md)
+- CC-1 CONFIRMED, low, not a regression. Root cause: `export_for_deploy` → `export(loglevel=subprocess_level())` sets the
+  process console level to WARNING and never restores it; `--loglevel info` is also hidden because `set_log_level` only
+  writes `REFLEX_LOGLEVEL` when the level changes (default already INFO), so config stays DEFAULT → WARNING. Also hides
+  the watch-phase narration; warnings/errors still shown. Workaround `REFLEX_LOGLEVEL=info`. Mechanism dates to 0.8.
+- CC-2 NARROWED, low, not a regression: only a DIRECTORY symlink resolving outside the app root crashes `_zip`
+  (ValueError); file symlinks are archived by content; a real `.venv` (pyvenv.cfg) is pruned and exports fine (worry
+  refuted). Also: a dangling symlink anywhere aborts export (FileNotFoundError); an env dir without pyvenv.cfg holding an
+  outside dir symlink crashes. `reflex deploy` reports it as a clean one-line error (rc 1, nothing uploaded); `reflex
+  export` shows a raw traceback. Workaround `--exclude-from-backend <link>`.

@@ -1,0 +1,4 @@
+ENTRIES 2
+plain.txt
+rxconfig.py
+TESTZIP None

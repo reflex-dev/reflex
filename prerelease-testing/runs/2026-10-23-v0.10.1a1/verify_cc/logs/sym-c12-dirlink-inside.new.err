@@ -1,0 +1,4 @@
+/usr/lib/python3.12/zipfile/__init__.py:1620: UserWarning: Duplicate name: 'cliapp/cliapp.py'
+  return self._open_to_write(zinfo, force_zip64=force_zip64)
+/usr/lib/python3.12/zipfile/__init__.py:1620: UserWarning: Duplicate name: 'cliapp/__init__.py'
+  return self._open_to_write(zinfo, force_zip64=force_zip64)
