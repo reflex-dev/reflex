@@ -63,3 +63,30 @@ ENT-30 / N-032 (re-verify item 3), new-ent (reflex 0.10.1a1 + rxe 0.9.8):
 - End-to-end confirmation: `own/xff_run.sh <venv> <reflex_hops> <label> [ws_version]` (own `hnet` app on 3610/8610 with
   `rxe.EventHandlerAPIPlugin(token_rate_limit=0)`; `own/probes/rest_probe.py` = REST path, `own/probes/ws_probe.py` =
   the hydration_net item's raw websocket client reused unchanged). Results below.
+- part 2 (entauth explorer app, dev + Redis): `drive_auth_redis` cycle/pubnav/twotab/xtab **ALL_PASSED**; `xtab_probe`
+  **TAB1_LOGGED_OUT 5/5**; `stale_hash_probe` **CORRECTED {"anon_boot": [3,3], "loggedin_boot": [3,3], "live_update": [3,3]}**;
+  `hydration_token_probe` SUMMARY `{reload_writes: True, newtab_writes: True, garbage_protected: False, garbage_public: False,
+  garbage_id_refresh: False, garbage_all_after_login: True}` (verbatim the 0.10.0 line); server log 0 tracebacks.
+  hunt loads per step = record (1 `hydrate_and_load` per boot, `on_load_internal`+`update_vars_internal` on client nav,
+  0 idle events, 1 `add_entry`). Browser noise only the known mock-IdP pico.css tunnel failure + cookie-sync keepalive aborts.
+
+### rxe 0.9.8 #277 pending-login — `own/pl_run.sh new-ent new 2 dev` (vauth, dev, Redis; driver `own/probes/pending_login.py`)
+Output `own/out/pending_login_new-dev.json`, server log `work/auth/logs/pl-new-dev.server.log`.
+- A two_starts (start login twice from /vault→/login, finish the FIRST authorization page): **pass 2/2**, and the two
+  authorization URLs carry the SAME `state` (`pair_reused: true`) — the 0.9.8 reuse behaviour.
+- B other_tab (tab2 completes tab1's authorization page): rejected (`AuthStateMismatchError` logged with a traceback,
+  2 per run = the intended rejection), auto-restarted ONCE with tab2's own pair (`restart_state_is_own: true`), then signed
+  in on /vault: **pass 2/2**.
+- C real double click on "Login with Generic": **pass 2/2**. E (dev only) a signed-in tab survives a backend hot reload
+  (touch vauth.py → "Changes detected, reloading workers" → reload → still alice, protected click works): **pass**.
+- D logout_keep failed 0/2 in this run because of a driver bug (a second `go_back()`); fixed and re-run in queue2.
+- Browser console: only the known mock-IdP pico.css `ERR_TUNNEL_CONNECTION_FAILED` + its 404.
+
+### Client IP end to end — websocket half (own hnet app, `own/xff_run.sh`; JSON in `own/out/xff_<label>_ws_*.json`)
+| run | XFF header sent on the websocket upgrade | `router.session.client_ip` seen by `IPState.rec` |
+|---|---|---|
+| new-ent, REFLEX_TRUSTED_PROXY_HOPS=0 | none / `6.6.6.6` / `6.6.6.6, 7.7.7.7` | `127.0.0.1` / `127.0.0.1` / `127.0.0.1` (XFF ignored, #7614) |
+| new-ent, REFLEX_TRUSTED_PROXY_HOPS=1 | none / `6.6.6.6` / `6.6.6.6, 7.7.7.7` | `127.0.0.1` / `6.6.6.6` / `7.7.7.7` (rightmost = the entry 1 hop from the right) |
+| prev-ent (0.10.0, no setting) | none / `6.6.6.6` / `6.6.6.6, 7.7.7.7` | `127.0.0.1` / `6.6.6.6` / `6.6.6.6` (leftmost, spoofable) |
+`asgi-scope-client` = 127.0.0.1 in every case; `client_token` (36) / `session_id` (20) present in the handler's router view
+as expected. REST half: see below (first attempt failed on the driver venv's httpx 1.0 `base_url` removal; fixed, rerun in queue2).
