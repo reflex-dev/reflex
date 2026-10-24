@@ -6,7 +6,7 @@ import logging
 import signal
 import sys
 from collections.abc import Callable
-from contextlib import contextmanager, nullcontext
+from contextlib import AbstractContextManager, contextmanager, nullcontext
 from importlib import import_module
 from importlib.util import find_spec
 from pathlib import Path
@@ -463,6 +463,20 @@ def _run_dev(
             running_mode.has_backend(),
         ))
 
+    # The compile daemon owns .web regeneration; backend reload workers only
+    # evaluate pages to register state. They recognise it through its on-disk
+    # marker (see ``compile_daemon.owns_compilation``): environment set here is
+    # not inherited by workers a forkserver started earlier.
+    from reflex_base.environment import environment
+
+    compile_daemon_scope: AbstractContextManager[None] = nullcontext()
+    if running_mode.has_frontend() and environment.REFLEX_COMPILE_CACHE.get():
+        from reflex.utils import compile_daemon
+
+        compile_daemon_scope = compile_daemon.running(
+            exec.should_prerender_routes(), initial_compiled=True
+        )
+
     with exec._frontend_process_lock:
         exec._frontend_shutting_down = False
         exec.frontend_process = None
@@ -479,6 +493,7 @@ def _run_dev(
 
     try:
         with (
+            compile_daemon_scope,
             _frontend_sigterm_handler(frontend_only and sys.platform != "win32"),
             processes.run_concurrently_context(
                 *commands, interrupt_on_failure=not frontend_only

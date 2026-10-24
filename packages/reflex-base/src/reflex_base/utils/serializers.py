@@ -411,6 +411,28 @@ def serialize_set(value: set) -> list:
     return list(value)
 
 
+def sorted_set(value: set | frozenset) -> list:
+    """Order a set for output that must be the same in every process.
+
+    A set's iteration order varies with the per-process hash seed; compiled
+    JSX embeds set literals, so a compile sorts them (a state delta does
+    not: its order carries no meaning and sorting costs on every update).
+
+    Args:
+        value: The set.
+
+    Returns:
+        The elements, sorted; elements of mixed types sort by their
+        serialized form.
+    """
+    try:
+        return sorted(value)
+    except TypeError:
+        return sorted(
+            value, key=lambda item: json.dumps(item, default=serialize, sort_keys=True)
+        )
+
+
 @serializer
 def serialize_sequence(value: Sequence) -> list:
     """Serialize a sequence to a JSON serializable list.

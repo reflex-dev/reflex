@@ -167,6 +167,46 @@ def test_compile_imports(import_dict: ParsedImportDict, test_dicts: list[dict]):
         )
 
 
+def test_compile_stylesheets_skips_unchanged_copy(
+    tmp_path: Path, mocker: MockerFixture
+):
+    """An unchanged asset stylesheet is not rewritten into .web on recompile.
+
+    Vite watches .web/styles, so a rewrite with identical content still fires
+    an HMR update on every dev reload.
+
+    Args:
+        tmp_path: The test directory.
+        mocker: Pytest mocker object.
+    """
+    project = tmp_path / "test_project"
+    project.mkdir()
+    assets_dir = project / "assets"
+    assets_dir.mkdir()
+    (assets_dir / "style.css").write_text("button { color: blue }")
+
+    mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=project)
+    mocker.patch(
+        "reflex.compiler.compiler.get_web_dir",
+        return_value=project / constants.Dirs.WEB,
+    )
+    mocker.patch(
+        "reflex.compiler.utils.get_web_dir", return_value=project / constants.Dirs.WEB
+    )
+
+    compiler.compile_root_stylesheet(["/style.css"])
+    target = project / constants.Dirs.WEB / "styles" / "style.css"
+    stat_before = target.stat()
+
+    compiler.compile_root_stylesheet(["/style.css"])
+    stat_after = target.stat()
+    assert stat_after.st_mtime_ns == stat_before.st_mtime_ns
+
+    (assets_dir / "style.css").write_text("button { color: red }")
+    compiler.compile_root_stylesheet(["/style.css"])
+    assert target.read_text() == "button { color: red }"
+
+
 def test_compile_stylesheets(tmp_path: Path, mocker: MockerFixture):
     """Test that stylesheets compile correctly.
 
@@ -842,9 +882,8 @@ def test_add_meta_accepts_dynamic_description():
     class PageState(rx.State):
         description: str = "Dynamic description"
 
-    page = rx.box()
-    utils.add_meta(
-        page,
+    page = utils.add_meta(
+        rx.box(),
         title="title",
         image="",
         meta=(),
@@ -858,9 +897,8 @@ def test_add_meta_accepts_dynamic_description():
 
 def test_add_meta_drops_empty_description():
     """An empty-string description keeps producing no description tag."""
-    page = rx.box()
-    utils.add_meta(
-        page,
+    page = utils.add_meta(
+        rx.box(),
         title="title",
         image="",
         meta=(),
@@ -1869,6 +1907,221 @@ def test_no_ssr_dynamic_import_names_the_client_side_wrapper():
     assert Plotly.create()._get_dynamic_imports().endswith(', "Plot")')
 
 
+@pytest.mark.parametrize("fresh_page", [False, True])
+def test_incremental_compile_runs_plugin_outputs(
+    tmp_path, monkeypatch, mocker, fresh_page
+):
+    """Cache hits still refresh plugin assets and scheduled output tasks."""
+    from reflex.compiler import disk_cache
+
+    class OutputPlugin(rx.plugins.Plugin):
+        """Contribute a task, static asset and non-idempotent modifier."""
+
+        def pre_compile(self, **context):
+            """Schedule outputs through the normal plugin lifecycle.
+
+            Args:
+                context: Compiler capabilities.
+            """
+            context["add_save_task"](lambda: ("task.txt", "task"))
+            context["add_modify_task"]("page.txt", lambda text: text + "!")
+
+        def get_static_assets(self, **context):
+            """Return a plugin asset.
+
+            Args:
+                context: Compiler capabilities.
+
+            Returns:
+                The static asset.
+            """
+            return [(Path("asset.txt"), "asset")]
+
+    monkeypatch.setenv("REFLEX_COMPILE_CACHE", "1")
+    monkeypatch.setenv("REFLEX_WEB_WORKDIR", str(tmp_path))
+    mocker.patch("reflex.app.reload_config")
+    app = rx.App()
+    app.add_page(lambda: rx.el.div("page"), route="index")
+    plugin = OutputPlugin()
+    config = rx.Config(app_name="testing", plugins=[plugin])
+    mocker.patch.object(compiler, "get_config", return_value=config)
+    mocker.patch.object(app, "_should_compile", return_value=True)
+
+    def rebuild(*args, outputs, **kwargs):
+        """Stage a regenerated page when simulating a cache miss.
+
+        Args:
+            args: Application arguments.
+            outputs: Compiler output mapping.
+            kwargs: Rebuild options.
+
+        Returns:
+            Whether the incremental rebuild succeeded.
+        """
+        if fresh_page:
+            outputs[tmp_path / "page.txt"] = "new"
+        return True
+
+    mocker.patch.object(disk_cache, "try_incremental_rebuild", side_effect=rebuild)
+    mocker.patch.object(
+        disk_cache,
+        "load_manifest",
+        return_value={"plugin_sources": {str(tmp_path / "page.txt"): "base"}},
+    )
+    # The attempt runs in this process, where the outputs can be observed.
+    from reflex.utils import compile_daemon
+
+    mocker.patch.object(
+        compile_daemon, "compiled_in_predicting_child", return_value=False
+    )
+    (tmp_path / "page.txt").write_text("base!")
+    assert compiler.compile_app(app, use_rich=False)
+    assert (tmp_path / "asset.txt").read_text() == "asset"
+    assert (tmp_path / "task.txt").read_text() == "task"
+    assert (tmp_path / "page.txt").read_text() == ("new!" if fresh_page else "base!")
+
+
+@pytest.mark.parametrize("write_fails", [False, True])
+def test_cached_compile_writes_the_manifest_last(
+    tmp_path, monkeypatch, mocker, write_fails
+):
+    """The refreshed manifest reaches disk only after every other output.
+
+    A manifest on disk vouches for the files it describes; it must never be
+    there while they are not (a kill between the two leaves pages stale).
+    """
+    from reflex.compiler import disk_cache
+
+    monkeypatch.setenv("REFLEX_COMPILE_CACHE", "1")
+    monkeypatch.setenv("REFLEX_WEB_WORKDIR", str(tmp_path))
+    mocker.patch("reflex.app.reload_config")
+    app = rx.App()
+    app.add_page(lambda: rx.el.div("page"), route="index")
+    mocker.patch.object(
+        compiler, "get_config", return_value=rx.Config(app_name="testing", plugins=[])
+    )
+    mocker.patch.object(app, "_should_compile", return_value=True)
+    # The attempt runs in this process, where the writes can be observed.
+    from reflex.utils import compile_daemon
+
+    mocker.patch.object(
+        compile_daemon, "compiled_in_predicting_child", return_value=False
+    )
+    manifest_path = disk_cache._manifest_path().absolute()
+    manifest_path.write_text(json.dumps({"schema": 0, "plugin_sources": {}}))
+    page = tmp_path / "page.txt"
+    written: list[Path] = []
+    original_write = compiler.utils.write_file
+
+    def write_file(path, code):
+        """Write an output, failing every write after the page when asked.
+
+        Args:
+            path: The output path.
+            code: The output content.
+
+        Raises:
+            OSError: When a write after the page is made to fail.
+        """
+        if write_fails and page in written:
+            msg = "disk full"
+            raise OSError(msg)
+        written.append(Path(path))
+        original_write(path, code)
+
+    mocker.patch.object(compiler.utils, "write_file", side_effect=write_file)
+    original_manifest_write = disk_cache._write
+
+    def write_manifest(manifest):
+        """Record when the manifest is written.
+
+        Args:
+            manifest: The manifest to write.
+        """
+        written.append(manifest_path)
+        original_manifest_write(manifest)
+
+    mocker.patch.object(disk_cache, "_write", side_effect=write_manifest)
+
+    def rebuild(*args, outputs, **kwargs):
+        """Stage a page and the refreshed manifest, manifest first.
+
+        Args:
+            args: Application arguments.
+            outputs: Compiler output mapping.
+            kwargs: Rebuild options.
+
+        Returns:
+            Whether the incremental rebuild succeeded.
+        """
+        outputs[manifest_path] = json.dumps({"schema": 1, "plugin_sources": {}})
+        outputs[page] = "new"
+        return True
+
+    mocker.patch.object(disk_cache, "try_incremental_rebuild", side_effect=rebuild)
+    if write_fails:
+        with pytest.raises(OSError, match="disk full"):
+            compiler.compile_app(app, use_rich=False)
+        assert not manifest_path.exists()
+        return
+    assert compiler.compile_app(app, use_rich=False)
+    assert json.loads(manifest_path.read_text())["schema"] == 1
+    assert written[0] == page
+    assert len(written) > 2
+    assert written.index(manifest_path) == len(written) - 1
+
+
+def test_preloaded_app_skips_incremental_reuse(monkeypatch, mocker):
+    """Unobserved import-time reads require a full compile for preloaded apps."""
+    from reflex.compiler import disk_cache
+
+    mocker.patch("reflex.app.reload_config")
+    app = rx.App()
+    config = rx.Config(app_name="testing", app_module_import="testing")
+    mocker.patch.object(compiler, "get_config", return_value=config)
+    mocker.patch.object(app, "_should_compile", return_value=True)
+    reuse = mocker.patch.object(
+        disk_cache, "try_incremental_rebuild", return_value=True
+    )
+    monkeypatch.setenv("REFLEX_COMPILE_CACHE", "1")
+
+    class FullCompileReached(Exception):
+        """Stop before full-compile side effects."""
+
+    mocker.patch.object(
+        compiler.console, "PoorProgress", side_effect=FullCompileReached
+    )
+    with pytest.raises(FullCompileReached):
+        compiler.compile_app(app, use_rich=False)
+    reuse.assert_not_called()
+
+
+def test_serving_app_compiles_every_page(monkeypatch, mocker):
+    """A process that serves the app registers every page's states.
+
+    The incremental cache evaluates only changed pages, so it is not used.
+    """
+    from reflex.compiler import disk_cache
+
+    mocker.patch("reflex.app.reload_config")
+    app = rx.App()
+    mocker.patch.object(app, "_should_compile", return_value=True)
+    reuse = mocker.patch.object(
+        disk_cache, "try_incremental_rebuild", return_value=True
+    )
+    monkeypatch.setenv("REFLEX_COMPILE_CACHE", "1")
+
+    class FullCompileReached(Exception):
+        """Stop before full-compile side effects."""
+
+    mocker.patch.object(
+        compiler.console, "PoorProgress", side_effect=FullCompileReached
+    )
+    with pytest.raises(FullCompileReached):
+        compiler.compile_app(app, use_rich=False, serving=True)
+    reuse.assert_not_called()
+
+
 def test_compile_app_drops_event_caches_from_earlier_compiles(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
 ):
@@ -1954,3 +2207,66 @@ def test_compile_app_resolves_show_built_with_reflex(
     assert get_user_tier.called is (
         compile_context == constants.CompileContext.DEPLOY and configured is None
     )
+
+
+@pytest.mark.parametrize("plugins", [[], [rx.plugins.SitemapPlugin()]])
+def test_compile_app_progress_ends_at_its_total(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture, plugins
+):
+    """The progress bar finishes exactly at the total it announced.
+
+    Args:
+        tmp_path: Directory for compiler output.
+        monkeypatch: Fixture for changing the app directory.
+        mocker: Fixture for configuring the test app.
+        plugins: The configured plugins.
+    """
+    monkeypatch.chdir(tmp_path)
+    poor_progress = compiler.console.PoorProgress
+    bars: list[compiler.console.PoorProgress] = []
+
+    def recording_progress() -> compiler.console.PoorProgress:
+        bar = poor_progress()
+        bars.append(bar)
+        return bar
+
+    mocker.patch.object(compiler.console, "PoorProgress", recording_progress)
+    with RegistrationContext():
+        config = rx.Config(app_name="progress_test", plugins=plugins)
+        mocker.patch("reflex_base.config._get_config", return_value=config)
+        app = rx.App()
+        app.add_page(lambda: rx.el.div("hello"), route="/")
+        compiler.compile_app(app, dry_run=True, use_rich=False)
+    [bar] = bars
+    [task] = bar.tasks.values()
+    assert task["current"] == task["total"]
+
+
+def test_serving_compile_discards_the_manifest(tmp_path, monkeypatch, mocker):
+    """A compile that bypasses the cache leaves no manifest describing its output.
+
+    The manifest an earlier cached compile wrote would otherwise validate
+    files this compile overwrote.
+    """
+    from reflex.compiler import disk_cache
+
+    monkeypatch.setenv("REFLEX_COMPILE_CACHE", "1")
+    monkeypatch.setenv("REFLEX_WEB_WORKDIR", str(tmp_path))
+    mocker.patch("reflex.app.reload_config")
+    # A fresh registry: states other test modules left behind would otherwise
+    # join the compiled state tree.
+    with RegistrationContext():
+        app = rx.App()
+        app.add_page(lambda: rx.el.div("page"), route="index")
+        mocker.patch.object(
+            compiler,
+            "get_config",
+            return_value=rx.Config(app_name="testing", plugins=[]),
+        )
+        mocker.patch.object(app, "_should_compile", return_value=True)
+        mocker.patch.object(app, "_get_frontend_packages")
+        mocker.patch.object(app, "_add_optional_endpoints")
+        manifest = disk_cache._manifest_path()
+        manifest.write_text("{}")
+        assert compiler.compile_app(app, use_rich=False, serving=True)
+    assert not manifest.exists()

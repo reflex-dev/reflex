@@ -642,6 +642,42 @@ def _flush(timeout: float | None = None) -> bool:
     return True
 
 
+def _spool_event(
+    spool: Path, event: str, properties: dict[str, Any] | None, kwargs: dict[str, Any]
+) -> None:
+    """Append an event to a spool file for another process to send.
+
+    Args:
+        spool: The spool file.
+        event: The event name.
+        properties: The event's structured payload.
+        kwargs: Additional event data.
+    """
+    with suppress(Exception), spool.open("a", encoding="utf-8") as fh:
+        fh.write(
+            json.dumps({"event": event, "properties": properties, "kwargs": kwargs})
+            + "\n"
+        )
+
+
+def send_spooled(spool: Path) -> None:
+    """Send the events a compile child spooled, then remove the spool.
+
+    Args:
+        spool: The spool file (see ``REFLEX_TELEMETRY_SPOOL``).
+    """
+    try:
+        lines = spool.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return
+    with suppress(OSError):
+        spool.unlink(missing_ok=True)
+    for line in lines:
+        with suppress(Exception):
+            entry = json.loads(line)
+            send(entry["event"], properties=entry["properties"], **entry["kwargs"])
+
+
 _legacy_alias_attempted = False
 
 
@@ -723,6 +759,11 @@ def send(
     with suppress(Exception):
         if telemetry_enabled is None:
             telemetry_enabled = get_config().telemetry_enabled
+        if not telemetry_enabled:
+            return
+        if (spool := environment.REFLEX_TELEMETRY_SPOOL.get()) is not None:
+            _spool_event(spool, event, properties, kwargs)
+            return
         # Only spin up the worker pool when there is actually something to send.
         if telemetry_enabled:
             _submit(

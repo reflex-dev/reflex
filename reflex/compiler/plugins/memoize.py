@@ -385,16 +385,17 @@ class MemoizeStatefulPlugin(Plugin):
         # tag is derived from the rendered memo body inside
         # ``create_passthrough_component_memo`` after the ``{children}`` hole
         # is substituted, so passthrough wrappers that differ only in their
-        # children collapse to a single definition.
-        wrapper_factory, definition = create_passthrough_component_memo(
-            comp, source_module=page_context.source_module
-        )
+        # children collapse to a single definition. An auto memo carries no
+        # source module: it is content-addressed by its tag and compiles to
+        # its own file, so identical subtrees anywhere in the app share one
+        # definition and a page's memo files never hold another page's memos
+        # (the compile cache rewrites a page's memo files without touching
+        # the pages it reuses).
+        wrapper_factory, definition = create_passthrough_component_memo(comp)
         tag = definition.export_name
         compile_context.memoize_wrappers[tag] = None
-        # Key by (tag, source_module) so identical-rendering subtrees from
-        # different user modules each get their own entry and emit into the
-        # right mirrored memo file.
-        compile_context.auto_memo_components[tag, definition.source_module] = definition
+        compile_context.auto_memo_components[tag, None] = definition
+        page_context.memo_uses[tag, None] = definition
 
         wrapper = wrapper_factory()
         # The wrapper has no structural children at the page level, but parents

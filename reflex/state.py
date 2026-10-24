@@ -10,7 +10,6 @@ import hashlib
 import inspect
 import json
 import logging
-import operator
 import pickle
 import re
 import sys
@@ -71,6 +70,7 @@ from reflex_base.vars.base import (
     computed_var,
     dispatch,
     is_computed_var,
+    seeded_unique_variable_names,
 )
 from rich.markup import escape
 
@@ -2024,9 +2024,19 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         """
         if include_computed:
             self._mark_dirty_computed_vars()
-        base_vars = {
-            prop_name: self.get_value(prop_name) for prop_name in self.base_vars
-        }
+        if initial:
+            # A compile serializes the initial values; a default component's
+            # generated names must not depend on which states came first (a
+            # set's order varies by process, and the compile cache merges
+            # values recorded by different processes).
+            with seeded_unique_variable_names(self.get_full_name()):
+                base_vars = {
+                    prop_name: self.get_value(prop_name) for prop_name in self.base_vars
+                }
+        else:
+            base_vars = {
+                prop_name: self.get_value(prop_name) for prop_name in self.base_vars
+            }
         if initial and include_computed:
             computed_vars = {
                 # Include initial computed vars.
@@ -2299,11 +2309,32 @@ def _frontend_schema(root: type[BaseState], context: RegistrationContext) -> str
     Returns:
         The hash of the frontend schema.
     """
+    return _hash_frontend_schema(_frontend_schema_entries(root, context))
 
-    def _state_entry(state: type[BaseState]) -> list[Any]:
+
+def _frontend_schema_entries(
+    root: type[BaseState], context: RegistrationContext
+) -> dict[str, list[Any]]:
+    """Collect the frontend schema entry of each state in the tree below ``root``.
+
+    Each entry depends on its own state only, so entries collected from
+    different trees combine into the schema of their union.
+
+    Args:
+        root: The state at the top of the tree.
+        context: The registration context holding the tree.
+
+    Returns:
+        The schema entry of each state, keyed by its full name.
+    """
+    entries = {}
+    pending = [root]
+    while pending:
+        state = pending.pop()
         fields = state.get_fields()
-        return [
-            state.get_full_name(),
+        full_name = state.get_full_name()
+        entries[full_name] = [
+            full_name,
             sorted(
                 (name, _serialize_type(fields[name].type_)) for name in state.base_vars
             ),
@@ -2314,15 +2345,21 @@ def _frontend_schema(root: type[BaseState], context: RegistrationContext) -> str
             ),
             sorted(state.event_handlers),
         ]
-
-    entries = []
-    pending = [root]
-    while pending:
-        state = pending.pop()
-        entries.append(_state_entry(state))
         pending.extend(context.get_substates(state))
-    entries.sort(key=operator.itemgetter(0))
-    return md5(json.dumps(entries, separators=(",", ":")).encode("utf-8")).hexdigest()
+    return entries
+
+
+def _hash_frontend_schema(entries: dict[str, list[Any]]) -> str:
+    """Hash frontend schema entries keyed by state full name.
+
+    Args:
+        entries: The entries, as from :func:`_frontend_schema_entries`.
+
+    Returns:
+        The hash of the frontend schema.
+    """
+    ordered = [entries[name] for name in sorted(entries)]
+    return md5(json.dumps(ordered, separators=(",", ":")).encode("utf-8")).hexdigest()
 
 
 def _legacy_state_schema(state_cls: type[BaseState]) -> str:

@@ -167,3 +167,38 @@ def test_prune_ignores_corrupt_manifest(fake_web_dir: Path):
     compiler_utils.prune_stale_memo_files([survivor])
 
     assert survivor.exists()
+
+
+def test_reconcile_keeps_untouched_files_and_drops_the_unused(fake_web_dir: Path):
+    """An incremental compile records what it wrote and deletes what it dropped.
+
+    Files it did not touch stay recorded, so a later full compile still
+    prunes them; only files the previous manifest recorded are deleted.
+    """
+    kept, dropped, foreign = _seed_files(
+        fake_web_dir,
+        [
+            "utils/components/Kept.jsx",
+            "utils/components/Dropped.jsx",
+            "utils/components/Foreign.jsx",
+        ],
+    )
+    _seed_manifest(
+        fake_web_dir, ["utils/components/Kept.jsx", "utils/components/Dropped.jsx"]
+    )
+    written = fake_web_dir / "utils" / "components" / "Written.jsx"
+    compiler_utils.reconcile_memo_manifest([written], [dropped, foreign])
+    assert kept.exists()
+    assert not dropped.exists()
+    assert foreign.exists(), "only files the manifest recorded are deleted"
+    recorded = json.loads(
+        (fake_web_dir / compiler_utils._MEMO_MANIFEST_FILENAME).read_text()
+    )
+    assert recorded == ["utils/components/Kept.jsx", "utils/components/Written.jsx"]
+    # A file both written and dropped is written.
+    compiler_utils.reconcile_memo_manifest([kept], [kept])
+    assert kept.exists()
+    recorded = json.loads(
+        (fake_web_dir / compiler_utils._MEMO_MANIFEST_FILENAME).read_text()
+    )
+    assert recorded == ["utils/components/Kept.jsx", "utils/components/Written.jsx"]

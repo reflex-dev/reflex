@@ -538,6 +538,38 @@ def test_serialize(value: Any, expected: str):
     assert json.loads(json_dumps(value)) == json.loads(json_dumps(expected))
 
 
+class _ReversedSet(set):
+    """A set that iterates in descending order, unlike small-int sets."""
+
+    def __iter__(self):
+        """Iterate in descending order.
+
+        Returns:
+            The descending iterator.
+        """
+        return iter(sorted(set.__iter__(self), reverse=True))
+
+
+def test_sorted_set_is_deterministic_and_serialize_set_is_not_sorted():
+    """Compiled output sorts sets; a state delta keeps the cheap list.
+
+    Compiled output and cache fingerprints embed serialized sets; a
+    hash-seed-dependent order churns files on every process restart. A delta
+    is serialized on every update and its order carries no meaning.
+    """
+    from reflex_base.vars import LiteralVar
+
+    assert serializers.sorted_set({"b", "c", "a"}) == ["a", "b", "c"]
+    assert serializers.sorted_set({3, 1, 2}) == [1, 2, 3]
+    # Unsortable element mixes sort by their serialized form.
+    assert serializers.sorted_set({1, "a"}) == serializers.sorted_set({"a", 1})
+    assert set(serializers.serialize_set({1, "a"})) == {1, "a"}
+    # The state-delta path keeps the set's own order: no sort per delta.
+    assert serializers.serialize_set(_ReversedSet({1, 2, 3})) == [3, 2, 1]
+    assert str(LiteralVar.create({"b", "c", "a"})) == '["a", "b", "c"]'
+    assert str(LiteralVar.create({3, 1, 2})) == "[1, 2, 3]"
+
+
 @pytest.mark.parametrize(
     ("value", "expected", "exp_var_is_string"),
     [
@@ -578,3 +610,26 @@ def test_serialize_var_to_str(value: Any, expected: str, exp_var_is_string: bool
     """
     v = LiteralVar.create(value)
     assert str(v) == expected
+
+
+def test_serialize_unordered_enum_set_is_deterministic():
+    """Non-orderable enum values serialize independently of set iteration."""
+    from enum import Enum
+
+    class Choice(Enum):
+        A = "a"
+        B = "b"
+
+    class ReversedSet(set):
+        """Model a different process's iteration order."""
+
+        def __iter__(self):
+            """Iterate in the opposite order.
+
+            Returns:
+                The reversed iterator.
+            """
+            return reversed(list(super().__iter__()))
+
+    values = {Choice.A, Choice.B}
+    assert serializers.sorted_set(values) == serializers.sorted_set(ReversedSet(values))

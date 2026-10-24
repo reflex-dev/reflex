@@ -213,6 +213,34 @@ async def test_compile_state_resolves_async_computed_vars_with_running_event_loo
     assert values[f"async_value{FIELD_MARKER}"] == "resolved"
 
 
+def test_write_file_creates_and_updates(tmp_path):
+    path = tmp_path / "sub" / "page.jsx"
+    write_file(path, "v1")
+    assert path.read_text() == "v1"
+    write_file(path, "v2")
+    assert path.read_text() == "v2"
+
+
+def test_write_file_atomic_leaves_no_temp_files(tmp_path):
+    path = tmp_path / "page.jsx"
+    write_file(path, "content")
+    # The temp file used for the atomic replace must not linger.
+    assert [p.name for p in tmp_path.iterdir()] == ["page.jsx"]
+
+
+def test_write_file_skips_byte_identical_write(tmp_path):
+    """An identical write must not touch the file (so vite isn't told to HMR)."""
+    path = tmp_path / "page.jsx"
+    write_file(path, "same")
+    before = path.stat().st_mtime_ns
+    import os
+
+    os.utime(path, ns=(before + 1_000_000_000, before + 1_000_000_000))
+    bumped = path.stat().st_mtime_ns
+    write_file(path, "same")  # identical -> no rewrite
+    assert path.stat().st_mtime_ns == bumped
+
+
 def test_compile_state_hashes_dict_with_mixed_key_types(
     forked_registration_context: RegistrationContext,
 ):
@@ -301,3 +329,46 @@ def test_document_root_controls_preserve_no_id_and_page_refs():
 
     assert not document_root._get_all_hooks()
     assert page_script._get_all_hooks()
+
+
+def test_compile_state_default_component_names_do_not_depend_on_state_order():
+    """A default component's generated names are a function of its state.
+
+    Substates are a set, whose order varies by process; the compile cache
+    merges initial values recorded by different processes, which must agree.
+    """
+    from reflex_base.vars.base import reset_unique_variable_names
+
+    with RegistrationContext():
+
+        class _OrderRoot(rx.State):
+            pass
+
+        class _OrderOne(_OrderRoot):
+            comp: rx.Field[rx.Component] = rx.field(
+                default_factory=lambda: rx.auto_scroll()
+            )
+
+        class _OrderTwo(_OrderRoot):
+            comp: rx.Field[rx.Component] = rx.field(
+                default_factory=lambda: rx.auto_scroll()
+            )
+
+        def serialized(substates: list[type[rx.State]]) -> str:
+            reset_unique_variable_names()
+            _OrderRoot.get_substates = classmethod(  # type: ignore[method-assign]
+                lambda cls: substates if cls is _OrderRoot else set()
+            )
+            try:
+                return utils._serialize_initial_state(compile_state(_OrderRoot))
+            finally:
+                del _OrderRoot.get_substates
+
+        first = serialized([_OrderOne, _OrderTwo])
+        second = serialized([_OrderTwo, _OrderOne])
+    assert first == second
+    one, two = (
+        first.index(_OrderOne.get_full_name()),
+        first.index(_OrderTwo.get_full_name()),
+    )
+    assert one != two

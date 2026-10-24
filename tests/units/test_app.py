@@ -381,6 +381,16 @@ def test_prepare_404_page_empty_string_metadata_uses_defaults():
     assert prepared.page.description == constants.Page404.DESCRIPTION
 
 
+def test_default_404_page_has_no_source_module():
+    """The framework's default 404 page belongs to no user module.
+
+    Otherwise its module comes from the call stack of whatever process
+    compiles the app, which differs between processes.
+    """
+    prepared = App()._prepare_page(route=constants.Page404.SLUG)
+    assert prepared.page._source_module is None
+
+
 def test_add_page_set_route(app: App, index_page: ComponentCallable):
     """Test adding a page to an app.
 
@@ -5628,6 +5638,100 @@ def test_compile_emits_stage_spans(
         assert parent.span_id == root.get_span_context().span_id
 
 
+def test_should_compile_consumes_the_nocompile_marker_under_a_daemon(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest
+):
+    """A backend worker consumes its ``nocompile`` marker even while a daemon owns .web.
+
+    Otherwise the marker outlives the worker and the daemon's next compile
+    child finds it, consumes it and skips the compile, so the first edit never
+    reaches the browser. Daemon processes never touch the marker at all.
+    """
+    from reflex.utils import compile_daemon, path_ops
+
+    web_dir = tmp_path / ".web"
+    web_dir.mkdir()
+    monkeypatch.setattr("reflex.utils.prerequisites.get_web_dir", lambda: web_dir)
+    daemon_lock = tmp_path / "daemon.lock"
+    monkeypatch.setattr(compile_daemon, "_daemon_lock_path", lambda: daemon_lock)
+    monkeypatch.delenv(environment.REFLEX_SKIP_COMPILE.name, raising=False)
+    monkeypatch.delenv(environment.REFLEX_COMPILE_DAEMON.name, raising=False)
+    descriptor = path_ops.try_lock(daemon_lock)
+    assert descriptor is not None
+    request.addfinalizer(lambda: os.close(descriptor))
+    marker = web_dir / constants.NOCOMPILE_FILE
+    marker.touch()
+    app = App()
+
+    # The worker stands down and takes its marker with it.
+    assert app._should_compile() is False
+    assert not marker.exists()
+
+    # The daemon (and its compile children) compile regardless of the marker.
+    marker.touch()
+    monkeypatch.setenv(environment.REFLEX_COMPILE_DAEMON.name, "1")
+    assert app._should_compile() is True
+    assert marker.exists()
+
+
+def test_compile_reuses_pages_the_incremental_attempt_already_evaluated(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A post-evaluation cache fallback must not evaluate a page twice.
+
+    Evaluating a page registers the states it defines; a second evaluation in
+    the same process renames a locally defined state (``LocalState_0``) while
+    the backend, which evaluates the page once, knows it as ``LocalState``. The
+    full compile therefore adopts the pages the incremental attempt compiled.
+    """
+    from reflex.compiler import disk_cache
+    from reflex.compiler.plugins import default_page_plugins
+
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    monkeypatch.setenv("REFLEX_COMPILE_CACHE", "1")
+    evaluations: list[str] = []
+
+    def local_state_page():
+        evaluations.append("local")
+
+        class AdoptedLocalState(rx.State):
+            value: int = 0
+
+        return rx.el.div(AdoptedLocalState.value)
+
+    def other_page():
+        evaluations.append("other")
+        return rx.el.div("other")
+
+    app.add_page(local_state_page, route="local")
+    app.add_page(other_page, route="other")
+
+    # What the incremental attempt did before deciding it must fall back.
+    evaluated = CompileContext(
+        app=app,
+        pages=[app._unevaluated_pages["local"]],
+        hooks=CompilerHooks(plugins=default_page_plugins(style=app.style)),
+    )
+    with evaluated:
+        evaluated.compile()
+    registered = evaluated.stateful_routes["local"]
+    mocker.patch.object(disk_cache, "try_incremental_rebuild", return_value=evaluated)
+
+    app._compile()
+
+    assert evaluations == ["local", "other"]
+    assert app._stateful_pages.keys() >= {"local"}
+    assert set(app._pages) >= {"local", "other"}
+    routes_dir = web_dir / constants.Dirs.PAGES / constants.Dirs.ROUTES
+    assert (routes_dir / "[local]._index.jsx").exists()
+    assert (routes_dir / "[other]._index.jsx").exists()
+    assert registered[0].endswith("adopted_local_state")
+    assert all(not name.endswith("_0") for name in registered)
+
+
 def test_write_stateful_pages_marker_never_truncates_final_path(
     tmp_path: Path, mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
 ):
@@ -5786,12 +5890,24 @@ def test_write_stateful_pages_marker_concurrent_readers_see_valid_json(
 
     with ThreadPoolExecutor(max_workers=8) as pool:
         readers = [pool.submit(reader) for _ in range(4)]
+        writers = [pool.submit(writer) for _ in range(4)]
         try:
-            writers = [pool.submit(writer) for _ in range(4)]
             for future in writers:
                 future.result()
-        finally:
+        except BaseException:
+            # Free the readers so the pool can join. Never on success: a reader
+            # released from the last round but not yet scheduled would see the
+            # aborted barrier and raise.
             round_started.abort()
+            raise
         for future in readers:
             future.result()
     assert json.loads(marker.read_text()) == routes
+
+
+def test_backend_compile_is_marked_serving(mocker):
+    """The backend's own compile tells the compiler that it serves the app."""
+    app = App()
+    compile_ = mocker.patch.object(app, "_compile")
+    app()
+    assert compile_.call_args.kwargs["serving"] is True

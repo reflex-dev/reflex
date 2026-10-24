@@ -752,6 +752,23 @@ class EnvironmentVariables:
     # If this env var is set to "yes", App.compile will be a no-op
     REFLEX_SKIP_COMPILE: EnvVar[bool] = env_var(False, internal=True)
 
+    # Experimental: incremental compile cache. A fresh compile process (e.g. a
+    # reflex-run hot-reload worker) reuses each page's compiled output from an
+    # on-disk manifest and recompiles only the pages whose source changed.
+    # See reflex/compiler/disk_cache.py and reflex/compiler/page_cache.py.
+    REFLEX_COMPILE_CACHE: EnvVar[bool] = env_var(False)
+
+    # Set only in the compile daemon's own process (and its forked children):
+    # marks the process that owns .web while a daemon runs, so backend reload
+    # workers of the same `reflex run` skip frontend compilation.
+    REFLEX_COMPILE_DAEMON: EnvVar[bool] = env_var(False, internal=True)
+
+    # Set by the compile daemon for its compile children: a file the child
+    # appends its telemetry events to instead of sending them, which the
+    # daemon sends once the child exited (a forked child must not start the
+    # telemetry thread, nor touch macOS's proxy lookup after fork).
+    REFLEX_TELEMETRY_SPOOL: EnvVar[Path | None] = env_var(None, internal=True)
+
     # Inherited by uvicorn/granian reload workers so the backend can distinguish
     # dev reload-capable worker boots from other backend starts. Never set in prod.
     REFLEX_DEV_BACKEND_RELOAD_ACTIVE: EnvVar[bool] = env_var(False, internal=True)

@@ -311,6 +311,97 @@ def _lock_descriptor(descriptor: int) -> None:
         fcntl.flock(descriptor, fcntl.LOCK_EX)
 
 
+#: The errors with which a non-blocking lock reports another holder.
+_LOCK_CONTENTION_ERRNOS = frozenset({
+    errno.EACCES,
+    errno.EAGAIN,
+    errno.EWOULDBLOCK,
+    errno.EDEADLK,
+})
+
+
+def _try_lock_descriptor(descriptor: int) -> bool:
+    """Take the OS's exclusive lock on a lock file without waiting.
+
+    Args:
+        descriptor: The open lock file descriptor.
+
+    Returns:
+        Whether the lock was taken.
+
+    Raises:
+        OSError: When the file system cannot lock files.
+    """
+    try:
+        if sys.platform == "win32":
+            msvcrt.locking(descriptor, msvcrt.LK_NBLCK, 1)
+        else:
+            fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError as error:
+        if error.errno in _LOCK_CONTENTION_ERRNOS:
+            return False
+        raise
+    return True
+
+
+def try_lock(path: Path) -> int | None:
+    """Take the OS's exclusive lock on ``path`` without waiting.
+
+    The OS releases the lock when its last descriptor closes, including when
+    the holder is killed, so a held lock always names a live owner. A pid file
+    cannot: its process may be gone, or its pid reused by another process.
+
+    Args:
+        path: The lock file, created if missing.
+
+    Returns:
+        The descriptor holding the lock (closing it releases the lock), or None
+        when another holder has it.
+
+    Raises:
+        OSError: When the file system cannot lock files.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    descriptor = os.open(path, os.O_CREAT | os.O_RDWR, 0o644)
+    try:
+        if _try_lock_descriptor(descriptor):
+            return descriptor
+    except OSError:
+        os.close(descriptor)
+        raise
+    os.close(descriptor)
+    return None
+
+
+def is_locked(path: Path) -> bool:
+    """Whether another descriptor holds the OS lock on ``path``.
+
+    Args:
+        path: The lock file.
+
+    Returns:
+        True while a holder has the lock; False when it is free, the file
+        does not exist, or the file system cannot lock files (so nothing can
+        hold it).
+    """
+    try:
+        descriptor = os.open(path, os.O_RDWR)
+    except FileNotFoundError:
+        return False
+    try:
+        try:
+            if not _try_lock_descriptor(descriptor):
+                return True
+        except OSError:
+            return False
+        if sys.platform == "win32":
+            msvcrt.locking(descriptor, msvcrt.LK_UNLCK, 1)
+        return False
+    finally:
+        # Closing releases a POSIX probe's lock.
+        os.close(descriptor)
+
+
 @contextlib.contextmanager
 def file_lock(path: str | Path) -> Iterator[Path]:
     """Lock a file or directory across processes, or proceed unlocked if unavailable.
