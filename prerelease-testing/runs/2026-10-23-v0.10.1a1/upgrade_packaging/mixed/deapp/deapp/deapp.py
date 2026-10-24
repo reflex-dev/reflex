@@ -17,7 +17,8 @@ if _qa_ev:  # QA venv guard
 
 class State(rx.State):
     columns: list[dict] = [
-        {"title": "Name", "type": "str", "id": "name"},
+        # DEAPP_UNTYPED=1: first column without type/id (relies on #7607's defaults; crashes 0.10.0 / dataeditor 0.10.0)
+        {"title": "Name"} if os.environ.get("DEAPP_UNTYPED") else {"title": "Name", "type": "str", "id": "name"},
         {"title": "Age", "type": "int", "id": "age"},
     ]
     data: list[list] = [["ada", 36], ["grace", 45], ["linus", 55]]
@@ -43,7 +44,7 @@ class State(rx.State):
         self.log.append(json.dumps(pos))
 
     @rx.event
-    def reset(self):
+    def reset_rows(self):
         self.data = [["ada", 36], ["grace", 45], ["linus", 55]]
         self.columns = [
             {"title": "Name", "type": "str", "id": "name"},
@@ -62,7 +63,7 @@ def index():
             rx.button("append", on_click=State.add_row_append, id="append"),
             rx.button("assign", on_click=State.add_row_assign, id="assign"),
             rx.button("more_cols", on_click=State.more_cols, id="more_cols"),
-            rx.button("reset", on_click=State.reset, id="reset"),
+            rx.button("reset", on_click=State.reset_rows, id="reset"),
         ),
         rx.text(State.data.length(), id="nrows"),
         rx.text(State.columns.length(), id="ncols"),

@@ -161,3 +161,55 @@ packaging items (#7411, #7440, #7566, #7554/#7556, #7639) and matches the observ
   bounce), per-IP OTP rate limit trips at attempt 6 as expected.
 - reflex-google-auth 0.2.0 demo dev: **12/13** (the driver's "key discoverable" check), 0 differing; the 11 console
   anomalies are the sandbox's blocked Google endpoints (`net::ERR_TUNNEL_CONNECTION_FAILED`), as on every pass.
+
+## 10. Mixed sibling floors (`mixed/`)
+
+App `mixed/mixedapp` (forms with checkbox/switch/id-only input/repeated names, `rx.window_event_listener`,
+`rx.clipboard`, `rx.data_editor` with state-backed columns (first column without `type`/`id` unless
+`MIXED_TYPED_COLUMNS=1`), `rx.icon` static + dynamic, `rx.code_block` + `rx._x.code_block(use_transformers=True)`,
+`rx.moment`), driver `mixed/drive_mixed.py`, runner `mixed/run_mixed.sh <venv> <label> dev|prod` (3470/8470). Graphs:
+- `new` = everything 0.10.1a1 (uv `--prerelease=allow`);
+- `upgrade_packaging-n001-pip312` = what a stock `pip install reflex[db]==0.10.1a1` (no `--pre`) gives: reflex, base,
+  core, radix, moment 0.10.1a1 + **reflex-components-code 0.10.0, dataeditor 0.10.0, lucide 1.1.0, hosting-cli 0.2.0**;
+- `prev` (the campaign's shared venv) = the reverse: reflex/base/core/radix/dataeditor 0.10.0 + code 0.10.1a1, moment
+  0.10.1a1, lucide 1.1.1a1 (core/radix/dataeditor a1 require `reflex-base>=0.10.1a1`, so they cannot be installed next
+  to reflex 0.10.0; code/moment/lucide a1 only require `reflex-base>=0.10.0` and can);
+- `upgrade_packaging-pure-prev` = pure 0.10.0 baseline.
+
+Results (dev; `mixed/logs/run-mixed-<label>.out`, JSON + screenshots in `$SB/apps/upgrade_packaging/mixed/out`):
+- **new (all a1), untyped state column**: 22/23 checks pass (the one FAIL was a too-strict driver assertion on the
+  dynamic icon's class, fixed in the driver afterwards): lucide static + dynamic icons render, shiki block with the
+  `[!code highlight]` transformer applied (#7437), react-syntax-highlighter block, moment, data_editor with an untyped
+  state column renders (#7607) and `on_cell_clicked` fires, form submit → `{"agree": true, "choice": "a", "idonly":
+  "idval", "sw": true, "tag1": "t1", "tag2": "t2", "tags": "t2", "username": "ada"}`, window keydown and clipboard paste
+  handlers fire, reload re-hydrates. Compile-time deprecations: `Submitting the form control with id 'idonly' by its
+  id has been deprecated in version 0.10.1 …` (#7386, expected) and the pre-existing "Implicit Radix Themes enablement"
+  one. **But** 4× `[Reflex Frontend Exception] TypeError: Cannot read properties of undefined (reading '0')` from
+  `@glideapps/glide-data-grid … eventListener` during the data_editor interaction (see the isolation runs below).
+- **pip312 (mixed, dataeditor 0.10.0 + base a1)**: compile logs `DeprecationWarning: format_data_editor_column has been
+  deprecated in version 0.10.1. Upgrade reflex-components-dataeditor; rx.data_editor now fills in its column defaults
+  itself` (the intended hint), then the page **crashes** in `<ForwardRef(DataGrid)>` (`TypeError: Cannot read properties
+  of undefined (reading 'includes') at truncateString`) = bug #7596, which dataeditor 0.10.1a1 fixes but a `--pre`-less
+  pip user never receives (reflex floors dataeditor at `>=0.10.0`). Same crash on `prev` and `pure-prev` (0.10.0).
+- Typed-column variants (every graph can render) and prod runs: see the table appended below once finished.
+
+Incidental re-verification of the registry's open-unfiled "no dispatch function when the app package has no
+`__init__.py`" (#7304): the probe apps were first run WITHOUT `__init__.py`. 0.10.0 (`pure-prev`): every state update
+fails with `Cannot process state update: no dispatch function for substate(s) "reflex___state____state.deapp____state"`
+(buttons do nothing, `nrows` stays 3); 0.10.1a1: state updates apply, 0 console errors → **fixed**, control reproduces.
+`__init__.py` was then added for the remaining baseline runs (`*-typed2` / `pureprev2` labels).
+
+data_editor isolation (`mixed/deapp`, driver `drive_deapp.py`, 3474/8474; all columns typed; hover sweep + click after
+each mutation): `new` 0 page errors across in-place append, reassign, column append, reset, reload; `pip312`
+(dataeditor 0.10.0) 0 page errors; `pure-prev` 0 page errors (but state updates inert, see #7304 above).
+
+Typed-column dev runs (`MIXED_TYPED_COLUMNS=1`, every graph renders):
+| graph | checks | page errors | notes |
+|---|---|---|---|
+| new (all a1) | **23/23** | 4× glide `reading '0'` at page load | shiki `[!code highlight]` applied (#7437 fixed), icons/moment/forms/keydown/paste OK |
+| pure-prev (0.10.0) | 22/23 | the same 4 glide errors at page load | the FAIL is the shiki transformer (`highlighted: 0`, #7430 reproduces on 0.10.0 = positive control); form data identical to a1 (`agree: True, sw: True, idonly: 'idval'`) |
+The 4 `TypeError: Cannot read properties of undefined (reading '0')` from `@glideapps/glide-data-grid … eventListener`
+occur at page load on BOTH versions (timestamps = hydration, before any interaction) and not in the `deapp` isolation
+app, so they are context, not a regression (probably the second, literal editor `columns=[{"title": "Lit"}, …]`,
+`data=[["x", 1]]`, `height="120px"`). The React warning `Checkbox is changing from uncontrolled to controlled` after the
+form submit is also on both versions.

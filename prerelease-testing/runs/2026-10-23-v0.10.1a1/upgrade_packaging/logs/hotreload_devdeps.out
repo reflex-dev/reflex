@@ -1,0 +1,3 @@
+=== package manager: bun
+init (prev) rc=0
+--- bun-1-prev (upgrade_packaging-pure-prev)

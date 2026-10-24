@@ -1,0 +1,28 @@
+153-in the future.
+154:DeprecationWarning: format_data_editor_column has been deprecated in version 
+155-0.10.1. Upgrade reflex-components-dataeditor; rx.data_editor now fills in its 
+156-column defaults itself. It will be completely removed in 1.0. 
+157-(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+158-s/upgrade_packaging-n001-pip312/lib/python3.12/site-packages/reflex_components_d
+--
+266-Debug: 2:05:39 AM [vite] (client) [console.error] TypeError: Cannot read 
+267:properties of undefined (reading 'includes')
+268-Debug:     at truncateString 
+269-(http://localhost:3470/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=9
+270-ea29f6b:5100:11)
+271-Debug:     at drawTextCell 
+--
+277-[Reflex Frontend Exception]
+278: TypeError: Cannot read properties of undefined (reading 'includes')
+279:TypeError: Cannot read properties of undefined (reading 'includes')
+280-    at truncateString 
+281-(http://localhost:3470/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=9
+282-ea29f6b:5100:11)
+283-    at drawTextCell 
+--
+332-Debug: 
+333:Debug: The above error occurred in the <ForwardRef(DataGrid)> component.
+334-Debug: 
+335-Debug: React will try to recreate this component tree from scratch using the 
+336-error boundary you provided, C.
+337-Debug: 

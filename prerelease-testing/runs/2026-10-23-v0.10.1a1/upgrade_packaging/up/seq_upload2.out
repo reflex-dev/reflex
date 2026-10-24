@@ -27,3 +27,13 @@ UP after 4s (frontend 200, backend /ping 200)
 reflex.lock/package.json == .web/package.json
 package.json upload-up -> upload-cold: < { < "name": "reflex", < "type": "module", < "scripts": { < "dev": "react-router dev --host", < "export": "react-router build" < }, < "dependencies": { < "@radix-ui/themes": "3.3.0", < "@react-router/node": "8.4.0", < "isbot": "5.2.2", < "lucide-react": "1.26.0", < "mergician": "v2.0.2", < "react": "19.3.1", < "react-dom": "19.3.1", < "react-dropzone": "17.0.0", < "react-error-boundary": "6.1.6", < "react-helmet": "6.1.0", < "react-router": "8.4.0", < "socket.io-client": "4.8.4", < "sonner": "2.0.8", < "universal-cookie": "8.1.2" < }, < "devDependencies": { < "@emotion/react": "11.14.0", < "@react-router/dev": "8.4.0", < "@react-router/fs-routes": "8.4.0", < "autoprefixer": "10.6.1", < "postcss": "8.5.30", < "postcss-import": "17.0.1", < "vite": "8.3.4" < }, < "overrides": {} < } > {"name": "reflex", "type": "module", "scripts": {"dev": "react-router dev --host", "export": "react-router build"}, "dependencies": {"@radix-ui/themes": "3.3.0", "@react-router/node": "8.4.0", "isbot": "5.2.2", "lucide-react": "1.26.0", "mergician": "v2.0.2", "react": "19.3.1", "react-dom": "19.3.1", "react-dropzone": "17.0.0", "react-error-boundary": "6.1.6", "react-helmet": "6.1.0", "react-router": "8.4.0", "socket.io-client": "4.8.4", "sonner": "2.0.8", "universal-cookie": "8.1.2"}, "devDependencies": {"@emotion/react": "11.14.0", "@react-router/dev": "8.4.0", "@react-router/fs-routes": "8.4.0", "autoprefixer": "10.6.1", "postcss": "8.5.30", "postcss-import": "17.0.1", "vite": "8.3.4"}, "overrides": {}} 
 .web file list identical
+[PASS   ] reload: state kept (pings counter survives): 2
+== upload-cold: {'pass': 21, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=14 unexpected_console=0 page_errors=0 bad_requests=1 (unexpected 0) ws_frames=105
+SHUTDOWN: main pid 2234 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+--- upload-base server-log warnings:
+      1 Debug: error: script "dev" exited with code 143
+--- upload-up server-log warnings:
+      1 Debug: error: script "dev" exited with code 143
+--- upload-cold server-log warnings:
+      1 Debug: error: script "dev" exited with code 143
