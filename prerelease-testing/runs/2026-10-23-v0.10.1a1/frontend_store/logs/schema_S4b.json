@@ -1,0 +1,220 @@
+{
+ "checks": [
+  {
+   "name": "first load: no mismatch warning",
+   "ok": true,
+   "got": 0,
+   "want": 0
+  },
+  {
+   "name": "first load: no banner",
+   "ok": true,
+   "got": 0,
+   "want": 0
+  },
+  {
+   "name": "first load: navigation type",
+   "ok": true,
+   "got": "navigate",
+   "want": "navigate"
+  },
+  {
+   "name": "after 1 reloads: no mismatch warning",
+   "ok": true,
+   "got": 0,
+   "want": 0
+  },
+  {
+   "name": "after reloads: no banner",
+   "ok": true,
+   "got": 0,
+   "want": 0
+  },
+  {
+   "name": "after reloads: count kept",
+   "ok": true,
+   "got": "1",
+   "want": "1"
+  },
+  {
+   "name": "after reloads: tally kept",
+   "ok": true,
+   "got": "1",
+   "want": "1"
+  },
+  {
+   "name": "second: tally t3 renders",
+   "ok": true,
+   "got": "0",
+   "want": "0"
+  },
+  {
+   "name": "prerendered routes: no mismatch warning",
+   "ok": true,
+   "got": 0,
+   "want": 0
+  },
+  {
+   "name": "prerendered /item/5 iid",
+   "ok": true,
+   "got": "5",
+   "want": "5"
+  },
+  {
+   "name": "no page errors so far",
+   "ok": true,
+   "got": [],
+   "want": []
+  },
+  {
+   "name": "timeline after restart",
+   "ok": true,
+   "got": [
+    {
+     "t": 2.8,
+     "loads": 5,
+     "nav": "navigate",
+     "banner": 0,
+     "hydrated": "true",
+     "free_input": "typed-free",
+     "mismatch": 0,
+     "unknown": 0
+    },
+    {
+     "t": 3.3,
+     "err": "Page.evaluate: Execution context was destroyed, most likely because of a navigat"
+    },
+    {
+     "t": 3.8,
+     "loads": 6,
+     "nav": "reload",
+     "banner": 1,
+     "hydrated": "true",
+     "free_input": "",
+     "mismatch": 1,
+     "unknown": 0
+    }
+   ],
+   "want": "info"
+  },
+  {
+   "name": "reloads caused by restart (loads delta)",
+   "ok": true,
+   "got": 1,
+   "want": 1
+  },
+  {
+   "name": "last_reloaded cooldown key set",
+   "ok": true,
+   "got": true,
+   "want": true
+  },
+  {
+   "name": "events still work after restart",
+   "ok": true,
+   "got": "1",
+   "want": "1"
+  },
+  {
+   "name": "banner still present after the event",
+   "ok": true,
+   "got": 1,
+   "want": 1
+  },
+  {
+   "name": "no reload loop after the cooldown",
+   "ok": true,
+   "got": 6,
+   "want": 6
+  },
+  {
+   "name": "banner Reload button reloads (loads +1)",
+   "ok": true,
+   "got": 7,
+   "want": 7
+  },
+  {
+   "name": "banner shows again after the manual reload (same skew)",
+   "ok": true,
+   "got": 1,
+   "want": 1
+  },
+  {
+   "name": "new mismatch warnings after restart",
+   "ok": true,
+   "got": 2,
+   "want": 2
+  }
+ ],
+ "n_fail": 0,
+ "console": [
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "t": 1792805710.474352
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "t": 1792805711.2252946
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "t": 1792805712.0078108
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "t": 1792805713.1999867
+  },
+  {
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8227/_event/?token=0283149d-e7e6-47b5-94c4-af56eae5d12e&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "t": 1792805716.0972521
+  },
+  {
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8227/_event/?token=0283149d-e7e6-47b5-94c4-af56eae5d12e&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "t": 1792805716.0974646
+  },
+  {
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8227/_event/?token=0283149d-e7e6-47b5-94c4-af56eae5d12e&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "t": 1792805716.097704
+  },
+  {
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8227/_event/?token=0283149d-e7e6-47b5-94c4-af56eae5d12e&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "t": 1792805716.0979595
+  },
+  {
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8227/_event/?token=0283149d-e7e6-47b5-94c4-af56eae5d12e&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "t": 1792805716.0981398
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "t": 1792805716.6228592
+  },
+  {
+   "type": "warning",
+   "text": "This page was built for another version of the app than the backend it connected to (state schema 9dedbb55279cd89a392387c4357d3b95, backend 4153d08721a0591a99abd5a159d64e5d). Reload the page to get the new version.",
+   "t": 1792805717.1612847
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "t": 1792805737.7595065
+  },
+  {
+   "type": "warning",
+   "text": "This page was built for another version of the app than the backend it connected to (state schema 9dedbb55279cd89a392387c4357d3b95, backend 4153d08721a0591a99abd5a159d64e5d). Reload the page to get the new version.",
+   "t": 1792805738.0502827
+  }
+ ],
+ "pageerrors": [],
+ "mismatch_warnings": 2,
+ "unknown_substate_warnings": 0
+}

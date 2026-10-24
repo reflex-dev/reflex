@@ -1,0 +1,30 @@
+[ok ] first load: no mismatch warning: got=0 want=0
+[ok ] first load: no banner: got=0 want=0
+[ok ] first load: navigation type: got='navigate' want='navigate'
+[ok ] after 1 reloads: no mismatch warning: got=0 want=0
+[ok ] after reloads: no banner: got=0 want=0
+[ok ] after reloads: count kept: got='1' want='1'
+[ok ] after reloads: tally kept: got='1' want='1'
+[ok ] second: tally t3 renders: got='0' want='0'
+[ok ] prerendered routes: no mismatch warning: got=0 want=0
+[ok ] prerendered /item/5 iid: got='5' want='5'
+[ok ] no page errors so far: got=[] want=[]
+[info] restarting backend: /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/frontend_store/schema_run.sh stop be_v1; /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/frontend_s
+stopped be_v1 (21881)
+backend be_v1b pid 22312 up after 2s; schema=
+[info] restart command done after 3.1s; observing 20s
+   {'t': 3.1, 'loads': 5, 'nav': 'navigate', 'banner': 0, 'hydrated': 'true', 'free_input': 'typed-free', 'mismatch': 0, 'unknown': 0}
+[ok ] reloads caused by restart (loads delta): got=0 want=0
+[ok ] last_reloaded cooldown key set: got=False want=False
+[ok ] events still work after restart: got=True want=True
+[ok ] new mismatch warnings after restart: got=0 want=0
+fails=0 mismatch_warnings=0 unknown_substate_warnings=0 console(non-benign)=9 pageerrors=0
+  console: log Disconnect websocket on page navigation
+  console: log Disconnect websocket on page navigation
+  console: log Disconnect websocket on page navigation
+  console: log Disconnect websocket on page navigation
+  console: error WebSocket connection to 'ws://localhost:8227/_event/?token=df5a7ebd-e739-4e71-ee33-bce7a2d7b586&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  console: error WebSocket connection to 'ws://localhost:8227/_event/?token=df5a7ebd-e739-4e71-ee33-bce7a2d7b586&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  console: error WebSocket connection to 'ws://localhost:8227/_event/?token=df5a7ebd-e739-4e71-ee33-bce7a2d7b586&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  console: error WebSocket connection to 'ws://localhost:8227/_event/?token=df5a7ebd-e739-4e71-ee33-bce7a2d7b586&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  console: error WebSocket connection to 'ws://localhost:8227/_event/?token=df5a7ebd-e739-4e71-ee33-bce7a2d7b586&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED

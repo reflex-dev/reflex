@@ -1,0 +1,171 @@
+{
+ "checks": [
+  {
+   "name": "first load: no mismatch warning",
+   "ok": false,
+   "got": 1,
+   "want": 0
+  },
+  {
+   "name": "first load: no banner",
+   "ok": false,
+   "got": 1,
+   "want": 0
+  },
+  {
+   "name": "first load: navigation type",
+   "ok": false,
+   "got": "reload",
+   "want": "navigate"
+  },
+  {
+   "name": "after 2 reloads: no mismatch warning",
+   "ok": false,
+   "got": 3,
+   "want": 0
+  },
+  {
+   "name": "after reloads: no banner",
+   "ok": false,
+   "got": 1,
+   "want": 0
+  },
+  {
+   "name": "after reloads: count kept",
+   "ok": true,
+   "got": "1",
+   "want": "1"
+  },
+  {
+   "name": "after reloads: tally kept",
+   "ok": true,
+   "got": "1",
+   "want": "1"
+  },
+  {
+   "name": "second: tally t3 renders",
+   "ok": true,
+   "got": "0",
+   "want": "0"
+  },
+  {
+   "name": "prerendered routes: no mismatch warning",
+   "ok": false,
+   "got": 5,
+   "want": 0
+  },
+  {
+   "name": "prerendered /item/5 iid",
+   "ok": true,
+   "got": "5",
+   "want": "5"
+  },
+  {
+   "name": "no page errors so far",
+   "ok": true,
+   "got": [],
+   "want": []
+  }
+ ],
+ "n_fail": 6,
+ "console": [
+  {
+   "type": "warning",
+   "text": "Skipping state update for unknown substate(s): no dispatch function for \"reflex___state____state.schema_app___schema_app____extra\", \"reflex___state____state.schema_app___schema_app____base.schema_app___schema_app____sub.schema_app___schema_app____sub_extra\". Try refreshing the page or clearing your browser cache. This usually indicates a mismatch between frontend and backend state definitions. If you are the developer of this app, rebuild the frontend and check that api_url is correct.",
+   "t": 1792805776.792002
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "t": 1792805776.797209
+  },
+  {
+   "type": "warning",
+   "text": "This page was built for another version of the app than the backend it connected to (state schema 9dedbb55279cd89a392387c4357d3b95, backend 6244d367f808d059885c0cd4d3bb29ed). Reload the page to get the new version.",
+   "t": 1792805776.8628879
+  },
+  {
+   "type": "warning",
+   "text": "Skipping state update for unknown substate(s): no dispatch function for \"reflex___state____state.schema_app___schema_app____extra\", \"reflex___state____state.schema_app___schema_app____base.schema_app___schema_app____sub.schema_app___schema_app____sub_extra\". Try refreshing the page or clearing your browser cache. This usually indicates a mismatch between frontend and backend state definitions. If you are the developer of this app, rebuild the frontend and check that api_url is correct.",
+   "t": 1792805776.8630843
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "t": 1792805777.5580838
+  },
+  {
+   "type": "warning",
+   "text": "This page was built for another version of the app than the backend it connected to (state schema 9dedbb55279cd89a392387c4357d3b95, backend 6244d367f808d059885c0cd4d3bb29ed). Reload the page to get the new version.",
+   "t": 1792805777.6205351
+  },
+  {
+   "type": "warning",
+   "text": "Skipping state update for unknown substate(s): no dispatch function for \"reflex___state____state.schema_app___schema_app____extra\", \"reflex___state____state.schema_app___schema_app____base.schema_app___schema_app____sub.schema_app___schema_app____sub_extra\". Try refreshing the page or clearing your browser cache. This usually indicates a mismatch between frontend and backend state definitions. If you are the developer of this app, rebuild the frontend and check that api_url is correct.",
+   "t": 1792805777.6209607
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "t": 1792805778.0355196
+  },
+  {
+   "type": "warning",
+   "text": "This page was built for another version of the app than the backend it connected to (state schema 9dedbb55279cd89a392387c4357d3b95, backend 6244d367f808d059885c0cd4d3bb29ed). Reload the page to get the new version.",
+   "t": 1792805778.089012
+  },
+  {
+   "type": "warning",
+   "text": "Skipping state update for unknown substate(s): no dispatch function for \"reflex___state____state.schema_app___schema_app____extra\", \"reflex___state____state.schema_app___schema_app____base.schema_app___schema_app____sub.schema_app___schema_app____sub_extra\". Try refreshing the page or clearing your browser cache. This usually indicates a mismatch between frontend and backend state definitions. If you are the developer of this app, rebuild the frontend and check that api_url is correct.",
+   "t": 1792805778.0947719
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "t": 1792805778.5509727
+  },
+  {
+   "type": "warning",
+   "text": "This page was built for another version of the app than the backend it connected to (state schema 9dedbb55279cd89a392387c4357d3b95, backend 6244d367f808d059885c0cd4d3bb29ed). Reload the page to get the new version.",
+   "t": 1792805778.6382704
+  },
+  {
+   "type": "warning",
+   "text": "Skipping state update for unknown substate(s): no dispatch function for \"reflex___state____state.schema_app___schema_app____extra\", \"reflex___state____state.schema_app___schema_app____base.schema_app___schema_app____sub.schema_app___schema_app____sub_extra\". Try refreshing the page or clearing your browser cache. This usually indicates a mismatch between frontend and backend state definitions. If you are the developer of this app, rebuild the frontend and check that api_url is correct.",
+   "t": 1792805778.639172
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "t": 1792805779.0774229
+  },
+  {
+   "type": "warning",
+   "text": "This page was built for another version of the app than the backend it connected to (state schema 9dedbb55279cd89a392387c4357d3b95, backend 6244d367f808d059885c0cd4d3bb29ed). Reload the page to get the new version.",
+   "t": 1792805779.1355155
+  },
+  {
+   "type": "warning",
+   "text": "Skipping state update for unknown substate(s): no dispatch function for \"reflex___state____state.schema_app___schema_app____extra\", \"reflex___state____state.schema_app___schema_app____base.schema_app___schema_app____sub.schema_app___schema_app____sub_extra\". Try refreshing the page or clearing your browser cache. This usually indicates a mismatch between frontend and backend state definitions. If you are the developer of this app, rebuild the frontend and check that api_url is correct.",
+   "t": 1792805779.1372275
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "t": 1792805779.5973556
+  },
+  {
+   "type": "warning",
+   "text": "This page was built for another version of the app than the backend it connected to (state schema 9dedbb55279cd89a392387c4357d3b95, backend 6244d367f808d059885c0cd4d3bb29ed). Reload the page to get the new version.",
+   "t": 1792805779.6833613
+  },
+  {
+   "type": "warning",
+   "text": "Skipping state update for unknown substate(s): no dispatch function for \"reflex___state____state.schema_app___schema_app____extra\", \"reflex___state____state.schema_app___schema_app____base.schema_app___schema_app____sub.schema_app___schema_app____sub_extra\". Try refreshing the page or clearing your browser cache. This usually indicates a mismatch between frontend and backend state definitions. If you are the developer of this app, rebuild the frontend and check that api_url is correct.",
+   "t": 1792805779.6884723
+  }
+ ],
+ "pageerrors": [],
+ "mismatch_warnings": 6,
+ "unknown_substate_warnings": 7
+}

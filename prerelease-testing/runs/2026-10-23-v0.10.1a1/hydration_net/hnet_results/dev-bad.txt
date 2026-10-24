@@ -1,0 +1,16 @@
+## HNET_HOPS=-1
+47:    raise ConfigError(msg)
+48:reflex_base.utils.exceptions.ConfigError: trusted_proxy_hops must be a non-negative integer.
+## REFLEX_TRUSTED_PROXY_HOPS=abc
+8:ValueError: invalid literal for int() with base 10: 'abc'
+64:    raise EnvironmentVarValueError(msg) from ve
+65:reflex_base.utils.exceptions.EnvironmentVarValueError: Invalid integer value: 'abc' for trusted_proxy_hops
+## REFLEX_TRUSTED_PROXY_HOPS=-2
+4:Debug: Overriding config value trusted_proxy_hops with env var 
+5:TRUSTED_PROXY_HOPS=-2
+49:    raise ConfigError(msg)
+50:reflex_base.utils.exceptions.ConfigError: trusted_proxy_hops must be a non-negative integer.
+## REFLEX_TRUSTED_PROXY_HOPS=true
+8:ValueError: invalid literal for int() with base 10: 'true'
+64:    raise EnvironmentVarValueError(msg) from ve
+65:reflex_base.utils.exceptions.EnvironmentVarValueError: Invalid integer value: 'true' for trusted_proxy_hops

@@ -1,0 +1,39 @@
+[ok ] first load: no mismatch warning: got=0 want=0
+[ok ] first load: no banner: got=0 want=0
+[ok ] first load: navigation type: got='navigate' want='navigate'
+[ok ] after 1 reloads: no mismatch warning: got=0 want=0
+[ok ] after reloads: no banner: got=0 want=0
+[ok ] after reloads: count kept: got='1' want='1'
+[ok ] after reloads: tally kept: got='1' want='1'
+[ok ] second: tally t3 renders: got='0' want='0'
+[ok ] prerendered routes: no mismatch warning: got=0 want=0
+[ok ] prerendered /item/5 iid: got='5' want='5'
+[ok ] no page errors so far: got=[] want=[]
+[info] restarting backend: /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/frontend_store/schema_run.sh stop be_v1e; /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/frontend_
+stopped be_v1e (697)
+backend be_rename pid 1145 up after 2s; schema=
+[info] restart command done after 2.8s; observing 12s
+   {'t': 2.8, 'loads': 5, 'nav': 'navigate', 'banner': 0, 'hydrated': 'true', 'free_input': 'typed-free', 'mismatch': 0, 'unknown': 0}
+   {'t': 3.3, 'err': 'Page.evaluate: Execution context was destroyed, most likely because of a navigat'}
+   {'t': 3.8, 'loads': 6, 'nav': 'reload', 'banner': 1, 'hydrated': 'true', 'free_input': '', 'mismatch': 1, 'unknown': 0}
+[ok ] reloads caused by restart (loads delta): got=1 want=1
+[ok ] last_reloaded cooldown key set: got=True want=True
+[ok ] events still work after restart: got='1' want='1'
+[ok ] banner still present after the event: got=1 want=1
+[ok ] no reload loop after the cooldown: got=6 want=6
+[ok ] banner Reload button reloads (loads +1): got=7 want=7
+[ok ] banner shows again after the manual reload (same skew): got=1 want=1
+[ok ] new mismatch warnings after restart: got=2 want=2
+fails=0 mismatch_warnings=2 unknown_substate_warnings=0 console(non-benign)=13 pageerrors=0
+  console: log Disconnect websocket on page navigation
+  console: log Disconnect websocket on page navigation
+  console: log Disconnect websocket on page navigation
+  console: log Disconnect websocket on page navigation
+  console: error WebSocket connection to 'ws://localhost:8227/_event/?token=0283149d-e7e6-47b5-94c4-af56eae5d12e&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  console: error WebSocket connection to 'ws://localhost:8227/_event/?token=0283149d-e7e6-47b5-94c4-af56eae5d12e&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  console: error WebSocket connection to 'ws://localhost:8227/_event/?token=0283149d-e7e6-47b5-94c4-af56eae5d12e&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  console: error WebSocket connection to 'ws://localhost:8227/_event/?token=0283149d-e7e6-47b5-94c4-af56eae5d12e&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  console: error WebSocket connection to 'ws://localhost:8227/_event/?token=0283149d-e7e6-47b5-94c4-af56eae5d12e&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  console: log Disconnect websocket on pagehide
+  console: warning This page was built for another version of the app than the backend it connected to (state schema 9dedbb55279cd89a392387c4357d3b95, backend 4153d08721a0591a99abd5a159d64e5d). Reload the page to get th
+  console: log Disconnect websocket on page navigation

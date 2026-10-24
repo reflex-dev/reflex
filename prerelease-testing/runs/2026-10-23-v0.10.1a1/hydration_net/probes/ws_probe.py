@@ -25,7 +25,8 @@ import playwright  # noqa: F401  venv guard
 assert f"/envs/{os.environ.get('DRV_VENV', 'driver')}/" in playwright.__file__, playwright.__file__
 
 STATE = "reflex___state____state"
-IPSTATE = f"{STATE}.hnet___hnet____ip_state"
+# IPState.get_full_name() on both 0.10.0 and 0.10.1a1 (checked with an import of the app)
+IPSTATE = f"{STATE}.hnet___hnet___ip_state"
 
 
 def ws_frame(payload: bytes, opcode: int = 1) -> bytes:
@@ -62,6 +63,7 @@ async def main():
     ap.add_argument("--local-addr", default=None)
     ap.add_argument("--hdr", action="append", default=[])
     ap.add_argument("--hdr-hex", action="append", default=[])
+    ap.add_argument("--line-hex", action="append", default=[], help="a whole raw header line as hex (name bytes too)")
     ap.add_argument("--tag", default="ws")
     ap.add_argument("--path", default="/ip")
     ap.add_argument("--state-schema", default=None)
@@ -99,6 +101,8 @@ async def main():
     for h in a.hdr_hex:
         name, _, hx = h.partition(":")
         lines.append(name.encode() + b": " + bytes.fromhex(hx))
+    for hx in a.line_hex:
+        lines.append(bytes.fromhex(hx))
     w.write(b"\r\n".join(lines) + b"\r\n\r\n")
     await w.drain()
     try:
@@ -139,8 +143,11 @@ async def main():
                         ev = json.loads(txt[len("42/_event,") :])
                         delta = ev[1].get("delta", {}) if isinstance(ev[1], dict) else {}
                         for st, fields in delta.items():
-                            if st == IPSTATE and "seen" in fields:
-                                out["seen"] = fields["seen"]
+                            if st == IPSTATE:
+                                # delta keys carry the field marker suffix (e.g. "seen_rx_state_")
+                                for k, v in fields.items():
+                                    if k.split("_rx_state_")[0] == "seen":
+                                        out["seen"] = v
                     except Exception as e:  # noqa: BLE001
                         out["errors"].append(f"parse: {e!r}")
         except (asyncio.IncompleteReadError, ConnectionResetError) as e:

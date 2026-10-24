@@ -1,0 +1,4 @@
+## /whoami direct:
+{"client":["127.0.0.1","48238"],"xff":null,"all_xff":[]}
+## /whoami via proxy 3145 (spoofed XFF 6.6.6.6):
+{"client":["127.0.0.2","48655"],"xff":"6.6.6.6, 127.0.0.1","all_xff":["6.6.6.6, 127.0.0.1"]}

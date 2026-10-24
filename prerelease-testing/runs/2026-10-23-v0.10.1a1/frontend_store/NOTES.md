@@ -169,3 +169,56 @@ Third-party use of the removed `StateContexts` export: GitHub code search (`Stat
 reflex's own old templates — no published component package hand-writes it. reflex-enterprise 0.9.8 imports only
 `ColorModeContext` from `$/utils/context` (still exported) and passes `VarData(position=...)` in dnd.py /
 combobox.py (now a deprecation warning, see the enterprise item).
+
+### schema_app (#7553 / #7435): old static frontend (:3227) + prod `--backend-only` backends (:8227)
+
+```
+cd $W && VENV=new ./schema_run.sh export v1 SCHEMA_EXTRA=0      # reflex export --frontend-only --no-zip, REFLEX_API_URL=http://localhost:8227 -> schema_app/static_v1
+./schema_scenarios.sh      # S1-S3 (+ first attempts of S4/S5); ./schema_scenarios2.sh S4a; ./schema_scenarios3.sh S4b/S5/S5b
+```
+`static_serve.py` serves the export with the SPA fallback; `drive_schema.py` records per document load the navigation
+type, mismatch / unknown-substate console warnings, the `#reflex-new-version-banner`, and whether typed input survived;
+`--restart-cmd` swaps the backend under the open page.
+
+| scenario | result |
+|---|---|
+| S1 identical build: frontend exported in one process, `reflex run --env prod --backend-only` in another; 3 reloads; prerendered `/second` and `/item/5`; ComponentState instances on 2 pages | pass: 0 mismatch warnings, no banner, 0 backend "does not match" lines, state kept across reloads |
+| S2 prod restart of the identical backend with the page open (typed input in an uncontrolled field) | pass: socket reconnects, no reload (loads unchanged), input kept, 0 mismatches |
+| S3a Redis (`:8229`) + `GRANIAN_WORKERS=3` forked from the preloading supervisor, 6 reloads | pass: 3 workers started, 0 mismatches |
+| S3b same with `REFLEX_BACKEND_START_METHOD=spawn` (each worker imports the app itself) | pass: 0 mismatches — hash stable across processes |
+| S4a default-only backend change (`count: int = 7`) deployed under the open page | pass: no reload, no mismatch (defaults are not hashed), new default visible after the reconnect |
+| S4b renamed handler deployed under the open page (`REFLEX_AUTO_RELOAD_COOLDOWN=6s`) | pass: reconnect → exactly ONE automatic reload (loads 5→6, `navigation.type=reload`, `reflex_last_reloaded_on_error` set), the reload lands on the same skew → banner `#reflex-new-version-banner`, page hydrated and events work with the banner up, no further reload 9 s past the cooldown, the banner's Reload button reloads (loads 7) and the banner shows again; backend logs "does not match" once per connect (3) |
+| S5 extra substate + var deployed under the open page (cooldown 8 s) | pass, same reload/banner behaviour; the delta for the unknown substate is skipped: console "Skipping state update for unknown substate(s) ... extra" once per connection, backend `Skipped state update for unknown substate(s)` 3× (3 connections), the rest of the hydrate applies (count/tally kept), no page errors |
+| S5b fresh load of the old frontend against the extra-substate backend, 2 manual reloads, prerendered routes | first load reloads once and shows the banner; every later load inside the cooldown shows the banner without reloading; app usable; the driver's "no mismatch" expectations fail as intended (6 FAILs = expected mismatch) |
+| lost user input | the automatic reload discards an uncontrolled `<input>` value typed before the backend swap (by design: reload once); S2 shows a same-schema restart keeps it |
+
+`schema_app` after the sequence: no reload loops anywhere (loads counter), no page errors in any scenario.
+
+### mid-size (BIG_N=300, all 300 read) dev timings, 2 runs each (`big_*_dev300_run*.json`)
+
+| | load | hydrated | 3-substate event | 1-substate event | reload+hydrate |
+|---|---|---|---|---|---|
+| 0.10.1a1 | 1572 / 271 ms | 1937 / 667 ms | 109 / 89 ms | 58 / 59 ms | 265 / 244 ms |
+| 0.10.0 | 1372 / 355 ms | 1795 / 761 ms | 115 / 109 ms | 61 / 54 ms | 328 / 351 ms |
+
+Equivalent; the single-store version is slightly faster on reload. First-run numbers include Vite's first transform.
+
+## Summary of findings
+
+1. (low, not a regression) Removing a configured `TailwindV4Plugin`/`TailwindV3Plugin` from `rxconfig.py` leaves
+   `.web/postcss.config.js` referencing `@tailwindcss/postcss` while the plugin's dev dependency is pruned →
+   `Failed to load PostCSS config` on every page until `.web` is deleted. Same on 0.10.0.
+2. (low, observation) `react_compiler=True` silently skips every component that renders an element with an `id`
+   (the hoisted `refs["ref_x"] = ref_x` and ref access make the compiler bail out); page route modules get no
+   `_c(` at all, only id-less memo subcomponents are compiled. Docs say `app/` is covered.
+3. (info) 0.10.1a1 keeps a dev session alive when a hot reload adds a substate (0.10.0 killed it), and
+   #7273/#7441/#7586/#7565/#7518/#7573/#7405/#7544/#7407 all verified with 0.10.0 positive controls.
+
+## Artifact index
+
+`fs_app/`, `fs_app_prev` = same source, `bigstate/`, `schema_app/` (apps); `serve.sh` (start/stop/wait with pid files),
+`schema_run.sh` + `schema_scenarios*.sh` + `static_serve.py` (schema scenarios); drivers `drive_share.py`,
+`drive_hooks.py`, `drive_js.py`, `drive_hmr.py`, `drive_big.py`, `drive_schema.py`; probes `probe_cdn.py`,
+`probe_schema.py`, `ssr_probe.mjs`, `rc_probe.mjs` (run inside `.web/`); `logs/*.json` = driver reports,
+`logs/schema_*.out` = driver stdout, `compiled_snapshots/` = `vite.config.js` / `package.json` / `context.jsx` /
+`tailwind.config.js` per run; `shots/big_prev_dev_1500.png` = the blank page on 0.10.0.

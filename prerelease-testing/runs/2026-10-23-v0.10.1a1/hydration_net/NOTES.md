@@ -31,6 +31,7 @@ $WORK/src/scripts/run_area.sh quick > $WORK/area_quick.txt 2>&1     # trimmed co
 | HYD-01 / F-002 `run_f002.sh <v> prod ... 3140 3140` | 0.10.0a1: fresh profile's localStorage holds `cu_ls, wt_ls, wu_ls, wu_sync` (+ SS, cookies) after the first load; v2 returning visitor keeps `wu-light` (stale default) | fresh x2 and same-build returning: localStorage only `theme=system`; v2 returning + fresh show `*-dark-v2` / `wu-sync-v2`; sync tabs converge on `sync-from-tabA` | **fixed, unchanged vs 0.10.0** |
 | HYD-02 / F-003 `run_cv.sh <v> dev ... 3142 8142 <vars> PYTHONHASHSEED=4` | 0.10.0a1 a/b/g: `reload [l='bad']` (browser keeps the bad token through reload/probe/noop) | `CVSTORE MATCHES cvstore_dev.summary.txt` (a–j, 0-byte diff vs the 0.10.0 expected file; b keeps N-016) | **fixed, unchanged** |
 | HYD-08 / A3-11 `run_storm.sh <v> dev 3 3142 8142 S 6` | 0.10.0a3 Part S: **0/3 storms on this box** (README recorded 3/4 on a quieter machine — Part S is timing dependent; see the Part R control below) | 0/3 storms, 59–65 frames, 0 in the quiet window, all 7 tabs + localStorage `s5` | pass (control via Part R) |
+| HYD-08 mechanism, Part R `run_storm.sh <v> dev 2 3142 8142 R 6` (tab B's inbound socket held 2.5 s while A changes `v1`->`v2`; `hnet_results/stormR-*.txt`, `results/sync/storm_*_R_6_*.json`) | 0.10.0a3 **reproduces the stale boot echo 2/2**: A's localStorage is overwritten `v2`->`v1` by B's echo at release, then `v1`->`v2` (`A_storage_events` 2 entries, `A_uvi` 2 update_vars_internal), and in run 1 A's UI shows `v1` again (`A_showed_v1_after_change: true`) | 2/2: `A_storage_events: []`, `A_uvi: []`, A never shows `v1` again, B ends on `v2` | **fixed** (= 0.10.0) |
 | HYD-09 / A3-12 `run_stamp2.sh <v> dev 3142 8142 2 1 6` | 0.10.0a3: run 1 **storm** (1,108,630 frames, 306k/299k per 5 s window, tabs split `36382b-1`/`2a91e1-1`); run 2 quiet (timing) | 0/2 storms, 87 frames each, 0 per 5 s afterwards, all 6 tabs on one slug; `/same` quiet (48 frames); compiled `state.js` md5 `de8ccd2b` (0.10.0: `b7915eda` — the template changed: #7545/#7551/#7605/#7435/#7553) | **fixed** |
 | #7360 / ENT-16 / DOC-14 `run_rtr.sh <v> dev <label> 3142 8142 8143` (hdr_proxy injects 8 credential headers + plain and HttpOnly cookie; scans every websocket frame, document, DOM, console) | 0.10.0a4: **all 10 secrets leak**: 20–21 inbound frames each, 1–2 outbound, present in the `/front` DOM (`front_html_has` all True), `recv_cookie` arg carries `rtr_plain=PLAINSECRET7a1; rtr_httponly=H…` | **0 secrets** in received / sent frames, documents, DOM, console (258 in / 111 out frames, 34 sockets, 18 proxied upgrades); `headers.cookie` renders `""`, `recv_cookie` arg `""`; backend handlers still see cookies + auth headers; `cmp_rtr.py ctrl-dev new-dev`: `steps A=37 B=37 log/url diffs=0`, reconnect identical; console only the favicon 404 | **holds** (= 0.10.0) |
 
@@ -93,4 +94,54 @@ controls the result (as the docs warn: set hops to the real number of proxies); 
 **Separate XFF lines (`xff_proxy.py --mode line`), hops=1, leg `dev_line`** — the proxy adds its own
 `X-Forwarded-For: 127.0.0.3` line after the client's spoofed line(s); #7588 joins them in order and hops=1 takes the
 rightmost -> `127.0.0.3` in every case.
+**`REFLEX_TRUSTED_PROXY_HOPS=1` (env var path), leg `dev_env`** — identical to `HNET_HOPS=1` (proxied spoofs ->
+`127.0.0.3`, direct `6.6.6.6` trusted). **Invalid values, leg `dev_bad`** (`hnet_results/dev-bad.txt`):
+`trusted_proxy_hops=-1` in `rx.Config` and `REFLEX_TRUSTED_PROXY_HOPS=-2` -> `ConfigError: trusted_proxy_hops must be
+a non-negative integer.`; `=abc` / `=true` -> `EnvironmentVarValueError: Invalid integer value: 'abc' for
+trusted_proxy_hops`. The server refuses to start in each case (clear message, no traceback-less hang).
+**Prod (single port 3144, proxy 3145), hops=1, leg `prod_h1`** — same as dev: proxied spoofs -> `127.0.0.3`, browser
+through the proxy `client_ip=127.0.0.1` everywhere (frontend, computed var, on_load, click, upload), direct spoof
+trusted (documented).
+**Baseline 0.10.0, leg `prev_dev`** (`hnet_results/prev-dev.matrix.txt`): through the proxy `X-Forwarded-For: 6.6.6.6`
+-> `ip=6.6.6.6` (leftmost entry, spoofable; chain `6.6.6.6, 7.7.7.7, 127.0.0.3` -> `6.6.6.6`). This is the behaviour
+#7614 removes; on 0.10.1a1 the same request yields the peer (hops=0) or the proxy-appended `127.0.0.3` (hops=1).
+
+Observations on #7614 (none is a regression; all are documented or pre-existing):
+1. Direct connections with hops>=1 trust the client's header (documented "do not enable if clients can connect
+   directly"); hops over-configured by one lets the client pick the IP (documented: "set to the number of proxies").
+2. The selected entry is not validated as an IP: `not an ip!! <script>`, `1.2.3.4:5678`, `[2001:db8::1]:443`, `éè`
+   (latin-1 decoded bytes) all become `router.session.client_ip` verbatim (0.10.0 did the same with the leftmost
+   entry). Apps that log or key rate limits on `client_ip` should treat it as untrusted text.
+3. `X-Real-IP` and RFC 7239 `Forwarded:` are never consulted (only XFF) — consistent with the docs.
+4. **reflex-enterprise 0.9.8 is inconsistent with #7614** (code reading of the installed wheel, not run end to end):
+   `reflex_enterprise/plugins/event_handler_api.py:1353-1355` builds the REST event-handler `router_data` with
+   `client_ip = headers.get("x-forwarded-for", client_ip).partition(",")[0].strip()`, i.e. the **leftmost** XFF
+   entry unconditionally, while the same plugin's own `trusted_proxy_hops` option (line 1427, default 0) only keys
+   the token endpoint's per-IP rate limit. A handler called over REST therefore sees a client-controlled
+   `router.session.client_ip` even on reflex 0.10.1a1 with `trusted_proxy_hops=0`. For the enterprise agent.
+
+### 2.3 #7551 / #7605 behind a proxy with a frame limit — `probes/close_proxy.py` (closes on a client frame > 100 kB)
+Leg `dev_close` (new) vs `prev_close` (0.10.0): 300k LocalStorage, backend reachable only through the proxy
+(`REFLEX_API_URL=http://localhost:8143`); Chromium fragments the CONNECT into 131,000-byte frames, the proxy closes
+each attempt (`client frame payload 131000 > 100000: closing`).
+- **new**: 12 websocket opens in 15 s, gaps `0.27, 0.43, 0.63, 0.82, 1.02, 1.22, 1.42, 1.62, 1.83, 2.02, 2.02` s
+  (incremental backoff capped at 10 x 200 ms); toast at 0.69 s: `Cannot connect to server: connection closed before
+  connecting (transport close). Check if server is reachable at ws://localhost:8143/_event`, still shown at 15 s;
+  shrink storage + reload -> hydrates. Proxy log: 12 closes.
+- **0.10.0**: **1051 opens in 15 s** (gaps 8–22 ms, a tight loop), no toast, no console error, never hydrates; proxy
+  log 1062 closes. -> #7605 fixed; not a regression.
+- The server-limit case on 0.10.0 (`prev_dev` leg, 1.1 MB): 326 opens / 12 s, 325 CONNECT frames actually sent,
+  no error, no toast (= F-008); on new 1 open, 0 CONNECT sent, one error (see 2.1).
+
+### 2.4 Baseline 0.10.0 for the browser scenarios (`prev_dev`, `hnet_results/prev-dev.scen.txt`, 19/33)
+| scenario | 0.10.0 | 0.10.1a1 (dev `dev_h0`, prod `prod_plain` 34/34) |
+|---|---|---|
+| #7545 shared name, other tab | only the **last declared** var (`Plain.shared`) follows: `other_tab=[pref-default, pref-default, from-a]` (#7506) | all three follow |
+| #7568 storage dependents per load | `tok_len` **2**x, `sib_len` **2**x | 1x / 1x |
+| #7603 storage-annotated vars | server log `Expected field 'Typed.ann_ck' to receive type Cookie, but got 'ck-w1' of type str` on every hydrate, for `ann_ls`/`ann_ck`/`ann_ss`/`ann_opt`/`ann_fld` (#7499); values still applied | no such line |
+| non-str storage vars (`int`/`bool`/`dict`) | `Expected field 'Typed.n_int' to receive type int, but got '3' of type LocalStorage` 39x (every state instantiation) + `got '2' of type str` at hydrate; hydrate back as strings; dict stored as `[object Object]` | identical (41x / 20x prod) — **pre-existing, unsupported** (docs: storage vars "currently only support string values"); the per-instantiation log line is noisy but not new |
+| #7572 override dependents | pass (0.10.0 predates #7568, so the #7571 regression never shipped) | pass |
+| #7407 client_state | late reader shows `initial` after an on_load push (push lost), stays `clicked` after set-back-to-default, gate reader misses the push; no TypeError (that part was #7286 in 0.10.0) | all pass |
+| #7551 1.1 MB hydrate | storm (326 opens / 12 s), no error | one error + toast, no loop |
+| same-tab siblings sharing a storage name | writing tab shows only the written var | same (browser `storage` events never fire in the writing tab; by design, A3-03 docs caveat) |
 

@@ -1,0 +1,5 @@
+[pass] bigproxy_backoff_no_tight_loop: {"n_ws_opens": 12, "open_gaps": [0.27, 0.431, 0.627, 0.816, 1.017, 1.217, 1.418, 1.622, 1.829, 2.016, 2.023], "hydrated": "false", "console_errors": [], "observe_s": 15.0}
+[pass] bigproxy_toast_shown: {"first_toast": ["Cannot connect to server: connection closed before connecting (transport close).\nCheck if server is reachable at ws://localhost:8143/_event"], "toast_at_s": 0.69, "final": ["Cannot connect to server: connection closed before connecting (transport close).\nCheck if server is reachable at ws://localhost:8143/_event"]}
+[pass] bigproxy_recovery: {"big_len": "len:10"}
+SUMMARY 3/3 pass; fail=[]
+proxy closes: 12

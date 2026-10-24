@@ -1,0 +1,121 @@
+{
+ "checks": [
+  {
+   "name": "first load: no mismatch warning",
+   "ok": true,
+   "got": 0,
+   "want": 0
+  },
+  {
+   "name": "first load: no banner",
+   "ok": true,
+   "got": 0,
+   "want": 0
+  },
+  {
+   "name": "first load: navigation type",
+   "ok": true,
+   "got": "navigate",
+   "want": "navigate"
+  },
+  {
+   "name": "after 6 reloads: no mismatch warning",
+   "ok": true,
+   "got": 0,
+   "want": 0
+  },
+  {
+   "name": "after reloads: no banner",
+   "ok": true,
+   "got": 0,
+   "want": 0
+  },
+  {
+   "name": "after reloads: count kept",
+   "ok": true,
+   "got": "1",
+   "want": "1"
+  },
+  {
+   "name": "after reloads: tally kept",
+   "ok": true,
+   "got": "1",
+   "want": "1"
+  },
+  {
+   "name": "second: tally t3 renders",
+   "ok": true,
+   "got": "0",
+   "want": "0"
+  },
+  {
+   "name": "prerendered routes: no mismatch warning",
+   "ok": true,
+   "got": 0,
+   "want": 0
+  },
+  {
+   "name": "prerendered /item/5 iid",
+   "ok": true,
+   "got": "5",
+   "want": "5"
+  },
+  {
+   "name": "no page errors so far",
+   "ok": true,
+   "got": [],
+   "want": []
+  }
+ ],
+ "n_fail": 0,
+ "console": [
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "t": 1792792707.6149933
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "t": 1792792708.1568735
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "t": 1792792708.6307867
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "t": 1792792709.1399777
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "t": 1792792709.6317694
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "t": 1792792710.139886
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "t": 1792792710.6739793
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "t": 1792792711.1961436
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "t": 1792792711.7228909
+  }
+ ],
+ "pageerrors": [],
+ "mismatch_warnings": 0,
+ "unknown_substate_warnings": 0
+}

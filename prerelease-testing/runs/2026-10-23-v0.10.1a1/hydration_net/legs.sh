@@ -31,6 +31,10 @@ for LEG in "$@"; do
       matrix_ip dev-h0 3142 8142 8143; whoami_ 8142 8143 | tee "$O/dev-h0.whoami.txt"
       mkdir -p "$O/dev-h0-scen"; $NP timeout 900 $DRIVE --base http://localhost:3142 --out "$O/dev-h0-scen" --only big,shared,cv,typed,ovr,cs 2>&1 | grep -E "^\[|^SUMMARY" | tee "$O/dev-h0.scen.txt"
       "$R" stop dev; cp "$(ls -t "$W/logs/hnet-dev"-*.log | head -1)" "$O/dev-h0.server.log";;
+    dev_h0m)
+      "$R" new dev dev 3142 8142 --proxy 8143:append --probe-only -- HNET_HOPS=0 || continue
+      "$M" dev-h0 8142 8143 | tee "$O/dev-h0.matrix.txt"
+      "$R" stop dev;;
     dev_h1)
       "$R" new dev dev 3142 8142 --proxy 8143:append --probe-only -- HNET_HOPS=1 || continue
       matrix_ip dev-h1 3142 8142 8143; whoami_ 8142 8143 | tee "$O/dev-h1.whoami.txt"

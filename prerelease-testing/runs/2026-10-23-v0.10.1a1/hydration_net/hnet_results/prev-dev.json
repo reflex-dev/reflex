@@ -1,0 +1,88 @@
+{
+ "base": "http://localhost:3146",
+ "checks": {
+  "C21_remove_synced_key": {
+   "ok": true,
+   "quiet_frames": 0,
+   "ls": null,
+   "t1": "syn-default",
+   "t2": "keep-me",
+   "t2_writes": [],
+   "t2_se": [
+    [
+     785,
+     "h4_syn",
+     "",
+     "keep-me"
+    ],
+    [
+     842,
+     "h4_syn",
+     "keep-me",
+     ""
+    ]
+   ],
+   "t2_reload": "syn-default",
+   "ls_after_reload": null
+  },
+  "C21_clear_local_storage": {
+   "ok": true,
+   "quiet_frames": 0,
+   "ls": {},
+   "t1": "syn-default",
+   "t2": "again"
+  },
+  "C23_shared_name_sync_and_nosync": {
+   "ok": true,
+   "ls_waits": [
+    [
+     true,
+     0.01
+    ],
+    [
+     true,
+     0.01
+    ],
+    [
+     true,
+     0.0
+    ]
+   ],
+   "after_ns_write": {
+    "t1": [
+     "via-ns",
+     "shared-default"
+    ],
+    "t2": [
+     "shared-default",
+     "via-ns"
+    ]
+   },
+   "after_s_write": {
+    "t1": [
+     "via-ns",
+     "via-s"
+    ],
+    "t2": [
+     "shared-default",
+     "via-s"
+    ]
+   },
+   "t1_reload": [
+    "via-ns",
+    "via-ns"
+   ],
+   "quiet_frames": 0
+  }
+ },
+ "noise": {
+  "C21": {
+   "console": [],
+   "failed": []
+  },
+  "C23": {
+   "console": [],
+   "failed": []
+  }
+ }
+}

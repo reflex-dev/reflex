@@ -26,7 +26,7 @@ class Root(rx.State):
         self.ticks += 1
 
 
-def _inc(self):
+def inc(self):
     self.v += 1
 
 
@@ -35,7 +35,7 @@ for _i in range(N):
     _cls = type(
         f"S{_i}",
         (Root,),
-        {"__annotations__": {"v": int}, "v": _i, "inc": rx.event(_inc), "__module__": __name__},
+        {"__annotations__": {"v": int}, "v": _i, "inc": rx.event(inc), "__module__": __name__},
     )
     SUBS.append(_cls)
 
