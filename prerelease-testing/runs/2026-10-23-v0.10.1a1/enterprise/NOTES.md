@@ -266,7 +266,7 @@ an AG Grid (another grid, a chart, a memo component) stays stale until a later d
 | gridshare (two grids on one in-place-mutated list) | **44/45 x3: grid B stale after a grid-A cell edit** | prev 45/45 x2 → regression |
 | a4 auth matrix 36/36 + MCP OAuth (memory) + anonymous MCP | pass | = 0.10.0 record |
 | check_mcp_anon --rate (Redis) | pass | — |
-| check_mcp_oauth_redis.py (Redis) | FAIL on rxe 0.9.8 (new 2/2 + rerun below, prev 1/1); pass rxe 0.9.7; pass memory | rxe-side, not reflex |
+| check_mcp_oauth_redis.py (Redis) | intermittent on rxe 0.9.8: new 2 fail / 1 pass, prev 1 fail; rxe 0.9.7 1 pass; memory 1 pass; focused probe 3/3 pass | rxe-side race, not reflex |
 | N-033 default workers | unchanged (27/27 405 cold, 2/6 logins keep cookies) | open rxe#262 |
 | N-026 flow reload A/B | 0/3 new, 0/3 prev | open rxe#269 |
 | vite "Files in the public directory" log for rxe's `$/public/external/...messageListener.js` import | Debug-level, present on prev-ent too (mantine dev prev 2 lines) | not new |
@@ -274,3 +274,9 @@ an AG Grid (another grid, a chart, a memo component) stays stale until a later d
 Not covered: expiry matrix, prod_suite / bglive (N-034), vauthx storx / vea (A3-10, A3-09), maps app, highcharts/tickets/rxeapp
 demos, reflex-azure-auth, `REFLEX_FRONTEND_LAZY_BUNDLED_LIBRARIES` entr run, Redis multi-worker rxe prod beyond N-033,
 `react_compiler` with rxe components.
+
+## Cleanup
+All servers, Redis, the mock IdP, the account stub and browsers stopped (`auth/bin/stop_app.sh`, `grid/bin/stop.sh`,
+`auth/bin/infra.sh stop`); ports 3600-3639 / 8600-8639 verified free; every `.web/`, `node_modules/`, `.states/` and
+sqlite db under `$SB/apps/enterprise/work` deleted (914 MB → sources + logs only). Venvs built for this item stay under
+`$SB/envs/enterprise-*` (drv, ctrl-a2, ctrl-a3, ctrl-rxe96, ctrl-rxe97, demo-new).
