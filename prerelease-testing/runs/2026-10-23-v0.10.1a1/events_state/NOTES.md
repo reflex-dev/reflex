@@ -84,3 +84,85 @@ annotations are rejected at compile time (0.10.0 `TypeError: Could not compare t
 
 ## 2. Crafted socket payloads / EVT-02
 (see below — filled in as the run proceeds)
+Crafted socket payloads (`probe_sio_payload.py`, run against the dev backend with the real CONNECT auth shape:
+`?token=<uuid>` query + `auth={"event": <hydrate_and_load>, "state_schema": <hash from a browser CONNECT frame>}`;
+output `out/sio_payload-new-dev.txt`, server log `out/sio_payload-new-dev.serverlog.txt`):
+- a valid `{"__reflex_form_data__": [[k, v], ...]}` envelope sent by hand reaches a dict handler as the last-value dict.
+- `{"__reflex_form_data__": "not-a-list" | 5 | [["one"]] | [[1,2,3]] | [[["x"],"v"]]}` in a `dict`-annotated OR
+  unannotated handler arg: `_transform_event_payload` raises (ValueError/TypeError from `dict(entries)`), the
+  `_prepare_event_payload` fallback calls `form_data_as_dict(value)` which calls `dict(entries)` AGAIN, so the
+  exception escapes: `[Reflex Backend Exception]` with a 3-level traceback in the server log and an "An error occurred"
+  toast to the client (6 tracebacks for 6 messages); the handler never runs; the connection survives and the next normal
+  event works. Any connected websocket client can trigger this per message (no auth needed beyond a socket). 0.10.0 has
+  no such envelope (not applicable). Low severity (log noise / a dead fallback branch), not a crash.
+- a dict nested one level down containing the key is untouched (only top-level args are decoded).
+- EVT-02 (`probe_client_error.py`, `out/client_error-new-dev*.txt`): socket.io-level `client_error` with no payload, `{}`,
+  None, a string, a list, a dict without the expected keys, a 100 kB stack: no traceback, connection kept, the server
+  logs `[Reflex Frontend Exception] [SID…] unknown: No error message provided` (3 lines for 7 emits: rate-limited); a
+  normal event afterwards works. **fixed (unchanged)**. Note: sending a *state* event named `…state.client_error` (not a
+  registered handler) logs a full `KeyError: 'No registered handler found for event'` traceback per message — same on
+  0.10.0 (any unknown event name does), not new.
+
+## 3. Re-verification (class_state fixtures, copied to `$W/class_state`, work dir `$W/cs_work`)
+```bash
+export W=$SB/apps/events_state/cs_work NEW=events_state-new PREV=events_state-prev; CS=$SB/apps/events_state/class_state
+bash $CS/bin/run_python_suite.sh $NEW; bash $CS/bin/run_python_suite.sh $PREV      # logs: $W/logs/py/<venv>/
+bash $CS/bin/n004_matrix.sh $W/logs/n004 $NEW $PREV                               # schema/pickle/disk interchange
+```
+- **STATE-11…19 (item 8)**: `rc.txt` identical between venvs; every probe log identical after normalizing version /
+  paths / timings / `base.py` line numbers (4822 → 5035) / a random numpy length (`probe_docs`). pytest: moot 25 passed,
+  converted 25, converted_attr 21, n039 204 + 1 skipped, undo_edge / v7 collection ERROR (expected), patch_substate 2F/2P,
+  test_min 1F/1P, backend_var 4F/2P, other_attrs 1F/9P — exactly the 0.10.0 record. Dev guard (`guard7495`,
+  `guard_local_rename`) unchanged. → still fixed / moot.
+- **STATE-20/21 (item 9)**: schema hash `bbd147dc3cdaec5701080b994dc1875a` on both versions; shape hashes
+  HBase=2efae2635f7cb10f HChild=f2d2a961f646368d HCfg=472cb6c56187afeb HSd=cb3b619998cde91c identical; pickles saved by
+  either version load on the other at defaults 0 and 5 (field values only); disk sessions continue writer/reader in all
+  4 combinations (`$W/cs_work/logs/n004/*.txt`). → unchanged (STATE-21 Python-version dependence not re-tested).
+- **STATE-05 (item 7)** (`probe_state05_meta.py`, `out/probe_state05_meta-{new,prev}-ent.txt`, venvs `new-ent`/`prev-ent`
+  with rxe 0.9.8): `type(rx.State) is BaseStateMeta` True; a `BaseStateMeta`-derived metaclass on a State subclass and
+  its substate constructs and instantiates; `mixin=True` works and a mixin cannot be instantiated; `_reflex_state_root`
+  is rejected as a reserved name (`StateValueError`); 113 rxe modules import (only `reflex_enterprise.testing.plugin`
+  needs pytest), 0 deprecation warnings during import; an rxe State subclass constructs. Identical on prev. → fixed.
+  (#7626 contract: `state_root=True` could not be exercised because `reflex_base.vars.base.BaseState` is not importable
+  from there; the keyword is only meaningful on the root class.)
+- **CMP-01 (item 17)** (`probe_upload_names.py`, `out/upload_names-new-dev.txt`; page `/upload` of formsapp with a
+  handler writing `rx.get_upload_dir() / file.name`): 17 hostile filenames (`..`, `../../etc/passwd`, `....`, `.. `,
+  `/abs/evil.txt`, `C:\x\y.txt`, `a/../../b.txt`, backslash traversal, `sub/dir/file.txt`, NUL byte, `. .`, `~/x.txt`,
+  `%2e%2e/%2e%2e/x`, empty, invalid UTF-8) all resolve inside the upload dir (`name` = basename or `upload`; `path` keeps
+  relative dirs with `..` segments removed, e.g. `etc/passwd`, `a/b.txt`, `~/x.txt` literal); HTTP 200 for all, no server
+  traceback. The NUL-byte name and an empty filename (`name=None`) only fail inside the user handler. → fixed (no 0.9.8
+  control venv available for the positive control).
+- **EVT-06 (item 6)**: see §4 (evapp `/filtered`).
+
+## 4. Python-level hunts (`probe_state_misc.py`, `out/probe_state_misc-<venv>.txt`; run on events_state-{new,prev} and
+the py3.14 venvs `process_model-py314-{new,prev}`)
+- **#7500** dict views: on new, mutation through `d.values()`, `d.items()`, `list(d.values())[0]`, `next(iter(...))`,
+  `reversed(d.values())`, `[*d.values()]`, `sorted(...)`, `max(...)`, `d.values().mapping[k]`, `dict(d.items())[k]`,
+  `for inner in nd.values(): inner[k] = v` all mark the var dirty and the cached var recomputes in the delta (0.10.0
+  missed every one of these). Still MISSED on both versions (pre-existing): `d.copy()[k].append(...)` (while
+  `dict(d)[k]` and `{**d}[k]` ARE tracked — inconsistent) and in-place operators on a value obtained without
+  `__setitem__` (`v = d["a"]; v += [1]`, `for v in d.values(): v += [..]`). Same on 3.14.
+- **#7636 / #7592**: handler args annotated `rx.Model` (also `Item | None`, `list[Item]`), pydantic v2 model, dataclass:
+  0 warnings on new; 0.10.0 emitted 2 × `PydanticDeprecatedSince20: The __fields__ attribute is deprecated` per rx.Model
+  payload key and 28 for assigning / delta / var access of model-typed state vars. `pydantic.v1` does not exist in
+  pydantic 2.14.1, so the v1-compat path could not be exercised.
+- **#7410**: with `@rx.state._override_base_method def get_delta` dropping an async `@rx.var(cache=False)` from the
+  delta: 0.10.0 → 2 `RuntimeWarning … never awaited` (`AsyncComputedVar.__get__.<locals>._awaitable_result` and
+  `_drop_unchanged_delta_value`); 0.10.1a1 → still 1: `coroutine '_drop_unchanged_delta_value' was never awaited`
+  (the wrapper created in `build_delta` is appended to `pending` and never closed when `_commit_delta_records` finds the
+  key withheld). Checked in a real app too: evapp `/filtered` (`atick`), see §5.
+- **#7443**: `app.modify_state("bare")`, `"tok_unknown___state"`, `"tok_<root>.nope"`, `""` → `ValueError: Invalid legacy
+  state token: no state found for the state path. Expected '<client_token>_<state_full_name>'. Use
+  rx.BaseStateToken(ident=client_token, cls=StateClass) instead.` (0.10.0: `ValueError: Invalid path: ('',)`); valid
+  legacy strings and `rx.BaseStateToken` work; no deprecation warning is emitted for the legacy string form (EVT-09's
+  "still un-deprecated" remark stands: 0 DeprecationWarnings recorded).
+- **#7547**: `items: list[Item] = []` / no default / backend `_items` / computed `-> Item` / `'list[Item]'` string /
+  `mod.Thing` → `NameError: name 'Item' is not defined` on 3.12 and 3.14, with and without `from __future__` (0.10.0:
+  `TypeError: Unsupported type ForwardRef(...)`, `AttributeError: 'ForwardRef' object has no attribute '__name__'`, or
+  silently created the class — backend var, `list['Item']`, and on 3.14 even the plain annotation). An undefined name in
+  a *handler* argument annotation still creates the class silently on both (not covered by #7547).
+- **#7606** `reflex_base.vars.get_leaf_vars`: slices, joins, arithmetic, casts, `d[k]`, literal containers, `foreach`
+  lambdas (loop var excluded, closed-over state var included), `rx.cond` all return the state leaf vars; literals → `[]`;
+  a non-Var input raises AttributeError (`'list' object has no attribute '_hash_key'`).
+- **#7622 revert**: a `frozenset[int]` state var raises `VarTypeError: State vars must be of a serializable type …`
+  on BOTH 0.10.0 and 0.10.1a1 (identical; #7622 was never released). See the probe for `Var.create(frozenset)`.
