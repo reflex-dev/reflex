@@ -1,0 +1,132 @@
+Debug: 2:18:36 AM [vite] (ssr) connected.
+Warning: Received event data as a string. This generally should not happen and 
+may indicate a bug. Event data: {"token": 
+"02098cdc-bf8c-444e-8383-c9eed18330d0", "name": 
+"reflex___state____state.formsapp___formsapp____state.store", "payload": 
+{"form": "ok_env", "form_data": {"__reflex_form_data__": [["a", "1"], ["a", 
+"2"]]}}, "router_data": {"pathname": "/verify", "asPath": "/verify"}}
+Warning: Received event data as a string. This generally should not happen and 
+may indicate a bug. Event data: {"token": 
+"02098cdc-bf8c-444e-8383-c9eed18330d0", "name": 
+"reflex___state____state.formsapp___formsapp____state.store", "payload": 
+{"form": "bad_str", "form_data": {"__reflex_form_data__": "not-a-list"}}, 
+"router_data": {"pathname": "/verify", "asPath": "/verify"}}
+Warning: Received event data as a string. This generally should not happen and 
+may indicate a bug. Event data: {"token": 
+"02098cdc-bf8c-444e-8383-c9eed18330d0", "name": 
+"reflex___state____state.formsapp___formsapp____state.store", "payload": 
+{"form": "bad_pairs", "form_data": {"__reflex_form_data__": [["only-one"]]}}, 
+"router_data": {"pathname": "/verify", "asPath": "/verify"}}
+Warning: Received event data as a string. This generally should not happen and 
+may indicate a bug. Event data: {"token": 
+"02098cdc-bf8c-444e-8383-c9eed18330d0", "name": 
+"reflex___state____state.formsapp___formsapp____state.store", "payload": 
+{"form": "bad_unhashable", "form_data": {"__reflex_form_data__": [[["x"], 
+"v"]]}}, "router_data": {"pathname": "/verify", "asPath": "/verify"}}
+Warning: Received event data as a string. This generally should not happen and 
+may indicate a bug. Event data: {"token": 
+"55dc6112-580c-4c91-a2ba-3ed0cbf7787b", "name": 
+"reflex___state____state.formsapp___formsapp____state.store", "payload": 
+{"form": "bystander", "form_data": {"b": "fine"}}, "router_data": {"pathname": 
+"/verify", "asPath": "/verify"}}
+Warning: Received event data as a string. This generally should not happen and 
+may indicate a bug. Event data: {"token": 
+"02098cdc-bf8c-444e-8383-c9eed18330d0", "name": 
+"reflex___state____state.formsapp___formsapp____state.store_dc", "payload": 
+{"form": "garbage_int", "form_data": 5}, "router_data": {"pathname": "/verify", 
+"asPath": "/verify"}}
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-prev/lib/python3.12/site-packages/reflex_base/event/processor/eve
+nt_processor.py", line 951, in _resolve_future
+    future.result()
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-prev/lib/python3.12/site-packages/reflex_base/event/processor/eve
+nt_processor.py", line 940, in _resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-prev/lib/python3.12/site-packages/reflex_base/event/processor/eve
+nt_processor.py", line 739, in _process_event_queue_entry
+    await self._execute_event(
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-prev/lib/python3.12/site-packages/reflex_base/event/processor/bas
+e_state_processor.py", line 510, in _execute_event
+    await process_event(
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-prev/lib/python3.12/site-packages/reflex_base/event/processor/bas
+e_state_processor.py", line 326, in process_event
+    events = fn(state, **payload)
+             ^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/app
+s/verify_es/formsapp/formsapp/formsapp.py", line 88, in store_dc
+    self._record(form, dataclasses.asdict(form_data), {"pytype": 
+type(form_data).__name__})
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/dataclasses.py", line 1321, in asdict
+    raise TypeError("asdict() should be called on dataclass instances")
+TypeError: asdict() should be called on dataclass instances
+
+
+Warning: Received event data as a string. This generally should not happen and 
+may indicate a bug. Event data: {"token": 
+"02098cdc-bf8c-444e-8383-c9eed18330d0", "name": 
+"reflex___state____state.formsapp___formsapp____state.store_dc", "payload": 
+{"form": "garbage_dict", "form_data": {"zzz": 1}}, "router_data": {"pathname": 
+"/verify", "asPath": "/verify"}}
+Warning: Error transforming event payload for handler State.store_dc: Error 
+transforming event argument 'form_data' with value '{'zzz': 1}' and type hint 
+'<class 'formsapp.formsapp.DCForm'>'
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-prev/lib/python3.12/site-packages/reflex_base/event/processor/eve
+nt_processor.py", line 951, in _resolve_future
+    future.result()
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-prev/lib/python3.12/site-packages/reflex_base/event/processor/eve
+nt_processor.py", line 940, in _resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-prev/lib/python3.12/site-packages/reflex_base/event/processor/eve
+nt_processor.py", line 739, in _process_event_queue_entry
+    await self._execute_event(
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-prev/lib/python3.12/site-packages/reflex_base/event/processor/bas
+e_state_processor.py", line 510, in _execute_event
+    await process_event(
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-prev/lib/python3.12/site-packages/reflex_base/event/processor/bas
+e_state_processor.py", line 326, in process_event
+    events = fn(state, **payload)
+             ^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/app
+s/verify_es/formsapp/formsapp/formsapp.py", line 88, in store_dc
+    self._record(form, dataclasses.asdict(form_data), {"pytype": 
+type(form_data).__name__})
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/dataclasses.py", line 1321, in asdict
+    raise TypeError("asdict() should be called on dataclass instances")
+TypeError: asdict() should be called on dataclass instances
+
+
+Warning: Received event data as a string. This generally should not happen and 
+may indicate a bug. Event data: {"token": 
+"02098cdc-bf8c-444e-8383-c9eed18330d0", "name": 
+"reflex___state____state.formsapp___formsapp____state.store", "payload": 
+{"form": "after", "form_data": {"a": "still-works"}}, "router_data": 
+{"pathname": "/verify", "asPath": "/verify"}}

@@ -1,0 +1,393 @@
+
+Warning: Received event data as a string. This generally should not happen and 
+may indicate a bug. Event data: {"token": 
+"6153af88-6cee-46e5-864c-184a26c187f7", "name": 
+"reflex___state____state.formsapp___formsapp____state.store", "payload": 
+{"form": "ok_env", "form_data": {"__reflex_form_data__": [["a", "1"], ["a", 
+"2"]]}}, "router_data": {"pathname": "/verify", "asPath": "/verify"}}
+Warning: Received event data as a string. This generally should not happen and 
+may indicate a bug. Event data: {"token": 
+"6153af88-6cee-46e5-864c-184a26c187f7", "name": 
+"reflex___state____state.formsapp___formsapp____state.store", "payload": 
+{"form": "bad_str", "form_data": {"__reflex_form_data__": "not-a-list"}}, 
+"router_data": {"pathname": "/verify", "asPath": "/verify"}}
+Warning: Error transforming event payload for handler State.store: Error 
+transforming event argument 'form_data' with value '{'__reflex_form_data__': 
+'not-a-list'}' and type hint '<class 'dict'>'
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 184, in _transform_event_payload
+    transformed[arg] = _transform_event_arg(value, hinted_args)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 126, in _transform_event_arg
+    value = transform_form_data(value, hinted_args)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/utils/form.py", line
+358, in transform_form_data
+    return dict(entries)
+           ^^^^^^^^^^^^^
+ValueError: dictionary update sequence element #0 has length 1; 2 is required
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 211, in _prepare_event_payload
+    return _transform_event_payload(payload, type_hints)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 187, in _transform_event_payload
+    raise ValueError(msg) from ex
+ValueError: Error transforming event argument 'form_data' with value 
+'{'__reflex_form_data__': 'not-a-list'}' and type hint '<class 'dict'>'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/even
+t_processor.py", line 960, in _resolve_future
+    future.result()
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/even
+t_processor.py", line 949, in _resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/even
+t_processor.py", line 748, in _process_event_queue_entry
+    await self._execute_event(
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 600, in _execute_event
+    await process_event(
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 335, in process_event
+    payload = _prepare_event_payload(handler, payload)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 216, in _prepare_event_payload
+    return {arg: form_data_as_dict(value) for arg, value in payload.items()}
+                 ^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/utils/form.py", line
+377, in form_data_as_dict
+    return value if entries is None else dict(entries)
+                                         ^^^^^^^^^^^^^
+ValueError: dictionary update sequence element #0 has length 1; 2 is required
+
+
+Warning: Received event data as a string. This generally should not happen and 
+may indicate a bug. Event data: {"token": 
+"6153af88-6cee-46e5-864c-184a26c187f7", "name": 
+"reflex___state____state.formsapp___formsapp____state.store", "payload": 
+{"form": "bad_pairs", "form_data": {"__reflex_form_data__": [["only-one"]]}}, 
+"router_data": {"pathname": "/verify", "asPath": "/verify"}}
+Warning: Error transforming event payload for handler State.store: Error 
+transforming event argument 'form_data' with value '{'__reflex_form_data__': 
+[['only-one']]}' and type hint '<class 'dict'>'
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 184, in _transform_event_payload
+    transformed[arg] = _transform_event_arg(value, hinted_args)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 126, in _transform_event_arg
+    value = transform_form_data(value, hinted_args)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/utils/form.py", line
+358, in transform_form_data
+    return dict(entries)
+           ^^^^^^^^^^^^^
+ValueError: dictionary update sequence element #0 has length 1; 2 is required
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 211, in _prepare_event_payload
+    return _transform_event_payload(payload, type_hints)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 187, in _transform_event_payload
+    raise ValueError(msg) from ex
+ValueError: Error transforming event argument 'form_data' with value 
+'{'__reflex_form_data__': [['only-one']]}' and type hint '<class 'dict'>'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/even
+t_processor.py", line 960, in _resolve_future
+    future.result()
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/even
+t_processor.py", line 949, in _resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/even
+t_processor.py", line 748, in _process_event_queue_entry
+    await self._execute_event(
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 600, in _execute_event
+    await process_event(
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 335, in process_event
+    payload = _prepare_event_payload(handler, payload)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 216, in _prepare_event_payload
+    return {arg: form_data_as_dict(value) for arg, value in payload.items()}
+                 ^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/utils/form.py", line
+377, in form_data_as_dict
+    return value if entries is None else dict(entries)
+                                         ^^^^^^^^^^^^^
+ValueError: dictionary update sequence element #0 has length 1; 2 is required
+
+
+Warning: Received event data as a string. This generally should not happen and 
+may indicate a bug. Event data: {"token": 
+"6153af88-6cee-46e5-864c-184a26c187f7", "name": 
+"reflex___state____state.formsapp___formsapp____state.store", "payload": 
+{"form": "bad_unhashable", "form_data": {"__reflex_form_data__": [[["x"], 
+"v"]]}}, "router_data": {"pathname": "/verify", "asPath": "/verify"}}
+Warning: Error transforming event payload for handler State.store: Error 
+transforming event argument 'form_data' with value '{'__reflex_form_data__': 
+[[['x'], 'v']]}' and type hint '<class 'dict'>'
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 184, in _transform_event_payload
+    transformed[arg] = _transform_event_arg(value, hinted_args)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 126, in _transform_event_arg
+    value = transform_form_data(value, hinted_args)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/utils/form.py", line
+358, in transform_form_data
+    return dict(entries)
+           ^^^^^^^^^^^^^
+TypeError: unhashable type: 'list'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 211, in _prepare_event_payload
+    return _transform_event_payload(payload, type_hints)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 187, in _transform_event_payload
+    raise ValueError(msg) from ex
+ValueError: Error transforming event argument 'form_data' with value 
+'{'__reflex_form_data__': [[['x'], 'v']]}' and type hint '<class 'dict'>'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/even
+t_processor.py", line 960, in _resolve_future
+    future.result()
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/even
+t_processor.py", line 949, in _resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/even
+t_processor.py", line 748, in _process_event_queue_entry
+    await self._execute_event(
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 600, in _execute_event
+    await process_event(
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 335, in process_event
+    payload = _prepare_event_payload(handler, payload)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 216, in _prepare_event_payload
+    return {arg: form_data_as_dict(value) for arg, value in payload.items()}
+                 ^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/utils/form.py", line
+377, in form_data_as_dict
+    return value if entries is None else dict(entries)
+                                         ^^^^^^^^^^^^^
+TypeError: unhashable type: 'list'
+
+
+Warning: Received event data as a string. This generally should not happen and 
+may indicate a bug. Event data: {"token": 
+"19d4a807-842a-468f-9cf8-4cba896aa59b", "name": 
+"reflex___state____state.formsapp___formsapp____state.store", "payload": 
+{"form": "bystander", "form_data": {"b": "fine"}}, "router_data": {"pathname": 
+"/verify", "asPath": "/verify"}}
+Warning: Received event data as a string. This generally should not happen and 
+may indicate a bug. Event data: {"token": 
+"6153af88-6cee-46e5-864c-184a26c187f7", "name": 
+"reflex___state____state.formsapp___formsapp____state.store_dc", "payload": 
+{"form": "garbage_int", "form_data": 5}, "router_data": {"pathname": "/verify", 
+"asPath": "/verify"}}
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/even
+t_processor.py", line 960, in _resolve_future
+    future.result()
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/even
+t_processor.py", line 949, in _resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/even
+t_processor.py", line 748, in _process_event_queue_entry
+    await self._execute_event(
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 600, in _execute_event
+    await process_event(
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 343, in process_event
+    events = fn(state, **payload)
+             ^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/app
+s/verify_es/formsapp/formsapp/formsapp.py", line 88, in store_dc
+    self._record(form, dataclasses.asdict(form_data), {"pytype": 
+type(form_data).__name__})
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/dataclasses.py", line 1321, in asdict
+    raise TypeError("asdict() should be called on dataclass instances")
+TypeError: asdict() should be called on dataclass instances
+
+
+Warning: Received event data as a string. This generally should not happen and 
+may indicate a bug. Event data: {"token": 
+"6153af88-6cee-46e5-864c-184a26c187f7", "name": 
+"reflex___state____state.formsapp___formsapp____state.store_dc", "payload": 
+{"form": "garbage_dict", "form_data": {"zzz": 1}}, "router_data": {"pathname": 
+"/verify", "asPath": "/verify"}}
+Warning: Error transforming event payload for handler State.store_dc: Error 
+transforming event argument 'form_data' with value '{'zzz': 1}' and type hint 
+'<class 'formsapp.formsapp.DCForm'>'
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/even
+t_processor.py", line 960, in _resolve_future
+    future.result()
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/even
+t_processor.py", line 949, in _resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/even
+t_processor.py", line 748, in _process_event_queue_entry
+    await self._execute_event(
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 600, in _execute_event
+    await process_event(
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 343, in process_event
+    events = fn(state, **payload)
+             ^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/app
+s/verify_es/formsapp/formsapp/formsapp.py", line 88, in store_dc
+    self._record(form, dataclasses.asdict(form_data), {"pytype": 
+type(form_data).__name__})
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/dataclasses.py", line 1321, in asdict
+    raise TypeError("asdict() should be called on dataclass instances")
+TypeError: asdict() should be called on dataclass instances
+
+
+Warning: Received event data as a string. This generally should not happen and 
+may indicate a bug. Event data: {"token": 
+"6153af88-6cee-46e5-864c-184a26c187f7", "name": 
+"reflex___state____state.formsapp___formsapp____state.store", "payload": 
+{"form": "after", "form_data": {"a": "still-works"}}, "router_data": 
+{"pathname": "/verify", "asPath": "/verify"}}

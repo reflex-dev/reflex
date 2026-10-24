@@ -1,0 +1,166 @@
+{
+ "base": "http://localhost:3760",
+ "forms": {
+  "v_group_id_eq_name": {
+   "steps": [
+    [
+     "clicknth",
+     "button[role=checkbox]",
+     0
+    ],
+    [
+     "clicknth",
+     "button[role=checkbox]",
+     2
+    ],
+    [
+     "check",
+     "#topping"
+    ],
+    [
+     "check",
+     "input[name=topping][value=olives]"
+    ]
+   ],
+   "error": null,
+   "seq_reached": 1,
+   "ws_sent": [
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"v_group_id_eq_name\",\"form_data\":{\"__reflex_form_data__\":[[\"cg\",\"c1\"],[\"cg\",\"c3\"],[\"topping\",\"cheese\"],[\"topping\",\"olives\"]]}},\"router_data\":{\"pathname\":\"/verify\",\"asPath\":\"/verify\"}}]"
+   ],
+   "results": {
+    "v_group_id_eq_name": {
+     "form": "v_group_id_eq_name",
+     "type": "dict",
+     "data": {
+      "cg": "c3",
+      "topping": "olives"
+     }
+    }
+   },
+   "toasts": []
+  },
+  "v_once_id_eq_name": {
+   "steps": [
+    [
+     "clicknth",
+     "button[role=checkbox]",
+     1
+    ],
+    [
+     "check",
+     "#solo"
+    ]
+   ],
+   "error": null,
+   "seq_reached": 1,
+   "ws_sent": [
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"v_once_id_eq_name\",\"form_data\":{\"__reflex_form_data__\":[[\"cg1\",\"c2\"],[\"solo\",true]]}},\"router_data\":{\"pathname\":\"/verify\",\"asPath\":\"/verify\"}}]"
+   ],
+   "results": {
+    "v_once_id_eq_name": {
+     "form": "v_once_id_eq_name",
+     "type": "dict",
+     "data": {
+      "cg1": "c2",
+      "solo": true
+     }
+    }
+   },
+   "toasts": []
+  },
+  "v_msel_id_eq_name": {
+   "steps": [
+    [
+     "nselect",
+     "select[name=msel]",
+     [
+      "o1",
+      "o3"
+     ]
+    ]
+   ],
+   "error": null,
+   "seq_reached": 1,
+   "ws_sent": [
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"v_msel_id_eq_name\",\"form_data\":{\"__reflex_form_data__\":[[\"msel\",\"o1\"],[\"msel\",\"o3\"]]}},\"router_data\":{\"pathname\":\"/verify\",\"asPath\":\"/verify\"}}]"
+   ],
+   "results": {
+    "v_msel_id_eq_name": {
+     "form": "v_msel_id_eq_name",
+     "type": "dict",
+     "data": {
+      "msel": "o3"
+     }
+    }
+   },
+   "toasts": []
+  },
+  "v_rep_id_eq_name": {
+   "steps": [],
+   "error": null,
+   "seq_reached": 1,
+   "ws_sent": [
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"v_rep_id_eq_name\",\"form_data\":{\"__reflex_form_data__\":[[\"rep2\",\"first\"],[\"rep2\",\"second\"]]}},\"router_data\":{\"pathname\":\"/verify\",\"asPath\":\"/verify\"}}]"
+   ],
+   "results": {
+    "v_rep_id_eq_name": {
+     "form": "v_rep_id_eq_name",
+     "type": "dict",
+     "data": {
+      "rep2": "second"
+     }
+    }
+   },
+   "toasts": []
+  },
+  "collide_plain": {
+   "steps": [],
+   "error": null,
+   "seq_reached": 1,
+   "ws_sent": [
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"collide_plain\",\"form_data\":{\"__reflex_form_data__\":[[\"__reflex_form_data__\",\"x\"],[\"a\",\"1\"]]}},\"router_data\":{\"pathname\":\"/verify\",\"asPath\":\"/verify\"}}]"
+   ],
+   "results": {
+    "collide_plain": {
+     "form": "collide_plain",
+     "type": "dict",
+     "data": {
+      "__reflex_form_data__": "x",
+      "a": "1"
+     }
+    }
+   },
+   "toasts": []
+  },
+  "collide_chain": {
+   "steps": [],
+   "error": null,
+   "seq_reached": 1,
+   "ws_sent": [
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.collide_first\",\"payload\":{\"form_data\":{\"__reflex_form_data__\":[[\"__reflex_form_data__\",\"x\"],[\"a\",\"1\"]]}},\"router_data\":{\"pathname\":\"/verify\",\"asPath\":\"/verify\"}}]"
+   ],
+   "results": {
+    "collide_first": {
+     "form": "collide_first",
+     "type": "dict",
+     "data": {
+      "__reflex_form_data__": "x",
+      "a": "1"
+     }
+    }
+   },
+   "toasts": []
+  }
+ },
+ "console": [],
+ "errors": [],
+ "ws_sent": [
+  "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"c96a90b59165ff93\",\"d029e8db883816fc\",\"c036a6c1ed0a5850\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/verify\",\"asPath\":\"/verify\"}},\"state_schema\":\"392411f8ad8efcd5d8b013d127df2cd2\"}",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"v_group_id_eq_name\",\"form_data\":{\"__reflex_form_data__\":[[\"cg\",\"c1\"],[\"cg\",\"c3\"],[\"topping\",\"cheese\"],[\"topping\",\"olives\"]]}},\"router_data\":{\"pathname\":\"/verify\",\"asPath\":\"/verify\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"v_once_id_eq_name\",\"form_data\":{\"__reflex_form_data__\":[[\"cg1\",\"c2\"],[\"solo\",true]]}},\"router_data\":{\"pathname\":\"/verify\",\"asPath\":\"/verify\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"v_msel_id_eq_name\",\"form_data\":{\"__reflex_form_data__\":[[\"msel\",\"o1\"],[\"msel\",\"o3\"]]}},\"router_data\":{\"pathname\":\"/verify\",\"asPath\":\"/verify\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"v_rep_id_eq_name\",\"form_data\":{\"__reflex_form_data__\":[[\"rep2\",\"first\"],[\"rep2\",\"second\"]]}},\"router_data\":{\"pathname\":\"/verify\",\"asPath\":\"/verify\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.store\",\"payload\":{\"form\":\"collide_plain\",\"form_data\":{\"__reflex_form_data__\":[[\"__reflex_form_data__\",\"x\"],[\"a\",\"1\"]]}},\"router_data\":{\"pathname\":\"/verify\",\"asPath\":\"/verify\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.formsapp___formsapp____state.collide_first\",\"payload\":{\"form_data\":{\"__reflex_form_data__\":[[\"__reflex_form_data__\",\"x\"],[\"a\",\"1\"]]}},\"router_data\":{\"pathname\":\"/verify\",\"asPath\":\"/verify\"}}]"
+ ]
+}

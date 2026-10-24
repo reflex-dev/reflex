@@ -21,3 +21,17 @@ Re-verified: EVT-06, STATE-05 (113/114 rxe modules import, testing.plugin needs 
 Pre-existing (both versions): `on_submit=State.h("x_" + it)` inside rx.foreach → ReferenceError; checkbox
 uncontrolled→controlled warnings.
 Not covered: #7447 memory; pydantic.v1 path; multi-worker Redis forms; browser forms on 3.14.
+
+## Verifier (verify_es/NOTES.md)
+- ES-1 CONFIRMED, low, not a regression of existing behaviour. Sender-only; one double traceback + toast per message,
+  bystanders unaffected. Browsers never emit malformed envelopes, BUT envelope detection is key-presence only: a control
+  named `__reflex_form_data__` whose dict is passed on to a second dict handler works on 0.10.0 and fails on 0.10.1a1
+  (contrived). Fix suggestion: treat the dict as an envelope only when entries are a list of 2-item lists.
+- ES-2 NARROWED → trivial/docs: only a never-started framework wrapper leaks (user async body runs 0 times); filters
+  that `.close()` what they withhold (as rxe and #7410's tests do) get 0 warnings. Polish: close staked wrappers for
+  withheld keys in `_commit_delta_records`, or document.
+- ES-3 CONFIRMED (deliberate, rare), low, regression-by-design: affects dict handlers reading an `id == name` control
+  whose name is submitted more than once (checkbox_group with 2+ checked, multi-select, repeated inputs). Documented in
+  docs/library/forms/form.md:166 and the PR, not in the CHANGELOG; the core deprecation entry also reads in present tense
+  for behaviour that only lands in 0.11 (verified: id != name still adds both keys; id == name checkbox still True).
+  New value is more correct. Recommend: one CHANGELOG sentence + future-tense wording for the 0.11 sentences.
