@@ -17,3 +17,13 @@ no loop. #7435 unknown substate skipped once per connection. #7645 package.json 
 #7573, #7405, #7544, #7587 all fixed vs 0.10.0.
 Re-verified: reflex#7429 fixed, #7247/#7435 fixed, #7407 fixed.
 Not covered: data_editor/plotly under structural sharing, mixed-version load balancer, cooldown-expiry second swap.
+
+## Verifier (verify_fh/NOTES.md) — FS-2 NARROWED: docs gap + low feature gap (experimental, default-off)
+Page route components are hook-free static trees of app_components wrappers, so the compiler (infer mode) never
+treats them as components — not a bail-out. Real bail-outs are wider than `id=`: (1) `refs["ref_x"] = ref_x` and refs
+in jsx() calls; (2) the IIFE event chain `((...args) => addEvents(...))()` in on_mount / on_unmount / form on_submit
+(compiler Invariant); (3) optional chaining in ternary tests from `rx.cond(State.x == ...)` (incl. rx.color_mode.button
+in the blank template); (4) client_state `??=` and window_event_listener patterns; MemoizedToastProvider in every app.
+Coverage: blank 4/6, quiz 14/18, snakegame 17/19, github-stats 13/16, traversal 11/13, fs_app 63/133. `panicThreshold:
+"none"` + no logger = silent. PR #7234's coverage test passes if any one function compiles. Suggested: log a skip
+summary; codegen: call addEvents directly, hoist cond tests into a const; correct the docs sentence.

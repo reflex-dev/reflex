@@ -14,3 +14,10 @@ storage → one error + persistent toast, no reconnect loop (0.10.0: 326 opens/1
 (0.10.0: 1051 opens/15 s); #7545, #7568 (1 evaluation vs 2), #7603, #7572, #7407 all fixed vs 0.10.0.
 Re-verified: HYD-01, HYD-02, HYD-08, HYD-09, ENT-16/DOC-14 (#7360), HYD-05 (F-008, reflex#7486) fixed; HYD-12 (C21)
 still broken, unchanged. Not re-run: HYD-06 (F-010), HYD-07 (F-017).
+
+## Verifier (verify_fh/NOTES.md) — HN-3 CONFIRMED / narrowed to hardening + docs (low, not a regression)
+Client text reaches client_ip only when the client's own header sits at position -hops (direct connection with hops>=1,
+or a proxy that forwards XFF untouched — the documented misconfiguration); through an appending proxy every spoof
+resolves to the real peer. Realistic trusted-proxy form: `ip:port` (Azure App Gateway), same as 0.10.0. Rendering is
+safe (React text, escaped; XSS payload inert). 0.10.0 is worse (leftmost entry, latin-1 kills the handler). Suggested
+hardening: `ipaddress.ip_address()` on the selected token (strip :port/brackets) with fallback to the peer + a docs line.
