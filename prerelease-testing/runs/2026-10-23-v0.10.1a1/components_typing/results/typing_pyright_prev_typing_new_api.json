@@ -1,0 +1,172 @@
+{
+    "version": "1.1.414",
+    "time": "1792809014920",
+    "generalDiagnostics": [
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_new_api.py",
+            "severity": "error",
+            "message": "Variable not allowed in type expression",
+            "range": {
+                "start": {
+                    "line": 20,
+                    "character": 39
+                },
+                "end": {
+                    "line": 20,
+                    "character": 46
+                }
+            },
+            "rule": "reportInvalidTypeForm"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_new_api.py",
+            "severity": "error",
+            "message": "\"assert_type\" mismatch: expected \"str\" but received \"Unknown\"",
+            "range": {
+                "start": {
+                    "line": 24,
+                    "character": 24
+                },
+                "end": {
+                    "line": 24,
+                    "character": 27
+                }
+            },
+            "rule": "reportAssertTypeFailure"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_new_api.py",
+            "severity": "error",
+            "message": "\"assert_type\" mismatch: expected \"str\" but received \"Unknown\"",
+            "range": {
+                "start": {
+                    "line": 25,
+                    "character": 24
+                },
+                "end": {
+                    "line": 25,
+                    "character": 29
+                }
+            },
+            "rule": "reportAssertTypeFailure"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_new_api.py",
+            "severity": "information",
+            "message": "Type of \"_form\" is \"Form\"",
+            "range": {
+                "start": {
+                    "line": 49,
+                    "character": 12
+                },
+                "end": {
+                    "line": 49,
+                    "character": 17
+                }
+            }
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_new_api.py",
+            "severity": "error",
+            "message": "Variable not allowed in type expression",
+            "range": {
+                "start": {
+                    "line": 50,
+                    "character": 5
+                },
+                "end": {
+                    "line": 50,
+                    "character": 12
+                }
+            },
+            "rule": "reportInvalidTypeForm"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_new_api.py",
+            "severity": "error",
+            "message": "\"assert_type\" mismatch: expected \"list[str]\" but received \"Unknown\"",
+            "range": {
+                "start": {
+                    "line": 51,
+                    "character": 12
+                },
+                "end": {
+                    "line": 51,
+                    "character": 28
+                }
+            },
+            "rule": "reportAssertTypeFailure"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_new_api.py",
+            "severity": "information",
+            "message": "Type of \"rx.form.FormData\" is \"Any\"",
+            "range": {
+                "start": {
+                    "line": 52,
+                    "character": 12
+                },
+                "end": {
+                    "line": 52,
+                    "character": 28
+                }
+            }
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_new_api.py",
+            "severity": "error",
+            "message": "Import \"reflex_base.utils.form\" could not be resolved",
+            "range": {
+                "start": {
+                    "line": 53,
+                    "character": 5
+                },
+                "end": {
+                    "line": 53,
+                    "character": 27
+                }
+            },
+            "rule": "reportMissingImports"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_new_api.py",
+            "severity": "error",
+            "message": "\"assert_type\" mismatch: expected \"list[str]\" but received \"Unknown\"",
+            "range": {
+                "start": {
+                    "line": 56,
+                    "character": 12
+                },
+                "end": {
+                    "line": 56,
+                    "character": 29
+                }
+            },
+            "rule": "reportAssertTypeFailure"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_new_api.py",
+            "severity": "error",
+            "message": "\"moment_provider\" is not a known attribute of module \"reflex\"",
+            "range": {
+                "start": {
+                    "line": 66,
+                    "character": 13
+                },
+                "end": {
+                    "line": 66,
+                    "character": 28
+                }
+            },
+            "rule": "reportAttributeAccessIssue"
+        }
+    ],
+    "summary": {
+        "filesAnalyzed": 1,
+        "errorCount": 8,
+        "warningCount": 0,
+        "informationCount": 2,
+        "timeInSec": 1.584
+    }
+}
+

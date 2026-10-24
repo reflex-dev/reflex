@@ -208,3 +208,13 @@ fill handle, immutable in-place update (`row_id_key` bump u-2), prepend, memo gr
   0.9.8 (#277 changed the post-login redirect logic) or driver drift since the a3 record. The a4-matrix consent flow
   (`check_mcp_oauth.py`, auth_min app, memory manager) passes on 0.10.1a1, so a memory-manager run of this script was added
   (queue5) to tell Redis-specific from script-specific.
+
+### N-026 / ENT-31 (rxe#269, open) — `grid/bin/flow_reload_ab.sh 3` (flow demo prod 3608, new-ent vs prev-ent)
+Moved node position survives reload: new-ent **0/3**, prev-ent **0/3** (the single pass in the earlier `demo.sh` run was the
+known race). **Unchanged**, not re-reported.
+
+### MCP OAuth consent on Redis — isolating the `check_mcp_oauth_redis.py` failure
+`own/mcp_oauth_mem.sh new-ent new` (same entauth app, same script, memory state manager instead of Redis): **exit 0, passes**
+(partial consent → scope denial, consent denial app + IdP, invalid scope, refresh/replay/revoke). So the failure is
+Redis-specific and present on reflex 0.10.0 + rxe 0.9.8 as well; compared with rxe 0.9.7 on reflex 0.10.0 below to tell
+whether rxe 0.9.8 introduced it.

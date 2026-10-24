@@ -1,0 +1,75 @@
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+DEBUG uv 0.11.32 (x86_64-unknown-linux-gnu)
+Using Python 3.12.3 environment at: envs/components_typing-sdist
+DEBUG At least one requirement is not satisfied: pydantic<2.15
+DEBUG Using request connect timeout of 10s and read timeout of 30s
+DEBUG Solving with installed Python version: 3.12.3
+DEBUG Solving with target Python version: >=3.12.3
+DEBUG Adding direct dependency: reflex-components-radix>=0.10.1a1, <0.10.1a1+
+DEBUG Adding direct dependency: pydantic<2.15
+DEBUG Found stale response for: https://pypi.org/simple/pydantic/
+DEBUG Sending revalidation request for: https://pypi.org/simple/pydantic/
+DEBUG Found stale response for: https://pypi.org/simple/reflex-components-radix/
+DEBUG Sending revalidation request for: https://pypi.org/simple/reflex-components-radix/
+DEBUG Found not-modified response for: https://pypi.org/simple/pydantic/
+DEBUG Found not-modified response for: https://pypi.org/simple/reflex-components-radix/
+DEBUG Selecting: reflex-components-radix==0.10.1a1 [compatible] (reflex_components_radix-0.10.1a1.tar.gz)
+DEBUG Selecting: pydantic==2.14.1 [compatible] (pydantic-2.14.1-py3-none-any.whl)
+DEBUG Found stale response for: https://pypi.org/simple/reflex-components-core/
+DEBUG Sending revalidation request for: https://pypi.org/simple/reflex-components-core/
+DEBUG Found not-modified response for: https://pypi.org/simple/reflex-components-core/
+DEBUG Found stale response for: https://pypi.org/simple/annotated-types/
+DEBUG Sending revalidation request for: https://pypi.org/simple/annotated-types/
+DEBUG Found stale response for: https://pypi.org/simple/typing-inspection/
+DEBUG Sending revalidation request for: https://pypi.org/simple/typing-inspection/
+DEBUG Found not-modified response for: https://pypi.org/simple/annotated-types/
+DEBUG Found not-modified response for: https://pypi.org/simple/typing-inspection/
+DEBUG Found stale response for: https://pypi.org/simple/pydantic-core/
+DEBUG Sending revalidation request for: https://pypi.org/simple/pydantic-core/
+DEBUG Found not-modified response for: https://pypi.org/simple/pydantic-core/
+DEBUG Selecting: pydantic-core==2.50.1 [compatible] (pydantic_core-2.50.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl)
+DEBUG Selecting: reflex-base==0.10.1a1 [compatible] (reflex_base-0.10.1a1-py3-none-any.whl)
+DEBUG Selecting: reflex-components-core==0.10.1a1 [compatible] (reflex_components_core-0.10.1a1-py3-none-any.whl)
+DEBUG Selecting: reflex-components-lucide==1.1.1a1 [compatible] (reflex_components_lucide-1.1.1a1-py3-none-any.whl)
+DEBUG Selecting: annotated-types==0.8.0 [compatible] (annotated_types-0.8.0-py3-none-any.whl)
+DEBUG Selecting: typing-extensions==4.16.0 [compatible] (typing_extensions-4.16.0-py3-none-any.whl)
+DEBUG Selecting: typing-inspection==0.4.4 [compatible] (typing_inspection-0.4.4-py3-none-any.whl)
+DEBUG Selecting: packaging==26.3 [compatible] (packaging-26.3-py3-none-any.whl)
+DEBUG Selecting: platformdirs==4.13.5 [compatible] (platformdirs-4.13.5-py3-none-any.whl)
+DEBUG Selecting: rich==15.0.0 [compatible] (rich-15.0.0-py3-none-any.whl)
+DEBUG Selecting: python-multipart==0.0.32 [compatible] (python_multipart-0.0.32-py3-none-any.whl)
+DEBUG Selecting: reflex-components-sonner==0.10.0 [compatible] (reflex_components_sonner-0.10.0-py3-none-any.whl)
+DEBUG Selecting: starlette==1.9.0 [compatible] (starlette-1.9.0-py3-none-any.whl)
+DEBUG Selecting: typing-extensions==4.16.0 [compatible] (typing_extensions-4.16.0-py3-none-any.whl)
+DEBUG Selecting: typing-extensions==4.16.0 [compatible] (typing_extensions-4.16.0-py3-none-any.whl)
+DEBUG Selecting: markdown-it-py==4.2.0 [compatible] (markdown_it_py-4.2.0-py3-none-any.whl)
+DEBUG Selecting: pygments==2.21.0 [compatible] (pygments-2.21.0-py3-none-any.whl)
+DEBUG Selecting: anyio==4.15.1 [compatible] (anyio-4.15.1-py3-none-any.whl)
+DEBUG Selecting: typing-extensions==4.16.0 [compatible] (typing_extensions-4.16.0-py3-none-any.whl)
+DEBUG Selecting: typing-extensions==4.16.0 [compatible] (typing_extensions-4.16.0-py3-none-any.whl)
+DEBUG Selecting: mdurl==0.1.2 [compatible] (mdurl-0.1.2-py3-none-any.whl)
+DEBUG Selecting: idna==3.20 [compatible] (idna-3.20-py3-none-any.whl)
+DEBUG marker environment resolution took 1.984s
+Resolved 20 packages in 1.98s
+Installed 20 packages in 391ms
+ + annotated-types==0.8.0
+ + anyio==4.15.1
+ + idna==3.20
+ + markdown-it-py==4.2.0
+ + mdurl==0.1.2
+ + packaging==26.3
+ + platformdirs==4.13.5
+ + pydantic==2.14.1
+ + pydantic-core==2.50.1
+ + pygments==2.21.0
+ + python-multipart==0.0.32
+ + reflex-base==0.10.1a1
+ + reflex-components-core==0.10.1a1
+ + reflex-components-lucide==1.1.1a1
+ + reflex-components-radix==0.10.1a1
+ + reflex-components-sonner==0.10.0
+ + rich==15.0.0
+ + starlette==1.9.0
+ + typing-extensions==4.16.0
+ + typing-inspection==0.4.4
+EXIT=0

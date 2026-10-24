@@ -1,0 +1,199 @@
+ERROR:pyi_generator:Failed to import reflex_components_radix.primitives.form
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/components_typing-hookenv-old/lib/python3.12/site-packages/reflex_base/utils/pyi_generator.py", line 1657, in _scan_files
+    importlib.import_module(module_import)
+  File "/usr/lib/python3.12/importlib/__init__.py", line 90, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 995, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/sdists/gen_old/src/reflex_components_radix/primitives/form.py", line 9, in <module>
+    from reflex_base.utils.form import FormData as _FormData
+ModuleNotFoundError: No module named 'reflex_base.utils.form'
+INFO:pyi_generator:Wrote reflex_components_radix/__init__.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/components/radio.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/components/slider.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/components/scroll_area.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/components/switch.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/components/dialog.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/components/aspect_ratio.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/components/checkbox_group.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/components/radio_group.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/components/__init__.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/components/progress.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/components/button.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/components/dropdown_menu.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/components/avatar.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/components/spinner.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/components/popover.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/components/badge.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/components/tabs.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/components/radio_cards.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/components/alert_dialog.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/components/select.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/components/text_area.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/components/segmented_control.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/components/text_field.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/components/separator.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/components/tooltip.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/components/icon_button.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/components/hover_card.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/components/card.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/components/checkbox_cards.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/components/data_list.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/components/skeleton.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/components/inset.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/components/callout.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/components/table.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/components/checkbox.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/__init__.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/base.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/typography/__init__.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/typography/link.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/typography/blockquote.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/typography/heading.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/typography/code.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/typography/text.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/layout/container.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/layout/box.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/color_mode.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/layout/base.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/layout/__init__.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/layout/section.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/components/context_menu.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/layout/grid.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/layout/center.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/layout/spacer.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/layout/flex.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/layout/stack.py
+INFO:pyi_generator:Wrote reflex_components_radix/themes/layout/list.py
+INFO:pyi_generator:Wrote reflex_components_radix/primitives/__init__.py
+INFO:pyi_generator:Wrote reflex_components_radix/primitives/slider.py
+INFO:pyi_generator:Wrote reflex_components_radix/primitives/base.py
+INFO:pyi_generator:Wrote reflex_components_radix/primitives/progress.py
+INFO:pyi_generator:Wrote reflex_components_radix/primitives/dialog.py
+INFO:pyi_generator:Wrote reflex_components_radix/primitives/drawer.py
+INFO:pyi_generator:Wrote reflex_components_radix/primitives/accordion.py
+64 files reformatted
+PYI052 Need type annotation for `DEFAULT_ANIMATION_DURATION`
+  --> reflex_components_radix/primitives/accordion.pyi:24:30
+   |
+22 | LiteralAccordionOrientation: TypeAlias = Literal["vertical", "horizontal"]
+23 | LiteralAccordionVariant: TypeAlias = Literal["classic", "soft", "surface", "outline", "ghost"]
+24 | DEFAULT_ANIMATION_DURATION = 250
+   |                              ^^^
+25 | DEFAULT_ANIMATION_EASING = "cubic-bezier(0.87, 0, 0.13, 1)"
+   |
+
+PYI052 Need type annotation for `DEFAULT_ANIMATION_EASING`
+  --> reflex_components_radix/primitives/accordion.pyi:25:28
+   |
+23 | LiteralAccordionVariant: TypeAlias = Literal["classic", "soft", "surface", "outline", "ghost"]
+24 | DEFAULT_ANIMATION_DURATION = 250
+25 | DEFAULT_ANIMATION_EASING = "cubic-bezier(0.87, 0, 0.13, 1)"
+   |                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+26 |
+27 | class AccordionComponent(RadixPrimitiveComponent):
+   |
+
+PYI017 Stubs should not contain assignments to attributes or multiple targets
+   --> reflex_components_radix/themes/color_mode.pyi:605:1
+    |
+603 |       switch = staticmethod(ColorModeSwitch.create)
+604 |
+605 | / color_mode = color_mode_var_and_namespace = ColorModeNamespace(
+606 | |     _js_expr=color_mode._js_expr,
+607 | |     _var_type=color_mode._var_type,
+608 | |     _var_data=color_mode._get_all_var_data(),
+609 | | )
+    | |_^
+
+PYI017 Stubs should not contain assignments to attributes or multiple targets
+   --> reflex_components_radix/themes/components/dropdown_menu.pyi:806:1
+    |
+804 |     separator = staticmethod(DropdownMenuSeparator.create)
+805 |
+806 | menu = dropdown_menu = DropdownMenu()
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+PYI052 Need type annotation for `RADIX_TO_LUCIDE_SIZE`
+  --> reflex_components_radix/themes/components/icon_button.pyi:23:24
+   |
+22 | LiteralButtonSize: TypeAlias = Literal["1", "2", "3", "4"]
+23 | RADIX_TO_LUCIDE_SIZE = {"1": 12, "2": 24, "3": 36, "4": 48}
+   |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+24 |
+25 | class IconButton(elements.Button, RadixLoadingProp, RadixThemesComponent):
+   |
+
+PYI017 Stubs should not contain assignments to attributes or multiple targets
+   --> reflex_components_radix/themes/components/radio_group.pyi:562:1
+    |
+560 |         """
+561 |
+562 | radio = radio_group = RadioGroup()
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+PYI052 Need type annotation for `_COUNT_VAR`
+  --> reflex_components_radix/themes/components/segmented_control.pyi:19:14
+   |
+17 | from reflex_components_radix.themes.base import RadixThemesComponent
+18 |
+19 | _COUNT_VAR = "--rx-sc-count"
+   |              ^^^^^^^^^^^^^^^
+20 | _IDX_VAR = "--rx-sc-idx"
+   |
+
+PYI052 Need type annotation for `_IDX_VAR`
+  --> reflex_components_radix/themes/components/segmented_control.pyi:20:12
+   |
+19 | _COUNT_VAR = "--rx-sc-count"
+20 | _IDX_VAR = "--rx-sc-idx"
+   |            ^^^^^^^^^^^^^
+21 |
+22 | def on_value_change(value: Var[str | list[str]]) -> tuple[Var[str | list[str]]]: ...
+   |
+
+PYI017 Stubs should not contain assignments to attributes or multiple targets
+   --> reflex_components_radix/themes/components/separator.pyi:165:1
+    |
+163 |         """
+164 |
+165 | divider = separator = Separator.create
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+PYI052 Need type annotation for `vertical_orientation_css`
+  --> reflex_components_radix/themes/components/tabs.pyi:19:28
+   |
+17 | from reflex_components_radix.themes.base import RadixThemesComponent
+18 |
+19 | vertical_orientation_css = "&[data-orientation='vertical']"
+   |                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+20 |
+21 | class TabsRoot(RadixThemesComponent):
+   |
+
+PYI017 Stubs should not contain assignments to attributes or multiple targets
+    --> reflex_components_radix/themes/components/text_field.pyi:1055:1
+     |
+1053 |         """
+1054 |
+1055 | input = text_field = TextField()
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+PYI052 Need type annotation for `ARIA_LABEL_KEY`
+  --> reflex_components_radix/themes/components/tooltip.pyi:21:18
+   |
+19 | LiteralAlignType: TypeAlias = Literal["start", "center", "end"]
+20 | LiteralStickyType: TypeAlias = Literal["partial", "always"]
+21 | ARIA_LABEL_KEY = "aria_label"
+   |                  ^^^^^^^^^^^^
+22 |
+23 | class Tooltip(RadixThemesComponent):
+   |
+
+Found 5015 errors (5003 fixed, 12 remaining).

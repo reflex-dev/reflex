@@ -1,0 +1,1762 @@
+{
+ "base": "http://localhost:3240",
+ "is_new": true,
+ "checks": [
+  {
+   "page": "cbg",
+   "name": "initial_group_value",
+   "ok": true,
+   "detail": "group=a"
+  },
+  {
+   "page": "cbg",
+   "name": "group_items_rendered",
+   "ok": true,
+   "detail": "count=3"
+  },
+  {
+   "page": "cbg",
+   "name": "item_a_checked",
+   "ok": true,
+   "detail": "true"
+  },
+  {
+   "page": "cbg",
+   "name": "item_b_disabled_attr",
+   "ok": true,
+   "detail": "disabled='' data-disabled=''"
+  },
+  {
+   "page": "cbg",
+   "name": "hidden_inputs_named_grp",
+   "ok": true,
+   "detail": "count=3"
+  },
+  {
+   "page": "cbg",
+   "name": "click_c_updates_state",
+   "ok": true,
+   "detail": "group=a,c"
+  },
+  {
+   "page": "cbg",
+   "name": "on_value_change_payload_list",
+   "ok": true,
+   "detail": "payload=[\"a\", \"c\"]"
+  },
+  {
+   "page": "cbg",
+   "name": "one_change_event",
+   "ok": true,
+   "detail": "group_changes=1"
+  },
+  {
+   "page": "cbg",
+   "name": "disabled_item_click_ignored",
+   "ok": true,
+   "detail": "group=a,c"
+  },
+  {
+   "page": "cbg",
+   "name": "server_reset_state",
+   "ok": true,
+   "detail": "group="
+  },
+  {
+   "page": "cbg",
+   "name": "server_reset_reaches_dom",
+   "ok": true,
+   "detail": "['false', 'false', 'false']"
+  },
+  {
+   "page": "cbg",
+   "name": "server_preset_reaches_dom",
+   "ok": true,
+   "detail": "group=a,c ['true', 'false', 'true']"
+  },
+  {
+   "page": "cbg",
+   "name": "root_disabled_var_disables_items",
+   "ok": true,
+   "detail": "disabled=true disabled attrs=['', '', '']"
+  },
+  {
+   "page": "cbg",
+   "name": "root_disabled_blocks_clicks",
+   "ok": true,
+   "detail": "group=a,c"
+  },
+  {
+   "page": "cbg",
+   "name": "cards_click_z",
+   "ok": false,
+   "detail": "cards=x"
+  },
+  {
+   "page": "cbg",
+   "name": "cards_click_x_keeps_z",
+   "ok": false,
+   "detail": "cards="
+  },
+  {
+   "page": "cbg",
+   "name": "cards_two_change_events",
+   "ok": true,
+   "detail": "cards_changes=2"
+  },
+  {
+   "page": "cbg",
+   "name": "card_y_disabled",
+   "ok": true,
+   "detail": "disabled=''"
+  },
+  {
+   "page": "cbg",
+   "name": "default_value_group_checked",
+   "ok": true,
+   "detail": "D2 aria-checked=true"
+  },
+  {
+   "page": "cbg",
+   "name": "form_submit_includes_group",
+   "ok": true,
+   "detail": "submitted={\"grp\": [\"a\", \"c\"], \"dgrp\": [\"d2\"], \"cg\": [\"a\"], \"cc\": [null], \"cg_default\": [\"d2\"]}"
+  },
+  {
+   "page": "cbg",
+   "name": "form_submit_all_values",
+   "ok": false,
+   "detail": "submitted={\"grp\": [\"a\", \"c\"], \"dgrp\": [\"d2\"], \"cg\": [\"a\"], \"cc\": [null], \"cg_default\": [\"d2\"]}"
+  },
+  {
+   "page": "accordion",
+   "name": "no_emotion_first_child_warning",
+   "ok": true,
+   "detail": "none"
+  },
+  {
+   "page": "accordion",
+   "name": "triggers_rendered",
+   "ok": true,
+   "detail": "count=3"
+  },
+  {
+   "page": "accordion",
+   "name": "multiple_two_open",
+   "ok": true,
+   "detail": "['open', 'open', 'closed']"
+  },
+  {
+   "page": "accordion",
+   "name": "content_visible",
+   "ok": true,
+   "detail": "M First\nM first content\nM Second\nM second content\nM Third"
+  },
+  {
+   "page": "accordion",
+   "name": "single_only_one_open",
+   "ok": true,
+   "detail": "['closed', 'open', 'closed']"
+  },
+  {
+   "page": "accordion",
+   "name": "default_value_open",
+   "ok": true,
+   "detail": "open"
+  },
+  {
+   "page": "accordion",
+   "name": "first_item_styled_first_of_type",
+   "ok": true,
+   "detail": "[{'btw': '0px', 'tl': '8px', 'mt': '0px'}, {'btw': '0px', 'tl': '0px', 'mt': '1px'}, {'btw': '0px', 'tl': '0px', 'mt': '1px'}]"
+  },
+  {
+   "page": "accordion",
+   "name": "keyboard_arrow_down_moves_focus",
+   "ok": true,
+   "detail": "M Second"
+  },
+  {
+   "page": "slider",
+   "name": "single_thumb_initial",
+   "ok": true,
+   "detail": "50"
+  },
+  {
+   "page": "slider",
+   "name": "single_keyboard_dom",
+   "ok": true,
+   "detail": "53"
+  },
+  {
+   "page": "slider",
+   "name": "single_on_change_state",
+   "ok": true,
+   "detail": "single=53"
+  },
+  {
+   "page": "slider",
+   "name": "single_on_value_commit",
+   "ok": true,
+   "detail": "committed=53"
+  },
+  {
+   "page": "slider",
+   "name": "range_two_thumbs",
+   "ok": true,
+   "detail": "count=2"
+  },
+  {
+   "page": "slider",
+   "name": "range_on_change",
+   "ok": true,
+   "detail": "range=20,79"
+  },
+  {
+   "page": "slider",
+   "name": "range_home_moves_first_thumb",
+   "ok": true,
+   "detail": "range=0,79 thumb0=0"
+  },
+  {
+   "page": "slider",
+   "name": "single_mouse_click_track",
+   "ok": true,
+   "detail": "single=10"
+  },
+  {
+   "page": "moment",
+   "name": "cmp11_plain",
+   "ok": true,
+   "detail": "Thursday 14 March 2024"
+  },
+  {
+   "page": "moment",
+   "name": "cmp11_plain2",
+   "ok": true,
+   "detail": "Thursday 14 March 2024"
+  },
+  {
+   "page": "moment",
+   "name": "cmp11_english",
+   "ok": true,
+   "detail": "Thursday 14 March 2024"
+  },
+  {
+   "page": "moment",
+   "name": "cmp11_french",
+   "ok": true,
+   "detail": "jeudi 14 mars 2024"
+  },
+  {
+   "page": "moment",
+   "name": "cmp11_titled",
+   "ok": true,
+   "detail": "Thursday 14 March 2024"
+  },
+  {
+   "page": "moment",
+   "name": "cmp11_fromnow_english",
+   "ok": true,
+   "detail": "7 years ago"
+  },
+  {
+   "page": "moment",
+   "name": "with_title_attr",
+   "ok": true,
+   "detail": "Thursday 14 March 2024"
+  },
+  {
+   "page": "moment",
+   "name": "info_defineLocale_warnings",
+   "ok": true,
+   "detail": "1 defineLocale messages (CMP-14 known)"
+  },
+  {
+   "page": "moment",
+   "name": "opt_prov-default",
+   "ok": true,
+   "detail": "expected='14 mars 2024' got='14 mars 2024'"
+  },
+  {
+   "page": "moment",
+   "name": "opt_prov-en",
+   "ok": true,
+   "detail": "expected='14 Mar 2024' got='14 Mar 2024'"
+  },
+  {
+   "page": "moment",
+   "name": "opt_prov-fmt",
+   "ok": true,
+   "detail": "expected='2024' got='2024'"
+  },
+  {
+   "page": "moment",
+   "name": "opt_prov-tz",
+   "ok": true,
+   "detail": "expected='2024-03-15 00:30' got='2024-03-15 00:30'"
+  },
+  {
+   "page": "moment",
+   "name": "opt_outside",
+   "ok": true,
+   "detail": "expected='14 Mar 2024' got='14 Mar 2024'"
+  },
+  {
+   "page": "moment",
+   "name": "opt_prov-var",
+   "ok": true,
+   "detail": "expected='Donnerstag' got='Donnerstag'"
+  },
+  {
+   "page": "moment",
+   "name": "opt_prov-var-fr",
+   "ok": true,
+   "detail": "expected='jeudi' got='jeudi'"
+  },
+  {
+   "page": "moment",
+   "name": "opt_utc",
+   "ok": true,
+   "detail": "expected='2024-03-14 23:30' got='2024-03-14 23:30'"
+  },
+  {
+   "page": "moment",
+   "name": "opt_noutc",
+   "ok": true,
+   "detail": "expected='2024-03-14 19:30' got='2024-03-14 19:30'"
+  },
+  {
+   "page": "moment",
+   "name": "opt_calendar",
+   "ok": true,
+   "detail": "expected='03/14/2024' got='03/14/2024'"
+  },
+  {
+   "page": "moment",
+   "name": "opt_from",
+   "ok": true,
+   "detail": "expected='in 4 days' got='in 4 days'"
+  },
+  {
+   "page": "moment",
+   "name": "opt_from-ago",
+   "ok": true,
+   "detail": "expected='4 days' got='4 days'"
+  },
+  {
+   "page": "moment",
+   "name": "opt_to",
+   "ok": true,
+   "detail": "expected='in 6 days' got='in 6 days'"
+  },
+  {
+   "page": "moment",
+   "name": "opt_element",
+   "ok": true,
+   "detail": "expected='2024' got='2024'"
+  },
+  {
+   "page": "moment",
+   "name": "opt_fallback",
+   "ok": true,
+   "detail": "expected='INVALID' got='INVALID'"
+  },
+  {
+   "page": "moment",
+   "name": "opt_filters",
+   "ok": true,
+   "detail": "expected='MARCH' got='MARCH'"
+  },
+  {
+   "page": "moment",
+   "name": "opt_renderers",
+   "ok": true,
+   "detail": "expected='R:2024' got='R:2024'"
+  },
+  {
+   "page": "moment",
+   "name": "opt_onchange",
+   "ok": true,
+   "detail": "expected='2024' got='2024'"
+  },
+  {
+   "page": "moment",
+   "name": "info_provider_format_overrides_child_from_now",
+   "ok": true,
+   "detail": "got='1 janv. 2020' (react-moment precedence: format > fromNow)"
+  },
+  {
+   "page": "moment",
+   "name": "provider_locale_applies_to_fromnow",
+   "ok": true,
+   "detail": "vor 7 Jahren"
+  },
+  {
+   "page": "moment",
+   "name": "opt_ago_fromnow",
+   "ok": true,
+   "detail": "7 years"
+  },
+  {
+   "page": "moment",
+   "name": "opt_element_span",
+   "ok": true,
+   "detail": "SPAN"
+  },
+  {
+   "page": "moment",
+   "name": "default_element_time",
+   "ok": true,
+   "detail": "TIME"
+  },
+  {
+   "page": "moment",
+   "name": "on_change_fired",
+   "ok": true,
+   "detail": "changes=2"
+  },
+  {
+   "page": "moment",
+   "name": "on_change_payload",
+   "ok": true,
+   "detail": "last=2024"
+  },
+  {
+   "page": "moment",
+   "name": "pooled_clocks_tick",
+   "ok": true,
+   "detail": "02:38:47->02:38:50 02:38:47->02:38:50"
+  },
+  {
+   "page": "moment",
+   "name": "pooled_clocks_in_sync",
+   "ok": true,
+   "detail": "02:38:50 vs 02:38:50"
+  },
+  {
+   "page": "moment",
+   "name": "provider_var_locale_switch_es",
+   "ok": true,
+   "detail": "jueves"
+  },
+  {
+   "page": "moment",
+   "name": "siblings_stay_english_after_switch",
+   "ok": true,
+   "detail": "Thursday 14 March 2024"
+  },
+  {
+   "page": "moment",
+   "name": "component_locale_overrides_provider",
+   "ok": true,
+   "detail": "jeudi"
+  },
+  {
+   "page": "moment",
+   "name": "provider_var_locale_switch_en",
+   "ok": true,
+   "detail": "Thursday"
+  },
+  {
+   "page": "moment",
+   "name": "info_utc_css_leak",
+   "ok": true,
+   "detail": "{'utc': None, 'cls': ''}"
+  },
+  {
+   "page": "de",
+   "name": "editor_1_canvas",
+   "ok": true,
+   "detail": "canvases=2"
+  },
+  {
+   "page": "de",
+   "name": "editor_2_canvas",
+   "ok": true,
+   "detail": "canvases=2"
+  },
+  {
+   "page": "de",
+   "name": "editor_3_canvas",
+   "ok": true,
+   "detail": "canvases=2"
+  },
+  {
+   "page": "de",
+   "name": "editor_4_canvas",
+   "ok": true,
+   "detail": "canvases=2"
+  },
+  {
+   "page": "de",
+   "name": "no_page_errors_on_load",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "page": "de",
+   "name": "no_column_type_undefined_warning",
+   "ok": true,
+   "detail": "0 messages"
+  },
+  {
+   "page": "de",
+   "name": "portal_div_present",
+   "ok": true,
+   "detail": "portal=True"
+  },
+  {
+   "page": "de",
+   "name": "info_app_wraps",
+   "ok": true,
+   "detail": "{'badge': False, 'portalChildren': 0}"
+  },
+  {
+   "page": "de",
+   "name": "info_overlay_editor",
+   "ok": true,
+   "detail": "{'html': '<div style=\"--gdg-accent-color: #4F5DFF; --gdg-accent-fg: #FFFFFF; --gdg-accent-light: rgba(62, 116, 253, 0.1); --gdg-text-dark: #313139; --gdg-text-medium: #737383; --gdg-text-light: #B2B2C0; --gdg-text-bubble: #313139; --gdg-bg-icon-header: #737383; --gdg-fg-icon-header: #FFFFFF; --gdg-text-header', 'active': 'TEXTAREA. gdg-input gdg-izpuzkl', 'value': 'Ann'}"
+  },
+  {
+   "page": "de",
+   "name": "cell_edit_roundtrip",
+   "ok": false,
+   "detail": "edits=0,0=Zed"
+  },
+  {
+   "page": "de",
+   "name": "cell_edit_updates_row",
+   "ok": true,
+   "detail": "row0=Zed|30|1990-01-01"
+  },
+  {
+   "page": "de",
+   "name": "cell_edit_dblclick_number",
+   "ok": false,
+   "detail": "edits=2,1=99"
+  },
+  {
+   "page": "de",
+   "name": "add_row_state",
+   "ok": true,
+   "detail": "nrows=4"
+  },
+  {
+   "page": "de",
+   "name": "add_untyped_column_no_error",
+   "ok": true,
+   "detail": "ncols=4 errors=[]"
+  },
+  {
+   "page": "de",
+   "name": "no_column_type_undefined_after_add",
+   "ok": true,
+   "detail": "0 messages"
+  },
+  {
+   "page": "de",
+   "name": "cmp31_image_overlay_opens",
+   "ok": true,
+   "detail": "{'imgs': 4, 'carousel': True, 'text': '1 of 2'}"
+  },
+  {
+   "page": "de",
+   "name": "info_overlay_closes_on_escape",
+   "ok": true,
+   "detail": "imgs after escape=0 (CMP-48 known)"
+  },
+  {
+   "page": "icons",
+   "name": "no_page_errors_on_load",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "page": "icons",
+   "name": "static_icon",
+   "ok": true,
+   "detail": "lucide lucide-apple"
+  },
+  {
+   "page": "icons",
+   "name": "button_icon",
+   "ok": true,
+   "detail": "lucide lucide-search"
+  },
+  {
+   "page": "icons",
+   "name": "badge_icon",
+   "ok": true,
+   "detail": "lucide lucide-check"
+  },
+  {
+   "page": "icons",
+   "name": "callout_icon",
+   "ok": true,
+   "detail": "lucide lucide-info"
+  },
+  {
+   "page": "icons",
+   "name": "input_slot_icon",
+   "ok": true,
+   "detail": "count=1"
+  },
+  {
+   "page": "icons",
+   "name": "dynamic_icon_initial",
+   "ok": true,
+   "detail": "class=lucide same_paths_as_apple=True"
+  },
+  {
+   "page": "icons",
+   "name": "foreach_icons",
+   "ok": true,
+   "detail": "count=3"
+  },
+  {
+   "page": "icons",
+   "name": "dynamic_icon_switches",
+   "ok": true,
+   "detail": "same_paths_as_banana=True"
+  },
+  {
+   "page": "icons",
+   "name": "dynamic_icon_underscore_name",
+   "ok": true,
+   "detail": "same_paths_as_wifi_off=True"
+  },
+  {
+   "page": "icons",
+   "name": "size_var_icon",
+   "ok": true,
+   "detail": "24"
+  },
+  {
+   "page": "icons",
+   "name": "size_var_updates",
+   "ok": true,
+   "detail": "32"
+  },
+  {
+   "page": "icons",
+   "name": "same_library_prop_import_static",
+   "ok": true,
+   "detail": "width=40"
+  },
+  {
+   "page": "icons",
+   "name": "same_library_prop_import_dynamic",
+   "ok": true,
+   "detail": "width=40"
+  },
+  {
+   "page": "icons",
+   "name": "color_mode_cond_icon_light",
+   "ok": true,
+   "detail": "rgb(255, 0, 0)"
+  },
+  {
+   "page": "icons",
+   "name": "toggle_color_mode_on_icon",
+   "ok": true,
+   "detail": "rgb(0, 0, 255)"
+  },
+  {
+   "page": "icons",
+   "name": "info_bundled_lucide_modules",
+   "ok": true,
+   "detail": "[]"
+  }
+ ],
+ "pages": {
+  "cbg": {
+   "console": [
+    {
+     "type": "log",
+     "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    },
+    {
+     "type": "debug",
+     "text": "[vite] connecting..."
+    },
+    {
+     "type": "debug",
+     "text": "[vite] connected."
+    },
+    {
+     "type": "info",
+     "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+     "type": "log",
+     "text": "Disconnect websocket on pagehide"
+    }
+   ],
+   "pageerrors": [],
+   "failed": [],
+   "http": []
+  },
+  "accordion": {
+   "console": [
+    {
+     "type": "log",
+     "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    },
+    {
+     "type": "debug",
+     "text": "[vite] connecting..."
+    },
+    {
+     "type": "debug",
+     "text": "[vite] connected."
+    },
+    {
+     "type": "info",
+     "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+     "type": "error",
+     "text": "Received `%s` for a non-boolean attribute `%s`.\n\nIf you want to write it to the DOM, pass a string instead: %s=\"%s\" or %s={value.toString()}. true collapsible collapsible true collapsible"
+    },
+    {
+     "type": "log",
+     "text": "Disconnect websocket on pagehide"
+    }
+   ],
+   "pageerrors": [],
+   "failed": [],
+   "http": []
+  },
+  "slider": {
+   "console": [
+    {
+     "type": "log",
+     "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    },
+    {
+     "type": "debug",
+     "text": "[vite] connecting..."
+    },
+    {
+     "type": "debug",
+     "text": "[vite] connected."
+    },
+    {
+     "type": "info",
+     "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+     "type": "log",
+     "text": "Disconnect websocket on pagehide"
+    }
+   ],
+   "pageerrors": [],
+   "failed": [],
+   "http": []
+  },
+  "moment": {
+   "console": [
+    {
+     "type": "log",
+     "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    },
+    {
+     "type": "debug",
+     "text": "[vite] connecting..."
+    },
+    {
+     "type": "debug",
+     "text": "[vite] connected."
+    },
+    {
+     "type": "info",
+     "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+     "type": "warning",
+     "text": "Deprecation warning: use moment.updateLocale(localeName, config) to change an existing locale. moment.defineLocale(localeName, config) should only be used for creating a new locale See http://momentjs.com/guides/#/warnings/define-locale/ for more info.\nError\n    at deprecateSimple (http://localhost:3240/node_modules/.vite/deps/moment.js?v=be94aef4:173:40)\n    at hooks.defineLocale (http://localhost:3240/node_modules/.vite/deps/moment.js?v=be94aef4:1286:6)\n    at http://localhost:3240/node_modules/.vite/deps/moment_min_locales.js?v=be94aef4:3747:10\n    at http://localhost:3240/node_modules/.vite/deps/moment_min_locales.js?v=be94aef4:6:101\n    at http://localhost:3240/node_modules/.vite/deps/moment_min_locales.js?v=be94aef4:7:4\n    at http://localhost:3240/node_modules/.vite/deps/rolldown-runtime-BtDSRbSq.js?v=be94aef4:8:49\n    at http://localhost:3240/node_modules/.vite/deps/moment_min_locales.js?v=be94aef4:10575:16"
+    },
+    {
+     "type": "warning",
+     "text": "Deprecation warning: value provided is not in a recognized RFC2822 or ISO format. moment construction falls back to js Date(), which is not reliable across all browsers and versions. Non RFC2822/ISO date formats are discouraged. Please refer to http://momentjs.com/guides/#/warnings/js-date/ for more info.\nArguments: \n[0] _isAMomentObject: true, _isUTC: false, _useUTC: false, _l: en, _i: garbage, _f: undefined, _strict: undefined, _locale: [object Object]\nError\n    at hooks.createFromInputFallback (http://localhost:3240/node_modules/.vite/deps/moment.js?v=be94aef4:163:103)\n    at configFromString (http://localhost:3240/node_modules/.vite/deps/moment.js?v=be94aef4:1518:15)\n    at configFromInput (http://localhost:3240/node_modules/.vite/deps/moment.js?v=be94aef4:1751:40)\n    at prepareConfig (http://localhost:3240/node_modules/.vite/deps/moment.js?v=be94aef4:1743:9)\n    at createFromConfig (http://localhost:3240/node_modules/.vite/deps/moment.js?v=be94aef4:1727:39)\n    at createLocalOrUTC (http://localhost:3240/node_modules/.vite/deps/moment.js?v=be94aef4:1778:11)\n    at createLocal (http://localhost:3240/node_modules/.vite/deps/moment.js?v=be94aef4:1781:11)\n    at hooks (http://localhost:3240/node_modules/.vite/deps/moment.js?v=be94aef4:15:24)\n    at tt (http://localhost:3240/node_modules/.vite/deps/react-moment.js?v=be94aef4:323:13)\n    at w (http://localhost:3240/node_modules/.vite/deps/react-moment.js?v=be94aef4:327:14)"
+    },
+    {
+     "type": "warning",
+     "text": "[react-moment] Invalid date input: garbage Provide a valid date or use the `fallback` prop."
+    },
+    {
+     "type": "warning",
+     "text": "[react-moment] Invalid date input: garbage Provide a valid date or use the `fallback` prop."
+    },
+    {
+     "type": "log",
+     "text": "Disconnect websocket on pagehide"
+    }
+   ],
+   "pageerrors": [],
+   "failed": [],
+   "http": []
+  },
+  "de": {
+   "console": [
+    {
+     "type": "log",
+     "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    },
+    {
+     "type": "debug",
+     "text": "[vite] connecting..."
+    },
+    {
+     "type": "debug",
+     "text": "[vite] connected."
+    },
+    {
+     "type": "info",
+     "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+     "type": "log",
+     "text": "Disconnect websocket on pagehide"
+    }
+   ],
+   "pageerrors": [],
+   "failed": [],
+   "http": []
+  },
+  "icons": {
+   "console": [
+    {
+     "type": "log",
+     "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    },
+    {
+     "type": "debug",
+     "text": "[vite] connecting..."
+    },
+    {
+     "type": "debug",
+     "text": "[vite] connected."
+    },
+    {
+     "type": "info",
+     "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+     "type": "error",
+     "text": "Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep)"
+    },
+    {
+     "type": "error",
+     "text": "Error loading route module `/app/routes/[icons]._index.jsx`, reloading page..."
+    },
+    {
+     "type": "error",
+     "text": "TypeError: Failed to fetch dynamically imported module: http://localhost:3240/app/routes/[icons]._index.jsx?import"
+    },
+    {
+     "type": "error",
+     "text": "Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep)"
+    },
+    {
+     "type": "error",
+     "text": "Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep)"
+    },
+    {
+     "type": "error",
+     "text": "Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep)"
+    },
+    {
+     "type": "error",
+     "text": "Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep)"
+    },
+    {
+     "type": "error",
+     "text": "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template)."
+    },
+    {
+     "type": "log",
+     "text": "Disconnect websocket on page navigation"
+    },
+    {
+     "type": "error",
+     "text": "TypeError: Failed to fetch dynamically imported module: http://localhost:3240/app/routes/[icons]._index.jsx?import"
+    },
+    {
+     "type": "error",
+     "text": "TypeError: Failed to fetch dynamically imported module: http://localhost:3240/app/routes/[icons]._index.jsx?import"
+    },
+    {
+     "type": "error",
+     "text": "Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep)"
+    },
+    {
+     "type": "error",
+     "text": "Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep)"
+    },
+    {
+     "type": "error",
+     "text": "Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep)"
+    },
+    {
+     "type": "error",
+     "text": "Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep)"
+    },
+    {
+     "type": "error",
+     "text": "Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep)"
+    },
+    {
+     "type": "error",
+     "text": "Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep)"
+    },
+    {
+     "type": "error",
+     "text": "Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep)"
+    },
+    {
+     "type": "error",
+     "text": "Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep)"
+    },
+    {
+     "type": "error",
+     "text": "Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep)"
+    },
+    {
+     "type": "log",
+     "text": "Disconnect websocket on pagehide"
+    },
+    {
+     "type": "log",
+     "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    },
+    {
+     "type": "debug",
+     "text": "[vite] connecting..."
+    },
+    {
+     "type": "debug",
+     "text": "[vite] connected."
+    },
+    {
+     "type": "info",
+     "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+     "type": "log",
+     "text": "Disconnect websocket on pagehide"
+    }
+   ],
+   "pageerrors": [],
+   "failed": [
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/haxe-DUkJCI1h.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/json-BOP5U8hn.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/http-CzO94ZEL.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/hsts-ctDtOOdo.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/uri-GPCUOsUA.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/ichigojam-CZTSbeMI.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/icon-GDCfyCGg.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/icu-message-format-BdglPyhv.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/idris-rm4Xdcs2.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/ignore-Do8livK6.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/inform7-M2OxzIE3.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/ini-DPQ_YaXb.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/io-CCMW-gK4.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/j-DHTM2l9Y.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/qml-DWAKitBA.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/reason-CnLaYZno.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/log-epqjObfs.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/soy-B1IdIJKh.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/typescript-DB5Amw1m.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/nsis-9Mio8MVj.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/pcaxis-DQsURjKY.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/keyman-BZzOZFls.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/php-extras-CzMUK9Vr.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/wiki-V2GQKg6C.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/lib-BhnHqJql.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/parigp-BzZvmtxk.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/peoplecode-Cc-sxhQi.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/nevod-woFCe6uN.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/stata-CcAmFMpI.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/qore-D9uMpP-i.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/kumir-S5WhJxn0.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/objectivec-DjvbpVds.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/solution-file-D0TWKmXr.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/livescript-Cuw9rV31.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/stan-CMImKREm.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/iecst-BaElPP_b.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/vbnet-DYtDENnb.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/scheme-yotO15ol.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/pascal-DMq-mngt.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/sparql-BFOa96Wp.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/nim-NxMHJn0i.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/latte-mQw86ltz.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/mizar-C6RJtrm9.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/rip-BXupag6Y.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/kotlin-C_pWvDdo.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/unrealscript-BYak00JU.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/moonscript-DE9-Nnb3.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/js-templates-DNq97vd4.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/mongodb-BweZBFrk.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/processing-BicRDZlr.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/scala-DX4i-os7.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/xojo-OKBnlGko.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/splunk-spl-Do9ZpEc_.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/liquid-CK-_WVnT.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/shell-session-l8KkHB7u.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/twig-DvfBwg0y.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/nasm-B_ZA_foh.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/opencl-Baulhhjm.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/yang-ChZFvbBj.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/wolfram-OAhFE5rH.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/pug-DnPiGvvh.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/cshtml-DQePGjct.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/character-entities-legacy-B7bzrcmX.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/rest-B5N5fTNF.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/smarty-BLJD-Pw1.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/supercollider-Dut87VhM.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/warpscript-Cw9rGZXv.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/sass-VTL_PTXs.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/typoscript-0hOplzUZ.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/nand2tetris-hdl-D3Jy89Xg.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/index.dom-cej3WKiz.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/php-BlvCTqFd.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/tap-DGRoP72X.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/pure-BBmjF1Jl.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/properties-BjDbVqfL.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/t4-vb-DUANIQn8.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/xeora-QAih3WKo.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/xquery-DITKaOUN.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/promql-nHVBnRUd.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/t4-cs-DI561SUr.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/powerquery-BXnIbWz-.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/oz-CYUyHW0l.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/jsonp-G6-3kfCs.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/plsql-BrqgqPW7.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/metafont-BTrM5SOJ.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/neon-D7jTmyqa.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/parser-NGIS2jSc.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/mata-DruadE1r.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/sml-DPjUNy2F.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/nix-B_Argrew.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/jsx-DLFFGYT6.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/t4-templating-CQfL2o2r.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/v-CGybqOVp.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/jq-CrwdbfZ3.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/verilog-Dsp2GV5B.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/vhdl-B1KVEQBj.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/perl-CVZSsSqT.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/javastacktrace-D5HAcFv_.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/sas-iIIbdHl9.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/velocity-DT8JXbvC.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/phpdoc-D7SO7T2c.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/javadoc-C02k0FK-.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/jsstacktrace-D5BmBHGB.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/zig-DBMXAEd9.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/kusto-BA1cv8YI.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/swift--FiHmiba.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/nginx-aioLvsML.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/rescript-BmOWu0mq.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/q-DaYwAuur.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/prolog-BwTMMUvP.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/purescript-Bfiy_vW7.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/squirrel-CqUoFqMJ.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/keepalived-DzMmT1TK.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/purebasic-CHO_TD1P.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/protobuf-CTJrY8vS.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/uorazor-BZR14Qz9.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/matlab-DqJDgZsE.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/javadoclike-DkUstERD.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/wren-C8SlxssU.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/jolie-4gVFs3xw.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/systemd-DyxbZcBF.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/turtle-BNi1XGzk.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/stylus-Cd7r0UAf.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/vim-B7ZhoY_4.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/ocaml-D7WivWh4.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/python-BwPs2jdy.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/visual-basic-0kvl1Iq8.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/n1ql-Cd200wPQ.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/mel-BqADpOem.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/psl-DiYNGVNI.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/solidity-DanbaI6_.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/latex-BxAkOseI.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/lilypond-BDxixi2u.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/plant-uml-Jv8Msp7T.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/lolcode-CpFKAXMr.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/js-extras-BOtz9KyY.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/renpy-DmnMgnVp.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/tt2-B0IeobuQ.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/tremor-hI3sZCYm.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/xml-doc-BciayKGu.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/maxscript-C8SVYmnA.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/qsharp-Jl5eSEA-.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/roboconf-CcDCatdX.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/vala-C7plKmoo.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/openqasm-CGo1dLO_.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/naniscript-DLYqMA8e.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/odin-8iMXYhd0.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/smalltalk-C_aueilj.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/java-CIcWIS0K.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/makefile-D9j2yHss.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/n4js-SFhxWeUu.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/tcl-CqQRGOrd.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/json5-D6TKPnls.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/jsdoc-Dh0tDj1A.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/powershell-2BcMNltl.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/web-idl-CmjhfMcS.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/magma-k0sZ9Xwp.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/smali-DbQpeZnG.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/wasm-8bPwfArB.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/llvm-DSkuqvlQ.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/lisp-BhC_VwKK.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/r-DU0AQmOj.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/sqf-D35arVAP.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/julia-IPbjTzGk.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/rego-qVmjccDD.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/racket-DeFv0CZS.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/wgsl-BehOJsOp.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/tsx-DDoWq85F.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/mermaid-BYjqapp9.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/pascaligo-DTrzHgCJ.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/toml-vCR4OJ5q.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/rust-xoVpgAi3.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/jexl-DlRY0oIj.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/puppet-BPpzGZx0.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/robotframework-BJeyUbKl.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/monkey-Co3gGIk3.js?v=be94aef4",
+     "failure": "net::ERR_ABORTED"
+    },
+    {
+     "url": "http://localhost:3240/styles/__reflex_global_styles.css",
+     "failure": "net::ERR_ABORTED"
+    }
+   ],
+   "http": [
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/haxe-DUkJCI1h.js?v=be94aef4",
+     "status": 504
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/json-BOP5U8hn.js?v=be94aef4",
+     "status": 504
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/http-CzO94ZEL.js?v=be94aef4",
+     "status": 504
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/hsts-ctDtOOdo.js?v=be94aef4",
+     "status": 504
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/uri-GPCUOsUA.js?v=be94aef4",
+     "status": 504
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/ichigojam-CZTSbeMI.js?v=be94aef4",
+     "status": 504
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/icon-GDCfyCGg.js?v=be94aef4",
+     "status": 504
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/icu-message-format-BdglPyhv.js?v=be94aef4",
+     "status": 504
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/idris-rm4Xdcs2.js?v=be94aef4",
+     "status": 504
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/ignore-Do8livK6.js?v=be94aef4",
+     "status": 504
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/inform7-M2OxzIE3.js?v=be94aef4",
+     "status": 504
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/ini-DPQ_YaXb.js?v=be94aef4",
+     "status": 504
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/io-CCMW-gK4.js?v=be94aef4",
+     "status": 504
+    },
+    {
+     "url": "http://localhost:3240/node_modules/.vite/deps/j-DHTM2l9Y.js?v=be94aef4",
+     "status": 504
+    }
+   ]
+  }
+ },
+ "summary": {
+  "cbg": {
+   "console_errwarn": 0,
+   "pageerrors": 0,
+   "failed_requests": 0,
+   "http_4xx_5xx": 0
+  },
+  "accordion": {
+   "console_errwarn": 1,
+   "pageerrors": 0,
+   "failed_requests": 0,
+   "http_4xx_5xx": 0
+  },
+  "slider": {
+   "console_errwarn": 0,
+   "pageerrors": 0,
+   "failed_requests": 0,
+   "http_4xx_5xx": 0
+  },
+  "moment": {
+   "console_errwarn": 4,
+   "pageerrors": 0,
+   "failed_requests": 0,
+   "http_4xx_5xx": 0
+  },
+  "de": {
+   "console_errwarn": 0,
+   "pageerrors": 0,
+   "failed_requests": 0,
+   "http_4xx_5xx": 0
+  },
+  "icons": {
+   "console_errwarn": 19,
+   "pageerrors": 0,
+   "failed_requests": 177,
+   "http_4xx_5xx": 14
+  }
+ },
+ "fail_count": 5,
+ "check_count": 111
+}

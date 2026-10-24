@@ -1,0 +1,7 @@
+typing_new_api.py:21:13: error[type-assertion-failure] Type `Any` does not match asserted type `str`
+typing_new_api.py:22:13: error[type-assertion-failure] Type `Any` does not match asserted type `str`
+typing_new_api.py:31:25: error[unresolved-attribute] Class `FormState` has no attribute `set_toppings`
+typing_new_api.py:45:1: error[type-assertion-failure] Type `Form` does not match asserted type `Component`
+typing_new_api.py:47:1: error[type-assertion-failure] Type `Any` does not match asserted type `list[str]`
+typing_new_api.py:57:11: error[unresolved-attribute] Module `reflex` has no member `moment_provider`
+Found 6 diagnostics

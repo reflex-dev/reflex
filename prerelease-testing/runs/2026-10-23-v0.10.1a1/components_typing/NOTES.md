@@ -154,3 +154,47 @@ Not fixed / observations (identical on 0.10.0 unless noted — none is a regress
 - `rx.data_editor(columns=["A", "B"])` and `columns=State.titles` (`list[str]`) are rejected by both checkers (`Sequence[dict[str, Any]]`), although #7607 documents title strings and the runtime accepts them.
 - `VarData(position=...)` / `Hooks.HookPosition` deprecation is runtime-only: pyright with `reportDeprecated=true` and ty report nothing (no `@deprecated` overload in the stub).
 - A plain annotation `plain_user: User | None = None` reads as `User | None` on the class (needs `rx.Field[...]`), as on 0.10.0.
+
+### D. ISSUE CT-3 — a wheel built from the 0.10.1a1 sdists ships regenerated, incomplete stubs
+
+Observed first by accident: `uv --no-config pip install --prerelease=allow 'reflex[db]==0.10.1a1' pyright ty`
+(cwd `$SB`, no `--only-binary`) produced a venv whose reflex packages all carry `uv_build.json` (built from sdist)
+although uv's own log says `Selecting: reflex-components-radix==0.10.1a1 [compatible] (...py3-none-any.whl)` and then
+`Registry requirement already cached` — uv reused sdist builds another agent had cached at 01:51
+(`/root/.cache/uv/sdists-v9/pypi/reflex-components-{radix,core,dataeditor,...}/0.10.1a1/`). Four venvs of this campaign
+are affected (`components_typing-new`, `-repro`, `-sdist`, and `enterprise-ctrl-a2` with 2 sdist-built dist-infos).
+`.py` files are byte-identical to the wheels (`diff -rq`), only `.pyi` differ.
+
+Compared with the PyPI wheels (`envs/new`, 122 stubs): the sdist-built install has 116 stubs — MISSING
+`reflex_components_radix/primitives/form.pyi`, `reflex_components_dataeditor/dataeditor.pyi`,
+`reflex_components_core/{base/error_boundary,core/banner,core/upload,el/elements/forms}.pyi` — and 100+ other stubs
+differ in content (e.g. `accordion.pyi`: `TypeAlias` annotations, multi-line imports: a different generator version).
+
+Mechanism (reproduced three ways, `sdists/gen_{full,hook,old}/gen.log`):
+1. `hatch-reflex-pyi` (0.10.0, `plugin.py`) deletes every `.pyi` under `src/` and re-runs
+   `python -m reflex_base.utils.pyi_generator` whenever `reflex_base` is importable in the build env — and it
+   always is, because the hook declares `dependencies = ["ruff", "reflex-base", "reflex-components-core", ...]`
+   (unpinned). The stubs shipped inside the sdist are never used.
+2. In an isolated build env those unpinned hook dependencies resolve to the latest **stable** release: pip's log
+   shows `Collecting reflex-base / Using cached reflex_base-0.10.0.tar.gz` while building
+   `reflex-components-radix==0.10.1a1` (`logs/build_pipsdist.log`); uv without `--prerelease=allow` does the same.
+3. The 0.10.0 generator cannot import modules that use 0.10.1 base APIs and drops them silently
+   (`sdists/gen_old/gen.log`: `ERROR:pyi_generator:Failed to import reflex_components_radix.primitives.form —
+   ModuleNotFoundError: No module named 'reflex_base.utils.form'`; exit code 0; 64 stubs instead of 65) and
+   reformats the rest (`accordion.pyi` from that run is byte-identical to the sdist-built install's).
+   With reflex-base 0.10.1a1 in the env (`gen_full`, `gen_hook`) all 65 stubs are generated.
+
+Repro for a stranger (no uv cache involved):
+```
+uv venv --python 3.12 /tmp/v && /tmp/v/bin/python -m pip install --no-cache-dir --no-binary :all: --no-deps 'reflex-components-radix==0.10.1a1'
+ls /tmp/v/lib/python3.12/site-packages/reflex_components_radix/primitives/form.pyi   # missing
+```
+(`pip install reflex-components-radix==0.10.1a1` with wheels: present.) Effect for users: any sdist install of
+the pre-release (e.g. `--no-binary`, a wheel-less index mirror, or a uv cache primed by one) type-checks against
+stubs that lack `rx.form.FormData`, `rx.form(...)`, `rx.data_editor(...)`, `rx.upload(...)`, `rx.el.form(...)`
+signatures (pyright then falls back to the `.py` source: `rx.form.FormData[str, str]` becomes
+`reportInvalidTypeForm`, `rx.form(...)` types as `RadixPrimitiveComponentWithClassName`). The orchestrator's
+preflight ".pyi audit: wheel == sdist" compares archive contents and cannot see this, because the mismatch is
+produced at build time. For a stable release the hook deps would resolve to the new stable only if `reflex-base`
+is published before the component packages are built by users; nothing pins them to the sibling floor
+(`reflex-base>=0.10.1.dev0` is only a runtime dependency).

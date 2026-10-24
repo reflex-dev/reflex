@@ -1,0 +1,251 @@
+{
+    "version": "1.1.414",
+    "time": "1792809012424",
+    "generalDiagnostics": [
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_user.py",
+            "severity": "information",
+            "message": "Type of \"AppState.plain_user\" is \"User | None\"",
+            "range": {
+                "start": {
+                    "line": 102,
+                    "character": 12
+                },
+                "end": {
+                    "line": 102,
+                    "character": 31
+                }
+            }
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_user.py",
+            "severity": "error",
+            "message": "Argument of type \"upload_files\" cannot be assigned to parameter \"value\" of type \"list[UploadFile] | Var[list[UploadFile]]\" in function \"__call__\"\n  Type \"upload_files\" is not assignable to type \"list[UploadFile] | Var[list[UploadFile]]\"\n    \"FileUpload\" is not assignable to \"list[UploadFile]\"\n    \"FileUpload\" is not assignable to \"Var[list[UploadFile]]\"",
+            "range": {
+                "start": {
+                    "line": 110,
+                    "character": 27
+                },
+                "end": {
+                    "line": 110,
+                    "character": 58
+                }
+            },
+            "rule": "reportArgumentType"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_user.py",
+            "severity": "error",
+            "message": "Argument of type \"upload_files_chunk\" cannot be assigned to parameter \"value\" of type \"UploadChunkIterator | Var[UploadChunkIterator]\" in function \"__call__\"\n  Type \"upload_files_chunk\" is not assignable to type \"UploadChunkIterator | Var[UploadChunkIterator]\"\n    \"UploadFilesChunk\" is not assignable to \"UploadChunkIterator\"\n    \"UploadFilesChunk\" is not assignable to \"Var[UploadChunkIterator]\"",
+            "range": {
+                "start": {
+                    "line": 113,
+                    "character": 27
+                },
+                "end": {
+                    "line": 113,
+                    "character": 64
+                }
+            },
+            "rule": "reportArgumentType"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_user.py",
+            "severity": "error",
+            "message": "Argument of type \"upload_files\" cannot be assigned to parameter \"value\" of type \"list[UploadFile] | Var[list[UploadFile]]\" in function \"__call__\"\n  Type \"upload_files\" is not assignable to type \"list[UploadFile] | Var[list[UploadFile]]\"\n    \"FileUpload\" is not assignable to \"list[UploadFile]\"\n    \"FileUpload\" is not assignable to \"Var[list[UploadFile]]\"",
+            "range": {
+                "start": {
+                    "line": 116,
+                    "character": 46
+                },
+                "end": {
+                    "line": 116,
+                    "character": 77
+                }
+            },
+            "rule": "reportArgumentType"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_user.py",
+            "severity": "error",
+            "message": "Argument of type \"upload_files_chunk\" cannot be assigned to parameter \"value\" of type \"UploadChunkIterator | Var[UploadChunkIterator]\" in function \"__call__\"\n  Type \"upload_files_chunk\" is not assignable to type \"UploadChunkIterator | Var[UploadChunkIterator]\"\n    \"UploadFilesChunk\" is not assignable to \"UploadChunkIterator\"\n    \"UploadFilesChunk\" is not assignable to \"Var[UploadChunkIterator]\"",
+            "range": {
+                "start": {
+                    "line": 120,
+                    "character": 36
+                },
+                "end": {
+                    "line": 120,
+                    "character": 73
+                }
+            },
+            "rule": "reportArgumentType"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_user.py",
+            "severity": "error",
+            "message": "Argument of type \"Point\" cannot be assigned to parameter \"_var_value\" of type \"Mapping[Unknown, Unknown]\" in function \"create\"\n  \"Point\" is not assignable to \"Mapping[Unknown, Unknown]\"",
+            "range": {
+                "start": {
+                    "line": 124,
+                    "character": 37
+                },
+                "end": {
+                    "line": 124,
+                    "character": 48
+                }
+            },
+            "rule": "reportArgumentType"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_user.py",
+            "severity": "error",
+            "message": "\"assert_type\" mismatch: expected \"EventCallback[*tuple[()]] | None\" but received \"(() -> Unknown) | None\"",
+            "range": {
+                "start": {
+                    "line": 137,
+                    "character": 16
+                },
+                "end": {
+                    "line": 137,
+                    "character": 31
+                }
+            },
+            "rule": "reportAssertTypeFailure"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_user.py",
+            "severity": "error",
+            "message": "\"assert_type\" mismatch: expected \"EventCallback[str] | None\" but received \"((str) -> Unknown) | None\"",
+            "range": {
+                "start": {
+                    "line": 138,
+                    "character": 16
+                },
+                "end": {
+                    "line": 138,
+                    "character": 29
+                }
+            },
+            "rule": "reportAssertTypeFailure"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_user.py",
+            "severity": "error",
+            "message": "\"assert_type\" mismatch: expected \"EventCallback[str] | None\" but received \"((str) -> Unknown) | None\"",
+            "range": {
+                "start": {
+                    "line": 156,
+                    "character": 16
+                },
+                "end": {
+                    "line": 156,
+                    "character": 30
+                }
+            },
+            "rule": "reportAssertTypeFailure"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_user.py",
+            "severity": "error",
+            "message": "Argument of type \"list[EventSpec]\" cannot be assigned to parameter \"value\" of type \"EventType[()]\" in function \"prop\"\n  Type \"list[EventSpec]\" is not assignable to type \"EventType[()]\"\n    \"list[EventSpec]\" is incompatible with protocol \"LambdaEventCallback[*tuple[()]]\"\n      \"__code__\" is not present\n      \"__call__\" is not present\n    \"list[EventSpec]\" is not assignable to \"EventCallback[*tuple[()]]\"\n    \"list[EventSpec]\" is not assignable to \"EventSpec\"\n    \"list[EventSpec]\" is not assignable to \"EventHandler\"\n    \"list[EventSpec]\" is not assignable to \"Var[Any]\"\n  ...",
+            "range": {
+                "start": {
+                    "line": 164,
+                    "character": 9
+                },
+                "end": {
+                    "line": 164,
+                    "character": 14
+                }
+            },
+            "rule": "reportArgumentType"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_user.py",
+            "severity": "error",
+            "message": "Argument of type \"tuple[EventCallback[*tuple[()]], ...]\" cannot be assigned to parameter \"value\" of type \"EventType[()]\" in function \"prop\"\n  Type \"tuple[EventCallback[*tuple[()]], ...]\" is not assignable to type \"EventType[()]\"\n    \"tuple[EventCallback[*tuple[()]], ...]\" is incompatible with protocol \"LambdaEventCallback[*tuple[()]]\"\n      \"__code__\" is not present\n      \"__call__\" is not present\n    \"tuple[EventCallback[*tuple[()]], ...]\" is not assignable to \"EventCallback[*tuple[()]]\"\n    \"tuple[EventCallback[*tuple[()]], ...]\" is not assignable to \"EventSpec\"\n    \"tuple[EventCallback[*tuple[()]], ...]\" is not assignable to \"EventHandler\"\n    \"tuple[EventCallback[*tuple[()]], ...]\" is not assignable to \"Var[Any]\"\n  ...",
+            "range": {
+                "start": {
+                    "line": 165,
+                    "character": 9
+                },
+                "end": {
+                    "line": 165,
+                    "character": 17
+                }
+            },
+            "rule": "reportArgumentType"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_user.py",
+            "severity": "information",
+            "message": "Type of \"_form\" is \"Form\"",
+            "range": {
+                "start": {
+                    "line": 173,
+                    "character": 12
+                },
+                "end": {
+                    "line": 173,
+                    "character": 17
+                }
+            }
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_user.py",
+            "severity": "information",
+            "message": "Type of \"_form_root\" is \"FormRoot\"",
+            "range": {
+                "start": {
+                    "line": 174,
+                    "character": 12
+                },
+                "end": {
+                    "line": 174,
+                    "character": 22
+                }
+            }
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_user.py",
+            "severity": "error",
+            "message": "Argument of type \"list[str]\" cannot be assigned to parameter \"columns\" of type \"Sequence[dict[str, Any]] | Var[Sequence[dict[str, Any]]] | None\" in function \"create\"\n  \"Literal['A']\" is not assignable to \"dict[str, Any]\"\n  \"Literal['B']\" is not assignable to \"dict[str, Any]\"",
+            "range": {
+                "start": {
+                    "line": 208,
+                    "character": 31
+                },
+                "end": {
+                    "line": 208,
+                    "character": 41
+                }
+            },
+            "rule": "reportArgumentType"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_user.py",
+            "severity": "error",
+            "message": "Argument of type \"Literal[True]\" cannot be assigned to parameter \"auto_complete\" of type \"Var[str] | str | None\" in function \"__call__\"\n  Type \"Literal[True]\" is not assignable to type \"Var[str] | str | None\"\n    \"Literal[True]\" is not assignable to \"Var[str]\"\n    \"Literal[True]\" is not assignable to \"str\"\n    \"Literal[True]\" is not assignable to \"None\"",
+            "range": {
+                "start": {
+                    "line": 214,
+                    "character": 31
+                },
+                "end": {
+                    "line": 214,
+                    "character": 35
+                }
+            },
+            "rule": "reportArgumentType"
+        }
+    ],
+    "summary": {
+        "filesAnalyzed": 1,
+        "errorCount": 12,
+        "warningCount": 0,
+        "informationCount": 3,
+        "timeInSec": 4.742
+    }
+}
+

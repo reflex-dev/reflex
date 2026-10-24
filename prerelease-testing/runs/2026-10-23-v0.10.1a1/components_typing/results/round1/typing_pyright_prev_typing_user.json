@@ -1,0 +1,446 @@
+{
+    "version": "1.1.414",
+    "time": "1792808609894",
+    "generalDiagnostics": [
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_user.py",
+            "severity": "error",
+            "message": "Type \"Field[Point]\" is not assignable to declared type \"Point\"\n  \"Field[Point]\" is not assignable to \"Point\"",
+            "range": {
+                "start": {
+                    "line": 44,
+                    "character": 28
+                },
+                "end": {
+                    "line": 44,
+                    "character": 73
+                }
+            },
+            "rule": "reportAssignmentType"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_user.py",
+            "severity": "error",
+            "message": "\"assert_type\" mismatch: expected \"ObjectVar[User]\" but received \"User | None\"",
+            "range": {
+                "start": {
+                    "line": 97,
+                    "character": 12
+                },
+                "end": {
+                    "line": 97,
+                    "character": 25
+                }
+            },
+            "rule": "reportAssertTypeFailure"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_user.py",
+            "severity": "error",
+            "message": "\"assert_type\" mismatch: expected \"ObjectVar[Point]\" but received \"Point | None\"",
+            "range": {
+                "start": {
+                    "line": 98,
+                    "character": 12
+                },
+                "end": {
+                    "line": 98,
+                    "character": 26
+                }
+            },
+            "rule": "reportAssertTypeFailure"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_user.py",
+            "severity": "error",
+            "message": "\"assert_type\" mismatch: expected \"ObjectVar[Filters]\" but received \"Filters | None\"",
+            "range": {
+                "start": {
+                    "line": 99,
+                    "character": 12
+                },
+                "end": {
+                    "line": 99,
+                    "character": 28
+                }
+            },
+            "rule": "reportAssertTypeFailure"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_user.py",
+            "severity": "error",
+            "message": "\"assert_type\" mismatch: expected \"ObjectVar[Point]\" but received \"Point\"",
+            "range": {
+                "start": {
+                    "line": 100,
+                    "character": 12
+                },
+                "end": {
+                    "line": 100,
+                    "character": 35
+                }
+            },
+            "rule": "reportAssertTypeFailure"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_user.py",
+            "severity": "error",
+            "message": "\"name\" is not a known attribute of \"None\"",
+            "range": {
+                "start": {
+                    "line": 101,
+                    "character": 31
+                },
+                "end": {
+                    "line": 101,
+                    "character": 35
+                }
+            },
+            "rule": "reportOptionalMemberAccess"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_user.py",
+            "severity": "error",
+            "message": "\"x\" is not a known attribute of \"None\"",
+            "range": {
+                "start": {
+                    "line": 102,
+                    "character": 26
+                },
+                "end": {
+                    "line": 102,
+                    "character": 27
+                }
+            },
+            "rule": "reportOptionalMemberAccess"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_user.py",
+            "severity": "error",
+            "message": "Cannot access attribute \"q\" for class \"Filters\"\n  Attribute \"q\" is unknown\n  Use [\"q\"] to reference item in TypedDict",
+            "range": {
+                "start": {
+                    "line": 103,
+                    "character": 30
+                },
+                "end": {
+                    "line": 103,
+                    "character": 31
+                }
+            },
+            "rule": "reportAttributeAccessIssue"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_user.py",
+            "severity": "error",
+            "message": "\"q\" is not a known attribute of \"None\"",
+            "range": {
+                "start": {
+                    "line": 103,
+                    "character": 30
+                },
+                "end": {
+                    "line": 103,
+                    "character": 31
+                }
+            },
+            "rule": "reportOptionalMemberAccess"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_user.py",
+            "severity": "error",
+            "message": "\"email\" is not a known attribute of \"None\"",
+            "range": {
+                "start": {
+                    "line": 104,
+                    "character": 30
+                },
+                "end": {
+                    "line": 104,
+                    "character": 35
+                }
+            },
+            "rule": "reportOptionalMemberAccess"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_user.py",
+            "severity": "error",
+            "message": "\"y\" is not a known attribute of \"None\"",
+            "range": {
+                "start": {
+                    "line": 104,
+                    "character": 52
+                },
+                "end": {
+                    "line": 104,
+                    "character": 53
+                }
+            },
+            "rule": "reportOptionalMemberAccess"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_user.py",
+            "severity": "error",
+            "message": "Cannot access attribute \"page\" for class \"Filters\"\n  Attribute \"page\" is unknown\n  Use [\"page\"] to reference item in TypedDict",
+            "range": {
+                "start": {
+                    "line": 104,
+                    "character": 72
+                },
+                "end": {
+                    "line": 104,
+                    "character": 76
+                }
+            },
+            "rule": "reportAttributeAccessIssue"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_user.py",
+            "severity": "error",
+            "message": "\"page\" is not a known attribute of \"None\"",
+            "range": {
+                "start": {
+                    "line": 104,
+                    "character": 72
+                },
+                "end": {
+                    "line": 104,
+                    "character": 76
+                }
+            },
+            "rule": "reportOptionalMemberAccess"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_user.py",
+            "severity": "error",
+            "message": "Argument of type \"upload_files\" cannot be assigned to parameter \"value\" of type \"list[UploadFile] | Var[list[UploadFile]]\" in function \"__call__\"\n  Type \"upload_files\" is not assignable to type \"list[UploadFile] | Var[list[UploadFile]]\"\n    \"FileUpload\" is not assignable to \"list[UploadFile]\"\n    \"FileUpload\" is not assignable to \"Var[list[UploadFile]]\"",
+            "range": {
+                "start": {
+                    "line": 108,
+                    "character": 27
+                },
+                "end": {
+                    "line": 108,
+                    "character": 58
+                }
+            },
+            "rule": "reportArgumentType"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_user.py",
+            "severity": "error",
+            "message": "Argument of type \"upload_files_chunk\" cannot be assigned to parameter \"value\" of type \"UploadChunkIterator | Var[UploadChunkIterator]\" in function \"__call__\"\n  Type \"upload_files_chunk\" is not assignable to type \"UploadChunkIterator | Var[UploadChunkIterator]\"\n    \"UploadFilesChunk\" is not assignable to \"UploadChunkIterator\"\n    \"UploadFilesChunk\" is not assignable to \"Var[UploadChunkIterator]\"",
+            "range": {
+                "start": {
+                    "line": 111,
+                    "character": 27
+                },
+                "end": {
+                    "line": 111,
+                    "character": 64
+                }
+            },
+            "rule": "reportArgumentType"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_user.py",
+            "severity": "error",
+            "message": "Argument of type \"upload_files\" cannot be assigned to parameter \"value\" of type \"list[UploadFile] | Var[list[UploadFile]]\" in function \"__call__\"\n  Type \"upload_files\" is not assignable to type \"list[UploadFile] | Var[list[UploadFile]]\"\n    \"FileUpload\" is not assignable to \"list[UploadFile]\"\n    \"FileUpload\" is not assignable to \"Var[list[UploadFile]]\"",
+            "range": {
+                "start": {
+                    "line": 114,
+                    "character": 46
+                },
+                "end": {
+                    "line": 114,
+                    "character": 77
+                }
+            },
+            "rule": "reportArgumentType"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_user.py",
+            "severity": "error",
+            "message": "Argument of type \"upload_files_chunk\" cannot be assigned to parameter \"value\" of type \"UploadChunkIterator | Var[UploadChunkIterator]\" in function \"__call__\"\n  Type \"upload_files_chunk\" is not assignable to type \"UploadChunkIterator | Var[UploadChunkIterator]\"\n    \"UploadFilesChunk\" is not assignable to \"UploadChunkIterator\"\n    \"UploadFilesChunk\" is not assignable to \"Var[UploadChunkIterator]\"",
+            "range": {
+                "start": {
+                    "line": 118,
+                    "character": 36
+                },
+                "end": {
+                    "line": 118,
+                    "character": 73
+                }
+            },
+            "rule": "reportArgumentType"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_user.py",
+            "severity": "error",
+            "message": "Argument of type \"Point\" cannot be assigned to parameter \"_var_value\" of type \"Mapping[Unknown, Unknown]\" in function \"create\"\n  \"Point\" is not assignable to \"Mapping[Unknown, Unknown]\"",
+            "range": {
+                "start": {
+                    "line": 122,
+                    "character": 37
+                },
+                "end": {
+                    "line": 122,
+                    "character": 48
+                }
+            },
+            "rule": "reportArgumentType"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_user.py",
+            "severity": "error",
+            "message": "\"assert_type\" mismatch: expected \"EventCallback[*tuple[()]] | None\" but received \"(() -> Unknown) | None\"",
+            "range": {
+                "start": {
+                    "line": 135,
+                    "character": 16
+                },
+                "end": {
+                    "line": 135,
+                    "character": 31
+                }
+            },
+            "rule": "reportAssertTypeFailure"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_user.py",
+            "severity": "error",
+            "message": "\"assert_type\" mismatch: expected \"EventCallback[str] | None\" but received \"((str) -> Unknown) | None\"",
+            "range": {
+                "start": {
+                    "line": 136,
+                    "character": 16
+                },
+                "end": {
+                    "line": 136,
+                    "character": 29
+                }
+            },
+            "rule": "reportAssertTypeFailure"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_user.py",
+            "severity": "error",
+            "message": "\"assert_type\" mismatch: expected \"EventCallback[str] | None\" but received \"((str) -> Unknown) | None\"",
+            "range": {
+                "start": {
+                    "line": 154,
+                    "character": 16
+                },
+                "end": {
+                    "line": 154,
+                    "character": 30
+                }
+            },
+            "rule": "reportAssertTypeFailure"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_user.py",
+            "severity": "error",
+            "message": "Argument of type \"list[EventSpec]\" cannot be assigned to parameter \"value\" of type \"EventType[()]\" in function \"prop\"\n  Type \"list[EventSpec]\" is not assignable to type \"EventType[()]\"\n    \"list[EventSpec]\" is incompatible with protocol \"LambdaEventCallback[*tuple[()]]\"\n      \"__code__\" is not present\n      \"__call__\" is not present\n    \"list[EventSpec]\" is not assignable to \"EventCallback[*tuple[()]]\"\n    \"list[EventSpec]\" is not assignable to \"EventSpec\"\n    \"list[EventSpec]\" is not assignable to \"EventHandler\"\n    \"list[EventSpec]\" is not assignable to \"Var[Any]\"\n  ...",
+            "range": {
+                "start": {
+                    "line": 162,
+                    "character": 9
+                },
+                "end": {
+                    "line": 162,
+                    "character": 14
+                }
+            },
+            "rule": "reportArgumentType"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_user.py",
+            "severity": "error",
+            "message": "Argument of type \"tuple[EventCallback[*tuple[()]], ...]\" cannot be assigned to parameter \"value\" of type \"EventType[()]\" in function \"prop\"\n  Type \"tuple[EventCallback[*tuple[()]], ...]\" is not assignable to type \"EventType[()]\"\n    \"tuple[EventCallback[*tuple[()]], ...]\" is incompatible with protocol \"LambdaEventCallback[*tuple[()]]\"\n      \"__code__\" is not present\n      \"__call__\" is not present\n    \"tuple[EventCallback[*tuple[()]], ...]\" is not assignable to \"EventCallback[*tuple[()]]\"\n    \"tuple[EventCallback[*tuple[()]], ...]\" is not assignable to \"EventSpec\"\n    \"tuple[EventCallback[*tuple[()]], ...]\" is not assignable to \"EventHandler\"\n    \"tuple[EventCallback[*tuple[()]], ...]\" is not assignable to \"Var[Any]\"\n  ...",
+            "range": {
+                "start": {
+                    "line": 163,
+                    "character": 9
+                },
+                "end": {
+                    "line": 163,
+                    "character": 17
+                }
+            },
+            "rule": "reportArgumentType"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_user.py",
+            "severity": "error",
+            "message": "\"assert_type\" mismatch: expected \"Component\" but received \"Form\"",
+            "range": {
+                "start": {
+                    "line": 169,
+                    "character": 12
+                },
+                "end": {
+                    "line": 169,
+                    "character": 17
+                }
+            },
+            "rule": "reportAssertTypeFailure"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_user.py",
+            "severity": "error",
+            "message": "\"assert_type\" mismatch: expected \"Component\" but received \"FormRoot\"",
+            "range": {
+                "start": {
+                    "line": 170,
+                    "character": 12
+                },
+                "end": {
+                    "line": 170,
+                    "character": 22
+                }
+            },
+            "rule": "reportAssertTypeFailure"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_user.py",
+            "severity": "error",
+            "message": "Argument of type \"list[str]\" cannot be assigned to parameter \"columns\" of type \"Sequence[dict[str, Any]] | Var[Sequence[dict[str, Any]]] | None\" in function \"create\"\n  \"Literal['A']\" is not assignable to \"dict[str, Any]\"\n  \"Literal['B']\" is not assignable to \"dict[str, Any]\"",
+            "range": {
+                "start": {
+                    "line": 204,
+                    "character": 31
+                },
+                "end": {
+                    "line": 204,
+                    "character": 41
+                }
+            },
+            "rule": "reportArgumentType"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_user.py",
+            "severity": "error",
+            "message": "Argument of type \"Literal[True]\" cannot be assigned to parameter \"auto_complete\" of type \"Var[str] | str | None\" in function \"__call__\"\n  Type \"Literal[True]\" is not assignable to type \"Var[str] | str | None\"\n    \"Literal[True]\" is not assignable to \"Var[str]\"\n    \"Literal[True]\" is not assignable to \"str\"\n    \"Literal[True]\" is not assignable to \"None\"",
+            "range": {
+                "start": {
+                    "line": 210,
+                    "character": 31
+                },
+                "end": {
+                    "line": 210,
+                    "character": 35
+                }
+            },
+            "rule": "reportArgumentType"
+        }
+    ],
+    "summary": {
+        "filesAnalyzed": 1,
+        "errorCount": 27,
+        "warningCount": 0,
+        "informationCount": 0,
+        "timeInSec": 4.553
+    }
+}
+

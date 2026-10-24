@@ -1,0 +1,40 @@
+typing_user.py:25:12: warning[unsupported-base] Unsupported class base with type `<class 'Model'> | <class '_ClassThatErrorsOnInit'>`
+typing_user.py:45:29: error[invalid-assignment] Object of type `dataclasses.Field[Field[Point]]` is not assignable to `Point`
+typing_user.py:89:1: error[type-assertion-failure] Type `Session | Unknown` does not match asserted type `Session`
+typing_user.py:90:1: error[type-assertion-failure] Type `AsyncSession | Unknown` does not match asserted type `AsyncSession`
+typing_user.py:91:13: error[unresolved-attribute] Attribute `get_metadata` is not defined on `<class '_ClassThatErrorsOnInit'>` in union `<class 'ModelRegistry'> | <class '_ClassThatErrorsOnInit'>`
+typing_user.py:92:1: error[type-assertion-failure] Type `Engine | Unknown` does not match asserted type `Engine`
+typing_user.py:93:1: error[type-assertion-failure] Type `Session | Unknown` does not match asserted type `Session`
+typing_user.py:94:23: error[unresolved-attribute] Attribute `get_metadata` is not defined on `<class '_ClassThatErrorsOnInit'>` in union `<class 'ModelRegistry'> | <class '_ClassThatErrorsOnInit'>`
+typing_user.py:95:1: error[unresolved-attribute] Attribute `register` is not defined on `<class '_ClassThatErrorsOnInit'>` in union `<class 'ModelRegistry'> | <class '_ClassThatErrorsOnInit'>`
+typing_user.py:98:1: error[type-assertion-failure] Type `User | None` does not match asserted type `ObjectVar[User]`
+typing_user.py:99:1: error[type-assertion-failure] Type `Point | None` does not match asserted type `ObjectVar[Point]`
+typing_user.py:100:1: error[type-assertion-failure] Type `Filters | None` does not match asserted type `ObjectVar[Filters]`
+typing_user.py:101:1: error[type-assertion-failure] Type `Point` does not match asserted type `ObjectVar[Point]`
+typing_user.py:102:18: error[unresolved-attribute] Attribute `name` is not defined on `None` in union `User | None`
+typing_user.py:103:12: error[unresolved-attribute] Attribute `x` is not defined on `None` in union `Point | None`
+typing_user.py:104:14: error[unresolved-attribute] Object of type `Filters | None` has no attribute `q`
+typing_user.py:105:17: error[unresolved-attribute] Attribute `email` is not defined on `None` in union `User | None`
+typing_user.py:105:38: error[unresolved-attribute] Attribute `y` is not defined on `None` in union `Point | None`
+typing_user.py:105:56: error[unresolved-attribute] Object of type `Filters | None` has no attribute `page`
+typing_user.py:108:1: error[type-assertion-failure] Type `Unknown` does not match asserted type `EventCallback[()]`
+typing_user.py:109:5: error[no-matching-overload] No overload matches arguments
+typing_user.py:111:1: error[type-assertion-failure] Type `Unknown` does not match asserted type `EventCallback[()]`
+typing_user.py:112:5: error[no-matching-overload] No overload matches arguments
+typing_user.py:115:24: error[no-matching-overload] No overload matches arguments
+typing_user.py:119:14: error[no-matching-overload] No overload matches arguments
+typing_user.py:123:38: error[invalid-argument-type] Argument to bound method `LiteralObjectVar.create` is incorrect: Expected `Mapping[Unknown, Unknown]`, found `Point`
+typing_user.py:136:5: error[type-assertion-failure] Type `((...) -> Unknown) | None` does not match asserted type `EventCallback[()] | None`
+typing_user.py:137:5: error[type-assertion-failure] Type `((...) -> Unknown) | None` does not match asserted type `EventCallback[str] | None`
+typing_user.py:138:35: error[invalid-argument-type] Argument to bound method `Button.create` is incorrect: Expected `EventType[()] | EventType[PointerEventInfo] | None`, found `((...) -> Unknown) | None`
+typing_user.py:154:5: error[type-assertion-failure] Type `(...) -> Unknown` does not match asserted type `(str, /) -> Any`
+typing_user.py:155:5: error[type-assertion-failure] Type `((...) -> Unknown) | None` does not match asserted type `EventCallback[str] | None`
+typing_user.py:163:10: error[invalid-argument-type] Argument to function `prop` is incorrect: Expected `EventType[()]`, found `list[EventSpec]`
+typing_user.py:164:10: error[invalid-argument-type] Argument to function `prop` is incorrect: Expected `EventType[()]`, found `tuple[EventCallback[()], ...]`
+typing_user.py:170:1: error[type-assertion-failure] Type `Form` does not match asserted type `Component`
+typing_user.py:171:1: error[type-assertion-failure] Type `FormRoot` does not match asserted type `Component`
+typing_user.py:186:15: error[invalid-type-form] Non-generic class `EventHandler` cannot be specialized in a type expression
+typing_user.py:187:16: error[invalid-type-form] Non-generic class `EventHandler` cannot be specialized in a type expression
+typing_user.py:205:24: error[invalid-argument-type] Argument to bound method `DataEditor.create` is incorrect: Expected `Sequence[dict[str, Any]] | Var[Sequence[dict[str, Any]]] | None`, found `list[str]`
+typing_user.py:211:18: error[invalid-argument-type] Argument to function `TextField.__call__` is incorrect: Expected `Var[str] | str | None`, found `Literal[True]`
+Found 39 diagnostics

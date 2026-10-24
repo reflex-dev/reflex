@@ -1,0 +1,3 @@
+typing_new_api.py:50:13: info[revealed-type] Revealed type: `Form`
+typing_new_api.py:53:13: info[revealed-type] Revealed type: `<class 'FormData'>`
+Found 2 diagnostics

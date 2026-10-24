@@ -1,0 +1,110 @@
+== pyright new typing_user.py
+  information L103: Type of "AppState.plain_user" is "User | None"  []
+  information L174: Type of "_form" is "RadixPrimitiveComponentWithClassName"  []
+  information L175: Type of "_form_root" is "RadixPrimitiveComponentWithClassName"  []
+  error    L215: Argument of type "Literal[True]" cannot be assigned to parameter "auto_complete" of type "Var[str] | str | None" in function "__call__"  [reportArgumentType]
+  summary: errors=1 warnings=0
+== ty new typing_user.py
+  typing_user.py:99:1: error[type-assertion-failure] Type `Var[User | None]` does not match asserted type `ObjectVar[User]`
+  typing_user.py:103:13: info[revealed-type] Revealed type: `User | None`
+  typing_user.py:104:18: error[unresolved-attribute] Object of type `Var[User | None]` has no attribute `name`
+  typing_user.py:107:17: error[unresolved-attribute] Object of type `Var[User | None]` has no attribute `email`
+  typing_user.py:174:13: info[revealed-type] Revealed type: `RadixPrimitiveComponentWithClassName`
+  typing_user.py:175:13: info[revealed-type] Revealed type: `RadixPrimitiveComponentWithClassName`
+  typing_user.py:190:15: error[invalid-type-form] Non-generic class `EventHandler` cannot be specialized in a type expression
+  typing_user.py:191:16: error[invalid-type-form] Non-generic class `EventHandler` cannot be specialized in a type expression
+  typing_user.py:215:18: error[invalid-argument-type] Argument to function `TextField.__call__` is incorrect: Expected `Var[str] | str | None`, found `Literal[True]`
+  Found 9 diagnostics
+== pyright new typing_new_api.py
+  error    L21: Variable not allowed in type expression  [reportInvalidTypeForm]
+  error    L25: "assert_type" mismatch: expected "str" but received "Unknown"  [reportAssertTypeFailure]
+  error    L26: "assert_type" mismatch: expected "str" but received "Unknown"  [reportAssertTypeFailure]
+  information L50: Type of "_form" is "RadixPrimitiveComponentWithClassName"  []
+  error    L51: Variable not allowed in type expression  [reportInvalidTypeForm]
+  error    L52: "assert_type" mismatch: expected "list[str]" but received "Unknown"  [reportAssertTypeFailure]
+  information L53: Type of "rx.form.FormData" is "type[FormData[Unknown, Unknown]]"  []
+  summary: errors=5 warnings=0
+== ty new typing_new_api.py
+  typing_new_api.py:21:40: error[invalid-type-form] Invalid subscript of object of type `type[FormData[Unknown, Unknown]]` in a parameter annotation
+  typing_new_api.py:25:13: error[type-assertion-failure] Type `Unknown` does not match asserted type `str`
+  typing_new_api.py:26:13: error[type-assertion-failure] Type `Unknown` does not match asserted type `str`
+  typing_new_api.py:50:13: info[revealed-type] Revealed type: `RadixPrimitiveComponentWithClassName`
+  typing_new_api.py:51:6: error[invalid-type-form] Invalid subscript of object of type `type[FormData[Unknown, Unknown]]` in a type expression
+  typing_new_api.py:52:1: error[type-assertion-failure] Type `list[Unknown]` does not match asserted type `list[str]`
+  typing_new_api.py:53:13: info[revealed-type] Revealed type: `type[FormData[Unknown, Unknown]]`
+  Found 7 diagnostics
+== pyright prev typing_user.py
+  information L103: Type of "AppState.plain_user" is "User | None"  []
+  error    L111: Argument of type "upload_files" cannot be assigned to parameter "value" of type "list[UploadFile] | Var[list[UploadFile]]" in function "__call__"  [reportArgumentType]
+  error    L114: Argument of type "upload_files_chunk" cannot be assigned to parameter "value" of type "UploadChunkIterator | Var[UploadChunkIterator]" in function "__call__"  [reportArgumentType]
+  error    L117: Argument of type "upload_files" cannot be assigned to parameter "value" of type "list[UploadFile] | Var[list[UploadFile]]" in function "__call__"  [reportArgumentType]
+  error    L121: Argument of type "upload_files_chunk" cannot be assigned to parameter "value" of type "UploadChunkIterator | Var[UploadChunkIterator]" in function "__call__"  [reportArgumentType]
+  error    L125: Argument of type "Point" cannot be assigned to parameter "_var_value" of type "Mapping[Unknown, Unknown]" in function "create"  [reportArgumentType]
+  error    L138: "assert_type" mismatch: expected "EventCallback[*tuple[()]] | None" but received "(() -> Unknown) | None"  [reportAssertTypeFailure]
+  error    L139: "assert_type" mismatch: expected "EventCallback[str] | None" but received "((str) -> Unknown) | None"  [reportAssertTypeFailure]
+  error    L157: "assert_type" mismatch: expected "EventCallback[str] | None" but received "((str) -> Unknown) | None"  [reportAssertTypeFailure]
+  error    L165: Argument of type "list[EventSpec]" cannot be assigned to parameter "value" of type "EventType[()]" in function "prop"  [reportArgumentType]
+  error    L166: Argument of type "tuple[EventCallback[*tuple[()]], ...]" cannot be assigned to parameter "value" of type "EventType[()]" in function "prop"  [reportArgumentType]
+  information L174: Type of "_form" is "Form"  []
+  information L175: Type of "_form_root" is "FormRoot"  []
+  error    L209: Argument of type "list[str]" cannot be assigned to parameter "columns" of type "Sequence[dict[str, Any]] | Var[Sequence[dict[str, Any]]] | None" in function "create"  [reportArgumentType]
+  error    L215: Argument of type "Literal[True]" cannot be assigned to parameter "auto_complete" of type "Var[str] | str | None" in function "__call__"  [reportArgumentType]
+  summary: errors=12 warnings=0
+== ty prev typing_user.py
+  typing_user.py:25:12: warning[unsupported-base] Unsupported class base with type `<class 'Model'> | <class '_ClassThatErrorsOnInit'>`
+  typing_user.py:90:1: error[type-assertion-failure] Type `Session | Unknown` does not match asserted type `Session`
+  typing_user.py:91:1: error[type-assertion-failure] Type `AsyncSession | Unknown` does not match asserted type `AsyncSession`
+  typing_user.py:92:13: error[unresolved-attribute] Attribute `get_metadata` is not defined on `<class '_ClassThatErrorsOnInit'>` in union `<class 'ModelRegistry'> | <class '_ClassThatErrorsOnInit'>`
+  typing_user.py:93:1: error[type-assertion-failure] Type `Engine | Unknown` does not match asserted type `Engine`
+  typing_user.py:94:1: error[type-assertion-failure] Type `Session | Unknown` does not match asserted type `Session`
+  typing_user.py:95:23: error[unresolved-attribute] Attribute `get_metadata` is not defined on `<class '_ClassThatErrorsOnInit'>` in union `<class 'ModelRegistry'> | <class '_ClassThatErrorsOnInit'>`
+  typing_user.py:96:1: error[unresolved-attribute] Attribute `register` is not defined on `<class '_ClassThatErrorsOnInit'>` in union `<class 'ModelRegistry'> | <class '_ClassThatErrorsOnInit'>`
+  typing_user.py:99:1: error[type-assertion-failure] Type `ArrayVar[User]` does not match asserted type `ObjectVar[User]`
+  typing_user.py:100:1: error[type-assertion-failure] Type `ObjectVar[Point | None]` does not match asserted type `ObjectVar[Point]`
+  typing_user.py:101:1: error[type-assertion-failure] Type `ObjectVar[Filters | None]` does not match asserted type `ObjectVar[Filters]`
+  typing_user.py:103:13: info[revealed-type] Revealed type: `User | None`
+  typing_user.py:104:18: error[unresolved-attribute] Object of type `ArrayVar[User]` has no attribute `name`
+  typing_user.py:107:17: error[unresolved-attribute] Object of type `ArrayVar[User]` has no attribute `email`
+  typing_user.py:110:1: error[type-assertion-failure] Type `Unknown` does not match asserted type `EventCallback[()]`
+  typing_user.py:111:5: error[no-matching-overload] No overload matches arguments
+  typing_user.py:113:1: error[type-assertion-failure] Type `Unknown` does not match asserted type `EventCallback[()]`
+  typing_user.py:114:5: error[no-matching-overload] No overload matches arguments
+  typing_user.py:117:24: error[no-matching-overload] No overload matches arguments
+  typing_user.py:121:14: error[no-matching-overload] No overload matches arguments
+  typing_user.py:125:38: error[invalid-argument-type] Argument to bound method `LiteralObjectVar.create` is incorrect: Expected `Mapping[Unknown, Unknown]`, found `Point`
+  typing_user.py:138:5: error[type-assertion-failure] Type `((...) -> Unknown) | None` does not match asserted type `EventCallback[()] | None`
+  typing_user.py:139:5: error[type-assertion-failure] Type `((...) -> Unknown) | None` does not match asserted type `EventCallback[str] | None`
+  typing_user.py:140:35: error[invalid-argument-type] Argument to bound method `Button.create` is incorrect: Expected `EventType[()] | EventType[PointerEventInfo] | None`, found `((...) -> Unknown) | None`
+  typing_user.py:156:5: error[type-assertion-failure] Type `(...) -> Unknown` does not match asserted type `(str, /) -> Any`
+  typing_user.py:157:5: error[type-assertion-failure] Type `((...) -> Unknown) | None` does not match asserted type `EventCallback[str] | None`
+  typing_user.py:165:10: error[invalid-argument-type] Argument to function `prop` is incorrect: Expected `EventType[()]`, found `list[EventSpec]`
+  typing_user.py:166:10: error[invalid-argument-type] Argument to function `prop` is incorrect: Expected `EventType[()]`, found `tuple[EventCallback[()], ...]`
+  typing_user.py:174:13: info[revealed-type] Revealed type: `Form`
+  typing_user.py:175:13: info[revealed-type] Revealed type: `FormRoot`
+  typing_user.py:190:15: error[invalid-type-form] Non-generic class `EventHandler` cannot be specialized in a type expression
+  typing_user.py:191:16: error[invalid-type-form] Non-generic class `EventHandler` cannot be specialized in a type expression
+  typing_user.py:209:24: error[invalid-argument-type] Argument to bound method `DataEditor.create` is incorrect: Expected `Sequence[dict[str, Any]] | Var[Sequence[dict[str, Any]]] | None`, found `list[str]`
+  typing_user.py:215:18: error[invalid-argument-type] Argument to function `TextField.__call__` is incorrect: Expected `Var[str] | str | None`, found `Literal[True]`
+  Found 34 diagnostics
+== pyright prev typing_new_api.py
+  error    L21: Variable not allowed in type expression  [reportInvalidTypeForm]
+  error    L25: "assert_type" mismatch: expected "str" but received "Unknown"  [reportAssertTypeFailure]
+  error    L26: "assert_type" mismatch: expected "str" but received "Unknown"  [reportAssertTypeFailure]
+  information L50: Type of "_form" is "Form"  []
+  error    L51: Variable not allowed in type expression  [reportInvalidTypeForm]
+  error    L52: "assert_type" mismatch: expected "list[str]" but received "Unknown"  [reportAssertTypeFailure]
+  information L53: Type of "rx.form.FormData" is "Any"  []
+  error    L54: Import "reflex_base.utils.form" could not be resolved  [reportMissingImports]
+  error    L57: "assert_type" mismatch: expected "list[str]" but received "Unknown"  [reportAssertTypeFailure]
+  error    L67: "moment_provider" is not a known attribute of module "reflex"  [reportAttributeAccessIssue]
+  summary: errors=8 warnings=0
+== ty prev typing_new_api.py
+  typing_new_api.py:25:13: error[type-assertion-failure] Type `Any` does not match asserted type `str`
+  typing_new_api.py:26:13: error[type-assertion-failure] Type `Any` does not match asserted type `str`
+  typing_new_api.py:50:13: info[revealed-type] Revealed type: `Form`
+  typing_new_api.py:52:1: error[type-assertion-failure] Type `Any` does not match asserted type `list[str]`
+  typing_new_api.py:53:13: info[revealed-type] Revealed type: `Any`
+  typing_new_api.py:54:6: error[unresolved-import] Cannot resolve imported module `reflex_base.utils.form`
+  typing_new_api.py:57:1: error[type-assertion-failure] Type `Unknown` does not match asserted type `list[str]`
+  typing_new_api.py:67:11: error[unresolved-attribute] Module `reflex` has no member `moment_provider`
+  Found 8 diagnostics

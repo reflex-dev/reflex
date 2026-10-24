@@ -1,0 +1,701 @@
+{
+ "venv": "new",
+ "reflex": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/new/lib/python3.12/site-packages/reflex/__init__.py",
+ "rows": [
+  {
+   "name": "cg_controlled",
+   "ok": true,
+   "detail": {
+    "props": [
+     "dir:\"rtl\"",
+     "disabled:true",
+     "loop:true",
+     "name:\"g\"",
+     "onValueChange:((_ev_0) => (addEvents([(ReflexEvent(\"reflex___state____state.__main_____s.set_vals\", ({ [\"v\"] : _ev_0 }), ({  })))], [_ev_0], ({  }))))",
+     "orientation:\"horizontal\"",
+     "required:true",
+     "value:reflex___state____state____main_____s.vals_rx_state_"
+    ],
+    "has_value_binding": true,
+    "has_onValueChange": true,
+    "disabled_as_prop": true,
+    "disabled_in_css": false,
+    "form_control": true
+   }
+  },
+  {
+   "name": "cc_controlled",
+   "ok": true,
+   "detail": {
+    "props": [
+     "columns:\"2\"",
+     "defaultValue:[\"x\"]",
+     "dir:\"ltr\"",
+     "disabled:false",
+     "loop:false",
+     "name:\"cards\"",
+     "onValueChange:((_ev_0) => (addEvents([(ReflexEvent(\"reflex___state____state.__main_____s.set_vals\", ({ [\"v\"] : _ev_0 }), ({  })))], [_ev_0], ({  }))))",
+     "orientation:\"vertical\"",
+     "required:true",
+     "value:reflex___state____state____main_____s.vals_rx_state_"
+    ],
+    "item_props": [
+     "disabled:true",
+     "required:true",
+     "value:\"x\""
+    ],
+    "has_onValueChange": true,
+    "item_value_prop": true,
+    "form_control": true
+   }
+  },
+  {
+   "name": "rc_aschild",
+   "ok": true,
+   "detail": {
+    "root_props": [
+     "css:({ [\"asChild\"] : true })",
+     "defaultValue:\"1\""
+    ],
+    "item_props": [
+     "css:({ [\"asChild\"] : true })",
+     "value:\"1\""
+    ],
+    "root_asChild_prop": true,
+    "root_as_child_in_css": true,
+    "item_asChild_prop": true
+   }
+  },
+  {
+   "name": "ac_cases",
+   "ok": true,
+   "detail": {
+    "off": [
+     "autoComplete:\"off\""
+    ],
+    "email": [
+     "autoComplete:\"email\""
+    ],
+    "true": [
+     "autoComplete:\"on\""
+    ],
+    "false": [
+     "autoComplete:\"off\""
+    ],
+    "boolvar": [
+     "autoComplete:(reflex___state____state____main_____s.flag_rx_state_ ? \"on\" : \"off\")"
+    ],
+    "strvar": [
+     "autoComplete:reflex___state____state____main_____s.ac_rx_state_"
+    ],
+    "el_off": [
+     "autoComplete:\"off\""
+    ]
+   }
+  },
+  {
+   "name": "prim_progress",
+   "ok": true,
+   "detail": {
+    "root_tag": "RadixProgressRoot",
+    "root_props": [
+     "className:\"Root \"",
+     "max:200",
+     "value:pyStrLength(reflex___state____state____main_____s.name_rx_state_)"
+    ],
+    "indicator_props": [
+     "className:\"Indicator \"",
+     "max:200",
+     "value:pyStrLength(reflex___state____state____main_____s.name_rx_state_)"
+    ],
+    "root_has_value": true,
+    "root_has_max": true,
+    "library": "@radix-ui/react-progress@1.2.1"
+   }
+  },
+  {
+   "name": "accordion_style",
+   "ok": true,
+   "detail": {
+    "first_of_type": true,
+    "first_child": false,
+    "library": "@radix-ui/react-accordion@1.3.1"
+   }
+  },
+  {
+   "name": "radix_versions",
+   "ok": false,
+   "detail": "AttributeError: 'Dialog' object has no attribute 'DialogElement'",
+   "tb": "Traceback (most recent call last):\n  File \"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/probes/probe_compile.py\", line 26, in row\n    res = fn()\n          ^^^^\n  File \"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/probes/probe_compile.py\", line 206, in radix_versions\n    \"dialog\": dialog.DialogElement.library,\n              ^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'Dialog' object has no attribute 'DialogElement'\n"
+  },
+  {
+   "name": "form_ns",
+   "ok": true,
+   "detail": {
+    "FormData": "<class 'reflex_base.utils.form.FormData'>",
+    "form_call": "Form",
+    "form_root": "FormRoot",
+    "stub_as_class": true,
+    "subscript": "reflex_base.utils.form.FormData[str, str]"
+   }
+  },
+  {
+   "name": "moment_props",
+   "ok": true,
+   "detail": {
+    "utc": {
+     "props": [
+      "utc:true"
+     ],
+     "css": [],
+     "imports": {
+      "$/utils/context": [
+       "ImportVar(tag='ClientSide', is_default=False, alias=None, install=True, render=True, package_path='/')"
+      ],
+      "moment@2.31.0": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ],
+      "react-moment@2.0.2": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ]
+     },
+     "custom_code": []
+    },
+    "calendar": {
+     "props": [
+      "calendar:true"
+     ],
+     "css": [],
+     "imports": {
+      "$/utils/context": [
+       "ImportVar(tag='ClientSide', is_default=False, alias=None, install=True, render=True, package_path='/')"
+      ],
+      "moment@2.31.0": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ],
+      "react-moment@2.0.2": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ]
+     },
+     "custom_code": []
+    },
+    "calendar_dict": {
+     "props": [
+      "calendar:({ [\"sameDay\"] : \"[Today]\" })"
+     ],
+     "css": [],
+     "imports": {
+      "$/utils/context": [
+       "ImportVar(tag='ClientSide', is_default=False, alias=None, install=True, render=True, package_path='/')"
+      ],
+      "moment@2.31.0": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ],
+      "react-moment@2.0.2": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ]
+     },
+     "custom_code": []
+    },
+    "from_": {
+     "props": [
+      "from:\"2024-03-10\""
+     ],
+     "css": [],
+     "imports": {
+      "$/utils/context": [
+       "ImportVar(tag='ClientSide', is_default=False, alias=None, install=True, render=True, package_path='/')"
+      ],
+      "moment@2.31.0": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ],
+      "react-moment@2.0.2": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ]
+     },
+     "custom_code": []
+    },
+    "to": {
+     "props": [
+      "to:\"2024-03-20\""
+     ],
+     "css": [],
+     "imports": {
+      "$/utils/context": [
+       "ImportVar(tag='ClientSide', is_default=False, alias=None, install=True, render=True, package_path='/')"
+      ],
+      "moment@2.31.0": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ],
+      "react-moment@2.0.2": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ]
+     },
+     "custom_code": []
+    },
+    "ago": {
+     "props": [
+      "ago:true",
+      "fromNow:true"
+     ],
+     "css": [],
+     "imports": {
+      "$/utils/context": [
+       "ImportVar(tag='ClientSide', is_default=False, alias=None, install=True, render=True, package_path='/')"
+      ],
+      "moment@2.31.0": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ],
+      "react-moment@2.0.2": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ]
+     },
+     "custom_code": []
+    },
+    "element": {
+     "props": [
+      "element:\"span\""
+     ],
+     "css": [],
+     "imports": {
+      "$/utils/context": [
+       "ImportVar(tag='ClientSide', is_default=False, alias=None, install=True, render=True, package_path='/')"
+      ],
+      "moment@2.31.0": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ],
+      "react-moment@2.0.2": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ]
+     },
+     "custom_code": []
+    },
+    "fallback": {
+     "props": [
+      "fallback:\"x\""
+     ],
+     "css": [],
+     "imports": {
+      "$/utils/context": [
+       "ImportVar(tag='ClientSide', is_default=False, alias=None, install=True, render=True, package_path='/')"
+      ],
+      "moment@2.31.0": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ],
+      "react-moment@2.0.2": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ]
+     },
+     "custom_code": []
+    },
+    "filters": {
+     "props": [
+      "filters:[(c) => c]"
+     ],
+     "css": [],
+     "imports": {
+      "$/utils/context": [
+       "ImportVar(tag='ClientSide', is_default=False, alias=None, install=True, render=True, package_path='/')"
+      ],
+      "moment@2.31.0": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ],
+      "react-moment@2.0.2": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ]
+     },
+     "custom_code": []
+    },
+    "renderers": {
+     "props": [
+      "renderers:[(p, d) => null]"
+     ],
+     "css": [],
+     "imports": {
+      "$/utils/context": [
+       "ImportVar(tag='ClientSide', is_default=False, alias=None, install=True, render=True, package_path='/')"
+      ],
+      "moment@2.31.0": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ],
+      "react-moment@2.0.2": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ]
+     },
+     "custom_code": []
+    },
+    "locale_fr": {
+     "props": [
+      "locale:\"fr\""
+     ],
+     "css": [],
+     "imports": {
+      "$/utils/context": [
+       "ImportVar(tag='ClientSide', is_default=False, alias=None, install=True, render=True, package_path='/')"
+      ],
+      "moment@2.31.0": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')",
+       "ImportVar(tag='moment', is_default=True, alias=None, install=True, render=True, package_path='/')"
+      ],
+      "react-moment@2.0.2": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ],
+      "": [
+       "ImportVar(tag='moment/locale/fr', is_default=False, alias=None, install=True, render=True, package_path='/')"
+      ]
+     },
+     "custom_code": [
+      "moment.locale(\"en\");"
+     ]
+    },
+    "locale_en": {
+     "props": [
+      "locale:\"en\""
+     ],
+     "css": [],
+     "imports": {
+      "$/utils/context": [
+       "ImportVar(tag='ClientSide', is_default=False, alias=None, install=True, render=True, package_path='/')"
+      ],
+      "moment@2.31.0": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ],
+      "react-moment@2.0.2": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ]
+     },
+     "custom_code": []
+    },
+    "locale_var": {
+     "props": [
+      "locale:reflex___state____state____main_____s.loc_rx_state_"
+     ],
+     "css": [],
+     "imports": {
+      "$/utils/context": [
+       "ImportVar(tag='ClientSide', is_default=False, alias=None, install=True, render=True, package_path='/')"
+      ],
+      "moment@2.31.0": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')",
+       "ImportVar(tag='moment', is_default=True, alias=None, install=True, render=True, package_path='/')"
+      ],
+      "react-moment@2.0.2": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ],
+      "$/utils/context-registry": [
+       "ImportVar(tag='useStateContext', is_default=False, alias=None, install=True, render=True, package_path='/')"
+      ],
+      "": [
+       "ImportVar(tag='moment/min/locales', is_default=False, alias=None, install=True, render=True, package_path='/')"
+      ]
+     },
+     "custom_code": [
+      "moment.locale(\"en\");"
+     ]
+    },
+    "tz": {
+     "props": [
+      "tz:\"Europe/Paris\""
+     ],
+     "css": [],
+     "imports": {
+      "$/utils/context": [
+       "ImportVar(tag='ClientSide', is_default=False, alias=None, install=True, render=True, package_path='/')"
+      ],
+      "moment@2.31.0": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ],
+      "react-moment@2.0.2": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ],
+      "moment-timezone@0.6.5": [
+       "ImportVar(tag='', is_default=False, alias=None, install=True, render=True, package_path='/')"
+      ]
+     },
+     "custom_code": []
+    },
+    "bad_filter": [
+     "css:({ [\"filter\"] : true })"
+    ],
+    "bad_settings": [
+     "css:({ [\"settings\"] : true })"
+    ],
+    "bad_form_at": [
+     "css:({ [\"formAt\"] : true })"
+    ]
+   }
+  },
+  {
+   "name": "moment_provider",
+   "ok": true,
+   "detail": {
+    "fr": {
+     "props": [
+      "format:\"D MMM YYYY\"",
+      "locale:\"fr\"",
+      "timezone:\"Europe/Paris\""
+     ],
+     "imports": {
+      "moment@2.31.0": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')",
+       "ImportVar(tag='moment', is_default=True, alias=None, install=True, render=True, package_path='/')"
+      ],
+      "react-moment@2.0.2": [
+       "ImportVar(tag='MomentProvider', is_default=False, alias=None, install=True, render=True, package_path='/')",
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ],
+      "": [
+       "ImportVar(tag='moment/locale/fr', is_default=False, alias=None, install=True, render=True, package_path='/')"
+      ],
+      "moment-timezone@0.6.5": [
+       "ImportVar(tag='', is_default=False, alias=None, install=True, render=True, package_path='/')"
+      ],
+      "$/utils/context": [
+       "ImportVar(tag='ClientSide', is_default=False, alias=None, install=True, render=True, package_path='/')"
+      ]
+     },
+     "custom_code": [
+      "moment.locale(\"en\");"
+     ]
+    },
+    "en": {
+     "props": [
+      "locale:\"en\""
+     ],
+     "imports": {
+      "moment@2.31.0": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ],
+      "react-moment@2.0.2": [
+       "ImportVar(tag='MomentProvider', is_default=False, alias=None, install=True, render=True, package_path='/')",
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ],
+      "$/utils/context": [
+       "ImportVar(tag='ClientSide', is_default=False, alias=None, install=True, render=True, package_path='/')"
+      ]
+     },
+     "custom_code": []
+    },
+    "var": {
+     "props": [
+      "locale:reflex___state____state____main_____s.loc_rx_state_"
+     ],
+     "imports": {
+      "moment@2.31.0": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')",
+       "ImportVar(tag='moment', is_default=True, alias=None, install=True, render=True, package_path='/')"
+      ],
+      "react-moment@2.0.2": [
+       "ImportVar(tag='MomentProvider', is_default=False, alias=None, install=True, render=True, package_path='/')",
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ],
+      "$/utils/context-registry": [
+       "ImportVar(tag='useStateContext', is_default=False, alias=None, install=True, render=True, package_path='/')"
+      ],
+      "": [
+       "ImportVar(tag='moment/min/locales', is_default=False, alias=None, install=True, render=True, package_path='/')"
+      ],
+      "$/utils/context": [
+       "ImportVar(tag='ClientSide', is_default=False, alias=None, install=True, render=True, package_path='/')"
+      ]
+     },
+     "custom_code": [
+      "moment.locale(\"en\");"
+     ]
+    },
+    "pool": {
+     "props": [
+      "element:\"span\"",
+      "filters:[(c)=>c]",
+      "interval:1000",
+      "local:true",
+      "parse:\"YYYY\"",
+      "pool:true",
+      "renderers:[(p,d)=>null]"
+     ],
+     "imports": {
+      "moment@2.31.0": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ],
+      "react-moment@2.0.2": [
+       "ImportVar(tag='MomentProvider', is_default=False, alias=None, install=True, render=True, package_path='/')",
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ],
+      "$/utils/context": [
+       "ImportVar(tag='ClientSide', is_default=False, alias=None, install=True, render=True, package_path='/')"
+      ]
+     },
+     "custom_code": []
+    },
+    "default_locale_field": "None"
+   }
+  },
+  {
+   "name": "de_literal_not_mutated",
+   "ok": true,
+   "detail": {
+    "mutated": false,
+    "before": "[{\"title\": \"Name\"}, {\"title\": \"Age\", \"type\": \"int\"}, {\"title\": \"Birth\", \"id\": \"date\"}, \"Plain\"]",
+    "after": "[{\"title\": \"Name\"}, {\"title\": \"Age\", \"type\": \"int\"}, {\"title\": \"Birth\", \"id\": \"date\"}, \"Plain\"]",
+    "columns_prop": [
+     "columns:[({ [\"type\"] : \"str\", [\"overlayIcon\"] : null, [\"title\"] : \"Name\", [\"id\"] : \"name\" }), ({ [\"type\"] : \"int\", [\"overlayIcon\"] : null, [\"title\"] : \"Age\", [\"id\"] : \"age\" }), ({ [\"type\"] : \"str\", [\"overlayIcon\"] : null, [\"title\"] : \"Birth\", [\"id\"] : \"date\" }), ({ [\"title\"] : \"Plain\", [\"id\"] : \"plain\", [\"type\"] : \"str\" })]"
+    ]
+   }
+  },
+  {
+   "name": "de_state_columns",
+   "ok": true,
+   "detail": {
+    "dict_cols": {
+     "columns_prop": [
+      "columns:columns_bacghqta"
+     ],
+     "getCellContent": [
+      "getCellContent:getData_bacghqta"
+     ],
+     "hooks": [
+      "const reflex___state____state____main_____s = useStateContext(\"reflex___state____state.__main_____s\")",
+      "const columns_bacghqta = useMemo(() => (reflex___state____state____main_____s.cols_rx_state_).map((col) => typeof col === \"string\" ? { title: col, id: col.toLowerCase(), type: \"str\" } : { type: \"str\", id: (col.title ?? \"\").toLowerCase(), ...col }), [reflex___state____state____main_____s.cols_rx_state_])",
+      "const getData_bacghqta = useCallback(([col, row]) => formatDataEditorCells(col, row, columns_bacghqta, reflex___state____state____main_____s.data_rx_state_), [columns_bacghqta, reflex___state____state____main_____s.data_rx_state_])"
+     ],
+     "react_imports": [
+      "useCallback",
+      "useMemo"
+     ]
+    },
+    "title_cols": {
+     "columns_prop": [
+      "columns:columns_rgwuwrnh"
+     ],
+     "getCellContent": [
+      "getCellContent:getData_rgwuwrnh"
+     ],
+     "hooks": [
+      "const reflex___state____state____main_____s = useStateContext(\"reflex___state____state.__main_____s\")",
+      "const columns_rgwuwrnh = useMemo(() => (reflex___state____state____main_____s.titles_rx_state_).map((col) => typeof col === \"string\" ? { title: col, id: col.toLowerCase(), type: \"str\" } : { type: \"str\", id: (col.title ?? \"\").toLowerCase(), ...col }), [reflex___state____state____main_____s.titles_rx_state_])",
+      "const getData_rgwuwrnh = useCallback(([col, row]) => formatDataEditorCells(col, row, columns_rgwuwrnh, reflex___state____state____main_____s.data_rx_state_), [columns_rgwuwrnh, reflex___state____state____main_____s.data_rx_state_])"
+     ],
+     "react_imports": [
+      "useCallback",
+      "useMemo"
+     ]
+    },
+    "sliced_data": {
+     "columns_prop": [
+      "columns:columns_osizayzf"
+     ],
+     "getCellContent": [
+      "getCellContent:getData_osizayzf"
+     ],
+     "hooks": [
+      "const reflex___state____state____main_____s = useStateContext(\"reflex___state____state.__main_____s\")",
+      "const columns_osizayzf = useMemo(() => (reflex___state____state____main_____s.cols_rx_state_).map((col) => typeof col === \"string\" ? { title: col, id: col.toLowerCase(), type: \"str\" } : { type: \"str\", id: (col.title ?? \"\").toLowerCase(), ...col }), [reflex___state____state____main_____s.cols_rx_state_])",
+      "const getData_osizayzf = useCallback(([col, row]) => formatDataEditorCells(col, row, columns_osizayzf, reflex___state____state____main_____s.data_rx_state_.slice(1, undefined)), [columns_osizayzf, reflex___state____state____main_____s.data_rx_state_])"
+     ],
+     "react_imports": [
+      "useCallback",
+      "useMemo"
+     ]
+    },
+    "literal_with_var_col": {
+     "columns_prop": [
+      "columns:columns_wnkiegyk"
+     ],
+     "getCellContent": [
+      "getCellContent:getData_wnkiegyk"
+     ],
+     "hooks": [
+      "const reflex___state____state____main_____s = useStateContext(\"reflex___state____state.__main_____s\")",
+      "const columns_wnkiegyk = useMemo(() => ([({ [\"title\"] : \"A\", [\"id\"] : \"a\", [\"type\"] : \"str\" }), reflex___state____state____main_____s.cols_rx_state_?.at?.(0)]).map((col) => typeof col === \"string\" ? { title: col, id: col.toLowerCase(), type: \"str\" } : { type: \"str\", id: (col.title ?? \"\").toLowerCase(), ...col }), [reflex___state____state____main_____s.cols_rx_state_])",
+      "const getData_wnkiegyk = useCallback(([col, row]) => formatDataEditorCells(col, row, columns_wnkiegyk, reflex___state____state____main_____s.data_rx_state_), [columns_wnkiegyk, reflex___state____state____main_____s.data_rx_state_])"
+     ],
+     "react_imports": [
+      "useCallback",
+      "useMemo"
+     ]
+    }
+   }
+  },
+  {
+   "name": "de_format_shim",
+   "ok": true,
+   "detail": {
+    "result": {
+     "title": "A",
+     "id": "a",
+     "type": "str",
+     "overlayIcon": null
+    },
+    "warnings": [],
+    "stdout": "format_data_editor_column has been deprecated in version 0.10.1. Upgrade reflex-components-dataeditor; rx.data_editor now fills in its column defaults itself. It will be completely removed in 1.0. (probes/probe_compile.py:353)\n"
+   }
+  },
+  {
+   "name": "lucide_import_var",
+   "ok": true,
+   "detail": {
+    "static_import_var": "ImportVar(tag='WifiOff', is_default=True, alias='LucideWifiOff', install=True, render=True, package_path='/dist/esm/icons/wifi-off.mjs')",
+    "dyn_import_var": "ImportVar(tag='DynamicIcon', is_default=False, alias=None, install=True, render=True, package_path='/dynamic.mjs')",
+    "static_imports": {
+     "lucide-react@1.26.0": [
+      "ImportVar(tag='WifiOff', is_default=True, alias='LucideWifiOff', install=True, render=True, package_path='/dist/esm/icons/wifi-off.mjs')"
+     ]
+    },
+    "with_prop_imports": {
+     "lucide-react@1.26.0": [
+      "ImportVar(tag='Apple', is_default=True, alias='LucideApple', install=True, render=True, package_path='/dist/esm/icons/apple.mjs')",
+      "ImportVar(tag='icons', is_default=False, alias='lucideIcons', install=True, render=True, package_path='/')"
+     ]
+    },
+    "with_prop_keeps_lucideIcons": true,
+    "dyn_with_prop_keeps_lucideIcons": true,
+    "cm_all_imports_keys": [
+     "$/utils/context",
+     "lucide-react@1.26.0",
+     "react"
+    ],
+    "idempotent": true
+   }
+  },
+  {
+   "name": "shiki_transformers",
+   "ok": true,
+   "detail": {
+    "transformers_prop": null,
+    "transformers_empty": false,
+    "imports": [
+     "$/utils/context",
+     "/components/shiki/code",
+     "@radix-ui/themes@3.3.0",
+     "@shikijs/transformers@4.5.0",
+     "react",
+     "shiki@4.5.0"
+    ],
+    "has_shikijs_transformers": true,
+    "rsh_library": "react-syntax-highlighter@16.1.2",
+    "custom_code_has_highlighted_style": false,
+    "styles": "{}"
+   }
+  },
+  {
+   "name": "vardata_position",
+   "ok": true,
+   "detail": {
+    "position_attr": "'<no attr>'",
+    "warnings": [],
+    "console": "VarData(position=...) has been deprecated in version 0.10.1. Hooks render in the order they are declared and merged. Remove the position argument. It will be completely removed in 1.0. (probes/probe_compile.py:419)\n"
+   }
+  },
+  {
+   "name": "themes_libs",
+   "ok": true,
+   "detail": {
+    "themes_progress": "@radix-ui/themes@3.3.0",
+    "themes_dialog_content": "@radix-ui/themes@3.3.0",
+    "slider": "@radix-ui/themes@3.3.0",
+    "accordion_root": "@radix-ui/react-accordion@1.3.1",
+    "drawer_root": "vaul@1.1.2"
+   }
+  }
+ ]
+}

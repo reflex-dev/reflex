@@ -1,0 +1,312 @@
+{
+ "base": "http://localhost:3240",
+ "is_new": true,
+ "checks": [
+  {
+   "page": "cbg",
+   "name": "initial_group_value",
+   "ok": true,
+   "detail": "group=a"
+  },
+  {
+   "page": "cbg",
+   "name": "group_items_rendered",
+   "ok": true,
+   "detail": "count=3"
+  },
+  {
+   "page": "cbg",
+   "name": "item_a_checked",
+   "ok": true,
+   "detail": "true"
+  },
+  {
+   "page": "cbg",
+   "name": "item_b_disabled_attr",
+   "ok": true,
+   "detail": "disabled='' data-disabled=''"
+  },
+  {
+   "page": "cbg",
+   "name": "hidden_inputs_named_grp",
+   "ok": true,
+   "detail": "count=3"
+  },
+  {
+   "page": "cbg",
+   "name": "click_c_updates_state",
+   "ok": true,
+   "detail": "group=a,c"
+  },
+  {
+   "page": "cbg",
+   "name": "on_value_change_payload_list",
+   "ok": true,
+   "detail": "payload=[\"a\", \"c\"]"
+  },
+  {
+   "page": "cbg",
+   "name": "one_change_event",
+   "ok": true,
+   "detail": "group_changes=1"
+  },
+  {
+   "page": "cbg",
+   "name": "disabled_item_click_ignored",
+   "ok": true,
+   "detail": "group=a,c"
+  },
+  {
+   "page": "cbg",
+   "name": "server_reset_state",
+   "ok": true,
+   "detail": "group="
+  },
+  {
+   "page": "cbg",
+   "name": "server_reset_reaches_dom",
+   "ok": true,
+   "detail": "['false', 'false', 'false']"
+  },
+  {
+   "page": "cbg",
+   "name": "server_preset_reaches_dom",
+   "ok": true,
+   "detail": "group=a,c ['true', 'false', 'true']"
+  },
+  {
+   "page": "cbg",
+   "name": "root_disabled_var_disables_items",
+   "ok": true,
+   "detail": "disabled=true disabled attrs=['', '', '']"
+  },
+  {
+   "page": "cbg",
+   "name": "root_disabled_blocks_clicks",
+   "ok": true,
+   "detail": "group=a,c"
+  },
+  {
+   "page": "cbg",
+   "name": "cards_click_z",
+   "ok": false,
+   "detail": "cards=x"
+  },
+  {
+   "page": "cbg",
+   "name": "cards_click_x_keeps_z",
+   "ok": false,
+   "detail": "cards="
+  },
+  {
+   "page": "cbg",
+   "name": "cards_two_change_events",
+   "ok": true,
+   "detail": "cards_changes=2"
+  },
+  {
+   "page": "cbg",
+   "name": "card_y_disabled",
+   "ok": true,
+   "detail": "disabled=''"
+  },
+  {
+   "page": "cbg",
+   "name": "default_value_group_checked",
+   "ok": true,
+   "detail": "D2 aria-checked=true"
+  },
+  {
+   "page": "cbg",
+   "name": "form_submit_includes_group",
+   "ok": true,
+   "detail": "submitted={\"grp\": [\"a\", \"c\"], \"dgrp\": [\"d2\"], \"cg\": [\"a\"], \"cc\": [null], \"cg_default\": [\"d2\"]}"
+  },
+  {
+   "page": "cbg",
+   "name": "form_submit_all_values",
+   "ok": false,
+   "detail": "submitted={\"grp\": [\"a\", \"c\"], \"dgrp\": [\"d2\"], \"cg\": [\"a\"], \"cc\": [null], \"cg_default\": [\"d2\"]}"
+  },
+  {
+   "page": "cbg",
+   "name": "info_id_based_keys_in_submit",
+   "ok": true,
+   "detail": "id keys present: cg=True cc=True cg_default=True :: submitted={\"grp\": [\"a\", \"c\"], \"dgrp\": [\"d2\"], \"cg\": [\"a\"], \"cc\": [null], \"cg_default\": [\"d2\"]}"
+  },
+  {
+   "page": "de",
+   "name": "editor_1_canvas",
+   "ok": true,
+   "detail": "canvases=2"
+  },
+  {
+   "page": "de",
+   "name": "editor_2_canvas",
+   "ok": true,
+   "detail": "canvases=2"
+  },
+  {
+   "page": "de",
+   "name": "editor_3_canvas",
+   "ok": true,
+   "detail": "canvases=2"
+  },
+  {
+   "page": "de",
+   "name": "editor_4_canvas",
+   "ok": true,
+   "detail": "canvases=2"
+  },
+  {
+   "page": "de",
+   "name": "no_page_errors_on_load",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "page": "de",
+   "name": "no_column_type_undefined_warning",
+   "ok": true,
+   "detail": "0 messages"
+  },
+  {
+   "page": "de",
+   "name": "portal_div_present",
+   "ok": true,
+   "detail": "portal=True"
+  },
+  {
+   "page": "de",
+   "name": "info_app_wraps",
+   "ok": true,
+   "detail": "{'badge': False, 'portalChildren': 0}"
+  },
+  {
+   "page": "de",
+   "name": "info_overlay_editor",
+   "ok": true,
+   "detail": "{'html': '<div style=\"--gdg-accent-color: #4F5DFF; --gdg-accent-fg: #FFFFFF; --gdg-accent-light: rgba(62, 116, 253, 0.1); --gdg-text-dark: #313139; --gdg-text-medium: #737383; --gdg-text-light: #B2B2C0; --gdg-text-bubble: #313139; --gdg-bg-icon-header: #737383; --gdg-fg-icon-header: #FFFFFF; --gdg-text-header', 'active': 'TEXTAREA. gdg-input gdg-izpuzkl', 'value': 'Ann'}"
+  },
+  {
+   "page": "de",
+   "name": "cell_edit_roundtrip",
+   "ok": true,
+   "detail": "edits=0,0=Zed"
+  },
+  {
+   "page": "de",
+   "name": "cell_edit_updates_row",
+   "ok": true,
+   "detail": "row0=Zed|30|1990-01-01"
+  },
+  {
+   "page": "de",
+   "name": "cell_edit_dblclick_number",
+   "ok": true,
+   "detail": "edits=2,1=99"
+  },
+  {
+   "page": "de",
+   "name": "add_row_state",
+   "ok": true,
+   "detail": "nrows=4"
+  },
+  {
+   "page": "de",
+   "name": "add_untyped_column_no_error",
+   "ok": true,
+   "detail": "ncols=4 errors=[]"
+  },
+  {
+   "page": "de",
+   "name": "no_column_type_undefined_after_add",
+   "ok": true,
+   "detail": "0 messages"
+  },
+  {
+   "page": "de",
+   "name": "cmp31_image_overlay_opens",
+   "ok": true,
+   "detail": "{'imgs': 4, 'carousel': True, 'text': '1 of 2'}"
+  },
+  {
+   "page": "de",
+   "name": "info_overlay_closes_on_escape",
+   "ok": true,
+   "detail": "imgs after escape=0 (CMP-48 known)"
+  }
+ ],
+ "pages": {
+  "cbg": {
+   "console": [
+    {
+     "type": "log",
+     "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    },
+    {
+     "type": "debug",
+     "text": "[vite] connecting..."
+    },
+    {
+     "type": "debug",
+     "text": "[vite] connected."
+    },
+    {
+     "type": "info",
+     "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+     "type": "log",
+     "text": "Disconnect websocket on pagehide"
+    }
+   ],
+   "pageerrors": [],
+   "failed": [],
+   "http": []
+  },
+  "de": {
+   "console": [
+    {
+     "type": "log",
+     "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    },
+    {
+     "type": "debug",
+     "text": "[vite] connecting..."
+    },
+    {
+     "type": "debug",
+     "text": "[vite] connected."
+    },
+    {
+     "type": "info",
+     "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+     "type": "log",
+     "text": "Disconnect websocket on pagehide"
+    }
+   ],
+   "pageerrors": [],
+   "failed": [],
+   "http": []
+  }
+ },
+ "summary": {
+  "cbg": {
+   "console_errwarn": 0,
+   "pageerrors": 0,
+   "failed_requests": 0,
+   "http_4xx_5xx": 0
+  },
+  "de": {
+   "console_errwarn": 0,
+   "pageerrors": 0,
+   "failed_requests": 0,
+   "http_4xx_5xx": 0
+  }
+ },
+ "fail_count": 3,
+ "check_count": 39
+}
