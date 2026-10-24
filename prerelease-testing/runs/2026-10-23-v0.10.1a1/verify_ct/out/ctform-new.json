@@ -1,0 +1,4 @@
+{
+ "out": "{\"dict\":\"{\\\"cards_id\\\": null, \\\"g_both\\\": null, \\\"g_id\\\": null, \\\"rad_id\\\": null, \\\"txt_id\\\": \\\"\\\"}\",\"td\":\"{\\\"cards_id\\\": null, \\\"g_both\\\": [null], \\\"g_id\\\": [null], \\\"rad_id\\\": null, \\\"txt_id\\\": \\\"\\\"} types={\\\"g_id\\\": [\\\"NoneType\\\"], \\\"g_both\\\": [\\\"NoneType\\\"], \\\"cards_id\\\": \\\"NoneType\\\", \\\"rad_id\\\": \\\"NoneType\\\", \\\"txt_id\\\": \\\"str\\\"}\",\"fd\":\"{\\\"cards_id\\\": [null], \\\"g_both\\\": [null], \\\"g_id\\\": [null], \\\"rad_id\\\": [null], \\\"txt_id\\\": [\\\"\\\"]}\"}",
+ "errors": []
+}

@@ -4,7 +4,7 @@ Method: every package installed from PyPI into throwaway venvs (never from a che
 (process model, frontend store, hydration/network, events/forms/state, components/typing, enterprise, upgrade/packaging,
 hosting CLI/release tools) drove real apps in Chromium in dev and prod, with memory and Redis, each against reflex
 0.10.0 as the baseline and older broken versions as positive controls for re-verified fixes; every claimed issue went to
-an independent adversarial verifier (8 verifier runs). Context: [CAMPAIGN_STATE.md](./CAMPAIGN_STATE.md); per-item
+an independent adversarial verifier (8 Fable verifier runs; the last three verifications — EN-1, CT-6, CT-1 — were done by the orchestrator after the Fable spend limit stopped the agents). Context: [CAMPAIGN_STATE.md](./CAMPAIGN_STATE.md); per-item
 notes in `<item>/NOTES.md`, per-item summaries in `reports/`.
 
 ## Versions under test
@@ -14,7 +14,9 @@ notes in `<item>/NOTES.md`, per-item summaries in `reports/`.
   plotly, react-player, recharts, sonner, docgen, hatch-reflex-pyi; reflex-otel 0.2.0. **All 20 published** (wheel +
   sdist).
 - reflex-enterprise 0.9.8 (PyPI wheel, `CI=true` + local account stub for prod).
-- Baseline: reflex 0.10.0 (+ hosting-cli 0.2.0, reflex-release 0.2.0, build-sdk 0.1.0). Positive controls: 0.10.0a1,
+- Baseline: reflex 0.10.0 (+ hosting-cli 0.2.0, reflex-release 0.2.0, build-sdk 0.1.0). Note: the shared `prev` venv
+  resolved reflex-components-code / -moment / lucide / hosting-cli / build-sdk to the a1 alphas (bootstrap uses
+  `--prerelease=allow`); core / radix / base were 0.10.0, and the items that needed strict 0.10.0 siblings built their own. Positive controls: 0.10.0a1,
   a2, a3, a4, reflex-enterprise 0.9.6 / 0.9.7.
 - Environment: Linux, 4 CPU / 15 GB, Python 3.12 (3.11, 3.13, 3.14, 3.15b4 for install / fork checks), Bun 1.4.4,
   Node, Chromium (Playwright), granian 2.8.5, Redis 7.
@@ -51,16 +53,17 @@ the bug:
   build-sdk `default_transport()`.
 
 **What needs attention before the final** (details in RELEASE_PLAN.md): one confirmed functional regression in
-structural sharing with components that mutate their row objects (R101-01, verification pending at time of writing),
+structural sharing (R101-01: after an AG Grid cell edit, every memoized consumer of the same state list stays stale),
 one scoped behaviour regression of the fork preload that needs a changelog note (R101-02), changelog wording for the
-deliberate form change (R101-05), and the sibling floors of the reflex wheel (R101-04).
+deliberate form change (R101-05), the sibling floors of the reflex wheel (R101-04), and two small fixes in new 0.10.1
+code (R101-06, R101-13).
 
-Severity: 1 medium (R101-01, pending verification) · 1 medium in reflex-enterprise (R101-07) · 17 low · 0 high /
-critical. Verifiers reclassified PM-1 medium → low, UP-1 medium → low, narrowed FS-2, HN-3, CC-2, ES-2; no claim was
-fully refuted.
+Severity: 1 medium regression (R101-01) · 1 medium in reflex-enterprise, not a regression (R101-07) · 19 low / trivial
+· 0 high / critical. Verifiers reclassified PM-1 medium → low and UP-1 medium → low, narrowed FS-2, HN-3, CC-2, ES-2,
+CT-6, and broadened EN-1; no claim was fully refuted.
 
 Index:
-- R101-01: Structural sharing leaves a sibling view stale after a component mutates the shared row object (AG Grid) (MEDIUM, regression) — verification pending
+- R101-01: After an AG Grid cell edit, every memoized consumer of the same state list stays stale (structural sharing #7273) (MEDIUM, regression)
 - R101-02: Fork preload kills import-time threads / shares module-level values in `--backend-only` prod and on Python 3.14 (LOW, scoped regression)
 - R101-03: Wheels built from the 0.10.1a1 component sdists silently lose `.pyi` stubs (LOW for the release; MEDIUM robustness item)
 - R101-04: Stock `pip install reflex==0.10.1a1` keeps components-code / -dataeditor 0.10.0, lucide 1.1.0, hosting-cli 0.2.0 (LOW)
@@ -72,8 +75,8 @@ Index:
 - R101-10: `reflex deploy` hides the new scaling-retry progress and its success line below `--loglevel debug` (LOW)
 - R101-11: Directory symlink resolving outside the app / dangling symlink crashes `reflex export` (LOW)
 - R101-12: uv cannot build the `reflex` 0.10.1a1 sdist (alpha-only) (LOW)
-- R101-13: FormData handler receives `[None]` for an empty `id=` checkbox group (LOW) — verification pending
-- R101-14: `radio_cards(as_child=...)` silently compiled into CSS after the prop's removal (LOW) — verification pending
+- R101-13: New FormData / TypedDict API yields `[None]` for an empty checkbox group that has an `id` (LOW)
+- R101-14: `radio_cards(as_child=...)` silently compiled into CSS after the prop's removal (LOW)
 - R101-15: Non-str browser-storage vars log a type error per instantiation and round-trip as strings (LOW, pre-existing)
 - R101-16: Background-task rehydration leaves storage vars at defaults until reload (LOW, pre-existing end state)
 - R101-17: Leftover "never awaited" wrapper warning when a `get_delta` filter withholds an async var without closing it (TRIVIAL)
@@ -81,6 +84,7 @@ Index:
 - R101-19: moment: unknown props still CSS; provider `format` overrides a child's `from_now` (LOW)
 - R101-20: typing gaps that pre-date 0.10.1a1 (LOW)
 - R101-21: rxe MCP OAuth consent race on Redis (LOW, rxe-side, pre-existing)
+- R101-22: recharts deep-freezes state objects it shares with other components, so an AG Grid edit on the same data throws (LOW–MEDIUM, pre-existing)
 
 ## Re-verification table
 | registry id | what | positive control | 0.10.1a1 | item |
@@ -111,14 +115,21 @@ Index:
 | CLI-28 (reflex#7432), CLI-11 | token guidance; `--json` after 403 | 0.2.0 | fixed | cloud_cli |
 | reflex#7429, #7247, #7407 | large trees, unknown substate, late client_state | 0.10.0 | fixed | frontend_store |
 
-## R101-01: Structural sharing leaves a sibling view stale after a component mutates the shared row object (MEDIUM)
-- Cluster: `enterprise` | Regression vs 0.10.0: **yes** (3/3 new, 0/2 prev) | Verifier: pending (`verify_en1/`)
-- Repro: `enterprise/own/gridshare` (two `rxe.ag_grid` on one state list — A with `row_id_key="uid"`, B with index ids —
-  plus an `rx.foreach`); `own/own_run.sh new-ent gridshare dev new`; edit grid A's price of row u-2 to 777 → backend,
-  grid A, foreach and total show 777, grid B keeps 11. Every button-driven in-place op updates both on both versions.
-- Evidence: `enterprise/own/out/gridshare_new{,-r2,-r3}.json` vs `gridshare_prev{,-r2}.json`.
-- Mechanism (explorer hypothesis): AG Grid mutates the row object it was given; the delta carries the same value;
-  #7273 keeps the old (already mutated) reference, so grid B's `rowData` prop identity never changes.
+## R101-01: After an AG Grid cell edit, every memoized consumer of the same state list stays stale (MEDIUM)
+- Cluster: `enterprise` | Regression vs 0.10.0: **yes** | Verifier: CONFIRMED and broadened (`verify_en1/`)
+- Minimal repro: `verify_en1/gridmin/` (`./run.sh new-ent new` vs `./run.sh prev-ent prev`): `GS.rows` bound to an
+  editable `rxe.ag_grid` (handler stores `int(newValue)`), a second grid, an `@rx.memo` component and an unmemoized
+  text of the same var. Edit u-2 → 777: on 0.10.1a1 backend, store, the edited grid, unmemoized text and `rx.foreach`
+  show 777 while **the `rx.memo` component and the second grid stay at 10**; on 0.10.0 everything shows 777. A handler
+  that stores a different value (clamp to 100) updates everything on both. Explorer's original: two grids on one list
+  (`enterprise/own/gridshare`, 3/3 new, 0/2 prev).
+- Mechanism: AG Grid's default value setter writes the edit into the row object it received — the reflex store's own
+  object. The backend echoes the same value; #7273's `replaceEqualDeep` (`reflex_base/.templates/web/utils/state.js`)
+  finds prev (already mutated) deep-equal and keeps the old references, so consumers memoized on prop identity never
+  re-render. Trigger: any component that mutates the objects it gets from state (AG Grid editing is the common one) +
+  a memoized second consumer (rx.memo, charts, other grids, app_components memo wrappers) + a handler that stores the
+  edited value as is (the normal edit handler).
+- Evidence: `verify_en1/out/nochart-{new,prev}.json`; `enterprise/own/out/gridshare_*.json`.
 
 ## R101-02: Fork preload kills import-time threads and shares module-level values (LOW, scoped regression)
 - Cluster: `process_model` | Regression vs 0.10.0: **yes** for `reflex run --env prod --backend-only` on Linux and any
@@ -218,11 +229,17 @@ Index:
   will not opt into; pip works; `-b build-constraints.txt` works around it. The final sdist carries no pre-release
   specifiers.
 
-## R101-13: FormData handler receives `[None]` for an empty `id=` checkbox group (LOW) — verification pending
-- Cluster: `components_typing` | Regression: unknown | Verifier: pending (`verify_ct/`)
+## R101-13: New FormData / TypedDict API yields `[None]` for an empty checkbox group with an `id` (LOW)
+- Cluster: `components_typing` | Regression: no for dict handlers (`null` existed on 0.10.0; `checkbox_cards` by id is
+  now a form control and adds `"cards_id": null`) | Verifier: CONFIRMED / narrowed (`verify_ct/`)
+- An empty `rx.checkbox_group.root(id=..., [name=...])` gives `[None]` in a `list[str]` TypedDict field and in
+  `FormData.getlist()` — also for the documented `id` + `name` form; name-only groups are correctly absent. Expected `[]`
+  / absent; `", ".join(...)` raises TypeError. Evidence: `verify_ct/out/ctform-{new,prev}.json`.
 
-## R101-14: `radio_cards(as_child=...)` silently compiled into CSS (LOW) — verification pending
-- Cluster: `components_typing` | Regression: no (0.10.0 crashed the page) | Verifier: pending (`verify_ct/`)
+## R101-14: `radio_cards(as_child=...)` silently compiled into CSS (LOW)
+- Cluster: `components_typing` | Regression: no (0.10.0 forwarded it and crashed the page) | Verifier: CONFIRMED
+- Generic unknown-prop behaviour after the prop's removal (`as_child=True` → `css: {asChild: true}`, like `foo_bar`);
+  a crash became a no-op without a warning.
 
 ## R101-15 … R101-21 (LOW / TRIVIAL, none a regression)
 - **R101-15** (`hydration_net`): int / bool / dict-annotated storage vars log "Expected field … got '3' of type
@@ -241,6 +258,10 @@ Index:
   `auto_complete=True`, `data_editor(columns=["A"])`, `VarData(position=)` deprecation invisible to checkers, ty rejects
   `rx.EventHandler[spec]`).
 - **R101-21** (`enterprise`): intermittent MCP OAuth consent race on Redis (lands on /login), same on 0.10.0 + rxe 0.9.8.
+- **R101-22** (`verify_en1/gridmin_chart/`, found during verification; LOW–MEDIUM, pre-existing): with
+  `rx.recharts.bar_chart(data=GS.rows)` on the same page, an AG Grid edit of `GS.rows` throws `Cannot assign to read
+  only property 'price' of object` and never reaches the backend, on 0.10.0 and 0.10.1a1 alike — recharts 3 keeps
+  `data` in a Redux Toolkit / immer store whose auto-freeze deep-freezes the reflex store's objects.
 
 ## Context observations (not findings)
 - kill -9 of one prod worker shuts the whole granian server down (granian `respawn_failed_workers=False`; same on 0.10.0).
