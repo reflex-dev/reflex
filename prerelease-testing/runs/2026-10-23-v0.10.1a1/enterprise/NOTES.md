@@ -90,3 +90,13 @@ Output `own/out/pending_login_new-dev.json`, server log `work/auth/logs/pl-new-d
 | prev-ent (0.10.0, no setting) | none / `6.6.6.6` / `6.6.6.6, 7.7.7.7` | `127.0.0.1` / `6.6.6.6` / `6.6.6.6` (leftmost, spoofable) |
 `asgi-scope-client` = 127.0.0.1 in every case; `client_token` (36) / `session_id` (20) present in the handler's router view
 as expected. REST half: see below (first attempt failed on the driver venv's httpx 1.0 `base_url` removal; fixed, rerun in queue2).
+
+### N-032 prod — `auth/bin/seq_n032_prod.sh new-ent new` (vauth prod single port 8621, Redis, GRANIAN_WORKERS=1, account stub)
+stale `{"p1_corrected": 3, "p2_corrected": 3, "p3_logged_out": 3, "p4_logged_out": 3} of 3`; away **3/3**; xtab **3/3, accepted 0/3**
+(race 2/3, each healed by tab2's reconcile); 0 tracebacks. = record. **ENT-30 still fixed in prod.**
+
+### ENT-29 / N-025 — `grid/bin/seq_grid.sh new-ent new 1` (entv + aggrid_min, prod 3600/3601, account stub)
+`drivers/summarize.py` table (`work/grid/out/SUMMARY.md`, copied to `grid_SUMMARY_new.md`): s1-s7, s9, s10, s13 w_state=2h/6c
+w_literal=2h/6c; s8 memo grids 2h/6c x2; s11 detail headers `['Count','Value']` x2 (4h/8c); s12 3 badges; boot = 1
+`hydrate_and_load` in the socket.io connect auth (now with a `state_schema` key, #7553; no schema-mismatch reload), deltas
+root-only; 0 page errors; console = AG Grid trial banner only. **identical to the a5 / 0.10.0 SUMMARY → still fixed.**
