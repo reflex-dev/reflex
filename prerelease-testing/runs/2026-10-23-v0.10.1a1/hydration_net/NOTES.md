@@ -145,3 +145,46 @@ each attempt (`client frame payload 131000 > 100000: closing`).
 | #7551 1.1 MB hydrate | storm (326 opens / 12 s), no error | one error + toast, no loop |
 | same-tab siblings sharing a storage name | writing tab shows only the written var | same (browser `storage` events never fire in the writing tab; by design, A3-03 docs caveat) |
 
+### 2.5 C21 / HYD-12 (`run_h4.sh <v> dev <label> 3146 8146 C21,C23`, `hnet_results/h4-*.txt`, `*-dev.json`)
+Both versions: driver 3/3; `C21_remove_synced_key`: after tab 1 calls `rx.remove_local_storage("h4_syn")` the key is
+gone (`ls=null`), tab 1 shows the default, **tab 2 keeps showing `keep-me`** and its storage event syncs `""`/null
+into the `str` var, and the server log has `TypeError: object of type 'NoneType' has no len()` from the computed var
+`syn_len` (`h4mix.py:54`) — identical on 0.10.0 and 0.10.1a1 (**unchanged, pre-existing, not re-reported**).
+`C23` (a sync=False and a sync=True var on one key): pass on both, 0 frames in the quiet window.
+
+## 3. Verdicts
+
+Re-verified (positive control first, every control reproduced except A3-11 Part S whose Part R mechanism control
+did): HYD-01 fixed, HYD-02 fixed, HYD-08 fixed, HYD-09 fixed, #7360 holds, HYD-05 / F-008 **now fixed** (#7551 +
+#7605), HYD-12 / C21 unchanged. Not re-run: F-010 (prenav), F-017 (Redis restart panic) — out of time after the
+machine restart; both are "report only if changed" context items.
+
+New-change hunt: #7614, #7588, #7602, #7551, #7605, #7545, #7568, #7603, #7572, #7407 all behave as described, in dev
+and prod, with the 0.10.0 baseline showing the old behaviour in each case. No regression found.
+
+Issues / observations (all reproducible with `legs.sh` + the files in `hnet_results/`):
+1. LOW, not a regression — non-`str` browser-storage vars (`n: int = rx.LocalStorage("3")`, `b: bool = rx.Cookie("true")`,
+   `d: dict = rx.LocalStorage('{"a": 1}')`) log `Expected field 'Typed.n_int' to receive type int, but got '3' of
+   type LocalStorage` on **every state instantiation** (41 lines per dev leg) plus `got '2' of type str` on every
+   hydrate, write the dict to storage as `[object Object]`, and hydrate back as plain strings. Identical on 0.10.0;
+   the docs say storage vars support only strings, so this is noise/unsupported rather than #7603 breakage — but
+   #7603's "no false type errors" does not extend to these annotations, and a per-instantiation error line is loud.
+   Repro: `legs.sh dev_h0`, then `grep -c "Expected field" results/hnet/dev-h0.server.log` and `hnet_results/dev-h0.scen.txt`
+   (`typed_nonstr_storage_roundtrip_INFO`).
+2. MEDIUM (security consistency, code reading only, for the enterprise item) — reflex-enterprise 0.9.8's REST
+   event-handler endpoint sets `router.session.client_ip` from the **leftmost** `X-Forwarded-For` entry
+   unconditionally (`reflex_enterprise/plugins/event_handler_api.py:1353-1355` in `$SB/envs/new-ent`), ignoring both
+   reflex's new `trusted_proxy_hops` and the plugin's own `trusted_proxy_hops` (line 1427, token-endpoint rate limit
+   only). A handler reached over REST sees a client-chosen IP even when the websocket path no longer does.
+3. LOW, not a regression — with `trusted_proxy_hops>=1` the selected XFF entry is used verbatim with no syntactic
+   check (`not an ip!! <script>`, `1.2.3.4:5678`, `[2001:db8::1]:443`, latin-1 `éè` all become `client_ip`). 0.10.0
+   did the same with the leftmost entry. Repro: `legs.sh dev_h1`, rows `d4b`, `d5b`, `d7` in `hnet_results/dev-h1.matrix.txt`.
+
+Procedural: the first `dev_h0` matrix used a wrong state name (`hnet___hnet____ip_state`) and a delta key without the
+`_rx_state_` marker — fixed in `ws_probe.py` before the `dev_h0m` rerun; `close_proxy.py` originally limited TCP
+read chunks (never tripped) and now parses websocket frame headers; `h4_c21` first ran with the subset in the env
+position (fixed); the machine restart after batch 2 cost nothing (all results were on disk). Two cleanup shells
+killed themselves through `pgrep -f` on their own command line — listeners were then killed by `lsof -t` on the port.
+Cleanup done: no reflex/granian/proxy/browser of this item running, ports 3140-3159/8140-8159 free, every run dir's
+`.web/` and `node_modules/` deleted.
+
