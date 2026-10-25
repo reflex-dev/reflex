@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Callable
 from pathlib import Path
 
 import pytest
+from reflex_base.event import EventHandler
 from reflex_base.registry import DefaultNameResolver, RegistrationContext, scheme_digest
 from reflex_base.utils.exceptions import ReflexError
-from reflex_base.utils.format import format_event_handler
+from reflex_base.utils.format import format_event_handler, format_queue_events
 
 import reflex as rx
 from reflex.environment import environment
@@ -1870,11 +1872,14 @@ def test_handler_id_matching_a_renamed_handler_name_is_not_rejected(
             pass
 
     path = get_state_full_path(AliasedEventState)
+    # Handed out for ``foo`` while it still goes by its own name.
+    rx.button(on_click=AliasedEventState.foo)
     set_minify_modes(monkeypatch, states=False, events=True)
     install_config(events={path: {"foo": "a", "bar": "foo"}})
 
     event = f'"{format_event_handler(AliasedEventState.event_handlers["bar"])}"'
     assert _stale_names_error(event) == ""
+    assert _stale_names_error(str(rx.button(on_click=AliasedEventState.bar))) == ""
 
 
 def test_stale_var_keys_are_rejected_when_only_vars_minify(
@@ -2030,6 +2035,110 @@ def test_stale_minified_var_keys_are_rejected_after_unminifying(
 
     assert _stale_names_error(str(UnminifiedVarState.count)) == ""
     assert f"var {path}.count" in _stale_names_error(old_expr)
+
+
+@pytest.mark.parametrize(
+    "emit",
+    [
+        lambda handler: str(rx.button(on_click=handler)),
+        lambda handler: str(format_queue_events(handler)),
+    ],
+    ids=["component", "callback"],
+)
+def test_stale_minified_event_names_are_rejected(
+    temp_minify_json: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    emit: Callable[[EventHandler], str],
+) -> None:
+    """An event built under another ``minify.json`` is caught by its handler's id.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+        emit: Builds compiled code calling a handler.
+    """
+
+    class MovedEventState(State):
+        @rx.event
+        def ping(self):
+            pass
+
+    path = get_state_full_path(MovedEventState)
+    handler = MovedEventState.event_handlers["ping"]
+    set_minify_modes(monkeypatch, states=False, events=True)
+    install_config(events={path: {"ping": "c"}})
+    old_code = emit(handler)
+    old_name = format_event_handler(handler)
+
+    install_config(events={path: {"ping": "d"}})
+
+    assert _stale_names_error(emit(handler)) == ""
+    assert _stale_names_error(f'"{old_name}"') == ""
+    error = _stale_names_error(old_code)
+    assert f"event handler {path}.ping, as '{old_name}' in page.jsx" in error
+
+
+def test_stale_event_names_are_rejected_when_only_the_state_id_changes(
+    temp_minify_json: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """An event built under another ``minify.json`` is caught by its state's id.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+
+    class MovedStateEventState(State):
+        @rx.event
+        def ping(self):
+            pass
+
+    path = get_state_full_path(MovedStateEventState)
+    root = "reflex.state.State"
+    events = {path: {"ping": "c"}}
+    set_minify_modes(monkeypatch, states=True, events=True)
+    install_config(states={path: StateEntry(id="z", parent=root)}, events=events)
+    old_code = str(rx.button(on_click=MovedStateEventState.ping))
+
+    install_config(states={path: StateEntry(id="y", parent=root)}, events=events)
+
+    assert _stale_names_error(str(rx.button(on_click=MovedStateEventState.ping))) == ""
+    assert f"event handler {path}.ping" in _stale_names_error(old_code)
+
+
+def test_event_id_reassigned_to_another_handler_is_rejected(
+    temp_minify_json: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """An event whose id now names another handler is caught unless built for it.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+
+    class ReassignedEventState(State):
+        @rx.event
+        def ping(self):
+            pass
+
+        @rx.event
+        def pong(self):
+            pass
+
+    path = get_state_full_path(ReassignedEventState)
+    set_minify_modes(monkeypatch, states=False, events=True)
+    install_config(events={path: {"ping": "c", "pong": "e"}})
+    old_code = str(rx.button(on_click=ReassignedEventState.ping))
+
+    install_config(events={path: {"ping": "d", "pong": "c"}})
+
+    error = _stale_names_error(old_code)
+    assert f"event handler {path}.ping" in error
+    assert f"{path}.pong" not in error
+    # Code built for the handler now holding the id reads the same.
+    new_code = str(rx.button(on_click=ReassignedEventState.pong))
+    assert new_code == old_code
+    assert _stale_names_error(new_code) == ""
 
 
 def test_text_resembling_state_reads_is_not_rejected(temp_minify_json: Path) -> None:

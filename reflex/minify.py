@@ -735,6 +735,40 @@ def _renamed_default_references() -> dict[str, str]:
     return references
 
 
+# The name of the event a compiled event call sends; ``format_event`` and
+# ``LiteralEventVar`` both emit it as a JSON string literal.
+_EVENT_CALL = re.compile(r'ReflexEvent\("([\w$.]+)"')
+
+
+def _stale_event_label(name: str) -> str | None:
+    """Label the handlers an event name was handed out for, unless it is live.
+
+    Code built for one handler reads the same as code built for another that
+    went by its name under an earlier resolver, so the name stays live while
+    any handler it was handed out for still goes by it.
+
+    Args:
+        name: The full event name a compiled event call sends.
+
+    Returns:
+        The label, or ``None`` if the name is live or was never handed out.
+    """
+    from reflex_base.registry import RegistrationContext
+    from reflex_base.utils.format import issued_event_handlers
+
+    if not (issuers := issued_event_handlers(name)):
+        return None
+    ctx = RegistrationContext.get()
+    labels: list[str] = []
+    for state_cls, handlers in issuers.items():
+        state_name = state_cls.get_full_name()
+        for handler in handlers:
+            if f"{state_name}.{ctx.get_handler_name(state_cls, handler)}" == name:
+                return None
+            labels.append(f"event handler {get_state_full_path(state_cls)}.{handler}")
+    return " or ".join(sorted(labels))
+
+
 def raise_for_stale_names(outputs: Iterable[tuple[str, str]]) -> None:
     """Reject compiled code naming a state, handler or var unlike the active resolver.
 
@@ -742,10 +776,12 @@ def raise_for_stale_names(outputs: Iterable[tuple[str, str]]) -> None:
     built from them beforehand -- e.g. by a module-level component imported
     before this app's ``minify.json`` was loaded, or while another app's was.
     Such code would read a context the frontend never provides, or send an
-    event the backend never registered, or read a var key it never sends.
-    Caught by the unminified spelling of a renamed state or handler, and by
-    each state local or var key once handed out that no state or var goes by
-    now -- which text merely looking like one never was.
+    event the backend never registered or now routes to another handler, or
+    read a var key it never sends. Caught by the unminified spelling of a
+    renamed state or handler, by each state local or var key once handed out
+    that no state or var goes by now, and by each event name once handed out
+    that no handler it was handed out for goes by now -- which text merely
+    looking like one never was.
 
     Args:
         outputs: ``(path, code)`` pairs of the compiled frontend.
@@ -766,6 +802,7 @@ def raise_for_stale_names(outputs: Iterable[tuple[str, str]]) -> None:
     references = _renamed_default_references()
     registered: set[type[BaseState]] | None = None
     live_keys: dict[type[BaseState], set[str]] = {}
+    event_labels: dict[str, str | None] = {}
     found: dict[str, tuple[str, str]] = {}
     for path, code in outputs:
         if references:
@@ -810,6 +847,11 @@ def raise_for_stale_names(outputs: Iterable[tuple[str, str]]) -> None:
                         (f"var {get_state_full_path(owner)}.{name}", path),
                     )
                     break
+        for name in _EVENT_CALL.findall(code):
+            if name not in event_labels:
+                event_labels[name] = _stale_event_label(name)
+            if (label := event_labels[name]) is not None:
+                found.setdefault(name, (label, path))
     if not found:
         return
     details = "\n".join(

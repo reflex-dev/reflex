@@ -2754,12 +2754,7 @@ class LiteralEventVar(VarOperationCall, LiteralVar, EventVar):
             _func=FunctionStringVar("ReflexEvent"),
             _args=(
                 # event handler name
-                ".".join(
-                    filter(
-                        None,
-                        format.get_event_handler_parts(value.handler),
-                    )
-                ),
+                format.format_event_handler(value.handler),
                 # event handler args
                 {str(name): value for name, value in value.args},
                 # event actions

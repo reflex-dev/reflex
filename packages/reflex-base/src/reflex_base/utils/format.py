@@ -470,7 +470,8 @@ def format_event_handler(handler: EventHandler) -> str:
 
     Cached on the handler instance under ``_formatted_name`` with the resolver
     it was formatted under, to skip the registry/resolver dispatch on every
-    event while any copy of the handler still follows a resolver change.
+    event while any copy of the handler still follows a resolver change. Each
+    name it computes counts as handed out, see :func:`issued_event_handlers`.
 
     Args:
         handler: The event handler to format.
@@ -486,7 +487,15 @@ def format_event_handler(handler: EventHandler) -> str:
     if cached is not None and cached[0] is resolver:
         return cached[1]
     state, name = get_event_handler_parts(handler)
-    full = name if state == "" else f"{state}.{name}"
+    if handler.state is None:
+        full = name
+    else:
+        full = f"{state}.{name}"
+        if (issued := _issued_event_handlers.get(full)) is None:
+            issued = _issued_event_handlers[full] = weakref.WeakKeyDictionary()
+        issued.setdefault(handler.state, set()).add(
+            handler.fn.__qualname__.rpartition(".")[2]
+        )
     object.__setattr__(handler, "_formatted_name", (resolver, full))
     return full
 
@@ -655,12 +664,16 @@ def format_state_name(state_name: str) -> str:
     return state_name.replace(".", "__")
 
 
-# Every state local and var key handed out under any resolver installed so
-# far, so code built under an earlier one can be told from look-alike text.
+# Every state local, var key and event name handed out under any resolver
+# installed so far, so code built under an earlier one can be told from
+# look-alike text.
 _issued_state_locals: dict[str, weakref.WeakSet[type[BaseState]]] = {}
 _issued_var_keys: weakref.WeakKeyDictionary[type[BaseState], dict[str, str]] = (
     weakref.WeakKeyDictionary()
 )
+_issued_event_handlers: dict[
+    str, weakref.WeakKeyDictionary[type[BaseState], set[str]]
+] = {}
 
 
 # The prefix of a renamed state's local; see ``format_state_local``.
@@ -696,6 +709,21 @@ def issued_var_keys(state_cls: type[BaseState]) -> Mapping[str, str]:
         ``{key: var name}``, the name the key was last handed out for.
     """
     return _issued_var_keys.get(state_cls, {})
+
+
+def issued_event_handlers(name: str) -> Mapping[type[BaseState], Collection[str]]:
+    """Get every handler an event name was handed out for, under any resolver.
+
+    Only :func:`format_event_handler` hands names out, to compiled code and to
+    the wire; the registry's own keys do not count.
+
+    Args:
+        name: The full event name, as :func:`format_event_handler` returns it.
+
+    Returns:
+        ``{state: handler names}``, empty if the name was never handed out.
+    """
+    return _issued_event_handlers.get(name, {})
 
 
 @cache

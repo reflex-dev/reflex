@@ -59,6 +59,23 @@ def _rekey(
     return out
 
 
+def _event_handler_key(handler: EventHandler) -> str:
+    """Get the full name the registry keys a handler by.
+
+    Bypasses ``format_event_handler``, which counts each name it computes as
+    handed out to code: a registry key is not, and must not pass for one.
+
+    Args:
+        handler: The event handler.
+
+    Returns:
+        The handler's full name under the active resolver.
+    """
+    from reflex_base.utils.format import get_event_handler_parts
+
+    return ".".join(filter(None, get_event_handler_parts(handler)))
+
+
 @runtime_checkable
 class NameResolver(Protocol):
     """Resolves user-visible names for state classes, event handlers and vars.
@@ -400,9 +417,7 @@ class RegistrationContext(BaseContext):
             StateValueError: If another handler of the same state already
                 resolves to the same name.
         """
-        from reflex.utils.format import format_event_handler
-
-        full_name = format_event_handler(handler)
+        full_name = _event_handler_key(handler)
         existing = self.event_handlers.get(full_name)
         # An entry of another class is replaced, as on a module reload.
         if existing is not None and existing.handler.state is handler.state:
@@ -546,12 +561,10 @@ class RegistrationContext(BaseContext):
 
         Built atomically: the replacement dicts are populated before any of
         ``self`` is mutated, so a partway failure (e.g. malformed minify.json
-        making ``format_event_handler`` raise) leaves the existing registry
-        intact. A console warning is emitted on full-name collisions —
-        usually a sign of duplicate ids in ``minify.json``.
+        making the resolver raise) leaves the existing registry intact. A
+        console warning is emitted on full-name collisions — usually a sign of
+        duplicate ids in ``minify.json``.
         """
-        from reflex.utils.format import format_event_handler
-
         new_base_states = _rekey(
             self.base_states.values(), lambda c: c.get_full_name(), "state class"
         )
@@ -565,7 +578,7 @@ class RegistrationContext(BaseContext):
                     new_substates.setdefault(parent.get_full_name(), set()).add(cls)
         new_handlers = _rekey(
             self.event_handlers.values(),
-            lambda r: format_event_handler(r.handler),
+            lambda r: _event_handler_key(r.handler),
             "event handler",
         )
 
