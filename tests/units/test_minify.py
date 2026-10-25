@@ -1265,6 +1265,39 @@ def test_sync_keeps_ids_that_only_decode_alike():
     assert not errors, errors
 
 
+def test_sync_assigns_ids_that_only_decode_alike():
+    """A held ``aa`` reserves only itself, so filling gaps still hands out ``a``."""
+
+    class AliasRoot(BaseState):
+        pass
+
+    class AliasHeld(AliasRoot):
+        def held(self):
+            pass
+
+        def added(self):
+            pass
+
+    class AliasNew(AliasRoot):
+        pass
+
+    root_path = get_state_full_path(AliasRoot)
+    held_path = get_state_full_path(AliasHeld)
+    existing = make_config(
+        states={
+            root_path: StateEntry(id="b", parent=None),
+            held_path: StateEntry(id="aa", parent=root_path),
+        },
+        events={held_path: {"held": "aa"}, "gone.State": {"x": "aa", "y": "aa"}},
+    )
+
+    new_config = sync_minify_config(existing, AliasRoot, reassign_deleted=True)
+
+    assert new_config["states"][get_state_full_path(AliasNew)]["id"] == "a"
+    assert new_config["events"][held_path]["added"] == "a"
+    assert new_config["events"]["gone.State"] == {"x": "aa", "y": "a"}
+
+
 def test_validate_exempts_an_orphan_holding_its_parent_id():
     """An orphan may keep an id its live parent also holds.
 
