@@ -1672,9 +1672,10 @@ async def test_a_room_broadcast_serializes_one_frame_for_every_member(
         encodes += 1
         return real_encode(*args)
 
-    def record(sids: Iterable[str], payload: Any, label: str) -> None:
+    def record(sids: Iterable[str], payload: Any, label: str) -> bool:
         # Stands in for queueing the frame on each client's connection.
         sent.extend((sid, payload) for sid in sids)
+        return True
 
     monkeypatch.setattr(event_namespace, "encode_channel_frame", counting_encode)
     monkeypatch.setattr(namespace, "_deliver", record)
@@ -1778,6 +1779,37 @@ async def test_send_to_token_reports_a_socket_whose_token_moved_as_a_miss(
     assert channel_frames(live) == [["news", None, "probe"]]
     assert channel_frames(moved) == []
     assert namespace._connections["moved"].close_code == 1008
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("state", ["closing", "overflowing", "gone"])
+async def test_send_to_token_reports_a_frame_no_connection_took_as_a_miss(
+    namespace: WebsocketEventNamespace, monkeypatch: pytest.MonkeyPatch, state: str
+):
+    """A token send its linked session's connection cannot take reports no delivery.
+
+    The connection may already be closing, close over this very frame, or be
+    gone; the frame never reaches the client either way.
+    """
+    channel = RecordingChannel()
+    # The backlog only overflows for a client that stopped reading.
+    websocket = StalledWebSocket() if state == "overflowing" else FakeWebSocket()
+    connection = _Connection(websocket)  # pyright: ignore[reportArgumentType]
+    if state != "gone":
+        namespace._connections["sid1"] = connection
+    if state == "closing":
+        connection.close(1001)
+    elif state == "overflowing":
+        monkeypatch.setattr(event_namespace, "_MAX_SEND_BACKLOG", 1)
+        connection.send("[]")
+    namespace._token_manager.sid_to_token["sid1"] = "tok"
+    channel.open_session("sid1", "tok", namespace._send_channel_message)
+
+    assert await channel.send_to_token("tok", "news") is False
+    await _drain_tasks()
+    connection.stop()
+
+    assert channel_frames(websocket) == []
 
 
 @pytest.mark.asyncio

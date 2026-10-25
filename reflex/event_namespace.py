@@ -424,14 +424,17 @@ class _Connection:
         self._lifetime: asyncio.Timeout | None = None
         self._writer = asyncio.create_task(self._write())
 
-    def send(self, frame: str | bytes) -> None:
+    def send(self, frame: str | bytes) -> bool:
         """Queue a frame for the client, closing a connection that stopped reading.
 
         Args:
             frame: The serialized text or binary frame.
+
+        Returns:
+            Whether the frame was queued on a connection that is not closing.
         """
         if self.close_code is not None:
-            return
+            return False
         frames = self._frames
         frames.append(frame)
         self._backlog += len(frame)
@@ -439,8 +442,9 @@ class _Connection:
         if self._backlog > _MAX_SEND_BACKLOG and len(frames) > 1:
             logger.debug("Closing a session whose client stopped reading.")
             self.close(1008)
-            return
+            return False
         self._ready.set()
+        return True
 
     async def _write(self) -> None:
         """Write the queued frames in order until the connection ends."""
@@ -1061,15 +1065,19 @@ class WebsocketEventNamespace(BaseEventNamespace):
         # Open channel sessions per connection, by session id and channel name.
         self._channel_sessions: dict[str, dict[str, ChannelSession]] = {}
 
-    def _deliver(self, sids: Iterable[str], payload: str | bytes, label: str) -> None:
+    def _deliver(self, sids: Iterable[str], payload: str | bytes, label: str) -> bool:
         """Queue one serialized frame for connected client sessions.
 
         Args:
             sids: The session ids to send to.
             payload: The serialized text or binary frame.
             label: The message name, for diagnostics.
+
+        Returns:
+            Whether any session's connection queued the frame.
         """
         size = utf8_size(payload) if otel.enabled else 0
+        queued = False
         for sid in sids:
             if (connection := self._connections.get(sid)) is None:
                 # Routine race: the client disconnected while an event was
@@ -1079,7 +1087,9 @@ class WebsocketEventNamespace(BaseEventNamespace):
                 continue
             if otel.enabled:
                 otel.record_message_size(size, "transmit")
-            connection.send(payload)
+            if connection.send(payload):
+                queued = True
+        return queued
 
     async def emit(self, event: str, data: Any = None, to: str | None = None) -> None:
         """Emit an event to a connected client session, or to all of them.
@@ -1115,7 +1125,7 @@ class WebsocketEventNamespace(BaseEventNamespace):
             buffers: The binary attachments.
 
         Returns:
-            Whether any session still linked to its token was sent to.
+            Whether a session still linked to its token queued the frame.
         """
         payload = (
             encode_channel_frame(event, data, channel, buffers)
@@ -1132,8 +1142,7 @@ class WebsocketEventNamespace(BaseEventNamespace):
                 # not the connection. Close it, as its next frame would; the
                 # teardown forgets its channel sessions.
                 connection.close(1008)
-        self._deliver(recipients, payload, event)
-        return bool(recipients)
+        return self._deliver(recipients, payload, event)
 
     async def _send_channel_error(
         self, sid: str, channel: str, code: str, message: str
