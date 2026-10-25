@@ -57,7 +57,8 @@ def test_set_locale_returns_client_and_server_events():
     assert isinstance(events, list)
     assert len(events) == 2
     # The first switches the client (run_script), the second updates state.
-    assert "switchLocale" in repr(events[0])
+    # The helper sends the server event itself, so the provider must not.
+    assert 'switchLocale("de", ({ ["notifyServer"] : false }))' in repr(events[0])
     assert "set_locale" in repr(events[1])
 
 

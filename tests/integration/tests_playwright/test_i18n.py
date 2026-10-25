@@ -109,6 +109,7 @@ def I18nApp():
             rx.button("greet", on_click=PageState.greet, id="greet"),
             rx.button("de", on_click=rx.i18n.set_locale("de"), id="to-de"),
             rx.button("en", on_click=rx.i18n.set_locale("en"), id="to-en"),
+            rx.i18n.language_switcher(id="switcher"),
         )
 
     app = rx.App()
@@ -242,6 +243,26 @@ def test_computed_var_retranslates_on_switch(i18n_app: AppHarness, page: Page):
     expect(page.locator("#computed-greeting")).to_have_text("Willkommen")
 
     page.click("#to-en")
+    expect(page.locator("#computed-greeting")).to_have_text("Welcome")
+
+
+def test_switcher_retranslates_server_side(i18n_app: AppHarness, page: Page):
+    """The built-in switcher also switches the server's locale, without a reload.
+
+    Args:
+        i18n_app: Running harness for the i18n app.
+        page: Playwright page.
+    """
+    assert i18n_app.frontend_url is not None
+    page.goto(i18n_app.frontend_url)
+    expect(page.locator("#token")).not_to_have_value("")
+    expect(page.locator("#computed-greeting")).to_have_text("Welcome")
+
+    page.click('#switcher a[hreflang="de"]')
+    expect(page.locator("#static-hello")).to_have_text("Hallo")
+    expect(page.locator("#computed-greeting")).to_have_text("Willkommen")
+
+    page.click('#switcher a[hreflang="en"]')
     expect(page.locator("#computed-greeting")).to_have_text("Welcome")
 
 

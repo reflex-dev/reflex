@@ -16,17 +16,28 @@ from reflex_i18n.runtime import negotiate_locale
 requires_node = pytest.mark.skipif(shutil.which("node") is None, reason="node missing")
 
 # Stand-ins for the modules the client runtime imports. Effects run during the
-# render call; state setters and navigations are recorded for the driver.
+# render call; state setters and navigations are recorded for the driver. A
+# rendered context provider supplies its value to components rendered after it.
 _RUNTIME_STUBS = {
     "react": """
-export const createContext = (value) => ({ value, Provider: "Provider" });
-export const createElement = (type, props, ...children) => ({ type, props, children });
+export const createContext = (value) => {
+  const context = { value };
+  context.Provider = { context };
+  return context;
+};
+export const createElement = (type, props, ...children) => {
+  if (type?.context) {
+    type.context.value = props.value;
+  }
+  return { type, props, children };
+};
 export const Fragment = "Fragment";
 export const useCallback = (fn) => fn;
 export const useContext = (context) => context.value;
 export const useEffect = (effect) => {
   effect();
 };
+export const useRef = (current) => ({ current });
 export const useState = (initial) => [
   initial,
   (next) => globalThis.stateUpdates.push(next),
@@ -40,14 +51,16 @@ export const useNavigate = () => (to, options) =>
 """,
 }
 
-# Renders one runtime component with browser globals from argv and prints the
-# navigations and state updates its effects made.
+# Renders one runtime component with browser globals from argv, runs the
+# optional action script against the module, and prints the navigations, state
+# updates and onLocaleChange calls they made.
 _RUNTIME_DRIVER = """
 import { pathToFileURL } from "node:url";
-const [modulePath, component, env] = process.argv.slice(2);
+const [modulePath, component, env, action] = process.argv.slice(2);
 const { pathname, languages } = JSON.parse(env);
 globalThis.navigations = [];
 globalThis.stateUpdates = [];
+const localeChanges = [];
 globalThis.routerLocation = { pathname, search: "", hash: "" };
 Object.defineProperty(globalThis, "navigator", {
   value: { languages, language: languages[0] },
@@ -56,8 +69,12 @@ Object.defineProperty(globalThis, "navigator", {
 globalThis.document = { cookie: "", documentElement: {} };
 globalThis.location = { protocol: "http:" };
 const mod = await import(pathToFileURL(modulePath).href);
-mod[component]({ children: null });
-process.stdout.write(JSON.stringify({ navigations, stateUpdates }));
+mod[component]({
+  children: null,
+  onLocaleChange: (locale) => localeChanges.push(locale),
+});
+new Function("mod", action)(mod);
+process.stdout.write(JSON.stringify({ navigations, stateUpdates, localeChanges }));
 """
 
 
@@ -71,6 +88,7 @@ def _render_runtime(
     default_at_root: bool = True,
     pathname: str = "/",
     languages: tuple[str, ...] = ("en",),
+    action: str = "",
 ) -> dict[str, Any]:
     """Render a component of the shipped client runtime against stub modules.
 
@@ -83,9 +101,10 @@ def _render_runtime(
         default_at_root: Whether the default locale is served unprefixed.
         pathname: The router location's path.
         languages: The browser's preferred languages.
+        action: JS run after the render with the runtime module as ``mod``.
 
     Returns:
-        The recorded ``navigations`` and ``stateUpdates``.
+        The recorded ``navigations``, ``stateUpdates`` and ``localeChanges``.
     """
     config = {
         "locales": locales,
@@ -113,7 +132,7 @@ def _render_runtime(
     driver.write_text(_RUNTIME_DRIVER)
     env = json.dumps({"pathname": pathname, "languages": list(languages)})
     result = subprocess.run(
-        ["node", str(driver), str(module), component, env],
+        ["node", str(driver), str(module), component, env, action],
         capture_output=True,
         encoding="utf-8",
         timeout=30,
@@ -267,3 +286,48 @@ def test_routing_wrap_redirects_unprefixed_path(
         expected
     )
     assert _render_runtime(tmp_path, "I18nProvider", **options)["navigations"] == []
+
+
+@requires_node
+@pytest.mark.parametrize(
+    ("action", "url_routing", "expected"),
+    [
+        ("mod.I18nContext.value.setLocale('de')", False, ["de"]),
+        (
+            (
+                "mod.LanguageSwitcher({}).children"
+                ".find((link) => link.props.hrefLang === 'de')"
+                ".props.onClick({ preventDefault() {} })"
+            ),
+            False,
+            ["de"],
+        ),
+        # rx.i18n.set_locale sends the server event itself and opts out.
+        (
+            "mod.switchLocale('de', { notifyServer: false }); mod.switchLocale('en')",
+            False,
+            ["en"],
+        ),
+        # The URL owns the locale: switching navigates and reports nothing.
+        ("mod.I18nContext.value.setLocale('de')", True, []),
+    ],
+    ids=["set_locale", "switcher_click", "switch_locale_opt_out", "url_routing"],
+)
+def test_provider_reports_locale_switch_to_server(
+    tmp_path: Path, action: str, url_routing: bool, expected: list[str]
+):
+    """A cookie-mode switch through the provider calls onLocaleChange once."""
+    rendered = _render_runtime(
+        tmp_path,
+        "I18nProvider",
+        locales=["en", "de"],
+        default_locale="en",
+        url_routing=url_routing,
+        action=action,
+    )
+    assert rendered["localeChanges"] == expected
+    if url_routing:
+        assert rendered["navigations"] == [["/de", None]]
+    else:
+        # The client switched as well.
+        assert rendered["stateUpdates"][-1] == expected[-1]

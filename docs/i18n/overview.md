@@ -231,8 +231,8 @@ Static (`rx.t`) content updates instantly; dynamic (state) content updates on
 the next server round-trip.
 
 `rx.i18n.language_switcher()` is a prebuilt switcher with one `<a>` per locale.
-It sets the cookie here, and becomes a set of real crawlable links once URL
-routing is on (below).
+Here it switches static and dynamic content just like `set_locale`, and becomes
+a set of real crawlable links once URL routing is on (below).
 
 Locales are BCP 47 language tags written with hyphens (`en`, `pt-BR`,
 `zh-Hant`) — they double as URL segments and `Intl` tags, so the underscore

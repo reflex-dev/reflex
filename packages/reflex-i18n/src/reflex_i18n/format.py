@@ -17,7 +17,7 @@ from reflex_base.vars.base import LiteralVar, Var, VarData
 from reflex_base.vars.function import FunctionStringVar, FunctionVar, ReflexCallable
 from reflex_base.vars.sequence import StringVar
 
-from .component import _PROVIDER_PRIORITY, I18nProvider
+from .component import _PROVIDER_PRIORITY, _provider
 from .config import get_active_i18n_config
 
 if TYPE_CHECKING:
@@ -49,7 +49,7 @@ def _format_var_data() -> VarData:
     return VarData(
         imports={"$/utils/i18n": [ImportVar(tag="useFormat")]},
         hooks={"const [ fmtNumber, fmtDate ] = useFormat()": None},
-        app_wraps=((_PROVIDER_PRIORITY, I18nProvider.create()),),
+        app_wraps=((_PROVIDER_PRIORITY, _provider()),),
     )
 
 
@@ -63,7 +63,7 @@ def _locale_var_data() -> VarData:
     return VarData(
         imports={"$/utils/i18n": [ImportVar(tag="useLocale")]},
         hooks={"const i18nLocale = useLocale()": None},
-        app_wraps=((_PROVIDER_PRIORITY, I18nProvider.create()),),
+        app_wraps=((_PROVIDER_PRIORITY, _provider()),),
     )
 
 

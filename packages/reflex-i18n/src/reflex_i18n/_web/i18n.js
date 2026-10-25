@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from "react";
 import { useHref, useLocation, useNavigate } from "react-router";
@@ -106,9 +107,9 @@ export const I18nContext = createContext({
 // the locale without threading context through the calling component.
 let _switchLocale = null;
 
-export function switchLocale(locale) {
+export function switchLocale(locale, options) {
   if (_switchLocale) {
-    _switchLocale(locale);
+    _switchLocale(locale, options);
   }
 }
 
@@ -140,9 +141,13 @@ const useLocaleNavigate = () => {
   );
 };
 
-export function I18nProvider({ children }) {
+export function I18nProvider({ children, onLocaleChange }) {
   const { pathname } = useLocation();
   const navigateLocale = useLocaleNavigate();
+  // The compiled event binding (cookie mode only) may change identity between
+  // renders; reading it through a ref keeps setLocale stable.
+  const onLocaleChangeRef = useRef(onLocaleChange);
+  onLocaleChangeRef.current = onLocaleChange;
   // Cookie mode starts from the default locale so the server/first render is
   // deterministic and never touches document/navigator; the cookie- and
   // browser-based locale is resolved client-side in the effect below.
@@ -192,7 +197,7 @@ export function I18nProvider({ children }) {
   }, [locale]);
 
   const setLocale = useCallback(
-    (nextLocale) => {
+    (nextLocale, { notifyServer = true } = {}) => {
       if (!locales.includes(nextLocale)) {
         console.error(
           `Invalid locale "${nextLocale}". Supported locales: ${locales.join(", ")}.`,
@@ -210,6 +215,11 @@ export function I18nProvider({ children }) {
       // applying for users who never picked a language.
       writeCookie(cookieName, nextLocale);
       setCookieLocale(nextLocale);
+      // Keep the server's locale (server-side translations) in step. A caller
+      // that already sends I18nState.set_locale itself opts out.
+      if (notifyServer) {
+        onLocaleChangeRef.current?.(nextLocale);
+      }
     },
     [navigateLocale],
   );

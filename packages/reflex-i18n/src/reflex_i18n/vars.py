@@ -11,7 +11,7 @@ from reflex_base.vars.base import LiteralVar, Var, VarData
 from reflex_base.vars.function import FunctionStringVar, FunctionVar, ReflexCallable
 from reflex_base.vars.sequence import StringVar
 
-from .component import _PROVIDER_PRIORITY, I18nProvider
+from .component import _PROVIDER_PRIORITY, _provider
 from .config import get_active_i18n_config
 from .registry import MessageKey, register
 
@@ -29,7 +29,7 @@ def _i18n_var_data() -> VarData:
     return VarData(
         imports={"$/utils/i18n": [ImportVar(tag="useTranslation")]},
         hooks={"const [ t_, tp_ ] = useTranslation()": None},
-        app_wraps=((_PROVIDER_PRIORITY, I18nProvider.create()),),
+        app_wraps=((_PROVIDER_PRIORITY, _provider()),),
     )
 
 

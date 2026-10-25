@@ -26,10 +26,18 @@ from .catalog import (
     default_plural_expr_js,
     read_po_catalog,
 )
-from .component import HreflangLinks, LocaleRoute
+from .component import HreflangLinks, LocaleRoute, _provider
 from .config import I18nConfig, get_active_catalog_dir, set_active_i18n_config
+from .format import (
+    _fmt_date,
+    _fmt_number,
+    _format_var_data,
+    _locale_var,
+    _locale_var_data,
+)
 from .registry import collected_messages
 from .routing import PathPrefixRouting
+from .vars import _i18n_var_data, _translate, _translate_plural
 
 if TYPE_CHECKING:
     from reflex_base.components.component import Component
@@ -78,6 +86,26 @@ def _catalog_var(locale: str) -> Var:
             }
         ),
     )
+
+
+def _reset_provider() -> None:
+    """Drop the cached provider and the client vars carrying it.
+
+    They are rebuilt on first use for the plugin configured then, whose
+    routing decides whether the provider reports a switch to the server.
+    """
+    for cached in (
+        _provider,
+        _i18n_var_data,
+        _translate,
+        _translate_plural,
+        _format_var_data,
+        _locale_var_data,
+        _fmt_number,
+        _fmt_date,
+        _locale_var,
+    ):
+        cached.cache_clear()
 
 
 def _localized_page(component: Any, locale: str) -> Any:
@@ -155,6 +183,8 @@ class I18nPlugin(Plugin):
             )
             raise TypeError(msg)
         set_active_i18n_config(self._config())
+        # A provider built for another plugin may disagree on its routing.
+        _reset_provider()
         # Registers I18nState (substate) and the event-scope locale provider.
         # Imported here rather than at module top so an app opting in triggers
         # it, but the package's other import paths (e.g. the reflex CLI loading
