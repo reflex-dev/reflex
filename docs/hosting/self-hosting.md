@@ -50,7 +50,7 @@ from a single server on port `3000`. Pass `--frontend-port` or
 the server runs up to 8 backend workers by default (`2 * cpu_count + 1`, capped at 8).
 When using Granian, set `GRANIAN_WORKERS` to override the default, including to use more workers.
 
-On Linux and macOS, `ps` shows labeled Reflex processes such as
+When using Granian on Linux and macOS, `ps` shows labeled Reflex processes such as
 `reflex run [compiler]`, `reflex run [backend]`, and
 `reflex run [backend] worker-1`; a standalone production frontend uses
 `reflex run [frontend]`. Windows Task Manager command lines are unchanged.

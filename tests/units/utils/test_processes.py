@@ -47,13 +47,11 @@ def test_process_title_ignores_bootstrap_arguments(monkeypatch, argv, label):
 def test_set_process_title(monkeypatch):
     """Set the current process title without retaining its bootstrap command."""
     setproctitle = mock.Mock()
-    monkeypatch.setitem(sys.modules, "setproctitle", setproctitle)
+    monkeypatch.setattr("setproctitle.setproctitle", setproctitle)
 
     processes.set_process_title("compiler")
 
-    setproctitle.setproctitle.assert_called_once_with(
-        f"{sys.executable} reflex run [compiler]"
-    )
+    setproctitle.assert_called_once_with(f"{sys.executable} reflex run [compiler]")
 
 
 @pytest.mark.parametrize(

@@ -18,6 +18,7 @@ from contextlib import closing
 from pathlib import Path
 from typing import Any, Literal, overload
 
+import setproctitle
 from reflex_base import constants
 from reflex_base.config import get_config
 from reflex_base.environment import environment
@@ -50,8 +51,6 @@ def set_process_title(label: str) -> None:
     Args:
         label: The role of the current process.
     """
-    import setproctitle
-
     setproctitle.setproctitle(get_process_title(label))
 
 
