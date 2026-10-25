@@ -136,8 +136,14 @@ def build_static_router_data(sid: str, asgi_scope: Mapping[str, Any]) -> dict[st
     else:
         client_ip = "0.0.0.0"
 
-    # Unroll reverse proxy forwarded headers.
-    client_ip = headers.get("x-forwarded-for", client_ip).partition(",")[0].strip()
+    # X-Forwarded-For is client-controlled unless the request arrived through
+    # a configured chain of trusted reverse proxies.
+    trusted_proxy_hops = get_config().trusted_proxy_hops
+    if trusted_proxy_hops:
+        forwarded_for = headers.get("x-forwarded-for", "")
+        forwarded_ips = [ip.strip() for ip in forwarded_for.split(",") if ip.strip()]
+        if len(forwarded_ips) >= trusted_proxy_hops:
+            client_ip = forwarded_ips[-trusted_proxy_hops]
     return {
         constants.RouteVar.SESSION_ID: sid,
         constants.RouteVar.HEADERS: headers,
@@ -779,6 +785,14 @@ class BaseEventNamespace(ABC):
         # Get token before cleaning up
         disconnect_token = self.sid_to_token.get(sid)
         if disconnect_token:
+            socket_record = self._token_manager.token_to_socket.get(disconnect_token)
+            if (
+                socket_record is not None
+                and socket_record.sid == sid
+                and socket_record.instance_id == self._token_manager.instance_id
+                and (processor := self.app._event_processor) is not None
+            ):
+                processor._on_disconnect(disconnect_token)
             # Use async cleanup through token manager
             task = asyncio.create_task(
                 self._token_manager.disconnect_token(disconnect_token, sid),

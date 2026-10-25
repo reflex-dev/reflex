@@ -64,6 +64,8 @@ def _make_app(sio: Any = None) -> SimpleNamespace:
 
     return SimpleNamespace(
         _state=None,
+        # Not started, like an app before its lifespan: no page loads to cancel.
+        _event_processor=None,
         sio=sio,
         router=lambda _path: None,
         event_processor=SimpleNamespace(enqueue=enqueue),

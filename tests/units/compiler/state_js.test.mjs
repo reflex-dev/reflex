@@ -24,6 +24,10 @@ async function setup({
   clientStorage = {},
   dropConnects = 0,
   dropReason = "transport close",
+  maxPayload = 1_000_000,
+  eventUrl = "ws://localhost:8000/_event",
+  firstPayload = {},
+  reconnectPayload,
   react = { useCallback() {}, useEffect() {}, useRef() {}, useState() {} },
 } = {}) {
   const sockets = [];
@@ -31,6 +35,7 @@ async function setup({
   const timers = new Map();
   const firstHydrates = [];
   const updates = [];
+  const consoleErrors = [];
   let connectErrors = [];
   const errorUpdates = [];
   const window = new EventTarget();
@@ -51,8 +56,9 @@ async function setup({
   document.visibilityState = hidden ? "hidden" : "visible";
   let dispose;
   const context = vm.createContext({
-    console,
+    console: { ...console, error: (...args) => consoleErrors.push(args) },
     URL,
+    TextEncoder,
     URLSearchParams,
     performance,
     localStorage,
@@ -68,7 +74,7 @@ async function setup({
   window.clearTimeout = context.clearTimeout;
 
   /** A transport double shared by the plain WebSocket and socket.io clients. */
-  function fakeSocket(kind, opts) {
+  function fakeSocket(kind, url, opts) {
     const handlers = new Map();
     const socket = {
       kind,
@@ -78,7 +84,28 @@ async function setup({
       namespaceConnects: 0,
       disconnects: 0,
       offs: 0,
-      io: { opts, encoder: {}, decoder: {} },
+      // Like socket.io-client: the URL path names the namespace.
+      nsp: new URL(url).pathname,
+      // Engine.IO frames of the CONNECT packets sent to the server.
+      frames: [],
+      io: {
+        opts,
+        // The handshake announces the server's limit.
+        engine: {
+          _maxPayload: maxPayload,
+          transport: { name: opts.transports?.[0] },
+        },
+        // Like socket.io-parser's Encoder.encodeAsString.
+        encoder: {
+          encodes: 0,
+          encode({ type, nsp, data }) {
+            this.encodes++;
+            const prefix = nsp && nsp !== "/" ? `${nsp},` : "";
+            return [`${type}${prefix}${JSON.stringify(data, this.replacer)}`];
+          },
+        },
+        decoder: {},
+      },
       open() {
         this.opens++;
       },
@@ -98,6 +125,18 @@ async function setup({
           "disconnect",
         ]) {
           assert.ok(handlers.has(name), `missing handler: ${name}`);
+        }
+        if (kind === "socketio") {
+          // Like Manager._packet: the server receives the frames the encoder returns.
+          const frames = this.io.encoder.encode({
+            type: 0,
+            nsp: this.nsp,
+            data: this.auth,
+          });
+          if (frames.length === 0) {
+            return;
+          }
+          this.frames.push(...frames.map((frame) => `4${frame}`));
         }
         this.namespaceConnects++;
         if (this.namespaceConnects <= dropConnects) {
@@ -133,9 +172,9 @@ async function setup({
   }
   // Called with `new`: a constructor returning an object yields that object.
   function ReflexWebSocket(url, opts) {
-    return fakeSocket("websocket", opts);
+    return fakeSocket("websocket", url, opts);
   }
-  const io = (url, opts) => fakeSocket("socketio", opts);
+  const io = (url, opts) => fakeSocket("socketio", url, opts);
   const imports = {
     "socket.io-client": { default: io },
     "$/utils/helpers/websocket": {
@@ -146,7 +185,7 @@ async function setup({
     mergician: { mergician() {} },
     "$/env.json": {
       default: {
-        EVENT: "ws://localhost:8000/_event",
+        EVENT: eventUrl,
         TRANSPORT: transport,
         SOCKETIO: socketio,
       },
@@ -169,9 +208,11 @@ async function setup({
             first
               ? {
                   name: "root.hydrate_and_load",
-                  payload: { hashes: ["defaults"] },
+                  payload: { hashes: ["defaults"], ...firstPayload },
                 }
-              : { name: "root.hydrate_and_load" },
+              : reconnectPayload
+                ? { name: "root.hydrate_and_load", payload: reconnectPayload }
+                : { name: "root.hydrate_and_load" },
           ];
         },
         initialState: stateful ? { root: {}, child: {} } : {},
@@ -182,7 +223,10 @@ async function setup({
       },
       eventLoop: { addEvents() {}, connectErrors: [] },
     },
-    "$/utils/helpers/json": { parseJsonLenient() {}, undefinedToNull() {} },
+    "$/utils/helpers/json": {
+      parseJsonLenient() {},
+      undefinedToNull: (_k, v) => (v === undefined ? null : v),
+    },
     "$/utils/helpers/debounce": { default() {} },
     "$/utils/helpers/throttle": { default() {} },
     "$/utils/helpers/upload": { uploadFiles() {} },
@@ -230,6 +274,7 @@ async function setup({
     localStorage,
     socket,
     updates,
+    consoleErrors,
     get connectErrors() {
       // Like React with pending work, apply queued updaters only on render.
       for (const update of errorUpdates.splice(0)) {
@@ -270,6 +315,147 @@ test("warm the transport without opening a session, then reuse it with every han
   assert.equal(app.timers.size, 0);
   assert.equal(app.window.sessionStorage.getItem("token"), "assigned-token");
   assert.equal(app.socket.current.auth.event.router_data.pathname, "/page");
+});
+
+test("the size check encodes a CONNECT packet once and leaves other packets alone", async () => {
+  const app = await connectWith("websocket", {}, 1_000_000);
+  const { encoder } = app.socket.current.io;
+  assert.equal(app.socket.current.namespaceConnects, 1);
+  assert.equal(encoder.encodes, 1);
+  assert.match(app.socket.current.frames[0], /"name":"root.hydrate_and_load"/);
+
+  // An event over the limit is not a hydrate; it is encoded as before.
+  const event = {
+    type: 2,
+    nsp: "/_event",
+    data: ["event", "x".repeat(1_000_001)],
+  };
+  assert.equal(encoder.encode(event).length, 1);
+  assert.equal(encoder.encodes, 2);
+  assert.equal(app.connectErrors.length, 0);
+});
+
+/** Measure a frame like the Engine.IO server: code points per websocket text frame, bytes per polling body. */
+const frameSize = (frame, transport) =>
+  transport === "websocket"
+    ? [...frame].length
+    : new TextEncoder().encode(frame).byteLength;
+
+/** Connect a socket.io app whose first hydrate carries the payload, with the given server limit. */
+async function connectWith(transport, firstPayload, maxPayload, options = {}) {
+  const app = await setup({
+    socketio: true,
+    firstPayload,
+    maxPayload,
+    ...options,
+  });
+  app.flush();
+  await app.connect([transport]);
+  return app;
+}
+
+for (const transport of ["websocket", "polling"]) {
+  test(`the ${transport} size check measures the namespaced frame the server receives`, async () => {
+    const payload = {
+      vars: { large: "é".repeat(400_001), undefinedValue: undefined },
+    };
+    const options = { eventUrl: "ws://localhost:8000/api/v1/_event" };
+    const probe = await connectWith(
+      transport,
+      payload,
+      Number.MAX_SAFE_INTEGER,
+      options,
+    );
+    const frame = probe.socket.current.frames[0];
+    assert.match(frame, /^40\/api\/v1\/_event,\{/);
+    assert.match(frame, /"undefinedValue":null/);
+    const size = frameSize(frame, transport);
+
+    const fits = await connectWith(transport, payload, size, options);
+    assert.equal(fits.socket.current.namespaceConnects, 1);
+    assert.deepEqual(fits.socket.current.frames, [frame]);
+    assert.equal(fits.connectErrors.length, 0);
+
+    const app = await connectWith(transport, payload, size - 1, options);
+    const socket = app.socket.current;
+    assert.equal(socket.namespaceConnects, 0);
+    assert.deepEqual(socket.frames, []);
+    assert.equal(socket.disconnects, 1);
+    assert.equal(app.timers.size, 0);
+    assert.equal(app.connectErrors.length, 1);
+    const [error] = app.connectErrors;
+    assert.equal(error.code, "hydration_payload_too_large");
+    assert.ok(error.message.includes(`(${size} `));
+    assert.ok(error.message.includes(`(${size - 1} `));
+    assert.match(
+      error.message,
+      transport === "websocket" ? /characters/ : /bytes/,
+    );
+    assert.match(error.message, /browser storage/i);
+    assert.deepEqual(app.consoleErrors, [[error.message]]);
+  });
+}
+
+test("the size limit comes from the server handshake, not the frontend build", async () => {
+  const payload = { vars: { large: "x".repeat(1_200_000) } };
+  const raised = await connectWith("websocket", payload, 2_000_000);
+  assert.equal(raised.socket.current.namespaceConnects, 1);
+  assert.equal(raised.connectErrors.length, 0);
+
+  const lowered = await connectWith("websocket", payload, 1_000_000);
+  assert.equal(lowered.socket.current.namespaceConnects, 0);
+  assert.equal(lowered.connectErrors.length, 1);
+});
+
+test("websocket limits count code points, polling limits count UTF-8 bytes", async () => {
+  // 600,000 code points: 1.2M UTF-16 units and 2.4M UTF-8 bytes.
+  const payload = {
+    vars: { large: String.fromCodePoint(0x1f600).repeat(600_000) },
+  };
+  const websocket = await connectWith("websocket", payload, 1_000_000);
+  assert.equal(websocket.socket.current.namespaceConnects, 1);
+  assert.equal(websocket.connectErrors.length, 0);
+
+  const polling = await connectWith("polling", payload, 1_000_000);
+  assert.equal(polling.socket.current.namespaceConnects, 0);
+  assert.match(polling.connectErrors[0].message, /bytes/);
+});
+
+test("an oversized first hydrate is reported once and not rebuilt per event", async () => {
+  const app = await connectWith(
+    "websocket",
+    { vars: { large: "x".repeat(1_000_001) } },
+    1_000_000,
+  );
+  const socket = app.socket.current;
+  // Later events reconnect through connect(), and a visible tab directly.
+  await app.connect();
+  socket.reconnect();
+
+  assert.deepEqual(app.firstHydrates, [true]);
+  assert.equal(socket.namespaceConnects, 0);
+  assert.equal(app.timers.size, 0);
+  assert.equal(app.connectErrors.length, 1);
+  assert.equal(app.consoleErrors.length, 1);
+});
+
+test("an oversized full hydrate on reconnect is reported, not retried", async () => {
+  const app = await setup({
+    socketio: true,
+    reconnectPayload: { vars: { large: "x".repeat(1_000_001) } },
+  });
+  app.flush();
+  await app.connect();
+  const socket = app.socket.current;
+  socket.connected = false;
+  socket.handlers.get("disconnect")("transport close");
+  socket.reconnect();
+
+  assert.equal(socket.namespaceConnects, 1);
+  assert.deepEqual(app.firstHydrates, [true, false]);
+  assert.equal(app.timers.size, 0);
+  assert.equal(app.connectErrors.length, 1);
+  assert.match(app.connectErrors[0].message, /exceeds/);
 });
 
 test("a new session's token is saved only once the mounted app connects", async () => {

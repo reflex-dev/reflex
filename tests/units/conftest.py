@@ -401,6 +401,9 @@ def mock_base_state_event_processor_obj(
         A fresh BaseState event processor.
     """
     monkeypatch.setattr(BaseStateEventProcessor, "_rehydrate", mock.AsyncMock())
+    monkeypatch.setattr(
+        BaseStateEventProcessor, "_rehydrate_snapshot", mock.AsyncMock()
+    )
 
     def handle_backend_exception(ex: Exception) -> None:
         formatted_exc = "\n".join(traceback.format_exception(ex))

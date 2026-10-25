@@ -1,5 +1,6 @@
 """Browser regressions for client-storage writes during hydration and assigned defaults."""
 
+import logging
 import re
 import time
 from collections.abc import Callable, Generator
@@ -22,7 +23,22 @@ def HydrationStorageApp():
         local: str = rx.LocalStorage("local-default", name="hydrate-local")
         session: str = rx.SessionStorage("session-default", name="hydrate-session")
         cookie: str = rx.Cookie("cookie-default", name="hydrate-cookie")
+        annotated_local: rx.Field[rx.LocalStorage] = rx.field(
+            rx.LocalStorage("light", name="hydrate-annotated-local", sync=True)
+        )
+        annotated_session: rx.SessionStorage | None = rx.SessionStorage(
+            "light", name="hydrate-annotated-session"
+        )
+        annotated_cookie: rx.Cookie = rx.Cookie(
+            "light", name="hydrate-annotated-cookie"
+        )
         nonce: rx.Field[str] = rx.field(default_factory=lambda: uuid.uuid4().hex)
+
+        @rx.event
+        def change_annotated(self):
+            """Assign plain strings to storage-annotated vars."""
+            for name in ("annotated_local", "annotated_session", "annotated_cookie"):
+                setattr(self, name, "changed")
 
         @rx.var
         def checked(self) -> str:
@@ -190,6 +206,19 @@ def HydrationStorageApp():
         """
         return rx.box(
             rx.text(StorageState.checked, id="checked"),
+            rx.text(
+                StorageState.annotated_local,
+                "|",
+                StorageState.annotated_session,
+                "|",
+                StorageState.annotated_cookie,
+                id="annotated",
+            ),
+            rx.button(
+                "Change annotated",
+                on_click=StorageState.change_annotated,
+                id="change-annotated",
+            ),
             rx.text(rx.cond(rx.State.is_hydrated, "true", "false"), id="hydrated"),
             rx.text(ReconcileState.token_hash, id="token-hash"),
         )
@@ -297,6 +326,52 @@ def test_hydration_reconciles_storage_in_get_delta(
     expect(page.locator("#hydrated")).to_have_text("true")
     expect(page.locator("#token-hash")).to_have_text("fresh")
     page.wait_for_function("localStorage.getItem('hydrate-token-hash') === 'fresh'")
+
+
+def test_storage_annotations_hydrate_and_persist(
+    hydration_storage_app: AppHarness,
+    page: Page,
+    caplog: pytest.LogCaptureFixture,
+    request: pytest.FixtureRequest,
+):
+    """Storage-annotated vars accept browser strings without logging type errors.
+
+    Args:
+        hydration_storage_app: The running app.
+        page: A fresh browser page.
+        caplog: Captured server log records.
+        request: The request used to remove the log handler after the test.
+    """
+    field_logger = logging.getLogger("reflex_base.vars.base")
+    field_logger.addHandler(caplog.handler)
+    request.addfinalizer(lambda: field_logger.removeHandler(caplog.handler))
+    assert hydration_storage_app.frontend_url is not None
+    page.goto(hydration_storage_app.frontend_url)
+    expect(page.locator("#hydrated")).to_have_text("true")
+    expect(page.locator("#annotated")).to_have_text("light|light|light")
+    page.evaluate("""() => {
+        localStorage.setItem('hydrate-annotated-local', 'saved');
+        sessionStorage.setItem('hydrate-annotated-session', 'saved');
+        document.cookie = 'hydrate-annotated-cookie=saved; path=/';
+    }""")
+
+    page.reload()
+    expect(page.locator("#hydrated")).to_have_text("true")
+    expect(page.locator("#annotated")).to_have_text("saved|saved|saved")
+    page.locator("#change-annotated").click()
+    page.wait_for_function("""() =>
+        localStorage.getItem('hydrate-annotated-local') === 'changed' &&
+        sessionStorage.getItem('hydrate-annotated-session') === 'changed' &&
+        document.cookie.split('; ').includes('hydrate-annotated-cookie=changed')
+    """)
+    page.reload()
+    expect(page.locator("#hydrated")).to_have_text("true")
+    expect(page.locator("#annotated")).to_have_text("changed|changed|changed")
+    assert not [
+        record.getMessage()
+        for record in caplog.records
+        if record.name == field_logger.name and record.levelno >= logging.ERROR
+    ]
 
 
 # The browser storage vars of the assigned page, by element id suffix.
@@ -655,16 +730,14 @@ def test_synced_storage_event_while_disconnected_sends_current_value(
     assert page.evaluate("localStorage.getItem('hydrate-sync')") == "fresh"
 
 
-@pytest.mark.parametrize("limit", ["server", "proxy"])
 def test_refused_hydration_retries_with_backoff(
-    hydration_storage_app: AppHarness, page: Page, limit: str
+    hydration_storage_app: AppHarness, page: Page
 ):
-    """A CONNECT packet dropped for its size is retried with backoff and reported.
+    """A CONNECT packet dropped by a proxy limit is retried with backoff and reported.
 
     Args:
         hydration_storage_app: The running app.
         page: A fresh browser page.
-        limit: Whether the server limit or a smaller proxy limit drops the packet.
     """
     assert hydration_storage_app.frontend_url is not None
     opens: list[float] = []
@@ -672,26 +745,24 @@ def test_refused_hydration_retries_with_backoff(
         "websocket",
         lambda ws: opens.append(time.monotonic()) if "/_event" in ws.url else None,
     )
-    if limit == "proxy":
 
-        def proxy(route: WebSocketRoute):
-            """Close the transport on a large frame, like a proxy with its own limit.
+    def proxy(route: WebSocketRoute):
+        """Close the transport on a large frame, like a proxy with its own limit.
 
-            Args:
-                route: The intercepted websocket.
-            """
-            server = route.connect_to_server()
-            route.on_message(
-                lambda m: route.close() if len(m) > 100_000 else server.send(m)
-            )
-            server.on_message(route.send)
+        Args:
+            route: The intercepted websocket.
+        """
+        server = route.connect_to_server()
+        route.on_message(
+            lambda m: route.close() if len(m) > 100_000 else server.send(m)
+        )
+        server.on_message(route.send)
 
-        page.route_web_socket(re.compile(r".*/_event"), proxy)
+    page.route_web_socket(re.compile(r".*/_event"), proxy)
     page.goto(hydration_storage_app.frontend_url)
     expect(page.locator("#hydrated")).to_have_text("true")
 
-    size = 1_100_000 if limit == "server" else 200_000
-    page.evaluate("n => localStorage.setItem('hydrate-local', 'x'.repeat(n))", size)
+    page.evaluate("localStorage.setItem('hydrate-local', 'x'.repeat(200_000))")
     opens.clear()
     page.reload()
     expect(page.get_by_text("Cannot connect to server")).to_be_visible()
@@ -704,6 +775,36 @@ def test_refused_hydration_retries_with_backoff(
     assert len(gaps) == 3, gaps
     assert all(gap > 0.15 for gap in gaps), gaps
     assert gaps[0] < gaps[2], gaps
+    expect(page.locator("#hydrated")).to_have_text("false")
+
+    page.evaluate("localStorage.removeItem('hydrate-local')")
+    page.reload()
+    expect(page.locator("#hydrated")).to_have_text("true")
+
+
+def test_hydration_over_server_limit_is_reported_once(
+    hydration_storage_app: AppHarness, page: Page
+):
+    """A hydrate over the server's announced limit is reported and not sent.
+
+    Args:
+        hydration_storage_app: The running app.
+        page: A fresh browser page.
+    """
+    assert hydration_storage_app.frontend_url is not None
+    opens: list[str] = []
+    page.on(
+        "websocket", lambda ws: opens.append(ws.url) if "/_event" in ws.url else None
+    )
+    page.goto(hydration_storage_app.frontend_url)
+    expect(page.locator("#hydrated")).to_have_text("true")
+
+    page.evaluate("localStorage.setItem('hydrate-local', 'x'.repeat(1_100_000))")
+    opens.clear()
+    page.reload()
+    expect(page.get_by_text("Reduce browser storage data and reload")).to_be_visible()
+    page.wait_for_timeout(2000)
+    assert len(opens) == 1, opens
     expect(page.locator("#hydrated")).to_have_text("false")
 
     page.evaluate("localStorage.removeItem('hydrate-local')")

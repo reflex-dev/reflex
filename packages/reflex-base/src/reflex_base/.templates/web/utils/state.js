@@ -43,6 +43,7 @@ const NEW_VERSION_BANNER_ID = "reflex-new-version-banner";
 // Client error types (must match reflex_base/constants/event.py ClientErrorType)
 const ERROR_TYPE_DISPATCH_MISSING = "dispatch_function_missing";
 const ERROR_TYPE_STATE_UPDATE = "state_update_processing_error";
+const ERROR_TYPE_HYDRATION_PAYLOAD_TOO_LARGE = "hydration_payload_too_large";
 
 // Connection errors kept for display, oldest dropped first.
 const MAX_CONNECT_ERRORS = 10;
@@ -209,6 +210,21 @@ const disposeSocket = (socket) => {
   socket.disconnect();
   // Also releases the plain WebSocket transport's offline listener.
   socket.off();
+};
+
+/**
+ * Measure encoded text the way the Engine.IO server limits a frame.
+ * @param frame The encoded text.
+ * @param transport The transport that carries it.
+ * @returns The code points for a websocket text frame, or the UTF-8 bytes for a polling body.
+ */
+const frameSize = (frame, transport) => {
+  if (transport !== "websocket") {
+    return new TextEncoder().encode(frame).byteLength;
+  }
+  let size = 0;
+  for (const _ of frame) size++;
+  return size;
 };
 
 let warmSocket = null;
@@ -990,6 +1006,38 @@ export const connect = async (
       });
       // Ensure undefined fields in events are sent as null instead of removed
       socket.current.io.encoder.replacer = undefinedToNull;
+      // The server drops a transport whose frame exceeds the limit its handshake
+      // announced, so a CONNECT packet (type 0) that carries an oversized hydrate
+      // is reported instead of sent. The page stays offline until browser storage
+      // shrinks and it reloads: wait_connect stays set, so reconnect() does not
+      // rebuild the hydrate.
+      const { encoder } = socket.current.io;
+      const encode = encoder.encode.bind(encoder);
+      encoder.encode = (packet) => {
+        const encoded = encode(packet);
+        if (packet.type !== 0) {
+          return encoded;
+        }
+        // socket.io-client is pinned; test_hydration_storage.py covers these internals.
+        const { engine } = socket.current.io;
+        const transport = engine.transport.name;
+        // The Engine.IO message type ("4") prefixes the encoded packet.
+        const size = 1 + frameSize(encoded[0], transport);
+        if (size > engine._maxPayload) {
+          const unit = transport === "websocket" ? "characters" : "bytes";
+          const error = new Error(
+            `Hydration payload (${size} ${unit}) exceeds the server limit (${engine._maxPayload} ${unit}). Reduce browser storage data and reload.`,
+          );
+          error.code = ERROR_TYPE_HYDRATION_PAYLOAD_TOO_LARGE;
+          console.error(error.message);
+          setConnectErrors((connectErrors) =>
+            addConnectError(connectErrors, error),
+          );
+          socket.current.disconnect();
+          return [];
+        }
+        return encoded;
+      };
       // The decoder API expects false (not undefined) for unparsable input.
       socket.current.io.decoder.tryParse = (str) =>
         parseJsonLenient(str, false);

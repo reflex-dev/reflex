@@ -2008,8 +2008,13 @@ def test_decode_asgi_headers():
     ]) == {"cookie": "a=1; b=ÿ"}
 
 
-def test_static_router_data_keeps_every_repeated_header_field():
+def test_static_router_data_keeps_every_repeated_header_field(
+    monkeypatch: pytest.MonkeyPatch,
+):
     """Repeated cookie and x-forwarded-for fields all reach the router data."""
+    monkeypatch.setattr(
+        event_namespace, "get_config", lambda: Mock(trusted_proxy_hops=2)
+    )
     router_data = event_namespace.build_static_router_data(
         "sid1",
         {
@@ -2029,6 +2034,70 @@ def test_static_router_data_keeps_every_repeated_header_field():
     # The original client hop comes first, not the proxy that added the second field.
     assert router_data[constants.RouteVar.CLIENT_IP] == "203.0.113.7"
     assert HeaderData.from_router_data(router_data).cookie == "sid=1; other=2"
+
+
+@pytest.mark.parametrize(
+    ("trusted_proxy_hops", "forwarded_for", "peer_ip", "expected_ip"),
+    [
+        (0, "6.6.6.6, 203.0.113.7", "10.0.0.2", "10.0.0.2"),
+        (1, "203.0.113.7", "10.0.0.2", "203.0.113.7"),
+        (2, "6.6.6.6, 203.0.113.7, 10.0.0.2", "127.0.0.1", "203.0.113.7"),
+        (2, "203.0.113.7", "10.0.0.2", "10.0.0.2"),
+    ],
+)
+def test_static_router_data_resolves_client_ip_from_trusted_proxy_hops(
+    monkeypatch: pytest.MonkeyPatch,
+    trusted_proxy_hops: int,
+    forwarded_for: str,
+    peer_ip: str,
+    expected_ip: str,
+):
+    """Only configured rightmost forwarded hops determine the client IP."""
+    monkeypatch.setattr(
+        event_namespace,
+        "get_config",
+        lambda: Mock(trusted_proxy_hops=trusted_proxy_hops),
+    )
+    router_data = event_namespace.build_static_router_data(
+        "sid1",
+        {
+            "headers": [(b"x-forwarded-for", forwarded_for.encode())],
+            "client": (peer_ip, 1234),
+        },
+    )
+
+    assert router_data[constants.RouteVar.CLIENT_IP] == expected_ip
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("owner", ["current", "replacement", "remote", "missing"])
+async def test_disconnect_only_cancels_current_local_socket(
+    namespace: WebsocketEventNamespace, namespace_app: Mock, owner: str
+):
+    """A stale disconnect must not cancel a replacement connection's page load.
+
+    Args:
+        namespace: The namespace.
+        namespace_app: The mock app it serves.
+        owner: The socket currently owning the client token.
+    """
+    manager = namespace._token_manager
+    manager.sid_to_token["old-sid"] = "token"
+    if owner != "missing":
+        manager.token_to_socket["token"] = SocketRecord(
+            instance_id="remote" if owner == "remote" else manager.instance_id,
+            sid="new-sid" if owner == "replacement" else "old-sid",
+        )
+    manager.disconnect_token = AsyncMock()
+    cleanup = namespace.handle_disconnect("old-sid")
+    assert cleanup is not None
+    await cleanup
+    cancel = namespace_app._event_processor._on_disconnect
+    if owner == "current":
+        cancel.assert_called_once_with("token")
+    else:
+        cancel.assert_not_called()
+    assert namespace.handle_disconnect("unknown-sid") is None
 
 
 @pytest.mark.asyncio
