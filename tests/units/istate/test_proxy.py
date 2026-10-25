@@ -10,7 +10,12 @@ import sys
 import weakref
 from asyncio import CancelledError
 from collections.abc import Callable, Iterator, Mapping
-from contextlib import AbstractContextManager, asynccontextmanager, contextmanager
+from contextlib import (
+    AbstractContextManager,
+    asynccontextmanager,
+    contextmanager,
+    suppress,
+)
 from operator import attrgetter, itemgetter
 from types import MappingProxyType
 from typing import Any, ClassVar, assert_type
@@ -1523,6 +1528,62 @@ async def test_proxy_aexit_cleans_state_when_scope_provider_raises(
 
     assert not root_state.dirty_vars
     assert not root_state.dirty_substates
+    assert not proxy._self_actx_lock.locked()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("entered", ["state", "linked_state", "field"])
+async def test_proxy_block_exception_suppressed_by_scope_provider(
+    token: str,
+    attached_mock_event_context: EventContext,
+    monkeypatch: pytest.MonkeyPatch,
+    entered: str,
+) -> None:
+    """An event-scope provider may suppress an exception raised in a block.
+
+    The handler continues after the block, which persists the state as on a
+    clean exit and releases the lock, whether it entered the proxy, a proxy
+    linked to it, or one of its fields.
+    """
+    from reflex_base.event.processor import scope
+
+    state_manager = attached_mock_event_context.state_manager
+    async with state_manager.modify_state(
+        BaseStateToken(ident=token, cls=MutableProxyState)
+    ) as state:
+        proxy = StateProxy(state)
+    async with proxy:
+        linked_proxy = await proxy.get_state(MutableProxyState)
+    block = {"state": proxy, "linked_state": linked_proxy, "field": proxy.data}[entered]
+
+    # Like the disk and redis managers, persist the state only on a clean exit.
+    persisted: list[list[int]] = []
+    modify_state = state_manager.modify_state
+
+    @asynccontextmanager
+    async def modify_state_persisting_on_clean_exit(token, **context):
+        async with modify_state(token, **context) as root_state:
+            yield root_state
+            state = await root_state.get_state(MutableProxyState)
+            persisted.append(list(state.data["a"]))
+
+    monkeypatch.setattr(
+        state_manager, "modify_state", modify_state_persisting_on_clean_exit
+    )
+
+    async def provider(_root_state):  # noqa: RUF029 - providers are awaited
+        return suppress(RuntimeError)
+
+    scope.register_event_scope_provider(provider)
+    try:
+        async with block:
+            proxy.data["a"].append(3)
+            msg = "suppressed by the provider"
+            raise RuntimeError(msg)
+    finally:
+        scope._providers.remove(provider)
+
+    assert persisted == [[1, 3]]
     assert not proxy._self_actx_lock.locked()
 
 

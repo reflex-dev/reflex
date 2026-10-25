@@ -315,21 +315,26 @@ class StateProxy(wrapt.ObjectProxy):
             raise
         return self
 
-    async def __aexit__(self, *exc_info: Any) -> None:
+    async def __aexit__(self, *exc_info: Any) -> bool | None:
         """Exit the async context manager protocol.
 
         Sets proxy mutability to False and persists any state changes.
 
         Args:
             exc_info: The exception info tuple.
+
+        Returns:
+            Whether the block's event scope suppressed its exception.
         """
         if self._self_parent_state_proxy is not None:
-            await self._self_parent_state_proxy.__aexit__(*exc_info)
-            return
+            return await self._self_parent_state_proxy.__aexit__(*exc_info)
         scope, self._self_scope = self._self_scope, None
+        suppressed = False
         try:
-            if scope is not None:
-                await scope.__aexit__(*exc_info)
+            if scope is not None and await scope.__aexit__(*exc_info):
+                # Persist the state as on a clean exit.
+                exc_info = (None, None, None)
+                suppressed = True
             if self._self_mutable and self._self_actx is not None:
                 # Inline to avoid a circular import through the processor
                 # package init.
@@ -357,6 +362,7 @@ class StateProxy(wrapt.ObjectProxy):
                 self._self_mutable = False
                 self._self_actx_lock_holder = None
                 self._self_actx_lock.release()
+        return suppressed
 
     def __enter__(self):
         """Enter the regular context manager protocol.
@@ -928,17 +934,20 @@ class MutableProxy(wrapt.ObjectProxy):
         )
         raise RuntimeError(msg)
 
-    async def __aexit__(self, *exc_info: Any) -> None:
+    async def __aexit__(self, *exc_info: Any) -> bool | None:
         """Exit the async context manager protocol through the bound state.
 
         Args:
             exc_info: The exception info tuple.
+
+        Returns:
+            Whether the bound state suppressed the block's exception.
         """
         context_state = self._self_actx_state
         if context_state is None:
-            return
+            return None
         try:
-            await context_state.__aexit__(*exc_info)
+            return await context_state.__aexit__(*exc_info)
         finally:
             self._self_actx_state = None
 
