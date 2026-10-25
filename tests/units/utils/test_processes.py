@@ -4,6 +4,7 @@ import logging
 import signal
 import socket
 import subprocess
+import sys
 import threading
 import time
 from contextlib import closing
@@ -27,6 +28,32 @@ requires_ipv6 = pytest.mark.skipif(
     not _can_bind_at_any_port(socket.AF_INET6),
     reason="IPv6 is not available on this system",
 )
+
+
+@pytest.mark.parametrize(
+    "argv", [["reflex", "run"], ["-c", "from multiprocessing.spawn import spawn_main"]]
+)
+@pytest.mark.parametrize("label", ["compiler", "backend", "frontend"])
+def test_process_title_ignores_bootstrap_arguments(monkeypatch, argv, label):
+    """Process titles identify Reflex even in spawned Python workers."""
+    monkeypatch.setattr(sys, "argv", argv)
+    monkeypatch.setattr(sys, "executable", "/venv/bin/python")
+
+    assert (
+        processes.get_process_title(label) == f"/venv/bin/python reflex run [{label}]"
+    )
+
+
+def test_set_process_title(monkeypatch):
+    """Set the current process title without retaining its bootstrap command."""
+    setproctitle = mock.Mock()
+    monkeypatch.setitem(sys.modules, "setproctitle", setproctitle)
+
+    processes.set_process_title("compiler")
+
+    setproctitle.setproctitle.assert_called_once_with(
+        f"{sys.executable} reflex run [compiler]"
+    )
 
 
 @pytest.mark.parametrize(

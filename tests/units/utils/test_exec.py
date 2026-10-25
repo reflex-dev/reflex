@@ -236,6 +236,7 @@ def test_run_granian_backend_sets_reload_env_var_and_clears_marker(
     class FakeGranian:
         def __init__(self, *_args, **_kwargs):
             seen["value"] = os.environ.get(DEV_BACKEND_RELOAD_ENV_NAME)
+            seen["process_name"] = _kwargs.get("process_name")
             assert not marker.exists()
 
         def on_reload(self, _callback):
@@ -251,6 +252,7 @@ def test_run_granian_backend_sets_reload_env_var_and_clears_marker(
     )
 
     assert seen["value"] == "True"
+    assert seen["process_name"] == f"{sys.executable} reflex run [backend]"
 
 
 @pytest.mark.parametrize(
@@ -579,6 +581,33 @@ def _fake_granian_prod(
         side_effect=lambda: calls.append("drain") or telemetry_stopped,
     )
     mocker.patch.object(gc, "freeze", side_effect=lambda: calls.append("freeze"))
+
+
+@pytest.mark.parametrize("frontend_only", [False, True])
+def test_production_server_process_titles(mocker: MockerFixture, frontend_only: bool):
+    """Label backend and standalone frontend servers through their real launchers."""
+    granian_server = pytest.importorskip("granian.server")
+    server = mocker.patch.object(granian_server, "Server")
+    mocker.patch.object(exec_utils, "_backend_start_method", return_value=None)
+    mocker.patch.object(exec_utils, "_get_backend_workers", return_value=1)
+    mocker.patch.object(
+        exec_utils, "get_app_instance_from_file", return_value="app:app"
+    )
+    mocker.patch.object(exec_utils, "should_use_granian", return_value=True)
+
+    if frontend_only:
+        exec_utils.run_frontend_prod("127.0.0.1", 3000)
+    else:
+        exec_utils.run_granian_backend_prod("127.0.0.1", 8000, exec_utils.LogLevel.INFO)
+
+    role = "frontend" if frontend_only else "backend"
+    assert server.call_args.kwargs["process_name"] == (
+        f"{sys.executable} reflex run [{role}]"
+    )
+    assert server.call_args.kwargs["target"] == (
+        "reflex.utils.exec:_frontend_prod_app" if frontend_only else "app:app"
+    )
+    server.return_value.serve.assert_called_once_with()
 
 
 def test_run_granian_backend_prod_preloads_app_before_forking(

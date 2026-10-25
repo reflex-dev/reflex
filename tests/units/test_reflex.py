@@ -155,6 +155,7 @@ def test_compile_app_worker_flushes_telemetry(mocker):
     """Flush the completed compile span before an isolated worker exits."""
     app_task = mocker.Mock(return_value=True)
     flush = mocker.patch("reflex_base.otel.flush")
+    mocker.patch("reflex.utils.processes.set_process_title")
 
     assert reflex._compile_app_worker(app_task, (True,), {"trigger": "initial"})
 
@@ -162,10 +163,27 @@ def test_compile_app_worker_flushes_telemetry(mocker):
     flush.assert_called_once_with()
 
 
+def test_compile_app_worker_sets_title_before_compiling(mocker):
+    """Label the compiler child before running application code."""
+    calls = mocker.Mock()
+    calls.attach_mock(mocker.patch("reflex.utils.processes.set_process_title"), "title")
+    app_task = mocker.Mock(return_value=True)
+    calls.attach_mock(app_task, "compile")
+    mocker.patch("reflex_base.otel.flush")
+
+    assert reflex._compile_app_worker(app_task, (True,), {"trigger": "initial"})
+
+    assert calls.mock_calls == [
+        mocker.call.title("compiler"),
+        mocker.call.compile(True, trigger="initial"),
+    ]
+
+
 def test_compile_app_worker_flushes_telemetry_on_failure(mocker):
     """Flush telemetry even when the worker's compile task raises."""
     app_task = mocker.Mock(side_effect=RuntimeError("compile failed"))
     flush = mocker.patch("reflex_base.otel.flush")
+    mocker.patch("reflex.utils.processes.set_process_title")
 
     with pytest.raises(RuntimeError, match="compile failed"):
         reflex._compile_app_worker(app_task, (), {})

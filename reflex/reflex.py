@@ -400,6 +400,9 @@ def _compile_app_worker(
     """
     from reflex_base import otel
 
+    from reflex.utils import processes
+
+    processes.set_process_title("compiler")
     try:
         return app_task(*args, **kwargs)
     finally:
