@@ -17,6 +17,7 @@ classifiers = [
 ]
 dependencies = [
     "reflex >= 0.10.1.dev0",
+    "reflex-base >= 0.10.1.dev0",
 ]
 
 [tool.hatch.version]
