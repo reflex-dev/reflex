@@ -39,7 +39,7 @@ dependencies = [
   "reflex-components-gridjs >= 0.10.0",
   "reflex-components-lucide >= 1.1.0",
   "reflex-components-markdown >= 0.10.0",
-  "reflex-components-moment >= 0.10.0",
+  "reflex-components-moment >= 0.10.1.dev0",
   "reflex-components-plotly >= 0.10.0",
   "reflex-components-radix >= 0.10.1.dev0",
   "reflex-components-react-player >= 0.10.0",
@@ -483,10 +483,9 @@ showcontent = true
 # checked.
 [tool.check-outdated-deps]
 backend_held = [
-    # Exact-pinned by pydantic and playwright respectively, so they can only move when
-    # their parent does. Drop these once the parent releases pick up the newer version.
-    "pydantic-core",
-    "pyee",
+    # plotly.py 7 targets plotly.js 4, which is held below in `frontend_held` (#7002);
+    # figures built with it would render against the older plotly.js bundle.
+    "plotly",
     # Held at 7.x: redis-py 8 hangs three redis-backed tests on Python 3.10/3.11
     # (including `get_state`, so it is not test-only). See #7026 for the reproduction
     # and the A/B that isolated it; requested in #6764.
@@ -559,6 +558,9 @@ reflex-components-recharts = false
 reflex-components-sonner = false
 reflex-enterprise = false
 reflex-hosting-cli = false
+pillow = "2026-10-21T00:00:00Z"
+certifi = "2026-10-21T00:00:00Z"
+virtualenv = "2026-10-22T00:00:00Z"
 
 [tool.uv.sources]
 hatch-reflex-pyi.workspace = true

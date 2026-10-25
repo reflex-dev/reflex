@@ -852,6 +852,19 @@ def value_inside_optional(cls: GenericType) -> GenericType:
     return cls
 
 
+def _get_pydantic_fields(cls: GenericType) -> dict[str, Any]:
+    """Get model fields using the supported Pydantic API.
+
+    Args:
+        cls: The class to check.
+
+    Returns:
+        The model's fields, or an empty dictionary for other classes.
+    """
+    fields = getattr(cls, "model_fields", None)
+    return fields if isinstance(fields, dict) else getattr(cls, "__fields__", {})
+
+
 def get_field_type(cls: GenericType, field_name: str) -> GenericType | None:
     """Get the type of a field in a class.
 
@@ -864,13 +877,11 @@ def get_field_type(cls: GenericType, field_name: str) -> GenericType | None:
     """
     if (fields := getattr(cls, "_fields", None)) is not None and field_name in fields:
         return fields[field_name].annotated_type
-    if (
-        hasattr(cls, "__fields__")
-        and field_name in cls.__fields__
-        and hasattr(cls.__fields__[field_name], "annotation")
-        and not isinstance(cls.__fields__[field_name].annotation, (str, ForwardRef))
-    ):
-        return cls.__fields__[field_name].annotation
+    field = _get_pydantic_fields(cls).get(field_name)
+    if field is not None and hasattr(field, "annotation"):
+        annotation = field.annotation
+        if not isinstance(annotation, (str, ForwardRef)):
+            return annotation
     type_hints = get_type_hints(cls)
     return type_hints.get(field_name, None)
 
@@ -986,7 +997,7 @@ def get_attribute_access_type(
     if hint := get_property_hint(attr):
         return hint
 
-    if hasattr(cls, "__fields__") and name in cls.__fields__:
+    if name in _get_pydantic_fields(cls):
         # pydantic models
         return get_field_type(cls, name)
     if isinstance(cls, type) and "sqlalchemy.orm" in sys.modules:
@@ -1763,6 +1774,35 @@ def typehint_issubclass(
     )
 
 
+def _resolve_annotation(
+    value: Any, base_globals: dict[str, Any] | None, *, strict: bool = False
+) -> Any:
+    """Resolve a string or ForwardRef annotation into a type object if possible.
+
+    Args:
+        value: The raw annotation to resolve.
+        base_globals: The globals of the module declaring the annotation.
+        strict: Whether an annotation naming an undefined symbol raises,
+            unless it is a ClassVar.
+
+    Returns:
+        The resolved annotation, or the unresolved ForwardRef.
+
+    Raises:
+        NameError: If strict and the annotation names an undefined symbol.
+    """
+    if isinstance(value, str):
+        value = ForwardRef(value, is_argument=False, is_class=True)
+    try:
+        if sys.version_info >= (3, 13):
+            return _eval_type(value, base_globals, None, type_params=())
+        return _eval_type(value, base_globals, None)
+    except NameError:
+        if strict and not is_classvar(value):
+            raise
+        return value
+
+
 def resolve_annotations(
     raw_annotations: Mapping[str, type[Any]], module_name: str | None
 ) -> dict[str, type[Any]]:
@@ -1783,20 +1823,10 @@ def resolve_annotations(
         module.__dict__ if module is not None else None
     )
 
-    annotations = {}
-    for name, value in raw_annotations.items():
-        if isinstance(value, str):
-            value = ForwardRef(value, is_argument=False, is_class=True)
-        try:
-            if sys.version_info >= (3, 13):
-                value = _eval_type(value, base_globals, None, type_params=())
-            else:
-                value = _eval_type(value, base_globals, None)
-        except NameError:
-            # this is ok, it can be fixed with update_forward_refs
-            pass
-        annotations[name] = value
-    return annotations
+    return {
+        name: _resolve_annotation(value, base_globals)
+        for name, value in raw_annotations.items()
+    }
 
 
 TYPES_THAT_HAS_DEFAULT_VALUE = (int, float, tuple, list, set, dict, str)

@@ -1138,7 +1138,7 @@ def test_supervise_output_does_not_wait_for_lingering_descendants(tmp_path):
     assert elapsed < 10
 
 
-_SIGTERM_SCRIPT = """
+_SLEEP_SCRIPT = """
 import sys
 import time
 
@@ -1151,11 +1151,16 @@ time.sleep(30)
 """
 
 
-@pytest.mark.skipif(sys.platform == "win32", reason="SIGTERM is POSIX-only")
-def test_supervise_output_forwards_sigterm(tmp_path):
-    """Terminating the supervisor terminates the command and reports the signal."""
-    script = tmp_path / "sigterm.py"
-    script.write_text(_SIGTERM_SCRIPT)
+@pytest.mark.skipif(
+    sys.platform == "win32", reason="PID-targeted signals are POSIX-only"
+)
+@pytest.mark.parametrize(
+    "signum", [signal.SIGTERM, signal.SIGINT], ids=["sigterm", "sigint"]
+)
+def test_supervise_output_forwards_shutdown_signal(tmp_path, signum):
+    """A signal sent to the supervisor's PID stops the command and is reported."""
+    script = tmp_path / "sleep.py"
+    script.write_text(_SLEEP_SCRIPT)
     with subprocess.Popen(
         [sys.executable, str(script)],
         stdout=subprocess.PIPE,
@@ -1163,8 +1168,8 @@ def test_supervise_output_forwards_sigterm(tmp_path):
     ) as proc:
         assert proc.stdout is not None
         assert json.loads(proc.stdout.readline())["message"] == "ready"
-        proc.send_signal(signal.SIGTERM)
-        assert proc.wait(timeout=10) == 128 + signal.SIGTERM
+        proc.send_signal(signum)
+        assert proc.wait(timeout=10) == 128 + signum
 
 
 def test_output_pump_survives_a_gone_consumer():

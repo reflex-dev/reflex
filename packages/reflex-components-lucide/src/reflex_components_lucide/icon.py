@@ -1,5 +1,6 @@
 """Lucide Icon component."""
 
+import dataclasses
 import logging
 
 from reflex_base.components.component import Component, field
@@ -95,7 +96,8 @@ class Icon(LucideIconComponent):
         props["_import_path"] = f"/dist/esm/icons/{file_name}.mjs"
         return super().create(**props)
 
-    def _get_imports(self):
+    @property
+    def import_var(self) -> ImportVar:
         """Emit a deep per-icon import instead of a lucide-react barrel import.
 
         Importing a static icon by name from the ``lucide-react`` barrel pulls
@@ -105,20 +107,11 @@ class Icon(LucideIconComponent):
         module avoids this and is lucide's recommended form.
 
         Returns:
-            The imports needed by the component.
+            The deep default import for the icon.
         """
-        imports_ = super()._get_imports()
-        if self.library and self._import_path:
-            imports_.pop(self.library, None)
-            imports_[LUCIDE_LIBRARY] = [
-                ImportVar(
-                    self.tag,
-                    is_default=True,
-                    alias=self.alias,
-                    package_path=self._import_path,
-                )
-            ]
-        return imports_
+        return dataclasses.replace(
+            super().import_var, is_default=True, package_path=self._import_path
+        )
 
 
 class DynamicIcon(LucideIconComponent):
@@ -129,14 +122,16 @@ class DynamicIcon(LucideIconComponent):
     name: Var[str]
     size: Var[int]
 
-    def _get_imports(self):
-        imports_ = super()._get_imports()
-        if self.library:
-            imports_.pop(self.library)
-        imports_[LUCIDE_LIBRARY] = [
-            ImportVar("DynamicIcon", package_path="/dynamic.mjs")
-        ]
-        return imports_
+    @property
+    def import_var(self) -> ImportVar:
+        """Import the dynamic icon from Lucide's dynamic module.
+
+        Returns:
+            The named dynamic module import.
+        """
+        return dataclasses.replace(
+            super().import_var, is_default=False, package_path="/dynamic.mjs"
+        )
 
 
 LUCIDE_ICON_LIST = [
