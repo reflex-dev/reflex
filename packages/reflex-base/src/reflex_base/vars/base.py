@@ -15,6 +15,7 @@ import json
 import logging
 import re
 import string
+import sys
 import warnings
 from abc import ABCMeta
 from collections.abc import Callable, Coroutine, Iterable, Iterator, Mapping, Sequence
@@ -2182,7 +2183,7 @@ def figure_out_type(value: Any) -> types.GenericType:
     Returns:
         The type of the value.
     """
-    if isinstance(value, (list, set, frozenset, tuple, Mapping, Var)):
+    if isinstance(value, (list, set, tuple, Mapping, Var)):
         if isinstance(value, Var):
             return value._var_type
         if has_args(value_type := type(value)):
@@ -2191,11 +2192,8 @@ def figure_out_type(value: Any) -> types.GenericType:
             if not value:
                 return Sequence[NoReturn]
             return Sequence[unionize(*{figure_out_type(v) for v in value[:100]})]  # ty:ignore[invalid-type-form]
-        if isinstance(value, (set, frozenset)):
-            element_type = unionize(*{figure_out_type(v) for v in value})
-            if isinstance(value, frozenset):
-                return frozenset[element_type]  # ty:ignore[invalid-type-form]
-            return set[element_type]  # ty:ignore[invalid-type-form]
+        if isinstance(value, set):
+            return set[unionize(*{figure_out_type(v) for v in value})]  # ty:ignore[invalid-type-form]
         if isinstance(value, tuple):
             if not value:
                 return tuple[NoReturn, ...]
@@ -4513,32 +4511,50 @@ class Field(Generic[FIELD_TYPE]):
         owner: Any,
     ) -> ArrayVar[SEQUENCE_TYPE]: ...
 
+    # The bounds of these type variables admit `None` (for computed vars of an
+    # optional object). Matched against `Field[X | None]`, a `self` union of
+    # `Field[T]` and `Field[T | None]` lets a checker solve `T` to `X | None`, so
+    # the optional overload comes first, on its own.
     @overload
     def __get__(
-        self: Field[MAPPING_TYPE] | Field[MAPPING_TYPE | None],
-        instance: None,
-        owner: Any,
+        self: Field[MAPPING_TYPE | None], instance: None, owner: Any
     ) -> ObjectVar[MAPPING_TYPE]: ...
 
     @overload
     def __get__(
-        self: Field[SQLA_TYPE] | Field[SQLA_TYPE | None], instance: None, owner: Any
+        self: Field[MAPPING_TYPE], instance: None, owner: Any
+    ) -> ObjectVar[MAPPING_TYPE]: ...
+
+    @overload
+    def __get__(
+        self: Field[SQLA_TYPE | None], instance: None, owner: Any
     ) -> ObjectVar[SQLA_TYPE]: ...
 
     @overload
     def __get__(
-        self: Field[BASE_MODEL_TYPE] | Field[BASE_MODEL_TYPE | None],
-        instance: None,
-        owner: Any,
+        self: Field[SQLA_TYPE], instance: None, owner: Any
+    ) -> ObjectVar[SQLA_TYPE]: ...
+
+    @overload
+    def __get__(
+        self: Field[BASE_MODEL_TYPE | None], instance: None, owner: Any
+    ) -> ObjectVar[BASE_MODEL_TYPE]: ...
+
+    @overload
+    def __get__(
+        self: Field[BASE_MODEL_TYPE], instance: None, owner: Any
     ) -> ObjectVar[BASE_MODEL_TYPE]: ...
 
     if TYPE_CHECKING:
 
         @overload
         def __get__(
-            self: Field[DATACLASS_TYPE] | Field[DATACLASS_TYPE | None],
-            instance: None,
-            owner: Any,
+            self: Field[DATACLASS_TYPE | None], instance: None, owner: Any
+        ) -> ObjectVar[DATACLASS_TYPE]: ...
+
+        @overload
+        def __get__(
+            self: Field[DATACLASS_TYPE], instance: None, owner: Any
         ) -> ObjectVar[DATACLASS_TYPE]: ...
 
     @overload
@@ -4714,11 +4730,14 @@ def _reserved_state_members(root: BaseStateMeta) -> dict[str, Any]:
     return members
 
 
-def _validate_state_name(root: BaseStateMeta, name: str, value: Any = None) -> None:
+def _validate_state_name(
+    root: BaseStateMeta | None, name: str, value: Any = None
+) -> None:
     """Reject declarations that replace framework methods or bookkeeping.
 
     Args:
-        root: The state class whose namespace is reserved.
+        root: The state class whose namespace is reserved, or None for a state
+            outside any hierarchy, which reserves nothing.
         name: The declared or dynamically registered name.
         value: The raw class declaration, when available.
 
@@ -4726,6 +4745,8 @@ def _validate_state_name(root: BaseStateMeta, name: str, value: Any = None) -> N
         StateValueError: If a declaration uses a reserved name.
         EventHandlerShadowsBuiltInStateMethodError: If a method overrides a builtin.
     """
+    if root is None:
+        return
     members = _reserved_state_members(root)
     if name not in members:
         return
@@ -4854,6 +4875,7 @@ def _annotated_fields(
     namespace: Mapping[str, Any],
     lookup_order: Sequence[type],
     private: tuple[str, ...],
+    strict: bool = False,
 ) -> dict[str, Field]:
     """Get the fields a class namespace declares by annotation.
 
@@ -4861,16 +4883,16 @@ def _annotated_fields(
         namespace: The class namespace.
         lookup_order: The bases of the class in method resolution order.
         private: The prefixes of names that are fields only when declared as such.
+        strict: Whether an annotation naming an undefined symbol raises.
 
     Returns:
         The fields by name.
     """
     slots = _slot_names(namespace)
+    base_globals = getattr(sys.modules.get(namespace["__module__"]), "__dict__", None)
     fields = {}
-    for key, annotation in types.resolve_annotations(
-        annotations_from_namespace(namespace), namespace["__module__"]
-    ).items():
-        if types.is_classvar(annotation) or key in slots:
+    for key, annotation in annotations_from_namespace(namespace).items():
+        if key in slots:
             continue
         value = namespace.get(key, MISSING)
         inherited = _inherited_value(lookup_order, key)
@@ -4894,6 +4916,11 @@ def _annotated_fields(
             if isinstance(declared, Field) or not callable(declared):
                 # Declared by a mixin or plain base: its default applies here.
                 value = declared
+        # Only a field's annotation is resolved, so a symbol imported only for
+        # type checking may annotate any other attribute.
+        annotation = types._resolve_annotation(annotation, base_globals, strict=strict)
+        if types.is_classvar(annotation):
+            continue
         if value is MISSING:
             fields[key] = Field(annotated_type=annotation)
         elif isinstance(value, Field):
@@ -4996,13 +5023,28 @@ def _is_tree_state(cls: Any) -> bool:
     return (
         isinstance(cls, BaseStateMeta)
         and not cls._mixin
-        and getattr(cls, "_reflex_state_root", cls) is not cls
+        and (root := cls._reflex_state_root) is not None
+        and root is not cls
     )
 
 
 @dataclass_transform(kw_only_default=True, field_specifiers=(field,))
 class BaseStateMeta(ABCMeta):
-    """Meta class for BaseState."""
+    """Metaclass of every state class, including ``rx.State``.
+
+    ``type(rx.State) is BaseStateMeta`` is a supported contract: a downstream
+    metaclass that customizes state classes must derive from this one.
+
+    It understands two class keywords:
+
+    - ``state_root=True`` makes the class the root of a state hierarchy; its
+      members are reserved and its subclasses may not shadow them.
+    - ``mixin=True`` marks a state mixin, which is never instantiated. A class
+      whose state bases are all mixins is a mixin too.
+
+    ``_reflex_state_root`` is a reserved name: it holds the root of the class's
+    hierarchy (the class itself on a root), or None outside any hierarchy.
+    """
 
     if TYPE_CHECKING:
         __inherited_fields__: Mapping[str, Field]
@@ -5012,9 +5054,9 @@ class BaseStateMeta(ABCMeta):
         # Whether this state class is a mixin and should not be instantiated.
         _mixin: bool = False
 
-        # The state declared with ``state_root=True`` that this class descends
-        # from; its namespace is reserved for the whole hierarchy.
-        _reflex_state_root: BaseStateMeta
+    # The state declared with ``state_root=True`` that this class descends
+    # from; its namespace is reserved for the whole hierarchy. None outside one.
+    _reflex_state_root: BaseStateMeta | None = None
 
     def __setattr__(cls, name: str, value: Any) -> None:
         """Set a class attribute, refusing to replace a state var.
@@ -5085,15 +5127,14 @@ class BaseStateMeta(ABCMeta):
             The new class.
         """
         lookup_order = _linearize_bases(bases)
-        for base in bases:
-            root = getattr(base, "_reflex_state_root", None)
-            if root is not None:
-                _validate_state_declaration(root, lookup_order, namespace)
-                break
-
         state_bases = [
             base for base in bases if issubclass(base, EvenMoreBasicBaseState)
         ]
+        for base in state_bases:
+            if (root := base._reflex_state_root) is not None:
+                _validate_state_declaration(root, lookup_order, namespace)
+                break
+
         mixin = mixin or (
             bool(state_bases) and all(base._mixin for base in state_bases)
         )
@@ -5113,7 +5154,7 @@ class BaseStateMeta(ABCMeta):
                 )
         private = _private_prefixes(name)
         own_fields = _unannotated_fields(namespace, private) | _annotated_fields(
-            namespace, lookup_order, private
+            namespace, lookup_order, private, strict=True
         )
         annotations = annotations_from_namespace(namespace)
         for key, value in namespace.items():

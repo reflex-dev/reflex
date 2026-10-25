@@ -317,11 +317,11 @@ def test_optional_list():
     )
 
     Foreach.create(
-        ForEachState.optional_dict,  # ty:ignore[invalid-argument-type]
+        ForEachState.optional_dict,
         lambda color: text(color[0], color[1]),
     )
 
     Foreach.create(
-        ForEachState.optional_dict_value,  # ty:ignore[invalid-argument-type]
+        ForEachState.optional_dict_value,
         lambda color: text(color[0], color[1]),
     )

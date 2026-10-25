@@ -63,7 +63,7 @@ KEY_TYPE = TypeVar("KEY_TYPE")
 VALUE_TYPE = TypeVar("VALUE_TYPE")
 
 
-class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set, frozenset)):
+class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set)):
     """Base class for immutable array vars."""
 
     def join(self, sep: StringVar | str = "") -> StringVar:
@@ -1926,7 +1926,6 @@ def _determine_value_of_array_index(
         Iterable,
         list,
         set,
-        frozenset,
         collections.abc.Sequence,
         collections.abc.Iterable,
     ]:

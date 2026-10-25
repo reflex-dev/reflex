@@ -1503,7 +1503,8 @@ async def claim_row(
     )
     async with runtime.current().session_factory() as session, session.begin():
         version, until = (await session.execute(stmt)).one()
-        return claim.Claimed(pk, version, until)
+    assert until is not None
+    return claim.Claimed(pk, version, until)
 
 
 async def pk_of(

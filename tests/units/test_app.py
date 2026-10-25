@@ -4479,10 +4479,15 @@ def test_decode_asgi_headers():
     }
     # Names and values are decoded as UTF-8.
     assert _decode_asgi_headers([(b"x-name", "café".encode())]) == {"x-name": "café"}
+    # Invalid UTF-8 values fall back to Latin-1 instead of aborting the connect.
+    assert _decode_asgi_headers([(b"x-name", b"\xe9")]) == {"x-name": "\u00e9"}
 
 
-def test_static_router_data_keeps_every_repeated_header_field():
+def test_static_router_data_keeps_every_repeated_header_field(
+    monkeypatch: pytest.MonkeyPatch,
+):
     """Repeated cookie and x-forwarded-for fields all reach the router data."""
+    monkeypatch.setattr("reflex.app.get_config", lambda: Mock(trusted_proxy_hops=2))
     router_data = EventNamespace("/event", Mock())._build_static_router_data(
         "sid1",
         {
@@ -4504,6 +4509,40 @@ def test_static_router_data_keeps_every_repeated_header_field():
     # The original client hop comes first, not the proxy that added the second field.
     assert router_data[constants.RouteVar.CLIENT_IP] == "203.0.113.7"
     assert HeaderData.from_router_data(router_data).cookie == "sid=1; other=2"
+
+
+@pytest.mark.parametrize(
+    ("trusted_proxy_hops", "forwarded_for", "peer_ip", "expected_ip"),
+    [
+        (0, "6.6.6.6, 203.0.113.7", "10.0.0.2", "10.0.0.2"),
+        (1, "203.0.113.7", "10.0.0.2", "203.0.113.7"),
+        (2, "6.6.6.6, 203.0.113.7, 10.0.0.2", "127.0.0.1", "203.0.113.7"),
+        (2, "203.0.113.7", "10.0.0.2", "10.0.0.2"),
+    ],
+)
+def test_static_router_data_resolves_client_ip_from_trusted_proxy_hops(
+    monkeypatch: pytest.MonkeyPatch,
+    trusted_proxy_hops: int,
+    forwarded_for: str,
+    peer_ip: str,
+    expected_ip: str,
+):
+    """Only configured rightmost forwarded hops determine the client IP."""
+    monkeypatch.setattr(
+        "reflex.app.get_config",
+        lambda: Mock(trusted_proxy_hops=trusted_proxy_hops),
+    )
+    router_data = EventNamespace("/event", Mock())._build_static_router_data(
+        "sid1",
+        {
+            "asgi.scope": {
+                "headers": [(b"x-forwarded-for", forwarded_for.encode())],
+                "client": (peer_ip, 1234),
+            }
+        },
+    )
+
+    assert router_data[constants.RouteVar.CLIENT_IP] == expected_ip
 
 
 def test_call_ignores_stale_marker_without_dev_backend_reload(
@@ -4883,6 +4922,37 @@ async def event_namespace_with_processor_mock() -> AsyncGenerator[EventNamespace
     await event_namespace._token_manager.disconnect_all()
 
 
+@pytest.mark.parametrize("owner", ["current", "replacement", "remote", "missing"])
+async def test_disconnect_only_cancels_current_local_socket(
+    event_namespace_with_processor_mock: EventNamespace,
+    owner: str,
+):
+    """A stale disconnect must not cancel a replacement connection's page load.
+
+    Args:
+        event_namespace_with_processor_mock: Namespace with a mocked processor.
+        owner: The socket currently owning the client token.
+    """
+    namespace = event_namespace_with_processor_mock
+    manager = namespace._token_manager
+    manager.sid_to_token["old-sid"] = "token"
+    if owner != "missing":
+        manager.token_to_socket["token"] = SocketRecord(
+            instance_id="remote" if owner == "remote" else manager.instance_id,
+            sid="new-sid" if owner == "replacement" else "old-sid",
+        )
+    manager.disconnect_token = AsyncMock()
+    cleanup = namespace.on_disconnect("old-sid")
+    assert cleanup is not None
+    await cleanup
+    cancel = cast(Mock, namespace.app.event_processor._on_disconnect)
+    if owner == "current":
+        cancel.assert_called_once_with("token")
+    else:
+        cancel.assert_not_called()
+    assert namespace.on_disconnect("unknown-sid") is None
+
+
 def _connect_environ(token: str) -> dict[str, Any]:
     return {
         "QUERY_STRING": f"token={token}",
@@ -5144,6 +5214,36 @@ async def test_on_connect_processes_boot_event_from_auth(
     assert modify_state.call_count == 2
     assert state.router_data[constants.RouteVar.SESSION_ID] == "new_sid"
     assert state.router_data[constants.RouteVar.CLIENT_TOKEN] == "abc"
+
+
+@pytest.mark.asyncio
+async def test_on_connect_accepts_non_utf8_header_value(
+    event_namespace: EventNamespace,
+):
+    """A non-UTF-8 request header value does not abort websocket connect.
+
+    Args:
+        event_namespace: The event namespace.
+    """
+    event_namespace._token_manager = Mock()
+    event_namespace._token_manager.link_token_to_sid = AsyncMock(return_value=None)
+    event_namespace.on_event = AsyncMock()
+
+    await event_namespace.on_connect(
+        "new_sid",
+        {
+            "QUERY_STRING": "token=abc",
+            "asgi.scope": {"headers": [(b"x-name", b"\xe9")]},
+        },
+        {"event": {"name": "state.hydrate_and_load", "payload": {}}},
+    )
+
+    assert (
+        event_namespace._static_router_data["new_sid"][constants.RouteVar.HEADERS][
+            "x-name"
+        ]
+        == "é"
+    )
 
 
 def _schema_checking_namespace(

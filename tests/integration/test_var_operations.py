@@ -798,7 +798,7 @@ def VarOperations():
                 id="optional_list",
             ),
             rx.box(
-                rx.foreach(VarOperationState.optional_dict, rx.text.span),  # ty:ignore[invalid-argument-type]
+                rx.foreach(VarOperationState.optional_dict, rx.text.span),
                 id="optional_dict",
             ),
             rx.box(
@@ -806,7 +806,7 @@ def VarOperations():
                 id="optional_list_value",
             ),
             rx.box(
-                rx.foreach(VarOperationState.optional_dict_value, rx.text.span),  # ty:ignore[invalid-argument-type]
+                rx.foreach(VarOperationState.optional_dict_value, rx.text.span),
                 id="optional_dict_value",
             ),
             rx.box(
