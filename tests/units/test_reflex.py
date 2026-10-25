@@ -1189,6 +1189,51 @@ def test_lookup_warns_about_an_id_reserved_for_a_deleted_handler(
     assert "deleted" in result.output
 
 
+def test_lookup_shows_both_readings_of_a_name_another_handler_holds_as_id(
+    temp_minify_json, cli_runner
+):
+    """A segment naming one handler and holding another's id resolves to both."""
+    from reflex.reflex import cli
+
+    class NameIdState(State):
+        def foo(self):
+            pass
+
+        def bar(self):
+            pass
+
+        def own(self):
+            pass
+
+    state_path = get_state_full_path(NameIdState)
+    install_config(
+        states={state_path: "b"},
+        events={state_path: {"foo": "a", "bar": "foo", "own": "own"}},
+        include_state_root=True,
+    )
+
+    result = cli_runner.invoke(cli, ["minify", "lookup", "--json", "b.foo"])
+    assert result.exit_code == 0, result.output
+    assert [
+        (e["handler"], e["event_id"])
+        for e in json.loads(result.output)
+        if e["kind"] == "event"
+    ] == [("bar", "foo"), ("foo", "a")]
+
+    text = cli_runner.invoke(cli, ["minify", "lookup", "b.foo"])
+    assert text.exit_code == 0, text.output
+    lines = text.output.splitlines()
+    assert f"{__name__}.NameIdState.bar" in lines
+    assert f"{__name__}.NameIdState.foo" in lines
+    assert "REFLEX_MINIFY_EVENTS" in text.output
+    assert "share the id" not in text.output
+
+    # A handler holding its own name as id is a single reading.
+    result = cli_runner.invoke(cli, ["minify", "lookup", "--json", "b.own"])
+    assert result.exit_code == 0, result.output
+    assert [e.get("handler") for e in json.loads(result.output)] == [None, "own"]
+
+
 @pytest.fixture
 def init_in_reflex_dir(tmp_path, monkeypatch: pytest.MonkeyPatch) -> list[str]:
     """Run `_init` from a directory named `reflex` with the setup steps stubbed.

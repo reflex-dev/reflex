@@ -1574,22 +1574,37 @@ def minify_lookup(output_json: bool, minified_path: str):
         handlers: list[str] = []
         current_path = get_state_full_path(current)
         current_events = config["events"].get(current_path, {})
+        owner = f"{current._get_source_module()}.{current.__name__}"
         if index == last_index:
             # Only live handlers: ``sync`` keeps a deleted one's id reserved,
             # and a config ``validate`` rejects can give several the same id.
             holders = sorted(
                 name for name, event_id in current_events.items() if event_id == part
             )
-            handlers = [name for name in holders if name in current.event_handlers] or (
-                [part] if part in current.event_handlers else []
-            )
+            handlers = [name for name in holders if name in current.event_handlers]
+            if len(handlers) > 1 and not output_json:
+                logger.warning(
+                    f"Handlers {', '.join(handlers)} of {owner} share the id '{part}', "
+                    "so all but one are unreachable. Run 'reflex minify sync' to "
+                    "reassign them."
+                )
             deleted = [name for name in holders if name not in handlers]
             if deleted and not output_json:
                 logger.warning(
                     f"'{part}' is also the id minify.json keeps reserved for deleted "
-                    f"handler(s) {', '.join(deleted)} of {current._get_source_module()}."
-                    f"{current.__name__}, which an older frontend may still send."
+                    f"handler(s) {', '.join(deleted)} of {owner}, which an older "
+                    "frontend may still send."
                 )
+            # With event minification off the wire carries Python names, so the
+            # segment may also be a handler other than the id's holders.
+            if part in current.event_handlers and part not in handlers:
+                if handlers and not output_json:
+                    logger.warning(
+                        f"Segment '{part}' is the id of {', '.join(handlers)} of "
+                        f"{owner} with REFLEX_MINIFY_EVENTS on, but names {part} "
+                        "with it off; showing both."
+                    )
+                handlers.append(part)
         if found is None and not handlers:
             kind = "state or event handler" if index == last_index else "state"
             logger.error(
@@ -1612,13 +1627,7 @@ def minify_lookup(output_json: bool, minified_path: str):
         if handlers and found is not None and not output_json:
             logger.warning(
                 f"Segment '{part}' is both a state id and an event handler id "
-                f"of {current._get_source_module()}.{current.__name__}; showing both."
-            )
-        if len(handlers) > 1 and not output_json:
-            logger.warning(
-                f"Handlers {', '.join(handlers)} of {current._get_source_module()}."
-                f"{current.__name__} share the id '{part}', so all but one are "
-                "unreachable. Run 'reflex minify sync' to reassign them."
+                f"of {owner}; showing both."
             )
         result_parts.extend(
             {
