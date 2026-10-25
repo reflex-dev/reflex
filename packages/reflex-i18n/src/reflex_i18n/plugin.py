@@ -92,6 +92,11 @@ def _localized_page(component: Any, locale: str) -> Any:
     """
 
     def render() -> Component:
+        """Render the page in its fixed locale.
+
+        Returns:
+            The page wrapped with its locale and catalog.
+        """
         # into_component normalizes the page exactly as an un-fanned page
         # would be (handles callables, ComponentState, memo).
         from reflex.compiler.compiler import into_component
