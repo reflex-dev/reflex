@@ -1558,10 +1558,11 @@ def minify_lookup(output_json: bool, minified_path: str):
     )
     from reflex.state import State
 
-    # How a member of each kind shows: its name's JSON key, and how to read it.
+    # How a member of each kind shows: its name's JSON key, how to read it, and
+    # the flag that minifies it.
     presentation = {
-        _EVENTS: ("handler", "an event handler"),
-        _VARS: ("var", "a var"),
+        _EVENTS: ("handler", "an event handler", "REFLEX_MINIFY_EVENTS"),
+        _VARS: ("var", "a var", "REFLEX_MINIFY_VARS"),
     }
     config = _open_minify_session(for_json=output_json)
 
@@ -1627,11 +1628,7 @@ def minify_lookup(output_json: bool, minified_path: str):
                 holders = sorted(
                     name for name, member_id in ids.items() if member_id == part
                 )
-                matches = [name for name in holders if name in names] or [
-                    name
-                    for name in dict.fromkeys((part, part.removesuffix(FIELD_MARKER)))
-                    if name in names
-                ][:1]
+                matches = [name for name in holders if name in names]
                 if len(matches) > 1 and not output_json:
                     logger.warning(
                         f"{', '.join(matches)} of {owner} share the id '{part}', so "
@@ -1645,6 +1642,24 @@ def minify_lookup(output_json: bool, minified_path: str):
                         f"deleted {', '.join(deleted)} of {owner}, which an older "
                         "frontend may still send."
                     )
+                # With this kind's minification off the wire carries names, so
+                # the segment may also name a member other than the id's holders.
+                named = next(
+                    (
+                        name
+                        for name in (part, part.removesuffix(FIELD_MARKER))
+                        if name in names
+                    ),
+                    None,
+                )
+                if named is not None and named not in matches:
+                    if matches and not output_json:
+                        logger.warning(
+                            f"Segment '{part}' is the id of {', '.join(matches)} of "
+                            f"{owner} with {presentation[kind][2]} on, but names "
+                            f"{named} with it off; showing both."
+                        )
+                    matches.append(named)
                 members.extend((kind, name, ids.get(name)) for name in matches)
         if found is None and not members:
             wanted = "state, event handler or var" if index == last_index else "state"
@@ -1664,9 +1679,10 @@ def minify_lookup(output_json: bool, minified_path: str):
                 "class": found.__name__,
                 "full_path": get_state_full_path(found),
             })
-        # JSON readers see the ambiguity as several entries for one segment.
+        # JSON readers see the ambiguity as several entries for one segment;
+        # several members of one kind were warned about above.
         readings = (["a state"] if found is not None else []) + [
-            presentation[kind][1] for kind, _, _ in members
+            *dict.fromkeys(presentation[kind][1] for kind, _, _ in members)
         ]
         if len(readings) > 1 and not output_json:
             logger.warning(

@@ -986,20 +986,21 @@ def _find_duplicate_ids(items: Iterable[tuple[str, str]]) -> dict[str, list[str]
 
 def _assign_next_ids(
     new_keys: Iterable[str],
-    existing_ids: Collection[int],
+    existing_ids: Collection[str],
     reassign_deleted: bool,
     for_states: bool = False,
-    skip: Collection[int] = (),
+    skip: Collection[str] = (),
 ) -> dict[str, str]:
     """Assign minified ids to ``new_keys`` while skipping ``existing_ids``.
 
-    Keys are sorted for deterministic output.
+    Keys are sorted for deterministic output. Ids are compared as strings, as
+    on the wire: a held ``aa`` leaves ``a`` free though both decode to 0.
 
     Args:
         new_keys: Keys needing new ids.
-        existing_ids: Already-used integer ids in the same scope.
+        existing_ids: Already-used ids in the same scope.
         reassign_deleted: When ``True``, scan from 0 (filling gaps);
-            otherwise start past the max of ``existing_ids``.
+            otherwise start past the highest decoded ``existing_ids``.
         for_states: Whether the ids name states, which skip the ids
             :func:`_is_state_id` rejects.
         skip: Ids to avoid that are not in the scope, so do not move its max.
@@ -1008,15 +1009,19 @@ def _assign_next_ids(
         Mapping from key to its newly-assigned minified id.
     """
     pool = {*existing_ids, *skip}
-    next_id = 0 if reassign_deleted else max(existing_ids, default=-1) + 1
+    next_id = (
+        0
+        if reassign_deleted
+        else max(map(minified_name_to_int, existing_ids), default=-1) + 1
+    )
     out: dict[str, str] = {}
     for key in sorted(new_keys):
-        while next_id in pool or (
-            for_states and not _is_state_id(int_to_minified_name(next_id))
+        while (name := int_to_minified_name(next_id)) in pool or (
+            for_states and not _is_state_id(name)
         ):
             next_id += 1
-        out[key] = int_to_minified_name(next_id)
-        pool.add(next_id)
+        out[key] = name
+        pool.add(name)
         next_id += 1
     return out
 
@@ -1064,11 +1069,7 @@ def _assign_state_ids(
     """
     siblings, parent = _state_id_scope(states, parent_key, set(state_paths))
     return _assign_next_ids(
-        state_paths,
-        {minified_name_to_int(i) for i in siblings},
-        reassign_deleted,
-        for_states=True,
-        skip={minified_name_to_int(i) for i in parent},
+        state_paths, siblings, reassign_deleted, for_states=True, skip=parent
     )
 
 
@@ -1093,11 +1094,7 @@ def _reassign_duplicate_ids(
         else:
             kept.add(ids[name])
     if duplicates:
-        ids.update(
-            _assign_next_ids(
-                duplicates, {minified_name_to_int(i) for i in kept}, reassign_deleted
-            )
-        )
+        ids.update(_assign_next_ids(duplicates, kept, reassign_deleted))
 
 
 def _rehome_ambiguous_ids(
@@ -1324,13 +1321,7 @@ def _sync_member_ids(
     for state_path, names in code_names.items():
         ids = section.get(state_path, {})
         if new_names := [name for name in names if name not in ids]:
-            ids.update(
-                _assign_next_ids(
-                    new_names,
-                    {minified_name_to_int(member_id) for member_id in ids.values()},
-                    reassign_deleted,
-                )
-            )
+            ids.update(_assign_next_ids(new_names, ids.values(), reassign_deleted))
             section[state_path] = ids
     return section
 
