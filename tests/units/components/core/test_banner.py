@@ -4,6 +4,10 @@ from reflex_components_core.core.banner import (
     ConnectionPulser,
     ConnectionToaster,
     WebsocketTargetURL,
+    connection_error,
+    has_connection_errors,
+    has_fatal_connection_error,
+    has_too_many_connection_errors,
 )
 from reflex_components_radix.themes.typography.text import Text
 
@@ -54,12 +58,41 @@ def test_connection_pulser():
     _imports = pulser._get_all_imports(collapse=True)
 
 
+def test_connection_error_vars_avoid_unpolyfilled_runtime_apis():
+    """The generated JS must not depend on `Array.prototype.at` (ES2022).
+
+    It is a runtime method, so the bundler's build target does not downlevel
+    it and older browsers throw while rendering the connection UI.
+    """
+    for var in (
+        connection_error,
+        has_connection_errors,
+        has_fatal_connection_error,
+        has_too_many_connection_errors,
+    ):
+        assert ".at(" not in str(var)
+
+
+def test_has_fatal_connection_error_is_length_guarded():
+    assert str(has_fatal_connection_error) == (
+        "((connectErrors.length > 0)"
+        " && connectErrors[connectErrors.length - 1].fatal === true)"
+    )
+
+
+def test_has_too_many_connection_errors_composes_the_fatal_check():
+    assert str(has_too_many_connection_errors) == (
+        "(connectErrors.length >= 2 || ((connectErrors.length > 0)"
+        " && connectErrors[connectErrors.length - 1].fatal === true))"
+    )
+
+
 def test_connection_toaster_shows_hydration_errors_at_once():
     hooks = "\n".join(map(str, ConnectionToaster.create()._get_all_hooks()))
     hydration_check = hooks.index("error.code === 'hydration_payload_too_large'")
 
     # Checked before the two-error threshold, with an id no connection toast
     # dismisses, and kept open until the user closes it.
-    assert hydration_check < hooks.index("(connectErrors.length >= 2)")
+    assert hydration_check < hooks.index(str(has_too_many_connection_errors))
     assert 'id: "hydration-payload-error"' in hooks
     assert "duration: Infinity" in hooks

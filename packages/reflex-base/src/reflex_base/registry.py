@@ -1,15 +1,23 @@
-"""A contextual registry for state and event handlers."""
+"""Contextual registry for state classes, event handlers, and the
+:class:`NameResolver` strategy that turns them into user-visible names.
+
+The default resolver is a no-op; ``reflex.minify.MinifyNameResolver``
+plugs in a :class:`minify.json`-driven implementation. Install a custom
+resolver via :meth:`RegistrationContext.set_name_resolver`.
+"""
 
 from __future__ import annotations
 
 import dataclasses
-from typing import TYPE_CHECKING, Any, Self
+import logging
+from collections.abc import Callable, Iterable
+from typing import TYPE_CHECKING, Any, Protocol, Self, TypeVar, runtime_checkable
 
 from reflex_base.context.base import BaseContext
 from reflex_base.utils.exceptions import ReflexRuntimeError, StateValueError
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Sequence
 
     from reflex.app import App
     from reflex.state import BaseState
@@ -18,6 +26,92 @@ if TYPE_CHECKING:
     from reflex_base.event import EventChain, EventHandler
     from reflex_base.utils.types import ArgsSpec
     from reflex_base.vars.base import Var
+
+logger = logging.getLogger(__name__)
+
+_T = TypeVar("_T")
+
+
+def _rekey(
+    items: Iterable[_T], key_fn: Callable[[_T], str], kind: str
+) -> dict[str, _T]:
+    """Build a name-keyed dict, warning on collisions.
+
+    Args:
+        items: Source items to re-key.
+        key_fn: Computes the new key for each item.
+        kind: Human-readable noun for the collision warning (e.g. ``"state class"``).
+
+    Returns:
+        A new dict mapping resolved key to item; later items overwrite earlier.
+    """
+    out: dict[str, _T] = {}
+    for item in items:
+        key = key_fn(item)
+        existing = out.get(key)
+        if existing is not None and existing is not item:
+            logger.warning(
+                f"Two {kind}s resolve to the same full name {key!r}: "
+                f"{existing!r} and {item!r}. The first one will be unreachable "
+                "in the registry. Check minify.json for duplicate ids."
+            )
+        out[key] = item
+    return out
+
+
+@runtime_checkable
+class NameResolver(Protocol):
+    """Resolves user-visible names for state classes and event handlers.
+
+    Return ``None`` to defer to the framework default. See
+    :class:`DefaultNameResolver` (no-op) and ``reflex.minify.MinifyNameResolver``.
+    """
+
+    def resolve_state_name(self, state_cls: type[BaseState]) -> str | None:
+        """Return the resolved name for ``state_cls``, or ``None`` for default."""
+        ...
+
+    def resolve_handler_name(
+        self, state_cls: type[BaseState], handler_name: str
+    ) -> str | None:
+        """Return the resolved name for the handler, or ``None`` for default."""
+        ...
+
+    def digest(self) -> str:
+        """Digest the names this resolver rewrites, ``""`` when it rewrites none."""
+        ...
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class DefaultNameResolver:
+    """No-op resolver — every state and handler keeps its default name."""
+
+    def resolve_state_name(self, state_cls: type[BaseState]) -> str | None:  # noqa: D102
+        return None
+
+    def resolve_handler_name(  # noqa: D102
+        self,
+        state_cls: type[BaseState],
+        handler_name: str,
+    ) -> str | None:
+        return None
+
+    def digest(self) -> str:  # noqa: D102
+        return ""
+
+
+def scheme_digest() -> str:
+    """Digest the wire-name scheme the active resolver produces.
+
+    A frontend bundle and the backend it talks to must agree on what the names
+    on the wire mean. Memoized on the resolver instance, so installing another
+    resolver produces a fresh digest without coordination.
+
+    Returns:
+        A short hex digest, or ``""`` when no name is rewritten.
+    """
+    ctx = RegistrationContext.try_get()
+    return ctx.name_resolver.digest() if ctx is not None else ""
 
 
 def _default_bundled_libraries() -> list[str]:
@@ -59,6 +153,15 @@ class RegistrationContext(BaseContext):
     )
     base_state_substates: dict[str, set[type[BaseState]]] = dataclasses.field(
         default_factory=dict,
+        repr=False,
+    )
+    # Keyed by the resolver-independent default full name, so never re-keyed.
+    _states_by_default_name: dict[str, type[BaseState]] = dataclasses.field(
+        default_factory=dict,
+        repr=False,
+    )
+    name_resolver: NameResolver = dataclasses.field(
+        default_factory=DefaultNameResolver,
         repr=False,
     )
     _config: Config | None = dataclasses.field(default=None, repr=False)
@@ -161,8 +264,10 @@ class RegistrationContext(BaseContext):
             base_state_substates={
                 k: set(v) for k, v in self.base_state_substates.items()
             },
+            _states_by_default_name=dict(self._states_by_default_name),
             decorated_pages=list(self.decorated_pages),
             bundled_libraries=list(self.bundled_libraries),
+            name_resolver=self.name_resolver,
             _explicit_bundled_libraries=dict(self._explicit_bundled_libraries),
         )
 
@@ -190,6 +295,18 @@ class RegistrationContext(BaseContext):
             return ctx
 
     @classmethod
+    def try_get(cls) -> Self | None:
+        """Return the active context, or ``None`` when none is attached.
+
+        Returns:
+            The registration context instance, or ``None``.
+        """
+        try:
+            return cls.get()
+        except LookupError:
+            return None
+
+    @classmethod
     def register_base_state(cls, state_cls: type[BaseState]) -> type[BaseState]:
         """Register a base state class with its full name.
 
@@ -215,6 +332,7 @@ class RegistrationContext(BaseContext):
             The registered base state class.
         """
         self.base_states[state_cls.get_full_name()] = state_cls
+        self._states_by_default_name[state_cls._get_default_full_name()] = state_cls
         for event_handler in state_cls.event_handlers.values():
             self._register_event_handler(event_handler, states=(state_cls,))
         if (parent_state := state_cls.get_parent_state()) is not None:
@@ -262,10 +380,25 @@ class RegistrationContext(BaseContext):
 
         Returns:
             The registered event handler.
+
+        Raises:
+            StateValueError: If another handler of the same state already
+                resolves to the same name.
         """
         from reflex.utils.format import format_event_handler
 
         full_name = format_event_handler(handler)
+        existing = self.event_handlers.get(full_name)
+        # An entry of another class is replaced, as on a module reload.
+        if existing is not None and existing.handler.state is handler.state:
+            existing_name = existing.handler.fn.__qualname__.rpartition(".")[2]
+            name = handler.fn.__qualname__.rpartition(".")[2]
+            if existing_name != name:
+                msg = (
+                    f"Event handlers '{existing_name}' and '{name}' both resolve to "
+                    f"'{full_name}'. Run 'reflex minify sync' to give each its own id."
+                )
+                raise StateValueError(msg)
         self.event_handlers[full_name] = RegisteredEventHandler(
             handler=handler, states=states
         )
@@ -287,3 +420,154 @@ class RegistrationContext(BaseContext):
         return self.base_state_substates.setdefault(
             base_state_cls.get_full_name(), set()
         )
+
+    def _get_state_by_default_name(self, default_full_name: str) -> type[BaseState]:
+        """Look up a registered state by its resolver-independent full name.
+
+        Args:
+            default_full_name: The state's ``_get_default_full_name()``.
+
+        Returns:
+            The state class.
+
+        Raises:
+            ValueError: If no registered state has that name.
+        """
+        try:
+            return self._states_by_default_name[default_full_name]
+        except KeyError:
+            msg = f"No state is registered as {default_full_name!r}."
+            raise ValueError(msg) from None
+
+    def _get_state_by_name(self, name: str) -> type[BaseState] | None:
+        """Look up a registered state by either of its full names.
+
+        Args:
+            name: The state's ``get_full_name()`` or ``_get_default_full_name()``.
+
+        Returns:
+            The state class, or ``None`` if no registered state has that name.
+        """
+        return self._states_by_default_name.get(name) or self.base_states.get(name)
+
+    @staticmethod
+    def default_state_name(state_cls: type[BaseState]) -> str:
+        """Compute the built-in snake-cased ``module___ClassName`` for a state.
+
+        Args:
+            state_cls: The state class.
+
+        Returns:
+            The default name.
+        """
+        from reflex.utils import format
+
+        module = state_cls.__module__.replace(".", "___")
+        return format.to_snake_case(f"{module}___{state_cls.__name__}")
+
+    def get_state_name(self, state_cls: type[BaseState]) -> str:
+        """Resolve the user-visible name for a state class.
+
+        Args:
+            state_cls: The state class.
+
+        Returns:
+            The resolved name (or :meth:`default_state_name` fallback).
+        """
+        resolved = self.name_resolver.resolve_state_name(state_cls)
+        if resolved is not None:
+            return resolved
+        return self.default_state_name(state_cls)
+
+    def get_handler_name(self, state_cls: type[BaseState], handler_name: str) -> str:
+        """Resolve the user-visible name for an event handler.
+
+        Args:
+            state_cls: The state class the handler is attached to.
+            handler_name: The original (Python) name of the handler.
+
+        Returns:
+            The resolved name (or ``handler_name`` unchanged).
+        """
+        resolved = self.name_resolver.resolve_handler_name(state_cls, handler_name)
+        if resolved is not None:
+            return resolved
+        return handler_name
+
+    def set_name_resolver(self, resolver: NameResolver) -> None:
+        """Install ``resolver`` and rebuild the registry under the new names.
+
+        Clears the per-class ``get_name`` / ``get_full_name`` /
+        ``get_class_substate`` lru_caches and calls :meth:`refresh_keys`.
+        Uses ``object.__setattr__`` to mutate the frozen ``name_resolver``
+        slot. Install the resolver before user state classes register:
+        ``VarData`` and dependency metadata capture names at class-creation
+        time and are not rebuilt here.
+
+        Args:
+            resolver: The resolver to install. Pass :class:`DefaultNameResolver`
+                to revert to built-in names.
+        """
+        object.__setattr__(self, "name_resolver", resolver)
+        for cls in self.base_states.values():
+            cls.get_name.cache_clear()
+            cls.get_full_name.cache_clear()
+            cls._get_substate_path.cache_clear()
+            cls.get_class_substate.cache_clear()
+        self.refresh_keys()
+
+    def find_unbound_states(self) -> list[tuple[type[BaseState], str]]:
+        """Registered states whose Vars name a state the resolver has since renamed.
+
+        ``VarData.from_state`` captures ``get_full_name()`` when a state class is
+        created, so a resolver installed afterwards renames the class without
+        rebuilding its Vars. Only ``base_vars`` are inspected: their ``VarData``
+        names exactly one state, while a computed Var may merge several.
+
+        Returns:
+            ``(state_cls, name_its_vars_use)`` pairs; empty when all names agree.
+        """
+        unbound: list[tuple[type[BaseState], str]] = []
+        for cls in self.base_states.values():
+            full_name = cls.get_full_name()
+            for var in cls.base_vars.values():
+                var_data = var._get_all_var_data()
+                if var_data is not None and var_data.state not in ("", full_name):
+                    unbound.append((cls, var_data.state))
+                    break
+        return unbound
+
+    def refresh_keys(self) -> None:
+        """Re-key the name-keyed dicts using current ``get_full_name`` values.
+
+        Built atomically: the replacement dicts are populated before any of
+        ``self`` is mutated, so a partway failure (e.g. malformed minify.json
+        making ``format_event_handler`` raise) leaves the existing registry
+        intact. A console warning is emitted on full-name collisions —
+        usually a sign of duplicate ids in ``minify.json``.
+        """
+        from reflex.utils.format import format_event_handler
+
+        new_base_states = _rekey(
+            self.base_states.values(), lambda c: c.get_full_name(), "state class"
+        )
+        # Walk the live tree: a module reload drops a retired state from it but
+        # leaves the class in base_states.
+        new_substates: dict[str, set[type[BaseState]]] = {}
+        for substates in self.base_state_substates.values():
+            for cls in substates:
+                parent = cls.get_parent_state()
+                if parent is not None:
+                    new_substates.setdefault(parent.get_full_name(), set()).add(cls)
+        new_handlers = _rekey(
+            self.event_handlers.values(),
+            lambda r: format_event_handler(r.handler),
+            "event handler",
+        )
+
+        self.base_states.clear()
+        self.base_states.update(new_base_states)
+        self.base_state_substates.clear()
+        self.base_state_substates.update(new_substates)
+        self.event_handlers.clear()
+        self.event_handlers.update(new_handlers)

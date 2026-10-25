@@ -24,6 +24,8 @@ from reflex_base.environment import environment
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor
 from reflex_base.event.processor.base_state_processor import (
+    _connect_supersedes,
+    _hydrate_event_names,
     _prepare_event_payload,
     _transform_event_arg,
     _transform_event_payload,
@@ -54,6 +56,7 @@ from reflex.state import (
 from reflex.utils import types as reflex_types
 from tests.units.conftest import metric_points
 from tests.units.mock_redis import mock_redis
+from tests.units.name_resolvers import stub_resolver, temporary_resolver
 
 # Class-level registries on State that registering a substate, or installing a
 # dynamic route arg, writes into with no removal path.
@@ -2767,6 +2770,17 @@ async def test_reconnect_cancels_stale_on_load_without_load_events(
     async with _read_back(real_base_state_processor, token) as root:
         assert (await root.get_state(SlowLoadState)).seen != "stale-finished"
         assert (await root.get_state(State)).is_hydrated is True
+
+
+def test_connect_event_names_follow_a_resolver_installed_later():
+    """The (re)connect events are recognized under the names the frontend sends."""
+    default = (_connect_supersedes(), _hydrate_event_names())
+    with temporary_resolver(stub_resolver(handler_prefix="h_")):
+        boot, on_load = _connect_supersedes()
+        assert boot.endswith(".h_hydrate_and_load")
+        assert on_load.endswith(".h_on_load_internal")
+        assert _hydrate_event_names() == (f"{State.get_name()}.h_hydrate", boot)
+    assert (_connect_supersedes(), _hydrate_event_names()) == default
 
 
 @pytest.mark.parametrize(

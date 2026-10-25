@@ -152,7 +152,9 @@ class BaseStateToken(StateToken["BaseState"]):
         """Get the key a state of this token's tree is stored under.
 
         Formats the key directly, which is cheaper than building a token for the
-        state class with `with_cls` and converting it to a string.
+        state class with `with_cls` and converting it to a string. Keyed by the
+        resolver-independent name, so enabling minification or editing
+        ``minify.json`` keeps every stored session.
 
         Args:
             cls: The class of the state.
@@ -160,7 +162,7 @@ class BaseStateToken(StateToken["BaseState"]):
         Returns:
             The key of the state in the underlying StateManager store.
         """
-        return f"{self.ident}_{cls.get_full_name()}"
+        return f"{self.ident}_{cls._get_default_full_name()}"
 
     def __str__(self) -> str:
         """The key used in the underlying StateManager store.
