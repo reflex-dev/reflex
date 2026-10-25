@@ -11,7 +11,7 @@ CLSX = Var(
 
 TW_MERGE = Var(
     "twMerge",
-    _var_data=VarData(imports={"tailwind-merge@3.6.0": ImportVar(tag="twMerge")}),
+    _var_data=VarData(imports={"tailwind-merge@3.7.0": ImportVar(tag="twMerge")}),
 ).to(FunctionVar)
 
 
