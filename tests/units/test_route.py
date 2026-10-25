@@ -47,6 +47,11 @@ def test_route_args(route_name, expected):
         ("/files/a/b", "files/[[...splat]]", {"splat": ["a", "b"]}),
         ("/files/a%20b/c", "files/[[...splat]]", {"splat": ["a b", "c"]}),
         ("/files", "files/[[...splat]]", {}),
+        ("/files/a", "files/[[...splat]]", {"splat": ["a"]}),
+        # Only the catch-all is a list, not every argument named `splat`.
+        ("/blog/hello", "blog/[splat]", {"splat": "hello"}),
+        ("/blog/a%2Fb", "blog/[splat]", {"splat": "a/b"}),
+        ("/docs/intro", "docs/[[splat]]", {"splat": "intro"}),
     ],
 )
 def test_extract_route_params(path: str, route: str, expected: dict):

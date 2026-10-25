@@ -98,15 +98,18 @@ def get_route_args(route: str) -> dict[str, str]:
 
 
 @functools.lru_cache(maxsize=1024)
-def _get_route_params_regex(route: str) -> re.Pattern | None:
+def _get_route_params_regex(route: str) -> tuple[re.Pattern, dict[str, str]] | None:
     """Compile a regex that captures the dynamic arguments of a route.
 
     Args:
         route: The route pattern with brackets (e.g. "blog/[slug]").
 
     Returns:
-        The regex with a named group per argument, or None for a static route.
+        The regex with a named group per argument and the argument types,
+        or None for a static route.
     """
+    if not (route_args := get_route_args(route)):
+        return None
     regex_parts = []
     for part in route.strip("/").split("/"):
         if part == constants.RouteRegex.SPLAT_CATCHALL:
@@ -117,8 +120,7 @@ def _get_route_params_regex(route: str) -> re.Pattern | None:
             regex_parts.append(f"/(?P<{arg.group(1)}>[^/]*)")
         else:
             regex_parts.append(re.escape("/" + part))
-    regex = re.compile("".join(regex_parts))
-    return regex if regex.groups else None
+    return re.compile("".join(regex_parts)), route_args
 
 
 def extract_route_params(path: str, route: str) -> dict[str, str | list[str]]:
@@ -135,11 +137,15 @@ def extract_route_params(path: str, route: str) -> dict[str, str | list[str]]:
         Dict mapping parameter names to their values,
         e.g. {"slug": "hello-world"}.
     """
-    regex = _get_route_params_regex(route)
-    if regex is None or (match := regex.fullmatch("/" + path.strip("/"))) is None:
+    if (params_regex := _get_route_params_regex(route)) is None:
+        return {}
+    regex, route_args = params_regex
+    if (match := regex.fullmatch("/" + path.strip("/"))) is None:
         return {}
     return {
-        name: unquote(value).split("/") if name == "splat" else unquote(value)
+        name: unquote(value).split("/")
+        if route_args[name] == constants.RouteArgType.LIST
+        else unquote(value)
         for name, value in match.groupdict().items()
         if value
     }
