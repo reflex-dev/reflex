@@ -726,8 +726,11 @@ def _renamed_default_references() -> dict[str, str]:
                 f"state {label}"
             )
             continue
-        for name in state_cls.event_handlers:
-            if ctx.get_handler_name(state_cls, name) != name:
+        # A renamed handler's name that is another handler's id is still live.
+        handlers = state_cls.event_handlers
+        live = {ctx.get_handler_name(state_cls, name) for name in handlers}
+        for name in handlers:
+            if name not in live:
                 references[f"{default_name}.{name}"] = f"event handler {label}.{name}"
     return references
 

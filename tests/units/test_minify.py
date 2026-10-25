@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 from reflex_base.registry import DefaultNameResolver, RegistrationContext, scheme_digest
 from reflex_base.utils.exceptions import ReflexError
+from reflex_base.utils.format import format_event_handler
 
 import reflex as rx
 from reflex.environment import environment
@@ -1847,6 +1848,33 @@ def test_stale_event_names_are_rejected_when_only_events_minify(
 
     assert _stale_names_error(f'"{full_name}.p"') == ""
     assert f"event handler {path}.ping" in _stale_names_error(f'"{full_name}.ping"')
+
+
+def test_handler_id_matching_a_renamed_handler_name_is_not_rejected(
+    temp_minify_json: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A handler's id may spell another handler's Python name.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+
+    class AliasedEventState(State):
+        @rx.event
+        def foo(self):
+            pass
+
+        @rx.event
+        def bar(self):
+            pass
+
+    path = get_state_full_path(AliasedEventState)
+    set_minify_modes(monkeypatch, states=False, events=True)
+    install_config(events={path: {"foo": "a", "bar": "foo"}})
+
+    event = f'"{format_event_handler(AliasedEventState.event_handlers["bar"])}"'
+    assert _stale_names_error(event) == ""
 
 
 def test_stale_var_keys_are_rejected_when_only_vars_minify(
