@@ -32,6 +32,10 @@ const LAST_RELOADED_KEY = "reflex_last_reloaded_on_error";
 // The id of the banner offering a reload when one already happened recently.
 const NEW_VERSION_BANNER_ID = "reflex-new-version-banner";
 
+// The cancelable window event dispatched before a prod page acts on a state
+// mismatch; a listener calling preventDefault() handles the mismatch instead.
+const STATE_MISMATCH_WINDOW_EVENT = "reflex:state-mismatch";
+
 // Client error types (must match reflex_base/constants/event.py ClientErrorType)
 const ERROR_TYPE_DISPATCH_MISSING = "dispatch_function_missing";
 const ERROR_TYPE_STATE_UPDATE = "state_update_processing_error";
@@ -862,8 +866,10 @@ const showNewVersionBanner = () => {
  * In prod the page reloads once per cooldown window. A mismatch inside the
  * window means the reload landed on the same skew (a cached bundle, or several
  * backend versions behind one load balancer), so a banner with a reload button
- * shows instead and the page never loops. In dev a backend hot reload can
- * reconnect before Vite serves the rebuilt bundle, so it only warns.
+ * shows instead and the page never loops. The app can take over first: a
+ * listener on the window's STATE_MISMATCH_WINDOW_EVENT that calls
+ * preventDefault() skips both. In dev a backend hot reload can reconnect
+ * before Vite serves the rebuilt bundle, so it only warns.
  * @param info The backend's state schema hash and the reload cooldown in ms.
  */
 const handleStateMismatch = (info) => {
@@ -875,6 +881,13 @@ const handleStateMismatch = (info) => {
       message +
         " Reload the page if it stays out of date once the frontend rebuilds.",
     );
+    return;
+  }
+  const event = new CustomEvent(STATE_MISMATCH_WINDOW_EVENT, {
+    cancelable: true,
+    detail: { frontend: app.stateSchema, backend: info.backend },
+  });
+  if (!window.dispatchEvent(event)) {
     return;
   }
   const last_reload =
