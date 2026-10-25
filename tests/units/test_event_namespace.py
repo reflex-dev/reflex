@@ -1813,6 +1813,48 @@ async def test_send_to_token_reports_a_frame_no_connection_took_as_a_miss(
 
 
 @pytest.mark.asyncio
+async def test_a_frame_that_overflows_the_backlog_never_reaches_the_client(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A frame whose send reports it unqueued stays off the wire and the backlog.
+
+    The writer runs until teardown stops it, so a client that resumes reading
+    in between must not get the frame its sender was told missed it.
+    """
+
+    class PausedWebSocket(FakeWebSocket):
+        """A peer that stopped reading for now: writes wait until it resumes."""
+
+        def __init__(self):
+            """Initialize the fake websocket."""
+            super().__init__()
+            self.reading = asyncio.Event()
+
+        async def send_text(self, text: str):
+            """Record an outgoing frame once the peer reads again."""
+            await self.reading.wait()
+            await super().send_text(text)
+
+    monkeypatch.setattr(event_namespace, "_MAX_SEND_BACKLOG", 10)
+    websocket = PausedWebSocket()
+    connection = _Connection(websocket)  # pyright: ignore[reportArgumentType]
+    assert connection.send('["a"]') is True
+    # The writer takes the first frame and waits on the paused peer.
+    await _drain_tasks()
+    assert connection.send('["b"]') is True
+    assert connection.send('["overflow"]') is False
+    assert connection.close_code == 1008
+    assert connection._backlog == len('["b"]')
+
+    websocket.reading.set()
+    await _drain_tasks()
+    connection.stop()
+
+    assert websocket.sent == [["a"], ["b"]]
+    assert connection._backlog == 0
+
+
+@pytest.mark.asyncio
 async def test_closing_a_connection_the_heartbeat_already_closed_is_not_an_error(
     namespace: WebsocketEventNamespace,
 ):

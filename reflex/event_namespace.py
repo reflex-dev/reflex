@@ -436,13 +436,15 @@ class _Connection:
         if self.close_code is not None:
             return False
         frames = self._frames
-        frames.append(frame)
-        self._backlog += len(frame)
+        backlog = self._backlog + len(frame)
         # One frame may exceed the bound; frames piling up behind it may not.
-        if self._backlog > _MAX_SEND_BACKLOG and len(frames) > 1:
+        # Checked before queueing: the writer runs on until teardown stops it.
+        if backlog > _MAX_SEND_BACKLOG and frames:
             logger.debug("Closing a session whose client stopped reading.")
             self.close(1008)
             return False
+        frames.append(frame)
+        self._backlog = backlog
         self._ready.set()
         return True
 
