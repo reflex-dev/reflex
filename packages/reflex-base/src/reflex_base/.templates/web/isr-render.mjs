@@ -17,7 +17,7 @@
  *     `build/server/index.js`.  The app root `loader()` fetches page state from
  *     the Python `/_ssr_data` endpoint, so this service needs network access to
  *     the backend (set SSR_DATA / the backend URL in the app env).
- *   - Node deps: `react-router`, `express`.
+ *   - Node deps `react-router` and `express`, which the SSR build installs.
  *
  * Run:  node isr-render.mjs   (listens on $PORT, default 8600)
  *

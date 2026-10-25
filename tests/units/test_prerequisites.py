@@ -1006,6 +1006,30 @@ def test_react_compiler_dependency_versions_invalidate_cache(
     assert "babel-plugin-react-compiler@0.0.0-test" in calls[1]
 
 
+def test_ssr_build_installs_isr_render_dependencies(
+    install_packages_env: InstallPackagesEnv, monkeypatch: pytest.MonkeyPatch
+):
+    """Only an SSR build installs the packages the ISR render service imports.
+
+    Args:
+        install_packages_env: The isolated install environment.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    env = install_packages_env
+    calls = _record_calls(env)
+    monkeypatch.delenv("REFLEX_SSR_BUILD", raising=False)
+    env.install()
+    assert calls == []
+
+    monkeypatch.setenv("REFLEX_SSR_BUILD", "1")
+    env.install()
+    assert len(calls) == 1
+    assert "add" in calls[0]
+    assert "-D" not in calls[0]
+    express = constants.PackageJson.ISR_RENDER_DEPENDENCIES["express"]
+    assert f"express@{express}" in calls[0]
+
+
 def test_install_frontend_packages_pinned_packages_single_call(
     install_packages_env: InstallPackagesEnv,
 ):
