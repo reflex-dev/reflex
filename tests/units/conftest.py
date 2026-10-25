@@ -102,6 +102,57 @@ def mock_app(app_module_mock: mock.Mock, app: App) -> App:
     return app
 
 
+@pytest.fixture
+def namespace_app(monkeypatch: pytest.MonkeyPatch) -> mock.Mock:
+    """A mock app for an event namespace, with a local token manager.
+
+    Redis is disabled so token linking cannot leak into a shared Redis.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+
+    Returns:
+        The mock app.
+    """
+    monkeypatch.setattr(prerequisites, "check_redis_used", lambda: False)
+    app = mock.Mock()
+    app._state = None
+    app._channels = {}
+    app.router = mock.Mock(return_value=None)
+    app.event_processor.enqueue = mock.AsyncMock()
+    return app
+
+
+@pytest.fixture
+def linked_state(namespace_app: mock.Mock) -> mock.Mock:
+    """The state a namespace app loads when a connect links its token.
+
+    Each load is recorded on ``namespace_app.state_manager.modify_state``.
+
+    Args:
+        namespace_app: The mock app.
+
+    Returns:
+        The state.
+    """
+    namespace_app._state = mock.Mock()
+    state = mock.Mock(router_data={})
+    namespace_app.state_manager.modify_state = mock.Mock(
+        return_value=mock.AsyncMock(__aenter__=mock.AsyncMock(return_value=state))
+    )
+    return state
+
+
+@pytest.fixture
+def boot_event() -> dict[str, Any]:
+    """The hydrate event a frontend sends with its connect.
+
+    Returns:
+        The event payload.
+    """
+    return {"name": "state.hydrate_and_load", "payload": {}, "router_data": {}}
+
+
 @pytest.fixture(scope="session")
 def windows_platform() -> bool:
     """Check if system is windows.

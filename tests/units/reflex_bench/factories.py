@@ -1,23 +1,74 @@
-"""Builders for reflex-bench result documents used across the tests."""
+"""Builders and helpers shared by the reflex-bench tests."""
 
 from __future__ import annotations
 
+import asyncio
+import contextlib
 import logging
 import random
 import sys
-from collections.abc import Mapping, Sequence
+import threading
+from collections.abc import Iterator, Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
+import pytest
 from reflex_bench.context import Context, Subject
-from reflex_bench.drivers.events import LoadResult
+from reflex_bench.drivers.echo_server import EchoServer
+from reflex_bench.drivers.events import CODECS, LoadResult
 from reflex_bench.registry import Metric
 from reflex_bench.scheduler import Policy, finalize
 from reflex_bench.schema import SCHEMA_ID, BenchmarkDoc, MachineDoc, ResultDoc, RunKind
+from reflex_bench.suites.events import PlaygroundStates
+
+import reflex as rx
+from reflex.istate.shared import SharedStateBaseInternal
 
 VERSION = "sha256:" + "0" * 64
 WALL = Metric(unit="s", direction="lower")
 BYTES = Metric(unit="B", direction="lower", assume="exact")
+WEBSOCKET = CODECS["websocket"]
+SOCKETIO = CODECS["socketio"]
+PROTOCOLS = pytest.mark.parametrize("protocol", ["websocket", "socketio"])
+# The playground's states as the workspace's reflex names them: the shared
+# state sits under reflex's internal parent of shared states.
+STATES = PlaygroundStates(
+    bench=f"{rx.State.get_full_name()}.playground___state____bench_state",
+    board=f"{SharedStateBaseInternal.get_full_name()}.playground___state____board_state",
+)
+
+
+@contextlib.contextmanager
+def serving(server: EchoServer) -> Iterator[str]:
+    """Run an echo server on a thread with its own event loop.
+
+    Args:
+        server: The server.
+
+    Yields:
+        Its base URL, like the backend URL of a started app.
+    """
+    loop = asyncio.new_event_loop()
+    ready = threading.Event()
+    port: list[int] = []
+    done: list[asyncio.Future[None]] = []
+
+    async def main() -> None:
+        done.append(loop.create_future())
+        async with server.serve("127.0.0.1", 0) as bound:
+            port.append(bound)
+            ready.set()
+            await done[0]
+
+    thread = threading.Thread(target=loop.run_until_complete, args=(main(),))
+    thread.start()
+    assert ready.wait(10)
+    try:
+        yield f"http://127.0.0.1:{port[0]}"
+    finally:
+        loop.call_soon_threadsafe(done[0].set_result, None)
+        thread.join(10)
+        loop.close()
 
 
 def make_subject(reflex_version: str | None = "0.9.12") -> Subject:

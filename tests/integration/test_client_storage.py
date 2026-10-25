@@ -524,7 +524,7 @@ async def test_client_side_state(
     l1s = driver.find_element(By.ID, "l1s")
     s1s = driver.find_element(By.ID, "s1s")
 
-    assert c1.text == "c1 value"
+    AppHarness.expect(lambda: c1.text == "c1 value")
     assert c2.text == "c2 value"
     assert c3.text == ""  # cookie expired so value removed from state
     assert c4.text == "c4 value"
@@ -573,7 +573,7 @@ async def test_client_side_state(
     l1s = driver.find_element(By.ID, "l1s")
     s1s = driver.find_element(By.ID, "s1s")
 
-    assert c1.text == "c1 value"
+    AppHarness.expect(lambda: c1.text == "c1 value")
     assert c2.text == "c2 value"
     assert c3.text == ""  # temporary cookie expired after reset state!
     assert c4.text == "c4 value"
@@ -672,7 +672,7 @@ async def test_client_side_state(
     l1s = driver.find_element(By.ID, "l1s")
     s1s = driver.find_element(By.ID, "s1s")
 
-    assert c1.text == "c1 post expire"
+    AppHarness.expect(lambda: c1.text == "c1 post expire")
     assert c2.text == "c2 value"
     assert c3.text == ""  # temporary cookie expired after reset state!
     assert c4.text == "c4 value"

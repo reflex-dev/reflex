@@ -1,5 +1,4 @@
 // State management for Reflex web apps.
-import io from "socket.io-client";
 import { mergician } from "mergician";
 import env from "$/env.json";
 import reflexEnvironment from "$/reflex.json";
@@ -13,9 +12,18 @@ import {
 } from "react-router";
 import { app, eventLoop } from "$/utils/context-registry";
 import debounce from "$/utils/helpers/debounce";
-import { parseJson } from "$/utils/helpers/json";
+import { parseJsonLenient, undefinedToNull } from "$/utils/helpers/json";
 import throttle from "$/utils/helpers/throttle";
 import { uploadFiles } from "$/utils/helpers/upload";
+import {
+  ReflexWebSocket,
+  disableChannels,
+  getChannel,
+} from "$/utils/helpers/websocket";
+
+// Re-exported so components can reach a side channel through the module they
+// already import for getBackendURL/getToken.
+export { getChannel };
 
 // Endpoint URLs.
 const EVENTURL = env.EVENT;
@@ -36,6 +44,9 @@ const NEW_VERSION_BANNER_ID = "reflex-new-version-banner";
 const ERROR_TYPE_DISPATCH_MISSING = "dispatch_function_missing";
 const ERROR_TYPE_STATE_UPDATE = "state_update_processing_error";
 const ERROR_TYPE_HYDRATION_PAYLOAD_TOO_LARGE = "hydration_payload_too_large";
+
+// Connection errors kept for display, oldest dropped first.
+const MAX_CONNECT_ERRORS = 10;
 
 // These hostnames indicate that the backend and frontend are reachable via the same domain.
 const SAME_DOMAIN_HOSTNAMES = ["localhost", "0.0.0.0", "::", "0:0:0:0:0:0:0:0"];
@@ -180,22 +191,26 @@ export const isBackendDisabled = () => {
 };
 
 /**
- * Create a socket without starting its namespace or hydration events.
+ * Create a plain WebSocket transport without dialing it.
  * @param endpoint The backend URL.
- * @param transports The configured transports.
  * @param token The session token the backend links the connection to.
- * @returns The disconnected socket.
+ * @returns The idle transport.
  */
-const createSocket = (endpoint, transports, token) =>
-  io(endpoint.href, {
-    path: endpoint.pathname,
-    transports,
-    protocols: [reflexEnvironment.version],
-    autoUnref: false,
-    autoConnect: false,
+const createSocket = (endpoint, token) =>
+  new ReflexWebSocket(endpoint.href, {
     query: { token },
-    reconnection: false,
+    protocols: [reflexEnvironment.version],
   });
+
+/**
+ * Close a transport for good and remove its handlers.
+ * @param socket The transport.
+ */
+const disposeSocket = (socket) => {
+  socket.disconnect();
+  // Also releases the plain WebSocket transport's offline listener.
+  socket.off();
+};
 
 /**
  * Measure encoded text the way the Engine.IO server limits a frame.
@@ -216,21 +231,34 @@ let warmSocket = null;
 let cancelWarmup = () => {};
 let socketStarted = false;
 
-/** Close an unclaimed transport and remove its cleanup handlers. */
-const discardWarmSocket = () => {
+/**
+ * Claim the warmed-up transport, cancelling its cleanup.
+ * @returns The warm transport, or null if there is none.
+ */
+const takeWarmSocket = () => {
   const socket = warmSocket;
   warmSocket = null;
   cancelWarmup();
-  socket?.disconnect();
+  return socket;
 };
 
-// Start only the transport while React is still preparing to mount. The
-// namespace stays disconnected until connect() installs all its handlers.
+/** Close an unclaimed transport and remove its cleanup handlers. */
+const discardWarmSocket = () => {
+  const socket = takeWarmSocket();
+  if (socket !== null) {
+    disposeSocket(socket);
+  }
+};
+
+// Dial the plain WebSocket transport while React is still preparing to mount.
+// The session stays closed until connect() installs all its handlers. The
+// socket.io transports load their client on connect, so they are not warmed.
 // Defer past module evaluation because context.js imports this module too.
 if (typeof window !== "undefined") {
   queueMicrotask(() => {
     if (
       socketStarted ||
+      env.SOCKETIO ||
       Object.keys(app.initialState ?? {}).length <= 1 ||
       isBackendDisabled() ||
       document.visibilityState === "hidden"
@@ -238,11 +266,7 @@ if (typeof window !== "undefined") {
       return;
     }
     try {
-      warmSocket = createSocket(
-        getBackendURL(EVENTURL),
-        [env.TRANSPORT],
-        peekToken(),
-      );
+      warmSocket = createSocket(getBackendURL(EVENTURL), peekToken());
     } catch {
       // Speculative setup may fail (for example, blocked session storage).
       // The normal connection path will report failures when the app mounts.
@@ -254,9 +278,8 @@ if (typeof window !== "undefined") {
       clearTimeout(timeout);
       window.removeEventListener("pagehide", discardWarmSocket);
     };
-    warmSocket.io.open((error) => {
-      if (error) discardWarmSocket();
-    });
+    // A dial that fails leaves nothing to clean up: connect() dials again.
+    warmSocket.open();
   });
 }
 
@@ -857,7 +880,8 @@ const showNewVersionBanner = () => {
 
 /**
  * Handle the backend reporting that this bundle was compiled for another
- * state tree than the one it runs (sent on connect, see EventNamespace.on_connect).
+ * state tree than the one it runs (sent on connect, see
+ * BaseEventNamespace.handle_connect).
  *
  * In prod the page reloads once per cooldown window. A mismatch inside the
  * window means the reload landed on the same skew (a cached bundle, or several
@@ -888,6 +912,17 @@ const handleStateMismatch = (info) => {
 };
 
 /**
+ * Append a connection error, keeping only the most recent ones.
+ * @param connectErrors The errors so far.
+ * @param error The new error.
+ * @returns The updated errors.
+ */
+const addConnectError = (connectErrors, error) => [
+  ...connectErrors.slice(1 - MAX_CONNECT_ERRORS),
+  error,
+];
+
+/**
  * Connect to a websocket and set the handlers.
  * @param socket The socket object to connect.
  * @param dispatch The function to queue state update
@@ -906,6 +941,8 @@ export const connect = async (
   navigate,
   params,
 ) => {
+  // Connecting (again) revokes a pending unmount cancellation.
+  socket.cancelConnect = false;
   // Socket already allocated, just reconnect it if needed.
   if (socket.current) {
     if (!socket.current.connected) {
@@ -913,16 +950,23 @@ export const connect = async (
     }
     return;
   }
+  // Another connect() call may be awaiting the socket.io-client import;
+  // don't create a second transport.
+  if (socket.connecting) {
+    return;
+  }
+  socket.connecting = true;
 
   // Get backend URL object from the endpoint.
   const endpoint = getBackendURL(EVENTURL);
 
-  // The hydrate event rides in the socket.io CONNECT packet, so the backend
-  // starts loading state as soon as the namespace connects instead of after
-  // an extra round trip for the connect acknowledgement. The keys are read by
-  // the backend as CompileVars.CONNECT_AUTH_EVENT and CONNECT_AUTH_STATE_SCHEMA;
-  // the state schema goes along on every (re)connect, since a reconnect can
-  // land on another backend version.
+  // The hydrate event rides in the connect request (the plain WebSocket's
+  // connect frame, or the socket.io CONNECT packet), so the backend starts
+  // loading state as soon as the session opens instead of after an extra
+  // round trip for its acknowledgement. The keys are read by the backend as
+  // CompileVars.CONNECT_AUTH_EVENT and CONNECT_AUTH_STATE_SCHEMA; the state
+  // schema goes along on every (re)connect, since a reconnect can land on
+  // another backend version.
   const bootAuth = (first) => {
     const boot_event = withRouterData(app.initialEvents(first)[0], params);
     recordSentStorageValues(boot_event);
@@ -934,62 +978,81 @@ export const connect = async (
   // Create the socket. A new session's token is saved here, once the app has
   // mounted, even when a transport warmed up with it earlier.
   socketStarted = true;
-  const session_token = getToken();
-  if (
-    warmSocket &&
-    (warmSocket.io.opts.query.token !== session_token ||
-      warmSocket.io.opts.transports.length !== transports.length ||
-      transports.some(
-        (transport, i) => transport !== warmSocket.io.opts.transports[i],
-      ))
-  ) {
-    discardWarmSocket();
+  try {
+    const session_token = getToken();
+    if (warmSocket && warmSocket.io.opts.query.token !== session_token) {
+      discardWarmSocket();
+    }
+    if (!env.SOCKETIO) {
+      // Default transport: plain WebSocket speaking the Reflex event protocol.
+      socket.current =
+        takeWarmSocket() ?? createSocket(endpoint, session_token);
+    } else {
+      // Socket.IO, over the engine.io transports given; the client library
+      // is only loaded when this transport is configured.
+      const { default: io } = await import("socket.io-client");
+      if (socket.cancelConnect) {
+        // The event loop unmounted while the import was pending.
+        return;
+      }
+      socket.current = io(endpoint.href, {
+        path: endpoint.pathname,
+        transports,
+        protocols: [reflexEnvironment.version],
+        autoUnref: false,
+        autoConnect: false,
+        query: { token: session_token },
+        reconnection: false, // Reconnection will be handled manually.
+      });
+      // Ensure undefined fields in events are sent as null instead of removed
+      socket.current.io.encoder.replacer = undefinedToNull;
+      // The server drops a transport whose frame exceeds the limit its
+      // handshake announced, so a CONNECT packet (type 0) that carries an
+      // oversized hydrate is reported instead of sent.
+      const { encoder } = socket.current.io;
+      const encode = encoder.encode.bind(encoder);
+      encoder.encode = (packet) => {
+        const encoded = encode(packet);
+        if (packet.type !== 0) {
+          return encoded;
+        }
+        // socket.io-client is pinned; test_hydration_storage.py covers these internals.
+        const { engine } = socket.current.io;
+        const transport = engine.transport.name;
+        // The Engine.IO message type ("4") prefixes the encoded packet.
+        const size = 1 + frameSize(encoded[0], transport);
+        if (size > engine._maxPayload) {
+          const unit = transport === "websocket" ? "characters" : "bytes";
+          const error = new Error(
+            `Hydration payload (${size} ${unit}) exceeds the server limit (${engine._maxPayload} ${unit}). Reduce browser storage data and reload.`,
+          );
+          error.code = ERROR_TYPE_HYDRATION_PAYLOAD_TOO_LARGE;
+          socket.current.disconnect();
+          retryConnect(error);
+          return [];
+        }
+        return encoded;
+      };
+      // The decoder API expects false (not undefined) for unparsable input.
+      socket.current.io.decoder.tryParse = (str) =>
+        parseJsonLenient(str, false);
+      // Channels are a plain-WebSocket protocol feature.
+      disableChannels(
+        'Channels require transport="websocket" in rxconfig.py, not Socket.IO.',
+      );
+    }
+  } catch (error) {
+    // Reported rather than rejected: the unhandled rejection handler adds an
+    // event, which reconnects, which fails again without end -- as a client
+    // chunk the browser failed to load does on every retry.
+    console.error("Failed to create the event socket:", error);
+    setConnectErrors((connectErrors) => addConnectError(connectErrors, error));
+    return;
+  } finally {
+    socket.connecting = false;
   }
-  socket.current =
-    warmSocket ?? createSocket(endpoint, transports, session_token);
-  warmSocket = null;
-  cancelWarmup();
   socket.current.auth = bootAuth(true);
   socket.current.wait_connect = !socket.current.connected;
-  // Ensure undefined fields in events are sent as null instead of removed
-  socket.current.io.encoder.replacer = (k, v) => (v === undefined ? null : v);
-  // The server drops a transport whose frame exceeds the limit its handshake
-  // announced, so a CONNECT packet (type 0) that carries an oversized hydrate
-  // is reported instead of sent. The page stays offline until browser storage
-  // shrinks and it reloads: wait_connect stays set, so reconnect() does not
-  // rebuild the hydrate.
-  const { encoder } = socket.current.io;
-  const encode = encoder.encode.bind(encoder);
-  encoder.encode = (packet) => {
-    const encoded = encode(packet);
-    if (packet.type !== 0) {
-      return encoded;
-    }
-    // socket.io-client is pinned; test_hydration_storage.py covers these internals.
-    const { engine } = socket.current.io;
-    const transport = engine.transport.name;
-    // The Engine.IO message type ("4") prefixes the encoded packet.
-    const size = 1 + frameSize(encoded[0], transport);
-    if (size > engine._maxPayload) {
-      const unit = transport === "websocket" ? "characters" : "bytes";
-      const error = new Error(
-        `Hydration payload (${size} ${unit}) exceeds the server limit (${engine._maxPayload} ${unit}). Reduce browser storage data and reload.`,
-      );
-      error.code = ERROR_TYPE_HYDRATION_PAYLOAD_TOO_LARGE;
-      console.error(error.message);
-      setConnectErrors((errors) => [...errors.slice(-9), error]);
-      socket.current.disconnect();
-      return [];
-    }
-    return encoded;
-  };
-  socket.current.io.decoder.tryParse = (str) => {
-    try {
-      return parseJson(str);
-    } catch {
-      return false;
-    }
-  };
   // Set up a reconnect helper function
   socket.current.reconnect = () => {
     if (
@@ -1070,10 +1133,17 @@ export const connect = async (
   });
 
   // Record a failed connection attempt and retry it with incremental backoff.
+  // A hydrate over the server's message limit fails every retry the same way,
+  // so the page stays offline until browser storage shrinks and it reloads:
+  // wait_connect stays set, so reconnect() does not rebuild the hydrate.
   const retryConnect = (error) => {
+    setConnectErrors((connectErrors) => addConnectError(connectErrors, error));
+    if (error.code === ERROR_TYPE_HYDRATION_PAYLOAD_TOO_LARGE) {
+      console.error(error.message);
+      return;
+    }
     socket.current.wait_connect = false;
-    failed_attempts = Math.min(failed_attempts + 1, 10);
-    setConnectErrors((connectErrors) => [...connectErrors.slice(-9), error]);
+    failed_attempts = Math.min(failed_attempts + 1, MAX_CONNECT_ERRORS);
     window.clearTimeout(retry_timer);
     retry_timer = window.setTimeout(() => {
       retry_timer = undefined;
@@ -1088,6 +1158,7 @@ export const connect = async (
   socket.current.on("disconnect", (reason, details) => {
     // A transport closed before the namespace connected is a failed attempt,
     // e.g. a CONNECT packet over the server or a proxy message size limit.
+    // Socket.IO reports it here; the plain WebSocket as connect_error.
     if (socket.current.wait_connect) {
       retryConnect(
         new Error(`connection closed before connecting (${reason})`),
@@ -1189,6 +1260,9 @@ export const connect = async (
   });
   socket.current.on(STATE_MISMATCH_EVENT, handleStateMismatch);
 
+  // Track the handler on the ref so unmount cleanup can remove it; a
+  // surviving listener would resurrect a transport for the unmounted hook.
+  socket.visibilityHandler = checkVisibility;
   document.addEventListener("visibilitychange", checkVisibility);
   socket.current.connect();
 };
@@ -1564,9 +1638,17 @@ export const useEventLoop = (
     // Cleanup function.
     return () => {
       mounted.current = false;
+      // Abort a connect() that is still awaiting the socket.io-client import.
+      socket.cancelConnect = true;
+      if (socket.visibilityHandler) {
+        document.removeEventListener(
+          "visibilitychange",
+          socket.visibilityHandler,
+        );
+        socket.visibilityHandler = null;
+      }
       if (socket.current) {
-        socket.current.disconnect();
-        socket.current.off();
+        disposeSocket(socket.current);
         socket.current = null;
       }
     };

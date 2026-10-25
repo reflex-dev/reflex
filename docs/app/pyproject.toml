@@ -15,7 +15,8 @@ dependencies = [
     "psycopg[binary]; python_version < '3.15'",
     "psycopg; python_version >= '3.15'",
     "python-frontmatter",
-    "reflex",
+    # xy 0.0.7's charts ride a Socket.IO namespace; see rxconfig.py.
+    "reflex[socketio]",
     "reflex-docgen",
     "reflex-enterprise>=0.9.4",
     "reflex-hosting-cli",

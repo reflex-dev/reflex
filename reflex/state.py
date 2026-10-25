@@ -3009,7 +3009,7 @@ class StateUpdate:
 
     Substates without a registered frontend dispatch function are skipped and
     reported to the backend through ``client_error`` (see
-    ``EventNamespace.on_client_error``).
+    ``BaseEventNamespace.handle_client_error``).
     """
 
     # The state delta.

@@ -1,11 +1,25 @@
-"""An open-loop event generator that speaks reflex's socket.io protocol over ``websockets``.
+"""An open-loop event generator that speaks reflex's event websocket over ``websockets``.
 
 It measures what a user of a reflex app waits for: the time from the moment an
 event *should* have been sent until the state delta that answers it arrives.
 
-**Protocol.** reflex mounts python-socketio at ``/_event`` with the websocket
-transport only (engine.io 4, socket.io 5), from 0.8.23 to HEAD. One session is
-one websocket, one token and one state::
+**Protocols.** One session is one websocket, one token and one state. reflex's
+default transport is a plain JSON protocol at ``/_event``; releases before it,
+from 0.8.23 on, and apps with ``transport="socketio"`` mount python-socketio at
+``/_event/`` with the websocket transport only (engine.io 4, socket.io 5). A
+:class:`Codec` frames each; :func:`detect_protocol` tells which one a backend
+speaks, as a Socket.IO backend refuses the upgrade of ``/_event``. The plain
+protocol::
+
+    client  GET /_event?token=<uuid4>
+    client  ["_connect",{"event":{"name":"...hydrate_and_load",...}}]   the boot event
+    server  ["_handshake",{"ping_interval":...,"protocol":2,...}]  (a "new_token" may come first)
+    client  ["event",{"name":...,"payload":...,"router_data":...,"token":...}]
+    server  ["event",{"delta":{...},"events":[...],"final":...}]
+    server  ["_ping"]   client  ["_pong"]
+    client  closes the websocket                  (the server closes with a code)
+
+Socket.IO::
 
     client  GET /_event/?EIO=4&transport=websocket&token=<uuid4>
     server  0{"sid":...,"upgrades":[],"pingInterval":25000,"pingTimeout":...}
@@ -16,11 +30,13 @@ one websocket, one token and one state::
     server  2   client  3                         engine.io ping and pong
     client  41/_event,                            leave the namespace
 
-A session is primed like a page load, with ``hydrate`` and ``on_load_internal``,
-until a delta sets ``is_hydrated``, then with the plan's :class:`LinkEvent` if
-it has one (joining a shared state token), until a delta of the linked state
-acknowledges it. Every event carries the token: 0.8.23 requires it, HEAD
-ignores it.
+A session is primed like a page load until a delta sets ``is_hydrated``: on the
+plain protocol its connect frame carries ``hydrate_and_load`` as the boot event,
+as the frontend's does on a reconnect (an empty payload: the full state); on
+Socket.IO it sends ``hydrate`` and ``on_load_internal`` once joined. Then it
+sends the plan's :class:`LinkEvent` if it has one (joining a shared state
+token), until a delta of the linked state acknowledges it. Every event carries
+the token: 0.8.23 requires it, later releases ignore it.
 
 **Open, closed and fan-out loop.** In the open loop each session sends on a
 fixed schedule whatever the server does, late events are sent at once (never
@@ -44,7 +60,8 @@ processes with one event loop each, starts their schedules together once every
 session is primed, and merges what they measured into a :class:`LoadResult`.
 :func:`open_sessions` primes sessions on the caller's loop without a load, for
 measurements of idle sessions; :func:`hold_sessions` does the same in a spawned
-process and keeps them open until told to close.
+process and keeps them open until told to close. Each pool of sessions detects
+the protocol once, unless its :class:`Endpoint` names it.
 """
 
 from __future__ import annotations
@@ -68,6 +85,7 @@ import time
 import traceback
 import urllib.parse
 import uuid
+from abc import ABC, abstractmethod
 from collections.abc import (
     AsyncIterator,
     Awaitable,
@@ -80,10 +98,10 @@ from collections.abc import (
 from dataclasses import dataclass
 from multiprocessing.connection import Connection
 from multiprocessing.process import BaseProcess
-from typing import Any, Literal
+from typing import Any, ClassVar, Literal
 
 from websockets.asyncio.client import ClientConnection, connect
-from websockets.exceptions import ConnectionClosed
+from websockets.exceptions import ConnectionClosed, InvalidStatus
 
 from reflex_bench import stats
 
@@ -91,22 +109,39 @@ if sys.platform != "win32":
     import resource
 
 Mode = Literal["open", "closed", "fanout"]
+WireProtocol = Literal["websocket", "socketio"]
 
 NAMESPACE = "/_event"
 ROOT_STATE = "reflex___state____state"
 HYDRATE_EVENT = f"{ROOT_STATE}.hydrate"
+HYDRATE_AND_LOAD_EVENT = f"{ROOT_STATE}.hydrate_and_load"
 ON_LOAD_EVENT = (
     f"{ROOT_STATE}.reflex___state____on_load_internal_state.on_load_internal"
 )
 HYDRATED_VAR = "is_hydrated_rx_state_"
-OPEN_PREFIX = "0"
-CLOSE = "1"
-PING = "2"
-PONG = "3"
-CONNECT_FRAME = f"40{NAMESPACE},"
-DISCONNECT_FRAME = f"41{NAMESPACE},"
-EVENT_PREFIX = f"42{NAMESPACE},"
-CONNECT_ERROR_PREFIX = f"44{NAMESPACE},"
+# Message names of the plain protocol (reflex.event_namespace).
+EVENT = "event"
+CONNECT = "_connect"
+HANDSHAKE = "_handshake"
+PING = "_ping"
+PONG = "_pong"
+# The key of the boot event in the connect frame (CompileVars.CONNECT_AUTH_EVENT).
+BOOT_KEY = "event"
+# Socket.IO packets the plain protocol has no message for decode to these names.
+OPENED = "_sio_open"
+REFUSED = "_sio_refused"
+DISCONNECTED = "_sio_disconnect"
+CONTROL = frozenset({CONNECT, HANDSHAKE, PING, PONG, OPENED, REFUSED, DISCONNECTED})
+# Socket.IO packets on reflex's namespace.
+SIO_OPEN_PREFIX = "0"
+SIO_CLOSE = "1"
+SIO_PING = "2"
+SIO_PONG = "3"
+SIO_CONNECT_FRAME = f"40{NAMESPACE},"
+SIO_DISCONNECT_FRAME = f"41{NAMESPACE},"
+SIO_EVENT_PREFIX = f"42{NAMESPACE},"
+SIO_CONNECT_ERROR_PREFIX = f"44{NAMESPACE},"
+_COMPACT = (",", ":")
 
 PRIME_TIMEOUT_S = 30.0
 PRIME_CONCURRENCY = 64
@@ -138,27 +173,15 @@ class LoadError(RuntimeError):
     """The load did not run: sessions could not start, a generator process failed, or it was stopped."""
 
 
-def emit_frame(*args: Any) -> str:
-    """Encode a socket.io event on reflex's namespace.
-
-    Args:
-        *args: The event name and its arguments.
-
-    Returns:
-        ``42/_event,[name, ...]``.
-    """
-    return EVENT_PREFIX + json.dumps(list(args), separators=(",", ":"))
-
-
-def event_frame(
+def event(
     name: str,
     payload: Mapping[str, Any] | None,
     *,
     token: str,
     pathname: str = "/",
     query: Mapping[str, str] | None = None,
-) -> str:
-    """Encode an event as the reflex frontend sends it.
+) -> dict[str, Any]:
+    """Build an event as the reflex frontend sends it.
 
     Args:
         name: The full event handler name.
@@ -169,34 +192,387 @@ def event_frame(
             ``/item/42`` of a ``/item/[item_id]`` page.
 
     Returns:
-        The frame.
+        The event.
     """
     router_data = {"pathname": pathname, "asPath": pathname, "query": dict(query or {})}
-    return emit_frame(
-        "event",
-        {"name": name, "payload": payload, "router_data": router_data, "token": token},
-    )
+    return {
+        "name": name,
+        "payload": payload,
+        "router_data": router_data,
+        "token": token,
+    }
 
 
-def event_url(backend_url: str, token: str) -> str:
-    """Build the websocket URL of a session.
+def _message(text: str) -> list[Any] | None:
+    """Decode a JSON message ``[name, *args]``.
+
+    Args:
+        text: The JSON.
+
+    Returns:
+        The message, or ``None`` when the text is not one.
+    """
+    try:
+        message = json.loads(text)
+    except ValueError:
+        return None
+    if isinstance(message, list) and message and isinstance(message[0], str):
+        return message
+    return None
+
+
+def _ws_url(backend_url: str, path: str, query: Mapping[str, Any]) -> str:
+    """Build a websocket URL on a backend.
 
     Args:
         backend_url: The backend's URL, e.g. ``http://localhost:8000``.
-        token: The session's token.
+        path: The path below the backend's.
+        query: The query parameters.
 
     Returns:
-        E.g. ``ws://localhost:8000/_event/?EIO=4&transport=websocket&token=<token>``.
+        The URL, ``wss`` for an ``https`` backend.
     """
     parts = urllib.parse.urlsplit(backend_url)
-    query = urllib.parse.urlencode({"EIO": 4, "transport": "websocket", "token": token})
     return urllib.parse.urlunsplit((
         "wss" if parts.scheme == "https" else "ws",
         parts.netloc,
-        f"{parts.path.rstrip('/')}{NAMESPACE}/",
-        query,
+        f"{parts.path.rstrip('/')}{path}",
+        urllib.parse.urlencode(query),
         "",
     ))
+
+
+class Codec(ABC):
+    """Frames reflex's event websocket in one protocol.
+
+    Received frames decode to messages ``[name, *args]`` named as in the plain
+    protocol; Socket.IO's open, refusal and disconnect packets, which it has
+    no message for, decode to :data:`OPENED`, :data:`REFUSED` and
+    :data:`DISCONNECTED`.
+    """
+
+    protocol: ClassVar[WireProtocol]
+    # Whether the server greets with an engine.io open before the connect.
+    greets: ClassVar[bool]
+    # The hydration events to send once the server acknowledged the connect.
+    load_events: ClassVar[tuple[str, ...]]
+    # The frame that opens a session without hydrating it.
+    join: ClassVar[str]
+    # The server's keepalive.
+    ping: ClassVar[str]
+    # The answer to a ping.
+    pong: ClassVar[str]
+    # The frame that leaves the session before the websocket closes, if any.
+    leave: ClassVar[str | None]
+
+    @abstractmethod
+    def url(self, backend_url: str, token: str) -> str:
+        """Build the websocket URL of a session.
+
+        Args:
+            backend_url: The backend's URL, e.g. ``http://localhost:8000``.
+            token: The session's token.
+
+        Returns:
+            The URL.
+        """
+
+    @abstractmethod
+    def emit(self, *args: Any) -> str:
+        """Encode a message.
+
+        Args:
+            *args: The message name and its arguments.
+
+        Returns:
+            The frame.
+        """
+
+    @abstractmethod
+    def parse(self, message: str | bytes) -> list[Any] | None:
+        """Decode a received frame.
+
+        Args:
+            message: The frame.
+
+        Returns:
+            The message ``[name, *args]``, or ``None`` for a frame the
+            protocol does not have.
+        """
+
+    @abstractmethod
+    def connect_frame(
+        self, *, token: str, pathname: str, query: Mapping[str, str] | None = None
+    ) -> str:
+        """Encode the frame that opens a session.
+
+        Args:
+            token: The session's token.
+            pathname: The page route the session loads.
+            query: The route's parameters.
+
+        Returns:
+            The frame; the plain protocol's carries the hydration as its boot
+            event.
+        """
+
+    def event_frame(
+        self,
+        name: str,
+        payload: Mapping[str, Any] | None,
+        *,
+        token: str,
+        pathname: str = "/",
+        query: Mapping[str, str] | None = None,
+    ) -> str:
+        """Encode an event as the reflex frontend sends it.
+
+        Args:
+            name: The full event handler name.
+            payload: The handler's arguments.
+            token: The session's token.
+            pathname: The page route the event comes from.
+            query: The route's parameters.
+
+        Returns:
+            The frame.
+        """
+        return self.emit(
+            EVENT, event(name, payload, token=token, pathname=pathname, query=query)
+        )
+
+
+class WebsocketCodec(Codec):
+    """reflex's plain protocol: every frame is a JSON message ``[name, *args]``."""
+
+    protocol = "websocket"
+    greets = False
+    load_events = ()
+    join = json.dumps([CONNECT, {}], separators=_COMPACT)
+    ping = json.dumps([PING])
+    pong = json.dumps([PONG])
+    leave = None
+
+    def url(self, backend_url: str, token: str) -> str:
+        """Build the websocket URL of a session.
+
+        Args:
+            backend_url: The backend's URL, e.g. ``http://localhost:8000``.
+            token: The session's token.
+
+        Returns:
+            E.g. ``ws://localhost:8000/_event?token=<token>``.
+        """
+        return _ws_url(backend_url, NAMESPACE, {"token": token})
+
+    def emit(self, *args: Any) -> str:
+        """Encode a message.
+
+        Args:
+            *args: The message name and its arguments.
+
+        Returns:
+            ``[name, ...]``.
+        """
+        return json.dumps(args, separators=_COMPACT)
+
+    def parse(self, message: str | bytes) -> list[Any] | None:
+        """Decode a received frame.
+
+        Args:
+            message: The frame.
+
+        Returns:
+            The message, or ``None`` for a binary frame or one that is not a
+            message.
+        """
+        return _message(message) if isinstance(message, str) else None
+
+    def connect_frame(
+        self, *, token: str, pathname: str, query: Mapping[str, str] | None = None
+    ) -> str:
+        """Encode the connect frame, with ``hydrate_and_load`` as its boot event.
+
+        Args:
+            token: The session's token.
+            pathname: The page route the session loads.
+            query: The route's parameters.
+
+        Returns:
+            ``["_connect",{"event":{...}}]``.
+        """
+        boot = event(
+            HYDRATE_AND_LOAD_EVENT, {}, token=token, pathname=pathname, query=query
+        )
+        return self.emit(CONNECT, {BOOT_KEY: boot})
+
+
+class SocketIOCodec(Codec):
+    """python-socketio on reflex's namespace: engine.io 4 and socket.io 5 packets."""
+
+    protocol = "socketio"
+    greets = True
+    load_events = (HYDRATE_EVENT, ON_LOAD_EVENT)
+    join = SIO_CONNECT_FRAME
+    ping = SIO_PING
+    pong = SIO_PONG
+    leave = SIO_DISCONNECT_FRAME
+
+    def url(self, backend_url: str, token: str) -> str:
+        """Build the websocket URL of a session.
+
+        Args:
+            backend_url: The backend's URL, e.g. ``http://localhost:8000``.
+            token: The session's token.
+
+        Returns:
+            E.g. ``ws://localhost:8000/_event/?EIO=4&transport=websocket&token=<token>``.
+        """
+        query = {"EIO": 4, "transport": "websocket", "token": token}
+        return _ws_url(backend_url, f"{NAMESPACE}/", query)
+
+    def emit(self, *args: Any) -> str:
+        """Encode a socket.io event on reflex's namespace.
+
+        Args:
+            *args: The event name and its arguments.
+
+        Returns:
+            ``42/_event,[name, ...]``.
+        """
+        return SIO_EVENT_PREFIX + json.dumps(args, separators=_COMPACT)
+
+    def parse(self, message: str | bytes) -> list[Any] | None:
+        """Decode a received packet.
+
+        Args:
+            message: The frame.
+
+        Returns:
+            A socket.io event's arguments; :data:`PING` for an engine.io ping,
+            :data:`HANDSHAKE` for the namespace ack, :data:`OPENED`,
+            :data:`REFUSED` and :data:`DISCONNECTED` with the packet's data;
+            ``None`` for anything else.
+        """
+        if not isinstance(message, str):
+            return None
+        if message.startswith(SIO_EVENT_PREFIX):
+            return _message(message[len(SIO_EVENT_PREFIX) :])
+        if message == SIO_PING:
+            return [PING]
+        if message.startswith(SIO_CONNECT_FRAME):
+            return [HANDSHAKE, message[len(SIO_CONNECT_FRAME) :]]
+        if message in {SIO_DISCONNECT_FRAME, SIO_CLOSE}:
+            return [DISCONNECTED]
+        if message.startswith(SIO_CONNECT_ERROR_PREFIX):
+            return [REFUSED, message[len(SIO_CONNECT_ERROR_PREFIX) :]]
+        if message.startswith(SIO_OPEN_PREFIX):
+            return [OPENED, message[len(SIO_OPEN_PREFIX) :]]
+        return None
+
+    def connect_frame(
+        self, *, token: str, pathname: str, query: Mapping[str, str] | None = None
+    ) -> str:
+        """Encode the namespace join; the hydration events follow its ack.
+
+        Args:
+            token: The session's token.
+            pathname: The page route the session loads.
+            query: The route's parameters.
+
+        Returns:
+            ``40/_event,``.
+        """
+        return self.join
+
+
+CODECS: dict[WireProtocol, Codec] = {
+    codec.protocol: codec for codec in (WebsocketCodec(), SocketIOCodec())
+}
+
+
+def end_reason(args: list[Any], frame: str | bytes) -> str | None:
+    """Tell why a message ends the session, if it does.
+
+    Args:
+        args: The message.
+        frame: Its raw frame.
+
+    Returns:
+        Why the server refused or disconnected the session, or ``None``.
+    """
+    name = args[0]
+    if name == REFUSED:
+        return f"the server refused {NAMESPACE}: {args[1]}"
+    if name == DISCONNECTED:
+        return f"the server disconnected the session ({frame!r})"
+    return None
+
+
+async def leave(ws: ClientConnection, codec: Codec) -> None:
+    """Leave a session before its websocket closes, on a protocol that has a leave frame.
+
+    Args:
+        ws: The websocket.
+        codec: Its protocol.
+    """
+    if codec.leave is not None:
+        with contextlib.suppress(ConnectionClosed):
+            await ws.send(codec.leave)
+
+
+def is_hydrated(delta: Mapping[str, Any]) -> bool:
+    """Tell whether a delta completes a hydration.
+
+    Args:
+        delta: The delta.
+
+    Returns:
+        Whether it sets the root state's ``is_hydrated``.
+    """
+    root = delta.get(ROOT_STATE)
+    return root is not None and root.get(HYDRATED_VAR) is True
+
+
+async def detect_protocol(
+    backend_url: str, timeout: float = PRIME_TIMEOUT_S
+) -> WireProtocol:
+    """Find the protocol of a backend's event websocket.
+
+    The plain protocol's endpoint accepts the websocket before the client
+    sends anything; a Socket.IO backend refuses the upgrade of ``/_event``,
+    its mount being ``/_event/``.
+
+    Args:
+        backend_url: The backend's URL, e.g. ``http://localhost:8000``.
+        timeout: Seconds to wait for the websocket to open.
+
+    Returns:
+        ``websocket`` or ``socketio``.
+    """
+    try:
+        async with connect(
+            CODECS["websocket"].url(backend_url, str(uuid.uuid4())),
+            proxy=None,
+            open_timeout=timeout,
+            ping_interval=None,
+            close_timeout=1,
+        ):
+            return "websocket"
+    except InvalidStatus:
+        return "socketio"
+
+
+async def resolve_codec(endpoint: Endpoint) -> Codec:
+    """Find the codec of an endpoint's protocol, detecting it if the endpoint names none.
+
+    Args:
+        endpoint: The endpoint.
+
+    Returns:
+        The codec.
+    """
+    return CODECS[endpoint.protocol or await detect_protocol(endpoint.backend_url)]
 
 
 def seq_payload(seq: int) -> dict[str, int]:
@@ -300,16 +676,16 @@ class LinkEvent:
 class Endpoint:
     """Where sessions connect: a reflex backend and the page they load.
 
-    The protocol is the same from 0.8.23 to HEAD (every event carries the
-    token), so nothing here depends on the reflex version.
-
     Attributes:
         backend_url: The backend's URL, e.g. ``http://localhost:8000``.
         pathname: The page route the sessions hydrate and send events from.
+        protocol: The protocol of its event websocket, or ``None`` to detect
+            it (:func:`detect_protocol`) once per pool of sessions.
     """
 
     backend_url: str
     pathname: str = "/"
+    protocol: WireProtocol | None = None
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -524,11 +900,12 @@ class _Frames:
     """Encodes a session's events; only the payload changes between them."""
 
     def __init__(
-        self, shape: EventShape, token: str, pathname: str, index: int
+        self, codec: Codec, shape: EventShape, token: str, pathname: str, index: int
     ) -> None:
         """Split the event frame around its payload.
 
         Args:
+            codec: The protocol's codec.
             shape: The event.
             token: The session's token.
             pathname: The page route.
@@ -537,7 +914,7 @@ class _Frames:
         """
         self._payload = shape.payload
         self._client = {"client": index} if shape.client_var is not None else {}
-        template = event_frame(shape.name, None, token=token, pathname=pathname)
+        template = codec.event_frame(shape.name, None, token=token, pathname=pathname)
         head, marker, self._tail = template.partition('"payload":null')
         self._head = head + marker.removesuffix("null")
 
@@ -551,7 +928,7 @@ class _Frames:
             The frame.
         """
         payload = json.dumps(
-            {**self._payload(seq), **self._client}, separators=(",", ":")
+            {**self._payload(seq), **self._client}, separators=_COMPACT
         )
         return f"{self._head}{payload}{self._tail}"
 
@@ -584,7 +961,8 @@ class _Session:
         self.shape = shape
         self.link = link
         self.token = str(uuid.uuid4())
-        self.frames = self._frames()
+        self.codec: Codec | None = None
+        self.frames: _Frames | None = None
         self.ws: ClientConnection | None = None
         self.error: str | None = None
         self.prime_ns: int | None = None
@@ -610,7 +988,10 @@ class _Session:
         """
         if self.shape is None:
             return None
-        return _Frames(self.shape, self.token, self.endpoint.pathname, self.index)
+        assert self.codec is not None
+        return _Frames(
+            self.codec, self.shape, self.token, self.endpoint.pathname, self.index
+        )
 
     def _fail(self, reason: str) -> None:
         """Mark the session failed and wake whatever waits on it.
@@ -624,74 +1005,81 @@ class _Session:
         self._linked.set()
         self._idle.set()
 
-    async def prime(self, gate: asyncio.Semaphore) -> None:
-        """Connect, join the namespace, hydrate like a page load and link; failures are recorded.
+    async def prime(self, gate: asyncio.Semaphore, codec: Codec) -> None:
+        """Connect, open the session, hydrate like a page load and link; failures are recorded.
 
         Args:
             gate: Limits how many sessions connect at once.
+            codec: The endpoint's protocol.
         """
+        self.codec = codec
+        self.frames = self._frames()
         async with gate:
             try:
-                await asyncio.wait_for(self._open(), PRIME_TIMEOUT_S)
+                await asyncio.wait_for(self._open(codec), PRIME_TIMEOUT_S)
             except TimeoutError:
                 step = "linked" if self._hydrated.is_set() else "hydrated"
                 self._fail(f"not {step} within {PRIME_TIMEOUT_S:g} s")
             except Exception as exc:
                 self._fail(f"could not connect: {type(exc).__name__}: {exc}")
 
-    async def _open(self) -> None:
-        """Run the handshake, the hydration events and the link event.
+    async def _open(self, codec: Codec) -> None:
+        """Run the handshake, the hydration and the link event.
+
+        Args:
+            codec: The endpoint's protocol.
 
         Raises:
-            ProtocolError: When the server does not open or refuses the namespace.
+            ProtocolError: When the server does not open or refuses the session.
             ConnectionError: When the session failed while hydrating or linking.
         """
         started = time.perf_counter_ns()
         ws = self.ws = await connect(
-            event_url(self.endpoint.backend_url, self.token),
+            codec.url(self.endpoint.backend_url, self.token),
             proxy=None,
             open_timeout=None,
             max_size=MAX_FRAME_BYTES,
             ping_interval=None,
             close_timeout=1,
         )
-        opened = await ws.recv()
-        if not (isinstance(opened, str) and opened.startswith(OPEN_PREFIX)):
-            msg = f"the server did not open an engine.io session: {opened[:40]!r}"
-            raise ProtocolError(msg)
-        await ws.send(CONNECT_FRAME)
+        pathname = self.endpoint.pathname
+        if codec.greets:
+            greeting = await ws.recv()
+            opened = codec.parse(greeting)
+            if opened is None or opened[0] != OPENED:
+                msg = f"the server did not open an engine.io session: {greeting[:40]!r}"
+                raise ProtocolError(msg)
+        await ws.send(codec.connect_frame(token=self.token, pathname=pathname))
         while True:
             message = await ws.recv()
-            if isinstance(message, str):
-                if message.startswith(EVENT_PREFIX):
-                    # python-socketio sends events of the connect handler first.
-                    self._on_emit(json.loads(message[len(EVENT_PREFIX) :]), message, 0)
-                    continue
-                if message.startswith(CONNECT_FRAME):
-                    break
-                if message.startswith(CONNECT_ERROR_PREFIX):
-                    reason = message[len(CONNECT_ERROR_PREFIX) :]
-                    msg = f"the server refused {NAMESPACE}: {reason}"
-                    raise ProtocolError(msg)
-                if message == PING:
-                    await ws.send(PONG)
-                    continue
-            msg = f"unexpected frame in the handshake: {message[:40]!r}"
-            raise ProtocolError(msg)
-        self._reader = asyncio.create_task(self._read())
-        pathname = self.endpoint.pathname
-        await ws.send(
-            event_frame(HYDRATE_EVENT, {}, token=self.token, pathname=pathname)
-        )
-        await ws.send(
-            event_frame(ON_LOAD_EVENT, {}, token=self.token, pathname=pathname)
-        )
+            args = codec.parse(message)
+            if args is None:
+                msg = f"unexpected frame in the handshake: {message[:40]!r}"
+                raise ProtocolError(msg)
+            name = args[0]
+            if name == HANDSHAKE:
+                break
+            if name == PING:
+                await ws.send(codec.pong)
+            elif name in CONTROL:
+                msg = end_reason(args, message) or (
+                    f"unexpected frame in the handshake: {message[:40]!r}"
+                )
+                raise ProtocolError(msg)
+            else:
+                # Events of the connect come first, e.g. a new token.
+                self._on_emit(args, message, 0)
+        self._reader = asyncio.create_task(self._read(ws, codec))
+        for name in codec.load_events:
+            await ws.send(
+                codec.event_frame(name, {}, token=self.token, pathname=pathname)
+            )
         await self._hydrated.wait()
         if self.error is not None:
             raise ConnectionError(self.error)
         if (link := self.link) is not None:
             await ws.send(
-                event_frame(
+                codec.event_frame(
                     link.name, link.payload, token=self.token, pathname=pathname
                 )
             )
@@ -700,43 +1088,49 @@ class _Session:
                 raise ConnectionError(self.error)
         self.prime_ns = time.perf_counter_ns() - started
 
-    async def _read(self) -> None:
-        """Receive frames until the websocket closes: answers, pings, tokens and disconnects."""
-        ws = self.ws
-        assert ws is not None
-        start = len(EVENT_PREFIX)
+    async def _read(self, ws: ClientConnection, codec: Codec) -> None:
+        """Receive frames until the websocket closes: answers, pings, tokens and disconnects.
+
+        Args:
+            ws: The websocket.
+            codec: Its protocol.
+        """
+        parse = codec.parse
         try:
             async for message in ws:
                 now = time.perf_counter_ns()
-                if isinstance(message, str) and message.startswith(EVENT_PREFIX):
-                    self._on_emit(json.loads(message[start:]), message, now)
-                elif message == PING:
-                    await ws.send(PONG)
-                elif message in {DISCONNECT_FRAME, CLOSE}:
-                    self._fail(f"the server disconnected the session ({message!r})")
-                    return
-                else:
+                args = parse(message)
+                if args is None:
                     self._fail(f"unexpected frame: {message[:40]!r}")
                     return
+                name = args[0]
+                if name == PING:
+                    await ws.send(codec.pong)
+                elif name in CONTROL:
+                    self._fail(
+                        end_reason(args, message)
+                        or f"unexpected frame: {message[:40]!r}"
+                    )
+                    return
+                else:
+                    self._on_emit(args, message, now)
         except ConnectionClosed as exc:
             if not self._closing:
                 self._fail(f"the websocket closed: {exc}")
-        except ValueError as exc:
-            self._fail(f"{type(exc).__name__}: {exc}")
         else:
             if not self._closing:
                 self._fail("the websocket closed")
 
-    def _on_emit(self, args: list[Any], frame: str, now: int) -> None:
-        """Handle a socket.io event from the server.
+    def _on_emit(self, args: list[Any], frame: str | bytes, now: int) -> None:
+        """Handle a message from the server.
 
         Args:
-            args: The event name and arguments.
+            args: The message name and arguments.
             frame: The raw frame.
             now: When it arrived.
         """
         name = args[0]
-        if name == "event":
+        if name == EVENT:
             delta = args[1].get("delta")
             if not delta:
                 return
@@ -750,7 +1144,7 @@ class _Session:
                     or state.get(shape.client_var) == self.index
                 )
             ):
-                if self.reply_frame is None:
+                if self.reply_frame is None and isinstance(frame, str):
                     self.reply_frame = frame
                 if self.fanout is None:
                     self._answer(seq, now)
@@ -765,11 +1159,7 @@ class _Session:
                 and self.link.delta_key in delta
             ):
                 self._linked.set()
-            if (
-                not self._hydrated.is_set()
-                and (root := delta.get(ROOT_STATE))
-                and root.get(HYDRATED_VAR) is True
-            ):
+            if not self._hydrated.is_set() and is_hydrated(delta):
                 self._hydrated.set()
         elif name == "new_token":
             # The token was in use by another session; reflex hands out a new one.
@@ -922,13 +1312,13 @@ class _Session:
                 await asyncio.wait_for(self._idle.wait(), remaining)
 
     async def close(self) -> None:
-        """Leave the namespace and close the websocket."""
+        """Leave the session and close the websocket."""
         self._closing = True
-        ws = self.ws
+        ws, codec = self.ws, self.codec
         if ws is not None:
+            assert codec is not None
             if self.error is None:
-                with contextlib.suppress(ConnectionClosed):
-                    await ws.send(DISCONNECT_FRAME)
+                await leave(ws, codec)
             await ws.close()
         if self._reader is not None:
             self._reader.cancel()
@@ -959,6 +1349,7 @@ class SessionPool:
             shape: The event they send, or ``None`` for idle sessions.
             link: The event they send once hydrated, or ``None``.
         """
+        self.endpoint = endpoint
         self.sessions = [_Session(index, endpoint, shape, link) for index in indices]
 
     @property
@@ -971,12 +1362,18 @@ class SessionPool:
         return [f"session {s.index}: {s.error}" for s in self.sessions if s.error]
 
     async def prime(self) -> None:
-        """Connect, hydrate and link every session, up to ``PRIME_CONCURRENCY`` at a time."""
+        """Find the protocol, then connect, hydrate and link every session, up to ``PRIME_CONCURRENCY`` at a time."""
+        try:
+            codec = await resolve_codec(self.endpoint)
+        except Exception as exc:
+            for session in self.sessions:
+                session._fail(f"could not connect: {type(exc).__name__}: {exc}")
+            return
         gate = asyncio.Semaphore(PRIME_CONCURRENCY)
-        await asyncio.gather(*(session.prime(gate) for session in self.sessions))
+        await asyncio.gather(*(session.prime(gate, codec) for session in self.sessions))
 
     async def close(self) -> None:
-        """Leave the namespace and close every websocket."""
+        """Leave the sessions and close every websocket."""
         await asyncio.gather(*(session.close() for session in self.sessions))
 
 
@@ -1350,6 +1747,120 @@ async def wait_readable(conn: Connection) -> None:
         loop.remove_reader(fd)
 
 
+def spawn_process(
+    target: Callable[..., None], *args: Any, name: str
+) -> tuple[BaseProcess, Connection]:
+    """Start a daemon process with a pipe to it.
+
+    It is spawned, not forked: the harness runs hooks on threads.
+
+    Args:
+        target: The process's function; the child's end of the pipe is its
+            last argument.
+        *args: Its other arguments.
+        name: The process's name.
+
+    Returns:
+        The started process and the parent's end of the pipe.
+    """
+    context = multiprocessing.get_context("spawn")
+    conn, child = context.Pipe()
+    proc = context.Process(target=target, args=(*args, child), name=name, daemon=True)
+    proc.start()
+    # Only the process holds the child's end now, so its exit closes the pipe.
+    child.close()
+    return proc, conn
+
+
+def stop_processes(procs: Sequence[BaseProcess]) -> None:
+    """Terminate started processes together, killing each one that does not exit in time.
+
+    Args:
+        procs: The processes.
+    """
+    for proc in procs:
+        if proc.is_alive():
+            proc.terminate()
+    for proc in procs:
+        proc.join(KILL_GRACE_S)
+        if proc.is_alive():
+            proc.kill()
+            proc.join(KILL_GRACE_S)
+
+
+def _ready_timeout(sessions: int) -> float:
+    """Bound the wait for a process to prime its sessions.
+
+    Args:
+        sessions: The process's sessions.
+
+    Returns:
+        Seconds: a margin plus the prime timeout per batch of
+        ``PRIME_CONCURRENCY`` sessions.
+    """
+    return READY_MARGIN_S + -(-sessions // PRIME_CONCURRENCY) * PRIME_TIMEOUT_S
+
+
+def _check_started(errors: Sequence[str], sessions: int) -> None:
+    """Fail when sessions could not start.
+
+    Args:
+        errors: Why sessions failed to prime.
+        sessions: How many were to start.
+
+    Raises:
+        LoadError: With how many failed and the first reason.
+    """
+    if errors:
+        msg = f"{len(errors)} of {sessions} sessions could not start; {errors[0]}"
+        raise LoadError(msg)
+
+
+def _report(conn: Connection, proc: BaseProcess, who: str) -> Any:
+    """Receive a process's next report.
+
+    Args:
+        conn: The pipe to it, readable or closed.
+        proc: The process.
+        who: The process as messages name it, e.g. ``generator process 0``.
+
+    Returns:
+        The report's value.
+
+    Raises:
+        LoadError: When the process exited or reports a failure.
+    """
+    try:
+        kind, value = conn.recv()
+    except (EOFError, OSError):
+        msg = f"{who} exited with code {proc.exitcode}"
+        raise LoadError(msg) from None
+    if kind == "error":
+        msg = f"{who} failed:\n{value}"
+        raise LoadError(msg)
+    return value
+
+
+def _serve(
+    conn: Connection, sessions: int, main: Callable[[], Awaitable[None]]
+) -> None:
+    """Run a spawned process's work on a fresh loop, reporting a failure to the parent.
+
+    Args:
+        conn: The pipe to the parent.
+        sessions: The sessions the work opens.
+        main: Starts the work, which reports its results itself.
+    """
+    # The parent decides when to stop, also on Ctrl-C.
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+    try:
+        raise_fd_limit(sessions)
+        event_loop().run_until_complete(main())
+    except BaseException:
+        with contextlib.suppress(OSError):
+            conn.send(("error", traceback.format_exc()))
+
+
 async def _handshake(conn: Connection, errors: list[str]) -> int | None:
     """Report the primed sessions to the parent and wait for the start.
 
@@ -1382,28 +1893,29 @@ async def _handshake(conn: Connection, errors: list[str]) -> int | None:
     return value
 
 
-def _worker(plan: LoadPlan, indices: Sequence[int], conn: Connection) -> None:
-    """Run one generator process: its sessions, on its CPUs, reporting over a pipe.
+async def _load(plan: LoadPlan, indices: Sequence[int], conn: Connection) -> None:
+    """Run a generator process's sessions on its CPUs and send the parent what they measured.
 
     Args:
         plan: The load plan.
         indices: The sessions of this process.
         conn: The pipe to the parent.
     """
-    # The parent decides when to stop, also on Ctrl-C.
-    signal.signal(signal.SIGINT, signal.SIG_IGN)
-    try:
-        if plan.cpus is not None and hasattr(os, "sched_setaffinity"):
-            os.sched_setaffinity(0, plan.cpus)
-        raise_fd_limit(len(indices))
-        loop = event_loop()
-        shard = loop.run_until_complete(
-            _run_sessions(plan, indices, lambda errors: _handshake(conn, errors))
-        )
-        conn.send(("result", shard))
-    except BaseException:
-        with contextlib.suppress(OSError):
-            conn.send(("error", traceback.format_exc()))
+    if plan.cpus is not None and hasattr(os, "sched_setaffinity"):
+        os.sched_setaffinity(0, plan.cpus)
+    shard = await _run_sessions(plan, indices, lambda errors: _handshake(conn, errors))
+    conn.send(("result", shard))
+
+
+def _worker(plan: LoadPlan, indices: Sequence[int], conn: Connection) -> None:
+    """Run one generator process, reporting over a pipe.
+
+    Args:
+        plan: The load plan.
+        indices: The sessions of this process.
+        conn: The pipe to the parent.
+    """
+    _serve(conn, len(indices), lambda: _load(plan, indices, conn))
 
 
 class LoadRunner:
@@ -1429,8 +1941,6 @@ class LoadRunner:
     def run(self, on_window: Callable[[str], None] | None = None) -> LoadResult:
         """Start the processes, prime every session, run the schedule and merge the results.
 
-        Processes are spawned, not forked: the harness runs hooks on threads.
-
         Args:
             on_window: Called with ``"start"`` and ``"end"`` on this thread when
                 the measured window starts and ends, e.g. to read the server's
@@ -1444,30 +1954,25 @@ class LoadRunner:
                 out, or the runner was stopped.
         """
         plan = self.plan
-        context = multiprocessing.get_context("spawn")
         try:
             with self._lock:
                 if self._stopped:
                     msg = "the load was stopped before it started"
                     raise LoadError(msg)
                 for index in range(plan.processes):
-                    conn, child = context.Pipe()
-                    self._conns.append(conn)
-                    proc = context.Process(
-                        target=_worker,
-                        args=(plan, range(index, plan.sessions, plan.processes), child),
+                    proc, conn = spawn_process(
+                        _worker,
+                        plan,
+                        range(index, plan.sessions, plan.processes),
                         name=f"reflex-bench-load-{index}",
-                        daemon=True,
                     )
-                    proc.start()
-                    child.close()
                     self._procs.append(proc)
+                    self._conns.append(conn)
             per_process = -(-plan.sessions // plan.processes)
-            batches = -(-per_process // PRIME_CONCURRENCY)
-            ready = self._collect("ready", READY_MARGIN_S + batches * PRIME_TIMEOUT_S)
-            if errors := [error for errors in ready for error in errors]:
-                msg = f"{len(errors)} of {plan.sessions} sessions could not start; {errors[0]}"
-                raise LoadError(msg)
+            ready = self._collect("ready", _ready_timeout(per_process))
+            _check_started(
+                [error for errors in ready for error in errors], plan.sessions
+            )
             t0 = time.perf_counter_ns() + int(START_DELAY_S * 1e9)
             for conn in self._conns:
                 conn.send(("go", t0))
@@ -1539,18 +2044,9 @@ class LoadRunner:
                 msg = f"generator processes sent no {kind} within {timeout:g} s"
                 raise LoadError(msg)
             for index, conn in pending:
-                if conn not in ready and self._procs[index].sentinel not in ready:
-                    continue
-                try:
-                    got, value = conn.recv()
-                except (EOFError, OSError):
-                    code = self._procs[index].exitcode
-                    msg = f"generator process {index} exited with code {code}"
-                    raise LoadError(msg) from None
-                if got == "error":
-                    msg = f"generator process {index} failed:\n{value}"
-                    raise LoadError(msg)
-                values[index] = value
+                proc = self._procs[index]
+                if conn in ready or proc.sentinel in ready:
+                    values[index] = _report(conn, proc, f"generator process {index}")
         return [values[index] for index in range(len(self._conns))]
 
     def stop(self) -> None:
@@ -1560,14 +2056,7 @@ class LoadRunner:
         """
         with self._lock:
             self._stopped = True
-            for proc in self._procs:
-                if proc.is_alive():
-                    proc.terminate()
-            for proc in self._procs:
-                proc.join(KILL_GRACE_S)
-                if proc.is_alive():
-                    proc.kill()
-                    proc.join(KILL_GRACE_S)
+            stop_processes(self._procs)
 
 
 def run_load(
@@ -1609,22 +2098,15 @@ def _hold_worker(endpoint: Endpoint, count: int, conn: Connection) -> None:
         count: How many.
         conn: The pipe to the parent.
     """
-    # The parent decides when to stop, also on Ctrl-C.
-    signal.signal(signal.SIGINT, signal.SIG_IGN)
-    try:
-        raise_fd_limit(count)
-        event_loop().run_until_complete(_hold(endpoint, count, conn))
-    except BaseException:
-        with contextlib.suppress(OSError):
-            conn.send(("error", traceback.format_exc()))
+    _serve(conn, count, lambda: _hold(endpoint, count, conn))
 
 
 class SessionHold:
     """Idle sessions in a spawned process: connected, hydrated and answering pings.
 
     The sessions send no events after priming, like browser tabs left open.
-    :meth:`ready` waits until every session is primed, :meth:`close` leaves the
-    namespace and closes each websocket, and :meth:`kill` ends the process from
+    :meth:`ready` waits until every session is primed, :meth:`close` leaves
+    each session and closes its websocket, and :meth:`kill` ends the process from
     any thread (a benchmark's ``conclude`` after a timed-out ``sample``). A hold
     whose parent exits closes its sessions and ends.
     """
@@ -1652,21 +2134,13 @@ class SessionHold:
         Raises:
             LoadError: When the hold was killed before it started.
         """
-        context = multiprocessing.get_context("spawn")
         with self._lock:
             if self._stopped:
                 msg = "the hold was stopped before it started"
                 raise LoadError(msg)
-            conn, child = context.Pipe()
-            self._conn = conn
-            proc = self._proc = context.Process(
-                target=_hold_worker,
-                args=(self.endpoint, self.count, child),
-                name="reflex-bench-hold",
-                daemon=True,
+            self._proc, self._conn = spawn_process(
+                _hold_worker, self.endpoint, self.count, name="reflex-bench-hold"
             )
-            proc.start()
-            child.close()
         return self
 
     def ready(self) -> None:
@@ -1676,14 +2150,11 @@ class SessionHold:
             LoadError: When sessions could not start, with how many, or the
                 process failed, timed out or was killed.
         """
-        batches = -(-self.count // PRIME_CONCURRENCY)
-        errors = self._receive("ready", READY_MARGIN_S + batches * PRIME_TIMEOUT_S)
-        if errors:
-            msg = f"{len(errors)} of {self.count} sessions could not start; {errors[0]}"
-            raise LoadError(msg)
+        errors = self._receive("ready", _ready_timeout(self.count))
+        _check_started(errors, self.count)
 
     def close(self) -> list[str]:
-        """Leave the namespace and close every websocket, then end the process.
+        """Leave every session and close its websocket, then end the process.
 
         Returns:
             Why sessions failed while they were held, e.g. because the server
@@ -1728,15 +2199,7 @@ class SessionHold:
         if not ready:
             msg = f"the hold sent no {kind} report within {timeout:g} s"
             raise LoadError(msg)
-        try:
-            got, value = conn.recv()
-        except (EOFError, OSError):
-            msg = f"the hold's process exited with code {proc.exitcode}"
-            raise LoadError(msg) from None
-        if got == "error":
-            msg = f"the hold's process failed:\n{value}"
-            raise LoadError(msg)
-        return value
+        return _report(conn, proc, "the hold's process")
 
     def kill(self) -> None:
         """Terminate the process, killing it if it does not exit.
@@ -1746,14 +2209,8 @@ class SessionHold:
         with self._lock:
             self._stopped = True
             proc = self._proc
-        if proc is None:
-            return
-        if proc.is_alive():
-            proc.terminate()
-        proc.join(KILL_GRACE_S)
-        if proc.is_alive():
-            proc.kill()
-            proc.join(KILL_GRACE_S)
+        if proc is not None:
+            stop_processes([proc])
 
 
 def hold_sessions(endpoint: Endpoint, count: int) -> SessionHold:

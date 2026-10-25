@@ -785,7 +785,11 @@ def test_refused_hydration_retries_with_backoff(
 def test_hydration_over_server_limit_is_reported_once(
     hydration_storage_app: AppHarness, page: Page
 ):
-    """A hydrate over the server's announced limit is reported and not sent.
+    """A hydrate over the server's limit is reported once and not retried.
+
+    Socket.IO checks it against the limit its handshake announced, before
+    sending it. The plain WebSocket sends it with its connect frame, which
+    saves the handshake round trip, and reports the server refusing it.
 
     Args:
         hydration_storage_app: The running app.
@@ -802,7 +806,14 @@ def test_hydration_over_server_limit_is_reported_once(
     page.evaluate("localStorage.setItem('hydrate-local', 'x'.repeat(1_100_000))")
     opens.clear()
     page.reload()
-    expect(page.get_by_text("Reduce browser storage data and reload")).to_be_visible()
+    # Each transport names the limit: the plain WebSocket from the close reason.
+    expect(
+        page.get_by_text(
+            re.compile(
+                r"server limit \(1000000 \w+\)\. Reduce browser storage data and reload"
+            )
+        )
+    ).to_be_visible()
     page.wait_for_timeout(2000)
     assert len(opens) == 1, opens
     expect(page.locator("#hydrated")).to_have_text("false")

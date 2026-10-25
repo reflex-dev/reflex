@@ -339,9 +339,12 @@ the only one so far.
 (`examples/playground`) answers and how fast. Each benchmark instance starts it
 once as a production backend (`reflex run --env prod --backend-only`, one
 granian worker), and each sample drives it for a few seconds with
-`reflex_bench.drivers.events`, a socket.io load generator that speaks reflex's
-event websocket over `websockets` (no python-socketio). Sessions are browser
-tabs: each connects with its own token, hydrates like a page load, then sends
+`reflex_bench.drivers.events`, a load generator that speaks reflex's event
+websocket over `websockets`: the plain protocol of reflex's default transport,
+or Socket.IO (without python-socketio) for releases before it and apps with
+`transport="socketio"`. Each pool of sessions detects which by dialing the
+plain endpoint, which a Socket.IO backend refuses. Sessions are browser tabs:
+each connects with its own token, hydrates like a page load, then sends
 `BenchState.set_seq*` events whose delta echoes a sequence number.
 
 The grid holds the common points, about 30 minutes with the default policy.
@@ -592,8 +595,14 @@ app and reflex version, so every metric is exact and a sample is one run.
   counts, as does any delta of another state. The extra data keeps the echo
   frame (`reply`), the largest frame, and `delta_bytes`, the bytes of each
   substate's part of the deltas re-serialized compactly.
-- **Keepalives do not count**: an engine.io ping and its pong are timing, not
-  payload, so a slow run moves the same bytes as a fast one.
+- **Keepalives do not count**: a ping and its pong are timing, not payload, so
+  a slow run moves the same bytes as a fast one.
+- **The backend's protocol**: the session speaks the plain protocol or
+  Socket.IO, whichever the backend does, so a comparison across reflex's switch
+  includes the framing. On the plain protocol the hydration rides in the
+  connect frame: `hydrate_and_load` with an empty payload, as on a reconnect,
+  so the full state rather than the difference from the compiled defaults a
+  browser's first load asks for.
 - **`wire.navigate`** sends what the frontend sends on a route change: one
   `on_load_internal` with the new route's `router_data`. `update_vars_internal`
   goes first only once the browser holds a value of a client storage var (the

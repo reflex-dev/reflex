@@ -1,6 +1,6 @@
 ---
 title: "Upgrading to Reflex 0.10"
-meta_description: "Changes to review when upgrading an app from Reflex 0.9 to 0.10, with the fix for each: backend vars read on a state class, class-level defaults, background tasks, and state stores shared with 0.9 instances."
+meta_description: "Changes to review when upgrading an app from Reflex 0.9 to 0.10, with the fix for each: backend vars read on a state class, class-level defaults, background tasks, the event transport, and state stores shared with 0.9 instances."
 ---
 
 # Upgrading to Reflex 0.10
@@ -130,6 +130,62 @@ class Child(Parent):
         async with self:
             self.bump()
 ```
+
+## The event transport
+
+`transport="websocket"`, the default, now means a plain WebSocket speaking
+JSON frames rather than Socket.IO over a websocket
+([#6932](https://github.com/reflex-dev/reflex/pull/6932)). Socket.IO remains
+available as `transport="socketio"` (or `"polling"`) with the optional extra,
+`pip install 'reflex[socketio]'`.
+
+| If your app | Do this |
+| --- | --- |
+| Passes `rx.App(sio=...)` | Set `transport="socketio"` in `rxconfig.py` and install `reflex[socketio]`. Without a transport setting the app still falls back to Socket.IO, with a deprecation warning. |
+| Uses `app.sio` for its own Socket.IO events | The same: under the default transport `app.sio` is `None`. |
+| Imports `socketio`, or `AsyncServer` or `EventNamespace` from `reflex.app` | Install `reflex[socketio]`: `python-socketio` is no longer a dependency of `reflex`. |
+| Replaces `reflex.app.EventNamespace` with a subclass | That class serves only `transport="socketio"` and `"polling"`; replace `reflex.app.WebsocketEventNamespace` as well, and override `handle_event` rather than `on_event` (see [below](#running-code-for-every-event)). |
+| Runs the backend on uvicorn | Install `reflex[uvicorn]`, which brings the `websockets` library uvicorn needs to serve the event socket. Without a websocket library, Reflex runs Granian instead. |
+| Routes the backend through a reverse proxy | Send both `/_event` and `/_event/*` to the backend; the client dials `/_event/`. |
+| Raised `REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE` | It counts UTF-8 bytes rather than characters, and Granian caps it at 16 MiB; run uvicorn for larger messages. |
+| Uses `AppHarness.backend` or `AppHarnessProd.frontend_server` in tests | Both are an embedded Granian server rather than a `uvicorn.Server`: wait for startup with `wait_started()` (`started` is deprecated), and drop uses of `servers`, `config`, `serve()` and the other uvicorn internals. `reflex[testing]` no longer installs uvicorn; add it yourself if your tests import it. |
+
+Browser tabs left open across the upgrade, and frontends exported with 0.9 and
+hosted separately, cannot reconnect: reload the tabs and re-export the
+frontend.
+
+Under the default transport `app.event_namespace` is a
+`WebsocketEventNamespace`. Its `emit(event, data, to=sid)` reaches one session,
+or every session when `to` is omitted; Socket.IO's rooms, `skip_sid` and
+callbacks are not available. An event whose payload is not a JSON object closes
+the connection instead of being parsed from a string, and a Socket.IO
+connection that carries no client token is refused.
+
+### Running code for every event
+
+To run code for every event, such as an authorization check or an audit log,
+subclass the event namespace and override `handle_event`. On either transport
+it receives every event, including the hydrate event a client sends with its
+connect. Replace the class in `reflex.app` before creating the app:
+
+```python
+import reflex as rx
+import reflex.app
+from reflex.event_namespace import WebsocketEventNamespace
+
+
+class AuditingNamespace(WebsocketEventNamespace):
+    async def handle_event(self, sid, data, asgi_scope):
+        audit(sid, data)
+        await super().handle_event(sid, data, asgi_scope)
+
+
+reflex.app.WebsocketEventNamespace = AuditingNamespace
+app = rx.App()
+```
+
+Under `transport="socketio"` or `"polling"`, subclass `reflex.app.EventNamespace`
+the same way. Overriding its `on_event` still works, but is deprecated.
 
 ## Sharing a state store between 0.9 and 0.10 instances
 
