@@ -25,9 +25,9 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 UPDATE_OTHER_CLIENT_TASKS: set[asyncio.Task] = set()
-# Reaps still waiting out the reconnect grace, by client token.
+# The latest reap per client token, the only one allowed to unlink it.
 DISCONNECT_REAP_TASKS: dict[str, asyncio.Task] = {}
-# Reaps past the grace, referenced until their cleanup finishes.
+# Reaps that started unlinking; a newer disconnect no longer cancels them.
 STARTED_REAP_TASKS: set[asyncio.Task] = set()
 LINKED_STATE = TypeVar("LINKED_STATE", bound="SharedStateBaseInternal")
 
@@ -99,7 +99,8 @@ def schedule_disconnect_reap(app: "App", token: str) -> asyncio.Task | None:
     (REFLEX_SHARED_STATE_DISCONNECT_GRACE) so brief reconnects (page reloads,
     network blips) are no-ops; a client reaped too eagerly re-subscribes on its
     next event through _internal_patch_linked_state. A new disconnect for the
-    same token restarts a pending grace; a cleanup already under way finishes.
+    same token restarts the grace; a cleanup already under way finishes the
+    shared state it is unlinking and leaves the rest to the new reap.
 
     Args:
         app: The application object.
@@ -111,7 +112,9 @@ def schedule_disconnect_reap(app: "App", token: str) -> asyncio.Task | None:
     grace = environment.REFLEX_SHARED_STATE_DISCONNECT_GRACE.get()
     if grace <= 0 or app._state is None:
         return None
-    if (previous := DISCONNECT_REAP_TASKS.pop(token, None)) is not None:
+    if (
+        previous := DISCONNECT_REAP_TASKS.get(token)
+    ) is not None and previous not in STARTED_REAP_TASKS:
         previous.cancel()
 
     task = asyncio.create_task(
@@ -140,12 +143,6 @@ async def _reap_disconnected_client(app: "App", token: str, grace: float) -> Non
         grace: Seconds to wait for a reconnect before unsubscribing.
     """
     await asyncio.sleep(grace)
-    # Past the grace, a new disconnect schedules another reap instead of
-    # cancelling this cleanup midway.
-    task = asyncio.current_task()
-    if task is not None and DISCONNECT_REAP_TASKS.get(token) is task:
-        del DISCONNECT_REAP_TASKS[token]
-        STARTED_REAP_TASKS.add(task)
     if (event_namespace := app.event_namespace) is None:
         return
     token_manager = event_namespace._token_manager
@@ -174,10 +171,16 @@ async def _reap_disconnected_client(app: "App", token: str, grace: float) -> Non
                     or token not in shared._linked_from
                 ):
                     continue
-                # Recheck under the lock: the client may have reconnected and
-                # resubscribed while the reap waited for it.
-                if await token_manager.is_token_connected(token):
+                # Recheck under the lock: the client may have reconnected, or
+                # disconnected again and left this to a newer reap.
+                if (
+                    await token_manager.is_token_connected(token)
+                    or (task := asyncio.current_task()) is None
+                    or DISCONNECT_REAP_TASKS.get(token, task) is not task
+                ):
                     return
+                # Unlinking starts; a newer disconnect must not cancel it midway.
+                STARTED_REAP_TASKS.add(task)
                 shared._linked_from.discard(token)
                 await shared._on_subscriber_disconnected(token)
         except Exception as e:

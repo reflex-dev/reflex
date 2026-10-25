@@ -121,6 +121,14 @@ async def test_update_other_tokens_redis_cross_instance(redis_manager, mock_redi
     assert local_key not in [call.args[0] for call in mock_redis.get.call_args_list]
 
 
+@pytest.fixture(autouse=True)
+def _clear_reap_tasks():
+    """Drop the reap bookkeeping left by tests calling the reap without scheduling it."""
+    yield
+    DISCONNECT_REAP_TASKS.clear()
+    STARTED_REAP_TASKS.clear()
+
+
 def _mock_reap_app(token_manager) -> tuple[Mock, Mock, list[str]]:
     """Create a mock app with one client linked to one shared state.
 
@@ -275,6 +283,70 @@ async def test_schedule_disconnect_reap_lets_started_cleanup_finish(monkeypatch)
 
     assert shared._linked_from == {"other"}
     shared._on_subscriber_disconnected.assert_awaited_once_with("gone")
+    assert not DISCONNECT_REAP_TASKS
+    assert not STARTED_REAP_TASKS
+
+
+@pytest.mark.parametrize("blocked_link", [0, 1])
+async def test_superseded_reap_leaves_unlink_to_new_grace(
+    monkeypatch, blocked_link: int
+):
+    """A reap waiting for a shared lock unlinks nothing once a newer disconnect restarts the grace."""
+    monkeypatch.setenv("REFLEX_SHARED_STATE_DISCONNECT_GRACE", "60")
+    sleep = asyncio.sleep
+    first_grace, second_grace = asyncio.Event(), asyncio.Event()
+    graces = [first_grace, second_grace]
+
+    async def wait_for_grace(delay):
+        await graces.pop(0).wait()
+
+    monkeypatch.setattr(asyncio, "sleep", wait_for_grace)
+    app, _, _ = _mock_reap_app(LocalTokenManager())
+    rooms = [Mock(spec=SharedState) for _ in range(2)]
+    for room in rooms:
+        room._linked_from = {"gone"}
+        room._on_subscriber_disconnected = AsyncMock()
+    app.state_manager.get_state.return_value._reflex_internal_links = {
+        "state.shared_0": "0",
+        "state.shared_1": "1",
+    }
+    lock_wanted = asyncio.Event()
+    release_lock = asyncio.Event()
+
+    @asynccontextmanager
+    async def modify_state(token):
+        if token.ident == str(blocked_link):
+            lock_wanted.set()
+            await release_lock.wait()
+        shared_root = Mock()
+        shared_root.get_state = AsyncMock(return_value=rooms[int(token.ident)])
+        yield shared_root
+
+    app.modify_state = modify_state
+
+    first_grace.set()
+    first = schedule_disconnect_reap(app, "gone")
+    await lock_wanted.wait()
+    # The client reconnects and drops again while the reap waits for the lock.
+    second = schedule_disconnect_reap(app, "gone")
+    release_lock.set()
+    assert first is not None
+    assert second is not None
+    await asyncio.wait([first])
+
+    for i, room in enumerate(rooms):
+        assert ("gone" in room._linked_from) is (i >= blocked_link)
+    rooms[blocked_link]._on_subscriber_disconnected.assert_not_awaited()
+    assert {"gone": second} == DISCONNECT_REAP_TASKS
+
+    second_grace.set()
+    await second
+    # Let the done callbacks release the tasks.
+    await sleep(0)
+
+    for room in rooms:
+        assert not room._linked_from
+        room._on_subscriber_disconnected.assert_awaited_once_with("gone")
     assert not DISCONNECT_REAP_TASKS
     assert not STARTED_REAP_TASKS
 
