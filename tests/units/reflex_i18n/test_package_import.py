@@ -28,11 +28,11 @@ def _run_snippet(body: str) -> None:
 
 def test_importing_package_does_not_register_state():
     """Importing the package must not register I18nState until an app opts in."""
-    # Regression: the reflex CLI imports every reflex.cli entry point at
-    # startup, which imports reflex_i18n; that must not attach I18nState (and
-    # its locale cookie) to apps that never use i18n.
+    # Regression: running `reflex i18n` imports reflex_i18n.cli, and with it
+    # reflex_i18n; that must not attach I18nState (and its locale cookie) to
+    # apps that never use i18n.
     _run_snippet("""
-        import reflex_i18n.cli  # the reflex.cli entry point target
+        import reflex_i18n.cli  # the `reflex i18n` command target
         import reflex_i18n
         from reflex.state import all_base_state_classes
 

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import contextlib
-import importlib.metadata
 import json
 import os
 import signal
@@ -20,12 +19,12 @@ from pytest_mock import MockerFixture
 from reflex_base import constants
 
 from reflex import reflex
-from reflex.reflex import _PluginCommand, cli
 from reflex.testing import DEFAULT_TIMEOUT
 
 _CLI_STARTUP_DENIED_MODULES = frozenset({
     "PIL",
     "alembic",
+    "babel",
     "fastapi",
     "granian",
     "httpx",
@@ -41,6 +40,7 @@ _CLI_STARTUP_DENIED_MODULES = frozenset({
     "reflex.utils.prerequisites",
     "reflex_cli.v2.deploy",
     "reflex_cli.v2.deployments",
+    "reflex_i18n",
     "sqlalchemy",
     "sqlmodel",
     "starlette",
@@ -563,97 +563,71 @@ def test_missing_command_tolerates_flags(caplog: pytest.LogCaptureFixture):
     assert "No such option" not in result.output
 
 
-@click.command()
-def _fake_command():
-    """A plugin-contributed command."""
+def test_i18n_command_registered_lazily():
+    """``reflex --help`` lists ``i18n`` without reading metadata or importing it."""
+    probe = """
+import importlib.metadata
+import json
+import sys
 
 
-def _entry_point(name: str, command: object = _fake_command) -> SimpleNamespace:
-    entry_point = SimpleNamespace(
-        name=name, value="fake_pkg.mod:cmd", dist=None, loads=0
-    )
-
-    def load():
-        entry_point.loads += 1
-        return command
-
-    entry_point.load = load
-    return entry_point
+def _scan(*args, **kwargs):
+    raise AssertionError("scanned installed distributions")
 
 
-@pytest.fixture
-def unscanned_cli():
-    """Yield the root group with the plugin scan pending, restoring it after."""
-    builtins = dict(cli.commands)
-    cli.__dict__.pop("_plugins_loaded", None)
-    yield cli
-    cli.__dict__.pop("_plugins_loaded", None)
-    cli.commands.clear()
-    cli.commands.update(builtins)
+# A metadata scan costs ~8% of the whole `reflex --help` process.
+importlib.metadata.distributions = _scan
+importlib.metadata.entry_points = _scan
+
+from click.testing import CliRunner
+from reflex import reflex
+
+runner = CliRunner()
+help_result = runner.invoke(reflex.cli, ["--help"])
+listed = [line.split()[0] for line in help_result.output.splitlines() if line.strip()]
+imported_before = "reflex_i18n" in sys.modules
+i18n_result = runner.invoke(reflex.cli, ["i18n", "--help"])
+
+from reflex_i18n.cli import i18n_cli
+
+command = reflex.cli.commands["i18n"]
+print(json.dumps({
+    "help_matches": command.help == i18n_cli.help,
+    "help_result": help_result.exit_code,
+    "i18n_result": i18n_result.exit_code,
+    "imported_before": imported_before,
+    "lazy": isinstance(command, reflex._LazyCommand),
+    "listed": "i18n" in listed,
+    "resolved": command._resolved_command is i18n_cli,
+}))
+"""
+    assert _run_cli_probe(probe) == {
+        "help_matches": True,
+        "help_result": 0,
+        "i18n_result": 0,
+        "imported_before": False,
+        "lazy": True,
+        "listed": True,
+        "resolved": True,
+    }
 
 
-def test_plugin_cli_scan_is_deferred(
-    unscanned_cli: click.Group, monkeypatch: pytest.MonkeyPatch
-):
-    """Entry points are scanned only for a name the built-in commands miss."""
-    scans = 0
+def test_i18n_command_absent_without_package():
+    """Without ``reflex-i18n`` installed, ``reflex i18n`` is not registered."""
+    probe = """
+import importlib.util
+import json
 
-    def entry_points(group: str):
-        nonlocal scans
-        scans += 1
-        return [_entry_point("fakeplugincmd")]
+_find_spec = importlib.util.find_spec
+importlib.util.find_spec = lambda name, package=None: (
+    None if name == "reflex_i18n" else _find_spec(name, package)
+)
 
-    monkeypatch.setattr(importlib.metadata, "entry_points", entry_points)
-    ctx = click.Context(unscanned_cli)
+from reflex import reflex
 
-    assert unscanned_cli.get_command(ctx, "run") is not None
-    assert scans == 0
-
-    assert isinstance(unscanned_cli.get_command(ctx, "fakeplugincmd"), _PluginCommand)
-    assert scans == 1
-
-    # The scan result is reused, including for a name nothing provides.
-    assert unscanned_cli.get_command(ctx, "nosuchcmd") is None
-    assert "fakeplugincmd" in unscanned_cli.list_commands(ctx)
-    assert scans == 1
-
-
-def test_plugin_cli_command_cannot_shadow_builtin(
-    unscanned_cli: click.Group, monkeypatch: pytest.MonkeyPatch
-):
-    monkeypatch.setattr(
-        importlib.metadata, "entry_points", lambda group: [_entry_point("run")]
-    )
-    ctx = click.Context(unscanned_cli)
-    builtin_run = unscanned_cli.get_command(ctx, "run")
-    unscanned_cli.list_commands(ctx)
-    assert unscanned_cli.get_command(ctx, "run") is builtin_run
-
-
-def test_plugin_cli_command_registers_new_name(
-    unscanned_cli: click.Group, monkeypatch: pytest.MonkeyPatch
-):
-    entry_point = _entry_point("fakeplugincmd")
-    monkeypatch.setattr(importlib.metadata, "entry_points", lambda group: [entry_point])
-    command = unscanned_cli.get_command(click.Context(unscanned_cli), "fakeplugincmd")
-    assert isinstance(command, _PluginCommand)
-    # Registration must not import the plugin; only use does.
-    assert entry_point.loads == 0
-    assert command.help == "Provided by fake_pkg.mod:cmd."
-    assert command._resolve() is _fake_command
-    assert command._resolve() is _fake_command
-    assert entry_point.loads == 1
-
-
-def test_plugin_cli_command_rejects_non_command(
-    unscanned_cli: click.Group, monkeypatch: pytest.MonkeyPatch
-):
-    entry_point = _entry_point("fakeplugincmd", command=object())
-    monkeypatch.setattr(importlib.metadata, "entry_points", lambda group: [entry_point])
-    command = unscanned_cli.get_command(click.Context(unscanned_cli), "fakeplugincmd")
-    assert isinstance(command, _PluginCommand)
-    with pytest.raises(click.ClickException, match=r"not a click\.Command"):
-        command._resolve()
+print(json.dumps({"registered": "i18n" in reflex.cli.commands}))
+"""
+    assert _run_cli_probe(probe) == {"registered": False}
 
 
 def test_init_records_version_check_after_frontend_setup(

@@ -22,9 +22,6 @@ dependencies = [
   "babel >= 2.14.0,<3.0",
 ]
 
-[project.entry-points."reflex.cli"]
-i18n = "reflex_i18n.cli:i18n_cli"
-
 [tool.hatch.version]
 source = "uv-dynamic-versioning"
 

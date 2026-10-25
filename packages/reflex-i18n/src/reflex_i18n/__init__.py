@@ -77,7 +77,7 @@ __all__ = [
 
 # Importing ``.state`` registers ``I18nState`` as a substate (a global side
 # effect). Defer it so merely importing this package (e.g. the reflex CLI
-# loading the ``reflex i18n`` entry point) does not attach i18n state to apps
+# loading the ``reflex i18n`` command) does not attach i18n state to apps
 # that never use i18n; opting in via ``I18nPlugin`` or accessing these names
 # does.
 _LAZY_STATE_ATTRS = frozenset({"I18nState", "set_locale"})

@@ -1,6 +1,7 @@
 """The ``reflex i18n`` command group: extract, init, and check catalogs.
 
-Attached to the ``reflex`` CLI via the ``reflex.cli`` entry point.
+Registered lazily as ``reflex i18n`` by ``reflex.reflex`` when this package is
+installed.
 """
 
 from __future__ import annotations

@@ -160,10 +160,12 @@ def test_cli_group_registered():
 def test_cli_group_discovered_by_reflex():
     import click
 
-    from reflex.reflex import cli
+    from reflex.reflex import _LazyCommand, cli
 
     ctx = click.Context(cli)
-    assert cli.get_command(ctx, "i18n") is not None
+    command = cli.get_command(ctx, "i18n")
+    assert isinstance(command, _LazyCommand)
+    assert command._resolve() is i18n_cli
     assert "i18n" in cli.list_commands(ctx)
 
 

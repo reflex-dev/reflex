@@ -158,7 +158,7 @@ class I18nPlugin(Plugin):
         # Registers I18nState (substate) and the event-scope locale provider.
         # Imported here rather than at module top so an app opting in triggers
         # it, but the package's other import paths (e.g. the reflex CLI loading
-        # the i18n entry point) don't register state.
+        # the ``reflex i18n`` command) don't register state.
         from . import state
 
         # I18nState registers as a root substate on first import of .state. A
