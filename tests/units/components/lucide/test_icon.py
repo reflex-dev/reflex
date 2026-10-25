@@ -1,6 +1,7 @@
 import pytest
 from reflex_base.utils import format
-from reflex_base.vars.base import Var
+from reflex_base.utils.imports import ImportVar
+from reflex_base.vars.base import Var, VarData
 from reflex_components_lucide.icon import (
     LUCIDE_ICON_FILENAME_OVERRIDE,
     LUCIDE_ICON_LIST,
@@ -84,6 +85,89 @@ def test_dynamic_icon_uses_dynamic_module():
     assert import_var.tag == "DynamicIcon"
     assert import_var.package_path == "/dynamic.mjs"
     assert not import_var.is_default
+
+
+@pytest.mark.parametrize(
+    ("tag", "expected"),
+    [
+        (
+            "wifi_off",
+            ImportVar(
+                "WifiOff",
+                is_default=True,
+                alias="LucideWifiOff",
+                package_path="/dist/esm/icons/wifi-off.mjs",
+            ),
+        ),
+        (
+            "fingerprint",
+            ImportVar(
+                "FingerprintPattern",
+                is_default=True,
+                alias="LucideFingerprintPattern",
+                package_path="/dist/esm/icons/fingerprint-pattern.mjs",
+            ),
+        ),
+        (
+            "grid_2x_2",
+            ImportVar(
+                "Grid2X2",
+                is_default=True,
+                alias="LucideGrid2X2",
+                package_path="/dist/esm/icons/grid-2x2.mjs",
+            ),
+        ),
+    ],
+)
+def test_static_icon_import_var(tag: str, expected: ImportVar):
+    """Expose the actual default module import through the component API.
+
+    Args:
+        tag: The static icon name.
+        expected: Its deep import, including aliases and file-name overrides.
+    """
+    assert Icon.create(tag).import_var == expected
+
+
+@pytest.mark.parametrize("is_default", [False, True])
+@pytest.mark.parametrize("reactive", [False, True])
+def test_dynamic_icon_import_var(is_default: bool, reactive: bool):
+    """Expose the named dynamic module import through the component API.
+
+    Args:
+        is_default: Whether the caller requests a default import.
+        reactive: Whether to construct the icon through the reactive factory.
+    """
+    name = Var("icon_name").to(str)
+    icon = (
+        Icon.create(name, is_default=is_default)
+        if reactive
+        else DynamicIcon.create(name=name, is_default=is_default)
+    )
+    assert icon.import_var == ImportVar("DynamicIcon", package_path="/dynamic.mjs")
+
+
+@pytest.mark.parametrize("reactive", [False, True])
+def test_icon_keeps_var_imports(reactive: bool):
+    """Assembling icon imports retains other Lucide imports required by props.
+
+    Args:
+        reactive: Whether to render a dynamic icon.
+    """
+    required = ImportVar("icons", alias="lucideIcons")
+    size = Var(
+        "Object.keys(lucideIcons).length",
+        _var_type=int,
+        _var_data=VarData(imports={LUCIDE_LIBRARY: [required]}),
+    )
+    icon = Icon.create(Var("icon_name").to(str) if reactive else "apple", size=size)
+    first = {
+        library: list(import_vars)
+        for library, import_vars in icon._get_imports().items()
+    }
+    assert required in first[LUCIDE_LIBRARY]
+    assert icon.import_var in first[LUCIDE_LIBRARY]
+    assert icon._get_imports() == first
 
 
 def test_static_icon_import_idempotent():

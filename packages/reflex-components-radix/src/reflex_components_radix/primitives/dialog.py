@@ -14,7 +14,7 @@ from .base import RadixPrimitiveComponent, RadixPrimitiveTriggerComponent
 class DialogElement(RadixPrimitiveComponent):
     """Base class for all @radix-ui/react-dialog components."""
 
-    library = "@radix-ui/react-dialog@1.1.23"
+    library = "@radix-ui/react-dialog@1.3.1"
 
 
 class DialogRoot(DialogElement):
