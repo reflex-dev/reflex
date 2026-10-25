@@ -1101,7 +1101,7 @@ class WebsocketEventNamespace(BaseEventNamespace):
         event: str,
         data: Any,
         buffers: Sequence[Buffer],
-    ) -> None:
+    ) -> bool:
         """Send one channel message to connected client sessions.
 
         The frame is serialized once for every recipient: a room broadcast
@@ -1113,6 +1113,9 @@ class WebsocketEventNamespace(BaseEventNamespace):
             event: The message name.
             data: The JSON-serializable metadata.
             buffers: The binary attachments.
+
+        Returns:
+            Whether any session still linked to its token was sent to.
         """
         payload = (
             encode_channel_frame(event, data, channel, buffers)
@@ -1130,6 +1133,7 @@ class WebsocketEventNamespace(BaseEventNamespace):
                 # teardown forgets its channel sessions.
                 connection.close(1008)
         self._deliver(recipients, payload, event)
+        return bool(recipients)
 
     async def _send_channel_error(
         self, sid: str, channel: str, code: str, message: str

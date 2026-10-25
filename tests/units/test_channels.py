@@ -23,6 +23,8 @@ class CollectingChannel(Channel):
         """Initialize the channel and its recorded sends."""
         super().__init__()
         self.sent: list[tuple[list[str], str, str, Any, list[bytes]]] = []
+        # What the stand-in transport reports for each send.
+        self.accepted = True
 
     async def on_message(
         self, session: ChannelSession, event: str, data: Any, buffers: list[bytes]
@@ -37,9 +39,14 @@ class CollectingChannel(Channel):
         event: str,
         data: Any,
         buffers: Any,
-    ) -> None:
-        """Stand in for the transport's send callable."""
+    ) -> bool:
+        """Stand in for the transport's send callable.
+
+        Returns:
+            Whether the transport accepted a recipient.
+        """
         self.sent.append((list(sids), channel, event, data, list(buffers)))
+        return self.accepted
 
     def session(self, sid: str, client_token: str = "tok") -> ChannelSession:
         """Open a session wired to the recording sender.
@@ -142,6 +149,21 @@ async def test_send_to_token_reports_delivery():
 
     assert await channel.send_to_token("tok1", "push", {"n": 1}) is True
     assert await channel.send_to_token("missing", "push") is False
+    assert [sent[0] for sent in channel.sent] == [["sid1"]]
+
+
+@pytest.mark.asyncio
+async def test_send_to_token_reports_a_send_the_transport_dropped():
+    """A token send reports a miss when the transport accepted no recipient.
+
+    The transport skips a session whose token moved to another socket, which
+    the channel keeps tracking until the connection's teardown forgets it.
+    """
+    channel = CollectingChannel()
+    channel.session("sid1", client_token="tok1")
+    channel.accepted = False
+
+    assert await channel.send_to_token("tok1", "push") is False
     assert [sent[0] for sent in channel.sent] == [["sid1"]]
 
 

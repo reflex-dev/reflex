@@ -44,10 +44,11 @@ MAX_MESSAGE_BUFFERS = 64
 RESERVED_EVENTS = frozenset({"connect", "disconnect", "error"})
 
 # Sends one channel message to connected sessions: (sids, channel, event,
-# data, buffers). Supplied by the transport when the session opens. It takes
-# every recipient at once so a fan-out serializes the frame only once.
+# data, buffers), returning whether it accepted any of them. Supplied by the
+# transport when the session opens. It takes every recipient at once so a
+# fan-out serializes the frame only once.
 ChannelSender = Callable[
-    [Sequence[str], str, str, Any, Sequence[Buffer]], Awaitable[None]
+    [Sequence[str], str, str, Any, Sequence[Buffer]], Awaitable[bool]
 ]
 
 
@@ -333,10 +334,9 @@ class Channel(ABC):
         # any member can carry the frame for all of them -- serialized once
         # rather than once per recipient. The recipients are collected first:
         # a send can close a session and mutate the group.
-        await next(iter(sessions))._send(
+        return await next(iter(sessions))._send(
             [session.sid for session in sessions], self.name, event, data, buffers
         )
-        return True
 
     def open_session(
         self, sid: str, client_token: str, send: ChannelSender

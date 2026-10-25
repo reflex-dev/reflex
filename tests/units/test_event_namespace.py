@@ -1751,6 +1751,36 @@ async def test_a_session_whose_token_moved_is_closed_instead_of_sent_to(
 
 
 @pytest.mark.asyncio
+async def test_send_to_token_reports_a_socket_whose_token_moved_as_a_miss(
+    namespace: WebsocketEventNamespace,
+):
+    """A token send reaching only a socket whose token moved reports no delivery.
+
+    The move drops the socket's token link before its teardown forgets the
+    channel session, so the channel still finds the session; the caller has to
+    learn that nothing was sent to take another delivery path.
+    """
+    channel = RecordingChannel()
+    live, moved = FakeWebSocket(), FakeWebSocket()
+    namespace._connections["live"] = _Connection(live)  # pyright: ignore[reportArgumentType]
+    namespace._connections["moved"] = _Connection(moved)  # pyright: ignore[reportArgumentType]
+    # The moved socket keeps its connection but has no token link.
+    namespace._token_manager.sid_to_token["live"] = "tok-live"
+    channel.open_session("live", "tok-live", namespace._send_channel_message)
+    channel.open_session("moved", "tok-moved", namespace._send_channel_message)
+
+    assert await channel.send_to_token("tok-live", "news") is True
+    assert await channel.send_to_token("tok-moved", "news") is False
+    await _drain_tasks()
+    for connection in namespace._connections.values():
+        connection.stop()
+
+    assert channel_frames(live) == [["news", None, "probe"]]
+    assert channel_frames(moved) == []
+    assert namespace._connections["moved"].close_code == 1008
+
+
+@pytest.mark.asyncio
 async def test_closing_a_connection_the_heartbeat_already_closed_is_not_an_error(
     namespace: WebsocketEventNamespace,
 ):
