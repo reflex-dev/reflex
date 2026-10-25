@@ -149,6 +149,25 @@ async def test_ssr_data_dynamic_route_params():
 
 
 @pytest.mark.asyncio
+async def test_ssr_data_decodes_route_params():
+    """Escaped route params reach the state decoded, as in browser events."""
+
+    class PostState(rx.State):
+        pass
+
+    app = App()
+    app._state = PostState
+    app.add_page(lambda: rx.text("post"), route="/blog/[slug]")
+
+    response = await ssr_data(app)(_make_request("/blog/hello%20world"))
+
+    page = _parse_response(response)["state"][rx.State.get_full_name()][
+        "rx_router_page_rx_state_"
+    ]
+    assert page["params"] == {"slug": "hello world"}
+
+
+@pytest.mark.asyncio
 async def test_ssr_data_on_load_runs():
     """The on_load handler runs and mutates state before serialization."""
 
