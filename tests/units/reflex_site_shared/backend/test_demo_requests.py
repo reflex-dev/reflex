@@ -65,7 +65,7 @@ def _state() -> DemoRequestState:
     Returns:
         The state.
     """
-    root = rx.State(_reflex_internal_init=True)  # pyright: ignore[reportCallIssue]
+    root = rx.State(_reflex_internal_init=True)  # ty:ignore[unknown-argument]
     state = cast(DemoRequestState, root.get_substate([DemoRequestState.get_name()]))
     state.router = RouterData(url=ReflexURL(PAGE))
     return state

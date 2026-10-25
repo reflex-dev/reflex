@@ -507,7 +507,7 @@ class Browser:
         # The driver is the node process behind Playwright's pipe transport, a
         # child of the harness; Chromium's root is the driver's child.
         driver = psutil.Process(
-            playwright._impl_obj._connection._transport._proc.pid  # pyright: ignore[reportAttributeAccessIssue]
+            playwright._impl_obj._connection._transport._proc.pid  # ty:ignore[unresolved-attribute]
         )
         self._processes = (*driver.children(), driver)
         self.anchor = Anchor.take()

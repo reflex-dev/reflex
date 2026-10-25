@@ -75,7 +75,7 @@ def settings() -> rx.Component:
                                 name.capitalize(),
                                 rx.switch(
                                     checked=SettingsState.switches[name],
-                                    on_change=lambda _, name=name: SettingsState.flip(
+                                    on_change=lambda _, name=name: SettingsState.flip(  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/4098
                                         name
                                     ),
                                     id=f"settings-switch-{name}",
@@ -123,7 +123,7 @@ def settings() -> rx.Component:
                         rx.callout(
                             "The accent previews here; the app theme stays violet.",
                             icon="info",
-                            color_scheme=SettingsState.accent,  # pyright: ignore[reportArgumentType]
+                            color_scheme=SettingsState.accent,  # ty:ignore[invalid-argument-type]
                             size=rx.cond(SettingsState.compact, "1", "2"),
                             id="settings-preview",
                         ),

@@ -658,7 +658,8 @@ class StateManagerRedis(StateManager):
                                     raise ValueError  # noqa: TRY301
                             except ValueError:
                                 await self.get_state(
-                                    token, for_state_instance=cached_state
+                                    token,  # ty:ignore[invalid-argument-type]
+                                    for_state_instance=cached_state,
                                 )
                         yield cast(TOKEN_TYPE, cached_state)
                         return
@@ -897,7 +898,7 @@ class StateManagerRedis(StateManager):
             lock_waiter_key_pattern: self._handle_lock_contention,
         }
         async with self.redis.pubsub() as pubsub:
-            await pubsub.psubscribe(**handlers)  # pyright: ignore[reportArgumentType]
+            await pubsub.psubscribe(**handlers)
             try:
                 # Notifications are only delivered once redis confirms the subscription.
                 async for message in pubsub.listen():
@@ -1011,7 +1012,7 @@ class StateManagerRedis(StateManager):
         res = self.redis.scard(lock_key + b"_waiters")
         if inspect.isawaitable(res):
             res = await res
-        return res
+        return res  # ty:ignore[invalid-return-type]
 
     @contextlib.asynccontextmanager
     async def _request_lock_release(

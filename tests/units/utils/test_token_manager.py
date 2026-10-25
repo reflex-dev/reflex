@@ -695,8 +695,8 @@ async def test_socket_record_subscriber_restores_deleted_live_record():
     )
     manager.sid_to_token[sid] = token
     await manager._store_socket_record(token, record)
-    event_log = redis._internals["event_log"]  # pyright: ignore[reportAttributeAccessIssue]
-    on_update = redis._internals["event_log_on_update"]  # pyright: ignore[reportAttributeAccessIssue]
+    event_log = redis._internals["event_log"]  # ty:ignore[unresolved-attribute]
+    on_update = redis._internals["event_log_on_update"]  # ty:ignore[unresolved-attribute]
 
     async def logged(channel: bytes, data: bytes, start: int = 0):
         """Wait until the mock redis logs an event.
@@ -905,9 +905,9 @@ async def test_redis_token_manager_lost_and_found(
         event_namespace_factory: Factory fixture for EventNamespace instances.
     """
     event_namespace1 = event_namespace_factory()
-    emit1_mock: Mock = event_namespace1.emit  # pyright: ignore[reportAssignmentType]
+    emit1_mock: Mock = event_namespace1.emit  # ty:ignore[invalid-assignment]
     event_namespace2 = event_namespace_factory()
-    emit2_mock: Mock = event_namespace2.emit  # pyright: ignore[reportAssignmentType]
+    emit2_mock: Mock = event_namespace2.emit  # ty:ignore[invalid-assignment]
 
     await event_namespace1.on_connect(sid="sid1", environ=query_string_for("token1"))
     await event_namespace2.on_connect(sid="sid2", environ=query_string_for("token2"))
@@ -960,9 +960,9 @@ async def test_redis_token_manager_lost_and_found_router_data(
         event_namespace_factory: Factory fixture for EventNamespace instances.
     """
     event_namespace1 = event_namespace_factory()
-    emit1_mock: Mock = event_namespace1.emit  # pyright: ignore[reportAssignmentType]
+    emit1_mock: Mock = event_namespace1.emit  # ty:ignore[invalid-assignment]
     event_namespace2 = event_namespace_factory()
-    emit2_mock: Mock = event_namespace2.emit  # pyright: ignore[reportAssignmentType]
+    emit2_mock: Mock = event_namespace2.emit  # ty:ignore[invalid-assignment]
 
     await event_namespace1.on_connect(sid="sid1", environ=query_string_for("token1"))
     await event_namespace2.on_connect(sid="sid2", environ=query_string_for("token2"))

@@ -285,7 +285,7 @@ def test_isinstance_checks_type_parameter_bounds() -> None:
     t = TypeVar("t")
     bounded = TypeVar("bounded", bound=str)
     constrained = TypeVar("constrained", int, str)
-    forward = TypeVar("forward", bound="Unresolvable")  # noqa: F821  # pyright: ignore[reportUndefinedVariable]
+    forward = TypeVar("forward", bound="Unresolvable")  # noqa: F821  # ty:ignore[unresolved-reference]
     assert _isinstance(1, t, nested=1, treat_var_as_type=False)
     assert _isinstance("x", t | None, nested=1, treat_var_as_type=False)
     assert not _isinstance("x", list[t], nested=1, treat_var_as_type=False)  # pyright: ignore[reportGeneralTypeIssues]
@@ -360,7 +360,7 @@ def test_resolve_type_alias_unwraps_annotated(alias_cls: type) -> None:
     assert resolve_type_alias(Annotated[Annotated[int, "a"], "b"]) is int
     assert resolve_type_alias(Annotated[int | str, "meta"]) == int | str
     # An alias on either side of the annotation resolves through it.
-    assert resolve_type_alias(Annotated[alias_cls("Name", str), "meta"]) is str
+    assert resolve_type_alias(Annotated[alias_cls("Name", str), "meta"]) is str  # ty:ignore[invalid-type-form]
     assert resolve_type_alias(alias_cls("Meta", Annotated[str, "meta"])) is str
     # A union member keeps resolving.
     assert resolve_type_alias(Annotated[int, "meta"] | str) == int | str
@@ -615,7 +615,7 @@ def test_get_typed_dict_field_types_through_stdlib_plain_subclass():
 
 
 class _Unresolved(TypedDict):
-    value: _FieldT  # pyright: ignore[reportGeneralTypeIssues]
+    value: _FieldT  # ty:ignore[unbound-type-variable]
 
 
 def test_get_typed_dict_field_types_rejects_unresolved_type_variables():

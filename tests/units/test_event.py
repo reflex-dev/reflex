@@ -276,7 +276,7 @@ def test_backend_var_event_arg_reports_repr():
     with pytest.raises(EventHandlerTypeError, match=r"Got Field\(default=42"):
         S.on_event(S._secret)
     with pytest.raises(EventHandlerTypeError, match=r"Got Field\(default=42"):
-        cast(EventSpec, S.on_event()).add_args(S._secret)  # pyright: ignore[reportArgumentType]
+        cast(EventSpec, S.on_event()).add_args(S._secret)  # ty:ignore[invalid-argument-type]
 
 
 class BackendTriggerState(BaseState):
@@ -316,7 +316,7 @@ def test_backend_var_upload_progress_reports_repr():
     """A backend var passed as on_upload_progress reports its repr."""
     upload = rx.upload_files(
         upload_id="u",
-        on_upload_progress=BackendTriggerState._secret,  # pyright: ignore[reportArgumentType]
+        on_upload_progress=BackendTriggerState._secret,  # ty:ignore[invalid-argument-type]
     )
     with pytest.raises(ValueError, match=r"^Field\(default=42.* is not a valid"):
         upload.as_event_spec(handler=cast(EventHandler, BackendTriggerState.on_upload))
@@ -329,7 +329,7 @@ def test_state_event_handler_caches_unresolved_type_hints():
         @event
         def on_event(
             self,
-            event: "_LateBoundEventType",  # pyright: ignore[reportUndefinedVariable]  # noqa: F821
+            event: "_LateBoundEventType",  # ty:ignore[unresolved-reference]  # noqa: F821
         ):
             pass
 
@@ -821,7 +821,7 @@ def test_event_actions_on_state():
     assert isinstance(handler, EventHandler)
     assert not handler.event_actions
 
-    sp_handler = EventActionState.handler.stop_propagation  # pyright: ignore [reportFunctionMemberAccess]
+    sp_handler = EventActionState.handler.stop_propagation  # ty:ignore[unresolved-attribute]
     assert sp_handler.event_actions == {"stopPropagation": True}
     # should NOT affect other references to the handler
     assert not handler.event_actions
@@ -927,7 +927,7 @@ def test_event_bound_method() -> None:
             return S.e(arg)
 
     w = Wrapper()
-    _ = rx.input(on_change=w.get_handler)
+    _ = rx.input(on_change=w.get_handler)  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/4098
 
 
 def test_event_decorator_with_event_actions():

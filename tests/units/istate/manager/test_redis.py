@@ -170,7 +170,7 @@ def event_log(state_manager_redis: StateManagerRedis) -> list[dict[str, Any]]:
     Returns:
         The redis event log.
     """
-    return state_manager_redis.redis._internals["event_log"]  # pyright: ignore[reportAttributeAccessIssue]
+    return state_manager_redis.redis._internals["event_log"]  # ty:ignore[unresolved-attribute]
 
 
 @pytest.fixture
@@ -186,7 +186,7 @@ def event_log_on_update(state_manager_redis: StateManagerRedis) -> asyncio.Event
     Returns:
         The event that is set when new events are added to the redis event log.
     """
-    return state_manager_redis.redis._internals["event_log_on_update"]  # pyright: ignore[reportAttributeAccessIssue]
+    return state_manager_redis.redis._internals["event_log_on_update"]  # ty:ignore[unresolved-attribute]
 
 
 @pytest.mark.asyncio
@@ -973,7 +973,7 @@ async def test_set_state_saves_tree_in_one_round_trip(
     async with state_manager_redis.modify_state(token) as state:
         assert len(state.substates) == 2
         state.count = 1
-        redis.eval = counting_eval  # pyright: ignore[reportAttributeAccessIssue]
+        redis.eval = counting_eval  # ty:ignore[invalid-assignment]
         try:
             await state_manager_redis.set_state(
                 token,
@@ -981,7 +981,7 @@ async def test_set_state_saves_tree_in_one_round_trip(
                 lock_id=await redis.get(state_manager_redis._lock_key(token)),
             )
         finally:
-            redis.eval = real_eval  # pyright: ignore[reportAttributeAccessIssue]
+            redis.eval = real_eval  # ty:ignore[invalid-assignment]
 
     # One command for a tree of three states, all of them touched by the load.
     assert len(evals) == 1

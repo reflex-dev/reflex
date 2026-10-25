@@ -38,7 +38,7 @@ class BaseField(Generic[FIELD_TYPE]):
         # Process type annotation
         type_origin = get_origin(annotated_type) or annotated_type
         if type_origin is Annotated:
-            type_origin = annotated_type.__origin__  # pyright: ignore [reportAttributeAccessIssue]
+            type_origin = annotated_type.__origin__  # ty:ignore[unresolved-attribute]
             # For Annotated types, use the actual type inside the annotation
             self.type_ = annotated_type
         else:
@@ -110,11 +110,11 @@ class FieldBasedMeta(type):
 
         # Collect inherited fields from base classes
         for base in bases[::-1]:
-            if hasattr(base, "_inherited_fields"):
-                inherited_fields.update(base._inherited_fields)
+            if (fields := getattr(base, "_inherited_fields", None)) is not None:
+                inherited_fields.update(fields)
         for base in bases[::-1]:
-            if hasattr(base, "_own_fields"):
-                inherited_fields.update(base._own_fields)
+            if (fields := getattr(base, "_own_fields", None)) is not None:
+                inherited_fields.update(fields)
 
         return inherited_fields
 

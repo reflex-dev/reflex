@@ -84,7 +84,7 @@ def test_upload_raises_the_first_failure(tmp_path: Path):
             if request.url.endswith("frontend.zip"):
                 return reply(403)(request)
             assert not isinstance(request.content, bytes | None)
-            for _ in request.content:  # pyright: ignore[reportGeneralTypeIssues]
+            for _ in request.content:  # ty:ignore[not-iterable]
                 pass
             return reply(200)(request)
 
@@ -126,7 +126,7 @@ def test_upload_reports_progress(tmp_path: Path):
     class Storage:
         def send(self, request: Request) -> Response:
             assert not isinstance(request.content, bytes | None)
-            b"".join(request.content)  # pyright: ignore[reportArgumentType]
+            b"".join(request.content)  # ty:ignore[invalid-argument-type]
             return reply(200)(request)
 
         def close(self) -> None:
@@ -148,7 +148,7 @@ def test_upload_requests(tmp_path: Path):
         def send(self, request: Request) -> Response:
             requests.append(request)
             assert not isinstance(request.content, bytes | None)
-            b"".join(request.content)  # pyright: ignore[reportArgumentType]
+            b"".join(request.content)  # ty:ignore[invalid-argument-type]
             return reply(200)(request)
 
         def close(self) -> None:

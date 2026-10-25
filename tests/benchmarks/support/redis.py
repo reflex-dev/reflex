@@ -53,7 +53,7 @@ async def real_redis_state_manager() -> AsyncIterator[StateManagerRedis]:
     url = performance_redis_url()
     redis = Redis.from_url(url)
     try:
-        await redis.ping()  # pyright: ignore [reportGeneralTypeIssues]
+        await redis.ping()  # ty:ignore[invalid-await]
         if await redis.dbsize():
             msg = (
                 f"Redis database at {url!r} is not empty; performance tests "

@@ -10,8 +10,6 @@ from selenium.webdriver.common.by import By
 
 from reflex.testing import AppHarness
 
-# pyright: reportOptionalMemberAccess=false, reportGeneralTypeIssues=false, reportUnknownMemberType=false
-
 
 def DynamicComponents():
     """App with var operations."""

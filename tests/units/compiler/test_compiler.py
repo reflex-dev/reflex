@@ -23,6 +23,7 @@ from reflex_base.vars.base import Var
 from reflex_base.vars.sequence import LiteralStringVar
 from reflex_components_core.base import Description, document
 from reflex_components_core.base.document import Links, Scripts
+from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.el.elements.metadata import Head, Link, Meta
 from reflex_components_core.el.elements.other import Html
 
@@ -818,17 +819,17 @@ def test_create_document_root():
     assert isinstance(root, Html)
     assert isinstance(root.children[0], Head)
     # Default language.
-    lang = root.lang  # pyright: ignore [reportAttributeAccessIssue]
+    lang = root.lang  # ty:ignore[unresolved-attribute]
     assert isinstance(lang, LiteralStringVar)
     assert lang.equals(Var.create("en"))
     # No children in head.
     assert len(root.children[0].children) == 6
     assert isinstance(root.children[0].children[1], Meta)
-    char_set = root.children[0].children[1].char_set  # pyright: ignore [reportAttributeAccessIssue]
+    char_set = root.children[0].children[1].char_set  # ty:ignore[unresolved-attribute]
     assert isinstance(char_set, LiteralStringVar)
     assert char_set.equals(Var.create("utf-8"))
     assert isinstance(root.children[0].children[2], Meta)
-    name = root.children[0].children[2].name  # pyright: ignore [reportAttributeAccessIssue]
+    name = root.children[0].children[2].name  # ty:ignore[unresolved-attribute]
     assert isinstance(name, LiteralStringVar)
     assert name.equals(Var.create("viewport"))
     assert isinstance(root.children[0].children[3], document.Meta)
@@ -853,7 +854,7 @@ def test_add_meta_accepts_dynamic_description():
 
     description = page.children[1]
     assert isinstance(description, Description)
-    assert description.content is PageState.description  # pyright: ignore [reportAttributeAccessIssue]
+    assert description.content is PageState.description  # ty:ignore[unresolved-attribute]
 
 
 def test_add_meta_drops_empty_description():
@@ -895,7 +896,7 @@ def test_create_document_root_with_scripts():
         "link",
         "Links",
     ]
-    lang = root.lang  # pyright: ignore [reportAttributeAccessIssue]
+    lang = root.lang  # ty:ignore[unresolved-attribute]
     assert isinstance(lang, LiteralStringVar)
     assert lang.equals(Var.create("rx"))
     assert isinstance(root.custom_attrs, dict)
@@ -915,7 +916,7 @@ def test_create_document_root_with_meta_char_set():
     assert len(root.children[0].children) == 6
     names = [c.tag for c in root.children[0].children]
     assert names == ["script", "meta", "meta", "Meta", "link", "Links"]
-    assert str(root.children[0].children[1].char_set) == '"cp1252"'  # pyright: ignore [reportAttributeAccessIssue]
+    assert str(root.children[0].children[1].char_set) == '"cp1252"'  # ty:ignore[unresolved-attribute]
 
 
 @pytest.mark.usefixtures("dev_mode")
@@ -932,10 +933,10 @@ def test_create_document_root_with_meta_viewport():
     assert len(root.children[0].children) == 7
     names = [c.tag for c in root.children[0].children]
     assert names == ["script", "meta", "meta", "meta", "Meta", "link", "Links"]
-    assert str(root.children[0].children[1].http_equiv) == '"refresh"'  # pyright: ignore [reportAttributeAccessIssue]
-    assert str(root.children[0].children[2].name) == '"viewport"'  # pyright: ignore [reportAttributeAccessIssue]
-    assert str(root.children[0].children[2].content) == '"foo"'  # pyright: ignore [reportAttributeAccessIssue]
-    assert str(root.children[0].children[3].char_set) == '"utf-8"'  # pyright: ignore [reportAttributeAccessIssue]
+    assert str(root.children[0].children[1].http_equiv) == '"refresh"'  # ty:ignore[unresolved-attribute]
+    assert str(root.children[0].children[2].name) == '"viewport"'  # ty:ignore[unresolved-attribute]
+    assert str(root.children[0].children[2].content) == '"foo"'  # ty:ignore[unresolved-attribute]
+    assert str(root.children[0].children[3].char_set) == '"utf-8"'  # ty:ignore[unresolved-attribute]
 
 
 class _RoutePlugin(rx.plugins.Plugin):
@@ -1886,8 +1887,8 @@ def test_compile_app_drops_event_caches_from_earlier_compiles(
         app = rx.App()
         app.add_page(lambda: rx.el.div("hello"), route="/")
         stale = object()
-        context._bound_event_chains[0, 0, None] = stale  # pyright: ignore[reportArgumentType]
-        context._memoized_event_triggers["on_click", 0] = stale  # pyright: ignore[reportArgumentType]
+        context._bound_event_chains[0, 0, None] = stale  # ty:ignore[invalid-assignment]
+        context._memoized_event_triggers["on_click", 0] = stale  # ty:ignore[invalid-assignment]
 
         compiler.compile_app(app, dry_run=True, use_rich=False)
 
@@ -1954,3 +1955,50 @@ def test_compile_app_resolves_show_built_with_reflex(
     assert get_user_tier.called is (
         compile_context == constants.CompileContext.DEPLOY and configured is None
     )
+
+
+@pytest.mark.parametrize(
+    ("component", "children"),
+    [
+        ("text", 1),
+        (Var.create("var"), 1),
+        ((rx.el.div(), rx.el.span()), 2),
+        (lambda: "text", 1),
+        (lambda: (rx.el.div(), rx.el.span()), 2),
+    ],
+)
+def test_into_component_wraps_renderables_in_a_fragment(component, children: int):
+    """Strings, Vars and sequences, returned directly or by a callable, become a Fragment.
+
+    Args:
+        component: The value to convert.
+        children: The number of children the Fragment should have.
+    """
+    converted = compiler.into_component(component)
+    assert isinstance(converted, Fragment)
+    assert len(converted.children) == children
+
+
+def test_into_component_returns_components_as_is():
+    """A Component, or the one a callable returns, is used unchanged."""
+    div = rx.el.div()
+    assert compiler.into_component(div) is div
+    assert compiler.into_component(lambda: div) is div
+
+
+@pytest.mark.parametrize(
+    ("component", "message"),
+    [
+        (None, "Expected a Component or callable"),
+        (lambda: None, "Expected a Component, got None"),
+    ],
+)
+def test_into_component_rejects_non_renderables(component, message: str):
+    """A value that is neither renderable nor callable, or a callable returning one, raises.
+
+    Args:
+        component: The value to convert.
+        message: The expected start of the error message.
+    """
+    with pytest.raises(TypeError, match=message):
+        compiler.into_component(component)

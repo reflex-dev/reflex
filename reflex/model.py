@@ -273,12 +273,12 @@ if TYPE_CHECKING or find_spec("sqlalchemy"):
 
             return metadata
 
-else:
+elif not TYPE_CHECKING:
     get_engine_args = _print_db_not_available
     get_engine = _print_db_not_available
     get_async_engine = _print_db_not_available
     sqla_session = _print_db_not_available
-    ModelRegistry = _ClassThatErrorsOnInit  # pyright: ignore [reportAssignmentType]
+    ModelRegistry = _ClassThatErrorsOnInit
 
 if TYPE_CHECKING or (find_spec("sqlalchemy") and find_spec("alembic")):
     import alembic.autogenerate
@@ -531,6 +531,7 @@ if TYPE_CHECKING or (
 ):
     import sqlmodel
     from reflex_base.utils.serializers import serialize_sqlmodel as serialize_sqlmodel
+    from sqlmodel.main import SQLModelConfig
 
     _AsyncSessionLocal: dict[str | None, sqlalchemy.ext.asyncio.async_sessionmaker] = {}
 
@@ -573,7 +574,7 @@ if TYPE_CHECKING or (
 
         id: int | None = sqlmodel.Field(default=None, primary_key=True)
 
-        model_config = {  # pyright: ignore [reportAssignmentType]
+        model_config: ClassVar[SQLModelConfig] = {
             "arbitrary_types_allowed": True,
             "use_enum_values": True,
             "extra": "allow",
@@ -715,8 +716,8 @@ if TYPE_CHECKING or (
             )
         return _AsyncSessionLocal[url]()
 
-else:
+elif not TYPE_CHECKING:
     get_db_status = _print_db_not_available
     session = _print_db_not_available
     asession = _print_db_not_available
-    Model = _ClassThatErrorsOnInit  # pyright: ignore [reportAssignmentType]
+    Model = _ClassThatErrorsOnInit

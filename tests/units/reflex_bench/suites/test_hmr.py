@@ -672,7 +672,7 @@ def test_granian_worker_is_the_other_listener_of_the_backend_port():
         worker_pid = int(root.stdout.readline())
         app = FakeApp(Path(), Path(), mode="dev", reflex_version=None, env={})
         app.pid, app.backend_url = root.pid, f"http://localhost:{port}"
-        supervisor, worker = hmr.granian_processes(app)  # pyright: ignore[reportArgumentType]
+        supervisor, worker = hmr.granian_processes(app)  # ty:ignore[invalid-argument-type]
         assert (supervisor.pid, worker.pid) == (root.pid, worker_pid)
     finally:
         for proc in [*tree.children(recursive=True), tree]:
@@ -688,4 +688,4 @@ def test_granian_processes_need_a_listening_worker():
         probe.bind(("127.0.0.1", 0))
         app.backend_url = f"http://localhost:{probe.getsockname()[1]}"
     with pytest.raises(LookupError, match="no process of the app listens"):
-        hmr.granian_processes(app)  # pyright: ignore[reportArgumentType]
+        hmr.granian_processes(app)  # ty:ignore[invalid-argument-type]

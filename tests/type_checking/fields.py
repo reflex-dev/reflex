@@ -4,6 +4,7 @@ import dataclasses
 from dataclasses import MISSING
 from typing import assert_type
 
+import pydantic
 from reflex_base.components.field import BaseField
 from reflex_base.utils.compat import MISSING_TYPE
 from reflex_base.vars.base import Field, field
@@ -41,11 +42,17 @@ class _Data:
     value: int
 
 
+class _Pydantic(pydantic.BaseModel):
+    value: int = 0
+
+
 class _ObjectFieldState(State):
     model: Field[_Model] = field(default_factory=lambda: _Model(id=0))
     optional_model: Field[_Model | None] = field(default=None)
     data: Field[_Data] = field(default_factory=lambda: _Data(value=0))
     optional_data: Field[_Data | None] = field(default=None)
+    pydantic_model: Field[_Pydantic] = field(default_factory=_Pydantic)
+    optional_pydantic_model: Field[_Pydantic | None] = field(default=None)
     mapping: Field[dict[str, int]] = field(default_factory=dict)
     optional_mapping: Field[dict[str, int] | None] = field(default=None)
 
@@ -57,5 +64,7 @@ assert_type(_ObjectFieldState.model, ObjectVar[_Model])
 assert_type(_ObjectFieldState.optional_model, ObjectVar[_Model])
 assert_type(_ObjectFieldState.data, ObjectVar[_Data])
 assert_type(_ObjectFieldState.optional_data, ObjectVar[_Data])
+assert_type(_ObjectFieldState.pydantic_model, ObjectVar[_Pydantic])
+assert_type(_ObjectFieldState.optional_pydantic_model, ObjectVar[_Pydantic])
 assert_type(_ObjectFieldState.mapping, ObjectVar[dict[str, int]])
 assert_type(_ObjectFieldState.optional_mapping, ObjectVar[dict[str, int]])

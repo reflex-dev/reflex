@@ -76,7 +76,7 @@ def test_form_data_is_immutable():
     """A FormData cannot be changed after it is built."""
     form_data = FormData(ITEMS)
     with pytest.raises(TypeError):
-        form_data["tag"] = "c"  # pyright: ignore[reportIndexIssue]
+        form_data["tag"] = "c"  # ty:ignore[invalid-assignment]
     with pytest.raises(AttributeError):
         form_data.other = 1  # pyright: ignore[reportAttributeAccessIssue]
 
@@ -502,7 +502,7 @@ def test_transform_form_data_bracketed_names_to_form_data(hint: Any):
 
 class _UnresolvableData(TypedDict):
     tag: list[str]
-    amount: "Decimal"  # noqa: F821 # pyright: ignore[reportUndefinedVariable]
+    amount: "Decimal"  # noqa: F821  # ty:ignore[unresolved-reference]
 
 
 def test_transform_form_data_coerces_around_unresolvable_fields():

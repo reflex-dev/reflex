@@ -86,7 +86,7 @@ def test_page_decorator_with_kwargs(
         description="Foo description",
         meta=[{"name": "keywords", "content": "foo, test"}],
         script_tags=["foo-script"],
-        on_load=load_foo,
+        on_load=load_foo,  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/4098
     )(foo_)
     assert decorated_foo_ == foo_
     assert len(clean_registration_context.decorated_pages) == 1
@@ -150,4 +150,4 @@ def test_page_namespace_unknown_attribute_raises():
     """Unknown attributes on the page namespace raise AttributeError."""
     page_module = importlib.import_module("reflex.page")
     with pytest.raises(AttributeError, match=r"reflex\.page"):
-        _ = page_module.definitely_not_an_attribute
+        _ = page_module.definitely_not_an_attribute  # ty:ignore[unresolved-attribute]

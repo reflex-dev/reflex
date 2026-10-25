@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 # For uvicorn windows bug fix (#2335)
 frontend_process = None
 _frontend_process_lock = threading.Lock()
-_frontend_shutting_down = False
+_frontend_shutting_down: bool = False
 
 DEV_BACKEND_RELOAD_MARKER = ".reflex_dev_backend_started"
 
@@ -290,7 +290,7 @@ def run_process_and_launch_url(
                 "env": _with_development_condition(frontend_env(os.environ))
             }
             if constants.IS_WINDOWS and backend_present:
-                kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # pyright: ignore [reportAttributeAccessIssue]
+                kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # ty:ignore[unresolved-attribute]
             process = processes.new_process(
                 run_command,
                 cwd=get_web_dir(),

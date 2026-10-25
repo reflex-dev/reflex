@@ -151,7 +151,7 @@ def fake(tmp_path: Path) -> Configure:
         path.write_text(json.dumps(spec), encoding="utf-8")
         env = {**subject_env(Path(sys.executable)), "FAKE_REFLEX": str(path)}
         env.pop("PYTHONSAFEPATH", None)
-        return env
+        return env  # ty:ignore[invalid-return-type]
 
     return configure
 

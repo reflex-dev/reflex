@@ -559,7 +559,7 @@ def sidebar_comp(
         rx.cond(is_docs_ai_builder, ai_builder_content, docs_content),
     )
 
-    return rx.box(  # pyright: ignore [reportCallIssue]
+    return rx.box(
         categories,
         content,
         style={

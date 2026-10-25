@@ -160,11 +160,11 @@ def props_field(
     if default is not MISSING and default_factory is not None:
         msg = "cannot specify both default and default_factory"
         raise ValueError(msg)
-    return PropsField(  # pyright: ignore [reportReturnType]
+    return PropsField(
         default=default,
         default_factory=default_factory,
         annotated_type=MISSING,
-    )
+    )  # ty:ignore[invalid-return-type]
 
 
 @dataclass_transform(field_specifiers=(props_field,))

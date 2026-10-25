@@ -25,8 +25,8 @@ from tests.units.conftest import active_tracer, metric_points
 def _ctx(token: str = "tok", parent_txid: str | None = None) -> EventContext:
     return EventContext(
         token=token,
-        state_manager=None,  # type: ignore[arg-type]
-        enqueue_impl=None,  # type: ignore[arg-type]
+        state_manager=None,  # ty:ignore[invalid-argument-type]
+        enqueue_impl=None,  # ty:ignore[invalid-argument-type]
         parent_txid=parent_txid,
     )
 
