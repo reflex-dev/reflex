@@ -7199,6 +7199,9 @@ async def test_state_manager_mixin_token(
         assert isinstance(root, TokenRootState)
         (await root.get_state(NoteMixin)).note = "written"
 
+    if environment.REFLEX_OPLOCK_ENABLED.get():
+        await state_manager.close()
+
     # The concrete token addresses the very same state.
     root = await state_manager.get_state(BaseStateToken(ident=token, cls=NoteState))
     assert (await root.get_state(NoteState)).note == "written"

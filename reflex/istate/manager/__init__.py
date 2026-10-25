@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Generic, TypedDict, cast, overload
 from reflex_base import constants
 from reflex_base.config import get_config
 from reflex_base.event import Event
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import InvalidStateManagerModeError
 from typing_extensions import ReadOnly, Unpack, deprecated
 
@@ -113,8 +114,6 @@ class StateManager(ABC):
             return BaseStateToken.from_legacy_token(token, root_state=State)  # type: ignore[return-value]
         # The store is never keyed on a mixin: resolve it to the state it was mixed into.
         if getattr(token.cls, "_mixin", False):
-            from reflex_base.registry import RegistrationContext
-
             resolved = RegistrationContext.get().resolve_implementation(
                 cast("type[BaseState]", token.cls)
             )
