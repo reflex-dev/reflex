@@ -251,12 +251,11 @@ def test_app_harness_reload_forgets_states_of_every_app_module(tmp_path, monkeyp
         {"__module__": "harnessapp.states"},
     )
     widget_state._evaluate(lambda state: rx.text("widget"))
-    name = widget_state.get_name()
-    assert name in rx.State._always_dirty_substates
+    assert widget_state in rx.State._always_dirty_substates
 
     AppHarness.create(root=tmp_path, app_name="harnessapp")._reload_state_module()
 
-    assert name not in rx.State._always_dirty_substates
+    assert widget_state not in rx.State._always_dirty_substates
     assert widget_state not in rx.State.get_substates()
 
 

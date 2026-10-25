@@ -337,7 +337,7 @@ async def _shared_state_app(
         mock.patch.object(
             rx.State,
             "_always_dirty_substates",
-            rx.State._always_dirty_substates | {SharedStateBaseInternal.get_name()},
+            rx.State._always_dirty_substates | {SharedStateBaseInternal},
         ),
     ):
         state_manager = StateManagerMemory()

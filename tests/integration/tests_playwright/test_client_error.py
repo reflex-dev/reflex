@@ -18,7 +18,7 @@ import dataclasses
 from collections.abc import Generator
 
 import pytest
-from playwright.sync_api import ConsoleMessage, Page, expect
+from playwright.sync_api import ConsoleMessage, Page, WebSocket, expect
 from reflex_base.registry import RegistrationContext
 
 from reflex.state import State, StateUpdate, _frontend_schema, all_base_state_classes
@@ -331,6 +331,80 @@ def test_state_mismatch_prompts_reload(
         context = RegistrationContext.get()
         context.get_substates(State).discard(ClientErrorExtraState)
         context.base_states.pop(ClientErrorExtraState.get_full_name(), None)
-        all_base_state_classes.pop(ClientErrorExtraState.get_full_name(), None)
+        default_name = ClientErrorExtraState._get_default_full_name()
+        context._states_by_default_name.pop(default_name, None)
+        all_base_state_classes.pop(default_name, None)
         State.get_class_substate.cache_clear()
         _frontend_schema.cache_clear()
+
+
+def test_scheme_mismatch_is_visible_to_the_viewer(
+    client_error_app: AppHarness, page: Page, monkeypatch: pytest.MonkeyPatch
+):
+    """A scheme mismatch reaches the connection UI, not just the console.
+
+    The backend emits the notice from its connect handler, so socket.io
+    buffers it and replays it before the client's own ``connect`` handler
+    runs. A ``connect`` handler that cleared every pending error would discard
+    the only signal the viewer gets, leaving a silently dead page.
+
+    Args:
+        client_error_app: Running AppHarness instance.
+        page: Playwright page fixture.
+        monkeypatch: pytest fixture for patching the backend's digest.
+    """
+    assert client_error_app.frontend_url is not None
+    # The bundle was compiled with the real digest; disagree only on the
+    # backend so the handshake fails the way a stale bundle would.
+    monkeypatch.setattr("reflex.app.scheme_digest", lambda: "other-scheme")
+
+    page.goto(client_error_app.frontend_url)
+
+    expect(page.get_by_text("This page is out of date")).to_be_visible(timeout=30000)
+
+
+def test_scheme_mismatch_closes_the_socket(
+    client_error_app: AppHarness, page: Page, monkeypatch: pytest.MonkeyPatch
+):
+    """A scheme mismatch drops the connection instead of idling on it.
+
+    Nothing can be exchanged over the socket once the mismatch is known, so
+    keeping it open would only pin a server connection to a dead tab. The
+    client must also not reconnect: a reconnect cannot change what the names
+    mean, and would loop forever.
+
+    Args:
+        client_error_app: Running AppHarness instance.
+        page: Playwright page fixture.
+        monkeypatch: pytest fixture for patching the backend's digest.
+    """
+    assert client_error_app.frontend_url is not None
+    assert client_error_app.app_instance is not None
+    event_namespace = client_error_app.app_instance.event_namespace
+    assert event_namespace is not None
+    monkeypatch.setattr("reflex.app.scheme_digest", lambda: "other-scheme")
+
+    # The dev server keeps its own HMR socket open; only the backend's matters.
+    backend_sockets: list[WebSocket] = []
+    page.on(
+        "websocket",
+        lambda ws: backend_sockets.append(ws) if "/_event" in ws.url else None,
+    )
+
+    page.goto(client_error_app.frontend_url)
+    expect(page.get_by_text("This page is out of date")).to_be_visible(timeout=30000)
+
+    assert AppHarness._poll_for(
+        lambda: backend_sockets and all(ws.is_closed() for ws in backend_sockets)
+    ), "the frontend kept its socket open after a fatal scheme mismatch"
+
+    # The backend saw the disconnect and forgot the stale tab.
+    assert AppHarness._poll_for(lambda: not event_namespace._scheme_mismatch_sids), (
+        "the backend still tracks the mismatched session"
+    )
+
+    # No reconnect loop: nothing reopens a socket afterwards.
+    opened = len(backend_sockets)
+    page.wait_for_timeout(2000)
+    assert len(backend_sockets) == opened
+    assert all(ws.is_closed() for ws in backend_sockets)
