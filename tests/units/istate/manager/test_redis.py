@@ -25,6 +25,7 @@ from reflex.istate.manager.redis import (
 )
 from reflex.istate.manager.token import BaseStateToken
 from reflex.state import BaseState
+from reflex.utils import prerequisites
 from tests.units.mock_redis import mock_redis, real_redis
 
 
@@ -162,6 +163,33 @@ async def state_manager_redis(
     await state_manager.close()
 
 
+@pytest_asyncio.fixture(loop_scope="function")
+async def other_state_manager(
+    state_manager_redis: StateManagerRedis,
+) -> AsyncGenerator[Callable[[], Awaitable[StateManagerRedis]]]:
+    """Get a factory for subscribed managers standing in for other app instances.
+
+    On a real Redis each gets its own client, so closing one leaves the shared
+    client usable; all of them are closed after the test.
+
+    Args:
+        state_manager_redis: The StateManagerRedis whose Redis they share.
+
+    Yields:
+        The factory.
+    """
+    async with contextlib.AsyncExitStack() as stack:
+
+        async def create() -> StateManagerRedis:
+            manager = StateManagerRedis(
+                redis=prerequisites.get_redis() or state_manager_redis.redis
+            )
+            stack.push_async_callback(manager.close)
+            return await _subscribed(manager)
+
+        yield create
+
+
 @pytest.fixture
 def event_log(state_manager_redis: StateManagerRedis) -> list[dict[str, Any]]:
     """Get the redis event log from the state manager.
@@ -286,6 +314,7 @@ async def test_get_state_discards_unpicklable_state(
 
 async def test_modify_oplock(
     state_manager_redis: StateManagerRedis,
+    other_state_manager: Callable[[], Awaitable[StateManagerRedis]],
     root_state: type[RedisTestState],
     event_log: list[dict[str, Any]],
     event_log_on_update: asyncio.Event,
@@ -294,6 +323,7 @@ async def test_modify_oplock(
 
     Args:
         state_manager_redis: The StateManagerRedis to test.
+        other_state_manager: Creates the managers of other app instances.
         root_state: The root state class.
         event_log: The redis event log.
         event_log_on_update: The event for new event records being added to the redis event log.
@@ -303,9 +333,7 @@ async def test_modify_oplock(
     state_manager_redis._debug_enabled = True
     state_manager_redis._oplock_enabled = True
 
-    state_manager_2 = await _subscribed(
-        StateManagerRedis(redis=state_manager_redis.redis)
-    )
+    state_manager_2 = await other_state_manager()
 
     state_manager_2._debug_enabled = True
     state_manager_2._oplock_enabled = True
@@ -424,6 +452,7 @@ async def test_modify_oplock(
 
 async def test_oplock_contention_queue(
     state_manager_redis: StateManagerRedis,
+    other_state_manager: Callable[[], Awaitable[StateManagerRedis]],
     root_state: type[RedisTestState],
     event_log: list[dict[str, Any]],
 ):
@@ -431,6 +460,7 @@ async def test_oplock_contention_queue(
 
     Args:
         state_manager_redis: The StateManagerRedis to test.
+        other_state_manager: Creates the managers of other app instances.
         root_state: The root state class.
         event_log: The redis event log.
     """
@@ -439,9 +469,7 @@ async def test_oplock_contention_queue(
     state_manager_redis._debug_enabled = True
     state_manager_redis._oplock_enabled = True
 
-    state_manager_2 = await _subscribed(
-        StateManagerRedis(redis=state_manager_redis.redis)
-    )
+    state_manager_2 = await other_state_manager()
 
     state_manager_2._debug_enabled = True
     state_manager_2._oplock_enabled = True
@@ -521,6 +549,7 @@ async def test_oplock_contention_queue(
 
 async def test_oplock_contention_no_lease(
     state_manager_redis: StateManagerRedis,
+    other_state_manager: Callable[[], Awaitable[StateManagerRedis]],
     root_state: type[RedisTestState],
     event_log: list[dict[str, Any]],
 ):
@@ -528,6 +557,7 @@ async def test_oplock_contention_no_lease(
 
     Args:
         state_manager_redis: The StateManagerRedis to test.
+        other_state_manager: Creates the managers of other app instances.
         root_state: The root state class.
         event_log: The redis event log.
     """
@@ -536,16 +566,12 @@ async def test_oplock_contention_no_lease(
     state_manager_redis._debug_enabled = True
     state_manager_redis._oplock_enabled = True
 
-    state_manager_2 = await _subscribed(
-        StateManagerRedis(redis=state_manager_redis.redis)
-    )
+    state_manager_2 = await other_state_manager()
 
     state_manager_2._debug_enabled = True
     state_manager_2._oplock_enabled = True
 
-    state_manager_3 = await _subscribed(
-        StateManagerRedis(redis=state_manager_redis.redis)
-    )
+    state_manager_3 = await other_state_manager()
     state_manager_3._debug_enabled = True
     state_manager_3._oplock_enabled = True
 
@@ -632,6 +658,7 @@ async def test_oplock_contention_no_lease(
 @pytest.mark.asyncio
 async def test_oplock_contention_racers(
     state_manager_redis: StateManagerRedis,
+    other_state_manager: Callable[[], Awaitable[StateManagerRedis]],
     root_state: type[RedisTestState],
     racer_delay: float | None,
 ):
@@ -639,6 +666,7 @@ async def test_oplock_contention_racers(
 
     Args:
         state_manager_redis: The StateManagerRedis to test.
+        other_state_manager: Creates the managers of other app instances.
         root_state: The root state class.
         racer_delay: The delay before the second racer starts.
     """
@@ -647,9 +675,7 @@ async def test_oplock_contention_racers(
     state_manager_redis._debug_enabled = True
     state_manager_redis._oplock_enabled = True
 
-    state_manager_2 = await _subscribed(
-        StateManagerRedis(redis=state_manager_redis.redis)
-    )
+    state_manager_2 = await other_state_manager()
     state_manager_2._debug_enabled = True
     state_manager_2._oplock_enabled = True
     lease_1 = None
@@ -1498,6 +1524,7 @@ async def test_oplock_lease_cancelled_while_flushing_keeps_its_lock_until_writte
 @pytest.mark.asyncio
 async def test_oplock_remote_waiter_outlasting_a_lock_expiration_blocks_the_next_lease(
     state_manager_redis: StateManagerRedis,
+    other_state_manager: Callable[[], Awaitable[StateManagerRedis]],
     root_state: type[RedisTestState],
     short_lock_expiration: int,
     monkeypatch: pytest.MonkeyPatch,
@@ -1509,6 +1536,7 @@ async def test_oplock_remote_waiter_outlasting_a_lock_expiration_blocks_the_next
 
     Args:
         state_manager_redis: The StateManagerRedis to test.
+        other_state_manager: Creates the managers of other app instances.
         root_state: The root state class.
         short_lock_expiration: The lock expiration time in milliseconds.
         monkeypatch: Pytest monkeypatch fixture.
@@ -1518,7 +1546,7 @@ async def test_oplock_remote_waiter_outlasting_a_lock_expiration_blocks_the_next
     state_manager_redis._oplock_enabled = True
     state_manager_redis.oplock_hold_time_ms = short_lock_expiration // 2
     await _subscribed(state_manager_redis)
-    remote = await _subscribed(StateManagerRedis(redis=state_manager_redis.redis))
+    remote = await other_state_manager()
     remote._oplock_enabled = True
     remote.lock_expiration = short_lock_expiration
 
