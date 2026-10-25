@@ -522,8 +522,10 @@ def supervise_output(args: list[str]) -> int:
             returncode = proc.wait()
             break
         except KeyboardInterrupt:
-            # The child gets the same interrupt and shuts down on its own.
-            continue
+            # A terminal Ctrl-C reaches the child too, a SIGINT sent only to
+            # this process does not. The child handles a repeated interrupt.
+            if sys.platform != "win32":
+                proc.send_signal(signal.SIGINT)
     wall_deadline = time.monotonic() + _DRAIN_WALL_SECONDS
     snapshots = [pump.writing_snapshot() for pump in pumps]
     for pump, (exited_at, writing_at_exit) in zip(pumps, snapshots, strict=True):
