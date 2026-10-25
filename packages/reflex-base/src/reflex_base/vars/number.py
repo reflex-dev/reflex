@@ -6,6 +6,7 @@ import dataclasses
 import decimal
 import json
 import math
+import re
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, NoReturn, TypeVar, overload
 
@@ -647,6 +648,9 @@ def number_modulo_operation(lhs: NumberVar, rhs: NumberVar):
     return f"({lhs!s} % {rhs!s})"
 
 
+_STARTS_WITH_UNARY_OPERATOR = re.compile(r"[-+!~]|(?:typeof|void|delete|await)\b")
+
+
 @binary_number_operation
 def number_exponent_operation(lhs: NumberVar, rhs: NumberVar):
     """Exponentiate two numbers.
@@ -658,7 +662,12 @@ def number_exponent_operation(lhs: NumberVar, rhs: NumberVar):
     Returns:
         The number exponent operation.
     """
-    return f"({lhs!s} ** {rhs!s})"
+    base = str(lhs)
+    # JavaScript rejects a unary expression as the base of `**` (`-2 ** 2` is a
+    # SyntaxError), so a negative literal or a negated var must be parenthesized.
+    if _STARTS_WITH_UNARY_OPERATOR.match(base):
+        base = f"({base})"
+    return f"({base} ** {rhs!s})"
 
 
 @var_operation

@@ -165,6 +165,7 @@ class BaseConfig:
         api_url: The backend url the frontend will connect to. Only needs to be set when the backend is listening on a different address than the frontend.
         deploy_url: The url the frontend will be hosted on. Used to build absolute frontend URLs, e.g. links in the generated sitemap.xml.
         backend_host: The url the backend will be hosted on.
+        trusted_proxy_hops: Number of trusted reverse proxies used to resolve client IPs from X-Forwarded-For. Defaults to 0, which ignores X-Forwarded-For.
         db_url: The database url used by rx.Model.
         async_db_url: The async database url used by rx.Model.
         redis_url: The redis url.
@@ -218,6 +219,8 @@ class BaseConfig:
     deploy_url: str | None = f"http://localhost:{constants.DefaultPorts.FRONTEND_PORT}"
 
     backend_host: str = "0.0.0.0"
+
+    trusted_proxy_hops: int = 0
 
     db_url: str | None = None
 
@@ -405,6 +408,14 @@ class Config(BaseConfig):
             setattr(self, key, env_value)
 
         self._normalize_frontend_compression_formats()
+
+        if (
+            isinstance(self.trusted_proxy_hops, bool)
+            or not isinstance(self.trusted_proxy_hops, int)
+            or self.trusted_proxy_hops < 0
+        ):
+            msg = "trusted_proxy_hops must be a non-negative integer."
+            raise ConfigError(msg)
 
         # Normalize route prefixes to ensure they start with a slash.
         self._normalize_paths()
