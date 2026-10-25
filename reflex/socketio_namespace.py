@@ -86,6 +86,8 @@ class EventNamespace(AsyncNamespace, BaseEventNamespace):
         # ASGI scope per session, so the per-event path reaches the connection
         # state it caches without going through the Socket.IO server.
         self._scopes: dict[str, MutableMapping[str, Any]] = {}
+        # Sessions whose boot event on_event is handling, which raises its failure.
+        self._booting: set[str] = set()
 
     async def on_connect(
         self, sid: str, environ: dict, auth: Any = None
@@ -113,15 +115,30 @@ class EventNamespace(AsyncNamespace, BaseEventNamespace):
         # A failed boot event refuses the connect rather than raising, which
         # would keep the connect registered yet unanswered, or disconnecting,
         # which would acknowledge a session that never hydrated.
-        if linked and (
-            boot_event is None
-            or await self._handle_boot_event(sid, boot_event, self._scope(sid)) is None
-        ):
+        if linked and (boot_event is None or await self._boot(sid, boot_event) is None):
             return None
         # Socket.IO runs no disconnect handler for a refused connect, so undo
         # this one here.
         self.on_disconnect(sid)
         return False
+
+    async def _boot(self, sid: str, boot_event: Any) -> int | None:
+        """Dispatch a connect's boot event through on_event, so its overrides see it.
+
+        Args:
+            sid: The Socket.IO session id.
+            boot_event: The boot event.
+
+        Returns:
+            None once dispatched, else the close code the session failed with.
+        """
+        # Marked as booting, on_event raises a failure for the boot event's
+        # policy instead of applying the per-event one.
+        self._booting.add(sid)
+        try:
+            return await self._handle_boot_event(sid, self.on_event(sid, boot_event))
+        finally:
+            self._booting.discard(sid)
 
     def on_disconnect(self, sid: str) -> asyncio.Task | None:
         """Event for when the websocket disconnects.
@@ -138,6 +155,8 @@ class EventNamespace(AsyncNamespace, BaseEventNamespace):
     async def on_event(self, sid: str, data: Any):
         """Event for receiving front-end websocket events.
 
+        A failing boot event raises, for on_connect to refuse the connect.
+
         Args:
             sid: The Socket.IO session id.
             data: The event data.
@@ -147,6 +166,8 @@ class EventNamespace(AsyncNamespace, BaseEventNamespace):
         try:
             await self.handle_event(sid, data, self._scope(sid))
         except Exception as exc:
+            if sid in self._booting:
+                raise
             if self._handler_failed(sid, f"socket event {_EVENT!r}", exc):
                 await self.disconnect(sid)
 

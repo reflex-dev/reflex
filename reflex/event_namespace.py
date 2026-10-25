@@ -12,7 +12,7 @@ import time
 import urllib.parse
 import uuid
 from abc import ABC, abstractmethod
-from collections.abc import Iterable, Mapping, MutableMapping, Sequence
+from collections.abc import Awaitable, Iterable, Mapping, MutableMapping, Sequence
 from datetime import timedelta
 from typing import TYPE_CHECKING, Any, ClassVar, NamedTuple
 
@@ -736,23 +736,23 @@ class BaseEventNamespace(ABC):
         return sid in self._token_manager.sid_to_token, boot_event
 
     async def _handle_boot_event(
-        self, sid: str, boot_event: Any, scope: MutableMapping[str, Any]
+        self, sid: str, dispatch: Awaitable[None]
     ) -> int | None:
-        """Dispatch the boot event of a connect as the session's first event.
+        """Await the dispatch of a connect's boot event, the session's first event.
 
         A session whose boot event failed is ended: kept open, it would leave
         the client waiting for a hydrate that never comes instead of retrying.
 
         Args:
             sid: The session id.
-            boot_event: The boot event.
-            scope: The ASGI scope of the client connection.
+            dispatch: The transport's dispatch of the boot event, raising
+                whatever made it fail.
 
         Returns:
             None once dispatched, else the close code to end the session with.
         """
         try:
-            await self.handle_event(sid, boot_event, scope)
+            await dispatch
         except Exception as exc:
             return self._handler_failed(sid, "the boot event", exc) or 1011
         return None
@@ -1647,7 +1647,7 @@ class WebsocketEventNamespace(BaseEventNamespace):
             boot_event is not None
             and (
                 close_code := await self._handle_boot_event(
-                    sid, boot_event, websocket.scope
+                    sid, self.handle_event(sid, boot_event, websocket.scope)
                 )
             )
             is not None

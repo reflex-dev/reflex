@@ -144,6 +144,7 @@ available as `transport="socketio"` (or `"polling"`) with the optional extra,
 | Passes `rx.App(sio=...)` | Set `transport="socketio"` in `rxconfig.py` and install `reflex[socketio]`. Without a transport setting the app still falls back to Socket.IO, with a deprecation warning. |
 | Uses `app.sio` for its own Socket.IO events | The same: under the default transport `app.sio` is `None`. |
 | Imports `socketio`, or `AsyncServer` or `EventNamespace` from `reflex.app` | Install `reflex[socketio]`: `python-socketio` is no longer a dependency of `reflex`. |
+| Replaces `reflex.app.EventNamespace` with a subclass | That class serves only `transport="socketio"` and `"polling"`; replace `reflex.app.WebsocketEventNamespace` as well, and override `handle_event` rather than `on_event` (see [below](#running-code-for-every-event)). |
 | Runs the backend on uvicorn | Install `reflex[uvicorn]`, which brings the `websockets` library uvicorn needs to serve the event socket. Without a websocket library, Reflex runs Granian instead. |
 | Routes the backend through a reverse proxy | Send both `/_event` and `/_event/*` to the backend; the client dials `/_event/`. |
 | Raised `REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE` | It counts UTF-8 bytes rather than characters, and Granian caps it at 16 MiB; run uvicorn for larger messages. |
@@ -159,6 +160,32 @@ or every session when `to` is omitted; Socket.IO's rooms, `skip_sid` and
 callbacks are not available. An event whose payload is not a JSON object closes
 the connection instead of being parsed from a string, and a Socket.IO
 connection that carries no client token is refused.
+
+### Running code for every event
+
+To run code for every event, such as an authorization check or an audit log,
+subclass the event namespace and override `handle_event`. On either transport
+it receives every event, including the hydrate event a client sends with its
+connect. Replace the class in `reflex.app` before creating the app:
+
+```python
+import reflex as rx
+import reflex.app
+from reflex.event_namespace import WebsocketEventNamespace
+
+
+class AuditingNamespace(WebsocketEventNamespace):
+    async def handle_event(self, sid, data, asgi_scope):
+        audit(sid, data)
+        await super().handle_event(sid, data, asgi_scope)
+
+
+reflex.app.WebsocketEventNamespace = AuditingNamespace
+app = rx.App()
+```
+
+Under `transport="socketio"` or `"polling"`, subclass `reflex.app.EventNamespace`
+the same way. Overriding its `on_event` still works, but is deprecated.
 
 ## Sharing a state store between 0.9 and 0.10 instances
 

@@ -993,22 +993,90 @@ def test_app_socketio_reexports_without_the_extra(monkeypatch: pytest.MonkeyPatc
             getattr(reflex.app, name)
 
 
+@pytest.mark.parametrize(
+    ("transport", "name"),
+    [("socketio", "EventNamespace"), ("websocket", "WebsocketEventNamespace")],
+)
 def test_a_replaced_event_namespace_class_is_used(
-    monkeypatch: pytest.MonkeyPatch, forked_registration_context: RegistrationContext
+    monkeypatch: pytest.MonkeyPatch,
+    forked_registration_context: RegistrationContext,
+    transport: str,
+    name: str,
 ):
-    """An app can still substitute its own Socket.IO namespace class."""
+    """An app can substitute its own namespace class for either transport."""
+    import reflex.app
+
+    class AuthorizingNamespace(getattr(reflex.app, name)):
+        """A namespace an app customized."""
+
+    monkeypatch.setattr(reflex.app, name, AuthorizingNamespace, raising=False)
+    monkeypatch.setenv("REFLEX_TRANSPORT", transport)
+
+    assert isinstance(App(enable_state=True).event_namespace, AuthorizingNamespace)
+
+
+@pytest.mark.parametrize(
+    ("override", "deprecated"),
+    [(None, False), ("handle_event", False), ("on_event", True)],
+)
+def test_overriding_on_event_is_deprecated(
+    monkeypatch: pytest.MonkeyPatch,
+    forked_registration_context: RegistrationContext,
+    mocker,
+    override: str | None,
+    deprecated: bool,
+):
+    """An app overriding on_event is pointed to handle_event, which both transports run."""
     import reflex.app
     from reflex.socketio_namespace import EventNamespace
 
-    class AuthorizingNamespace(EventNamespace):
-        """A namespace an app customized."""
+    class TenantNamespace(EventNamespace):
+        async def handle_event(self, sid, data, asgi_scope):
+            await super().handle_event(sid, data, asgi_scope)
 
+    class AuditingNamespace(EventNamespace):
+        async def on_event(self, sid, data):
+            await super().on_event(sid, data)
+
+    namespace_classes = {
+        None: EventNamespace,
+        "handle_event": TenantNamespace,
+        "on_event": AuditingNamespace,
+    }
+    deprecate = mocker.patch("reflex.app.console.deprecate")
     monkeypatch.setattr(
-        reflex.app, "EventNamespace", AuthorizingNamespace, raising=False
+        reflex.app, "EventNamespace", namespace_classes[override], raising=False
     )
     monkeypatch.setenv("REFLEX_TRANSPORT", "socketio")
 
-    assert isinstance(App(enable_state=True).event_namespace, AuthorizingNamespace)
+    App(enable_state=True)
+
+    assert [call.kwargs["feature_name"] for call in deprecate.call_args_list] == (
+        ["Overriding EventNamespace.on_event"] if deprecated else []
+    )
+
+
+@pytest.mark.asyncio
+async def test_a_handle_event_override_sees_every_event(
+    namespace_app: Mock, boot_event: dict[str, Any]
+):
+    """A handle_event override sees the hydrate on connect and every later event."""
+    seen: list[str] = []
+
+    class TenantNamespace(WebsocketEventNamespace):
+        async def handle_event(self, sid, data, asgi_scope):
+            seen.append(data["name"])
+            await super().handle_event(sid, data, asgi_scope)
+
+    click = {"name": "state.on_click", "payload": {}, "router_data": {}}
+    await serve(
+        TenantNamespace("/_event", namespace_app),
+        [CONNECT_MESSAGE, {"event": boot_event}],
+        ["event", click],
+        connect=False,
+    )
+
+    assert seen == ["state.hydrate_and_load", "state.on_click"]
 
 
 @pytest.mark.asyncio

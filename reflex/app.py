@@ -679,7 +679,7 @@ class App(MiddlewareMixin, LifespanMixin):
         if config.transport in ("socketio", "polling"):
             # Legacy Socket.IO transport, kept behind the optional dependency.
             try:
-                from reflex.socketio_namespace import create_socketio_app
+                from reflex import socketio_namespace
 
                 # Through the module, so an app that replaced the class gets
                 # its own.
@@ -688,7 +688,19 @@ class App(MiddlewareMixin, LifespanMixin):
                 msg = f"transport={config.transport!r} requires {_SOCKETIO_PACKAGE}."
                 raise RuntimeError(msg) from ex
 
-            socket_app = create_socketio_app(self, config)
+            if (
+                event_namespace_class.on_event
+                is not socketio_namespace.EventNamespace.on_event
+            ):
+                console.deprecate(
+                    feature_name="Overriding EventNamespace.on_event",
+                    reason="Override handle_event instead; it runs for every "
+                    "event, including the hydrate on connect, on both transports",
+                    deprecation_version="0.10.1",
+                    removal_version="1.0",
+                )
+
+            socket_app = socketio_namespace.create_socketio_app(self, config)
 
             # Create the event namespace and attach the main app. Not related to any paths.
             self._event_namespace = event_namespace_class(namespace, self)
@@ -699,7 +711,8 @@ class App(MiddlewareMixin, LifespanMixin):
             if self._api:
                 self._api.mount(event_path, socket_app)
         else:
-            # Default transport: plain WebSocket served by the API itself.
+            # Default transport: plain WebSocket served by the API itself. Read
+            # from the module here, so an app that replaced the class gets its own.
             self._event_namespace = WebsocketEventNamespace(namespace, self)
             if self._api:
                 # Also with a trailing slash, the form the client dials: proxy

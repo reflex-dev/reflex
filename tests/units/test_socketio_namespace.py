@@ -313,6 +313,163 @@ async def test_a_failing_handler_is_logged_within_the_error_budget(
     namespace.disconnect.assert_not_awaited()
 
 
+class AuditingNamespace(EventNamespace):
+    """A namespace an app customized through on_event, recording what it is handed."""
+
+    def __init__(self, namespace: str, app: Mock):
+        """Initialize the namespace."""
+        super().__init__(namespace, app)
+        self.seen: list[Any] = []
+
+    async def on_event(self, sid: str, data: Any):
+        """Record the event, then handle it."""
+        self.seen.append(data)
+        await super().on_event(sid, data)
+
+
+@pytest.fixture
+def auditing_namespace(namespace_app: Mock) -> AuditingNamespace:
+    """A namespace overriding on_event, serving the mock app.
+
+    Returns:
+        The namespace.
+    """
+    return AuditingNamespace("/_event", namespace_app)
+
+
+@pytest.mark.asyncio
+async def test_an_on_event_override_sees_the_boot_event_of_every_connect(
+    auditing_namespace: AuditingNamespace,
+    namespace_app: Mock,
+    boot_event: dict[str, Any],
+):
+    """An on_event override sees the hydrate on connect and on reconnect.
+
+    Apps override it for authorization checks, tenant routing or auditing,
+    which the boot event must not bypass.
+    """
+    connected = await auditing_namespace.on_connect(
+        "sid1", _connect_environ("tok1"), {"event": boot_event}
+    )
+    cleanup = auditing_namespace.on_disconnect("sid1")
+    assert cleanup is not None
+    await cleanup
+    reconnected = await auditing_namespace.on_connect(
+        "sid2", _connect_environ("tok1"), {"event": boot_event}
+    )
+
+    assert connected is None
+    assert reconnected is None
+    assert auditing_namespace.seen == [boot_event, boot_event]
+    assert [
+        call.args[0] for call in namespace_app.event_processor.enqueue.await_args_list
+    ] == ["tok1", "tok1"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("malformed", "errors"),
+    [
+        pytest.param(
+            False, ["Error handling the boot event for session sid1."], id="raising"
+        ),
+        pytest.param(True, [], id="malformed"),
+    ],
+)
+async def test_a_failing_boot_event_refuses_the_connect_under_an_on_event_override(
+    auditing_namespace: AuditingNamespace,
+    namespace_app: Mock,
+    caplog: pytest.LogCaptureFixture,
+    boot_event: dict[str, Any],
+    malformed: bool,
+    errors: list[str],
+):
+    """A boot event failing inside an on_event override still refuses the connect.
+
+    on_event swallows a later event's failure, but acknowledged, a session
+    whose boot event failed would leave the client waiting for a hydrate that
+    never comes. A malformed one is refused quietly, without the disconnect a
+    later malformed event gets.
+    """
+    boot: Any = "not an event" if malformed else boot_event
+    namespace_app.event_processor.enqueue.side_effect = ValueError("bad boot event")
+    auditing_namespace.disconnect = AsyncMock()
+
+    with caplog.at_level(logging.DEBUG, logger="reflex.event_namespace"):
+        refused = await auditing_namespace.on_connect(
+            "sid1", _connect_environ("tok1"), {"event": boot}
+        )
+    # Let the token cleanup task run.
+    await asyncio.sleep(0)
+
+    assert refused is False
+    assert auditing_namespace.seen == [boot]
+    auditing_namespace.disconnect.assert_not_awaited()
+    assert "tok1" not in auditing_namespace.token_to_sid
+    assert auditing_namespace._scopes == {}
+    assert [
+        record.getMessage()
+        for record in caplog.records
+        if record.levelno > logging.DEBUG
+    ] == errors
+
+
+@pytest.mark.asyncio
+async def test_later_events_keep_the_failure_policy_under_an_on_event_override(
+    auditing_namespace: AuditingNamespace,
+    namespace_app: Mock,
+    caplog: pytest.LogCaptureFixture,
+    boot_event: dict[str, Any],
+):
+    """Past the boot event, a failing event is logged and a malformed one disconnects.
+
+    Only the boot event's failure is raised out of on_event; raised into
+    python-socketio, a later one would log a traceback per frame, outside the
+    session's error budget.
+    """
+    await auditing_namespace.on_connect(
+        "sid1", _connect_environ("tok1"), {"event": boot_event}
+    )
+    auditing_namespace.disconnect = AsyncMock()
+    namespace_app.event_processor.enqueue.side_effect = RuntimeError("server bug")
+
+    with caplog.at_level(logging.ERROR, logger="reflex.event_namespace"):
+        await auditing_namespace.on_event(
+            "sid1", {"name": "state.on_click", "payload": {}, "router_data": {}}
+        )
+    auditing_namespace.disconnect.assert_not_awaited()
+    await auditing_namespace.on_event("sid1", 42)
+
+    assert len(auditing_namespace.seen) == 3
+    assert [
+        record.getMessage()
+        for record in caplog.records
+        if record.levelno >= logging.ERROR
+    ] == ["Error handling socket event 'event' for session sid1."]
+    auditing_namespace.disconnect.assert_awaited_once_with("sid1")
+
+
+@pytest.mark.asyncio
+async def test_a_handle_event_override_sees_every_event(
+    namespace_app: Mock, boot_event: dict[str, Any]
+):
+    """A handle_event override sees the hydrate on connect and every later event."""
+    seen: list[str] = []
+
+    class TenantNamespace(EventNamespace):
+        async def handle_event(self, sid, data, asgi_scope):
+            seen.append(data["name"])
+            await super().handle_event(sid, data, asgi_scope)
+
+    namespace = TenantNamespace("/_event", namespace_app)
+    await namespace.on_connect("sid1", _connect_environ("tok1"), {"event": boot_event})
+    await namespace.on_event(
+        "sid1", {"name": "state.on_click", "payload": {}, "router_data": {}}
+    )
+
+    assert seen == ["state.hydrate_and_load", "state.on_click"]
+
+
 def test_packets_with_an_unpaired_surrogate_stay_valid_utf8():
     """A packet carrying an unpaired surrogate is escaped, as plain frames are.
 
