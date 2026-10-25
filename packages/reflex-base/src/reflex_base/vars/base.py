@@ -3050,9 +3050,12 @@ class ComputedVar(Var[RETURN_TYPE]):
 
         d: dict[str, set[str]] = {}
         if self._static_deps:
-            # None is a placeholder for the current state class.
+            # None is a placeholder for the current state class, which may
+            # also be named explicitly; merge both into one entry.
             for k, v in self._static_deps.items():
-                d[k if k is not None else objclass.get_full_name()] = v
+                d.setdefault(
+                    k if k is not None else objclass.get_full_name(), set()
+                ).update(v)
 
         if not self._auto_deps:
             return d

@@ -6683,6 +6683,35 @@ async def test_add_dependency_get_state_regression(
     await other_state.fetch_data_state()  # Should not raise exception.
 
 
+def test_add_dependency_on_own_state_keeps_declared_deps() -> None:
+    """A dependency added on the var's own state joins its declared deps."""
+
+    class OwnStateDepState(BaseState):
+        a: Field[int] = field(0)
+        b: Field[int] = field(0)
+
+        @rx.var(deps=["a"], auto_deps=False)
+        def total(self) -> int:
+            return self.a + self.b
+
+    cvar = OwnStateDepState.computed_vars["total"]
+    cvar.add_dependency(OwnStateDepState, OwnStateDepState.b)
+    assert cvar._deps(objclass=OwnStateDepState) == {
+        OwnStateDepState.get_full_name(): {"a", "b"}
+    }
+
+    # A reload rebuilds the dependency map from _deps.
+    OwnStateDepState._var_dependencies = {}
+    OwnStateDepState._init_var_dependency_dicts()
+    state = OwnStateDepState()
+    assert state.total == 0
+    state.dirty_vars.clear()
+    state.a = 1
+    state._mark_dirty_computed_vars()
+    assert "total" in state.dirty_vars
+    assert state.total == 1
+
+
 def test_override_base_method_skips_event_handler_wrapping():
     """A method marked with __override_base_method__ should not be wrapped as an EventHandler."""
     from reflex.state import _override_base_method
