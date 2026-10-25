@@ -46,6 +46,8 @@ class HreflangLinks(Component):
     """App-wrap emitting ``hreflang`` alternates + canonical for the route.
 
     Reads the current path and its config from ``$/i18n/index.js`` (no props).
+    When every locale is prefixed, it also redirects an unprefixed URL to its
+    default-locale address.
     """
 
     library = "$/utils/i18n"

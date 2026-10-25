@@ -62,16 +62,23 @@ const writeCookie = (name, value) => {
 };
 
 // Match a requested locale list against the supported locales: exact tag
-// first, then primary-language prefix (e.g. "de-AT" -> "de").
+// first, then primary-language prefix (e.g. "de-AT" -> "de"). Like the
+// server's negotiate_locale, tags match case-insensitively (RFC 5646) and
+// resolve to the configured spelling.
 const negotiate = (requested) => {
-  for (const tag of requested) {
-    if (locales.includes(tag)) {
-      return tag;
-    }
+  const byTag = new Map();
+  const byLanguage = new Map();
+  for (const supported of locales) {
+    const tag = supported.toLowerCase();
+    byTag.set(tag, supported);
     const language = tag.split("-")[0];
-    const match = locales.find(
-      (supported) => supported.split("-")[0] === language,
-    );
+    if (!byLanguage.has(language)) {
+      byLanguage.set(language, supported);
+    }
+  }
+  for (const tag of requested) {
+    const lower = tag.toLowerCase();
+    const match = byTag.get(lower) ?? byLanguage.get(lower.split("-")[0]);
     if (match !== undefined) {
       return match;
     }
@@ -152,14 +159,6 @@ export function I18nProvider({ children }) {
       setCookieLocale(initialLocale());
     }
   }, []);
-
-  // When every locale is prefixed (defaultAtRoot off), an unprefixed URL has
-  // no locale of its own; send it to its default-locale address.
-  useEffect(() => {
-    if (urlRouting && !defaultAtRoot && pathLocale(pathname) === undefined) {
-      navigateLocale(defaultLocale, { replace: true });
-    }
-  }, [pathname, navigateLocale]);
 
   useEffect(() => {
     let cancelled = false;
@@ -389,6 +388,15 @@ const useBasename = () => useHref("/").replace(/\/$/, "");
 export function HreflangLinks({ children }) {
   const { pathname } = useLocation();
   const basename = useBasename();
+  const navigateLocale = useLocaleNavigate();
+  // When every locale is prefixed (defaultAtRoot off), an unprefixed URL has
+  // no locale of its own; send it to its default-locale address. This wrap is
+  // on every page with URL routing, unlike the provider.
+  useEffect(() => {
+    if (!defaultAtRoot && pathLocale(pathname) === undefined) {
+      navigateLocale(defaultLocale, { replace: true });
+    }
+  }, [pathname, navigateLocale]);
   const base = delocalizePath(pathname);
   const href = (locale) => absoluteUrl(basename + localizePath(base, locale));
   const links = locales.map((locale) =>
