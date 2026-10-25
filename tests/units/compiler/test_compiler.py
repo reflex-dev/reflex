@@ -12,6 +12,7 @@ from reflex_base import constants
 from reflex_base.components.component import Component
 from reflex_base.components.component import field as component_field
 from reflex_base.components.dynamic import bundle_library, reset_bundled_libraries
+from reflex_base.components.memo import MEMOS
 from reflex_base.constants.base import LiteralColorMode
 from reflex_base.constants.compiler import (
     MemoizationDisposition,
@@ -2036,6 +2037,9 @@ def isolated_compile(
     preserve_memo_registries: None,
 ) -> None:
     """Compile in a private directory, registry and memo table without plugins."""
+    # Memos that other modules define at import time may read state, and every
+    # registered memo is compiled, so start from an empty table.
+    MEMOS.clear()
     monkeypatch.chdir(tmp_path)
     config = rx.Config(app_name="state_guard_test", plugins=[])
     mocker.patch("reflex_base.config._get_config", return_value=config)
