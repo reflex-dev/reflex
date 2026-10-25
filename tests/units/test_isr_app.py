@@ -16,11 +16,12 @@ from reflex.isr import (
 
 
 class _Renderer:
-    """Minimal renderer that echoes the path and counts calls."""
+    """Minimal renderer that echoes the path and records calls."""
 
     def __init__(self) -> None:
-        """Initialize the call counter."""
+        """Initialize the call counter and rendered paths."""
         self.calls = 0
+        self.paths: list[str] = []
 
     async def __call__(self, path: str) -> RenderResult:
         """Render the path.
@@ -32,6 +33,7 @@ class _Renderer:
             A render result echoing the path.
         """
         self.calls += 1
+        self.paths.append(path)
         return RenderResult(html=f"<html>{path}#{self.calls}</html>", tags=("t",))
 
 
@@ -62,6 +64,32 @@ def test_serves_and_caches_rendered_html():
     assert "/blog/hello#1" in r1.text
     assert r1.text == r2.text
     assert renderer.calls == 1  # second request hit the cache
+
+
+def test_renders_and_caches_the_raw_path():
+    """An encoded slash reaches the renderer and cache key still encoded."""
+    renderer = _Renderer()
+    client = _client(renderer)
+
+    encoded = client.get("/blog/a%2Fb")
+    decoded = client.get("/blog/a/b")
+
+    assert "/blog/a%2Fb#1" in encoded.text
+    assert "/blog/a/b#2" in decoded.text
+    assert client.get("/blog/a%2Fb").text == encoded.text
+    assert renderer.paths == ["/blog/a%2Fb", "/blog/a/b"]
+
+
+def test_caches_by_path_without_query_string():
+    """Requests differing only in their query string share one cached page."""
+    renderer = _Renderer()
+    client = _client(renderer)
+
+    first = client.get("/search?q=a")
+    second = client.get("/search?q=b")
+
+    assert first.text == second.text
+    assert renderer.paths == ["/search"]
 
 
 def test_falls_back_to_shell_on_render_failure():

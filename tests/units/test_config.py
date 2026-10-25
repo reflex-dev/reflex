@@ -18,7 +18,11 @@ from pytest_mock import MockerFixture
 from reflex_base.constants import Endpoint, Env
 from reflex_base.plugins import Plugin
 from reflex_base.plugins.sitemap import SitemapPlugin
-from reflex_base.utils.exceptions import ConfigError, InvalidPluginConfigError
+from reflex_base.utils.exceptions import (
+    ConfigError,
+    EnvironmentVarValueError,
+    InvalidPluginConfigError,
+)
 
 import reflex as rx
 from reflex.environment import (
@@ -114,6 +118,7 @@ def test_react_compiler_default(base_config_values):
         ("REFLEX_REACT_COMPILER", False),
         ("REFLEX_REACT_COMPILER", True),
         ("REFLEX_DEFAULT_COLOR_MODE", "dark"),
+        ("REFLEX_SSR_MODE", "always"),
     ],
 )
 def test_update_from_env(
@@ -136,6 +141,22 @@ def test_update_from_env(
     # Remove REFLEX_ prefix to get the actual field name
     field_name = env_var.removeprefix("REFLEX_").lower()
     assert getattr(config, field_name) == value
+
+
+def test_update_from_env_rejects_unknown_ssr_mode(
+    base_config_values: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+):
+    """An ssr_mode outside rx.SsrMode fails config validation.
+
+    Args:
+        base_config_values: Config values.
+        monkeypatch: The pytest monkeypatch object.
+    """
+    monkeypatch.setenv("REFLEX_SSR_MODE", "bot_only")
+    with pytest.raises(
+        EnvironmentVarValueError, match="Invalid enum value: 'bot_only' for ssr_mode"
+    ):
+        rx.Config(**base_config_values)
 
 
 def test_update_from_env_path(

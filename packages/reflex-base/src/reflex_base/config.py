@@ -194,8 +194,9 @@ class BaseConfig:
         plugins: List of plugins to use in the app.
         disable_plugins: List of plugin types to disable in the app.
         transport: The transport method for client-server communication.
-        ssr_mode: Server-side rendering mode ("off", "bot_only", or "always").
+        ssr_mode: Server-side rendering mode ("off" or "always").
         isr_render_url: ISR render-tier URL; when set, enables ISR page serving.
+            Pages are rendered and cached per path, without the query string.
         isr_revalidate: Default seconds until an ISR-cached page goes stale.
         isr_build_id: Identifier that rotates the ISR cache on each deploy.
     """
@@ -289,11 +290,13 @@ class BaseConfig:
 
     transport: Literal["websocket", "polling"] = "websocket"
 
-    # Server-side rendering mode: "off" (default), "bot_only", or "always".
+    # Server-side rendering mode: "off" (default) or "always".
     ssr_mode: constants.SsrMode = constants.SsrMode.OFF
 
     # ISR render-tier URL. When set, the ISR page-server regenerates pages by
-    # POSTing paths here; when None, ISR is disabled.
+    # POSTing paths here; when None, ISR is disabled. Pages are rendered and
+    # cached per path without the query string; the page's on_load fills in
+    # query-dependent content after hydration.
     isr_render_url: str | None = None
 
     # Default seconds until an ISR-cached page is considered stale.

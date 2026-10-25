@@ -14,7 +14,10 @@ Responsibilities split:
 
 Cache entries are keyed by ``{build_id}:{path}`` so a new deploy (new build id)
 transparently rotates the cache and never serves HTML that references
-content-hashed assets from a previous build.
+content-hashed assets from a previous build.  ``path`` is the raw request path,
+percent-encoding included, without the query string: each page is rendered and
+cached per path, and its ``on_load`` fills in query-dependent content after
+hydration.
 """
 
 from __future__ import annotations
@@ -59,8 +62,9 @@ class RenderResult:
     tags: tuple[str, ...] = ()
 
 
-# A Renderer turns a concrete request path into a RenderResult, or None on
-# failure (in which case ISR serves stale/fallback rather than caching an error).
+# A Renderer turns a raw request path (percent-encoded, no query string) into a
+# RenderResult, or None on failure (ISR then serves stale/fallback rather than
+# caching an error).
 Renderer = Callable[[str], Awaitable["RenderResult | None"]]
 
 
@@ -683,7 +687,7 @@ async def revalidate_path(path: str, *, config: Config | None = None) -> None:
     is configured (nothing is shared to invalidate).
 
     Args:
-        path: The path to invalidate (e.g. ``/blog/hello-world``).
+        path: The percent-encoded path to invalidate (e.g. ``/blog/hello-world``).
         config: The config to read the build id from (defaults to global).
     """
     redis = prerequisites.get_redis()
@@ -764,7 +768,10 @@ def create_isr_app(
 
     Serves documents via ISR (nginx ``proxy_cache`` is expected in front for
     edge caching), falling back to the SPA shell on a miss/render failure, and
-    exposes ``POST /_isr/revalidate`` for on-demand invalidation.  The
+    exposes ``POST /_isr/revalidate`` for on-demand invalidation.  Pages are
+    rendered and cached per raw request path; the query string is neither
+    forwarded nor part of the cache key, so the page's ``on_load`` fills in
+    query-dependent content after hydration.  The
     revalidation endpoint requires a matching ``X-Reflex-ISR-Token`` header when
     the ``REFLEX_ISR_REVALIDATE_TOKEN`` env var is set.
 
@@ -791,7 +798,11 @@ def create_isr_app(
         Returns:
             The rendered page, the shell, or a 404.
         """
-        html = await mgr.get_html(request.url.path)
+        # The raw path keeps an encoded slash (``/blog/a%2Fb``) in its segment.
+        raw_path = request.scope.get("raw_path")
+        html = await mgr.get_html(
+            raw_path.decode("latin-1") if raw_path is not None else request.url.path
+        )
         if html is not None:
             return HTMLResponse(html)
         if shell_html is not None:

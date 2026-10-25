@@ -149,8 +149,17 @@ async def test_ssr_data_dynamic_route_params():
 
 
 @pytest.mark.asyncio
-async def test_ssr_data_decodes_route_params():
-    """Escaped route params reach the state decoded, as in browser events."""
+@pytest.mark.parametrize(
+    ("path", "slug"),
+    [("/blog/hello%20world", "hello world"), ("/blog/a%2Fb", "a/b")],
+)
+async def test_ssr_data_decodes_route_params(path: str, slug: str):
+    """Escaped route params reach the state decoded, as in browser events.
+
+    Args:
+        path: The percent-encoded request path.
+        slug: The expected decoded slug.
+    """
 
     class PostState(rx.State):
         pass
@@ -159,12 +168,13 @@ async def test_ssr_data_decodes_route_params():
     app._state = PostState
     app.add_page(lambda: rx.text("post"), route="/blog/[slug]")
 
-    response = await ssr_data(app)(_make_request("/blog/hello%20world"))
+    response = await ssr_data(app)(_make_request(path))
 
     page = _parse_response(response)["state"][rx.State.get_full_name()][
         "rx_router_page_rx_state_"
     ]
-    assert page["params"] == {"slug": "hello world"}
+    assert page["path"] == "/blog/[slug]"
+    assert page["params"] == {"slug": slug}
 
 
 @pytest.mark.asyncio

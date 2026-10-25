@@ -214,12 +214,10 @@ class SsrMode(str, Enum):
     """Server-side rendering modes.
 
     OFF:      No SSR — static SPA (default, same as before).
-    BOT_ONLY: SSR for crawlers/bots only — regular users get the SPA shell.
     ALWAYS:   SSR for all users — better FCP/LCP, higher server load.
     """
 
     OFF = "off"
-    BOT_ONLY = "bot_only"
     ALWAYS = "always"
 
 
