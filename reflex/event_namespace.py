@@ -47,6 +47,10 @@ OPENED_MESSAGE = "_opened"
 CLOSE_MESSAGE = "_close"
 CHANNEL_ERROR_MESSAGE = "_error"
 
+# Close reason prefix of a connect frame refused for its size; the limit
+# follows it. It must match the client's in websocket.js.
+MAX_MESSAGE_SIZE_REASON = "max_message_size="
+
 # Wire protocol version, announced in the handshake. The client gates channel
 # frames on it: a backend that predates channels closes the connection on the
 # binary frames they use.
@@ -1344,7 +1348,9 @@ class WebsocketEventNamespace(BaseEventNamespace):
         return None
 
     @staticmethod
-    async def _close_quietly(websocket: WebSocket, code: int) -> None:
+    async def _close_quietly(
+        websocket: WebSocket, code: int, reason: str | None = None
+    ) -> None:
         """Close a connection, tolerating one that is already closed.
 
         The client can close its side while the server decides to close, and
@@ -1353,9 +1359,10 @@ class WebsocketEventNamespace(BaseEventNamespace):
         Args:
             websocket: The client websocket connection.
             code: The close code.
+            reason: The close reason, at most 123 UTF-8 bytes.
         """
         try:
-            await websocket.close(code=code)
+            await websocket.close(code=code, reason=reason)
         except RuntimeError:
             logger.debug("Connection was already closed.", exc_info=True)
 
@@ -1476,7 +1483,11 @@ class WebsocketEventNamespace(BaseEventNamespace):
             return None
         if (text := received.get("text")) is not None:
             if (close_code := self._accept_inbound(sid, text, max_size)) is not None:
-                await self._close_quietly(websocket, close_code)
+                # The client reports the oversized hydrate this carries, with
+                # the limit named here.
+                await self._close_quietly(
+                    websocket, close_code, f"{MAX_MESSAGE_SIZE_REASON}{max_size}"
+                )
                 return None
             message = _parse_frame(text)
             if isinstance(message, list) and message and message[0] == CONNECT_MESSAGE:

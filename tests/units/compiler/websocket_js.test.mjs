@@ -64,6 +64,11 @@ async function setup({
     receive(frame) {
       this.onmessage({ data: JSON.stringify(frame) });
     }
+
+    serverClose(code, reason = "") {
+      this.readyState = WebSocket.CLOSED;
+      this.onclose?.({ code, reason });
+    }
   }
 
   const context = vm.createContext({
@@ -208,6 +213,92 @@ test("a session that is never acknowledged fails as a connect error", async () =
   assert.equal(sockets[0].readyState, sockets[0].constructor.CLOSED);
   assert.equal(events.at(-1)[0], "connect_error");
   assert.equal(timers.size, 0);
+});
+
+/**
+ * The UTF-8 size of the connect frame carrying the transport's auth.
+ * @param transport The transport.
+ * @returns The size in bytes.
+ */
+const connectFrameSize = (transport) =>
+  new TextEncoder().encode(JSON.stringify(["_connect", transport.auth]))
+    .byteLength;
+
+for (const [reason, named] of [
+  ["max_message_size=100", " (100 bytes)"],
+  // An older backend, or a proxy with its own limit.
+  ["", ""],
+  ["Message Too Big", ""],
+]) {
+  test(`a connect frame refused for its size with reason ${JSON.stringify(reason)} reports the hydrate`, async () => {
+    const { transport, sockets, events, timers } = await setup();
+    transport.auth = {
+      event: { name: "boot", payload: { large: "é".repeat(80) } },
+    };
+    transport.connect();
+    sockets[0].open();
+    sockets[0].serverClose(1009, reason);
+    assert.equal(events.length, 1);
+    const [name, error] = events[0];
+    assert.equal(name, "connect_error");
+    assert.equal(error.code, "hydration_payload_too_large");
+    assert.equal(
+      error.message,
+      `Hydration payload (${connectFrameSize(transport)} bytes) exceeds the ` +
+        `server limit${named}. Reduce browser storage data and reload.`,
+    );
+    assert.equal(timers.size, 0);
+  });
+}
+
+test("other closes are a generic connect error before the handshake and a disconnect after it", async () => {
+  const app = await setup();
+  app.transport.connect();
+  app.sockets[0].open();
+  app.sockets[0].serverClose(1008);
+  const [name, error] = app.events.at(-1);
+  assert.equal(name, "connect_error");
+  assert.equal(error.message, "websocket connection failed");
+  assert.equal(error.code, undefined);
+
+  // A session's oversized message is not its hydrate.
+  const socket = connectTransport(app);
+  socket.serverClose(1009, "max_message_size=100");
+  assert.deepEqual(app.events.at(-1).slice(0, 2), [
+    "disconnect",
+    "transport close",
+  ]);
+});
+
+test("a reconnect over the limit an earlier handshake announced is refused before sending", async () => {
+  const app = await setup();
+  const first = connectTransport(app, { max_message_size: 100 });
+  first.serverClose(1001);
+  app.transport.auth = { event: { name: "rehydrate", large: "x".repeat(200) } };
+  app.transport.connect();
+  const socket = app.sockets.at(-1);
+  socket.open();
+  assert.notEqual(socket, first);
+  assert.deepEqual(socket.sent, []);
+  assert.equal(socket.readyState, socket.constructor.CLOSED);
+  assert.equal(app.timers.size, 0);
+  assert.equal(app.events.filter(([n]) => n === "connect_error").length, 1);
+  const [name, error] = app.events.at(-1);
+  assert.equal(name, "connect_error");
+  assert.equal(error.code, "hydration_payload_too_large");
+  assert.equal(
+    error.message,
+    `Hydration payload (${connectFrameSize(app.transport)} bytes) exceeds ` +
+      "the server limit (100 bytes). Reduce browser storage data and reload.",
+  );
+
+  // One that fits is sent.
+  app.transport.auth = { event: { name: "rehydrate" } };
+  app.transport.connect();
+  app.sockets.at(-1).open();
+  assert.deepEqual(app.sockets.at(-1).sent, [
+    ["_connect", { event: { name: "rehydrate" } }],
+  ]);
 });
 
 test("the transport dials the event path with a trailing slash", async () => {

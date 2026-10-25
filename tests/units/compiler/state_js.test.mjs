@@ -137,6 +137,17 @@ async function setup({
             return;
           }
           this.frames.push(...frames.map((frame) => `4${frame}`));
+        } else if (
+          JSON.stringify(["_connect", this.auth]).length > maxPayload
+        ) {
+          // Like ReflexWebSocket when the backend refuses its connect frame
+          // for its size.
+          const error = new Error(
+            "Hydration payload exceeds the server limit. Reduce browser storage data and reload.",
+          );
+          error.code = "hydration_payload_too_large";
+          handlers.get("connect_error")(error);
+          return;
         }
         this.namespaceConnects++;
         if (this.namespaceConnects <= dropConnects) {
@@ -421,42 +432,48 @@ test("websocket limits count code points, polling limits count UTF-8 bytes", asy
   assert.match(polling.connectErrors[0].message, /bytes/);
 });
 
-test("an oversized first hydrate is reported once and not rebuilt per event", async () => {
-  const app = await connectWith(
-    "websocket",
-    { vars: { large: "x".repeat(1_000_001) } },
-    1_000_000,
-  );
-  const socket = app.socket.current;
-  // Later events reconnect through connect(), and a visible tab directly.
-  await app.connect();
-  socket.reconnect();
+for (const socketio of [false, true]) {
+  const over = socketio ? " over socket.io" : "";
 
-  assert.deepEqual(app.firstHydrates, [true]);
-  assert.equal(socket.namespaceConnects, 0);
-  assert.equal(app.timers.size, 0);
-  assert.equal(app.connectErrors.length, 1);
-  assert.equal(app.consoleErrors.length, 1);
-});
+  test(`an oversized first hydrate${over} is reported once and not rebuilt per event`, async () => {
+    const app = await setup({
+      socketio,
+      firstPayload: { vars: { large: "x".repeat(1_000_001) } },
+    });
+    app.flush();
+    await app.connect();
+    const socket = app.socket.current;
+    // Later events reconnect through connect(), and a visible tab directly.
+    await app.connect();
+    socket.reconnect();
 
-test("an oversized full hydrate on reconnect is reported, not retried", async () => {
-  const app = await setup({
-    socketio: true,
-    reconnectPayload: { vars: { large: "x".repeat(1_000_001) } },
+    assert.deepEqual(app.firstHydrates, [true]);
+    assert.equal(socket.namespaceConnects, 0);
+    assert.equal(app.timers.size, 0);
+    assert.equal(app.connectErrors.length, 1);
+    assert.equal(app.connectErrors[0].code, "hydration_payload_too_large");
+    assert.deepEqual(app.consoleErrors, [[app.connectErrors[0].message]]);
   });
-  app.flush();
-  await app.connect();
-  const socket = app.socket.current;
-  socket.connected = false;
-  socket.handlers.get("disconnect")("transport close");
-  socket.reconnect();
 
-  assert.equal(socket.namespaceConnects, 1);
-  assert.deepEqual(app.firstHydrates, [true, false]);
-  assert.equal(app.timers.size, 0);
-  assert.equal(app.connectErrors.length, 1);
-  assert.match(app.connectErrors[0].message, /exceeds/);
-});
+  test(`an oversized full hydrate on reconnect${over} is reported, not retried`, async () => {
+    const app = await setup({
+      socketio,
+      reconnectPayload: { vars: { large: "x".repeat(1_000_001) } },
+    });
+    app.flush();
+    await app.connect();
+    const socket = app.socket.current;
+    socket.connected = false;
+    socket.handlers.get("disconnect")("transport close");
+    socket.reconnect();
+
+    assert.equal(socket.namespaceConnects, 1);
+    assert.deepEqual(app.firstHydrates, [true, false]);
+    assert.equal(app.timers.size, 0);
+    assert.equal(app.connectErrors.length, 1);
+    assert.match(app.connectErrors[0].message, /exceeds/);
+  });
+}
 
 test("a new session's token is saved only once the mounted app connects", async () => {
   const app = await setup({ storedToken: null });

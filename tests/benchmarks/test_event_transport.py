@@ -109,7 +109,7 @@ class FakeWebSocket:
             return {"type": "websocket.disconnect", "code": 1000}
         return {"type": "websocket.receive", "text": item}
 
-    async def close(self, code: int = 1000):
+    async def close(self, code: int = 1000, reason: str | None = None):
         """Close the connection."""
 
 

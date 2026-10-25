@@ -13,6 +13,14 @@ const OPEN_MESSAGE = "_open";
 const OPENED_MESSAGE = "_opened";
 const CHANNEL_ERROR_MESSAGE = "_error";
 
+// Close reason prefix of a connect frame the backend refused for its size; the
+// limit follows it (must match reflex/event_namespace.py).
+const MAX_MESSAGE_SIZE_REASON = "max_message_size=";
+
+// The code of the error that reports such a refused hydrate (must match
+// ClientErrorType.HYDRATION_PAYLOAD_TOO_LARGE in reflex_base/constants/event.py).
+const HYDRATION_PAYLOAD_TOO_LARGE = "hydration_payload_too_large";
+
 // Backend protocol version that speaks channels. A backend older than this
 // closes the connection on a binary frame, so channels stay shut until the
 // handshake proves otherwise.
@@ -134,6 +142,24 @@ const exceedsMessageLimit = (frame, limit) => {
 const oversizedMessage = (subject, frame, limit) =>
   `${subject} is ${frameByteLength(frame)} bytes, over the ${limit} the ` +
   "backend accepts (REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE)";
+
+/**
+ * The error for a connect frame over the backend's inbound message limit.
+ *
+ * Every retry would carry the same hydrate, so the code marks it as final.
+ * @param frame The serialized connect frame.
+ * @param limit The limit in bytes; falsy when the backend did not name it.
+ * @returns The error.
+ */
+const hydrationTooLargeError = (frame, limit) => {
+  const error = new Error(
+    `Hydration payload (${frameByteLength(frame)} bytes) exceeds the server limit` +
+      (limit ? ` (${limit} bytes)` : "") +
+      ". Reduce browser storage data and reload.",
+  );
+  error.code = HYDRATION_PAYLOAD_TOO_LARGE;
+  return error;
+};
 
 /**
  * Serialize an outgoing frame.
@@ -610,6 +636,8 @@ export class ReflexWebSocket extends LocalEmitter {
     this._connectTimer = null;
     // The backend's inbound message limit, learned from the handshake.
     this._maxMessageSize = null;
+    // The connect frame awaiting its handshake, measured only if refused.
+    this._connectFrame = null;
     // Network emulation and OS offline do not interrupt established
     // websockets, so treat the browser's offline event as a disconnect.
     // Localhost connections keep working offline.
@@ -722,10 +750,18 @@ export class ReflexWebSocket extends LocalEmitter {
       }
       const details = { code: event.code, reason: event.reason };
       if (!this._settleClose("transport close", details)) {
-        // Never handshaked: this was a failed connection attempt.
+        // Never handshaked: this was a failed connection attempt. A 1009
+        // refused the connect frame for its size, naming the limit unless an
+        // older backend or a proxy sent it.
         this._emitLocal(
           "connect_error",
-          new Error("websocket connection failed"),
+          event.code === 1009
+            ? hydrationTooLargeError(
+                this._connectFrame,
+                event.reason.startsWith(MAX_MESSAGE_SIZE_REASON) &&
+                  event.reason.slice(MAX_MESSAGE_SIZE_REASON.length),
+              )
+            : new Error("websocket connection failed"),
         );
       }
     };
@@ -733,9 +769,20 @@ export class ReflexWebSocket extends LocalEmitter {
 
   /**
    * Send the connect frame that opens the session on the open socket.
+   *
+   * A frame over the limit an earlier handshake announced is refused instead,
+   * so it is not uploaded only for the backend to close the socket over it.
    */
   _sendConnect() {
-    this._ws.send(stringifyFrame([CONNECT_MESSAGE, this.auth]));
+    const frame = stringifyFrame([CONNECT_MESSAGE, this.auth]);
+    const limit = this._maxMessageSize;
+    if (exceedsMessageLimit(frame, limit)) {
+      this._teardown("io client disconnect", undefined);
+      this._emitLocal("connect_error", hydrationTooLargeError(frame, limit));
+      return;
+    }
+    this._connectFrame = frame;
+    this._ws.send(frame);
   }
 
   /**
@@ -852,6 +899,7 @@ export class ReflexWebSocket extends LocalEmitter {
       this._watchdogMs = (payload.ping_interval + payload.ping_timeout) * 1000;
       this._resetWatchdog();
       this.connected = true;
+      this._connectFrame = null;
       this._maxMessageSize = payload.max_message_size ?? null;
       // Open the channels first: a frame queued on the transport for one of
       // them has to arrive after its _open, or the backend has no session to

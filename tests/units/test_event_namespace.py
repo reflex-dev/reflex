@@ -36,6 +36,7 @@ from reflex.event_namespace import (
     CLOSE_MESSAGE,
     CONNECT_MESSAGE,
     HANDSHAKE_MESSAGE,
+    MAX_MESSAGE_SIZE_REASON,
     OPEN_MESSAGE,
     OPENED_MESSAGE,
     PING_MESSAGE,
@@ -87,6 +88,7 @@ class FakeWebSocket:
         self.accepted_subprotocol: str | None = None
         self.accepted = False
         self.close_code: int | None = None
+        self.close_reason: str | None = None
         # Starlette refuses a second close; set to model one already sent.
         self.refuse_close = False
         self._incoming: asyncio.Queue = asyncio.Queue()
@@ -105,7 +107,7 @@ class FakeWebSocket:
         """Record an outgoing binary frame."""
         self.sent.append(data)
 
-    async def close(self, code: int = 1000):
+    async def close(self, code: int = 1000, reason: str | None = None):
         """Record the close call.
 
         Raises:
@@ -115,6 +117,7 @@ class FakeWebSocket:
             message = 'Cannot call "send" once a close message has been sent.'
             raise RuntimeError(message)
         self.close_code = code
+        self.close_reason = reason
 
     async def receive(self) -> dict[str, Any]:
         """Return the next queued frame as an ASGI message.
@@ -349,13 +352,18 @@ async def test_socket_without_a_connect_frame_times_out(
 async def test_oversize_connect_frame_closes_connection(
     namespace: WebsocketEventNamespace, monkeypatch: pytest.MonkeyPatch
 ):
-    """The size limit applies to the connect frame too."""
+    """The size limit applies to the connect frame too, and the close names it.
+
+    The client has no handshake yet to learn the limit from, so it reads it
+    from the close reason to report its oversized hydrate.
+    """
     monkeypatch.setenv("REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE", "10")
     websocket = FakeWebSocket()
     websocket.feed()
     await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
 
     assert websocket.close_code == 1009
+    assert websocket.close_reason == f"{MAX_MESSAGE_SIZE_REASON}10"
     assert websocket.sent == []
 
 
@@ -429,11 +437,11 @@ class ReceiveBoundWebSocket(FakeWebSocket):
         finally:
             self.receiving = False
 
-    async def close(self, code: int = 1000):
+    async def close(self, code: int = 1000, reason: str | None = None):
         """Record the close, unless a receive is pending."""
         if self.receiving:
             await asyncio.Event().wait()
-        await super().close(code)
+        await super().close(code, reason)
 
 
 class StalledWebSocket(FakeWebSocket):
@@ -1813,6 +1821,7 @@ def test_client_limits_match_the_protocol():
     template = WEBSOCKET_JS_TEMPLATE.read_text()
 
     assert f"const MAX_MESSAGE_BUFFERS = {MAX_MESSAGE_BUFFERS};" in template
+    assert f'const MAX_MESSAGE_SIZE_REASON = "{MAX_MESSAGE_SIZE_REASON}";' in template
     reserved = re.search(r"const LIFECYCLE_EVENTS = new Set\(\[([^\]]+)\]\);", template)
     assert reserved is not None
     assert {name.strip().strip('"') for name in reserved.group(1).split(",")} == set(
@@ -2134,10 +2143,15 @@ async def test_link_token_to_sid_records_the_connecting_identity(
 
 
 def test_client_error_constants_match_frontend():
-    """The socket event and error types are duplicated as literals in state.js.
+    """The socket event and error types are duplicated as literals in the client.
 
-    Nothing at runtime keeps the two definitions in sync, so pin them here.
+    Nothing at runtime keeps the definitions in sync, so pin them here.
     """
+    assert (
+        "const HYDRATION_PAYLOAD_TOO_LARGE = "
+        f'"{constants.ClientErrorType.HYDRATION_PAYLOAD_TOO_LARGE}";'
+        in WEBSOCKET_JS_TEMPLATE.read_text()
+    )
     state_js = (WEB_TEMPLATE_ROOT / "utils/state.js").read_text()
     assert (
         f'const CLIENT_ERROR_EVENT = "{constants.SocketEvent.CLIENT_ERROR}"' in state_js
@@ -2149,4 +2163,8 @@ def test_client_error_constants_match_frontend():
     assert (
         f'const ERROR_TYPE_STATE_UPDATE = "{constants.ClientErrorType.STATE_UPDATE}"'
         in state_js
+    )
+    assert (
+        "const ERROR_TYPE_HYDRATION_PAYLOAD_TOO_LARGE = "
+        f'"{constants.ClientErrorType.HYDRATION_PAYLOAD_TOO_LARGE}"' in state_js
     )

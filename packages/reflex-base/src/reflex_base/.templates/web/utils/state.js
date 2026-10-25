@@ -1006,11 +1006,9 @@ export const connect = async (
       });
       // Ensure undefined fields in events are sent as null instead of removed
       socket.current.io.encoder.replacer = undefinedToNull;
-      // The server drops a transport whose frame exceeds the limit its handshake
-      // announced, so a CONNECT packet (type 0) that carries an oversized hydrate
-      // is reported instead of sent. The page stays offline until browser storage
-      // shrinks and it reloads: wait_connect stays set, so reconnect() does not
-      // rebuild the hydrate.
+      // The server drops a transport whose frame exceeds the limit its
+      // handshake announced, so a CONNECT packet (type 0) that carries an
+      // oversized hydrate is reported instead of sent.
       const { encoder } = socket.current.io;
       const encode = encoder.encode.bind(encoder);
       encoder.encode = (packet) => {
@@ -1029,11 +1027,8 @@ export const connect = async (
             `Hydration payload (${size} ${unit}) exceeds the server limit (${engine._maxPayload} ${unit}). Reduce browser storage data and reload.`,
           );
           error.code = ERROR_TYPE_HYDRATION_PAYLOAD_TOO_LARGE;
-          console.error(error.message);
-          setConnectErrors((connectErrors) =>
-            addConnectError(connectErrors, error),
-          );
           socket.current.disconnect();
+          retryConnect(error);
           return [];
         }
         return encoded;
@@ -1138,10 +1133,17 @@ export const connect = async (
   });
 
   // Record a failed connection attempt and retry it with incremental backoff.
+  // A hydrate over the server's message limit fails every retry the same way,
+  // so the page stays offline until browser storage shrinks and it reloads:
+  // wait_connect stays set, so reconnect() does not rebuild the hydrate.
   const retryConnect = (error) => {
+    setConnectErrors((connectErrors) => addConnectError(connectErrors, error));
+    if (error.code === ERROR_TYPE_HYDRATION_PAYLOAD_TOO_LARGE) {
+      console.error(error.message);
+      return;
+    }
     socket.current.wait_connect = false;
     failed_attempts = Math.min(failed_attempts + 1, MAX_CONNECT_ERRORS);
-    setConnectErrors((connectErrors) => addConnectError(connectErrors, error));
     window.clearTimeout(retry_timer);
     retry_timer = window.setTimeout(() => {
       retry_timer = undefined;

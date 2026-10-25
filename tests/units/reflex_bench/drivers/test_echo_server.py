@@ -65,11 +65,12 @@ class _Socket:
         await asyncio.sleep(0)
         return self._received.pop(0)
 
-    async def close(self, code: int = 1000) -> None:
+    async def close(self, code: int = 1000, reason: str | None = None) -> None:
         """Close the connection.
 
         Args:
             code: The close code.
+            reason: The close reason.
         """
 
 
