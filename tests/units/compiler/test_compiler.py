@@ -2000,6 +2000,14 @@ def _read_in_app_wrap(app: rx.App, label: str) -> None:
     app.add_page(lambda: rx.el.div("static"), route="/")
 
 
+def _read_in_unmemoized_app_wrap(app: rx.App, label: str) -> None:
+    """Read state in an app wrap that stays in the app root."""
+    app.extra_app_wraps[50, "UnmemoizedBanner"] = lambda _: UnmemoizedLabel.create(
+        label=label
+    )
+    app.add_page(lambda: rx.el.div("static"), route="/")
+
+
 def _read_in_hydrate_fallback(app: rx.App, label: str) -> None:
     """Read state in the hydrate fallback."""
     app.hydrate_fallback = rx.el.div(label)
@@ -2013,6 +2021,7 @@ state_read_locations = pytest.mark.parametrize(
         pytest.param(_read_in_unmemoized_page_component, id="page"),
         pytest.param(_read_in_explicit_memo, id="explicit-memo"),
         pytest.param(_read_in_app_wrap, id="app-wrap-memo"),
+        pytest.param(_read_in_unmemoized_app_wrap, id="app-wrap-unmemoized"),
         pytest.param(_read_in_hydrate_fallback, id="hydrate-fallback-memo"),
     ],
 )
