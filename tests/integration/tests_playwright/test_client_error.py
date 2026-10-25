@@ -273,6 +273,9 @@ def mismatch_reports(
         context = RegistrationContext.get()
         context.get_substates(State).discard(ClientErrorExtraState)
         context.base_states.pop(ClientErrorExtraState.get_full_name(), None)
+        for name, registered in list(context.event_handlers.items()):
+            if ClientErrorExtraState in registered.states:
+                del context.event_handlers[name]
         all_base_state_classes.pop(ClientErrorExtraState.get_full_name(), None)
         State.get_class_substate.cache_clear()
         _frontend_schema.cache_clear()
