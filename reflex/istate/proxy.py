@@ -56,6 +56,8 @@ from reflex_base.vars.base import Field
 from reflex.istate.manager.token import BaseStateToken
 
 if TYPE_CHECKING:
+    from contextlib import AbstractAsyncContextManager
+
     from reflex.state import BaseState, StateUpdate
 
 T_STATE = TypeVar("T_STATE", bound="BaseState")
@@ -221,6 +223,8 @@ class StateProxy(wrapt.ObjectProxy):
             cls=state_instance.__class__,
         )
         self._self_actx = None
+        # The event scope (e.g. i18n locale) entered for the current block.
+        self._self_scope: AbstractAsyncContextManager[None] | None = None
         self._self_mutable = False
         self._self_actx_lock = asyncio.Lock()
         self._self_actx_lock_holder = None
@@ -244,7 +248,8 @@ class StateProxy(wrapt.ObjectProxy):
 
         Sets mutability to True and enters the `App.modify_state` async context,
         which refreshes the state from state_manager and holds the lock for the
-        given state token until exiting the context.
+        given state token until exiting the context, and the refreshed state's
+        event scope (e.g. i18n locale).
 
         Background tasks should avoid blocking calls while inside the context.
 
@@ -296,6 +301,14 @@ class StateProxy(wrapt.ObjectProxy):
                 from reflex_base.event.processor import BaseStateEventProcessor
 
                 await BaseStateEventProcessor._rehydrate_snapshot(mutable_state)
+            # Inline to avoid a circular import through the processor package init.
+            from reflex_base.event.processor.scope import event_scope
+
+            # The task's own scope was derived at dispatch; derive the block's
+            # from the state just loaded, which may have changed since.
+            scope = event_scope(mutable_state)
+            await scope.__aenter__()
+            self._self_scope = scope
         except (Exception, asyncio.CancelledError):
             # Restore the proxy to a consistent state since __aexit__ will not be called when __aenter__ raises.
             await self.__aexit__(*sys.exc_info())
@@ -313,7 +326,10 @@ class StateProxy(wrapt.ObjectProxy):
         if self._self_parent_state_proxy is not None:
             await self._self_parent_state_proxy.__aexit__(*exc_info)
             return
+        scope, self._self_scope = self._self_scope, None
         try:
+            if scope is not None:
+                await scope.__aexit__(*exc_info)
             if self._self_mutable and self._self_actx is not None:
                 # Inline to avoid a circular import through the processor
                 # package init.

@@ -9,8 +9,8 @@ import subprocess
 import sys
 import weakref
 from asyncio import CancelledError
-from collections.abc import Callable, Mapping
-from contextlib import asynccontextmanager, contextmanager
+from collections.abc import Callable, Iterator, Mapping
+from contextlib import AbstractContextManager, asynccontextmanager, contextmanager
 from operator import attrgetter, itemgetter
 from types import MappingProxyType
 from typing import Any, ClassVar, assert_type
@@ -1146,6 +1146,37 @@ class ScopedProxyState(BaseState):
         return _ambient_lang.get()
 
 
+@contextmanager
+def _use_ambient_lang(lang: str) -> Iterator[None]:
+    """Set the ambient language for the duration of the context.
+
+    Args:
+        lang: The language to set.
+
+    Yields:
+        None.
+    """
+    reset = _ambient_lang.set(lang)
+    try:
+        yield
+    finally:
+        _ambient_lang.reset(reset)
+
+
+async def _ambient_lang_provider(
+    root_state: BaseState,
+) -> AbstractContextManager[None]:
+    """An event-scope provider deriving the ambient language from state.
+
+    Args:
+        root_state: The client's root state.
+
+    Returns:
+        The context setting ``ScopedProxyState.lang`` as the ambient language.
+    """
+    return _use_ambient_lang((await root_state.get_state(ScopedProxyState)).lang)
+
+
 @pytest.mark.asyncio
 async def test_proxy_aexit_resolves_delta_in_event_scope(
     token: str,
@@ -1160,31 +1191,18 @@ async def test_proxy_aexit_resolves_delta_in_event_scope(
     """
     from reflex_base.event.processor import scope
 
-    async def provider(root_state):
-        lang = (await root_state.get_state(ScopedProxyState)).lang
-
-        @contextmanager
-        def cm():
-            reset = _ambient_lang.set(lang)
-            try:
-                yield
-            finally:
-                _ambient_lang.reset(reset)
-
-        return cm()
-
     state_manager = attached_mock_event_context.state_manager
     async with state_manager.modify_state(
         BaseStateToken(ident=token, cls=ScopedProxyState)
     ) as state:
         proxy = StateProxy(await state.get_state(ScopedProxyState))
 
-    scope.register_event_scope_provider(provider)
+    scope.register_event_scope_provider(_ambient_lang_provider)
     try:
         async with proxy:
             proxy.lang = "de"
     finally:
-        scope._providers.remove(provider)
+        scope._providers.remove(_ambient_lang_provider)
 
     # Delta keys carry the formatted var name suffix; match by prefix.
     scoped_values = [
@@ -1195,6 +1213,38 @@ async def test_proxy_aexit_resolves_delta_in_event_scope(
         if name.startswith("scoped")
     ]
     assert scoped_values == ["de"]
+
+
+@pytest.mark.asyncio
+async def test_proxy_block_runs_in_the_event_scope_of_its_fresh_state(
+    token: str,
+    attached_mock_event_context: EventContext,
+) -> None:
+    """`async with self` enters the event scope of the state it reloads.
+
+    A background task's scope is derived at dispatch; a value changed while
+    the task waited (e.g. the visitor's locale) must apply inside the block,
+    and the task's own scope again after it.
+    """
+    from reflex_base.event.processor import scope
+
+    state_manager = attached_mock_event_context.state_manager
+    state_token = BaseStateToken(ident=token, cls=ScopedProxyState)
+    async with state_manager.modify_state(state_token) as state:
+        proxy = StateProxy(await state.get_state(ScopedProxyState))
+    async with state_manager.modify_state(state_token) as state:
+        (await state.get_state(ScopedProxyState)).lang = "de"
+
+    scope.register_event_scope_provider(_ambient_lang_provider)
+    try:
+        with _use_ambient_lang("en"):
+            async with proxy:
+                inside = _ambient_lang.get()
+            after = _ambient_lang.get()
+    finally:
+        scope._providers.remove(_ambient_lang_provider)
+
+    assert (inside, after) == ("de", "en")
 
 
 @dataclasses.dataclass(frozen=True)
@@ -1437,16 +1487,24 @@ def test_subclass_overrides_a_framework_method():
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("failing_lang", ["en", "de"])
 async def test_proxy_aexit_cleans_state_when_scope_provider_raises(
     token: str,
     attached_mock_event_context: EventContext,
+    failing_lang: str,
 ) -> None:
-    """A failing event-scope provider must not leave the root state dirty."""
+    """A failing event-scope provider must not leave the state dirty or locked.
+
+    It fails entering the block (``en``) or resolving its exit delta (``de``).
+    """
     from reflex_base.event.processor import scope
 
-    async def provider(root_state):  # noqa: RUF029 - providers are awaited
-        msg = "scope failed"
-        raise RuntimeError(msg)
+    async def provider(root_state):
+        lang = (await root_state.get_state(ScopedProxyState)).lang
+        if lang == failing_lang:
+            msg = "scope failed"
+            raise RuntimeError(msg)
+        return _use_ambient_lang(lang)
 
     state_manager = attached_mock_event_context.state_manager
     async with state_manager.modify_state(
@@ -1465,6 +1523,7 @@ async def test_proxy_aexit_cleans_state_when_scope_provider_raises(
 
     assert not root_state.dirty_vars
     assert not root_state.dirty_substates
+    assert not proxy._self_actx_lock.locked()
 
 
 class InventoryState(BaseState):
