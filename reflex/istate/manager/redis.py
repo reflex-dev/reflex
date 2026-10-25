@@ -594,7 +594,7 @@ class StateManagerRedis(StateManager):
         async with self._get_state_cached(token) as cached_state:
             if cached_state is not None:
                 # The lease keeps its lock alive for this use, within the
-                # lock expiration from now (see `_create_lease_break_task`).
+                # lock expiration from now (see `_Lease.keep_lock_alive`).
                 self._hand_off_cached_state(token.lock_key, time.monotonic())
                 try:
                     yield cached_state
@@ -779,174 +779,6 @@ class StateManagerRedis(StateManager):
 
         lock_key = token.lock_key
         redis_lock_key = self._lock_key(token)
-        lease_started = False
-        # When a contention notice broke the lease before its hold time.
-        broken_at: float | None = None
-
-        async def keep_lock_alive() -> None:
-            """Renew the lease's lock for each use of the cached state and for the flush.
-
-            Stops once the lease no longer owns the lock or a use runs past its
-            lock expiration.
-            """
-            # Whoever uses the cached state ahead of the flush gets the lock
-            # expiration from when they got it (or from an early lease break, if
-            # later), as a handler holding the lock itself would; the flush gets
-            # it from now. A use that runs over loses the lock, and the flush
-            # then fails instead of writing.
-            expiration = self.lock_expiration / 1000
-            handoff = self._cached_state_handoffs[lock_key] = asyncio.Event()
-            try:
-                while True:
-                    handoff.clear()
-                    now = time.monotonic()
-                    if (since := self._cached_state_users_since.get(lock_key)) is None:
-                        deadline = now + expiration
-                    else:
-                        deadline = (
-                            since if broken_at is None else max(since, broken_at)
-                        ) + expiration
-                    ttl_ms = int((deadline - now) * 1000)
-                    if ttl_ms <= 0 or not await self._extend_lock(
-                        redis_lock_key, lock_id, ttl_ms
-                    ):
-                        return
-                    # The lock may now expire with the current user's deadline,
-                    # so renew it as soon as the next user takes over. Not
-                    # `asyncio.wait_for`, which can swallow the cancellation
-                    # that ends this loop on Python 3.11.
-                    renew_later = asyncio.get_running_loop().call_later(
-                        expiration / 3, handoff.set
-                    )
-                    try:
-                        await handoff.wait()
-                    finally:
-                        renew_later.cancel()
-            finally:
-                if self._cached_state_handoffs.get(lock_key) is handoff:
-                    del self._cached_state_handoffs[lock_key]
-
-        async def do_flush() -> None:
-            """Write the cached state to redis and end the local lease.
-
-            Keeps the lock alive while the uses queued ahead of the write and
-            the write itself run.
-            """
-            if (state_lock := self._cached_states_locks.get(lock_key)) is None:
-                # If we lost the lock, we can't write the state, something went wrong.
-                logger.warning(
-                    f"State lock for {lock_key} missing while finalizing lease."
-                )
-                return
-            # Whoever holds or waits for the cached state goes before the flush,
-            # and the write takes its time as well, so keep the lock alive
-            # meanwhile: it could expire under them, and the flush would then
-            # drop their changes.
-            keep_alive = asyncio.create_task(keep_lock_alive())
-            try:
-                async with state_lock:
-                    # Write the state to redis while no one else can modify the
-                    # cached copy. A lease cancelled before it started can flush
-                    # after the next lease took over, whose copy is not its to write.
-                    state = (
-                        self._cached_states.pop(lock_key, None)
-                        if self._local_leases.get(lock_key) is task
-                        else None
-                    )
-                    try:
-                        if state:
-                            if self._debug_enabled:
-                                logger.debug(
-                                    f"{SMR} [{time.monotonic() - start:.3f}] {lock_key} lease breaker {lock_id.decode()} flushing state"
-                                )
-                            await self.set_state(
-                                token, state, lock_id=lock_id, **context
-                            )
-                    finally:
-                        if (current_lease := self._local_leases.get(lock_key)) is task:
-                            self._local_leases.pop(lock_key, None)
-                            # TODO: clean up the cached states locks periodically
-                        elif self._debug_enabled:
-                            logger.debug(
-                                f"{SMR} [{time.monotonic() - start:.3f}] {lock_key} lease breaker {lock_id.decode()} cleanup of {task=} found different task in _local_leases {current_lease=}."
-                            )
-            finally:
-                keep_alive.cancel()
-                # A renewal that failed fails the flush, which reports it.
-                with contextlib.suppress(asyncio.CancelledError):
-                    await keep_alive
-
-        async def flush() -> None:
-            """Run the flush to completion and report a failure to the event loop.
-
-            A cancellation of this task waits for the flush and is re-raised
-            once the write is done.
-            """
-            # The flush runs to completion even when this task is cancelled,
-            # and this task waits for it: returning early would release the
-            # lock under the write, which the fenced write then fails, and let
-            # the next lease read the state before the write lands.
-            flushing = asyncio.create_task(do_flush())
-            cancelled_error: asyncio.CancelledError | None = None
-            while not flushing.done():
-                if (err := await _wait_unless_cancelled(flushing)) is not None:
-                    cancelled_error = err
-            try:
-                flushing.result()
-            except Exception as e:
-                # Propagate exception to the main loop, since we have nowhere to catch it.
-                asyncio.get_running_loop().call_exception_handler({
-                    "message": "Exception in Redis State Manager lease breaker",
-                    "exception": e,
-                })
-                raise
-            if cancelled_error is not None:
-                raise cancelled_error
-
-        async def lease_breaker():
-            """Hold the lease until its hold time ends or it is broken, then flush it."""
-            nonlocal lease_started, broken_at
-            lease_started = True
-            cancelled_error: asyncio.CancelledError | None = None
-            async with lease_ctx:
-                lease_break_time = self.oplock_hold_time_ms / 1000
-                if self._debug_enabled:
-                    logger.debug(
-                        f"{SMR} [{time.monotonic() - start:.3f}] {lock_key} lease breaker {lock_id.decode()} started, sleeping for {lease_break_time}s"
-                    )
-                try:
-                    await asyncio.sleep(lease_break_time)
-                except asyncio.CancelledError as err:
-                    cancelled_error = err
-                    broken_at = time.monotonic()
-                try:
-                    await flush()
-                finally:
-                    # Re-raise any cancellation error after cleaning up.
-                    if cancelled_error is not None:
-                        raise cancelled_error
-
-        async def release_unstarted_lease() -> None:
-            """Flush the state of a lease cancelled before it started and release its lock."""
-            async with lease_ctx:
-                await flush()
-
-        def on_lease_done(lease: asyncio.Task) -> None:
-            """Schedule the cleanup of a lease that was cancelled before it started.
-
-            Args:
-                lease: The finished lease task.
-            """
-            # A lease cancelled before its first step never ran lease_breaker,
-            # so nothing else flushes its state and releases its lock.
-            if lease_started:
-                return
-            cleanup = asyncio.create_task(
-                release_unstarted_lease(),
-                name=f"reflex_lease_cleanup|{lock_key}|{lock_id.decode()}",
-            )
-            self._lease_cleanups.add(cleanup)
-            cleanup.add_done_callback(self._lease_cleanups.discard)
 
         if (state_lock := self._cached_states_locks.get(lock_key)) is not None:
             # We have an existing lock, so lets see if we have an existing lease to cancel.
@@ -975,7 +807,7 @@ class StateManagerRedis(StateManager):
             # Create the task now if one didn't sneak past us.
             if (
                 lock_key not in self._local_leases
-                and await self._n_lock_contenders(self._lock_key(token)) == 0
+                and await self._n_lock_contenders(redis_lock_key) == 0
             ):
                 state = await self.get_state(token)
                 # The lease may start long after the lock was taken (behind the
@@ -988,12 +820,10 @@ class StateManagerRedis(StateManager):
                 # The lease owns the lock from here, with no await left that
                 # could fail before it does.
                 self._cached_states[lock_key] = state
-                lease_ctx = cleanup_ctx.pop_all()
-                self._local_leases[lock_key] = task = asyncio.create_task(
-                    lease_breaker(),
-                    name=f"reflex_lease_breaker|{lock_key}|{lock_id.decode()}",
+                lease = _Lease(
+                    self, token, lock_id, redis_lock_key, cleanup_ctx.pop_all(), context
                 )
-                task.add_done_callback(on_lease_done)
+                self._local_leases[lock_key] = task = lease.start_task()
                 return task
         return None
 
@@ -1236,18 +1066,28 @@ class StateManagerRedis(StateManager):
             yield
             return
 
-        lock_waiter_key = lock_key + b"_waiters"
-        pipeline = self.redis.pipeline()
-        # Signal intention to request oplock for this process.
-        pipeline.sadd(lock_waiter_key, self._instance_id)
-        pipeline.pexpire(lock_waiter_key, self.lock_expiration)
-        await pipeline.execute()
+        await self._register_lock_contender(lock_key)
         try:
             yield  # Waiting for redis/oplock to be acquired.
         finally:
-            res = self.redis.srem(lock_waiter_key, self._instance_id)
+            res = self.redis.srem(lock_key + b"_waiters", self._instance_id)
             if inspect.isawaitable(res):
                 await res
+
+    async def _register_lock_contender(self, lock_key: bytes) -> None:
+        """Register this instance as a contender for a lock for one lock expiration.
+
+        Adding it to the contenders breaks the lock holder's lease; registering
+        it again while it is still a contender does not.
+
+        Args:
+            lock_key: The redis key for the lock.
+        """
+        lock_waiter_key = lock_key + b"_waiters"
+        pipeline = self.redis.pipeline()
+        pipeline.sadd(lock_waiter_key, self._instance_id)
+        pipeline.pexpire(lock_waiter_key, self.lock_expiration)
+        await pipeline.execute()
 
     async def _get_local_lease(
         self, token: str, raise_when_found: bool = False
@@ -1332,6 +1172,10 @@ class StateManagerRedis(StateManager):
                         logger.debug(
                             f"{SMR} [{time.monotonic() - start:.3f}] {lock_key.decode()} wait timeout for {lock_id.decode()}"
                         )
+                    if self._oplock_enabled:
+                        # A lease can keep the lock past one expiration, which
+                        # would outlast the registration as a contender.
+                        await self._register_lock_contender(lock_key)
                     lock_released_event.set()  # to re-check the lock
             if self._debug_enabled:
                 logger.debug(
@@ -1443,3 +1287,233 @@ class StateManagerRedis(StateManager):
             await asyncio.gather(*self._lease_cleanups, return_exceptions=True)
         finally:
             await self.redis.aclose(close_connection_pool=True)
+
+
+@dataclasses.dataclass(eq=False)
+class _Lease:
+    """A local lease on a token's redis lock, which serves the token's state from memory.
+
+    Its task holds the lock until the hold time ends or a contender breaks the
+    lease, then writes the cached state back and releases the lock.
+    """
+
+    manager: StateManagerRedis
+    token: StateToken[Any]
+    lock_id: bytes
+    redis_lock_key: bytes
+    # Holds the lock, which the lease releases when it ends.
+    lease_ctx: contextlib.AsyncExitStack
+    # The state modification context of the event that took the lock.
+    context: StateModificationContext
+    # Whether the task ran; one cancelled before its first step did not.
+    started: bool = False
+    # When a contention notice broke the lease before its hold time.
+    broken_at: float | None = None
+    # The failure the flush reported, which the task raises as well.
+    reported_error: BaseException | None = None
+    task: asyncio.Task = dataclasses.field(init=False)
+
+    def start_task(self) -> asyncio.Task:
+        """Start the lease task, which takes the lock over.
+
+        Returns:
+            The lease task.
+        """
+        self.task = asyncio.create_task(
+            self.run(),
+            name=f"reflex_lease_breaker|{self.token.lock_key}|{self.lock_id.decode()}",
+        )
+        self.task.add_done_callback(self._on_done)
+        return self.task
+
+    async def run(self) -> None:
+        """Hold the lease until its hold time ends or it is broken, then flush it."""
+        self.started = True
+        cancelled_error: asyncio.CancelledError | None = None
+        async with self.lease_ctx:
+            lease_break_time = self.manager.oplock_hold_time_ms / 1000
+            if self.manager._debug_enabled:
+                logger.debug(
+                    f"{SMR} [{time.monotonic() - start:.3f}] {self.token.lock_key} lease breaker {self.lock_id.decode()} started, sleeping for {lease_break_time}s"
+                )
+            try:
+                await asyncio.sleep(lease_break_time)
+            except asyncio.CancelledError as err:
+                cancelled_error = err
+                self.broken_at = time.monotonic()
+            try:
+                await self.flush()
+            finally:
+                # Re-raise any cancellation error after cleaning up.
+                if cancelled_error is not None:
+                    raise cancelled_error
+
+    async def release_unstarted(self) -> None:
+        """Flush the state of a lease cancelled before it started and release its lock."""
+        async with self.lease_ctx:
+            await self.flush()
+
+    async def flush(self) -> None:
+        """Run the write-back to completion and report a failure to the event loop.
+
+        A cancellation of this task waits for the write-back and is re-raised
+        once it is done.
+        """
+        # The write-back runs to completion even when this task is cancelled,
+        # and this task waits for it: returning early would release the lock
+        # under the write, which the fenced write then fails, and let the next
+        # lease read the state before the write lands.
+        flushing = asyncio.create_task(self._write_back())
+        cancelled_error: asyncio.CancelledError | None = None
+        while not flushing.done():
+            if (err := await _wait_unless_cancelled(flushing)) is not None:
+                cancelled_error = err
+        try:
+            flushing.result()
+        except Exception as e:
+            # Report it here: a cancelled lease raises its cancellation instead.
+            self._report(e)
+            raise
+        if cancelled_error is not None:
+            raise cancelled_error
+
+    async def _write_back(self) -> None:
+        """Write the cached state to redis and end the local lease.
+
+        Keeps the lock alive while the uses queued ahead of the write and the
+        write itself run.
+        """
+        manager = self.manager
+        lock_key = self.token.lock_key
+        if (state_lock := manager._cached_states_locks.get(lock_key)) is None:
+            # If we lost the lock, we can't write the state, something went wrong.
+            logger.warning(f"State lock for {lock_key} missing while finalizing lease.")
+            return
+        # Whoever holds or waits for the cached state goes before the flush, and
+        # the write takes its time as well, so keep the lock alive meanwhile: it
+        # could expire under them, and the flush would then drop their changes.
+        keep_alive = asyncio.create_task(self.keep_lock_alive())
+        try:
+            async with state_lock:
+                # Write the state to redis while no one else can modify the
+                # cached copy. A lease cancelled before it started can flush
+                # after the next lease took over, whose copy is not its to write.
+                state = (
+                    manager._cached_states.pop(lock_key, None)
+                    if manager._local_leases.get(lock_key) is self.task
+                    else None
+                )
+                try:
+                    if state:
+                        if manager._debug_enabled:
+                            logger.debug(
+                                f"{SMR} [{time.monotonic() - start:.3f}] {lock_key} lease breaker {self.lock_id.decode()} flushing state"
+                            )
+                        await manager.set_state(
+                            self.token, state, lock_id=self.lock_id, **self.context
+                        )
+                finally:
+                    if (
+                        current_lease := manager._local_leases.get(lock_key)
+                    ) is self.task:
+                        manager._local_leases.pop(lock_key, None)
+                        # TODO: clean up the cached states locks periodically
+                    elif manager._debug_enabled:
+                        logger.debug(
+                            f"{SMR} [{time.monotonic() - start:.3f}] {lock_key} lease breaker {self.lock_id.decode()} cleanup of task={self.task!r} found different task in _local_leases {current_lease=}."
+                        )
+        finally:
+            keep_alive.cancel()
+            # A renewal that failed fails the flush, which reports it.
+            with contextlib.suppress(asyncio.CancelledError):
+                await keep_alive
+
+    async def keep_lock_alive(self) -> None:
+        """Renew the lease's lock for each use of the cached state and for the flush.
+
+        Stops once the lease no longer owns the lock or a use runs past its
+        lock expiration.
+        """
+        # Whoever uses the cached state ahead of the flush gets the lock
+        # expiration from when they got it (or from an early lease break, if
+        # later), as a handler holding the lock itself would; the flush gets it
+        # from now. A use that runs over loses the lock, and the flush then
+        # fails instead of writing.
+        manager = self.manager
+        lock_key = self.token.lock_key
+        expiration = manager.lock_expiration / 1000
+        handoff = manager._cached_state_handoffs[lock_key] = asyncio.Event()
+        try:
+            while True:
+                handoff.clear()
+                now = time.monotonic()
+                if (since := manager._cached_state_users_since.get(lock_key)) is None:
+                    deadline = now + expiration
+                else:
+                    deadline = (
+                        since if self.broken_at is None else max(since, self.broken_at)
+                    ) + expiration
+                ttl_ms = int((deadline - now) * 1000)
+                if ttl_ms <= 0 or not await manager._extend_lock(
+                    self.redis_lock_key, self.lock_id, ttl_ms
+                ):
+                    return
+                # The lock may now expire with the current user's deadline, so
+                # renew it as soon as the next user takes over. Not
+                # `asyncio.wait_for`, which can swallow the cancellation that
+                # ends this loop on Python 3.11.
+                renew_later = asyncio.get_running_loop().call_later(
+                    expiration / 3, handoff.set
+                )
+                try:
+                    await handoff.wait()
+                finally:
+                    renew_later.cancel()
+        finally:
+            if manager._cached_state_handoffs.get(lock_key) is handoff:
+                del manager._cached_state_handoffs[lock_key]
+
+    def _on_done(self, task: asyncio.Task) -> None:
+        """Report the finished lease task's failure, or release a lease that never started.
+
+        Args:
+            task: The finished lease task.
+        """
+        if self.started:
+            self._report_unreported(task)
+            return
+        # A lease cancelled before its first step never ran, so nothing else
+        # flushes its state and releases its lock.
+        cleanup = asyncio.create_task(
+            self.release_unstarted(),
+            name=f"reflex_lease_cleanup|{self.token.lock_key}|{self.lock_id.decode()}",
+        )
+        cleanups = self.manager._lease_cleanups
+        cleanups.add(cleanup)
+        cleanup.add_done_callback(cleanups.discard)
+        cleanup.add_done_callback(self._report_unreported)
+
+    def _report(self, error: BaseException) -> None:
+        """Report a failure of the lease to the event loop.
+
+        Args:
+            error: The failure.
+        """
+        self.reported_error = error
+        asyncio.get_running_loop().call_exception_handler({
+            "message": "Exception in Redis State Manager lease breaker",
+            "exception": error,
+        })
+
+    def _report_unreported(self, task: asyncio.Task) -> None:
+        """Retrieve a finished task's failure and report it, unless the flush did.
+
+        Args:
+            task: The finished lease or cleanup task.
+        """
+        if (
+            not task.cancelled()
+            and (error := task.exception()) is not None
+            and error is not self.reported_error
+        ):
+            self._report(error)

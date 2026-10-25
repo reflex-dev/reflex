@@ -107,10 +107,12 @@ def mock_redis() -> Redis:
         keyset = keys.setdefault(key, set())
         if not isinstance(keyset, set):
             raise TypeError(WRONGTYPE_MESSAGE)
-        before = len(keyset)
+        if value in keyset:
+            return 0
         keyset.add(value)
+        # Like redis, only announce a member that was added.
         _keyspace_event(key, "sadd")
-        return len(keyset) - before
+        return 1
 
     async def mock_srem(key: KeyT, value: EncodableT) -> int:
         _expire_keys()
