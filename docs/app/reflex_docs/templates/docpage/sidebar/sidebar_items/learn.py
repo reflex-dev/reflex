@@ -127,6 +127,7 @@ def get_sidebar_items_backend():
         database,
         enterprise,
         events,
+        i18n,
         state,
         state_structure,
         utility_methods,
@@ -181,6 +182,12 @@ def get_sidebar_items_backend():
             "Client Storage",
             children=[
                 client_storage.overview,
+            ],
+        ),
+        create_item(
+            "Internationalization",
+            children=[
+                i18n.overview,
             ],
         ),
         create_item(

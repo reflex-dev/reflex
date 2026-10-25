@@ -56,6 +56,8 @@ from reflex_base.vars.base import Field
 from reflex.istate.manager.token import BaseStateToken
 
 if TYPE_CHECKING:
+    from contextlib import AbstractAsyncContextManager
+
     from reflex.state import BaseState, StateUpdate
 
 T_STATE = TypeVar("T_STATE", bound="BaseState")
@@ -221,6 +223,8 @@ class StateProxy(wrapt.ObjectProxy):
             cls=state_instance.__class__,
         )
         self._self_actx = None
+        # The event scope (e.g. i18n locale) entered for the current block.
+        self._self_scope: AbstractAsyncContextManager[None] | None = None
         self._self_mutable = False
         self._self_actx_lock = asyncio.Lock()
         self._self_actx_lock_holder = None
@@ -244,7 +248,8 @@ class StateProxy(wrapt.ObjectProxy):
 
         Sets mutability to True and enters the `App.modify_state` async context,
         which refreshes the state from state_manager and holds the lock for the
-        given state token until exiting the context.
+        given state token until exiting the context, and the refreshed state's
+        event scope (e.g. i18n locale).
 
         Background tasks should avoid blocking calls while inside the context.
 
@@ -296,28 +301,54 @@ class StateProxy(wrapt.ObjectProxy):
                 from reflex_base.event.processor import BaseStateEventProcessor
 
                 await BaseStateEventProcessor._rehydrate_snapshot(mutable_state)
+            # Inline to avoid a circular import through the processor package init.
+            from reflex_base.event.processor.scope import event_scope
+
+            # The task's own scope was derived at dispatch; derive the block's
+            # from the state just loaded, which may have changed since.
+            scope = event_scope(mutable_state)
+            await scope.__aenter__()
+            self._self_scope = scope
         except (Exception, asyncio.CancelledError):
             # Restore the proxy to a consistent state since __aexit__ will not be called when __aenter__ raises.
             await self.__aexit__(*sys.exc_info())
             raise
         return self
 
-    async def __aexit__(self, *exc_info: Any) -> None:
+    async def __aexit__(self, *exc_info: Any) -> bool | None:
         """Exit the async context manager protocol.
 
         Sets proxy mutability to False and persists any state changes.
 
         Args:
             exc_info: The exception info tuple.
+
+        Returns:
+            Whether the block's event scope suppressed its exception.
         """
         if self._self_parent_state_proxy is not None:
-            await self._self_parent_state_proxy.__aexit__(*exc_info)
-            return
+            return await self._self_parent_state_proxy.__aexit__(*exc_info)
+        scope, self._self_scope = self._self_scope, None
+        suppressed = False
         try:
+            if scope is not None and await scope.__aexit__(*exc_info):
+                # Persist the state as on a clean exit.
+                exc_info = (None, None, None)
+                suppressed = True
             if self._self_mutable and self._self_actx is not None:
+                # Inline to avoid a circular import through the processor
+                # package init.
+                from reflex_base.event.processor.scope import event_scope
+
                 root_state = self.__wrapped__._get_root_state()
-                delta = await root_state._get_resolved_delta()
-                root_state._clean()
+                # Re-derive the ambient event scope (e.g. i18n locale) from
+                # the state the handler just changed: computed vars are
+                # recomputed during delta resolution.
+                try:
+                    async with event_scope(root_state):
+                        delta = await root_state._get_resolved_delta()
+                finally:
+                    root_state._clean()
                 # When the frontend vars are modified emit the delta to the frontend.
                 if delta:
                     ctx = EventContext.get()
@@ -331,6 +362,7 @@ class StateProxy(wrapt.ObjectProxy):
                 self._self_mutable = False
                 self._self_actx_lock_holder = None
                 self._self_actx_lock.release()
+        return suppressed
 
     def __enter__(self):
         """Enter the regular context manager protocol.
@@ -902,17 +934,20 @@ class MutableProxy(wrapt.ObjectProxy):
         )
         raise RuntimeError(msg)
 
-    async def __aexit__(self, *exc_info: Any) -> None:
+    async def __aexit__(self, *exc_info: Any) -> bool | None:
         """Exit the async context manager protocol through the bound state.
 
         Args:
             exc_info: The exception info tuple.
+
+        Returns:
+            Whether the bound state suppressed the block's exception.
         """
         context_state = self._self_actx_state
         if context_state is None:
-            return
+            return None
         try:
-            await context_state.__aexit__(*exc_info)
+            return await context_state.__aexit__(*exc_info)
         finally:
             self._self_actx_state = None
 

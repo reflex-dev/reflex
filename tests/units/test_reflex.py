@@ -24,6 +24,7 @@ from reflex.testing import DEFAULT_TIMEOUT
 _CLI_STARTUP_DENIED_MODULES = frozenset({
     "PIL",
     "alembic",
+    "babel",
     "fastapi",
     "granian",
     "httpx",
@@ -39,6 +40,7 @@ _CLI_STARTUP_DENIED_MODULES = frozenset({
     "reflex.utils.prerequisites",
     "reflex_cli.v2.deploy",
     "reflex_cli.v2.deployments",
+    "reflex_i18n",
     "sqlalchemy",
     "sqlmodel",
     "starlette",
@@ -559,6 +561,73 @@ def test_missing_command_tolerates_flags(caplog: pytest.LogCaptureFixture):
     assert result.exit_code == 1
     assert "pip install reflex-hosting-cli" in caplog.text
     assert "No such option" not in result.output
+
+
+def test_i18n_command_registered_lazily():
+    """``reflex --help`` lists ``i18n`` without reading metadata or importing it."""
+    probe = """
+import importlib.metadata
+import json
+import sys
+
+
+def _scan(*args, **kwargs):
+    raise AssertionError("scanned installed distributions")
+
+
+# A metadata scan costs ~8% of the whole `reflex --help` process.
+importlib.metadata.distributions = _scan
+importlib.metadata.entry_points = _scan
+
+from click.testing import CliRunner
+from reflex import reflex
+
+runner = CliRunner()
+help_result = runner.invoke(reflex.cli, ["--help"])
+listed = [line.split()[0] for line in help_result.output.splitlines() if line.strip()]
+imported_before = "reflex_i18n" in sys.modules
+i18n_result = runner.invoke(reflex.cli, ["i18n", "--help"])
+
+from reflex_i18n.cli import i18n_cli
+
+command = reflex.cli.commands["i18n"]
+print(json.dumps({
+    "help_matches": command.help == i18n_cli.help,
+    "help_result": help_result.exit_code,
+    "i18n_result": i18n_result.exit_code,
+    "imported_before": imported_before,
+    "lazy": isinstance(command, reflex._LazyCommand),
+    "listed": "i18n" in listed,
+    "resolved": command._resolved_command is i18n_cli,
+}))
+"""
+    assert _run_cli_probe(probe) == {
+        "help_matches": True,
+        "help_result": 0,
+        "i18n_result": 0,
+        "imported_before": False,
+        "lazy": True,
+        "listed": True,
+        "resolved": True,
+    }
+
+
+def test_i18n_command_absent_without_package():
+    """Without ``reflex-i18n`` installed, ``reflex i18n`` is not registered."""
+    probe = """
+import importlib.util
+import json
+
+_find_spec = importlib.util.find_spec
+importlib.util.find_spec = lambda name, package=None: (
+    None if name == "reflex_i18n" else _find_spec(name, package)
+)
+
+from reflex import reflex
+
+print(json.dumps({"registered": "i18n" in reflex.cli.commands}))
+"""
+    assert _run_cli_probe(probe) == {"registered": False}
 
 
 def test_init_records_version_check_after_frontend_setup(

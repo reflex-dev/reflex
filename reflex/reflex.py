@@ -1206,6 +1206,15 @@ cli.add_command(
         convert_typer=True,
     )
 )
+# Probe the top-level package: finding reflex_i18n.cli would import reflex_i18n.
+if find_spec("reflex_i18n") is not None:
+    cli.add_command(
+        _LazyCommand(
+            "i18n",
+            "reflex_i18n.cli:i18n_cli",
+            help="Manage translation catalogs for the app.",
+        )
+    )
 
 cli.add_command(db_cli, name="db")
 cli.add_command(script_cli, name="script")
