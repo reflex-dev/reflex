@@ -23,6 +23,7 @@ from reflex_base.vars.base import Var
 from reflex_base.vars.sequence import LiteralStringVar
 from reflex_components_core.base import Description, document
 from reflex_components_core.base.document import Links, Scripts
+from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.el.elements.metadata import Head, Link, Meta
 from reflex_components_core.el.elements.other import Html
 
@@ -1954,3 +1955,50 @@ def test_compile_app_resolves_show_built_with_reflex(
     assert get_user_tier.called is (
         compile_context == constants.CompileContext.DEPLOY and configured is None
     )
+
+
+@pytest.mark.parametrize(
+    ("component", "children"),
+    [
+        ("text", 1),
+        (Var.create("var"), 1),
+        ((rx.el.div(), rx.el.span()), 2),
+        (lambda: "text", 1),
+        (lambda: (rx.el.div(), rx.el.span()), 2),
+    ],
+)
+def test_into_component_wraps_renderables_in_a_fragment(component, children: int):
+    """Strings, Vars and sequences, returned directly or by a callable, become a Fragment.
+
+    Args:
+        component: The value to convert.
+        children: The number of children the Fragment should have.
+    """
+    converted = compiler.into_component(component)
+    assert isinstance(converted, Fragment)
+    assert len(converted.children) == children
+
+
+def test_into_component_returns_components_as_is():
+    """A Component, or the one a callable returns, is used unchanged."""
+    div = rx.el.div()
+    assert compiler.into_component(div) is div
+    assert compiler.into_component(lambda: div) is div
+
+
+@pytest.mark.parametrize(
+    ("component", "message"),
+    [
+        (None, "Expected a Component or callable"),
+        (lambda: None, "Expected a Component, got None"),
+    ],
+)
+def test_into_component_rejects_non_renderables(component, message: str):
+    """A value that is neither renderable nor callable, or a callable returning one, raises.
+
+    Args:
+        component: The value to convert.
+        message: The expected start of the error message.
+    """
+    with pytest.raises(TypeError, match=message):
+        compiler.into_component(component)

@@ -864,6 +864,24 @@ if TYPE_CHECKING:
     from reflex.app import App, ComponentCallable, UnevaluatedPage
 
 
+def _wrap_in_fragment(
+    component: ComponentCallable | tuple[Component, ...] | str | Var | int | float,
+) -> Component | None:
+    """Wrap a Var, primitive or sequence of components in a Fragment.
+
+    Args:
+        component: The value to wrap.
+
+    Returns:
+        The Fragment, or None if the value cannot be wrapped.
+    """
+    if isinstance(component, (Var, int, float, str)):
+        return Fragment.create(component)
+    if isinstance(component, Sequence):
+        return Fragment.create(*component)
+    return None
+
+
 def _into_component_once(
     component: Component
     | ComponentCallable
@@ -883,11 +901,7 @@ def _into_component_once(
     """
     if isinstance(component, Component):
         return component
-    if isinstance(component, (Var, int, float, str)):
-        return Fragment.create(component)
-    if isinstance(component, Sequence):
-        return Fragment.create(*component)
-    return None
+    return _wrap_in_fragment(component)
 
 
 def readable_name_from_component(
@@ -962,7 +976,7 @@ def into_component(component: Component | ComponentCallable) -> Component:
     """
     if isinstance(component, Component):
         return component
-    if (converted := _into_component_once(component)) is not None:
+    if (converted := _wrap_in_fragment(component)) is not None:
         return converted
     if not callable(component):
         msg = f"Expected a Component or callable, got {component!r} of type {type(component)}"
