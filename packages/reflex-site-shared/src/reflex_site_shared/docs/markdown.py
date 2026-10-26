@@ -3,7 +3,6 @@
 # Transformer overrides inherit their contracts from DocumentTransformer.
 # ruff: noqa: D102, D107, DOC201
 
-import hashlib
 import json
 import re
 import sys
@@ -247,6 +246,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
         self.virtual_filepath = virtual_filepath
         self.filename = filename
         self.env: dict = {}
+        self.deferred_demos = 0
 
     # ------------------------------------------------------------------
     # Top-level
@@ -534,11 +534,9 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             raise
 
         if "defer" in flags:
+            self.deferred_demos += 1
             comp = DeferredDemo.create(
-                comp,
-                demo_id=hashlib.blake2s(
-                    f"{self.virtual_filepath}\0{content}".encode(), digest_size=8
-                ).hexdigest(),
+                comp, demo_id=f"{self.virtual_filepath}#{self.deferred_demos}"
             )
 
         demobox_props: dict = {}

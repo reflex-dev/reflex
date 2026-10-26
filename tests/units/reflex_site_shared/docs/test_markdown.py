@@ -74,17 +74,21 @@ def test_deferred_demo_preserves_code_and_gates_preview() -> None:
     assert "rx.text" in str(component)
 
 
-def test_deferred_demo_id_is_stable_per_page_and_source() -> None:
-    """A demo keeps its id across renders so a loaded preview remounts at once."""
+def test_deferred_demo_id_is_stable_and_unique_per_fence() -> None:
+    """Each fence keeps its id across renders, even beside an identical fence."""
 
-    def demo_props(path: str) -> str:
-        (preview,) = _deferred_previews(
-            render_markdown(_DEFERRED_DEMO, virtual_filepath=path)
+    def demo_props(path: str) -> list[str]:
+        previews = _deferred_previews(
+            render_markdown(
+                f"{_DEFERRED_DEMO}\n\n{_DEFERRED_DEMO}", virtual_filepath=path
+            )
         )
-        return str(preview.render()["props"])
+        return sorted(str(preview.render()["props"]) for preview in previews)
 
-    assert demo_props("tests/a.md") == demo_props("tests/a.md")
-    assert demo_props("tests/a.md") != demo_props("tests/b.md")
+    first, second = demo_props("tests/a.md")
+    assert first != second
+    assert demo_props("tests/a.md") == [first, second]
+    assert set(demo_props("tests/b.md")).isdisjoint({first, second})
 
 
 def test_render_markdown_covers_core_blocks_and_spans() -> None:
