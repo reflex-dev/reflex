@@ -146,9 +146,32 @@ verifier's range, which is the collision the map exists to prevent.
 ## Running it
 
 - Two agents at a time is right for a 4-CPU box; the workflow's own concurrency cap handles the
-  rest of the queue.
+  rest of the queue. A third agent fits when one of them runs no app server (a CLI or packaging
+  cluster, a verifier working through Python-level probes).
 - Between phases, read the results before launching the next one.
 - Schedule a check-in (`send_later`, ~45 min) during long runs so a wedged agent or a leaked dev
   server gets noticed. Check `ps` for stray `reflex run` processes and commit finished clusters.
 - When the workflow completes, its full structured result is in the task output file; parse it for
   the report rather than re-reading transcripts.
+- Record each agent's report as it arrives (a short `reports/<cluster>.md` in the run directory)
+  and commit it. `FINDINGS.md` is then assembled from files rather than from conversation context,
+  which may have been compacted by the time the last agent reports.
+
+## Surviving interruptions
+
+A full campaign runs for hours, and usage limits, spend limits and container restarts all happen
+mid-run. Plan for them:
+
+- **Commit continuously.** Agents cannot run git, so run a background loop that commits and pushes
+  the run directory every ~10 minutes, skipping any file over 2 MB (`git reset` it from the index).
+  Start it with `setsid nohup <loop> &` so it outlives the tool call, and stop it with a sentinel
+  file at the end. A restarted container loses the loop: start it again.
+- **Resume, don't respawn.** An agent stopped by a limit keeps its transcript. When the limit
+  resets, message it (`SendMessage` to its id) to continue, and tell it that every server, Redis,
+  proxy and browser it had running is gone after a restart. A fresh agent would redo the work
+  without its notes.
+- **Scratch survives, processes do not.** `$SB` (venvs, apps, logs) normally survives a worker
+  restart; check `ps` and the ports before resuming anything.
+- **When the configured model is unavailable** (a spend limit with no reset in sight), finish the
+  remaining verifications yourself rather than shipping unverified findings. Say so in
+  `FINDINGS.md` and to the user, since it departs from the independence the method relies on.

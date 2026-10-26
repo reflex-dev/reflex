@@ -278,8 +278,12 @@ def main() -> int:
         else [m for m in console if not is_benign(m["text"])]
     )
     problems = [m for m in shown if m["type"] in ("error", "warning")]
+    # A page that rendered no text inspected nothing: a dev server's first load often
+    # outlasts --settle, and a crashed render leaves the body empty too. Neither is clean.
+    empty_page = not read_error and not load_error and not body.strip()
     clean = not (
         problems
+        or empty_page
         or page_errors
         or failed
         or bad_status
@@ -298,6 +302,7 @@ def main() -> int:
         "action_error": action_error,
         "screenshot_error": screenshot_error,
         "read_error": read_error,
+        "empty_page": empty_page,
         "console": shown,
         "page_errors": page_errors,
         "failed_requests": failed,
@@ -325,6 +330,10 @@ def main() -> int:
         print(f"  ACTION FAILED: {action_error}")
     if read_error:
         print(f"  PAGE UNREADABLE: {read_error}")
+    if empty_page:
+        print(
+            "  EMPTY PAGE: no text rendered (slow first dev load? add a wait_for action)"
+        )
     if screenshot_error:
         print(f"  SCREENSHOT FAILED: {screenshot_error}")
     for m in shown:

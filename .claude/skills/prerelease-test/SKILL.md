@@ -23,17 +23,42 @@ Its value comes from three habits, not from breadth of assertions:
    reclassifies a meaningful share of findings — and it is what makes the report trustworthy
    enough for maintainers to act on directly.
 
+## Where the work lives
+
+Campaigns run on the long-lived branch **`testing/prerelease`** (`main` + a `prerelease-testing/`
+directory, never merged back). It is this skill's working memory between releases:
+
+- `prerelease-testing/REGISTRY.md` — every finding of every past pass with its current status and a
+  "re-verify on every pass" shortlist. Read it before scoping; re-verified items are half the pass.
+- `prerelease-testing/fixtures/<area>/` — reusable apps, drivers and probes with their expected
+  results on the latest release. Copy a fixture to scratch and run it there; extend it rather than
+  rebuilding from scratch.
+- `prerelease-testing/runs/<date>-v<version>/` — the current pass (below). At close-out, move its
+  top-level docs into `history/`, fold improved fixtures into `fixtures/`, update `REGISTRY.md`, and
+  delete the rest.
+
+At the start of a pass: `git fetch origin && git rebase origin/main` on the branch, then
+`git push --force-with-lease`. Nothing outside `prerelease-testing/` changes there, so it never
+conflicts. If the branch does not exist yet, create it from `main` with the same layout.
+
 ## Deliverables
 
-Produce these under `prerelease-testing/<date>-<version>/` in the repo and commit them to a work
-branch as you go (never to `main`):
+Produce these under `prerelease-testing/runs/<date>-v<version>/` and commit them to
+`testing/prerelease` as you go (never to `main`):
 
-- `FINDINGS.md` — executive summary, numbered findings with repro + evidence + regression status,
-  refuted claims, and per-cluster summaries. Templates: `references/reporting.md`.
+- `CAMPAIGN_STATE.md` — what is under test, the change table with risks, the re-verify list, items
+  and port ranges, environment. Agents read it first.
+- `AGENT_BRIEF.md` — `references/agent-brief.md` with every placeholder filled.
+- `FINDINGS.md` — executive summary, re-verification table, numbered findings with repro + evidence
+  + regression status, refuted claims, and per-cluster summaries. Templates: `references/reporting.md`.
 - `RELEASE_PLAN.md` — triage into fix-before-release vs file-as-issue. Rubric below.
-- One directory per test cluster containing the sample app sources (no `.web/`, `node_modules/`,
-  venvs), the driver scripts, `NOTES.md` with exact rerun commands, logs and screenshots.
-- `README.md` — what each cluster covers and how to reuse it for the next release.
+- One directory per test cluster (and per verifier) containing the sample app sources (no `.web/`,
+  `node_modules/`, venvs), the driver scripts, `NOTES.md` with exact rerun commands, and only the
+  trimmed logs and screenshots that are evidence for a finding.
+
+Keep bulk out of git: about 2 MB per cluster and 10 MB per pass. Full logs, frame dumps and
+screenshots stay in the scratch dir. (A past archive reached 320 MB in six weeks by committing every
+run output, which made it useless as a reference.)
 
 Findings must be reproducible by a stranger from `NOTES.md` alone. That is the bar: a fix agent
 gets handed the finding and nothing else.
@@ -46,7 +71,11 @@ Work these in order. Phases 2–5 can overlap; 0 and 1 gate everything.
 
 Find the pre-release branch (`git ls-remote --heads origin 'r/pre-*'`, or the user names it), then
 read **every** `CHANGELOG.md` on it: the root one plus `packages/*/CHANGELOG.md`. The top entry of
-each is what this train ships.
+each is what this train ships. A release run can leave several `r/pre-*` branches with the same
+date, one per materialization step; the one to test is the branch whose head carries the release
+tag (`git tag --points-at origin/<branch>`). Use the tag as `<git-ref>` from here on, and list
+`git log --oneline v<prev>..v<new>` for the change table — the changelog links issue numbers, which
+do not always match the PR that shipped.
 
 Run the discovery script to extract every package's version and confirm each is published:
 
@@ -63,17 +92,39 @@ is what lets you test it as a user rather than as a checklist.
 
 ### Phase 1 — De-risk with a smoke test
 
-Before any fan-out: one venv, `reflex init --template blank`, `reflex run`, then drive it in
-Chromium with `.claude/skills/prerelease-test/scripts/drive_app.py`. This shakes out environment
-problems (proxy, bun installs, browser path) once, in a context where you can debug them, instead
-of inside ten parallel agents.
+Build the campaign's venvs first, from a neutral directory (never from the checkout):
+
+    NEW_VERSION=<new> PREV_VERSION=<prev> CTRL_VERSIONS="<positive-control versions>" \
+      ENT_SPEC='reflex-enterprise[mcp]==<ent>'  # or ENT_WHEEL=<user-supplied offline wheel>
+      .claude/skills/prerelease-test/scripts/bootstrap_envs.sh "$SB" --enterprise
+
+It builds `new`, `prev`, `ctrl-<X>`, `driver`, `new-ent`, `prev-ent` under `$SB/envs/`, and prints
+every reflex package each one resolved. A final `prev` resolves without pre-releases, as a user's
+install would. With `--prerelease=allow`, the previous release's `>=` sibling floors resolve to the
+new alphas, and the "baseline" quietly runs half the code under test. Check the printed versions
+before trusting a baseline.
+
+Before any fan-out: `reflex init --template blank`, `reflex run`, then drive it in Chromium with
+`.claude/skills/prerelease-test/scripts/drive_app.py`, in dev and in prod. This shakes out
+environment problems (proxy, bun installs, browser path) once, in a context where you can debug
+them, instead of inside ten parallel agents. A dev server's first page load can take longer than
+the driver's settle time; pass a `wait_for` action on text the page must show.
 
 The scripts carry PEP 723 metadata, so `uv run --script <path>` runs each one in its own isolated
 environment (the driver pulls in playwright that way); running them with an existing driver venv's
 interpreter works too.
 
-Also confirm the dependency graph resolves the way the changelog says it should (e.g. optional
-dependencies genuinely absent, sub-packages pinned as intended).
+Then check that what PyPI serves is what the tag contains, and how it resolves:
+
+    cd "$SB" && uv --no-config run --script <checkout>/.claude/skills/prerelease-test/scripts/check_wheel_sources.py \
+      --repo <checkout> --base v<prev> --ref v<new> --site-packages $SB/envs/new/lib/python3.*/site-packages
+
+It compares every source file changed between the two tags with the installed copy, and reports
+files missing from the install, which is expected only for unpublished workspace packages. Also
+read the published `reflex` wheel's `Requires-Dist`, and do a stock `pip install reflex==<new>`
+(no `--pre`). A sibling floor below the train's version (`reflex-components-core>=<prev>`) means
+a user who upgrades only `reflex` keeps the old sibling and none of its fixes. That is a
+maintainer decision for the final, so report it.
 
 ### Phase 2 — Feature exploration fan-out
 
@@ -116,8 +167,15 @@ checkout) against the new reflex and run its demos — ag-grid, map, dnd, mantin
 plugin, OIDC. Baseline against the previous stable whenever something fails, so you can say
 whether the new release broke it.
 
-Before running anything, grep the published enterprise wheel for names the changelog says moved or
-were removed; that finds the breakage in seconds instead of hours.
+Before running anything, grep the published enterprise wheel for names the changelog says moved,
+were removed, or were deprecated (a deprecated API rxe still calls prints a warning its users cannot
+fix). Grep it too for its own copies of logic the train changed. A security change in core,
+such as client-IP resolution, header handling or credential redaction, is only as good as every
+parallel surface: rxe's REST event API, MCP and rate limiters each resolve the same values their own
+way. Drive the same handler over the websocket and over the REST API and compare what it sees.
+
+If the user supplies an enterprise build with fixes (an offline wheel), re-run the original repro
+against it, with the previous rxe on the same reflex as the positive control.
 
 ### Phase 5 — Packaging audit
 
@@ -137,6 +195,17 @@ counts line up with `pyi_hashes.json` (a package absent from the manifest must s
 
 Stub content hashes legitimately differ from the committed manifest because the build hook
 regenerates them at release time — compare *presence and counts*, and wheel against sdist.
+
+The audit reads the published files; it does not build. A wheel built *from* an sdist runs the
+stub hook again in an isolated build env. For an alpha train, that env resolves the hook's unpinned
+`reflex-base` to the newest final, and modules that need the alpha's new symbols silently lose
+their stubs. Build each changed component sdist once and count the `.pyi` files against the
+published wheel. Use a throwaway uv cache, because uv reuses a cached sdist build for later
+ordinary installs of the same version and would taint every venv built after it:
+
+    UV_CACHE_DIR=$SB/uv-sdist-cache uv --no-config pip install --python <throwaway venv> \
+      --prerelease=allow --no-binary <pkg> <pkg>==<version>
+    find <throwaway venv>/lib/python3.*/site-packages/<module> -name '*.pyi' | wc -l
 
 ### Phase 6 — Triage and report
 
@@ -171,8 +240,10 @@ resolved graph is all-final.
   findings.
 - **Concurrency.** Dev servers are heavy (bun + vite + granian). On a 4-CPU box run about two
   agents at a time and one dev server per agent; more just makes everything slow and flaky.
-- **Commit as you go.** Each cluster's artifacts land on the work branch when that cluster
-  finishes, so a long campaign is never one unrecoverable batch.
+- **Commit as you go.** Each cluster's artifacts land on `testing/prerelease` when that cluster
+  finishes, and a periodic commit of the run directory covers the agents still writing. A long
+  campaign outlives usage limits and container restarts, so it must never be one unrecoverable
+  batch. See "Surviving interruptions" in `references/orchestration.md`.
 - **Never fix framework code during the campaign.** Testing and fixing are separate engagements
   with separate review standards; mixing them costs you the independence that makes the findings
   credible. Record the repro and move on. (If the user then asks for fixes, that is a new task —

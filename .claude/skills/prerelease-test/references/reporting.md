@@ -25,9 +25,15 @@ Index:
 - FINDING-001: <title> (SEVERITY)
 - ...
 
+## Re-verification table
+| registry id | what | positive control (version, result) | new result | cluster |
+<Every REGISTRY.md item re-run this pass: fixed / still broken / changed, with the control that
+proves the check can fail.>
+
 ## FINDING-00N: <title> (SEVERITY)
 
-- Cluster: `<cluster>` | Regression vs <prev stable>: yes/no | Verifier: CONFIRMED
+- Cluster: `<cluster>` | Regression vs <prev stable>: yes/no | Verifier: CONFIRMED / NARROWED /
+  RECLASSIFIED (say what changed: severity, scope, regression status)
 - Repro: <exact commands/steps, self-contained>
 - Evidence: <log excerpt, console error, screenshot path>
 - Root cause (verifier analysis): <file:line and mechanism, when known>
