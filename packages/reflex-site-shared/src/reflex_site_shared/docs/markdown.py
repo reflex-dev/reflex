@@ -246,6 +246,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
         self.virtual_filepath = virtual_filepath
         self.filename = filename
         self.env: dict = {}
+        self.deferred_demos = 0
 
     # ------------------------------------------------------------------
     # Top-level
@@ -533,7 +534,10 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             raise
 
         if "defer" in flags:
-            comp = DeferredDemo.create(comp)
+            self.deferred_demos += 1
+            comp = DeferredDemo.create(
+                comp, demo_id=f"{self.virtual_filepath}#{self.deferred_demos}"
+            )
 
         demobox_props: dict = {}
         for flag in flags:

@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.11, <4.0"
 resolution-markers = [
     "python_full_version >= '3.15' and sys_platform == 'win32'",
@@ -9,10 +9,10 @@ resolution-markers = [
     "python_full_version == '3.14.*' and sys_platform == 'emscripten'",
     "python_full_version == '3.14.*' and sys_platform != 'emscripten' and sys_platform != 'win32'",
     "python_full_version == '3.13.*' and sys_platform == 'win32'",
-    "python_full_version == '3.12.*' and sys_platform == 'win32'",
     "python_full_version == '3.13.*' and sys_platform == 'emscripten'",
-    "python_full_version == '3.12.*' and sys_platform == 'emscripten'",
     "python_full_version == '3.13.*' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version == '3.12.*' and sys_platform == 'win32'",
+    "python_full_version == '3.12.*' and sys_platform == 'emscripten'",
     "python_full_version == '3.12.*' and sys_platform != 'emscripten' and sys_platform != 'win32'",
     "python_full_version < '3.12' and sys_platform == 'win32'",
     "python_full_version < '3.12' and sys_platform == 'emscripten'",
@@ -24,28 +24,28 @@ exclude-newer = "0001-01-01T00:00:00Z" # This has no effect and is included for 
 exclude-newer-span = "P7D"
 
 [options.exclude-newer-package]
-reflex-components-plotly = false
-reflex-components-react-player = false
-reflex-components-moment = false
-reflex-components-sonner = false
+certifi = "2026-10-21T00:00:00Z"
 hatch-reflex-pyi = false
 pillow = "2026-10-21T00:00:00Z"
-reflex-components-gridjs = false
 reflex = false
-reflex-enterprise = false
+reflex-base = false
+reflex-build-sdk = false
 reflex-components-code = false
-reflex-components-recharts = false
 reflex-components-core = false
 reflex-components-dataeditor = false
-reflex-base = false
-reflex-components-markdown = false
-reflex-build-sdk = false
-certifi = "2026-10-21T00:00:00Z"
-virtualenv = "2026-10-22T00:00:00Z"
+reflex-components-gridjs = false
 reflex-components-internal = false
 reflex-components-lucide = false
+reflex-components-markdown = false
+reflex-components-moment = false
+reflex-components-plotly = false
 reflex-components-radix = false
+reflex-components-react-player = false
+reflex-components-recharts = false
+reflex-components-sonner = false
+reflex-enterprise = false
 reflex-hosting-cli = false
+virtualenv = "2026-10-22T00:00:00Z"
 
 [manifest]
 members = [
@@ -835,10 +835,10 @@ resolution-markers = [
     "python_full_version == '3.14.*' and sys_platform == 'emscripten'",
     "python_full_version == '3.14.*' and sys_platform != 'emscripten' and sys_platform != 'win32'",
     "python_full_version == '3.13.*' and sys_platform == 'win32'",
-    "python_full_version == '3.12.*' and sys_platform == 'win32'",
     "python_full_version == '3.13.*' and sys_platform == 'emscripten'",
-    "python_full_version == '3.12.*' and sys_platform == 'emscripten'",
     "python_full_version == '3.13.*' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version == '3.12.*' and sys_platform == 'win32'",
+    "python_full_version == '3.12.*' and sys_platform == 'emscripten'",
     "python_full_version == '3.12.*' and sys_platform != 'emscripten' and sys_platform != 'win32'",
 ]
 dependencies = [
@@ -2613,10 +2613,10 @@ resolution-markers = [
     "python_full_version == '3.14.*' and sys_platform == 'emscripten'",
     "python_full_version == '3.14.*' and sys_platform != 'emscripten' and sys_platform != 'win32'",
     "python_full_version == '3.13.*' and sys_platform == 'win32'",
-    "python_full_version == '3.12.*' and sys_platform == 'win32'",
     "python_full_version == '3.13.*' and sys_platform == 'emscripten'",
-    "python_full_version == '3.12.*' and sys_platform == 'emscripten'",
     "python_full_version == '3.13.*' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version == '3.12.*' and sys_platform == 'win32'",
+    "python_full_version == '3.12.*' and sys_platform == 'emscripten'",
     "python_full_version == '3.12.*' and sys_platform != 'emscripten' and sys_platform != 'win32'",
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/95/b0/c7453d0b6e2073c3264468b106ee1563750cecc910965e67357e3698c83e/numpy-2.5.4.tar.gz", hash = "sha256:9a94cf751c9ad8ebaa835bcd3d40dacf8534ad086b88c38029b65123c7999d2a", size = 20866315, upload-time = "2026-10-10T20:05:31.422Z" }
@@ -3649,10 +3649,10 @@ resolution-markers = [
     "python_full_version == '3.14.*' and sys_platform == 'emscripten'",
     "python_full_version == '3.14.*' and sys_platform != 'emscripten' and sys_platform != 'win32'",
     "python_full_version == '3.13.*' and sys_platform == 'win32'",
-    "python_full_version == '3.12.*' and sys_platform == 'win32'",
     "python_full_version == '3.13.*' and sys_platform == 'emscripten'",
-    "python_full_version == '3.12.*' and sys_platform == 'emscripten'",
     "python_full_version == '3.13.*' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version == '3.12.*' and sys_platform == 'win32'",
+    "python_full_version == '3.12.*' and sys_platform == 'emscripten'",
     "python_full_version == '3.12.*' and sys_platform != 'emscripten' and sys_platform != 'win32'",
 ]
 dependencies = [
@@ -4539,7 +4539,7 @@ requires-dist = [
     { name = "reflex", editable = "." },
     { name = "reflex-components-internal", editable = "packages/reflex-components-internal" },
     { name = "reflex-docgen", editable = "packages/reflex-docgen" },
-    { name = "reflex-enterprise", specifier = ">=0.9.4" },
+    { name = "reflex-enterprise", specifier = ">=0.9.9" },
     { name = "reflex-hosting-cli", editable = "packages/reflex-hosting-cli" },
     { name = "reflex-integrations-docs", editable = "packages/integrations-docs" },
     { name = "reflex-pyplot" },
@@ -4568,7 +4568,7 @@ source = { editable = "docs/package" }
 
 [[package]]
 name = "reflex-enterprise"
-version = "0.9.8"
+version = "0.9.9"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "asgiproxy" },
@@ -4577,9 +4577,9 @@ dependencies = [
     { name = "psutil" },
     { name = "reflex", extra = ["db"] },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/0f/05/01c924a3cb1aeeff2ec6bd1b4b0bc534268a2e5d563485b602f68f9f97db/reflex_enterprise-0.9.8.tar.gz", hash = "sha256:292017e2ba9f14347bed7d71c3c7dd371b7d5176056fefa8fb26ea1c4eba68a6", size = 921184, upload-time = "2026-10-22T21:22:06.156Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/dd/b2/01982953960eee59e3f6ea64af524c3669f5cc16df26a06089c2181ceda8/reflex_enterprise-0.9.9.tar.gz", hash = "sha256:f8861c71e7e2aedfac1b299eb2ad7d913096c18596903c80d1420679b3f62e56", size = 922276, upload-time = "2026-10-26T15:29:20.611Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/0f/a6/ba3ed78cb2316e361917f7034e51c9a57783a94e6485660ce061d104854d/reflex_enterprise-0.9.8-py3-none-any.whl", hash = "sha256:7c8c5add968f22f336e11b17b7008fd6003cb49ed8e60b13fdf3a3368cc585c7", size = 473510, upload-time = "2026-10-22T21:22:04.282Z" },
+    { url = "https://files.pythonhosted.org/packages/7e/be/9157c3c3cbca7a1d4d7fa78ea30bf789e399eae5845f3f743a26810f603a/reflex_enterprise-0.9.9-py3-none-any.whl", hash = "sha256:f8f1301c2e6a4fb870a8e490411633491f3edc46e478da510dbd2b78986d8cc6", size = 473803, upload-time = "2026-10-26T15:29:19.089Z" },
 ]
 
 [[package]]
@@ -4873,10 +4873,10 @@ resolution-markers = [
     "python_full_version == '3.14.*' and sys_platform == 'emscripten'",
     "python_full_version == '3.14.*' and sys_platform != 'emscripten' and sys_platform != 'win32'",
     "python_full_version == '3.13.*' and sys_platform == 'win32'",
-    "python_full_version == '3.12.*' and sys_platform == 'win32'",
     "python_full_version == '3.13.*' and sys_platform == 'emscripten'",
-    "python_full_version == '3.12.*' and sys_platform == 'emscripten'",
     "python_full_version == '3.13.*' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version == '3.12.*' and sys_platform == 'win32'",
+    "python_full_version == '3.12.*' and sys_platform == 'emscripten'",
     "python_full_version == '3.12.*' and sys_platform != 'emscripten' and sys_platform != 'win32'",
 ]
 dependencies = [
