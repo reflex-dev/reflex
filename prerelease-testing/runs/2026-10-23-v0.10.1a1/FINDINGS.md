@@ -86,6 +86,11 @@ Index:
 - R101-21: rxe MCP OAuth consent race on Redis (LOW, rxe-side, pre-existing)
 - R101-22: recharts deep-freezes state objects it shares with other components, so an AG Grid edit on the same data throws (LOW–MEDIUM, pre-existing)
 
+## Update 2026-10-26 — reflex 0.10.1a2
+a2 is byte-identical to a1 outside wheel metadata; it raises the reflex wheel's sibling floors (#7662). Every install
+path (pip without `--pre` on 3.11–3.14, `pip install -U` from 0.10.0, uv) now resolves the whole train, and the
+stock-pip mixed app passes 23/23 in dev and prod: **R101-04 fixed**. See `../2026-10-26-v0.10.1a2/NOTES.md`.
+
 ## Update 2026-10-26 — reflex-enterprise 0.9.10a1
 With the user-supplied rxe 0.9.10a1 wheel on reflex 0.10.1a1 (`verify_ent910/`): **R101-01 fixed** (via rxe #282,
 deep copies of state rows), **R101-07 fixed** (rxe #279), **R101-22 fixed** (side effect of #282). Controls with rxe

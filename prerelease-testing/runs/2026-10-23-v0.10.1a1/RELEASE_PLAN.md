@@ -1,5 +1,20 @@
 # Release plan — what blocks reflex 0.10.1 vs what gets filed
 
+## Final determination (2026-10-26, after 0.10.1a2)
+**GO for reflex 0.10.1, conditional on releasing reflex-enterprise 0.9.10 (final) together with it.**
+- reflex / reflex-base 0.10.1a2 are release-ready as packages: published, stubs audited, code byte-identical to the
+  fully tested a1, and the sibling floors (R101-04) now deliver the whole train to pip, `pip install -U` and uv users.
+- The one confirmed functional regression, R101-01 (stale views after an AG Grid edit), is fixed only in rxe 0.9.10a1.
+  PyPI's newest rxe is 0.9.9, which still has it on 0.10.1 (re-confirmed on a2). Publish rxe 0.9.10 final before or with
+  reflex 0.10.1 and tell enterprise users to upgrade both together; R101-07 (REST client_ip, security hardening for the
+  0.10.1 breaking change) ships in the same rxe release.
+- Recommended, not blocking: the CHANGELOG notes for R101-02 (fork preload: `--backend-only` and Python 3.14 change
+  behaviour; `REFLEX_BACKEND_START_METHOD=spawn`) and R101-05 (form `id == name` repeated-name change; future tense for
+  the 0.11 deprecation sentences) as news fragments before the final is materialized — or in the release announcement.
+  R101-06 and R101-13 (edge cases in the new form API) can ship in 0.10.2; neither changes existing behaviour.
+- After publishing: run a stock `pip install reflex==0.10.1` (no `--pre`) smoke and confirm the materialized floors
+  resolve to finals.
+
 Findings referenced as R101-NN (see [FINDINGS.md](./FINDINGS.md)). Rubric (skill): fix before release when a finding is
 a confirmed regression vs 0.10.0, security-relevant, significant user impact, or trivially small. Each entry names the
 arm that put it there.
