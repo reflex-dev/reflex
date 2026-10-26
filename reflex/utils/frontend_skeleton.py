@@ -33,7 +33,9 @@ def initialize_gitignore(
     # Combine with the current ignored files.
     current_ignore: list[str] = []
     if gitignore_file.exists():
-        current_ignore = [ln.strip() for ln in gitignore_file.read_text().splitlines()]
+        current_ignore = [
+            ln.strip() for ln in gitignore_file.read_text(encoding="utf-8").splitlines()
+        ]
 
     if files_to_ignore == current_ignore:
         logger.debug(f"{gitignore_file} already up to date.")
@@ -44,7 +46,7 @@ def initialize_gitignore(
     # Write files to the .gitignore file.
     gitignore_file.touch(exist_ok=True)
     logger.debug(f"Creating {gitignore_file}")
-    gitignore_file.write_text("\n".join(files_to_ignore) + "\n")
+    gitignore_file.write_text("\n".join(files_to_ignore) + "\n", encoding="utf-8")
 
 
 AgentsMdAction = Literal["managed", "bridge"]
@@ -76,7 +78,7 @@ def _plan_agents_md(
         return plan
     if (
         agents_file.exists() and claude_file.samefile(agents_file)
-    ) or constants.AgentsMd.CLAUDE_IMPORT in claude_file.read_text():
+    ) or constants.AgentsMd.CLAUDE_IMPORT in claude_file.read_text(encoding="utf-8"):
         return [(agents_file, "managed")]
     if agents_file.exists():
         return [(agents_file, "managed"), (claude_file, "managed")]
@@ -104,7 +106,7 @@ def _apply_agents_md_action(
     elif not file.exists():
         content = managed_agents_md_text + "\n"
     else:
-        existing = file.read_text()
+        existing = file.read_text(encoding="utf-8")
         begin_idx = existing.find(begin)
         end_idx = existing.find(end, begin_idx + len(begin)) if begin_idx != -1 else -1
         if end_idx != -1:
@@ -120,7 +122,7 @@ def _apply_agents_md_action(
                 f"\n\n{remainder}\n" if remainder else "\n"
             )
     logger.debug(f"Creating {file}")
-    file.write_text(content)
+    file.write_text(content, encoding="utf-8")
 
 
 def initialize_agents_md(
