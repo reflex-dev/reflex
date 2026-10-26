@@ -3,6 +3,8 @@
 from pathlib import Path
 
 import pytest
+from reflex_base.components.component import BaseComponent
+from reflex_site_shared.components.blocks.demo import DeferredDemo
 from reflex_site_shared.docs.markdown import (
     get_docgen_toc,
     get_markdown_toc,
@@ -29,6 +31,31 @@ def example():
 
     assert isinstance(component, rx.Component)
     assert "Shared live example" in str(component)
+
+
+def test_deferred_demo_preserves_code_and_gates_preview() -> None:
+    """Automatic loading must gate the live preview without hiding its code."""
+    component = render_markdown(
+        """```python demo exec defer
+import reflex as rx
+
+def example():
+    return rx.text("Activated preview")
+```""",
+        virtual_filepath="tests/deferred-demo.md",
+    )
+    pending: list[BaseComponent] = [component]
+    previews = []
+    while pending:
+        child = pending.pop()
+        if isinstance(child, DeferredDemo):
+            previews.append(child)
+        pending.extend(child.children)
+
+    assert len(previews) == 1
+    assert "loadOnClick" not in str(previews[0])
+    assert "Activated preview" in str(previews[0])
+    assert "rx.text" in str(component)
 
 
 def test_render_markdown_covers_core_blocks_and_spans() -> None:

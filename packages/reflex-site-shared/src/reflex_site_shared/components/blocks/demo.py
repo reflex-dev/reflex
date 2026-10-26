@@ -18,7 +18,7 @@ _DATA_TAB_VALUE = "data"
 
 
 class DeferredDemo(rx.Component):
-    """Mount a costly interactive preview when it approaches the viewport."""
+    """Mount a costly interactive preview when visible and the browser is idle."""
 
     library = "$/public/components/DeferredDemo"
     tag = "DeferredDemo"

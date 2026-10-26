@@ -11,6 +11,92 @@ pytestmark = pytest.mark.skipif(
 )
 
 
+@pytest.mark.parametrize("width", [390, 1440])
+def test_spline_preview_waits_for_visibility_and_idle(page: Page, width: int):
+    """Load the 3D preview only while visible, after the browser becomes idle."""
+    page.set_viewport_size({"width": width, "height": 600})
+    page.add_init_script("""
+        window.previewIdleCallbacks = new Map();
+        let nextId = 0;
+        window.requestIdleCallback = callback => {
+            const id = ++nextId;
+            window.previewIdleCallbacks.set(id, callback);
+            return id;
+        };
+        window.cancelIdleCallback = id => window.previewIdleCallbacks.delete(id);
+    """)
+    scripts = []
+    scenes = []
+    errors = []
+    page.on("pageerror", lambda error: errors.append(str(error)))
+    page.on(
+        "request",
+        lambda request: (
+            scripts.append(request.url)
+            if request.resource_type == "script" and request.url.startswith(PREVIEW_URL)
+            else None
+        ),
+    )
+    page.on(
+        "request",
+        lambda request: (
+            scenes.append(request.url) if "scene.splinecode" in request.url else None
+        ),
+    )
+    page.goto(f"{PREVIEW_URL}/docs/wrapping-react/overview/", wait_until="networkidle")
+    preview = page.locator(".docs-demo-preview").first
+    assert preview.bounding_box()["y"] >= 600
+    assert scenes == []
+    assert scripts
+    assert all(
+        "renderSplineScene" not in page.request.get(url).text() for url in scripts
+    )
+    preview.scroll_into_view_if_needed()
+    page.wait_for_function("window.previewIdleCallbacks.size > 0")
+    assert scenes == []
+    page.evaluate("window.scrollTo(0, 0)")
+    page.wait_for_function("window.previewIdleCallbacks.size === 0")
+
+    tabs = page.locator('[role="tablist"]').first
+    tabs.get_by_role("tab", name="Code", exact=True).click()
+    expect(
+        page.get_by_text("class Spline(NoSSRComponent):", exact=False)
+    ).to_be_visible()
+    page.wait_for_function("window.previewIdleCallbacks.size === 0")
+    tabs.get_by_role("tab", name="View", exact=True).click()
+    preview.scroll_into_view_if_needed()
+    page.wait_for_function("window.previewIdleCallbacks.size > 0")
+    assert scenes == []
+    assert all(
+        "renderSplineScene" not in page.request.get(url).text() for url in scripts
+    )
+
+    with page.expect_response("**/scene.splinecode") as scene:
+        page.evaluate("""() => {
+            for (const [id, callback] of window.previewIdleCallbacks) {
+                window.previewIdleCallbacks.delete(id);
+                callback({didTimeout: false, timeRemaining: () => 50});
+            }
+        }""")
+    assert scene.value.ok
+    expect(page.locator(".docs-demo-preview canvas")).to_be_visible()
+    assert errors == []
+
+
+@pytest.mark.parametrize("idle_callback", [True, False])
+def test_spline_preview_loads_automatically(page: Page, idle_callback: bool):
+    """Scrolling loads the preview with native idle callbacks or their fallback."""
+    page.set_viewport_size({"width": 390, "height": 600})
+    if not idle_callback:
+        page.add_init_script("delete window.requestIdleCallback")
+    page.goto(f"{PREVIEW_URL}/docs/wrapping-react/overview/", wait_until="networkidle")
+    expect(page.locator(".docs-demo-preview canvas")).to_have_count(0)
+    with page.expect_response("**/scene.splinecode") as scene:
+        page.locator(".docs-demo-preview").first.scroll_into_view_if_needed()
+    assert scene.value.ok
+    expect(page.locator(".docs-demo-preview canvas")).to_be_visible()
+
+
 @pytest.mark.parametrize("width", [320, 375, 768, 1440])
 @pytest.mark.parametrize("route", ["/docs/", "/docs/getting-started/introduction/"])
 def test_editorial_header_stays_in_viewport(page: Page, width: int, route: str):

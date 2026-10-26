@@ -63,6 +63,13 @@ config = rx.Config(
 Existing sites that provide their own font CSS can use
 `SharedSiteStylesPlugin(include_fonts=False)`.
 
+Executable `python demo exec` fences can add `defer` to mount their preview when
+it is visible and the browser has idle time. Pending loads are canceled when
+readers scroll away or switch to the Code tab.
+Use `NoSSRComponent` for expensive wrapped libraries so their JavaScript is
+also imported only when the preview mounts. The Code tab stays available before
+the preview loads.
+
 `DocsMarkdownPlugin` serves each discovered page as Markdown using the same
 URL convention as the official Reflex docs. For example,
 `/guide/installation/` is also available at `/guide/installation.md` and
