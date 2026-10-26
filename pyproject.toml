@@ -33,11 +33,11 @@ dependencies = [
   "typing_extensions >=4.13.0",
   "wrapt >=1.17.0,<2.6",
   "reflex-base >= 0.10.1.dev0",
-  "reflex-components-code >= 0.10.0",
+  "reflex-components-code >= 0.10.1.dev0",
   "reflex-components-core >= 0.10.0",
-  "reflex-components-dataeditor >= 0.10.0",
+  "reflex-components-dataeditor >= 0.10.1.dev0",
   "reflex-components-gridjs >= 0.10.0",
-  "reflex-components-lucide >= 1.1.0",
+  "reflex-components-lucide >= 1.1.1.dev0",
   "reflex-components-markdown >= 0.10.0",
   "reflex-components-moment >= 0.10.1.dev0",
   "reflex-components-plotly >= 0.10.0",
@@ -45,8 +45,7 @@ dependencies = [
   "reflex-components-react-player >= 0.10.0",
   "reflex-components-recharts >= 0.10.0",
   "reflex-components-sonner >= 0.10.0",
-  # 0.1.73a1 predates the Python 3.11 train; the floor lifts to the next alpha.
-  "reflex-hosting-cli >= 0.2.0, != 0.1.73a1",
+  "reflex-hosting-cli >= 0.2.1.dev0",
 ]
 
 classifiers = [
