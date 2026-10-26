@@ -5,6 +5,7 @@ from __future__ import annotations
 import functools
 import re
 from collections.abc import Callable
+from urllib.parse import unquote
 
 from reflex_base import constants
 
@@ -94,6 +95,60 @@ def get_route_args(route: str) -> dict[str, str]:
             continue
 
     return args
+
+
+@functools.lru_cache(maxsize=1024)
+def _get_route_params_regex(route: str) -> tuple[re.Pattern, dict[str, str]] | None:
+    """Compile a regex that captures the dynamic arguments of a route.
+
+    Args:
+        route: The route pattern with brackets (e.g. "blog/[slug]").
+
+    Returns:
+        The regex with a named group per argument and the argument types,
+        or None for a static route.
+    """
+    if not (route_args := get_route_args(route)):
+        return None
+    regex_parts = []
+    for part in route.strip("/").split("/"):
+        if part == constants.RouteRegex.SPLAT_CATCHALL:
+            regex_parts.append("(?:/(?P<splat>.*))?")
+        elif arg := constants.RouteRegex.OPTIONAL_ARG.fullmatch(part):
+            regex_parts.append(f"(?:/(?P<{arg.group(1)}>[^/]+))?")
+        elif arg := constants.RouteRegex.ARG.fullmatch(part):
+            regex_parts.append(f"/(?P<{arg.group(1)}>[^/]*)")
+        else:
+            regex_parts.append(re.escape("/" + part))
+    return re.compile("".join(regex_parts)), route_args
+
+
+def extract_route_params(path: str, route: str) -> dict[str, str | list[str]]:
+    """Extract dynamic route parameter values from a concrete path.
+
+    Values are URL-decoded and the splat is split into its segments, as React
+    Router reports them to the client. Omitted optional segments are left out.
+
+    Args:
+        path: The concrete URL path (e.g. "/blog/hello-world").
+        route: The route pattern with brackets (e.g. "blog/[slug]").
+
+    Returns:
+        Dict mapping parameter names to their values,
+        e.g. {"slug": "hello-world"}.
+    """
+    if (params_regex := _get_route_params_regex(route)) is None:
+        return {}
+    regex, route_args = params_regex
+    if (match := regex.fullmatch("/" + path.strip("/"))) is None:
+        return {}
+    return {
+        name: unquote(value).split("/")
+        if route_args[name] == constants.RouteArgType.LIST
+        else unquote(value)
+        for name, value in match.groupdict().items()
+        if value
+    }
 
 
 def replace_brackets_with_keywords(input_string: str) -> str:
