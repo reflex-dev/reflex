@@ -1,10 +1,14 @@
 import { createElement, useEffect, useRef, useState } from "react";
 
-/** Mount expensive previews when visible and the browser has idle time. */
-export function DeferredDemo({ children, style, ...props }) {
+// Demos already shown in this session remount at once, e.g. after a tab switch.
+const loadedDemos = new Set();
+
+/** Mount expensive previews near the viewport once the browser has idle time. */
+export function DeferredDemo({ children, style, demoId, ...props }) {
   const element = useRef(null);
-  const [ready, setReady] = useState(false);
+  const [ready, setReady] = useState(() => loadedDemos.has(demoId));
   useEffect(() => {
+    if (ready) return;
     let observer;
     let scheduled = null;
     const useIdleCallback = "requestIdleCallback" in window;
@@ -17,6 +21,7 @@ export function DeferredDemo({ children, style, ...props }) {
     const load = () => {
       scheduled = null;
       observer?.disconnect();
+      loadedDemos.add(demoId);
       setReady(true);
     };
     const schedule = () => {
@@ -25,10 +30,13 @@ export function DeferredDemo({ children, style, ...props }) {
         : window.setTimeout(load, 0);
     };
     if ("IntersectionObserver" in window) {
-      observer = new IntersectionObserver((entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) schedule();
-        else cancel();
-      });
+      observer = new IntersectionObserver(
+        (entries) => {
+          if (entries.some((entry) => entry.isIntersecting)) schedule();
+          else cancel();
+        },
+        { rootMargin: "200px" },
+      );
       observer.observe(element.current);
     } else {
       schedule();
@@ -37,7 +45,7 @@ export function DeferredDemo({ children, style, ...props }) {
       observer?.disconnect();
       cancel();
     };
-  }, []);
+  }, [ready, demoId]);
   return createElement(
     "div",
     {

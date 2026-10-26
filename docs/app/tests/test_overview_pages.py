@@ -38,14 +38,19 @@ def test_wrapping_overview_defers_the_spline_import_and_preview():
         "docs/wrapping-react/overview.md", DOCS / "wrapping-react/overview.md"
     )
     imports = body._get_all_imports()
-    spline_imports = imports["@splinetool/react-spline@4.1.0"]
+    spline_imports = [
+        item
+        for library, items in imports.items()
+        if library.startswith("@splinetool/react-spline@")
+        for item in items
+    ]
+    assert spline_imports
     assert all(not item.render for item in spline_imports)
     assert any(
         "import('@splinetool/react-spline')" in statement
         for statement in body._get_all_dynamic_imports()
     )
     assert "DeferredDemo" in str(body)
-    assert "loadOnClick" not in str(body)
 
 
 @pytest.mark.parametrize("path", PAGES)

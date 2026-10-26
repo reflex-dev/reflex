@@ -13,7 +13,7 @@ pytestmark = pytest.mark.skipif(
 
 @pytest.mark.parametrize("width", [390, 1440])
 def test_spline_preview_waits_for_visibility_and_idle(page: Page, width: int):
-    """Load the 3D preview only while visible, after the browser becomes idle."""
+    """Load the 3D preview only near the viewport, after the browser becomes idle."""
     page.set_viewport_size({"width": width, "height": 600})
     page.add_init_script("""
         window.previewIdleCallbacks = new Map();
@@ -45,31 +45,30 @@ def test_spline_preview_waits_for_visibility_and_idle(page: Page, width: int):
     )
     page.goto(f"{PREVIEW_URL}/docs/wrapping-react/overview/", wait_until="networkidle")
     preview = page.locator(".docs-demo-preview").first
-    assert preview.bounding_box()["y"] >= 600
-    assert scenes == []
-    assert scripts
-    assert all(
-        "renderSplineScene" not in page.request.get(url).text() for url in scripts
-    )
-    preview.scroll_into_view_if_needed()
-    page.wait_for_function("window.previewIdleCallbacks.size > 0")
-    assert scenes == []
-    page.evaluate("window.scrollTo(0, 0)")
-    page.wait_for_function("window.previewIdleCallbacks.size === 0")
+    pending = "window.previewIdleCallbacks.size"
+    # Beyond the viewport and the observer's 200px margin.
+    assert preview.bounding_box()["y"] >= 800
+    assert page.evaluate(pending) == 0
+    initial_scripts = len(scripts)
 
+    preview.scroll_into_view_if_needed()
+    page.wait_for_function(f"{pending} > 0")
+    page.evaluate("window.scrollTo(0, 0)")
+    page.wait_for_function(f"{pending} === 0")
+
+    preview.scroll_into_view_if_needed()
+    page.wait_for_function(f"{pending} > 0")
     tabs = page.locator('[role="tablist"]').first
     tabs.get_by_role("tab", name="Code", exact=True).click()
+    page.wait_for_function(f"{pending} === 0")
     expect(
-        page.get_by_text("class Spline(NoSSRComponent):", exact=False)
+        page.get_by_text("class Spline(rx.NoSSRComponent):", exact=False)
     ).to_be_visible()
-    page.wait_for_function("window.previewIdleCallbacks.size === 0")
     tabs.get_by_role("tab", name="View", exact=True).click()
     preview.scroll_into_view_if_needed()
-    page.wait_for_function("window.previewIdleCallbacks.size > 0")
+    page.wait_for_function(f"{pending} > 0")
     assert scenes == []
-    assert all(
-        "renderSplineScene" not in page.request.get(url).text() for url in scripts
-    )
+    assert len(scripts) == initial_scripts
 
     with page.expect_response("**/scene.splinecode") as scene:
         page.evaluate("""() => {
@@ -80,6 +79,14 @@ def test_spline_preview_waits_for_visibility_and_idle(page: Page, width: int):
         }""")
     assert scene.value.ok
     expect(page.locator(".docs-demo-preview canvas")).to_be_visible()
+    # The deferred import fetched the wrapper's chunk only after the idle callback.
+    assert len(scripts) > initial_scripts
+
+    # A loaded preview remounts without waiting for idle time again.
+    tabs.get_by_role("tab", name="Code", exact=True).click()
+    tabs.get_by_role("tab", name="View", exact=True).click()
+    expect(page.locator(".docs-demo-preview canvas")).to_be_visible()
+    assert page.evaluate(pending) == 0
     assert errors == []
 
 

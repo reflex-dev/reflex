@@ -63,13 +63,6 @@ config = rx.Config(
 Existing sites that provide their own font CSS can use
 `SharedSiteStylesPlugin(include_fonts=False)`.
 
-Executable `python demo exec` fences can add `defer` to mount their preview when
-it is visible and the browser has idle time. Pending loads are canceled when
-readers scroll away or switch to the Code tab.
-Use `NoSSRComponent` for expensive wrapped libraries so their JavaScript is
-also imported only when the preview mounts. The Code tab stays available before
-the preview loads.
-
 `DocsMarkdownPlugin` serves each discovered page as Markdown using the same
 URL convention as the official Reflex docs. For example,
 `/guide/installation/` is also available at `/guide/installation.md` and
@@ -113,7 +106,9 @@ the exported `render_docgen_document` helper directly.
 
 ### Expensive documentation previews
 
-Add `defer` to a `python demo exec` fence to mount a heavy preview as it approaches the viewport. The example's source code remains in the initial HTML; the preview reserves 450px of height and stays mounted once shown. This is useful for pages containing many Plotly charts.
+Add `defer` to a `python demo exec` fence to mount a heavy preview once it is within 200px of the viewport and the browser has idle time. A pending load is canceled when the reader scrolls away or switches to the Code tab, and a preview that has loaded remounts immediately when the reader returns to it. The example's source code remains in the initial HTML, and the preview reserves 450px of height. This is useful for pages containing many Plotly charts.
+
+Wrap expensive libraries with `rx.NoSSRComponent` so their JavaScript is also imported only when the preview mounts.
 
 ## Marketing footer
 

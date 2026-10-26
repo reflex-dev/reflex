@@ -17,14 +17,13 @@ Simple components that don't have any interaction can be wrapped with just a few
 
 Below we show how to wrap the [Spline](https://github.com/splinetool/react-spline) library can be used to create 3D scenes and animations.
 
-The 3D preview loads automatically as you scroll to it. The wrapper uses `NoSSRComponent` to import Spline when it mounts in the browser.
+The 3D preview loads automatically as you scroll to it. The wrapper uses [`rx.NoSSRComponent`](/docs/wrapping-react/library-and-tags/) so Spline is imported only when it mounts in the browser.
 
 ```python demo exec defer
 import reflex as rx
-from reflex.components.component import NoSSRComponent
 
 
-class Spline(NoSSRComponent):
+class Spline(rx.NoSSRComponent):
     """Spline component."""
 
     # The name of the npm package.

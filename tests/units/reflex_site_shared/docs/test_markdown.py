@@ -33,29 +33,58 @@ def example():
     assert "Shared live example" in str(component)
 
 
-def test_deferred_demo_preserves_code_and_gates_preview() -> None:
-    """Automatic loading must gate the live preview without hiding its code."""
-    component = render_markdown(
-        """```python demo exec defer
+_DEFERRED_DEMO = """```python demo exec defer
 import reflex as rx
 
 def example():
     return rx.text("Activated preview")
-```""",
-        virtual_filepath="tests/deferred-demo.md",
-    )
-    pending: list[BaseComponent] = [component]
+```"""
+
+
+def _deferred_previews(
+    component: BaseComponent,
+) -> list[DeferredDemo]:
+    """Collect the deferred previews in a rendered component tree.
+
+    Args:
+        component: The rendered component tree.
+
+    Returns:
+        The deferred previews, in no particular order.
+    """
+    pending = [component]
     previews = []
     while pending:
         child = pending.pop()
         if isinstance(child, DeferredDemo):
             previews.append(child)
         pending.extend(child.children)
+    return previews
+
+
+def test_deferred_demo_preserves_code_and_gates_preview() -> None:
+    """Automatic loading must gate the live preview without hiding its code."""
+    component = render_markdown(
+        _DEFERRED_DEMO, virtual_filepath="tests/deferred-demo.md"
+    )
+    previews = _deferred_previews(component)
 
     assert len(previews) == 1
-    assert "loadOnClick" not in str(previews[0])
     assert "Activated preview" in str(previews[0])
     assert "rx.text" in str(component)
+
+
+def test_deferred_demo_id_is_stable_per_page_and_source() -> None:
+    """A demo keeps its id across renders so a loaded preview remounts at once."""
+
+    def demo_props(path: str) -> str:
+        (preview,) = _deferred_previews(
+            render_markdown(_DEFERRED_DEMO, virtual_filepath=path)
+        )
+        return str(preview.render()["props"])
+
+    assert demo_props("tests/a.md") == demo_props("tests/a.md")
+    assert demo_props("tests/a.md") != demo_props("tests/b.md")
 
 
 def test_render_markdown_covers_core_blocks_and_spans() -> None:

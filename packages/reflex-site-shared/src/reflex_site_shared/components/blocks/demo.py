@@ -23,6 +23,9 @@ class DeferredDemo(rx.Component):
     library = "$/public/components/DeferredDemo"
     tag = "DeferredDemo"
 
+    # Identifies the demo so it remounts immediately once shown, e.g. after a tab switch.
+    demo_id: rx.Var[str]
+
 
 def _reflex_build_icon() -> rx.Component:
     """Create the Reflex Build mark for the demo action.
