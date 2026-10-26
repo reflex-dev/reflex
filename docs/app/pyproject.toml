@@ -22,7 +22,7 @@ dependencies = [
     "reflex-pyplot",
     "reflex-integrations-docs",
     "reflex-components-internal",
-    "reflex-site-shared>=0.0.49.dev0",
+    "reflex-site-shared",
     "alembic",
     "requests",
     "ruff-format",
