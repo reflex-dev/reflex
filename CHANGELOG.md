@@ -1,3 +1,8 @@
+## v0.10.1a2 (2026-10-26)
+
+No significant changes.
+
+
 ## v0.10.1a1 (2026-10-23)
 
 ### Breaking Changes
