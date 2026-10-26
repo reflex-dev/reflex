@@ -413,6 +413,34 @@ def test_datetime_comparison_preserves_microseconds():
     )
 
 
+@pytest.mark.parametrize(
+    ("operation", "operator"),
+    [
+        (op.lt, "<"),
+        (op.le, "<="),
+        (op.gt, ">"),
+        (op.ge, ">="),
+    ],
+)
+def test_array_comparison_uses_compare_arrays(operation, operator):
+    lhs = cast(ArrayVar[list[int]], v([1, 10, 0]))
+
+    assert str(operation(lhs, [1, 9, 0])) == (
+        f"(compareArrays([1, 10, 0], [1, 9, 0]) {operator} 0)"
+    )
+
+
+def test_array_comparison_imports_compare_arrays():
+    lhs = cast(ArrayVar[list[int]], v([1, 10, 0]))
+    comparison = cast(Var, lhs < [1, 9, 0])
+    var_data = comparison._get_all_var_data()
+
+    assert var_data is not None
+    assert dict(var_data.imports)["$/utils/helpers/array.js"] == (
+        ImportVar(tag="compareArrays", is_default=True, install=False),
+    )
+
+
 def test_date_comparison_uses_compare_datetime():
     lhs = cast(DateTimeVar, v(date(2024, 1, 1)))
     rhs = date(2024, 1, 2)

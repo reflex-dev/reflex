@@ -1810,6 +1810,13 @@ def array_reverse_operation(
     )
 
 
+_ARRAY_COMPARE_IMPORT: ImportDict = {
+    "$/utils/helpers/array.js": [
+        ImportVar(tag="compareArrays", is_default=True, install=False)
+    ],
+}
+
+
 @var_operation
 def array_lt_operation(lhs: ArrayVar | list | tuple, rhs: ArrayVar | list | tuple):
     """Check if an array is less than another array.
@@ -1821,7 +1828,11 @@ def array_lt_operation(lhs: ArrayVar | list | tuple, rhs: ArrayVar | list | tupl
     Returns:
         The array less than operation.
     """
-    return var_operation_return(js_expression=f"{lhs!s} < {rhs!s}", var_type=bool)
+    return var_operation_return(
+        js_expression=f"(compareArrays({lhs!s}, {rhs!s}) < 0)",
+        var_type=bool,
+        var_data=VarData(imports=_ARRAY_COMPARE_IMPORT),
+    )
 
 
 @var_operation
@@ -1835,7 +1846,11 @@ def array_gt_operation(lhs: ArrayVar | list | tuple, rhs: ArrayVar | list | tupl
     Returns:
         The array greater than operation.
     """
-    return var_operation_return(js_expression=f"{lhs!s} > {rhs!s}", var_type=bool)
+    return var_operation_return(
+        js_expression=f"(compareArrays({lhs!s}, {rhs!s}) > 0)",
+        var_type=bool,
+        var_data=VarData(imports=_ARRAY_COMPARE_IMPORT),
+    )
 
 
 @var_operation
@@ -1849,7 +1864,11 @@ def array_le_operation(lhs: ArrayVar | list | tuple, rhs: ArrayVar | list | tupl
     Returns:
         The array less than or equal operation.
     """
-    return var_operation_return(js_expression=f"{lhs!s} <= {rhs!s}", var_type=bool)
+    return var_operation_return(
+        js_expression=f"(compareArrays({lhs!s}, {rhs!s}) <= 0)",
+        var_type=bool,
+        var_data=VarData(imports=_ARRAY_COMPARE_IMPORT),
+    )
 
 
 @var_operation
@@ -1863,7 +1882,11 @@ def array_ge_operation(lhs: ArrayVar | list | tuple, rhs: ArrayVar | list | tupl
     Returns:
         The array greater than or equal operation.
     """
-    return var_operation_return(js_expression=f"{lhs!s} >= {rhs!s}", var_type=bool)
+    return var_operation_return(
+        js_expression=f"(compareArrays({lhs!s}, {rhs!s}) >= 0)",
+        var_type=bool,
+        var_data=VarData(imports=_ARRAY_COMPARE_IMPORT),
+    )
 
 
 @var_operation
