@@ -86,6 +86,12 @@ Index:
 - R101-21: rxe MCP OAuth consent race on Redis (LOW, rxe-side, pre-existing)
 - R101-22: recharts deep-freezes state objects it shares with other components, so an AG Grid edit on the same data throws (LOW–MEDIUM, pre-existing)
 
+## Update 2026-10-26 — reflex-enterprise 0.9.10a1
+With the user-supplied rxe 0.9.10a1 wheel on reflex 0.10.1a1 (`verify_ent910/`): **R101-01 fixed** (via rxe #282,
+deep copies of state rows), **R101-07 fixed** (rxe #279), **R101-22 fixed** (side effect of #282). Controls with rxe
+0.9.8 still reproduce all three. Residual: a rejected edit stays visible in the rejecting grid (accepted, better than
+0.10.0); R101-01's mechanism remains open for non-AG-Grid components that mutate state objects.
+
 ## Re-verification table
 | registry id | what | positive control | 0.10.1a1 | item |
 |---|---|---|---|---|

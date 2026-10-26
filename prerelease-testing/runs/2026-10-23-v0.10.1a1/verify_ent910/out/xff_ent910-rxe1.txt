@@ -1,0 +1,11 @@
+## ent910-rxe1 venv=ent910 REFLEX_TRUSTED_PROXY_HOPS=0 XFF_RXE_HOPS=1 2026-10-26T21:07:53Z
+## REST (rxe EventHandlerAPIPlugin) -> 8610
+rest_none          tok=200 ev=200 ip=127.0.0.1    xff=None                   asc=127.0.0.1 ctok_len=36 sid_len=0 cookie_in_router='qa_cookie=COOKIEVALUE123' authz_in_router=None | retrieve=200 ctok_vals=[''] sid_vals=[''] tok_leak=False cookie_echo=True secret_note_visible=True
+rest_spoof_one     tok=200 ev=200 ip=6.6.6.6      xff='6.6.6.6'              asc=127.0.0.1 ctok_len=36 sid_len=0 cookie_in_router='qa_cookie=COOKIEVALUE123' authz_in_router=None | retrieve=200 ctok_vals=[''] sid_vals=[''] tok_leak=False cookie_echo=True secret_note_visible=True
+rest_spoof_chain   tok=200 ev=200 ip=7.7.7.7      xff='6.6.6.6, 7.7.7.7'     asc=127.0.0.1 ctok_len=36 sid_len=0 cookie_in_router='qa_cookie=COOKIEVALUE123' authz_in_router=None | retrieve=200 ctok_vals=[''] sid_vals=[''] tok_leak=False cookie_echo=True secret_note_visible=True
+rest_spoof_junk    tok=200 ev=200 ip=not an ip <script> xff='not an ip <script>'   asc=127.0.0.1 ctok_len=36 sid_len=0 cookie_in_router='qa_cookie=COOKIEVALUE123' authz_in_router=None | retrieve=200 ctok_vals=[''] sid_vals=[''] tok_leak=False cookie_echo=True secret_note_visible=True
+## websocket (reflex core) -> 8610
+ws_none                      status=HTTP/1.1 101 ip=127.0.0.1      xff=None                           asc=127.0.0.1 ctok_len=36 sid_len=20 err=[]
+ws_spoof_one                 status=HTTP/1.1 101 ip=127.0.0.1      xff='6.6.6.6'                      asc=127.0.0.1 ctok_len=36 sid_len=20 err=[]
+ws_spoof_chain               status=HTTP/1.1 101 ip=127.0.0.1      xff='6.6.6.6, 7.7.7.7'             asc=127.0.0.1 ctok_len=36 sid_len=20 err=[]
+stopped; tracebacks=0 xff-warnings=0

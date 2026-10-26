@@ -5,7 +5,13 @@ a confirmed regression vs 0.10.0, security-relevant, significant user impact, or
 arm that put it there.
 
 ## Already in flight
-None known at the time of writing (no open PRs were checked against these findings; search before filing).
+- **reflex-enterprise 0.9.10a1** (offline wheel, 2026-10-26; rxe #279, #282) — re-verified in `verify_ent910/`:
+  **R101-01 fixed** (every memoized consumer follows state after grid edits, dev + prod, nested fields, after reload;
+  45/45 on the explorer's suite), **R101-07 fixed** (REST `client_ip` = websocket resolution; rate limits keyed on the
+  resolved IP), and **R101-22 fixed** as a side effect (grid edits work next to a recharts chart of the same data).
+  Accepted limitation: a handler that rejects an edit leaves the typed value in that grid (better than 0.10.0). Gap:
+  R101-01 is fixed for AG Grid only — any other component that mutates the objects it receives from state still
+  defeats #7273's structural sharing; a reflex-side guard remains worth considering.
 
 ## Fix before release
 
