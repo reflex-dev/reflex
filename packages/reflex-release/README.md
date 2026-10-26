@@ -86,8 +86,8 @@ cli-command = "uvx reflex-release@0.1.0"
 # this tool pins, so upgrading reflex-release moves them too — and `sync
 # --check` reports that as drift until you regenerate. Set either one to keep
 # your own cadence, or to "" to install whatever setup-uv defaults to.
-uv-version = "0.12.5"
-python-version = "3.14.7"
+uv-version = "0.13.4"
+python-version = "3.14.10"
 
 # Whether the release may be approved by the person who triggered it. True (the
 # default) keeps GitHub's own behavior: the environment's reviewer list decides
