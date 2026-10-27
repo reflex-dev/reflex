@@ -441,7 +441,7 @@ rx.upload.root(
 
 ## Handling the Upload
 
-For uploads, your event handler should be an async function that accepts a single argument, `files: list[UploadFile]`, which will contain [Starlette UploadFile](https://www.starlette.io/requests/#request-files) instances. Each file exposes its original filename as `file.name`. You can read the files and save them anywhere as shown in the example.
+For uploads, your event handler should be an async function that accepts a single argument, `files: list[UploadFile]`, which will contain [Starlette UploadFile](https://starlette.dev/requests/#request-files) instances. Each file exposes its original filename as `file.name`. You can read the files and save them anywhere as shown in the example.
 
 ```md alert warning
 # Upload handlers are regular event handlers.
