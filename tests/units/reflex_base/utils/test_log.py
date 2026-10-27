@@ -176,6 +176,19 @@ def test_json_mode_adds_trace_ids(monkeypatch, capsys, otel_sdk):
         assert record["span_id"] == f"{span_context.span_id:016x}"
 
 
+def test_console_print_json_mode_adds_trace_ids(monkeypatch, capsys, otel_sdk):
+    """Plain console output in JSON mode carries the current span's ids too."""
+    monkeypatch.setenv("REFLEX_LOG_JSON", "true")
+    log.configure()
+    with active_tracer().start_as_current_span("outer") as span:
+        console.print("printed inside")
+    span_context = span.get_span_context()
+    record = json.loads(capsys.readouterr().out)
+    assert record["message"] == "printed inside"
+    assert record["trace_id"] == f"{span_context.trace_id:032x}"
+    assert record["span_id"] == f"{span_context.span_id:016x}"
+
+
 def test_json_mode_omits_trace_ids_outside_span(monkeypatch, capsys, otel_sdk):
     """With tracing on but no current span, records carry no trace ids."""
     monkeypatch.setenv("REFLEX_LOG_JSON", "true")

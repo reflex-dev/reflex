@@ -88,9 +88,10 @@ meter provider).
 
 ### Logs
 
-With JSON logging on (`REFLEX_LOG_JSON=true` or `--json`), every Reflex log
-record emitted inside a span carries that span's W3C ids, so a log line can be
-looked up in your tracing backend and vice versa:
+With JSON logging on (`REFLEX_LOG_JSON=true` or `--json`), every JSON record
+Reflex writes inside a span (log records and plain console output alike)
+carries that span's W3C ids, so a log line can be looked up in your tracing
+backend and vice versa:
 
 ```json
 {"level": "error", "message": "...", "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736", "span_id": "00f067aa0ba902b7"}
