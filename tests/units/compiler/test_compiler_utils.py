@@ -357,7 +357,7 @@ def test_compile_client_storage_skips_plain_factories(
         return "plain"
 
     def missing_at_compile() -> str:
-        """Fail: a backend factory is never called while compiling.
+        """Fail: a factory that only works at runtime is skipped while compiling.
 
         Raises:
             RuntimeError: Always.
@@ -368,6 +368,7 @@ def test_compile_client_storage_skips_plain_factories(
     class PlainState(State):
         text: rx.Field[str] = rx.field(default_factory=make_text)
         _token: rx.Field[str] = rx.field(default_factory=missing_at_compile)
+        runtime_only: rx.Field[str] = rx.field(default_factory=missing_at_compile)
         items: rx.Field[list[str]] = rx.field(default_factory=list)
         # issubclass against a TypedDict raises, so the check must not ask it.
         node: rx.Field[Node] = rx.field(default_factory=lambda: Node(name="root"))

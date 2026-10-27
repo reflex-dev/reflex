@@ -344,9 +344,14 @@ def _compile_client_storage_field(
         and field.default is MISSING
         and field.default_factory is not None
         and _may_hold_str(field.outer_type_)
-        and isinstance(produced := field.default_factory(), ClientStorageBase)
     ):
-        _raise_factory_storage(field, type(produced))
+        # A factory that only works at runtime declares no storage.
+        try:
+            produced = field.default_factory()
+        except Exception:
+            return None, None
+        if isinstance(produced, ClientStorageBase):
+            _raise_factory_storage(field, type(produced))
     return None, None
 
 
