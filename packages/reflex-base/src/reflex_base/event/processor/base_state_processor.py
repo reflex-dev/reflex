@@ -388,8 +388,10 @@ async def execute_event_inline(spec: EventSpec) -> Any:
     # A nested inline run on an already registered task leaves the outer
     # run's registration in place.
     task = asyncio.current_task()
-    added = task is not None and task not in ctx.inline_tasks
-    if added:
+    if task is None or task in ctx.inline_tasks:
+        # Nothing to register here, and nothing to unregister after.
+        task = None
+    else:
         ctx.inline_tasks.add(task)
     try:
         substate = await root_state.get_state(registered.states[0])
@@ -400,7 +402,7 @@ async def execute_event_inline(spec: EventSpec) -> Any:
             root_state=root_state,
         )
     finally:
-        if added:
+        if task is not None:
             ctx.inline_tasks.discard(task)
 
 
