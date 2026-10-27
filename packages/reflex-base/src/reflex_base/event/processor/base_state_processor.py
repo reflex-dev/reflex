@@ -717,7 +717,10 @@ class BaseStateEventProcessor(EventProcessor):
             substate = await state.get_state(registered_handler.states[0])
             root_state = state._get_root_state()
 
-            async with ctx.holding_lock(root_state):
+            # Not `holding_lock`: this is the hot path of every event, and
+            # the plain try/finally spares the context manager's overhead.
+            ctx.set_locked_root(root_state)
+            try:
                 if needs_to_rehydrate:
                     await self._rehydrate(root_state)
 
@@ -729,6 +732,8 @@ class BaseStateEventProcessor(EventProcessor):
                         state=substate,
                         root_state=root_state,
                     )
+            finally:
+                await ctx.release_lock()
         # Otherwise drop the state lock and start processing the background task
         # with a proxy state. No root_state: the lock is no longer held, and
         # under a shared state tree (opportunistic locking, in-memory manager)

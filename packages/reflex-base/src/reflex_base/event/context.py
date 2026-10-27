@@ -181,13 +181,24 @@ class EventContext(BaseContext):
         stays held until it finishes. When the releasing task is being
         cancelled, those runs are cancelled too.
         """
+        if not self.inline_tasks:
+            # The common case: nothing was started inline.
+            self.set_locked_root(None)
+            return
         current = asyncio.current_task()
+        # A task already being cancelled (the cancellation arrived inside
+        # the locked block) is not interrupted again while it waits, so the
+        # runs it waits for are cancelled up front.
+        cancelling = current is not None and current.cancelling()
         try:
             # Drain until nothing is left: a run may start another while
             # the earlier ones are awaited.
             while pending := [
                 t for t in self.inline_tasks if t is not current and not t.done()
             ]:
+                if cancelling:
+                    for task in pending:
+                        task.cancel()
                 try:
                     results = await asyncio.gather(*pending, return_exceptions=True)
                 except asyncio.CancelledError:
