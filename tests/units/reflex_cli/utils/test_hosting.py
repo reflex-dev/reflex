@@ -1834,3 +1834,38 @@ def test_watch_hands_back_a_control_plane_that_stays_unreachable(
     warnings = _log_messages(caplog, logging.WARNING)
     assert "lost contact" in warnings[0]
     assert f"apps status {deployment} --watch" in warnings[-1]
+
+
+def test_generate_config_without_pyyaml_raises(mocker: MockFixture):
+    """A missing PyYAML stops before authenticating, and is not reported as None.
+
+    Args:
+        mocker: Pytest mocker fixture.
+    """
+    mocker.patch.dict("sys.modules", {"yaml": None})
+    get_client = mocker.patch("reflex_cli.utils.hosting.get_authenticated_client")
+
+    with pytest.raises(click.exceptions.Exit) as exc_info:
+        hosting.generate_config(interactive=False)
+
+    assert exc_info.value.exit_code == 1
+    get_client.assert_not_called()
+
+
+def test_generate_config_with_existing_file_returns_none(
+    mocker: MockFixture, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """An existing cloud.yml is left alone and reported as nothing written.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        tmp_path: A temporary directory standing in for the app root.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "cloud.yml").write_text("name: existing\n")
+    get_client = mocker.patch("reflex_cli.utils.hosting.get_authenticated_client")
+
+    assert hosting.generate_config(interactive=False) is None
+    assert (tmp_path / "cloud.yml").read_text() == "name: existing\n"
+    get_client.assert_not_called()

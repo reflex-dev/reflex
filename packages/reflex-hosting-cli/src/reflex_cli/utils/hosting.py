@@ -1928,16 +1928,17 @@ def generate_config(interactive: bool = True, token: str | None = None) -> Path 
         token: An existing authentication token to use instead of interactive auth.
 
     Returns:
-        The path of the config file written, or None if none was.
+        The path of the config file written, or None if a cloud.yml already exists.
 
     Raises:
-        click.exceptions.Exit: If authentication fails or user cancels operation.
+        Exit: If PyYAML is not installed, authentication fails or user cancels operation.
     """
     try:
         import yaml
     except ImportError:
         logger.error("Please install PyYAML to use this command: pip install pyyaml")
-        return None
+        # A failure, not "nothing to write": None would read as success to a caller.
+        raise click.exceptions.Exit(1) from None
 
     config_path = Path("cloud.yml")
     if config_path.exists():
