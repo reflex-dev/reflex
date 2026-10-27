@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import logging
+import os
 import signal
 import sys
+import time
 from collections.abc import Callable, Generator
 from contextlib import contextmanager, nullcontext
 from importlib import import_module
@@ -18,7 +20,7 @@ from reflex_base import constants
 from reflex_base.config import get_config, reload_config
 from reflex_base.environment import environment
 from reflex_base.utils import console, log, supervisor
-from reflex_base.utils.process_tree import stop_process_tree
+from reflex_base.utils.process_tree import kill_descendants, stop_process_tree
 
 from reflex.utils.cli_options import log_options
 
@@ -407,33 +409,47 @@ def _compile_app_worker(
         otel.flush()
 
 
+# Seconds after a stop request in which a repeat is the same request delivered
+# twice; a later repeat forces the exit.
+_REPEAT_IGNORE_SECONDS = 1
+
+
 @contextmanager
 def _shutdown_signals() -> Generator[Callable[[], None], None, None]:
-    """Turn the first SIGINT or SIGTERM into a clean unwind and ignore repeats.
+    """Turn the first SIGINT or SIGTERM into a clean unwind; force on a later one.
 
     The first signal raises in the main thread so the run body unwinds into
-    its cleanup. Later signals, such as the second delivery a terminal Ctrl-C
-    produces next to the one the output supervisor forwards, are ignored so
-    they cannot interrupt that cleanup. The backend server installs its own
-    handlers while it serves; this covers the time before and after.
+    its cleanup. A repeat within ``_REPEAT_IGNORE_SECONDS``, such as the
+    second delivery a terminal Ctrl-C produces next to the one the output
+    supervisor forwards, is ignored so it cannot interrupt that cleanup. A
+    later repeat means the cleanup is stuck: every descendant is killed and
+    the process exits at once. The backend server installs its own handlers
+    while it serves; this covers the time before and after.
 
     Yields:
         A function the run body calls when its cleanup begins, so a signal
-        arriving only then is ignored as well.
+        arriving only then counts as a repeat.
     """
-    stopping = False
+    stopping_at: float | None = None
 
     def begin_cleanup() -> None:
-        nonlocal stopping
-        stopping = True
+        nonlocal stopping_at
+        if stopping_at is None:
+            stopping_at = time.monotonic()
 
     def stop(signum: int, frame: FrameType | None) -> None:
-        if stopping:
+        if stopping_at is None:
+            begin_cleanup()
+            if signum == signal.SIGINT:
+                raise KeyboardInterrupt
+            raise SystemExit(0)
+        if time.monotonic() - stopping_at < _REPEAT_IGNORE_SECONDS:
             return
-        begin_cleanup()
-        if signum == signal.SIGINT:
-            raise KeyboardInterrupt
-        raise SystemExit(0)
+        # A normal exit would wait for the thread a stuck cleanup blocks, for
+        # example one reading a pipe that a process outside the tree holds open.
+        os.write(2, b"Forced exit: the cleanup did not finish.\n")
+        kill_descendants(os.getpid())
+        os._exit(128 + signum)
 
     # Windows never delivers SIGTERM, but Ctrl-C arrives as SIGINT there too.
     previous = {

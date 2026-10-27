@@ -135,6 +135,19 @@ def test_stop_process_tree_stops_an_orphaned_grandchild(tmp_path: Path):
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="POSIX signals")
+def test_kill_descendants_kills_below_the_root_only(tmp_path: Path):
+    """Every descendant is killed at once and the root keeps running."""
+    proc, line = _start(tmp_path, _ORPHANING_CHILD)
+    grandchild = int(line)
+    try:
+        process_tree.kill_descendants(proc.pid)
+        assert _wait_gone(grandchild, timeout=1)
+        assert proc.poll() is None
+    finally:
+        process_tree.stop_process_tree(proc, timeout=1)
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX signals")
 def test_stop_process_tree_kills_a_child_that_ignores_sigterm(tmp_path: Path):
     """A child that survives the deadline is killed."""
     proc, line = _start(tmp_path, _STUBBORN_CHILD)

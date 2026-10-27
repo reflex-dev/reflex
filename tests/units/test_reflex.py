@@ -1083,6 +1083,66 @@ rx._run_dev(MODE,3000,PORT,"127.0.0.1")
                     os.kill(pid, signal.SIGKILL)
 
 
+_STUCK_CLEANUP_SCRIPT = """
+import subprocess, sys, time
+
+from reflex import reflex
+
+with reflex._shutdown_signals() as begin_cleanup:
+    try:
+        print("ready", flush=True)
+        while True:
+            time.sleep(1)
+    finally:
+        begin_cleanup()
+        # A cleanup that never ends, like a frontend pipe held open forever.
+        helper = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"])
+        print(helper.pid, flush=True)
+        while True:
+            time.sleep(1)
+"""
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX signals")
+@pytest.mark.parametrize("sig", [signal.SIGINT, signal.SIGTERM])
+def test_shutdown_signals_force_exit_on_a_later_repeat(tmp_path, sig):
+    """A repeat right after the first signal is ignored; a later one forces the exit."""
+    script = tmp_path / "stuck.py"
+    script.write_text(_STUCK_CLEANUP_SCRIPT)
+    proc = subprocess.Popen(
+        [sys.executable, str(script)], stdout=subprocess.PIPE, text=True
+    )
+    helper = None
+    try:
+        assert proc.stdout is not None
+        assert proc.stdout.readline() == "ready\n"
+        proc.send_signal(sig)
+        helper = int(proc.stdout.readline())
+        # The same Ctrl-C delivered twice under --json: not a request to force.
+        proc.send_signal(sig)
+        time.sleep(0.3)
+        assert proc.poll() is None
+        time.sleep(reflex._REPEAT_IGNORE_SECONDS)
+        proc.send_signal(sig)
+        assert proc.wait(timeout=DEFAULT_TIMEOUT) == 128 + sig
+        deadline = time.monotonic() + DEFAULT_TIMEOUT
+        while time.monotonic() < deadline:
+            try:
+                if psutil.Process(helper).status() == psutil.STATUS_ZOMBIE:
+                    break
+            except psutil.NoSuchProcess:
+                break
+            time.sleep(0.05)
+        else:
+            pytest.fail("the forced exit left the cleanup's child running")
+    finally:
+        proc.kill()
+        proc.wait()
+        if helper is not None:
+            with contextlib.suppress(ProcessLookupError):
+                os.kill(helper, signal.SIGKILL)
+
+
 @pytest.mark.parametrize(
     ("argv", "supervised", "expected"),
     [(["--json"], False, True), (["--json"], True, False), ([], False, False)],

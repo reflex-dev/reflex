@@ -127,6 +127,19 @@ def _signal(pids: list[int], signum: int):
             os.kill(pid, signum)
 
 
+def kill_descendants(pid: int):
+    """SIGKILL every descendant of a process at once, without waiting.
+
+    On Windows this does nothing: there is no SIGKILL, and ``taskkill /T``
+    in :func:`stop_process_tree` already ends a tree without a grace period.
+
+    Args:
+        pid: The root process ID, which is left running.
+    """
+    if sys.platform != "win32":
+        _signal(descendant_pids(pid), signal.SIGKILL)
+
+
 def _wait(process: subprocess.Popen, descendants: list[int], deadline: float):
     """Wait until the process and its descendants are gone or the deadline passes.
 
