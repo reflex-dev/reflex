@@ -496,6 +496,9 @@ class Base(MappedAsDataclass, DeclarativeBase):
     """Base class for the app's tables."""
 
 
+rx.ModelRegistry.register(Base)
+
+
 class Customer(Base):
     """The customer model."""
 
@@ -637,6 +640,9 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_co
 
 class Base(MappedAsDataclass, DeclarativeBase):
     """Base class for the app's tables."""
+
+
+rx.ModelRegistry.register(Base)
 
 
 class Customer(Base):
