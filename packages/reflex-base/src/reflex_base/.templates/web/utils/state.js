@@ -1074,18 +1074,18 @@ export const connect = async (
     window.addEventListener("pagehide", pagehideHandler);
     window.addEventListener("beforeunload", disconnectTrigger);
     // The connection auth event already loads its route, and every queued
-    // on_load loads the route current when it is sent. Keep the first queued
-    // on_load only if the route changed after the auth event was built.
+    // on_load loads the route current when it is sent. Keep the last queued
+    // on_load, after every navigation's storage update, only if the route
+    // changed after the auth event was built.
     let keepOnLoad = bootRoute !== currentRouteKey();
-    let kept = 0;
-    for (const event of event_queue) {
-      if (event.name === app.on_load_internal_event) {
-        if (!keepOnLoad) continue;
+    for (let i = event_queue.length - 1; i >= 0; i--) {
+      if (event_queue[i].name !== app.on_load_internal_event) continue;
+      if (keepOnLoad) {
         keepOnLoad = false;
+      } else {
+        event_queue.splice(i, 1);
       }
-      event_queue[kept++] = event;
     }
-    event_queue.length = kept;
     // Drain any initial events from the queue.
     while (event_queue.length > 0) {
       await processEvent(socket.current, navigate, params);

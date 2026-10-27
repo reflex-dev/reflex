@@ -345,18 +345,29 @@ test("queued on_load is kept when navigation follows auth capture", async () => 
   ]);
 });
 
-test("queued on_loads for a newer route are sent once, in queue order", async () => {
+test("queued on_loads for a newer route are sent once, after the last storage update", async () => {
   const stateName = "reflex___state____root";
   const app = await setup({ deferConnectAck: true, stateName });
   app.flush();
   await app.connect();
   const socket = app.socket.current;
 
+  // Each navigation queues the browser storage it read, then its on_load.
   app.window.location = new URL("http://localhost:3000/other?query=value");
   const onLoadEvent = { name: app.onLoadInternalEvent, payload: {} };
-  const userEvent = { name: `${stateName}.child.increment`, payload: {} };
+  const storageEvent = (value) => ({
+    name: `${stateName}.update_vars_internal_state.update_vars_internal`,
+    payload: { vars: { "root.token": value } },
+  });
   await app.module.namespace.queueEvents(
-    [{ ...onLoadEvent }, userEvent, { ...onLoadEvent }],
+    [storageEvent("first"), { ...onLoadEvent }],
+    app.socket,
+    false,
+    () => {},
+    { current: {} },
+  );
+  await app.module.namespace.queueEvents(
+    [storageEvent("second"), { ...onLoadEvent }],
     app.socket,
     false,
     () => {},
@@ -370,8 +381,9 @@ test("queued on_loads for a newer route are sent once, in queue order", async ()
     query: { query: "value" },
   };
   assert.deepEqual(JSON.parse(JSON.stringify(socket.events)), [
+    { name: "event", event: { ...storageEvent("first"), router_data } },
+    { name: "event", event: { ...storageEvent("second"), router_data } },
     { name: "event", event: { ...onLoadEvent, router_data } },
-    { name: "event", event: { ...userEvent, router_data } },
   ]);
 });
 
