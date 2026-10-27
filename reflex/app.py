@@ -1888,7 +1888,7 @@ class App(MiddlewareMixin, LifespanMixin):
             try:
                 forked_context = EventContext.get().fork(token=token.ident)
             except LookupError:
-                pass
+                forked_context = None
             else:
                 reset_token = EventContext.set(forked_context)
                 rebind.callback(EventContext.reset, reset_token)
@@ -1897,7 +1897,12 @@ class App(MiddlewareMixin, LifespanMixin):
                 token, previous_dirty_vars=previous_dirty_vars, **context
             ) as state:
                 # No other event handler can modify the state while in this context.
-                yield state
+                if forked_context is not None:
+                    # An awaited handler runs inline on the locked tree.
+                    with forked_context.holding_lock(state._get_root_state()):
+                        yield state
+                else:
+                    yield state
                 delta = await state._get_resolved_delta()
                 state._clean()
                 if delta:

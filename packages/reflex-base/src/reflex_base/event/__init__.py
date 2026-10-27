@@ -8,7 +8,7 @@ import sys
 import types
 import warnings
 from base64 import b64encode
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Generator, Mapping, Sequence
 from functools import cached_property, lru_cache, partial
 from typing import (
     TYPE_CHECKING,
@@ -640,6 +640,14 @@ class EventHandler(EventActionsMixin):
         """
         return getattr(self.fn, SUPERSEDES_MARKER, False)
 
+    def __await__(self) -> Generator[Any, None, Any]:
+        """Run the handler with no arguments in the active EventContext.
+
+        Returns:
+            The awaitable's iterator; awaiting it yields the handler's return value.
+        """
+        return self().__await__()
+
     def __set_name__(self, owner: type, name: str) -> None:
         """Bind the handler to the state class whose body declares it.
 
@@ -836,6 +844,34 @@ class EventSpec(EventActionsMixin):
         object.__setattr__(self, "handler", handler)
         object.__setattr__(self, "client_handler_name", client_handler_name)
         object.__setattr__(self, "args", args or ())
+
+    def __hash__(self) -> int:
+        """Hash the spec by identity, so ``asyncio.gather`` can track it as an awaitable.
+
+        The bound args are Vars, whose ``==`` builds a Var instead of a bool,
+        so the field-wise hash and equality a dataclass generates are unusable
+        for a spec with args.
+
+        Returns:
+            The hash of the spec.
+        """
+        return id(self)
+
+    def __await__(self) -> Generator[Any, None, Any]:
+        """Run the event in the active EventContext.
+
+        Inline on the locked state tree while the current task holds the state
+        lock, else enqueued and awaited. Each await runs the event again: a
+        spec describes an event, like a ``functools.partial`` describes a call.
+
+        Returns:
+            The awaitable's iterator; awaiting it yields the handler's return value.
+        """
+        from reflex_base.event.processor.base_state_processor import (
+            execute_event_inline,
+        )
+
+        return execute_event_inline(self).__await__()
 
     def _to_event(self, router_data: dict[str, Any] | None = None) -> Event:
         """Create the runtime Event this spec describes.
@@ -2908,11 +2944,19 @@ class EventCallback(Generic[*P], EventActionsMixin):
     """A descriptor that wraps a function to be used as an event."""
 
     if TYPE_CHECKING:
-        # EventCallback is never instantiated: `event()` returns the undecorated
-        # function, which the state metaclass turns into an EventHandler. This
-        # class is only the static stand-in for it, so declare the EventHandler
-        # attribute that `SomeState.handler` actually exposes at runtime.
+        # EventCallback is never instantiated: `event()` returns an
+        # EventHandler. This class is only the static stand-in for it, so
+        # declare the EventHandler members that `SomeState.handler` actually
+        # exposes at runtime.
         fn: Callable[[Any, Unpack[P]], Any]
+
+        def __await__(self) -> Generator[Any, None, Any]:
+            """Run the handler in the active EventContext.
+
+            Returns:
+                The awaitable's iterator; awaiting it yields the handler's return value.
+            """
+            ...
 
     def __init__(self, func: Callable[[Any, Unpack[P]], Any]):
         """Initialize the descriptor with the function to be wrapped.

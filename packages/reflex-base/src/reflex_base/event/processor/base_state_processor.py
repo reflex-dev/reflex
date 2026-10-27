@@ -320,6 +320,73 @@ def ensure_locked(
     return None
 
 
+async def execute_event_inline(spec: EventSpec) -> Any:
+    """Run the event a spec describes from inside the active EventContext.
+
+    This is what awaiting an EventHandler or EventSpec does. While the current
+    task holds the token's state lock (a foreground handler, ``async with
+    self`` in a background handler, ``app.modify_state``), the handler runs
+    inline on the locked state tree under the caller's context: its yields
+    emit deltas and the events it yields chain under the caller's event. With
+    no lock held, the event is enqueued and its future awaited. A stateless
+    handler always runs inline.
+
+    Args:
+        spec: The event spec to execute.
+
+    Returns:
+        The handler's return value.
+
+    Raises:
+        EventHandlerTypeError: If there is no active EventContext, the spec is
+            a frontend-only or upload event, or a background handler is
+            awaited while the state lock is held (which would deadlock).
+    """
+    from reflex_base.registry import RegistrationContext
+    from reflex_base.utils.exceptions import EventHandlerTypeError
+
+    name = format_event_handler(spec.handler)
+    try:
+        ctx = EventContext.get()
+    except LookupError as le:
+        msg = (
+            f"Event handler `{name}` can only be awaited from an event handler "
+            "or inside `app.modify_state`; use it as an event trigger or yield "
+            "it instead."
+        )
+        raise EventHandlerTypeError(msg) from le
+    if spec.client_handler_name:
+        msg = f"Upload event `{name}` cannot be awaited; use it as an event trigger."
+        raise EventHandlerTypeError(msg)
+    event = spec._to_event(ctx.router_data)
+    registered = RegistrationContext.get().event_handlers.get(event.name)
+    if registered is None:
+        msg = (
+            f"`{name}` is a frontend-only event, so it cannot be awaited; "
+            "yield or return it instead."
+        )
+        raise EventHandlerTypeError(msg)
+    handler = registered.handler
+    if not registered.states:
+        return await process_event(
+            handler=handler, payload=event.payload, state=None, root_state=None
+        )
+    root_state = ctx.locked_root
+    if root_state is None:
+        (future,) = await ctx.enqueue(event)
+        return await future
+    if handler.is_background:
+        msg = (
+            f"Background event handler `{name}` cannot be awaited while the "
+            "state lock is held, as it would wait for that lock; yield it instead."
+        )
+        raise EventHandlerTypeError(msg)
+    substate = await root_state.get_state(registered.states[0])
+    return await process_event(
+        handler=handler, payload=event.payload, state=substate, root_state=root_state
+    )
+
+
 async def process_event(
     handler: EventHandler,
     payload: dict,
@@ -633,17 +700,18 @@ class BaseStateEventProcessor(EventProcessor):
             substate = await state.get_state(registered_handler.states[0])
             root_state = state._get_root_state()
 
-            if needs_to_rehydrate:
-                await self._rehydrate(root_state)
+            with ctx.holding_lock(root_state):
+                if needs_to_rehydrate:
+                    await self._rehydrate(root_state)
 
-            # Process non-background events while holding the lock.
-            if not registered_handler.handler.is_background:
-                return await process_event(
-                    handler=registered_handler.handler,
-                    payload=event.payload,
-                    state=substate,
-                    root_state=root_state,
-                )
+                # Process non-background events while holding the lock.
+                if not registered_handler.handler.is_background:
+                    return await process_event(
+                        handler=registered_handler.handler,
+                        payload=event.payload,
+                        state=substate,
+                        root_state=root_state,
+                    )
         # Otherwise drop the state lock and start processing the background task
         # with a proxy state. No root_state: the lock is no longer held, and
         # under a shared state tree (opportunistic locking, in-memory manager)
@@ -725,4 +793,9 @@ class BaseStateEventProcessor(EventProcessor):
                 )
 
 
-__all__ = ["BaseStateEventProcessor", "chain_updates", "process_event"]
+__all__ = [
+    "BaseStateEventProcessor",
+    "chain_updates",
+    "execute_event_inline",
+    "process_event",
+]

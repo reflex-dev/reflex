@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import contextlib
 import dataclasses
 import functools
 import os
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Protocol
 
 from reflex_base import otel
@@ -16,6 +17,7 @@ if TYPE_CHECKING:
     from opentelemetry.context import Context
 
     from reflex.istate.manager import StateManager
+    from reflex.state import BaseState
     from reflex_base.event import Event
     from reflex_base.event.processor.future import EventFuture
 
@@ -113,8 +115,13 @@ class EventContext(BaseContext):
     emit_event_impl: EmitEventProtocol | None = dataclasses.field(
         default=None, repr=False
     )
-    cached_states: dict[type, Any] = dataclasses.field(
-        default_factory=dict, init=False, repr=False
+    # The root of the state tree this task holds the token's state lock on,
+    # while it does: set by the event processor around a foreground handler,
+    # by ``async with self`` in a background handler, and by
+    # ``App.modify_state``. An awaited handler runs inline on it; with no lock
+    # held, the handler is enqueued instead. Never inherited by fork().
+    locked_root: BaseState | None = dataclasses.field(
+        default=None, init=False, repr=False
     )
     # OpenTelemetry context active when this event was enqueued (None when tracing is off).
     otel_context: Context | None = dataclasses.field(default=None, repr=False)
@@ -146,6 +153,30 @@ class EventContext(BaseContext):
             router_data=router_data or self.router_data,
             otel_context=otel.capture_context(),
         )
+
+    def set_locked_root(self, root_state: BaseState | None) -> None:
+        """Record the state tree the current task holds the lock on, or None.
+
+        Args:
+            root_state: The locked root state, or None once the lock is released.
+        """
+        object.__setattr__(self, "locked_root", root_state)
+
+    @contextlib.contextmanager
+    def holding_lock(self, root_state: BaseState) -> Iterator[None]:
+        """Mark the state lock as held for the duration of the block.
+
+        Args:
+            root_state: The root of the locked state tree.
+
+        Yields:
+            Nothing.
+        """
+        self.set_locked_root(root_state)
+        try:
+            yield
+        finally:
+            self.set_locked_root(None)
 
     async def emit_delta(self, delta: Mapping[str, Mapping[str, Any]]) -> None:
         """Emit a delta to the frontend.

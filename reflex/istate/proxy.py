@@ -286,6 +286,8 @@ class StateProxy(wrapt.ObjectProxy):
             super().__setattr__(
                 "__wrapped__", mutable_state.get_substate(self._self_substate_path)
             )
+            # An awaited handler runs inline on this tree while the lock is held.
+            ctx.set_locked_root(mutable_state)
             from reflex.state import State
 
             if type(mutable_state) is State and not mutable_state.router_data:
@@ -325,6 +327,7 @@ class StateProxy(wrapt.ObjectProxy):
         finally:
             try:
                 if self._self_mutable and self._self_actx is not None:
+                    EventContext.get().set_locked_root(None)
                     await self._self_actx.__aexit__(*exc_info)
             finally:
                 self._self_actx = None

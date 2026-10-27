@@ -3697,3 +3697,438 @@ async def test_stateless_handler_is_not_serialized_behind_the_token_queue(
         release.set()
         await asyncio.wait_for(slow_future, 5)
     assert order == ["quick", "slow"]
+
+
+async def test_locked_root_is_set_only_while_the_lock_is_held(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """The context names the locked root during a handler, and None otherwise.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    seen: dict[str, Any] = {}
+
+    class LockState(State):
+        @event
+        def foreground(self):
+            ctx = EventContext.get()
+            seen["fg"] = ctx.locked_root is self._get_root_state()
+            seen["fg_ctx"] = ctx
+
+        @event(background=True)
+        async def background(self):
+            ctx = EventContext.get()
+            seen["bg_outside"] = ctx.locked_root
+            async with self:
+                seen["bg_inside"] = (
+                    ctx.locked_root is self.__wrapped__._get_root_state()  # pyright: ignore[reportAttributeAccessIssue]
+                )
+            seen["bg_after"] = ctx.locked_root
+
+        @event
+        def raises(self):
+            seen["raises_ctx"] = EventContext.get()
+            msg = "boom"
+            raise ValueError(msg)
+
+    captured: list[Exception] = []
+    real_base_state_processor.backend_exception_handler = captured.append
+    async with real_base_state_processor as processor:
+        await processor.enqueue(token, Event.from_event_type(LockState.foreground())[0])
+        await processor.enqueue(token, Event.from_event_type(LockState.background())[0])
+        future = await processor.enqueue(
+            token, Event.from_event_type(LockState.raises())[0]
+        )
+        with pytest.raises(ValueError, match="boom"):
+            await future
+        await processor.join(5)
+        await asyncio.sleep(0)
+
+    assert seen["fg"] is True
+    assert seen["fg_ctx"].locked_root is None
+    assert seen["bg_outside"] is None
+    assert seen["bg_inside"] is True
+    assert seen["bg_after"] is None
+    assert seen["raises_ctx"].locked_root is None
+    assert len(captured) == 1
+
+
+async def test_await_handler_inline_returns_value_and_chains_its_yields(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+):
+    """Awaiting a handler runs it under the caller's lock; its yields chain under the caller.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: List to capture emitted deltas.
+        token: The client token.
+    """
+
+    class AwaitState(State):
+        log: list[str] = []
+        n: int = 0
+
+        @event
+        def add(self, tag: str):
+            self.log = [*self.log, tag]
+
+        @event
+        def callee(self, x: int):
+            self.log = [*self.log, f"callee:{x}"]
+            self.n = x
+            yield AwaitState.add("from_callee")
+            return x * 2  # noqa: B901
+
+        @event
+        async def caller(self):
+            self.log = [*self.log, "caller:0"]
+            value = await AwaitState.callee(21)
+            self.log = [*self.log, f"caller:{value}"]
+            await asyncio.gather(AwaitState.add("g1"), AwaitState.add("g2"))
+            yield AwaitState.add("after_await")
+
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(AwaitState.caller())[0]
+        )
+        # The chained events are children of the caller's future, so waiting
+        # on the tree is enough: no processor.join needed.
+        await future.wait_all()
+
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    state = await root_ctx.state_manager.get_state(
+        BaseStateToken(ident=token, cls=State)
+    )
+    assert (await state.get_state(AwaitState)).log == [
+        "caller:0",
+        "callee:21",
+        "caller:42",
+        "g1",
+        "g2",
+        "from_callee",
+        "after_await",
+    ]
+    # The callee's yield flushed a delta with its change before the caller went on.
+    n_values = [
+        delta[AwaitState.get_full_name()][f"n{FIELD_MARKER}"]
+        for _, delta in emitted_deltas
+        if f"n{FIELD_MARKER}" in delta.get(AwaitState.get_full_name(), {})
+    ]
+    assert 21 in n_values
+
+
+async def test_await_from_substate_targets_sibling_state(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A handler can await a handler of another state in the same tree.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+
+    class SiblingA(State):
+        total: int = 0
+
+        @event
+        async def run(self):
+            self.total = await SiblingB.compute(5)
+
+    class SiblingB(State):
+        seen: int = 0
+
+        @event
+        def compute(self, x: int) -> int:
+            self.seen = x
+            return x + 1
+
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(SiblingA.run())[0]
+        )
+        await future
+
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    state = await root_ctx.state_manager.get_state(
+        BaseStateToken(ident=token, cls=State)
+    )
+    assert (await state.get_state(SiblingA)).total == 6
+    assert (await state.get_state(SiblingB)).seen == 5
+
+
+async def test_await_background_handler_from_locked_context_raises(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """Awaiting a background handler under the state lock is refused (it would deadlock).
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    from reflex_base.utils.exceptions import EventHandlerTypeError
+
+    class BgAwaitState(State):
+        @event(background=True)
+        async def work(self):
+            pass
+
+        @event
+        async def caller(self):
+            await BgAwaitState.work()
+
+    captured: list[Exception] = []
+    real_base_state_processor.backend_exception_handler = captured.append
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(BgAwaitState.caller())[0]
+        )
+        with pytest.raises(EventHandlerTypeError, match="yield it instead"):
+            await future
+
+
+async def test_await_from_background_enqueues_outside_and_runs_inline_inside(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A background handler awaits through the queue, or inline inside ``async with self``.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    results: list[int] = []
+
+    class BgCallerState(State):
+        counter: int = 0
+
+        @event
+        def increment(self) -> int:
+            self.counter += 1
+            return self.counter
+
+        @event(background=True)
+        async def run(self):
+            # No lock held: each await enqueues the event and waits for it.
+            results.append(await BgCallerState.increment())
+            results.append(await BgCallerState.increment())
+            async with self:
+                # Lock held: runs inline on the locked tree.
+                results.append(await BgCallerState.increment())
+                assert self.counter == 3
+
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(BgCallerState.run())[0]
+        )
+        await future.wait_all()
+
+    assert results == [1, 2, 3]
+
+
+async def test_await_without_event_context_raises():
+    """Awaiting a handler outside any EventContext is an error."""
+    from reflex_base.utils.exceptions import EventHandlerTypeError
+
+    class NoCtxState(State):
+        @event
+        def handle(self):
+            pass
+
+    with pytest.raises(EventHandlerTypeError, match="can only be awaited"):
+        await NoCtxState.handle()
+    with pytest.raises(EventHandlerTypeError, match="can only be awaited"):
+        await NoCtxState.handle
+
+
+async def test_await_frontend_only_and_upload_specs_raise(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """Frontend-only events and upload events cannot be awaited.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    from reflex_base.utils.exceptions import EventHandlerTypeError
+
+    errors: dict[str, str] = {}
+
+    class FrontendAwaitState(State):
+        @event
+        async def handle_upload(self, files: list[rx.UploadFile]):
+            pass
+
+        @event
+        async def caller(self):
+            try:
+                await rx.redirect("/")
+            except EventHandlerTypeError as ex:
+                errors["redirect"] = str(ex)
+            try:
+                await FrontendAwaitState.handle_upload(rx.upload_files(upload_id="u"))
+            except EventHandlerTypeError as ex:
+                errors["upload"] = str(ex)
+
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(FrontendAwaitState.caller())[0]
+        )
+        await future
+
+    assert "frontend-only" in errors["redirect"]
+    assert "cannot be awaited" in errors["upload"]
+
+
+async def test_await_same_spec_twice_executes_twice(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A spec describes an event, so each await runs it again.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+
+    class TwiceState(State):
+        log: list[str] = []
+
+        @event
+        def add(self, tag: str):
+            self.log = [*self.log, tag]
+
+        @event
+        async def caller(self):
+            spec = TwiceState.add("x")
+            await spec
+            await spec
+
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(TwiceState.caller())[0]
+        )
+        await future
+
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    state = await root_ctx.state_manager.get_state(
+        BaseStateToken(ident=token, cls=State)
+    )
+    assert (await state.get_state(TwiceState)).log == ["x", "x"]
+
+
+async def test_await_payload_decodes_vars_and_detaches_proxies(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """Args bound to an awaited handler arrive as plain values, detached from the state.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    received: list[Any] = []
+
+    class PayloadState(State):
+        items: list[int] = [1, 2]
+
+        @event
+        def take(self, values: list[int]) -> int:
+            received.append(values)
+            values.append(99)
+            return len(values)
+
+        @event(background=True)
+        async def run(self):
+            async with self:
+                assert await PayloadState.take(self.items) == 3
+                assert self.items == [1, 2]
+            assert await PayloadState.take(self.items) == 3
+
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(PayloadState.run())[0]
+        )
+        await future.wait_all()
+
+    assert [type(v) for v in received] == [list, list]
+    assert received == [[1, 2, 99], [1, 2, 99]]
+
+
+async def test_await_stateless_handler_runs_inline(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A stateless handler is awaited inline, with or without the lock held.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+
+    @event
+    def stateless_double(x: int) -> int:
+        return x * 2
+
+    class StatelessCallerState(State):
+        got: int = 0
+
+        @event
+        async def caller(self):
+            self.got = await stateless_double(4)
+
+        @event(background=True)
+        async def bg_caller(self):
+            value = await stateless_double(5)
+            async with self:
+                self.got = value
+
+    async with real_base_state_processor as processor:
+        await (
+            await processor.enqueue(
+                token, Event.from_event_type(StatelessCallerState.caller())[0]
+            )
+        )
+        root_ctx = real_base_state_processor._root_context
+        assert root_ctx is not None
+        state = await root_ctx.state_manager.get_state(
+            BaseStateToken(ident=token, cls=State)
+        )
+        assert (await state.get_state(StatelessCallerState)).got == 8
+        await (
+            await processor.enqueue(
+                token, Event.from_event_type(StatelessCallerState.bg_caller())[0]
+            )
+        )
+        state = await root_ctx.state_manager.get_state(
+            BaseStateToken(ident=token, cls=State)
+        )
+        assert (await state.get_state(StatelessCallerState)).got == 10
