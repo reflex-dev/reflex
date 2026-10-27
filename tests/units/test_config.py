@@ -79,7 +79,9 @@ def test_event_loop_blocking_threshold_defaults_to_development_threshold(
     assert rx.Config(**base_config_values).event_loop_blocking_threshold == 0.2
 
 
-@pytest.mark.parametrize("threshold", [0, -1, float("inf"), float("nan"), True, "1"])
+@pytest.mark.parametrize(
+    "threshold", [0, -1, float("inf"), float("nan"), True, "1", 10**1000]
+)
 def test_event_loop_blocking_threshold_must_be_positive_finite_or_none(
     base_config_values, threshold
 ):
@@ -139,6 +141,7 @@ def test_react_compiler_default(base_config_values):
         ("REFLEX_REACT_COMPILER", False),
         ("REFLEX_REACT_COMPILER", True),
         ("REFLEX_DEFAULT_COLOR_MODE", "dark"),
+        ("REFLEX_EVENT_LOOP_BLOCKING_THRESHOLD", 0.35),
     ],
 )
 def test_update_from_env(

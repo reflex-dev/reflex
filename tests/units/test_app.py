@@ -3520,6 +3520,19 @@ def test_app_state_determination():
     assert a2._state is None
 
 
+async def test_setup_event_processor_passes_blocking_threshold(
+    monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
+):
+    """Forward the app config threshold to its event processor."""
+    app = App()
+    config = rx.Config(app_name="blockingthreshold", event_loop_blocking_threshold=0.35)
+    mocker.patch("reflex.app.get_config", return_value=config)
+    monkeypatch.setenv("REFLEX_ENV_MODE", constants.Env.PROD.value)
+
+    async with app._setup_event_processor():
+        assert app.event_processor.event_loop_blocking_threshold == 0.35
+
+
 def test_raise_on_state():
     """Test that the state is set."""
     # state kwargs is deprecated, we just make sure the app is created anyway.

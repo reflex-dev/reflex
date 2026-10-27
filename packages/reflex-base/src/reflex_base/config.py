@@ -403,16 +403,20 @@ class Config(BaseConfig):
             msg = "trusted_proxy_hops must be a non-negative integer."
             raise ConfigError(msg)
 
-        if self.event_loop_blocking_threshold is not None and (
-            isinstance(self.event_loop_blocking_threshold, bool)
-            or not isinstance(self.event_loop_blocking_threshold, (int, float))
-            or not math.isfinite(self.event_loop_blocking_threshold)
-            or self.event_loop_blocking_threshold <= 0
-        ):
-            msg = (
-                "event_loop_blocking_threshold must be a positive finite number or None."
+        if self.event_loop_blocking_threshold is not None:
+            threshold = self.event_loop_blocking_threshold
+            is_number = not isinstance(threshold, bool) and isinstance(
+                threshold, (int, float)
             )
-            raise ConfigError(msg)
+            try:
+                is_finite = is_number and math.isfinite(threshold)
+            except OverflowError:
+                is_finite = False
+            if not is_finite or threshold <= 0:
+                msg = (
+                    "event_loop_blocking_threshold must be a positive finite number or None."
+                )
+                raise ConfigError(msg)
 
         # Normalize route prefixes to ensure they start with a slash.
         self._normalize_paths()

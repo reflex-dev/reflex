@@ -87,7 +87,8 @@ class EventLoopBlockingMonitor:
 
     def _run(self) -> None:
         """Poll loop responsiveness from outside the event-loop thread."""
-        interval = min(max(self.threshold / 2, 0.001), 0.1)
+        # Poll at one tenth of the threshold, between one and 10 milliseconds.
+        interval = min(max(self.threshold / 10, 0.001), 0.01)
         while not self._stop.wait(interval):
             responsive = threading.Event()
             started = time.perf_counter()
@@ -101,12 +102,12 @@ class EventLoopBlockingMonitor:
                 if self._stop.is_set():
                     return
                 duration = time.perf_counter() - started
-                if duration >= self.threshold and not reported:
+                if duration + interval >= self.threshold and not reported:
                     if handler_name := self._find_handler():
                         logger.warning(
-                            "Event handler %s blocked the event loop for at least "
-                            "%.3fs (threshold: %.3fs). Move blocking work to a "
-                            "thread pool executor or a background event.",
+                            "Event handler %s blocked the event loop "
+                            "(observed delay: %.3fs; threshold: %.3fs). Move blocking "
+                            "I/O to a thread pool or use a non-blocking async API.",
                             handler_name,
                             duration,
                             self.threshold,
