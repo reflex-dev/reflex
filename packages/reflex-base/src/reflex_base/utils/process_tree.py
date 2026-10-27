@@ -17,7 +17,7 @@ import signal
 import subprocess
 import sys
 import time
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from pathlib import Path
 
 # Linux lists every process under /proc; other POSIX systems need ps(1).
@@ -127,7 +127,7 @@ def _signal(pids: list[int], signum: int):
             os.kill(pid, signum)
 
 
-def kill_descendants(pid: int):
+def kill_descendants(pid: int, known: Iterable[int] = ()):
     """SIGKILL every descendant of a process at once, without waiting.
 
     On Windows this does nothing: there is no SIGKILL, and ``taskkill /T``
@@ -135,9 +135,12 @@ def kill_descendants(pid: int):
 
     Args:
         pid: The root process ID, which is left running.
+        known: Process IDs seen below the root earlier. They are killed too,
+            since a descendant whose parent has exited since is no longer
+            found below the root.
     """
     if sys.platform != "win32":
-        _signal(descendant_pids(pid), signal.SIGKILL)
+        _signal([*known, *descendant_pids(pid)], signal.SIGKILL)
 
 
 def _wait(process: subprocess.Popen, descendants: list[int], deadline: float):

@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import logging
 import os
+import select
 import signal
 import sys
 import time
 from collections.abc import Callable, Generator
-from contextlib import contextmanager, nullcontext
+from contextlib import contextmanager, nullcontext, suppress
 from importlib import import_module
 from importlib.util import find_spec
 from pathlib import Path
@@ -20,7 +21,11 @@ from reflex_base import constants
 from reflex_base.config import get_config, reload_config
 from reflex_base.environment import environment
 from reflex_base.utils import console, log, supervisor
-from reflex_base.utils.process_tree import kill_descendants, stop_process_tree
+from reflex_base.utils.process_tree import (
+    descendant_pids,
+    kill_descendants,
+    stop_process_tree,
+)
 
 from reflex.utils.cli_options import log_options
 
@@ -414,6 +419,20 @@ def _compile_app_worker(
 _REPEAT_IGNORE_SECONDS = 1
 
 
+def _write_stderr_now(message: bytes) -> None:
+    """Write to stderr unless that would block.
+
+    A forced exit must not wait on a pipe nobody reads. On Windows ``select``
+    takes only sockets, so the write is attempted directly there.
+
+    Args:
+        message: The bytes to write.
+    """
+    with suppress(OSError):
+        if sys.platform == "win32" or select.select([], [2], [], 0)[1]:
+            os.write(2, message)
+
+
 @contextmanager
 def _shutdown_signals() -> Generator[Callable[[], None], None, None]:
     """Turn the first SIGINT or SIGTERM into a clean unwind; force on a later one.
@@ -431,11 +450,16 @@ def _shutdown_signals() -> Generator[Callable[[], None], None, None]:
         arriving only then counts as a repeat.
     """
     stopping_at: float | None = None
+    # Everything below this process when the cleanup began. A forced exit
+    # kills these as well: a server whose wrapper exited during the cleanup
+    # is no longer found below this process.
+    tree: list[int] = []
 
     def begin_cleanup() -> None:
         nonlocal stopping_at
         if stopping_at is None:
             stopping_at = time.monotonic()
+            tree.extend(descendant_pids(os.getpid()))
 
     def stop(signum: int, frame: FrameType | None) -> None:
         if stopping_at is None:
@@ -447,8 +471,8 @@ def _shutdown_signals() -> Generator[Callable[[], None], None, None]:
             return
         # A normal exit would wait for the thread a stuck cleanup blocks, for
         # example one reading a pipe that a process outside the tree holds open.
-        os.write(2, b"Forced exit: the cleanup did not finish.\n")
-        kill_descendants(os.getpid())
+        kill_descendants(os.getpid(), tree)
+        _write_stderr_now(b"Forced exit: the cleanup did not finish.\n")
         os._exit(128 + signum)
 
     # Windows never delivers SIGTERM, but Ctrl-C arrives as SIGINT there too.

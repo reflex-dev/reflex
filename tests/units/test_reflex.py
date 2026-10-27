@@ -5,6 +5,7 @@ from __future__ import annotations
 import contextlib
 import json
 import os
+import select
 import signal
 import subprocess
 import sys
@@ -1125,22 +1126,143 @@ def test_shutdown_signals_force_exit_on_a_later_repeat(tmp_path, sig):
         time.sleep(reflex._REPEAT_IGNORE_SECONDS)
         proc.send_signal(sig)
         assert proc.wait(timeout=DEFAULT_TIMEOUT) == 128 + sig
-        deadline = time.monotonic() + DEFAULT_TIMEOUT
-        while time.monotonic() < deadline:
-            try:
-                if psutil.Process(helper).status() == psutil.STATUS_ZOMBIE:
-                    break
-            except psutil.NoSuchProcess:
-                break
-            time.sleep(0.05)
-        else:
-            pytest.fail("the forced exit left the cleanup's child running")
+        _assert_gone(helper, "the forced exit left the cleanup's child running")
     finally:
         proc.kill()
         proc.wait()
         if helper is not None:
             with contextlib.suppress(ProcessLookupError):
                 os.kill(helper, signal.SIGKILL)
+
+
+def _assert_gone(pid: int, message: str) -> None:
+    """Wait for a process to exit; an exited process nobody reaped counts.
+
+    Args:
+        pid: The process ID.
+        message: The failure message when it keeps running.
+    """
+    deadline = time.monotonic() + DEFAULT_TIMEOUT
+    while time.monotonic() < deadline:
+        try:
+            if psutil.Process(pid).status() == psutil.STATUS_ZOMBIE:
+                return
+        except psutil.NoSuchProcess:
+            return
+        time.sleep(0.05)
+    pytest.fail(message)
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="fills a pipe by whole pages")
+def test_shutdown_signals_force_exit_with_a_full_stderr(tmp_path):
+    """A stderr nobody reads cannot hold up the forced exit."""
+    script = tmp_path / "stuck.py"
+    script.write_text(_STUCK_CLEANUP_SCRIPT)
+    read_end, write_end = os.pipe()
+    proc = subprocess.Popen(
+        [sys.executable, str(script)],
+        stdout=subprocess.PIPE,
+        stderr=write_end,
+        text=True,
+    )
+    helper = None
+    try:
+        assert proc.stdout is not None
+        assert proc.stdout.readline() == "ready\n"
+        proc.send_signal(signal.SIGTERM)
+        helper = int(proc.stdout.readline())
+        # Fill the pipe; its write end stays open here, so nothing drains it.
+        while select.select([], [write_end], [], 0)[1]:
+            os.write(write_end, b"\0" * select.PIPE_BUF)
+        time.sleep(reflex._REPEAT_IGNORE_SECONDS + 0.1)
+        proc.send_signal(signal.SIGTERM)
+        assert proc.wait(timeout=DEFAULT_TIMEOUT) == 128 + signal.SIGTERM
+        _assert_gone(helper, "the forced exit left the cleanup's child running")
+    finally:
+        proc.kill()
+        proc.wait()
+        os.close(read_end)
+        os.close(write_end)
+        if helper is not None:
+            with contextlib.suppress(ProcessLookupError):
+                os.kill(helper, signal.SIGKILL)
+
+
+# A dev server that ignores SIGTERM behind a wrapper that exits on it, like a
+# package manager in front of the server.
+_SERVER_BEHIND_WRAPPER_SCRIPT = """
+import subprocess, sys, time
+
+server = subprocess.Popen(
+    [
+        sys.executable,
+        "-c",
+        "import signal, time\\n"
+        "signal.signal(signal.SIGTERM, signal.SIG_IGN)\\n"
+        "print('ready', flush=True)\\n"
+        "time.sleep(60)",
+    ],
+    stdout=subprocess.PIPE,
+    text=True,
+)
+# Only report the server once it ignores SIGTERM.
+server.stdout.readline()
+print(server.pid, flush=True)
+time.sleep(60)
+"""
+
+_ORPHANING_CLEANUP_SCRIPT = """
+import subprocess, sys, time
+
+from reflex import reflex
+from reflex_base.utils.process_tree import stop_process_tree
+
+wrapper = subprocess.Popen(
+    [sys.executable, sys.argv[1]], stdout=subprocess.PIPE, text=True
+)
+print(wrapper.stdout.readline(), end="", flush=True)
+with reflex._shutdown_signals() as begin_cleanup:
+    try:
+        print("ready", flush=True)
+        while True:
+            time.sleep(1)
+    finally:
+        begin_cleanup()
+        # The wrapper exits at once; the server holds the stop until the deadline.
+        stop_process_tree(wrapper, timeout=60)
+"""
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX signals")
+def test_shutdown_signals_force_exit_kills_an_orphaned_descendant(tmp_path):
+    """The forced exit kills a server whose wrapper exited during the cleanup."""
+    wrapper_script = tmp_path / "wrapper.py"
+    wrapper_script.write_text(_SERVER_BEHIND_WRAPPER_SCRIPT)
+    script = tmp_path / "stuck.py"
+    script.write_text(_ORPHANING_CLEANUP_SCRIPT)
+    proc = subprocess.Popen(
+        [sys.executable, str(script), str(wrapper_script)],
+        stdout=subprocess.PIPE,
+        text=True,
+    )
+    server = None
+    try:
+        assert proc.stdout is not None
+        server = int(proc.stdout.readline())
+        assert proc.stdout.readline() == "ready\n"
+        proc.send_signal(signal.SIGTERM)
+        # By now the wrapper is gone and the server is no longer found below the run.
+        time.sleep(reflex._REPEAT_IGNORE_SECONDS + 0.2)
+        assert proc.poll() is None
+        proc.send_signal(signal.SIGTERM)
+        assert proc.wait(timeout=DEFAULT_TIMEOUT) == 128 + signal.SIGTERM
+        _assert_gone(server, "the forced exit left the orphaned server running")
+    finally:
+        proc.kill()
+        proc.wait()
+        if server is not None:
+            with contextlib.suppress(ProcessLookupError):
+                os.kill(server, signal.SIGKILL)
 
 
 @pytest.mark.parametrize(
