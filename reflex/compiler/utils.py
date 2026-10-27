@@ -41,7 +41,7 @@ from reflex_components_core.el.elements.sectioning import Body
 
 from reflex.istate.delta import _resolve_delta
 from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
-from reflex.state import BaseState, cache_initial_snapshot
+from reflex.state import BaseState, _frontend_schema_entries, cache_initial_snapshot
 from reflex.utils import path_ops
 from reflex.utils.exec import is_prod_mode
 from reflex.utils.prerequisites import get_web_dir
@@ -242,17 +242,17 @@ def compile_state(state: type[BaseState]) -> dict:
     return _sorted_keys(resolved_initial_state)
 
 
-def _compile_initial_state(
-    state: type[BaseState], *, component_imports: ParsedImportDict | None = None
-) -> tuple[dict, str]:
+def _serialize_initial_state(
+    initial_state: dict, *, component_imports: ParsedImportDict | None = None
+) -> str:
     """Serialize initial state while discovering its dynamic component imports.
 
     Args:
-        state: The app state class.
+        initial_state: The compiled initial-state mapping.
         component_imports: Optional accumulator for frontend package installation.
 
     Returns:
-        The initial state dictionary and its serialized JSON.
+        The serialized initial-state JSON.
     """
 
     def serialize_initial_value(value: Any) -> Any:
@@ -272,9 +272,24 @@ def _compile_initial_state(
                     component_imports.setdefault(library, []).extend(fields)
         return serializers.serialize(value)
 
+    return format.json_dumps(initial_state, default=serialize_initial_value)
+
+
+def _compile_initial_state(
+    state: type[BaseState], *, component_imports: ParsedImportDict | None = None
+) -> tuple[dict, str]:
+    """Compile and serialize initial state while discovering component imports.
+
+    Args:
+        state: The app state class.
+        component_imports: Optional accumulator for frontend package installation.
+
+    Returns:
+        The initial state dictionary and its serialized JSON.
+    """
     initial_state = compile_state(state)
-    return initial_state, format.json_dumps(
-        initial_state, default=serialize_initial_value
+    return initial_state, _serialize_initial_state(
+        initial_state, component_imports=component_imports
     )
 
 
@@ -399,6 +414,28 @@ def compile_client_storage(
         constants.LOCAL_STORAGE: local_storage,
         constants.SESSION_STORAGE: session_storage,
     }
+
+
+ContextsSnapshot = tuple[
+    dict[str, Any], dict[str, dict[str, Any]], dict[str, list[Any]]
+]
+
+
+def compile_contexts_snapshot(state: type[BaseState]) -> ContextsSnapshot:
+    """Compile the state-tree inputs of the contexts file.
+
+    Args:
+        state: The app state.
+
+    Returns:
+        The initial state, the client storage, and the frontend schema entries,
+        each keyed by state full name.
+    """
+    return (
+        compile_state(state),
+        compile_client_storage(state),
+        _frontend_schema_entries(state, RegistrationContext.get()),
+    )
 
 
 def _apply_component_style_for_compile(component: Component) -> Component:
@@ -984,6 +1021,18 @@ def get_memo_components_dir() -> str:
     return str(get_web_dir() / constants.Dirs.COMPONENTS_PATH)
 
 
+def get_memo_component_path(name: str) -> str:
+    """Get the on-disk path of an un-mirrored per-memo module.
+
+    Args:
+        name: The memo's export name.
+
+    Returns:
+        The absolute path of the memo's ``.jsx`` file.
+    """
+    return str(Path(get_memo_components_dir()) / f"{name}{constants.Ext.JSX}")
+
+
 def get_memo_module_path(segments: tuple[str, ...]) -> str:
     """Get the on-disk path for a memo module mirrored from a Python module.
 
@@ -1027,10 +1076,12 @@ def add_meta(
         children.append(Description.create(content=description))
     children.append(Image.create(content=image))
 
-    page.children.extend(children)
-    page.children.extend(meta_tags)
-
-    return page
+    # Page roots may be shared by the construction cache; copy before appending
+    # metadata so repeated reuse does not accumulate duplicate tags.
+    new_page = copy.copy(page)
+    new_page.children = [*page.children, *children, *meta_tags]
+    new_page._clear_compile_caches()
+    return new_page
 
 
 def resolve_path_of_web_dir(path: str | Path) -> Path:
@@ -1100,30 +1151,29 @@ def _write_memo_manifest(web_dir: Path, relative_paths: set[str]) -> None:
         raise
 
 
-def prune_stale_memo_files(emitted_paths: Iterable[str | Path]) -> None:
-    """Delete memo files written previously that this compile no longer emits.
-
-    Only paths that appear in the previous manifest are considered for
-    deletion — never a fresh filesystem walk — so files this code did not
-    emit are never touched. Empty parent directories created by mirrored
-    output are removed up to (but not including) the ``.web`` root.
+def _memo_relative_paths(web_dir: Path, paths: Iterable[str | Path]) -> set[str]:
+    """Express memo file paths as the memo manifest records them.
 
     Args:
-        emitted_paths: Paths the current compile produced for the memo
-            pipeline, as built by joining :func:`get_web_dir` (so they share
-            its prefix — relative by default, absolute when overridden).
+        web_dir: The project's ``.web`` directory.
+        paths: Memo file paths, as built by joining :func:`get_web_dir` (so
+            they share its prefix — relative by default, absolute when
+            overridden).
+
+    Returns:
+        The paths relative to ``web_dir``, with forward slashes.
     """
-    web_dir = get_web_dir()
+    return {str(Path(path).relative_to(web_dir)).replace(os.sep, "/") for path in paths}
 
-    # Emitted paths are built by joining ``web_dir`` (see Args), so each is
-    # always under it — no need to guard ``relative_to``.
-    emitted_relative = {
-        str(Path(path).relative_to(web_dir)).replace(os.sep, "/")
-        for path in emitted_paths
-    }
 
-    previous = _read_memo_manifest(web_dir)
-    for relative in previous - emitted_relative:
+def _delete_memo_files(web_dir: Path, relative_paths: Iterable[str]) -> None:
+    """Delete memo files, and the empty mirrored directories they leave.
+
+    Args:
+        web_dir: The project's ``.web`` directory.
+        relative_paths: The files to delete, relative to ``web_dir``.
+    """
+    for relative in relative_paths:
         target = web_dir / relative
         if target.is_file():
             target.unlink()
@@ -1135,8 +1185,48 @@ def prune_stale_memo_files(emitted_paths: Iterable[str | Path]) -> None:
                     break
                 parent = parent.parent
 
+
+def prune_stale_memo_files(emitted_paths: Iterable[str | Path]) -> None:
+    """Delete memo files written previously that this compile no longer emits.
+
+    Only paths that appear in the previous manifest are considered for
+    deletion — never a fresh filesystem walk — so files this code did not
+    emit are never touched. Empty parent directories created by mirrored
+    output are removed up to (but not including) the ``.web`` root.
+
+    Args:
+        emitted_paths: Paths the current compile produced for the memo
+            pipeline (see :func:`_memo_relative_paths`).
+    """
+    web_dir = get_web_dir()
+    emitted_relative = _memo_relative_paths(web_dir, emitted_paths)
+    previous = _read_memo_manifest(web_dir)
+    _delete_memo_files(web_dir, previous - emitted_relative)
     if emitted_relative != previous:
         _write_memo_manifest(web_dir, emitted_relative)
+
+
+def reconcile_memo_manifest(
+    emitted_paths: Iterable[str | Path], dropped_paths: Iterable[str | Path]
+) -> None:
+    """Record the memo files an incremental compile wrote and dropped.
+
+    The files the compile did not touch stay recorded, so a later full
+    compile still prunes them when it stops emitting them. Only files the
+    previous manifest recorded are deleted.
+
+    Args:
+        emitted_paths: The memo files this compile wrote.
+        dropped_paths: The memo files no longer used by any page.
+    """
+    web_dir = get_web_dir()
+    emitted_relative = _memo_relative_paths(web_dir, emitted_paths)
+    dropped_relative = _memo_relative_paths(web_dir, dropped_paths) - emitted_relative
+    previous = _read_memo_manifest(web_dir)
+    _delete_memo_files(web_dir, dropped_relative & previous)
+    current = (previous | emitted_relative) - dropped_relative
+    if current != previous:
+        _write_memo_manifest(web_dir, current)
 
 
 def empty_dir(path: str | Path, keep_files: list[str] | None = None):

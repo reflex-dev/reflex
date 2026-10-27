@@ -1,0 +1,1606 @@
+"""Tests for the warm fork-per-compile dev compile daemon."""
+
+import contextlib
+import errno
+import os
+import sys
+from pathlib import Path
+from typing import Any
+from unittest.mock import Mock
+
+import pytest
+
+import reflex as rx
+from reflex.compiler import disk_cache
+from reflex.testing import AppHarness
+from reflex.utils import compile_daemon
+
+
+class _SurvivingModuleState(rx.State):
+    """Module-level state, like one from a non-purged installed package."""
+
+    b: int = 0
+
+
+@pytest.fixture(autouse=True)
+def _isolated_daemon_process_state(tmp_path_factory, monkeypatch):
+    """Keep the daemon's lock files and bytecode cache out of the user's dirs.
+
+    Args:
+        tmp_path_factory: The pytest temporary path factory.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    monkeypatch.setenv("REFLEX_DIR", str(tmp_path_factory.mktemp("reflex-data")))
+    monkeypatch.setattr(sys, "pycache_prefix", sys.pycache_prefix)
+
+
+def test_can_fork_rejects_remaining_native_threads(monkeypatch):
+    """Native threads must force the subprocess fallback after the grace period."""
+    monkeypatch.setattr(compile_daemon, "_quiesce_parent", lambda: None)
+    monkeypatch.setattr(compile_daemon.threading, "active_count", lambda: 1)
+    monkeypatch.setattr(compile_daemon, "_os_thread_count", lambda: 8)
+    ticks = iter([0.0, 1.0])
+    monkeypatch.setattr(compile_daemon.time, "monotonic", lambda: next(ticks))
+    assert not compile_daemon._can_fork()
+
+
+def test_missed_changes_includes_new_sources_and_assets(tmp_path):
+    """Catch sources and assets created while the OS watcher is stopped."""
+    state = compile_daemon._WatchState(roots=[tmp_path], root=tmp_path)
+    before = compile_daemon._dependency_snapshot(state)
+    source = tmp_path / "new_page.py"
+    source.write_text("VALUE = 1\n")
+    assets = tmp_path / "assets"
+    assets.mkdir()
+    asset = assets / "image.txt"
+    asset.write_text("new asset")
+    after = compile_daemon._dependency_snapshot(state)
+    assert {source, asset} <= compile_daemon._missed_changes(before, after)
+
+
+def test_next_changes_catches_edit_before_watcher_starts(tmp_path, monkeypatch):
+    """Reconcile the previous snapshot after the watcher has subscribed."""
+    import watchfiles
+
+    state = compile_daemon._WatchState(roots=[tmp_path], root=tmp_path)
+    state.checkpoint = compile_daemon._dependency_snapshot(state)
+    source = tmp_path / "new_page.py"
+    source.write_text("VALUE = 1\n")
+
+    def watch(*args, **kwargs):
+        """Simulate a watcher timeout with no event for the earlier edit.
+
+        Yields:
+            An empty event batch.
+        """
+        yield set()
+
+    monkeypatch.setattr(watchfiles, "watch", watch)
+    assert compile_daemon._next_changes(state, lambda: True) == {source}
+
+
+def test_iter_source_files_picks_content_skips_build_dirs(tmp_path):
+    (tmp_path / "page.py").write_text("x = 1\n")
+    (tmp_path / "doc.md").write_text("# doc\n")
+    (tmp_path / "guide.mdx").write_text("mdx\n")
+    (tmp_path / "data.txt").write_text("ignored\n")  # not a watched suffix
+    web = tmp_path / ".web"
+    web.mkdir()
+    (web / "build.js").write_text("// artifact\n")
+    pycache = tmp_path / "__pycache__"
+    pycache.mkdir()
+    (pycache / "stale.py").write_text("# compiled\n")
+
+    found = {p.name for p in compile_daemon._iter_source_files(tmp_path)}
+    assert found == {"page.py", "doc.md", "guide.mdx"}
+
+
+def test_under_roots_matches_only_real_ancestors(tmp_path):
+    root = tmp_path / "app"
+    roots = [root]
+    assert compile_daemon._under_roots(root, roots)
+    assert compile_daemon._under_roots(root / "pages" / "index.py", roots)
+    # A sibling sharing the root's string prefix is NOT under it.
+    assert not compile_daemon._under_roots(tmp_path / "app_extra" / "m.py", roots)
+    assert not compile_daemon._under_roots(tmp_path / "other.py", roots)
+    # The root's own parent is not under it either.
+    assert not compile_daemon._under_roots(tmp_path, roots)
+
+
+def test_external_dependency_files_includes_sibling_markdown(tmp_path, monkeypatch):
+    """A page's markdown read from a sibling dir (outside the app root) is watched.
+
+    This is the regression for markdown edits never triggering a reload: such
+    files live outside ``get_reload_paths`` and are only known via the compile
+    manifest's per-page dependency sets.
+    """
+    app_root = tmp_path / "app"
+    app_root.mkdir()
+    own_module = app_root / "page.py"
+    own_module.write_text("x = 1\n")
+    sibling_md = tmp_path / "docs" / "guide.md"
+    sibling_md.parent.mkdir()
+    sibling_md.write_text("# guide\n")
+
+    manifest = {
+        "pages": {
+            "/g": {
+                "deps": [
+                    str(own_module),  # under the app root -> not external
+                    str(sibling_md),  # sibling dir -> must be watched
+                ]
+            }
+        }
+    }
+    monkeypatch.setattr(disk_cache, "load_manifest", lambda: manifest)
+
+    external = compile_daemon._external_dependency_files([app_root.resolve()])
+    assert sibling_md.resolve() in external
+    assert own_module.resolve() not in external
+
+
+def test_external_dependency_files_empty_without_manifest(tmp_path, monkeypatch):
+    monkeypatch.setattr(disk_cache, "load_manifest", lambda: None)
+    assert compile_daemon._external_dependency_files([tmp_path]) == set()
+
+
+def test_snapshot_detects_external_markdown_change(tmp_path, monkeypatch):
+    """The watch snapshot includes sibling markdown and reflects its mtime change."""
+    app_root = tmp_path / "app"
+    app_root.mkdir()
+    (app_root / "page.py").write_text("x = 1\n")
+    sibling_md = tmp_path / "docs" / "guide.md"
+    sibling_md.parent.mkdir()
+    sibling_md.write_text("# v1\n")
+    monkeypatch.setattr(
+        disk_cache,
+        "load_manifest",
+        lambda: {"pages": {"/g": {"deps": [str(sibling_md)]}}},
+    )
+
+    roots = [app_root.resolve()]
+    state = compile_daemon._WatchState.build(roots, tmp_path.resolve())
+    snap1 = compile_daemon._snapshot(state.watch_paths())
+    assert sibling_md.resolve() in snap1
+    assert (app_root / "page.py").resolve() in snap1
+    # The OS watcher is pointed at the sibling directory too.
+    assert sibling_md.resolve().parent in state.targets()
+
+    # Force a distinct mtime (deterministic, independent of fs mtime resolution).
+    bumped = snap1[sibling_md.resolve()] + 1_000_000_000
+    os.utime(sibling_md, ns=(bumped, bumped))
+    snap2 = compile_daemon._snapshot(state.watch_paths())
+    assert snap2[sibling_md.resolve()] != snap1[sibling_md.resolve()]
+
+
+def test_watch_state_accepts_only_compile_inputs(tmp_path, monkeypatch):
+    """Recorded data deps of any suffix count; build output never does."""
+    app_root = tmp_path / "app"
+    app_root.mkdir()
+    data = app_root / "table.json"
+    data.write_text("{}")
+    monkeypatch.setattr(
+        disk_cache, "load_manifest", lambda: {"pages": {"/t": {"deps": [str(data)]}}}
+    )
+    (tmp_path / "assets").mkdir()
+    state = compile_daemon._WatchState.build([app_root.resolve()], tmp_path.resolve())
+
+    assert state.accepts(app_root / "page.py")
+    assert state.accepts(app_root / "guide.md")
+    assert state.accepts(data)  # not a watched suffix, but a recorded dependency
+    assert state.accepts(tmp_path / "assets" / "logo.svg")
+    assert not state.accepts(app_root / "other.json")  # unrecorded data file
+    assert not state.accepts(tmp_path / ".web" / "app" / "routes" / "x.jsx")
+    assert not state.accepts(tmp_path / "elsewhere" / "page.py")  # outside roots
+
+
+def test_iter_changes_reports_an_edit(tmp_path):
+    """The OS watcher reports an edited source file (no polling involved)."""
+    import threading
+    import time
+
+    pytest.importorskip("watchfiles")
+    app_root = tmp_path / "app"
+    app_root.mkdir()
+    page = app_root / "page.py"
+    page.write_text("x = 1\n")
+    state = compile_daemon._WatchState([app_root.resolve()], tmp_path.resolve())
+    got: list[set] = []
+
+    def run() -> None:
+        changed = compile_daemon._next_changes(state, lambda: not got)
+        if changed:
+            got.append(changed)
+
+    thread = threading.Thread(target=run, daemon=True)
+    thread.start()
+    deadline = time.monotonic() + 10
+    while not got and time.monotonic() < deadline:
+        page.write_text(f"x = {time.monotonic()}\n")
+        time.sleep(0.2)
+    thread.join(5)
+    assert got
+    assert page.resolve() in {p.resolve() for p in got[0]}
+    # The native watcher thread is gone, so the daemon may fork again.
+    assert not any("watchfiles" in t.name.lower() for t in threading.enumerate())
+
+
+def test_missed_changes_catches_edits_during_compile(tmp_path):
+    a, b = tmp_path / "a.py", tmp_path / "b.py"
+    a.write_text("1")
+    b.write_text("1")
+    state = compile_daemon._WatchState([tmp_path], tmp_path, known={a, b})
+    before = compile_daemon._dependency_snapshot(state)
+    bumped = before[b] + 1_000_000_000
+    os.utime(b, ns=(bumped, bumped))
+    c = tmp_path / "c.py"
+    c.write_text("1")
+    state.known.add(c)
+    after = compile_daemon._dependency_snapshot(state)
+    assert compile_daemon._missed_changes(before, after) == {b, c}
+    assert compile_daemon._missed_changes(after, after) == set()
+
+
+def test_wait_for_compile_respects_lock(tmp_path, monkeypatch):
+    import time
+
+    from reflex.utils import path_ops
+
+    monkeypatch.setattr("reflex.utils.prerequisites.get_backend_dir", lambda: tmp_path)
+    monkeypatch.setattr(compile_daemon, "daemon_active", lambda: True)
+    # No compile in progress -> returns at once.
+    start = time.monotonic()
+    compile_daemon.wait_for_compile(timeout=1)
+    assert time.monotonic() - start < 0.2
+    # A compile in progress -> waits until it finishes (or the timeout).
+    with compile_daemon._compile_lock(tmp_path):
+        start = time.monotonic()
+        compile_daemon.wait_for_compile(timeout=0.3)
+        assert time.monotonic() - start >= 0.3
+    # A lock file nobody holds (a compile killed mid-way) is not waited on,
+    # even when it holds the pid of a live process.
+    lock = compile_daemon._lock_path()
+    lock.parent.mkdir(parents=True, exist_ok=True)
+    lock.write_text(str(os.getpid()))
+    assert not path_ops.is_locked(lock)
+    start = time.monotonic()
+    compile_daemon.wait_for_compile(timeout=5)
+    assert time.monotonic() - start < 0.5
+    # A daemon that exits mid-wait releases the worker.
+    monkeypatch.setattr(compile_daemon, "daemon_active", lambda: False)
+    with compile_daemon._compile_lock(tmp_path):
+        start = time.monotonic()
+        compile_daemon.wait_for_compile(timeout=5)
+        assert time.monotonic() - start < 0.5
+
+
+@pytest.mark.parametrize("blocked_attempts", [1, 2])
+def test_record_built_inputs_retries_windows_readers(
+    tmp_path, monkeypatch, blocked_attempts
+):
+    """Publish the new record after Windows readers release the old record."""
+    monkeypatch.setattr("reflex.utils.prerequisites.get_backend_dir", lambda: tmp_path)
+    monkeypatch.setattr(compile_daemon.constants, "IS_WINDOWS", True)
+    page = tmp_path / "page.py"
+    page.write_text("v1")
+    built = compile_daemon._snapshot({page})
+    compile_daemon._record_built_inputs(built)
+    record = compile_daemon._built_inputs_path()
+    previous_record = record.read_text()
+    mtime = built[page] + 1_000_000_000
+    os.utime(page, ns=(mtime, mtime))
+    replace = Path.replace
+    attempts = 0
+
+    def replace_after_reader_closes(source, target):
+        """Keep the previous record intact while a reader blocks replacement.
+
+        Args:
+            source: Temporary record to publish.
+            target: Destination record.
+
+        Returns:
+            The destination after the reader releases it.
+
+        Raises:
+            PermissionError: While the reader still holds the destination open.
+        """
+        nonlocal attempts
+        attempts += 1
+        assert record.read_text() == previous_record
+        assert not compile_daemon._built_inputs_current()
+        if attempts <= blocked_attempts:
+            raise PermissionError(errno.EACCES, "Reader still has the record open")
+        return replace(source, target)
+
+    monkeypatch.setattr(Path, "replace", replace_after_reader_closes)
+    sleep = Mock()
+    monkeypatch.setattr(compile_daemon.time, "sleep", sleep)
+    compile_daemon._record_built_inputs(compile_daemon._snapshot({page}))
+    assert compile_daemon._built_inputs_current()
+    assert sleep.call_count == blocked_attempts
+    assert not list(tmp_path.glob("*.tmp"))
+
+
+@pytest.mark.parametrize(
+    ("is_windows", "error", "attempts"),
+    [
+        (True, PermissionError(errno.EACCES, "Access denied"), 3),
+        (False, PermissionError(errno.EACCES, "Access denied"), 1),
+        (True, OSError(errno.ENOSPC, "No space left"), 1),
+    ],
+)
+def test_record_built_inputs_propagates_errors(
+    tmp_path, monkeypatch, is_windows, error, attempts
+):
+    """Bound retries, retain the old record, and remove a failed temporary write."""
+    monkeypatch.setattr("reflex.utils.prerequisites.get_backend_dir", lambda: tmp_path)
+    monkeypatch.setattr(compile_daemon.constants, "IS_WINDOWS", is_windows)
+    compile_daemon._record_built_inputs({})
+    record = compile_daemon._built_inputs_path()
+    previous_record = record.read_text()
+    replace = Mock(side_effect=error)
+    monkeypatch.setattr(Path, "replace", replace)
+    sleep = Mock()
+    monkeypatch.setattr(compile_daemon.time, "sleep", sleep)
+    with pytest.raises(type(error)) as raised:
+        compile_daemon._record_built_inputs({tmp_path / "page.py": 1})
+    assert raised.value is error
+    assert replace.call_count == attempts
+    assert sleep.call_count == attempts - 1
+    assert record.read_text() == previous_record
+    assert not list(tmp_path.glob("*.tmp"))
+
+
+def test_wait_for_compile_waits_for_unbuilt_edits(tmp_path, monkeypatch):
+    """Without a lock, a worker still waits while a built input has changed.
+
+    The daemon takes its lock only once its watcher reports the edit, so a
+    worker that restarts first would read the previous stateful-pages marker.
+    """
+    import threading
+    import time
+
+    monkeypatch.setattr("reflex.utils.prerequisites.get_backend_dir", lambda: tmp_path)
+    monkeypatch.setattr(compile_daemon, "daemon_active", lambda: True)
+    page = tmp_path / "page.py"
+    page.write_text("v1")
+    built = compile_daemon._snapshot({page})
+    compile_daemon._record_built_inputs(built)
+    start = time.monotonic()
+    compile_daemon.wait_for_compile(timeout=1)
+    assert time.monotonic() - start < 0.2
+    mtime = built[page] + 1_000_000_000
+    os.utime(page, ns=(mtime, mtime))
+    start = time.monotonic()
+    compile_daemon.wait_for_compile(timeout=0.3)
+    assert time.monotonic() - start >= 0.3
+    # The daemon builds the edit: the worker proceeds.
+    timer = threading.Timer(
+        0.1, compile_daemon._record_built_inputs, [compile_daemon._snapshot({page})]
+    )
+    timer.start()
+    start = time.monotonic()
+    try:
+        compile_daemon.wait_for_compile(timeout=5)
+        assert time.monotonic() - start < 1
+        assert compile_daemon._built_inputs_current()
+    finally:
+        timer.join()
+
+
+def test_first_party_module_names_caches_file_classification(tmp_path, monkeypatch):
+    """Module files are classified once; a repeat pass resolves no paths."""
+    import sys
+    import types
+
+    mod = types.ModuleType("fp_cached_mod")
+    mod.__file__ = str(tmp_path / "pkg" / "cached_mod.py")
+    monkeypatch.setitem(sys.modules, "fp_cached_mod", mod)
+    roots = [tmp_path.resolve()]
+    assert "fp_cached_mod" in compile_daemon._first_party_module_names(roots)
+    assert compile_daemon._first_party_file_cache[mod.__file__] is True
+
+    calls = 0
+    original = Path.resolve
+
+    def counting_resolve(self, *args, **kwargs):
+        nonlocal calls
+        calls += 1
+        return original(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "resolve", counting_resolve)
+    assert "fp_cached_mod" in compile_daemon._first_party_module_names(roots)
+    assert calls == 0
+
+
+def test_first_party_module_names_includes_namespace_packages(tmp_path, monkeypatch):
+    """Namespace packages (no ``__file__``) are captured for purge by name.
+
+    Regression: a namespace package left in ``sys.modules`` after its regular
+    siblings were purged broke re-import with a ``KeyError`` on the parent path.
+    They are now identified by sharing a first-party top-level name (derived from
+    a regular sibling's ``__file__``), never by their lazy ``__path__``.
+    """
+    import importlib
+    import sys
+
+    nspkg = tmp_path / "ns_under_test"
+    nspkg.mkdir()  # no __init__.py -> namespace package
+    (nspkg / "leaf.py").write_text("Y = 1\n")  # regular submodule with __file__
+    monkeypatch.syspath_prepend(str(tmp_path))
+    try:
+        pkg = importlib.import_module("ns_under_test")
+        importlib.import_module("ns_under_test.leaf")
+        assert getattr(pkg, "__file__", None) is None  # confirm it's a namespace pkg
+
+        names = compile_daemon._first_party_module_names([tmp_path.resolve()])
+        assert "ns_under_test" in names  # namespace pkg captured by name
+        assert "ns_under_test.leaf" in names  # regular module captured via __file__
+    finally:
+        sys.modules.pop("ns_under_test", None)
+        sys.modules.pop("ns_under_test.leaf", None)
+
+
+def test_reset_model_metadata_skips_unloaded_model_layers(monkeypatch):
+    """A child of an app that never loaded the model layer does not import it.
+
+    Importing it only to clear its registries cost every hot reload ~0.3 s.
+    """
+    for name in ("sqlmodel", "reflex.model"):
+        monkeypatch.delitem(sys.modules, name, raising=False)
+    compile_daemon._reset_model_metadata()
+    assert "sqlmodel" not in sys.modules
+    assert "reflex.model" not in sys.modules
+
+
+@pytest.mark.skipif(not hasattr(os, "fork"), reason="requires os.fork (POSIX)")
+def test_reset_model_metadata_allows_table_redefinition():
+    """After reset, an ``rx.Model`` table can be redefined without conflict.
+
+    Regression: the forked child inherits the warm, populated SQLAlchemy
+    ``MetaData``; re-evaluating a page that defines a model raised
+    ``Table '...' is already defined``. Run in a fork so clearing the global
+    metadata can't affect the test process.
+    """
+    # ``rx.Model(table=True)`` needs the SQLModel stack; the db-less unit-test
+    # job uninstalls it, so skip there rather than fail on the first definition.
+    pytest.importorskip("sqlmodel")
+
+    read_fd, write_fd = os.pipe()
+    pid = os.fork()
+    if pid == 0:  # child
+        os.close(read_fd)
+        result = b"E"
+        try:
+            import warnings
+
+            warnings.simplefilter("ignore")
+            import reflex as rx
+
+            def _define():
+                class DaemonResetUser(rx.Model, table=True):
+                    name: str
+
+            _define()
+            compile_daemon._reset_model_metadata()
+            _define()  # must NOT raise "Table 'daemonresetuser' is already defined"
+            result = b"1"
+        except Exception:
+            import traceback
+
+            traceback.print_exc()
+        finally:
+            os.write(write_fd, result)
+            os.close(write_fd)
+            os._exit(0)
+
+    os.close(write_fd)
+    out = os.read(read_fd, 1)
+    os.close(read_fd)
+    os.waitpid(pid, 0)
+    assert out == b"1"
+
+
+@pytest.mark.skipif(not hasattr(os, "fork"), reason="requires os.fork (POSIX)")
+def test_reset_first_party_keeps_surviving_module_states(tmp_path):
+    """States from modules that survive the purge stay registered.
+
+    A class body in a non-purged module (framework internals, installed or
+    workspace packages like reflex_site_shared) never re-executes in the child,
+    so dropping its registration loses the state from the app's state tree —
+    and from the compiled contexts file — breaking the frontend's dispatch map.
+    Purged-module states and runtime-created ``reflex.istate.dynamic`` states
+    must still be dropped (they re-register on re-import/re-evaluation), and
+    the dynamic module's attributes must be reset so re-created local states
+    get their deterministic fresh-process names, matching the cold backend.
+    """
+    mod_file = tmp_path / "purged_state_mod.py"
+    mod_file.write_text(
+        "import reflex as rx\n\nclass PurgedState(rx.State):\n    a: int = 0\n"
+    )
+
+    read_fd, write_fd = os.pipe()
+    pid = os.fork()
+    if pid == 0:  # child
+        os.close(read_fd)
+        result = b"E"
+        try:
+            import importlib.util
+            import sys
+
+            import reflex.istate.dynamic as istate_dynamic
+            from reflex.state import State, all_base_state_classes
+
+            spec = importlib.util.spec_from_file_location("purged_state_mod", mod_file)
+            assert spec is not None
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)  # type: ignore[union-attr]
+            sys.modules["purged_state_mod"] = module
+
+            def _local_state() -> type[rx.State]:
+                class LocalState(rx.State):
+                    c: int = 0
+
+                return LocalState
+
+            local_cls = _local_state()
+            assert local_cls.__module__ == istate_dynamic.__name__
+            local_name = local_cls.__name__
+
+            from reflex_base.vars.base import (
+                get_unique_variable_name,
+                reset_unique_variable_names,
+            )
+
+            get_unique_variable_name()  # the parent drew names
+            compile_daemon._reset_first_party([tmp_path.resolve()])
+
+            substate_names = {c.__name__ for c in State.get_substates()}
+            surviving_kept = (
+                "_SurvivingModuleState" in substate_names
+                and _SurvivingModuleState.get_full_name() in all_base_state_classes
+            )
+            purged_dropped = (
+                "purged_state_mod" not in sys.modules
+                and "PurgedState" not in substate_names
+            )
+            dynamic_dropped = local_name not in substate_names and not [
+                n for n in vars(istate_dynamic) if not n.startswith("__")
+            ]
+            # A re-created local state gets its original (fresh-process) name,
+            # not a collision-suffixed drift.
+            redefined_deterministic = _local_state().__name__ == local_name
+            # Re-imported modules draw the names a cold process draws.
+            child_names = [get_unique_variable_name() for _ in range(3)]
+            reset_unique_variable_names()
+            cold_names = [get_unique_variable_name() for _ in range(3)]
+            names_reset = child_names == cold_names
+
+            result = (
+                b"1"
+                if (
+                    surviving_kept
+                    and purged_dropped
+                    and dynamic_dropped
+                    and redefined_deterministic
+                    and names_reset
+                )
+                else b"0"
+            )
+        except Exception:
+            import traceback
+
+            traceback.print_exc()
+        finally:
+            os.write(write_fd, result)
+            os.close(write_fd)
+            os._exit(0)
+
+    os.close(write_fd)
+    out = os.read(read_fd, 1)
+    os.close(read_fd)
+    os.waitpid(pid, 0)
+    assert out == b"1"
+
+
+@pytest.mark.skipif(not hasattr(os, "fork"), reason="requires os.fork (POSIX)")
+def test_reset_first_party_keeps_dynamic_states_surviving_modules_created(tmp_path):
+    """A dynamic state a surviving module created at import stays registered.
+
+    An installed library's local state or ``ComponentState.create()`` runs
+    once, at import; purged modules re-import, surviving ones do not, so
+    dropping it would lose it from the state tree for good. A state a page
+    defined (per the manifest) is dropped: the page re-evaluates.
+    """
+    read_fd, write_fd = os.pipe()
+    pid = os.fork()
+    if pid == 0:  # child
+        os.close(read_fd)
+        result = b"E"
+        try:
+            import reflex.istate.dynamic as istate_dynamic
+            from reflex.state import State
+
+            def _import_time_state() -> type[rx.State]:
+                class LibraryState(rx.State):
+                    c: int = 0
+
+                return LibraryState
+
+            def _page_state() -> type[rx.State]:
+                class PageLocalState(rx.State):
+                    d: int = 0
+
+                return PageLocalState
+
+            library_cls = _import_time_state()
+            page_cls = _page_state()
+            manifest = {
+                "pages": {
+                    "/p": {"state_slice": {"schema": {page_cls.get_full_name(): []}}}
+                }
+            }
+            disk_cache.load_manifest = lambda: manifest
+
+            compile_daemon._reset_first_party([tmp_path.resolve()])
+
+            names = {c.__name__ for c in State.get_substates()}
+            kept = library_cls.__name__ in names and hasattr(
+                istate_dynamic, library_cls.__name__
+            )
+            dropped = page_cls.__name__ not in names and not hasattr(
+                istate_dynamic, page_cls.__name__
+            )
+            # The page's local state re-registers under its original name.
+            redefined = _page_state().__name__ == page_cls.__name__
+            result = b"1" if (kept and dropped and redefined) else b"0"
+        except Exception:
+            import traceback
+
+            traceback.print_exc()
+        finally:
+            os.write(write_fd, result)
+            os.close(write_fd)
+            os._exit(0)
+
+    os.close(write_fd)
+    out = os.read(read_fd, 1)
+    os.close(read_fd)
+    os.waitpid(pid, 0)
+    assert out == b"1"
+
+
+@pytest.mark.skipif(not hasattr(os, "fork"), reason="requires os.fork (POSIX)")
+def test_reset_first_party_drops_memos_of_purged_modules(tmp_path):
+    """A purged module's memos leave the registry; the module re-registers them.
+
+    Otherwise a renamed memo collides with the parent's registration of its
+    old name on every re-import, and a deleted memo keeps being emitted.
+    Memos of surviving modules stay.
+    """
+    mod_file = tmp_path / "purged_memo_mod.py"
+    mod_file.write_text(
+        "import reflex as rx\n\n@rx.memo\ndef my_card() -> rx.Component:\n"
+        "    return rx.text('card')\n"
+    )
+
+    read_fd, write_fd = os.pipe()
+    pid = os.fork()
+    if pid == 0:  # child
+        os.close(read_fd)
+        result = b"E"
+        try:
+            import importlib.util
+            import sys
+
+            from reflex_base.components.memo import MEMOS
+
+            def load(source: str) -> None:
+                mod_file.write_text(source)
+                spec = importlib.util.spec_from_file_location(
+                    "purged_memo_mod", mod_file
+                )
+                assert spec is not None
+                module = importlib.util.module_from_spec(spec)
+                sys.modules["purged_memo_mod"] = module
+                spec.loader.exec_module(module)  # type: ignore[union-attr]
+
+            load(mod_file.read_text())
+            surviving = {key for key in MEMOS if key[1] != "purged_memo_mod"}
+            assert ("MyCard", "purged_memo_mod") in MEMOS
+
+            compile_daemon._reset_first_party([tmp_path.resolve()])
+            dropped = ("MyCard", "purged_memo_mod") not in MEMOS
+            kept = surviving <= set(MEMOS)
+            # The renamed memo re-registers under its export name without a
+            # collision with the parent's registration.
+            load(mod_file.read_text().replace("def my_card", "def _my_card"))
+            renamed = ("MyCard", "purged_memo_mod") in MEMOS
+            result = b"1" if (dropped and kept and renamed) else b"0"
+        except Exception:
+            import traceback
+
+            traceback.print_exc()
+        finally:
+            os.write(write_fd, result)
+            os.close(write_fd)
+            os._exit(0)
+
+    os.close(write_fd)
+    out = os.read(read_fd, 1)
+    os.close(read_fd)
+    os.waitpid(pid, 0)
+    assert out == b"1"
+
+
+@pytest.mark.skipif(not hasattr(os, "fork"), reason="requires os.fork (POSIX)")
+def test_reset_first_party_purges_modules_and_registries(tmp_path):
+    """``_reset_first_party`` purges first-party modules and clears registries.
+
+    Runs in a forked child so the registry reset cannot affect the test process.
+    """
+    mod_file = tmp_path / "fp_module.py"
+    mod_file.write_text("VALUE = 1\n")
+
+    read_fd, write_fd = os.pipe()
+    pid = os.fork()
+    if pid == 0:  # child
+        os.close(read_fd)
+        result = b"E"
+        try:
+            import importlib.util
+            import sys
+
+            spec = importlib.util.spec_from_file_location(
+                "fp_module_under_test", mod_file
+            )
+            assert spec is not None
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)  # type: ignore[union-attr]
+            sys.modules["fp_module_under_test"] = module
+
+            from reflex_base.registry import RegistrationContext
+
+            from reflex.state import all_base_state_classes
+
+            RegistrationContext.ensure_context().base_states["sentinel"] = object()  # type: ignore[assignment]
+            all_base_state_classes["sentinel"] = None
+            RegistrationContext.ensure_context().decorated_pages.append((
+                lambda: None,
+                {},
+            ))
+
+            compile_daemon._reset_first_party([tmp_path.resolve()])
+
+            purged = "fp_module_under_test" not in sys.modules
+            # The sentinel (a bare object, no surviving module) must be dropped;
+            # real states from surviving modules are kept (see the test above).
+            cleared = (
+                "sentinel" not in RegistrationContext.ensure_context().base_states
+                and "sentinel" not in all_base_state_classes
+                and not RegistrationContext.ensure_context().decorated_pages
+            )
+            result = b"1" if (purged and cleared) else b"0"
+        except Exception:
+            import traceback
+
+            traceback.print_exc()
+        finally:
+            os.write(write_fd, result)
+            os.close(write_fd)
+            os._exit(0)
+
+    os.close(write_fd)
+    out = os.read(read_fd, 1)
+    os.close(read_fd)
+    os.waitpid(pid, 0)
+    assert out == b"1"
+
+
+def test_quiesce_parent_stops_telemetry_worker():
+    """The telemetry worker must not keep the daemon parent multi-threaded.
+
+    The initial compile sends a telemetry event, whose executor thread would
+    otherwise outlive it and make every later fork check fail silently.
+    """
+    import threading
+
+    from reflex.utils import telemetry
+
+    telemetry._get_telemetry_executor().submit(lambda: None).result()
+    assert any(t.name.startswith("reflex-telemetry") for t in threading.enumerate())
+
+    compile_daemon._quiesce_parent()
+
+    assert telemetry._executor is None
+    assert not any(t.name.startswith("reflex-telemetry") for t in threading.enumerate())
+    # A later send lazily recreates a worker, so shutdown is not one-way.
+    telemetry._get_telemetry_executor().submit(lambda: None).result()
+    telemetry._shutdown_executor()
+    assert telemetry._executor is None
+
+
+def test_owns_compilation_follows_the_daemon_lock(tmp_path, monkeypatch):
+    """Backend reload workers defer to a daemon holding its lock; nobody else.
+
+    The daemon always owns the build, and so does a process that asked for
+    a compile (``reflex compile``, ``reflex export``): deferring would leave
+    its output to the daemon's dev build.
+    """
+    from reflex_base.environment import environment
+
+    from reflex.utils import path_ops
+
+    monkeypatch.setattr("reflex.utils.prerequisites.get_backend_dir", lambda: tmp_path)
+    monkeypatch.delenv(environment.REFLEX_COMPILE_DAEMON.name, raising=False)
+    monkeypatch.setenv(environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.name, "1")
+    # No daemon: a worker compiles as usual.
+    assert compile_daemon.daemon_active() is False
+    assert compile_daemon.owns_compilation() is True
+    # A lock file nobody holds (a killed daemon, a copied .web) names no owner,
+    # even when it holds the pid of a live process.
+    lock = compile_daemon._daemon_lock_path()
+    lock.parent.mkdir(parents=True, exist_ok=True)
+    lock.write_text(str(os.getpid()))
+    assert compile_daemon.daemon_active() is False
+    # A daemon holding the lock: workers stand down.
+    descriptor = path_ops.try_lock(lock)
+    assert descriptor is not None
+    try:
+        assert compile_daemon.daemon_active() is True
+        assert compile_daemon.owns_compilation() is False
+        # ...but the daemon's own processes still own the build.
+        monkeypatch.setenv(environment.REFLEX_COMPILE_DAEMON.name, "1")
+        assert compile_daemon.owns_compilation() is True
+        # ...and so does a CLI compile, which is no reload worker.
+        monkeypatch.delenv(environment.REFLEX_COMPILE_DAEMON.name)
+        monkeypatch.delenv(environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.name)
+        assert compile_daemon.owns_compilation() is True
+    finally:
+        os.close(descriptor)
+
+
+def test_lock_files_live_outside_the_web_dir(tmp_path, monkeypatch):
+    """``rm -rf .web`` while the daemon runs must not unlink the lock it holds."""
+    from reflex_base.environment import environment
+
+    backend = tmp_path / ".web" / "backend"
+    monkeypatch.setattr("reflex.utils.prerequisites.get_backend_dir", lambda: backend)
+    for lock in (compile_daemon._lock_path(), compile_daemon._daemon_lock_path()):
+        assert not lock.is_relative_to(tmp_path / ".web")
+        assert lock.is_relative_to(environment.REFLEX_DIR.get().expanduser())
+    assert compile_daemon._lock_path() != compile_daemon._daemon_lock_path()
+    # Keyed by the project: another project's daemon holds another lock.
+    this_project = compile_daemon._daemon_lock_path()
+    monkeypatch.setattr(
+        "reflex.utils.prerequisites.get_backend_dir", lambda: tmp_path / "other"
+    )
+    assert compile_daemon._daemon_lock_path() != this_project
+
+
+def test_running_restarts_the_daemon_on_its_restart_code(tmp_path, monkeypatch):
+    """A daemon exiting for a global config change is started again.
+
+    The daemon cannot apply such a change to its warm parent; a new process
+    loads the new world. Re-executing in place would leave ``reflex run``
+    with a dead handle on Windows, where that starts a new process.
+    """
+    import subprocess
+
+    popen = subprocess.Popen
+    spawned: list[subprocess.Popen] = []
+
+    def spawn(args, **kwargs):
+        """Stand in for the daemon: ask for a restart once, then wait.
+
+        Args:
+            args: The daemon command (replaced).
+            kwargs: The Popen options.
+
+        Returns:
+            The spawned process.
+        """
+        code = compile_daemon._RESTART_EXIT_CODE if not spawned else 0
+        body = f"import sys, time\nsys.exit({code}) if {code} else time.sleep(60)\n"
+        proc = popen([sys.executable, "-c", body], **kwargs)
+        spawned.append(proc)
+        return proc
+
+    environments: list[dict[str, str]] = []
+    original_spawn = spawn
+
+    def spawn_recording_env(args, **kwargs):
+        environments.append(dict(kwargs["env"]))
+        return original_spawn(args, **kwargs)
+
+    monkeypatch.setattr(compile_daemon.subprocess, "Popen", spawn_recording_env)
+    with compile_daemon.running(initial_compiled=True):
+        assert AppHarness._poll_for(lambda: len(spawned) == 2, timeout=10)
+        assert spawned[0].poll() == compile_daemon._RESTART_EXIT_CODE
+        assert spawned[1].poll() is None
+    assert spawned[1].poll() is not None
+    assert len(spawned) == 2
+    # The first daemon found the frontend compiled; the restarted one must
+    # compile, since the config change made that frontend stale.
+    assert "REFLEX_COMPILE_DAEMON_PRECOMPILED" in environments[0]
+    assert "REFLEX_COMPILE_DAEMON_PRECOMPILED" not in environments[1]
+
+
+@pytest.mark.skipif(not hasattr(os, "fork"), reason="requires os.fork (POSIX)")
+def test_await_child_kills_the_child_when_the_daemon_exits(monkeypatch):
+    """A daemon unwinding mid-compile (SIGTERM, Ctrl-C) takes its child with it.
+
+    Otherwise the orphaned child keeps the locks and writes ``.web`` after
+    ``reflex run`` ended, and a new run finds a daemon that owns the project.
+    """
+    import time
+
+    pid = os.fork()
+    if pid == 0:  # child: a compile that never ends
+        try:
+            time.sleep(60)
+        finally:
+            os._exit(0)
+
+    def exit_now(_seconds: float) -> None:
+        raise SystemExit(0)
+
+    monkeypatch.setattr(compile_daemon.time, "sleep", exit_now)
+    with pytest.raises(SystemExit):
+        compile_daemon._await_child(pid)
+    # Reaped: the pid is gone (or at least no longer ours to wait for).
+    with pytest.raises(ChildProcessError):
+        os.waitpid(pid, 0)
+
+
+def test_watch_state_skips_build_dirs_below_the_project_only(tmp_path, monkeypatch):
+    """A project living under a directory named like a build dir is watched."""
+    root = tmp_path / "venv" / "project"
+    app_root = root / "app"
+    app_root.mkdir(parents=True)
+    monkeypatch.setattr(disk_cache, "load_manifest", lambda: None)
+    state = compile_daemon._WatchState.build([app_root.resolve()], root.resolve())
+    assert state.accepts(app_root / "page.py")
+    assert not state.accepts(app_root / "node_modules" / "pkg" / "index.py")
+    assert not state.accepts(root / ".web" / "x.py")
+
+
+def test_child_compile_uses_a_private_bytecode_cache(tmp_path, monkeypatch):
+    """Changed modules re-import from source, not from same-second bytecode.
+
+    Timestamp ``.pyc`` files are keyed by whole-second mtime and size, so a
+    second same-size edit within a second of the compile that cached the
+    first would import stale bytecode.
+    """
+    import importlib.util
+
+    monkeypatch.setattr("reflex.utils.prerequisites.get_backend_dir", lambda: tmp_path)
+    compile_daemon._use_private_pycache()
+    assert sys.pycache_prefix == str(tmp_path.resolve() / compile_daemon._PYCACHE_DIR)
+    source = tmp_path / "page.py"
+    source.write_text("x = 1\n")
+    cached = Path(importlib.util.cache_from_source(str(source)))
+    assert cached.is_relative_to(tmp_path / compile_daemon._PYCACHE_DIR)
+    cached.parent.mkdir(parents=True)
+    cached.write_bytes(b"stale")
+    compile_daemon._forget_bytecode({source, tmp_path / "data.md"})
+    assert not cached.exists()
+    compile_daemon._forget_bytecode({source})  # already gone: no error
+
+
+def test_compile_child_telemetry_is_sent_by_the_daemon(tmp_path, monkeypatch):
+    """A compile child spools its events; the daemon sends them afterwards.
+
+    A forked child must not start the telemetry thread, nor touch macOS's
+    proxy lookup after a fork, and ``os._exit`` drops anything it queued.
+    """
+    from reflex_base.environment import environment
+
+    from reflex.utils import telemetry
+
+    monkeypatch.setattr("reflex.utils.prerequisites.get_backend_dir", lambda: tmp_path)
+    sent: list[tuple[str, dict]] = []
+    monkeypatch.setattr(
+        telemetry, "send", lambda event, **kwargs: sent.append((event, kwargs))
+    )
+    monkeypatch.setattr(compile_daemon, "_can_fork", lambda: False)
+
+    def run(args, **kwargs):
+        """Stand in for the cold compile child: send an event, exit.
+
+        Args:
+            args: The compile command (replaced).
+            kwargs: The run options.
+
+        Returns:
+            A completed process.
+        """
+        spool = Path(kwargs["env"][environment.REFLEX_TELEMETRY_SPOOL.name])
+        telemetry._spool_event(spool, "compile", {"pages_count": 1}, {})
+        return Mock(returncode=0)
+
+    monkeypatch.setattr(compile_daemon.subprocess, "run", run)
+    assert (
+        compile_daemon._run_compile_child([tmp_path], False, None, predict=False) == 0
+    )
+    assert sent == [("compile", {"properties": {"pages_count": 1}})]
+    assert not list(tmp_path.glob(".telemetry.*"))
+    assert environment.REFLEX_TELEMETRY_SPOOL.get() is None
+    assert compile_daemon.owns_compilation() is True
+
+
+def test_failed_daemon_spawn_propagates(monkeypatch):
+    """A failed spawn raises out of the run scope, leaving workers in charge."""
+
+    def fail(*args, **kwargs):
+        """Simulate failure to launch the child."""
+        message = "spawn failed"
+        raise OSError(message)
+
+    monkeypatch.setattr(compile_daemon.subprocess, "Popen", fail)
+    with pytest.raises(OSError, match="spawn failed"), compile_daemon.running():
+        pass
+
+
+@pytest.mark.parametrize("exit_with", [None, KeyboardInterrupt])
+def test_daemon_stops_when_the_run_scope_exits(tmp_path, monkeypatch, exit_with):
+    """Leaving the ``reflex run`` scope stops the daemon, however the run ends.
+
+    A signal to ``reflex run`` alone (an IDE stop, ``kill``) must not leave the
+    run waiting on a daemon that never got the signal.
+    """
+    import subprocess
+
+    monkeypatch.setattr("reflex.utils.prerequisites.get_backend_dir", lambda: tmp_path)
+    lock = compile_daemon._daemon_lock_path()
+    popen = subprocess.Popen
+    spawned: list[subprocess.Popen] = []
+
+    def spawn_holder(args, **kwargs):
+        """Stand in for the daemon: hold its lock and never exit on its own.
+
+        Args:
+            args: The daemon command (replaced).
+            kwargs: The Popen options.
+
+        Returns:
+            The spawned process.
+        """
+        holder = (
+            "import time\n"
+            "from pathlib import Path\n"
+            "from reflex.utils import path_ops\n"
+            f"assert path_ops.try_lock(Path({str(lock)!r})) is not None\n"
+            "print('held', flush=True)\n"
+            "time.sleep(60)\n"
+        )
+        proc = popen(
+            [sys.executable, "-c", holder], stdout=subprocess.PIPE, text=True, **kwargs
+        )
+        spawned.append(proc)
+        return proc
+
+    monkeypatch.setattr(compile_daemon.subprocess, "Popen", spawn_holder)
+    with (
+        contextlib.suppress(KeyboardInterrupt),
+        compile_daemon.running(),
+    ):
+        [proc] = spawned
+        assert proc.stdout is not None
+        assert proc.stdout.readline().strip() == "held"
+        assert compile_daemon.daemon_active()
+        if exit_with is not None:
+            raise exit_with
+    [proc] = spawned
+    assert proc.poll() is not None
+    # Windows can release byte-range locks asynchronously after process exit.
+    assert AppHarness._poll_for(lambda: not compile_daemon.daemon_active(), timeout=5)
+
+
+def test_watch_state_discovers_new_project_root_sources(tmp_path):
+    """Watching existing children must not hide newly created siblings."""
+    existing = tmp_path / "app"
+    existing.mkdir()
+    state = compile_daemon._WatchState(roots=[existing], root=tmp_path)
+    source = tmp_path / "new_helper.py"
+    assert tmp_path in state.targets()
+    assert state.accepts(source)
+    source.write_text("VALUE = 1")
+    assert source in state.watch_paths()
+
+
+def test_watcher_preserves_snapshot_before_teardown(tmp_path, monkeypatch):
+    """An edit during watcher teardown must be caught after compilation."""
+    import watchfiles
+
+    source = tmp_path / "page.py"
+    source.write_text("before")
+    state = compile_daemon._WatchState(roots=[tmp_path], root=tmp_path)
+    state.checkpoint = compile_daemon._dependency_snapshot(state)
+
+    def watch(*args, **kwargs):
+        """Emit an edit, then mutate another input as the watcher closes.
+
+        Yields:
+            A filesystem event batch.
+        """
+        try:
+            source.write_text("first edit")
+            yield {(2, str(source))}
+        finally:
+            (tmp_path / "late.py").write_text("late edit")
+
+    monkeypatch.setattr(watchfiles, "watch", watch)
+    assert compile_daemon._next_changes(state, lambda: True) == {source}
+    assert source not in compile_daemon._missed_changes(
+        state.checkpoint, compile_daemon._dependency_snapshot(state)
+    )
+    assert tmp_path / "late.py" in compile_daemon._missed_changes(
+        state.checkpoint, compile_daemon._dependency_snapshot(state)
+    )
+
+
+@pytest.mark.parametrize("warm_only", [False, True])
+def test_daemon_initial_work_holds_lock(tmp_path, monkeypatch, warm_only):
+    """Startup either warms or compiles, always under the backend wait lock."""
+    from reflex.utils import path_ops, prerequisites
+
+    lock = tmp_path / "compile.lock"
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(compile_daemon, "_lock_path", lambda: lock)
+    monkeypatch.setattr(compile_daemon, "_reload_roots", lambda: [tmp_path])
+    monkeypatch.setattr(compile_daemon, "_prepare_fork_parent", lambda roots: None)
+    monkeypatch.setattr(compile_daemon, "_next_changes", lambda *args: None)
+    monkeypatch.setattr(
+        compile_daemon._WatchState,
+        "build",
+        lambda *args: compile_daemon._WatchState([tmp_path], tmp_path),
+    )
+    calls = []
+
+    def compile_app(**kwargs):
+        """Verify initial compilation blocks backend readers."""
+        calls.append(("compile", path_ops.is_locked(lock)))
+
+    def import_app(**kwargs):
+        """Verify warm startup only imports the application."""
+        calls.append(("import", path_ops.is_locked(lock)))
+
+    monkeypatch.setattr(prerequisites, "get_compiled_app", compile_app)
+    monkeypatch.setattr(prerequisites, "get_app", import_app)
+    if warm_only:
+        monkeypatch.setenv("REFLEX_COMPILE_DAEMON_PRECOMPILED", "1")
+    else:
+        monkeypatch.delenv("REFLEX_COMPILE_DAEMON_PRECOMPILED", raising=False)
+    compile_daemon._serve()
+    assert calls == [("import" if warm_only else "compile", True)]
+    assert not path_ops.is_locked(lock)
+    assert "REFLEX_COMPILE_DAEMON_PRECOMPILED" not in os.environ
+
+
+def test_sigterm_during_the_initial_compile_stops_the_daemon(tmp_path, monkeypatch):
+    """SIGTERM is not a broken initial compile: the daemon exits, not watches."""
+    from reflex.utils import prerequisites
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(compile_daemon, "_lock_path", lambda: tmp_path / "c.lock")
+    monkeypatch.setattr(compile_daemon, "_reload_roots", lambda: [tmp_path])
+    monkeypatch.setattr(compile_daemon, "_prepare_fork_parent", lambda roots: None)
+    monkeypatch.setattr(
+        compile_daemon._WatchState,
+        "build",
+        lambda *args: compile_daemon._WatchState([tmp_path], tmp_path),
+    )
+    watched = []
+    monkeypatch.setattr(
+        compile_daemon, "_next_changes", lambda *args: watched.append(args)
+    )
+    monkeypatch.delenv("REFLEX_COMPILE_DAEMON_PRECOMPILED", raising=False)
+
+    def terminated(**kwargs):
+        """Receive SIGTERM mid-compile."""
+        compile_daemon._exit_on_sigterm(0, None)
+
+    monkeypatch.setattr(prerequisites, "get_compiled_app", terminated)
+    with pytest.raises(compile_daemon._Terminated):
+        compile_daemon._serve()
+    assert watched == []
+
+
+def test_watcher_reconciles_edits_after_an_idle_batch(tmp_path, monkeypatch):
+    """A late edit must be included even if its OS event is in a later batch."""
+    import watchfiles
+
+    first = tmp_path / "first.py"
+    second = tmp_path / "second.py"
+    first.write_text("old")
+    second.write_text("old")
+    state = compile_daemon._WatchState([tmp_path], tmp_path)
+    state.checkpoint = compile_daemon._dependency_snapshot(state)
+
+    def watch(*args, **kwargs):
+        """Return one event while another changed input awaits its event batch.
+
+        Yields:
+            An idle batch, followed by the first file's event.
+        """
+        yield set()
+        first.write_text("new first")
+        second.write_text("new second")
+        yield {(2, str(first))}
+
+    monkeypatch.setattr(watchfiles, "watch", watch)
+    assert compile_daemon._next_changes(state, lambda: True) == {first, second}
+
+
+def test_serve_keeps_failed_changes_pending_until_a_compile_succeeds(
+    tmp_path, monkeypatch
+):
+    """Paths from a failed compile are re-reported with the next change batch.
+
+    The manifest is only refreshed by a successful compile, so a path that
+    missed a failed build is still a stale dependency: dropping it from the
+    changed hint would let the stat-free hit shortcut reuse its page.
+    """
+    from reflex.utils import prerequisites
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(compile_daemon, "_lock_path", lambda: tmp_path / "lock")
+    monkeypatch.setattr(compile_daemon, "_reload_roots", lambda: [tmp_path])
+    monkeypatch.setattr(compile_daemon, "_prepare_fork_parent", lambda roots: None)
+    monkeypatch.setattr(prerequisites, "get_app", lambda **kwargs: None)
+    monkeypatch.setenv("REFLEX_COMPILE_DAEMON_PRECOMPILED", "1")
+    monkeypatch.setattr(
+        compile_daemon._WatchState,
+        "build",
+        lambda *args: compile_daemon._WatchState([tmp_path], tmp_path),
+    )
+    a, b = tmp_path / "a.py", tmp_path / "b.py"
+    batches = iter([{a, b}, {b}, {a}, None])
+    monkeypatch.setattr(compile_daemon, "_next_changes", lambda *args: next(batches))
+    compiles: list[set[Path]] = []
+
+    def compile_once(roots, prerender_routes, changed=None):
+        """Fail the first compile, succeed afterwards.
+
+        Args:
+            roots: The reload roots.
+            prerender_routes: Whether to prerender routes.
+            changed: The changed-path hint handed to the compile.
+
+        Returns:
+            Whether the simulated compile succeeded.
+        """
+        compiles.append(set(changed or ()))
+        return len(compiles) > 1
+
+    monkeypatch.setattr(compile_daemon, "_compile_once", compile_once)
+    compile_daemon._serve()
+    assert compiles == [{a, b}, {a, b}, {a}]
+
+
+def test_daemon_compiles_an_edit_made_before_its_first_snapshot(tmp_path, monkeypatch):
+    """An input edited after the last build but before the watch starts compiles.
+
+    The first snapshot is the watch baseline, so such an edit raises no event.
+    """
+    from reflex.compiler import disk_cache, page_cache
+    from reflex.utils import prerequisites
+
+    page = tmp_path / "page.py"
+    page.write_text("TITLE = 'v1'\n")
+    entry = page_cache.file_entry(str(page))
+    assert entry is not None
+    files = {str(page): list(entry)}
+    page.write_text("TITLE = 'edited before the daemon watched'\n")
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("REFLEX_COMPILE_DAEMON_PRECOMPILED", "1")
+    monkeypatch.setattr(compile_daemon, "_lock_path", lambda: tmp_path / "lock")
+    monkeypatch.setattr(compile_daemon, "_reload_roots", lambda: [tmp_path])
+    monkeypatch.setattr(compile_daemon, "_prepare_fork_parent", lambda roots: None)
+    monkeypatch.setattr(compile_daemon, "_next_changes", lambda *args: None)
+    monkeypatch.setattr(
+        compile_daemon._WatchState,
+        "build",
+        lambda *args: compile_daemon._WatchState([tmp_path], tmp_path, known={page}),
+    )
+    monkeypatch.setattr(prerequisites, "get_app", lambda **kwargs: None)
+    monkeypatch.setattr(
+        disk_cache,
+        "load_manifest",
+        lambda: {"files": files, "pages": {"index": {"deps": list(files)}}},
+    )
+    compiled = []
+    monkeypatch.setattr(
+        compile_daemon,
+        "_compile_once",
+        lambda roots, prerender, changed: compiled.append(changed) or True,
+    )
+    monkeypatch.setattr("reflex.utils.prerequisites.get_backend_dir", lambda: tmp_path)
+    compile_daemon._serve()
+    assert compiled == [{page}]
+    assert compile_daemon._built_inputs_current()
+
+
+def test_daemon_entry_point_runs_the_canonical_module(tmp_path):
+    """``python -m`` must run the importable module, not a ``__main__`` copy.
+
+    Records go through the ``reflex`` logger tree only from the real module's
+    logger, and module state must not be split between two copies.
+    """
+    import subprocess
+
+    probe = (
+        "import runpy, sys\n"
+        "import reflex.utils.compile_daemon as daemon\n"
+        "def main(argv=None):\n"
+        "    print(daemon.logger.name, sys.modules['reflex.utils.compile_daemon'] is daemon)\n"
+        "    return 0\n"
+        "daemon.main = main\n"
+        "runpy.run_module('reflex.utils.compile_daemon', run_name='__main__')\n"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", probe],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=15,
+    )
+    assert result.stdout.split() == ["reflex.utils.compile_daemon", "True"], (
+        result.stderr
+    )
+
+
+def test_compile_once_retries_a_failed_prediction_exactly(monkeypatch):
+    """A failed state-name prediction compiles again in a fresh child, exactly."""
+    attempts = []
+
+    def run_child(roots, prerender_routes, changed, *, predict):
+        attempts.append(predict)
+        return compile_daemon._RETRY_EXIT_CODE if predict else 0
+
+    monkeypatch.setattr(compile_daemon, "_run_compile_child", run_child)
+    assert compile_daemon._compile_once([], False, None) is True
+    assert attempts == [True, False]
+
+
+@pytest.mark.skipif(not hasattr(os, "fork"), reason="requires os.fork (POSIX)")
+def test_failed_prediction_exits_the_child_with_the_retry_code(monkeypatch):
+    """The forked child reports a failed prediction distinctly from a failure."""
+    from reflex.compiler import disk_cache
+
+    def fail_prediction(roots, prerender_routes, changed, predict):
+        """Simulate a page claiming other state names than recorded.
+
+        Raises:
+            DynamicStatePredictionError: Always.
+        """
+        route = "/two"
+        raise disk_cache.DynamicStatePredictionError(route)
+
+    monkeypatch.setattr(compile_daemon, "_can_fork", lambda: True)
+    monkeypatch.setattr(compile_daemon, "_child_compile", fail_prediction)
+    code = compile_daemon._run_compile_child([], False, None, predict=True)
+    assert code == compile_daemon._RETRY_EXIT_CODE
+
+
+@pytest.mark.skipif(not hasattr(os, "fork"), reason="requires os.fork (POSIX)")
+@pytest.mark.parametrize(
+    ("outcome", "compiled"),
+    [
+        ("ok", True),
+        ("fell back", False),
+        ("failed prediction", False),
+        ("error", False),
+    ],
+)
+def test_cold_compile_predicts_names_in_a_child(
+    monkeypatch, tmp_path, outcome, compiled
+):
+    """A cold compile predicts dynamic state names in a forked child.
+
+    Only a child that compiled spares the caller its exact in-process compile.
+    """
+    from reflex.compiler import disk_cache
+
+    seen = tmp_path / "predicted"
+
+    def attempt() -> bool:
+        """Record the prediction mode, then end as ``outcome`` says.
+
+        Returns:
+            Whether the compile succeeded.
+
+        Raises:
+            DynamicStatePredictionError: For a failed prediction.
+            RuntimeError: For an error.
+        """
+        seen.write_text(str(disk_cache._predict_dynamic_names))
+        if outcome == "failed prediction":
+            route = "/two"
+            raise disk_cache.DynamicStatePredictionError(route)
+        if outcome == "error":
+            msg = "boom"
+            raise RuntimeError(msg)
+        return outcome == "ok"
+
+    monkeypatch.setattr(compile_daemon, "_single_threaded", lambda: True)
+    monkeypatch.setattr(disk_cache, "load_manifest", lambda: {"pages": {}})
+    assert compile_daemon.compiled_in_predicting_child(attempt) is compiled
+    assert seen.read_text() == "True"
+    assert disk_cache._predict_dynamic_names is None
+
+
+def test_cold_compile_without_a_manifest_does_not_fork(monkeypatch):
+    """With nothing to reuse, the attempt would only fall back: no child."""
+    from reflex.compiler import disk_cache
+
+    monkeypatch.setattr(compile_daemon, "_single_threaded", lambda: True)
+    monkeypatch.setattr(disk_cache, "load_manifest", lambda: None)
+    monkeypatch.setattr(
+        compile_daemon.os, "fork", Mock(side_effect=AssertionError), raising=False
+    )
+    assert compile_daemon.compiled_in_predicting_child(lambda: True) is False
+
+
+@pytest.mark.parametrize(
+    ("single_threaded", "chosen"), [(False, None), (True, False), (True, True)]
+)
+def test_cold_compile_without_a_safe_fork_compiles_in_process(
+    monkeypatch, single_threaded, chosen
+):
+    """The caller compiles in-process with other threads alive or a mode chosen."""
+    from reflex.compiler import disk_cache
+
+    monkeypatch.setattr(compile_daemon, "_single_threaded", lambda: single_threaded)
+    monkeypatch.setattr(disk_cache, "_predict_dynamic_names", chosen)
+    attempts: list[bool] = []
+
+    def attempt() -> bool:
+        """Record a compile the caller must not have handed over.
+
+        Returns:
+            True.
+        """
+        attempts.append(True)
+        return True
+
+    assert compile_daemon.compiled_in_predicting_child(attempt) is False
+    assert attempts == []
+
+
+@pytest.mark.parametrize("lock", ["held", "unsupported"])
+def test_daemon_without_its_lock_does_not_serve(tmp_path, monkeypatch, lock):
+    """Only the daemon holding the ownership lock compiles the project."""
+    from unittest.mock import Mock
+
+    from reflex.utils import path_ops
+
+    lock_path = tmp_path / "daemon.lock"
+    monkeypatch.setattr(compile_daemon, "_daemon_lock_path", lambda: lock_path)
+    monkeypatch.setattr(compile_daemon, "_LOCK_ACQUIRE_TIMEOUT", 0.05)
+    served: list[bool] = []
+    monkeypatch.setattr(compile_daemon, "_serve", lambda: served.append(True))
+    holder = path_ops.try_lock(lock_path) if lock == "held" else None
+    if lock == "unsupported":
+        monkeypatch.setattr(
+            path_ops, "try_lock", Mock(side_effect=OSError(errno.ENOLCK, "no locks"))
+        )
+    try:
+        assert compile_daemon.main([]) == 0
+    finally:
+        if holder is not None:
+            os.close(holder)
+    assert served == []
+
+
+@pytest.mark.parametrize("recorded", [True, False])
+def test_built_inputs_include_dependencies_the_compile_added(
+    tmp_path, monkeypatch, recorded
+):
+    """Workers wait on an edit to a file the last compile started reading.
+
+    The file was not watched before that compile, which is no edit when the
+    manifest records it as read. A file created after the compile read it as
+    missing is an edit.
+    """
+    from reflex.compiler import disk_cache, page_cache
+    from reflex.utils import prerequisites
+
+    page, data = tmp_path / "page.py", tmp_path / "data.json"
+    page.write_text("TITLE = 'v1'\n")
+    files: dict[str, Any] = {}
+    if recorded:
+        data.write_text("{}")
+        files[str(data)] = page_cache.file_entry(str(data))
+    known = {page}
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("REFLEX_COMPILE_DAEMON_PRECOMPILED", "1")
+    monkeypatch.setattr(compile_daemon, "_lock_path", lambda: tmp_path / "lock")
+    monkeypatch.setattr(compile_daemon, "_reload_roots", lambda: [tmp_path])
+    monkeypatch.setattr(compile_daemon, "_prepare_fork_parent", lambda roots: None)
+    monkeypatch.setattr(
+        disk_cache,
+        "load_manifest",
+        lambda: {"files": files, "pages": {"index": {"deps": list(files)}}},
+    )
+    monkeypatch.setattr(prerequisites, "get_app", lambda **kwargs: None)
+    monkeypatch.setattr("reflex.utils.prerequisites.get_backend_dir", lambda: tmp_path)
+    monkeypatch.setattr(
+        compile_daemon._WatchState,
+        "build",
+        lambda *args: compile_daemon._WatchState(
+            [tmp_path], tmp_path, known=set(known)
+        ),
+    )
+    batches = iter([{page}, None])
+    monkeypatch.setattr(compile_daemon, "_next_changes", lambda *args: next(batches))
+
+    def compile_once(roots, prerender_routes, changed=None) -> bool:
+        """Compile a page that now reads ``data``.
+
+        Args:
+            roots: The reload roots.
+            prerender_routes: Whether to prerender routes.
+            changed: The changed-path hint.
+
+        Returns:
+            True.
+        """
+        compiles.append(changed)
+        known.add(data)
+        if not data.exists():
+            data.write_text("{}")
+        return True
+
+    compiles: list[set[Path] | None] = []
+    monkeypatch.setattr(compile_daemon, "_compile_once", compile_once)
+    compile_daemon._serve()
+    if not recorded:
+        assert compiles == [{page}, {data}]
+        return
+    assert compiles == [{page}]
+    assert compile_daemon._built_inputs_current()
+    data.write_text('{"edited": true}')
+    os.utime(data, ns=(1, 1))
+    assert not compile_daemon._built_inputs_current()
+
+
+def test_unbuilt_changes_compare_function_slices(tmp_path, monkeypatch):
+    """A module recorded only as function slices still reports its edits."""
+    from reflex.compiler import disk_cache, page_cache
+
+    page = tmp_path / "page.py"
+    page.write_text("def index():\n    return 'v1'\n")
+    dep = f"{page}{page_cache.SLICE_SEPARATOR}index"
+    manifest = {
+        "files": {dep: page_cache.file_entry(dep)},
+        "pages": {"index": {"deps": [dep]}},
+    }
+    monkeypatch.setattr(disk_cache, "load_manifest", lambda: manifest)
+    state = compile_daemon._WatchState([tmp_path], tmp_path, known={page})
+    assert compile_daemon._unbuilt_changes(state) == set()
+    page.write_text("def index():\n    return 'edited'\n")
+    os.utime(page, ns=(1, 1))
+    assert compile_daemon._unbuilt_changes(state) == {page}
+
+
+def test_unbuilt_changes_ignore_unreferenced_file_table_entries(tmp_path, monkeypatch):
+    """A slice no page depends on any more does not report its module as edited.
+
+    An incremental rebuild extends the file table without pruning it, so a
+    renamed page function leaves its old slice behind.
+    """
+    from reflex.compiler import disk_cache, page_cache
+
+    page = tmp_path / "page.py"
+    page.write_text("def home():\n    return 'v1'\n")
+    stale = f"{page}{page_cache.SLICE_SEPARATOR}index"
+    current = f"{page}{page_cache.SLICE_SEPARATOR}home"
+    files = {stale: ["0" * 64, 1, 1], current: page_cache.file_entry(current)}
+    manifest = {"files": files, "pages": {"home": {"deps": [current]}}}
+    monkeypatch.setattr(disk_cache, "load_manifest", lambda: manifest)
+    state = compile_daemon._WatchState([tmp_path], tmp_path, known={page})
+    assert compile_daemon._unbuilt_changes(state) == set()
+    assert compile_daemon._built_inputs({page}) == {page}

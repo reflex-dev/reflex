@@ -6,6 +6,7 @@ import copy
 import dataclasses
 import inspect
 from collections.abc import Callable, Sequence
+from contextlib import AbstractContextManager
 from typing import TYPE_CHECKING, Any, ClassVar, Protocol, TypeAlias, TypeVar, cast
 
 from reflex_base.components.component import BaseComponent, Component
@@ -30,6 +31,10 @@ else:
 
 
 _BaseComponentT = TypeVar("_BaseComponentT", bound=BaseComponent)
+
+
+#: Optional recorder for source files read during each page evaluation.
+page_source_recorder: Callable[[], AbstractContextManager[set[str]]] | None = None
 
 
 class PageDefinition(Protocol):
@@ -599,6 +604,16 @@ class PageContext(BaseContext):
     output_path: str | None = None
     output_code: str | None = None
     source_module: str | None = None
+    # Source files read while evaluating this page, when a recorder is installed.
+    source_files: set[str] = dataclasses.field(default_factory=set)
+    # The page's unique-name generator state after evaluation, resumed for its
+    # render so its generated names never depend on other pages.
+    unique_name_state: Any = None
+    # The auto-memo components this page's output imports, by registry key
+    # (filled by ``MemoizeStatefulPlugin``).
+    memo_uses: dict[tuple[str, str | None], Any] = dataclasses.field(
+        default_factory=dict
+    )
     # Stack of ``id(component)`` for components whose subtree is
     # memoize-suppressed. Populated by ``MemoizeStatefulPlugin`` when it
     # encounters a ``MemoizationLeaf``-style snapshot boundary and popped on
@@ -673,18 +688,23 @@ class CompileContext(BaseContext):
     app_wrap_components: dict[tuple[int, str], Component] = dataclasses.field(
         default_factory=dict
     )
-    stateful_routes: dict[str, None] = dataclasses.field(default_factory=dict)
+    # Routes whose evaluation defined new state classes, mapped to the full
+    # names of the states each page defined.
+    stateful_routes: dict[str, list[str]] = dataclasses.field(default_factory=dict)
     # Auto-memoize wrapper tags seen during the tree walk (populated by
     # ``MemoizeStatefulPlugin``).
     memoize_wrappers: dict[str, None] = dataclasses.field(default_factory=dict)
     # Compiler-generated memo definitions for auto-memoized stateful wrappers.
-    # Keyed by ``(tag, source_module)`` so identical-rendering subtrees from
-    # different user modules each get their own entry and emit into the right
-    # mirrored memo file. Stored as ``Any`` to avoid an import cycle with
-    # ``reflex_base.components.memo``.
+    # Keyed by ``(tag, source_module)``; an auto memo is content-addressed by
+    # its tag and carries no source module, so identical subtrees anywhere in
+    # the app share one definition and one output file. Stored as ``Any`` to
+    # avoid an import cycle with ``reflex_base.components.memo``.
     auto_memo_components: dict[tuple[str, str | None], Any] = dataclasses.field(
         default_factory=dict
     )
+    # The auto memo tags the app root imports, including those a page also
+    # uses (filled when the app root is built).
+    app_root_memo_keys: set[str] = dataclasses.field(default_factory=set)
 
     def compile(
         self,
@@ -705,7 +725,18 @@ class CompileContext(BaseContext):
         """
         from reflex.compiler import compiler
         from reflex.state import all_base_state_classes
+        from reflex_base.components.memo import registration_owner
+        from reflex_base.vars.base import (
+            names_before_first_compile,
+            restore_unique_variable_name_state,
+            seed_unique_variable_names,
+            unique_variable_name_state,
+        )
 
+        # The names drawn before the compile (at import, in the serving
+        # process) stay taken: whatever draws names after the pages must not
+        # repeat them.
+        names_before = names_before_first_compile()
         self.ensure_context_attached()
         self.compiled_pages.clear()
         self.all_imports.clear()
@@ -713,16 +744,36 @@ class CompileContext(BaseContext):
         self.stateful_routes.clear()
         self.memoize_wrappers.clear()
         self.auto_memo_components.clear()
+        self.app_root_memo_keys.clear()
 
+        recorder = page_source_recorder
         for page in self.pages:
             page_fn = page.component
             n_states_before = len(all_base_state_classes)
-            page_ctx = self.hooks.eval_page(
-                page_fn,
-                page=page,
-                compile_context=self,
-                **kwargs,
-            )
+            # Names generated for a page are a function of the page alone, so
+            # recompiling any subset of pages reproduces them (see
+            # ``seed_unique_variable_names``).
+            seed_unique_variable_names(page.route)
+            # Memos registered while this page evaluates (e.g. from modules
+            # imported inside the page function) are owned by this route.
+            with registration_owner(page.route):
+                if recorder is not None:
+                    with recorder() as read_set:
+                        page_ctx = self.hooks.eval_page(
+                            page_fn,
+                            page=page,
+                            compile_context=self,
+                            **kwargs,
+                        )
+                    if page_ctx is not None:
+                        page_ctx.source_files = read_set
+                else:
+                    page_ctx = self.hooks.eval_page(
+                        page_fn,
+                        page=page,
+                        compile_context=self,
+                        **kwargs,
+                    )
             if page_ctx is None:
                 page_name = getattr(page_fn, "__name__", repr(page_fn))
                 msg = (
@@ -735,8 +786,14 @@ class CompileContext(BaseContext):
                 raise RuntimeError(msg)
 
             if len(all_base_state_classes) > n_states_before:
-                self.stateful_routes[page.route] = None
+                # Record which states this page defined (registration order is
+                # insertion order), so the compile cache can fingerprint the
+                # page's contribution to the contexts file.
+                self.stateful_routes[page.route] = list(all_base_state_classes)[
+                    n_states_before:
+                ]
 
+            page_ctx.unique_name_state = unique_variable_name_state()
             self.compiled_pages[page_ctx.route] = page_ctx
 
             if evaluate_progress is not None:
@@ -747,6 +804,8 @@ class CompileContext(BaseContext):
             self.compiled_pages.values(),
             strict=True,
         ):
+            restore_unique_variable_name_state(page_ctx.unique_name_state)
+            page_ctx.unique_name_state = None
             with page_ctx:
                 page_ctx.root_component = self.hooks.compile_component(
                     page_ctx.root_component,
@@ -759,7 +818,6 @@ class CompileContext(BaseContext):
                     compile_context=self,
                     **kwargs,
                 )
-
             page_ctx.frontend_imports = page_ctx.merged_imports(collapse=True)
             self.all_imports = merge_imports(
                 self.all_imports, page_ctx.frontend_imports
@@ -772,7 +830,41 @@ class CompileContext(BaseContext):
             if render_progress is not None:
                 render_progress()
 
+        # Whatever compiles after the pages (app root, memo modules) starts
+        # from the same state on every compile, and never repeats a name the
+        # process drew before the pages.
+        seed_unique_variable_names("app", reserved=names_before)
         return self.compiled_pages
+
+    def absorb(self, other: CompileContext, pages: Sequence[PageDefinition]) -> None:
+        """Adopt the pages another context compiled, so none is compiled twice.
+
+        Merges the other context's per-page results and app-wide accumulations
+        into this one and orders the compiled pages by ``pages``, which becomes
+        this context's page list.
+
+        Args:
+            other: A context that compiled a disjoint set of pages.
+            pages: The complete page list, in compile order.
+        """
+        compiled = {**self.compiled_pages, **other.compiled_pages}
+        self.pages = pages
+        self.compiled_pages = {page.route: compiled[page.route] for page in pages}
+        self.all_imports = merge_imports(self.all_imports, other.all_imports)
+        self.app_wrap_components = {}
+        for page in pages:
+            self.app_wrap_components.update(
+                self.compiled_pages[page.route].app_wrap_components
+            )
+        # In page order, like a compile that evaluated every page.
+        stateful_routes = {**self.stateful_routes, **other.stateful_routes}
+        self.stateful_routes = {
+            page.route: stateful_routes[page.route]
+            for page in pages
+            if page.route in stateful_routes
+        }
+        self.memoize_wrappers.update(other.memoize_wrappers)
+        self.auto_memo_components.update(other.auto_memo_components)
 
 
 __all__ = [

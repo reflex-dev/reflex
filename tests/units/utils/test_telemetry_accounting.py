@@ -147,6 +147,7 @@ def _fake_app(**overrides):
     defaults = {
         "_state": None,
         "_pages": {},
+        "_cached_component_counts": None,
         "_unevaluated_pages": {},
     }
     lifespan_tasks = overrides.pop("_lifespan_tasks", {})

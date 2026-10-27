@@ -22,7 +22,6 @@ from reflex_base.components.memoize_helpers import (
 )
 from reflex_base.constants.compiler import MemoizationDisposition, MemoizationMode
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
-from reflex_base.utils import memo_paths
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars import VarData
 from reflex_base.vars.base import Field, LiteralVar, Var, field
@@ -857,7 +856,7 @@ def test_passthrough_memo_definitions_are_not_shared_globally(monkeypatch) -> No
 
     first_compile = SimpleNamespace(memoize_wrappers={}, auto_memo_components={})
     second_compile = SimpleNamespace(memoize_wrappers={}, auto_memo_components={})
-    page_context = cast(PageContext, SimpleNamespace(source_module=None))
+    page_context = cast(PageContext, SimpleNamespace(source_module=None, memo_uses={}))
 
     MemoizeStatefulPlugin._build_wrapper(
         first_component,
@@ -898,15 +897,13 @@ def test_shared_subtree_across_pages_uses_same_tag() -> None:
         assert f"jsx({tag}," in output
 
 
-def test_shared_subtree_in_distinct_source_modules_emits_per_module() -> None:
-    """Identical subtrees in different user modules emit one memo per module.
+def test_shared_subtree_in_distinct_source_modules_shares_one_memo() -> None:
+    """Identical subtrees in different user modules share one auto memo.
 
-    Regression: the auto-memo registry was keyed by tag only, so when two
-    pages from different user modules produced the same memoizable subtree
-    (and therefore the same tag), the second registration overwrote the
-    first. Only the surviving definition's source module got a mirrored
-    memo file, leaving the other page importing a tag from a file that
-    never exported it.
+    Auto memos are content-addressed by their tag and compile to one file
+    each under ``utils/components/``, whatever module the page lives in, so
+    the two pages import the same file and neither page's memo files hold
+    another page's memos.
     """
     from reflex.compiler.compiler import compile_memo_components
 
@@ -930,43 +927,20 @@ def test_shared_subtree_in_distinct_source_modules_emits_per_module() -> None:
 
     assert len(ctx.memoize_wrappers) == 1
     tag = next(iter(ctx.memoize_wrappers))
-    # Both source modules survive registration as distinct entries.
-    assert set(ctx.auto_memo_components) == {
-        (tag, "memo_collision_test.module_a"),
-        (tag, "memo_collision_test.module_b"),
-    }
-
-    # Each module emits and imports the tag under a per-module symbol so the
-    # two pages never collide on a shared JS identifier.
-    symbol_a = memo_paths.mirrored_symbol(tag, "memo_collision_test.module_a")
-    symbol_b = memo_paths.mirrored_symbol(tag, "memo_collision_test.module_b")
-    page_a_output = ctx.compiled_pages["/a"].output_code or ""
-    page_b_output = ctx.compiled_pages["/b"].output_code or ""
-    assert (
-        f'import {{{symbol_a}}} from "$/app_components/memo_collision_test/module_a"'
-        in page_a_output
-    )
-    assert (
-        f'import {{{symbol_b}}} from "$/app_components/memo_collision_test/module_b"'
-        in page_b_output
-    )
+    assert set(ctx.auto_memo_components) == {(tag, None)}
+    for route in ("/a", "/b"):
+        page_ctx = ctx.compiled_pages[route]
+        assert set(page_ctx.memo_uses) == {(tag, None)}
+        assert f'import {{{tag}}} from "$/utils/components/{tag}"' in (
+            page_ctx.output_code or ""
+        )
 
     output_files, _ = compile_memo_components(
         memos=tuple(ctx.auto_memo_components.values()),
     )
-    emitted = {Path(path).as_posix(): code for path, code in output_files}
-
-    def find_emitted(suffix: str) -> str | None:
-        return next(
-            (code for path, code in emitted.items() if path.endswith(suffix)), None
-        )
-
-    matched_a = find_emitted("memo_collision_test/module_a.jsx")
-    matched_b = find_emitted("memo_collision_test/module_b.jsx")
-    assert matched_a is not None, f"missing module_a memo file in {sorted(emitted)}"
-    assert matched_b is not None, f"missing module_b memo file in {sorted(emitted)}"
-    assert f"const {symbol_a} = memo" in matched_a
-    assert f"const {symbol_b} = memo" in matched_b
+    [(path, code)] = output_files
+    assert Path(path).as_posix().endswith(f"utils/components/{tag}.jsx")
+    assert f"const {tag} = memo" in code
 
 
 def test_shared_parent_instance_across_pages_preserves_original() -> None:

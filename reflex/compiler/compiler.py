@@ -51,7 +51,12 @@ from rich.progress import Progress
 from reflex.compiler import templates, utils
 from reflex.compiler.plugins import default_page_plugins
 from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin
-from reflex.state import BaseState, code_uses_state_contexts, state_snapshot_hashes
+from reflex.state import (
+    BaseState,
+    _hash_frontend_schema,
+    code_uses_state_contexts,
+    state_snapshot_hashes,
+)
 from reflex.utils import console, frontend_skeleton, path_ops, prerequisites
 from reflex.utils.exec import get_compile_context, is_prod_mode
 from reflex.utils.prerequisites import get_web_dir
@@ -245,6 +250,7 @@ def _compile_contexts(
     theme: Component | None,
     *,
     component_imports: ParsedImportDict | None = None,
+    contexts_snapshot: utils.ContextsSnapshot | None = None,
 ) -> str:
     """Compile the initial state and contexts.
 
@@ -252,6 +258,10 @@ def _compile_contexts(
         state: The app state.
         theme: The top-level app theme.
         component_imports: Optional accumulator for initial component dependencies.
+        contexts_snapshot: The state-tree inputs compiled for this contexts
+            output, when already available. They may include states that are
+            not in this process's state tree (states only registered while a
+            page evaluates, restored from the compile cache manifest).
 
     Returns:
         The compiled context file.
@@ -260,30 +270,34 @@ def _compile_contexts(
     disable_react_owner_stacks = (
         not is_prod_mode() and not environment.REFLEX_REACT_OWNER_STACKS.get()
     )
-    initial_state, initial_state_json = (
-        utils._compile_initial_state(state, component_imports=component_imports)
-        if state
-        else (None, None)
-    )
-
-    return (
-        templates.context_template(
-            initial_state=initial_state,
-            initial_state_json=initial_state_json,
-            initial_state_hashes=state_snapshot_hashes(initial_state),
-            state_name=state.get_name(),
-            state_schema=state._to_frontend_schema(),
-            client_storage=utils.compile_client_storage(state),
+    if state is None:
+        return templates.context_template(
             is_dev_mode=not is_prod_mode(),
             default_color_mode=default_color_mode,
             disable_react_owner_stacks=disable_react_owner_stacks,
         )
-        if state and initial_state is not None
-        else templates.context_template(
-            is_dev_mode=not is_prod_mode(),
-            default_color_mode=default_color_mode,
-            disable_react_owner_stacks=disable_react_owner_stacks,
+    if contexts_snapshot is None:
+        initial_state, initial_state_json = utils._compile_initial_state(
+            state, component_imports=component_imports
         )
+        client_storage = utils.compile_client_storage(state)
+        state_schema = state._to_frontend_schema()
+    else:
+        initial_state, client_storage, schema_entries = contexts_snapshot
+        initial_state_json = utils._serialize_initial_state(
+            initial_state, component_imports=component_imports
+        )
+        state_schema = _hash_frontend_schema(schema_entries)
+    return templates.context_template(
+        initial_state=initial_state,
+        initial_state_json=initial_state_json,
+        initial_state_hashes=state_snapshot_hashes(initial_state),
+        state_name=state.get_name(),
+        state_schema=state_schema,
+        client_storage=client_storage,
+        is_dev_mode=not is_prod_mode(),
+        default_color_mode=default_color_mode,
+        disable_react_owner_stacks=disable_react_owner_stacks,
     )
 
 
@@ -443,23 +457,22 @@ def _compile_root_stylesheet(
 
         target.parent.mkdir(parents=True, exist_ok=True)
 
+        # Skip rewriting an unchanged target: Vite watches .web/styles, and a
+        # rewrite-with-identical-content still fires an HMR update per reload.
         if stylesheet.suffix == ".css":
-            path_ops.cp(src=stylesheet, dest=target, overwrite=True)
+            data = stylesheet.read_bytes()
+            if not target.exists() or target.read_bytes() != data:
+                target.write_bytes(data)
         else:
             try:
                 from sass import compile as sass_compile
 
-                target.write_text(
-                    # libsass is untyped; compiling from a filename returns the CSS.
-                    data=cast(
-                        "str",
-                        sass_compile(
-                            filename=str(stylesheet),
-                            output_style="compressed",
-                        ),
-                    ),
-                    encoding="utf8",
-                )
+                compiled_css = cast(
+                    "str",
+                    sass_compile(filename=str(stylesheet), output_style="compressed"),
+                ).encode("utf8")
+                if not target.exists() or target.read_bytes() != compiled_css:
+                    target.write_bytes(compiled_css)
             except ImportError:
                 failed_to_import_sass = True
 
@@ -546,7 +559,6 @@ def _compile_memo_components(
     output_files: list[tuple[str, str]] = []
     aggregate_imports: dict[str, list[ImportVar]] = {}
     unmirrored_files: list[tuple[str, str]] = []
-    unmirrored_base_dir = utils.get_memo_components_dir()
     groups: collections.defaultdict[tuple[str, ...], _MemoGroup] = (
         collections.defaultdict(_MemoGroup)
     )
@@ -557,10 +569,7 @@ def _compile_memo_components(
         render_imports: dict,
     ) -> None:
         code, file_imports = compile_fn(render, render_imports)
-        unmirrored_files.append((
-            _memo_component_file_path(unmirrored_base_dir, render["name"]),
-            code,
-        ))
+        unmirrored_files.append((utils.get_memo_component_path(render["name"]), code))
         _extend_imports_in_place(aggregate_imports, file_imports)
 
     for memo in memos:
@@ -670,19 +679,6 @@ def _compile_single_memo_function(
     return code, imports
 
 
-def _memo_component_file_path(base_dir: str, name: str) -> str:
-    """Return the on-disk path for a per-memo module.
-
-    Args:
-        base_dir: The directory that holds per-memo files.
-        name: The memo's export name.
-
-    Returns:
-        The absolute path for the memo's ``.jsx`` file.
-    """
-    return str(Path(base_dir) / f"{name}{constants.Ext.JSX}")
-
-
 def compile_document_root(
     head_components: list[Component],
     html_lang: str | None = None,
@@ -766,6 +762,7 @@ def compile_contexts(
     theme: Component | None,
     *,
     component_imports: ParsedImportDict | None = None,
+    contexts_snapshot: utils.ContextsSnapshot | None = None,
 ) -> tuple[str, str]:
     """Compile the initial state / context.
 
@@ -773,6 +770,7 @@ def compile_contexts(
         state: The app state.
         theme: The top-level app theme.
         component_imports: Optional accumulator for initial component dependencies.
+        contexts_snapshot: See :func:`_compile_contexts`.
 
     Returns:
         The path and code of the compiled context.
@@ -781,7 +779,10 @@ def compile_contexts(
     output_path = utils.get_context_path()
 
     return output_path, _compile_contexts(
-        state, theme, component_imports=component_imports
+        state,
+        theme,
+        component_imports=component_imports,
+        contexts_snapshot=contexts_snapshot,
     )
 
 
@@ -1058,7 +1059,7 @@ def compile_unevaluated_page(
             meta_args["description"] = page.description
 
         # Add meta information to the component.
-        utils.add_meta(
+        component = utils.add_meta(
             component,
             **meta_args,
         )
@@ -1128,6 +1129,43 @@ def _resolve_app_wrap_components(
     return app_wrappers
 
 
+def _build_app_root(
+    app: App,
+    page_app_wrap_components: dict[tuple[int, str], Component],
+    compile_ctx: CompileContext,
+) -> tuple[Component, str | None]:
+    """Assemble the app root from the pages' app wraps.
+
+    Memo definitions the root needs (stateful wraps, the hydrate fallback) are
+    registered on ``compile_ctx.auto_memo_components``.
+
+    Args:
+        app: The app being compiled.
+        page_app_wrap_components: The app wraps the pages require.
+        compile_ctx: The compile context receiving the root's memo definitions.
+
+    Returns:
+        The app root and the hydrate fallback's export name, if any.
+    """
+    app_wrappers = _resolve_app_wrap_components(app, page_app_wrap_components)
+    app_root = _memoize_stateful_app_wraps(app._app_root(app_wrappers), compile_ctx)
+    hydrate_fallback = app._resolve_hydrate_fallback()
+    hydrate_fallback_export = None
+    if hydrate_fallback is not None:
+        hydrate_fallback._add_style_recursive(app.style)
+        # Compile the fallback through the memo pipeline so it lands in its own
+        # JS module; root.jsx then re-exports it as HydrateFallback.
+        hydrate_fallback_definition = create_component_memo(
+            hydrate_fallback, "hydrate_fallback"
+        )
+        compile_ctx.auto_memo_components[
+            hydrate_fallback_definition.export_name, None
+        ] = hydrate_fallback_definition
+        hydrate_fallback_export = hydrate_fallback_definition.export_name
+        compile_ctx.app_root_memo_keys.add(hydrate_fallback_export)
+    return app_root, hydrate_fallback_export
+
+
 def _memoize_stateful_app_wraps(
     app_root: Component,
     compile_context: CompileContext,
@@ -1161,6 +1199,7 @@ def _memoize_stateful_app_wraps(
         page_context=page_context,
         compile_context=compile_context,
     )
+    compile_context.app_root_memo_keys.update(tag for tag, _ in page_context.memo_uses)
     if not isinstance(compiled_root, Component):
         msg = "Compiled app root must be a Component."
         raise TypeError(msg)
@@ -1206,6 +1245,144 @@ def _register_plugin_routes(app: App, plugins: Sequence[Plugin]) -> None:
     app._register_plugin_pages(plugins)
 
 
+def _register_compiled_pages(app: App, compiled_pages: dict[str, PageContext]) -> None:
+    """Register evaluated page components and routes on the application.
+
+    Args:
+        app: The application receiving compiled pages.
+        compiled_pages: Pages evaluated by this compilation.
+
+    Raises:
+        TypeError: A compiled page root is not a Component.
+    """
+    for route, page_ctx in compiled_pages.items():
+        app._check_routes_conflict(route)
+        if not isinstance(page_ctx.root_component, Component):
+            msg = (
+                f"Compiled page {route!r} root must be a Component before it can "
+                "be registered on the app."
+            )
+            raise TypeError(msg)
+        app._pages[route] = page_ctx.root_component
+
+    app._evaluated_pages.update(compiled_pages)
+
+
+def _plugin_output_tasks(
+    plugins: Sequence[Plugin],
+    radix_themes_plugin: RadixThemesPlugin,
+    pages: Sequence[UnevaluatedPage],
+):
+    """Collect output tasks from configured plugins.
+
+    Args:
+        plugins: Configured plugins in execution order.
+        radix_themes_plugin: Resolved theme plugin.
+        pages: All registered page definitions.
+
+    Returns:
+        Scheduled save and modify tasks.
+    """
+    save_tasks: list[
+        tuple[
+            Callable[..., list[tuple[str, str]] | tuple[str, str] | None],
+            tuple[Any, ...],
+            dict[str, Any],
+        ]
+    ] = []
+    modify_files_tasks: list[tuple[str, str, Callable[[str], str]]] = []
+
+    def add_save_task(
+        task_fn: Callable[..., list[tuple[str, str]] | tuple[str, str] | None],
+        /,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
+        save_tasks.append((task_fn, args, kwargs))
+
+    for plugin in plugins:
+        plugin.pre_compile(
+            add_save_task=add_save_task,
+            add_modify_task=lambda *args, plugin=plugin: modify_files_tasks.append((
+                plugin.__class__.__module__ + plugin.__class__.__name__,
+                *args,
+            )),
+            radix_themes_plugin=radix_themes_plugin,
+            unevaluated_pages=pages,
+        )
+
+    return save_tasks, modify_files_tasks
+
+
+def _apply_plugin_outputs(
+    output_mapping: dict[Path, str],
+    plugins: Sequence[Plugin],
+    modify_files_tasks: Sequence[tuple[str, str, Callable[[str], str]]],
+    cached_sources: dict[str, str] | None = None,
+) -> dict[str, str]:
+    """Apply static assets and modifiers, preserving unmodified source content.
+
+    Args:
+        output_mapping: Fresh compiler and save-task output, updated in place.
+        plugins: Configured plugins.
+        modify_files_tasks: Ordered file modifications.
+        cached_sources: Original content of reused files before any modifiers.
+
+    Returns:
+        Original contents needed to replay modifiers on the next cache hit.
+    """
+    cached_sources = cached_sources or {}
+    sources = {}
+    for plugin in plugins:
+        for static_file_path, content in plugin.get_static_assets():
+            path = utils.resolve_path_of_web_dir(static_file_path)
+            if path in output_mapping:
+                logger.warning(
+                    f"Plugin {plugin.__class__.__name__} is overwriting existing files at {path}."
+                )
+            output_mapping[path] = (
+                content.decode("utf-8") if isinstance(content, bytes) else content
+            )
+
+    for plugin_name, file_path, modify_fn in modify_files_tasks:
+        path = utils.resolve_path_of_web_dir(file_path)
+        file_content = output_mapping.get(path, cached_sources.get(str(path)))
+        if file_content is None:
+            if path.exists():
+                file_content = path.read_text()
+            else:
+                msg = f"Plugin {plugin_name} is trying to modify {path} but it does not exist."
+                raise FileNotFoundError(msg)
+        sources.setdefault(str(path), file_content)
+        output_mapping[path] = modify_fn(file_content)
+
+    return sources
+
+
+def _reset_compile_registries(compiler_plugins: Sequence[Plugin]) -> None:
+    """Reset the registries a compile fills before any page is evaluated.
+
+    Args:
+        compiler_plugins: The resolved compiler plugins.
+    """
+    from reflex_base.components.dynamic import (
+        _bundle_library,
+        _reset_bundled_libraries_for_compile,
+    )
+
+    _reset_bundled_libraries_for_compile()
+    # Drop cached memo wrapper classes so each compile recomputes a memo's
+    # ``library`` from the current module layout (handles a module flipping to
+    # a package across hot reloads).
+    reset_memo_component_classes()
+    # Page evaluation rebuilds every chain that is not interned by handler, so
+    # entries from an earlier compile can only retain dead chains.
+    RegistrationContext.ensure_context()._reset_compile_caches()
+    for plugin in compiler_plugins:
+        for dependency in plugin.get_frontend_dependencies():
+            _bundle_library(dependency)
+
+
 def _read_stateful_pages_marker() -> list[str] | None:
     """Read the routes that create state classes from a previous compile.
 
@@ -1229,32 +1406,120 @@ def _read_stateful_pages_marker() -> list[str] | None:
         raise
 
 
+def _compile_from_cache(
+    app: App,
+    compiler_plugins: Sequence[Plugin],
+    radix_themes_plugin: RadixThemesPlugin,
+    *,
+    prerender_routes: bool,
+    use_rich: bool,
+    registrations: dict[str, str],
+) -> CompileContext | bool:
+    """Compile from the compile cache, writing the plugin outputs on success.
+
+    Args:
+        app: The app.
+        compiler_plugins: The resolved compiler plugins.
+        radix_themes_plugin: The resolved Radix Themes plugin.
+        prerender_routes: Whether to prerender routes.
+        use_rich: Whether to show rich progress.
+        registrations: Each route's registration digest.
+
+    Returns:
+        True when the cache compiled the app, the evaluated pages to adopt
+        when it fell back after evaluating, else False.
+    """
+    from reflex.compiler import disk_cache
+
+    config = get_config()
+    outputs: dict[Path, str] = {}
+    rebuilt = disk_cache.try_incremental_rebuild(
+        app,
+        compiler_plugins=compiler_plugins,
+        prerender_routes=prerender_routes,
+        use_rich=use_rich,
+        outputs=outputs,
+        registrations=registrations,
+    )
+    if rebuilt is True:
+        manifest_path = disk_cache._manifest_path().absolute()
+        # The refreshed manifest is written last: a manifest on disk must
+        # never vouch for outputs that were not written, so until every
+        # other file is on disk there is none.
+        staged_manifest = outputs.pop(manifest_path, None)
+        manifest = (
+            json.loads(staged_manifest)
+            if staged_manifest is not None
+            else disk_cache.load_manifest()
+        )
+        manifest_path.unlink(missing_ok=True)
+        save_tasks, modify_tasks = _plugin_output_tasks(
+            config.plugins,
+            radix_themes_plugin,
+            list(app._unevaluated_pages.values()),
+        )
+        stylesheet_path, stylesheet_code = compile_root_stylesheet(
+            app.stylesheets, app.reset_style, plugins=compiler_plugins
+        )
+        outputs[utils.resolve_path_of_web_dir(stylesheet_path)] = stylesheet_code
+        for task_fn, args, kwargs in save_tasks:
+            result = task_fn(*args, **kwargs)
+            if result is not None:
+                for path, code in result if isinstance(result, list) else [result]:
+                    outputs[utils.resolve_path_of_web_dir(path)] = code
+        sources = _apply_plugin_outputs(
+            outputs,
+            config.plugins,
+            modify_tasks,
+            manifest.get("plugin_sources", {}) if manifest is not None else {},
+        )
+        for path, code in outputs.items():
+            utils.write_file(path, code)
+        if manifest is not None:
+            manifest["plugin_sources"] = sources
+            disk_cache._write(manifest)
+    return rebuilt
+
+
 def compile_app(
     app: App,
     *,
     prerender_routes: bool = False,
     dry_run: bool = False,
     use_rich: bool = True,
+    serving: bool = False,
 ) -> bool:
     """Compile an app using the compiler plugin pipeline.
+
+    Args:
+        app: The app to compile.
+        prerender_routes: Whether to prerender the routes.
+        dry_run: Whether to compile the app without saving it.
+        use_rich: Whether to use rich progress bars.
+        serving: Whether this process serves the app after compiling. It
+            needs every page evaluated to register their states, so the
+            incremental cache is not used.
 
     Returns:
         ``True`` when a real frontend compile ran, ``False`` when the call
         short-circuited (backend-only paths that only re-evaluate pages).
     """
-    from reflex_base.components.dynamic import (
-        _bundle_library,
-        _reset_bundled_libraries_for_compile,
-    )
     from reflex_base.utils.exceptions import ReflexRuntimeError
 
     app._apply_decorated_pages()
     config = get_config()
     _register_plugin_routes(app, config.plugins)
     app._pages = {}
+    app._cached_component_counts = None
 
     should_compile = app._should_compile()
     if not dry_run and not should_compile:
+        from reflex.utils import compile_daemon
+
+        if compile_daemon.daemon_active():
+            # The compile daemon reacts to the same save; read its marker only
+            # once it has finished rewriting .web for this change.
+            compile_daemon.wait_for_compile()
         stateful_pages = _read_stateful_pages_marker()
     else:
         stateful_pages = None
@@ -1289,29 +1554,74 @@ def compile_app(
         app._add_optional_endpoints()
         return False
 
-    progress = console.progress() if use_rich else console.PoorProgress()
-    fixed_steps = 7
+    cache_on = (
+        not dry_run
+        and not serving
+        and environment.REFLEX_COMPILE_CACHE.get()
+        and config.app_module_import is None
+    )
+
     compiler_plugins, radix_themes_plugin = _resolve_radix_themes_plugin(
         app,
         config.plugins,
     )
-    _reset_bundled_libraries_for_compile()
-    # Drop cached memo wrapper classes so each compile recomputes a memo's
-    # ``library`` from the current module layout (handles a module flipping to
-    # a package across hot reloads).
-    reset_memo_component_classes()
-    # Page evaluation rebuilds every chain that is not interned by handler, so
-    # entries from an earlier compile can only retain dead chains.
-    RegistrationContext.ensure_context()._reset_compile_caches()
-    for plugin in compiler_plugins:
-        for dependency in plugin.get_frontend_dependencies():
-            _bundle_library(dependency)
-    base_total = (len(app._unevaluated_pages) * 2) + fixed_steps + len(config.plugins)
+    # Experimental incremental compile cache: in a fresh process, recompile only
+    # the pages whose source changed and reuse the rest from the on-disk
+    # manifest. Falls back to a full compile on any unsafe condition; pages the
+    # attempt already compiled before falling back are adopted, not redone.
+    evaluated: CompileContext | None = None
+    registrations: dict[str, str] | None = None
+    if cache_on:
+        from reflex.compiler import disk_cache, page_cache
+
+        page_cache.enable_read_tracking()
+        # Taken before any page evaluates: evaluation mutates components.
+        registrations = disk_cache.registration_digests(app._unevaluated_pages.values())
+        from reflex.utils import compile_daemon
+
+        def attempt() -> CompileContext | bool:
+            return _compile_from_cache(
+                app,
+                compiler_plugins,
+                radix_themes_plugin,
+                prerender_routes=prerender_routes,
+                use_rich=use_rich,
+                registrations=registrations,
+            )
+
+        if compile_daemon.compiled_in_predicting_child(lambda: attempt() is True):
+            # The child's pages never existed here; the manifest it wrote has
+            # their counts for the compile telemetry.
+            if (manifest := disk_cache.load_manifest()) is not None:
+                app._cached_component_counts = disk_cache.manifest_component_counts(
+                    manifest
+                )
+            return True
+        rebuilt = attempt()
+        if isinstance(rebuilt, CompileContext):
+            evaluated = rebuilt
+        elif rebuilt:
+            return True
+
+    progress = console.progress() if use_rich else console.PoorProgress()
+    fixed_steps = 8
+    all_pages = list(app._unevaluated_pages.values())
+    if evaluated is None:
+        pages_to_compile = all_pages
+        _reset_compile_registries(compiler_plugins)
+    else:
+        # The incremental attempt already did the resets above and bundled what
+        # its pages registered; only the pages it never touched remain.
+        pages_to_compile = [
+            page for page in all_pages if page.route not in evaluated.compiled_pages
+        ]
+    base_total = (len(pages_to_compile) * 2) + fixed_steps + len(config.plugins)
     progress.start()
     task = progress.add_task("Compiling:", total=base_total)
+
     compile_ctx = CompileContext(
         app=app,
-        pages=list(app._unevaluated_pages.values()),
+        pages=pages_to_compile,
         hooks=CompilerHooks(
             plugins=default_page_plugins(style=app.style, plugins=compiler_plugins)
         ),
@@ -1326,19 +1636,11 @@ def compile_app(
             evaluate_progress=lambda: progress.advance(task),
             render_progress=lambda: progress.advance(task),
         )
+    if evaluated is not None:
+        compile_ctx.absorb(evaluated, all_pages)
 
-    for route, page_ctx in compile_ctx.compiled_pages.items():
-        app._check_routes_conflict(route)
-        if not isinstance(page_ctx.root_component, Component):
-            msg = (
-                f"Compiled page {route!r} root must be a Component before it can "
-                "be registered on the app."
-            )
-            raise TypeError(msg)
-        app._pages[route] = page_ctx.root_component
-
-    app._evaluated_pages.update(compile_ctx.compiled_pages)
-    app._stateful_pages.update(compile_ctx.stateful_routes)
+    _register_compiled_pages(app, compile_ctx.compiled_pages)
+    app._stateful_pages.update(dict.fromkeys(compile_ctx.stateful_routes))
     if not dry_run:
         app._write_stateful_pages_marker()
     app._add_optional_endpoints()
@@ -1383,23 +1685,10 @@ def compile_app(
         raise ReflexRuntimeError(msg)
     progress.advance(task)
 
-    app_wrappers = _resolve_app_wrap_components(app, compile_ctx.app_wrap_components)
-    app_root = _memoize_stateful_app_wraps(app._app_root(app_wrappers), compile_ctx)
+    app_root, hydrate_fallback_export = _build_app_root(
+        app, compile_ctx.app_wrap_components, compile_ctx
+    )
     all_imports = utils.merge_imports(all_imports, app_root._get_all_imports())
-
-    hydrate_fallback = app._resolve_hydrate_fallback()
-    hydrate_fallback_export = None
-    if hydrate_fallback is not None:
-        hydrate_fallback._add_style_recursive(app.style)
-        # Compile the fallback through the memo pipeline so it lands in its own
-        # JS module; root.jsx then re-exports it as HydrateFallback.
-        hydrate_fallback_definition = create_component_memo(
-            hydrate_fallback, "hydrate_fallback"
-        )
-        compile_ctx.auto_memo_components[
-            hydrate_fallback_definition.export_name, None
-        ] = hydrate_fallback_definition
-        hydrate_fallback_export = hydrate_fallback_definition.export_name
 
     memo_component_files, memo_components_imports = compile_memo_components(
         (
@@ -1435,33 +1724,9 @@ def compile_app(
                 dest=Path.cwd() / prerequisites.get_web_dir() / constants.Dirs.PUBLIC,
             )
 
-    save_tasks: list[
-        tuple[
-            Callable[..., list[tuple[str, str]] | tuple[str, str] | None],
-            tuple[Any, ...],
-            dict[str, Any],
-        ]
-    ] = []
-    modify_files_tasks: list[tuple[str, str, Callable[[str], str]]] = []
-
-    def add_save_task(
-        task_fn: Callable[..., list[tuple[str, str]] | tuple[str, str] | None],
-        /,
-        *args: Any,
-        **kwargs: Any,
-    ) -> None:
-        save_tasks.append((task_fn, args, kwargs))
-
-    for plugin in config.plugins:
-        plugin.pre_compile(
-            add_save_task=add_save_task,
-            add_modify_task=lambda *args, plugin=plugin: modify_files_tasks.append((
-                plugin.__class__.__module__ + plugin.__class__.__name__,
-                *args,
-            )),
-            radix_themes_plugin=radix_themes_plugin,
-            unevaluated_pages=list(app._unevaluated_pages.values()),
-        )
+    save_tasks, modify_files_tasks = _plugin_output_tasks(
+        config.plugins, radix_themes_plugin, all_pages
+    )
 
     if save_tasks:
         _set_progress_total(progress, task, base_total + len(save_tasks))
@@ -1491,11 +1756,15 @@ def compile_app(
             compile_results.append(result)
         progress.advance(task)
 
+    contexts_snapshot = (
+        utils.compile_contexts_snapshot(app._state) if app._state is not None else None
+    )
     compile_results.extend([
         compile_contexts(
             app._state,
             radix_themes_plugin.get_theme(),
             component_imports=all_imports,
+            contexts_snapshot=contexts_snapshot,
         ),
         utils._compile_bundled_libraries(),
     ])
@@ -1554,30 +1823,29 @@ def compile_app(
             )
         output_mapping[path] = code
 
-    for plugin in config.plugins:
-        for static_file_path, content in plugin.get_static_assets():
-            path = utils.resolve_path_of_web_dir(static_file_path)
-            if path in output_mapping:
-                logger.warning(
-                    f"Plugin {plugin.__class__.__name__} is overwriting existing files at {path}."
-                )
-            output_mapping[path] = (
-                content.decode("utf-8") if isinstance(content, bytes) else content
-            )
+    plugin_sources = _apply_plugin_outputs(
+        output_mapping, config.plugins, modify_files_tasks
+    )
 
-    for plugin_name, file_path, modify_fn in modify_files_tasks:
-        path = utils.resolve_path_of_web_dir(file_path)
-        file_content = output_mapping.get(path)
-        if file_content is None:
-            if path.exists():
-                file_content = path.read_text()
-            else:
-                msg = f"Plugin {plugin_name} is trying to modify {path} but it does not exist."
-                raise FileNotFoundError(msg)
-        output_mapping[path] = modify_fn(file_content)
+    from reflex.compiler import disk_cache
+
+    if not cache_on:
+        # The output written below is not recorded: a manifest an earlier cached
+        # compile left must not validate files this compile overwrites.
+        disk_cache._manifest_path().unlink(missing_ok=True)
 
     with log.timing(logger, "Write to Disk"), otel.span("reflex.compile.write"):
         for output_path, code in output_mapping.items():
             utils.write_file(output_path, code)
+
+    if cache_on:
+        disk_cache.write_manifest(
+            compile_ctx,
+            all_pages,
+            all_imports,
+            plugin_sources=plugin_sources,
+            contexts_snapshot=contexts_snapshot,
+            registrations=registrations,
+        )
 
     return True

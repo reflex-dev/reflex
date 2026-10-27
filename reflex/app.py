@@ -60,6 +60,7 @@ from reflex_base.utils.types import (
     Send,
     is_non_string_sequence,
 )
+from reflex_base.vars.base import seeded_unique_variable_names
 from reflex_base.vars.dep_tracking import is_dependency
 from reflex_components_core.base.error_boundary import ErrorBoundary
 from reflex_components_core.base.fragment import Fragment
@@ -474,6 +475,8 @@ class App(MiddlewareMixin, LifespanMixin):
     # A map from a page route to the component to render. Users should use `add_page`.
     _pages: dict[str, Component] = dataclasses.field(default_factory=dict)
 
+    _cached_component_counts: dict[str, int] | None = dataclasses.field(default=None)
+
     # A mapping of pages which created states as they were being evaluated.
     _stateful_pages: dict[str, None] = dataclasses.field(default_factory=dict)
 
@@ -805,6 +808,7 @@ class App(MiddlewareMixin, LifespanMixin):
         self._compile(
             prerender_routes=should_prerender_routes(),
             trigger=trigger,
+            serving=True,
         )
 
         # In preview mode the frontend is served as a mounted static bundle rather
@@ -1067,6 +1071,7 @@ class App(MiddlewareMixin, LifespanMixin):
             msg = "Route must be set if component is not a callable."
             raise exceptions.RouteValueError(msg)
 
+        default_404 = route == constants.Page404.SLUG and component is None
         if route == constants.Page404.SLUG:
             if component is None:
                 from reflex_components_core.el.elements import span
@@ -1085,7 +1090,10 @@ class App(MiddlewareMixin, LifespanMixin):
         # Check if the route given is valid
         verify_route_validity(route)
 
-        if isinstance(component, Callable):
+        if default_404:
+            # The framework's page, so no user module to mirror.
+            source_module = None
+        elif isinstance(component, Callable):
             source_module = memo_paths.capture_source_module(component)
         else:
             # The user passed a pre-built Component instance — fall back to
@@ -1354,12 +1362,15 @@ class App(MiddlewareMixin, LifespanMixin):
             return
 
         n_states_before = len(all_base_state_classes)
-        component = compiler.compile_unevaluated_page(
-            route,
-            self._unevaluated_pages[route],
-            self.style,
-            self.theme,
-        )
+        # The same names the compiling process drew for this page (a
+        # ``ClientStateVar`` created inside the page function is used by both).
+        with seeded_unique_variable_names(route):
+            component = compiler.compile_unevaluated_page(
+                route,
+                self._unevaluated_pages[route],
+                self.style,
+                self.theme,
+            )
 
         # Indicate that evaluating this page creates one or more state classes.
         if len(all_base_state_classes) > n_states_before:
@@ -1652,16 +1663,19 @@ class App(MiddlewareMixin, LifespanMixin):
         if environment.REFLEX_SKIP_COMPILE.get():
             return False
 
-        nocompile = prerequisites.get_web_dir() / constants.NOCOMPILE_FILE
+        # The nocompile marker is the backend's: its first worker consumes it
+        # and stands down. The compile daemon and its children never read it.
+        if not environment.REFLEX_COMPILE_DAEMON.get():
+            nocompile = prerequisites.get_web_dir() / constants.NOCOMPILE_FILE
+            if nocompile.exists():
+                nocompile.unlink(missing_ok=True)
+                return False
 
-        # Check the nocompile file.
-        if nocompile.exists():
-            # Delete the nocompile file
-            nocompile.unlink(missing_ok=True)
-            return False
+        # A running compile daemon owns .web; backend workers only evaluate
+        # pages to register state.
+        from reflex.utils import compile_daemon
 
-        # By default, compile the app.
-        return True
+        return compile_daemon.owns_compilation()
 
     def _setup_sticky_badge(self):
         """Add the sticky badge to the app."""
@@ -1723,6 +1737,7 @@ class App(MiddlewareMixin, LifespanMixin):
         dry_run: bool = False,
         use_rich: bool = True,
         trigger: CompileTrigger | None = None,
+        serving: bool = False,
     ):
         """Compile the app and output it to the pages folder.
 
@@ -1732,6 +1747,7 @@ class App(MiddlewareMixin, LifespanMixin):
             use_rich: Whether to use rich progress bars.
             trigger: Label identifying what initiated this compile. Recorded
                 on the ``compile`` telemetry event.
+            serving: Whether this process serves the app after compiling.
 
         Raises:
             ReflexRuntimeError: When any page uses state, but no rx.State subclass is defined.
@@ -1748,6 +1764,7 @@ class App(MiddlewareMixin, LifespanMixin):
                         prerender_routes=prerender_routes,
                         dry_run=dry_run,
                         use_rich=use_rich,
+                        serving=serving,
                     )
                     return
 
@@ -1759,6 +1776,7 @@ class App(MiddlewareMixin, LifespanMixin):
                             prerender_routes=prerender_routes,
                             dry_run=dry_run,
                             use_rich=use_rich,
+                            serving=serving,
                         )
                     except Exception as exc:
                         ctx.set_exception(exc)
@@ -1786,6 +1804,13 @@ class App(MiddlewareMixin, LifespanMixin):
         stateful_pages_marker = (
             prerequisites.get_backend_dir() / constants.Dirs.STATEFUL_PAGES
         )
+        content = json.dumps(list(self._stateful_pages))
+        # Skip an identical rewrite so file watchers see no spurious change.
+        if (
+            stateful_pages_marker.exists()
+            and stateful_pages_marker.read_text(encoding="utf-8") == content
+        ):
+            return
         stateful_pages_marker.parent.mkdir(parents=True, exist_ok=True)
         fd, tmp_path = tempfile.mkstemp(
             dir=stateful_pages_marker.parent,
@@ -1795,8 +1820,7 @@ class App(MiddlewareMixin, LifespanMixin):
         os.close(fd)
         tmp_marker = Path(tmp_path)
         try:
-            with tmp_marker.open("w", encoding="utf-8") as f:
-                json.dump(list(self._stateful_pages), f)
+            tmp_marker.write_text(content, encoding="utf-8")
             tmp_marker.chmod(0o644)
             for attempt in range(100):
                 try:

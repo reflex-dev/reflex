@@ -561,6 +561,38 @@ def test_missing_command_tolerates_flags(caplog: pytest.LogCaptureFixture):
     assert "No such option" not in result.output
 
 
+def test_dev_daemon_does_not_disable_backend_fallback(monkeypatch, mocker):
+    """The daemon owns compilation only while its process remains alive."""
+    import contextlib
+
+    from reflex_base import constants
+    from reflex_base.environment import environment
+
+    from reflex.utils import build, compile_daemon, processes, telemetry
+
+    monkeypatch.setenv("REFLEX_COMPILE_CACHE", "1")
+    monkeypatch.delenv("REFLEX_SKIP_COMPILE", raising=False)
+    compiled = mocker.patch.object(reflex, "_compile_app")
+    mocker.patch.object(build, "setup_frontend")
+    mocker.patch.object(telemetry, "send")
+    mocker.patch("atexit.register")
+    concurrent = mocker.patch.object(
+        processes, "run_concurrently_context", return_value=contextlib.nullcontext()
+    )
+    daemon = mocker.patch.object(
+        compile_daemon, "running", return_value=contextlib.nullcontext()
+    )
+    reflex._run_dev(constants.RunningMode.FRONTEND_ONLY, None, None, "localhost")
+    compiled.assert_called_once()
+    assert not environment.REFLEX_SKIP_COMPILE.get()
+    # The run scope owns the daemon process; no concurrent task supervises it.
+    daemon.assert_called_once_with(mocker.ANY, initial_compiled=True)
+    assert all(
+        getattr(command[0], "__module__", None) != compile_daemon.__name__
+        for command in concurrent.call_args.args
+    )
+
+
 def test_init_records_version_check_after_frontend_setup(
     tmp_path, monkeypatch: pytest.MonkeyPatch
 ):

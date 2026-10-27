@@ -1,0 +1,1 @@
+Compiler-generated memo components (the auto-memoized stateful subtrees) now compile to one file each under `.web/utils/components/`, named by their content, instead of one file per source module under `.web/app_components/`; identical subtrees anywhere in the app share one file. `@rx.memo` components keep mirroring their source modules.

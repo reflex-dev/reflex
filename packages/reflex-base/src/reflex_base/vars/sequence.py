@@ -15,7 +15,7 @@ from typing_extensions import TypeVar as TypingExtensionsTypeVar
 
 from reflex_base import constants
 from reflex_base.constants.base import REFLEX_VAR_OPENING_TAG, Dirs
-from reflex_base.utils import console, types
+from reflex_base.utils import console, serializers, types
 from reflex_base.utils.exceptions import VarTypeError
 from reflex_base.utils.imports import ImportDict, ImportVar
 from reflex_base.utils.types import GenericType, get_origin, unionize
@@ -696,11 +696,18 @@ class LiteralArrayVar(
         Returns:
             The var.
         """
+        if _var_type is None:
+            _var_type = figure_out_type(value)
+        # Compiled output embeds the literal; a set's order varies with the
+        # hash seed, so it is sorted once here, not on the delta path.
+        elements: Any = (
+            serializers.sorted_set(value) if isinstance(value, set) else value
+        )
         return LiteralArrayVar(
             _js_expr="",
-            _var_type=figure_out_type(value) if _var_type is None else _var_type,
+            _var_type=_var_type,
             _var_data=_var_data,
-            _var_value=value,
+            _var_value=elements,
         )
 
 
