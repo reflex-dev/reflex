@@ -4701,7 +4701,12 @@ def _validate_state_name(
     members = _reserved_state_members(root)
     if name not in members:
         return
+    from reflex_base.event import EventHandler
+
     method = value.__func__ if isinstance(value, (classmethod, staticmethod)) else value
+    if isinstance(method, EventHandler):
+        # A decorated method shadows like the function it wraps.
+        method = method.fn
     if isinstance(method, FunctionType):
         if value is members[name] or getattr(method, "__override_base_method__", False):
             return

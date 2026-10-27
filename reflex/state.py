@@ -803,7 +803,12 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
 
         # Set up the event handlers.
         for name, fn in list(cls.__dict__.items()):
-            if cls._item_is_event_handler(name, fn):
+            if isinstance(fn, EventHandler):
+                # Bound by __set_name__ (a decorated method). One bound to
+                # another state is an alias and stays that state's.
+                if fn.state is cls and name not in cls.event_handlers:
+                    cls.event_handlers[name] = fn
+            elif cls._item_is_event_handler(name, fn):
                 handler = cls._create_event_handler(fn)
                 cls.event_handlers[name] = handler
                 setattr(cls, name, handler)
@@ -864,6 +869,12 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
                             _var_data=VarData.from_state(cls),
                         ),
                     )
+                elif isinstance(value, EventHandler) and value.state is None:
+                    # A decorated handler of a mixin: copy its function, which
+                    # carries the markers, and let it be wrapped for this class.
+                    fn = cls._copy_fn(value.fn)
+                    fn.__qualname__ = f"{cls.__name__}.{name}"
+                    setattr(cls, name, fn)
                 elif cls._item_is_event_handler(name, value):
                     fn = cls._copy_fn(value)
                     fn.__qualname__ = f"{cls.__name__}.{name}"
@@ -918,7 +929,18 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
 
         Returns:
             Whether the item is an event handler.
+
+        Raises:
+            TypeError: If a decorator was applied on top of ``@rx.event``.
         """
+        if isinstance(getattr(value, "__wrapped__", None), EventHandler):
+            # Wrapped as a handler, the wrapper would return the event spec
+            # of the handler it wraps, chaining that handler forever.
+            msg = (
+                f"Event handler `{name}` is decorated above @rx.event; apply "
+                "other decorators below it."
+            )
+            raise TypeError(msg)
         return (
             not name.startswith("_")
             and isinstance(value, Callable)

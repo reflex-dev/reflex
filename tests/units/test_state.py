@@ -7539,3 +7539,108 @@ async def test_hydration_replay_preserves_shared_cleanup_marks(
     assert storage.value == "fresh"
     assert storage._previous_dirty_vars >= {"snapshot_write", "value"}
     assert not storage.dirty_vars
+
+
+def test_rx_event_handler_bound_at_class_creation() -> None:
+    """A decorated method is an EventHandler bound to its class when the body runs."""
+
+    class BoundState(BaseState):
+        @rx.event
+        def handle(self, value: int):
+            pass
+
+    handler = BoundState.__dict__["handle"]
+    assert isinstance(handler, EventHandler)
+    assert handler.state is BoundState
+    assert handler._type_hints == {"value": int}
+    assert BoundState.event_handlers["handle"] is handler
+    registered = RegistrationContext.get().event_handlers[
+        f"{BoundState.get_full_name()}.handle"
+    ]
+    assert registered.handler is handler
+    assert registered.states == (BoundState,)
+
+
+def test_mixin_decorated_handler_copied_per_state() -> None:
+    """A mixin's decorated handler stays unbound; each state gets its own copy."""
+
+    class CopyMixin(BaseState, mixin=True):
+        @rx.event(background=True, stop_propagation=True)
+        async def work(self):
+            pass
+
+    class UsesCopyMixinA(CopyMixin, State):
+        pass
+
+    class UsesCopyMixinB(CopyMixin, State):
+        pass
+
+    template = CopyMixin.__dict__["work"]
+    assert isinstance(template, EventHandler)
+    assert template.state is None
+    handler_a = UsesCopyMixinA.event_handlers["work"]
+    handler_b = UsesCopyMixinB.event_handlers["work"]
+    assert handler_a.state is UsesCopyMixinA
+    assert handler_b.state is UsesCopyMixinB
+    assert len({template.fn, handler_a.fn, handler_b.fn}) == 3
+    for handler in (handler_a, handler_b):
+        assert handler.is_background
+        assert handler.event_actions == {"stopPropagation": True}
+
+
+def test_aliased_handler_keeps_its_state() -> None:
+    """Assigning another state's handler in a class body does not rebind it."""
+
+    class OwnerState(BaseState):
+        @rx.event
+        def handle(self):
+            pass
+
+    class AliasState(BaseState):
+        alias = OwnerState.handle
+
+    owner_handler = OwnerState.__dict__["handle"]
+    assert isinstance(owner_handler, EventHandler)
+    assert owner_handler.state is OwnerState
+    assert AliasState.__dict__["alias"] is owner_handler
+    assert "alias" not in AliasState.event_handlers
+
+
+def test_wrapper_above_rx_event_raises() -> None:
+    """A decorator applied on top of @rx.event is rejected at class creation."""
+
+    def logged(fn):
+        @functools.wraps(fn)
+        def wrapper(*args, **kwargs):
+            return fn(*args, **kwargs)
+
+        return wrapper
+
+    with pytest.raises(TypeError, match=r"decorated above @rx\.event"):
+
+        class WrappedState(BaseState):
+            @logged
+            @rx.event
+            def handle(self):
+                pass
+
+
+def test_decorated_handler_shadowing_builtin_raises() -> None:
+    """A decorated handler that shadows a State method is rejected like a plain one."""
+    with pytest.raises(NameError, match="shadows a builtin State method"):
+
+        class ShadowState(BaseState):
+            @rx.event
+            def reset(self):
+                pass
+
+
+def test_rx_event_rejects_static_and_class_methods() -> None:
+    """@rx.event on a staticmethod or classmethod raises."""
+    with pytest.raises(TypeError, match="static or class methods"):
+
+        class StaticState(BaseState):
+            @rx.event
+            @staticmethod
+            def handle():
+                pass

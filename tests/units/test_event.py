@@ -1713,3 +1713,44 @@ def test_event_sequence():
     assert event_sequence(events_user_list) is events_user_list
     assert event_sequence("abc") == ["abc"]
     assert event_sequence(b"ab") == [b"ab"]
+
+
+def test_decentralized_event_actions_are_registered():
+    """The registered handler of a decentralized event carries its event actions."""
+
+    class S(BaseState):
+        field: Field[str] = field("")
+
+    @event(stop_propagation=True)
+    def e(s: S):
+        s.field = "foo"
+
+    assert isinstance(e, EventHandler)
+    registered = RegistrationContext.get().event_handlers[
+        format.format_event_handler(e)
+    ]
+    assert registered.handler is e
+    assert registered.handler.event_actions == {"stopPropagation": True}
+    assert registered.states == (S,)
+
+
+def test_rx_event_stateless_registers_globally():
+    """A function with no state parameter registers as a stateless handler."""
+
+    @event
+    def ping(x: str) -> str:
+        return x
+
+    assert isinstance(ping, EventHandler)
+    assert ping.state is None
+    registered = RegistrationContext.get().event_handlers[
+        format.format_event_handler(ping)
+    ]
+    assert registered.handler is ping
+    assert registered.states == ()
+    spec = ping("1")
+    assert isinstance(spec, EventSpec)
+    [ev] = Event.from_event_type(spec)
+    assert ev.name == format.format_event_handler(ping)
+    assert ev.payload == {"x": "1"}
+    _ = rx.input(on_change=ping)

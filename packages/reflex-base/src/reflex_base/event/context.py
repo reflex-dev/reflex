@@ -5,7 +5,7 @@ from __future__ import annotations
 import dataclasses
 import functools
 import os
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Protocol
 
 from reflex_base import otel
@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 
     from reflex.istate.manager import StateManager
     from reflex_base.event import Event
+    from reflex_base.event.processor.future import EventFuture
 
 
 @functools.lru_cache
@@ -43,12 +44,15 @@ def _new_txid() -> str:
 class EnqueueProtocol(Protocol):
     """Protocol for the enqueue function in the event context."""
 
-    async def __call__(self, token: str, *events: Event) -> Any:
+    async def __call__(self, token: str, *events: Event) -> Sequence[EventFuture]:
         """Enqueue an event handler to be executed.
 
         Args:
             token: The client token associated with the event.
             events: The events to enqueue.
+
+        Returns:
+            One future per event, each resolving to its handler's return value.
         """
         ...
 
@@ -163,10 +167,13 @@ class EventContext(BaseContext):
         if self.emit_event_impl is not None:
             await self.emit_event_impl(self.token, *events)
 
-    async def enqueue(self, *event: Event) -> None:
+    async def enqueue(self, *event: Event) -> Sequence[EventFuture]:
         """Enqueue an event handler to be executed.
 
         Args:
             event: The event to enqueue.
+
+        Returns:
+            One future per event, each resolving to its handler's return value.
         """
-        await self.enqueue_impl(self.token, *event)
+        return await self.enqueue_impl(self.token, *event)

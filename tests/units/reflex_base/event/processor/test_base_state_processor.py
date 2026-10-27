@@ -3430,3 +3430,270 @@ async def test_hydrate_replays_override_side_effects_once(
         state = await root.get_state(StorageState)
         assert state.value == "browser"
         assert state.revision == 1
+
+
+async def test_handler_return_value_resolves_future(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+):
+    """A non-event return value resolves the event's future after the delta.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: List to capture emitted deltas.
+        token: The client token.
+    """
+
+    class ReturnState(State):
+        n: int = 0
+
+        @event
+        def compute(self, x: int) -> int:
+            self.n = x
+            return x * 2
+
+        @event
+        async def compute_async(self, x: int) -> dict[str, int]:
+            self.n = x
+            return {"doubled": x * 2}
+
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(ReturnState.compute(21))[0]
+        )
+        assert await future == 42
+        assert any(
+            delta.get(ReturnState.get_full_name(), {}).get(f"n{FIELD_MARKER}") == 21
+            for _, delta in emitted_deltas
+        )
+        future = await processor.enqueue(
+            token, Event.from_event_type(ReturnState.compute_async(4))[0]
+        )
+        assert await future == {"doubled": 8}
+
+
+async def test_generator_return_value_resolves_future(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+):
+    """A generator handler's ``return`` value resolves the future; a returned event chains.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: List to capture emitted deltas.
+        token: The client token.
+    """
+
+    class GenReturnState(State):
+        n: int = 0
+        log: list[str] = []
+
+        @event
+        def steps(self):
+            self.n = 1
+            yield
+            self.n = 2
+            return "done"  # noqa: B901
+
+        @event
+        def add(self, tag: str):
+            self.log = [*self.log, tag]
+
+        @event
+        def chains(self):
+            yield
+            return GenReturnState.add("chained")  # noqa: B901
+
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(GenReturnState.steps())[0]
+        )
+        assert await future == "done"
+        n_values = [
+            delta[GenReturnState.get_full_name()].get(f"n{FIELD_MARKER}")
+            for _, delta in emitted_deltas
+            if GenReturnState.get_full_name() in delta
+        ]
+        # The hydration snapshot carries the default before the two yields.
+        assert n_values[-2:] == [1, 2]
+        future = await processor.enqueue(
+            token, Event.from_event_type(GenReturnState.chains())[0]
+        )
+        assert await future.wait_all() is None
+        await processor.join(5)
+
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    state = await root_ctx.state_manager.get_state(
+        BaseStateToken(ident=token, cls=State)
+    )
+    assert (await state.get_state(GenReturnState)).log == ["chained"]
+
+
+async def test_returned_coroutine_still_raises_type_error(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A handler returning a coroutine it forgot to await is an error, not a result.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+
+    async def _work() -> int:  # noqa: RUF029
+        return 1
+
+    class ForgotAwaitState(State):
+        @event
+        def handler(self):
+            return _work()
+
+    captured: list[Exception] = []
+    real_base_state_processor.backend_exception_handler = captured.append
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(ForgotAwaitState.handler())[0]
+        )
+        with pytest.raises(TypeError, match="must only return/yield"):
+            await future
+    assert len(captured) == 1
+
+
+async def test_background_handler_return_value_resolves_future(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A background handler's return value resolves its future too.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+
+    class BgReturnState(State):
+        n: int = 0
+
+        @event(background=True)
+        async def compute(self, x: int) -> int:
+            async with self:
+                self.n = x
+            return x + 1
+
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(BgReturnState.compute(1))[0]
+        )
+        assert await future == 2
+
+
+async def test_stateless_handler_runs_without_lock_and_resolves_result(
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A stateless handler runs with no state and its return value resolves the future.
+
+    Args:
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    calls: list[tuple[int, int]] = []
+
+    @event
+    def stateless_add(a: int, b: int) -> int:
+        calls.append((a, b))
+        return a + b
+
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(stateless_add(1, 2))[0]
+        )
+        assert await future == 3
+    assert calls == [(1, 2)]
+
+
+async def test_stateless_handler_chains_returned_events(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """Events a stateless handler returns or yields run against the token's state.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+
+    class ChainTargetState(State):
+        log: list[str] = []
+
+        @event
+        def add(self, tag: str):
+            self.log = [*self.log, tag]
+
+    @event
+    def stateless_chain():
+        yield ChainTargetState.add("yielded")
+        return ChainTargetState.add("returned")  # noqa: B901
+
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(stateless_chain())[0]
+        )
+        assert await future.wait_all() is None
+        await processor.join(5)
+
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    state = await root_ctx.state_manager.get_state(
+        BaseStateToken(ident=token, cls=State)
+    )
+    assert (await state.get_state(ChainTargetState)).log == ["yielded", "returned"]
+
+
+async def test_stateless_handler_is_not_serialized_behind_the_token_queue(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A stateless handler holds no lock, so it does not wait for the token's FIFO.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    order: list[str] = []
+    release = asyncio.Event()
+
+    class SlowState(State):
+        @event
+        async def slow(self):
+            await release.wait()
+            order.append("slow")
+
+    @event
+    def quick():
+        order.append("quick")
+
+    async with real_base_state_processor as processor:
+        slow_future = await processor.enqueue(
+            token, Event.from_event_type(SlowState.slow())[0]
+        )
+        quick_future = await processor.enqueue(token, Event.from_event_type(quick())[0])
+        await asyncio.wait_for(quick_future, 5)
+        assert order == ["quick"]
+        release.set()
+        await asyncio.wait_for(slow_future, 5)
+    assert order == ["quick", "slow"]

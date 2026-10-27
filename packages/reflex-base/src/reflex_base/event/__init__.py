@@ -147,22 +147,7 @@ class Event:
             if not isinstance(e, EventSpec):
                 msg = f"Unexpected event type, {type(e)}."
                 raise ValueError(msg)
-            name = format.format_event_handler(e.handler)
-            # Detach mutable values from any state-bound proxies (e.g.
-            # ImmutableMutableProxy from a background task's StateProxy),
-            # copying only subtrees that are actually proxied.
-            payload = {
-                k._js_expr: _detach_state_proxies(v._decode()) for k, v in e.args
-            }
-
-            # Create an event and append it to the list.
-            out.append(
-                Event(
-                    name=name,
-                    payload=payload,
-                    router_data=router_data or {},
-                )
-            )
+            out.append(e._to_event(router_data))
 
         return out
 
@@ -655,6 +640,27 @@ class EventHandler(EventActionsMixin):
         """
         return getattr(self.fn, SUPERSEDES_MARKER, False)
 
+    def __set_name__(self, owner: type, name: str) -> None:
+        """Bind the handler to the state class whose body declares it.
+
+        Runs when the class is created, before ``BaseState.__init_subclass__``
+        collects and registers the class's handlers. A handler already bound
+        to a state (aliased onto another class) and one declared on a mixin
+        (copied per concrete state instead) are left unbound.
+
+        Args:
+            owner: The class the handler is declared on.
+            name: The attribute name.
+        """
+        del name
+        if self.state is not None or getattr(owner, "_mixin", True):
+            return
+        from reflex.state import BaseState
+
+        if isinstance(owner, type) and issubclass(owner, BaseState):
+            object.__setattr__(self, "state", owner)
+            self._get_type_hints()
+
     def __get__(self, instance: Any, owner: type | None = None) -> Any:
         """Get the handler on class access, or its function bound to a state.
 
@@ -830,6 +836,26 @@ class EventSpec(EventActionsMixin):
         object.__setattr__(self, "handler", handler)
         object.__setattr__(self, "client_handler_name", client_handler_name)
         object.__setattr__(self, "args", args or ())
+
+    def _to_event(self, router_data: dict[str, Any] | None = None) -> Event:
+        """Create the runtime Event this spec describes.
+
+        Args:
+            router_data: The routing data for the event.
+
+        Returns:
+            The Event, with its payload decoded from the bound args.
+        """
+        return Event(
+            name=format.format_event_handler(self.handler),
+            # Detach mutable values from any state-bound proxies (e.g.
+            # ImmutableMutableProxy from a background task's StateProxy),
+            # copying only subtrees that are actually proxied.
+            payload={
+                k._js_expr: _detach_state_proxies(v._decode()) for k, v in self.args
+            },
+            router_data=router_data or {},
+        )
 
     def with_args(self, args: tuple[tuple[Var, Var], ...]) -> "EventSpec":
         """Copy the event spec, with updated args.
@@ -3119,6 +3145,26 @@ if TYPE_CHECKING:
     from reflex.state import BaseState
 
 
+class EventDecorator(Protocol):
+    """The decorator ``rx.event(...)`` returns, for state-bound and stateless handlers."""
+
+    @overload
+    def __call__(
+        self, func: "Callable[[BASE_STATE, Unpack[P]], Any]"
+    ) -> EventCallback[*P]: ...
+
+    @overload
+    def __call__(self, func: "Callable[[Unpack[P]], Any]") -> EventCallback[*P]: ...
+
+    def __call__(self, func: Callable) -> EventCallback:
+        """Wrap a function to be used as an event.
+
+        Args:
+            func: The function to wrap.
+        """
+        ...
+
+
 class EventNamespace:
     """A namespace for event related classes."""
 
@@ -3194,7 +3240,7 @@ class EventNamespace:
         throttle: int | None = None,
         debounce: int | None = None,
         temporal: bool | None = None,
-    ) -> "Callable[[Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[*P]]": ...
+    ) -> EventDecorator: ...
 
     @overload
     def __new__(
@@ -3210,9 +3256,11 @@ class EventNamespace:
         temporal: bool | None = None,
     ) -> EventCallback[*P]: ...
 
+    # A stateless handler: a function whose first parameter is not a state.
+    @overload
     def __new__(
         cls,
-        func: "Callable[[BASE_STATE, Unpack[P]], Any] | None" = None,
+        func: "Callable[[Unpack[P]], Any]",
         *,
         background: bool | None = None,
         supersedes: bool | None = None,
@@ -3221,7 +3269,20 @@ class EventNamespace:
         throttle: int | None = None,
         debounce: int | None = None,
         temporal: bool | None = None,
-    ) -> "EventCallback[*P] | Callable[[Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[*P]]":
+    ) -> EventCallback[*P]: ...
+
+    def __new__(
+        cls,
+        func: "Callable[..., Any] | None" = None,
+        *,
+        background: bool | None = None,
+        supersedes: bool | None = None,
+        stop_propagation: bool | None = None,
+        prevent_default: bool | None = None,
+        throttle: int | None = None,
+        debounce: int | None = None,
+        temporal: bool | None = None,
+    ) -> "EventCallback | EventDecorator":
         """Wrap a function to be used as an event.
 
         Args:
@@ -3272,9 +3333,10 @@ class EventNamespace:
                 event_actions["temporal"] = temporal
             return event_actions
 
-        def wrapper(
-            func: "Callable[[BASE_STATE, Unpack[P]], T]",
-        ) -> EventCallback[*P]:
+        def wrapper(func: Callable[..., Any]) -> EventCallback:
+            if isinstance(func, (staticmethod, classmethod)):
+                msg = "Event handlers cannot be static or class methods."
+                raise TypeError(msg)
             if background is True:
                 if not inspect.iscoroutinefunction(
                     func
@@ -3288,48 +3350,49 @@ class EventNamespace:
                 msg = "Event handlers cannot be private."
                 raise ValueError(msg)
 
+            # The markers stay on the function: a mixin's handler is copied
+            # per concrete state from its function, and the handler reads
+            # them from there.
+            event_actions = _build_event_actions()
+            if event_actions:
+                setattr(func, EVENT_ACTIONS_MARKER, event_actions)
+
             qualname: str | None = getattr(func, "__qualname__", None)
 
             if qualname and (
                 len(func_path := qualname.split(".")) == 1
                 or func_path[-2] == "<locals>"
             ):
+                # A plain function: a decentralized handler when its first
+                # parameter is a state, else a stateless one. Either is
+                # registered now, under a module-qualified name.
                 from reflex.state import BaseState
 
                 types = get_type_hints(func)
                 state_arg_name = next(iter(inspect.signature(func).parameters), None)
                 state_cls = state_arg_name and types.get(state_arg_name)
+                name = (
+                    (func.__module__ + "." + qualname)
+                    .replace(".", "_")
+                    .replace("<locals>", "_")
+                    .removeprefix("_")
+                )
+                object.__setattr__(func, "__name__", name)
+                object.__setattr__(func, "__qualname__", name)
                 if state_cls and issubclass(state_cls, BaseState):
-                    name = (
-                        (func.__module__ + "." + qualname)
-                        .replace(".", "_")
-                        .replace("<locals>", "_")
-                        .removeprefix("_")
-                    )
-                    object.__setattr__(func, "__name__", name)
-                    object.__setattr__(func, "__qualname__", name)
                     state_cls._add_event_handler(name, func)
-                    event_callback = getattr(state_cls, name)
+                    return getattr(state_cls, name)
+                return RegistrationContext.register_event_handler(
+                    EventHandler(fn=func, event_actions=event_actions)
+                )  # pyright: ignore [reportReturnType]
 
-                    # Apply decorator event actions
-                    event_actions = _build_event_actions()
-                    if event_actions:
-                        # Create new EventCallback with updated event_actions
-                        event_callback = dataclasses.replace(
-                            event_callback, event_actions=event_actions
-                        )
-
-                    return event_callback
-
-            # Store decorator event actions on the function for later processing
-            event_actions = _build_event_actions()
-            if event_actions:
-                setattr(func, EVENT_ACTIONS_MARKER, event_actions)
-            return func  # pyright: ignore [reportReturnType]
+            # A method: bound to its state class by __set_name__ when the
+            # class body is executed.
+            return EventHandler(fn=func, event_actions=event_actions)  # pyright: ignore [reportReturnType]
 
         if func is not None:
             return wrapper(func)
-        return wrapper
+        return wrapper  # pyright: ignore [reportReturnType]
 
     get_event = staticmethod(get_event)
     get_hydrate_event = staticmethod(get_hydrate_event)

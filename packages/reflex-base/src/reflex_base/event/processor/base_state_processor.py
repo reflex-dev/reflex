@@ -66,6 +66,28 @@ def _connect_supersedes() -> tuple[str, str]:
     )
 
 
+_EVENT_LIKE_TYPES = (Event, EventHandler, EventSpec)
+
+
+def _is_event_like(value: Any) -> bool:
+    """Whether a handler's return value is an event or a sequence of events.
+
+    Args:
+        value: The value a handler returned or yielded.
+
+    Returns:
+        True for an Event, EventHandler or EventSpec, or a sequence of them.
+    """
+    if isinstance(value, _EVENT_LIKE_TYPES):
+        return True
+    if not is_non_string_sequence(value):
+        return False
+    try:
+        return all(isinstance(e, _EVENT_LIKE_TYPES) for e in value)
+    except TypeError:
+        return False
+
+
 def _check_valid_yield(events: Any, handler_name: str = "unknown") -> Any:
     """Check if the events yielded are valid. They must be EventHandlers or EventSpecs.
 
@@ -79,21 +101,11 @@ def _check_valid_yield(events: Any, handler_name: str = "unknown") -> Any:
     Raises:
         TypeError: If any of the events are not valid.
     """
-
-    def _is_valid_type(events: Any) -> bool:
-        return isinstance(events, (Event, EventHandler, EventSpec))
-
-    if events is None or _is_valid_type(events):
+    if events is None or _is_event_like(events):
         return events
 
     if not is_non_string_sequence(events):
         events = [events]
-
-    try:
-        if all(_is_valid_type(e) for e in events):
-            return events
-    except TypeError:
-        pass
 
     coroutines = [e for e in events if inspect.iscoroutine(e)]
 
@@ -282,7 +294,7 @@ async def chain_updates(
 
 
 def ensure_locked(
-    state: BaseState | StateProxy, root_state: BaseState | None
+    state: BaseState | StateProxy | None, root_state: BaseState | None
 ) -> BaseState | None:
     """The root to flush deltas from, only while the state lock is held.
 
@@ -311,21 +323,25 @@ def ensure_locked(
 async def process_event(
     handler: EventHandler,
     payload: dict,
-    state: BaseState | StateProxy,
+    state: BaseState | StateProxy | None,
     root_state: BaseState | None,
-):
+) -> Any:
     """Process event.
 
     Args:
         handler: EventHandler to process.
         payload: The event payload.
-        state: State to process the handler.
+        state: State to process the handler, or None for a stateless handler.
         root_state: The root state of the app, used for emitting deltas. Pass
             None when the caller does not hold the state lock (background
             tasks): computing and cleaning a delta on an unlocked root races
             concurrent events on a shared state tree, and background state
             changes are emitted by the ``async with self`` context exits
             instead.
+
+    Returns:
+        The handler's return value, None when it returned nothing or events
+        (which are chained instead).
 
     Raises:
         ValueError: If a string value is received for an int or float type and cannot be converted.
@@ -334,13 +350,15 @@ async def process_event(
     handler_name = fn.__qualname__
     payload = _prepare_event_payload(handler, payload)
 
+    # A stateless handler takes no state argument.
+    args = () if state is None else (state,)
     # Handle async functions.
     if handler._is_coroutine_function:
-        events = await fn(state, **payload)
+        events = await fn(*args, **payload)
 
     # Handle regular functions.
     else:
-        events = fn(state, **payload)
+        events = fn(*args, **payload)
     # Handle async generators.
     if inspect.isasyncgen(events):
         async for event in events:
@@ -349,9 +367,7 @@ async def process_event(
                 root_state=ensure_locked(state, root_state),
                 handler_name=handler_name,
             )
-        await chain_updates(
-            None, root_state=ensure_locked(state, root_state), handler_name=handler_name
-        )
+        events = None
 
     # Handle regular generators.
     elif inspect.isgenerator(events):
@@ -365,23 +381,23 @@ async def process_event(
         except StopIteration as si:
             # the "return" value of the generator is not available
             # in the loop, we must catch StopIteration to access it
-            if si.value is not None:
-                await chain_updates(
-                    si.value,
-                    root_state=ensure_locked(state, root_state),
-                    handler_name=handler_name,
-                )
-        await chain_updates(
-            None, root_state=ensure_locked(state, root_state), handler_name=handler_name
-        )
+            events = si.value
 
-    # Handle regular event chains.
-    else:
+    # Chain a returned event (or events); anything else is the result.
+    if events is None or _is_event_like(events):
         await chain_updates(
             events,
             root_state=ensure_locked(state, root_state),
             handler_name=handler_name,
         )
+        return None
+    if inspect.iscoroutine(events):
+        # A coroutine that was never awaited is a bug, not a result.
+        _check_valid_yield(events, handler_name=handler_name)
+    await chain_updates(
+        None, root_state=ensure_locked(state, root_state), handler_name=handler_name
+    )
+    return events
 
 
 class BaseStateEventProcessor(EventProcessor):
@@ -528,9 +544,23 @@ class BaseStateEventProcessor(EventProcessor):
         for future in self._superseded.pop((on_load_name, token), {}).values():
             future.cancel()
 
+    def _runs_unordered(self, registered_handler: RegisteredEventHandler) -> bool:
+        """Whether an event runs immediately instead of in its token's FIFO.
+
+        The FIFO serializes the handlers that take the token's state lock. A
+        stateless handler takes none, so it runs like a background one.
+
+        Args:
+            registered_handler: The registered handler for the event.
+
+        Returns:
+            True for a background or stateless handler.
+        """
+        return registered_handler.handler.is_background or not registered_handler.states
+
     async def _execute_event(
         self, *, entry: EventQueueEntry, registered_handler: RegisteredEventHandler
-    ) -> None:
+    ) -> Any:
         """Execute the handler for a single event queue entry with full state management.
 
         The ``EventContext`` has already been set by ``_process_event_queue_entry``
@@ -539,9 +569,20 @@ class BaseStateEventProcessor(EventProcessor):
         Args:
             entry: The event queue entry to process.
             registered_handler: The registered handler for the event.
+
+        Returns:
+            The handler's return value, which resolves the event's future.
         """
         ctx = entry.ctx
         event = entry.event
+        if not registered_handler.states:
+            # A stateless handler holds no lock and gets no state.
+            return await process_event(
+                handler=registered_handler.handler,
+                payload=event.payload,
+                state=None,
+                root_state=None,
+            )
         # The context, not the event: a chained event carries none of its own
         # and inherits the producing view's through fork().
         router_data = ctx.router_data
@@ -586,7 +627,7 @@ class BaseStateEventProcessor(EventProcessor):
                     await ctx.emit_delta(update.delta)
                 if update.events:
                     await _route_events(ctx, update.events)
-                return
+                return None
 
             # Get the event's substate.
             substate = await state.get_state(registered_handler.states[0])
@@ -597,13 +638,12 @@ class BaseStateEventProcessor(EventProcessor):
 
             # Process non-background events while holding the lock.
             if not registered_handler.handler.is_background:
-                await process_event(
+                return await process_event(
                     handler=registered_handler.handler,
                     payload=event.payload,
                     state=substate,
                     root_state=root_state,
                 )
-                return
         # Otherwise drop the state lock and start processing the background task
         # with a proxy state. No root_state: the lock is no longer held, and
         # under a shared state tree (opportunistic locking, in-memory manager)
@@ -618,8 +658,9 @@ class BaseStateEventProcessor(EventProcessor):
         # lock, so these locals would pin an extra copy for the whole task.
         del state, substate, root_state
         handler_error: BaseException | None = None
+        result = None
         try:
-            await process_event(
+            result = await process_event(
                 handler=registered_handler.handler,
                 state=proxy,
                 payload=event.payload,
@@ -659,6 +700,7 @@ class BaseStateEventProcessor(EventProcessor):
                         "Error flushing delta after background handler "
                         f"{registered_handler.handler.fn.__qualname__} raised:"
                     )
+        return result
 
     async def _handle_backend_exception(
         self, ex: Exception, ev_ctx: EventContext | None = None

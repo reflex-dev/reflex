@@ -701,9 +701,20 @@ class EventProcessor:
         if task is not None:
             task.cancel()
 
+    def _runs_unordered(self, registered_handler: RegisteredEventHandler) -> bool:
+        """Whether an event runs immediately instead of in its token's FIFO.
+
+        Args:
+            registered_handler: The registered handler for the event.
+
+        Returns:
+            True for a background handler.
+        """
+        return registered_handler.handler.is_background
+
     async def _execute_event(
         self, *, entry: EventQueueEntry, registered_handler: RegisteredEventHandler
-    ) -> None:
+    ) -> Any:
         """Execute the handler for a single event queue entry.
 
         This method contains the actual event-processing logic.  The base
@@ -718,15 +729,21 @@ class EventProcessor:
         Args:
             entry: The event queue entry to process.
             registered_handler: The registered handler for the event.
+
+        Returns:
+            The handler's return value, which resolves the event's future.
         """
         event = entry.event
         result = registered_handler.handler.fn(**event.payload)
-        if inspect.isawaitable(result):
-            await result
+        # Only a coroutine is run for the handler: an awaitable EventSpec it
+        # returns is a description of an event, not work to do here.
+        if inspect.iscoroutine(result):
+            result = await result
+        return result
 
     async def _process_event_queue_entry(
         self, *, entry: EventQueueEntry, registered_handler: RegisteredEventHandler
-    ) -> None:
+    ) -> Any:
         """Process a single event queue entry.
 
         This function runs in a new task for each event.  It sets up the
@@ -741,16 +758,18 @@ class EventProcessor:
         Args:
             entry: The event queue entry to process.
             registered_handler: The registered handler for the event.
+
+        Returns:
+            The handler's return value, which resolves the event's future.
         """
         # Set up the event context for this task.
         EventContext.set(entry.ctx)
         if not otel.enabled:
-            await self._execute_event(
+            return await self._execute_event(
                 entry=entry, registered_handler=registered_handler
             )
-            return
         with otel.event_span(entry.event, entry.ctx, registered_handler):
-            await self._execute_event(
+            return await self._execute_event(
                 entry=entry, registered_handler=registered_handler
             )
 
@@ -866,8 +885,7 @@ class EventProcessor:
                             f"No registered handler found for event: {entry.event.name}"
                         )
                         raise KeyError(msg) from ke
-                    if registered_handler.handler.is_background:
-                        # Background events run immediately, bypassing per-token ordering.
+                    if self._runs_unordered(registered_handler):
                         self._create_event_task(
                             entry=entry, registered_handler=registered_handler
                         )
