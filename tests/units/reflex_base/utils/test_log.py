@@ -7,6 +7,7 @@ import os
 import signal
 import subprocess
 import sys
+import threading
 import time
 from pathlib import Path
 from unittest import mock
@@ -1495,3 +1496,29 @@ def test_output_pump_writes_in_atomic_chunks(monkeypatch):
     assert json.loads(big)["message"] == "y" * (2 * log._PIPE_BUF)
     assert json.loads(last)["message"] == "z"
     assert b"".join(writes).count(b"\n") == 202
+
+
+def test_output_pump_drain_grace_ends_with_the_write(monkeypatch):
+    """The grace ends when the write completes, even while the pipe stays open."""
+    release = threading.Event()
+    started = threading.Event()
+
+    def slow_write(_fd, _data):
+        started.set()
+        release.wait(5)
+
+    monkeypatch.setattr(log, "_write_all", slow_write)
+    # The write end stays open, like a descendant that outlives the command.
+    read_fd, write_fd = os.pipe()
+    pump = log._OutputPump(read_fd, 1, "info", "stdout")
+    pump.start()
+    try:
+        os.write(write_fd, b"line\n")
+        assert started.wait(5)
+        threading.Timer(0.2, release.set).start()
+        begin = time.monotonic()
+        pump.drain(begin, 0.0, begin)
+        assert time.monotonic() - begin < 1
+    finally:
+        os.close(write_fd)
+        pump.join(5)

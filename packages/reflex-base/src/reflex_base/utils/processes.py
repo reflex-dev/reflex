@@ -24,6 +24,25 @@ from pathlib import Path
 _PROC = Path("/proc")
 
 
+def _stat_fields(pid: int | str) -> list[bytes] | None:
+    """Read the fixed fields of a process's ``/proc/<pid>/stat``.
+
+    Args:
+        pid: The process ID.
+
+    Returns:
+        The fields after the command name (state, ppid, ...), or None when
+        the process is gone.
+    """
+    try:
+        stat = (_PROC / str(pid) / "stat").read_bytes()
+    except OSError:
+        return None
+    # The command name may hold spaces or parentheses; the fixed fields start
+    # after its closing parenthesis.
+    return stat[stat.rfind(b")") + 1 :].split()
+
+
 def _process_parents() -> Iterator[tuple[int, int]]:
     """Yield ``(pid, ppid)`` for every process on a POSIX system.
 
@@ -32,16 +51,9 @@ def _process_parents() -> Iterator[tuple[int, int]]:
     """
     if sys.platform == "linux" and _PROC.is_dir():
         for entry in _PROC.iterdir():
-            if not entry.name.isdigit():
-                continue
-            try:
-                stat = (entry / "stat").read_bytes()
-            except OSError:
-                # The process exited while being listed.
-                continue
-            # The command name may hold spaces or parentheses; the fixed
-            # fields start after its closing parenthesis: state, ppid, ...
-            yield int(entry.name), int(stat[stat.rfind(b")") + 1 :].split()[1])
+            # A process that exited while being listed has no fields.
+            if entry.name.isdigit() and (fields := _stat_fields(entry.name)):
+                yield int(entry.name), int(fields[1])
         return
     listing = subprocess.run(
         ["ps", "-A", "-o", "pid=,ppid="], capture_output=True, text=True, check=False
@@ -98,11 +110,8 @@ def _alive(pid: int) -> bool:
     except PermissionError:
         return True
     if sys.platform == "linux":
-        try:
-            stat = (_PROC / str(pid) / "stat").read_bytes()
-        except OSError:
-            return False
-        return stat[stat.rfind(b")") + 1 :].split()[0] != b"Z"
+        fields = _stat_fields(pid)
+        return fields is not None and fields[0] != b"Z"
     return True
 
 

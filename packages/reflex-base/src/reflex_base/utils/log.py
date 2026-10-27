@@ -435,6 +435,9 @@ class _OutputPump(threading.Thread):
         # Cumulative write time and the start of any ongoing write.
         self._write_state: tuple[float, float | None] = (0.0, None)
         self._write_lock = threading.Lock()
+        # Clear while a write is in progress.
+        self._write_done = threading.Event()
+        self._write_done.set()
 
     def run(self):
         """Forward the pipe until every writer closed it."""
@@ -467,6 +470,7 @@ class _OutputPump(threading.Thread):
         records = _to_records(lines, traceback, self.level, self.logger_name, final)
         if not records or self._dropping:
             return
+        self._write_done.clear()
         with self._write_lock:
             elapsed, _ = self._write_state
             started = time.monotonic()
@@ -479,6 +483,7 @@ class _OutputPump(threading.Thread):
                 _write_all(self.write_fd, chunk)
         with self._write_lock:
             self._write_state = (elapsed + time.monotonic() - started, None)
+        self._write_done.set()
 
     def writing_snapshot(self) -> tuple[float, float]:
         """Capture the current time and cumulative write duration together.
@@ -522,10 +527,7 @@ class _OutputPump(threading.Thread):
             ):
                 break
         self._dropping = True
-        with self._write_lock:
-            writing = self._write_state[1] is not None
-        if writing:
-            self.join(_DRAIN_RECORD_GRACE_SECONDS)
+        self._write_done.wait(_DRAIN_RECORD_GRACE_SECONDS)
 
 
 def supervise_output(args: list[str]) -> int:

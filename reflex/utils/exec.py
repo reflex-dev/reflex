@@ -181,25 +181,6 @@ def get_different_packages(
     return dependencies_change, dev_dependencies_change
 
 
-def kill(proc_pid: int):
-    """Kills a process and all its child processes.
-
-    Requires the `psutil` library to be installed.
-
-    Args:
-        proc_pid: The process ID of the process to be killed.
-
-    Example:
-        >>> kill(1234)
-    """
-    import psutil
-
-    process = psutil.Process(proc_pid)
-    for proc in process.children(recursive=True):
-        proc.kill()
-    process.kill()
-
-
 def notify_frontend(url: str, backend_present: bool):
     """Output a string notifying where the frontend is running.
 
