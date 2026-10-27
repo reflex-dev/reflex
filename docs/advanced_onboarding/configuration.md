@@ -25,6 +25,19 @@ config = rx.Config(
 
 See the [config reference](/docs/api-reference/config/) for all the parameters available.
 
+## Event Loop Blocking Detection
+
+In development, Reflex reports when an event handler blocks the asyncio event loop for at least `event_loop_blocking_threshold` seconds (default `0.2`). The warning includes the handler name and suggests moving blocking work to a thread pool executor or a background event. Detection is disabled in production. Set the threshold to `None` to disable it in development:
+
+```python
+config = rx.Config(
+    app_name="my_app_name",
+    event_loop_blocking_threshold=None,
+)
+```
+
+The setting can also be overridden with `REFLEX_EVENT_LOOP_BLOCKING_THRESHOLD`.
+
 ## Environment Variables
 
 Any config parameter can be overridden by setting an environment variable with the `REFLEX_` prefix and the parameter name in uppercase. Environment variables take precedence over values set in `rxconfig.py`.

@@ -17,8 +17,10 @@ from typing import TYPE_CHECKING, Any, Self, TypeVar
 
 from reflex.app_mixins.middleware import MiddlewareMixin
 from reflex.istate.manager import StateManager
-from reflex_base import otel
+from reflex_base import constants, otel
+from reflex_base.environment import environment
 from reflex_base.event.context import EventContext
+from reflex_base.event.processor.blocking import EventLoopBlockingMonitor
 from reflex_base.event.processor.future import EventFuture
 from reflex_base.event.processor.timeout import DrainTimeoutManager
 from reflex_base.registry import RegisteredEventHandler, RegistrationContext
@@ -108,6 +110,7 @@ class EventProcessor:
         Callable[[Exception], EventSpec | list[EventSpec] | None] | None
     ) = None
     graceful_shutdown_timeout: float | None = None
+    event_loop_blocking_threshold: float | None = None
 
     _queue: asyncio.Queue[EventQueueEntry] | None = dataclasses.field(
         default=None, init=False
@@ -137,6 +140,9 @@ class EventProcessor:
         str,
         collections.deque[tuple[EventQueueEntry, RegisteredEventHandler]],
     ] = dataclasses.field(default_factory=dict, init=False)
+    _blocking_monitor: EventLoopBlockingMonitor | None = dataclasses.field(
+        default=None, init=False, repr=False
+    )
 
     def configure(
         self,
@@ -243,6 +249,14 @@ class EventProcessor:
             raise RuntimeError(msg)
         self._attached_root_context_token = EventContext.set(self._root_context)
         self._queue = asyncio.Queue()
+        if (
+            self.event_loop_blocking_threshold is not None
+            and environment.REFLEX_ENV_MODE.get() == constants.Env.DEV
+        ):
+            self._blocking_monitor = EventLoopBlockingMonitor(
+                asyncio.get_running_loop(), self.event_loop_blocking_threshold
+            )
+            self._blocking_monitor.start()
         self._ensure_queue_task()
 
     async def _stop_tasks(self, timeout: float | None = None) -> None:
@@ -339,6 +353,9 @@ class EventProcessor:
             if not future.done():
                 future.cancel()
         self._futures.clear()
+        if self._blocking_monitor is not None:
+            self._blocking_monitor.stop()
+            self._blocking_monitor = None
 
     async def join(
         self, timeout: float | None = None, queue: asyncio.Queue | None = None
@@ -744,15 +761,23 @@ class EventProcessor:
         """
         # Set up the event context for this task.
         EventContext.set(entry.ctx)
-        if not otel.enabled:
-            await self._execute_event(
-                entry=entry, registered_handler=registered_handler
-            )
-            return
-        with otel.event_span(entry.event, entry.ctx, registered_handler):
-            await self._execute_event(
-                entry=entry, registered_handler=registered_handler
-            )
+        monitor = self._blocking_monitor
+        handler = registered_handler.handler.fn
+        if monitor is not None:
+            monitor.handler_started(handler)
+        try:
+            if not otel.enabled:
+                await self._execute_event(
+                    entry=entry, registered_handler=registered_handler
+                )
+                return
+            with otel.event_span(entry.event, entry.ctx, registered_handler):
+                await self._execute_event(
+                    entry=entry, registered_handler=registered_handler
+                )
+        finally:
+            if monitor is not None:
+                monitor.handler_finished(handler)
 
     def _create_event_task(
         self,
