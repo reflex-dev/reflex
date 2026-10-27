@@ -27,7 +27,7 @@ POST_RELEASE_WORKFLOW_KEY = "post-release-workflow"
 #: workflow drift the next ``sync --check`` reports — which is the point: the
 #: tool and the release path it generates move together. A repository that wants
 #: its own cadence sets ``uv-version``.
-DEFAULT_UV_VERSION = "0.13.4"
+DEFAULT_UV_VERSION = "0.13.6"
 
 #: The Python the generated workflows run uv with, pinned for the same reason. A
 #: repository whose packages cannot build on it sets ``python-version``.

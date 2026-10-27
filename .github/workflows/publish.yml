@@ -104,7 +104,7 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
-          version: "0.13.4"
+          version: "0.13.6"
           python-version: "3.14.10"
 
       - name: Validate against changelog, branch rules and existing tags
@@ -134,7 +134,7 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
-          version: "0.13.4"
+          version: "0.13.6"
           python-version: "3.14.10"
 
       - name: Pin lockstep siblings to exact versions
@@ -211,7 +211,7 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
-          version: "0.13.4"
+          version: "0.13.6"
           python-version: "3.14.10"
 
       # One artifact per build job — a platform matrix uploads one per leg —
@@ -373,7 +373,7 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
-          version: "0.13.4"
+          version: "0.13.6"
           python-version: "3.14.10"
           enable-cache: "false"
           ignore-empty-workdir: "true"
@@ -415,7 +415,7 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
-          version: "0.13.4"
+          version: "0.13.6"
           python-version: "3.14.10"
 
       # The same artifact the approval covered: the release notes and the
