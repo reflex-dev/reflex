@@ -157,9 +157,35 @@ def test_kill_descendants_kills_known_pids_no_longer_below_the_root(tmp_path: Pa
     try:
         proc.terminate()
         proc.wait(timeout=5)
-        assert process_tree.descendant_pids(proc.pid) == []
-        process_tree.kill_descendants(proc.pid, [grandchild])
+        assert grandchild not in process_tree.descendant_pids(os.getpid())
+        process_tree.kill_descendants(os.getpid(), [grandchild])
         assert _wait_gone(grandchild, timeout=1)
+    finally:
+        with contextlib.suppress(OSError):
+            os.kill(grandchild, signal.SIGKILL)
+
+
+# A child that exits at once, leaving a grandchild in a process group of its
+# own: it stands in for an unrelated process that took over a reused ID.
+_DETACHING_CHILD = """
+import subprocess, sys
+grandchild = subprocess.Popen(
+    [sys.executable, "-c", "import time; time.sleep(60)"], start_new_session=True
+)
+print(grandchild.pid, flush=True)
+"""
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX signals")
+def test_kill_descendants_spares_a_known_pid_outside_the_group(tmp_path: Path):
+    """A known ID now held by a process outside the root's group is not killed."""
+    proc, line = _start(tmp_path, _DETACHING_CHILD)
+    grandchild = int(line)
+    try:
+        proc.wait(timeout=5)
+        process_tree.kill_descendants(os.getpid(), [grandchild])
+        time.sleep(0.2)
+        assert _alive(grandchild)
     finally:
         with contextlib.suppress(OSError):
             os.kill(grandchild, signal.SIGKILL)

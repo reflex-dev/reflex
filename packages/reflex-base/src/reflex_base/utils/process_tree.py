@@ -136,12 +136,33 @@ def kill_descendants(pid: int, known: Iterable[int] = ()):
 
     Args:
         pid: The root process ID, which is left running.
-        known: Process IDs seen below the root earlier. They are killed too,
-            since a descendant whose parent has exited since is no longer
-            found below the root.
+        known: Process IDs seen below the root earlier. One still in the
+            root's process group is killed too, since a descendant whose
+            parent has exited is no longer found below the root. One that
+            left the group belongs to an unrelated process that took over
+            the ID, so it is spared.
     """
-    if sys.platform != "win32":
-        _signal([*known, *descendant_pids(pid)], signal.SIGKILL)
+    if sys.platform == "win32":
+        return
+    group = _group_of(pid)
+    pids = [p for p in known if _group_of(p) == group]
+    _signal([*pids, *descendant_pids(pid)], signal.SIGKILL)
+
+
+def _group_of(pid: int) -> int | None:
+    """Look up a process's process group.
+
+    Args:
+        pid: The process ID.
+
+    Returns:
+        The process group ID, or None when the process is gone or not ours
+        to ask about.
+    """
+    try:
+        return os.getpgid(pid)
+    except (ProcessLookupError, PermissionError):
+        return None
 
 
 def _wait(process: subprocess.Popen, descendants: list[int], deadline: float):
