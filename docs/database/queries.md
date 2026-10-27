@@ -6,6 +6,12 @@ A query is a request for information from a database table or combination of
 tables. A query can be used to retrieve data from a single table or multiple
 tables. A query can also be used to insert, update, or delete data from a table.
 
+```md alert warning
+# `rx.Model` is deprecated
+
+`rx.Model` and `rx.session` are deprecated as of Reflex 0.9.2 and are scheduled for removal in 1.0.0. The examples below document the existing Reflex ORM interface. For new applications, use SQLModel or SQLAlchemy directly with your own engine and sessions; see the [database overview](/docs/database/overview/).
+```
+
 ## Session
 
 To execute a query you must first create a `rx.session`. You can use the session

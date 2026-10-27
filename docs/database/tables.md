@@ -6,6 +6,12 @@ In tables, data is logically organized in a row-and-column format similar to a
 spreadsheet. Each row represents a unique record, and each column represents a
 field in the record.
 
+```md alert warning
+# `rx.Model` is deprecated
+
+`rx.Model` and `rx.session` are deprecated as of Reflex 0.9.2 and are scheduled for removal in 1.0.0. The examples below document the existing Reflex ORM interface. For new applications, use SQLModel or SQLAlchemy directly with your own engine and sessions; see the [database overview](/docs/database/overview/).
+```
+
 ## Creating a Table
 
 To create a table, make a class that inherits from `rx.Model`.

@@ -9,6 +9,12 @@ To establish bidirectional relationships a model must correctly set the
 `back_populates` keyword argument on the `Relationship` to the relationship
 attribute in the _other_ model.
 
+```md alert warning
+# `rx.Model` is deprecated
+
+`rx.Model` and `rx.session` are deprecated as of Reflex 0.9.2 and are scheduled for removal in 1.0.0. The examples below document the existing Reflex ORM interface. For new applications, use SQLModel or SQLAlchemy directly with your own engine and sessions; see the [database overview](/docs/database/overview/).
+```
+
 ## Foreign Key Relationships
 
 To create a relationship, first add a field to the model that references the
