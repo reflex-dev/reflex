@@ -762,9 +762,20 @@ class EventProcessor:
         # Set up the event context for this task.
         EventContext.set(entry.ctx)
         monitor = self._blocking_monitor
+        if monitor is None:
+            if not otel.enabled:
+                await self._execute_event(
+                    entry=entry, registered_handler=registered_handler
+                )
+                return
+            with otel.event_span(entry.event, entry.ctx, registered_handler):
+                await self._execute_event(
+                    entry=entry, registered_handler=registered_handler
+                )
+            return
+
         handler = registered_handler.handler.fn
-        if monitor is not None:
-            monitor.handler_started(handler)
+        monitor.handler_started(handler)
         try:
             if not otel.enabled:
                 await self._execute_event(
@@ -776,8 +787,7 @@ class EventProcessor:
                     entry=entry, registered_handler=registered_handler
                 )
         finally:
-            if monitor is not None:
-                monitor.handler_finished(handler)
+            monitor.handler_finished(handler)
 
     def _create_event_task(
         self,
