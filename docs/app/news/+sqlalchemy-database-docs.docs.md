@@ -1,0 +1,1 @@
+Rewrite the database overview, tables, queries and relationships pages and the table component's database examples to use SQLAlchemy `DeclarativeBase` models with `MappedAsDataclass`, a `sessionmaker` session factory and 2.0-style `select` queries instead of the deprecated `rx.Model` and `rx.session`. The overview gains a migration table from `rx.Model`.

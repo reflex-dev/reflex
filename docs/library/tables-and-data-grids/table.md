@@ -139,13 +139,21 @@ TableRowHeaderCell: |
 
 ```python exec
 import reflex as rx
+from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
 
 
-class Customer(rx.Model, table=True):
-    name: str
-    email: str
-    phone: str
-    address: str
+class Base(MappedAsDataclass, DeclarativeBase):
+    """Base class for the app's tables."""
+
+
+class Customer(Base):
+    __tablename__ = "customer"
+
+    id: Mapped[int] = mapped_column(init=False, primary_key=True)
+    name: Mapped[str]
+    email: Mapped[str]
+    phone: Mapped[str]
+    address: Mapped[str]
 ```
 
 # Table
@@ -472,28 +480,32 @@ The more common use case for building an `rx.table` is to use data from a databa
 
 The code below shows how to load data from a database and place it in an `rx.table`.
 
-```md alert warning
-# `rx.Model` is deprecated
-
-`rx.Model` is deprecated as of Reflex 0.9.2 and is scheduled for removal in 1.0.0. The examples below document the existing Reflex ORM interface. For new applications, use SQLModel or SQLAlchemy directly with your own engine and sessions; see the [database overview](/docs/database/overview/).
-```
-
 ## Loading data into table
 
-A `Customer` [model](/docs/database/tables/) is defined that inherits from `rx.Model`.
+A `Customer` [model](/docs/database/tables/) is defined as a SQLAlchemy table, and the examples open sessions with the `Session` factory from the [database overview](/docs/database/overview/#connecting).
 
 The `load_entries` event handler executes a [query](/docs/database/queries/) that is used to request information from a database table. This `load_entries` event handler is called on the `on_mount` event trigger of the `rx.table.root`.
 
 If you want to load the data when the page in the app loads you can set `on_load` in `app.add_page()` to equal this event handler, like `app.add_page(page_name, on_load=State.load_entries)`.
 
 ```python
-class Customer(rx.Model, table=True):
+from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
+
+
+class Base(MappedAsDataclass, DeclarativeBase):
+    """Base class for the app's tables."""
+
+
+class Customer(Base):
     """The customer model."""
 
-    name: str
-    email: str
-    phone: str
-    address: str
+    __tablename__ = "customer"
+
+    id: Mapped[int] = mapped_column(init=False, primary_key=True)
+    name: Mapped[str]
+    email: Mapped[str]
+    phone: Mapped[str]
+    address: Mapped[str]
 ```
 
 ```python exec
@@ -563,7 +575,7 @@ loading_data_table_example()
 ```
 
 ```python
-from sqlmodel import select
+from sqlalchemy import select
 
 
 class DatabaseTableState(rx.State):
@@ -572,8 +584,8 @@ class DatabaseTableState(rx.State):
     @rx.event
     def load_entries(self):
         """Get all users from the database."""
-        with rx.session() as session:
-            self.users = session.exec(select(Customer)).all()
+        with Session() as session:
+            self.users = session.scalars(select(Customer)).all()
 
 
 def show_customer(user: Customer):
@@ -620,13 +632,23 @@ The `%` character before and after `search_value` makes it a wildcard pattern th
 ```
 
 ```python
-class Customer(rx.Model, table=True):
+from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
+
+
+class Base(MappedAsDataclass, DeclarativeBase):
+    """Base class for the app's tables."""
+
+
+class Customer(Base):
     """The customer model."""
 
-    name: str
-    email: str
-    phone: str
-    address: str
+    __tablename__ = "customer"
+
+    id: Mapped[int] = mapped_column(init=False, primary_key=True)
+    name: Mapped[str]
+    email: Mapped[str]
+    phone: Mapped[str]
+    address: Mapped[str]
 ```
 
 ```python exec
@@ -749,7 +771,7 @@ loading_data_table_example_2()
 ```
 
 ```python
-from sqlmodel import select, asc, or_
+from sqlalchemy import asc, or_, select
 
 
 class DatabaseTableState2(rx.State):
@@ -761,7 +783,7 @@ class DatabaseTableState2(rx.State):
     @rx.event
     def load_entries(self):
         """Get all users from the database."""
-        with rx.session() as session:
+        with Session() as session:
             query = select(Customer)
 
             if self.search_value != "":
@@ -780,7 +802,7 @@ class DatabaseTableState2(rx.State):
                 order = asc(sort_column)
                 query = query.order_by(order)
 
-            self.users = session.exec(query).all()
+            self.users = session.scalars(query).all()
 
     @rx.event
     def sort_values(self, sort_value):
@@ -911,7 +933,7 @@ class DatabaseTableState3(rx.State):
         self.load_entries()
 
     def _get_total_items(self, session):
-        self.total_items = session.exec(select(func.count(Customer.id))).one()
+        self.total_items = session.scalar(select(func.count(Customer.id)))
 
     @rx.event
     def load_entries(self):
@@ -966,7 +988,7 @@ loading_data_table_example3()
 ```
 
 ```python
-from sqlmodel import select, func
+from sqlalchemy import func, select
 
 
 class DatabaseTableState3(rx.State):
@@ -999,18 +1021,18 @@ class DatabaseTableState3(rx.State):
 
     def _get_total_items(self, session):
         """Return the total number of items in the Customer table."""
-        self.total_items = session.exec(select(func.count(Customer.id))).one()
+        self.total_items = session.scalar(select(func.count(Customer.id)))
 
     @rx.event
     def load_entries(self):
         """Get all users from the database."""
-        with rx.session() as session:
+        with Session() as session:
             query = select(Customer)
 
             # Apply pagination
             query = query.offset(self.offset).limit(self.limit)
 
-            self.users = session.exec(query).all()
+            self.users = session.scalars(query).all()
             self._get_total_items(session)
 
 
@@ -1078,8 +1100,9 @@ For the `json` download the `rx.download` is in the frontend code attached to th
 For the `csv` download the `rx.download` is in the backend code as an event_handler `download_csv_data`. There is also a helper function `_convert_to_csv` that converts the data in `self.users` to `csv` format.
 
 ```python exec
-import io
 import csv
+import dataclasses
+import io
 import json
 
 
@@ -1119,14 +1142,14 @@ class TableDownloadState(rx.State):
         writer = csv.DictWriter(output, fieldnames=fieldnames)
         writer.writeheader()
         for user in self.users:
-            writer.writerow(user.dict())
+            writer.writerow(dataclasses.asdict(user))
 
         csv_data = output.getvalue()
         output.close()
         return csv_data
 
     def _convert_to_json(self) -> str:
-        return json.dumps([u.dict() for u in self._mock_data], indent=2)
+        return json.dumps([dataclasses.asdict(u) for u in self._mock_data], indent=2)
 
     @rx.event
     def download_csv_data(self):
@@ -1191,9 +1214,11 @@ download_data_table_example()
 ```
 
 ```python
-import io
 import csv
-from sqlmodel import select
+import dataclasses
+import io
+
+from sqlalchemy import select
 
 
 class TableDownloadState(rx.State):
@@ -1202,8 +1227,8 @@ class TableDownloadState(rx.State):
     @rx.event
     def load_entries(self):
         """Get all users from the database."""
-        with rx.session() as session:
-            self.users = session.exec(select(Customer)).all()
+        with Session() as session:
+            self.users = session.scalars(select(Customer)).all()
 
     def _convert_to_csv(self) -> str:
         """Convert the users data to CSV format."""
@@ -1213,14 +1238,14 @@ class TableDownloadState(rx.State):
             self.load_entries()
 
         # Define the CSV file header based on the Customer model's attributes
-        fieldnames = list(Customer.__fields__)
+        fieldnames = [field.name for field in dataclasses.fields(Customer)]
 
         # Create a string buffer to hold the CSV data
         output = io.StringIO()
         writer = csv.DictWriter(output, fieldnames=fieldnames)
         writer.writeheader()
         for user in self.users:
-            writer.writerow(user.dict())
+            writer.writerow(dataclasses.asdict(user))
 
         # Get the CSV data as a string
         csv_data = output.getvalue()

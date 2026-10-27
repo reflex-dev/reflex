@@ -6,37 +6,122 @@ In tables, data is logically organized in a row-and-column format similar to a
 spreadsheet. Each row represents a unique record, and each column represents a
 field in the record.
 
-```md alert warning
-# `rx.Model` is deprecated
-
-`rx.Model` is deprecated as of Reflex 0.9.2 and is scheduled for removal in 1.0.0. The examples below document the existing Reflex ORM interface. For new applications, use SQLModel or SQLAlchemy directly with your own engine and sessions; see the [database overview](/docs/database/overview/).
-```
-
 ## Creating a Table
 
-To create a table, make a class that inherits from `rx.Model`.
-
-The following example shows how to create a table called `User`.
+Tables are [SQLAlchemy](https://docs.sqlalchemy.org/en/20/orm/quickstart.html)
+models. Define one base class for the app and make each table a subclass of it.
 
 ```python
-class User(rx.Model, table=True):
-    username: str
-    email: str
+import reflex as rx
+from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
+
+
+class Base(MappedAsDataclass, DeclarativeBase):
+    """Base class for the app's tables."""
+
+
+rx.ModelRegistry.register(Base)
+
+
+class User(Base):
+    __tablename__ = "user"
+
+    id: Mapped[int] = mapped_column(init=False, primary_key=True)
+    username: Mapped[str]
+    email: Mapped[str]
 ```
 
-The `table=True` argument tells Reflex to create a table in the database for
-this class.
+Each `Mapped[...]` annotation becomes a column whose SQL type is derived from the
+Python type. `MappedAsDataclass` makes the model a dataclass, so `User(username="test", email="test@example.com")`
+constructs a row and Reflex can store `User` instances in state and render their
+fields in components. `rx.ModelRegistry.register(Base)` lets the `reflex db`
+[migration commands](/docs/database/overview/#migrations) find the tables.
+
+Dataclass fields without a default must come before fields with one, so declare
+required columns first and optional columns, with `default=None` or
+`default_factory`, after them.
 
 ### Primary Key
 
-By default, Reflex will create a primary key column called `id` for each table.
+Every table needs a primary key. Declare it with `primary_key=True`; `init=False`
+excludes it from the constructor so the database assigns it on insert.
 
-However, if an `rx.Model` defines a different field with `primary_key=True`, then the
-default `id` field will not be created. A table may also redefine `id` as needed.
+```python
+class User(Base):
+    __tablename__ = "user"
 
-It is not currently possible to create a table without a primary key.
+    id: Mapped[int] = mapped_column(init=False, primary_key=True)
+    ...
+```
 
 ## Advanced Column Types
+
+### Nullable and Optional Columns
+
+A column annotated with `| None` is nullable. Give it `default=None` so it can
+be left out when constructing the row.
+
+```python
+from datetime import datetime
+
+
+class Post(Base):
+    __tablename__ = "post"
+
+    id: Mapped[int] = mapped_column(init=False, primary_key=True)
+    title: Mapped[str]
+    body: Mapped[str]
+    published_at: Mapped[datetime | None] = mapped_column(default=None)
+```
+
+### Explicit column types
+
+SQLAlchemy maps basic Python types to column types, but for more advanced use
+cases, pass the column type to `mapped_column` directly. For example, we can add
+a last updated timestamp to the post example as a `DateTime` with timezone that
+the database fills in.
+
+```python
+import datetime
+
+import sqlalchemy
+
+
+class Post(Base):
+    __tablename__ = "post"
+
+    id: Mapped[int] = mapped_column(init=False, primary_key=True)
+    ...
+    update_ts: Mapped[datetime.datetime] = mapped_column(
+        sqlalchemy.DateTime(timezone=True),
+        init=False,
+        server_default=sqlalchemy.func.now(),
+    )
+```
+
+Reflex serializes `datetime` values to ISO strings for the frontend. To change
+how a model is sent to the frontend, register a serializer for it. This one
+strips the microseconds from `update_ts`:
+
+```python
+import dataclasses
+
+import reflex as rx
+
+
+@rx.serializer
+def serialize_post(post: Post) -> dict:
+    data = dataclasses.asdict(post)
+    data["update_ts"] = post.update_ts.replace(microsecond=0).isoformat()
+    return data
+```
+
+## Existing `rx.Model` apps
+
+`rx.Model` is deprecated as of Reflex 0.9.2 and is scheduled for removal in
+1.0.0. See [Migrating existing apps](/docs/database/overview/#migrating-existing-apps)
+for the equivalent SQLAlchemy declarations. The note below applies to apps that
+still use `rx.Model` or SQLModel directly.
 
 ### Datetimes and SQLModel upgrades
 
@@ -82,43 +167,3 @@ convert existing database values: determine the timezone of stored data and
 apply a database-specific migration before adopting UTC storage. Follow
 [SQLModel's datetime upgrade guide](https://sqlmodel.tiangolo.com/advanced/datetime/#upgrade-existing-applications)
 for the PostgreSQL, SQLite, and MySQL migration details.
-
-### Explicit column types
-
-SQLModel automatically maps basic python types to SQLAlchemy column types, but
-for more advanced use cases, it is possible to define the column type using
-`sqlalchemy` directly. For example, we can add a last updated timestamp to the
-post example as a proper `DateTime` field with timezone.
-
-```python
-import datetime
-
-import sqlmodel
-import sqlalchemy
-
-
-class Post(rx.Model, table=True):
-    ...
-    update_ts: datetime.datetime = sqlmodel.Field(
-        default=None,
-        sa_column=sqlalchemy.Column(
-            "update_ts",
-            sqlalchemy.DateTime(timezone=True),
-            server_default=sqlalchemy.func.now(),
-        ),
-    )
-```
-
-To make the `Post` model more usable on the frontend, a `dict` method may be provided
-that converts any fields to a JSON serializable value. In this case, the dict method is
-overriding the default `datetime` serializer to strip off the microsecond part.
-
-```python
-class Post(rx.Model, table=True):
-    ...
-
-    def dict(self, *args, **kwargs) -> dict:
-        d = super().dict(*args, **kwargs)
-        d["update_ts"] = self.update_ts.replace(microsecond=0).isoformat()
-        return d
-```
