@@ -418,6 +418,9 @@ def _compile_app_worker(
 # twice; a later repeat forces the exit.
 _REPEAT_IGNORE_SECONDS = 1
 
+# Windows never delivers SIGTERM, but Ctrl-C arrives as SIGINT there too.
+_SHUTDOWN_SIGNALS = (signal.SIGINT, signal.SIGTERM)
+
 
 def _write_stderr_now(message: bytes) -> None:
     """Write to stderr unless that would block.
@@ -444,8 +447,8 @@ def _shutdown_signals() -> Generator[Callable[[], None], None, None]:
     later repeat means the cleanup is stuck: every descendant is killed and
     the process exits at once (on Windows only the exit: a console Ctrl-C
     already reached every process on the console). The backend server
-    installs its own handlers while it serves; this covers the time before
-    and after.
+    installs its own handlers while it serves and does not restore these, so
+    the cleanup puts them back.
 
     Yields:
         A function the run body calls when its cleanup begins, so a signal
@@ -462,6 +465,9 @@ def _shutdown_signals() -> Generator[Callable[[], None], None, None]:
         if stopping_at is None:
             stopping_at = time.monotonic()
             tree.extend(descendant_pids(os.getpid()))
+        # The backend server installs its own handlers and does not restore them.
+        for sig in _SHUTDOWN_SIGNALS:
+            signal.signal(sig, stop)
 
     def stop(signum: int, frame: FrameType | None) -> None:
         if stopping_at is None:
@@ -477,10 +483,7 @@ def _shutdown_signals() -> Generator[Callable[[], None], None, None]:
         _write_stderr_now(b"Forced exit: the cleanup did not finish.\n")
         os._exit(128 + signum)
 
-    # Windows never delivers SIGTERM, but Ctrl-C arrives as SIGINT there too.
-    previous = {
-        sig: signal.signal(sig, stop) for sig in (signal.SIGINT, signal.SIGTERM)
-    }
+    previous = {sig: signal.signal(sig, stop) for sig in _SHUTDOWN_SIGNALS}
     try:
         yield begin_cleanup
     finally:

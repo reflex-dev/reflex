@@ -1085,15 +1085,20 @@ rx._run_dev(MODE,3000,PORT,"127.0.0.1")
 
 
 _STUCK_CLEANUP_SCRIPT = """
-import subprocess, sys, time
+import os, signal, subprocess, sys, threading, time
 
 from reflex import reflex
 
 with reflex._shutdown_signals() as begin_cleanup:
     try:
+        served = threading.Event()
+        if os.environ.get("SERVER_HANDLERS"):
+            # Like granian: its own handlers while serving, never restored.
+            for sig in (signal.SIGINT, signal.SIGTERM):
+                signal.signal(sig, lambda *_: served.set())
         print("ready", flush=True)
-        while True:
-            time.sleep(1)
+        while not served.is_set():
+            time.sleep(0.05)
     finally:
         begin_cleanup()
         # A cleanup that never ends, like a frontend pipe held open forever.
@@ -1106,12 +1111,20 @@ with reflex._shutdown_signals() as begin_cleanup:
 
 @pytest.mark.skipif(sys.platform == "win32", reason="POSIX signals")
 @pytest.mark.parametrize("sig", [signal.SIGINT, signal.SIGTERM])
-def test_shutdown_signals_force_exit_on_a_later_repeat(tmp_path, sig):
-    """A repeat right after the first signal is ignored; a later one forces the exit."""
+@pytest.mark.parametrize("server_handlers", [False, True], ids=["own", "server"])
+def test_shutdown_signals_force_exit_on_a_later_repeat(tmp_path, sig, server_handlers):
+    """A repeat right after the first signal is ignored; a later one forces the exit.
+
+    A backend server that installed its own handlers and never restored them,
+    as granian does, cannot swallow the later repeat.
+    """
     script = tmp_path / "stuck.py"
     script.write_text(_STUCK_CLEANUP_SCRIPT)
     proc = subprocess.Popen(
-        [sys.executable, str(script)], stdout=subprocess.PIPE, bufsize=0
+        [sys.executable, str(script)],
+        stdout=subprocess.PIPE,
+        bufsize=0,
+        env={**os.environ, "SERVER_HANDLERS": "1" if server_handlers else ""},
     )
     helper = None
     try:
