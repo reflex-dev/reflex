@@ -1,1 +1,0 @@
-Raise an actionable error when a legacy string passed to `App.modify_state()` has a missing or unknown state path. Use `rx.BaseStateToken(ident=client_token, cls=StateClass)` to select the state explicitly.

@@ -13,6 +13,19 @@ pytestmark = pytest.mark.skipif(
 )
 
 
+@pytest.mark.parametrize("width", [390, 1440])
+def test_ag_chart_loads_without_visiting_ag_grid(page: Page, width: int):
+    """A direct visit renders the standalone chart on mobile and desktop."""
+    errors = []
+    page.on("pageerror", lambda error: errors.append(str(error)))
+    page.set_viewport_size({"width": width, "height": 1000})
+    page.goto(f"{PREVIEW_URL}/docs/enterprise/ag-chart/")
+    chart = page.locator(".docs-demo-preview canvas").first
+    expect(chart).to_be_visible()
+    expect(page.get_by_text("Application Error", exact=False)).to_have_count(0)
+    assert not errors
+
+
 @pytest.mark.parametrize("width", [390, 768, 1440])
 def test_docs_reading_typography_is_consistent(page: Page, width: int):
     """Editorial type is consistent without overriding live-example headings."""
