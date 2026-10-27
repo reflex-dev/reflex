@@ -86,6 +86,20 @@ attributes. Event payloads and state are never recorded.
 Pass `meter_provider=` to `instrument()` to export them (defaults to the global
 meter provider).
 
+### Logs
+
+With JSON logging on (`REFLEX_LOG_JSON=true` or `--json`), every Reflex log
+record emitted inside a span carries that span's W3C ids, so a log line can be
+looked up in your tracing backend and vice versa:
+
+```json
+{"level": "error", "message": "...", "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736", "span_id": "00f067aa0ba902b7"}
+```
+
+Records emitted outside a span, or while the instrumentation is off, have no
+`trace_id`/`span_id` fields. For your own application loggers, use
+[`opentelemetry-instrumentation-logging`](https://opentelemetry-python-contrib.readthedocs.io/en/latest/instrumentation/logging/logging.html).
+
 ## Frontend: browser traces
 
 Add the plugin to your config to trace the browser as well:

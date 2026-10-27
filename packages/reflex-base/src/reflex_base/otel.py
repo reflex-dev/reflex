@@ -269,6 +269,24 @@ def capture_context() -> Context | None:
     return context_api.get_current()
 
 
+def trace_fields() -> dict[str, str] | None:
+    """W3C ids of the current span, for correlating a log record with its trace.
+
+    Returns:
+        ``trace_id`` (32 hex digits) and ``span_id`` (16 hex digits) of the
+        current span, or None when tracing is off or no valid span is current.
+    """
+    if not enabled:
+        return None
+    span_context = trace.get_current_span().get_span_context()
+    if not span_context.is_valid:
+        return None
+    return {
+        "trace_id": trace.format_trace_id(span_context.trace_id),
+        "span_id": trace.format_span_id(span_context.span_id),
+    }
+
+
 def attach_context(context: Context | None) -> None:
     """Make a captured context current for the rest of the running task.
 
@@ -524,4 +542,5 @@ __all__ = [
     "record_message_size",
     "record_state_acquired",
     "remote_context",
+    "trace_fields",
 ]

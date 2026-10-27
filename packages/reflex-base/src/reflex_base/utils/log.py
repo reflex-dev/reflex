@@ -42,6 +42,7 @@ from rich.console import Console
 from rich.errors import MarkupError
 from rich.text import Text
 
+from reflex_base import otel
 from reflex_base.constants import LogLevel
 from reflex_base.constants.base import Reflex
 from reflex_base.utils.decorator import once
@@ -571,6 +572,9 @@ class JsonHandler(logging.Handler):
                 value = getattr(record, field, None)
                 if value is not None:
                     payload[field] = value
+            # Correlate the record with the span it was emitted under.
+            if (ids := otel.trace_fields()) is not None:
+                payload.update(ids)
             if record.exc_info and record.exc_info[0] is not None:
                 payload["exception"] = _EXC_FORMATTER.formatException(
                     record.exc_info  # pyright: ignore[reportArgumentType]
