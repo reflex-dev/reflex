@@ -110,7 +110,7 @@ rx.flex(
 
 ```python demo
 rx.hstack(
-    rx.box("Example", bg="red", border_radius="3px", width="10%"),
+    rx.box("Example", bg="red", color="black", border_radius="3px", width="10%"),
     rx.box(
         "Example",
         bg="orange",
@@ -147,7 +147,7 @@ rx.hstack(
 
 ```python demo
 rx.vstack(
-    rx.box("Example", bg="red", border_radius="3px", width="20%"),
+    rx.box("Example", bg="red", color="black", border_radius="3px", width="20%"),
     rx.box(
         "Example",
         bg="orange",
