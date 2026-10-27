@@ -6,6 +6,7 @@ import asyncio
 import contextlib
 import dataclasses
 import functools
+import logging
 import os
 from collections.abc import AsyncIterator, Callable, Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Protocol
@@ -21,6 +22,9 @@ if TYPE_CHECKING:
     from reflex.state import BaseState
     from reflex_base.event import Event
     from reflex_base.event.processor.future import EventFuture
+
+
+logger = logging.getLogger(__name__)
 
 
 @functools.lru_cache
@@ -178,15 +182,28 @@ class EventContext(BaseContext):
         cancelled, those runs are cancelled too.
         """
         current = asyncio.current_task()
-        pending = [t for t in self.inline_tasks if t is not current and not t.done()]
         try:
-            if pending:
+            # Drain until nothing is left: a run may start another while
+            # the earlier ones are awaited.
+            while pending := [
+                t for t in self.inline_tasks if t is not current and not t.done()
+            ]:
                 try:
-                    await asyncio.gather(*pending, return_exceptions=True)
+                    results = await asyncio.gather(*pending, return_exceptions=True)
                 except asyncio.CancelledError:
                     for task in pending:
                         task.cancel()
                     raise
+                for task, result in zip(pending, results, strict=True):
+                    if isinstance(result, BaseException) and not isinstance(
+                        result, asyncio.CancelledError
+                    ):
+                        # Gathering retrieved the exception, so asyncio would
+                        # not report it as unretrieved; keep it visible.
+                        logger.error(
+                            f"Inline event handler task {task.get_name()} failed:",
+                            exc_info=result,
+                        )
         finally:
             self.set_locked_root(None)
 

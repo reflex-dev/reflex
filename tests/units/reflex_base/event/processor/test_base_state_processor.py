@@ -4299,3 +4299,89 @@ async def test_cancelled_background_handler_releases_the_lock_while_waiting_for_
         BaseStateToken(ident=token, cls=State)
     )
     assert (await state.get_state(CancelState)).log == ["ping"]
+
+
+async def test_release_lock_waits_for_nested_and_late_inline_runs(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+    caplog: pytest.LogCaptureFixture,
+):
+    """The lock outlives a detached run that nests another, spawns a late one, or fails.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+        caplog: The log capture fixture.
+    """
+    release = asyncio.Event()
+
+    class NestedState(State):
+        log: list[str] = []
+
+        @event
+        def inner(self):
+            self.log = [*self.log, "inner"]
+
+        @event
+        async def late(self):
+            await release.wait()
+            self.log = [*self.log, "late"]
+
+        @event
+        async def failing(self):
+            # Still running when the release drains, so it is gathered there.
+            await release.wait()
+            msg = "inline boom"
+            raise ValueError(msg)
+
+        @event
+        async def outer(self):
+            # Nesting an inline run must not drop this task's registration.
+            await NestedState.inner()
+            await asyncio.sleep(0)
+            # Started while the release is already waiting for this run.
+            asyncio.ensure_future(NestedState.late())  # noqa: RUF006
+            asyncio.ensure_future(NestedState.failing())  # noqa: RUF006
+            await asyncio.sleep(0)
+            self.log = [*self.log, "outer"]
+
+        @event
+        async def parent(self):
+            asyncio.ensure_future(NestedState.outer())  # noqa: RUF006
+            await asyncio.sleep(0)
+            self.log = [*self.log, "parent"]
+
+        @event
+        def next_event(self):
+            self.log = [*self.log, "next"]
+
+    with caplog.at_level(logging.ERROR, logger="reflex_base.event.context"):
+        async with real_base_state_processor as processor:
+            await processor.enqueue(
+                token, Event.from_event_type(NestedState.parent())[0]
+            )
+            next_future = await processor.enqueue(
+                token, Event.from_event_type(NestedState.next_event())[0]
+            )
+            await asyncio.sleep(0.05)
+            assert not next_future.done()
+            release.set()
+            await asyncio.wait_for(next_future, 5)
+
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    state = await root_ctx.state_manager.get_state(
+        BaseStateToken(ident=token, cls=State)
+    )
+    # The spawned run starts at the parent's first suspension point and runs
+    # `inner` inline before the parent resumes.
+    assert (await state.get_state(NestedState)).log == [
+        "inner",
+        "parent",
+        "outer",
+        "late",
+        "next",
+    ]
+    assert "inline boom" in caplog.text

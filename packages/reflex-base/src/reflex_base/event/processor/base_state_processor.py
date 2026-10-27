@@ -385,8 +385,11 @@ async def execute_event_inline(spec: EventSpec) -> Any:
     # The lock stays held until this run is done, even if the task that
     # started it finishes first. Registered before the first await, so a
     # task that starts while the lock is held is always seen by its release.
+    # A nested inline run on an already registered task leaves the outer
+    # run's registration in place.
     task = asyncio.current_task()
-    if task is not None:
+    added = task is not None and task not in ctx.inline_tasks
+    if added:
         ctx.inline_tasks.add(task)
     try:
         substate = await root_state.get_state(registered.states[0])
@@ -397,7 +400,7 @@ async def execute_event_inline(spec: EventSpec) -> Any:
             root_state=root_state,
         )
     finally:
-        if task is not None:
+        if added:
             ctx.inline_tasks.discard(task)
 
 
