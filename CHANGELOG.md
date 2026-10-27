@@ -1,3 +1,63 @@
+## v0.10.1a2 (2026-10-26)
+
+No significant changes.
+
+
+## v0.10.1a1 (2026-10-23)
+
+### Breaking Changes
+
+- `router.session.client_ip` now ignores untrusted `X-Forwarded-For` headers by default. Configure `trusted_proxy_hops` to use forwarded client addresses from a trusted proxy chain. ([#7614](https://github.com/reflex-dev/reflex/issues/7614))
+
+### Features
+
+- Add an experimental, default-off `react_compiler` configuration flag to enable React Compiler memoization for generated components in development and production. ([#7234](https://github.com/reflex-dev/reflex/issues/7234))
+- Form `on_submit` handlers can annotate their form data as `rx.form.FormData` to receive every value of fields that share a name, in submission order; a `dict` annotation still keeps each name's last value. In a `TypedDict` annotation, a `list[str]` field collects every value of its name and a `bool` field is `False` when nothing was submitted, such as for an unchecked checkbox, or when the value is false-like, such as `"false"`, `"off"` or `"0"`; for `list[str] | None` and `bool | None` fields an unsubmitted value is `None`, and an unsubmitted `NotRequired` field is left out. In a `TypedDict`, a list field `range` also collects the `range[]` values a two-thumb `rx.slider(name="range")` submits.
+
+  ```python
+  @rx.event
+  def handle_submit(self, form_data: rx.form.FormData[str, str]):
+      self.toppings = form_data.getlist("topping")
+  ``` ([#7386](https://github.com/reflex-dev/reflex/issues/7386))
+- A page's `on_load` accepts any sequence of events, e.g. a tuple, like a list of them. ([#7402](https://github.com/reflex-dev/reflex/issues/7402))
+- Detect a frontend built for another version of the app when it connects to the backend. The compiled frontend now carries a hash of the state tree (state names, frontend vars and event handler names) and sends it on every socket connect. On a mismatch, a production page reloads once (sharing the `REFLEX_AUTO_RELOAD_COOLDOWN` with the reload on frontend errors) and otherwise shows a "new version available" banner with a reload button; in dev mode it only logs a console warning. Load balancers serving several backend versions still need sticky sessions. ([#7553](https://github.com/reflex-dev/reflex/issues/7553))
+- Expose `rx.moment_provider` for sharing locale, timezone, formatting, and timer defaults across Moment components. ([#7591](https://github.com/reflex-dev/reflex/issues/7591))
+
+### Bug Fixes
+
+- Use atomic writes and OS locks to protect shared JSON metadata from concurrent Reflex processes. When locks are unavailable (for example, with a read-only `REFLEX_DIR`), writes remain atomic but concurrent updates may overwrite each other. ([#7052](https://github.com/reflex-dev/reflex/issues/7052))
+- Load backend apps by their configured module name so state updates work even when the app package has no `__init__.py`. ([#7258](https://github.com/reflex-dev/reflex/issues/7258))
+- A `stateful_pages.json` marker that is not valid UTF-8 is now treated as corrupt and rebuilt, instead of raising `UnicodeDecodeError` on every backend start. ([#7404](https://github.com/reflex-dev/reflex/issues/7404))
+- Type checkers see the database helpers of `reflex.model` (`rx.session`, `rx.asession`, `rx.Model`, `ModelRegistry`, ...) as defined, rather than as unions with the stand-ins used when the db extra is missing. ([#7406](https://github.com/reflex-dev/reflex/issues/7406))
+- Fix a global `rx._x.client_state` reader that mounts after the value was set, such as one behind an `rx.cond`, keeping the stale value when the value is later set back to its default. ([#7407](https://github.com/reflex-dev/reflex/issues/7407))
+- Fix `TypeError: refs._client_state_set... is not a function` when the backend pushes a global `rx._x.client_state` value before any component using it has mounted, such as one behind an `rx.cond` or a page that waits for hydration. The value is now kept for the first component that mounts. ([#7407](https://github.com/reflex-dev/reflex/issues/7407))
+- Fix unawaited coroutine warnings when a state delta filter withholds an async uncached computed variable. ([#7410](https://github.com/reflex-dev/reflex/issues/7410))
+- Fix installing Reflex source distributions with uv by excluding references to workspace packages that are not included in the archive. ([#7411](https://github.com/reflex-dev/reflex/issues/7411))
+- Cancel unfinished page-load event chains when the client disconnects, including hydration that has not yet started. Independent background events continue running. ([#7415](https://github.com/reflex-dev/reflex/issues/7415))
+- The backend log for an unknown frontend substate now says the substate was skipped instead of reporting a failed state update. The frontend exception handler docs describe how to resolve the mismatch. ([#7435](https://github.com/reflex-dev/reflex/issues/7435))
+- `reflex.model` (and `rx.ModelRegistry`, `rx.session`, `rx.Model`) can be imported without `greenlet`, which SQLAlchemy 2.1 only installs with its `asyncio` extra; only `rx.asession` and `get_async_engine` require it now. ([#7440](https://github.com/reflex-dev/reflex/issues/7440))
+- Detect state reads from the new shared state store when checking that an app that reads state defines an `rx.State` subclass. ([#7441](https://github.com/reflex-dev/reflex/issues/7441))
+- Raise an actionable error when a legacy string passed to `App.modify_state()` has a missing or unknown state path. Use `rx.BaseStateToken(ident=client_token, cls=StateClass)` to select the state explicitly. ([#7443](https://github.com/reflex-dev/reflex/issues/7443))
+- Production exports, `reflex run --env prod`, and preview startup that share a `.web` directory now wait for one another instead of overwriting each other's compiled frontend and archives. ([#7453](https://github.com/reflex-dev/reflex/issues/7453))
+- Mutating a nested value reached through `dict.values()` or `dict.items()` on a state var now marks the var dirty, so the UI and cached vars depending on it update. ([#7500](https://github.com/reflex-dev/reflex/issues/7500))
+- `reflex run` no longer logs "Unexpected exit from worker-1" when the dev backend is stopped with SIGTERM or SIGINT. ([#7538](https://github.com/reflex-dev/reflex/issues/7538))
+- Cap the automatically selected number of Redis-backed backend workers at eight. Set `GRANIAN_WORKERS` to override the default. ([#7542](https://github.com/reflex-dev/reflex/issues/7542))
+- `reflex init` no longer refuses to reinitialize an existing app just because its project directory is named `reflex`; the check now applies to the `app_name` set in `rxconfig.py`. ([#7554](https://github.com/reflex-dev/reflex/issues/7554))
+- Add development frontend packages with `-D`, so npm saves them under `devDependencies` and source-only hot reloads no longer reinstall frontend packages. ([#7566](https://github.com/reflex-dev/reflex/issues/7566))
+- Cached computed vars that depend on client storage (`rx.LocalStorage`, `rx.SessionStorage`, `rx.Cookie`) are now evaluated once per page load instead of twice. ([#7568](https://github.com/reflex-dev/reflex/issues/7568))
+- A background task that re-enters an expired session now rehydrates the loaded state tree, so the browser no longer shows stale values for those states. ([#7585](https://github.com/reflex-dev/reflex/issues/7585))
+- Repeated request headers are no longer collapsed to their last value: repeated `cookie` fields are joined with `"; "` and any other repeated field with `", "`, so `router.headers.cookie` keeps every cookie. ([#7588](https://github.com/reflex-dev/reflex/issues/7588))
+- Websocket connections now accept request header values containing bytes that are not valid UTF-8. ([#7602](https://github.com/reflex-dev/reflex/issues/7602))
+- Avoid false type errors when hydrating or assigning strings to vars annotated with `Cookie`, `LocalStorage`, or `SessionStorage`. ([#7603](https://github.com/reflex-dev/reflex/issues/7603))
+- Clarify the warning shown when Bun is below the minimum supported version. ([#7639](https://github.com/reflex-dev/reflex/issues/7639))
+
+### Performance
+
+- Production backend workers on Linux are now forked from a supervisor that has already imported the app, so they share its memory instead of each importing the app again, which cuts memory use and startup time. Set `REFLEX_BACKEND_START_METHOD=spawn` for apps that are not fork-safe. ([#7079](https://github.com/reflex-dev/reflex/issues/7079))
+- The `reflex run` backend reload worker is now forked from the supervisor on Linux instead of started through a forkserver, so framework code is shared copy-on-write and the extra forkserver processes are gone. Set `REFLEX_BACKEND_START_METHOD=spawn` or `REFLEX_STRICT_HOT_RELOAD=1` for apps that are not fork-safe. ([#7113](https://github.com/reflex-dev/reflex/issues/7113))
+- Speed up deployment archive creation by reducing filesystem checks for excluded files and avoiding recompression of precompressed frontend assets. ([#7450](https://github.com/reflex-dev/reflex/issues/7450))
+
+
 ## v0.10.0 (2026-10-08)
 
 ### Breaking Changes

@@ -34,7 +34,7 @@ dependencies = [
     # and raise all three bounds when adopting a new one. The default transport
     # factory requires the next SDK release; materialization lifts this dev
     # floor when it publishes. The cap also admits the following dev builds.
-    "reflex-build-sdk[httpx] >=0.1.1.dev0,<0.1.2.post,!=0.1.2",
+    "reflex-build-sdk[httpx] >=0.1.1a1,<0.1.2.post,!=0.1.2",
     "rich >=13,<16",
 ]
 
