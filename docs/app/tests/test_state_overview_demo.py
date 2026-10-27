@@ -10,8 +10,10 @@ DOCS = Path(__file__).resolve().parents[2]
 
 def test_example_heading_starts_theme_aware():
     """The first color is the theme foreground, not black, so it reads in dark mode."""
+    # A test-specific virtual path keeps the demo's state class from colliding
+    # with the one test_docgen_double_eval registers for the real page.
     body, _ = render_docgen_document(
-        "docs/state/overview.md", str(DOCS / "state" / "overview.md")
+        "docs/state/overview_heading_test.md", str(DOCS / "state" / "overview.md")
     )
     rendered = str(body)
     # The example source is embedded with escaped quotes, so match loosely.
