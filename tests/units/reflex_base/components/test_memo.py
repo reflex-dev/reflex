@@ -46,6 +46,41 @@ def test_auto_memo_evaluates_body_once(snapshot: bool, has_children: bool):
     assert isinstance(definition.fn(Var(_js_expr="children", _var_type=Component)), Div)
 
 
+def test_forced_snapshot_tag_hashes_descendant_artifacts():
+    """A forced snapshot body is identified by its whole subtree.
+
+    ``snapshot=True`` bakes the children into the body of a component whose
+    own strategy is passthrough, so the tag has to cover descendants' hooks
+    and other artifacts that never show up in the rendered JSX; a root-only
+    hash would let two such bodies collapse into one module.
+    """
+
+    def hooked(effect: str) -> type[Div]:
+        class Hooked(Div):
+            def add_hooks(self) -> list[str]:
+                return [f"useEffect(() => console.log('{effect}'), [])"]
+
+        return Hooked
+
+    bodies = [Div.create(hooked(effect).create("x")) for effect in ("A", "B")]
+    for body in bodies:
+        body._memoization_mode = MemoizationMode(recursive=True)
+    tags = {
+        memo.create_passthrough_component_memo(body, snapshot=True)[1].export_name
+        for body in bodies
+    }
+    assert len(tags) == 2
+    # Without the snapshot the children sit behind the hole, so the bodies are
+    # the same and the tags rightly coincide.
+    assert (
+        len({
+            memo.create_passthrough_component_memo(body)[1].export_name
+            for body in bodies
+        })
+        == 1
+    )
+
+
 def test_auto_memo_snapshot_renders_lifted_rest_props():
     """The retained memo body must render props lifted out of its children."""
     component = Div.create(Bare.create(memo._rest_placeholder("rest")))

@@ -2042,7 +2042,7 @@ def component_hash(component: Component, *, recursive: bool) -> str:
     return digest
 
 
-def memo_tag(component: Component) -> str:
+def memo_tag(component: Component, *, recursive: bool | None = None) -> str:
     """Compute a stable tag name for the memo wrapping ``component``.
 
     The class qualname is in the tag prefix so distinct classes that render
@@ -2053,11 +2053,16 @@ def memo_tag(component: Component) -> str:
 
     Args:
         component: The component being memoized.
+        recursive: Whether the memo body carries the whole subtree, so its
+            descendants' artifacts identify the body too. Defaults to whether
+            the component's own strategy is a snapshot; a caller that renders
+            a snapshot of a component whose strategy is not says so here.
 
     Returns:
         The stable tag name.
     """
-    recursive = get_memoization_strategy(component) is MemoizationStrategy.SNAPSHOT
+    if recursive is None:
+        recursive = get_memoization_strategy(component) is MemoizationStrategy.SNAPSHOT
     prefix, tag = type(component).__qualname__, component.tag or "Comp"
     # Memo component classes are already named ``MemoComponent_<tag>``.
     if prefix != f"MemoComponent_{tag}":
@@ -2164,7 +2169,7 @@ def create_passthrough_component_memo(
     params = _PASSTHROUGH_PARAMS
     rest_target_fields: set[str] = set()
     preview = _evaluate_component_body(passthrough, params, rest_target_fields)
-    tag = memo_tag(preview)
+    tag = memo_tag(preview, recursive=render_snapshot)
 
     passthrough.__name__ = format.to_snake_case(tag)
     passthrough.__qualname__ = passthrough.__name__

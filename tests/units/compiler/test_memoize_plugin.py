@@ -3424,6 +3424,44 @@ def _module_named(modules: dict[str, str], python_name: str) -> str:
     return block
 
 
+def test_loop_items_differing_only_in_descendant_hooks_get_their_own_modules() -> None:
+    """Item components are told apart by artifacts the JSX does not show.
+
+    Regression: the item component captures the item's whole subtree, but its
+    tag hashed the root alone, so two loops whose items rendered identical
+    JSX with different descendant hooks shared one module and both ran the
+    hooks registered last.
+    """
+    from reflex.compiler.compiler import compile_memo_components
+
+    def hooked(effect: str) -> type[Component]:
+        class Hooked(rx.el.Div):
+            def add_hooks(self) -> list[str]:
+                return [f"useEffect(() => console.log('{effect}'), [])"]
+
+        return Hooked
+
+    first, second = hooked("first"), hooked("second")
+    ctx, _page_ctx = _compile_single_page(
+        lambda: rx.box(
+            rx.foreach(
+                SpecialFormMemoState.items, lambda _item: rx.box(first.create("x"))
+            ),
+            rx.foreach(
+                SpecialFormMemoState.items, lambda _item: rx.box(second.create("x"))
+            ),
+        )
+    )
+    files, _imports = compile_memo_components(
+        memos=tuple(ctx.auto_memo_components.values())
+    )
+    item_modules = [
+        block for block in _module_by_export(files).values() if "console.log(" in block
+    ]
+    assert len(item_modules) == 2
+    assert {"'first'" in block for block in item_modules} == {True, False}
+
+
 def test_memo_item_function_inside_an_explicit_memo_scopes_client_state_per_item() -> (
     None
 ):
