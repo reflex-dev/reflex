@@ -16,6 +16,12 @@ class EventLoopBlockingMonitor:
     """Report event handlers that keep the event loop from responding."""
 
     def __init__(self, loop: asyncio.AbstractEventLoop, threshold: float) -> None:
+        """Create a monitor for an event loop.
+
+        Args:
+            loop: The event loop to monitor.
+            threshold: Blocking duration in seconds at which to warn.
+        """
         self.loop = loop
         self.threshold = threshold
         self._loop_thread_id = threading.get_ident()

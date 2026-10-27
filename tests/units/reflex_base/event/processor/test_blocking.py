@@ -1,8 +1,11 @@
 """Tests for development-time event-loop blocking detection."""
 
+from collections.abc import Callable
 import asyncio
 import logging
+import threading
 import time
+from typing import Any
 
 import pytest
 
@@ -20,6 +23,8 @@ async def test_sync_handler_blocking_is_reported(caplog: pytest.LogCaptureFixtur
     monitor.handler_started(blocking_handler)
     monitor.start()
     try:
+        # Let the monitor queue a responsiveness probe before blocking the loop.
+        await asyncio.sleep(0.02)
         blocking_handler()
         await asyncio.sleep(0)
     finally:
@@ -33,18 +38,31 @@ async def test_sync_handler_blocking_is_reported(caplog: pytest.LogCaptureFixtur
 
 async def test_handler_blocking_just_over_threshold_is_detected(
     caplog: pytest.LogCaptureFixture,
+    monkeypatch: pytest.MonkeyPatch,
 ):
     """Account for the time between responsiveness probes."""
+    loop = asyncio.get_running_loop()
+    probe_queued = threading.Event()
+    call_soon_threadsafe = loop.call_soon_threadsafe
+
+    def track_probe(
+        callback: Callable[..., Any], *args: Any, **kwargs: Any
+    ) -> asyncio.Handle:
+        handle = call_soon_threadsafe(callback, *args, **kwargs)
+        probe_queued.set()
+        return handle
+
+    monkeypatch.setattr(loop, "call_soon_threadsafe", track_probe)
 
     def blocking_handler():
+        assert probe_queued.wait(timeout=1)
         time.sleep(0.055)
 
-    monitor = EventLoopBlockingMonitor(asyncio.get_running_loop(), threshold=0.04)
+    monitor = EventLoopBlockingMonitor(loop, threshold=0.04)
     caplog.set_level(logging.WARNING, logger="reflex_base.event.processor.blocking")
     monitor.handler_started(blocking_handler)
     monitor.start()
     try:
-        await asyncio.sleep(0.021)
         blocking_handler()
         await asyncio.sleep(0)
     finally:
@@ -65,6 +83,8 @@ async def test_async_handler_blocking_is_reported(caplog: pytest.LogCaptureFixtu
     monitor.handler_started(blocking_handler)
     monitor.start()
     try:
+        # Let the monitor queue a responsiveness probe before blocking the loop.
+        await asyncio.sleep(0.02)
         await blocking_handler()
         await asyncio.sleep(0)
     finally:

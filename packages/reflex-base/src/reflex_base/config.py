@@ -413,9 +413,7 @@ class Config(BaseConfig):
             except OverflowError:
                 is_finite = False
             if not is_finite or threshold <= 0:
-                msg = (
-                    "event_loop_blocking_threshold must be a positive finite number or None."
-                )
+                msg = "event_loop_blocking_threshold must be a positive finite number or None."
                 raise ConfigError(msg)
 
         # Normalize route prefixes to ensure they start with a slash.
