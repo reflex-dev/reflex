@@ -1127,6 +1127,41 @@ def test_get_config_keeps_caller_owned_cwd_entry(
     assert sys.path.count(cwd) == caller_owned
 
 
+def test_get_config_inside_rxconfig_does_not_reload_it(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
+):
+    """rxconfig.py can call rx.asset, which reads the config, without recursing.
+
+    The stand-in config rx.asset sees mid-import must not be cached on the context.
+
+    Args:
+        tmp_path: The pytest tmp_path fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        clean_config_modules: Cleanup for modules left behind by the load.
+    """
+    from reflex_base.registry import RegistrationContext
+
+    (tmp_path / "assets").mkdir()
+    (tmp_path / "assets" / "favicon.ico").write_bytes(b"")
+    (tmp_path / "rxconfig.py").write_text(
+        textwrap.dedent(
+            """
+            import reflex as rx
+
+            ASSET = rx.asset("favicon.ico")
+            config = rx.Config(app_name="asset_in_config")
+            """
+        )
+    )
+    monkeypatch.chdir(tmp_path)
+
+    with RegistrationContext() as ctx:
+        assert reflex_base.config._get_config().app_name == "asset_in_config"
+        assert ctx._config is None
+        assert reflex_base.config.get_config().app_name == "asset_in_config"
+    assert sys.modules["rxconfig"].ASSET.startswith("/favicon.ico")
+
+
 def test_get_config_accepts_explicit_project_root(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
 ):
