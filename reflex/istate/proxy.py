@@ -327,8 +327,12 @@ class StateProxy(wrapt.ObjectProxy):
         finally:
             try:
                 if self._self_mutable and self._self_actx is not None:
-                    await EventContext.get().release_lock()
-                    await self._self_actx.__aexit__(*exc_info)
+                    try:
+                        await EventContext.get().release_lock()
+                    finally:
+                        # Waiting for inline runs may be cancelled; the state
+                        # manager's lock must be released regardless.
+                        await self._self_actx.__aexit__(*exc_info)
             finally:
                 self._self_actx = None
                 self._self_mutable = False

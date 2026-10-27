@@ -4241,3 +4241,61 @@ async def test_detached_task_started_after_release_is_enqueued(
                 break
 
     assert log == ["parent", "next", "child"]
+
+
+async def test_cancelled_background_handler_releases_the_lock_while_waiting_for_inline_runs(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """Cancelling a handler while its lock release waits for a detached run still frees the lock.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    started = asyncio.Event()
+    seen: dict[str, Any] = {}
+
+    class CancelState(State):
+        log: list[str] = []
+
+        @event
+        async def child(self):
+            started.set()
+            await asyncio.Event().wait()
+
+        @event(background=True)
+        async def background(self):
+            async with self:
+                seen["child_task"] = asyncio.ensure_future(CancelState.child())
+                await started.wait()
+            # Leaving `async with self` waits for the detached child.
+
+        @event
+        def ping(self):
+            self.log = [*self.log, "ping"]
+
+    async with real_base_state_processor as processor:
+        bg_future = await processor.enqueue(
+            token, Event.from_event_type(CancelState.background())[0]
+        )
+        await asyncio.wait_for(started.wait(), 5)
+        await asyncio.sleep(0.05)
+        bg_future.cancel()
+        ping_future = await processor.enqueue(
+            token, Event.from_event_type(CancelState.ping())[0]
+        )
+        # The state lock was released despite the cancelled wait.
+        await asyncio.wait_for(ping_future, 5)
+        with contextlib.suppress(asyncio.CancelledError):
+            await asyncio.wait_for(seen["child_task"], 5)
+        assert seen["child_task"].cancelled()
+
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    state = await root_ctx.state_manager.get_state(
+        BaseStateToken(ident=token, cls=State)
+    )
+    assert (await state.get_state(CancelState)).log == ["ping"]

@@ -179,12 +179,16 @@ class EventContext(BaseContext):
         """
         current = asyncio.current_task()
         pending = [t for t in self.inline_tasks if t is not current and not t.done()]
-        if pending:
-            if current is not None and current.cancelling():
-                for task in pending:
-                    task.cancel()
-            await asyncio.gather(*pending, return_exceptions=True)
-        self.set_locked_root(None)
+        try:
+            if pending:
+                try:
+                    await asyncio.gather(*pending, return_exceptions=True)
+                except asyncio.CancelledError:
+                    for task in pending:
+                        task.cancel()
+                    raise
+        finally:
+            self.set_locked_root(None)
 
     @contextlib.asynccontextmanager
     async def holding_lock(self, root_state: BaseState) -> AsyncIterator[None]:
