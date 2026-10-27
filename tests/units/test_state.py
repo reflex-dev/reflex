@@ -7596,20 +7596,23 @@ async def test_shared_storage_name_syncs_siblings(
     }
 
 
+@pytest.mark.parametrize("second_sync", [True, False])
 async def test_shared_storage_name_keeps_event_writes(
     clean_registration_context: RegistrationContext,
+    second_sync: bool,
 ):
     """Vars sharing a storage name that one event writes keep their own values.
 
     Args:
         clean_registration_context: An isolated state registry.
+        second_sync: Whether the second var syncs.
     """
 
     class WrittenFirst(State):
         value: str = rx.LocalStorage("", name="shared", sync=True)
 
     class WrittenSecond(State):
-        value: str = rx.LocalStorage("", name="shared", sync=True)
+        value: str = rx.LocalStorage("", name="shared", sync=second_sync)
 
     root = State()
     first = await root.get_state(WrittenFirst)

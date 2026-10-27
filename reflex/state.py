@@ -1112,7 +1112,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         # change to any state invalidates every cached root.
         cls._to_schema.cache_clear()
         _frontend_schema.cache_clear()
-        _shared_storage_targets.cache_clear()
+        _shared_storage_groups.cache_clear()
 
     @classmethod
     def _iter_functions(cls) -> Iterator[tuple[str, FunctionType]]:
@@ -2287,46 +2287,39 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
 
 
 @functools.lru_cache
-def _shared_storage_targets(
+def _shared_storage_groups(
     root: type[BaseState], context: RegistrationContext
-) -> dict[tuple[str, str], tuple[tuple[type[BaseState], str], ...]]:
-    """Map each localStorage var to the other synced vars with its storage name.
+) -> tuple[tuple[tuple[type[BaseState], str, bool], ...], ...]:
+    """Group the localStorage vars by storage name.
 
-    Only vars whose storage name another synced var shares are included.
+    Only names that a synced var shares with another var are included.
 
     Args:
         root: The state at the top of the tree.
         context: The registration context holding the tree.
 
     Returns:
-        The synced vars to set, by the state name and var name of a var.
+        The state, var name and sync flag of each var, one group per name.
     """
     # The compiler imports this module.
     from reflex.compiler.utils import _compile_client_storage_recursive
 
-    by_name: dict[str, list[tuple[str, str, bool]]] = {}
+    by_name: dict[str, list[tuple[type[BaseState], str, bool]]] = {}
     for state_key, options in _compile_client_storage_recursive(root)[1].items():
         if name := options.get("name"):
             state_name, _, var_name = state_key.removesuffix(FIELD_MARKER).rpartition(
                 "."
             )
             by_name.setdefault(name, []).append((
-                state_name,
+                root.get_class_substate(state_name),
                 var_name,
                 bool(options.get("sync")),
             ))
-    return {
-        (state_name, var_name): targets
+    return tuple(
+        tuple(members)
         for members in by_name.values()
-        for state_name, var_name, _ in members
-        if (
-            targets := tuple(
-                (root.get_class_substate(other_state), other_var)
-                for other_state, other_var, sync in members
-                if sync and (other_state, other_var) != (state_name, var_name)
-            )
-        )
-    }
+        if len(members) > 1 and any(sync for _, _, sync in members)
+    )
 
 
 async def _sync_shared_storage(state: BaseState) -> None:
@@ -2338,21 +2331,25 @@ async def _sync_shared_storage(state: BaseState) -> None:
     Args:
         state: The root of the states to get the delta for.
     """
-    targets = _shared_storage_targets(state.get_root_state(), RegistrationContext.get())
-    writes = {
-        key: (source.get_value(key[1]), synced)
-        for key, synced in targets.items()
-        if (source := _loaded_substate(state, key[0])) is not None
-        and key[1] in source.dirty_vars
-    }
-    for value, synced in writes.values():
-        for target_cls, target_var in synced:
-            # A var this event wrote keeps its own value.
-            if (target_cls.get_full_name(), target_var) in writes:
-                continue
-            target = await state.get_state(target_cls)
-            if target.get_value(target_var) != value:
-                setattr(target, target_var, value)
+    for members in _shared_storage_groups(
+        state.get_root_state(), RegistrationContext.get()
+    ):
+        written = {
+            (state_cls, var_name): source.get_value(var_name)
+            for state_cls, var_name, _ in members
+            if (source := _loaded_substate(state, state_cls.get_full_name()))
+            is not None
+            and var_name in source.dirty_vars
+        }
+        if not written:
+            continue
+        # The vars this event wrote keep their values; the others take the first.
+        value = next(iter(written.values()))
+        for state_cls, var_name, sync in members:
+            if sync and (state_cls, var_name) not in written:
+                target = await state.get_state(state_cls)
+                if target.get_value(var_name) != value:
+                    setattr(target, var_name, value)
 
 
 def _loaded_substate(root: BaseState, state_name: str) -> BaseState | None:
