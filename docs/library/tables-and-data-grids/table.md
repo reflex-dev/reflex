@@ -475,7 +475,7 @@ The code below shows how to load data from a database and place it in an `rx.tab
 ```md alert warning
 # `rx.Model` is deprecated
 
-`rx.Model` and `rx.session` are deprecated as of Reflex 0.9.2 and are scheduled for removal in 1.0.0. The examples below document the existing Reflex ORM interface. For new applications, use SQLModel or SQLAlchemy directly with your own engine and sessions; see the [database overview](/docs/database/overview/).
+`rx.Model` is deprecated as of Reflex 0.9.2 and is scheduled for removal in 1.0.0. The examples below document the existing Reflex ORM interface. For new applications, use SQLModel or SQLAlchemy directly with your own engine and sessions; see the [database overview](/docs/database/overview/).
 ```
 
 ## Loading data into table
