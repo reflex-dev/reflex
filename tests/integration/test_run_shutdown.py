@@ -25,7 +25,7 @@ from collections.abc import Generator
 from pathlib import Path
 
 import pytest
-from reflex_base.utils.processes import descendant_pids
+from reflex_base.utils.process_tree import descendant_pids
 
 pytestmark = pytest.mark.skipif(sys.platform == "win32", reason="POSIX signal delivery")
 

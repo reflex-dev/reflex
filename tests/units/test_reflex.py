@@ -1104,14 +1104,14 @@ def test_run_supervises_output_only_in_json_mode(
         expected: Whether the supervisor is expected to start.
     """
     from reflex_base.environment import environment
-    from reflex_base.utils import log
+    from reflex_base.utils import log, supervisor
 
     # Registered so teardown restores the variables the CLI callbacks set.
     monkeypatch.setenv(log._MANAGED_ENV_VAR, "true")
     monkeypatch.setenv(environment.REFLEX_LOG_JSON.name, "false")
-    monkeypatch.setenv(log._SUPERVISED_ENV_VAR, "1234" if supervised else "")
+    monkeypatch.setenv(supervisor._SUPERVISED_ENV_VAR, "1234" if supervised else "")
     monkeypatch.setattr(sys, "argv", ["reflex", "run", *argv])
-    supervise = mocker.patch.object(log, "supervise_output", return_value=7)
+    supervise = mocker.patch.object(supervisor, "supervise_output", return_value=7)
     run = mocker.patch.object(reflex, "_run")
     mocker.patch("reflex.utils.prerequisites.check_running_mode")
 

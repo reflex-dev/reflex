@@ -12,7 +12,7 @@ from pathlib import Path
 
 import psutil
 import pytest
-from reflex_base.utils import processes
+from reflex_base.utils import process_tree
 
 # A child that starts a grandchild and does not forward signals to it, like
 # ``npm run`` in front of a dev server. It reports the grandchild PID on stdout.
@@ -100,22 +100,22 @@ def test_descendant_pids_lists_the_whole_tree(tmp_path: Path):
     try:
         if sys.platform == "win32":
             pytest.skip("taskkill walks the tree on Windows")
-        assert processes.descendant_pids(proc.pid) == [grandchild]
-        tree = processes.descendant_pids(os.getpid())
+        assert process_tree.descendant_pids(proc.pid) == [grandchild]
+        tree = process_tree.descendant_pids(os.getpid())
         assert tree.index(proc.pid) < tree.index(grandchild)
     finally:
-        processes.stop_process_tree(proc, timeout=1)
+        process_tree.stop_process_tree(proc, timeout=1)
 
 
 @pytest.mark.skipif(sys.platform != "linux", reason="/proc is Linux-only")
 def test_descendant_pids_falls_back_to_ps(tmp_path: Path, monkeypatch):
     """Without /proc the tree is read from ps, as on macOS."""
-    monkeypatch.setattr(processes, "_PROC", tmp_path / "no-proc")
+    monkeypatch.setattr(process_tree, "_PROC", tmp_path / "no-proc")
     proc, line = _start(tmp_path, _ORPHANING_CHILD)
     try:
-        assert processes.descendant_pids(proc.pid) == [int(line)]
+        assert process_tree.descendant_pids(proc.pid) == [int(line)]
     finally:
-        processes.stop_process_tree(proc, timeout=1)
+        process_tree.stop_process_tree(proc, timeout=1)
 
 
 def test_stop_process_tree_stops_an_orphaned_grandchild(tmp_path: Path):
@@ -124,7 +124,7 @@ def test_stop_process_tree_stops_an_orphaned_grandchild(tmp_path: Path):
     grandchild = int(line)
     try:
         started = time.monotonic()
-        processes.stop_process_tree(proc, timeout=5)
+        process_tree.stop_process_tree(proc, timeout=5)
         assert time.monotonic() - started < 4
         assert proc.returncode is not None
         assert _wait_gone(grandchild)
@@ -140,7 +140,7 @@ def test_stop_process_tree_kills_a_child_that_ignores_sigterm(tmp_path: Path):
     proc, line = _start(tmp_path, _STUBBORN_CHILD)
     assert line == "ready"
     started = time.monotonic()
-    processes.stop_process_tree(proc, timeout=0.5)
+    process_tree.stop_process_tree(proc, timeout=0.5)
     assert proc.returncode == -signal.SIGKILL
     assert 0.5 <= time.monotonic() - started < 3
 
@@ -149,7 +149,7 @@ def test_stop_process_tree_on_an_exited_process(tmp_path: Path):
     """Stopping a process that already exited only reaps it."""
     proc = subprocess.Popen([sys.executable, "-c", "pass"])
     proc.wait()
-    processes.stop_process_tree(proc, timeout=1)
+    process_tree.stop_process_tree(proc, timeout=1)
     assert proc.returncode == 0
 
 
@@ -158,8 +158,8 @@ def test_alive_treats_an_unreaped_child_as_gone():
     """A zombie no longer runs, so waiting for it would only waste the timeout."""
     proc = subprocess.Popen([sys.executable, "-c", "pass"])
     deadline = time.monotonic() + 5
-    while processes._alive(proc.pid) and time.monotonic() < deadline:
+    while process_tree._alive(proc.pid) and time.monotonic() < deadline:
         time.sleep(0.02)
-    assert not processes._alive(proc.pid)
+    assert not process_tree._alive(proc.pid)
     # _alive reaped the zombie, which is what happens to orphans under PID 1.
     assert proc.poll() in (0, None)

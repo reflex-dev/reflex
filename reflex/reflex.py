@@ -17,8 +17,8 @@ import click
 from reflex_base import constants
 from reflex_base.config import get_config, reload_config
 from reflex_base.environment import environment
-from reflex_base.utils import console, log
-from reflex_base.utils.processes import stop_process_tree
+from reflex_base.utils import console, log, supervisor
+from reflex_base.utils.process_tree import stop_process_tree
 
 from reflex.utils.cli_options import log_options
 
@@ -809,11 +809,11 @@ def run(
     """Run the app in the current directory."""
     from reflex.utils import prerequisites
 
-    if log.is_json_mode() and not log.is_output_supervised():
+    if log.is_json_mode() and not supervisor.is_output_supervised():
         # Run the command again below a process that turns every line it and
         # its workers print into a JSON record.
         raise SystemExit(
-            log.supervise_output([sys.executable, "-m", "reflex", *sys.argv[1:]])
+            supervisor.supervise_output([sys.executable, "-m", "reflex", *sys.argv[1:]])
         )
 
     if frontend_only and backend_only:

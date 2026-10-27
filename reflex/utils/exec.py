@@ -26,7 +26,7 @@ from reflex_base.environment import environment
 from reflex_base.telemetry_context import CompileTrigger
 from reflex_base.utils import console, log
 from reflex_base.utils.decorator import once
-from reflex_base.utils.processes import stop_process_tree
+from reflex_base.utils.process_tree import stop_process_tree
 
 from reflex.utils import path_ops
 from reflex.utils.misc import get_module_path
