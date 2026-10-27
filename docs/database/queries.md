@@ -109,8 +109,8 @@ class ChangeEmail(rx.State):
             session.commit()
 ```
 
-`session.scalar()` returns the first row of the statement, or `None` when
-nothing matches.
+`session.scalar()` returns the first column of the first row of the statement,
+here the `User` itself, or `None` when nothing matches.
 
 ### Delete
 

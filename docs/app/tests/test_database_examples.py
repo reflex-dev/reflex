@@ -12,6 +12,7 @@ from uuid import uuid4
 import pytest
 import reflex as rx
 from reflex_base.registry import RegistrationContext
+from reflex_base.utils import serializers
 from reflex_base.utils.serializers import serialize
 
 pytest.importorskip("sqlalchemy")
@@ -28,14 +29,28 @@ PAGES = {
 
 @pytest.fixture(autouse=True)
 def isolated_registration(tmp_path, monkeypatch):
-    """Point the docs' config-driven engine at a throwaway database."""
+    """Point the docs' config-driven engine at a throwaway database.
+
+    The snippets register models and serializers in process-wide registries,
+    so each test gets a copy of those and the serializer caches are cleared
+    on both sides.
+    """
     monkeypatch.setattr(rx.ModelRegistry, "models", set())
     monkeypatch.setattr(rx.ModelRegistry, "_metadata", None)
+    monkeypatch.setattr(serializers, "SERIALIZERS", dict(serializers.SERIALIZERS))
+    monkeypatch.setattr(
+        serializers, "SERIALIZER_TYPES", dict(serializers.SERIALIZER_TYPES)
+    )
     config = rx.Config(
         app_name="database_docs_test", db_url=f"sqlite:///{tmp_path / 'docs.db'}"
     )
-    with RegistrationContext(_config=config):
-        yield
+    try:
+        with RegistrationContext(_config=config):
+            yield
+    finally:
+        serializers.get_serializer.cache_clear()
+        serializers.get_serializer_type.cache_clear()
+        serializers._dataclass_serializer.cache_clear()
 
 
 def block(page, marker):
@@ -131,6 +146,7 @@ def test_tables_custom_serializer(monkeypatch):
         "id": 1,
         "update_ts": module.post.update_ts.replace(microsecond=0).isoformat(),
     }
+    assert serialize(module.Post()) == {"id": None, "update_ts": None}
 
 
 @pytest.fixture

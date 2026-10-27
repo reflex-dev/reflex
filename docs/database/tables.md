@@ -101,7 +101,8 @@ class Post(Base):
 
 Reflex serializes `datetime` values to ISO strings for the frontend. To change
 how a model is sent to the frontend, register a serializer for it. This one
-strips the microseconds from `update_ts`:
+strips the microseconds from `update_ts`, which is `None` until the row has been
+inserted:
 
 ```python
 import dataclasses
@@ -112,7 +113,8 @@ import reflex as rx
 @rx.serializer
 def serialize_post(post: Post) -> dict:
     data = dataclasses.asdict(post)
-    data["update_ts"] = post.update_ts.replace(microsecond=0).isoformat()
+    if post.update_ts is not None:
+        data["update_ts"] = post.update_ts.replace(microsecond=0).isoformat()
     return data
 ```
 
