@@ -134,7 +134,9 @@ def test_stop_process_tree_stops_an_orphaned_grandchild(tmp_path: Path):
             os.kill(grandchild, signal.SIGTERM)
 
 
-@pytest.mark.skipif(sys.platform == "win32", reason="POSIX signals")
+# The killed grandchild stays a zombie under its living parent, which only
+# the Linux check sees as gone.
+@pytest.mark.skipif(sys.platform != "linux", reason="zombie detection needs /proc")
 def test_kill_descendants_kills_below_the_root_only(tmp_path: Path):
     """Every descendant is killed at once and the root keeps running."""
     proc, line = _start(tmp_path, _ORPHANING_CHILD)

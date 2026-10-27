@@ -1111,14 +1111,13 @@ def test_shutdown_signals_force_exit_on_a_later_repeat(tmp_path, sig):
     script = tmp_path / "stuck.py"
     script.write_text(_STUCK_CLEANUP_SCRIPT)
     proc = subprocess.Popen(
-        [sys.executable, str(script)], stdout=subprocess.PIPE, text=True
+        [sys.executable, str(script)], stdout=subprocess.PIPE, bufsize=0
     )
     helper = None
     try:
-        assert proc.stdout is not None
-        assert proc.stdout.readline() == "ready\n"
+        assert _read_line(proc) == "ready\n"
         proc.send_signal(sig)
-        helper = int(proc.stdout.readline())
+        helper = int(_read_line(proc))
         # The same Ctrl-C delivered twice under --json: not a request to force.
         proc.send_signal(sig)
         time.sleep(0.3)
@@ -1133,6 +1132,22 @@ def test_shutdown_signals_force_exit_on_a_later_repeat(tmp_path, sig):
         if helper is not None:
             with contextlib.suppress(ProcessLookupError):
                 os.kill(helper, signal.SIGKILL)
+
+
+def _read_line(proc: subprocess.Popen) -> str:
+    """Read one line from a child's unbuffered stdout, failing instead of hanging.
+
+    Args:
+        proc: The child, started with ``stdout=PIPE`` and ``bufsize=0`` so no
+            later line is read ahead into a buffer ``select`` cannot see.
+
+    Returns:
+        The decoded line, newline included.
+    """
+    assert proc.stdout is not None
+    if not select.select([proc.stdout], [], [], DEFAULT_TIMEOUT)[0]:
+        pytest.fail("the child printed nothing in time")
+    return proc.stdout.readline().decode()
 
 
 def _assert_gone(pid: int, message: str) -> None:
@@ -1163,14 +1178,13 @@ def test_shutdown_signals_force_exit_with_a_full_stderr(tmp_path):
         [sys.executable, str(script)],
         stdout=subprocess.PIPE,
         stderr=write_end,
-        text=True,
+        bufsize=0,
     )
     helper = None
     try:
-        assert proc.stdout is not None
-        assert proc.stdout.readline() == "ready\n"
+        assert _read_line(proc) == "ready\n"
         proc.send_signal(signal.SIGTERM)
-        helper = int(proc.stdout.readline())
+        helper = int(_read_line(proc))
         # Fill the pipe; its write end stays open here, so nothing drains it.
         while select.select([], [write_end], [], 0)[1]:
             os.write(write_end, b"\0" * select.PIPE_BUF)
@@ -1243,13 +1257,12 @@ def test_shutdown_signals_force_exit_kills_an_orphaned_descendant(tmp_path):
     proc = subprocess.Popen(
         [sys.executable, str(script), str(wrapper_script)],
         stdout=subprocess.PIPE,
-        text=True,
+        bufsize=0,
     )
     server = None
     try:
-        assert proc.stdout is not None
-        server = int(proc.stdout.readline())
-        assert proc.stdout.readline() == "ready\n"
+        server = int(_read_line(proc))
+        assert _read_line(proc) == "ready\n"
         proc.send_signal(signal.SIGTERM)
         # By now the wrapper is gone and the server is no longer found below the run.
         time.sleep(reflex._REPEAT_IGNORE_SECONDS + 0.2)

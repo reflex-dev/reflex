@@ -130,8 +130,9 @@ def _signal(pids: list[int], signum: int):
 def kill_descendants(pid: int, known: Iterable[int] = ()):
     """SIGKILL every descendant of a process at once, without waiting.
 
-    On Windows this does nothing: there is no SIGKILL, and ``taskkill /T``
-    in :func:`stop_process_tree` already ends a tree without a grace period.
+    On Windows this does nothing: descendants are not listed there, and the
+    one caller acts on a console Ctrl-C, which the console delivers to every
+    process attached to it, so the tree already has the signal.
 
     Args:
         pid: The root process ID, which is left running.

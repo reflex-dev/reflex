@@ -442,8 +442,10 @@ def _shutdown_signals() -> Generator[Callable[[], None], None, None]:
     second delivery a terminal Ctrl-C produces next to the one the output
     supervisor forwards, is ignored so it cannot interrupt that cleanup. A
     later repeat means the cleanup is stuck: every descendant is killed and
-    the process exits at once. The backend server installs its own handlers
-    while it serves; this covers the time before and after.
+    the process exits at once (on Windows only the exit: a console Ctrl-C
+    already reached every process on the console). The backend server
+    installs its own handlers while it serves; this covers the time before
+    and after.
 
     Yields:
         A function the run body calls when its cleanup begins, so a signal
