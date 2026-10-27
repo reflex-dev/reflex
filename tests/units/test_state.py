@@ -7621,3 +7621,28 @@ async def test_shared_storage_name_keeps_event_writes(
     second.value = "two"
     await root._get_resolved_delta()
     assert (first.value, second.value) == ("one", "two")
+
+
+async def test_shared_storage_name_conflicting_writes_pick_by_name(
+    clean_registration_context: RegistrationContext,
+):
+    """Conflicting writes to one storage name set the other synced vars in name order.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+
+    class ZWriter(State):
+        value: str = rx.LocalStorage("", name="shared", sync=True)
+
+    class AWriter(State):
+        value: str = rx.LocalStorage("", name="shared", sync=True)
+
+    class MSibling(State):
+        value: str = rx.LocalStorage("", name="shared", sync=True)
+
+    root = State()
+    (await root.get_state(ZWriter)).value = "z"
+    (await root.get_state(AWriter)).value = "a"
+    await root._get_resolved_delta()
+    assert (await root.get_state(MSibling)).value == "a"

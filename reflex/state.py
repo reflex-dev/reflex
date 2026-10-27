@@ -2315,8 +2315,10 @@ def _shared_storage_groups(
                 var_name,
                 bool(options.get("sync")),
             ))
+    # Sorted, so conflicting writes to one name set the other vars the same way
+    # in every process.
     return tuple(
-        tuple(members)
+        tuple(sorted(members, key=lambda m: (m[0].get_full_name(), m[1])))
         for members in by_name.values()
         if len(members) > 1 and any(sync for _, _, sync in members)
     )
@@ -2343,7 +2345,8 @@ async def _sync_shared_storage(state: BaseState) -> None:
         }
         if not written:
             continue
-        # The vars this event wrote keep their values; the others take the first.
+        # The vars this event wrote keep their values; the others take the first
+        # written value in name order.
         value = next(iter(written.values()))
         for state_cls, var_name, sync in members:
             if sync and (state_cls, var_name) not in written:
