@@ -83,11 +83,11 @@ The imported module must still define `app` at module level.
 - `frontend_port` (default `3000`) and `backend_port` (default `8000`) control which ports the frontend and backend listen on. In dev mode, if a port is taken, the next available port is used.
 - `backend_host` (default `0.0.0.0`) is the address the backend server binds to.
 - `api_url` (default `http://localhost:8000`) is the URL the user's **browser** uses to reach the backend. You typically don't need to set it: when `api_url` points at localhost, the frontend substitutes the domain the app was served from, so a backend reachable at the same address as the frontend (e.g. behind a reverse proxy or load balancer) is found automatically. Set `api_url` only when the backend is listening on a different address than the frontend, e.g. `https://api.example.com`.
-- `deploy_url` (default `http://localhost:3000`) is the public URL where the **frontend** is hosted. Reflex uses it wherever an absolute frontend URL is needed — most notably for the links in the generated `sitemap.xml`. It is also the origin browsers will present when connecting to the backend, which matters for CORS (below).
+- `deploy_url` (unset by default) is the public URL where the **frontend** is hosted when it is served from a different origin than the backend. Reflex uses it wherever an absolute frontend URL is needed — most notably for the links in the generated `sitemap.xml`, which fall back to `api_url` when it is unset (`config.backend_url` exposes that resolved value). It is also the origin browsers will present when connecting to the backend, which matters for CORS (below).
 
 ## CORS
 
-The backend only accepts cross-origin requests from origins listed in `cors_allowed_origins`. By default any origin is allowed in dev mode, while in prod mode only the origin of `deploy_url` is allowed, so set `deploy_url` to where your frontend is served from. Set `cors_allowed_origins` explicitly when the frontend is reachable from several origins, or to `["*"]` to allow any origin in production:
+The backend only accepts cross-origin requests from origins listed in `cors_allowed_origins`. By default any origin is allowed in dev mode. In prod mode the backend serves the frontend from its own origin, so by default no cross-origin requests are allowed at all and same-origin requests pass; when `deploy_url` is set, only that origin is allowed. Set `cors_allowed_origins` explicitly when the frontend is reachable from several origins, or to `["*"]` to allow any origin in production:
 
 ```python
 config = rx.Config(

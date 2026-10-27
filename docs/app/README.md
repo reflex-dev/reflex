@@ -64,7 +64,7 @@ If the build uses a custom `REFLEX_WEB_WORKDIR`, pass that environment variable 
 
 The `reflex-docs` integration CI jobs run the frontend tests after building the production site, using the installed React and bundler dependencies.
 
-Public URLs use `deploy_url` and `frontend_path`. Keep the default localhost origin expected by the Helm sitemap rewrite; environments may override `REFLEX_DEPLOY_URL`. The `/docs` mount is configured separately.
+Public URLs use `deploy_url` and `frontend_path`. `deploy_url` is unset by default, so the sitemap uses the backend's own origin (`config.backend_url`, i.e. `api_url`), which the Helm sitemap rewrite maps to the public domain; environments may override `REFLEX_DEPLOY_URL`. The `/docs` mount is configured separately.
 
 The docs app serves permanent HTTP 301 redirects for its legacy URLs when the Reflex backend serves the frontend. In development or when HTML is hosted separately, requests reach the frontend instead: the redirect pages retain client navigation and prerendered HTML includes an immediate refresh, canonical link, noindex directive, and a usable destination link. That fallback navigates readers but returns HTTP 200. For HTTP 301 semantics on a separate frontend/CDN, configure redirects at that host's edge using the `redirects` list in `reflex_docs/reflex_docs.py`; backend middleware alone cannot redirect requests it never receives.
 

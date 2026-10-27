@@ -1,0 +1,1 @@
+`deploy_url` now defaults to `None` instead of `http://localhost:3000` and is no longer derived from `frontend_port`. The new `Config.backend_url` property returns `deploy_url` when set and `api_url` otherwise; the sitemap plugin builds absolute links from it.

@@ -431,7 +431,7 @@ DEFAULT_CONFIG = rx.Config(app_name="a")
             {
                 "api_url": "http://localhost:8001",
                 "backend_port": 8001,
-                "deploy_url": "http://localhost:3001",
+                "deploy_url": None,
                 "frontend_port": 3001,
             },
         ),
@@ -443,7 +443,7 @@ DEFAULT_CONFIG = rx.Config(app_name="a")
             {
                 "api_url": "http://localhost:8002",
                 "backend_port": 8002,
-                "deploy_url": "http://localhost:3001",
+                "deploy_url": None,
                 "frontend_port": 3001,
             },
         ),
@@ -455,7 +455,7 @@ DEFAULT_CONFIG = rx.Config(app_name="a")
             {
                 "api_url": "http://localhost:8002",
                 "backend_port": 8002,
-                "deploy_url": "http://localhost:3005",
+                "deploy_url": None,
                 "frontend_port": 3005,
             },
         ),
@@ -1701,3 +1701,19 @@ def test_get_config_reload_deprecated(mocker: MockerFixture):
         # The freshly loaded config stays cached on the context afterwards.
         assert reflex_base.config.get_config() is second
         deprecate.assert_called_once()
+
+
+def test_backend_url_falls_back_to_api_url(monkeypatch: pytest.MonkeyPatch):
+    """backend_url is deploy_url when set, otherwise api_url.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    monkeypatch.delenv("REFLEX_DEPLOY_URL", raising=False)
+    monkeypatch.delenv("REFLEX_API_URL", raising=False)
+    config = rx.Config(app_name="a")
+    assert config.deploy_url is None
+    assert config.backend_url == config.api_url == "http://localhost:8000"
+
+    config = rx.Config(app_name="a", deploy_url="https://example.com")
+    assert config.backend_url == "https://example.com"

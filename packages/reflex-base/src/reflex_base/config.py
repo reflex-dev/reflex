@@ -163,7 +163,7 @@ class BaseConfig:
         backend_port: The port to run the backend on. NOTE: When running in dev mode, the next available port will be used if this is taken.
         backend_path: The path prefix for backend routes. For example, "/api" mounts the event websocket, /ping, /_upload, /_health, and /_all_routes under /api, and is automatically included in URLs baked into the frontend. Changing this requires a full `reflex run` restart — routes are registered at startup.
         api_url: The backend url the frontend will connect to. Only needs to be set when the backend is listening on a different address than the frontend.
-        deploy_url: The url the frontend will be hosted on. Used to build absolute frontend URLs, e.g. links in the generated sitemap.xml.
+        deploy_url: The public url the frontend is hosted on, when it differs from the backend origin. Unset by default: the backend then serves the frontend from its own origin and backend_url falls back to api_url.
         backend_host: The url the backend will be hosted on.
         trusted_proxy_hops: Number of trusted reverse proxies used to resolve client IPs from X-Forwarded-For. Defaults to 0, which ignores X-Forwarded-For.
         db_url: The database url used by rx.Model.
@@ -173,7 +173,7 @@ class BaseConfig:
         bun_path: The bun path.
         frozen_lockfile: Run frontend package manager in lockfile-enforcing mode (only honored by bun).
         static_page_generation_timeout: Timeout to do a production build of a frontend page.
-        cors_allowed_origins: Comma separated list of origins that are allowed to connect to the backend API. The default allows any origin in dev mode; in prod mode it allows only the origin of deploy_url.
+        cors_allowed_origins: Comma separated list of origins that are allowed to connect to the backend API. The default allows any origin in dev mode; in prod mode it allows only the origin of deploy_url, or only same-origin requests when deploy_url is unset.
         vite_allowed_hosts: Allowed hosts for the Vite dev server. Set to True to allow all hosts, or provide a list of hostnames (e.g. ["myservice.local"]) to allow specific ones. Prevents 403 errors in Docker, Codespaces, reverse proxies, etc.
         react_strict_mode: Whether to use React strict mode.
         react_compiler: Enable experimental React Compiler memoization for generated components in development and production. Defaults to False.
@@ -212,7 +212,7 @@ class BaseConfig:
 
     api_url: str = f"http://localhost:{constants.DefaultPorts.BACKEND_PORT}"
 
-    deploy_url: str | None = f"http://localhost:{constants.DefaultPorts.FRONTEND_PORT}"
+    deploy_url: str | None = None
 
     backend_host: str = "0.0.0.0"
 
@@ -734,6 +734,16 @@ class Config(BaseConfig):
         return self._prepend_path(path, self.backend_path)
 
     @property
+    def backend_url(self) -> str:
+        """The public url the app is reachable at.
+
+        Returns:
+            ``deploy_url`` when set, otherwise ``api_url``, which is the origin the
+            backend serves the frontend from.
+        """
+        return self.deploy_url or self.api_url
+
+    @property
     def app_module(self) -> ModuleType | None:
         """The app module if `app_module_import` is set.
 
@@ -817,12 +827,6 @@ class Config(BaseConfig):
         """
         if "api_url" not in self._non_default_attributes and "backend_port" in kwargs:
             self.api_url = f"http://localhost:{kwargs['backend_port']}"
-
-        if (
-            "deploy_url" not in self._non_default_attributes
-            and "frontend_port" in kwargs
-        ):
-            self.deploy_url = f"http://localhost:{kwargs['frontend_port']}"
 
         if "api_url" not in self._non_default_attributes:
             # If running in Github Codespaces, override API_URL

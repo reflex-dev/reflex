@@ -390,22 +390,24 @@ def _is_location_specifier(specifier: str) -> bool:
 _DEFAULT_PORTS = {"http": 80, "https": 443}
 
 
-def _cors_allowed_origins() -> list[str]:
+def _cors_allowed_origins() -> list[str] | None:
     """Resolve the origins the backend accepts cross-origin requests from.
 
     An explicitly configured ``cors_allowed_origins`` is used as is. The
     ``["*"]`` default stays open in dev mode, but in prod mode it narrows to
     the origin of ``deploy_url`` so only the configured frontend can reach
-    the backend; without a ``deploy_url`` no cross-origin request is accepted.
+    the backend. Without a ``deploy_url`` the backend serves the frontend
+    itself, so CORS is left unconfigured and only same-origin requests pass.
 
     Returns:
-        The allowed origins, where ``["*"]`` means any origin.
+        The allowed origins, where ``["*"]`` means any origin, or None to
+        leave CORS unconfigured.
     """
     config = get_config()
     if "cors_allowed_origins" in config._non_default_attributes or not is_prod_mode():
         return list(config.cors_allowed_origins)
     if not config.deploy_url:
-        return []
+        return None
     # Match the browser's Origin serialization: lowercase host, no default port.
     parts = urllib.parse.urlsplit(config.deploy_url)
     host = parts.hostname or ""
@@ -951,12 +953,15 @@ class App(MiddlewareMixin, LifespanMixin):
         Args:
             api: The Starlette app to add CORS middleware to.
         """
+        allow_origins = _cors_allowed_origins()
+        if allow_origins is None:
+            return
         api.add_middleware(
             cors.CORSMiddleware,
             allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],
-            allow_origins=_cors_allowed_origins(),
+            allow_origins=allow_origins,
         )
 
     @property

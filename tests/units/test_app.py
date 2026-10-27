@@ -5803,13 +5803,12 @@ def test_write_stateful_pages_marker_concurrent_readers_see_valid_json(
     ("prod", "config_kwargs", "expected"),
     [
         (False, {}, ["*"]),
-        (True, {}, ["http://localhost:3000"]),
+        (True, {}, None),
         (True, {"deploy_url": "https://example.com/app/"}, ["https://example.com"]),
         (True, {"deploy_url": "https://Example.COM:443/app"}, ["https://example.com"]),
         (True, {"deploy_url": "http://example.com:80"}, ["http://example.com"]),
         (True, {"deploy_url": "http://example.com:8080"}, ["http://example.com:8080"]),
         (True, {"deploy_url": "http://[::1]:3000"}, ["http://[::1]:3000"]),
-        (True, {"deploy_url": None}, []),
         (
             True,
             {"cors_allowed_origins": ["https://a.com", "https://b.com"]},
@@ -5824,7 +5823,7 @@ def test_cors_allowed_origins_default_restricts_to_deploy_url_in_prod(
     monkeypatch: pytest.MonkeyPatch,
     prod: bool,
     config_kwargs: dict[str, Any],
-    expected: list[str],
+    expected: list[str] | None,
 ):
     """The default CORS origins open up in dev mode and narrow to deploy_url in prod mode.
 
@@ -5890,13 +5889,12 @@ def test_add_cors_and_socketio_use_resolved_origins(
     [
         ("https://example.com:443/app", "https://example.com", True),
         ("https://example.com", "https://evil.example", False),
-        (None, "http://localhost:3000", False),
     ],
 )
 def test_cors_middleware_enforces_resolved_origins(
     mocker: MockerFixture,
     monkeypatch: pytest.MonkeyPatch,
-    deploy_url: str | None,
+    deploy_url: str,
     origin: str,
     allowed: bool,
 ):
@@ -5910,6 +5908,7 @@ def test_cors_middleware_enforces_resolved_origins(
         allowed: Whether the preflight should succeed.
     """
     monkeypatch.delenv("REFLEX_CORS_ALLOWED_ORIGINS", raising=False)
+    monkeypatch.delenv("REFLEX_DEPLOY_URL", raising=False)
     config = rx.Config(app_name="cors_app", deploy_url=deploy_url)
     mocker.patch("reflex.app.get_config", return_value=config)
     mocker.patch("reflex.app.is_prod_mode", return_value=True)
@@ -5928,3 +5927,35 @@ def test_cors_middleware_enforces_resolved_origins(
     assert app.sio is not None
     environ = {"HTTP_ORIGIN": origin, "wsgi.url_scheme": "http", "HTTP_HOST": "api"}
     assert (origin in app.sio.eio._cors_allowed_origins(environ)) is allowed
+
+
+def test_cors_left_unconfigured_in_prod_without_deploy_url(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """Without deploy_url in prod mode, only same-origin requests reach the backend.
+
+    No CORS middleware is installed, so browsers refuse cross-origin reads, and
+    Socket.IO falls back to its same-origin default.
+
+    Args:
+        mocker: The pytest mocker fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    monkeypatch.delenv("REFLEX_CORS_ALLOWED_ORIGINS", raising=False)
+    monkeypatch.delenv("REFLEX_DEPLOY_URL", raising=False)
+    config = rx.Config(app_name="cors_app")
+    mocker.patch("reflex.app.get_config", return_value=config)
+    mocker.patch("reflex.app.is_prod_mode", return_value=True)
+
+    api = Starlette()
+    App._add_cors(api)
+    assert api.user_middleware == []
+
+    app = App(_state=rx.State)
+    app._setup_state()
+    assert app.sio is not None
+    assert app.sio.eio.cors_allowed_origins is None
+    environ = {"wsgi.url_scheme": "https", "HTTP_HOST": "app.example.com"}
+    allowed = app.sio.eio._cors_allowed_origins(environ)
+    assert "https://app.example.com" in allowed
+    assert "https://evil.example" not in allowed

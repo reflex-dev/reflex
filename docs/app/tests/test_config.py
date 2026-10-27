@@ -9,14 +9,14 @@ import pytest
 @pytest.mark.parametrize(
     "deploy_url,expected",
     [
-        (None, "http://localhost:3000"),
+        (None, None),
         ("https://staging.example.com", "https://staging.example.com"),
     ],
 )
 def test_docs_deployment_origin_comes_from_environment(
     monkeypatch, deploy_url, expected
 ):
-    """Builds preserve the chart's expected origin unless explicitly overridden."""
+    """Builds leave deploy_url unset (same-origin backend) unless explicitly overridden."""
     monkeypatch.delenv("REFLEX_DEPLOY_URL", raising=False)
     monkeypatch.delenv("REFLEX_FRONTEND_PORT", raising=False)
     if deploy_url is not None:
