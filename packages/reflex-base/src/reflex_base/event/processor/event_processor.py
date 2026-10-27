@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING, Any, Self, TypeVar
 from reflex.app_mixins.middleware import MiddlewareMixin
 from reflex.istate.manager import StateManager
 from reflex_base import otel
+from reflex_base.event import EventHandler, EventSpec
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.future import EventFuture
 from reflex_base.event.processor.timeout import DrainTimeoutManager
@@ -27,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from reflex.app import EventNamespace
-    from reflex.event import Event, EventSpec
+    from reflex.event import Event
 
 if hasattr(asyncio, "QueueShutDown"):
 
@@ -735,9 +736,11 @@ class EventProcessor:
         """
         event = entry.event
         result = registered_handler.handler.fn(**event.payload)
-        # Only a coroutine is run for the handler: an awaitable EventSpec it
-        # returns is a description of an event, not work to do here.
-        if inspect.iscoroutine(result):
+        # An awaitable EventSpec or EventHandler the handler returns is a
+        # description of an event, not work to do here.
+        if inspect.isawaitable(result) and not isinstance(
+            result, (EventSpec, EventHandler)
+        ):
             result = await result
         return result
 

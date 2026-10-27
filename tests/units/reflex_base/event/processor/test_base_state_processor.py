@@ -4132,3 +4132,112 @@ async def test_await_stateless_handler_runs_inline(
             BaseStateToken(ident=token, cls=State)
         )
         assert (await state.get_state(StatelessCallerState)).got == 10
+
+
+async def test_detached_inline_task_holds_the_lock_until_it_finishes(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A task started from a handler keeps the lock held after the handler returns.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    release = asyncio.Event()
+    seen: dict[str, Any] = {}
+
+    class DetachedState(State):
+        log: list[str] = []
+
+        @event
+        async def child(self):
+            await release.wait()
+            self.log = [*self.log, "child"]
+
+        @event
+        async def parent(self):
+            seen["ctx"] = EventContext.get()
+            asyncio.ensure_future(DetachedState.child())  # noqa: RUF006
+            # Let the child start under the lock before returning.
+            await asyncio.sleep(0)
+            self.log = [*self.log, "parent"]
+
+        @event
+        def next_event(self):
+            self.log = [*self.log, "next"]
+
+    async with real_base_state_processor as processor:
+        parent_future = await processor.enqueue(
+            token, Event.from_event_type(DetachedState.parent())[0]
+        )
+        next_future = await processor.enqueue(
+            token, Event.from_event_type(DetachedState.next_event())[0]
+        )
+        await asyncio.sleep(0.05)
+        # The parent's handler has returned, but its lock is still held for
+        # the detached child, so the next event has not run yet.
+        assert not parent_future.done()
+        assert not next_future.done()
+        assert seen["ctx"].locked_root is not None
+        release.set()
+        await asyncio.wait_for(next_future, 5)
+        assert parent_future.done()
+
+    assert seen["ctx"].locked_root is None
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    state = await root_ctx.state_manager.get_state(
+        BaseStateToken(ident=token, cls=State)
+    )
+    assert (await state.get_state(DetachedState)).log == ["parent", "child", "next"]
+
+
+async def test_detached_task_started_after_release_is_enqueued(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A task that only starts once the lock is gone runs through the queue instead.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+
+    class LateState(State):
+        log: list[str] = []
+
+        @event
+        def child(self):
+            self.log = [*self.log, "child"]
+
+        @event
+        def parent(self):
+            # Returns before the task gets to run.
+            asyncio.ensure_future(LateState.child())  # noqa: RUF006
+            self.log = [*self.log, "parent"]
+
+        @event
+        def next_event(self):
+            self.log = [*self.log, "next"]
+
+    async with real_base_state_processor as processor:
+        await processor.enqueue(token, Event.from_event_type(LateState.parent())[0])
+        await processor.enqueue(token, Event.from_event_type(LateState.next_event())[0])
+        root_ctx = real_base_state_processor._root_context
+        assert root_ctx is not None
+        log: list[str] = []
+        for _ in range(100):
+            await asyncio.sleep(0.01)
+            state = await root_ctx.state_manager.get_state(
+                BaseStateToken(ident=token, cls=State)
+            )
+            log = (await state.get_state(LateState)).log
+            if len(log) == 3:
+                break
+
+    assert log == ["parent", "next", "child"]

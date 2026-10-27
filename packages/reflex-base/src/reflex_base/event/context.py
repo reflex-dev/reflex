@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import asyncio
 import contextlib
 import dataclasses
 import functools
 import os
-from collections.abc import Callable, Iterator, Mapping, Sequence
+from collections.abc import AsyncIterator, Callable, Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Protocol
 
 from reflex_base import otel
@@ -123,6 +124,12 @@ class EventContext(BaseContext):
     locked_root: BaseState | None = dataclasses.field(
         default=None, init=False, repr=False
     )
+    # The tasks running an awaited handler inline on the locked tree. The
+    # lock is released only once they are done, so a task spawned from a
+    # handler cannot keep writing to the tree after the lock is gone.
+    inline_tasks: set[asyncio.Task] = dataclasses.field(
+        default_factory=set, init=False, repr=False
+    )
     # OpenTelemetry context active when this event was enqueued (None when tracing is off).
     otel_context: Context | None = dataclasses.field(default=None, repr=False)
 
@@ -162,8 +169,25 @@ class EventContext(BaseContext):
         """
         object.__setattr__(self, "locked_root", root_state)
 
-    @contextlib.contextmanager
-    def holding_lock(self, root_state: BaseState) -> Iterator[None]:
+    async def release_lock(self) -> None:
+        """Wait for the inline handler runs started under the lock, then unmark it.
+
+        A handler run that another task started inline (``asyncio.ensure_future``
+        on a handler) still holds references to the locked tree, so the lock
+        stays held until it finishes. When the releasing task is being
+        cancelled, those runs are cancelled too.
+        """
+        current = asyncio.current_task()
+        pending = [t for t in self.inline_tasks if t is not current and not t.done()]
+        if pending:
+            if current is not None and current.cancelling():
+                for task in pending:
+                    task.cancel()
+            await asyncio.gather(*pending, return_exceptions=True)
+        self.set_locked_root(None)
+
+    @contextlib.asynccontextmanager
+    async def holding_lock(self, root_state: BaseState) -> AsyncIterator[None]:
         """Mark the state lock as held for the duration of the block.
 
         Args:
@@ -176,7 +200,7 @@ class EventContext(BaseContext):
         try:
             yield
         finally:
-            self.set_locked_root(None)
+            await self.release_lock()
 
     async def emit_delta(self, delta: Mapping[str, Mapping[str, Any]]) -> None:
         """Emit a delta to the frontend.

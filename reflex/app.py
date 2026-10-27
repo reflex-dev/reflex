@@ -1899,7 +1899,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 # No other event handler can modify the state while in this context.
                 if forked_context is not None:
                     # An awaited handler runs inline on the locked tree.
-                    with forked_context.holding_lock(state._get_root_state()):
+                    async with forked_context.holding_lock(state._get_root_state()):
                         yield state
                 else:
                     yield state

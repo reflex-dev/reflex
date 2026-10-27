@@ -52,8 +52,9 @@ def call_handler_example():
 An event handler accessed through its state class is awaitable. `await` runs it
 right away, inside the current event, and gives back its return value. The
 awaited handler runs on the same locked state as the caller, its `yield`s send
-updates to the frontend as usual, and any events it yields or returns are
-queued after the current event, as if the caller had yielded them.
+updates to the frontend as usual, and any backend events it yields or returns
+are queued after the current event, as if the caller had yielded them;
+frontend-only events are sent to the frontend immediately.
 
 ```python demo exec id=await-handler
 class AwaitHandlerState(rx.State):
@@ -94,7 +95,8 @@ state.
 - A background task awaiting a handler outside `async with self` queues the event and waits for it to finish; inside `async with self` the handler runs right away on the locked state.
 - A background handler cannot be awaited while the state lock is held, as it would wait for that lock. `yield` it instead.
 - Frontend-only events like `rx.redirect` cannot be awaited. `yield` or return them.
-- Awaiting several handlers at once with `asyncio.gather` works; they run one after the other on the same state.
+- Awaiting several handlers at once with `asyncio.gather` works, but they run concurrently on the same state and interleave at every `await` inside them. Await them one at a time when order matters.
+- A task started from a handler, like `asyncio.ensure_future(State.add(1))`, keeps the state lock held until it finishes when it starts before the handler returns. If the handler returns first, the task's handler is queued like a yielded event and runs under its own lock.
 ```
 
 ## Returning Events From Event Handlers

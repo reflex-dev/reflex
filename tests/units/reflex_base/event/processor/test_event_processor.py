@@ -1817,3 +1817,26 @@ async def test_bare_handler_return_value_resolves_future(
         spec = await spec_future
         assert isinstance(spec, EventSpec)
     assert _CALL_LOG == []
+
+
+async def test_bare_handler_returned_future_is_awaited(
+    mock_event_processor: EventProcessor,
+    token: str,
+):
+    """A bare handler returning a Future still has it awaited; only event specs are not.
+
+    Args:
+        mock_event_processor: The event processor with mock root context.
+        token: The client token.
+    """
+
+    def _returns_future() -> asyncio.Future[int]:
+        future: asyncio.Future[int] = asyncio.get_running_loop().create_future()
+        asyncio.get_running_loop().call_soon(future.set_result, 11)
+        return future
+
+    future_event = EventHandler(fn=_returns_future)
+    RegistrationContext.register_event_handler(future_event)
+    async with mock_event_processor as ep:
+        event_future = await ep.enqueue(token, Event.from_event_type(future_event())[0])
+        assert await event_future == 11

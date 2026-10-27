@@ -3424,7 +3424,7 @@ class EventNamespace:
                 )
                 object.__setattr__(func, "__name__", name)
                 object.__setattr__(func, "__qualname__", name)
-                if state_cls and issubclass(state_cls, BaseState):
+                if isinstance(state_cls, type) and issubclass(state_cls, BaseState):
                     state_cls._add_event_handler(name, func)
                     return getattr(state_cls, name)
                 return RegistrationContext.register_event_handler(

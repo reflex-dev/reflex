@@ -1,4 +1,4 @@
-Event handlers are awaitable: `await State.handler(args)` inside another event handler runs it right away on the same locked state and returns its result, and a handler may now return any value rather than only events. `@rx.event` returns the `EventHandler` itself, a function without a state parameter registers as a stateless handler that runs without the state lock, and `self.handler()` keeps calling the plain method as before.
+Event handlers are awaitable: `await State.handler(args)` inside another event handler runs it right away on the same locked state and returns its result, so a handler may return a value to the backend code awaiting it (returned events still chain, a returned coroutine still raises, and return values are not sent to the frontend yet). `@rx.event` returns the `EventHandler` itself, a function without a state parameter registers as a stateless handler that runs without the state lock, and `self.handler()` keeps calling the plain method as before.
 
 ```python
 @rx.event

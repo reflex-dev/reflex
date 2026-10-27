@@ -327,7 +327,7 @@ class StateProxy(wrapt.ObjectProxy):
         finally:
             try:
                 if self._self_mutable and self._self_actx is not None:
-                    EventContext.get().set_locked_root(None)
+                    await EventContext.get().release_lock()
                     await self._self_actx.__aexit__(*exc_info)
             finally:
                 self._self_actx = None

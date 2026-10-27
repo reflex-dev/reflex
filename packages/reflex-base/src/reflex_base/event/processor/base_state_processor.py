@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import dataclasses
 import functools
 import inspect
@@ -381,10 +382,23 @@ async def execute_event_inline(spec: EventSpec) -> Any:
             "state lock is held, as it would wait for that lock; yield it instead."
         )
         raise EventHandlerTypeError(msg)
-    substate = await root_state.get_state(registered.states[0])
-    return await process_event(
-        handler=handler, payload=event.payload, state=substate, root_state=root_state
-    )
+    # The lock stays held until this run is done, even if the task that
+    # started it finishes first. Registered before the first await, so a
+    # task that starts while the lock is held is always seen by its release.
+    task = asyncio.current_task()
+    if task is not None:
+        ctx.inline_tasks.add(task)
+    try:
+        substate = await root_state.get_state(registered.states[0])
+        return await process_event(
+            handler=handler,
+            payload=event.payload,
+            state=substate,
+            root_state=root_state,
+        )
+    finally:
+        if task is not None:
+            ctx.inline_tasks.discard(task)
 
 
 async def process_event(
@@ -700,7 +714,7 @@ class BaseStateEventProcessor(EventProcessor):
             substate = await state.get_state(registered_handler.states[0])
             root_state = state._get_root_state()
 
-            with ctx.holding_lock(root_state):
+            async with ctx.holding_lock(root_state):
                 if needs_to_rehydrate:
                     await self._rehydrate(root_state)
 

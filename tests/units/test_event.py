@@ -1754,3 +1754,18 @@ def test_rx_event_stateless_registers_globally():
     assert ev.name == format.format_event_handler(ping)
     assert ev.payload == {"x": "1"}
     _ = rx.input(on_change=ping)
+
+
+def test_rx_event_stateless_with_generic_annotation():
+    """A stateless handler may annotate its first parameter with a generic alias."""
+
+    @event
+    def summarize(items: list[int], label: str | None = None) -> int:
+        return sum(items)
+
+    assert isinstance(summarize, EventHandler)
+    assert summarize.state is None
+    registered = RegistrationContext.get().event_handlers[
+        format.format_event_handler(summarize)
+    ]
+    assert registered.states == ()
