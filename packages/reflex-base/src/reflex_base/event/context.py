@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 import asyncio
-import contextlib
 import dataclasses
 import functools
 import logging
 import os
-from collections.abc import AsyncIterator, Callable, Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Protocol
 
 from reflex_base import otel
@@ -217,22 +216,6 @@ class EventContext(BaseContext):
                         )
         finally:
             self.set_locked_root(None)
-
-    @contextlib.asynccontextmanager
-    async def holding_lock(self, root_state: BaseState) -> AsyncIterator[None]:
-        """Mark the state lock as held for the duration of the block.
-
-        Args:
-            root_state: The root of the locked state tree.
-
-        Yields:
-            Nothing.
-        """
-        self.set_locked_root(root_state)
-        try:
-            yield
-        finally:
-            await self.release_lock()
 
     async def emit_delta(self, delta: Mapping[str, Mapping[str, Any]]) -> None:
         """Emit a delta to the frontend.
