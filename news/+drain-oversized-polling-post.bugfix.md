@@ -1,1 +1,1 @@
-Fixed a polling-transport stall where an event larger than `REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE` left the page unable to reconnect: the backend now reads the oversized request body before it rejects it, so the browser reconnects at once.
+Fixed a polling-transport stall where an event larger than `REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE` left the page unable to reconnect: the backend now reads the oversized request body before it rejects it, so the browser can reconnect.

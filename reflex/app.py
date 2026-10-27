@@ -413,7 +413,9 @@ class _DrainOversizedBodyMiddleware:
             "headers": [(b"content-type", b"text/plain")],
         })
         await send({"type": "http.response.body", "body": b'"Bad Request"'})
-        sid = urllib.parse.parse_qs(scope["query_string"].decode()).get("sid", [""])[0]
+        sid = urllib.parse.parse_qs(scope["query_string"].decode("latin-1")).get(
+            "sid", [""]
+        )[0]
         if socket := self.eio.sockets.get(sid):
             await socket.close(wait=False)
 

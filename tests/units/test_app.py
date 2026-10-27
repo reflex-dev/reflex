@@ -5783,7 +5783,7 @@ async def _asgi_http_call(
         "scheme": "http",
         "path": path,
         "raw_path": path.encode(),
-        "query_string": query_string.encode(),
+        "query_string": query_string.encode("latin-1"),
         "root_path": "",
         "headers": headers,
         "client": ("127.0.0.1", 12345),
@@ -5894,6 +5894,17 @@ async def test_drain_oversized_body_middleware_answers_post_without_parked_poll(
         _asgi_http_call(app, "GET", query), timeout=5
     )
     assert poll_status == 400
+
+
+async def test_drain_oversized_body_middleware_closes_session_for_non_utf8_query():
+    """A query string that is not UTF-8 still closes the rejected session."""
+    socket_app, eio = _polling_engine_app(max_size=100)
+    app = _DrainOversizedBodyMiddleware(socket_app, eio)
+    query = await _polling_handshake(app)
+
+    status, _, _ = await _oversized_post(app, f"{query}&x=\xff")
+    assert status == 400
+    assert eio.sockets[query.rpartition("=")[2]].closed
 
 
 async def test_app_event_endpoint_drains_oversized_polling_post():
