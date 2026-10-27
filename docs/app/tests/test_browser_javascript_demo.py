@@ -2,9 +2,22 @@
 
 from pathlib import Path
 
+import pytest
+import reflex as rx
+from reflex_base.registry import RegistrationContext
+
 from reflex_docs.docgen_pipeline import render_docgen_document
 
 DOCS = Path(__file__).resolve().parents[2]
+
+
+@pytest.fixture(autouse=True)
+def isolated_registration():
+    """Keep the demo's state class out of the shared registries other tests use."""
+    with RegistrationContext(
+        _config=rx.Config(app_name="reflex_docs", frontend_path="/docs")
+    ):
+        yield
 
 
 def test_sound_demo_audio_resolves_under_frontend_path():
