@@ -33,7 +33,6 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, overload
 
-import engineio
 from reflex_base import constants, otel
 from reflex_base.components.component import Component, ComponentStyle
 from reflex_base.config import get_config, reload_config
@@ -75,6 +74,7 @@ from reflex_components_sonner.toast import toast
 from socketio import ASGIApp as EngineIOApp
 from socketio import AsyncNamespace, AsyncServer
 from starlette.applications import Starlette
+from starlette.datastructures import Headers
 from starlette.middleware import cors
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
@@ -122,6 +122,7 @@ else:
     from warnings import deprecated
 
 if TYPE_CHECKING:
+    from engineio import AsyncServer as AsyncEngineIOServer
     from reflex_base.plugins import Plugin
     from reflex_base.plugins.base import AddPageProtocol
     from reflex_base.vars import Var
@@ -370,104 +371,51 @@ class _ContextMiddleware:
 
 
 class _DrainOversizedBodyMiddleware:
-    """Drain oversized polling POST bodies, then reject them with a 400.
+    """Drain an oversized polling POST, answer 400, and close its session.
 
-    engine.io compares ``Content-Length`` against ``max_http_buffer_size`` and
-    answers 400 without reading the request body. The client is still sending
-    at that point, and the unsent remainder can wedge its connection pool so
-    the reconnect handshake is never served. Reading the body to completion
-    first lets the rejection reach a client that has finished sending, so it
-    can record the failure and retry.
-
-    The rejection is answered by this middleware rather than engine.io because
-    engine.io rejects by disconnecting the session, and its disconnect waits
-    for a poll GET to consume the session's CLOSE packet before the POST
-    response is sent. When no poll is parked - common, since the engine.io
-    client sends the CONNECT POST and the first poll GET at the same time -
-    the POST would never be answered. The middleware answers 400 itself and
-    closes the session without waiting for the send queue.
+    engine.io rejects a POST over ``max_http_buffer_size`` without reading its
+    body, which strands the browser mid-send, and holds the 400 until a poll
+    takes the session's CLOSE packet. This middleware reads the body first,
+    answers itself, and closes the session without waiting for a poll.
     """
 
-    def __init__(
-        self, app: ASGIApp, max_size: int, eio: engineio.AsyncServer | None = None
-    ) -> None:
-        """Wrap an ASGI app, rejecting oversized POST bodies after draining them.
+    def __init__(self, app: ASGIApp, eio: AsyncEngineIOServer) -> None:
+        """Wrap the socket app.
 
         Args:
-            app: The next ASGI app in the middleware stack.
-            max_size: The maximum accepted body size; larger POST bodies are drained
-                and rejected.
-            eio: The engine.io server, used to close the rejected session without
-                waiting for its send queue. Optional; the rejected request never
-                reaches engine.io, so when omitted the session is left open and
-                expires on engine.io's own timeout.
+            app: The socket ASGI app.
+            eio: The engine.io server whose buffer limit and sessions apply.
         """
         self.app = app
-        self.max_size = max_size
         self.eio = eio
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        """Drain an oversized POST body, then forward the request downstream.
+        """Drain and reject an oversized POST; pass other requests through.
 
         Args:
             scope: The ASGI connection scope.
             receive: The ASGI receive callable.
             send: The ASGI send callable.
         """
-        if scope["type"] != "http" or scope["method"] != "POST":
+        if (
+            scope["type"] != "http"
+            or scope["method"] != "POST"
+            or int(Headers(scope=scope).get("content-length", 0))
+            <= self.eio.max_http_buffer_size
+        ):
             await self.app(scope, receive, send)
             return
-
-        content_length: int | None = None
-        for name, value in scope.get("headers", []):
-            if name.lower() == b"content-length":
-                try:
-                    content_length = int(value)
-                except ValueError:
-                    content_length = None
-                break
-
-        if content_length is None or content_length <= self.max_size:
-            await self.app(scope, receive, send)
-            return
-
-        # Drain the declared body so the client finishes sending before the
-        # rejection reaches it. The bytes are discarded.
-        remaining = content_length
-        while remaining > 0:
-            message = await receive()
-            if message["type"] != "http.request":
-                break
-            remaining -= len(message.get("body", b""))
-            if not message.get("more_body"):
-                break
-
-        # Answer the oversized POST from here instead of delegating to
-        # engine.io. engine.io rejects on Content-Length by disconnecting the
-        # session, and disconnect waits in queue.join() for a poll GET to
-        # consume the CLOSE packet before the POST response is sent. The
-        # engine.io client sends the CONNECT POST and the first poll GET at
-        # the same time, so no poll may be parked when the POST arrives, and
-        # its response would be held forever. Answer directly, then close the
-        # session without waiting: a parked poll still receives the CLOSE
-        # packet, but no poll is required for this response.
+        while (await receive()).get("more_body"):
+            pass
         await send({
             "type": "http.response.start",
             "status": 400,
             "headers": [(b"content-type", b"text/plain")],
         })
         await send({"type": "http.response.body", "body": b'"Bad Request"'})
-
-        if self.eio is not None:
-            sid = urllib.parse.parse_qs(
-                scope.get("query_string", b"").decode("latin-1")
-            ).get("sid", [None])[0]
-            socket = self.eio.sockets.get(sid) if sid else None
-            if socket is not None:
-                with contextlib.suppress(Exception):
-                    # Best-effort; the 400 above is already sent.
-                    await socket.close(wait=False)
-        return
+        sid = urllib.parse.parse_qs(scope["query_string"].decode()).get("sid", [""])[0]
+        if socket := self.eio.sockets.get(sid):
+            await socket.close(wait=False)
 
 
 def _is_location_specifier(specifier: str) -> bool:
@@ -759,11 +707,7 @@ class App(MiddlewareMixin, LifespanMixin):
         socket_app = EngineIOApp(self.sio, socketio_path="")
         # Drain oversized polling POST bodies before engine.io rejects them, so
         # the 400 response does not strand a half-sent request on the client.
-        drained_socket_app = _DrainOversizedBodyMiddleware(
-            socket_app,
-            max_size=self.sio.eio.max_http_buffer_size,
-            eio=self.sio.eio,
-        )
+        drained_socket_app = _DrainOversizedBodyMiddleware(socket_app, self.sio.eio)
         namespace = config.get_event_namespace()
 
         # Create the event namespace and attach the main app. Not related to any paths.

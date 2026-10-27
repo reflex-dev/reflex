@@ -5719,7 +5719,12 @@ def _polling_engine_app(max_size: int):
 
 
 async def _asgi_http_call(
-    app, method: str, query_string: str, body: bytes = b"", chunk_size: int = 65536
+    app,
+    method: str,
+    query_string: str,
+    body: bytes = b"",
+    chunk_size: int = 65536,
+    path: str = "/",
 ):
     """Drive one HTTP request through an ASGI app with a chunked body.
 
@@ -5729,6 +5734,7 @@ async def _asgi_http_call(
         query_string: The raw query string.
         body: The request body.
         chunk_size: Size of each http.request message body chunk.
+        path: The request path.
 
     Returns:
         A tuple of (status, response body, request bytes consumed from receive).
@@ -5775,8 +5781,8 @@ async def _asgi_http_call(
         "http_version": "1.1",
         "method": method,
         "scheme": "http",
-        "path": "/",
-        "raw_path": b"/",
+        "path": path,
+        "raw_path": path.encode(),
         "query_string": query_string.encode(),
         "root_path": "",
         "headers": headers,
@@ -5791,6 +5797,44 @@ async def _asgi_http_call(
     return status, response_body, consumed
 
 
+async def _polling_handshake(app, path: str = "/") -> str:
+    """Open an engine.io polling session.
+
+    Args:
+        app: The ASGI app serving engine.io.
+        path: The request path.
+
+    Returns:
+        The query string that addresses the new session.
+    """
+    status, response_body, _ = await _asgi_http_call(
+        app, "GET", "EIO=4&transport=polling", path=path
+    )
+    assert status == 200
+    sid = re.search(r'"sid":"([^"]+)"', response_body.decode())
+    assert sid is not None
+    return f"EIO=4&transport=polling&sid={sid.group(1)}"
+
+
+async def _oversized_post(app, query_string: str, path: str = "/"):
+    """POST a 1000-byte body in 100-byte chunks, failing after 10 seconds.
+
+    Args:
+        app: The ASGI app serving engine.io.
+        query_string: The query string that addresses the session.
+        path: The request path.
+
+    Returns:
+        A tuple of (status, response body, request bytes consumed from receive).
+    """
+    return await asyncio.wait_for(
+        _asgi_http_call(
+            app, "POST", query_string, b"x" * 1000, chunk_size=100, path=path
+        ),
+        timeout=10,
+    )
+
+
 async def test_engineio_rejects_oversized_polling_post_without_draining_body():
     """Document the engine.io behavior _DrainOversizedBodyMiddleware works around.
 
@@ -5798,115 +5842,74 @@ async def test_engineio_rejects_oversized_polling_post_without_draining_body():
     without reading the request body, stranding the client mid-send.
     """
     app, _ = _polling_engine_app(max_size=100)
-    status, response_body, _ = await _asgi_http_call(
-        app, "GET", "EIO=4&transport=polling"
-    )
-    assert status == 200
-    sid = re.search(r'"sid":"([^"]+)"', response_body.decode())
-    assert sid is not None
+    query = await _polling_handshake(app)
 
-    # A real polling client always has a poll in flight; park one so the
-    # server can deliver its CLOSE packet when it rejects the POST.
-    poll_task = asyncio.create_task(
-        _asgi_http_call(app, "GET", f"EIO=4&transport=polling&sid={sid.group(1)}")
-    )
+    # Park a poll so engine.io can deliver its CLOSE packet and answer the POST.
+    poll_task = asyncio.create_task(_asgi_http_call(app, "GET", query))
     await asyncio.sleep(0.1)
 
-    big_body = b"x" * 1000
-    status, _, consumed = await asyncio.wait_for(
-        _asgi_http_call(
-            app,
-            "POST",
-            f"EIO=4&transport=polling&sid={sid.group(1)}",
-            big_body,
-            chunk_size=100,
-        ),
-        timeout=10,
-    )
+    status, _, consumed = await _oversized_post(app, query)
     poll_status, _, _ = await asyncio.wait_for(poll_task, timeout=5)
     assert status == 400
     assert poll_status == 200
-    assert consumed < len(big_body)
+    assert consumed < 1000
 
 
 async def test_drain_oversized_body_middleware_drains_and_rejects_oversized_post():
     """Oversized polling POST bodies are drained so the client can finish sending."""
     socket_app, eio = _polling_engine_app(max_size=100)
-    app = _DrainOversizedBodyMiddleware(socket_app, max_size=100, eio=eio)
-    status, response_body, _ = await _asgi_http_call(
-        app, "GET", "EIO=4&transport=polling"
-    )
-    assert status == 200
-    sid = re.search(r'"sid":"([^"]+)"', response_body.decode())
-    assert sid is not None
+    app = _DrainOversizedBodyMiddleware(socket_app, eio)
+    query = await _polling_handshake(app)
 
-    # A real polling client always has a poll in flight; park one so the
-    # server can deliver its CLOSE packet when it rejects the POST.
-    poll_task = asyncio.create_task(
-        _asgi_http_call(app, "GET", f"EIO=4&transport=polling&sid={sid.group(1)}")
-    )
+    # A parked poll still receives the CLOSE packet of the rejected session.
+    poll_task = asyncio.create_task(_asgi_http_call(app, "GET", query))
     await asyncio.sleep(0.1)
 
-    big_body = b"x" * 1000
-    status, _, consumed = await asyncio.wait_for(
-        _asgi_http_call(
-            app,
-            "POST",
-            f"EIO=4&transport=polling&sid={sid.group(1)}",
-            big_body,
-            chunk_size=100,
-        ),
-        timeout=10,
-    )
+    status, _, consumed = await _oversized_post(app, query)
     poll_status, _, _ = await asyncio.wait_for(poll_task, timeout=5)
     assert status == 400
     assert poll_status == 200
-    assert consumed == len(big_body)
+    assert consumed == 1000
 
     # The reconnect handshake is served normally after the rejected POST.
-    status, _, _ = await _asgi_http_call(app, "GET", "EIO=4&transport=polling")
-    assert status == 200
+    await _polling_handshake(app)
 
 
 async def test_drain_oversized_body_middleware_answers_post_without_parked_poll():
     """The oversized POST is answered even when no poll is in flight.
 
-    The engine.io client sends the CONNECT POST and the first poll GET at the
-    same time, so the POST can be rejected before any poll is parked. The
-    rejection must not wait for a poll to consume the session CLOSE packet.
+    The rejection must not wait for a poll to consume the session CLOSE packet.
     """
     socket_app, eio = _polling_engine_app(max_size=100)
-    app = _DrainOversizedBodyMiddleware(socket_app, max_size=100, eio=eio)
-    status, response_body, _ = await _asgi_http_call(
-        app, "GET", "EIO=4&transport=polling"
-    )
-    assert status == 200
-    sid = re.search(r'"sid":"([^"]+)"', response_body.decode())
-    assert sid is not None
+    app = _DrainOversizedBodyMiddleware(socket_app, eio)
+    query = await _polling_handshake(app)
 
-    # No poll is parked: the engine.io client races the CONNECT POST against
-    # the first poll GET, so the POST can arrive first.
-    big_body = b"x" * 1000
-    status, response_body, consumed = await asyncio.wait_for(
-        _asgi_http_call(
-            app,
-            "POST",
-            f"EIO=4&transport=polling&sid={sid.group(1)}",
-            big_body,
-            chunk_size=100,
-        ),
-        timeout=10,
-    )
+    status, response_body, consumed = await _oversized_post(app, query)
     assert status == 400
     assert response_body == b'"Bad Request"'
-    assert consumed == len(big_body)
+    assert consumed == 1000
 
     # A later poll learns the session is gone instead of the POST hanging.
     poll_status, _, _ = await asyncio.wait_for(
-        _asgi_http_call(app, "GET", f"EIO=4&transport=polling&sid={sid.group(1)}"),
-        timeout=5,
+        _asgi_http_call(app, "GET", query), timeout=5
     )
     assert poll_status == 400
+
+
+async def test_app_event_endpoint_drains_oversized_polling_post():
+    """The App's event endpoint drains and answers an oversized polling POST."""
+    app = App(
+        enable_state=False,
+        sio=AsyncServer(async_mode="asgi", max_http_buffer_size=100),
+    )
+    app._enable_state()
+    assert app._api is not None
+    path = f"{constants.Endpoint.EVENT}/"
+    query = await _polling_handshake(app._api, path)
+
+    status, _, consumed = await _oversized_post(app._api, query, path)
+    assert status == 400
+    assert consumed == 1000
 
 
 async def test_drain_oversized_body_middleware_passes_regular_requests_through():
@@ -5925,7 +5928,7 @@ async def test_drain_oversized_body_middleware_passes_regular_requests_through()
         await send({"type": "http.response.start", "status": 200, "headers": []})
         await send({"type": "http.response.body", "body": b"ok"})
 
-    app = _DrainOversizedBodyMiddleware(echo_app, max_size=100)
+    app = _DrainOversizedBodyMiddleware(echo_app, _polling_engine_app(100)[1])
     status, response_body, _ = await _asgi_http_call(app, "POST", "", b"hello")
     assert status == 200
     assert response_body == b"ok"
