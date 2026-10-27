@@ -7539,3 +7539,58 @@ async def test_hydration_replay_preserves_shared_cleanup_marks(
     assert storage.value == "fresh"
     assert storage._previous_dirty_vars >= {"snapshot_write", "value"}
     assert not storage.dirty_vars
+
+
+async def test_shared_storage_name_syncs_siblings(
+    clean_registration_context: RegistrationContext,
+):
+    """A write to a var sharing a storage name sets the synced vars with that name.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+
+    class SharedFirst(State):
+        value: str = rx.LocalStorage("", name="shared", sync=True)
+
+    class SharedSecond(State):
+        value: str = rx.LocalStorage("", name="shared", sync=True)
+
+    class SharedPlain(State):
+        value: str = rx.LocalStorage("", name="shared")
+
+    class OtherName(State):
+        value: str = rx.LocalStorage("", name="other", sync=True)
+
+    key = "value" + FIELD_MARKER
+    root = State()
+    first = await root.get_state(SharedFirst)
+    first.value = "new"
+    delta = await root._get_resolved_delta()
+    root._clean()
+    assert delta[SharedFirst.get_full_name()][key] == "new"
+    assert delta[SharedSecond.get_full_name()][key] == "new"
+    assert SharedPlain.get_full_name() not in delta
+    assert OtherName.get_full_name() not in delta
+
+    # An unsynced var's write raises the storage event too, so it syncs them.
+    plain = await root.get_state(SharedPlain)
+    plain.value = "plain"
+    delta = await root._get_resolved_delta()
+    root._clean()
+    assert delta[SharedFirst.get_full_name()][key] == "plain"
+    assert delta[SharedSecond.get_full_name()][key] == "plain"
+
+    # An unchanged sibling is not sent again.
+    first.value = "plain"
+    assert await root._get_resolved_delta() == {
+        SharedFirst.get_full_name(): {key: "plain"}
+    }
+    root._clean()
+
+    # A name no other var shares sets nothing else.
+    other = await root.get_state(OtherName)
+    other.value = "alone"
+    assert await root._get_resolved_delta() == {
+        OtherName.get_full_name(): {key: "alone"}
+    }

@@ -186,6 +186,32 @@ def HydrationStorageApp():
             """
             self.synced = value
 
+    class SharedOverrideState(rx.State):
+        first: str = rx.LocalStorage("", name="hydrate-shared-override", sync=True)
+        second: str = rx.LocalStorage("", name="hydrate-shared-override", sync=True)
+
+        @rx.event
+        def set_second(self, value: str):
+            """Store a value through the second var.
+
+            Args:
+                value: The value to store.
+            """
+            self.second = value
+
+        @rx.state._override_base_method
+        def get_delta(self):
+            """Replace the first var's "x".
+
+            Returns:
+                The delta, with the value replaced.
+            """
+            delta = super().get_delta()
+            subdelta = delta.get(self.get_full_name(), {})
+            if subdelta.get("first" + FIELD_MARKER) == "x":
+                subdelta["first" + FIELD_MARKER] = "x-replaced"
+            return delta
+
     def synced():
         """Display a browser storage var synced across tabs.
 
@@ -202,14 +228,22 @@ def HydrationStorageApp():
             rx.text(SharedNameState.synced, id="shared-value"),
             rx.text(SharedNameState.synced2, id="shared-value-2"),
             rx.button(
-                "Plain old",
-                on_click=SharedNameState.set_plain("old"),
-                id="set-plain-old",
-            ),
-            rx.button(
                 "Synced new",
                 on_click=SharedNameState.set_synced("new"),
                 id="set-synced-new",
+            ),
+            rx.text(SharedOverrideState.first, id="override-first"),
+            rx.text(SharedOverrideState.second, id="override-second"),
+            rx.button(
+                "Second x", on_click=SharedOverrideState.set_second("x"), id="set-x"
+            ),
+            rx.button(
+                "Second y", on_click=SharedOverrideState.set_second("y"), id="set-y"
+            ),
+            rx.button(
+                "Plain old",
+                on_click=SharedNameState.set_plain("old"),
+                id="set-plain-old",
             ),
             rx.text(rx.cond(rx.State.is_hydrated, "true", "false"), id="hydrated"),
         )
@@ -683,23 +717,42 @@ def test_synced_storage_echo_after_own_write_is_written(
 def test_synced_storage_shared_name_syncs_siblings_in_writing_tab(
     hydration_storage_app: AppHarness, page: Page
 ):
-    """A write to one synced var sharing a storage name updates the others in the writing tab.
-
-    The storage event only fires in other tabs, so the writing tab syncs its
-    sibling vars sharing the name itself (issue #7567).
+    """A write to one var sharing a storage name updates the others in the writing tab.
 
     Args:
         hydration_storage_app: The running app.
         page: A fresh browser page.
     """
+    socket = EventSocket(page)
     open_synced(hydration_storage_app, page)
     page.locator("#set-synced-new").click()
     expect(page.locator("#shared-value")).to_have_text("new")
     expect(page.locator("#shared-value-2")).to_have_text("new")
     page.wait_for_timeout(500)
-    expect(page.locator("#shared-value")).to_have_text("new")
-    expect(page.locator("#shared-value-2")).to_have_text("new")
     assert page.evaluate("localStorage.getItem('hydrate-shared')") == "new"
+    assert not [m for m in socket.sent if "update_vars_internal" in m]
+
+
+def test_synced_storage_shared_name_override_keeps_syncing(
+    hydration_storage_app: AppHarness, page: Page
+):
+    """A get_delta override replacing one shared-name value leaves later writes synced.
+
+    Args:
+        hydration_storage_app: The running app.
+        page: A fresh browser page.
+    """
+    socket = EventSocket(page)
+    open_synced(hydration_storage_app, page)
+    page.locator("#set-x").click()
+    expect(page.locator("#override-first")).to_have_text("x-replaced")
+    expect(page.locator("#override-second")).to_have_text("x")
+    page.locator("#set-y").click()
+    expect(page.locator("#override-first")).to_have_text("y")
+    expect(page.locator("#override-second")).to_have_text("y")
+    page.wait_for_timeout(500)
+    assert page.evaluate("localStorage.getItem('hydrate-shared-override')") == "y"
+    assert not [m for m in socket.sent if "update_vars_internal" in m]
 
 
 @pytest.mark.parametrize("other_tab_stores", [False, True], ids=["alone", "other_tab"])

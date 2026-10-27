@@ -1112,6 +1112,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         # change to any state invalidates every cached root.
         cls._to_schema.cache_clear()
         _frontend_schema.cache_clear()
+        _shared_storage_targets.cache_clear()
 
     @classmethod
     def _iter_functions(cls) -> Iterator[tuple[str, FunctionType]]:
@@ -1953,6 +1954,8 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         Returns:
             The resolved delta.
         """
+        if not _replay_client_storage.get():
+            await _sync_shared_storage(self)
         return await resolve_delta(self)
 
     def _mark_dirty(self, var_names: Iterable[str] | None = None) -> None:
@@ -2281,6 +2284,73 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         ):
             raise StateSchemaMismatchError
         return state
+
+
+@functools.lru_cache
+def _shared_storage_targets(
+    root: type[BaseState], context: RegistrationContext
+) -> dict[tuple[str, str], tuple[tuple[type[BaseState], str], ...]]:
+    """Map each localStorage var to the other synced vars with its storage name.
+
+    Only vars whose storage name another synced var shares are included.
+
+    Args:
+        root: The state at the top of the tree.
+        context: The registration context holding the tree.
+
+    Returns:
+        The synced vars to set, by the state name and var name of a var.
+    """
+    # The compiler imports this module.
+    from reflex.compiler.utils import _compile_client_storage_recursive
+
+    by_name: dict[str, list[tuple[str, str, bool]]] = {}
+    for state_key, options in _compile_client_storage_recursive(root)[1].items():
+        if name := options.get("name"):
+            state_name, _, var_name = state_key.removesuffix(FIELD_MARKER).rpartition(
+                "."
+            )
+            by_name.setdefault(name, []).append((
+                state_name,
+                var_name,
+                bool(options.get("sync")),
+            ))
+    return {
+        (state_name, var_name): targets
+        for members in by_name.values()
+        for state_name, var_name, _ in members
+        if (
+            targets := tuple(
+                (root.get_class_substate(other_state), other_var)
+                for other_state, other_var, sync in members
+                if sync and (other_state, other_var) != (state_name, var_name)
+            )
+        )
+    }
+
+
+async def _sync_shared_storage(state: BaseState) -> None:
+    """Set the synced vars sharing the storage name of a var this event wrote.
+
+    The browser raises the storage event in other tabs only, so the tab that
+    stores the value would keep the other vars with its name stale.
+
+    Args:
+        state: The root of the states to get the delta for.
+    """
+    targets = _shared_storage_targets(state.get_root_state(), RegistrationContext.get())
+    for (state_name, var_name), synced in targets.items():
+        source = state
+        for name in state_name.split(".")[1:]:
+            if (source := source.substates.get(name)) is None:
+                break
+        if source is None or var_name not in source.dirty_vars:
+            continue
+        value = source.get_value(var_name)
+        for target_cls, target_var in synced:
+            target = await state.get_state(target_cls)
+            if target.get_value(target_var) != value:
+                setattr(target, target_var, value)
 
 
 @functools.lru_cache
