@@ -345,21 +345,21 @@ async def execute_event_inline(spec: EventSpec) -> Any:
     from reflex_base.registry import RegistrationContext
     from reflex_base.utils.exceptions import EventHandlerTypeError
 
-    name = format_event_handler(spec.handler)
     try:
         ctx = EventContext.get()
     except LookupError as le:
         msg = (
-            f"Event handler `{name}` can only be awaited from an event handler "
-            "or inside `app.modify_state`; use it as an event trigger or yield "
-            "it instead."
+            f"Event handler `{format_event_handler(spec.handler)}` can only be "
+            "awaited from an event handler or inside `app.modify_state`; use it "
+            "as an event trigger or yield it instead."
         )
         raise EventHandlerTypeError(msg) from le
+    event = spec._to_event(ctx.router_data)
+    name = event.name
     if spec.client_handler_name:
         msg = f"Upload event `{name}` cannot be awaited; use it as an event trigger."
         raise EventHandlerTypeError(msg)
-    event = spec._to_event(ctx.router_data)
-    registered = RegistrationContext.get().event_handlers.get(event.name)
+    registered = RegistrationContext.get().event_handlers.get(name)
     if registered is None:
         msg = (
             f"`{name}` is a frontend-only event, so it cannot be awaited; "

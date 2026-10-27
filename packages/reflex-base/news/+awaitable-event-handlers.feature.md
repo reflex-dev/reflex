@@ -6,6 +6,7 @@ def add(self, amount: int) -> int:
     self.total += amount
     return self.total
 
+
 @rx.event
 async def add_twice(self, amount: int):
     first = await type(self).add(amount)
