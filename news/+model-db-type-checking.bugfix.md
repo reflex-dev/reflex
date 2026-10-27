@@ -1,1 +1,0 @@
-Type checkers see the database helpers of `reflex.model` (`rx.session`, `rx.asession`, `rx.Model`, `ModelRegistry`, ...) as defined, rather than as unions with the stand-ins used when the db extra is missing.
