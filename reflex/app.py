@@ -2312,6 +2312,8 @@ class EventNamespace(AsyncNamespace):
         Returns:
             An asyncio Task for cleaning up the token, or None.
         """
+        from reflex.istate.shared import schedule_disconnect_reap
+
         if otel.enabled:
             otel.record_connection(-1)
         self._client_error_counts.pop(sid, None)
@@ -2327,6 +2329,9 @@ class EventNamespace(AsyncNamespace):
                 and (processor := self.app._event_processor) is not None
             ):
                 processor._on_disconnect(disconnect_token)
+            # Unsubscribe the client from its linked shared states unless it
+            # reconnects within the grace period.
+            schedule_disconnect_reap(self.app, disconnect_token)
             # Use async cleanup through token manager
             task = asyncio.create_task(
                 self._token_manager.disconnect_token(disconnect_token, sid),
