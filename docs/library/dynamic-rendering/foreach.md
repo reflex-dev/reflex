@@ -80,7 +80,7 @@ def display_row(row: rx.Var[list[str]]):
             row,
             lambda item: rx.box(
                 item,
-                border="1px solid black",
+                border=f"1px solid {rx.color('gray', 7)}",
                 padding="0.5em",
             ),
         ),
@@ -144,7 +144,9 @@ def todo_example():
     return rx.vstack(
         rx.heading("Todos", as_="h2"),
         rx.input(
-            on_blur=ListState.set_new_item, placeholder="Add a todo...", bg="white"
+            on_blur=ListState.set_new_item,
+            placeholder="Add a todo...",
+            bg=rx.color("gray", 2),
         ),
         rx.button("Add", on_click=ListState.add_item),
         rx.divider(),
@@ -154,7 +156,8 @@ def todo_example():
                 get_item,
             ),
         ),
-        bg="#ededed",
+        bg=rx.color("gray", 3),
+        color=rx.color("gray", 12),
         padding="1em",
         border_radius="0.5em",
         shadow="lg",

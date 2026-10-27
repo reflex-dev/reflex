@@ -79,8 +79,11 @@ from reflex.state import (
     OnLoadInternalState,
     State,
     StateUpdate,
+    _apply_client_storage_vars,
     _frontend_schema,
+    _get_client_storage_delta,
     _load_events_for_page,
+    _override_base_method,
     all_base_state_classes,
     is_serializable,
     state_snapshot_hashes,
@@ -5908,6 +5911,79 @@ def test_frontend_schema_leaves_out_backend_vars():
     )
 
 
+@pytest.mark.parametrize("value", ["", "dark"])
+@pytest.mark.parametrize(
+    "var_name",
+    [
+        "cookie",
+        "local",
+        "session",
+        "field_cookie",
+        "field_local",
+        "field_session",
+        "optional",
+        "storage_union",
+        "plain",
+    ],
+)
+async def test_storage_annotations_accept_browser_strings(
+    var_name: str,
+    value: str,
+    caplog: pytest.LogCaptureFixture,
+    clean_registration_context: RegistrationContext,
+):
+    """Browser strings satisfy storage annotations during hydration and later writes.
+
+    Args:
+        var_name: The browser storage var to update.
+        value: The value sent by the browser.
+        caplog: Captured log records.
+        clean_registration_context: An isolated state registry.
+    """
+
+    class StorageAnnotationState(State):
+        cookie: rx.Cookie = rx.Cookie("light", name="cookie", path="/settings")
+        local: rx.LocalStorage = rx.LocalStorage("light", name="local", sync=True)
+        session: rx.SessionStorage = rx.SessionStorage("light", name="session")
+        field_cookie: rx.Field[rx.Cookie] = rx.field(rx.Cookie("light"))
+        field_local: rx.Field[rx.LocalStorage] = rx.field(rx.LocalStorage("light"))
+        field_session: rx.Field[rx.SessionStorage] = rx.field(
+            rx.SessionStorage("light")
+        )
+        plain: str = rx.LocalStorage("light", name="plain")
+        optional: rx.Field[rx.LocalStorage | None] = rx.field(rx.LocalStorage("light"))
+        storage_union: rx.Cookie | rx.SessionStorage = rx.Cookie("light")
+
+    root = State()
+    state = await root.get_state(StorageAnnotationState)
+    declared = StorageAnnotationState.get_fields()[var_name].default
+    assert isinstance(declared, (rx.Cookie, rx.LocalStorage, rx.SessionStorage))
+    options = declared.options()
+
+    with caplog.at_level(logging.ERROR):
+        applied = await _apply_client_storage_vars(
+            root,
+            {
+                f"{StorageAnnotationState.get_full_name()}.{var_name}{FIELD_MARKER}": value
+            },
+        )
+        assert applied == [(state, var_name)]
+        assert getattr(state, var_name) == value
+        assert var_name in state.dirty_vars
+        assert not caplog.records
+
+        setattr(state, var_name, "changed")
+        assert getattr(state, var_name) == "changed"
+        assert not caplog.records
+
+        setattr(state, var_name, 42)
+        assert len(caplog.records) == 1
+        assert "Expected field" in caplog.records[0].getMessage()
+
+    assert StorageAnnotationState.get_fields()[var_name].default is declared
+    assert declared.options() == options
+
+
 def test_reset_client_storage_uses_declared_factories():
     """Hydration evaluates declared factories for all browser storage types."""
     calls = []
@@ -7412,3 +7488,54 @@ def test_non_var_annotation_with_undefined_name_is_allowed(
     state = type("UndefinedNonVarState", (BaseState,), namespace)
 
     assert name not in state.get_fields()
+
+
+async def test_hydration_replay_preserves_shared_cleanup_marks(
+    monkeypatch: pytest.MonkeyPatch, clean_registration_context: RegistrationContext
+):
+    """A single shared cleanup records snapshot and correction writes for fanout.
+
+    Args:
+        monkeypatch: Restore root metadata changed by defining a shared state.
+        clean_registration_context: Isolate the temporary shared state class.
+    """
+    links = State.get_fields()["_reflex_internal_links"]
+    monkeypatch.setattr(links, "default", links.default)
+    monkeypatch.setattr(links, "default_factory", links.default_factory)
+    monkeypatch.setattr(
+        State, "_always_dirty_substates", State._always_dirty_substates.copy()
+    )
+    clean_calls = 0
+
+    class StorageState(rx.SharedState):
+        value: str = rx.LocalStorage("")
+        snapshot_write: str = "initial"
+
+        @_override_base_method
+        def get_delta(self):
+            """Normalize a backend storage value before returning its delta.
+
+            Returns:
+                The base delta.
+            """
+            if "value" in self.dirty_vars and self.value == "stale":
+                self.value = "fresh"
+            return super().get_delta()
+
+        @_override_base_method
+        def _clean(self):
+            """Count the cleanup calls that capture shared fanout marks."""
+            nonlocal clean_calls
+            clean_calls += 1
+            super()._clean()
+
+    root = State.get_root_state()(_reflex_internal_init=True)
+    storage = await root.get_state(StorageState)
+    storage.snapshot_write = "snapshot"
+    storage.value = "stale"
+    storage._previous_dirty_vars = set()
+    await _get_client_storage_delta(root, [(storage, "value")])
+    assert clean_calls == 1
+    assert storage.value == "fresh"
+    assert storage._previous_dirty_vars >= {"snapshot_write", "value"}
+    assert not storage.dirty_vars
