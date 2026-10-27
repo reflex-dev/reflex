@@ -2339,18 +2339,37 @@ async def _sync_shared_storage(state: BaseState) -> None:
         state: The root of the states to get the delta for.
     """
     targets = _shared_storage_targets(state.get_root_state(), RegistrationContext.get())
-    for (state_name, var_name), synced in targets.items():
-        source = state
-        for name in state_name.split(".")[1:]:
-            if (source := source.substates.get(name)) is None:
-                break
-        if source is None or var_name not in source.dirty_vars:
-            continue
-        value = source.get_value(var_name)
+    writes = {
+        key: (source.get_value(key[1]), synced)
+        for key, synced in targets.items()
+        if (source := _loaded_substate(state, key[0])) is not None
+        and key[1] in source.dirty_vars
+    }
+    for value, synced in writes.values():
         for target_cls, target_var in synced:
+            # A var this event wrote keeps its own value.
+            if (target_cls.get_full_name(), target_var) in writes:
+                continue
             target = await state.get_state(target_cls)
             if target.get_value(target_var) != value:
                 setattr(target, target_var, value)
+
+
+def _loaded_substate(root: BaseState, state_name: str) -> BaseState | None:
+    """Get a substate by its full name only if it is already loaded.
+
+    Args:
+        root: The root state.
+        state_name: The full name of the substate.
+
+    Returns:
+        The substate, or None if it is not loaded.
+    """
+    state = root
+    for name in state_name.split(".")[1:]:
+        if (state := state.substates.get(name)) is None:
+            return None
+    return state
 
 
 @functools.lru_cache

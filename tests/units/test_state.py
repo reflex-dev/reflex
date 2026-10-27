@@ -7594,3 +7594,27 @@ async def test_shared_storage_name_syncs_siblings(
     assert await root._get_resolved_delta() == {
         OtherName.get_full_name(): {key: "alone"}
     }
+
+
+async def test_shared_storage_name_keeps_event_writes(
+    clean_registration_context: RegistrationContext,
+):
+    """Vars sharing a storage name that one event writes keep their own values.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+
+    class WrittenFirst(State):
+        value: str = rx.LocalStorage("", name="shared", sync=True)
+
+    class WrittenSecond(State):
+        value: str = rx.LocalStorage("", name="shared", sync=True)
+
+    root = State()
+    first = await root.get_state(WrittenFirst)
+    second = await root.get_state(WrittenSecond)
+    first.value = "one"
+    second.value = "two"
+    await root._get_resolved_delta()
+    assert (first.value, second.value) == ("one", "two")
