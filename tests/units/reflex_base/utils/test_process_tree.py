@@ -154,15 +154,27 @@ def test_kill_descendants_kills_known_pids_no_longer_below_the_root(tmp_path: Pa
     """A descendant seen earlier is killed although its parent has exited."""
     proc, line = _start(tmp_path, _ORPHANING_CHILD)
     grandchild = int(line)
+    root = _sleeper()
     try:
         proc.terminate()
         proc.wait(timeout=5)
-        assert grandchild not in process_tree.descendant_pids(os.getpid())
-        process_tree.kill_descendants(os.getpid(), [grandchild])
+        assert grandchild not in process_tree.descendant_pids(root.pid)
+        process_tree.kill_descendants(root.pid, [grandchild])
         assert _wait_gone(grandchild, timeout=1)
     finally:
+        root.kill()
+        root.wait()
         with contextlib.suppress(OSError):
             os.kill(grandchild, signal.SIGKILL)
+
+
+def _sleeper() -> subprocess.Popen:
+    """Start a child with no children of its own, to serve as a root.
+
+    Returns:
+        The child process.
+    """
+    return subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"])
 
 
 # A child that exits at once, leaving a grandchild in a process group of its
@@ -181,12 +193,15 @@ def test_kill_descendants_spares_a_known_pid_outside_the_group(tmp_path: Path):
     """A known ID now held by a process outside the root's group is not killed."""
     proc, line = _start(tmp_path, _DETACHING_CHILD)
     grandchild = int(line)
+    root = _sleeper()
     try:
         proc.wait(timeout=5)
-        process_tree.kill_descendants(os.getpid(), [grandchild])
+        process_tree.kill_descendants(root.pid, [grandchild])
         time.sleep(0.2)
         assert _alive(grandchild)
     finally:
+        root.kill()
+        root.wait()
         with contextlib.suppress(OSError):
             os.kill(grandchild, signal.SIGKILL)
 
