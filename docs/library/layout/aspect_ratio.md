@@ -43,7 +43,7 @@ rx.grid(
         rx.box(
             "Square 1:1",
             background_color="green",
-            color="black",
+            color="white",
             width="100%",
             height="100%",
         ),
