@@ -7562,7 +7562,7 @@ def test_rx_event_handler_bound_at_class_creation() -> None:
 
 
 def test_mixin_decorated_handler_copied_per_state() -> None:
-    """A mixin's decorated handler stays unbound; each state gets its own copy."""
+    """A mixin's decorated handler is bound to the mixin; each state gets its own copy."""
 
     class CopyMixin(BaseState, mixin=True):
         @rx.event(background=True, stop_propagation=True)
@@ -7577,7 +7577,7 @@ def test_mixin_decorated_handler_copied_per_state() -> None:
 
     template = CopyMixin.__dict__["work"]
     assert isinstance(template, EventHandler)
-    assert template.state is None
+    assert template.state is CopyMixin
     handler_a = UsesCopyMixinA.event_handlers["work"]
     handler_b = UsesCopyMixinB.event_handlers["work"]
     assert handler_a.state is UsesCopyMixinA
@@ -7644,3 +7644,29 @@ def test_rx_event_rejects_static_and_class_methods() -> None:
             @staticmethod
             def handle():
                 pass
+
+
+def test_decorated_handler_on_state_derived_from_a_mixin_only() -> None:
+    """A state whose base flips the mixin flag on (like ``rx.SharedState``) owns its handlers.
+
+    The metaclass first marks a class declared on mixins alone as a mixin and
+    the base's ``__init_subclass__`` flips it, so binding must not depend on
+    that flag.
+    """
+
+    class FlippingMixin(BaseState, mixin=True):
+        def __init_subclass__(cls, **kwargs):
+            kwargs["mixin"] = False
+            cls._mixin = False
+            super().__init_subclass__(**kwargs)
+
+    class FromFlippingMixin(FlippingMixin):
+        @rx.event
+        def handle(self):
+            pass
+
+    assert not FromFlippingMixin._mixin
+    handler = FromFlippingMixin.__dict__["handle"]
+    assert isinstance(handler, EventHandler)
+    assert handler.state is FromFlippingMixin
+    assert FromFlippingMixin.event_handlers["handle"] is handler

@@ -115,6 +115,25 @@ def BackgroundTask():
                 self.counter += 1
 
         @rx.event(background=True)
+        async def await_handlers(self):
+            # No lock held: each await enqueues the handler and waits for it.
+            await State.increment()
+            await State.increment()
+            async with self:
+                # Lock held: the handler runs inline on the locked state.
+                await State.increment()
+                assert self.counter == 3
+                await State.increment_by(await State.pick_amount(2))
+
+        @rx.event
+        def increment_by(self, amount: int):
+            self.counter += amount
+
+        @rx.event
+        def pick_amount(self, amount: int) -> int:
+            return amount * 2
+
+        @rx.event(background=True)
         async def disconnect_reconnect_background(self):
             async with self:
                 self.counter += 1
@@ -211,6 +230,11 @@ def BackgroundTask():
                 "Fast Yielding",
                 on_click=State.fast_yielding,
                 id="fast-yielding",
+            ),
+            rx.button(
+                "Await Handlers",
+                on_click=State.await_handlers,
+                id="await-handlers",
             ),
             rx.button("Reset", on_click=State.reset_counter, id="reset"),
         )
@@ -422,6 +446,28 @@ def test_yield_in_async_with_self(
 
     yield_in_async_with_self_button.click()
     AppHarness.expect(lambda: counter.text == "2", timeout=5)
+
+
+def test_await_handlers_from_background_task(
+    background_task: AppHarness,
+    driver: WebDriver,
+    token: str,
+):
+    """A background task awaits handlers through the queue, or inline under the lock.
+
+    Args:
+        background_task: harness for BackgroundTask app.
+        driver: WebDriver instance.
+        token: The token for the connected client.
+    """
+    assert background_task.app_instance is not None
+
+    await_handlers_button = driver.find_element(By.ID, "await-handlers")
+    counter = driver.find_element(By.ID, "counter")
+    AppHarness.expect(lambda: counter.text == "0", timeout=5)
+
+    await_handlers_button.click()
+    AppHarness.expect(lambda: counter.text == "7", timeout=5)
 
 
 @pytest.mark.parametrize(

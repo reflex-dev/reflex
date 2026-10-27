@@ -869,8 +869,8 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
                             _var_data=VarData.from_state(cls),
                         ),
                     )
-                elif isinstance(value, EventHandler) and value.state is None:
-                    # A decorated handler of a mixin: copy its function, which
+                elif isinstance(value, EventHandler) and value.state is mixin_cls:
+                    # A handler declared on the mixin: copy its function, which
                     # carries the markers, and let it be wrapped for this class.
                     fn = cls._copy_fn(value.fn)
                     fn.__qualname__ = f"{cls.__name__}.{name}"

@@ -117,6 +117,19 @@ def EventChain():
             yield State.event_arg("yield_nested")
 
         @rx.event
+        def event_return_value(self, arg: int):
+            self.event_order.append(f"event_return_value:{arg}")
+            yield State.event_arg(f"from_callee:{arg}")
+            return arg * 2  # noqa: B901
+
+        @rx.event
+        async def click_await_handler(self):
+            self.event_order.append("click_await_handler:0")
+            value = await State.event_return_value(21)
+            self.event_order.append(f"click_await_handler:{value}")
+            yield State.event_arg("after_await")
+
+        @rx.event
         def redirect_return_chain(self):
             self.event_order.append("redirect_return_chain")
             yield rx.redirect("/on-load-return-chain")
@@ -203,6 +216,11 @@ def EventChain():
                 "Yield Nested",
                 id="yield_nested",
                 on_click=State.click_yield_nested,
+            ),
+            rx.button(
+                "Await Handler",
+                id="await_handler",
+                on_click=State.click_await_handler,
             ),
             rx.button(
                 "Redirect Yield Chain",
@@ -444,6 +462,16 @@ def assert_token(event_chain: AppHarness, driver: WebDriver) -> str:
                 "event_arg:nested_2",
                 "event_no_args",
                 "event_arg:nested_3",
+            ],
+        ),
+        (
+            "await_handler",
+            [
+                "click_await_handler:0",
+                "event_return_value:21",
+                "click_await_handler:42",
+                "event_arg:from_callee:21",
+                "event_arg:after_await",
             ],
         ),
         (

@@ -159,3 +159,28 @@ def process_form(state: FormState, data: dict):
     # Process form data
     return validate_data  # Chain to another event
 ```
+
+## Stateless Event Handlers
+
+A function decorated with `@rx.event` whose first parameter is not a state is a
+stateless event handler. It is registered like any other handler, can be used
+as an event trigger, and can be awaited from other handlers, but it runs
+without a state and without taking the state lock, so it never waits behind
+the other events of the same client.
+
+```python box
+@rx.event
+async def fetch_quote(symbol: str) -> float:
+    return await price_service.quote(symbol)
+
+
+class PortfolioState(rx.State):
+    price: float = 0.0
+
+    @rx.event
+    async def refresh(self, symbol: str):
+        self.price = await fetch_quote(symbol)
+```
+
+A stateless handler can still yield or return events, which run against the
+state of the client that triggered it.

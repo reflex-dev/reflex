@@ -47,11 +47,61 @@ def call_handler_example():
     )
 ```
 
+## Awaiting Event Handlers
+
+An event handler accessed through its state class is awaitable. `await` runs it
+right away, inside the current event, and gives back its return value. The
+awaited handler runs on the same locked state as the caller, its `yield`s send
+updates to the frontend as usual, and any events it yields or returns are
+queued after the current event, as if the caller had yielded them.
+
+```python demo exec id=await-handler
+class AwaitHandlerState(rx.State):
+    total: int = 0
+    last_added: int = 0
+
+    @rx.event
+    def add(self, amount: int) -> int:
+        """Add to the total and return the new total."""
+        self.total += amount
+        self.last_added = amount
+        return self.total
+
+    @rx.event
+    async def add_twice(self, amount: int):
+        first = await type(self).add(amount)
+        second = await type(self).add(amount)
+        yield rx.toast(f"{first} then {second}")
+
+
+def await_handler_example():
+    return rx.vstack(
+        rx.text(f"Total: {AwaitHandlerState.total}"),
+        rx.button("Add 5 twice", on_click=AwaitHandlerState.add_twice(5)),
+    )
+```
+
+Compared to calling the handler as a method of `self`, awaiting it converts
+the arguments like an event from the frontend, sends an update when it yields,
+and works for a handler of any state in the app, not only the caller's own
+state.
+
+```md alert info
+# Rules for awaiting event handlers
+
+- Only inside an event handler (or `app.modify_state`); awaiting a handler anywhere else raises an error.
+- Calling the handler, like `State.add(5)`, only binds its arguments. Nothing runs until it is awaited, so it can still be returned or yielded as before. Each `await` runs it again.
+- A background task awaiting a handler outside `async with self` queues the event and waits for it to finish; inside `async with self` the handler runs right away on the locked state.
+- A background handler cannot be awaited while the state lock is held, as it would wait for that lock. `yield` it instead.
+- Frontend-only events like `rx.redirect` cannot be awaited. `yield` or return them.
+- Awaiting several handlers at once with `asyncio.gather` works; they run one after the other on the same state.
+```
+
 ## Returning Events From Event Handlers
 
 So far, we have only seen events that are triggered by components. However, an event handler can also return events.
 
-In Reflex, event handlers run synchronously, so only one event handler can run at a time, and the events in the queue will be blocked until the current event handler finishes.The difference between returning an event and calling an event handler is that returning an event will send the event to the frontend and unblock the queue.
+In Reflex, event handlers run synchronously, so only one event handler can run at a time, and the events in the queue will be blocked until the current event handler finishes. The difference between returning an event and calling an event handler is that a returned event is queued and runs after the current handler finishes.
 
 ```md alert info
 # Be sure to use the class name `State` (or any substate) rather than `self` when returning events.

@@ -653,15 +653,16 @@ class EventHandler(EventActionsMixin):
 
         Runs when the class is created, before ``BaseState.__init_subclass__``
         collects and registers the class's handlers. A handler already bound
-        to a state (aliased onto another class) and one declared on a mixin
-        (copied per concrete state instead) are left unbound.
+        to a state (aliased onto another class) is left as it is. A mixin's
+        handler is bound to the mixin, which marks it as declared there: each
+        state using the mixin gets a copy of its own.
 
         Args:
             owner: The class the handler is declared on.
             name: The attribute name.
         """
         del name
-        if self.state is not None or getattr(owner, "_mixin", True):
+        if self.state is not None:
             return
         from reflex.state import BaseState
 
