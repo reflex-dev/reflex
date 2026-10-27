@@ -23,6 +23,7 @@ rx.grid(
         rx.box(
             "Widescreen 16:9",
             background_color="papayawhip",
+            color="black",
             width="100%",
             height="100%",
         ),
@@ -32,6 +33,7 @@ rx.grid(
         rx.box(
             "Letterbox 4:3",
             background_color="orange",
+            color="black",
             width="100%",
             height="100%",
         ),
@@ -41,6 +43,7 @@ rx.grid(
         rx.box(
             "Square 1:1",
             background_color="green",
+            color="black",
             width="100%",
             height="100%",
         ),
@@ -50,6 +53,7 @@ rx.grid(
         rx.box(
             "Portrait 5:7",
             background_color="lime",
+            color="black",
             width="100%",
             height="100%",
         ),
