@@ -135,10 +135,9 @@ def _transform_event_arg(value: Any, hinted_args: Any) -> Any:
 
         if issubclass(hinted_args, Model):
             # Remove non-fields from the payload
+            model_fields = hinted_args.model_fields
             return hinted_args(**{
-                key: value
-                for key, value in value.items()
-                if key in hinted_args.__fields__
+                key: value for key, value in value.items() if key in model_fields
             })
         if dataclasses.is_dataclass(hinted_args):
             return hinted_args(**value)

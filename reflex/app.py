@@ -74,6 +74,7 @@ from reflex_components_sonner.toast import toast
 from socketio import ASGIApp as EngineIOApp
 from socketio import AsyncNamespace, AsyncServer
 from starlette.applications import Starlette
+from starlette.datastructures import Headers
 from starlette.middleware import cors
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
@@ -121,6 +122,7 @@ else:
     from warnings import deprecated
 
 if TYPE_CHECKING:
+    from engineio import AsyncServer as AsyncEngineIOServer
     from reflex_base.plugins import Plugin
     from reflex_base.plugins.base import AddPageProtocol
     from reflex_base.vars import Var
@@ -366,6 +368,56 @@ class _ContextMiddleware:
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         self.reflex_app._set_contexts_internal()
         await self.app(scope, receive, send)
+
+
+class _DrainOversizedBodyMiddleware:
+    """Drain an oversized polling POST, answer 400, and close its session.
+
+    engine.io rejects a POST over ``max_http_buffer_size`` without reading its
+    body, which strands the browser mid-send, and holds the 400 until a poll
+    takes the session's CLOSE packet. This middleware reads the body first,
+    answers itself, and closes the session without waiting for a poll.
+    """
+
+    def __init__(self, app: ASGIApp, eio: AsyncEngineIOServer) -> None:
+        """Wrap the socket app.
+
+        Args:
+            app: The socket ASGI app.
+            eio: The engine.io server whose buffer limit and sessions apply.
+        """
+        self.app = app
+        self.eio = eio
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """Drain and reject an oversized POST; pass other requests through.
+
+        Args:
+            scope: The ASGI connection scope.
+            receive: The ASGI receive callable.
+            send: The ASGI send callable.
+        """
+        if (
+            scope["type"] != "http"
+            or scope["method"] != "POST"
+            or int(Headers(scope=scope).get("content-length", 0))
+            <= self.eio.max_http_buffer_size
+        ):
+            await self.app(scope, receive, send)
+            return
+        while (await receive()).get("more_body"):
+            pass
+        await send({
+            "type": "http.response.start",
+            "status": 400,
+            "headers": [(b"content-type", b"text/plain")],
+        })
+        await send({"type": "http.response.body", "body": b'"Bad Request"'})
+        sid = urllib.parse.parse_qs(scope["query_string"].decode("latin-1")).get(
+            "sid", [""]
+        )[0]
+        if socket := self.eio.sockets.get(sid):
+            await socket.close(wait=False)
 
 
 def _is_location_specifier(specifier: str) -> bool:
@@ -681,6 +733,9 @@ class App(MiddlewareMixin, LifespanMixin):
 
         # Create the socket app. Note event endpoint constant replaces the default 'socket.io' path.
         socket_app = EngineIOApp(self.sio, socketio_path="")
+        # Drain oversized polling POST bodies before engine.io rejects them, so
+        # the 400 response does not strand a half-sent request on the client.
+        drained_socket_app = _DrainOversizedBodyMiddleware(socket_app, self.sio.eio)
         namespace = config.get_event_namespace()
 
         # Create the event namespace and attach the main app. Not related to any paths.
@@ -716,7 +771,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
                     return await self.app(scope, receive, modified_send)
 
-            socket_app_with_headers = HeaderMiddleware(socket_app)
+            socket_app_with_headers = HeaderMiddleware(drained_socket_app)
             self._api.mount(
                 config.prepend_backend_path(str(constants.Endpoint.EVENT)),
                 socket_app_with_headers,
