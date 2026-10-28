@@ -74,6 +74,7 @@ from reflex_components_sonner.toast import toast
 from socketio import ASGIApp as EngineIOApp
 from socketio import AsyncNamespace, AsyncServer
 from starlette.applications import Starlette
+from starlette.datastructures import Headers
 from starlette.middleware import cors
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
@@ -121,6 +122,7 @@ else:
     from warnings import deprecated
 
 if TYPE_CHECKING:
+    from engineio import AsyncServer as AsyncEngineIOServer
     from reflex_base.plugins import Plugin
     from reflex_base.plugins.base import AddPageProtocol
     from reflex_base.vars import Var
@@ -405,6 +407,56 @@ class _RootMiddleware:
             })
             raise
         await send({"type": "lifespan.shutdown.complete"})
+
+
+class _DrainOversizedBodyMiddleware:
+    """Drain an oversized polling POST, answer 400, and close its session.
+
+    engine.io rejects a POST over ``max_http_buffer_size`` without reading its
+    body, which strands the browser mid-send, and holds the 400 until a poll
+    takes the session's CLOSE packet. This middleware reads the body first,
+    answers itself, and closes the session without waiting for a poll.
+    """
+
+    def __init__(self, app: ASGIApp, eio: AsyncEngineIOServer) -> None:
+        """Wrap the socket app.
+
+        Args:
+            app: The socket ASGI app.
+            eio: The engine.io server whose buffer limit and sessions apply.
+        """
+        self.app = app
+        self.eio = eio
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """Drain and reject an oversized POST; pass other requests through.
+
+        Args:
+            scope: The ASGI connection scope.
+            receive: The ASGI receive callable.
+            send: The ASGI send callable.
+        """
+        if (
+            scope["type"] != "http"
+            or scope["method"] != "POST"
+            or int(Headers(scope=scope).get("content-length", 0))
+            <= self.eio.max_http_buffer_size
+        ):
+            await self.app(scope, receive, send)
+            return
+        while (await receive()).get("more_body"):
+            pass
+        await send({
+            "type": "http.response.start",
+            "status": 400,
+            "headers": [(b"content-type", b"text/plain")],
+        })
+        await send({"type": "http.response.body", "body": b'"Bad Request"'})
+        sid = urllib.parse.parse_qs(scope["query_string"].decode("latin-1")).get(
+            "sid", [""]
+        )[0]
+        if socket := self.eio.sockets.get(sid):
+            await socket.close(wait=False)
 
 
 def _is_location_specifier(specifier: str) -> bool:
@@ -694,6 +746,9 @@ class App(MiddlewareMixin, LifespanMixin):
 
         # Create the socket app. Note event endpoint constant replaces the default 'socket.io' path.
         socket_app = EngineIOApp(self.sio, socketio_path="")
+        # Drain oversized polling POST bodies before engine.io rejects them, so
+        # the 400 response does not strand a half-sent request on the client.
+        drained_socket_app = _DrainOversizedBodyMiddleware(socket_app, self.sio.eio)
         namespace = config.get_event_namespace()
 
         # Create the event namespace and attach the main app. Not related to any paths.
@@ -729,7 +784,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
                     return await self.app(scope, receive, modified_send)
 
-            socket_app_with_headers = HeaderMiddleware(socket_app)
+            socket_app_with_headers = HeaderMiddleware(drained_socket_app)
             self._api.mount(
                 config.prepend_backend_path(str(constants.Endpoint.EVENT)),
                 socket_app_with_headers,
@@ -2168,7 +2223,8 @@ def _decode_asgi_headers(headers: Iterable[tuple[bytes, bytes]]) -> dict[str, st
 
     ASGI keeps a repeated header as separate pairs, so their values are combined in
     order: cookies with "; " (RFC 9113 section 8.2.3), any other field with ", "
-    (RFC 9110 section 5.3).
+    (RFC 9110 section 5.3). Header values that are not valid UTF-8 are decoded as
+    Latin-1.
 
     Args:
         headers: Raw (name, value) byte pairs from the ASGI scope.
@@ -2179,7 +2235,10 @@ def _decode_asgi_headers(headers: Iterable[tuple[bytes, bytes]]) -> dict[str, st
     decoded: dict[str, str] = {}
     for raw_name, raw_value in headers:
         name = raw_name.decode()
-        value = raw_value.decode()
+        try:
+            value = raw_value.decode()
+        except UnicodeDecodeError:
+            value = raw_value.decode("latin-1")
         if name in decoded:
             decoded[name] += ("; " if name == "cookie" else ", ") + value
         else:
@@ -2348,16 +2407,16 @@ class EventNamespace(AsyncNamespace):
         except (KeyError, IndexError):
             client_ip = environ.get("REMOTE_ADDR", "0.0.0.0")
 
-        # Unroll reverse proxy forwarded headers.
-        client_ip = (
-            headers
-            .get(
-                "x-forwarded-for",
-                client_ip,
-            )
-            .partition(",")[0]
-            .strip()
-        )
+        # X-Forwarded-For is client-controlled unless the request arrived through
+        # a configured chain of trusted reverse proxies.
+        trusted_proxy_hops = get_config().trusted_proxy_hops
+        if trusted_proxy_hops:
+            forwarded_for = headers.get("x-forwarded-for", "")
+            forwarded_ips = [
+                ip.strip() for ip in forwarded_for.split(",") if ip.strip()
+            ]
+            if len(forwarded_ips) >= trusted_proxy_hops:
+                client_ip = forwarded_ips[-trusted_proxy_hops]
         return {
             constants.RouteVar.SESSION_ID: sid,
             constants.RouteVar.HEADERS: headers,
@@ -2380,6 +2439,14 @@ class EventNamespace(AsyncNamespace):
         # Get token before cleaning up
         disconnect_token = self.sid_to_token.get(sid)
         if disconnect_token:
+            socket_record = self._token_manager.token_to_socket.get(disconnect_token)
+            if (
+                socket_record is not None
+                and socket_record.sid == sid
+                and socket_record.instance_id == self._token_manager.instance_id
+                and (processor := self.app._event_processor) is not None
+            ):
+                processor._on_disconnect(disconnect_token)
             # Use async cleanup through token manager
             task = asyncio.create_task(
                 self._token_manager.disconnect_token(disconnect_token, sid),
