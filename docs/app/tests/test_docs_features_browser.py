@@ -91,13 +91,17 @@ def test_enterprise_sidebar_links_match_group_color(page: Page, width: int):
     else:
         sidebar = page.locator(".docs-sidebar")
     expect(sidebar).to_be_visible()
-    expect(sidebar.get_by_text("AG Grid", exact=True)).to_have_css(
-        "color", "rgb(0, 0, 0)"
-    )
-    for label in ("Overview", "AG Chart"):
-        expect(
-            sidebar.get_by_role("link", name=label, exact=True).locator("p")
-        ).to_have_css("color", "rgb(0, 0, 0)")
+    grid_label = sidebar.get_by_text("AG Grid", exact=True)
+    expect(grid_label).to_have_css("color", "rgb(0, 0, 0)")
+    grid_label.click()
+    for href in (
+        "/docs/enterprise/overview/",
+        "/docs/enterprise/ag-grid/",
+        "/docs/enterprise/ag-chart/",
+    ):
+        label = sidebar.locator(f'a[href="{href}"] p')
+        expect(label).to_be_visible()
+        expect(label).to_have_css("color", "rgb(0, 0, 0)")
 
 
 @pytest.mark.parametrize(
