@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import dataclasses
-import re
 from collections.abc import Callable
 from typing import Any
 
@@ -257,15 +256,11 @@ class ClientStateVar(Var):
         ).to(FunctionVar)
 
         if value is not NoValue:
-            # This is a hack to make it work like an EventSpec taking an arg
             value_var = LiteralVar.create(value)
-            value_str = str(value_var)
-
+            # The value can be an expression in the enclosing event callback.
+            # Capture it rather than treating its JavaScript as a parameter name.
             setter = ArgsFunctionOperationBuilder.create(
-                # remove patterns of ["*"] from the value_str using regex
-                args_names=(re.sub(r"(\?\.)?\[\".*\"\]", "", value_str),)
-                if value_str.startswith("_")
-                else (),
+                args_names=(),
                 return_expr=setter.call(value_var),
             )
 

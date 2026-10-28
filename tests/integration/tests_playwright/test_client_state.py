@@ -10,6 +10,8 @@ from reflex.testing import AppHarness
 
 def ClientStateApp():
     """App sharing a global client state var between sibling components."""
+    from reflex_components_radix.themes.components.button import Button
+
     import reflex as rx
 
     pushed = rx._x.client_state(default="initial")
@@ -32,6 +34,38 @@ def ClientStateApp():
 
     shared = rx._x.client_state(default="initial")
     backend_default = rx._x.client_state(default=ClientStateAppState.default_text)
+    raw_x = rx._x.client_state(default=0)
+    typed_x = rx._x.client_state(default=0)
+
+    def raw_client_x(
+        event: rx.vars.ObjectVar[rx.event.JavascriptMouseEvent],
+    ) -> tuple[rx.Var]:
+        return (rx.Var(f"{event}?.clientX"),)
+
+    def typed_client_x(
+        event: rx.vars.ObjectVar[rx.event.JavascriptMouseEvent],
+    ) -> tuple[rx.Var]:
+        return (event.clientX,)
+
+    class RawXButton(Button):
+        on_click: rx.EventHandler[raw_client_x]
+
+    class TypedXButton(Button):
+        on_click: rx.EventHandler[typed_client_x]
+
+    def event_expressions():
+        return rx.box(
+            RawXButton.create(
+                "raw", on_click=lambda x: rx.call_function(raw_x.set_value(x)), id="raw"
+            ),
+            rx.text(raw_x.value.to_string(), id="raw-value"),
+            TypedXButton.create(
+                "typed", on_click=lambda x: typed_x.set_value(x), id="typed"
+            ),
+            rx.text(typed_x.value.to_string(), id="typed-value"),
+            rx.input(on_change=shared.set, id="direct-input"),
+            rx.text(shared.value, id="direct-value"),
+        )
 
     def index():
         return rx.box(
@@ -83,25 +117,51 @@ def ClientStateApp():
     app.add_page(siblings)
     app.add_page(backend_default_page, route="/backend-default")
     app.add_page(push_before_mount, route="/push-before-mount")
+    app.add_page(event_expressions, route="/event-expressions")
 
 
 @pytest.fixture(scope="module")
 def client_state_app(
     tmp_path_factory: pytest.TempPathFactory,
+    app_harness_env: type[AppHarness],
 ) -> Generator[AppHarness, None, None]:
     """Run the client state app under an AppHarness.
 
     Args:
         tmp_path_factory: Pytest fixture for creating temporary directories.
+        app_harness_env: Development or production harness class.
 
     Yields:
         The running harness.
     """
-    with AppHarness.create(
+    with app_harness_env.create(
         root=tmp_path_factory.mktemp("client_state"),
         app_source=ClientStateApp,
     ) as harness:
         yield harness
+
+
+def test_event_expressions_update_client_state(
+    client_state_app: AppHarness, page: Page
+) -> None:
+    """Raw and typed event expressions work alongside direct setter bindings.
+
+    Args:
+        client_state_app: Running app harness.
+        page: Playwright page.
+    """
+    assert client_state_app.frontend_url is not None
+    errors = _collect_page_errors(page)
+    script_errors = _collect_script_errors(page)
+    page.goto(client_state_app.frontend_url.removesuffix("/") + "/event-expressions")
+    page.locator("#raw").dispatch_event("click", {"clientX": 123})
+    expect(page.locator("#raw-value")).to_have_text("123")
+    page.locator("#typed").dispatch_event("click", {"clientX": 456})
+    expect(page.locator("#typed-value")).to_have_text("456")
+    page.locator("#direct-input").fill("changed")
+    expect(page.locator("#direct-value")).to_have_text("changed")
+    assert errors == []
+    assert script_errors == []
 
 
 def _collect_page_errors(page: Page) -> list[str]:
