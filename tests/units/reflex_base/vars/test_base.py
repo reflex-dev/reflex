@@ -564,8 +564,12 @@ def test_literal_var_dispatch_follows_later_registrations():
         base._literal_var_by_type.clear()
 
 
-def test_literal_var_dispatch_sees_through_proxies():
-    """Proxies of different values dispatch on the wrapped value, not the proxy type."""
+def test_literal_var_dispatch_sees_through_proxies(clean_registration_context):
+    """Proxies of different values dispatch on the wrapped value, not the proxy type.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
     from reflex_base.vars import base
 
     state_cls = type(
