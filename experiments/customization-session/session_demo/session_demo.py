@@ -485,6 +485,8 @@ def canvas_card(card: ObjectVar[dict[str, Any]]) -> rx.Component:
                 "↘ Resize",
                 None,
                 aria_label="Resize " + card["title"].to(str),
+                aria_description="Arrow Up and Down change height. Arrow Left and Right choose half or full width.",
+                title="Resize: drag, or use Arrow Up/Down for height and Left/Right for width",
                 custom_attrs={"data-pointer-action": "resize"},
                 class_name="pointer-resize",
             ),

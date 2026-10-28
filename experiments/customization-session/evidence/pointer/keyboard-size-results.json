@@ -1,0 +1,19 @@
+{
+  "checks": [
+    "resize handle exposes arrow-key instructions",
+    "ArrowUp stages exactly one validated Python size",
+    "ArrowUp retains keyboard focus",
+    "ArrowDown stages exactly one validated Python size",
+    "ArrowDown retains keyboard focus",
+    "ArrowLeft stages exactly one validated Python size",
+    "ArrowLeft retains keyboard focus",
+    "ArrowRight stages exactly one validated Python size",
+    "ArrowRight retains keyboard focus",
+    "opposite keyboard commands restore starting preferences",
+    "minimum height announces without another stage",
+    "Cancel discards keyboard size changes",
+    "no browser errors"
+  ],
+  "errors": [],
+  "passed": 13
+}

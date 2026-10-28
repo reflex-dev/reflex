@@ -109,6 +109,22 @@ export function PointerSurface({children, editing, revision, result, onCommand})
       g.target.style.display='none';say('Validating the drop on the server.');
       props.current.onCommand({op:g.op,id:g.id,widget:g.widget,before:g.before||'',width:g.nextWidth||g.width,height:g.nextHeight||g.height,revision:g.revision,request_id:g.requestId});
     };
+    const keyboard = event => {
+      if(event.key==='Escape'){cancel(event);return;}
+      if(!props.current.editing||current.current||!['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(event.key))return;
+      const grip=event.target.closest('[data-pointer-action="resize"]');
+      if(!grip||!host.contains(grip))return;
+      const source=grip.closest('[data-instance]');if(!source)return;
+      event.preventDefault();event.stopPropagation();
+      const width=Number(source.dataset.columns),height=Number(source.dataset.rows);
+      const nextWidth=event.key==='ArrowLeft'?6:event.key==='ArrowRight'?12:width;
+      const nextHeight=Math.max(Number(source.dataset.minHeight),Math.min(Number(source.dataset.maxHeight),height+(event.key==='ArrowUp'?-1:event.key==='ArrowDown'?1:0)));
+      if(nextWidth===width&&nextHeight===height){say('Size limit reached. No change.');return;}
+      const requestId=String(++sequence);
+      current.current={source,grip,requestId,op:'resize',id:source.dataset.instance,revision:props.current.revision,originalStyle:source.getAttribute('style'),originalInert:source.inert,originalHidden:source.getAttribute('aria-hidden'),active:false,pending:true};
+      host.dataset.pointerPending='true';say(`Resizing to ${nextWidth===12?'full':'half'} width and ${nextHeight} height units. Waiting for the server.`);
+      props.current.onCommand({op:'resize',id:source.dataset.instance,width:nextWidth,height:nextHeight,revision:props.current.revision,request_id:requestId});
+    };
     const cancel = event => {
       const g=current.current;if(!g||g.pending)return;
       if(event.type==='keydown'&&event.key!=='Escape')return;
@@ -117,8 +133,8 @@ export function PointerSurface({children, editing, revision, result, onCommand})
     };
     host.addEventListener('pointerdown',down,true);
     document.addEventListener('pointermove',move,{capture:true,passive:false});
-    document.addEventListener('pointerup',up,true);document.addEventListener('pointercancel',cancel,true);document.addEventListener('keydown',cancel,true);window.addEventListener('blur',cancel);
-    return()=>{clean();delete host.__pointerClean;host.removeEventListener('pointerdown',down,true);document.removeEventListener('pointermove',move,true);document.removeEventListener('pointerup',up,true);document.removeEventListener('pointercancel',cancel,true);document.removeEventListener('keydown',cancel,true);window.removeEventListener('blur',cancel);};
+    document.addEventListener('pointerup',up,true);document.addEventListener('pointercancel',cancel,true);document.addEventListener('keydown',keyboard,true);window.addEventListener('blur',cancel);
+    return()=>{clean();delete host.__pointerClean;host.removeEventListener('pointerdown',down,true);document.removeEventListener('pointermove',move,true);document.removeEventListener('pointerup',up,true);document.removeEventListener('pointercancel',cancel,true);document.removeEventListener('keydown',keyboard,true);window.removeEventListener('blur',cancel);};
   },[]);
   useEffect(()=>{
     const g=current.current;if(!g)return;

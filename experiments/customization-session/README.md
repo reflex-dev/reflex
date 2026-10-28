@@ -32,6 +32,10 @@ app files and evidence writes there can trigger hot reloads.
 - Enter Customize, then use a dedicated dot grip to drag a canvas widget or a
   catalog preview. Use the explicit Resize handle for width and height. Keyboard
   Move before/after, half/full width, Add and allowlisted settings remain usable.
+  The focused Resize handle accepts Arrow Up/Down for one height unit and
+  Left/Right for half/full width through the same versioned Python command.
+  Bounds announce a no-op without staging, and accepted keyboard sizes retain
+  focus on the handle.
 - The actual source DOM node becomes the floating inert ghost, with a placeholder
   preserving its source position. Its real chart/grid renderer stays mounted;
   there is no chart image substitute or separately invented ghost renderer.
@@ -110,6 +114,10 @@ uv run --no-sync pytest test_session.py test_pointer_model.py test_pointer_event
 BASE_URL=http://127.0.0.1:4202 \
 EVIDENCE_DIR=/workspace/customization-pointer-evidence \
 NODE_PATH=/workspace/xy-integration/node_modules node pointer-audit.cjs
+
+BASE_URL=http://127.0.0.1:4202 \
+EVIDENCE_DIR=/workspace/customization-pointer-evidence \
+NODE_PATH=/workspace/xy-integration/node_modules node keyboard-audit.cjs
 ```
 
 The model/event tests include real `State` calls and a spy on actual `Draft.stage`:

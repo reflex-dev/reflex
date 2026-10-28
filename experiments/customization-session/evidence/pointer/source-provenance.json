@@ -5,7 +5,7 @@
   "hashes": {
     "pointerSurface": {
       "file": "experiments/customization-session/session_demo/PointerSurface.js",
-      "sha256": "da73e04fe28a0ab2df6be8f3300951170d4fabcfa59c27814de47bb5d8b8ca7d"
+      "sha256": "fa76e193509418a9951e77d317801973ae227f8216309390e783b58c63fb2f6d"
     },
     "sessionModel": {
       "file": "experiments/customization-session/session_demo/model.py",
@@ -13,7 +13,7 @@
     },
     "reflexBindings": {
       "file": "experiments/customization-session/session_demo/session_demo.py",
-      "sha256": "4815966c1b6eaf17e4b68d11ddf186304f0af75f5bf3866473b45616f3926598"
+      "sha256": "33199637b4f8503e1c5df18a57797b6e59e3e5d3bf72366b774ecfd5e50d9ebf"
     },
     "sharedDraft": {
       "file": "packages/reflex-components-internal/src/reflex_components_internal/experimental/customization.py",
