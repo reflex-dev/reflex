@@ -651,9 +651,7 @@ async def test_processor_reports_blocking_sync_handler(
     """Report blocking handlers executed through the event queue."""
     monkeypatch.setenv("REFLEX_ENV_MODE", constants.Env.DEV.value)
     mock_event_processor.event_loop_blocking_threshold = 0.04
-    caplog.set_level(
-        logging.WARNING, logger="reflex_base.event.processor.blocking"
-    )
+    caplog.set_level(logging.WARNING, logger="reflex_base.event.processor.blocking")
 
     async with mock_event_processor as ep:
         await ep.enqueue(token, Event.from_event_type(blocking_sync_event())[0])
