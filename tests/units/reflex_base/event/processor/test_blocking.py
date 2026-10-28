@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import sys
 import threading
 import time
 from collections.abc import Callable, Coroutine
@@ -134,7 +135,7 @@ async def test_blocking_outside_event_task_is_not_reported(
 
     await _run_monitored(_blocking(probe_queued, 0.12), "other_task")
 
-    assert "blocked the event loop" not in caplog_blocking.text
+    assert "the event loop" not in caplog_blocking.text
 
 
 async def test_awaiting_event_is_not_reported(
@@ -149,4 +150,55 @@ async def test_awaiting_event_is_not_reported(
         yielding_handler, f"{EVENT_TASK_PREFIX}state.yielding|token|txid"
     )
 
-    assert "blocked the event loop" not in caplog_blocking.text
+    assert "the event loop" not in caplog_blocking.text
+
+
+async def test_hung_event_is_reported_while_still_blocked(
+    caplog_blocking: pytest.LogCaptureFixture,
+):
+    """Warn when the threshold is reached, before the loop responds again."""
+    warned = threading.Event()
+
+    class _SetOnWarning(logging.Handler):
+        def emit(self, record: logging.LogRecord) -> None:
+            warned.set()
+
+    handler = _SetOnWarning(level=logging.WARNING)
+    blocking_logger = logging.getLogger("reflex_base.event.processor.blocking")
+    blocking_logger.addHandler(handler)
+
+    async def hung_handler():  # noqa: RUF029
+        # Stands in for a handler that never releases the loop.
+        assert warned.wait(timeout=1)
+
+    try:
+        await _run_monitored(hung_handler, f"{EVENT_TASK_PREFIX}state.hung|token|txid")
+    finally:
+        blocking_logger.removeHandler(handler)
+
+    assert "state.hung is blocking the event loop" in caplog_blocking.text
+    assert "warned.wait(timeout=1)" in caplog_blocking.text
+
+
+async def test_stack_without_task_entry_is_not_reported(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Do not describe a frame snapshot taken after the task left the loop."""
+    monitor = EventLoopBlockingMonitor(
+        asyncio.get_running_loop(), threshold=0.04, event_handlers={}
+    )
+    unrelated = sys._getframe()
+    monkeypatch.setattr(
+        sys,
+        "_current_frames",
+        lambda: {monitor._loop_thread_id: unrelated},
+    )
+
+    async def handler():  # noqa: RUF029
+        return monitor._describe_blocking()
+
+    description = await asyncio.create_task(
+        handler(), name=f"{EVENT_TASK_PREFIX}state.moved|token|txid"
+    )
+
+    assert description is None

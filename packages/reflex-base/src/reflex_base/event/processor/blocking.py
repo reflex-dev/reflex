@@ -65,26 +65,29 @@ class EventLoopBlockingMonitor:
 
         Returns:
             The handler name and the formatted stack of the event task, or None
-            if the running task processes no event.
+            if the running task processes no event or has left the loop.
         """
         task = asyncio.current_task(self.loop)
         if task is None or not (name := task.get_name()).startswith(EVENT_TASK_PREFIX):
             return None
         event_name = name[len(EVENT_TASK_PREFIX) :].partition("|")[0]
         registered = self.event_handlers.get(event_name)
+        if (stack := self._task_stack(task)) is None:
+            return None
         handler_name = (
             event_name if registered is None else registered.handler.fn.__qualname__
         )
-        return handler_name, "".join(traceback.format_list(self._task_stack(task)))
+        return handler_name, "".join(traceback.format_list(stack))
 
-    def _task_stack(self, task: asyncio.Task) -> traceback.StackSummary:
+    def _task_stack(self, task: asyncio.Task) -> traceback.StackSummary | None:
         """Extract the loop thread's frames from the task entry to the blocking line.
 
         Args:
             task: The task that runs on the blocked loop.
 
         Returns:
-            The frames, outermost first.
+            The frames, outermost first, or None if the loop thread no longer
+            runs the task.
         """
         entry = getattr(task.get_coro(), "cr_frame", None)
         frame = sys._current_frames().get(self._loop_thread_id)
@@ -92,11 +95,11 @@ class EventLoopBlockingMonitor:
         while frame is not None:
             frames.append(frame)
             if frame is entry:
-                break
+                return traceback.StackSummary.extract(
+                    (frame, frame.f_lineno) for frame in reversed(frames)
+                )
             frame = frame.f_back
-        return traceback.StackSummary.extract(
-            (frame, frame.f_lineno) for frame in reversed(frames)
-        )
+        return None
 
     def _run(self) -> None:
         """Poll loop responsiveness from outside the event-loop thread."""
@@ -110,27 +113,32 @@ class EventLoopBlockingMonitor:
             except RuntimeError:
                 return
 
-            # The task is only visible while the loop is blocked, so describe
-            # it then and report the full duration once the loop responds.
-            blocking = None
+            # The task is only visible while the loop is blocked, so report it
+            # then, and report the total duration once the loop responds.
+            handler_name = None
             while not responsive.wait(interval):
                 if self._stop.is_set():
                     return
+                elapsed = time.perf_counter() - started
                 if (
-                    blocking is None
-                    and time.perf_counter() - started + interval >= self.threshold
+                    handler_name is None
+                    and elapsed + interval >= self.threshold
+                    and (blocking := self._describe_blocking()) is not None
                 ):
-                    blocking = self._describe_blocking()
-            if blocking is not None:
-                handler_name, stack = blocking
+                    handler_name, stack = blocking
+                    logger.warning(
+                        "Event handler %s is blocking the event loop (threshold: "
+                        "%.3fs), including state updates such as computed vars. "
+                        "Move blocking I/O to a thread pool or use a non-blocking "
+                        "async API.\n"
+                        "Blocking stack (most recent call last):\n%s",
+                        handler_name,
+                        self.threshold,
+                        stack.rstrip(),
+                    )
+            if handler_name is not None:
                 logger.warning(
-                    "Event handler %s blocked the event loop for %.3fs "
-                    "(threshold: %.3fs), including state updates such as computed "
-                    "vars. Move blocking I/O to a thread pool or use a "
-                    "non-blocking async API.\n"
-                    "Blocking stack (most recent call last):\n%s",
+                    "Event handler %s blocked the event loop for %.3fs in total.",
                     handler_name,
                     time.perf_counter() - started,
-                    self.threshold,
-                    stack.rstrip(),
                 )
