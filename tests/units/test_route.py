@@ -143,12 +143,16 @@ def test_get_router_splat_catchall(path: str, expected: str | None):
         ("/Posts/42", "posts/[id]"),
         ("/team", "Team"),
         ("/", "index"),
+        # React Router folds ASCII case only.
+        ("/k\u0131t", None),
+        ("/K\u0130T", None),
+        ("/\u212ait", None),
     ],
 )
-def test_get_router_ignores_case(path: str, expected: str):
+def test_get_router_ignores_case(path: str, expected: str | None):
     # React Router renders a page for any casing of its path, so the backend
     # must resolve the same route to run its on_load events.
-    router = get_router(["index", "about", "posts/[id]", "Team"])
+    router = get_router(["index", "about", "posts/[id]", "Team", "kit"])
     assert router(path) == expected
 
 
