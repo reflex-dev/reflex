@@ -4,11 +4,14 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 import sys
+import sysconfig
 import threading
 import time
 import traceback
 from collections.abc import Mapping
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -18,6 +21,12 @@ logger = logging.getLogger(__name__)
 
 # Name prefix of the asyncio task that processes one event.
 EVENT_TASK_PREFIX = "reflex_event|"
+
+# The standard library and installed packages hold no app code.
+_LIBRARY_PATHS = tuple({
+    f"{Path(sysconfig.get_path(name))}{os.sep}"
+    for name in ("stdlib", "platstdlib", "purelib", "platlib")
+})
 
 
 class EventLoopBlockingMonitor:
@@ -39,8 +48,9 @@ class EventLoopBlockingMonitor:
         self.loop = loop
         self.threshold = threshold
         self.event_handlers = event_handlers
-        # The monitor is created on the loop thread.
+        # The monitor is created on the loop thread, in the app root.
         self._loop_thread_id = threading.get_ident()
+        self._app_root = f"{Path.cwd()}{os.sep}"
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
 
@@ -60,11 +70,12 @@ class EventLoopBlockingMonitor:
             self._thread.join(timeout=1)
             self._thread = None
 
-    def _describe_blocking(self) -> tuple[str, str] | None:
+    def _describe_blocking(self) -> tuple[str, str, str] | None:
         """Describe the event task that runs on the blocked loop.
 
         Returns:
-            The handler name and the formatted stack of the event task, or None
+            The handler name, the location of the innermost app frame (or an
+            empty string), and the formatted stack of the event task, or None
             if the running task processes no event or has left the loop.
         """
         task = asyncio.current_task(self.loop)
@@ -77,7 +88,32 @@ class EventLoopBlockingMonitor:
         handler_name = (
             event_name if registered is None else registered.handler.fn.__qualname__
         )
-        return handler_name, "".join(traceback.format_list(stack))
+        app_frame = self._app_frame(stack)
+        location = (
+            ""
+            if app_frame is None
+            else f" at {app_frame.filename[len(self._app_root) :]}:"
+            f"{app_frame.lineno} in {app_frame.name}"
+        )
+        return handler_name, location, "".join(traceback.format_list(stack))
+
+    def _app_frame(
+        self, stack: traceback.StackSummary
+    ) -> traceback.FrameSummary | None:
+        """Find the innermost frame of app code, outside the stdlib and packages.
+
+        Args:
+            stack: The frames, outermost first.
+
+        Returns:
+            The innermost app frame, or None if no frame is app code.
+        """
+        for frame in reversed(stack):
+            if frame.filename.startswith(
+                self._app_root
+            ) and not frame.filename.startswith(_LIBRARY_PATHS):
+                return frame
+        return None
 
     def _task_stack(self, task: asyncio.Task) -> traceback.StackSummary | None:
         """Extract the loop thread's frames from the task entry to the blocking line.
@@ -125,14 +161,15 @@ class EventLoopBlockingMonitor:
                     and elapsed + interval >= self.threshold
                     and (blocking := self._describe_blocking()) is not None
                 ):
-                    handler_name, stack = blocking
+                    handler_name, location, stack = blocking
                     logger.warning(
-                        "Event handler %s is blocking the event loop (threshold: "
+                        "Event handler %s is blocking the event loop%s (threshold: "
                         "%.3fs), including state updates such as computed vars. "
                         "Move blocking I/O to a thread pool or use a non-blocking "
                         "async API.\n"
                         "Blocking stack (most recent call last):\n%s",
                         handler_name,
+                        location,
                         self.threshold,
                         stack.rstrip(),
                     )

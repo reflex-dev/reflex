@@ -113,7 +113,7 @@ class EventProcessor:
         Callable[[Exception], EventSpec | list[EventSpec] | None] | None
     ) = None
     graceful_shutdown_timeout: float | None = None
-    event_loop_blocking_threshold: float | None = None
+    event_loop_blocking_threshold: float = 0
 
     _queue: asyncio.Queue[EventQueueEntry] | None = dataclasses.field(
         default=None, init=False
@@ -253,7 +253,7 @@ class EventProcessor:
         self._attached_root_context_token = EventContext.set(self._root_context)
         self._queue = asyncio.Queue()
         if (
-            self.event_loop_blocking_threshold is not None
+            self.event_loop_blocking_threshold
             and environment.REFLEX_ENV_MODE.get() == constants.Env.DEV
         ):
             self._blocking_monitor = EventLoopBlockingMonitor(

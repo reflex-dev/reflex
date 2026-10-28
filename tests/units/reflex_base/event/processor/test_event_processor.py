@@ -6,6 +6,7 @@ import dataclasses
 import logging
 import re
 import sys
+import threading
 import time
 from collections.abc import AsyncIterator, Mapping
 from typing import Any
@@ -47,6 +48,11 @@ async def _slow_handler(delay: float = 0.5):
 def _blocking_sync_handler():
     """Block the event loop briefly for the detector integration test."""
     time.sleep(0.12)
+
+
+def _blocking_stdlib_handler():
+    """Block the event loop inside a stdlib call for the detector test."""
+    threading.Event().wait(0.12)
 
 
 async def _error_handler():  # noqa: RUF029
@@ -372,6 +378,7 @@ _counting_superseding_handler._reflex_supersedes = True  # type: ignore[attr-def
 noop_event = EventHandler(fn=_noop_handler)
 slow_event = EventHandler(fn=_slow_handler)
 blocking_sync_event = EventHandler(fn=_blocking_sync_handler)
+blocking_stdlib_event = EventHandler(fn=_blocking_stdlib_handler)
 error_event = EventHandler(fn=_error_handler)
 recovery_event = EventHandler(fn=_recovery_handler)
 logging_event = EventHandler(fn=_logging_handler)
@@ -413,6 +420,7 @@ def _register_handlers(forked_registration_context: RegistrationContext):
         noop_event,
         slow_event,
         blocking_sync_event,
+        blocking_stdlib_event,
         error_event,
         recovery_event,
         logging_event,
@@ -546,6 +554,12 @@ async def test_blocking_monitor_starts_only_in_development(
     await dev_processor.stop()
     assert dev_processor._blocking_monitor is None
 
+    disabled_processor = EventProcessor(event_loop_blocking_threshold=0)
+    disabled_processor.configure()
+    await disabled_processor.start()
+    assert disabled_processor._blocking_monitor is None
+    await disabled_processor.stop()
+
 
 async def test_stop_idempotent(processor: EventProcessor):
     """Stopping an already-stopped processor does not error.
@@ -666,6 +680,27 @@ async def test_processor_reports_blocking_sync_handler(
     assert "Blocking stack (most recent call last):" in caplog.text
     assert "time.sleep(0.12)" in caplog.text
     assert "base_events.py" not in caplog.text
+
+
+async def test_processor_reports_innermost_app_frame(
+    mock_event_processor: EventProcessor,
+    token: str,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+):
+    """Name the app line that called the blocking library code."""
+    monkeypatch.setenv("REFLEX_ENV_MODE", constants.Env.DEV.value)
+    mock_event_processor.event_loop_blocking_threshold = 0.04
+    caplog.set_level(logging.WARNING, logger="reflex_base.event.processor.blocking")
+
+    async with mock_event_processor as ep:
+        await ep.enqueue(token, Event.from_event_type(blocking_stdlib_event())[0])
+
+    assert (
+        "is blocking the event loop at "
+        "tests/units/reflex_base/event/processor/test_event_processor.py:"
+    ) in caplog.text
+    assert "in _blocking_stdlib_handler (threshold" in caplog.text
 
 
 async def test_processor_reports_blocking_after_handler_returns(

@@ -195,7 +195,7 @@ class BaseConfig:
         plugins: List of plugins to use in the app.
         disable_plugins: List of plugin types to disable in the app.
         transport: The transport method for client-server communication.
-        event_loop_blocking_threshold: Minimum event-loop blocking duration in seconds to report in development. Set to None to disable detection.
+        event_loop_blocking_threshold: Minimum event-loop blocking duration in seconds to report in development. Set to 0 to disable detection.
     """
 
     app_name: str
@@ -287,7 +287,7 @@ class BaseConfig:
 
     transport: Literal["websocket", "polling"] = "websocket"
 
-    event_loop_blocking_threshold: float | None = 0.2
+    event_loop_blocking_threshold: float = 0.2
 
     # Whether to skip plugin checks.
     _skip_plugins_checks: bool = dataclasses.field(default=False, repr=False)
@@ -404,12 +404,12 @@ class Config(BaseConfig):
             raise ConfigError(msg)
 
         threshold = self.event_loop_blocking_threshold
-        if threshold is not None and (
+        if (
             isinstance(threshold, bool)
             or not isinstance(threshold, (int, float))
-            or not 0 < threshold < math.inf
+            or not 0 <= threshold < math.inf
         ):
-            msg = "event_loop_blocking_threshold must be a positive finite number or None."
+            msg = "event_loop_blocking_threshold must be a non-negative finite number."
             raise ConfigError(msg)
 
         # Normalize route prefixes to ensure they start with a slash.
