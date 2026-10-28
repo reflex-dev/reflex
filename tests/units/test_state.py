@@ -7670,3 +7670,110 @@ def test_decorated_handler_on_state_derived_from_a_mixin_only() -> None:
     assert isinstance(handler, EventHandler)
     assert handler.state is FromFlippingMixin
     assert FromFlippingMixin.event_handlers["handle"] is handler
+
+
+async def test_shared_storage_name_syncs_siblings(
+    clean_registration_context: RegistrationContext,
+):
+    """A write to a var sharing a storage name sets the synced vars with that name.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+
+    class SharedFirst(State):
+        value: str = rx.LocalStorage("", name="shared", sync=True)
+
+    class SharedSecond(State):
+        value: str = rx.LocalStorage("", name="shared", sync=True)
+
+    class SharedPlain(State):
+        value: str = rx.LocalStorage("", name="shared")
+
+    class OtherName(State):
+        value: str = rx.LocalStorage("", name="other", sync=True)
+
+    key = "value" + FIELD_MARKER
+    root = State()
+    first = await root.get_state(SharedFirst)
+    first.value = "new"
+    delta = await root._get_resolved_delta()
+    root._clean()
+    assert delta[SharedFirst.get_full_name()][key] == "new"
+    assert delta[SharedSecond.get_full_name()][key] == "new"
+    assert SharedPlain.get_full_name() not in delta
+    assert OtherName.get_full_name() not in delta
+
+    # An unsynced var's write raises the storage event too, so it syncs them.
+    plain = await root.get_state(SharedPlain)
+    plain.value = "plain"
+    delta = await root._get_resolved_delta()
+    root._clean()
+    assert delta[SharedFirst.get_full_name()][key] == "plain"
+    assert delta[SharedSecond.get_full_name()][key] == "plain"
+
+    # An unchanged sibling is not sent again.
+    first.value = "plain"
+    assert await root._get_resolved_delta() == {
+        SharedFirst.get_full_name(): {key: "plain"}
+    }
+    root._clean()
+
+    # A name no other var shares sets nothing else.
+    other = await root.get_state(OtherName)
+    other.value = "alone"
+    assert await root._get_resolved_delta() == {
+        OtherName.get_full_name(): {key: "alone"}
+    }
+
+
+@pytest.mark.parametrize("second_sync", [True, False])
+async def test_shared_storage_name_keeps_event_writes(
+    clean_registration_context: RegistrationContext,
+    second_sync: bool,
+):
+    """Vars sharing a storage name that one event writes keep their own values.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+        second_sync: Whether the second var syncs.
+    """
+
+    class WrittenFirst(State):
+        value: str = rx.LocalStorage("", name="shared", sync=True)
+
+    class WrittenSecond(State):
+        value: str = rx.LocalStorage("", name="shared", sync=second_sync)
+
+    root = State()
+    first = await root.get_state(WrittenFirst)
+    second = await root.get_state(WrittenSecond)
+    first.value = "one"
+    second.value = "two"
+    await root._get_resolved_delta()
+    assert (first.value, second.value) == ("one", "two")
+
+
+async def test_shared_storage_name_conflicting_writes_pick_by_name(
+    clean_registration_context: RegistrationContext,
+):
+    """Conflicting writes to one storage name set the other synced vars in name order.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+
+    class ZWriter(State):
+        value: str = rx.LocalStorage("", name="shared", sync=True)
+
+    class AWriter(State):
+        value: str = rx.LocalStorage("", name="shared", sync=True)
+
+    class MSibling(State):
+        value: str = rx.LocalStorage("", name="shared", sync=True)
+
+    root = State()
+    (await root.get_state(ZWriter)).value = "z"
+    (await root.get_state(AWriter)).value = "a"
+    await root._get_resolved_delta()
+    assert (await root.get_state(MSibling)).value == "a"
