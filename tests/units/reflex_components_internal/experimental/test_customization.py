@@ -1,6 +1,7 @@
 """Headless personalization contract tests."""
 
 from dataclasses import FrozenInstanceError, replace
+from typing import Any, cast
 from unittest.mock import Mock
 
 import pytest
@@ -130,15 +131,15 @@ def test_option_value_types_do_not_confuse_true_with_one():
 
 def test_input_collections_cannot_mutate_preferences():
     options = [["legend", "auto"]]
-    item = Item("one", "chart", options=options)
+    item = Item("one", "chart", options=cast(Any, options))
     items = [item]
-    preferences = Preferences(items)
+    preferences = Preferences(cast(Any, items))
     options[0][1] = "hidden"
     items.clear()
     assert preferences.items == (item,)
     assert item.options == (("legend", "auto"),)
     with pytest.raises(FrozenInstanceError):
-        item.x = 4
+        cast(Any, item).x = 4
 
 
 def test_builder_contract_rejects_duplicate_registration_and_bad_bounds(
@@ -163,13 +164,13 @@ def test_preview_and_normal_content_share_builder_renderer(registry):
 
 def test_registration_detaches_mutable_builder_input():
     choices = ["auto", "hidden"]
-    option = Option("legend", choices, "auto")
+    option = Option("legend", cast(Any, choices), "auto")
     options = [option]
-    widget = Widget("chart", Mock(), options)
+    widget = Widget("chart", Mock(), cast(Any, options))
     choices.clear()
     options.clear()
     assert widget.options == (option,)
     assert option.choices == ("auto", "hidden")
     assert option.accepts("auto")
     with pytest.raises(ValueError, match="immutable"):
-        Option("bad", ([1],), [1])
+        Option("bad", cast(Any, ([1],)), cast(Any, [1]))
