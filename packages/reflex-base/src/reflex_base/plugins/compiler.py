@@ -605,6 +605,14 @@ class PageContext(BaseContext):
     # the matching ``leave_component``. Non-empty iff we are inside such a
     # subtree.
     memoize_suppressor_stack: list[int] = dataclasses.field(default_factory=list)
+    # Number of components using each page-local hook scope shared across
+    # multiple components. Memoization boundaries must not split these scopes.
+    memoize_shared_scope_counts: dict[str, int] = dataclasses.field(
+        default_factory=dict
+    )
+    # Snapshot candidates whose subtree contains only part of a shared local
+    # hook scope, computed once when the root component is visited.
+    memoize_shared_scope_split_ids: set[int] = dataclasses.field(default_factory=set)
     # Maps both the user-owned original's ``id()`` and the clone's ``id()`` to
     # the page-local clone. Lets the walker and plugins rebind children, style,
     # or event_triggers on a page-local copy without mutating a user-owned
@@ -615,6 +623,9 @@ class PageContext(BaseContext):
     # garbage collected, and Python may recycle its ``id()`` for a fresh
     # component, causing ``own()`` to hand back the wrong clone.
     _owned_refs: list[BaseComponent] = dataclasses.field(default_factory=list)
+    # Original component identity for page-owned clones, used by compiler passes
+    # whose prepasses run before plugins create those clones.
+    _owned_original_ids: dict[int, int] = dataclasses.field(default_factory=dict)
 
     def own(self, comp: _BaseComponentT) -> _BaseComponentT:
         """Return a page-local copy of ``comp``, cloning on first encounter.
@@ -636,6 +647,9 @@ class PageContext(BaseContext):
         self._owned[id(comp)] = new
         self._owned[id(new)] = new
         self._owned_refs.append(comp)
+        self._owned_original_ids[id(new)] = self._owned_original_ids.get(
+            id(comp), id(comp)
+        )
         return new
 
     def merged_imports(self, *, collapse: bool = False) -> ParsedImportDict:

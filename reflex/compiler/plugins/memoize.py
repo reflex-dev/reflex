@@ -21,13 +21,14 @@ No shared ``stateful_components`` file is produced.
 from __future__ import annotations
 
 import dataclasses
+from collections.abc import Iterable, Iterator
 from typing import Any
 
 from reflex_base.components.app_wraps import (
     collect_var_app_wraps_for_component,
     collect_var_app_wraps_in_subtree,
 )
-from reflex_base.components.component import BaseComponent, Component
+from reflex_base.components.component import BaseComponent, Component, ComponentStyle
 from reflex_base.components.memo import create_passthrough_component_memo
 from reflex_base.components.memoize_helpers import (
     MemoizationStrategy,
@@ -39,9 +40,13 @@ from reflex_base.components.memoize_helpers import (
 from reflex_base.constants.compiler import MemoizationDisposition
 from reflex_base.plugins import ComponentAndChildren, PageContext
 from reflex_base.plugins.base import Plugin
+from reflex_base.style import Style
+from reflex_base.vars.base import VarData
 from reflex_components_core.base.bare import Bare
 from reflex_components_core.core.cond import Cond
 from reflex_components_core.core.match import Match
+
+_EMPTY_SHARED_SCOPE_COUNTS: dict[str, int] = {}
 
 
 def _subtree_has_reactive_data(
@@ -85,6 +90,191 @@ def _subtree_has_reactive_data(
     result = _component_subtree_is_reactive(component, _cache)
     _cache[key] = result
     return result
+
+
+def _iter_component_descendants(
+    component: Component, var_data: Iterable[VarData]
+) -> Iterator[Component]:
+    """Yield components reachable through vars, children, and component props.
+
+    Returns:
+        Each descendant component occurrence in the rendered subtree.
+    """
+    for data in var_data:
+        yield from (child for child in data.components if isinstance(child, Component))
+    yield from (child for child in component.children if isinstance(child, Component))
+    yield from (
+        child
+        for child in component._get_components_in_props()
+        if isinstance(child, Component)
+    )
+
+
+def _merge_shared_scope_counts(
+    counts: dict[str, int] | None, descendant_counts: dict[str, int]
+) -> dict[str, int] | None:
+    """Merge a descendant's scope counts without allocating for empty subtrees.
+
+    Returns:
+        The merged counts, or ``None`` if both subtrees are empty.
+    """
+    if not descendant_counts:
+        return counts
+    if counts is None:
+        counts = {}
+    for key, count in descendant_counts.items():
+        counts[key] = counts.get(key, 0) + count
+    return counts
+
+
+def _component_style_scope_keys(
+    component: Component, style_scope_keys: dict[Any, tuple[str, ...]]
+) -> tuple[str, ...]:
+    """Return cached app-style scope keys using component style precedence."""
+    scope_keys = style_scope_keys.get(type(component), ())
+    return style_scope_keys.get(component.create, scope_keys)
+
+
+def _collect_subtree_shared_scope_counts(
+    component: Component,
+    subtree_counts: dict[int, dict[str, int]],
+    visiting: set[int],
+    style_scope_keys: dict[Any, tuple[str, ...]],
+) -> dict[str, int]:
+    """Count each subtree's shared-scope appearances in one post-order traversal.
+
+    Args:
+        component: Subtree root to scan.
+        subtree_counts: Component identity to scope occurrence counts.
+        visiting: Component identities on the current traversal path.
+        style_scope_keys: Cached hook scopes from app-level component styles.
+
+    Returns:
+        Scope occurrence counts in this subtree.
+    """
+    component_id = id(component)
+    if component_id in visiting:
+        return _EMPTY_SHARED_SCOPE_COUNTS
+    if component_id in subtree_counts:
+        return subtree_counts[component_id]
+
+    visiting.add(component_id)
+    counts: dict[str, int] | None = None
+
+    try:
+        local_scope_keys: set[str] | None = None
+        var_data: list[VarData] = []
+        for var in component._get_vars(include_children=False):
+            data = var._get_all_var_data()
+            if data is None:
+                continue
+            if data.shared_scope_keys:
+                if local_scope_keys is None:
+                    local_scope_keys = set()
+                local_scope_keys.update(data.shared_scope_keys)
+            if data.components:
+                var_data.append(data)
+
+        if style_scope_keys:
+            style_keys = _component_style_scope_keys(component, style_scope_keys)
+            if style_keys:
+                if local_scope_keys is None:
+                    local_scope_keys = set()
+                local_scope_keys.update(style_keys)
+
+        for child in _iter_component_descendants(component, var_data):
+            descendant_counts = _collect_subtree_shared_scope_counts(
+                child, subtree_counts, visiting, style_scope_keys
+            )
+            counts = _merge_shared_scope_counts(counts, descendant_counts)
+        if local_scope_keys:
+            counts = counts or {}
+            for key in local_scope_keys:
+                counts[key] = counts.get(key, 0) + 1
+    finally:
+        visiting.remove(component_id)
+
+    result = counts if counts is not None else _EMPTY_SHARED_SCOPE_COUNTS
+    subtree_counts[component_id] = result
+    return result
+
+
+def _subtree_splits_shared_scope(
+    component_id: int,
+    split_component_ids: set[int],
+) -> bool:
+    """Whether memoizing this component would split a shared hook scope.
+
+    Args:
+        component_id: Original identity for a component or its page-owned clone.
+        split_component_ids: Precomputed candidates that split a shared scope.
+
+    Returns:
+        Whether this component belongs to the precomputed split set.
+    """
+    return component_id in split_component_ids
+
+
+def _component_uses_shared_scope(
+    component: Component, shared_scope_counts: dict[str, int]
+) -> bool:
+    """Whether a component directly uses a hook scope shared across components.
+
+    Args:
+        component: Component being considered for memoization.
+        shared_scope_counts: Shared hook scopes present on the page.
+
+    Returns:
+        Whether the component directly carries a shared-scope Var.
+    """
+    if not shared_scope_counts:
+        return False
+    return any(
+        key in shared_scope_counts
+        for var in component._get_vars(include_children=False)
+        if (var_data := var._get_all_var_data()) is not None
+        for key in var_data.shared_scope_keys
+    )
+
+
+def _get_style_scope_keys(style: ComponentStyle | None) -> dict[Any, tuple[str, ...]]:
+    """Extract hook-scope keys from app styles once per memoization plugin.
+
+    Returns:
+        Style keys mapped to their shared local-state scope identifiers.
+    """
+    if not style:
+        return {}
+    scope_keys = {}
+    for key, style_props in style.items():
+        if not isinstance(key, type) and not callable(key):
+            continue
+        var_data = Style(style_props)._var_data
+        scope_keys[key] = var_data.shared_scope_keys if var_data is not None else ()
+    return scope_keys
+
+
+def _prepare_shared_scopes(
+    component: Component,
+    page_context: PageContext,
+    style_scope_keys: dict[Any, tuple[str, ...]],
+) -> None:
+    """Prepare shared-scope counts and memoization boundaries for a page."""
+    subtree_counts: dict[int, dict[str, int]] = {}
+    scope_counts = _collect_subtree_shared_scope_counts(
+        component, subtree_counts, set(), style_scope_keys
+    )
+    page_context.memoize_shared_scope_counts = {
+        key: count for key, count in scope_counts.items() if count > 1
+    }
+    page_context.memoize_shared_scope_split_ids = {
+        component_id
+        for component_id, counts in subtree_counts.items()
+        if any(
+            0 < counts.get(key, 0) < count
+            for key, count in page_context.memoize_shared_scope_counts.items()
+        )
+    }
 
 
 def _component_subtree_is_reactive(
@@ -203,6 +393,14 @@ def _should_memoize(component: Component) -> bool:
     return bool(component.event_triggers)
 
 
+def _suppress_snapshot_descendants(
+    component: Component, snapshot_boundary: bool, page_context: PageContext
+) -> None:
+    """Keep descendants of an unwrapped snapshot boundary in the same scope."""
+    if snapshot_boundary:
+        page_context.memoize_suppressor_stack.append(id(component))
+
+
 @dataclasses.dataclass(frozen=True, slots=True)
 class MemoizeStatefulPlugin(Plugin):
     """Auto-memoize stateful components with experimental-memo wrappers.
@@ -225,6 +423,15 @@ class MemoizeStatefulPlugin(Plugin):
     that pushed suppression, popped in ``leave_component`` when the matching
     component leaves.
     """
+
+    style: ComponentStyle | None = None
+    style_scope_keys: dict[Any, tuple[str, ...]] = dataclasses.field(
+        init=False, default_factory=dict, repr=False, compare=False
+    )
+
+    def __post_init__(self) -> None:
+        """Cache hook scopes added by app-level component styles."""
+        object.__setattr__(self, "style_scope_keys", _get_style_scope_keys(self.style))
 
     def enter_component(
         self,
@@ -260,22 +467,22 @@ class MemoizeStatefulPlugin(Plugin):
             A ``(wrapper, ())`` replacement for memoized boundaries, otherwise
             ``None``.
         """
-        if in_prop_tree:
+        if in_prop_tree or not isinstance(comp, Component):
             return None
-        if not isinstance(comp, Component):
-            return None
+        root = page_context.root_component
+        if comp is root or page_context._owned.get(id(root)) is comp:
+            _prepare_shared_scopes(comp, page_context, self.style_scope_keys)
         if page_context.memoize_suppressor_stack:
             return None
         strategy = get_memoization_strategy(comp)
         if strategy is not MemoizationStrategy.SNAPSHOT:
             return None
         snapshot_boundary = is_snapshot_boundary(comp)
-
-        if not _should_memoize(comp):
-            # Boundary not worth wrapping — still suppress descendants so
-            # they don't memoize independently of the boundary's subtree.
-            if snapshot_boundary:
-                page_context.memoize_suppressor_stack.append(id(comp))
+        original_id = page_context._owned_original_ids.get(id(comp), id(comp))
+        if _subtree_splits_shared_scope(
+            original_id, page_context.memoize_shared_scope_split_ids
+        ) or not _should_memoize(comp):
+            _suppress_snapshot_descendants(comp, snapshot_boundary, page_context)
             return None
 
         wrapper = self._build_wrapper(
@@ -316,16 +523,16 @@ class MemoizeStatefulPlugin(Plugin):
         Returns:
             The memo wrapper for non-boundary memoizables, else ``None``.
         """
-        if in_prop_tree:
-            return None
-        if not isinstance(comp, Component):
+        if in_prop_tree or not isinstance(comp, Component):
             return None
 
         stack = page_context.memoize_suppressor_stack
         if stack and stack[-1] == id(comp):
             stack.pop()
 
-        if stack:
+        if stack or _component_uses_shared_scope(
+            comp, page_context.memoize_shared_scope_counts
+        ):
             return None
 
         if len(children) != len(comp.children) or any(
