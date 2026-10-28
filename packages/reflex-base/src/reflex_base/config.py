@@ -992,14 +992,19 @@ def _get_config(project_root: Path | None = None) -> Config:
     Returns:
         The app config.
     """
-    global _config_module_deps_root, _loading_config
+    global _config_module_deps_root, _loading_config, _state_auto_setters
 
     project_root = (project_root or Path.cwd()).resolve()
     with _load_config_lock:
         if _loading_config:
             # rxconfig.py read the config while importing (e.g. via rx.asset);
             # importing it again would recurse, so use the env and defaults.
-            return Config(app_name="", _skip_plugins_checks=True)
+            # Building it must not replace the state_auto_setters value a
+            # Config already created in rxconfig.py published.
+            state_auto_setters = _state_auto_setters
+            config = Config(app_name="", _skip_plugins_checks=True)
+            _state_auto_setters = state_auto_setters
+            return config
         # A fresh str object, so the exact inserted entry can be removed by
         # identity: rxconfig.py may itself add or remove equal cwd entries,
         # which removal by value could confuse with caller-owned ones.

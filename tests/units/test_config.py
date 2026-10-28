@@ -1162,6 +1162,38 @@ def test_get_config_inside_rxconfig_does_not_reload_it(
     assert sys.modules["rxconfig"].ASSET.startswith("/favicon.ico")
 
 
+def test_get_config_inside_rxconfig_keeps_state_auto_setters(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
+):
+    """The stand-in config built mid-import does not reset state_auto_setters.
+
+    Args:
+        tmp_path: The pytest tmp_path fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        clean_config_modules: Cleanup for modules left behind by the load.
+    """
+    from reflex_base.registry import RegistrationContext
+
+    (tmp_path / "assets").mkdir()
+    (tmp_path / "assets" / "favicon.ico").write_bytes(b"")
+    (tmp_path / "rxconfig.py").write_text(
+        textwrap.dedent(
+            """
+            import reflex as rx
+
+            config = rx.Config(app_name="asset_in_config", state_auto_setters=True)
+            ASSET = rx.asset("favicon.ico")
+            """
+        )
+    )
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(reflex_base.config, "_state_auto_setters", None)
+
+    with RegistrationContext():
+        reflex_base.config._get_config()
+        assert reflex_base.config.get_state_auto_setters() is True
+
+
 def test_get_config_accepts_explicit_project_root(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
 ):
