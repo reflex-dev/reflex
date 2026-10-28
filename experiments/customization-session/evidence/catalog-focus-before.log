@@ -1,0 +1,15 @@
+real Community grid has loaded synthetic rows
+real XY adapter has populated canvas layers
+no iframe or chart screenshot substitutes
+normal chart legend does not overlap axis title
+Customize constructed Python Draft
+AssertionError [ERR_ASSERTION]: catalog toggle exposes expanded state and moves focus to heading
+    at check (/workspace/customization-session-worktree/experiments/customization-session/browser-audit.cjs:11:42)
+    at /workspace/customization-session-worktree/experiments/customization-session/browser-audit.cjs:33:2 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}

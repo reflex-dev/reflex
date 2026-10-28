@@ -1,0 +1,81 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________ test_mixed_height_adjacent_moves_preserve_extent_and_neighbors ________
+
+    def test_mixed_height_adjacent_moves_preserve_extent_and_neighbors():
+        session = Session(REGISTRY)
+        session.begin()
+        session.add("search")
+        original = session.current
+>       session.move("accounts", 1)
+
+test_session.py:107:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+session_demo/model.py:62: in move
+    self.stage(replace(self.current, items=tuple(items)))
+session_demo/model.py:48: in stage
+    self.draft.stage(candidate)
+../../packages/reflex-components-internal/src/reflex_components_internal/experimental/customization.py:239: in stage
+    self._registry.validate(preferences)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <reflex_components_internal.experimental.customization.Registry object at 0x7f3de774d550>
+preferences = Preferences(items=(Item(id='trend', widget='trend', x=0, y=0, width=12, height=4, options=()), Item(id='search', widge...ght=4, options=()), Item(id='search-1', widget='search', x=0, y=10, width=12, height=2, options=())), navigation='top')
+
+    def validate(self, preferences: Preferences) -> None:
+        """Reject unsupported navigation, settings, overlaps and out-of-bounds items.
+
+        Args:
+            preferences: A complete candidate layout.
+
+        Raises:
+            ValueError: The candidate violates the page's builder-owned contract.
+        """
+        if preferences.navigation not in ("top", "left"):
+            msg = "Navigation must be top or left"
+            raise ValueError(msg)
+        ids: set[str] = set()
+        occupied: list[Item] = []
+        for item in preferences.items:
+            if not item.id or item.id in ids:
+                msg = "Widget instance IDs must be nonempty and unique"
+                raise ValueError(msg)
+            ids.add(item.id)
+            widget = self.widget(item.widget)
+            if any(
+                type(value) is not int
+                for value in (item.x, item.y, item.width, item.height)
+            ):
+                msg = "Widget geometry must use integers"
+                raise ValueError(msg)
+            if not (
+                item.x >= 0
+                and item.y >= 0
+                and widget.min_width <= item.width <= widget.max_width
+                and widget.min_height <= item.height <= widget.max_height
+                and item.x + item.width <= self.columns
+            ):
+                msg = "Widget geometry is outside the allowed bounds"
+                raise ValueError(msg)
+            options = {option.key: option for option in widget.options}
+            seen: set[str] = set()
+            for key, value in item.options:
+                if key in seen or key not in options or not options[key].accepts(value):
+                    msg = f"Unsupported widget option: {key}"
+                    raise ValueError(msg)
+                seen.add(key)
+            if any(
+                item.x < other.x + other.width
+                and other.x < item.x + item.width
+                and item.y < other.y + other.height
+                and other.y < item.y + item.height
+                for other in occupied
+            ):
+                msg = "Widget instances cannot overlap"
+>               raise ValueError(msg)
+E               ValueError: Widget instances cannot overlap
+
+../../packages/reflex-components-internal/src/reflex_components_internal/experimental/customization.py:195: ValueError
+=========================== short test summary info ============================
+FAILED test_session.py::test_mixed_height_adjacent_moves_preserve_extent_and_neighbors
+1 failed in 0.73s

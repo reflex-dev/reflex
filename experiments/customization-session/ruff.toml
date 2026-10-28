@@ -1,0 +1,5 @@
+extend = "../../pyproject.toml"
+
+[lint.extend-per-file-ignores]
+"rxconfig.py" = ["INP001"]
+"test_session.py" = ["INP001", "D103"]

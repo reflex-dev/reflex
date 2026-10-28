@@ -1,0 +1,40 @@
+real Community grid has loaded synthetic rows
+real XY adapter has populated canvas layers
+no iframe or chart screenshot substitutes
+normal chart legend does not overlap axis title
+Customize constructed Python Draft
+catalog toggle exposes expanded state and moves focus to heading
+catalog reflow leaves persisted geometry unchanged
+catalog renders actual XY and Community widgets
+catalog chart legend does not overlap axis title
+compact actual grid preview omits squeezed pagination
+nonmodal catalog has no backdrop or dialog
+keyboard Move before called Python Draft.stage
+server order changed to accounts first
+React keyed move preserves real grid instance
+grid descending sort survives layout move
+Size stages explicit logical width
+allowed legend setting is validated server preference
+left nav is actual page layout
+native shared search filters actual Community rows
+search retains focus across server roundtrip
+Save confirmed actual Python Draft
+Save scope explicitly session only
+Reset stages builder defaults
+Cancel after Reset restores saved personal view
+Add uses builder registry and server draft
+ordinary mixed-height server reorder preserves appended neighbor
+Cancel discards appended instance
+laptop left-nav dock layout has readable canvas
+laptop layout has no page horizontal overflow
+responsive dock reflow does not rewrite logical geometry
+browser has no uncaught errors
+{
+  "passed": 31,
+  "errors": [],
+  "laptop": {
+    "overflow": false,
+    "canvas": 556,
+    "dock": 280
+  }
+}
