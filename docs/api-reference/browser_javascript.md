@@ -58,9 +58,10 @@ class SoundEffectState(rx.State):
 
 def sound_effect_demo():
     return rx.hstack(
-        rx.script("""
-            var button_sfx = new Audio("/vintage-button-sound-effect.mp3")
-            function playFromStart (sfx) {sfx.load(); sfx.play()}"""),
+        rx.script(
+            f'var button_sfx = new Audio("{rx.asset("vintage-button-sound-effect.mp3")}");'
+            " function playFromStart(sfx) {sfx.load(); sfx.play()}"
+        ),
         rx.button(
             "Play Immediately", on_click=rx.call_script("playFromStart(button_sfx)")
         ),
