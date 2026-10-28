@@ -23,25 +23,33 @@ immutable tuples. Registry construction is builder-owned, not user-provided.
 
 ```python
 from reflex_components_internal.experimental.customization import (
-    Draft, Item, Option, Preferences, Registry, Widget,
+    Draft,
+    Item,
+    Option,
+    Preferences,
+    Registry,
+    Widget,
 )
 
 registry = Registry((
-    Widget("revenue", render_revenue, (
-        Option("legend", ("auto", "hidden"), "auto"),
-    ), min_width=4),
+    Widget(
+        "revenue",
+        render_revenue,
+        (Option("legend", ("auto", "hidden"), "auto"),),
+        min_width=4,
+    ),
 ))
 defaults = Preferences((Item("revenue-main", "revenue", width=8),))
 draft = Draft(registry, saved_preferences, defaults)
 draft.stage(candidate_preferences)  # Complete, atomic validated replacement.
-draft.reset()                       # Stages defaults; Cancel still restores saved.
-snapshot = draft.save()             # No writes; the draft remains active.
+draft.reset()  # Stages defaults; Cancel still restores saved.
+snapshot = draft.save()  # No writes; the draft remains active.
 try:
     personal_store.save(user_id, page_id, snapshot)
 except OSError:
     show_retry_without_discarding_draft()
 else:
-    draft.confirm_save(snapshot)    # Closes only if the current draft still matches.
+    draft.confirm_save(snapshot)  # Closes only if the current draft still matches.
 ```
 
 `cancel()` restores the initial saved layout and closes the transaction. Closed
