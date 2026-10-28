@@ -1,0 +1,40 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+ExpectError: expect(received).toEqual(expected) // deep equality
+
+- Expected  - 1
++ Received  + 4
+
+- Array []
++ Array [
++   "No Rows To Show. 1 to 25 of 10,000. Page 1 of 400",
++   "Loading...",
++ ]
+    at captureRawStack (/workspace/grid-work/experiments/community-grid/node_modules/playwright-core/lib/coreBundle.js:9282:17)
+    at callMatcherAsStep (/workspace/grid-work/experiments/community-grid/node_modules/playwright/lib/matchers/expect.js:13316:57)
+    at Object.toEqual (/workspace/grid-work/experiments/community-grid/node_modules/playwright/lib/matchers/expect.js:13308:23)
+    at /workspace/grid-a11y/experiments/community-grid/status-audit.mjs:21:111 {
+  matcherResult: {
+    actual: [
+      'No Rows To Show. 1 to 25 of 10,000. Page 1 of 400',
+      'Loading...'
+    ],
+    expected: [],
+    message: 'expect(received).toEqual(expected) // deep equality\n' +
+      '\n' +
+      '- Expected  - 1\n' +
+      '+ Received  + 4\n' +
+      '\n' +
+      '- Array []\n' +
+      '+ Array [\n' +
+      '+   "No Rows To Show. 1 to 25 of 10,000. Page 1 of 400",\n' +
+      '+   "Loading...",\n' +
+      '+ ]',
+    name: 'toEqual',
+    pass: false
+  }
+}
+
+Node.js v24.19.0

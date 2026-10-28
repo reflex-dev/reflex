@@ -31,11 +31,15 @@ window.gridEvents = [];
 function App() {
   const [paginated, setPaginated] = useState(true);
   const [reverse, setReverse] = useState(false);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(
+    new URLSearchParams(location.search).get("query") || "",
+  );
   const [saved, setSaved] = useState(undefined);
   const [current, setCurrent] = useState({});
   const [generation, setGeneration] = useState(0);
-  const [empty, setEmpty] = useState(false);
+  const [empty, setEmpty] = useState(
+    new URLSearchParams(location.search).has("empty"),
+  );
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState([]);
   const recordState = (state) => {

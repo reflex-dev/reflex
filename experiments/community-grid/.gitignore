@@ -3,3 +3,4 @@ dist/
 test-results/
 reflex_app/reflex.lock/
 !package-lock.json
+evidence/status-reflex-runtime.log

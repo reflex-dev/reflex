@@ -1,0 +1,17 @@
+Recorded failure from the first fresh-start attempt for this audit (not a fabricated raw runtime log).
+
+Working directory:
+/workspace/grid-a11y/experiments/community-grid/reflex_app
+
+Failed command:
+REFLEX_DIR=/tmp/grid-a11y-runtime npm_config_cache=/tmp/grid-npm-cache VIRTUAL_ENV=/workspace/reflex/.venv UV_CACHE_DIR=/tmp/grid-uv-cache PYTHONPATH=/workspace/grid-a11y/packages/reflex-components-internal/src uv run --active --no-sync reflex run --env dev --frontend-port 4195 --backend-port 8195
+
+Exact rejection:
+RuntimeError: There should not be an `__init__.py` file in your app root directory
+Info: Reflex app stopped.
+
+Cause:
+The phase-one runtime proof ran before a lint cleanup added reflex_app/__init__.py. The committed phase-one fixture therefore did not reproduce that earlier running state on a fresh start. This audit caught that mismatch. The fixture root must not be a Python package.
+
+Correction:
+Removed reflex_app/__init__.py; rxconfig.py narrowly exempts Ruff INP001. The corrected command above then started a fresh frontend4195/backend8195. Raw corrected startup output is status-reflex-start.log. status-runtime-smoke.log and reflex-runtime.json record the subsequent real browser/Python event proof. The initial raw startup log was replaced by the corrected run; this record preserves the failed command and exact rejection rather than pretending the original raw log remains.

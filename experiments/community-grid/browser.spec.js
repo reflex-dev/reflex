@@ -269,3 +269,94 @@ test("10k unpaginated rows remain virtualized while scrolling", async ({
     fullPage: true,
   });
 });
+
+test("current accessible status follows loading, empty, filtered and populated states", async ({
+  page,
+}) => {
+  const cdp = await page.context().newCDPSession(page);
+  const transitions = [];
+  await page.goto("/");
+  const grid = page.locator('[role="grid"]').first();
+  const statusId = await grid.getAttribute("aria-describedby");
+  expect(statusId).toBeTruthy();
+  const status = page.locator(`[id="${statusId}"]`);
+  await expect(status).toHaveAttribute("role", "status");
+  await expect(status).toHaveAttribute("aria-live", "polite");
+  await expect(status).toHaveAttribute("aria-atomic", "true");
+  async function check(name, text, busy) {
+    await expect(status).toHaveText(text);
+    await expect(grid).toHaveAttribute("aria-busy", String(busy));
+    await page.waitForTimeout(300);
+    const ax = await cdp.send("Accessibility.getFullAXTree");
+    const accessibleGrid = ax.nodes.find(
+      (node) => !node.ignored && node.role?.value === "grid",
+    );
+    expect(accessibleGrid?.description?.value).toBe(text);
+    const names = ax.nodes
+      .filter((node) => !node.ignored && node.role?.value === "StaticText")
+      .map((node) => node.name?.value ?? "");
+    expect(names.filter((value) => value === text)).toHaveLength(1);
+    expect(
+      names.filter((value) => /No Rows To Show|Loading\.\.\./.test(value)),
+    ).toEqual([]);
+    transitions.push({
+      name,
+      text,
+      busy,
+      legacyLiveText: await page
+        .locator(".ag-aria-description-container")
+        .textContent(),
+    });
+  }
+  await check("initial populated", "Rows available.", false);
+  await page.getByLabel("Search rows", { exact: true }).focus();
+  await page
+    .getByRole("button", { name: "Toggle loading", exact: true })
+    .click();
+  await check("loading populated", "Loading rows.", true);
+  await page
+    .getByRole("button", { name: "Toggle loading", exact: true })
+    .click();
+  await check("loaded populated", "Rows available.", false);
+  await page.getByRole("button", { name: "Toggle empty", exact: true }).click();
+  await check("empty", "No rows to show.", false);
+  await page
+    .getByRole("button", { name: "Toggle loading", exact: true })
+    .click();
+  await check("loading empty", "Loading rows.", true);
+  await page
+    .getByRole("button", { name: "Toggle loading", exact: true })
+    .click();
+  await check("loaded empty", "No rows to show.", false);
+  await page.getByRole("button", { name: "Toggle empty", exact: true }).click();
+  await check("restored populated", "Rows available.", false);
+  await page
+    .getByLabel("Search rows", { exact: true })
+    .fill("no-synthetic-record-matches");
+  await check("filtered empty", "No rows to show.", false);
+  await expect(page.getByLabel("Search rows", { exact: true })).toBeFocused();
+  await page.getByLabel("Search rows", { exact: true }).fill("");
+  await check("filtered populated", "Rows available.", false);
+  fs.writeFileSync(
+    "evidence/status-transitions.json",
+    JSON.stringify(transitions, null, 2),
+  );
+});
+
+for (const path of ["/?empty=1", "/?query=no-synthetic-record-matches"]) {
+  test(`initial empty status is accurate at ${path}`, async ({ page }) => {
+    await page.goto(path);
+    const grid = page.locator('[role="grid"]').first();
+    await expect(grid).toBeVisible();
+    const id = await grid.getAttribute("aria-describedby");
+    expect(id).toBeTruthy();
+    await expect(page.locator(`[id="${id}"]`)).toHaveText("No rows to show.");
+    await expect(grid).toHaveAttribute("aria-busy", "false");
+    if (path.includes("empty=1")) {
+      await expect(page.locator(".ag-overlay-no-rows-center")).toBeVisible();
+    }
+    await expect(
+      page.locator('.ag-center-cols-container [role="row"]'),
+    ).toHaveCount(0);
+  });
+}

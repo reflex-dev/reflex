@@ -1,0 +1,39 @@
+[
+  {
+    "name": "populated initial",
+    "legacyLiveText": "No Rows To Show. 1 to 25 of 10,000. Page 1 of 400",
+    "grid": {
+      "busy": null,
+      "describedby": null,
+      "rowcount": "10002"
+    },
+    "exposedStatusText": [
+      "No Rows To Show. 1 to 25 of 10,000. Page 1 of 400"
+    ]
+  },
+  {
+    "name": "loading",
+    "legacyLiveText": "Loading...",
+    "grid": {
+      "busy": null,
+      "describedby": null,
+      "rowcount": "10002"
+    },
+    "exposedStatusText": [
+      "Loading...",
+      "Loading..."
+    ]
+  },
+  {
+    "name": "populated after loading",
+    "legacyLiveText": "Loading...",
+    "grid": {
+      "busy": null,
+      "describedby": null,
+      "rowcount": "10002"
+    },
+    "exposedStatusText": [
+      "Loading..."
+    ]
+  }
+]

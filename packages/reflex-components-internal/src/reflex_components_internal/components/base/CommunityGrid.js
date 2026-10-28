@@ -1,4 +1,11 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { AgGridReact } from "ag-grid-react";
 import { AllCommunityModule, themeQuartz } from "ag-grid-community";
 
@@ -110,6 +117,8 @@ export function CommunityGrid({
   id,
 }) {
   const grid = useRef(null);
+  const statusId = useId();
+  const [displayedRows, setDisplayedRows] = useState(rowData.length);
   const [, refreshColumns] = useState(0);
   const rows = useMemo(
     () => validateRowIds(rowData, rowIdKey),
@@ -132,6 +141,21 @@ export function CommunityGrid({
         String(data[rowIdKey]),
     [rowIdKey],
   );
+  const statusText = loading
+    ? "Loading rows."
+    : displayedRows === 0
+      ? "No rows to show."
+      : "Rows available.";
+  const describeGrid = useCallback(
+    (api) => {
+      api.setGridAriaProperty("describedby", statusId);
+      api.setGridAriaProperty("busy", loading ? "true" : "false");
+    },
+    [loading, statusId],
+  );
+  useEffect(() => {
+    if (grid.current?.api) describeGrid(grid.current.api);
+  }, [describeGrid]);
   const authoredIds = new Set(columns.map((col) => col.colId ?? col.field));
   const fullColumnState =
     grid.current?.api?.getColumnState() ??
@@ -180,6 +204,26 @@ export function CommunityGrid({
         color: "var(--secondary-12, #202020)",
       },
     },
+    React.createElement(
+      "span",
+      {
+        id: statusId,
+        role: "status",
+        "aria-live": "polite",
+        "aria-atomic": true,
+        style: {
+          position: "absolute",
+          width: 1,
+          height: 1,
+          padding: 0,
+          margin: -1,
+          overflow: "hidden",
+          clipPath: "inset(50%)",
+          whiteSpace: "nowrap",
+        },
+      },
+      statusText,
+    ),
     React.createElement(
       "details",
       {
@@ -294,9 +338,20 @@ export function CommunityGrid({
         paginationPageSizeSelector: false,
         quickFilterText: quickFilter,
         loading,
+        // Custom templates leave overlay announcements to the current status above.
+        overlayLoadingTemplate:
+          '<span class="ag-overlay-loading-center" aria-hidden="true">Loading...</span>',
+        overlayNoRowsTemplate:
+          '<span class="ag-overlay-no-rows-center" aria-hidden="true">No Rows To Show</span>',
         initialState,
         suppressFieldDotNotation: true,
-        onGridReady: () => refreshColumns((n) => n + 1),
+        onGridReady: ({ api }) => {
+          describeGrid(api);
+          refreshColumns((n) => n + 1);
+        },
+        onModelUpdated: ({ api }) => {
+          setDisplayedRows(api.getDisplayedRowCount());
+        },
         onColumnMoved: () => refreshColumns((n) => n + 1),
         onColumnPinned: () => refreshColumns((n) => n + 1),
         onColumnVisible: () => refreshColumns((n) => n + 1),

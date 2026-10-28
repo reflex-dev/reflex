@@ -1,0 +1,56 @@
+[
+  {
+    "name": "initial populated",
+    "text": "Rows available.",
+    "busy": false,
+    "legacyLiveText": "1 to 25 of 10,000. Page 1 of 400"
+  },
+  {
+    "name": "loading populated",
+    "text": "Loading rows.",
+    "busy": true,
+    "legacyLiveText": "1 to 25 of 10,000. Page 1 of 400"
+  },
+  {
+    "name": "loaded populated",
+    "text": "Rows available.",
+    "busy": false,
+    "legacyLiveText": "1 to 25 of 10,000. Page 1 of 400"
+  },
+  {
+    "name": "empty",
+    "text": "No rows to show.",
+    "busy": false,
+    "legacyLiveText": "0 to 0 of 0. Page 0 of 0"
+  },
+  {
+    "name": "loading empty",
+    "text": "Loading rows.",
+    "busy": true,
+    "legacyLiveText": "0 to 0 of 0. Page 0 of 0"
+  },
+  {
+    "name": "loaded empty",
+    "text": "No rows to show.",
+    "busy": false,
+    "legacyLiveText": "0 to 0 of 0. Page 0 of 0"
+  },
+  {
+    "name": "restored populated",
+    "text": "Rows available.",
+    "busy": false,
+    "legacyLiveText": "1 to 25 of 10,000. Page 1 of 400"
+  },
+  {
+    "name": "filtered empty",
+    "text": "No rows to show.",
+    "busy": false,
+    "legacyLiveText": "0 to 0 of 0. Page 0 of 0"
+  },
+  {
+    "name": "filtered populated",
+    "text": "Rows available.",
+    "busy": false,
+    "legacyLiveText": "1 to 25 of 10,000. Page 1 of 400"
+  }
+]

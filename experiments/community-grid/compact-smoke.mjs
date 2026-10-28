@@ -8,7 +8,9 @@ const results = [];
 try {
   for (const width of [1366, 1024]) {
     const page = await browser.newPage({ viewport: { width, height: 360 } });
-    await page.goto("http://127.0.0.1:4191/compact.html");
+    await page.goto(
+      `http://127.0.0.1:${process.env.GRID_PORT || "4191"}/compact.html`,
+    );
     await expect(page.locator(".ag-paging-panel")).toBeVisible();
     const footer = await page.locator(".ag-paging-panel").boundingBox();
     expect(footer.y + footer.height).toBeLessThanOrEqual(360);

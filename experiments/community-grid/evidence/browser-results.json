@@ -2,11 +2,11 @@
   "config": {
     "argv": [
       "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
-      "/workspace/grid-work/experiments/community-grid/node_modules/.bin/playwright",
+      "/workspace/grid-a11y/node_modules/.bin/playwright",
       "test"
     ],
-    "configFile": "/workspace/grid-work/experiments/community-grid/playwright.config.js",
-    "rootDir": "/workspace/grid-work/experiments/community-grid",
+    "configFile": "/workspace/grid-a11y/experiments/community-grid/playwright.config.js",
+    "rootDir": "/workspace/grid-a11y/experiments/community-grid",
     "failOnFlakyTests": false,
     "forbidOnly": false,
     "fullyParallel": false,
@@ -22,7 +22,7 @@
     "preserveOutput": "always",
     "projects": [
       {
-        "outputDir": "/workspace/grid-work/experiments/community-grid/test-results",
+        "outputDir": "/workspace/grid-a11y/experiments/community-grid/test-results",
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
@@ -30,7 +30,7 @@
         },
         "id": "",
         "name": "",
-        "testDir": "/workspace/grid-work/experiments/community-grid",
+        "testDir": "/workspace/grid-a11y/experiments/community-grid",
         "testIgnore": [],
         "testMatch": [
           "browser.spec.js"
@@ -42,20 +42,20 @@
       {
         "grep": {},
         "grepInvert": null,
-        "outputDir": "/workspace/grid-work/experiments/community-grid/test-results",
+        "outputDir": "/workspace/grid-a11y/experiments/community-grid/test-results",
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
           "actualWorkers": 1
         },
         "name": "",
-        "testDir": "/workspace/grid-work/experiments/community-grid",
-        "snapshotDir": "/workspace/grid-work/experiments/community-grid",
+        "testDir": "/workspace/grid-a11y/experiments/community-grid",
+        "snapshotDir": "/workspace/grid-a11y/experiments/community-grid",
         "testIgnore": [],
         "testMatch": "browser.spec.js",
         "timeout": 30000,
         "use": {
-          "baseURL": "http://127.0.0.1:4191",
+          "baseURL": "http://127.0.0.1:4194",
           "launchOptions": {
             "executablePath": "/usr/bin/chromium",
             "args": [
@@ -92,8 +92,8 @@
     "version": "1.64.1",
     "workers": 1,
     "webServer": {
-      "command": "npm run dev -- --port 4191",
-      "url": "http://127.0.0.1:4191",
+      "command": "npm run dev -- --port 4194",
+      "url": "http://127.0.0.1:4194",
       "reuseExistingServer": true
     }
   },
@@ -120,12 +120,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 5401,
+                  "duration": 5580,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-28T04:44:04.914Z",
+                  "startTime": "2026-10-28T05:14:55.880Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -154,12 +154,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1165,
+                  "duration": 1448,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-28T04:44:10.823Z",
+                  "startTime": "2026-10-28T05:15:01.990Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -188,12 +188,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1142,
+                  "duration": 1440,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-28T04:44:12.002Z",
+                  "startTime": "2026-10-28T05:15:03.457Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -222,12 +222,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1139,
+                  "duration": 1270,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-28T04:44:13.159Z",
+                  "startTime": "2026-10-28T05:15:04.917Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -256,12 +256,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 814,
+                  "duration": 894,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-28T04:44:14.309Z",
+                  "startTime": "2026-10-28T05:15:06.204Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -273,15 +273,117 @@
           "file": "browser.spec.js",
           "line": 235,
           "column": 1
+        },
+        {
+          "title": "current accessible status follows loading, empty, filtered and populated states",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4235,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-28T05:15:07.112Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "254a68b5fae918765be2-a4023ed91baa4250538f",
+          "file": "browser.spec.js",
+          "line": 273,
+          "column": 1
+        },
+        {
+          "title": "initial empty status is accurate at /?empty=1",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 687,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-28T05:15:11.368Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "254a68b5fae918765be2-259d514a5382d080b7fb",
+          "file": "browser.spec.js",
+          "line": 347,
+          "column": 3
+        },
+        {
+          "title": "initial empty status is accurate at /?query=no-synthetic-record-matches",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 780,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-28T05:15:12.072Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "254a68b5fae918765be2-4b214ca8ccfd5da409c0",
+          "file": "browser.spec.js",
+          "line": 347,
+          "column": 3
         }
       ]
     }
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-10-28T04:44:04.525Z",
-    "duration": 10687.343,
-    "expected": 5,
+    "startTime": "2026-10-28T05:14:55.409Z",
+    "duration": 17530.973,
+    "expected": 8,
     "skipped": 0,
     "unexpected": 0,
     "flaky": 0

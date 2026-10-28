@@ -1,0 +1,20 @@
+
+Running 8 tests using 1 worker
+
+(node:92176) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 browser.spec.js:4:1 › Community renderer handles core interactions and saved view state (5.6s)
+  ✓  2 browser.spec.js:190:3 › desktop layout, theme and loading/empty states (1.4s)
+  ✓  3 browser.spec.js:190:3 › laptop layout, theme and loading/empty states (1.4s)
+  ✓  4 browser.spec.js:190:3 › mobile layout, theme and loading/empty states (1.3s)
+  ✓  5 browser.spec.js:235:1 › 10k unpaginated rows remain virtualized while scrolling (894ms)
+  ✓  6 browser.spec.js:273:1 › current accessible status follows loading, empty, filtered and populated states (4.2s)
+  ✓  7 browser.spec.js:347:3 › initial empty status is accurate at /?empty=1 (687ms)
+  ✓  8 browser.spec.js:347:3 › initial empty status is accurate at /?query=no-synthetic-record-matches (780ms)
+
+  8 passed (17.5s)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.1
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.1
+npm notice To update run: npm install -g npm@12.2.1
+npm notice
