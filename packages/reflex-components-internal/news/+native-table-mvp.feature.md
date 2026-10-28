@@ -1,0 +1,1 @@
+Add an experimental read-only native table with text filtering, sorting, selection, pagination and keyboard-accessible column controls. It is a bounded prototype without virtualization or AG Grid compatibility.
