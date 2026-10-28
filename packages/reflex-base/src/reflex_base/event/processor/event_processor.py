@@ -20,7 +20,10 @@ from reflex.istate.manager import StateManager
 from reflex_base import constants, otel
 from reflex_base.environment import environment
 from reflex_base.event.context import EventContext
-from reflex_base.event.processor.blocking import EventLoopBlockingMonitor
+from reflex_base.event.processor.blocking import (
+    EVENT_TASK_PREFIX,
+    EventLoopBlockingMonitor,
+)
 from reflex_base.event.processor.future import EventFuture
 from reflex_base.event.processor.timeout import DrainTimeoutManager
 from reflex_base.registry import RegisteredEventHandler, RegistrationContext
@@ -254,7 +257,9 @@ class EventProcessor:
             and environment.REFLEX_ENV_MODE.get() == constants.Env.DEV
         ):
             self._blocking_monitor = EventLoopBlockingMonitor(
-                asyncio.get_running_loop(), self.event_loop_blocking_threshold
+                asyncio.get_running_loop(),
+                self.event_loop_blocking_threshold,
+                RegistrationContext.get().event_handlers,
             )
             self._blocking_monitor.start()
         self._ensure_queue_task()
@@ -761,33 +766,15 @@ class EventProcessor:
         """
         # Set up the event context for this task.
         EventContext.set(entry.ctx)
-        monitor = self._blocking_monitor
-        if monitor is None:
-            if not otel.enabled:
-                await self._execute_event(
-                    entry=entry, registered_handler=registered_handler
-                )
-                return
-            with otel.event_span(entry.event, entry.ctx, registered_handler):
-                await self._execute_event(
-                    entry=entry, registered_handler=registered_handler
-                )
+        if not otel.enabled:
+            await self._execute_event(
+                entry=entry, registered_handler=registered_handler
+            )
             return
-
-        handler = registered_handler.handler.fn
-        monitor.handler_started(handler)
-        try:
-            if not otel.enabled:
-                await self._execute_event(
-                    entry=entry, registered_handler=registered_handler
-                )
-                return
-            with otel.event_span(entry.event, entry.ctx, registered_handler):
-                await self._execute_event(
-                    entry=entry, registered_handler=registered_handler
-                )
-        finally:
-            monitor.handler_finished(handler)
+        with otel.event_span(entry.event, entry.ctx, registered_handler):
+            await self._execute_event(
+                entry=entry, registered_handler=registered_handler
+            )
 
     def _create_event_task(
         self,
@@ -807,7 +794,9 @@ class EventProcessor:
         coro = self._process_event_queue_entry(
             entry=entry, registered_handler=registered_handler
         )
-        name = f"reflex_event|{entry.event.name}|{entry.ctx.token}|{entry.ctx.txid}"
+        name = (
+            f"{EVENT_TASK_PREFIX}{entry.event.name}|{entry.ctx.token}|{entry.ctx.txid}"
+        )
         loop = asyncio.get_running_loop()
         if (
             sys.version_info >= (3, 12)

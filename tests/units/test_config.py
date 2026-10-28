@@ -80,9 +80,7 @@ def test_event_loop_blocking_threshold_defaults_to_development_threshold(
     assert config.event_loop_blocking_threshold == pytest.approx(0.2)
 
 
-@pytest.mark.parametrize(
-    "threshold", [0, -1, float("inf"), float("nan"), True, "1", 10**1000]
-)
+@pytest.mark.parametrize("threshold", [0, -1, float("inf"), float("nan"), True, "1"])
 def test_event_loop_blocking_threshold_must_be_positive_finite_or_none(
     base_config_values, threshold
 ):

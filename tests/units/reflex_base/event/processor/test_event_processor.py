@@ -4,6 +4,7 @@ import asyncio
 import contextlib
 import dataclasses
 import logging
+import re
 import sys
 import time
 from collections.abc import AsyncIterator, Mapping
@@ -657,6 +658,34 @@ async def test_processor_reports_blocking_sync_handler(
         await ep.enqueue(token, Event.from_event_type(blocking_sync_event())[0])
 
     assert "_blocking_sync_handler" in caplog.text
+    assert "blocked the event loop" in caplog.text
+    duration = re.search(r"blocked the event loop for (\d+\.\d+)s", caplog.text)
+    assert duration is not None
+    assert float(duration.group(1)) >= 0.1
+
+
+async def test_processor_reports_blocking_after_handler_returns(
+    mock_event_processor: EventProcessor,
+    token: str,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+):
+    """Attribute blocking in post-handler processing (e.g. computed vars) to the event."""
+    execute_event = EventProcessor._execute_event
+
+    async def _execute_event(self: EventProcessor, **kwargs):
+        await execute_event(self, **kwargs)
+        time.sleep(0.12)  # noqa: ASYNC251
+
+    monkeypatch.setenv("REFLEX_ENV_MODE", constants.Env.DEV.value)
+    monkeypatch.setattr(EventProcessor, "_execute_event", _execute_event)
+    mock_event_processor.event_loop_blocking_threshold = 0.04
+    caplog.set_level(logging.WARNING, logger="reflex_base.event.processor.blocking")
+
+    async with mock_event_processor as ep:
+        await ep.enqueue(token, Event.from_event_type(noop_event())[0])
+
+    assert "_noop_handler" in caplog.text
     assert "blocked the event loop" in caplog.text
 
 

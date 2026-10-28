@@ -4,30 +4,40 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import sys
 import threading
 import time
-import types
+from collections.abc import Mapping
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from reflex_base.registry import RegisteredEventHandler
 
 logger = logging.getLogger(__name__)
+
+# Name prefix of the asyncio task that processes one event.
+EVENT_TASK_PREFIX = "reflex_event|"
 
 
 class EventLoopBlockingMonitor:
     """Report event handlers that keep the event loop from responding."""
 
-    def __init__(self, loop: asyncio.AbstractEventLoop, threshold: float) -> None:
+    def __init__(
+        self,
+        loop: asyncio.AbstractEventLoop,
+        threshold: float,
+        event_handlers: Mapping[str, RegisteredEventHandler],
+    ) -> None:
         """Create a monitor for an event loop.
 
         Args:
             loop: The event loop to monitor.
             threshold: Blocking duration in seconds at which to warn.
+            event_handlers: The registered handlers, by event name.
         """
         self.loop = loop
         self.threshold = threshold
-        self._loop_thread_id = threading.get_ident()
+        self.event_handlers = event_handlers
         self._stop = threading.Event()
-        self._handlers_lock = threading.Lock()
-        self._handlers: dict[types.CodeType, tuple[str, int]] = {}
         self._thread: threading.Thread | None = None
 
     def start(self) -> None:
@@ -46,54 +56,19 @@ class EventLoopBlockingMonitor:
             self._thread.join(timeout=1)
             self._thread = None
 
-    def handler_started(self, handler: object) -> None:
-        """Record a handler while its event task is executing.
-
-        Args:
-            handler: The registered handler function.
-        """
-        code = getattr(handler, "__code__", None)
-        name = getattr(handler, "__qualname__", None)
-        if not isinstance(code, types.CodeType) or not isinstance(name, str):
-            return
-        with self._handlers_lock:
-            current_name, count = self._handlers.get(code, (name, 0))
-            self._handlers[code] = current_name, count + 1
-
-    def handler_finished(self, handler: object) -> None:
-        """Remove a handler after its event task finishes.
-
-        Args:
-            handler: The registered handler function.
-        """
-        code = getattr(handler, "__code__", None)
-        if not isinstance(code, types.CodeType):
-            return
-        with self._handlers_lock:
-            if (current := self._handlers.get(code)) is None:
-                return
-            name, count = current
-            if count == 1:
-                del self._handlers[code]
-            else:
-                self._handlers[code] = name, count - 1
-
-    def _find_handler(self) -> str | None:
-        """Find the innermost active handler frame on the event-loop thread.
+    def _blocking_handler(self) -> str | None:
+        """Name the handler of the event task that runs on the blocked loop.
 
         Returns:
-            The handler name, or None if no registered handler is active.
+            The handler name, or None if the running task processes no event.
         """
-        frame = sys._current_frames().get(self._loop_thread_id)
-        if frame is None:
+        task = asyncio.current_task(self.loop)
+        if task is None or not (name := task.get_name()).startswith(EVENT_TASK_PREFIX):
             return None
-        with self._handlers_lock:
-            handlers = self._handlers.copy()
-        while frame is not None:
-            if handler := handlers.get(frame.f_code):
-                return handler[0]
-            frame = frame.f_back
-        return None
+        event_name = name[len(EVENT_TASK_PREFIX) :].partition("|")[0]
+        if (registered := self.event_handlers.get(event_name)) is None:
+            return event_name
+        return registered.handler.fn.__qualname__
 
     def _run(self) -> None:
         """Poll loop responsiveness from outside the event-loop thread."""
@@ -107,22 +82,24 @@ class EventLoopBlockingMonitor:
             except RuntimeError:
                 return
 
-            reported = False
+            # The task is only visible while the loop is blocked, so name it
+            # then and report the full duration once the loop responds.
+            handler_name = None
             while not responsive.wait(interval):
                 if self._stop.is_set():
                     return
-                duration = time.perf_counter() - started
                 if (
-                    duration + interval >= self.threshold
-                    and not reported
-                    and (handler_name := self._find_handler())
+                    handler_name is None
+                    and time.perf_counter() - started + interval >= self.threshold
                 ):
-                    logger.warning(
-                        "Event handler %s blocked the event loop "
-                        "(observed delay: %.3fs; threshold: %.3fs). Move blocking "
-                        "I/O to a thread pool or use a non-blocking async API.",
-                        handler_name,
-                        duration,
-                        self.threshold,
-                    )
-                    reported = True
+                    handler_name = self._blocking_handler()
+            if handler_name is not None:
+                logger.warning(
+                    "Event handler %s blocked the event loop for %.3fs "
+                    "(threshold: %.3fs), including state updates such as computed "
+                    "vars. Move blocking I/O to a thread pool or use a "
+                    "non-blocking async API.",
+                    handler_name,
+                    time.perf_counter() - started,
+                    self.threshold,
+                )
