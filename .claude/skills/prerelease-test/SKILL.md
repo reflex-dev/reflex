@@ -92,8 +92,9 @@ is what lets you test it as a user rather than as a checklist.
 
 ### Phase 1 — De-risk with a smoke test
 
-Build the campaign's venvs first, from a neutral directory (never from the checkout). For an
-offline enterprise wheel, set `ENT_WHEEL=<user-supplied wheel>` instead of `ENT_SPEC`:
+Build the campaign's venvs first, from a neutral directory (never from the checkout). This
+example installs reflex-enterprise from PyPI; to use a user-supplied offline wheel instead, replace
+the `ENT_SPEC=...` line with `ENT_WHEEL=<path to the wheel> \`:
 
     export SB=<scratch dir>
     cd "$SB" && NEW_VERSION=<new> PREV_VERSION=<prev> CTRL_VERSIONS="<positive-control versions>" \
