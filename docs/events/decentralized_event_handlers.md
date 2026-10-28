@@ -177,10 +177,17 @@ async def fetch_quote(symbol: str) -> float:
 class PortfolioState(rx.State):
     price: float = 0.0
 
-    @rx.event
+    @rx.event(background=True)
     async def refresh(self, symbol: str):
-        self.price = await fetch_quote(symbol)
+        price = await fetch_quote(symbol)
+        async with self:
+            self.price = price
 ```
+
+Call external services from a [background task](/docs/events/background-events/)
+so the client's state lock is not held while waiting: a stateless handler runs
+inline wherever it is awaited, so the quote above is fetched outside
+`async with self` and the lock is taken only to store it.
 
 A stateless handler can still yield or return events, which run against the
 state of the client that triggered it.
