@@ -43,7 +43,7 @@ from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style
 from reflex_base.utils import exceptions, format, memo_paths
 from reflex_base.utils.imports import ImportVar
-from reflex_base.utils.types import Receive, Scope, Send
+from reflex_base.utils.types import ASGIApp, Receive, Scope, Send
 from reflex_base.vars.base import computed_var
 from reflex_components_core.base.bare import Bare
 from reflex_components_core.base.fragment import Fragment
@@ -55,8 +55,9 @@ from socketio import AsyncServer
 from starlette.applications import Starlette
 from starlette.datastructures import FormData, Headers, UploadFile
 from starlette.exceptions import HTTPException
-from starlette.requests import ClientDisconnect
-from starlette.responses import PlainTextResponse, StreamingResponse
+from starlette.middleware.cors import CORSMiddleware
+from starlette.requests import ClientDisconnect, Request
+from starlette.responses import JSONResponse, PlainTextResponse, StreamingResponse
 from starlette.routing import Route
 from starlette.testclient import TestClient
 from starlette_admin.auth import AuthProvider
@@ -68,10 +69,10 @@ from reflex.app import (
     App,
     ComponentCallable,
     EventNamespace,
-    _ContextMiddleware,
     _cors_allowed_origins,
     _decode_asgi_headers,
     _DrainOversizedBodyMiddleware,
+    _RootMiddleware,
     _sio_dumps,
     _sio_loads,
     default_overlay_component,
@@ -591,12 +592,228 @@ def test_admin_dashboard_routes_remain_reversible(
     )
     mocker.patch.object(app, "_compile")
     api = app()
-    assert isinstance(api, Starlette)
-    assert str(api.url_path_for("admin:index")) == "/admin/"
+    router = app.api_transformer or app._api
+    assert isinstance(router, Starlette)
+    assert str(router.url_path_for("admin:index")) == "/admin/"
     with TestClient(api) as client:
         response = client.get("/admin/")
     assert response.status_code == 200
     assert "Reflex Admin Dashboard" in response.text
+
+
+def test_api_transformer_lifespans_run(mocker: MockerFixture):
+    """Send ASGI lifespan events through the api_transformer apps.
+
+    The outermost app and each app a Starlette transformer mounts get them, after
+    the Reflex lifespan tasks start; apps mounted on a transformer by the user
+    do not.
+
+    Args:
+        mocker: The mock fixture for skipping frontend compilation.
+    """
+    fastapi = pytest.importorskip("fastapi")
+    events: list[str] = []
+
+    def recording_lifespan(name: str, state: dict[str, str] | None = None) -> Any:
+        @contextlib.asynccontextmanager
+        async def lifespan(app: Any):
+            events.append(f"{name} start")
+            yield state
+            events.append(f"{name} stop")
+
+        return lifespan
+
+    async def read_state(request: Request) -> JSONResponse:  # noqa: RUF029
+        return JSONResponse({"db": request.state.db, "own_app": request.app is outer})
+
+    def record_scope_types(asgi_app: ASGIApp) -> ASGIApp:
+        async def recorder(scope: Scope, receive: Receive, send: Send) -> None:
+            events.append(f"callable {scope['type']}")
+            await asgi_app(scope, receive, send)
+
+        return recorder
+
+    inner = fastapi.FastAPI(lifespan=recording_lifespan("inner"))
+    inner.mount("/sub", Starlette(lifespan=recording_lifespan("mounted")))
+    outer = Starlette(lifespan=recording_lifespan("outer", {"db": "conn"}))
+    outer.add_route("/db", read_state)
+    app = App(api_transformer=[inner, record_scope_types, outer])
+    app.register_lifespan_task(recording_lifespan("reflex"))
+    mocker.patch.object(app, "_compile")
+
+    with TestClient(app()) as client:
+        assert events == [
+            "reflex start",
+            "callable lifespan",
+            "inner start",
+            "outer start",
+        ]
+        assert client.get("/db").json() == {"db": "conn", "own_app": True}
+        assert client.get("/ping").text == '"pong"'
+    assert events[4:] == ["callable http", "outer stop", "inner stop", "reflex stop"]
+
+
+@pytest.mark.parametrize("also_registered", [False, True])
+def test_api_transformer_lifespan_also_registered_warns(
+    mocker: MockerFixture, caplog: pytest.LogCaptureFixture, also_registered: bool
+):
+    """Warn when a transformer's lifespan is also registered as a lifespan task.
+
+    Args:
+        mocker: The mock fixture for skipping frontend compilation.
+        caplog: The log capture fixture.
+        also_registered: Whether the lifespan is also registered as a task.
+    """
+    fastapi = pytest.importorskip("fastapi")
+
+    @contextlib.asynccontextmanager
+    async def lifespan(app: Any):
+        yield
+
+    app = App(api_transformer=fastapi.FastAPI(lifespan=lifespan))
+    if also_registered:
+        app.register_lifespan_task(lifespan)
+    mocker.patch.object(app, "_compile")
+
+    with caplog.at_level(logging.WARNING, logger="reflex.app"):
+        app()
+    assert ("runs twice" in caplog.text) is also_registered
+
+
+def test_api_transformer_lifespan_startup_failure_stops_the_app(
+    mocker: MockerFixture,
+):
+    """A transformer failing to start fails the server's startup.
+
+    Args:
+        mocker: The mock fixture for skipping frontend compilation.
+    """
+    stopped: list[str] = []
+
+    @contextlib.asynccontextmanager
+    async def reflex_task():
+        try:
+            yield
+        finally:
+            stopped.append("reflex")
+
+    @contextlib.asynccontextmanager
+    async def failing_lifespan(app: Starlette):
+        msg = "boom"
+        raise ValueError(msg)
+        yield
+
+    app = App(api_transformer=Starlette(lifespan=failing_lifespan))
+    app.register_lifespan_task(reflex_task)
+    mocker.patch.object(app, "_compile")
+
+    with pytest.raises(RuntimeError, match="boom"), TestClient(app()):
+        pass
+    assert stopped == ["reflex"]
+
+
+def test_api_transformer_lifespan_shutdown_failure_is_reported(
+    mocker: MockerFixture,
+):
+    """A transformer failing to stop fails the server's shutdown after Reflex stops.
+
+    Args:
+        mocker: The mock fixture for skipping frontend compilation.
+    """
+    stopped: list[str] = []
+
+    @contextlib.asynccontextmanager
+    async def reflex_task():
+        try:
+            yield
+        finally:
+            stopped.append("reflex")
+
+    @contextlib.asynccontextmanager
+    async def failing_lifespan(app: Starlette):
+        yield
+        msg = "boom"
+        raise ValueError(msg)
+
+    app = App(api_transformer=Starlette(lifespan=failing_lifespan))
+    app.register_lifespan_task(reflex_task)
+    mocker.patch.object(app, "_compile")
+
+    status_codes: list[int] = []
+    with pytest.raises(RuntimeError, match="boom"), TestClient(app()) as client:
+        status_codes.append(client.get("/ping").status_code)
+    assert status_codes == [200]
+    assert stopped == ["reflex"]
+
+
+@pytest.mark.parametrize("callable_last", [False, True])
+def test_api_transformer_routes_get_cors_headers(
+    mocker: MockerFixture, callable_last: bool
+):
+    """Routes of the outermost transformer answer with CORS headers exactly once.
+
+    Args:
+        mocker: The mock fixture for skipping frontend compilation.
+        callable_last: Whether the outermost transformer is a callable.
+    """
+
+    def add_route(asgi_app: ASGIApp) -> ASGIApp:
+        async def router(scope: Scope, receive: Receive, send: Send) -> None:
+            if scope["type"] == "http" and scope["path"] == "/extra":
+                await JSONResponse("extra")(scope, receive, send)
+            else:
+                await asgi_app(scope, receive, send)
+
+        return router
+
+    starlette_app = Starlette()
+    starlette_app.add_route("/extra", lambda _: JSONResponse("extra"))
+    app = App(api_transformer=add_route if callable_last else starlette_app)
+    mocker.patch.object(app, "_compile")
+
+    with TestClient(app()) as client:
+        for path in ("/extra", "/ping"):
+            response = client.get(path, headers={"Origin": "http://example.com"})
+            assert response.status_code == 200
+            assert response.headers.get_list("access-control-allow-origin") == [
+                "http://example.com"
+            ]
+
+
+@pytest.mark.parametrize("transformer", [None, "starlette", "callable"])
+def test_unhandled_route_error_gets_cors_headers(
+    mocker: MockerFixture, transformer: str | None
+):
+    """A 500 from an unhandled route error answers with CORS headers exactly once.
+
+    Args:
+        mocker: The mock fixture for skipping frontend compilation.
+        transformer: The kind of api_transformer to use, if any.
+    """
+
+    async def boom(request: Request) -> JSONResponse:  # noqa: RUF029
+        msg = "boom"
+        raise ValueError(msg)
+
+    starlette_app = Starlette()
+    api_transformers = {
+        None: None,
+        "starlette": starlette_app,
+        "callable": lambda asgi_app: asgi_app,
+    }
+    app = App(api_transformer=api_transformers[transformer])
+    assert app._api is not None
+    # The route sits on the outermost Starlette app.
+    router = starlette_app if transformer == "starlette" else app._api
+    router.add_route("/boom", boom)
+    mocker.patch.object(app, "_compile")
+
+    with TestClient(app(), raise_server_exceptions=False) as client:
+        response = client.get("/boom", headers={"Origin": "http://example.com"})
+    assert response.status_code == 500
+    assert response.headers.get_list("access-control-allow-origin") == [
+        "http://example.com"
+    ]
 
 
 @pytest.mark.skipif(
@@ -3538,7 +3755,9 @@ def test_call_app():
     app = App()
     app._compile = unittest.mock.Mock()
     api = app()
-    assert isinstance(api, Starlette)
+    assert isinstance(api, _RootMiddleware)
+    assert isinstance(api.app, CORSMiddleware)
+    assert api.app.app is app._api
 
 
 def _probe_worker_token_identity(app: App, redis: AsyncMock, sender: Connection):
@@ -4166,11 +4385,11 @@ def test_set_contexts_no_event_processor(isolated_context: contextvars.Context):
     isolated_context.run(_test)
 
 
-def test_context_middleware_is_registered_as_a_class(
+def test_registered_middleware_are_classes(
     compilable_app: tuple[App, Path],
     mocker: MockerFixture,
 ):
-    """The context middleware must reach Starlette as a class, not a bound method.
+    """Every middleware registered on a Starlette app must be a class, not a bound method.
 
     ASGI instrumentation libraries (sentry-sdk's Starlette integration among them)
     wrap every registered middleware by assigning to ``cls.__call__``. A bound
@@ -4182,24 +4401,21 @@ def test_context_middleware_is_registered_as_a_class(
 
     asgi_app = app()
 
-    assert isinstance(asgi_app, Starlette)
-    registered = [m.cls for m in asgi_app.user_middleware]
-    assert _ContextMiddleware in registered, (
-        f"context middleware not registered as a class, got {registered}"
-    )
+    assert isinstance(asgi_app, _RootMiddleware)
+    assert app._api is not None
     # Mimic the instrumentation's patch on every middleware in the stack.
-    for cls in registered:
-        cls.__call__ = cls.__call__
+    for middleware in app._api.user_middleware:
+        middleware.cls.__call__ = middleware.cls.__call__
 
 
-async def test_context_middleware_sets_contexts(app_with_processor: App):
-    """The context middleware attaches Reflex contexts before calling the app."""
+async def test_root_middleware_sets_contexts(app_with_processor: App):
+    """The root middleware attaches Reflex contexts before calling the app."""
     seen: list[tuple[RegistrationContext, EventContext]] = []
 
     async def inner_app(scope: Scope, receive: Receive, send: Send) -> None:  # noqa: RUF029
         seen.append((RegistrationContext.get(), EventContext.get()))
 
-    await _ContextMiddleware(inner_app, app_with_processor)(
+    await _RootMiddleware(inner_app, app_with_processor, contextlib.nullcontext)(
         {"type": "http"}, AsyncMock(), AsyncMock()
     )
 
@@ -5962,6 +6178,12 @@ def test_cors_left_unconfigured_in_prod_without_deploy_url(
     allowed = app.sio.eio._cors_allowed_origins(environ)
     assert "https://app.example.com" in allowed
     assert "https://evil.example" not in allowed
+
+    plain_app = App()
+    mocker.patch.object(plain_app, "_compile")
+    asgi_app = plain_app()
+    assert isinstance(asgi_app, _RootMiddleware)
+    assert not isinstance(asgi_app.app, CORSMiddleware)
 
 
 def _polling_engine_app(max_size: int):
