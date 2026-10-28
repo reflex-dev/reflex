@@ -58,7 +58,7 @@ def collapsible_box(
                 ),
                 body,
                 border_radius=item_border_radius,
-                padding="16px",
+                padding=["16px", "24px"],
                 background_color=bg,
                 border="none",
             ),

@@ -27,6 +27,10 @@ def test_context_menu_callout_title_has_room_for_code_chips(
     trigger = callout.get_by_role("button", name=re.compile("DIRECT child"))
     trigger.scroll_into_view_if_needed()
     expect(trigger).to_have_attribute("aria-expanded", "false")
+    padding = "24px" if width >= 480 else "16px"
+    item = callout.locator(".AccordionItem")
+    for side in ("top", "right", "bottom", "left"):
+        expect(item).to_have_css(f"padding-{side}", padding)
     geometry = trigger.evaluate("""el => {
         const chips = [...el.querySelectorAll('code')];
         const rects = chips.flatMap(chip => [...chip.getClientRects()]);

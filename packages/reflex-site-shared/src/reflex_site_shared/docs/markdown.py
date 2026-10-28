@@ -642,6 +642,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
                 color=foreground_color(),
                 flex="1",
                 min_width="0",
+                overflow_wrap="anywhere",
                 text_wrap="balance",
             )
 
