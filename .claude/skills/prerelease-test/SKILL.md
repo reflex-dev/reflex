@@ -92,23 +92,27 @@ is what lets you test it as a user rather than as a checklist.
 
 ### Phase 1 — De-risk with a smoke test
 
-Build the campaign's venvs first, from a neutral directory (never from the checkout):
+Build the campaign's venvs first, from a neutral directory (never from the checkout). For an
+offline enterprise wheel, set `ENT_WHEEL=<user-supplied wheel>` instead of `ENT_SPEC`:
 
-    NEW_VERSION=<new> PREV_VERSION=<prev> CTRL_VERSIONS="<positive-control versions>" \
-      ENT_SPEC='reflex-enterprise[mcp]==<ent>'  # or ENT_WHEEL=<user-supplied offline wheel>
-      .claude/skills/prerelease-test/scripts/bootstrap_envs.sh "$SB" --enterprise
+    export SB=<scratch dir>
+    cd "$SB" && NEW_VERSION=<new> PREV_VERSION=<prev> CTRL_VERSIONS="<positive-control versions>" \
+      ENT_SPEC='reflex-enterprise[mcp]==<ent>' \
+      <checkout>/.claude/skills/prerelease-test/scripts/bootstrap_envs.sh "$SB" --enterprise
 
 It builds `new`, `prev`, `ctrl-<X>`, `driver`, `new-ent`, `prev-ent` under `$SB/envs/`, and prints
-every reflex package each one resolved. A final `prev` resolves without pre-releases, as a user's
-install would. With `--prerelease=allow`, the previous release's `>=` sibling floors resolve to the
-new alphas, and the "baseline" quietly runs half the code under test. Check the printed versions
-before trusting a baseline.
+every reflex package each one resolved. A final `prev` resolves without pre-releases, and with
+every reflex package it requires held to that release's upload time. Otherwise the previous
+release's `>=` sibling floors resolve to the new train's alphas or finals, and the "baseline"
+quietly runs half the code under test. Check the printed versions before trusting a baseline.
 
-Before any fan-out: `reflex init --template blank`, `reflex run`, then drive it in Chromium with
-`.claude/skills/prerelease-test/scripts/drive_app.py`, in dev and in prod. This shakes out
-environment problems (proxy, bun installs, browser path) once, in a context where you can debug
-them, instead of inside ten parallel agents. A dev server's first page load can take longer than
-the driver's settle time; pass a `wait_for` action on text the page must show.
+Before any fan-out: `$SB/envs/new/bin/reflex init --template blank`, `$SB/envs/new/bin/reflex run`,
+then drive it in Chromium with the driver venv
+(`$SB/envs/driver/bin/python <checkout>/.claude/skills/prerelease-test/scripts/drive_app.py`), in
+dev and in prod. This shakes out environment problems (proxy, bun installs, browser path) once,
+in a context where you can debug them, instead of inside ten parallel agents. A dev server's first
+page load can take longer than the driver's settle time; pass an `expect_text` action on text the
+page must show.
 
 The scripts carry PEP 723 metadata, so `uv run --script <path>` runs each one in its own isolated
 environment (the driver pulls in playwright that way); running them with an existing driver venv's

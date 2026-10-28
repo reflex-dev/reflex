@@ -77,13 +77,71 @@ def dist_name(repo: str, ref: str, package_dir: str) -> str:
     return re.sub(r"[-_.]+", "-", match.group(1) if match else package_dir).lower()
 
 
+def classify(
+    repo: str, ref: str, path: str, site: Path, names: dict[str, str]
+) -> tuple[str, str] | None:
+    """Compare one changed file of the checkout with its installed copy.
+
+    Args:
+        repo: Path to the reflex checkout.
+        ref: The tag under test.
+        path: The changed file, relative to the checkout.
+        site: The site-packages directory.
+        names: Cache of distribution names by ``packages/`` directory, filled as needed.
+
+    Returns:
+        The distribution and one of ``same``, ``differs``, ``stale`` (deleted at the tag,
+        still installed) or ``deleted``; ``None`` for a file no distribution ships.
+    """
+    if not path.endswith((".py", ".pyi", ".js", ".jsx", ".json", ".css")):
+        return None
+    if path.startswith("reflex/"):
+        target, dist = site / path, "reflex"
+    elif match := PACKAGE_SOURCE.fullmatch(path):
+        package_dir, rel = match.groups()
+        if package_dir not in names:
+            names[package_dir] = dist_name(repo, ref, package_dir)
+        target, dist = site / rel, names[package_dir]
+    else:
+        return None
+    at_ref = git(repo, "show", f"{ref}:{path}")
+    if at_ref.returncode != 0:
+        return dist, "stale" if target.exists() else "deleted"
+    if not target.exists() or target.read_bytes() != at_ref.stdout:
+        return dist, "differs"
+    return dist, "same"
+
+
+def report(results: dict[str, list[str]], uninstalled: dict[str, list[str]]) -> int:
+    """Print the files that do not match the tag and the overall verdict.
+
+    Args:
+        results: Changed files of installed distributions, by status.
+        uninstalled: Changed files of distributions missing from the venv, by name.
+
+    Returns:
+        ``1`` when a file differs or a deleted file is still installed, otherwise ``0``.
+    """
+    for path in results["differs"]:
+        print(f"  DIFFERS OR MISSING  {path}")
+    for path in results["stale"]:
+        print(f"  DELETED AT TAG, STILL INSTALLED  {path}")
+    for dist, paths in sorted(uninstalled.items()):
+        print(f"  not installed: {dist} ({len(paths)} changed files)")
+    if results["differs"] or results["stale"]:
+        print("FAIL: the installed packages do not match the tag")
+        return 1
+    print("PASS")
+    return 0
+
+
 def main() -> int:
     """Compare the changed source files and print a summary.
 
     Returns:
         ``1`` when an installed file differs from the tag or a deleted file is still
-        installed, ``2`` when the refs or the site-packages directory cannot be read,
-        otherwise ``0``.
+        installed, ``2`` when the refs or the site-packages directory cannot be read or
+        ``reflex`` is not installed there, otherwise ``0``.
     """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo", default=".", help="path to the reflex checkout")
@@ -94,52 +152,41 @@ def main() -> int:
     )
     args = parser.parse_args()
     site: Path = args.site_packages
-    if not site.is_dir():
-        print(f"not a directory: {site}", file=sys.stderr)
+    dists = installed_dists(site) if site.is_dir() else set()
+    if "reflex" not in dists:
+        print(f"reflex is not installed in {site}", file=sys.stderr)
         return 2
-    diff = git(args.repo, "diff", "--name-only", f"{args.base}..{args.ref}", "--")
+    # Without renames, a moved file is a deletion plus an addition, so a stale copy at
+    # the old path is still caught.
+    diff = git(
+        args.repo,
+        "diff",
+        "--no-renames",
+        "--name-only",
+        f"{args.base}..{args.ref}",
+        "--",
+    )
     if diff.returncode != 0:
         print(diff.stderr.decode().strip(), file=sys.stderr)
         return 2
 
-    dists = installed_dists(site)
     names: dict[str, str] = {}
-    same, differ, stale, uninstalled = 0, [], [], {}
+    results: dict[str, list[str]] = {"same": [], "differs": [], "stale": []}
+    uninstalled: dict[str, list[str]] = {}
     for path in diff.stdout.decode().splitlines():
-        if not path.endswith((".py", ".pyi", ".js", ".jsx", ".json", ".css")):
+        if (found := classify(args.repo, args.ref, path, site, names)) is None:
             continue
-        if path.startswith("reflex/"):
-            target, dist = site / path, "reflex"
-        elif match := PACKAGE_SOURCE.fullmatch(path):
-            package_dir, rel = match.groups()
-            if package_dir not in names:
-                names[package_dir] = dist_name(args.repo, args.ref, package_dir)
-            target, dist = site / rel, names[package_dir]
-        else:
-            continue
-        at_ref = git(args.repo, "show", f"{args.ref}:{path}")
+        dist, status = found
         if dist not in dists:
             uninstalled.setdefault(dist, []).append(path)
-        elif at_ref.returncode != 0:
-            if target.exists():
-                stale.append(path)
-        elif not target.exists() or target.read_bytes() != at_ref.stdout:
-            differ.append(path)
-        else:
-            same += 1
+        elif status in results:
+            results[status].append(path)
 
-    print(f"{args.base}..{args.ref}: {same} changed source files identical in {site}")
-    for path in differ:
-        print(f"  DIFFERS OR MISSING  {path}")
-    for path in stale:
-        print(f"  DELETED AT TAG, STILL INSTALLED  {path}")
-    for dist, paths in sorted(uninstalled.items()):
-        print(f"  not installed: {dist} ({len(paths)} changed files)")
-    if differ or stale:
-        print("FAIL: the installed packages do not match the tag")
-        return 1
-    print("PASS")
-    return 0
+    print(
+        f"{args.base}..{args.ref}: {len(results['same'])} changed source files "
+        f"identical in {site}"
+    )
+    return report(results, uninstalled)
 
 
 if __name__ == "__main__":

@@ -27,6 +27,7 @@ Index:
 
 ## Re-verification table
 | registry id | what | positive control (version, result) | new result | cluster |
+|---|---|---|---|---|
 <Every REGISTRY.md item re-run this pass: fixed / still broken / changed, with the control that
 proves the check can fail.>
 

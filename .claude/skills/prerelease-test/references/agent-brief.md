@@ -54,10 +54,10 @@ and hunt for anomalies. You REPORT issues; you never fix framework code.
 
 - Scratchpad root: `SB=<SCRATCHPAD>`
 - **Prebuilt shared venvs (READ-ONLY — never install into them)**, built by
-  `scripts/bootstrap_envs.sh`: `$SB/envs/new` (`reflex[db]==<VERSION>`, the version under test),
-  `$SB/envs/prev` (`<PREV_STABLE>`, the baseline), `$SB/envs/ctrl-<X>` (positive controls: versions a
-  finding you re-verify reproduced on — run the control FIRST; a re-verification without a
-  reproducing control proves nothing), `$SB/envs/new-ent` / `prev-ent` (+ reflex-enterprise),
+  `<checkout>/.claude/skills/prerelease-test/scripts/bootstrap_envs.sh`: `$SB/envs/new`
+  (`reflex[db]==<VERSION>`, the version under test), `$SB/envs/prev` (`<PREV_STABLE>`, the
+  baseline), `$SB/envs/ctrl-<X>` (positive controls: versions a finding you re-verify reproduced
+  on — run the control FIRST; a re-verification without a reproducing control proves nothing), `$SB/envs/new-ent` / `prev-ent` (+ reflex-enterprise),
   `$SB/envs/driver`.
 - Need other deps or versions? Make your OWN venv `$SB/envs/<cluster>-<name>`, always with cwd=`$SB`
   and `--no-config` (the checkout's pyproject has an `exclude-newer` window that hides fresh
@@ -93,9 +93,10 @@ and hunt for anomalies. You REPORT issues; you never fix framework code.
   first run does a bun install (1–2 min); poll the frontend URL until it returns 200 for up to ~6
   minutes before concluding failure. A dev server's first page render can lag the 200: wait for
   text the page must show before reading it.
-- Redis: start your own on a port in YOUR range (`redis-server --port <BP+9> --save ''
-  --appendonly no &`) and point the app at it with `REFLEX_REDIS_URL`. Prod with Redis forks
-  several granian workers (capped at 8 by default; `GRANIAN_WORKERS` overrides).
+- Redis: start your own on the last backend port of YOUR range, which no app server then uses
+  (`redis-server --port <BP_END> --save '' --appendonly no &`), and point the app at it with
+  `REFLEX_REDIS_URL`. Prod with Redis forks several granian workers (capped at 8 by default;
+  `GRANIAN_WORKERS` overrides).
 - Chromium does not apply Playwright `extra_http_headers` to the websocket upgrade: inject headers
   (`X-Forwarded-For`, cookies) through a small forwarding proxy, or a raw websocket client.
 - `--loglevel debug` gives verbose server logs; redirect to a file and actually read it.
@@ -144,7 +145,9 @@ have surfaced first as an unexplained warning.
      commands), what you observed per check, including benign quirks and baseline results
    - only the trimmed logs and screenshots that are evidence for a finding; keep DEST under ~2 MB.
      Full logs stay under `$SB/apps/<cluster>/`.
-2. Your FINAL MESSAGE is this structured report (the orchestrator parses it):
+2. Your FINAL MESSAGE is this structured report (the orchestrator parses it). When a Workflow
+   gives you a result schema, return the schema's fields instead; this text form is for plain
+   agent calls:
    ```
    CLUSTER: <cluster>
    SUMMARY: <2-4 sentences>

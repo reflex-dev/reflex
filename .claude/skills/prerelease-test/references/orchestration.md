@@ -128,9 +128,9 @@ produce confusing, unreproducible results.
 Every cluster prompt should open with the same preamble, then the cluster-specific brief:
 
 ```
-FIRST read <SB>/AGENT_BRIEF.md and follow every rule in it (isolated PyPI-only installs — never
-install from the checkout; end-to-end browser testing; artifact + NOTES.md deliverables; kill your
-processes).
+FIRST read <RUN_DIR>/CAMPAIGN_STATE.md, then <RUN_DIR>/AGENT_BRIEF.md, and follow every rule in
+it (isolated PyPI-only installs — never install from the checkout; end-to-end browser testing;
+artifact + NOTES.md deliverables; kill your processes).
 Your cluster key: "<key>". Working dir: <SB>/apps/<key>/. Artifact destination: <DEST>/<key>/.
 Your RESERVED ports: frontend <FP_START>-<FP_END>, backend <BP_START>-<BP_END> — always pass them
 explicitly, and never bind outside them.
@@ -163,7 +163,7 @@ A full campaign runs for hours, and usage limits, spend limits and container res
 mid-run. Plan for them:
 
 - **Commit continuously.** Agents cannot run git, so run a background loop that commits and pushes
-  the run directory every ~10 minutes, skipping any file over 2 MB (`git reset` it from the index).
+  the run directory every ~10 minutes, skipping any file over 2 MB (`git reset -q -- <file>`).
   Start it with `setsid nohup <loop> &` so it outlives the tool call, and stop it with a sentinel
   file at the end. A restarted container loses the loop: start it again.
 - **Resume, don't respawn.** An agent stopped by a limit keeps its transcript. When the limit

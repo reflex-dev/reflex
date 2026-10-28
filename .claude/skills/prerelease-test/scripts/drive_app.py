@@ -208,7 +208,10 @@ def main() -> int:
     read_error: str | None = None
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(executable_path=CHROMIUM, headless=not args.headed)
+        browser = p.chromium.launch(
+            executable_path=CHROMIUM if Path(CHROMIUM).exists() else None,
+            headless=not args.headed,
+        )
         page = browser.new_context().new_page()
         page.on("console", lambda m: console.append({"type": m.type, "text": m.text}))
         page.on("pageerror", lambda e: page_errors.append(str(e)))
@@ -332,7 +335,7 @@ def main() -> int:
         print(f"  PAGE UNREADABLE: {read_error}")
     if empty_page:
         print(
-            "  EMPTY PAGE: no text rendered (slow first dev load? add a wait_for action)"
+            "  EMPTY PAGE: no text rendered (slow first dev load? add an expect_text action)"
         )
     if screenshot_error:
         print(f"  SCREENSHOT FAILED: {screenshot_error}")
