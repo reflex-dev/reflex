@@ -6179,9 +6179,8 @@ def test_cors_left_unconfigured_in_prod_without_deploy_url(
     assert "https://app.example.com" in allowed
     assert "https://evil.example" not in allowed
 
-    plain_app = App()
-    mocker.patch.object(plain_app, "_compile")
-    asgi_app = plain_app()
+    mocker.patch.object(app, "_compile")
+    asgi_app = app()
     assert isinstance(asgi_app, _RootMiddleware)
     assert not isinstance(asgi_app.app, CORSMiddleware)
 
