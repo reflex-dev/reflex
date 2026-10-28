@@ -1,1 +1,1 @@
-Two production builds of the same app are now identical: the frontend no longer bundles `.web/reflex.json`, whose project hash and last run time renamed every script at each build, and reads the Reflex version from `env.json` instead.
+Make production frontend builds reproducible: exporting the same app twice now gives identical files, so a deploy no longer renames scripts that did not change.
