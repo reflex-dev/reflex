@@ -21,7 +21,7 @@ from reflex_components_core.core.cond import cond
 
 
 @var_operation
-def _string_codepoints_operation(string: Var[Any]):
+def _string_chars_operation(string: Var[Any]):
     """Convert a string to an array of Unicode code points.
 
     Args:
@@ -109,7 +109,7 @@ class Foreach(Component):
             iterable = iterable.entries()
 
         if isinstance(iterable, StringVar):
-            iterable = _string_codepoints_operation(iterable)
+            iterable = _string_chars_operation(iterable)
 
         if not isinstance(iterable, ArrayVar):
             msg = (

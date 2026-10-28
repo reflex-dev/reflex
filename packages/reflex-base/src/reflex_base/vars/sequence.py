@@ -788,7 +788,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         if isinstance(i, slice):
             if i.step is None:
                 return string_slice_operation(self, i.start, i.stop)
-            return string_codepoints_operation(self)[i].join()
+            return string_chars_operation(self)[i].join()
         if not isinstance(i, (int, NumberVar)) or (
             isinstance(i, NumberVar) and i._is_strict_float()
         ):
@@ -869,7 +869,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         Returns:
             The string reverse operation.
         """
-        return string_codepoints_operation(self).reverse().join()
+        return string_chars_operation(self).reverse().join()
 
     def rstrip(self, chars: StringVar | str | None = None) -> StringVar:
         """Right strip the string.
@@ -1307,7 +1307,7 @@ def string_ends_with_operation(
 
 
 @var_operation
-def string_codepoints_operation(string: StringVar[Any]):
+def string_chars_operation(string: StringVar[Any]):
     """Convert a string to an array of Unicode code points.
 
     Args:
