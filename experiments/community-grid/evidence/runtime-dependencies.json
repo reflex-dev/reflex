@@ -1,0 +1,82 @@
+{
+  "name": "community-grid",
+  "dependencies": {
+    "ag-grid-community": {
+      "version": "34.3.1",
+      "resolved": "https://registry.npmjs.org/ag-grid-community/-/ag-grid-community-34.3.1.tgz",
+      "overridden": false,
+      "dependencies": {
+        "ag-charts-types": {
+          "version": "12.3.1",
+          "resolved": "https://registry.npmjs.org/ag-charts-types/-/ag-charts-types-12.3.1.tgz",
+          "overridden": false
+        }
+      }
+    },
+    "ag-grid-react": {
+      "version": "34.3.1",
+      "resolved": "https://registry.npmjs.org/ag-grid-react/-/ag-grid-react-34.3.1.tgz",
+      "overridden": false,
+      "dependencies": {
+        "ag-grid-community": {
+          "version": "34.3.1"
+        },
+        "prop-types": {
+          "version": "15.8.1",
+          "resolved": "https://registry.npmjs.org/prop-types/-/prop-types-15.8.1.tgz",
+          "overridden": false,
+          "dependencies": {
+            "loose-envify": {
+              "version": "1.4.0",
+              "resolved": "https://registry.npmjs.org/loose-envify/-/loose-envify-1.4.0.tgz",
+              "overridden": false,
+              "dependencies": {
+                "js-tokens": {
+                  "version": "4.0.0",
+                  "resolved": "https://registry.npmjs.org/js-tokens/-/js-tokens-4.0.0.tgz",
+                  "overridden": false
+                }
+              }
+            },
+            "object-assign": {
+              "version": "4.1.1",
+              "resolved": "https://registry.npmjs.org/object-assign/-/object-assign-4.1.1.tgz",
+              "overridden": false
+            },
+            "react-is": {
+              "version": "16.13.1",
+              "resolved": "https://registry.npmjs.org/react-is/-/react-is-16.13.1.tgz",
+              "overridden": false
+            }
+          }
+        },
+        "react-dom": {
+          "version": "19.1.1"
+        },
+        "react": {
+          "version": "19.1.1"
+        }
+      }
+    },
+    "react-dom": {
+      "version": "19.1.1",
+      "resolved": "https://registry.npmjs.org/react-dom/-/react-dom-19.1.1.tgz",
+      "overridden": false,
+      "dependencies": {
+        "react": {
+          "version": "19.1.1"
+        },
+        "scheduler": {
+          "version": "0.26.0",
+          "resolved": "https://registry.npmjs.org/scheduler/-/scheduler-0.26.0.tgz",
+          "overridden": false
+        }
+      }
+    },
+    "react": {
+      "version": "19.1.1",
+      "resolved": "https://registry.npmjs.org/react/-/react-19.1.1.tgz",
+      "overridden": false
+    }
+  }
+}

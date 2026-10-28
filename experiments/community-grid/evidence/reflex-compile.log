@@ -1,0 +1,37 @@
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+─────────────────────────── Initializing grid_review ───────────────────────────
+Info: Initializing the web directory.
+Info: Failed to connect to https://registry.npmmirror.com.
+Info: Failed to connect to https://registry.npmmirror.com.
+Info: Failed to connect to https://registry.npmmirror.com.
+Warning: Your version (0.0.1.dev3797+17370c28) of reflex is out of date. Upgrade
+to 0.10.1 with 'pip install reflex --upgrade'
+Success: Initialized grid_review. Install dependencies from `requirements.txt` 
+with `uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Progress: 1/12
+Progress: 2/12
+Progress: 3/12
+Progress: 4/12
+Progress: 5/12
+Progress: 6/12
+Progress: 7/12
+Progress: 8/12
+Progress: 9/13
+Progress: 10/13
+Progress: 11/13
+Progress: 12/13
+Progress: 13/13
+Progress: 14/13
+Success: App compiled successfully in 5.235 seconds.

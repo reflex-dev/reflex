@@ -9,6 +9,7 @@ _COMPONENTS_MAPPING = {
     "components.base.button": ["button"],
     "components.base.card": ["card"],
     "components.base.checkbox": ["checkbox"],
+    "components.base.community_grid": ["community_grid"],
     "components.base.collapsible": ["collapsible"],
     "components.base.context_menu": ["context_menu"],
     "components.base.dialog": ["dialog"],

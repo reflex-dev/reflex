@@ -1,0 +1,78 @@
+{
+  "version": "34.3.1",
+  "sort": {
+    "sortModel": [
+      {
+        "colId": "revenue",
+        "sort": "desc"
+      }
+    ]
+  },
+  "columnPinning": {
+    "leftColIds": [
+      "region"
+    ],
+    "rightColIds": []
+  },
+  "columnVisibility": {
+    "hiddenColIds": [
+      "active"
+    ]
+  },
+  "columnSizing": {
+    "columnSizingModel": [
+      {
+        "colId": "ag-Grid-SelectionColumn",
+        "width": 50
+      },
+      {
+        "colId": "name",
+        "width": 260
+      },
+      {
+        "colId": "revenue",
+        "flex": 1,
+        "width": 613
+      },
+      {
+        "colId": "region",
+        "width": 307
+      },
+      {
+        "colId": "active",
+        "flex": 1,
+        "width": 306
+      }
+    ]
+  },
+  "columnOrder": {
+    "orderedColIds": [
+      "ag-Grid-SelectionColumn",
+      "name",
+      "revenue",
+      "region",
+      "active"
+    ]
+  },
+  "filter": {
+    "filterModel": {
+      "region": {
+        "filterType": "text",
+        "type": "contains",
+        "filter": "North"
+      }
+    }
+  },
+  "rowSelection": [
+    "row-8991"
+  ],
+  "pagination": {
+    "page": 1,
+    "pageSize": 25
+  },
+  "focusedCell": {
+    "colId": "name",
+    "rowIndex": 26,
+    "rowPinned": null
+  }
+}

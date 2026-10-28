@@ -1,0 +1,84 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="icon" href="data:," />
+    <title>Community Grid review</title>
+    <style>
+      :root {
+        --font-sans: Inter, system-ui, sans-serif;
+        --primary-9: #6e56cf;
+        --secondary-1: #fff;
+        --secondary-2: #f9f9fb;
+        --secondary-6: #e2e2e5;
+        --secondary-11: #64646b;
+        --secondary-12: #202024;
+        --radius-ui-md: 8px;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #f8f8fa;
+        font-family: var(--font-sans);
+        color: var(--secondary-12);
+      }
+      main {
+        max-width: 1280px;
+        margin: auto;
+        padding: 24px;
+      }
+      h1 {
+        font-size: 22px;
+        margin: 0 0 8px;
+      }
+      p {
+        color: #64646b;
+        font-size: 14px;
+      }
+      header {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin: 20px 0;
+      }
+      button,
+      input {
+        font: inherit;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        background: white;
+        padding: 8px 10px;
+      }
+      #host {
+        height: 520px;
+      }
+      .dark {
+        --secondary-1: #202024;
+        --secondary-2: #28282d;
+        --secondary-6: #42424a;
+        --secondary-11: #b0b0b8;
+        --secondary-12: #f5f5f8;
+        background: #18181b;
+      }
+      #snapshot {
+        font: 12px monospace;
+        white-space: pre-wrap;
+        max-height: 100px;
+        overflow: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Community data grid</h1>
+      <p>
+        Deterministic synthetic rows · read-only data · personal layout state
+      </p>
+      <div id="app"></div>
+    </main>
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>
