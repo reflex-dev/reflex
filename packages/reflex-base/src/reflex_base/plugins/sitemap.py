@@ -149,7 +149,7 @@ def generate_links_for_sitemap(
     from reflex_base.config import get_config
 
     app_config = get_config()
-    deploy_url = app_config.backend_url
+    deploy_url = app_config.frontend_url
 
     links: list[SitemapLink] = []
 

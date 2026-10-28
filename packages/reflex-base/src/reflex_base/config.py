@@ -163,7 +163,7 @@ class BaseConfig:
         backend_port: The port to run the backend on. NOTE: When running in dev mode, the next available port will be used if this is taken.
         backend_path: The path prefix for backend routes. For example, "/api" mounts the event websocket, /ping, /_upload, /_health, and /_all_routes under /api, and is automatically included in URLs baked into the frontend. Changing this requires a full `reflex run` restart — routes are registered at startup.
         api_url: The backend url the frontend will connect to. Only needs to be set when the backend is listening on a different address than the frontend.
-        deploy_url: The public url the frontend is hosted on, when it differs from the backend origin. Unset by default: in prod mode the backend then serves the frontend from its own origin, and backend_url falls back to api_url.
+        deploy_url: The public url the frontend is hosted on, when it differs from the backend origin. Unset by default: in prod mode the backend then serves the frontend from its own origin, and frontend_url falls back to http://localhost:<frontend_port>.
         backend_host: The url the backend will be hosted on.
         trusted_proxy_hops: Number of trusted reverse proxies used to resolve client IPs from X-Forwarded-For. Defaults to 0, which ignores X-Forwarded-For.
         db_url: The database url used by rx.Model.
@@ -734,14 +734,16 @@ class Config(BaseConfig):
         return self._prepend_path(path, self.backend_path)
 
     @property
-    def backend_url(self) -> str:
-        """The public url the app is reachable at.
+    def frontend_url(self) -> str:
+        """The public url the frontend is reachable at.
 
         Returns:
-            ``deploy_url`` when set, otherwise ``api_url``, which is the origin the
-            backend serves the frontend from.
+            ``deploy_url`` when set, otherwise ``http://localhost:<frontend_port>``.
         """
-        return self.deploy_url or self.api_url
+        return (
+            self.deploy_url
+            or f"http://localhost:{self.frontend_port or constants.DefaultPorts.FRONTEND_PORT}"
+        )
 
     @property
     def app_module(self) -> ModuleType | None:
