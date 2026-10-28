@@ -657,11 +657,15 @@ def _stable_var_digest(marker: re.Match[str]) -> str:
         marker: The marker found in a string.
 
     Returns:
-        A short hex digest.
+        A short hex digest, or an empty string for an unknown marker.
     """
     from reflex_base.vars.base import _global_vars
 
-    var = _global_vars[int(marker.group(1))]
+    key = marker.group(1)
+    # Event refs take any string, which can hold a marker no Var here wrote.
+    var = _global_vars.get(int(key)) if key.lstrip("-").isdigit() else None
+    if var is None:
+        return ""
     identity = f"{var._js_expr}\0{var._var_type}".encode()
     return hashlib.sha256(identity).hexdigest()[:_VAR_DIGEST_LENGTH]
 
