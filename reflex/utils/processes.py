@@ -402,6 +402,7 @@ def stream_logs(
     suppress_errors: bool = False,
     analytics_enabled: bool = False,
     prior_logs: tuple[tuple[str, ...], ...] = (),
+    expected_exit: Callable[[], bool] | None = None,
 ):
     """Stream the logs for a process.
 
@@ -412,6 +413,8 @@ def stream_logs(
         suppress_errors: If True, do not exit if errors are encountered (for fallback).
         analytics_enabled: Whether analytics are enabled for this command.
         prior_logs: The logs of the prior processes that have been run.
+        expected_exit: Reports whether the process was asked to stop, in which
+            case its exit code is not a failure whatever its value.
 
     Yields:
         The lines of the process output.
@@ -463,7 +466,11 @@ def stream_logs(
             *(-sig for sig in interrupt_signals),
             *(128 + sig for sig in interrupt_signals),
         }
-    if process.returncode not in accepted_return_codes and not suppress_errors:
+    if (
+        process.returncode not in accepted_return_codes
+        and not suppress_errors
+        and not (expected_exit is not None and expected_exit())
+    ):
         logger.error(f"{message} failed with exit code {process.returncode}")
         if "".join(logs).count("CERT_HAS_EXPIRED") > 0:
             bunfig = prerequisites.get_web_dir() / constants.Bun.CONFIG_PATH

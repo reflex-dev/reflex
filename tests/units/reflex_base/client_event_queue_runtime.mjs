@@ -27,7 +27,6 @@ export async function createQueueRuntime(
     "socket.io-client": { default: unused },
     mergician: { mergician: unused },
     "$/env.json": { default: {} },
-    "$/reflex.json": { default: {} },
     "universal-cookie": {
       default: class {
         remove() {}

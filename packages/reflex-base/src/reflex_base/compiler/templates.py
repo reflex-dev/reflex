@@ -320,6 +320,7 @@ def context_template(
     state_str = (
         rf"""
 export const state_name = "{state_name}"
+export const on_load_internal_event = '{state_name}.{constants.CompileVars.ON_LOAD_INTERNAL}'
 
 export const exception_state_name = "{constants.CompileVars.FRONTEND_EXCEPTION_STATE_FULL}"
 
@@ -374,6 +375,7 @@ export const initialEvents = (first = false) => {{
         if state_name
         else """
 export const state_name = undefined
+export const on_load_internal_event = undefined
 
 export const exception_state_name = undefined
 
@@ -434,6 +436,7 @@ registerApp({{
   initialState,
   clientStorage,
   state_name,
+  on_load_internal_event,
   stateSchema,
   exception_state_name,
   onLoadInternalEvent,

@@ -1,5 +1,6 @@
 """Tests for reflex_base.client_state."""
 
+import re
 from typing import Any, cast
 
 import pytest
@@ -324,8 +325,8 @@ def test_generated_names_are_sequential_and_distinct() -> None:
     """Unnamed vars get distinct, counter-derived names."""
     names = [client_state()._state_name for _ in range(3)]
     assert len(set(names)) == 3
-    assert all(name.startswith("cs") for name in names)
-    numbers = [int(name.removeprefix("cs")) for name in names]
+    assert all(name.startswith("cs$") for name in names)
+    numbers = [int(name.removeprefix("cs$")) for name in names]
     assert numbers == sorted(numbers)
 
 
@@ -333,10 +334,10 @@ def test_generated_names_unaffected_by_unrelated_var_names() -> None:
     """An unrelated placeholder draw must not shift the client state sequence."""
     from reflex_base.vars.base import get_unique_variable_name
 
-    before = int(client_state()._state_name.removeprefix("cs"))
+    before = int(client_state()._state_name.removeprefix("cs$"))
     get_unique_variable_name()
     rx.Var.create([1, 2, 3]).to(list).map(lambda x: x)  # pyright: ignore [reportAttributeAccessIssue]
-    after = int(client_state()._state_name.removeprefix("cs"))
+    after = int(client_state()._state_name.removeprefix("cs$"))
     assert after == before + 1
 
 
@@ -663,6 +664,17 @@ def test_generated_names_stay_unique_across_prefixes() -> None:
         client_state(0)._state_name,
     ]
     assert len(set(names)) == 3
+
+
+def test_generated_name_separates_prefix_from_counter() -> None:
+    """``$`` sits between prefix and counter, so ``row1`` + 0 is never ``row`` + 10."""
+    assert re.fullmatch(r"row1\$\d+", client_state(0, prefix="row1")._state_name)
+    assert re.fullmatch(r"row\$\d+", client_state(0, prefix="row")._state_name)
+    # The identifiers derived from it stay valid javascript.
+    cs = client_state(0, prefix="row")
+    assert _hook(cs).startswith(f"const [{cs._state_name}RxClientState, setRow$")
+    with pytest.raises(ValueError, match=r"must not contain '\$'"):
+        client_state(0, prefix="row$1")
 
 
 @pytest.mark.parametrize("bad", ["1bad", "my-prefix", "", "a b"])
