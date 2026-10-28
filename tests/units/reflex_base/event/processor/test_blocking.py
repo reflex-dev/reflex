@@ -28,6 +28,16 @@ def _track_queued_probe(
     def track_probe(
         callback: Callable[..., Any], *args: Any, **kwargs: Any
     ) -> asyncio.Handle:
+        """Queue the callback and record that a probe was queued.
+
+        Args:
+            callback: The callback to queue.
+            *args: Positional arguments for the callback.
+            **kwargs: Keyword arguments for call_soon_threadsafe.
+
+        Returns:
+            The handle of the queued callback.
+        """
         handle = call_soon_threadsafe(callback, *args, **kwargs)
         probe_queued.set()
         return handle
@@ -63,6 +73,7 @@ def _blocking(
     """
 
     async def blocking_handler():  # noqa: RUF029
+        """Block the loop for the duration after a probe is queued."""
         assert probe_queued.wait(timeout=1)
         time.sleep(duration)  # noqa: ASYNC251
 
@@ -144,6 +155,7 @@ async def test_awaiting_event_is_not_reported(
     """Do not report handlers that yield control while doing async work."""
 
     async def yielding_handler():
+        """Yield to the loop while waiting."""
         await asyncio.sleep(0.1)
 
     await _run_monitored(
@@ -161,6 +173,11 @@ async def test_hung_event_is_reported_while_still_blocked(
 
     class _SetOnWarning(logging.Handler):
         def emit(self, record: logging.LogRecord) -> None:
+            """Record that the monitor logged a warning.
+
+            Args:
+                record: The log record.
+            """
             warned.set()
 
     handler = _SetOnWarning(level=logging.WARNING)
@@ -168,7 +185,7 @@ async def test_hung_event_is_reported_while_still_blocked(
     blocking_logger.addHandler(handler)
 
     async def hung_handler():  # noqa: RUF029
-        # Stands in for a handler that never releases the loop.
+        """Hold the loop until the monitor warns, like a handler that never returns."""
         assert warned.wait(timeout=1)
 
     try:
@@ -195,6 +212,11 @@ async def test_stack_without_task_entry_is_not_reported(
     )
 
     async def handler():  # noqa: RUF029
+        """Describe the blocking from inside the event task.
+
+        Returns:
+            The description of the blocking.
+        """
         return monitor._describe_blocking()
 
     description = await asyncio.create_task(
