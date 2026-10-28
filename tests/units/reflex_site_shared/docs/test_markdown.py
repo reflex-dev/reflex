@@ -166,6 +166,17 @@ def test_render_markdown_renders_alert_directives() -> None:
     assert "All good" in title_only
 
 
+def test_title_only_alert_wraps_unbroken_inline_code() -> None:
+    """Title-only warnings must wrap long identifiers without an accordion trigger."""
+    identifier = "rx.context_menu.an_extremely_long_unbroken_component_identifier"
+    document = render_markdown(f"```md alert warning\n# `{identifier}`\n```\n")
+    title = document.children[0].children[0].children[1]
+
+    assert isinstance(title, rx.Component)
+    assert identifier in str(title)
+    assert str(title.style.get("overflowWrap")) == '"anywhere"'
+
+
 def test_render_markdown_renders_video_quote_and_tabs_directives() -> None:
     """Render the video, quote, and tabs directive shapes."""
     video = str(
