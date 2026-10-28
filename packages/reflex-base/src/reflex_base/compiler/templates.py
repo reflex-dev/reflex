@@ -55,9 +55,8 @@ class _RenderUtils:
         ])
         arg = component["arg_name"]
         index = component["arg_index"]
-        # Provide the item and index to the subtree by name. Descendants that
-        # compile into their own components read them from context, so a hoisted
-        # handler or a lifted memo body no longer loses the loop scope.
+        # Provide the item and index to the subtree by name, so descendants
+        # that compile into their own components read them from context.
         values = f"{{{arg}:{arg},{index}:{index}}}"
         # The provider is the element the map yields, so it carries the key.
         key = component["item_key"]

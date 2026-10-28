@@ -37,12 +37,11 @@ def _deprecate(feature_name: str) -> None:
 
 
 def _legacy_name(var_name: str | None, global_ref: bool | Any) -> str | None:
-    """Map the legacy ``(var_name, global_ref)`` pair onto the new scoping rules.
+    """Map the legacy ``(var_name, global_ref)`` pair onto the naming rules.
 
-    ``global_ref`` defaulted to true and an omitted ``var_name`` was generated,
-    so an unnamed legacy var was still global and reachable from the backend.
-    Only ``global_ref=False`` meant "anonymous": that name was never a store
-    key, so dropping it reproduces that exactly.
+    ``global_ref`` defaults to true and an omitted ``var_name`` is generated, so
+    a legacy var is global unless ``global_ref=False`` is passed, in which case
+    its name is dropped and the var is scoped.
 
     Args:
         var_name: The legacy name.
@@ -80,7 +79,7 @@ class ClientStateVar(_ClientStateVar):
         Args:
             var_name: The name of the variable. Naming it makes the var global.
             default: The default value of the variable.
-            global_ref: Formerly selected whether the state was app-wide. Scoping
+            global_ref: Whether the state is app-wide. Scoping
                 now follows from whether the var is named, so this is only honored
                 to keep existing callers behaving as they did.
 
@@ -101,7 +100,7 @@ def client_state(
     Args:
         var_name: The name of the variable. Naming it makes the var global.
         default: The default value of the variable.
-        global_ref: Formerly selected whether the state was app-wide. Scoping now
+        global_ref: Whether the state is app-wide. Scoping now
             follows from whether the var is named, so this is only honored to
             keep existing callers behaving as they did.
 

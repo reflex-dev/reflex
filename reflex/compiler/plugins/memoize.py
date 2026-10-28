@@ -395,9 +395,8 @@ class MemoizeStatefulPlugin(Plugin):
         The item is first rendered through its own memo component (see
         :meth:`_isolate_loop_item`), whose body was walked with this plugin
         alone, so descendants still get their own memo modules while the page
-        collector never sees them — their hooks, imports, refs and custom code
-        belong to the memo body that renders them, exactly as when the walker
-        skipped the subtree outright.
+        collector never sees them: their hooks, imports, refs and custom code
+        belong to the memo body that renders them.
 
         Args:
             comp: The structural snapshot child.

@@ -27,19 +27,17 @@ _SCOPED_VALUE_IMPORT = {
 def scoped_loop_var(name: str, var_type: GenericType) -> Var:
     """Build a loop var that reads its value from the enclosing scope.
 
-    A loop var used to render as nothing but the map callback's parameter, which
-    broke the moment anything referencing it compiled into its own function -- an
-    event handler hoisted into a ``useCallback``, or a subtree lifted into its own
-    memo module (reflex-dev/reflex#3210). The loop now publishes the item and
-    index by name around each rendered item, so a consumer reads them from
-    context wherever the compiler puts it.
+    The loop publishes its item and index by name around each rendered item,
+    so a consumer that compiles into its own function -- an event handler in a
+    ``useCallback``, a subtree in its own memo module -- reads them from context
+    rather than from the map callback's parameter.
 
     The hook declares the *same* identifier as the map callback's parameter, on
     purpose. Hooks float to the top of whichever component they land in, so in
     the module that renders the loop itself the declaration sits above the
-    ``.map`` and would read nothing -- the parameter shadows it for everything
-    inside the callback, which is exactly the scope where the parameter is the
-    real value. Anywhere else there is no parameter, and the context read wins.
+    ``.map`` and reads nothing; the parameter shadows it for everything inside
+    the callback, which is exactly the scope where the parameter is the real
+    value. Anywhere else there is no parameter, and the context read wins.
 
     Args:
         name: The name the value is provided under.
