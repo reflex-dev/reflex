@@ -15,9 +15,7 @@ from reflex_base.config import get_config
 from reflex_base.environment import environment
 
 if TYPE_CHECKING:
-    from types import ModuleType
-
-    from opentelemetry.trace import Span
+    from opentelemetry.trace import Span, TracerProvider
 
 logger = logging.getLogger(__name__)
 
@@ -92,17 +90,23 @@ def _configure_sdk_from_environment() -> None:
         )
 
 
-def _workflow_otel() -> ModuleType | None:
-    """Return the reflex-workflow trace-point module when that package is installed.
+def _set_workflow_tracing(
+    enabled: bool, tracer_provider: TracerProvider | None = None
+) -> None:
+    """Turn the reflex-workflow trace points on or off when that package is installed.
 
-    Returns:
-        ``reflex_workflow.otel``, or None without a reflex-workflow that has it.
+    Args:
+        enabled: Whether to turn them on.
+        tracer_provider: The provider to trace through when turning them on.
     """
     try:
         from reflex_workflow import otel as workflow_otel
     except ImportError:
-        return None
-    return workflow_otel
+        return
+    if enabled:
+        workflow_otel.enable(tracer_provider=tracer_provider)
+    else:
+        workflow_otel.disable()
 
 
 def _redact_token(span: Span, scope: Any) -> None:
@@ -246,8 +250,7 @@ class ReflexInstrumentor(BaseInstrumentor):
             meter_provider=meter_provider,
             asgi_middleware_factory=asgi_middleware,
         )
-        if (workflow_otel := _workflow_otel()) is not None:
-            workflow_otel.enable(tracer_provider=tracer_provider)
+        _set_workflow_tracing(True, tracer_provider)
 
     def _uninstrument(self, **kwargs: Any) -> None:
         """Turn off the Reflex trace points.
@@ -256,5 +259,4 @@ class ReflexInstrumentor(BaseInstrumentor):
             **kwargs: Ignored.
         """
         otel.disable()
-        if (workflow_otel := _workflow_otel()) is not None:
-            workflow_otel.disable()
+        _set_workflow_tracing(False)

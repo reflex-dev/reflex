@@ -14,8 +14,6 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from collections.abc import MutableMapping
-
-if TYPE_CHECKING:
     from contextlib import AbstractContextManager
 
     from opentelemetry import context as context_api
@@ -166,7 +164,7 @@ def record_outcome(outcome: str) -> None:
     """Record how the current attempt ended on its span.
 
     Args:
-        outcome: ok, retry, failed, fenced, stale, or missing.
+        outcome: ok, retry, failed, or fenced.
     """
     if not enabled:
         return
