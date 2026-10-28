@@ -27,7 +27,6 @@ from unittest.mock import AsyncMock, Mock
 import pytest
 import pytest_asyncio
 import reflex_base
-from fastapi import FastAPI
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
@@ -56,6 +55,7 @@ from socketio import AsyncServer
 from starlette.applications import Starlette
 from starlette.datastructures import FormData, Headers, UploadFile
 from starlette.exceptions import HTTPException
+from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import ClientDisconnect, Request
 from starlette.responses import JSONResponse, StreamingResponse
 from starlette.testclient import TestClient
@@ -609,6 +609,7 @@ def test_api_transformer_lifespans_run(mocker: MockerFixture):
     Args:
         mocker: The mock fixture for skipping frontend compilation.
     """
+    fastapi = pytest.importorskip("fastapi")
     events: list[str] = []
 
     def recording_lifespan(name: str, state: dict[str, str] | None = None) -> Any:
@@ -630,7 +631,7 @@ def test_api_transformer_lifespans_run(mocker: MockerFixture):
 
         return recorder
 
-    inner = FastAPI(lifespan=recording_lifespan("inner"))
+    inner = fastapi.FastAPI(lifespan=recording_lifespan("inner"))
     inner.mount("/sub", Starlette(lifespan=recording_lifespan("mounted")))
     outer = Starlette(lifespan=recording_lifespan("outer", {"db": "conn"}))
     outer.add_route("/db", read_state)
@@ -661,12 +662,13 @@ def test_api_transformer_lifespan_also_registered_warns(
         caplog: The log capture fixture.
         also_registered: Whether the lifespan is also registered as a task.
     """
+    fastapi = pytest.importorskip("fastapi")
 
     @contextlib.asynccontextmanager
     async def lifespan(app: Any):
         yield
 
-    app = App(api_transformer=FastAPI(lifespan=lifespan))
+    app = App(api_transformer=fastapi.FastAPI(lifespan=lifespan))
     if also_registered:
         app.register_lifespan_task(lifespan)
     mocker.patch.object(app, "_compile")
@@ -735,11 +737,10 @@ def test_api_transformer_lifespan_shutdown_failure_is_reported(
     app.register_lifespan_task(reflex_task)
     mocker.patch.object(app, "_compile")
 
-    client = TestClient(app())
-    client.__enter__()
-    assert client.get("/ping").status_code == 200
-    with pytest.raises(RuntimeError, match="boom"):
-        client.__exit__(None, None, None)
+    status_codes: list[int] = []
+    with pytest.raises(RuntimeError, match="boom"), TestClient(app()) as client:
+        status_codes.append(client.get("/ping").status_code)
+    assert status_codes == [200]
     assert stopped == ["reflex"]
 
 
@@ -775,6 +776,42 @@ def test_api_transformer_routes_get_cors_headers(
             assert response.headers.get_list("access-control-allow-origin") == [
                 "http://example.com"
             ]
+
+
+@pytest.mark.parametrize("transformer", [None, "starlette", "callable"])
+def test_unhandled_route_error_gets_cors_headers(
+    mocker: MockerFixture, transformer: str | None
+):
+    """A 500 from an unhandled route error answers with CORS headers exactly once.
+
+    Args:
+        mocker: The mock fixture for skipping frontend compilation.
+        transformer: The kind of api_transformer to use, if any.
+    """
+
+    async def boom(request: Request) -> JSONResponse:  # noqa: RUF029
+        msg = "boom"
+        raise ValueError(msg)
+
+    starlette_app = Starlette()
+    api_transformers = {
+        None: None,
+        "starlette": starlette_app,
+        "callable": lambda asgi_app: asgi_app,
+    }
+    app = App(api_transformer=api_transformers[transformer])
+    assert app._api is not None
+    # The route sits on the outermost Starlette app.
+    router = starlette_app if transformer == "starlette" else app._api
+    router.add_route("/boom", boom)
+    mocker.patch.object(app, "_compile")
+
+    with TestClient(app(), raise_server_exceptions=False) as client:
+        response = client.get("/boom", headers={"Origin": "http://example.com"})
+    assert response.status_code == 500
+    assert response.headers.get_list("access-control-allow-origin") == [
+        "http://example.com"
+    ]
 
 
 @pytest.mark.skipif(
@@ -3717,7 +3754,8 @@ def test_call_app():
     app._compile = unittest.mock.Mock()
     api = app()
     assert isinstance(api, _RootMiddleware)
-    assert api.app is app._api
+    assert isinstance(api.app, CORSMiddleware)
+    assert api.app.app is app._api
 
 
 def _probe_worker_token_identity(app: App, redis: AsyncMock, sender: Connection):

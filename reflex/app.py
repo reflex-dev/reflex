@@ -965,12 +965,11 @@ class App(MiddlewareMixin, LifespanMixin):
 
             if asgi_app is not api:
                 lifespan_apps.append(asgi_app)
-            if api_transformers and not isinstance(api_transformers[-1], Starlette):
-                # Routes added by a callable transformer bypass the CORS of the apps it wraps.
-                asgi_app = cors.CORSMiddleware(asgi_app, **App._cors_options())
 
         top_asgi_app = _RootMiddleware(
-            asgi_app,
+            # Covers the routes a callable transformer adds and the 500 responses
+            # that the outermost Starlette app's error handler sends.
+            cors.CORSMiddleware(asgi_app, **App._cors_options()),
             reflex_app=self,
             lifespan=functools.partial(self._run_lifespan, api, lifespan_apps),
         )
