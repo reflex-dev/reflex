@@ -28,9 +28,11 @@ from reflex.istate.manager import (
     StateManager,
     StateModificationContext,
     _default_token_expiration,
+    _drop_cached_var_values,
 )
 from reflex.istate.manager.token import TOKEN_TYPE, BaseStateToken, StateToken
 from reflex.state import BaseState
+from reflex.utils.exec import is_prod_mode
 from reflex.utils.tasks import ensure_task
 
 logger = logging.getLogger(__name__)
@@ -205,6 +207,11 @@ class StateManagerRedis(StateManager):
     # The unique ID for this state manager, the domain for _local_leases.
     _instance_id: str = dataclasses.field(default_factory=lambda: str(uuid.uuid4()))
 
+    # In dev mode, the keys of the states this process already read. None in prod mode.
+    _dev_read_keys: set[str] | None = dataclasses.field(
+        default_factory=lambda: None if is_prod_mode() else set(), init=False
+    )
+
     # Lock waiters for redis per-token lock.
     _lock_waiters: dict[bytes, list[asyncio.Event]] = dataclasses.field(
         default_factory=dict,
@@ -315,6 +322,25 @@ class StateManagerRedis(StateManager):
             )
         return populated_states
 
+    def _drop_cached_vars_on_first_read(
+        self, token: BaseStateToken, state: BaseState
+    ) -> None:
+        """Drop the cached var values of a state on its first read in dev mode.
+
+        A hot reload starts a new process, so its first read of a state may
+        return values cached by the old code.
+
+        Args:
+            token: The token of the state tree.
+            state: The state read from redis.
+        """
+        if self._dev_read_keys is None:
+            return
+        state_key = token._state_key(type(state))
+        if state_key not in self._dev_read_keys:
+            self._dev_read_keys.add(state_key)
+            _drop_cached_var_values(state)
+
     @override
     async def get_state(
         self,
@@ -378,6 +404,7 @@ class StateManagerRedis(StateManager):
                 # Deserialize the substate.
                 with contextlib.suppress(StateSchemaMismatchError):
                     state = BaseState._deserialize(data=redis_state)
+                    self._drop_cached_vars_on_first_read(token, state)
             if state is None:
                 # Key didn't exist or schema mismatch so create a new instance for this token.
                 state = state_cls(

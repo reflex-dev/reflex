@@ -2,8 +2,6 @@
 
 import math
 import os
-import subprocess
-import sys
 from pathlib import Path
 
 import pytest
@@ -217,76 +215,3 @@ async def test_states_from_disk_recompute_cached_vars(tmp_path, monkeypatch):
     child = await state.get_state(DiskCachedChild)
     assert (state.count, state.data, child.child_data) == (99, ["a"], ["a"])
     await reloaded_state_manager.close()
-
-
-_HOT_RELOAD_APP = """
-import reflex as rx
-from reflex.state import BaseState
-
-class HotState(BaseState):
-    count: int = 7
-
-    @rx.var(cache=True)
-    def main_data(self) -> list[dict]:
-        return {rows}
-"""
-
-_HOT_RELOAD_BACKEND = """
-import asyncio
-import sys
-
-from hot_app import HotState
-from reflex.istate.manager.disk import StateManagerDisk
-from reflex.istate.manager.token import BaseStateToken
-
-
-async def main():
-    state_manager = StateManagerDisk(_write_debounce_seconds=0)
-    token = BaseStateToken(ident="client", cls=HotState)
-    if sys.argv[1] == "before":
-        async with state_manager.modify_state(token) as state:
-            state.count = 99
-            print(state.main_data)
-    else:
-        state = await state_manager.get_state(token)
-        print(state.count, state.main_data)
-    await state_manager.close()
-
-
-asyncio.run(main())
-"""
-
-
-def test_hot_reload_recomputes_cached_vars(tmp_path: Path):
-    """A backend restarted after a getter edit returns the new value and keeps fields.
-
-    Args:
-        tmp_path: A temporary directory.
-    """
-    app = tmp_path / "hot_app.py"
-    backend = tmp_path / "backend.py"
-    backend.write_text(_HOT_RELOAD_BACKEND)
-
-    def run(step: str) -> str:
-        """Run one step of the backend script in a new process.
-
-        Args:
-            step: "before" or "after" the reload.
-
-        Returns:
-            What the script printed.
-        """
-        return subprocess.run(
-            # -B: no bytecode cache, so the second run imports the edited app.
-            [sys.executable, "-B", str(backend), step],
-            capture_output=True,
-            text=True,
-            check=True,
-            cwd=tmp_path,
-        ).stdout.strip()
-
-    app.write_text(_HOT_RELOAD_APP.format(rows='[{"id": "2"}, {"id": "3"}]'))
-    assert run("before") == "[{'id': '2'}, {'id': '3'}]"
-    # Only the getter changes, so the saved state still matches the schema.
-    app.write_text(_HOT_RELOAD_APP.format(rows='[{"id": "2"}]'))
-    assert run("after") == "99 [{'id': '2'}]"

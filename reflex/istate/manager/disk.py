@@ -18,6 +18,7 @@ from reflex.istate.manager import (
     StateManager,
     StateModificationContext,
     _default_token_expiration,
+    _drop_cached_var_values,
     _release_state_tree,
 )
 from reflex.istate.manager.token import TOKEN_TYPE, BaseStateToken, StateToken
@@ -60,20 +61,6 @@ def _mark_replacement_state_touched(cached_state: object, state: object) -> None
     """
     if state is not cached_state and isinstance(state, BaseState):
         _mark_state_tree_touched(state)
-
-
-def _drop_cached_var_values(state: BaseState) -> None:
-    """Drop the computed var values cached in a state read from disk.
-
-    A state is only read from disk when it is not in memory, typically after
-    the backend restarted, as on a hot reload that may have changed the code.
-    Its fields are kept, and its computed vars are computed again when read.
-
-    Args:
-        state: The state read from disk.
-    """
-    for computed_var in state.computed_vars.values():
-        computed_var.mark_dirty(instance=state)
 
 
 @dataclasses.dataclass
