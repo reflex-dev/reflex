@@ -19,6 +19,7 @@ from reflex_components_internal.experimental.customization import (
 )
 
 from session_demo.model import Session
+from session_demo.pointer import pointer_surface
 
 ROWS = [
     {
@@ -56,11 +57,19 @@ def render_trend(
             reflex_xy.legend(
                 show=not hidden, loc="lower center", anchor=(0.5, 1.06), ncols=2
             ),
+            reflex_xy.interaction_config(
+                navigation=True,
+                pan=True,
+                zoom=True,
+                select=False,
+                brush=False,
+                default_drag_action="pan",
+            ),
             reflex_xy.x_axis(grid=False, label="Day"),
             reflex_xy.y_axis(grid=True, label="Synthetic revenue"),
             data=DATA,
             padding=(48, 12, 64, 54),
-            height="260px" if preview else "310px",
+            height="260px" if preview else card["content_height"].to(str) + "px",
             width="100%",
             style={
                 "font-family": "Inter, system-ui, sans-serif",
@@ -92,7 +101,9 @@ def render_accounts(
         page_size=card["page_size"].to(int),
         pagination=not preview,
         quick_filter=State.query,
-        height="230px" if preview else "320px",
+        height="230px" if preview else card["content_height"].to(str) + "px",
+        initial_state=card["grid_state"].to(dict),
+        on_state_changed=lambda state: State.grid_presentation(card["id"], state),
         selection_mode="none",
     )
 
@@ -135,11 +146,18 @@ REGISTRY = Registry((
         render_trend,
         (Option("legend", ("outside", "hidden"), "outside"),),
         min_width=6,
+        min_height=3,
+        max_height=8,
     ),
     Widget(
-        "accounts", render_accounts, (Option("page_size", (10, 25), 10),), min_width=6
+        "accounts",
+        render_accounts,
+        (Option("page_size", (10, 25), 10),),
+        min_width=6,
+        min_height=3,
+        max_height=8,
     ),
-    Widget("search", render_search, min_width=6, min_height=2),
+    Widget("search", render_search, min_width=6, min_height=2, max_height=5),
 ))
 TITLES = {"trend": "Revenue trend", "accounts": "Accounts", "search": "Account search"}
 
@@ -156,9 +174,31 @@ def card_data(item: Item) -> dict[str, Any]:
         "widget": item.widget,
         "title": TITLES[item.widget],
         "width": item.width,
+        "height": item.height,
+        "content_height": item.height * 72 + 22,
+        "min_height": REGISTRY.widget(item.widget).min_height,
+        "max_height": REGISTRY.widget(item.widget).max_height,
         "legend_hidden": options.get("legend") == "hidden",
         "page_size": options.get("page_size", 10),
     }
+
+
+def pointer_payload(command: dict[str, Any]) -> dict[str, Any]:
+    """Project browser gesture metadata into the exact Python command contract.
+
+    Returns:
+        The operation-specific command validated by Session.pointer.
+    """
+    keys = {
+        "add": ("op", "revision", "widget", "before"),
+        "move": ("op", "revision", "id", "before"),
+        "resize": ("op", "revision", "id", "width", "height"),
+    }
+    operation = command.get("op")
+    if type(operation) is not str or operation not in keys:
+        message = "Unsupported pointer operation"
+        raise ValueError(message)
+    return {key: command.get(key) for key in keys[operation]}
 
 
 class State(rx.State):
@@ -174,6 +214,8 @@ class State(rx.State):
     engine_calls: int = 0
     operation: str = "Session defaults"
     preferences_json: str = ""
+    pointer_result: dict[str, Any] = {}
+    _grid_states: dict[str, dict[str, Any]] = {}
     _session: Session | None = None
 
     def _get_session(self) -> Session:
@@ -183,7 +225,10 @@ class State(rx.State):
 
     def _sync(self):
         session = self._get_session()
-        self.cards = [card_data(item) for item in session.current.items]
+        self.cards = [
+            {**card_data(item), "grid_state": self._grid_states.get(item.id, {})}
+            for item in session.current.items
+        ]
         self.navigation = session.current.navigation
         self.editing = session.draft is not None
         self.engine_calls = session.engine_calls
@@ -213,6 +258,38 @@ class State(rx.State):
         except (ValueError, OSError) as error:
             self.error = str(error)
         self._sync()
+
+    @rx.event
+    def grid_presentation(self, item_id: str, value: dict[str, Any]):
+        """Retain Community presentation for real catalog-to-canvas additions."""
+        allowed = {item.id for item in self._get_session().current.items} | {
+            "preview-accounts"
+        }
+        if item_id in allowed:
+            self._grid_states[item_id] = value
+
+    @rx.event
+    def pointer_command(self, command: dict[str, Any]):
+        """Validate one completed pointer command through the actual Python Draft."""
+        self.error = ""
+        result: dict[str, Any] = {}
+        operation = command.get("op")
+        try:
+            payload = pointer_payload(command)
+            result = self._get_session().pointer(payload)
+            if operation == "add" and command.get("widget") == "accounts":
+                self._grid_states[result["id"]] = dict(
+                    self._grid_states.get("preview-accounts", {})
+                )
+        except ValueError as error:
+            self.error = str(error)
+        self._sync()
+        self.pointer_result = {
+            "request_id": command.get("request_id", ""),
+            "accepted": not self.error,
+            "id": result.get("id", ""),
+            "error": self.error,
+        }
 
     @rx.event
     def set_query(self, value: str):
@@ -347,7 +424,20 @@ def canvas_card(card: ObjectVar[dict[str, Any]]) -> rx.Component:
     """
     return rx.el.section(
         rx.el.div(
-            rx.el.h2(card["title"]),
+            rx.el.div(
+                rx.cond(
+                    State.editing,
+                    button(
+                        "⠿",
+                        None,
+                        aria_label="Drag " + card["title"].to(str),
+                        custom_attrs={"data-pointer-action": "move"},
+                        class_name="pointer-grip",
+                    ),
+                ),
+                rx.el.h2(card["title"]),
+                class_name="widget-title",
+            ),
             rx.cond(
                 State.editing,
                 rx.el.div(
@@ -383,10 +473,32 @@ def canvas_card(card: ObjectVar[dict[str, Any]]) -> rx.Component:
             ),
             class_name="card-heading",
         ),
-        render_widget(card),
+        rx.el.div(
+            render_widget(card),
+            class_name="widget-content",
+            style={"min_height": card["content_height"].to(str) + "px"},
+            custom_attrs={"data-widget-content": ""},
+        ),
+        rx.cond(
+            State.editing,
+            button(
+                "↘ Resize",
+                None,
+                aria_label="Resize " + card["title"].to(str),
+                custom_attrs={"data-pointer-action": "resize"},
+                class_name="pointer-resize",
+            ),
+        ),
         class_name=rx.cond(card["width"] == 6, "widget half", "widget full"),
         key=card["id"],
-        custom_attrs={"data-widget": card["widget"], "data-instance": card["id"]},
+        custom_attrs={
+            "data-widget": card["widget"],
+            "data-instance": card["id"],
+            "data-columns": card["width"],
+            "data-rows": card["height"],
+            "data-min-height": card["min_height"],
+            "data-max-height": card["max_height"],
+        },
     )
 
 
@@ -408,7 +520,17 @@ def catalog():
         ),
         *[
             rx.el.div(
-                rx.el.h3(TITLES[key]),
+                rx.el.div(
+                    button(
+                        "⠿",
+                        None,
+                        aria_label="Drag add " + TITLES[key],
+                        custom_attrs={"data-pointer-action": "add"},
+                        class_name="pointer-grip",
+                    ),
+                    rx.el.h3(TITLES[key]),
+                    class_name="widget-title",
+                ),
                 render_widget(
                     rx.Var.create({
                         "id": "preview-" + key,
@@ -416,11 +538,14 @@ def catalog():
                         "title": TITLES[key],
                         "legend_hidden": False,
                         "page_size": 10,
+                        "grid_state": {},
+                        "content_height": 260,
                     }),
                     True,
                 ),
                 button("Add " + TITLES[key], State.add(key)),
                 class_name="catalog-card",
+                custom_attrs={"data-catalog-widget": key},
             )
             for key in TITLES
         ],
@@ -478,13 +603,19 @@ def index():
             ),
             rx.el.p(State.status, role="status", id="session-status"),
             rx.cond(State.error != "", rx.el.p(State.error, role="alert")),
-            rx.el.div(
+            pointer_surface(
                 rx.el.div(
-                    rx.foreach(State.cards, canvas_card),
-                    class_name=rx.cond(State.editing, "canvas editing", "canvas"),
+                    rx.el.div(
+                        rx.foreach(State.cards, canvas_card),
+                        class_name=rx.cond(State.editing, "canvas editing", "canvas"),
+                    ),
+                    rx.cond(State.editing & State.catalog_open, catalog()),
+                    class_name="workspace",
                 ),
-                rx.cond(State.editing & State.catalog_open, catalog()),
-                class_name="workspace",
+                editing=State.editing,
+                revision=State.engine_calls,
+                result=State.pointer_result,
+                on_command=State.pointer_command,
             ),
             rx.el.details(
                 rx.el.summary("Session verification"),

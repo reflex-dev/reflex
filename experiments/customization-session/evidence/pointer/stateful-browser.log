@@ -1,0 +1,15 @@
+ghost is same inert actual grid node
+pointer movement has no Python stage before release
+drop changes actual server draft order
+acknowledged reorder keeps actual grid and sort
+Escape cancels without a Python stage
+resize validates snapped width and height on Python Draft
+drag-add ghost is same actual catalog grid
+catalog grid sort survives into new actual destination
+XY ghost retains actual renderer and zoomed state
+catalog XY zoom survives into new actual destination
+Cancel after repeated pointer changes restores original saved preferences
+second canceled drag stages nothing
+Save after canceled drag preserves authoritative layout
+1024px left-nav dock remains readable without page overflow
+no uncaught browser errors

@@ -2,6 +2,7 @@
 
 from collections.abc import Callable
 from dataclasses import replace
+from itertools import pairwise
 
 from reflex_components_internal.experimental.customization import (
     Draft,
@@ -137,3 +138,112 @@ class Session:
             f"{key}-{suffix}", key, y=y, width=12, height=2 if key == "search" else 4
         )
         self.stage(replace(self.current, items=(*items, item)))
+
+    def pointer(self, command: dict) -> dict[str, str]:
+        """Validate one versioned pointer drop before staging the real draft.
+
+        This ordered vertical adapter preserves explicit inter-item gaps. Pointer
+        movement and presentation snapshots never enter this method.
+
+        Args:
+            command: One add, move, or resize command at the observed revision.
+
+        Returns:
+            The existing or newly allocated widget instance ID.
+
+        Raises:
+            ValueError: A closed, stale, malformed or unsupported drop.
+        """
+        if self.draft is None:
+            msg = "Open Customize first"
+            raise ValueError(msg)
+        if type(command) is not dict:
+            msg = "Pointer command must be an object"
+            raise ValueError(msg)
+        if (
+            type(command.get("revision")) is not int
+            or command["revision"] != self.engine_calls
+        ):
+            msg = "Pointer command revision is stale or invalid"
+            raise ValueError(msg)
+        operation = command.get("op")
+        fields = {
+            "add": {"op", "revision", "widget", "before"},
+            "move": {"op", "revision", "id", "before"},
+            "resize": {"op", "revision", "id", "width", "height"},
+        }
+        if (
+            type(operation) is not str
+            or operation not in fields
+            or set(command) != fields[operation]
+        ):
+            msg = "Pointer command fields are invalid"
+            raise ValueError(msg)
+        current = self.current
+        items = list(current.items)
+        if operation == "add":
+            key = command["widget"]
+            if type(key) is not str or not key:
+                msg = "Pointer widget must be a registered key"
+                raise ValueError(msg)
+            self.registry.widget(key)
+            suffix = 1
+            while any(item.id == f"{key}-{suffix}" for item in items):
+                suffix += 1
+            instance = Item(
+                f"{key}-{suffix}", key, width=12, height=2 if key == "search" else 4
+            )
+        else:
+            item_id = command["id"]
+            if type(item_id) is not str or not any(
+                item.id == item_id for item in items
+            ):
+                msg = "Pointer widget instance does not exist"
+                raise ValueError(msg)
+            instance = next(item for item in items if item.id == item_id)
+        if operation == "resize":
+            width, height = command["width"], command["height"]
+            if (
+                type(width) is not int
+                or width not in (6, 12)
+                or type(height) is not int
+            ):
+                msg = "Pointer size must use allowed integer dimensions"
+                raise ValueError(msg)
+            delta = height - instance.height
+            index = items.index(instance)
+            items[index] = replace(instance, width=width, height=height)
+            items[index + 1 :] = [
+                replace(item, y=item.y + delta) for item in items[index + 1 :]
+            ]
+        else:
+            before = command["before"]
+            if (
+                type(before) is not str
+                or (before and not any(item.id == before for item in items))
+                or before == instance.id
+            ):
+                msg = "Pointer destination does not exist or is the source"
+                raise ValueError(msg)
+            gaps = [items[0].y] if items else []
+            gaps.extend(
+                item.y - previous.y - previous.height
+                for previous, item in pairwise(items)
+            )
+            if operation == "move":
+                items.remove(instance)
+            destination = next(
+                (i for i, item in enumerate(items) if item.id == before), len(items)
+            )
+            if operation == "add":
+                gaps.insert(destination, 0)
+            items.insert(destination, instance)
+            y = 0
+            for index, item in enumerate(items):
+                y += gaps[index]
+                items[index] = replace(item, y=y)
+                y += item.height
+        candidate = replace(current, items=tuple(items))
+        self.registry.validate(candidate)
+        self.stage(candidate)
+        return {"id": instance.id}

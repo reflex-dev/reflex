@@ -1,0 +1,31 @@
+{
+  "sharedIntegrationBase": "829949fdee12f738615ef1ffb7db128fd8225359",
+  "observedXYCommit": "2b5ac52bb0a83b2b24bc7d2b7b629a9d6e9e1084",
+  "scope": "Actual Reflex event bridge to shared Python Draft, in-memory session only, vertical ordered layout adapter.",
+  "hashes": {
+    "pointerSurface": {
+      "file": "experiments/customization-session/session_demo/PointerSurface.js",
+      "sha256": "da73e04fe28a0ab2df6be8f3300951170d4fabcfa59c27814de47bb5d8b8ca7d"
+    },
+    "sessionModel": {
+      "file": "experiments/customization-session/session_demo/model.py",
+      "sha256": "da8216cb5fcd12939d4b553f76411813aefa3d884fbbe16f8cddf4972b7c02dc"
+    },
+    "reflexBindings": {
+      "file": "experiments/customization-session/session_demo/session_demo.py",
+      "sha256": "4815966c1b6eaf17e4b68d11ddf186304f0af75f5bf3866473b45616f3926598"
+    },
+    "sharedDraft": {
+      "file": "packages/reflex-components-internal/src/reflex_components_internal/experimental/customization.py",
+      "sha256": "d826f25665e01316604dde751cafbd7b051772b043271c19c62140be4b1eec30"
+    },
+    "sharedGrid": {
+      "file": "packages/reflex-components-internal/src/reflex_components_internal/components/base/CommunityGrid.js",
+      "sha256": "57337227c56f6e44d882c4bf9c1c58423a42db1d9d77f95646f3d31856186a7e"
+    },
+    "xyRuntime": {
+      "file": "/workspace/xy-integration/python/xy/static/index.js",
+      "sha256": "52e0cb33e6764dc5331dcb5035ecf777d4164db55f50f7e440f3faf2ee290f20"
+    }
+  }
+}

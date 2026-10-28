@@ -7,8 +7,8 @@ config = rx.Config(
     app_name="session_demo",
     telemetry_enabled=False,
     state_manager_mode=rx.constants.StateManagerMode.MEMORY,
-    frontend_port=4201,
-    backend_port=8201,
+    frontend_port=4202,
+    backend_port=8202,
     plugins=[rx.plugins.TailwindV4Plugin(), reflex_xy.XYPlugin()],
     disable_plugins=[rx.plugins.SitemapPlugin],
 )
