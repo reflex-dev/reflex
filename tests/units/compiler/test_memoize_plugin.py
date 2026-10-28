@@ -1658,7 +1658,7 @@ def test_client_state_setter_only_sibling_memo_initializes_state(
     )
     # A global var passes ``true`` as the third argument; a scoped var omits it.
     hook = re.search(
-        r'const \[\w+, (set\w+)\] = useClientState\("a", "(\w+)"(, true)?\)',
+        r'const \[[\w$]+, (set[\w$]+)\] = useClientState\("a", "([\w$]+)"(, true)?\)',
         button_memo,
     )
     assert hook is not None, button_memo

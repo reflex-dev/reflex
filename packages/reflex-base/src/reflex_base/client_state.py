@@ -70,6 +70,34 @@ _DEFAULT_NAME_PREFIX = "cs"
 
 _VALID_NAME = re.compile(r"^[A-Za-z_$][A-Za-z0-9_$]*$")
 
+
+def _generate_name(prefix: str = _DEFAULT_NAME_PREFIX) -> str:
+    """Build the name of an unnamed var from a prefix and the shared counter.
+
+    ``$`` separates the two and is not allowed in the prefix, so two generated
+    names are equal only when both their prefixes and their counters are.
+
+    Args:
+        prefix: The readable part of the name.
+
+    Returns:
+        The generated name, a valid javascript identifier.
+
+    Raises:
+        ValueError: If the prefix contains ``$`` or is not an identifier.
+    """
+    if "$" in prefix:
+        msg = f"prefix {prefix!r} must not contain '$', which separates it from the counter."
+        raise ValueError(msg)
+    if not _VALID_NAME.match(prefix):
+        msg = (
+            f"prefix {prefix!r} is not a valid javascript identifier; it "
+            "is emitted as one in the compiled app."
+        )
+        raise ValueError(msg)
+    return f"{prefix}${next(_name_counter)}"
+
+
 # The store's entry point on the global `refs` object. This is the only binding
 # reachable from the scope `run_script` code is evaluated in, and doubles as the
 # devtools handle for inspecting client state.
@@ -278,8 +306,8 @@ class ClientStateVar(Var):
             default: The default value of the variable.
             name: Optional name. Naming the var makes it global.
             prefix: Prefix for the generated name when the var is unnamed, to
-                keep the compiled javascript readable. Ignored when ``name`` is
-                given.
+                keep the compiled javascript readable. Must not contain ``$``.
+                Ignored when ``name`` is given.
 
         Returns:
             ClientStateVar
@@ -289,18 +317,7 @@ class ClientStateVar(Var):
         """
         # Named -> global, unnamed -> tree-scoped.
         is_global = name is not None
-        if name is None:
-            if not _VALID_NAME.match(prefix):
-                msg = (
-                    f"prefix {prefix!r} is not a valid javascript identifier; it "
-                    "is emitted as one in the compiled app."
-                )
-                raise ValueError(msg)
-            # One shared counter across every prefix, so a generated name is
-            # unique no matter what prefixes are in play.
-            var_name = f"{prefix}{next(_name_counter)}"
-        else:
-            var_name = name
+        var_name = _generate_name(prefix) if name is None else name
         if isinstance(var_name, Var):
             msg = (
                 "name must be a string, not a Var. The name keys the client "

@@ -10,9 +10,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from reflex_base.client_state import _DEFAULT_NAME_PREFIX, _name_counter
 from reflex_base.client_state import ClientStateVar as _ClientStateVar
 from reflex_base.client_state import NoValue as NoValue
+from reflex_base.client_state import _generate_name
 from reflex_base.utils import console
 
 __all__ = ["ClientStateVar", "NoValue", "client_state"]
@@ -54,9 +54,8 @@ def _legacy_name(var_name: str | None, global_ref: bool | Any) -> str | None:
     if global_ref is not NoValue and not global_ref:
         return None
     if var_name is None:
-        # The shared counter keeps a generated global name from colliding with
-        # a generated scoped one.
-        return f"{_DEFAULT_NAME_PREFIX}{next(_name_counter)}"
+        # Drawn from the same generator as scoped names, so the two never collide.
+        return _generate_name()
     return var_name
 
 
