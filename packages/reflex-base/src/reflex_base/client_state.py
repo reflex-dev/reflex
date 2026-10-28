@@ -349,7 +349,7 @@ class ClientStateVar(Var):
             _var_type=default_var._var_type,
             _var_data=VarData.merge(
                 # ``_get_all_var_data``, not ``._var_data``: a derived or cast
-                # default (a loop var, a state var read) keeps its hooks and
+                # default (a state var read, a cast var) keeps its hooks and
                 # imports on the var it wraps, and dropping them compiles the
                 # default's identifier into a dangling reference.
                 default_var._get_all_var_data(),

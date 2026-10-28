@@ -172,27 +172,18 @@ def counter():
 rx.vstack(counter(), counter(), counter())  # three independent counters
 ```
 
-Each item rendered by `rx.foreach` is its own scope too, so an unnamed var used in a
-loop body is per item, and can be seeded from the loop item or index:
+Inside `rx.foreach`, give the item its own state by making the item function an
+`@rx.memo` component; each rendered instance then owns its unnamed vars:
 
 ```python
-def row(item: rx.Var[str], index: rx.Var[int]) -> rx.Component:
+@rx.memo
+def row(item: rx.Var[str]) -> rx.Component:
     expanded = rx.client_state(False)  # one per rendered row
-    count = rx.client_state(index)  # row N starts at N
     ...
 
 
-rx.foreach(State.items, row)
+rx.foreach(State.items, lambda item: row(item=item))
 ```
-
-A default is read once, when the scope first claims the name, so it seeds the state
-rather than tracking the var. That means a row seeded from its item keeps the *old*
-seed when the list's contents change, because `rx.foreach` keys rows by position and
-a row that does not unmount never re-claims its slot. The item itself still follows
-the data -- only the seeded state lags. Pass `key=` on the item to tie a row's state
-to the item instead, or set the value explicitly (`on_mount=count.set(index)`) when
-you want it to follow. See
-[foreach](/docs/library/dynamic-rendering/foreach) for the worked example.
 
 Pass `prefix=` to make generated names readable in the compiled output:
 `rx.client_state(0, prefix="counter")`.
