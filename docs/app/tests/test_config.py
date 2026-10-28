@@ -24,7 +24,7 @@ def test_docs_deployment_origin_comes_from_environment(
     if deploy_url is not None:
         monkeypatch.setenv("REFLEX_DEPLOY_URL", deploy_url)
     config = runpy.run_path(str(Path(__file__).parents[1] / "rxconfig.py"))["config"]
-    assert config.deploy_url == expected
+    assert config.frontend_url == expected
 
 
 def test_docs_head_identifies_cross_origin_video_embeds(monkeypatch):
