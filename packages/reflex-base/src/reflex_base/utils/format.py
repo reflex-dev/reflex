@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import inspect
 import json
 import os
@@ -655,8 +654,6 @@ def format_ref(ref: str) -> str:
     A Var formatted into an f-string leaves a marker holding its hash, which
     changes from one run to the next; the marker is dropped and the Var's
     expression after it names the ref, so the name is the same in every build.
-    Such a name ends with a digest of the text before its punctuation becomes
-    underscores, so expressions such as ``i + 1`` and ``i - 1`` stay apart.
 
     Args:
         ref: The ref to format.
@@ -664,11 +661,9 @@ def format_ref(ref: str) -> str:
     Returns:
         The formatted ref.
     """
-    plain = _VAR_MARKER.sub("", ref)
+    ref = _VAR_MARKER.sub("", ref)
     # Replace all non-word characters with underscores.
-    clean_ref = re.sub(r"[^\w]+", "_", plain)
-    if plain != ref:
-        clean_ref += "_" + hashlib.sha256(plain.encode()).hexdigest()[:8]
+    clean_ref = re.sub(r"[^\w]+", "_", ref)
     return f"ref_{clean_ref}"
 
 
