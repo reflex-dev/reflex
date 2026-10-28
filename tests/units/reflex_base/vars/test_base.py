@@ -564,6 +564,29 @@ def test_literal_var_dispatch_follows_later_registrations():
         base._literal_var_by_type.clear()
 
 
+def test_literal_var_dispatch_sees_through_proxies():
+    """Proxies of different values dispatch on the wrapped value, not the proxy type."""
+    from reflex_base.vars import base
+
+    state_cls = type(
+        "ProxyDispatchState",
+        (BaseState,),
+        {
+            "__module__": __name__,
+            "__annotations__": {"mapping": dict[str, int], "items": list[int]},
+            "mapping": {"a": 1},
+            "items": [1, 2],
+        },
+    )
+    state = state_cls()
+    try:
+        assert str(LiteralVar.create(state.mapping)) == '({ ["a"] : 1 })'  # pyright: ignore [reportAttributeAccessIssue]
+        assert str(LiteralVar.create(state.items)) == "[1, 2]"  # pyright: ignore [reportAttributeAccessIssue]
+        assert MutableProxy not in base._literal_var_by_type
+    finally:
+        base._literal_var_by_type.clear()
+
+
 def test_guess_type_dispatch_follows_later_registrations():
     """A Var subclass registered after a guess wins the next guess for its type."""
 
