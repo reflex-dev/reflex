@@ -27,7 +27,7 @@ See the [config reference](/docs/api-reference/config/) for all the parameters a
 
 ## Event Loop Blocking Detection
 
-In development, Reflex warns when an event handler blocks the asyncio event loop near or beyond `event_loop_blocking_threshold` seconds (default `0.2`). The warning names the handler and the blocking duration, which includes the state updates after the handler, such as computed vars. It recommends moving blocking I/O to a thread pool or using a non-blocking async API. Background events still run on the event loop and do not make synchronous blocking code non-blocking. Detection is disabled in production. Set the threshold to `None` to disable it in development:
+In development, Reflex warns when an event handler blocks the asyncio event loop near or beyond `event_loop_blocking_threshold` seconds (default `0.2`). The warning names the handler, the blocking duration, and the stack of the code that blocked. The duration includes the state updates after the handler, such as computed vars. It recommends moving blocking I/O to a thread pool or using a non-blocking async API. Background events still run on the event loop and do not make synchronous blocking code non-blocking. Detection is disabled in production. Set the threshold to `None` to disable it in development:
 
 ```python
 config = rx.Config(

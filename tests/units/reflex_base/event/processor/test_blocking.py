@@ -95,6 +95,8 @@ async def test_blocking_event_is_reported_with_handler_name(
 
     assert "blocking_handler" in caplog_blocking.text
     assert "blocked the event loop for 0.1" in caplog_blocking.text
+    assert "time.sleep(duration)  # noqa: ASYNC251" in caplog_blocking.text
+    assert "_run_monitored" not in caplog_blocking.text
     assert "thread pool or use a non-blocking async API" in caplog_blocking.text
 
 

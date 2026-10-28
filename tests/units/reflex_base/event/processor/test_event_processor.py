@@ -662,6 +662,10 @@ async def test_processor_reports_blocking_sync_handler(
     duration = re.search(r"blocked the event loop for (\d+\.\d+)s", caplog.text)
     assert duration is not None
     assert float(duration.group(1)) >= 0.1
+    # The stack of the event task ends at the blocking line, without loop frames.
+    assert "Blocking stack (most recent call last):" in caplog.text
+    assert "time.sleep(0.12)" in caplog.text
+    assert "base_events.py" not in caplog.text
 
 
 async def test_processor_reports_blocking_after_handler_returns(
@@ -687,6 +691,7 @@ async def test_processor_reports_blocking_after_handler_returns(
 
     assert "_noop_handler" in caplog.text
     assert "blocked the event loop" in caplog.text
+    assert "time.sleep(0.12)  # noqa: ASYNC251" in caplog.text
 
 
 async def test_enqueue_returns_future(
