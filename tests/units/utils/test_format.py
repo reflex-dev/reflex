@@ -810,7 +810,27 @@ def test_format_ref_names_an_f_string_var_by_its_expression(var_type: type):
     """
     var = Var(_js_expr="item", _var_type=var_type)
 
-    assert format.format_ref(f"zone-{var}") == "ref_zone_item"
+    assert format.format_ref(f"zone-{var}") == "ref_zone_item_de382f32"
+
+
+@pytest.mark.parametrize(
+    ("first", "second"),
+    [
+        ("(i + 1)", "(i - 1)"),
+        ('values?.["first-name"]', 'values?.["first_name"]'),
+    ],
+)
+def test_format_ref_keeps_f_string_vars_apart_by_punctuation(first: str, second: str):
+    """Two Var expressions that differ only in punctuation get different refs.
+
+    Args:
+        first: A Var expression.
+        second: The same expression with other punctuation.
+    """
+    first_ref = format.format_ref(f"cell-{Var(_js_expr=first)}")
+    second_ref = format.format_ref(f"cell-{Var(_js_expr=second)}")
+
+    assert first_ref != second_ref
 
 
 @pytest.mark.parametrize("key", ["xyz", "123"])
@@ -824,7 +844,7 @@ def test_format_ref_drops_a_marker_of_no_known_var(key: str):
         f"a-{constants.REFLEX_VAR_OPENING_TAG}{key}{constants.REFLEX_VAR_CLOSING_TAG}b"
     )
 
-    assert format.format_ref(ref) == "ref_a_b"
+    assert format.format_ref(ref) == "ref_a_b_d44362d6"
 
 
 @pytest.mark.parametrize(
