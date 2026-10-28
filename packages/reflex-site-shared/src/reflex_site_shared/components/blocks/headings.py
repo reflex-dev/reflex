@@ -130,7 +130,10 @@ class HeadingLink(rx.link.__self__):
             The component.
         """
         id_ = cls.slugify(text)
-        href = rx.State.router.url + "#" + id_
+        # The reported URL carries the page's current fragment, so build the
+        # permalink from its origin and path to replace that fragment.
+        url = rx.State.router.url
+        href = url.origin + url.path + "#" + id_
         scroll_margin = rx.cond(
             HostingBannerState.is_banner_visible,
             "scroll-mt-[113px]",
