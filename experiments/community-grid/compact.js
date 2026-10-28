@@ -21,7 +21,8 @@ createRoot(document.getElementById("app")).render(
   React.createElement(CommunityGrid, {
     rowData: rows,
     columnDefs: columns,
-    pagination: false,
+    pagination: true,
+    pageSize: 5,
     style: { height: "100%", width: "100%" },
   }),
 );

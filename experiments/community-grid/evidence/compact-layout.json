@@ -1,0 +1,16 @@
+[
+  {
+    "width": 1366,
+    "height": 360,
+    "pageSize": 5,
+    "footerBottom": 351,
+    "sortAndFilter": true
+  },
+  {
+    "width": 1024,
+    "height": 360,
+    "pageSize": 5,
+    "footerBottom": 351,
+    "sortAndFilter": true
+  }
+]

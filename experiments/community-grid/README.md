@@ -103,3 +103,5 @@ uv run --active --no-sync reflex run --env dev --frontend-port 4192 --backend-po
 ```
 
 Then run `node runtime-smoke.mjs` from this harness directory. The runtime fixture uses synthetic rows only. Normal setup warnings about the implicit Radix theme/sitemap plugin remain visible in its raw log.
+
+Compact dashboard preview now uses five-row pagination. At 1366/1024×360, `node compact-smoke.mjs` checks that the pager and all five rows fit, then verifies real sort/filter interactions. Budget at least 350–360px iframe height for five rows plus headers, filters, footer and Columns control; a shorter widget should reduce page size or explicitly scroll. The adapter has no data-loading error prop: application-owned error UI remains unimplemented/unverified; validation exceptions are not an error-state design.

@@ -3,9 +3,7 @@
     "argv": [
       "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
       "/workspace/grid-work/experiments/community-grid/node_modules/.bin/playwright",
-      "test",
-      "-g",
-      "unpaginated"
+      "test"
     ],
     "configFile": "/workspace/grid-work/experiments/community-grid/playwright.config.js",
     "rootDir": "/workspace/grid-work/experiments/community-grid",
@@ -107,6 +105,142 @@
       "line": 0,
       "specs": [
         {
+          "title": "Community renderer handles core interactions and saved view state",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5401,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-28T04:44:04.914Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "254a68b5fae918765be2-698cded836668b6d8955",
+          "file": "browser.spec.js",
+          "line": 4,
+          "column": 1
+        },
+        {
+          "title": "desktop layout, theme and loading/empty states",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1165,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-28T04:44:10.823Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "254a68b5fae918765be2-0eb5ea6f82bbff2b2850",
+          "file": "browser.spec.js",
+          "line": 190,
+          "column": 3
+        },
+        {
+          "title": "laptop layout, theme and loading/empty states",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1142,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-28T04:44:12.002Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "254a68b5fae918765be2-a5cc583a4fe35db97a84",
+          "file": "browser.spec.js",
+          "line": 190,
+          "column": 3
+        },
+        {
+          "title": "mobile layout, theme and loading/empty states",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1139,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-28T04:44:13.159Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "254a68b5fae918765be2-0f24ddad8c64452508b2",
+          "file": "browser.spec.js",
+          "line": 190,
+          "column": 3
+        },
+        {
           "title": "10k unpaginated rows remain virtualized while scrolling",
           "ok": true,
           "tags": [],
@@ -122,12 +256,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1509,
+                  "duration": 814,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-28T04:42:47.761Z",
+                  "startTime": "2026-10-28T04:44:14.309Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -145,9 +279,9 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-10-28T04:42:46.583Z",
-    "duration": 3967.2219999999998,
-    "expected": 1,
+    "startTime": "2026-10-28T04:44:04.525Z",
+    "duration": 10687.343,
+    "expected": 5,
     "skipped": 0,
     "unexpected": 0,
     "flaky": 0
