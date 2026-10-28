@@ -1769,3 +1769,18 @@ def test_rx_event_stateless_with_generic_annotation():
         format.format_event_handler(summarize)
     ]
     assert registered.states == ()
+
+
+def test_event_handler_and_spec_expose_wrapped_function() -> None:
+    """EventHandler and EventSpec expose the decorated function as __wrapped__."""
+
+    class WrappedState(BaseState):
+        @rx.event
+        def handle(self, value: int):
+            pass
+
+    handler = WrappedState.handle
+    assert isinstance(handler, EventHandler)
+    assert handler.__wrapped__ is handler.fn
+    assert handler.__wrapped__.__name__ == "handle"
+    assert handler(1).__wrapped__ is handler.fn

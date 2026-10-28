@@ -933,9 +933,13 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         Raises:
             TypeError: If a decorator was applied on top of ``@rx.event``.
         """
-        if isinstance(getattr(value, "__wrapped__", None), EventHandler):
+        if not isinstance(value, EventHandler) and isinstance(
+            inspect.unwrap(value, stop=lambda f: isinstance(f, EventHandler)),
+            EventHandler,
+        ):
             # Wrapped as a handler, the wrapper would return the event spec
-            # of the handler it wraps, chaining that handler forever.
+            # of the handler it wraps, chaining that handler forever. Chase
+            # the whole __wrapped__ chain so stacked decorators are found too.
             msg = (
                 f"Event handler `{name}` is decorated above @rx.event; apply "
                 "other decorators below it."

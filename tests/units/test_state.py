@@ -7625,6 +7625,26 @@ def test_wrapper_above_rx_event_raises() -> None:
                 pass
 
 
+def test_stacked_wrappers_above_rx_event_raise() -> None:
+    """Decorators stacked above @rx.event are found through the __wrapped__ chain."""
+
+    def logged(fn):
+        @functools.wraps(fn)
+        def wrapper(*args, **kwargs):
+            return fn(*args, **kwargs)
+
+        return wrapper
+
+    with pytest.raises(TypeError, match=r"decorated above @rx\.event"):
+
+        class StackedState(BaseState):
+            @logged
+            @logged
+            @rx.event
+            def handle(self):
+                pass
+
+
 def test_decorated_handler_shadowing_builtin_raises() -> None:
     """A decorated handler that shadows a State method is rejected like a plain one."""
     with pytest.raises(NameError, match="shadows a builtin State method"):

@@ -640,6 +640,15 @@ class EventHandler(EventActionsMixin):
         """
         return getattr(self.fn, SUPERSEDES_MARKER, False)
 
+    @property
+    def __wrapped__(self) -> Callable:
+        """The decorated function, as decorators and proxies expose it.
+
+        Returns:
+            The function the handler runs.
+        """
+        return self.fn
+
     def __await__(self) -> Generator[Any, None, Any]:
         """Run the handler with no arguments in the active EventContext.
 
@@ -661,7 +670,6 @@ class EventHandler(EventActionsMixin):
             owner: The class the handler is declared on.
             name: The attribute name.
         """
-        del name
         if self.state is not None:
             return
         from reflex.state import BaseState
@@ -857,6 +865,15 @@ class EventSpec(EventActionsMixin):
             The hash of the spec.
         """
         return id(self)
+
+    @property
+    def __wrapped__(self) -> Callable:
+        """The decorated function of the handler the spec binds arguments for.
+
+        Returns:
+            The function the handler runs.
+        """
+        return self.handler.fn
 
     def __await__(self) -> Generator[Any, None, Any]:
         """Run the event in the active EventContext.
@@ -2950,6 +2967,15 @@ class EventCallback(Generic[*P], EventActionsMixin):
         # declare the EventHandler members that `SomeState.handler` actually
         # exposes at runtime.
         fn: Callable[[Any, Unpack[P]], Any]
+
+        @property
+        def __wrapped__(self) -> Callable[[Any, Unpack[P]], Any]:
+            """The decorated function.
+
+            Returns:
+                The function the handler runs.
+            """
+            ...
 
         def __await__(self) -> Generator[Any, None, Any]:
             """Run the handler in the active EventContext.
