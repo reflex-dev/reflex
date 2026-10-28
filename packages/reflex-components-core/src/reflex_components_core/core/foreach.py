@@ -10,7 +10,7 @@ from typing import Any
 
 from reflex_base.components.component import Component, field
 from reflex_base.components.tags import IterTag
-from reflex_base.constants import MemoizationMode
+from reflex_base.constants import Dirs
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.utils import types
 from reflex_base.utils.exceptions import UntypedVarError
@@ -31,9 +31,15 @@ class ForeachRenderError(TypeError):
 class Foreach(Component):
     """A component that takes in an iterable and a render function and renders a list of components."""
 
-    _memoization_mode = MemoizationMode(recursive=False)
-
     iterable: Var[Iterable] = field(doc="The iterable to create components from.")
+
+    def add_imports(self) -> dict[str, str]:
+        """Import the provider each item's subtree is wrapped in.
+
+        Returns:
+            The imports for the component.
+        """
+        return {f"$/{Dirs.CLIENT_STATE_PATH}": "ScopedValues"}
 
     render_fn: Callable = field(
         doc="A function from the render args to the component.",
@@ -168,12 +174,25 @@ class Foreach(Component):
             The dictionary for template of component.
         """
         tag = self._render()
+        # The per-item provider is the element the map yields, so it is what
+        # React reconciles the list by and therefore what carries the key. An
+        # explicit key on the item is lifted up to it; otherwise the loop index
+        # keys by position, as it always has.
+        item_key = next(
+            (
+                str(LiteralVar.create(child.key))
+                for child in self.children
+                if isinstance(child, Component) and child.key is not None
+            ),
+            tag.index_var_name,
+        )
 
         return dict(
             tag,
             iterable_state=str(tag.iterable),
             arg_name=tag.arg_var_name,
             arg_index=tag.index_var_name,
+            item_key=item_key,
         )
 
 

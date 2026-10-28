@@ -16,11 +16,13 @@ import {
   CLIENT_STATE_REF,
   ClientStateProvider,
   ClientStateScope,
+  ScopedValues,
   createClientStateStore,
   getClientState,
   getClientStore,
   setClientState,
   useClientState,
+  useScopedValue,
   withClientStateScope,
 } from "$/utils/client_state";
 
@@ -550,6 +552,171 @@ describe("withClientStateScope", () => {
   });
 });
 
+describe("scoped values", () => {
+  /** Render a component that reads one scoped value by name. */
+  const reader = (name) => {
+    const seen = [];
+    const Reader = () => {
+      seen.push(useScopedValue(name));
+      return null;
+    };
+    return { seen, element: createElement(Reader) };
+  };
+
+  test("a descendant component reads a value it never received as a prop", () => {
+    // The shape a loop emits: the value lives in context, so a descendant that
+    // compiled into its own component can still see it.
+    const item = reader("item0");
+    const { unmount } = mount(
+      createElement(ScopedValues, { values: { item0: "a" } }, item.element),
+    );
+
+    expect(item.seen.at(-1)).toBe("a");
+
+    unmount();
+  });
+
+  test("a nested provider still exposes the outer values", () => {
+    const outer = reader("outer0");
+    const inner = reader("inner0");
+    const { unmount } = mount(
+      createElement(
+        ScopedValues,
+        { values: { outer0: "out" } },
+        createElement(
+          ScopedValues,
+          { values: { inner0: "in" } },
+          outer.element,
+          inner.element,
+        ),
+      ),
+    );
+
+    expect(outer.seen.at(-1)).toBe("out");
+    expect(inner.seen.at(-1)).toBe("in");
+
+    unmount();
+  });
+
+  test("a nearer provider shadows the same name", () => {
+    const item = reader("item0");
+    const { unmount } = mount(
+      createElement(
+        ScopedValues,
+        { values: { item0: "outer" } },
+        createElement(
+          ScopedValues,
+          { values: { item0: "inner" } },
+          item.element,
+        ),
+      ),
+    );
+
+    expect(item.seen.at(-1)).toBe("inner");
+
+    unmount();
+  });
+
+  test("an unprovided name reads undefined rather than throwing", () => {
+    const item = reader("missing");
+    const { unmount } = mount(
+      createElement(ScopedValues, { values: {} }, item.element),
+    );
+
+    expect(item.seen.at(-1)).toBeUndefined();
+
+    unmount();
+  });
+
+  test("reading outside any provider is undefined", () => {
+    const item = reader("orphan");
+    const { unmount } = mount(item.element);
+
+    expect(item.seen.at(-1)).toBeUndefined();
+
+    unmount();
+  });
+
+  test("a re-render with new values is seen by descendants", () => {
+    // A loop re-renders with a new item on every list change, so the provided
+    // value must not be frozen at first render.
+    const item = reader("item0");
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    const render = (value) =>
+      act(() => {
+        root.render(
+          createElement(
+            ScopedValues,
+            { values: { item0: value } },
+            item.element,
+          ),
+        );
+      });
+
+    render("first");
+    expect(item.seen.at(-1)).toBe("first");
+
+    render("second");
+    expect(item.seen.at(-1)).toBe("second");
+
+    act(() => root.unmount());
+    container.remove();
+  });
+
+  test("each provided subtree owns its unnamed client state", () => {
+    // One rendered item is one component instance, so an unnamed var used in a
+    // loop body must not be shared between items.
+    const stateProbe = () => {
+      const renders = { value: undefined, set: undefined };
+      const Probe = () => {
+        const [value, set] = useClientState("", "cs0");
+        renders.value = value;
+        renders.set = set;
+        return null;
+      };
+      return { renders, element: createElement(Probe) };
+    };
+    const first = stateProbe();
+    const second = stateProbe();
+    const { unmount } = mount(
+      createElement(
+        ClientStateProvider,
+        { registry },
+        createElement(ScopedValues, { values: { item0: "a" } }, first.element),
+        createElement(ScopedValues, { values: { item0: "b" } }, second.element),
+      ),
+    );
+
+    act(() => first.renders.set("typed into the first"));
+
+    expect(first.renders.value).toBe("typed into the first");
+    expect(second.renders.value).toBe("");
+
+    unmount();
+  });
+
+  test("sibling providers give each subtree its own value", () => {
+    // One loop, two items: each item's subtree sees only its own value.
+    const first = reader("item0");
+    const second = reader("item0");
+    const { unmount } = mount(
+      createElement(
+        "div",
+        null,
+        createElement(ScopedValues, { values: { item0: "a" } }, first.element),
+        createElement(ScopedValues, { values: { item0: "b" } }, second.element),
+      ),
+    );
+
+    expect(first.seen.at(-1)).toBe("a");
+    expect(second.seen.at(-1)).toBe("b");
+
+    unmount();
+  });
+});
+
 describe("slot lifetime", () => {
   test("a consumer unsubscribes from its slot when it unmounts", () => {
     // Root-scope slots live for the page, so a listener that outlived its
@@ -582,6 +749,89 @@ describe("slot lifetime", () => {
     slot.subscribe = realSubscribe;
   });
 
+  test("per-item state is claimed in the item's scope, never at the root", () => {
+    // Otherwise a loop would append a root entry per rendered item and the
+    // store would grow without bound as the list churned.
+    const root = getClientStore().root;
+    const before = root.owned.size;
+    const rows = (list) =>
+      createElement(
+        ClientStateProvider,
+        { registry },
+        ...list.map((item) =>
+          createElement(
+            ScopedValues,
+            { key: item, values: { item0: item } },
+            createElement(ItemState),
+          ),
+        ),
+      );
+    const { rerender, unmount } = mount(rows(["a", "b", "c"]));
+
+    expect(root.owned.size).toBe(before);
+
+    rerender(rows(["d", "e", "f"]));
+    expect(root.owned.size).toBe(before);
+
+    unmount();
+    expect(root.owned.size).toBe(before);
+  });
+
+  test("an item's state is released once that item unmounts", () => {
+    // Keying by identity means a changed list unmounts the old rows, so their
+    // scopes -- and the slots those scopes own -- become unreachable. A new row
+    // reaching the same name has to start from the default, not inherit.
+    const rows = (list) =>
+      createElement(
+        ClientStateProvider,
+        { registry },
+        ...list.map((item) =>
+          createElement(
+            ScopedValues,
+            { key: item, values: { item0: item } },
+            createElement(ItemState),
+          ),
+        ),
+      );
+    const { rerender, unmount } = mount(rows(["a", "b", "c"]));
+
+    act(() => lastItemSetter("written"));
+    expect(itemValues.at(-1)).toBe("written");
+
+    itemValues.length = 0;
+    rerender(rows(["d", "e", "f"]));
+
+    expect(itemValues).toEqual(["default", "default", "default"]);
+
+    unmount();
+  });
+
+  test("under positional keys an item keeps its state across a list change", () => {
+    // The counterpart, and the reason `key=` matters now that a loop item can
+    // hold state: index keys reuse the component, so nothing unmounts and the
+    // state stays with the position rather than the item.
+    const rows = (list) =>
+      createElement(
+        ClientStateProvider,
+        { registry },
+        ...list.map((item, index) =>
+          createElement(
+            ScopedValues,
+            { key: index, values: { item0: item } },
+            createElement(ItemState),
+          ),
+        ),
+      );
+    const { rerender, unmount } = mount(rows(["a", "b", "c"]));
+
+    act(() => lastItemSetter("written"));
+    itemValues.length = 0;
+    rerender(rows(["d", "e", "f"]));
+
+    expect(itemValues).toEqual(["default", "default", "written"]);
+
+    unmount();
+  });
 });
 
 test("CLIENT_STATE_REF matches the Python constant", () => {

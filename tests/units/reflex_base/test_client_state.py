@@ -506,31 +506,23 @@ def test_var_default_is_used_directly() -> None:
 def test_derived_var_default_brings_its_hook_and_import() -> None:
     """A default whose var data is only reachable through the operation graph.
 
-    ``Var.guess_type()`` returns a cast wrapper whose own ``_var_data`` is
-    ``None``; the hook and import live on the var it wraps and must still be
-    collected, or the default compiles to a dangling identifier.
+    ``scoped_loop_var(...).guess_type()`` returns a cast wrapper whose own
+    ``_var_data`` is ``None`` -- the hook and import live on the var it wraps.
+    Reading the field directly dropped them, compiling the default's identifier
+    into a dangling reference.
     """
-    from reflex_base.utils.imports import ImportVar
-    from reflex_base.vars.base import Var, VarData
+    from reflex_base.components.tags.iter_tag import scoped_loop_var
 
-    seed = Var(
-        _js_expr="seed",
-        _var_type=int,
-        _var_data=VarData(
-            hooks={"const seed = useSeed()": None},
-            imports={"$/utils/seed": [ImportVar(tag="useSeed")]},
-        ),
-    ).guess_type()
-    cs = client_state(seed, name="seeded")
+    cs = client_state(scoped_loop_var("ix_rx_state_", int), name="seeded")
 
     # The declaration comes first; ``useClientState`` reading it comes last.
     assert _hooks_ending_with_client_state(cs) == [
-        "const seed = useSeed()",
-        'const [seededRxClientState, setSeeded] = useClientState(seed, "seeded", true)',
+        'const ix_rx_state_ = useScopedValue("ix_rx_state_")',
+        'const [seededRxClientState, setSeeded] = useClientState(ix_rx_state_, "seeded", true)',
     ]
     var_data = cs._get_all_var_data()
     assert var_data is not None
-    assert "useSeed" in str(dict(var_data.imports))
+    assert "useScopedValue" in str(dict(var_data.imports))
 
 
 def test_state_var_default_brings_its_state_wiring() -> None:

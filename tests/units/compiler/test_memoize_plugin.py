@@ -50,6 +50,7 @@ from reflex_components_core.el.elements.tables import Col
 from reflex_components_core.el.elements.typography import Hr
 from reflex_components_moment.moment import Moment
 from reflex_components_radix.themes.layout.box import Box
+from reflex_components_radix.themes.typography.text import Text
 
 import reflex as rx
 import reflex.compiler.plugins.memoize as memoize_plugin
@@ -409,6 +410,20 @@ def test_special_form_memo_wrappers_render_structural_body(
     assert body_marker not in page_output
 
 
+def _loop_item_export(loop_code: str) -> str:
+    """Pick the component a compiled loop mounts inside each item's provider.
+
+    Args:
+        loop_code: A module (or body) containing the rendered ``.map``.
+
+    Returns:
+        The export name of the item component.
+    """
+    match = re.search(r"jsx\(ScopedValues,\{key:.*?\}\},jsx\((\w+),", loop_code)
+    assert match is not None, loop_code
+    return match.group(1)
+
+
 def test_foreach_snapshot_memo_applies_component_styles() -> None:
     """Foreach memo bodies must render styled children after preview rendering.
 
@@ -442,10 +457,15 @@ def test_foreach_snapshot_memo_applies_component_styles() -> None:
     foreach_code = next(
         code for path, code in memo_files if "/Foreach" in path or "\\Foreach" in path
     )
+    # The loop mounts each item through its own component, which is where
+    # the item's subtree (and its styles) now renders.
+    item_code = next(
+        code for path, code in memo_files if _loop_item_export(foreach_code) in path
+    )
 
-    assert '["width"] : "400px"' in foreach_code
-    assert '["borderRadius"] : "var(--radius-4)"' in foreach_code
-    assert '["justifyContent"] : "space-between"' in foreach_code
+    assert '["width"] : "400px"' in item_code
+    assert '["borderRadius"] : "var(--radius-4)"' in item_code
+    assert '["justifyContent"] : "space-between"' in item_code
 
 
 def test_foreach_parent_does_not_absorb_sibling_into_snapshot() -> None:
@@ -456,6 +476,10 @@ def test_foreach_parent_does_not_absorb_sibling_into_snapshot() -> None:
     reactive content into the same wide memo body. The parent should now render
     on the page side, with Foreach and any reactive sibling each getting their
     own independent wrapper.
+
+    The Foreach snapshot is not opaque: the walker descends into the item body,
+    so the item's own loop-var consumer gets a third, independent wrapper, and
+    the item itself renders through a fourth, its own component.
     """
     ctx, _page_ctx = _compile_single_page(
         lambda: rx.box(
@@ -474,8 +498,9 @@ def test_foreach_parent_does_not_absorb_sibling_into_snapshot() -> None:
     ]
     wrapped_types = {type(definition.component) for definition in wrapped_definitions}
 
-    assert len(wrapped_definitions) == 2
+    assert len(wrapped_definitions) == 4
     assert Box not in wrapped_types
+    assert Text in wrapped_types
 
     foreach_definition = next(
         definition
@@ -487,16 +512,25 @@ def test_foreach_parent_does_not_absorb_sibling_into_snapshot() -> None:
         is MemoizationStrategy.SNAPSHOT
     )
 
-    bare_definition = next(
+    bare_definitions = [
         definition
         for definition in wrapped_definitions
         if isinstance(definition.component, Bare)
-    )
-    assert (
-        get_memoization_strategy(bare_definition.component)
+    ]
+    assert len(bare_definitions) == 2
+    assert all(
+        get_memoization_strategy(definition.component)
         is MemoizationStrategy.PASSTHROUGH
+        for definition in bare_definitions
     )
-    assert bare_definition is not foreach_definition
+    # One reads app state on the page side, the other reads the loop item from
+    # the scope the Foreach provides around each rendered item.
+    bare_contents = {
+        str(cast(Bare, definition.component).contents)
+        for definition in bare_definitions
+    }
+    assert any("items_rx_state_.length" in contents for contents in bare_contents)
+    assert any(contents == f"item{FIELD_MARKER}" for contents in bare_contents)
 
 
 def test_common_memoization_snapshot_helper_classifies_snapshot_cases() -> None:
@@ -731,6 +765,75 @@ def test_user_memo_children_render_in_page_scope() -> None:
     # The hole, not the authored child, is what the memo body renders.
     assert ",children)" in wrapper_code
     assert "static child" not in wrapper_code
+
+
+def test_user_memo_inside_foreach_reads_its_loop_var_from_the_scope() -> None:
+    """A user memo with a loop-var prop is wrapped, and the wrapper reads the scope.
+
+    Foreach owns the snapshot for the item subtree, so the wrapper module lands
+    beside it rather than on the page, and it resolves ``item`` through
+    ``useScopedValue`` instead of closing over the callback parameter.
+    """
+    from reflex.compiler.compiler import compile_memo_components
+
+    @rx.memo
+    def row(label: rx.Var[str]) -> Component:
+        return WithProp.create(label=label)
+
+    ctx, page_ctx = _compile_single_page(
+        lambda: rx.box(
+            rx.foreach(SpecialFormMemoState.items, lambda item: row(label=item))
+        )
+    )
+
+    definitions = list(ctx.auto_memo_components.values())
+    (foreach_definition,) = (
+        definition
+        for definition in definitions
+        if isinstance(definition.component, Foreach)
+    )
+    # The user memo instance is wrapped twice over: a passthrough wrapper
+    # reads the loop var for it, and the item component renders that wrapper
+    # below the per-item provider.
+    (wrapper_definition, item_definition) = (
+        definition
+        for definition in definitions
+        if isinstance(definition.component, MemoComponent)
+    )
+    assert isinstance(foreach_definition, MemoComponentDefinition)
+    assert isinstance(wrapper_definition, MemoComponentDefinition)
+    assert isinstance(item_definition, MemoComponentDefinition)
+    assert wrapper_definition.auto_memo_wrapper
+    assert item_definition.component is not wrapper_definition.component
+
+    memo_files, _memo_imports = compile_memo_components(
+        memos=tuple(ctx.auto_memo_components.values()),
+    )
+    code_by_export = {
+        definition.export_name: next(
+            code for path, code in memo_files if definition.export_name in path
+        )
+        for definition in (foreach_definition, wrapper_definition, item_definition)
+    }
+
+    wrapper_code = code_by_export[wrapper_definition.export_name]
+    assert 'useScopedValue("item_rx_state_")' in wrapper_code
+    # The wrapper is transparent to injected props, so the loop var reaches the
+    # user memo through the ``mergeSlotProps`` merge rather than a bare literal.
+    assert re.search(
+        rf"jsx\({row(label='x').tag},\{{\.\.\.mergeSlotProps\(rest, \(\{{[^)]*label:item_rx_state_",
+        wrapper_code,
+    ), wrapper_code
+
+    # The foreach body mounts the item component inside the per-item provider,
+    # which mounts the wrapper; the page module is left with neither the loop
+    # var nor the item subtree.
+    foreach_code = code_by_export[foreach_definition.export_name]
+    assert _loop_item_export(foreach_code) == item_definition.export_name
+    item_code = code_by_export[item_definition.export_name]
+    assert f"jsx({wrapper_definition.export_name}," in item_code
+    assert f"jsx({wrapper_definition.export_name}," not in foreach_code
+    assert not any("useScopedValue" in hook for hook in page_ctx.hooks)
 
 
 def test_passthrough_memo_skips_hole_for_childless_component() -> None:
@@ -2815,6 +2918,135 @@ def test_auto_memo_wrappers_do_not_open_a_scope() -> None:
         )
 
 
+def test_foreach_item_event_handler_reaches_the_loop_index() -> None:
+    """A hoisted item handler reads the loop index from the item's scope.
+
+    Regression for reflex-dev/reflex#3210: the ``on_submit`` callback of a form
+    rendered inside an ``rx.foreach`` compiles into a ``useCallback`` that the
+    compiler lifts out of the ``.map`` body, so the callback parameter the loop
+    index used to render as was not in scope and the page threw
+    ``ReferenceError: index is not defined``. The index now renders as a
+    ``useScopedValue`` read inside the handler's own memo module.
+    """
+    from reflex.compiler.compiler import compile_memo_components
+
+    ctx, page_ctx = _compile_single_page(
+        lambda: rx.vstack(
+            rx.foreach(
+                Var.range(3),
+                lambda index: rx.form(
+                    rx.input(name="input"),
+                    on_submit=lambda form_data: SpecialFormMemoState.record(
+                        index, form_data
+                    ),
+                ),
+            )
+        )
+    )
+
+    files, _imports = compile_memo_components(
+        memos=tuple(ctx.auto_memo_components.values()),
+    )
+    code = "\n".join(memo_code for _path, memo_code in files)
+
+    handler = next(
+        block for block in code.split("export const ") if "handleSubmit" in block
+    )
+    index_read = re.search(r'const (\w+) = useScopedValue\("(index\w*)"\)', handler)
+    assert index_read is not None, f"no scoped index read in the handler\n{handler}"
+    local, provided = index_read.groups()
+    # The handler sends the scoped read, not the map callback parameter.
+    assert f'["index"] : {local}' in handler
+
+    # ... and the loop provides that exact name around each rendered item.
+    foreach_block = next(
+        block for block in code.split("export const ") if "Array.prototype.map" in block
+    )
+    assert f"{provided}:{provided}" in foreach_block
+    # The read has to happen below the provider, which means in a module of its
+    # own: hooks are hoisted to the top of whichever component they land in, so
+    # a read in the module that *renders* the provider would sit above it.
+    assert handler is not foreach_block, "the handler must be its own memo module"
+    # Inside the loop body the callback parameter of the same name shadows any
+    # hoisted read, so inline uses see the real per-item value.
+    assert f"(({provided}," in foreach_block
+
+    # The page itself stays free of the loop scope.
+    assert "useScopedValue" not in (page_ctx.output_code or "")
+
+
+def test_memo_wrapper_carries_the_wrapped_component_key() -> None:
+    """An auto-memo wrapper takes the key of the component it replaces.
+
+    The key belongs to the element the parent renders. Left on the memo body it
+    does nothing, so a keyed item inside a ``rx.foreach`` would silently fall
+    back to positional identity once its root became a wrapper.
+    """
+    from reflex.compiler.compiler import compile_memo_components
+
+    ctx, _page_ctx = _compile_single_page(
+        lambda: rx.box(
+            rx.foreach(
+                SpecialFormMemoState.items,
+                lambda item: rx.el.div(
+                    Bare.create(SpecialFormMemoState.value), key=item
+                ),
+            )
+        )
+    )
+
+    files, _imports = compile_memo_components(
+        memos=tuple(ctx.auto_memo_components.values()),
+    )
+    code = "\n".join(memo_code for _path, memo_code in files)
+
+    assert f"jsx(ScopedValues,{{key:item{FIELD_MARKER}," in code
+
+
+def test_client_state_seeded_from_a_loop_var_declares_it_in_every_consumer() -> None:
+    """A ``Var`` client state default reaches each consumer module it seeds.
+
+    A loop var is a cast wrapper whose hooks live on the var it wraps, so the
+    default used to compile into a bare identifier with nothing declaring it --
+    ``useClientState(ix_rx_state_, "cs0")`` above no ``useScopedValue`` line.
+    """
+    from reflex.compiler.compiler import compile_memo_components
+
+    def counter(initial: Any) -> Component:
+        count = rx.client_state(initial, prefix="seeded")
+        return rx.hstack(
+            rx.el.button("-", on_click=count.set(lambda v: v - 1)),
+            Bare.create(count.value),
+        )
+
+    ctx, page_ctx = _compile_single_page(
+        lambda: rx.box(
+            rx.foreach(SpecialFormMemoState.items, lambda _x, ix: counter(ix))
+        )
+    )
+
+    files, _imports = compile_memo_components(
+        memos=tuple(ctx.auto_memo_components.values()),
+    )
+    consumers = [
+        block
+        for _path, code in files
+        for block in code.split("export const ")
+        if "useClientState(" in block
+    ]
+    assert consumers, "no memo module read the client state var"
+    for block in consumers:
+        read = re.search(r'const (\w+) = useScopedValue\("(\w+)"\)', block)
+        assert read is not None, f"nothing declares the seed\n{block}"
+        local, provided = read.groups()
+        assert local == provided
+        assert f"useClientState({local}," in block
+        # Declared before it is read, since hooks emit in order.
+        assert block.index(local) < block.index("useClientState(")
+
+    assert "useScopedValue" not in (page_ctx.output_code or "")
+
+
 def test_passthrough_memo_forwards_ref_and_props_to_root() -> None:
     """Passthrough wrappers are transparent to their parent.
 
@@ -3192,14 +3424,54 @@ def _module_named(modules: dict[str, str], python_name: str) -> str:
     return block
 
 
+def test_loop_items_differing_only_in_descendant_hooks_get_their_own_modules() -> None:
+    """Item components are told apart by artifacts the JSX does not show.
+
+    Regression: the item component captures the item's whole subtree, but its
+    tag hashed the root alone, so two loops whose items rendered identical
+    JSX with different descendant hooks shared one module and both ran the
+    hooks registered last.
+    """
+    from reflex.compiler.compiler import compile_memo_components
+
+    def hooked(effect: str) -> type[Component]:
+        class Hooked(rx.el.Div):
+            def add_hooks(self) -> list[str]:
+                return [f"useEffect(() => console.log('{effect}'), [])"]
+
+        return Hooked
+
+    first, second = hooked("first"), hooked("second")
+    ctx, _page_ctx = _compile_single_page(
+        lambda: rx.box(
+            rx.foreach(
+                SpecialFormMemoState.items, lambda _item: rx.box(first.create("x"))
+            ),
+            rx.foreach(
+                SpecialFormMemoState.items, lambda _item: rx.box(second.create("x"))
+            ),
+        )
+    )
+    files, _imports = compile_memo_components(
+        memos=tuple(ctx.auto_memo_components.values())
+    )
+    item_modules = [
+        block for block in _module_by_export(files).values() if "console.log(" in block
+    ]
+    assert len(item_modules) == 2
+    assert {"'first'" in block for block in item_modules} == {True, False}
+
+
 def test_memo_item_function_inside_an_explicit_memo_scopes_client_state_per_item() -> (
     None
 ):
-    """An ``@rx.memo`` item function keeps client state per loop item.
+    """An ``@rx.memo`` item function keeps client state per item inside a memo.
 
-    Each rendered instance of the item memo owns its unnamed client state, so
-    the slot binding lives in the item module and the loop body only mounts
-    the item with its props.
+    An explicit memo body is compiled as one component and never walked, so a
+    loop inside it renders its item inline and any ``useClientState`` in the
+    item hoists above the ``.map``, where every item shares one slot. The
+    supported way to scope it per item is an ``@rx.memo`` item function: the
+    loop then mounts an instance per item, and the instance owns its state.
     """
     from reflex.compiler.compiler import compile_memo_components
 
@@ -3227,7 +3499,4 @@ def test_memo_item_function_inside_an_explicit_memo_scopes_client_state_per_item
     assert f"useClientState(item{FIELD_MARKER}," not in body
     assert "useClientState(itemRxMemo," in row
     # The loop mounts the row with its item and the memo's own parameter.
-    mount = re.search(rf"jsx\({row_export},\{{([^}}]*)\}}", body)
-    assert mount is not None, body
-    assert f"item:item{FIELD_MARKER}" in mount.group(1)
-    assert "label:labelRxMemo" in mount.group(1)
+    assert f"jsx({row_export},{{item:item{FIELD_MARKER},label:labelRxMemo}}" in body

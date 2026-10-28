@@ -1,0 +1,1 @@
+`rx.foreach` item and index values are now available to event handlers and memoized components rendered inside the loop, and each item renders as a component of its own, so an unnamed `rx.client_state` var declared in the item function is per item.
