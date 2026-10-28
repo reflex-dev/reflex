@@ -76,7 +76,8 @@ def test_event_loop_blocking_threshold_defaults_to_development_threshold(
     base_config_values,
 ):
     """Enable useful blocking diagnostics by default in development."""
-    assert rx.Config(**base_config_values).event_loop_blocking_threshold == 0.2
+    config = rx.Config(**base_config_values)
+    assert config.event_loop_blocking_threshold == pytest.approx(0.2)
 
 
 @pytest.mark.parametrize(

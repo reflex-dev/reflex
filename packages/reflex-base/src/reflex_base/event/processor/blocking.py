@@ -79,7 +79,11 @@ class EventLoopBlockingMonitor:
                 self._handlers[code] = name, count - 1
 
     def _find_handler(self) -> str | None:
-        """Find the innermost active handler frame on the event-loop thread."""
+        """Find the innermost active handler frame on the event-loop thread.
+
+        Returns:
+            The handler name, or None if no registered handler is active.
+        """
         frame = sys._current_frames().get(self._loop_thread_id)
         if frame is None:
             return None
@@ -108,14 +112,17 @@ class EventLoopBlockingMonitor:
                 if self._stop.is_set():
                     return
                 duration = time.perf_counter() - started
-                if duration + interval >= self.threshold and not reported:
-                    if handler_name := self._find_handler():
-                        logger.warning(
-                            "Event handler %s blocked the event loop "
-                            "(observed delay: %.3fs; threshold: %.3fs). Move blocking "
-                            "I/O to a thread pool or use a non-blocking async API.",
-                            handler_name,
-                            duration,
-                            self.threshold,
-                        )
-                        reported = True
+                if (
+                    duration + interval >= self.threshold
+                    and not reported
+                    and (handler_name := self._find_handler())
+                ):
+                    logger.warning(
+                        "Event handler %s blocked the event loop "
+                        "(observed delay: %.3fs; threshold: %.3fs). Move blocking "
+                        "I/O to a thread pool or use a non-blocking async API.",
+                        handler_name,
+                        duration,
+                        self.threshold,
+                    )
+                    reported = True

@@ -3530,7 +3530,7 @@ async def test_setup_event_processor_passes_blocking_threshold(
     monkeypatch.setenv("REFLEX_ENV_MODE", constants.Env.PROD.value)
 
     async with app._setup_event_processor():
-        assert app.event_processor.event_loop_blocking_threshold == 0.35
+        assert app.event_processor.event_loop_blocking_threshold == pytest.approx(0.35)
 
 
 def test_raise_on_state():

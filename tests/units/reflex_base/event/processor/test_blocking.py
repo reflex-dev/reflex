@@ -8,7 +8,6 @@ from collections.abc import Callable
 from typing import Any
 
 import pytest
-
 from reflex_base.event.processor.blocking import EventLoopBlockingMonitor
 
 
@@ -91,8 +90,9 @@ async def test_async_handler_blocking_is_reported(
     probe_queued = _track_queued_probe(loop, monkeypatch)
 
     async def blocking_handler():
+        await asyncio.sleep(0)
         assert probe_queued.wait(timeout=1)
-        time.sleep(0.12)
+        time.sleep(0.12)  # noqa: ASYNC251
 
     monitor = EventLoopBlockingMonitor(loop, threshold=0.04)
     caplog.set_level(logging.WARNING, logger="reflex_base.event.processor.blocking")
