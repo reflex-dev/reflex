@@ -78,13 +78,25 @@ def test_sidebar_labels_match_reading_text_color(page: Page):
     expect(page.get_by_role("heading", name="Onboarding", exact=True)).to_have_css(
         "color", "rgb(105, 100, 94)"
     )
+
+
+@pytest.mark.parametrize("width", [390, 1440])
+def test_enterprise_sidebar_links_match_group_color(page: Page, width: int):
+    """Inactive links match group labels in the desktop sidebar and mobile drawer."""
+    page.set_viewport_size({"width": width, "height": 1000})
     page.goto(f"{PREVIEW_URL}/docs/enterprise/testing/")
+    if width < 1024:
+        page.get_by_role("button", name="Open documentation navigation").click()
+        sidebar = page.get_by_role("dialog")
+    else:
+        sidebar = page.locator(".docs-sidebar")
+    expect(sidebar).to_be_visible()
+    expect(sidebar.get_by_text("AG Grid", exact=True)).to_have_css(
+        "color", "rgb(0, 0, 0)"
+    )
     for label in ("Overview", "AG Chart"):
         expect(
-            page
-            .locator(".docs-sidebar")
-            .get_by_role("link", name=label, exact=True)
-            .locator("p")
+            sidebar.get_by_role("link", name=label, exact=True).locator("p")
         ).to_have_css("color", "rgb(0, 0, 0)")
 
 
