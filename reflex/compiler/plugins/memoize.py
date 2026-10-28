@@ -162,17 +162,25 @@ def _collect_subtree_shared_scope_counts(
     counts: dict[str, int] | None = None
 
     try:
-        local_scope_keys: set[str] = set()
-        var_data = tuple(
-            data
-            for var in component._get_vars(include_children=False)
-            if (data := var._get_all_var_data()) is not None
-        )
-        for data in var_data:
-            local_scope_keys.update(data.shared_scope_keys)
-        local_scope_keys.update(
-            _component_style_scope_keys(component, style_scope_keys)
-        )
+        local_scope_keys: set[str] | None = None
+        var_data: list[VarData] = []
+        for var in component._get_vars(include_children=False):
+            data = var._get_all_var_data()
+            if data is None:
+                continue
+            if data.shared_scope_keys:
+                if local_scope_keys is None:
+                    local_scope_keys = set()
+                local_scope_keys.update(data.shared_scope_keys)
+            if data.components:
+                var_data.append(data)
+
+        if style_scope_keys:
+            style_keys = _component_style_scope_keys(component, style_scope_keys)
+            if style_keys:
+                if local_scope_keys is None:
+                    local_scope_keys = set()
+                local_scope_keys.update(style_keys)
 
         for child in _iter_component_descendants(component, var_data):
             descendant_counts = _collect_subtree_shared_scope_counts(
