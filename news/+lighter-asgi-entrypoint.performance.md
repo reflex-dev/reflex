@@ -1,0 +1,1 @@
+The backend no longer wraps the app in an extra `Starlette` application to run lifespan tasks, which removes a routing layer from every request. As a result, calling the `rx.App` instance returns a plain ASGI app rather than a `Starlette` instance.

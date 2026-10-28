@@ -36,17 +36,15 @@ def lucide_icons() -> rx.Component:
                     LUCIDE_ICON_LIST,
                     lambda icon: rx.cond(
                         icon.startswith(icon_search_cs.value),
-                        rx.tooltip(
-                            rx.box(
-                                rx.icon(tag=icon),
-                                class_name="flex items-center justify-center rounded-md hover:bg-accent transition-bg p-2 cursor-pointer",
-                                on_click=[
-                                    rx.set_clipboard(icon),
-                                    rx.toast.success(f"Copied {icon} to clipboard"),
-                                ],
-                                key=icon,
-                            ),
-                            content=icon,
+                        rx.box(
+                            rx.icon(tag=icon),
+                            title=icon,
+                            class_name="flex items-center justify-center rounded-md hover:bg-accent transition-bg p-2 cursor-pointer",
+                            on_click=[
+                                rx.set_clipboard(icon),
+                                rx.toast.success(f"Copied {icon} to clipboard"),
+                            ],
+                            key=icon,
                         ),
                         None,
                     ),

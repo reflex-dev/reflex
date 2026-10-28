@@ -2,7 +2,6 @@
 import io from "socket.io-client";
 import { mergician } from "mergician";
 import env from "$/env.json";
-import reflexEnvironment from "$/reflex.json";
 import Cookies from "universal-cookie";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -191,7 +190,7 @@ const createSocket = (endpoint, transports, token) =>
   io(endpoint.href, {
     path: endpoint.pathname,
     transports,
-    protocols: [reflexEnvironment.version],
+    protocols: [env.REFLEX_VERSION],
     autoUnref: false,
     autoConnect: false,
     query: { token },
@@ -786,6 +785,12 @@ const withRouterData = (event, params) => {
   return event;
 };
 
+const currentRouteKey = () => {
+  const loc = locationRef.current ?? window.location;
+  const liveLoc = env.MOUNT_TARGET ? loc : window.location;
+  return loc.pathname + (liveLoc.search ?? "");
+};
+
 /**
  * Send an event to the server via REST.
  * @param event The current event.
@@ -983,6 +988,7 @@ export const connect = async (
 
   // Get backend URL object from the endpoint.
   const endpoint = getBackendURL(EVENTURL);
+  let bootRoute;
 
   // The hydrate event rides in the socket.io CONNECT packet, so the backend
   // starts loading state as soon as the namespace connects instead of after
@@ -990,12 +996,13 @@ export const connect = async (
   // the backend as CompileVars.CONNECT_AUTH_EVENT and CONNECT_AUTH_STATE_SCHEMA;
   // the state schema goes along on every (re)connect, since a reconnect can
   // land on another backend version.
-  const bootAuth = (first) => {
+  const bootAuth = (first) => (callback) => {
     const boot_event = withRouterData(app.initialEvents(first)[0], params);
+    bootRoute = currentRouteKey();
     recordSentStorageValues(boot_event);
     // Instrumentation hook (installed by reflex-otel): may add a traceparent.
     window.__reflex_otel?.onEventSend?.(boot_event);
-    return { event: boot_event, state_schema: app.stateSchema };
+    callback({ event: boot_event, state_schema: app.stateSchema });
   };
 
   // Create the socket. A new session's token is saved here, once the app has
@@ -1016,6 +1023,8 @@ export const connect = async (
     warmSocket ?? createSocket(endpoint, transports, session_token);
   warmSocket = null;
   cancelWarmup();
+  // Socket.IO calls this when the namespace connection is sent, so route data
+  // reflects any navigation that happened while the transport was connecting.
   socket.current.auth = bootAuth(true);
   socket.current.wait_connect = !socket.current.connected;
   // Ensure undefined fields in events are sent as null instead of removed
@@ -1130,6 +1139,19 @@ export const connect = async (
     window.__reflex_otel?.onSocketConnect?.();
     window.addEventListener("pagehide", pagehideHandler);
     window.addEventListener("beforeunload", disconnectTrigger);
+    // The connection auth event already loads its route, and every queued
+    // on_load loads the route current when it is sent. Keep the last queued
+    // on_load, after every navigation's storage update, only if the route
+    // changed after the auth event was built.
+    let keepOnLoad = bootRoute !== currentRouteKey();
+    for (let i = event_queue.length - 1; i >= 0; i--) {
+      if (event_queue[i].name !== app.on_load_internal_event) continue;
+      if (keepOnLoad) {
+        keepOnLoad = false;
+      } else {
+        event_queue.splice(i, 1);
+      }
+    }
     // Drain any initial events from the queue.
     while (event_queue.length > 0) {
       await processEvent(socket.current, navigate, params);

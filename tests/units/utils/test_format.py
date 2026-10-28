@@ -6,6 +6,7 @@ from typing import Any
 
 import plotly.graph_objects as go
 import pytest
+from reflex_base import constants
 from reflex_base.components.tags.tag import Tag
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import (
@@ -798,6 +799,33 @@ def test_format_ref(input, output):
         output: The expected formatted name.
     """
     assert format.format_ref(input) == output
+
+
+def test_format_ref_names_an_f_string_var_by_its_expression_and_type():
+    """A Var in an f-string id gives a ref name free of its run-dependent hash."""
+    # A fixed name: the same in every process, whatever its hash seed.
+    assert (
+        format.format_ref(f"zone-{Var(_js_expr='item', _var_type=str)}")
+        == "ref_zone_3deb28a3item"
+    )
+    assert (
+        format.format_ref(f"zone-{Var(_js_expr='item', _var_type=int)}")
+        == "ref_zone_e6949b17item"
+    )
+
+
+@pytest.mark.parametrize("key", ["xyz", "123"])
+def test_format_ref_drops_a_marker_of_no_known_var(key: str):
+    """A ref string can hold a marker that no Var in this process wrote.
+
+    Args:
+        key: The marker content: not a hash, or a hash of no known Var.
+    """
+    ref = (
+        f"a-{constants.REFLEX_VAR_OPENING_TAG}{key}{constants.REFLEX_VAR_CLOSING_TAG}b"
+    )
+
+    assert format.format_ref(ref) == "ref_a_b"
 
 
 @pytest.mark.parametrize(
