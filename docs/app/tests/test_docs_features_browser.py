@@ -63,7 +63,7 @@ def test_docs_reading_typography_is_consistent(page: Page, width: int):
 
 
 def test_sidebar_labels_match_reading_text_color(page: Page):
-    """Section labels use foreground while inactive links and captions recede."""
+    """Sidebar navigation uses foreground while section captions recede."""
     page.set_viewport_size({"width": 1440, "height": 1000})
     page.goto(f"{PREVIEW_URL}/docs/getting-started/introduction/")
     expect(
@@ -74,10 +74,18 @@ def test_sidebar_labels_match_reading_text_color(page: Page):
     )
     expect(
         page.get_by_role("link", name="Installation", exact=True).locator("p")
-    ).to_have_css("color", "rgb(105, 100, 94)")
+    ).to_have_css("color", "rgb(0, 0, 0)")
     expect(page.get_by_role("heading", name="Onboarding", exact=True)).to_have_css(
         "color", "rgb(105, 100, 94)"
     )
+    page.goto(f"{PREVIEW_URL}/docs/enterprise/testing/")
+    for label in ("Overview", "AG Chart"):
+        expect(
+            page
+            .locator(".docs-sidebar")
+            .get_by_role("link", name=label, exact=True)
+            .locator("p")
+        ).to_have_css("color", "rgb(0, 0, 0)")
 
 
 @pytest.mark.parametrize(
