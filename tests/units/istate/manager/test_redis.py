@@ -2028,6 +2028,11 @@ async def test_first_read_in_dev_recomputes_cached_vars(
 
         @computed_var(cache=True)
         def data(self) -> list[str]:
+            """The rows, which a reload can change.
+
+            Returns:
+                A copy of the rows.
+            """
             return list(rows)
 
     class RedisCachedChild(RedisCachedState):
@@ -2035,6 +2040,11 @@ async def test_first_read_in_dev_recomputes_cached_vars(
 
         @computed_var(cache=True)
         def child_data(self) -> list[str]:
+            """The rows, cached on the substate.
+
+            Returns:
+                A copy of the rows.
+            """
             return list(rows)
 
     async def read(state_manager: StateManagerRedis, count: int) -> tuple:
@@ -2091,6 +2101,11 @@ async def test_dev_unwritten_state_keeps_recomputing_cached_vars(
 
         @computed_var(cache=True)
         def data(self) -> list[str]:
+            """The rows, which a reload can change.
+
+            Returns:
+                A copy of the rows.
+            """
             return list(rows)
 
     redis = mock_redis()

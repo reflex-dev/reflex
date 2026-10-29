@@ -189,11 +189,21 @@ async def test_states_from_disk_recompute_cached_vars(tmp_path, monkeypatch):
 
         @computed_var(cache=True)
         def data(self) -> list[str]:
+            """The rows, which a reload can change.
+
+            Returns:
+                A copy of the rows.
+            """
             return list(rows)
 
     class DiskCachedChild(DiskCachedState):
         @computed_var(cache=True)
         def child_data(self) -> list[str]:
+            """The rows, cached on the substate.
+
+            Returns:
+                A copy of the rows.
+            """
             return list(rows)
 
     token = BaseStateToken(ident="client", cls=DiskCachedState)
