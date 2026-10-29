@@ -1,0 +1,1 @@
+Load docs pages faster: the icon gallery fetches its icons in one request after the page renders instead of one request per icon, page text no longer jumps when web fonts load or while a long page is still loading, and the introduction and pyplot pages ship less JavaScript.
