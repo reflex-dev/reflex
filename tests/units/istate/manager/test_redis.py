@@ -410,10 +410,10 @@ async def test_repeated_cancellation_waits_for_state_save(
             await task
 
 
-async def test_modify_exception_does_not_persist_state(
+async def test_modify_exception_persists_state(
     state_manager_redis: StateManagerRedis,
 ):
-    """Keep the existing write-discarding behavior for non-cancellation errors.
+    """Keep the writes of a handler that raises, like the other state managers.
 
     Args:
         state_manager_redis: The StateManagerRedis to test.
@@ -428,7 +428,7 @@ async def test_modify_exception_does_not_persist_state(
             raise RuntimeError(msg)
     persisted = await manager.get_state(token)
     assert isinstance(persisted, RedisTestState)
-    assert persisted.count == 0
+    assert persisted.count == 1
 
 
 async def test_modify_cancelled_does_not_save_after_lock_expiry(

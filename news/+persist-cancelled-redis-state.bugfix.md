@@ -1,1 +1,1 @@
-Preserve state changes made by cancelled foreground event handlers when using Redis, including updates already yielded to the client before a superseding event.
+Preserve state changes made by foreground event handlers that raise or are cancelled when using Redis, including updates already yielded to the client before a superseding event, matching the other state managers.

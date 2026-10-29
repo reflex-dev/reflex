@@ -575,7 +575,7 @@ class StateManagerRedis(StateManager):
         lock_id: bytes,
         **context: Unpack[StateModificationContext],
     ) -> AsyncIterator[TOKEN_TYPE]:
-        """Load and save state under an existing lock, including on cancellation.
+        """Load and save state under an existing lock, also when the handler fails.
 
         Args:
             token: The token to modify the state for.
@@ -588,7 +588,7 @@ class StateManagerRedis(StateManager):
         state = await self.get_state(token)
         try:
             yield state
-        except asyncio.CancelledError:
+        except (Exception, asyncio.CancelledError):
             # A handler may already have yielded these writes to the client.
             save = asyncio.create_task(
                 self.set_state(token, state, lock_id=lock_id, **context)
