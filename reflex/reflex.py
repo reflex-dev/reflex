@@ -882,8 +882,6 @@ def run(
 
     config = get_config()
 
-    frontend_port = frontend_port or config.frontend_port
-    backend_port = backend_port or config.backend_port
     backend_host = backend_host or config.backend_host
 
     environment.REFLEX_COMPILE_CONTEXT.set(constants.CompileContext.RUN)
@@ -891,6 +889,13 @@ def run(
     environment.REFLEX_FRONTEND_ONLY.set(frontend_only)
 
     running_mode = prerequisites.check_running_mode(frontend_only, backend_only)
+
+    # Only the side that runs takes its port from the config, so `_run` can
+    # still reject a port flag given for the side that does not run.
+    if running_mode.has_frontend():
+        frontend_port = frontend_port or config.frontend_port
+    if running_mode.has_backend():
+        backend_port = backend_port or config.backend_port
 
     _run(
         env=constants.Env(env),

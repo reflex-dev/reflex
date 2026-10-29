@@ -18,6 +18,7 @@ import psutil
 import pytest
 from pytest_mock import MockerFixture
 from reflex_base import constants
+from reflex_base.environment import environment
 
 from reflex import reflex
 from reflex.testing import DEFAULT_TIMEOUT
@@ -1342,6 +1343,99 @@ def test_run_supervises_output_only_in_json_mode(
         assert result.exit_code == 0, result.output
         supervise.assert_not_called()
         run.assert_called_once()
+
+
+@pytest.fixture
+def run_cli_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Unset the variables ``reflex run`` reads or sets, and restore them after.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    for var in (
+        environment.REFLEX_COMPILE_CONTEXT,
+        environment.REFLEX_FRONTEND_ONLY,
+        environment.REFLEX_BACKEND_ONLY,
+        environment.REFLEX_FRONTEND_PORT,
+        environment.REFLEX_BACKEND_PORT,
+        environment.REFLEX_LOG_JSON,
+    ):
+        monkeypatch.delenv(var.name, raising=False)
+
+
+@pytest.mark.usefixtures("run_cli_env")
+@pytest.mark.parametrize(
+    ("argv", "frontend_port", "backend_port"),
+    [
+        ([], 3653, 8653),
+        (["--frontend-only"], 3653, None),
+        (["--backend-only"], None, 8653),
+        (["--frontend-only", "--frontend-port", "3001"], 3001, None),
+        (["--backend-only", "--backend-port", "8001"], None, 8001),
+    ],
+)
+def test_run_uses_config_ports_only_for_the_running_side(
+    mocker: MockerFixture,
+    argv: list[str],
+    frontend_port: int | None,
+    backend_port: int | None,
+):
+    """A port set in rxconfig.py does not reach ``_run`` for a side that does not run.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        argv: Extra ``reflex run`` arguments.
+        frontend_port: The frontend port expected to reach ``_run``.
+        backend_port: The backend port expected to reach ``_run``.
+    """
+    config = mocker.patch.object(reflex, "get_config").return_value
+    config.frontend_port = 3653
+    config.backend_port = 8653
+    run = mocker.patch.object(reflex, "_run")
+
+    result = click.testing.CliRunner().invoke(reflex.cli, ["run", *argv])
+
+    assert result.exit_code == 0, result.output
+    assert run.call_args.kwargs["frontend_port"] == frontend_port
+    assert run.call_args.kwargs["backend_port"] == backend_port
+
+
+@pytest.mark.usefixtures("run_cli_env")
+@pytest.mark.parametrize(
+    ("argv", "message"),
+    [
+        (
+            ["--frontend-only", "--backend-port", "8001"],
+            "Cannot specify --backend-port when not running backend.",
+        ),
+        (
+            ["--backend-only", "--frontend-port", "3001"],
+            "Cannot specify --frontend-port when not running frontend.",
+        ),
+    ],
+)
+def test_run_rejects_a_port_flag_for_the_side_that_does_not_run(
+    mocker: MockerFixture,
+    caplog: pytest.LogCaptureFixture,
+    argv: list[str],
+    message: str,
+):
+    """An explicit port flag for the side that does not run is still an error.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        caplog: The pytest log capture fixture.
+        argv: Extra ``reflex run`` arguments.
+        message: The expected error message.
+    """
+    config = mocker.patch.object(reflex, "get_config").return_value
+    config.frontend_port = 3653
+    config.backend_port = 8653
+
+    result = click.testing.CliRunner().invoke(reflex.cli, ["run", *argv])
+
+    assert result.exit_code == 1
+    assert message in caplog.text
 
 
 @pytest.mark.parametrize(
