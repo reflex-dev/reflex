@@ -1,0 +1,6951 @@
+{
+  "schema": "reflex-bench/1",
+  "tool": {
+    "name": "reflex-bench",
+    "version": "0.0.1.dev3811+6c3713012"
+  },
+  "invocation": {
+    "id": "23ff007e-afea-4a42-8a7f-0dd49cb748a3",
+    "argv": [
+      "run",
+      "--suite",
+      "daily",
+      "lifecycle.*",
+      "--kind",
+      "daily",
+      "--json",
+      "lifecycle.json",
+      "--no-save",
+      "--fail-on",
+      "never"
+    ],
+    "started_at": "2026-10-29T04:46:01Z",
+    "duration_s": 729.395,
+    "mode": "ci",
+    "kind": "daily",
+    "ci": {
+      "provider": "github",
+      "run_id": "40819495670",
+      "url": "https://github.com/reflex-dev/reflex/actions/runs/40819495670",
+      "runner": "GitHub Actions 1001353111"
+    },
+    "rng_seed": 167471591
+  },
+  "subjects": {
+    "A": {
+      "spec": "workspace",
+      "source": "workspace",
+      "python": "/home/runner/work/reflex/reflex/.venv/bin/python",
+      "python_version": "3.12.3",
+      "reflex_version": "0.10.2.dev24+6c3713012",
+      "commit": "6c371301252275961409e98e946198f1dd838ab7",
+      "dirty": false,
+      "extra": {
+        "granian": "2.8.4"
+      }
+    }
+  },
+  "machine": {
+    "profile_id": "linux-arm64-neoverse-n2-py3.12",
+    "os": "Linux",
+    "kernel": "7.0.0-1017-azure",
+    "arch": "arm64",
+    "cpu_model": "Neoverse-N2",
+    "cpu_count": 4,
+    "ram_bytes": 16715923456,
+    "governor": null,
+    "turbo": null,
+    "load_avg_1m": 1.77,
+    "ac_power": null,
+    "cgroup_v2": true,
+    "container": false,
+    "virtualized": true,
+    "tools": {
+      "bun": false,
+      "node": true,
+      "chromium": true
+    }
+  },
+  "fixture": null,
+  "policy": {
+    "runs": null,
+    "min_runs": 10,
+    "max_runs": 30,
+    "min_time_s": 30.0,
+    "warmup": null,
+    "timeout_s": null,
+    "smoke": false,
+    "alpha": 0.01,
+    "correction": "holm",
+    "threshold_rel": 0.03,
+    "confidence": 0.95,
+    "bootstrap_resamples": 10000,
+    "fail_on": "never",
+    "fail_on_inconclusive": false
+  },
+  "benchmarks": [
+    {
+      "id": "lifecycle.compile.cold",
+      "params": {
+        "app": "playground"
+      },
+      "kind": "time",
+      "version": "sha256:cb603e1bff9acc234529e18f4c400c82e6d11332a76579c1d090246e91161204",
+      "status": "ok",
+      "error": null,
+      "traceback_tail": null,
+      "dims": {
+        "collector": "cgroup",
+        "fixture": "playground"
+      },
+      "metrics": {
+        "wall": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {
+            "A": [
+              2.4910928280000064,
+              2.6034387250000037,
+              2.758619225000004,
+              2.371221356999996,
+              2.4402571600000016,
+              2.383984861000002,
+              2.4539622100000003,
+              2.4470623669999867,
+              2.416419784999988,
+              2.5082889990000012,
+              2.381058335000006,
+              2.803659737000004
+            ]
+          },
+          "summary": {
+            "A": {
+              "n": 12,
+              "median": 2.4505122884999935,
+              "ci": [
+                2.383984861000002,
+                2.6034387250000037
+              ],
+              "mean": 2.5049221324166666,
+              "stddev": 0.14438500527182604,
+              "min": 2.371221356999996,
+              "max": 2.803659737000004,
+              "q1": 2.4083110539999915,
+              "q3": 2.532076430500002,
+              "mad": 0.0621520689999997,
+              "cv": 0.057640516407002296,
+              "outliers": {
+                "mild": 2,
+                "severe": 0
+              }
+            }
+          },
+          "comparison": null,
+          "warnings": []
+        },
+        "cpu": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {
+            "A": [
+              2.559388,
+              2.56188,
+              2.590942,
+              2.510977,
+              2.583407,
+              2.520376,
+              2.589079,
+              2.586227,
+              2.557301,
+              2.566252,
+              2.507044,
+              2.485549
+            ]
+          },
+          "summary": {
+            "A": {
+              "n": 12,
+              "median": 2.5606340000000003,
+              "ci": [
+                2.510977,
+                2.586227
+              ],
+              "mean": 2.5515351666666666,
+              "stddev": 0.03636904807121106,
+              "min": 2.485549,
+              "max": 2.590942,
+              "q1": 2.51802625,
+              "q3": 2.5841119999999997,
+              "mad": 0.027018999999999682,
+              "cv": 0.014253790638019579,
+              "outliers": {
+                "mild": 0,
+                "severe": 0
+              }
+            }
+          },
+          "comparison": null,
+          "warnings": []
+        },
+        "peak_mem": {
+          "unit": "B",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {
+            "A": [
+              150339584.0,
+              146010112.0,
+              150347776.0,
+              140546048.0,
+              135933952.0,
+              135671808.0,
+              135958528.0,
+              135950336.0,
+              135938048.0,
+              148516864.0,
+              137506816.0,
+              135675904.0
+            ]
+          },
+          "summary": {
+            "A": {
+              "n": 12,
+              "median": 136732672.0,
+              "ci": [
+                135933952.0,
+                148516864.0
+              ],
+              "mean": 140699648.0,
+              "stddev": 6226617.775252191,
+              "min": 135671808.0,
+              "max": 150347776.0,
+              "q1": 135937024.0,
+              "q3": 146636800.0,
+              "mad": 1058816.0,
+              "cv": 0.04425467912508346,
+              "outliers": {
+                "mild": 0,
+                "severe": 0
+              }
+            }
+          },
+          "comparison": null,
+          "warnings": []
+        }
+      },
+      "sample_meta": [
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:46:12.806Z",
+          "warmup": false,
+          "duration_s": 2.500998224
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:46:15.959Z",
+          "warmup": false,
+          "duration_s": 2.614000981
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:46:19.258Z",
+          "warmup": false,
+          "duration_s": 2.768501283
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:46:22.675Z",
+          "warmup": false,
+          "duration_s": 2.381258408
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:46:25.706Z",
+          "warmup": false,
+          "duration_s": 2.44988154
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:46:28.822Z",
+          "warmup": false,
+          "duration_s": 2.393975076
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:46:31.872Z",
+          "warmup": false,
+          "duration_s": 2.463991822
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:46:34.989Z",
+          "warmup": false,
+          "duration_s": 2.457129938
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:46:38.094Z",
+          "warmup": false,
+          "duration_s": 2.426379284
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:46:41.169Z",
+          "warmup": false,
+          "duration_s": 2.51826403
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:46:44.338Z",
+          "warmup": false,
+          "duration_s": 2.391076796
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:46:47.377Z",
+          "warmup": false,
+          "duration_s": 2.813558452
+        }
+      ],
+      "sample_extra": [
+        {
+          "phases": {
+            "total": 2.4910928280000064,
+            "cpu_total": 2.559388,
+            "python": 2.351128449000015,
+            "install": 0.13996437899999137,
+            "frontend": 0.0,
+            "idle": 0.14112844900001553,
+            "cpu": {
+              "python": 2.2099999999999995,
+              "install": 0.34,
+              "frontend": 0.0
+            },
+            "python_breakdown": {
+              "compile": 0.77,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": false
+          },
+          "timing": {
+            "compile": 0.77,
+            "assets": 0.0,
+            "install": 0.23,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "deleted_bytes": {
+            "web": 0
+          }
+        },
+        {
+          "phases": {
+            "total": 2.6034387250000037,
+            "cpu_total": 2.56188,
+            "python": 2.3523821990000044,
+            "install": 0.2510565259999993,
+            "frontend": 0.0,
+            "idle": 0.15238219900000471,
+            "cpu": {
+              "python": 2.1999999999999997,
+              "install": 0.35000000000000003,
+              "frontend": 0.0
+            },
+            "python_breakdown": {
+              "compile": 0.77,
+              "assets": 0.0,
+              "write": 0.01
+            },
+            "mismatch": false
+          },
+          "timing": {
+            "compile": 0.77,
+            "assets": 0.0,
+            "install": 0.35,
+            "write": 0.01
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "deleted_bytes": {
+            "web": 588244422
+          }
+        },
+        {
+          "phases": {
+            "total": 2.758619225000004,
+            "cpu_total": 2.590942,
+            "python": 2.4599873080000094,
+            "install": 0.2986319169999945,
+            "frontend": 0.0,
+            "idle": 0.23998730800000967,
+            "cpu": {
+              "python": 2.2199999999999998,
+              "install": 0.36,
+              "frontend": 0.0
+            },
+            "python_breakdown": {
+              "compile": 0.77,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": false
+          },
+          "timing": {
+            "compile": 0.77,
+            "assets": 0.0,
+            "install": 0.35,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "deleted_bytes": {
+            "web": 588244422
+          }
+        },
+        {
+          "phases": {
+            "total": 2.371221356999996,
+            "cpu_total": 2.510977,
+            "python": 2.2550761139999906,
+            "install": 0.1161452430000054,
+            "frontend": 0.0,
+            "idle": 0.11507611399999051,
+            "cpu": {
+              "python": 2.14,
+              "install": 0.36,
+              "frontend": 0.0
+            },
+            "python_breakdown": {
+              "compile": 0.76,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": false
+          },
+          "timing": {
+            "compile": 0.76,
+            "assets": 0.0,
+            "install": 0.2,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "deleted_bytes": {
+            "web": 588244422
+          }
+        },
+        {
+          "phases": {
+            "total": 2.4402571600000016,
+            "cpu_total": 2.583407,
+            "python": 2.2989632030000138,
+            "install": 0.1412939569999878,
+            "frontend": 0.0,
+            "idle": 0.04896320300001378,
+            "cpu": {
+              "python": 2.25,
+              "install": 0.32,
+              "frontend": 0.0
+            },
+            "python_breakdown": {
+              "compile": 0.79,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": false
+          },
+          "timing": {
+            "compile": 0.79,
+            "assets": 0.0,
+            "install": 0.2,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "deleted_bytes": {
+            "web": 588244422
+          }
+        },
+        {
+          "phases": {
+            "total": 2.383984861000002,
+            "cpu_total": 2.520376,
+            "python": 2.265887399999997,
+            "install": 0.11809746100000496,
+            "frontend": 0.0,
+            "idle": 0.11588739999999698,
+            "cpu": {
+              "python": 2.15,
+              "install": 0.36,
+              "frontend": 0.0
+            },
+            "python_breakdown": {
+              "compile": 0.76,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": false
+          },
+          "timing": {
+            "compile": 0.76,
+            "assets": 0.0,
+            "install": 0.2,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "deleted_bytes": {
+            "web": 588244421
+          }
+        },
+        {
+          "phases": {
+            "total": 2.4539622100000003,
+            "cpu_total": 2.589079,
+            "python": 2.315127566000001,
+            "install": 0.13883464399999923,
+            "frontend": 0.0,
+            "idle": 0.10512756600000106,
+            "cpu": {
+              "python": 2.21,
+              "install": 0.36,
+              "frontend": 0.0
+            },
+            "python_breakdown": {
+              "compile": 0.79,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": false
+          },
+          "timing": {
+            "compile": 0.79,
+            "assets": 0.0,
+            "install": 0.2,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "deleted_bytes": {
+            "web": 588244422
+          }
+        },
+        {
+          "phases": {
+            "total": 2.4470623669999867,
+            "cpu_total": 2.586227,
+            "python": 2.3097935509999843,
+            "install": 0.1372688160000024,
+            "frontend": 0.0,
+            "idle": 0.09979355099998433,
+            "cpu": {
+              "python": 2.21,
+              "install": 0.36,
+              "frontend": 0.0
+            },
+            "python_breakdown": {
+              "compile": 0.79,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": false
+          },
+          "timing": {
+            "compile": 0.79,
+            "assets": 0.0,
+            "install": 0.2,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "deleted_bytes": {
+            "web": 588244422
+          }
+        },
+        {
+          "phases": {
+            "total": 2.416419784999988,
+            "cpu_total": 2.557301,
+            "python": 2.297867081999982,
+            "install": 0.11855270300000598,
+            "frontend": 0.0,
+            "idle": 0.07786708199998227,
+            "cpu": {
+              "python": 2.2199999999999998,
+              "install": 0.33,
+              "frontend": 0.0
+            },
+            "python_breakdown": {
+              "compile": 0.77,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": false
+          },
+          "timing": {
+            "compile": 0.77,
+            "assets": 0.0,
+            "install": 0.2,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "deleted_bytes": {
+            "web": 588244422
+          }
+        },
+        {
+          "phases": {
+            "total": 2.5082889990000012,
+            "cpu_total": 2.566252,
+            "python": 2.391411478000009,
+            "install": 0.11687752099999216,
+            "frontend": 0.0,
+            "idle": 0.1914114780000089,
+            "cpu": {
+              "python": 2.2,
+              "install": 0.36,
+              "frontend": 0.0
+            },
+            "python_breakdown": {
+              "compile": 0.76,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": false
+          },
+          "timing": {
+            "compile": 0.76,
+            "assets": 0.0,
+            "install": 0.2,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "deleted_bytes": {
+            "web": 588244421
+          }
+        },
+        {
+          "phases": {
+            "total": 2.381058335000006,
+            "cpu_total": 2.507044,
+            "python": 2.2640191940000136,
+            "install": 0.11703914099999224,
+            "frontend": 0.0,
+            "idle": 0.0840191940000139,
+            "cpu": {
+              "python": 2.1799999999999997,
+              "install": 0.31,
+              "frontend": 0.0
+            },
+            "python_breakdown": {
+              "compile": 0.77,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": false
+          },
+          "timing": {
+            "compile": 0.77,
+            "assets": 0.0,
+            "install": 0.21,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "deleted_bytes": {
+            "web": 588244422
+          }
+        },
+        {
+          "phases": {
+            "total": 2.803659737000004,
+            "cpu_total": 2.485549,
+            "python": 2.6881936960000132,
+            "install": 0.11546604099999058,
+            "frontend": 0.0,
+            "idle": 0.5381936960000133,
+            "cpu": {
+              "python": 2.15,
+              "install": 0.32,
+              "frontend": 0.0
+            },
+            "python_breakdown": {
+              "compile": 0.75,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": false
+          },
+          "timing": {
+            "compile": 0.75,
+            "assets": 0.0,
+            "install": 0.2,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "deleted_bytes": {
+            "web": 588244421
+          }
+        }
+      ],
+      "fixture_hash": "sha256:4e394b7fae5105fdd5820509cefc0ee7bd5d4e05714a89cfb8d1478568123ef5"
+    },
+    {
+      "id": "lifecycle.compile.incremental",
+      "params": {
+        "app": "playground"
+      },
+      "kind": "time",
+      "version": "sha256:59609c8363ad202a8ad78b1940d7179619fd7c78e648f6fc8d313f3f24d3fdc8",
+      "status": "ok",
+      "error": null,
+      "traceback_tail": null,
+      "dims": {
+        "collector": "cgroup",
+        "fixture": "playground"
+      },
+      "metrics": {
+        "wall": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {
+            "A": [
+              2.1160795649999926,
+              2.1635466790000066,
+              2.089348466000004,
+              2.229559041999991,
+              2.122107897999996,
+              2.122992515000007,
+              2.0820568000000037,
+              2.1562512270000127,
+              2.1299777750000146,
+              2.1430070829999863,
+              2.1231161640000096,
+              2.139910165999993,
+              2.1512641390000056,
+              2.1042891829999917,
+              2.2502785899999935
+            ]
+          },
+          "summary": {
+            "A": {
+              "n": 14,
+              "median": 2.1349439705000037,
+              "ci": [
+                2.1042891829999917,
+                2.1635466790000066
+              ],
+              "mean": 2.1434075519285725,
+              "stddev": 0.04736702450552569,
+              "min": 2.0820568000000037,
+              "max": 2.2502785899999935,
+              "q1": 2.1223290522499987,
+              "q3": 2.155004455000011,
+              "mad": 0.01881371250000541,
+              "cv": 0.022098935157201575,
+              "outliers": {
+                "mild": 2,
+                "severe": 0
+              }
+            }
+          },
+          "comparison": null,
+          "warnings": []
+        },
+        "cpu": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {
+            "A": [
+              2.104883,
+              2.149486,
+              2.077901,
+              2.218428,
+              2.107056,
+              2.112073,
+              2.068432,
+              2.141955,
+              2.117143,
+              2.131216,
+              2.107952,
+              2.12474,
+              2.139909,
+              2.066564,
+              2.102364
+            ]
+          },
+          "summary": {
+            "A": {
+              "n": 14,
+              "median": 2.114608,
+              "ci": [
+                2.077901,
+                2.141955
+              ],
+              "mean": 2.1189442142857144,
+              "stddev": 0.038779719727988146,
+              "min": 2.066564,
+              "max": 2.218428,
+              "q1": 2.103537,
+              "q3": 2.13773575,
+              "mad": 0.020954499999999987,
+              "cv": 0.01830143496300614,
+              "outliers": {
+                "mild": 1,
+                "severe": 0
+              }
+            }
+          },
+          "comparison": null,
+          "warnings": []
+        },
+        "peak_mem": {
+          "unit": "B",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {
+            "A": [
+              116817920.0,
+              117080064.0,
+              117080064.0,
+              117346304.0,
+              116813824.0,
+              117071872.0,
+              117075968.0,
+              117075968.0,
+              116813824.0,
+              116809728.0,
+              117080064.0,
+              117071872.0,
+              117075968.0,
+              116809728.0,
+              117334016.0
+            ]
+          },
+          "summary": {
+            "A": {
+              "n": 14,
+              "median": 117075968.0,
+              "ci": [
+                116813824.0,
+                117080064.0
+              ],
+              "mean": 117038518.85714285,
+              "stddev": 175263.86738543998,
+              "min": 116809728.0,
+              "max": 117346304.0,
+              "q1": 116878336.0,
+              "q3": 117080064.0,
+              "mad": 4096.0,
+              "cv": 0.0014974887677736844,
+              "outliers": {
+                "mild": 0,
+                "severe": 0
+              }
+            }
+          },
+          "comparison": null,
+          "warnings": []
+        }
+      },
+      "sample_meta": [
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:46:54.878Z",
+          "warmup": true,
+          "duration_s": 2.125656373
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:46:57.005Z",
+          "warmup": false,
+          "duration_s": 2.173258864
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:46:59.179Z",
+          "warmup": false,
+          "duration_s": 2.09909331
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:47:01.280Z",
+          "warmup": false,
+          "duration_s": 2.239590097
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:47:03.521Z",
+          "warmup": false,
+          "duration_s": 2.13264689
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:47:05.655Z",
+          "warmup": false,
+          "duration_s": 2.132738415
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:47:07.789Z",
+          "warmup": false,
+          "duration_s": 2.093981073
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:47:09.885Z",
+          "warmup": false,
+          "duration_s": 2.166196426
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:47:12.052Z",
+          "warmup": false,
+          "duration_s": 2.139529553
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:47:14.193Z",
+          "warmup": false,
+          "duration_s": 2.15303525
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:47:16.348Z",
+          "warmup": false,
+          "duration_s": 2.133148239
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:47:18.482Z",
+          "warmup": false,
+          "duration_s": 2.149756983
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:47:20.634Z",
+          "warmup": false,
+          "duration_s": 2.161347527
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:47:22.796Z",
+          "warmup": false,
+          "duration_s": 2.114583152
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:47:24.916Z",
+          "warmup": false,
+          "duration_s": 2.259828366
+        }
+      ],
+      "sample_extra": [
+        {
+          "phases": {
+            "total": 2.1160795649999926,
+            "cpu_total": 2.104883,
+            "python": 2.1160795649999926,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.026079564999992755,
+            "cpu": {
+              "python": 2.09,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {
+              "compile": 0.7,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": false
+          },
+          "timing": {
+            "compile": 0.7,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "marker": "m-1-leaf"
+        },
+        {
+          "phases": {
+            "total": 2.1635466790000066,
+            "cpu_total": 2.149486,
+            "python": 2.1635466790000066,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.02354667900000651,
+            "cpu": {
+              "python": 2.14,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {
+              "compile": 0.71,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": false
+          },
+          "timing": {
+            "compile": 0.71,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "marker": "m-2-leaf"
+        },
+        {
+          "phases": {
+            "total": 2.089348466000004,
+            "cpu_total": 2.077901,
+            "python": 2.089348466000004,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.02934846600000407,
+            "cpu": {
+              "python": 2.06,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {
+              "compile": 0.69,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": false
+          },
+          "timing": {
+            "compile": 0.69,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "marker": "m-3-leaf"
+        },
+        {
+          "phases": {
+            "total": 2.229559041999991,
+            "cpu_total": 2.218428,
+            "python": 2.229559041999991,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.019559041999991145,
+            "cpu": {
+              "python": 2.21,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {
+              "compile": 0.73,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": false
+          },
+          "timing": {
+            "compile": 0.73,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "marker": "m-4-leaf"
+        },
+        {
+          "phases": {
+            "total": 2.122107897999996,
+            "cpu_total": 2.107056,
+            "python": 2.122107897999996,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.022107897999995796,
+            "cpu": {
+              "python": 2.1,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {
+              "compile": 0.7,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": false
+          },
+          "timing": {
+            "compile": 0.7,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "marker": "m-5-leaf"
+        },
+        {
+          "phases": {
+            "total": 2.122992515000007,
+            "cpu_total": 2.112073,
+            "python": 2.122992515000007,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.022992515000006986,
+            "cpu": {
+              "python": 2.1,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {
+              "compile": 0.7,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": false
+          },
+          "timing": {
+            "compile": 0.7,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "marker": "m-6-leaf"
+        },
+        {
+          "phases": {
+            "total": 2.0820568000000037,
+            "cpu_total": 2.068432,
+            "python": 2.0820568000000037,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.02205680000000365,
+            "cpu": {
+              "python": 2.06,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {
+              "compile": 0.69,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": false
+          },
+          "timing": {
+            "compile": 0.69,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "marker": "m-7-leaf"
+        },
+        {
+          "phases": {
+            "total": 2.1562512270000127,
+            "cpu_total": 2.141955,
+            "python": 2.1562512270000127,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.02625122700001281,
+            "cpu": {
+              "python": 2.13,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {
+              "compile": 0.71,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": false
+          },
+          "timing": {
+            "compile": 0.71,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "marker": "m-8-leaf"
+        },
+        {
+          "phases": {
+            "total": 2.1299777750000146,
+            "cpu_total": 2.117143,
+            "python": 2.1299777750000146,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.029977775000014528,
+            "cpu": {
+              "python": 2.1,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {
+              "compile": 0.7,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": false
+          },
+          "timing": {
+            "compile": 0.7,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "marker": "m-9-leaf"
+        },
+        {
+          "phases": {
+            "total": 2.1430070829999863,
+            "cpu_total": 2.131216,
+            "python": 2.1430070829999863,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.023007082999986217,
+            "cpu": {
+              "python": 2.12,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {
+              "compile": 0.71,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": false
+          },
+          "timing": {
+            "compile": 0.71,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "marker": "m-10-leaf"
+        },
+        {
+          "phases": {
+            "total": 2.1231161640000096,
+            "cpu_total": 2.107952,
+            "python": 2.1231161640000096,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.023116164000009487,
+            "cpu": {
+              "python": 2.1,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {
+              "compile": 0.71,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": false
+          },
+          "timing": {
+            "compile": 0.71,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "marker": "m-11-leaf"
+        },
+        {
+          "phases": {
+            "total": 2.139910165999993,
+            "cpu_total": 2.12474,
+            "python": 2.139910165999993,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.029910165999992966,
+            "cpu": {
+              "python": 2.11,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {
+              "compile": 0.71,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": false
+          },
+          "timing": {
+            "compile": 0.71,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "marker": "m-12-leaf"
+        },
+        {
+          "phases": {
+            "total": 2.1512641390000056,
+            "cpu_total": 2.139909,
+            "python": 2.1512641390000056,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.021264139000005677,
+            "cpu": {
+              "python": 2.13,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {
+              "compile": 0.71,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": false
+          },
+          "timing": {
+            "compile": 0.71,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "marker": "m-13-leaf"
+        },
+        {
+          "phases": {
+            "total": 2.1042891829999917,
+            "cpu_total": 2.066564,
+            "python": 2.1042891829999917,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.04428918299999163,
+            "cpu": {
+              "python": 2.06,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {
+              "compile": 0.69,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": false
+          },
+          "timing": {
+            "compile": 0.69,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "marker": "m-14-leaf"
+        },
+        {
+          "phases": {
+            "total": 2.2502785899999935,
+            "cpu_total": 2.102364,
+            "python": 2.2502785899999935,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.16027858999999367,
+            "cpu": {
+              "python": 2.09,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {
+              "compile": 0.7,
+              "assets": 0.0,
+              "write": 0.03
+            },
+            "mismatch": false
+          },
+          "timing": {
+            "compile": 0.7,
+            "assets": 0.0,
+            "install": 0.07,
+            "write": 0.03
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "marker": "m-15-leaf"
+        }
+      ],
+      "fixture_hash": "sha256:4e394b7fae5105fdd5820509cefc0ee7bd5d4e05714a89cfb8d1478568123ef5"
+    },
+    {
+      "id": "lifecycle.compile.warm",
+      "params": {
+        "app": "playground"
+      },
+      "kind": "time",
+      "version": "sha256:352cf69f52c7b88cf4c5de70fc2d4387e5678552b7e2c8f6c0af24fac7b90327",
+      "status": "ok",
+      "error": null,
+      "traceback_tail": null,
+      "dims": {
+        "collector": "cgroup",
+        "fixture": "playground"
+      },
+      "metrics": {
+        "wall": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {
+            "A": [
+              2.100794519999994,
+              2.1402691019999907,
+              2.1081709620000026,
+              2.118033048000001,
+              2.068827452000022,
+              2.094714213000003,
+              2.062226608000003,
+              2.0882109990000117,
+              2.050289752999987,
+              2.1403907099999913,
+              2.0832496660000004,
+              2.104022759000003,
+              2.1197442019999926,
+              2.1470319340000117,
+              2.1226852969999754
+            ]
+          },
+          "summary": {
+            "A": {
+              "n": 14,
+              "median": 2.1060968605000028,
+              "ci": [
+                2.068827452000022,
+                2.1402691019999907
+              ],
+              "mean": 2.1034190503571426,
+              "stddev": 0.03029484310087193,
+              "min": 2.050289752999987,
+              "max": 2.1470319340000117,
+              "q1": 2.0844899992500032,
+              "q3": 2.1219500232499797,
+              "mad": 0.02036652799999672,
+              "cv": 0.014402666504198545,
+              "outliers": {
+                "mild": 0,
+                "severe": 0
+              }
+            }
+          },
+          "comparison": null,
+          "warnings": []
+        },
+        "cpu": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {
+            "A": [
+              2.093126,
+              2.126242,
+              2.096981,
+              2.106928,
+              2.05927,
+              2.082918,
+              2.050949,
+              2.075613,
+              2.037944,
+              2.126514,
+              2.067747,
+              2.092726,
+              2.108522,
+              2.132779,
+              2.11145
+            ]
+          },
+          "summary": {
+            "A": {
+              "n": 14,
+              "median": 2.0948535,
+              "ci": [
+                2.05927,
+                2.126242
+              ],
+              "mean": 2.0911845,
+              "stddev": 0.029787092947604493,
+              "min": 2.037944,
+              "max": 2.132779,
+              "q1": 2.0697134999999998,
+              "q3": 2.110718,
+              "mad": 0.02317350000000018,
+              "cv": 0.014244124775984374,
+              "outliers": {
+                "mild": 0,
+                "severe": 0
+              }
+            }
+          },
+          "comparison": null,
+          "warnings": []
+        },
+        "peak_mem": {
+          "unit": "B",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {
+            "A": [
+              117080064.0,
+              117075968.0,
+              117608448.0,
+              117071872.0,
+              117084160.0,
+              116809728.0,
+              117080064.0,
+              117080064.0,
+              116809728.0,
+              116805632.0,
+              117075968.0,
+              117075968.0,
+              117075968.0,
+              116813824.0,
+              117080064.0
+            ]
+          },
+          "summary": {
+            "A": {
+              "n": 14,
+              "median": 117075968.0,
+              "ci": [
+                116809728.0,
+                117080064.0
+              ],
+              "mean": 117039104.0,
+              "stddev": 205353.78665497858,
+              "min": 116805632.0,
+              "max": 117608448.0,
+              "q1": 116878336.0,
+              "q3": 117080064.0,
+              "mad": 4096.0,
+              "cv": 0.001754574152028527,
+              "outliers": {
+                "mild": 1,
+                "severe": 0
+              }
+            }
+          },
+          "comparison": null,
+          "warnings": []
+        }
+      },
+      "sample_meta": [
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:47:29.580Z",
+          "warmup": true,
+          "duration_s": 2.110485407
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:47:31.691Z",
+          "warmup": false,
+          "duration_s": 2.149941331
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:47:33.841Z",
+          "warmup": false,
+          "duration_s": 2.117682421
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:47:35.959Z",
+          "warmup": false,
+          "duration_s": 2.12790648
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:47:38.088Z",
+          "warmup": false,
+          "duration_s": 2.078499585
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:47:40.166Z",
+          "warmup": false,
+          "duration_s": 2.104539377
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:47:42.271Z",
+          "warmup": false,
+          "duration_s": 2.072030186
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:47:44.344Z",
+          "warmup": false,
+          "duration_s": 2.098136192
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:47:46.442Z",
+          "warmup": false,
+          "duration_s": 2.060017945
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:47:48.502Z",
+          "warmup": false,
+          "duration_s": 2.150246622
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:47:50.653Z",
+          "warmup": false,
+          "duration_s": 2.093001252
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:47:52.746Z",
+          "warmup": false,
+          "duration_s": 2.113863382
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:47:54.860Z",
+          "warmup": false,
+          "duration_s": 2.129529736
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:47:56.990Z",
+          "warmup": false,
+          "duration_s": 2.158871919
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:47:59.149Z",
+          "warmup": false,
+          "duration_s": 2.13255678
+        }
+      ],
+      "sample_extra": [
+        {
+          "phases": {
+            "total": 2.100794519999994,
+            "cpu_total": 2.093126,
+            "python": 2.100794519999994,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.02079451999999371,
+            "cpu": {
+              "python": 2.08,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {
+              "compile": 0.7,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": false
+          },
+          "timing": {
+            "compile": 0.7,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 2.1402691019999907,
+            "cpu_total": 2.126242,
+            "python": 2.1402691019999907,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.020269101999990546,
+            "cpu": {
+              "python": 2.12,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {
+              "compile": 0.7,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": false
+          },
+          "timing": {
+            "compile": 0.7,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 2.1081709620000026,
+            "cpu_total": 2.096981,
+            "python": 2.1081709620000026,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.01817096200000279,
+            "cpu": {
+              "python": 2.09,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {
+              "compile": 0.7,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": false
+          },
+          "timing": {
+            "compile": 0.7,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 2.118033048000001,
+            "cpu_total": 2.106928,
+            "python": 2.118033048000001,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.02803304800000106,
+            "cpu": {
+              "python": 2.09,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {
+              "compile": 0.7,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": false
+          },
+          "timing": {
+            "compile": 0.7,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 2.068827452000022,
+            "cpu_total": 2.05927,
+            "python": 2.068827452000022,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.018827452000022227,
+            "cpu": {
+              "python": 2.05,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {
+              "compile": 0.7,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": false
+          },
+          "timing": {
+            "compile": 0.7,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 2.094714213000003,
+            "cpu_total": 2.082918,
+            "python": 2.094714213000003,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.024714213000003316,
+            "cpu": {
+              "python": 2.07,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {
+              "compile": 0.7,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": false
+          },
+          "timing": {
+            "compile": 0.7,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 2.062226608000003,
+            "cpu_total": 2.050949,
+            "python": 2.062226608000003,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.02222660800000309,
+            "cpu": {
+              "python": 2.04,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {
+              "compile": 0.69,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": false
+          },
+          "timing": {
+            "compile": 0.69,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 2.0882109990000117,
+            "cpu_total": 2.075613,
+            "python": 2.0882109990000117,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.018210999000011885,
+            "cpu": {
+              "python": 2.07,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {
+              "compile": 0.7,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": false
+          },
+          "timing": {
+            "compile": 0.7,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 2.050289752999987,
+            "cpu_total": 2.037944,
+            "python": 2.050289752999987,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.03028975299998704,
+            "cpu": {
+              "python": 2.02,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {
+              "compile": 0.69,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": false
+          },
+          "timing": {
+            "compile": 0.69,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 2.1403907099999913,
+            "cpu_total": 2.126514,
+            "python": 2.1403907099999913,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.020390709999991152,
+            "cpu": {
+              "python": 2.12,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {
+              "compile": 0.71,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": false
+          },
+          "timing": {
+            "compile": 0.71,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 2.0832496660000004,
+            "cpu_total": 2.067747,
+            "python": 2.0832496660000004,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.023249666000000335,
+            "cpu": {
+              "python": 2.06,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {
+              "compile": 0.69,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": false
+          },
+          "timing": {
+            "compile": 0.69,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 2.104022759000003,
+            "cpu_total": 2.092726,
+            "python": 2.104022759000003,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.024022759000002836,
+            "cpu": {
+              "python": 2.08,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {
+              "compile": 0.7,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": false
+          },
+          "timing": {
+            "compile": 0.7,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 2.1197442019999926,
+            "cpu_total": 2.108522,
+            "python": 2.1197442019999926,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.019744201999992494,
+            "cpu": {
+              "python": 2.1,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {
+              "compile": 0.7,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": false
+          },
+          "timing": {
+            "compile": 0.7,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 2.1470319340000117,
+            "cpu_total": 2.132779,
+            "python": 2.1470319340000117,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.017031934000011795,
+            "cpu": {
+              "python": 2.13,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {
+              "compile": 0.7,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": false
+          },
+          "timing": {
+            "compile": 0.7,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 2.1226852969999754,
+            "cpu_total": 2.11145,
+            "python": 2.1226852969999754,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.022685296999975346,
+            "cpu": {
+              "python": 2.1,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {
+              "compile": 0.7,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": false
+          },
+          "timing": {
+            "compile": 0.7,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        }
+      ],
+      "fixture_hash": "sha256:4e394b7fae5105fdd5820509cefc0ee7bd5d4e05714a89cfb8d1478568123ef5"
+    },
+    {
+      "id": "lifecycle.export.dev",
+      "params": {
+        "app": "playground"
+      },
+      "kind": "time",
+      "version": "sha256:e6303893364e6c28d3c66820cf48e6bf1da4a810fef1d85860ee13e219008969",
+      "status": "ok",
+      "error": null,
+      "traceback_tail": null,
+      "dims": {
+        "collector": "cgroup",
+        "fixture": "playground"
+      },
+      "metrics": {
+        "wall": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {
+            "A": [
+              12.608391669000014,
+              11.709104277999984,
+              11.647633697000003,
+              11.76718759100001,
+              11.745167771000013,
+              11.685126660999998,
+              11.617054437000007,
+              11.694402953000008,
+              11.611124930000017,
+              11.814570397000011,
+              11.539417802000003
+            ]
+          },
+          "summary": {
+            "A": {
+              "n": 10,
+              "median": 11.689764807000003,
+              "ci": [
+                11.611124930000017,
+                11.76718759100001
+              ],
+              "mean": 11.683079051700005,
+              "stddev": 0.08196241577416853,
+              "min": 11.539417802000003,
+              "max": 11.814570397000011,
+              "q1": 11.624699252000006,
+              "q3": 11.736151897750005,
+              "mad": 0.06405666700000268,
+              "cv": 0.0070154807145845835,
+              "outliers": {
+                "mild": 0,
+                "severe": 0
+              }
+            }
+          },
+          "comparison": null,
+          "warnings": [
+            "phases: 9 of 10 samples' process tree CPU is off the measured total by more than 10 %"
+          ]
+        },
+        "cpu": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {
+            "A": [
+              17.92609,
+              17.749461,
+              17.720147,
+              17.64459,
+              17.855019,
+              17.776819,
+              17.501756,
+              17.71244,
+              17.674975,
+              17.814914,
+              17.502848
+            ]
+          },
+          "summary": {
+            "A": {
+              "n": 10,
+              "median": 17.7162935,
+              "ci": [
+                17.502848,
+                17.814914
+              ],
+              "mean": 17.6952969,
+              "stddev": 0.11915873825228995,
+              "min": 17.501756,
+              "max": 17.855019,
+              "q1": 17.65218625,
+              "q3": 17.769979499999998,
+              "mad": 0.06611449999999941,
+              "cv": 0.00673392138745578,
+              "outliers": {
+                "mild": 0,
+                "severe": 0
+              }
+            }
+          },
+          "comparison": null,
+          "warnings": []
+        },
+        "peak_mem": {
+          "unit": "B",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {
+            "A": [
+              1265446912.0,
+              1263419392.0,
+              1241493504.0,
+              1230659584.0,
+              1309208576.0,
+              1291071488.0,
+              1287512064.0,
+              1241325568.0,
+              1310420992.0,
+              1293619200.0,
+              1314496512.0
+            ]
+          },
+          "summary": {
+            "A": {
+              "n": 10,
+              "median": 1289291776.0,
+              "ci": [
+                1241325568.0,
+                1310420992.0
+              ],
+              "mean": 1278322688.0,
+              "stddev": 31610124.87068405,
+              "min": 1230659584.0,
+              "max": 1314496512.0,
+              "q1": 1246974976.0,
+              "q3": 1305311232.0,
+              "mad": 23166976.0,
+              "cv": 0.024727813381877527,
+              "outliers": {
+                "mild": 0,
+                "severe": 0
+              }
+            }
+          },
+          "comparison": null,
+          "warnings": []
+        }
+      },
+      "sample_meta": [
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:48:03.709Z",
+          "warmup": true,
+          "duration_s": 12.619525072
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:48:16.330Z",
+          "warmup": false,
+          "duration_s": 11.719586606
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:48:28.051Z",
+          "warmup": false,
+          "duration_s": 11.658046929
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:48:39.711Z",
+          "warmup": false,
+          "duration_s": 11.779538242
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:48:51.493Z",
+          "warmup": false,
+          "duration_s": 11.756707793
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:49:03.251Z",
+          "warmup": false,
+          "duration_s": 11.695253414
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:49:14.948Z",
+          "warmup": false,
+          "duration_s": 11.62815486
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:49:26.578Z",
+          "warmup": false,
+          "duration_s": 11.705109947
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:49:38.285Z",
+          "warmup": false,
+          "duration_s": 11.621731026
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:49:49.909Z",
+          "warmup": false,
+          "duration_s": 11.825216141
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:50:01.736Z",
+          "warmup": false,
+          "duration_s": 11.550189051
+        }
+      ],
+      "sample_extra": [
+        {
+          "phases": {
+            "total": 12.608391669000014,
+            "cpu_total": 17.92609,
+            "python": 3.1469147200000407,
+            "install": 0.0,
+            "frontend": 9.461476948999973,
+            "idle": 0.0,
+            "cpu": {
+              "python": 17.47,
+              "install": 0.0,
+              "frontend": 14.559999999999999
+            },
+            "python_breakdown": {
+              "compile": 0.76,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": true
+          },
+          "timing": {
+            "compile": 0.76,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 11.709104277999984,
+            "cpu_total": 17.749461,
+            "python": 3.1411744699999815,
+            "install": 0.0,
+            "frontend": 8.567929808000002,
+            "idle": 0.0,
+            "cpu": {
+              "python": 3.2900000000000014,
+              "install": 0.0,
+              "frontend": 14.44
+            },
+            "python_breakdown": {
+              "compile": 0.71,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": false
+          },
+          "timing": {
+            "compile": 0.71,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 11.647633697000003,
+            "cpu_total": 17.720147,
+            "python": 3.0867091020000146,
+            "install": 0.0,
+            "frontend": 8.560924594999989,
+            "idle": 0.0,
+            "cpu": {
+              "python": 17.28,
+              "install": 0.0,
+              "frontend": 14.419999999999998
+            },
+            "python_breakdown": {
+              "compile": 0.7,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": true
+          },
+          "timing": {
+            "compile": 0.7,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 11.76718759100001,
+            "cpu_total": 17.64459,
+            "python": 3.112164288999992,
+            "install": 0.0,
+            "frontend": 8.655023302000018,
+            "idle": 0.0,
+            "cpu": {
+              "python": 17.190000000000005,
+              "install": 0.0,
+              "frontend": 14.36
+            },
+            "python_breakdown": {
+              "compile": 0.7,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": true
+          },
+          "timing": {
+            "compile": 0.7,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 11.745167771000013,
+            "cpu_total": 17.855019,
+            "python": 3.1252758039999833,
+            "install": 0.0,
+            "frontend": 8.61989196700003,
+            "idle": 0.0,
+            "cpu": {
+              "python": 17.409999999999997,
+              "install": 0.0,
+              "frontend": 14.54
+            },
+            "python_breakdown": {
+              "compile": 0.71,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": true
+          },
+          "timing": {
+            "compile": 0.71,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 11.685126660999998,
+            "cpu_total": 17.776819,
+            "python": 3.127554742999962,
+            "install": 0.0,
+            "frontend": 8.557571918000036,
+            "idle": 0.0,
+            "cpu": {
+              "python": 17.33,
+              "install": 0.0,
+              "frontend": 14.44
+            },
+            "python_breakdown": {
+              "compile": 0.7,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": true
+          },
+          "timing": {
+            "compile": 0.7,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 11.617054437000007,
+            "cpu_total": 17.501756,
+            "python": 3.10543591900003,
+            "install": 0.0,
+            "frontend": 8.511618517999977,
+            "idle": 0.0,
+            "cpu": {
+              "python": 17.06,
+              "install": 0.0,
+              "frontend": 14.21
+            },
+            "python_breakdown": {
+              "compile": 0.69,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": true
+          },
+          "timing": {
+            "compile": 0.69,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 11.694402953000008,
+            "cpu_total": 17.71244,
+            "python": 3.0944687700000486,
+            "install": 0.0,
+            "frontend": 8.59993418299996,
+            "idle": 0.0,
+            "cpu": {
+              "python": 17.28,
+              "install": 0.0,
+              "frontend": 14.409999999999998
+            },
+            "python_breakdown": {
+              "compile": 0.69,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": true
+          },
+          "timing": {
+            "compile": 0.69,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 11.611124930000017,
+            "cpu_total": 17.674975,
+            "python": 3.064190447000044,
+            "install": 0.0,
+            "frontend": 8.546934482999973,
+            "idle": 0.0,
+            "cpu": {
+              "python": 17.22,
+              "install": 0.0,
+              "frontend": 14.42
+            },
+            "python_breakdown": {
+              "compile": 0.69,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": true
+          },
+          "timing": {
+            "compile": 0.69,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 11.814570397000011,
+            "cpu_total": 17.814914,
+            "python": 3.0578101520000587,
+            "install": 0.0,
+            "frontend": 8.756760244999953,
+            "idle": 0.0,
+            "cpu": {
+              "python": 17.37,
+              "install": 0.0,
+              "frontend": 14.549999999999999
+            },
+            "python_breakdown": {
+              "compile": 0.69,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": true
+          },
+          "timing": {
+            "compile": 0.69,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 11.539417802000003,
+            "cpu_total": 17.502848,
+            "python": 3.097973556999932,
+            "install": 0.0,
+            "frontend": 8.44144424500007,
+            "idle": 0.0,
+            "cpu": {
+              "python": 17.07,
+              "install": 0.0,
+              "frontend": 14.200000000000001
+            },
+            "python_breakdown": {
+              "compile": 0.7,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": true
+          },
+          "timing": {
+            "compile": 0.7,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        }
+      ],
+      "fixture_hash": "sha256:4e394b7fae5105fdd5820509cefc0ee7bd5d4e05714a89cfb8d1478568123ef5"
+    },
+    {
+      "id": "lifecycle.export.prod",
+      "params": {
+        "app": "playground"
+      },
+      "kind": "time",
+      "version": "sha256:f26997a03679fa54953d0d61d48ce2fa46f488f1f71d6148f47000bf712f5686",
+      "status": "ok",
+      "error": null,
+      "traceback_tail": null,
+      "dims": {
+        "collector": "cgroup",
+        "fixture": "playground"
+      },
+      "metrics": {
+        "wall": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {
+            "A": [
+              11.888215098999979,
+              11.85601053299996,
+              11.558843029000002,
+              11.67652805900002,
+              11.631612989999951,
+              11.819858436000004,
+              11.67738009499999,
+              11.694179715000018,
+              11.743813934000002,
+              11.567478871999981,
+              11.691268521999973
+            ]
+          },
+          "summary": {
+            "A": {
+              "n": 10,
+              "median": 11.684324308499981,
+              "ci": [
+                11.567478871999981,
+                11.819858436000004
+              ],
+              "mean": 11.69169741849999,
+              "stddev": 0.09618979664722628,
+              "min": 11.558843029000002,
+              "max": 11.85601053299996,
+              "q1": 11.642841757249968,
+              "q3": 11.731405379250006,
+              "mad": 0.05610047200002555,
+              "cv": 0.008227188337514053,
+              "outliers": {
+                "mild": 0,
+                "severe": 0
+              }
+            }
+          },
+          "comparison": null,
+          "warnings": [
+            "phases: 9 of 10 samples' process tree CPU is off the measured total by more than 10 %"
+          ]
+        },
+        "cpu": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {
+            "A": [
+              17.945735,
+              17.854558,
+              17.590026,
+              17.624735,
+              17.690116,
+              17.892338,
+              17.762726,
+              17.59136,
+              17.73028,
+              17.68437,
+              17.660653
+            ]
+          },
+          "summary": {
+            "A": {
+              "n": 10,
+              "median": 17.687243000000002,
+              "ci": [
+                17.59136,
+                17.854558
+              ],
+              "mean": 17.7081162,
+              "stddev": 0.10356249392173192,
+              "min": 17.590026,
+              "max": 17.892338,
+              "q1": 17.6337145,
+              "q3": 17.754614500000002,
+              "mad": 0.06899549999999977,
+              "cv": 0.0058483066607464395,
+              "outliers": {
+                "mild": 0,
+                "severe": 0
+              }
+            }
+          },
+          "comparison": null,
+          "warnings": []
+        },
+        "peak_mem": {
+          "unit": "B",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {
+            "A": [
+              1345970176.0,
+              1298788352.0,
+              1304674304.0,
+              1202642944.0,
+              1297272832.0,
+              1353039872.0,
+              1375993856.0,
+              1290768384.0,
+              1258573824.0,
+              1219465216.0,
+              1425018880.0
+            ]
+          },
+          "summary": {
+            "A": {
+              "n": 10,
+              "median": 1298030592.0,
+              "ci": [
+                1219465216.0,
+                1375993856.0
+              ],
+              "mean": 1302623846.4,
+              "stddev": 68268686.5436859,
+              "min": 1202642944.0,
+              "max": 1425018880.0,
+              "q1": 1266622464.0,
+              "q3": 1340948480.0,
+              "mad": 47233024.0,
+              "cv": 0.052408595721901485,
+              "outliers": {
+                "mild": 0,
+                "severe": 0
+              }
+            }
+          },
+          "comparison": null,
+          "warnings": []
+        }
+      },
+      "sample_meta": [
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:50:15.661Z",
+          "warmup": true,
+          "duration_s": 11.898614592
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:50:27.562Z",
+          "warmup": false,
+          "duration_s": 11.867392405
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:50:39.432Z",
+          "warmup": false,
+          "duration_s": 11.569171108
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:50:51.003Z",
+          "warmup": false,
+          "duration_s": 11.686820607
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:51:02.692Z",
+          "warmup": false,
+          "duration_s": 11.64230423
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:51:14.336Z",
+          "warmup": false,
+          "duration_s": 11.83027038
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:51:26.168Z",
+          "warmup": false,
+          "duration_s": 11.68752983
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:51:37.858Z",
+          "warmup": false,
+          "duration_s": 11.704418343
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:51:49.564Z",
+          "warmup": false,
+          "duration_s": 11.753917653
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:01.320Z",
+          "warmup": false,
+          "duration_s": 11.577772266
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:12.900Z",
+          "warmup": false,
+          "duration_s": 11.701528139
+        }
+      ],
+      "sample_extra": [
+        {
+          "phases": {
+            "total": 11.888215098999979,
+            "cpu_total": 17.945735,
+            "python": 3.1791493719999835,
+            "install": 0.0,
+            "frontend": 8.709065726999995,
+            "idle": 0.0,
+            "cpu": {
+              "python": 17.5,
+              "install": 0.0,
+              "frontend": 14.58
+            },
+            "python_breakdown": {
+              "compile": 0.71,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": true
+          },
+          "timing": {
+            "compile": 0.71,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 11.85601053299996,
+            "cpu_total": 17.854558,
+            "python": 3.103788270999928,
+            "install": 0.0,
+            "frontend": 8.752222262000032,
+            "idle": 0.0,
+            "cpu": {
+              "python": 17.4,
+              "install": 0.0,
+              "frontend": 14.57
+            },
+            "python_breakdown": {
+              "compile": 0.7,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": true
+          },
+          "timing": {
+            "compile": 0.7,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 11.558843029000002,
+            "cpu_total": 17.590026,
+            "python": 3.079454015999943,
+            "install": 0.0,
+            "frontend": 8.479389013000059,
+            "idle": 0.0,
+            "cpu": {
+              "python": 3.249999999999999,
+              "install": 0.0,
+              "frontend": 14.33
+            },
+            "python_breakdown": {
+              "compile": 0.7,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": false
+          },
+          "timing": {
+            "compile": 0.7,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 11.67652805900002,
+            "cpu_total": 17.624735,
+            "python": 3.130434631000071,
+            "install": 0.0,
+            "frontend": 8.54609342799995,
+            "idle": 0.0,
+            "cpu": {
+              "python": 17.19,
+              "install": 0.0,
+              "frontend": 14.299999999999999
+            },
+            "python_breakdown": {
+              "compile": 0.71,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": true
+          },
+          "timing": {
+            "compile": 0.71,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 11.631612989999951,
+            "cpu_total": 17.690116,
+            "python": 3.144393301999969,
+            "install": 0.0,
+            "frontend": 8.487219687999982,
+            "idle": 0.0,
+            "cpu": {
+              "python": 17.239999999999995,
+              "install": 0.0,
+              "frontend": 14.360000000000001
+            },
+            "python_breakdown": {
+              "compile": 0.7,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": true
+          },
+          "timing": {
+            "compile": 0.7,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 11.819858436000004,
+            "cpu_total": 17.892338,
+            "python": 3.1475930920000224,
+            "install": 0.0,
+            "frontend": 8.672265343999982,
+            "idle": 0.0,
+            "cpu": {
+              "python": 17.45,
+              "install": 0.0,
+              "frontend": 14.559999999999999
+            },
+            "python_breakdown": {
+              "compile": 0.71,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": true
+          },
+          "timing": {
+            "compile": 0.71,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 11.67738009499999,
+            "cpu_total": 17.762726,
+            "python": 3.0986474879999832,
+            "install": 0.0,
+            "frontend": 8.578732607000006,
+            "idle": 0.0,
+            "cpu": {
+              "python": 17.31,
+              "install": 0.0,
+              "frontend": 14.45
+            },
+            "python_breakdown": {
+              "compile": 0.71,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": true
+          },
+          "timing": {
+            "compile": 0.71,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 11.694179715000018,
+            "cpu_total": 17.59136,
+            "python": 3.107623027000045,
+            "install": 0.0,
+            "frontend": 8.586556687999973,
+            "idle": 0.0,
+            "cpu": {
+              "python": 17.139999999999997,
+              "install": 0.0,
+              "frontend": 14.290000000000001
+            },
+            "python_breakdown": {
+              "compile": 0.7,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": true
+          },
+          "timing": {
+            "compile": 0.7,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 11.743813934000002,
+            "cpu_total": 17.73028,
+            "python": 3.1060320509999997,
+            "install": 0.0,
+            "frontend": 8.637781883000002,
+            "idle": 0.0,
+            "cpu": {
+              "python": 17.29,
+              "install": 0.0,
+              "frontend": 14.42
+            },
+            "python_breakdown": {
+              "compile": 0.71,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": true
+          },
+          "timing": {
+            "compile": 0.71,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 11.567478871999981,
+            "cpu_total": 17.68437,
+            "python": 3.113277079999989,
+            "install": 0.0,
+            "frontend": 8.454201791999992,
+            "idle": 0.0,
+            "cpu": {
+              "python": 17.229999999999997,
+              "install": 0.0,
+              "frontend": 14.39
+            },
+            "python_breakdown": {
+              "compile": 0.71,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": true
+          },
+          "timing": {
+            "compile": 0.71,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 11.691268521999973,
+            "cpu_total": 17.660653,
+            "python": 3.121893938000028,
+            "install": 0.0,
+            "frontend": 8.569374583999945,
+            "idle": 0.0,
+            "cpu": {
+              "python": 17.2,
+              "install": 0.0,
+              "frontend": 14.360000000000001
+            },
+            "python_breakdown": {
+              "compile": 0.7,
+              "assets": 0.0,
+              "write": 0.0
+            },
+            "mismatch": true
+          },
+          "timing": {
+            "compile": 0.7,
+            "assets": 0.0,
+            "install": 0.0,
+            "write": 0.0
+          },
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        }
+      ],
+      "fixture_hash": "sha256:4e394b7fae5105fdd5820509cefc0ee7bd5d4e05714a89cfb8d1478568123ef5"
+    },
+    {
+      "id": "lifecycle.import",
+      "params": {},
+      "kind": "time",
+      "version": "sha256:c861a8a7fed27aae979b7144c747df2f2e3ce1812cf0fb38e08501955d15c3ca",
+      "status": "ok",
+      "error": null,
+      "traceback_tail": null,
+      "dims": {},
+      "metrics": {
+        "wall": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {
+            "A": [
+              0.4503199590000122,
+              0.44601632699999527,
+              0.44172787700000526,
+              0.4490376690000062,
+              0.4450958500000297,
+              0.45335286400000996,
+              0.4513138180000169,
+              0.4458115549999775,
+              0.45273033099999793,
+              0.45285018200002014,
+              0.44854522399998586,
+              0.44843695800000205,
+              0.4473007070000108,
+              0.44470582100001366,
+              0.44667321600002197,
+              0.4443772079999917,
+              0.44543060999995987,
+              0.4464079869999864,
+              0.4465430209999681,
+              0.4466097019999893,
+              0.44605696000002126,
+              0.4373351479999883,
+              0.4386367530000257,
+              0.43041063300000815,
+              0.43132500500001925,
+              0.4336754409999912,
+              0.43130229299998746,
+              0.4303769109999962,
+              0.434628943000007,
+              0.4308805610000377,
+              0.4386099060000106
+            ]
+          },
+          "summary": {
+            "A": {
+              "n": 30,
+              "median": 0.4456210824999687,
+              "ci": [
+                0.4386367530000257,
+                0.4466097019999893
+              ],
+              "mean": 0.442873516033336,
+              "stddev": 0.007291540141189004,
+              "min": 0.4303769109999962,
+              "max": 0.45335286400000996,
+              "q1": 0.43765383749999387,
+              "q3": 0.4471438342500136,
+              "mad": 0.0036548960000004627,
+              "cv": 0.016464159352983652,
+              "outliers": {
+                "mild": 0,
+                "severe": 0
+              }
+            }
+          },
+          "comparison": null,
+          "warnings": []
+        }
+      },
+      "sample_meta": [
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:24.605Z",
+          "warmup": true,
+          "duration_s": 0.457231356
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:25.063Z",
+          "warmup": false,
+          "duration_s": 0.453148932
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:25.516Z",
+          "warmup": false,
+          "duration_s": 0.448645989
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:25.965Z",
+          "warmup": false,
+          "duration_s": 0.456140953
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:26.421Z",
+          "warmup": false,
+          "duration_s": 0.452506333
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:26.874Z",
+          "warmup": false,
+          "duration_s": 0.460517862
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:27.335Z",
+          "warmup": false,
+          "duration_s": 0.458245153
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:27.794Z",
+          "warmup": false,
+          "duration_s": 0.452943447
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:28.247Z",
+          "warmup": false,
+          "duration_s": 0.45992744
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:28.707Z",
+          "warmup": false,
+          "duration_s": 0.459983738
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:29.167Z",
+          "warmup": false,
+          "duration_s": 0.455702812
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:29.623Z",
+          "warmup": false,
+          "duration_s": 0.455591898
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:30.079Z",
+          "warmup": false,
+          "duration_s": 0.454371685
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:30.534Z",
+          "warmup": false,
+          "duration_s": 0.451807904
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:30.986Z",
+          "warmup": false,
+          "duration_s": 0.453781227
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:31.440Z",
+          "warmup": false,
+          "duration_s": 0.451472347
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:31.892Z",
+          "warmup": false,
+          "duration_s": 0.452345386
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:32.344Z",
+          "warmup": false,
+          "duration_s": 0.453585655
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:32.798Z",
+          "warmup": false,
+          "duration_s": 0.453491102
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:33.252Z",
+          "warmup": false,
+          "duration_s": 0.453743882
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:33.706Z",
+          "warmup": false,
+          "duration_s": 0.453059372
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:34.159Z",
+          "warmup": false,
+          "duration_s": 0.44443257
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:34.604Z",
+          "warmup": false,
+          "duration_s": 0.445739111
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:35.050Z",
+          "warmup": false,
+          "duration_s": 0.437498855
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:35.488Z",
+          "warmup": false,
+          "duration_s": 0.438250007
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:35.926Z",
+          "warmup": false,
+          "duration_s": 0.440805641
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:36.367Z",
+          "warmup": false,
+          "duration_s": 0.43835865
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:36.806Z",
+          "warmup": false,
+          "duration_s": 0.437246687
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:37.244Z",
+          "warmup": false,
+          "duration_s": 0.441684707
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:37.686Z",
+          "warmup": false,
+          "duration_s": 0.43786286
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:38.124Z",
+          "warmup": false,
+          "duration_s": 0.445713711
+        }
+      ],
+      "sample_extra": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "id": "lifecycle.init.cold",
+      "params": {},
+      "kind": "time",
+      "version": "sha256:2a5f4a2b5e6bcdd195fef8c0f1a001aaca49f62dc196f6c48ceefd442c85c3e2",
+      "status": "ok",
+      "error": null,
+      "traceback_tail": null,
+      "dims": {
+        "collector": "cgroup"
+      },
+      "metrics": {
+        "wall": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {
+            "A": [
+              3.212269412000012,
+              1.5018116790000136,
+              1.433404306,
+              2.2192613089999895,
+              1.3525601430000052,
+              1.828997261999973,
+              1.6591891669999654,
+              1.8676912440000137,
+              1.4274337610000316,
+              1.4319297549999987
+            ]
+          },
+          "summary": {
+            "A": {
+              "n": 10,
+              "median": 1.5805004229999895,
+              "ci": [
+                1.4274337610000316,
+                2.2192613089999895
+              ],
+              "mean": 1.7934548038000002,
+              "stddev": 0.5669508688040945,
+              "min": 1.3525601430000052,
+              "max": 3.212269412000012,
+              "q1": 1.432298392749999,
+              "q3": 1.8580177485000036,
+              "mad": 0.19050347099997111,
+              "cv": 0.31612219477336706,
+              "outliers": {
+                "mild": 0,
+                "severe": 1
+              }
+            }
+          },
+          "comparison": null,
+          "warnings": [
+            "high variance: CV 32 % (warns at 10 %)",
+            "max is 103 % above the median",
+            "1 severe outlier (sample 0: +103 %). Kept."
+          ]
+        },
+        "cpu": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {
+            "A": [
+              0.392912,
+              0.401,
+              0.400663,
+              0.39947,
+              0.396805,
+              0.402736,
+              0.402204,
+              0.396766,
+              0.39105,
+              0.395687
+            ]
+          },
+          "summary": {
+            "A": {
+              "n": 10,
+              "median": 0.39813750000000003,
+              "ci": [
+                0.392912,
+                0.402204
+              ],
+              "mean": 0.39792930000000004,
+              "stddev": 0.003955260773816169,
+              "min": 0.39105,
+              "max": 0.402736,
+              "q1": 0.39595675,
+              "q3": 0.40091575,
+              "mad": 0.002693999999999974,
+              "cv": 0.009939606794011319,
+              "outliers": {
+                "mild": 0,
+                "severe": 0
+              }
+            }
+          },
+          "comparison": null,
+          "warnings": []
+        },
+        "peak_mem": {
+          "unit": "B",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {
+            "A": [
+              35569664.0,
+              35426304.0,
+              35958784.0,
+              35786752.0,
+              35684352.0,
+              35528704.0,
+              35209216.0,
+              35786752.0,
+              35450880.0,
+              35786752.0
+            ]
+          },
+          "summary": {
+            "A": {
+              "n": 10,
+              "median": 35627008.0,
+              "ci": [
+                35426304.0,
+                35786752.0
+              ],
+              "mean": 35618816.0,
+              "stddev": 223122.37063399388,
+              "min": 35209216.0,
+              "max": 35958784.0,
+              "q1": 35470336.0,
+              "q3": 35786752.0,
+              "mad": 159744.0,
+              "cv": 0.006264171460219056,
+              "outliers": {
+                "mild": 0,
+                "severe": 0
+              }
+            }
+          },
+          "comparison": null,
+          "warnings": []
+        }
+      },
+      "sample_meta": [
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:38.595Z",
+          "warmup": false,
+          "duration_s": 3.222437121
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:41.849Z",
+          "warmup": false,
+          "duration_s": 1.511432051
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:43.393Z",
+          "warmup": false,
+          "duration_s": 1.442869551
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:44.868Z",
+          "warmup": false,
+          "duration_s": 2.229242407
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:47.131Z",
+          "warmup": false,
+          "duration_s": 1.36294251
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:48.526Z",
+          "warmup": false,
+          "duration_s": 1.83855289
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:50.397Z",
+          "warmup": false,
+          "duration_s": 1.671007795
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:52.101Z",
+          "warmup": false,
+          "duration_s": 1.877109692
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:54.011Z",
+          "warmup": false,
+          "duration_s": 1.439548481
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:55.483Z",
+          "warmup": false,
+          "duration_s": 1.441695197
+        }
+      ],
+      "sample_extra": [
+        {
+          "phases": {
+            "total": 3.212269412000012,
+            "cpu_total": 0.392912,
+            "python": 3.212269412000012,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 2.832269412000012,
+            "cpu": {
+              "python": 0.38,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "deleted_bytes": {
+            "web": 0
+          }
+        },
+        {
+          "phases": {
+            "total": 1.5018116790000136,
+            "cpu_total": 0.401,
+            "python": 1.5018116790000136,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 1.1118116790000134,
+            "cpu": {
+              "python": 0.39,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "deleted_bytes": {
+            "web": 128096
+          }
+        },
+        {
+          "phases": {
+            "total": 1.433404306,
+            "cpu_total": 0.400663,
+            "python": 1.433404306,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 1.043404306,
+            "cpu": {
+              "python": 0.38999999999999996,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "deleted_bytes": {
+            "web": 128096
+          }
+        },
+        {
+          "phases": {
+            "total": 2.2192613089999895,
+            "cpu_total": 0.39947,
+            "python": 2.2192613089999895,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 1.8292613089999894,
+            "cpu": {
+              "python": 0.39,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "deleted_bytes": {
+            "web": 128096
+          }
+        },
+        {
+          "phases": {
+            "total": 1.3525601430000052,
+            "cpu_total": 0.396805,
+            "python": 1.3525601430000052,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.9725601430000052,
+            "cpu": {
+              "python": 0.38,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "deleted_bytes": {
+            "web": 128096
+          }
+        },
+        {
+          "phases": {
+            "total": 1.828997261999973,
+            "cpu_total": 0.402736,
+            "python": 1.828997261999973,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 1.4389972619999731,
+            "cpu": {
+              "python": 0.38999999999999996,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "deleted_bytes": {
+            "web": 128095
+          }
+        },
+        {
+          "phases": {
+            "total": 1.6591891669999654,
+            "cpu_total": 0.402204,
+            "python": 1.6591891669999654,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 1.2691891669999653,
+            "cpu": {
+              "python": 0.39,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "deleted_bytes": {
+            "web": 128096
+          }
+        },
+        {
+          "phases": {
+            "total": 1.8676912440000137,
+            "cpu_total": 0.396766,
+            "python": 1.8676912440000137,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 1.4876912440000138,
+            "cpu": {
+              "python": 0.38,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "deleted_bytes": {
+            "web": 128095
+          }
+        },
+        {
+          "phases": {
+            "total": 1.4274337610000316,
+            "cpu_total": 0.39105,
+            "python": 1.4274337610000316,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 1.0474337610000317,
+            "cpu": {
+              "python": 0.38,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "deleted_bytes": {
+            "web": 128096
+          }
+        },
+        {
+          "phases": {
+            "total": 1.4319297549999987,
+            "cpu_total": 0.395687,
+            "python": 1.4319297549999987,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 1.0419297549999986,
+            "cpu": {
+              "python": 0.39,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0,
+          "deleted_bytes": {
+            "web": 128096
+          }
+        }
+      ]
+    },
+    {
+      "id": "lifecycle.init.warm",
+      "params": {},
+      "kind": "time",
+      "version": "sha256:5255f3da1d7ff90afc2dadddd8fff5b213258a94074f91f98b190fe29bbb5282",
+      "status": "ok",
+      "error": null,
+      "traceback_tail": null,
+      "dims": {
+        "collector": "cgroup"
+      },
+      "metrics": {
+        "wall": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {
+            "A": [
+              0.45898993999998083,
+              0.4544596789999673,
+              0.45517390599997043,
+              0.441027747000021,
+              0.45749126600003365,
+              0.46487884399999757,
+              0.4500088940000069,
+              0.46170083500004466,
+              0.4354678960000342,
+              0.45636402300004875,
+              0.4490159659999904,
+              0.4458802839999976,
+              0.4497497410000051,
+              0.4614250170000105,
+              0.4565803070000243,
+              0.4562122990000148,
+              0.44578864999999723,
+              0.453628005999974,
+              0.45306799399998,
+              0.454698723999968,
+              0.4357340960000329,
+              0.45589462899999944,
+              0.46611255400000573,
+              0.4574432370000068,
+              0.4607859160000203,
+              0.46155989900000804,
+              0.45478698100004067,
+              0.4527788629999918,
+              0.4549708819999978,
+              0.4434745990000124
+            ]
+          },
+          "summary": {
+            "A": {
+              "n": 30,
+              "median": 0.45487893150001923,
+              "ci": [
+                0.4527788629999918,
+                0.4565803070000243
+              ],
+              "mean": 0.4535050558000061,
+              "stddev": 0.007655281968113586,
+              "min": 0.4354678960000342,
+              "max": 0.46611255400000573,
+              "q1": 0.44981452925000553,
+              "q3": 0.45747925875002693,
+              "mad": 0.004490522999986979,
+              "cv": 0.016880257166282914,
+              "outliers": {
+                "mild": 2,
+                "severe": 0
+              }
+            }
+          },
+          "comparison": null,
+          "warnings": []
+        },
+        "cpu": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {
+            "A": [
+              0.385552,
+              0.383318,
+              0.38473,
+              0.380093,
+              0.385384,
+              0.384059,
+              0.377044,
+              0.385548,
+              0.37677,
+              0.383,
+              0.378671,
+              0.383089,
+              0.380628,
+              0.382467,
+              0.373885,
+              0.379351,
+              0.385024,
+              0.3818,
+              0.386374,
+              0.381004,
+              0.38142,
+              0.384094,
+              0.385092,
+              0.379922,
+              0.383675,
+              0.387172,
+              0.383747,
+              0.384304,
+              0.384563,
+              0.382348
+            ]
+          },
+          "summary": {
+            "A": {
+              "n": 30,
+              "median": 0.38320350000000003,
+              "ci": [
+                0.38142,
+                0.384304
+              ],
+              "mean": 0.3824709333333333,
+              "stddev": 0.0031058183877154277,
+              "min": 0.373885,
+              "max": 0.387172,
+              "q1": 0.380722,
+              "q3": 0.38468825,
+              "mad": 0.0018544999999999534,
+              "cv": 0.008120403714466392,
+              "outliers": {
+                "mild": 1,
+                "severe": 0
+              }
+            }
+          },
+          "comparison": null,
+          "warnings": []
+        },
+        "peak_mem": {
+          "unit": "B",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {
+            "A": [
+              35704832.0,
+              35753984.0,
+              35471360.0,
+              35680256.0,
+              35246080.0,
+              35475456.0,
+              35659776.0,
+              35467264.0,
+              35659776.0,
+              35471360.0,
+              35483648.0,
+              35495936.0,
+              35475456.0,
+              35205120.0,
+              35475456.0,
+              35540992.0,
+              35438592.0,
+              35655680.0,
+              35737600.0,
+              35262464.0,
+              35397632.0,
+              35389440.0,
+              35405824.0,
+              35639296.0,
+              35741696.0,
+              35786752.0,
+              35442688.0,
+              35475456.0,
+              35512320.0,
+              35450880.0
+            ]
+          },
+          "summary": {
+            "A": {
+              "n": 30,
+              "median": 35475456.0,
+              "ci": [
+                35467264.0,
+                35639296.0
+              ],
+              "mean": 35520102.4,
+              "stddev": 152536.9166327761,
+              "min": 35205120.0,
+              "max": 35786752.0,
+              "q1": 35444736.0,
+              "q3": 35658752.0,
+              "mad": 73728.0,
+              "cv": 0.004294382795269647,
+              "outliers": {
+                "mild": 0,
+                "severe": 0
+              }
+            }
+          },
+          "comparison": null,
+          "warnings": []
+        }
+      },
+      "sample_meta": [
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:56.935Z",
+          "warmup": false,
+          "duration_s": 0.468443493
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:57.406Z",
+          "warmup": false,
+          "duration_s": 0.464335293
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:57.873Z",
+          "warmup": false,
+          "duration_s": 0.465161938
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:58.341Z",
+          "warmup": false,
+          "duration_s": 0.450739757
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:58.794Z",
+          "warmup": false,
+          "duration_s": 0.469099293
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:59.266Z",
+          "warmup": false,
+          "duration_s": 0.474674753
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:52:59.743Z",
+          "warmup": false,
+          "duration_s": 0.459535341
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:00.206Z",
+          "warmup": false,
+          "duration_s": 0.47136726
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:00.680Z",
+          "warmup": false,
+          "duration_s": 0.445179931
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:01.127Z",
+          "warmup": false,
+          "duration_s": 0.467680612
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:01.598Z",
+          "warmup": false,
+          "duration_s": 0.458489836
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:02.059Z",
+          "warmup": false,
+          "duration_s": 0.455446356
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:02.517Z",
+          "warmup": false,
+          "duration_s": 0.459447847
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:02.979Z",
+          "warmup": false,
+          "duration_s": 0.47075498
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:03.452Z",
+          "warmup": false,
+          "duration_s": 0.468026722
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:03.923Z",
+          "warmup": false,
+          "duration_s": 0.466904755
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:04.397Z",
+          "warmup": false,
+          "duration_s": 0.455309473
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:04.855Z",
+          "warmup": false,
+          "duration_s": 0.46318727
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:05.321Z",
+          "warmup": false,
+          "duration_s": 0.462960313
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:05.787Z",
+          "warmup": false,
+          "duration_s": 0.46433231
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:06.254Z",
+          "warmup": false,
+          "duration_s": 0.445169885
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:06.701Z",
+          "warmup": false,
+          "duration_s": 0.467523704
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:07.172Z",
+          "warmup": false,
+          "duration_s": 0.475685307
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:07.653Z",
+          "warmup": false,
+          "duration_s": 0.467170857
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:08.123Z",
+          "warmup": false,
+          "duration_s": 0.470310659
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:08.596Z",
+          "warmup": false,
+          "duration_s": 0.471004057
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:09.070Z",
+          "warmup": false,
+          "duration_s": 0.46457511
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:09.537Z",
+          "warmup": false,
+          "duration_s": 0.462306819
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:10.002Z",
+          "warmup": false,
+          "duration_s": 0.464619296
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:10.469Z",
+          "warmup": false,
+          "duration_s": 0.453008619
+        }
+      ],
+      "sample_extra": [
+        {
+          "phases": {
+            "total": 0.45898993999998083,
+            "cpu_total": 0.385552,
+            "python": 0.45898993999998083,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.07898993999998083,
+            "cpu": {
+              "python": 0.38,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.4544596789999673,
+            "cpu_total": 0.383318,
+            "python": 0.4544596789999673,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.0744596789999673,
+            "cpu": {
+              "python": 0.38,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.45517390599997043,
+            "cpu_total": 0.38473,
+            "python": 0.45517390599997043,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.07517390599997043,
+            "cpu": {
+              "python": 0.38,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.441027747000021,
+            "cpu_total": 0.380093,
+            "python": 0.441027747000021,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.07102774700002101,
+            "cpu": {
+              "python": 0.37,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.45749126600003365,
+            "cpu_total": 0.385384,
+            "python": 0.45749126600003365,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.08749126600003365,
+            "cpu": {
+              "python": 0.37,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.46487884399999757,
+            "cpu_total": 0.384059,
+            "python": 0.46487884399999757,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.09487884399999758,
+            "cpu": {
+              "python": 0.37,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.4500088940000069,
+            "cpu_total": 0.377044,
+            "python": 0.4500088940000069,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.08000889400000688,
+            "cpu": {
+              "python": 0.37,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.46170083500004466,
+            "cpu_total": 0.385548,
+            "python": 0.46170083500004466,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.09170083500004467,
+            "cpu": {
+              "python": 0.37,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.4354678960000342,
+            "cpu_total": 0.37677,
+            "python": 0.4354678960000342,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.07546789600003423,
+            "cpu": {
+              "python": 0.36,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.45636402300004875,
+            "cpu_total": 0.383,
+            "python": 0.45636402300004875,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.08636402300004875,
+            "cpu": {
+              "python": 0.37,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.4490159659999904,
+            "cpu_total": 0.378671,
+            "python": 0.4490159659999904,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.07901596599999039,
+            "cpu": {
+              "python": 0.37,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.4458802839999976,
+            "cpu_total": 0.383089,
+            "python": 0.4458802839999976,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.07588028399999758,
+            "cpu": {
+              "python": 0.37,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.4497497410000051,
+            "cpu_total": 0.380628,
+            "python": 0.4497497410000051,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.07974974100000509,
+            "cpu": {
+              "python": 0.37,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.4614250170000105,
+            "cpu_total": 0.382467,
+            "python": 0.4614250170000105,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.09142501700001049,
+            "cpu": {
+              "python": 0.37,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.4565803070000243,
+            "cpu_total": 0.373885,
+            "python": 0.4565803070000243,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.09658030700002429,
+            "cpu": {
+              "python": 0.36,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.4562122990000148,
+            "cpu_total": 0.379351,
+            "python": 0.4562122990000148,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.08621229900001481,
+            "cpu": {
+              "python": 0.37,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.44578864999999723,
+            "cpu_total": 0.385024,
+            "python": 0.44578864999999723,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.07578864999999724,
+            "cpu": {
+              "python": 0.37,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.453628005999974,
+            "cpu_total": 0.3818,
+            "python": 0.453628005999974,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.07362800599997399,
+            "cpu": {
+              "python": 0.38,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.45306799399998,
+            "cpu_total": 0.386374,
+            "python": 0.45306799399998,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.08306799399998,
+            "cpu": {
+              "python": 0.37,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.454698723999968,
+            "cpu_total": 0.381004,
+            "python": 0.454698723999968,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.08469872399996803,
+            "cpu": {
+              "python": 0.37,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.4357340960000329,
+            "cpu_total": 0.38142,
+            "python": 0.4357340960000329,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.06573409600003288,
+            "cpu": {
+              "python": 0.37,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.45589462899999944,
+            "cpu_total": 0.384094,
+            "python": 0.45589462899999944,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.08589462899999945,
+            "cpu": {
+              "python": 0.37,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.46611255400000573,
+            "cpu_total": 0.385092,
+            "python": 0.46611255400000573,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.09611255400000573,
+            "cpu": {
+              "python": 0.37,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.4574432370000068,
+            "cpu_total": 0.379922,
+            "python": 0.4574432370000068,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.08744323700000678,
+            "cpu": {
+              "python": 0.37,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.4607859160000203,
+            "cpu_total": 0.383675,
+            "python": 0.4607859160000203,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.09078591600002028,
+            "cpu": {
+              "python": 0.37,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.46155989900000804,
+            "cpu_total": 0.387172,
+            "python": 0.46155989900000804,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.08155989900000804,
+            "cpu": {
+              "python": 0.38,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.45478698100004067,
+            "cpu_total": 0.383747,
+            "python": 0.45478698100004067,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.08478698100004067,
+            "cpu": {
+              "python": 0.37,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.4527788629999918,
+            "cpu_total": 0.384304,
+            "python": 0.4527788629999918,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.08277886299999182,
+            "cpu": {
+              "python": 0.37,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.4549708819999978,
+            "cpu_total": 0.384563,
+            "python": 0.4549708819999978,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.0849708819999978,
+            "cpu": {
+              "python": 0.37,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        },
+        {
+          "phases": {
+            "total": 0.4434745990000124,
+            "cpu_total": 0.382348,
+            "python": 0.4434745990000124,
+            "install": 0.0,
+            "frontend": 0.0,
+            "idle": 0.0634745990000124,
+            "cpu": {
+              "python": 0.38,
+              "install": 0.0,
+              "frontend": 0.0
+            },
+            "python_breakdown": {},
+            "mismatch": false
+          },
+          "timing": {},
+          "cpu_method": "cgroup",
+          "memory_method": "cgroup",
+          "peak_reset": false,
+          "returncode": 0
+        }
+      ]
+    },
+    {
+      "id": "lifecycle.run.backend_only.ready",
+      "params": {
+        "app": "playground"
+      },
+      "kind": "startup",
+      "version": "sha256:18e44325a74c3ed436cd3fa4fec9ab46ec6cdd6612a30b60896550bdfb288a28",
+      "status": "ok",
+      "error": null,
+      "traceback_tail": null,
+      "dims": {
+        "fixture": "playground"
+      },
+      "metrics": {
+        "process_ready": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {
+            "A": [
+              0.8768441120000148,
+              0.8814176989999964,
+              0.8749869869999998,
+              0.8784406220000278,
+              0.8793385479999642,
+              0.8738564729999894,
+              0.8754500489999941,
+              0.8772565319999899,
+              0.8780686520000245,
+              0.8767016339999714,
+              0.9182550300000116,
+              0.8787928209999905,
+              0.8588368350000337,
+              0.8773518010000316,
+              0.8775077779999947,
+              0.8778479480000101,
+              0.8562546139999654,
+              0.8537901409999904,
+              0.8528313620000745,
+              0.8490425720000303,
+              0.9175952560000269,
+              0.8773879479999778,
+              0.8970109179999781,
+              0.8772458659999529,
+              0.8725461300000461,
+              0.857280099000036,
+              0.8617315660000031,
+              0.8754941849999796,
+              0.8734592829999883,
+              0.8782355609999968,
+              0.8569515990000127
+            ]
+          },
+          "summary": {
+            "A": {
+              "n": 30,
+              "median": 0.8769737499999621,
+              "ci": [
+                0.8734592829999883,
+                0.8778479480000101
+              ],
+              "mean": 0.8746988836333363,
+              "stddev": 0.015936912212713473,
+              "min": 0.8490425720000303,
+              "max": 0.9182550300000116,
+              "q1": 0.8644352070000139,
+              "q3": 0.8781938337500037,
+              "mad": 0.002741037499987442,
+              "cv": 0.018219884020560892,
+              "outliers": {
+                "mild": 2,
+                "severe": 0
+              }
+            }
+          },
+          "comparison": null,
+          "warnings": []
+        },
+        "http_ready": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {
+            "A": [
+              0.9331481410000038,
+              0.8990659899999969,
+              0.8922199830000181,
+              0.8958150189999969,
+              0.8965970939999579,
+              0.891270134000024,
+              0.8932996059999709,
+              0.8950411760000065,
+              0.8951967390000277,
+              0.8943571949999978,
+              0.9354316300000391,
+              0.8963936629999694,
+              0.8759243950000268,
+              0.8950498030000062,
+              0.8950338279999528,
+              0.8953487210000048,
+              0.8733410909999861,
+              0.8707306310000149,
+              0.8699444549999953,
+              0.8661808620000784,
+              0.9351518830000032,
+              0.8950062549999984,
+              0.9141795919999822,
+              0.8949178299999403,
+              0.8896761390000165,
+              0.8740964309999981,
+              0.8784112240000468,
+              0.8924200379999547,
+              0.8908201350000127,
+              0.8957870570000068,
+              0.8734215389999918
+            ]
+          },
+          "summary": {
+            "A": {
+              "n": 30,
+              "median": 0.894637512499969,
+              "ci": [
+                0.8908201350000127,
+                0.8951967390000277
+              ],
+              "mean": 0.8920043379333341,
+              "stddev": 0.01608545475027997,
+              "min": 0.8661808620000784,
+              "max": 0.9354316300000391,
+              "q1": 0.8812274527500392,
+              "q3": 0.8956774730000063,
+              "mad": 0.002892453999947975,
+              "cv": 0.018032933323562098,
+              "outliers": {
+                "mild": 2,
+                "severe": 0
+              }
+            }
+          },
+          "comparison": null,
+          "warnings": []
+        }
+      },
+      "sample_meta": [
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:14.027Z",
+          "warmup": true,
+          "duration_s": 0.933196199
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:15.009Z",
+          "warmup": false,
+          "duration_s": 0.899112231
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:15.976Z",
+          "warmup": false,
+          "duration_s": 0.89225892
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:16.937Z",
+          "warmup": false,
+          "duration_s": 0.89585346
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:17.902Z",
+          "warmup": false,
+          "duration_s": 0.896636327
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:18.867Z",
+          "warmup": false,
+          "duration_s": 0.891309591
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:19.827Z",
+          "warmup": false,
+          "duration_s": 0.89334139
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:20.789Z",
+          "warmup": false,
+          "duration_s": 0.895081512
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:21.753Z",
+          "warmup": false,
+          "duration_s": 0.895236388
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:22.716Z",
+          "warmup": false,
+          "duration_s": 0.894397531
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:23.679Z",
+          "warmup": false,
+          "duration_s": 0.935470575
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:24.744Z",
+          "warmup": false,
+          "duration_s": 0.896433415
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:25.709Z",
+          "warmup": false,
+          "duration_s": 0.875965339
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:26.674Z",
+          "warmup": false,
+          "duration_s": 0.895088291
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:27.638Z",
+          "warmup": false,
+          "duration_s": 0.8950727
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:28.602Z",
+          "warmup": false,
+          "duration_s": 0.895388554
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:29.566Z",
+          "warmup": false,
+          "duration_s": 0.87338154
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:30.528Z",
+          "warmup": false,
+          "duration_s": 0.870769575
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:31.487Z",
+          "warmup": false,
+          "duration_s": 0.869982896
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:32.446Z",
+          "warmup": false,
+          "duration_s": 0.866247864
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:33.401Z",
+          "warmup": false,
+          "duration_s": 0.935192347
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:34.466Z",
+          "warmup": false,
+          "duration_s": 0.895044817
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:35.429Z",
+          "warmup": false,
+          "duration_s": 0.914219473
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:36.392Z",
+          "warmup": false,
+          "duration_s": 0.894956623
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:37.356Z",
+          "warmup": false,
+          "duration_s": 0.889742748
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:38.314Z",
+          "warmup": false,
+          "duration_s": 0.874136015
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:39.277Z",
+          "warmup": false,
+          "duration_s": 0.878451408
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:40.244Z",
+          "warmup": false,
+          "duration_s": 0.892457478
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:41.225Z",
+          "warmup": false,
+          "duration_s": 0.890856856
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:42.185Z",
+          "warmup": false,
+          "duration_s": 0.895825906
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:43.149Z",
+          "warmup": false,
+          "duration_s": 0.873459307
+        }
+      ],
+      "sample_extra": [
+        {
+          "readiness": {
+            "spawned": 0.0005457780000028833,
+            "ready_line": 0.2467636760000005,
+            "process_ready": 0.8768441120000148,
+            "http_ready": 0.9331481410000038,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0005755160000262549,
+            "ready_line": 0.25230879399998685,
+            "process_ready": 0.8814176989999964,
+            "http_ready": 0.8990659899999969,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0005629710000221166,
+            "ready_line": 0.2465527439999846,
+            "process_ready": 0.8749869869999998,
+            "http_ready": 0.8922199830000181,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0005583070000056978,
+            "ready_line": 0.24939774099999568,
+            "process_ready": 0.8784406220000278,
+            "http_ready": 0.8958150189999969,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0005657309999946847,
+            "ready_line": 0.2505585689999634,
+            "process_ready": 0.8793385479999642,
+            "http_ready": 0.8965970939999579,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0005613150000272071,
+            "ready_line": 0.244908090000024,
+            "process_ready": 0.8738564729999894,
+            "http_ready": 0.891270134000024,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.000565834999974868,
+            "ready_line": 0.24617978700001686,
+            "process_ready": 0.8754500489999941,
+            "http_ready": 0.8932996059999709,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.000547347000008358,
+            "ready_line": 0.24806440800000473,
+            "process_ready": 0.8772565319999899,
+            "http_ready": 0.8950411760000065,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0005732120000061514,
+            "ready_line": 0.24883012700001927,
+            "process_ready": 0.8780686520000245,
+            "http_ready": 0.8951967390000277,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0005664349999960905,
+            "ready_line": 0.24765523999997185,
+            "process_ready": 0.8767016339999714,
+            "http_ready": 0.8943571949999978,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0006057479999981297,
+            "ready_line": 0.24771557700000812,
+            "process_ready": 0.9182550300000116,
+            "http_ready": 0.9354316300000391,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0005800759999488037,
+            "ready_line": 0.2497657209999602,
+            "process_ready": 0.8787928209999905,
+            "http_ready": 0.8963936629999694,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0006781310000292251,
+            "ready_line": 0.25033250600000656,
+            "process_ready": 0.8588368350000337,
+            "http_ready": 0.8759243950000268,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.000565539000035642,
+            "ready_line": 0.24847689000000628,
+            "process_ready": 0.8773518010000316,
+            "http_ready": 0.8950498030000062,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0005698669999674166,
+            "ready_line": 0.24887893999999733,
+            "process_ready": 0.8775077779999947,
+            "http_ready": 0.8950338279999528,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0005609789999994064,
+            "ready_line": 0.24912270900000522,
+            "process_ready": 0.8778479480000101,
+            "http_ready": 0.8953487210000048,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0005734029999757695,
+            "ready_line": 0.24830727599999136,
+            "process_ready": 0.8562546139999654,
+            "http_ready": 0.8733410909999861,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0005833069999994223,
+            "ready_line": 0.24587373099996057,
+            "process_ready": 0.8537901409999904,
+            "http_ready": 0.8707306310000149,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0005917720000070403,
+            "ready_line": 0.24322032700001728,
+            "process_ready": 0.8528313620000745,
+            "http_ready": 0.8699444549999953,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0005860350000830294,
+            "ready_line": 0.2410665950000066,
+            "process_ready": 0.8490425720000303,
+            "http_ready": 0.8661808620000784,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0005881549999458002,
+            "ready_line": 0.24735115399994356,
+            "process_ready": 0.9175952560000269,
+            "http_ready": 0.9351518830000032,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0005604819999689425,
+            "ready_line": 0.24880301199993937,
+            "process_ready": 0.8773879479999778,
+            "http_ready": 0.8950062549999984,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0005900029999565959,
+            "ready_line": 0.24740997799995057,
+            "process_ready": 0.8970109179999781,
+            "http_ready": 0.9141795919999822,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0005784589999393575,
+            "ready_line": 0.24816344899988962,
+            "process_ready": 0.8772458659999529,
+            "http_ready": 0.8949178299999403,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.00058187500007989,
+            "ready_line": 0.24381886300000133,
+            "process_ready": 0.8725461300000461,
+            "http_ready": 0.8896761390000165,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0006888770000159639,
+            "ready_line": 0.2491694440000174,
+            "process_ready": 0.857280099000036,
+            "http_ready": 0.8740964309999981,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0005648349999773927,
+            "ready_line": 0.2531929269999864,
+            "process_ready": 0.8617315660000031,
+            "http_ready": 0.8784112240000468,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0005619229999638264,
+            "ready_line": 0.24694044199998189,
+            "process_ready": 0.8754941849999796,
+            "http_ready": 0.8924200379999547,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0005982190000395349,
+            "ready_line": 0.2448529209999606,
+            "process_ready": 0.8734592829999883,
+            "http_ready": 0.8908201350000127,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0005698340000890312,
+            "ready_line": 0.2492981380000856,
+            "process_ready": 0.8782355609999968,
+            "http_ready": 0.8957870570000068,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0005790989999923113,
+            "ready_line": 0.24754706600003828,
+            "process_ready": 0.8569515990000127,
+            "http_ready": 0.8734215389999918,
+            "interactive_ready": null
+          }
+        }
+      ],
+      "fixture_hash": "sha256:4e394b7fae5105fdd5820509cefc0ee7bd5d4e05714a89cfb8d1478568123ef5"
+    },
+    {
+      "id": "lifecycle.run.dev.ready",
+      "params": {
+        "app": "playground"
+      },
+      "kind": "startup",
+      "version": "sha256:ce300710c590fc3b10bbc823a8c0a521a65f383479731d334aa4fd5deb6603e8",
+      "status": "ok",
+      "error": null,
+      "traceback_tail": null,
+      "dims": {
+        "fixture": "playground"
+      },
+      "metrics": {
+        "process_ready": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {
+            "A": [
+              2.4645394130000113,
+              2.4667565989999503,
+              2.4610731349999924,
+              2.4437471459999642,
+              2.4679728090000026,
+              2.54274913800009,
+              2.5425085800000033,
+              2.5842082280000795,
+              2.519077745000004,
+              2.5550250219999953,
+              2.521203853999964
+            ]
+          },
+          "summary": {
+            "A": {
+              "n": 10,
+              "median": 2.520140799499984,
+              "ci": [
+                2.4610731349999924,
+                2.5550250219999953
+              ],
+              "mean": 2.5104322256000047,
+              "stddev": 0.04747987459814763,
+              "min": 2.4437471459999642,
+              "max": 2.5842082280000795,
+              "q1": 2.4670606514999633,
+              "q3": 2.5426889985000685,
+              "mad": 0.04352610649999633,
+              "cv": 0.018913027849935173,
+              "outliers": {
+                "mild": 0,
+                "severe": 0
+              }
+            }
+          },
+          "comparison": null,
+          "warnings": []
+        },
+        "http_ready": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {
+            "A": [
+              3.6482772299999624,
+              3.641431771999919,
+              3.6290704110000434,
+              3.6122384509999392,
+              3.636232581999934,
+              3.690370915000017,
+              3.758981120000044,
+              3.7306435550000288,
+              3.707498289,
+              3.746376641999973,
+              3.6672674640000196
+            ]
+          },
+          "summary": {
+            "A": {
+              "n": 10,
+              "median": 3.678819189500018,
+              "ci": [
+                3.6290704110000434,
+                3.746376641999973
+              ],
+              "mean": 3.682011120099992,
+              "stddev": 0.05247494051559353,
+              "min": 3.6122384509999392,
+              "max": 3.758981120000044,
+              "q1": 3.6375323794999304,
+              "q3": 3.7248572385000216,
+              "mad": 0.04616769300002943,
+              "cv": 0.014251706147527462,
+              "outliers": {
+                "mild": 0,
+                "severe": 0
+              }
+            }
+          },
+          "comparison": null,
+          "warnings": []
+        }
+      },
+      "sample_meta": [
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:46.491Z",
+          "warmup": true,
+          "duration_s": 3.648321567
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:50.272Z",
+          "warmup": false,
+          "duration_s": 3.641476388
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:54.008Z",
+          "warmup": false,
+          "duration_s": 3.629114548
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:53:57.747Z",
+          "warmup": false,
+          "duration_s": 3.6122837
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:54:01.469Z",
+          "warmup": false,
+          "duration_s": 3.636277271
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:54:05.235Z",
+          "warmup": false,
+          "duration_s": 3.690415116
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:54:09.036Z",
+          "warmup": false,
+          "duration_s": 3.759026097
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:54:12.925Z",
+          "warmup": false,
+          "duration_s": 3.730688444
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:54:16.766Z",
+          "warmup": false,
+          "duration_s": 3.707544097
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:54:20.603Z",
+          "warmup": false,
+          "duration_s": 3.746420426
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:54:24.480Z",
+          "warmup": false,
+          "duration_s": 3.667312081
+        }
+      ],
+      "sample_extra": [
+        {
+          "readiness": {
+            "spawned": 0.0005674259999750575,
+            "ready_line": 2.464225926999916,
+            "process_ready": 2.4645394130000113,
+            "http_ready": 3.6482772299999624,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0006144980000044598,
+            "ready_line": 2.4664120969999885,
+            "process_ready": 2.4667565989999503,
+            "http_ready": 3.641431771999919,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0005695780000678496,
+            "ready_line": 2.4607309049999913,
+            "process_ready": 2.4610731349999924,
+            "http_ready": 3.6290704110000434,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0005482010000150694,
+            "ready_line": 2.4434008279999944,
+            "process_ready": 2.4437471459999642,
+            "http_ready": 3.6122384509999392,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0005498900000020512,
+            "ready_line": 2.467623546999903,
+            "process_ready": 2.4679728090000026,
+            "http_ready": 3.636232581999934,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0005766290000792651,
+            "ready_line": 2.5424015110000937,
+            "process_ready": 2.54274913800009,
+            "http_ready": 3.690370915000017,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0006085580000672053,
+            "ready_line": 2.5421635339999966,
+            "process_ready": 2.5425085800000033,
+            "http_ready": 3.758981120000044,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0005795620000981216,
+            "ready_line": 2.583814911000104,
+            "process_ready": 2.5842082280000795,
+            "http_ready": 3.7306435550000288,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0006043920000138314,
+            "ready_line": 2.518644161999987,
+            "process_ready": 2.519077745000004,
+            "http_ready": 3.707498289,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0005652329999747963,
+            "ready_line": 2.5546678409999686,
+            "process_ready": 2.5550250219999953,
+            "http_ready": 3.746376641999973,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0005996649999815418,
+            "ready_line": 2.5208286239999325,
+            "process_ready": 2.521203853999964,
+            "http_ready": 3.6672674640000196,
+            "interactive_ready": null
+          }
+        }
+      ],
+      "fixture_hash": "sha256:4e394b7fae5105fdd5820509cefc0ee7bd5d4e05714a89cfb8d1478568123ef5"
+    },
+    {
+      "id": "lifecycle.run.preview.ready",
+      "params": {
+        "app": "playground"
+      },
+      "kind": "startup",
+      "version": "sha256:78771370f10b671885cf4a5d67c1f3af4c1462ec8a6138545439a9e6416cc3db",
+      "status": "ok",
+      "error": null,
+      "traceback_tail": null,
+      "dims": {
+        "fixture": "playground"
+      },
+      "metrics": {
+        "process_ready": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {
+            "A": [
+              9.165734004,
+              9.219005661999972,
+              9.071778718999894,
+              9.184959400000025,
+              9.224189851000006,
+              9.341658442000039,
+              9.26195776999998,
+              9.0349026130001,
+              9.114493597999967,
+              9.022553829000003,
+              9.061423141999967
+            ]
+          },
+          "summary": {
+            "A": {
+              "n": 10,
+              "median": 9.149726498999996,
+              "ci": [
+                9.0349026130001,
+                9.26195776999998
+              ],
+              "mean": 9.153692302599996,
+              "stddev": 0.10818416029590962,
+              "min": 9.022553829000003,
+              "max": 9.341658442000039,
+              "q1": 9.064012036249949,
+              "q3": 9.222893803749997,
+              "mad": 0.08312556850006558,
+              "cv": 0.011818636318502995,
+              "outliers": {
+                "mild": 0,
+                "severe": 0
+              }
+            }
+          },
+          "comparison": null,
+          "warnings": []
+        },
+        "http_ready": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {
+            "A": [
+              9.188556837000078,
+              9.24042620299997,
+              9.093035568999994,
+              9.205263137999964,
+              9.245346186000006,
+              9.362721713000042,
+              9.282499811999969,
+              9.055108761000042,
+              9.135730792999993,
+              9.043672883,
+              9.082278819999942
+            ]
+          },
+          "summary": {
+            "A": {
+              "n": 10,
+              "median": 9.170496965499979,
+              "ci": [
+                9.055108761000042,
+                9.282499811999969
+              ],
+              "mean": 9.174608387799992,
+              "stddev": 0.10822678123712491,
+              "min": 9.043672883,
+              "max": 9.362721713000042,
+              "q1": 9.084968007249955,
+              "q3": 9.244116190249997,
+              "mad": 0.08283977100001039,
+              "cv": 0.01179633796479426,
+              "outliers": {
+                "mild": 0,
+                "severe": 0
+              }
+            }
+          },
+          "comparison": null,
+          "warnings": []
+        }
+      },
+      "sample_meta": [
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:54:30.806Z",
+          "warmup": true,
+          "duration_s": 9.188596661
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:54:40.043Z",
+          "warmup": false,
+          "duration_s": 9.2404687
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:54:49.332Z",
+          "warmup": false,
+          "duration_s": 9.093074545
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:54:58.474Z",
+          "warmup": false,
+          "duration_s": 9.205312586
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:55:07.748Z",
+          "warmup": false,
+          "duration_s": 9.245414723
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:55:17.042Z",
+          "warmup": false,
+          "duration_s": 9.362762243
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:55:26.454Z",
+          "warmup": false,
+          "duration_s": 9.282539556
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:55:35.805Z",
+          "warmup": false,
+          "duration_s": 9.055150082
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:55:44.929Z",
+          "warmup": false,
+          "duration_s": 9.135773386
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:55:54.113Z",
+          "warmup": false,
+          "duration_s": 9.043713571
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:56:03.205Z",
+          "warmup": false,
+          "duration_s": 9.082320997
+        }
+      ],
+      "sample_extra": [
+        {
+          "readiness": {
+            "spawned": 0.000580312000010963,
+            "ready_line": 8.515905498000052,
+            "process_ready": 9.165734004,
+            "http_ready": 9.188556837000078,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0006274890000668165,
+            "ready_line": 8.569240156999967,
+            "process_ready": 9.219005661999972,
+            "http_ready": 9.24042620299997,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0005857989999640267,
+            "ready_line": 8.42223533799995,
+            "process_ready": 9.071778718999894,
+            "http_ready": 9.093035568999994,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0005766570000105276,
+            "ready_line": 8.55595981800002,
+            "process_ready": 9.184959400000025,
+            "http_ready": 9.205263137999964,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0005732890000444968,
+            "ready_line": 8.574783199999956,
+            "process_ready": 9.224189851000006,
+            "http_ready": 9.245346186000006,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0005957520000947625,
+            "ready_line": 8.69220223700006,
+            "process_ready": 9.341658442000039,
+            "http_ready": 9.362721713000042,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0005515889999969659,
+            "ready_line": 8.632836306999934,
+            "process_ready": 9.26195776999998,
+            "http_ready": 9.282499811999969,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.000578657000005478,
+            "ready_line": 8.405717435000042,
+            "process_ready": 9.0349026130001,
+            "http_ready": 9.055108761000042,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0005707269999675191,
+            "ready_line": 8.465058780999925,
+            "process_ready": 9.114493597999967,
+            "http_ready": 9.135730792999993,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.000582151999992675,
+            "ready_line": 8.373555288000034,
+            "process_ready": 9.022553829000003,
+            "http_ready": 9.043672883,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0005828469999187291,
+            "ready_line": 8.432379424999908,
+            "process_ready": 9.061423141999967,
+            "http_ready": 9.082278819999942,
+            "interactive_ready": null
+          }
+        }
+      ],
+      "fixture_hash": "sha256:4e394b7fae5105fdd5820509cefc0ee7bd5d4e05714a89cfb8d1478568123ef5"
+    },
+    {
+      "id": "lifecycle.run.prod.ready",
+      "params": {
+        "app": "playground"
+      },
+      "kind": "startup",
+      "version": "sha256:903940a5dc3b26a701428dd95e6681bb38dbbcb850a166d5ad6d7ba60375d6e7",
+      "status": "ok",
+      "error": null,
+      "traceback_tail": null,
+      "dims": {
+        "fixture": "playground"
+      },
+      "metrics": {
+        "process_ready": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {
+            "A": [
+              10.66059953499996,
+              10.516521794000028,
+              10.597090732000083,
+              10.471136831999956,
+              10.14104488999999,
+              10.464828726000064,
+              10.476048978999984,
+              10.634402366000018,
+              10.477588310999977,
+              10.570238587999938,
+              10.403956000999983
+            ]
+          },
+          "summary": {
+            "A": {
+              "n": 10,
+              "median": 10.47681864499998,
+              "ci": [
+                10.403956000999983,
+                10.597090732000083
+              ],
+              "mean": 10.475285721900002,
+              "stddev": 0.1365480528603059,
+              "min": 10.14104488999999,
+              "max": 10.634402366000018,
+              "q1": 10.466405752500037,
+              "q3": 10.55680938949996,
+              "mad": 0.05628289650002216,
+              "cv": 0.01303525808129832,
+              "outliers": {
+                "mild": 0,
+                "severe": 1
+              }
+            }
+          },
+          "comparison": null,
+          "warnings": [
+            "1 severe outlier (sample 4: -3 %). Kept."
+          ]
+        },
+        "http_ready": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {
+            "A": [
+              10.684345656000005,
+              10.540525439000021,
+              10.620867212000007,
+              10.494354426999962,
+              10.16445703599993,
+              10.488681910000082,
+              10.500399923000032,
+              10.659150573000034,
+              10.501794940999957,
+              10.59400630999994,
+              10.42856532199994
+            ]
+          },
+          "summary": {
+            "A": {
+              "n": 10,
+              "median": 10.501097431999995,
+              "ci": [
+                10.42856532199994,
+                10.620867212000007
+              ],
+              "mean": 10.49928030929999,
+              "stddev": 0.13673472009701226,
+              "min": 10.16445703599993,
+              "max": 10.659150573000034,
+              "q1": 10.490100039250052,
+              "q3": 10.58063609224996,
+              "mad": 0.055980058500040286,
+              "cv": 0.013023246933972816,
+              "outliers": {
+                "mild": 0,
+                "severe": 1
+              }
+            }
+          },
+          "comparison": null,
+          "warnings": [
+            "1 severe outlier (sample 4: -3 %). Kept."
+          ]
+        }
+      },
+      "sample_meta": [
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:56:14.793Z",
+          "warmup": true,
+          "duration_s": 10.684385129
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:56:25.546Z",
+          "warmup": false,
+          "duration_s": 10.540567744
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:56:36.135Z",
+          "warmup": false,
+          "duration_s": 10.620909108
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:56:46.825Z",
+          "warmup": false,
+          "duration_s": 10.494396747
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:56:57.388Z",
+          "warmup": false,
+          "duration_s": 10.164499685
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:57:07.621Z",
+          "warmup": false,
+          "duration_s": 10.488721646
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:57:18.178Z",
+          "warmup": false,
+          "duration_s": 10.500441779
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:57:28.727Z",
+          "warmup": false,
+          "duration_s": 10.659192167
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:57:39.455Z",
+          "warmup": false,
+          "duration_s": 10.501837469
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:57:50.026Z",
+          "warmup": false,
+          "duration_s": 10.59404635
+        },
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-29T04:58:00.689Z",
+          "warmup": false,
+          "duration_s": 10.428606746
+        }
+      ],
+      "sample_extra": [
+        {
+          "readiness": {
+            "spawned": 0.0006799129999990328,
+            "ready_line": 10.518100624999988,
+            "process_ready": 10.66059953499996,
+            "http_ready": 10.684345656000005,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.000580744999979288,
+            "ready_line": 10.374124177999988,
+            "process_ready": 10.516521794000028,
+            "http_ready": 10.540525439000021,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0006100320000541615,
+            "ready_line": 10.454625173000068,
+            "process_ready": 10.597090732000083,
+            "http_ready": 10.620867212000007,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0005966389999230159,
+            "ready_line": 10.349091466000004,
+            "process_ready": 10.471136831999956,
+            "http_ready": 10.494354426999962,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0005792700000029072,
+            "ready_line": 10.019053783999993,
+            "process_ready": 10.14104488999999,
+            "http_ready": 10.16445703599993,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0005815020000454751,
+            "ready_line": 10.322286731000077,
+            "process_ready": 10.464828726000064,
+            "http_ready": 10.488681910000082,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0006140870000308496,
+            "ready_line": 10.333624622000002,
+            "process_ready": 10.476048978999984,
+            "http_ready": 10.500399923000032,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.000588205999974889,
+            "ready_line": 10.491819598999996,
+            "process_ready": 10.634402366000018,
+            "http_ready": 10.659150573000034,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0006021189999501075,
+            "ready_line": 10.335023860999968,
+            "process_ready": 10.477588310999977,
+            "http_ready": 10.501794940999957,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.000562974999979815,
+            "ready_line": 10.427728312999989,
+            "process_ready": 10.570238587999938,
+            "http_ready": 10.59400630999994,
+            "interactive_ready": null
+          }
+        },
+        {
+          "readiness": {
+            "spawned": 0.0006248129999448793,
+            "ready_line": 10.261490960999936,
+            "process_ready": 10.403956000999983,
+            "http_ready": 10.42856532199994,
+            "interactive_ready": null
+          }
+        }
+      ],
+      "fixture_hash": "sha256:4e394b7fae5105fdd5820509cefc0ee7bd5d4e05714a89cfb8d1478568123ef5"
+    }
+  ]
+}
