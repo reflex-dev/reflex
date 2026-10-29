@@ -43,7 +43,7 @@ app = rx.App(
 )
 ```
 
-The event comes with every connect and reconnect that hits a mismatch, also after a reload the app started itself. The reload cooldown only guards the reload Reflex does on its own, so an app that reloads needs its own guard against a reload loop. In development, the event is not dispatched.
+The event comes with every connect and reconnect that hits a mismatch, also after a reload the app started itself. The reload cooldown only guards the reload Reflex does on its own, so an app that reloads needs its own guard against a reload loop. In development, the event is not dispatched, so try your listener with `reflex run --env prod` or an exported build.
 
 Independently of that check, if a backend update names a substate that the compiled frontend does not recognize, Reflex skips that substate. Updates to known substates and subsequent events continue to work. Reflex warns in the browser console and reports each unknown substate to `frontend_exception_handler` once per connection. If the warning persists after a reload, rebuild the frontend and check that `api_url` points to the intended backend. Reflex only skips unknown substates; it does not reconcile other differences, such as a renamed state or a changed var.
 
