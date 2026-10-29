@@ -7565,43 +7565,94 @@ def test_aliased_handler_keeps_its_state() -> None:
     assert "alias" not in AliasState.event_handlers
 
 
-def test_wrapper_above_rx_event_raises() -> None:
-    """A decorator applied on top of @rx.event is rejected at class creation."""
+def _logged(fn):
+    """Wrap a method the way an auth decorator stacked above @rx.event does.
 
-    def logged(fn):
-        @functools.wraps(fn)
-        def wrapper(*args, **kwargs):
-            return fn(*args, **kwargs)
+    Args:
+        fn: The decorated method (an EventHandler when stacked above @rx.event).
 
-        return wrapper
+    Returns:
+        The wrapper, which calls ``fn`` with the instance like a plain method.
+    """
 
-    with pytest.raises(TypeError, match=r"decorated above @rx\.event"):
+    @functools.wraps(fn)
+    def wrapper(self, *args, **kwargs):
+        return fn(self, *args, **kwargs)
+
+    return wrapper
+
+
+def test_wrapper_above_rx_event_is_deprecated_and_still_runs() -> None:
+    """A decorator above @rx.event warns and keeps working as the plain method it wraps."""
+    from reflex_base.utils import console as base_console
+
+    from reflex.utils import console
+
+    with (
+        patch.object(console, "deprecate", wraps=console.deprecate) as state_deprecate,
+        patch.object(
+            base_console, "deprecate", wraps=base_console.deprecate
+        ) as event_deprecate,
+    ):
 
         class WrappedState(BaseState):
-            @logged
+            x: int = 0
+
+            @_logged
             @rx.event
-            def handle(self):
+            def inc(self, by: int):
+                self.x += by
+
+            @_logged
+            @rx.event(background=True)
+            async def bg(self):
                 pass
 
+        assert (
+            state_deprecate.call_args.kwargs["feature_name"]
+            == "Decorators above @rx.event"
+        )
+        handler = WrappedState.inc
+        assert isinstance(handler, EventHandler)
+        assert handler.state is WrappedState
+        assert format.format_event_handler(handler).endswith(".inc")
+        assert WrappedState.event_handlers["inc"] is handler
+        assert WrappedState.bg.is_background  # pyright: ignore [reportAttributeAccessIssue]
+        state = WrappedState()
+        # The wrapper calls the inner handler with the instance, like on main.
+        handler.fn(state, 2)
+        assert state.x == 2
+        assert (
+            event_deprecate.call_args.kwargs["feature_name"]
+            == "Calling an event handler with a state instance"
+        )
 
-def test_stacked_wrappers_above_rx_event_raise() -> None:
-    """Decorators stacked above @rx.event are found through the __wrapped__ chain."""
 
-    def logged(fn):
-        @functools.wraps(fn)
-        def wrapper(*args, **kwargs):
-            return fn(*args, **kwargs)
+def test_stacked_wrappers_above_rx_event_still_run() -> None:
+    """Decorators stacked above @rx.event are found through the whole __wrapped__ chain."""
+    from reflex.utils import console
 
-        return wrapper
-
-    with pytest.raises(TypeError, match=r"decorated above @rx\.event"):
+    with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
 
         class StackedState(BaseState):
-            @logged
-            @logged
+            x: int = 0
+
+            @_logged
+            @_logged
             @rx.event
-            def handle(self):
-                pass
+            def inc(self, by: int):
+                self.x += by
+
+        assert (
+            mock_deprecate.call_args.kwargs["feature_name"]
+            == "Decorators above @rx.event"
+        )
+        handler = StackedState.inc
+        assert isinstance(handler, EventHandler)
+        assert format.format_event_handler(handler).endswith(".inc")
+        state = StackedState()
+        handler.fn(state, 3)
+        assert state.x == 3
 
 
 def test_decorated_handler_shadowing_builtin_raises() -> None:
@@ -7614,15 +7665,24 @@ def test_decorated_handler_shadowing_builtin_raises() -> None:
                 pass
 
 
-def test_rx_event_rejects_static_and_class_methods() -> None:
-    """@rx.event on a staticmethod or classmethod raises."""
-    with pytest.raises(TypeError, match="static or class methods"):
+def test_rx_event_on_static_and_class_methods_is_deprecated_and_ignored() -> None:
+    """@rx.event on a staticmethod or classmethod warns and leaves it as it is."""
+    from reflex_base.utils import console
+
+    with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
 
         class StaticState(BaseState):
             @rx.event
             @staticmethod
-            def handle():
-                pass
+            def helper(value: int) -> int:
+                return value * 2
+
+    assert (
+        mock_deprecate.call_args.kwargs["feature_name"]
+        == "@rx.event on a staticmethod or classmethod"
+    )
+    assert isinstance(StaticState.__dict__["helper"], staticmethod)
+    assert StaticState.helper(2) == 4
 
 
 def test_decorated_handler_on_state_derived_from_a_mixin_only() -> None:

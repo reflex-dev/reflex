@@ -89,6 +89,23 @@ def _is_event_like(value: Any) -> bool:
         return False
 
 
+def _contains_events(value: Any) -> bool:
+    """Whether a sequence holds at least one event next to other values.
+
+    Args:
+        value: The value a handler returned.
+
+    Returns:
+        True for a sequence with an event in it that ``_is_event_like`` rejects.
+    """
+    if not is_non_string_sequence(value):
+        return False
+    try:
+        return any(isinstance(e, _EVENT_LIKE_TYPES) for e in value)
+    except TypeError:
+        return False
+
+
 def _check_valid_yield(events: Any, handler_name: str = "unknown") -> Any:
     """Check if the events yielded are valid. They must be EventHandlers or EventSpecs.
 
@@ -485,8 +502,9 @@ async def process_event(
             handler_name=handler_name,
         )
         return None
-    if inspect.iscoroutine(events):
-        # A coroutine that was never awaited is a bug, not a result.
+    if inspect.iscoroutine(events) or _contains_events(events):
+        # A coroutine that was never awaited, or events mixed with other
+        # values, is a bug, not a result.
         _check_valid_yield(events, handler_name=handler_name)
     await chain_updates(
         None, root_state=ensure_locked(state, root_state), handler_name=handler_name

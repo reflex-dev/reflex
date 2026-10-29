@@ -3568,6 +3568,41 @@ async def test_returned_coroutine_still_raises_type_error(
     assert len(captured) == 1
 
 
+async def test_returned_list_mixing_events_and_values_raises_type_error(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A returned sequence that holds an event next to a plain value is still an error.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+
+    class MixedReturnState(State):
+        log: list[str] = []
+
+        @event
+        def add(self):
+            self.log = [*self.log, "add"]
+
+        @event
+        def handler(self):
+            return [MixedReturnState.add(), "x"]
+
+    captured: list[Exception] = []
+    real_base_state_processor.backend_exception_handler = captured.append
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(MixedReturnState.handler())[0]
+        )
+        with pytest.raises(TypeError, match="must only return/yield"):
+            await future
+    assert len(captured) == 1
+
+
 async def test_background_handler_return_value_resolves_future(
     wired_app: App,
     real_base_state_processor: BaseStateEventProcessor,

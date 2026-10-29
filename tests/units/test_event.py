@@ -1784,3 +1784,24 @@ def test_event_handler_and_spec_expose_wrapped_function() -> None:
     assert handler.__wrapped__ is handler.fn
     assert handler.__wrapped__.__name__ == "handle"
     assert handler(1).__wrapped__ is handler.fn
+
+
+def test_rx_event_on_a_non_state_class_method_still_calls_it() -> None:
+    """@rx.event on a method of a class that is not a state warns and stays a method."""
+    from unittest.mock import patch
+
+    from reflex_base.utils import console
+
+    with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
+
+        class Helper:
+            @rx.event
+            def compute(self, x: int) -> int:
+                return x * 2
+
+    assert (
+        mock_deprecate.call_args.kwargs["feature_name"]
+        == "@rx.event on a method of a class that is not a state"
+    )
+    assert isinstance(Helper.compute, EventHandler)
+    assert Helper().compute(3) == 6  # pyright: ignore [reportArgumentType]

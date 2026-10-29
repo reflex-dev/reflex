@@ -39,7 +39,7 @@ from reflex_base import constants
 from reflex_base.components.field import BaseField
 from reflex_base.constants.compiler import CompileVars, Imports
 from reflex_base.registry import RegistrationContext
-from reflex_base.utils import format
+from reflex_base.utils import console, format
 from reflex_base.utils.decorator import once
 from reflex_base.utils.exceptions import (
     EventFnArgMismatchError,
@@ -496,6 +496,17 @@ def _no_chain_background_task(state: "BaseState", fn: Callable) -> Callable:
     raise TypeError(msg)
 
 
+def _base_state_type() -> type:
+    """The BaseState class, imported lazily to avoid a circular import.
+
+    Returns:
+        ``reflex.state.BaseState``.
+    """
+    from reflex.state import BaseState
+
+    return BaseState
+
+
 @dataclasses.dataclass(
     init=True,
     frozen=True,
@@ -677,6 +688,16 @@ class EventHandler(EventActionsMixin):
         if isinstance(owner, type) and issubclass(owner, BaseState):
             object.__setattr__(self, "state", owner)
             self._get_type_hints()
+            return
+        console.deprecate(
+            feature_name="@rx.event on a method of a class that is not a state",
+            reason=(
+                f"`{owner.__qualname__}.{name}` stays a plain method; remove the "
+                "decorator."
+            ),
+            deprecation_version="0.10.2",
+            removal_version="1.0",
+        )
 
     def __get__(self, instance: Any, owner: type | None = None) -> Any:
         """Get the handler on class access, or its function bound to a state.
@@ -690,12 +711,14 @@ class EventHandler(EventActionsMixin):
             instance of the handler's state (an ancestor of ``instance`` for
             an inherited handler).
         """
-        if (
-            instance is None
-            or self.state is None
+        if instance is None:
+            return self
+        if self.state is None:
+            # A method of a class that is not a state: a plain bound method,
+            # as when @rx.event returned the function.
+            return types.MethodType(self.fn, instance)
+        if not isinstance(instance, self.state):
             # Held by a class that is not its state, nor a substate of it.
-            or not isinstance(instance, self.state)
-        ):
             return self
         state = (
             instance
@@ -722,6 +745,21 @@ class EventHandler(EventActionsMixin):
             EventHandlerTypeError: If the arguments are invalid.
         """
         from reflex_base.utils.exceptions import EventHandlerTypeError
+
+        if args and isinstance(args[0], self.state or _base_state_type()):
+            # A decorator stacked above @rx.event calls the handler like the
+            # plain method it used to be (the handler itself is never bound:
+            # the class attribute is the wrapper). Run it, as before.
+            console.deprecate(
+                feature_name="Calling an event handler with a state instance",
+                reason=(
+                    f"`{self.fn.__qualname__}` is called through a decorator "
+                    "stacked above @rx.event; apply other decorators below it."
+                ),
+                deprecation_version="0.10.2",
+                removal_version="1.0",
+            )
+            return self.fn(*args, **kwargs)
 
         # Get the function args.
         if self.state is not None:
@@ -3406,8 +3444,14 @@ class EventNamespace:
 
         def wrapper(func: Callable[..., Any]) -> EventCallback:
             if isinstance(func, (staticmethod, classmethod)):
-                msg = "Event handlers cannot be static or class methods."
-                raise TypeError(msg)
+                # Never an event handler; left as it is, like before.
+                console.deprecate(
+                    feature_name="@rx.event on a staticmethod or classmethod",
+                    reason="The decorator has no effect there; remove it.",
+                    deprecation_version="0.10.2",
+                    removal_version="1.0",
+                )
+                return func  # pyright: ignore [reportReturnType]
             if background is True:
                 if not inspect.iscoroutinefunction(
                     func

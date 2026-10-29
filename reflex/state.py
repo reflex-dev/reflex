@@ -35,7 +35,9 @@ from reflex_base import constants
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import PerformanceMode, auto_reload_cooldown, environment
 from reflex_base.event import (
+    BACKGROUND_TASK_MARKER,
     EVENT_ACTIONS_MARKER,
+    SUPERSEDES_MARKER,
     Event,
     EventHandler,
     EventSpec,
@@ -543,6 +545,17 @@ all_base_state_classes: dict[str, None] = {}
 _ROUTER_FIELD_NAMES = frozenset((*constants.ROUTER_VARS, constants.ROUTER_DATA))
 
 
+# What a wrapper stacked above @rx.event takes over from the handler it wraps:
+# the name it registers under and the markers @rx.event set on the function.
+_STACKED_HANDLER_ATTRIBUTES = (
+    "__name__",
+    "__qualname__",
+    BACKGROUND_TASK_MARKER,
+    SUPERSEDES_MARKER,
+    EVENT_ACTIONS_MARKER,
+)
+
+
 class BaseState(EvenMoreBasicBaseState, state_root=True):
     """The state of the app."""
 
@@ -930,21 +943,27 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         Returns:
             Whether the item is an event handler.
 
-        Raises:
-            TypeError: If a decorator was applied on top of ``@rx.event``.
+        A decorator stacked above ``@rx.event`` (found through the whole
+        ``__wrapped__`` chain) is deprecated: the wrapper is treated as the
+        plain method it wraps, as when ``@rx.event`` returned the function,
+        carrying the inner handler's name and markers.
         """
         if not isinstance(value, EventHandler) and isinstance(
-            inspect.unwrap(value, stop=lambda f: isinstance(f, EventHandler)),
+            inner := inspect.unwrap(value, stop=lambda f: isinstance(f, EventHandler)),
             EventHandler,
         ):
-            # Wrapped as a handler, the wrapper would return the event spec
-            # of the handler it wraps, chaining that handler forever. Chase
-            # the whole __wrapped__ chain so stacked decorators are found too.
-            msg = (
-                f"Event handler `{name}` is decorated above @rx.event; apply "
-                "other decorators below it."
+            console.deprecate(
+                feature_name="Decorators above @rx.event",
+                reason=(
+                    f"`{name}` is decorated above @rx.event; apply other "
+                    "decorators below it."
+                ),
+                deprecation_version="0.10.2",
+                removal_version="1.0",
             )
-            raise TypeError(msg)
+            for attr in _STACKED_HANDLER_ATTRIBUTES:
+                if hasattr(inner.fn, attr):
+                    setattr(value, attr, getattr(inner.fn, attr))
         return (
             not name.startswith("_")
             and isinstance(value, Callable)
