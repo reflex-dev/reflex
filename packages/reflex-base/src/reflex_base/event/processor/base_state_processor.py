@@ -369,8 +369,13 @@ async def execute_event_inline(spec: EventSpec) -> Any:
         raise EventHandlerTypeError(msg)
     handler = registered.handler
     if not registered.states:
+        # Flush the caller's pending delta (if it holds the lock) before any
+        # frontend event the helper yields, like every other yield does.
         return await process_event(
-            handler=handler, payload=event.payload, state=None, root_state=None
+            handler=handler,
+            payload=event.payload,
+            state=None,
+            root_state=ctx.locked_root,
         )
     root_state = ctx.locked_root
     if root_state is None:

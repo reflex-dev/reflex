@@ -4081,6 +4081,60 @@ async def test_await_payload_decodes_vars_and_detaches_proxies(
     assert received == [[1, 2, 99], [1, 2, 99]]
 
 
+async def test_await_stateless_handler_flushes_the_caller_delta_first(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list,
+    emitted_events: list,
+    token: str,
+):
+    """A stateless helper awaited under the lock emits the caller's pending delta first.
+
+    A script the helper yields must see the state the caller just changed,
+    which is the ordering every other yield keeps.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: Deltas emitted to the frontend, in order.
+        emitted_events: Frontend events emitted, in order.
+        token: The client token.
+    """
+    deltas_before_script: list[int] = []
+
+    @event
+    def read_storage():
+        yield rx.call_script("localStorage.getItem('value')")
+        deltas_before_script.append(len(emitted_deltas))
+
+    class FlushFirstState(State):
+        value: str = "old"
+
+        @event
+        async def change_then_read(self):
+            self.value = "new"
+            await read_storage()
+
+    async with real_base_state_processor as processor:
+        await (
+            await processor.enqueue(
+                token, Event.from_event_type(FlushFirstState.change_then_read())[0]
+            )
+        )
+
+    assert len(emitted_events) == 1
+    assert "_call_script" in emitted_events[0][1][0].name
+    flushed_before_script = [
+        delta
+        for _, delta in emitted_deltas[: deltas_before_script[0]]
+        if delta.get(FlushFirstState.get_full_name(), {}).get("value" + FIELD_MARKER)
+        == "new"
+    ]
+    assert flushed_before_script, (
+        "the caller's change reached the frontend after the script"
+    )
+
+
 async def test_await_stateless_handler_runs_inline(
     wired_app: App,
     real_base_state_processor: BaseStateEventProcessor,
