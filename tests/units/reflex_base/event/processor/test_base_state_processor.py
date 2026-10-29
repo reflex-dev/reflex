@@ -1418,6 +1418,148 @@ async def test_rehydrate_runs_on_load_for_the_incoming_events_route(
         assert (await root.get_state(State)).is_hydrated is True
 
 
+@pytest.mark.parametrize("outcome", ["cancelled", "raised"])
+@pytest.mark.parametrize(
+    "processor_state_manager", ["in_process", "disk", "redis"], indirect=True
+)
+async def test_failed_handler_emits_writes_after_last_yield(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    processor_state_manager: StateManager,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+    outcome: str,
+):
+    """A cancelled or failing handler sends the writes it made after its last yield.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked event processor.
+        processor_state_manager: The state manager backing the processor.
+        emitted_deltas: The deltas sent by the processor.
+        token: The client token.
+        outcome: Whether the handler is cancelled or raises.
+    """
+    started = asyncio.Event()
+
+    class CleanupState(State):
+        """Write a var only after the handler's last yield."""
+
+        cleanup: str = ""
+
+        @event
+        async def run(self):
+            """Yield, then write in cleanup when cancelled or failing.
+
+            Yields:
+                The state update before waiting.
+
+            Raises:
+                RuntimeError: When the handler is set to fail.
+            """
+            yield
+            if outcome == "raised":
+                self.cleanup = "raised"
+                msg = "handler failed"
+                raise RuntimeError(msg)
+            started.set()
+            try:
+                await asyncio.Event().wait()
+            except asyncio.CancelledError:
+                self.cleanup = "cancelled"
+                raise
+
+    handled: list[Exception] = []
+    real_base_state_processor.backend_exception_handler = handled.append
+    wired_app.add_page(lambda: rx.text("cleanup"), route="/")
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, _client_event(CleanupState.run(), _view("/"))
+        )
+        if outcome == "cancelled":
+            await asyncio.wait_for(started.wait(), timeout=5)
+            future.cancel()
+        with contextlib.suppress(BaseException):
+            await asyncio.wait_for(future.wait_all(), timeout=5)
+
+    field = "cleanup" + FIELD_MARKER
+    sent = [
+        fields[field]
+        for _, delta in emitted_deltas
+        if field in (fields := delta.get(CleanupState.get_full_name(), {}))
+    ]
+    assert sent[-1] == outcome
+    # The handler's own exception is reported, not one from the flush.
+    assert [str(ex) for ex in handled] == (
+        ["handler failed"] if outcome == "raised" else []
+    )
+
+
+async def test_failed_handler_flush_error_keeps_handler_exception(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+    caplog: pytest.LogCaptureFixture,
+):
+    """A failing flush is logged and the handler's own exception is reported.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked event processor.
+        token: The client token.
+        caplog: The pytest log capture fixture.
+    """
+
+    class FlushErrorState(State):
+        """Fail the delta computation once the handler wrote its cleanup."""
+
+        cleanup: str = ""
+
+        @rx.var
+        def checked(self) -> str:
+            """Raise once cleanup is set.
+
+            Returns:
+                The cleanup value.
+
+            Raises:
+                ValueError: When cleanup is set.
+            """
+            if self.cleanup:
+                msg = "delta failed"
+                raise ValueError(msg)
+            return self.cleanup
+
+        @event
+        def run(self):
+            """Write cleanup, then fail.
+
+            Raises:
+                RuntimeError: Always.
+            """
+            self.cleanup = "raised"
+            msg = "handler failed"
+            raise RuntimeError(msg)
+
+    handled: list[Exception] = []
+    real_base_state_processor.backend_exception_handler = handled.append
+    wired_app.add_page(lambda: rx.text("flush"), route="/")
+    with caplog.at_level(logging.ERROR):
+        async with real_base_state_processor as processor:
+            future = await processor.enqueue(
+                token, _client_event(FlushErrorState.run(), _view("/"))
+            )
+            with contextlib.suppress(RuntimeError):
+                await asyncio.wait_for(future.wait_all(), timeout=5)
+
+    assert [str(ex) for ex in handled] == ["handler failed"]
+    assert any(
+        "Error flushing delta after handler" in record.getMessage()
+        and "delta failed" in (record.exc_text or "")
+        for record in caplog.records
+    )
+
+
 async def test_rehydrate_after_expiry_does_not_reload_the_previous_route(
     wired_app: App,
     real_base_state_processor: BaseStateEventProcessor,
