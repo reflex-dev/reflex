@@ -3635,6 +3635,53 @@ async def test_returned_list_of_coroutines_raises_type_error(
     assert len(captured) == 1
 
 
+async def test_invalid_return_value_still_flushes_the_delta_first(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list,
+    token: str,
+):
+    """A handler's state changes reach the frontend before an invalid return value raises.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: Deltas emitted to the frontend, in order.
+        token: The client token.
+    """
+
+    async def _work() -> int:  # noqa: RUF029
+        return 1
+
+    class FlushThenRaiseState(State):
+        value: str = "old"
+
+        @event
+        def handler(self):
+            self.value = "new"
+            return _work()
+
+    deltas_before_error: list[int] = []
+    real_base_state_processor.backend_exception_handler = lambda _ex: (
+        deltas_before_error.append(len(emitted_deltas))
+    )
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(FlushThenRaiseState.handler())[0]
+        )
+        with pytest.raises(TypeError, match="must only return/yield"):
+            await future
+    flushed = [
+        delta
+        for _, delta in emitted_deltas[: deltas_before_error[0]]
+        if delta.get(FlushThenRaiseState.get_full_name(), {}).get(
+            "value" + FIELD_MARKER
+        )
+        == "new"
+    ]
+    assert flushed, "the change was not emitted before the error was handled"
+
+
 async def test_background_handler_return_value_resolves_future(
     wired_app: App,
     real_base_state_processor: BaseStateEventProcessor,

@@ -505,12 +505,14 @@ async def process_event(
             handler_name=handler_name,
         )
         return None
-    if inspect.iscoroutine(events) or _holds_events_or_coroutines(events):
-        # A coroutine that was never awaited, or events mixed with other
-        # values, is a bug, not a result.
-        _check_valid_yield(events, handler_name=handler_name)
+    # A coroutine that was never awaited, or events mixed with other values,
+    # is a bug, not a result: chain_updates flushes the delta and then raises
+    # for it, as it does for any invalid yield.
+    invalid = inspect.iscoroutine(events) or _holds_events_or_coroutines(events)
     await chain_updates(
-        None, root_state=ensure_locked(state, root_state), handler_name=handler_name
+        events if invalid else None,
+        root_state=ensure_locked(state, root_state),
+        handler_name=handler_name,
     )
     return events
 
