@@ -83,11 +83,11 @@ The imported module must still define `app` at module level.
 - `frontend_port` (default `3000`) and `backend_port` (default `8000`) control which ports the frontend and backend listen on. In dev mode, if a port is taken, the next available port is used.
 - `backend_host` (default `0.0.0.0`) is the address the backend server binds to.
 - `api_url` (default `http://localhost:8000`) is the URL the user's **browser** uses to reach the backend. You typically don't need to set it: when `api_url` points at localhost, the frontend substitutes the domain the app was served from, so a backend reachable at the same address as the frontend (e.g. behind a reverse proxy or load balancer) is found automatically. Set `api_url` only when the backend is listening on a different address than the frontend, e.g. `https://api.example.com`.
-- `deploy_url` (default `http://localhost:3000`) is the public URL where the **frontend** is hosted. Reflex uses it wherever an absolute frontend URL is needed — most notably for the links in the generated `sitemap.xml`. It is also the origin browsers will present when connecting to the backend, which matters for CORS (below).
+- `deploy_url` (unset by default) is the public URL where the **frontend** is hosted when it is served from a different origin than the backend. Reflex uses it wherever an absolute frontend URL is needed — most notably for the links in the generated `sitemap.xml`, which fall back to `http://localhost:<frontend_port>` when it is unset (`config.frontend_url` exposes that resolved value). It is also the origin browsers will present when connecting to the backend, which matters for CORS (below).
 
 ## CORS
 
-The backend only accepts cross-origin requests from origins listed in `cors_allowed_origins`. The default, `["*"]`, allows any origin — convenient in development, but in production restrict it to the origins your frontend is actually served from (typically the origin of `deploy_url`):
+The backend only accepts cross-origin requests from origins listed in `cors_allowed_origins`. By default any origin is allowed in dev mode. In prod mode the backend serves the frontend from its own origin, so by default no cross-origin requests are allowed at all and same-origin requests pass; when `deploy_url` is set, only that origin is allowed. Set `cors_allowed_origins` explicitly when the frontend is reachable from several origins, or to `["*"]` to allow any origin in production:
 
 ```python
 config = rx.Config(
@@ -114,6 +114,19 @@ By default the frontend is served from the root of its domain and backend routes
 Both values are normalized to start with a `/`.
 
 When `frontend_path` is set, use `rx.asset()` for local files in the `assets/` directory. It adds the configured frontend path to the generated URL. Literal paths such as `src="/components/logo.svg"` are not rewritten, so they must already include the prefix (for example, `src="/app/components/logo.svg"`).
+
+## Client IP Behind Proxies
+
+`router.session.client_ip` uses the connection's peer address by default and ignores `X-Forwarded-For`, which an untrusted client can set. If the backend is reachable only through trusted reverse proxies that append their observed client address to `X-Forwarded-For`, set `trusted_proxy_hops` to the number of those proxies:
+
+```python
+config = rx.Config(
+    app_name="my_app_name",
+    trusted_proxy_hops=1,
+)
+```
+
+For example, `trusted_proxy_hops=1` uses the rightmost `X-Forwarded-For` entry; `2` uses the second entry from the right. The default is `0`. Do not enable forwarded-header trust if untrusted clients can connect directly to the backend or bypass the trusted proxy chain. The setting can also be provided as `REFLEX_TRUSTED_PROXY_HOPS`.
 
 ## Plugins
 

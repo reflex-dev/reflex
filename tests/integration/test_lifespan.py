@@ -32,6 +32,7 @@ def LifespanApp(
 
     lifespan_task_global = 0
     lifespan_context_global = 0
+    transformer_lifespan_global = 0  # noqa: F841 (read from the module by the test)
     raw_asyncio_task_global = 0
     connected_tokens: set[str] = set()
 
@@ -146,7 +147,20 @@ def LifespanApp(
 
     from fastapi import FastAPI
 
-    app = rx.App(api_transformer=FastAPI() if mount_api_transformer else None)
+    @asynccontextmanager
+    async def transformer_lifespan(app: FastAPI):
+        global transformer_lifespan_global
+        transformer_lifespan_global += 1  # pyright: ignore[reportUnboundVariable]
+        try:
+            yield
+        finally:
+            transformer_lifespan_global += 1
+
+    app = rx.App(
+        api_transformer=FastAPI(lifespan=transformer_lifespan)
+        if mount_api_transformer
+        else None
+    )
 
     if mount_cached_fastapi:
         assert app._api is not None
@@ -296,6 +310,8 @@ def test_lifespan(lifespan_app: AppHarness):
 
     assert lifespan_app.poll_for_content(context_global, exp_not_equal="0") == "2"
     assert lifespan_app.app_module.lifespan_context_global == 2
+    transformer_starts = 1 if lifespan_app.app_module.app.api_transformer else 0
+    assert lifespan_app.app_module.transformer_lifespan_global == transformer_starts
 
     original_task_global_text = task_global.text
     original_task_global_value = int(original_task_global_text)
@@ -314,6 +330,7 @@ def test_lifespan(lifespan_app: AppHarness):
     assert lifespan_app.app_module.lifespan_task_global == 0
     assert lifespan_app.app_module.lifespan_context_global == 4
     assert lifespan_app.app_module.raw_asyncio_task_global == 0
+    assert lifespan_app.app_module.transformer_lifespan_global == 2 * transformer_starts
 
 
 # --- Do NOT add new test cases below this line. ---

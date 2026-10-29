@@ -6,7 +6,7 @@ title: Wrapping Local Packages
 import reflex as rx
 ```
 
-# Assets
+# Wrapping Local Packages
 
 If a wrapped component depends on assets such as images, scripts, or
 stylesheets, these can be kept adjacent to the component code and

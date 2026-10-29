@@ -43,18 +43,22 @@ from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style
 from reflex_base.utils import exceptions, format, memo_paths
 from reflex_base.utils.imports import ImportVar
-from reflex_base.utils.types import Receive, Scope, Send
+from reflex_base.utils.types import ASGIApp, Receive, Scope, Send
 from reflex_base.vars.base import computed_var
 from reflex_components_core.base.bare import Bare
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.core.upload import selected_files
 from reflex_components_radix.themes.typography.text import Text
 from reflex_otel import ReflexInstrumentor
+from socketio import ASGIApp as EngineIOApp
+from socketio import AsyncServer
 from starlette.applications import Starlette
 from starlette.datastructures import FormData, Headers, UploadFile
 from starlette.exceptions import HTTPException
-from starlette.requests import ClientDisconnect
-from starlette.responses import StreamingResponse
+from starlette.middleware.cors import CORSMiddleware
+from starlette.requests import ClientDisconnect, Request
+from starlette.responses import JSONResponse, PlainTextResponse, StreamingResponse
+from starlette.routing import Route
 from starlette.testclient import TestClient
 from starlette_admin.auth import AuthProvider
 
@@ -65,8 +69,10 @@ from reflex.app import (
     App,
     ComponentCallable,
     EventNamespace,
-    _ContextMiddleware,
+    _cors_allowed_origins,
     _decode_asgi_headers,
+    _DrainOversizedBodyMiddleware,
+    _RootMiddleware,
     _sio_dumps,
     _sio_loads,
     default_overlay_component,
@@ -586,12 +592,228 @@ def test_admin_dashboard_routes_remain_reversible(
     )
     mocker.patch.object(app, "_compile")
     api = app()
-    assert isinstance(api, Starlette)
-    assert str(api.url_path_for("admin:index")) == "/admin/"
+    router = app.api_transformer or app._api
+    assert isinstance(router, Starlette)
+    assert str(router.url_path_for("admin:index")) == "/admin/"
     with TestClient(api) as client:
         response = client.get("/admin/")
     assert response.status_code == 200
     assert "Reflex Admin Dashboard" in response.text
+
+
+def test_api_transformer_lifespans_run(mocker: MockerFixture):
+    """Send ASGI lifespan events through the api_transformer apps.
+
+    The outermost app and each app a Starlette transformer mounts get them, after
+    the Reflex lifespan tasks start; apps mounted on a transformer by the user
+    do not.
+
+    Args:
+        mocker: The mock fixture for skipping frontend compilation.
+    """
+    fastapi = pytest.importorskip("fastapi")
+    events: list[str] = []
+
+    def recording_lifespan(name: str, state: dict[str, str] | None = None) -> Any:
+        @contextlib.asynccontextmanager
+        async def lifespan(app: Any):
+            events.append(f"{name} start")
+            yield state
+            events.append(f"{name} stop")
+
+        return lifespan
+
+    async def read_state(request: Request) -> JSONResponse:  # noqa: RUF029
+        return JSONResponse({"db": request.state.db, "own_app": request.app is outer})
+
+    def record_scope_types(asgi_app: ASGIApp) -> ASGIApp:
+        async def recorder(scope: Scope, receive: Receive, send: Send) -> None:
+            events.append(f"callable {scope['type']}")
+            await asgi_app(scope, receive, send)
+
+        return recorder
+
+    inner = fastapi.FastAPI(lifespan=recording_lifespan("inner"))
+    inner.mount("/sub", Starlette(lifespan=recording_lifespan("mounted")))
+    outer = Starlette(lifespan=recording_lifespan("outer", {"db": "conn"}))
+    outer.add_route("/db", read_state)
+    app = App(api_transformer=[inner, record_scope_types, outer])
+    app.register_lifespan_task(recording_lifespan("reflex"))
+    mocker.patch.object(app, "_compile")
+
+    with TestClient(app()) as client:
+        assert events == [
+            "reflex start",
+            "callable lifespan",
+            "inner start",
+            "outer start",
+        ]
+        assert client.get("/db").json() == {"db": "conn", "own_app": True}
+        assert client.get("/ping").text == '"pong"'
+    assert events[4:] == ["callable http", "outer stop", "inner stop", "reflex stop"]
+
+
+@pytest.mark.parametrize("also_registered", [False, True])
+def test_api_transformer_lifespan_also_registered_warns(
+    mocker: MockerFixture, caplog: pytest.LogCaptureFixture, also_registered: bool
+):
+    """Warn when a transformer's lifespan is also registered as a lifespan task.
+
+    Args:
+        mocker: The mock fixture for skipping frontend compilation.
+        caplog: The log capture fixture.
+        also_registered: Whether the lifespan is also registered as a task.
+    """
+    fastapi = pytest.importorskip("fastapi")
+
+    @contextlib.asynccontextmanager
+    async def lifespan(app: Any):
+        yield
+
+    app = App(api_transformer=fastapi.FastAPI(lifespan=lifespan))
+    if also_registered:
+        app.register_lifespan_task(lifespan)
+    mocker.patch.object(app, "_compile")
+
+    with caplog.at_level(logging.WARNING, logger="reflex.app"):
+        app()
+    assert ("runs twice" in caplog.text) is also_registered
+
+
+def test_api_transformer_lifespan_startup_failure_stops_the_app(
+    mocker: MockerFixture,
+):
+    """A transformer failing to start fails the server's startup.
+
+    Args:
+        mocker: The mock fixture for skipping frontend compilation.
+    """
+    stopped: list[str] = []
+
+    @contextlib.asynccontextmanager
+    async def reflex_task():
+        try:
+            yield
+        finally:
+            stopped.append("reflex")
+
+    @contextlib.asynccontextmanager
+    async def failing_lifespan(app: Starlette):
+        msg = "boom"
+        raise ValueError(msg)
+        yield
+
+    app = App(api_transformer=Starlette(lifespan=failing_lifespan))
+    app.register_lifespan_task(reflex_task)
+    mocker.patch.object(app, "_compile")
+
+    with pytest.raises(RuntimeError, match="boom"), TestClient(app()):
+        pass
+    assert stopped == ["reflex"]
+
+
+def test_api_transformer_lifespan_shutdown_failure_is_reported(
+    mocker: MockerFixture,
+):
+    """A transformer failing to stop fails the server's shutdown after Reflex stops.
+
+    Args:
+        mocker: The mock fixture for skipping frontend compilation.
+    """
+    stopped: list[str] = []
+
+    @contextlib.asynccontextmanager
+    async def reflex_task():
+        try:
+            yield
+        finally:
+            stopped.append("reflex")
+
+    @contextlib.asynccontextmanager
+    async def failing_lifespan(app: Starlette):
+        yield
+        msg = "boom"
+        raise ValueError(msg)
+
+    app = App(api_transformer=Starlette(lifespan=failing_lifespan))
+    app.register_lifespan_task(reflex_task)
+    mocker.patch.object(app, "_compile")
+
+    status_codes: list[int] = []
+    with pytest.raises(RuntimeError, match="boom"), TestClient(app()) as client:
+        status_codes.append(client.get("/ping").status_code)
+    assert status_codes == [200]
+    assert stopped == ["reflex"]
+
+
+@pytest.mark.parametrize("callable_last", [False, True])
+def test_api_transformer_routes_get_cors_headers(
+    mocker: MockerFixture, callable_last: bool
+):
+    """Routes of the outermost transformer answer with CORS headers exactly once.
+
+    Args:
+        mocker: The mock fixture for skipping frontend compilation.
+        callable_last: Whether the outermost transformer is a callable.
+    """
+
+    def add_route(asgi_app: ASGIApp) -> ASGIApp:
+        async def router(scope: Scope, receive: Receive, send: Send) -> None:
+            if scope["type"] == "http" and scope["path"] == "/extra":
+                await JSONResponse("extra")(scope, receive, send)
+            else:
+                await asgi_app(scope, receive, send)
+
+        return router
+
+    starlette_app = Starlette()
+    starlette_app.add_route("/extra", lambda _: JSONResponse("extra"))
+    app = App(api_transformer=add_route if callable_last else starlette_app)
+    mocker.patch.object(app, "_compile")
+
+    with TestClient(app()) as client:
+        for path in ("/extra", "/ping"):
+            response = client.get(path, headers={"Origin": "http://example.com"})
+            assert response.status_code == 200
+            assert response.headers.get_list("access-control-allow-origin") == [
+                "http://example.com"
+            ]
+
+
+@pytest.mark.parametrize("transformer", [None, "starlette", "callable"])
+def test_unhandled_route_error_gets_cors_headers(
+    mocker: MockerFixture, transformer: str | None
+):
+    """A 500 from an unhandled route error answers with CORS headers exactly once.
+
+    Args:
+        mocker: The mock fixture for skipping frontend compilation.
+        transformer: The kind of api_transformer to use, if any.
+    """
+
+    async def boom(request: Request) -> JSONResponse:  # noqa: RUF029
+        msg = "boom"
+        raise ValueError(msg)
+
+    starlette_app = Starlette()
+    api_transformers = {
+        None: None,
+        "starlette": starlette_app,
+        "callable": lambda asgi_app: asgi_app,
+    }
+    app = App(api_transformer=api_transformers[transformer])
+    assert app._api is not None
+    # The route sits on the outermost Starlette app.
+    router = starlette_app if transformer == "starlette" else app._api
+    router.add_route("/boom", boom)
+    mocker.patch.object(app, "_compile")
+
+    with TestClient(app(), raise_server_exceptions=False) as client:
+        response = client.get("/boom", headers={"Origin": "http://example.com"})
+    assert response.status_code == 500
+    assert response.headers.get_list("access-control-allow-origin") == [
+        "http://example.com"
+    ]
 
 
 @pytest.mark.skipif(
@@ -2430,7 +2652,7 @@ def test_app_wrap_compile_theme(
         function_app_definition, "DefaultOverlayComponents"
     )
     expected = (
-        "function AppWrap({children}) {\n\n\n\n\n"
+        "function AppWrap({children}) {\n\n"
         "return ("
         + ("jsx(StrictMode,{}," if react_strict_mode else "")
         + "jsx(StateProvider,{},"
@@ -3344,7 +3566,7 @@ def test_app_wrap_priority(
         function_app_definition, "DefaultOverlayComponents"
     )
     expected = (
-        "function AppWrap({children}) {\n\n\n\n\n"
+        "function AppWrap({children}) {\n\n"
         "return ("
         + ("jsx(StrictMode,{}," if react_strict_mode else "")
         + "jsx(StateProvider,{},"
@@ -3533,7 +3755,9 @@ def test_call_app():
     app = App()
     app._compile = unittest.mock.Mock()
     api = app()
-    assert isinstance(api, Starlette)
+    assert isinstance(api, _RootMiddleware)
+    assert isinstance(api.app, CORSMiddleware)
+    assert api.app.app is app._api
 
 
 def _probe_worker_token_identity(app: App, redis: AsyncMock, sender: Connection):
@@ -4161,11 +4385,11 @@ def test_set_contexts_no_event_processor(isolated_context: contextvars.Context):
     isolated_context.run(_test)
 
 
-def test_context_middleware_is_registered_as_a_class(
+def test_registered_middleware_are_classes(
     compilable_app: tuple[App, Path],
     mocker: MockerFixture,
 ):
-    """The context middleware must reach Starlette as a class, not a bound method.
+    """Every middleware registered on a Starlette app must be a class, not a bound method.
 
     ASGI instrumentation libraries (sentry-sdk's Starlette integration among them)
     wrap every registered middleware by assigning to ``cls.__call__``. A bound
@@ -4177,24 +4401,21 @@ def test_context_middleware_is_registered_as_a_class(
 
     asgi_app = app()
 
-    assert isinstance(asgi_app, Starlette)
-    registered = [m.cls for m in asgi_app.user_middleware]
-    assert _ContextMiddleware in registered, (
-        f"context middleware not registered as a class, got {registered}"
-    )
+    assert isinstance(asgi_app, _RootMiddleware)
+    assert app._api is not None
     # Mimic the instrumentation's patch on every middleware in the stack.
-    for cls in registered:
-        cls.__call__ = cls.__call__
+    for middleware in app._api.user_middleware:
+        middleware.cls.__call__ = middleware.cls.__call__
 
 
-async def test_context_middleware_sets_contexts(app_with_processor: App):
-    """The context middleware attaches Reflex contexts before calling the app."""
+async def test_root_middleware_sets_contexts(app_with_processor: App):
+    """The root middleware attaches Reflex contexts before calling the app."""
     seen: list[tuple[RegistrationContext, EventContext]] = []
 
     async def inner_app(scope: Scope, receive: Receive, send: Send) -> None:  # noqa: RUF029
         seen.append((RegistrationContext.get(), EventContext.get()))
 
-    await _ContextMiddleware(inner_app, app_with_processor)(
+    await _RootMiddleware(inner_app, app_with_processor, contextlib.nullcontext)(
         {"type": "http"}, AsyncMock(), AsyncMock()
     )
 
@@ -4479,10 +4700,15 @@ def test_decode_asgi_headers():
     }
     # Names and values are decoded as UTF-8.
     assert _decode_asgi_headers([(b"x-name", "café".encode())]) == {"x-name": "café"}
+    # Invalid UTF-8 values fall back to Latin-1 instead of aborting the connect.
+    assert _decode_asgi_headers([(b"x-name", b"\xe9")]) == {"x-name": "\u00e9"}
 
 
-def test_static_router_data_keeps_every_repeated_header_field():
+def test_static_router_data_keeps_every_repeated_header_field(
+    monkeypatch: pytest.MonkeyPatch,
+):
     """Repeated cookie and x-forwarded-for fields all reach the router data."""
+    monkeypatch.setattr("reflex.app.get_config", lambda: Mock(trusted_proxy_hops=2))
     router_data = EventNamespace("/event", Mock())._build_static_router_data(
         "sid1",
         {
@@ -4504,6 +4730,40 @@ def test_static_router_data_keeps_every_repeated_header_field():
     # The original client hop comes first, not the proxy that added the second field.
     assert router_data[constants.RouteVar.CLIENT_IP] == "203.0.113.7"
     assert HeaderData.from_router_data(router_data).cookie == "sid=1; other=2"
+
+
+@pytest.mark.parametrize(
+    ("trusted_proxy_hops", "forwarded_for", "peer_ip", "expected_ip"),
+    [
+        (0, "6.6.6.6, 203.0.113.7", "10.0.0.2", "10.0.0.2"),
+        (1, "203.0.113.7", "10.0.0.2", "203.0.113.7"),
+        (2, "6.6.6.6, 203.0.113.7, 10.0.0.2", "127.0.0.1", "203.0.113.7"),
+        (2, "203.0.113.7", "10.0.0.2", "10.0.0.2"),
+    ],
+)
+def test_static_router_data_resolves_client_ip_from_trusted_proxy_hops(
+    monkeypatch: pytest.MonkeyPatch,
+    trusted_proxy_hops: int,
+    forwarded_for: str,
+    peer_ip: str,
+    expected_ip: str,
+):
+    """Only configured rightmost forwarded hops determine the client IP."""
+    monkeypatch.setattr(
+        "reflex.app.get_config",
+        lambda: Mock(trusted_proxy_hops=trusted_proxy_hops),
+    )
+    router_data = EventNamespace("/event", Mock())._build_static_router_data(
+        "sid1",
+        {
+            "asgi.scope": {
+                "headers": [(b"x-forwarded-for", forwarded_for.encode())],
+                "client": (peer_ip, 1234),
+            }
+        },
+    )
+
+    assert router_data[constants.RouteVar.CLIENT_IP] == expected_ip
 
 
 def test_call_ignores_stale_marker_without_dev_backend_reload(
@@ -4883,6 +5143,37 @@ async def event_namespace_with_processor_mock() -> AsyncGenerator[EventNamespace
     await event_namespace._token_manager.disconnect_all()
 
 
+@pytest.mark.parametrize("owner", ["current", "replacement", "remote", "missing"])
+async def test_disconnect_only_cancels_current_local_socket(
+    event_namespace_with_processor_mock: EventNamespace,
+    owner: str,
+):
+    """A stale disconnect must not cancel a replacement connection's page load.
+
+    Args:
+        event_namespace_with_processor_mock: Namespace with a mocked processor.
+        owner: The socket currently owning the client token.
+    """
+    namespace = event_namespace_with_processor_mock
+    manager = namespace._token_manager
+    manager.sid_to_token["old-sid"] = "token"
+    if owner != "missing":
+        manager.token_to_socket["token"] = SocketRecord(
+            instance_id="remote" if owner == "remote" else manager.instance_id,
+            sid="new-sid" if owner == "replacement" else "old-sid",
+        )
+    manager.disconnect_token = AsyncMock()
+    cleanup = namespace.on_disconnect("old-sid")
+    assert cleanup is not None
+    await cleanup
+    cancel = cast(Mock, namespace.app.event_processor._on_disconnect)
+    if owner == "current":
+        cancel.assert_called_once_with("token")
+    else:
+        cancel.assert_not_called()
+    assert namespace.on_disconnect("unknown-sid") is None
+
+
 def _connect_environ(token: str) -> dict[str, Any]:
     return {
         "QUERY_STRING": f"token={token}",
@@ -5144,6 +5435,36 @@ async def test_on_connect_processes_boot_event_from_auth(
     assert modify_state.call_count == 2
     assert state.router_data[constants.RouteVar.SESSION_ID] == "new_sid"
     assert state.router_data[constants.RouteVar.CLIENT_TOKEN] == "abc"
+
+
+@pytest.mark.asyncio
+async def test_on_connect_accepts_non_utf8_header_value(
+    event_namespace: EventNamespace,
+):
+    """A non-UTF-8 request header value does not abort websocket connect.
+
+    Args:
+        event_namespace: The event namespace.
+    """
+    event_namespace._token_manager = Mock()
+    event_namespace._token_manager.link_token_to_sid = AsyncMock(return_value=None)
+    event_namespace.on_event = AsyncMock()
+
+    await event_namespace.on_connect(
+        "new_sid",
+        {
+            "QUERY_STRING": "token=abc",
+            "asgi.scope": {"headers": [(b"x-name", b"\xe9")]},
+        },
+        {"event": {"name": "state.hydrate_and_load", "payload": {}}},
+    )
+
+    assert (
+        event_namespace._static_router_data["new_sid"][constants.RouteVar.HEADERS][
+            "x-name"
+        ]
+        == "é"
+    )
 
 
 def _schema_checking_namespace(
@@ -5695,3 +6016,419 @@ def test_write_stateful_pages_marker_concurrent_readers_see_valid_json(
         for future in readers:
             future.result()
     assert json.loads(marker.read_text()) == routes
+
+
+@pytest.mark.parametrize(
+    ("prod", "config_kwargs", "expected"),
+    [
+        (False, {}, ["*"]),
+        (True, {}, None),
+        (True, {"deploy_url": "https://example.com/app/"}, ["https://example.com"]),
+        (True, {"deploy_url": "https://Example.COM:443/app"}, ["https://example.com"]),
+        (True, {"deploy_url": "http://example.com:80"}, ["http://example.com"]),
+        (True, {"deploy_url": "http://example.com:8080"}, ["http://example.com:8080"]),
+        (True, {"deploy_url": "http://[::1]:3000"}, ["http://[::1]:3000"]),
+        (
+            True,
+            {"cors_allowed_origins": ["https://a.com", "https://b.com"]},
+            ["https://a.com", "https://b.com"],
+        ),
+        (True, {"cors_allowed_origins": ["*"]}, ["*"]),
+        (False, {"cors_allowed_origins": ["https://a.com"]}, ["https://a.com"]),
+    ],
+)
+def test_cors_allowed_origins_default_restricts_to_deploy_url_in_prod(
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    prod: bool,
+    config_kwargs: dict[str, Any],
+    expected: list[str] | None,
+):
+    """The default CORS origins open up in dev mode and narrow to deploy_url in prod mode.
+
+    Args:
+        mocker: The pytest mocker fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        prod: Whether to resolve in prod mode.
+        config_kwargs: Extra config values.
+        expected: The expected allowed origins.
+    """
+    monkeypatch.delenv("REFLEX_CORS_ALLOWED_ORIGINS", raising=False)
+    monkeypatch.delenv("REFLEX_DEPLOY_URL", raising=False)
+    config = rx.Config(app_name="cors_app", **config_kwargs)
+    mocker.patch("reflex.app.get_config", return_value=config)
+    mocker.patch("reflex.app.is_prod_mode", return_value=prod)
+
+    assert _cors_allowed_origins() == expected
+
+
+def test_cors_allowed_origins_from_env_is_explicit(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """An env-provided cors_allowed_origins counts as explicit, even in prod mode.
+
+    Args:
+        mocker: The pytest mocker fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    monkeypatch.setenv("REFLEX_CORS_ALLOWED_ORIGINS", "*")
+    config = rx.Config(app_name="cors_app")
+    mocker.patch("reflex.app.get_config", return_value=config)
+    mocker.patch("reflex.app.is_prod_mode", return_value=True)
+
+    assert _cors_allowed_origins() == ["*"]
+
+
+def test_add_cors_and_socketio_use_resolved_origins(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """Both the HTTP middleware and the Socket.IO server use the resolved origins.
+
+    Args:
+        mocker: The pytest mocker fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    monkeypatch.delenv("REFLEX_CORS_ALLOWED_ORIGINS", raising=False)
+    config = rx.Config(app_name="cors_app", deploy_url="https://example.com")
+    mocker.patch("reflex.app.get_config", return_value=config)
+    mocker.patch("reflex.app.is_prod_mode", return_value=True)
+
+    api = Starlette()
+    App._add_cors(api)
+    assert api.user_middleware[0].kwargs["allow_origins"] == ["https://example.com"]
+
+    app = App(_state=rx.State)
+    app._setup_state()
+    assert app.sio is not None
+    assert app.sio.eio.cors_allowed_origins == ["https://example.com"]
+
+
+@pytest.mark.parametrize(
+    ("deploy_url", "origin", "allowed"),
+    [
+        ("https://example.com:443/app", "https://example.com", True),
+        ("https://example.com", "https://evil.example", False),
+    ],
+)
+def test_cors_middleware_enforces_resolved_origins(
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    deploy_url: str,
+    origin: str,
+    allowed: bool,
+):
+    """A preflight from the frontend origin passes and any other origin is refused.
+
+    Args:
+        mocker: The pytest mocker fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        deploy_url: The configured deploy_url.
+        origin: The Origin header of the request.
+        allowed: Whether the preflight should succeed.
+    """
+    monkeypatch.delenv("REFLEX_CORS_ALLOWED_ORIGINS", raising=False)
+    monkeypatch.delenv("REFLEX_DEPLOY_URL", raising=False)
+    config = rx.Config(app_name="cors_app", deploy_url=deploy_url)
+    mocker.patch("reflex.app.get_config", return_value=config)
+    mocker.patch("reflex.app.is_prod_mode", return_value=True)
+
+    api = Starlette(routes=[Route("/ping", lambda request: PlainTextResponse("pong"))])
+    App._add_cors(api)
+    response = TestClient(api).options(
+        "/ping",
+        headers={"Origin": origin, "Access-Control-Request-Method": "GET"},
+    )
+    assert (response.status_code == 200) is allowed
+    assert (response.headers.get("access-control-allow-origin") == origin) is allowed
+
+    app = App(_state=rx.State)
+    app._setup_state()
+    assert app.sio is not None
+    environ = {"HTTP_ORIGIN": origin, "wsgi.url_scheme": "http", "HTTP_HOST": "api"}
+    assert (origin in app.sio.eio._cors_allowed_origins(environ)) is allowed
+
+
+def test_cors_left_unconfigured_in_prod_without_deploy_url(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """Without deploy_url in prod mode, only same-origin requests reach the backend.
+
+    No CORS middleware is installed, so browsers refuse cross-origin reads, and
+    Socket.IO falls back to its same-origin default.
+
+    Args:
+        mocker: The pytest mocker fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    monkeypatch.delenv("REFLEX_CORS_ALLOWED_ORIGINS", raising=False)
+    monkeypatch.delenv("REFLEX_DEPLOY_URL", raising=False)
+    config = rx.Config(app_name="cors_app")
+    mocker.patch("reflex.app.get_config", return_value=config)
+    mocker.patch("reflex.app.is_prod_mode", return_value=True)
+
+    api = Starlette()
+    App._add_cors(api)
+    assert api.user_middleware == []
+
+    app = App(_state=rx.State)
+    app._setup_state()
+    assert app.sio is not None
+    assert app.sio.eio.cors_allowed_origins is None
+    environ = {"wsgi.url_scheme": "https", "HTTP_HOST": "app.example.com"}
+    allowed = app.sio.eio._cors_allowed_origins(environ)
+    assert "https://app.example.com" in allowed
+    assert "https://evil.example" not in allowed
+
+    mocker.patch.object(app, "_compile")
+    asgi_app = app()
+    assert isinstance(asgi_app, _RootMiddleware)
+    assert not isinstance(asgi_app.app, CORSMiddleware)
+
+
+def _polling_engine_app(max_size: int):
+    """Build the socket ASGI app the way ``App._setup_state`` mounts it.
+
+    Args:
+        max_size: Value for engine.io's ``max_http_buffer_size``.
+
+    Returns:
+        A (socket.io ASGI app, engine.io server) pair for a fresh engine.io
+        server.
+    """
+    sio = AsyncServer(
+        async_mode="asgi",
+        max_http_buffer_size=max_size,
+        async_handlers=False,
+    )
+    return EngineIOApp(sio, socketio_path=""), sio.eio
+
+
+async def _asgi_http_call(
+    app,
+    method: str,
+    query_string: str,
+    body: bytes = b"",
+    chunk_size: int = 65536,
+    path: str = "/",
+):
+    """Drive one HTTP request through an ASGI app with a chunked body.
+
+    Args:
+        app: The ASGI app to call.
+        method: The HTTP method.
+        query_string: The raw query string.
+        body: The request body.
+        chunk_size: Size of each http.request message body chunk.
+        path: The request path.
+
+    Returns:
+        A tuple of (status, response body, request bytes consumed from receive).
+    """
+    chunks = [body[i : i + chunk_size] for i in range(0, len(body), chunk_size)] or [
+        b""
+    ]
+    sent = []
+    consumed = 0
+    index = 0
+
+    async def receive():  # noqa: RUF029
+        """Yield the request body one chunk at a time, then disconnect.
+
+        Returns:
+            http.request messages for each chunk, then http.disconnect.
+        """
+        nonlocal consumed, index
+        if index < len(chunks):
+            chunk = chunks[index]
+            index += 1
+            consumed += len(chunk)
+            return {
+                "type": "http.request",
+                "body": chunk,
+                "more_body": index < len(chunks),
+            }
+        return {"type": "http.disconnect"}
+
+    async def send(message):  # noqa: RUF029
+        """Record an outgoing ASGI message.
+
+        Args:
+            message: The ASGI message sent by the app.
+        """
+        sent.append(message)
+
+    headers = []
+    if method == "POST":
+        headers.append((b"content-length", str(len(body)).encode()))
+    scope = {
+        "type": "http",
+        "asgi": {"version": "3.0"},
+        "http_version": "1.1",
+        "method": method,
+        "scheme": "http",
+        "path": path,
+        "raw_path": path.encode(),
+        "query_string": query_string.encode("latin-1"),
+        "root_path": "",
+        "headers": headers,
+        "client": ("127.0.0.1", 12345),
+        "server": ("127.0.0.1", 8000),
+    }
+    await app(scope, receive, send)
+    status = next(m["status"] for m in sent if m["type"] == "http.response.start")
+    response_body = b"".join(
+        m.get("body", b"") for m in sent if m["type"] == "http.response.body"
+    )
+    return status, response_body, consumed
+
+
+async def _polling_handshake(app, path: str = "/") -> str:
+    """Open an engine.io polling session.
+
+    Args:
+        app: The ASGI app serving engine.io.
+        path: The request path.
+
+    Returns:
+        The query string that addresses the new session.
+    """
+    status, response_body, _ = await _asgi_http_call(
+        app, "GET", "EIO=4&transport=polling", path=path
+    )
+    assert status == 200
+    sid = re.search(r'"sid":"([^"]+)"', response_body.decode())
+    assert sid is not None
+    return f"EIO=4&transport=polling&sid={sid.group(1)}"
+
+
+async def _oversized_post(app, query_string: str, path: str = "/"):
+    """POST a 1000-byte body in 100-byte chunks, failing after 10 seconds.
+
+    Args:
+        app: The ASGI app serving engine.io.
+        query_string: The query string that addresses the session.
+        path: The request path.
+
+    Returns:
+        A tuple of (status, response body, request bytes consumed from receive).
+    """
+    return await asyncio.wait_for(
+        _asgi_http_call(
+            app, "POST", query_string, b"x" * 1000, chunk_size=100, path=path
+        ),
+        timeout=10,
+    )
+
+
+async def test_engineio_rejects_oversized_polling_post_without_draining_body():
+    """Document the engine.io behavior _DrainOversizedBodyMiddleware works around.
+
+    engine.io rejects a polling POST larger than max_http_buffer_size with 400
+    without reading the request body, stranding the client mid-send.
+    """
+    app, _ = _polling_engine_app(max_size=100)
+    query = await _polling_handshake(app)
+
+    # Park a poll so engine.io can deliver its CLOSE packet and answer the POST.
+    poll_task = asyncio.create_task(_asgi_http_call(app, "GET", query))
+    await asyncio.sleep(0.1)
+
+    status, _, consumed = await _oversized_post(app, query)
+    poll_status, _, _ = await asyncio.wait_for(poll_task, timeout=5)
+    assert status == 400
+    assert poll_status == 200
+    assert consumed < 1000
+
+
+async def test_drain_oversized_body_middleware_drains_and_rejects_oversized_post():
+    """Oversized polling POST bodies are drained so the client can finish sending."""
+    socket_app, eio = _polling_engine_app(max_size=100)
+    app = _DrainOversizedBodyMiddleware(socket_app, eio)
+    query = await _polling_handshake(app)
+
+    # A parked poll still receives the CLOSE packet of the rejected session.
+    poll_task = asyncio.create_task(_asgi_http_call(app, "GET", query))
+    await asyncio.sleep(0.1)
+
+    status, _, consumed = await _oversized_post(app, query)
+    poll_status, _, _ = await asyncio.wait_for(poll_task, timeout=5)
+    assert status == 400
+    assert poll_status == 200
+    assert consumed == 1000
+
+    # The reconnect handshake is served normally after the rejected POST.
+    await _polling_handshake(app)
+
+
+async def test_drain_oversized_body_middleware_answers_post_without_parked_poll():
+    """The oversized POST is answered even when no poll is in flight.
+
+    The rejection must not wait for a poll to consume the session CLOSE packet.
+    """
+    socket_app, eio = _polling_engine_app(max_size=100)
+    app = _DrainOversizedBodyMiddleware(socket_app, eio)
+    query = await _polling_handshake(app)
+
+    status, response_body, consumed = await _oversized_post(app, query)
+    assert status == 400
+    assert response_body == b'"Bad Request"'
+    assert consumed == 1000
+
+    # A later poll learns the session is gone instead of the POST hanging.
+    poll_status, _, _ = await asyncio.wait_for(
+        _asgi_http_call(app, "GET", query), timeout=5
+    )
+    assert poll_status == 400
+
+
+async def test_drain_oversized_body_middleware_closes_session_for_non_utf8_query():
+    """A query string that is not UTF-8 still closes the rejected session."""
+    socket_app, eio = _polling_engine_app(max_size=100)
+    app = _DrainOversizedBodyMiddleware(socket_app, eio)
+    query = await _polling_handshake(app)
+
+    status, _, _ = await _oversized_post(app, f"{query}&x=\xff")
+    assert status == 400
+    assert eio.sockets[query.rpartition("=")[2]].closed
+
+
+async def test_app_event_endpoint_drains_oversized_polling_post():
+    """The App's event endpoint drains and answers an oversized polling POST."""
+    app = App(
+        enable_state=False,
+        sio=AsyncServer(async_mode="asgi", max_http_buffer_size=100),
+    )
+    app._enable_state()
+    assert app._api is not None
+    path = f"{constants.Endpoint.EVENT}/"
+    query = await _polling_handshake(app._api, path)
+
+    status, _, consumed = await _oversized_post(app._api, query, path)
+    assert status == 400
+    assert consumed == 1000
+
+
+async def test_drain_oversized_body_middleware_passes_regular_requests_through():
+    """Requests within the size limit reach the downstream app untouched."""
+    received = []
+
+    async def echo_app(scope, receive, send):
+        """Echo app that records the first request body and replies 200.
+
+        Args:
+            scope: The ASGI connection scope.
+            receive: The ASGI receive callable.
+            send: The ASGI send callable.
+        """
+        received.append(await receive())
+        await send({"type": "http.response.start", "status": 200, "headers": []})
+        await send({"type": "http.response.body", "body": b"ok"})
+
+    app = _DrainOversizedBodyMiddleware(echo_app, _polling_engine_app(100)[1])
+    status, response_body, _ = await _asgi_http_call(app, "POST", "", b"hello")
+    assert status == 200
+    assert response_body == b"ok"
+    assert received[0]["body"] == b"hello"
+
+    status, _, _ = await _asgi_http_call(app, "GET", "", b"")
+    assert status == 200

@@ -747,10 +747,12 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         Returns:
             StringVar: The resulting sequence after multiplication.
         """
-        if not isinstance(other, (NumberVar, int)):
+        if not isinstance(other, (NumberVar, int)) or (
+            isinstance(other, NumberVar) and other._is_strict_float()
+        ):
             raise_unsupported_operand_types("*", (type(self), type(other)))
 
-        return (self.split() * other).join()
+        return string_repeat_operation(self, other)
 
     def __rmul__(self, other: NumberVar | int) -> StringVar:
         """Multiply the sequence by a number or an integer.
@@ -761,10 +763,12 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         Returns:
             StringVar: The resulting sequence after multiplication.
         """
-        if not isinstance(other, (NumberVar, int)):
+        if not isinstance(other, (NumberVar, int)) or (
+            isinstance(other, NumberVar) and other._is_strict_float()
+        ):
             raise_unsupported_operand_types("*", (type(other), type(self)))
 
-        return (self.split() * other).join()
+        return string_repeat_operation(self, other)
 
     @overload
     def __getitem__(self, i: slice) -> StringVar: ...
@@ -784,7 +788,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         if isinstance(i, slice):
             if i.step is None:
                 return string_slice_operation(self, i.start, i.stop)
-            return string_codepoints_operation(self)[i].join()
+            return string_chars_operation(self)[i].join()
         if not isinstance(i, (int, NumberVar)) or (
             isinstance(i, NumberVar) and i._is_strict_float()
         ):
@@ -865,7 +869,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         Returns:
             The string reverse operation.
         """
-        return self.split().reverse().join()
+        return string_chars_operation(self).reverse().join()
 
     def rstrip(self, chars: StringVar | str | None = None) -> StringVar:
         """Right strip the string.
@@ -1303,7 +1307,7 @@ def string_ends_with_operation(
 
 
 @var_operation
-def string_codepoints_operation(string: StringVar[Any]):
+def string_chars_operation(string: StringVar[Any]):
     """Convert a string to an array of Unicode code points.
 
     Args:
@@ -1316,6 +1320,23 @@ def string_codepoints_operation(string: StringVar[Any]):
         js_expression=f"pyStrChars({string!s})",
         var_type=list[str],
         var_data=VarData(imports=_PY_STR_CHARS_IMPORT),
+    )
+
+
+@var_operation
+def string_repeat_operation(string: StringVar[Any], count: NumberVar | int):
+    """Repeat a string a number of times.
+
+    Args:
+        string: The string to repeat.
+        count: The number of repetitions.
+
+    Returns:
+        The repeated string.
+    """
+    return var_operation_return(
+        js_expression=f"{string!s}.repeat(Math.max(0, {count!s}))",
+        var_type=str,
     )
 
 
