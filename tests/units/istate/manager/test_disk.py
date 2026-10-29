@@ -1,15 +1,21 @@
 """Tests for the disk state manager."""
 
+import logging
 import math
 import os
+import pickle
 from pathlib import Path
 
 import pytest
 
+from reflex.istate.manager import disk
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.token import BaseStateToken, StateToken
 from reflex.state import BaseState
 from reflex.utils import prerequisites
+
+# A pickle of a global from a module that does not exist.
+MISSING_MODULE_PICKLE = b"cmissing_module_for_disk_test\nThing\n."
 
 
 class DiskPersistState(BaseState):
@@ -166,4 +172,108 @@ async def test_set_state_for_substate_builds_tokens_for_written_states_only(
         await state_manager.set_state_for_substate(token, state)
 
     assert written == [DiskTreeFirst]
+    await state_manager.close()
+
+
+@pytest.mark.asyncio
+async def test_load_state_missing_file_is_not_logged(tmp_path, monkeypatch, caplog):
+    """A state that was never persisted loads as None without logging.
+
+    Args:
+        tmp_path: A temporary directory.
+        monkeypatch: The pytest monkeypatch fixture.
+        caplog: The pytest log capture fixture.
+    """
+    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
+    state_manager = StateManagerDisk(_write_debounce_seconds=0)
+    token = StateToken(ident="client", cls=int)
+
+    with caplog.at_level(logging.DEBUG, logger=disk.__name__):
+        assert await state_manager.load_state(token) is None
+
+    assert not caplog.records
+    await state_manager.close()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("token", "contents", "fresh_state"),
+    [
+        (StateToken(ident="client", cls=int), b"not-a-pickle", 0),
+        (StateToken(ident="client", cls=int), b"", 0),
+        (BaseStateToken(ident="client", cls=DiskPersistState), b"not-a-pickle", None),
+        (BaseStateToken(ident="client", cls=DiskPersistState), b"", None),
+        (
+            BaseStateToken(ident="client", cls=DiskPersistState),
+            MISSING_MODULE_PICKLE,
+            None,
+        ),
+    ],
+)
+async def test_load_state_logs_unreadable_file(
+    tmp_path, monkeypatch, caplog, token, contents, fresh_state
+):
+    """A persisted state file that cannot be read or unpickled is logged as a warning.
+
+    Args:
+        tmp_path: A temporary directory.
+        monkeypatch: The pytest monkeypatch fixture.
+        caplog: The pytest log capture fixture.
+        token: The token whose state file is damaged.
+        contents: The damaged file contents.
+        fresh_state: The expected fresh state, or None for a DiskPersistState.
+    """
+    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
+    state_manager = StateManagerDisk(_write_debounce_seconds=0)
+    token_path = state_manager.token_path(token)
+    token_path.write_bytes(contents)
+
+    with caplog.at_level(logging.DEBUG, logger=disk.__name__):
+        assert await state_manager.load_state(token) is None
+
+    [record] = caplog.records
+    assert record.levelno == logging.WARNING
+    assert str(token) in record.getMessage()
+    assert str(token_path) in record.getMessage()
+    assert record.exc_info is not None
+
+    caplog.clear()
+    with caplog.at_level(logging.WARNING, logger=disk.__name__):
+        state = await state_manager.get_state(token)
+    assert [r.levelno for r in caplog.records] == [logging.WARNING]
+    if fresh_state is None:
+        assert isinstance(state, DiskPersistState)
+        assert math.isclose(state.num, 3.15)
+    else:
+        assert state == fresh_state
+    await state_manager.close()
+
+
+@pytest.mark.asyncio
+async def test_load_state_logs_schema_mismatch_at_debug(tmp_path, monkeypatch, caplog):
+    """A persisted BaseState whose class changed since it was written is logged at debug.
+
+    Args:
+        tmp_path: A temporary directory.
+        monkeypatch: The pytest monkeypatch fixture.
+        caplog: The pytest log capture fixture.
+    """
+    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
+    state_manager = StateManagerDisk(_write_debounce_seconds=0)
+    token = BaseStateToken(ident="client", cls=DiskPersistState)
+    token_path = state_manager.token_path(token)
+    stale_state = DiskPersistState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    stale_state.num = 9.5
+    token_path.write_bytes(pickle.dumps(("stale-schema", stale_state)))
+
+    with caplog.at_level(logging.DEBUG, logger=disk.__name__):
+        assert await state_manager.load_state(token) is None
+
+    [record] = caplog.records
+    assert record.levelno == logging.DEBUG
+    assert str(token_path) in record.getMessage()
+
+    state = await state_manager.get_state(token)
+    assert isinstance(state, DiskPersistState)
+    assert math.isclose(state.num, 3.15)
     await state_manager.close()
