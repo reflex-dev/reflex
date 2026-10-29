@@ -195,7 +195,8 @@ test("a mismatch in prod reloads once per cooldown, then shows a banner", async 
   assert.ok(banner);
   assert.equal(banner.attributes.role, "alert");
   assert.match(banner.children[0], /new version/i);
-  assert.equal(c.warn.mock.callCount(), 2);
+  // Every mismatch warns once, the one that reloaded included.
+  assert.equal(c.warn.mock.callCount(), 3);
   const button = banner.children.find((node) => node.tag === "button");
   assert.equal(button.textContent, "Reload");
 
@@ -268,7 +269,12 @@ test("canceling the window event skips the reload and the banner", async (t) => 
     assert.equal(c.reloads.length, 0);
     assert.equal(c.banner(), undefined);
     assert.equal(c.session.get(LAST_RELOADED_KEY), lastReload?.toString());
-    assert.equal(c.warn.mock.callCount(), 0);
+    // The console still names both hashes when the app handles the mismatch.
+    assert.equal(c.warn.mock.callCount(), 2);
+    assert.match(
+      c.warn.mock.calls[0].arguments[0],
+      /frontend-schema.*backend-schema/,
+    );
 
     await c.enqueue([{ name: "test.event", payload: { id: 1 } }]);
     assert.deepEqual(c.sent.at(-1).value.payload, { id: 1 });

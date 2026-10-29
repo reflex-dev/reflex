@@ -382,7 +382,9 @@ def test_state_mismatch_handled_by_app(
     assert client_error_app_env.frontend_url is not None
     url = f"{client_error_app_env.frontend_url.rstrip('/')}/handled"
     if isinstance(client_error_app_env, AppHarnessProd):
-        page.goto(url)
+        # The console names both hashes although the app handles the mismatch.
+        with page.expect_console_message(_is_mismatch_warning):
+            page.goto(url)
         page.wait_for_function("() => window.__state_mismatch !== undefined")
         detail = page.evaluate("() => window.__state_mismatch")
         assert detail["frontend"]

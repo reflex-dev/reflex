@@ -883,6 +883,7 @@ const handleStateMismatch = (info) => {
     );
     return;
   }
+  console.warn(message);
   const event = new CustomEvent(STATE_MISMATCH_WINDOW_EVENT, {
     cancelable: true,
     detail: { frontend: app.stateSchema, backend: info.backend },
@@ -896,7 +897,6 @@ const handleStateMismatch = (info) => {
     reloadForNewVersion();
     return;
   }
-  console.warn(message + " Reload the page to get the new version.");
   showNewVersionBanner();
 };
 
