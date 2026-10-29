@@ -18,6 +18,7 @@ import psutil
 import pytest
 from pytest_mock import MockerFixture
 from reflex_base import constants
+from reflex_base.environment import environment
 
 from reflex import reflex
 from reflex.testing import DEFAULT_TIMEOUT
@@ -1351,14 +1352,13 @@ def run_cli_env(monkeypatch: pytest.MonkeyPatch) -> None:
     Args:
         monkeypatch: The pytest monkeypatch fixture.
     """
-    from reflex_base.environment import environment
-
     for var in (
         environment.REFLEX_COMPILE_CONTEXT,
         environment.REFLEX_FRONTEND_ONLY,
         environment.REFLEX_BACKEND_ONLY,
         environment.REFLEX_FRONTEND_PORT,
         environment.REFLEX_BACKEND_PORT,
+        environment.REFLEX_LOG_JSON,
     ):
         monkeypatch.delenv(var.name, raising=False)
 
