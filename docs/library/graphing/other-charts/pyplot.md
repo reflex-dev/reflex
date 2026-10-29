@@ -204,13 +204,24 @@ def create_plot(theme: str, plot_data: tuple, scale: list):
 
 class PyplotState(rx.State):
     num_points: int = 25
-    plot_data: tuple = tuple(np.random.rand(2, 25) for _ in range(2))
-    scale: list = [random.uniform(0, 100) for _ in range(25)]
+    # Generated when the demo mounts, so the figures are not computed up front.
+    plot_data: tuple = ()
+    scale: list = []
+
+    def _generate(self):
+        self.plot_data = tuple(np.random.rand(2, self.num_points) for _ in range(2))
+        self.scale = [random.uniform(0, 100) for _ in range(self.num_points)]
+
+    @rx.event
+    def load(self):
+        # Not temporal: on_mount can fire before the websocket connects, and
+        # temporal events sent while disconnected are dropped.
+        if not self.plot_data:
+            self._generate()
 
     @rx.event(temporal=True, throttle=500)
     def randomize(self):
-        self.plot_data = tuple(np.random.rand(2, self.num_points) for _ in range(2))
-        self.scale = [random.uniform(0, 100) for _ in range(self.num_points)]
+        self._generate()
 
     @rx.event(temporal=True, throttle=500)
     def set_num_points(self, num_points: list[int | float]):
@@ -219,11 +230,17 @@ class PyplotState(rx.State):
 
     @rx.var
     def fig_light(self) -> Figure:
+        if not self.plot_data:
+            # Placeholder until the demo mounts and generates data.
+            return Figure(figsize=(0.01, 0.01))
         fig = create_plot("light", self.plot_data, self.scale)
         return fig
 
     @rx.var
     def fig_dark(self) -> Figure:
+        if not self.plot_data:
+            # Placeholder until the demo mounts and generates data.
+            return Figure(figsize=(0.01, 0.01))
         fig = create_plot("dark", self.plot_data, self.scale)
         return fig
 
@@ -272,6 +289,7 @@ def pyplot_example():
         align_items="center",
         height="100%",
         width="100%",
+        on_mount=PyplotState.load,
     )
 ```
 
