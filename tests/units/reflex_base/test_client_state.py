@@ -278,6 +278,17 @@ def test_set_declares_every_trigger_arg_up_to_the_last_one_read() -> None:
     assert "((_ev_0) => (setX(_ev_0)))" in _bound(lambda a, b: cs.set(a), int, int)
 
 
+def test_trigger_arg_inside_a_nested_lambda_is_declared() -> None:
+    """A value mapping over a list with a lambda that reads the arg declares it."""
+    cs = client_state(0, name="x")
+    items = Var.create([1, 2]).to(list[int])
+    chain = _bound(lambda e: cs.set(items.map(lambda item: item + e).length()), int)
+    assert re.search(
+        r"\(\(_ev_0\) => \(setX\(\[1, 2\]\.map\(\(\(\w+\) => \(\w+ \+ _ev_0\)\)\)\.length\)\)\)",
+        chain,
+    ), chain
+
+
 def test_updater_closing_over_a_trigger_arg_declares_it() -> None:
     """A functional updater reading a trigger argument gets it from the wrapper."""
     cs = client_state(0, name="x")

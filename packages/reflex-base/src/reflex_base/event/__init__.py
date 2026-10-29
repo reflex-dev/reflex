@@ -57,13 +57,7 @@ from reflex_base.utils.types import (
     value_inside_optional,
 )
 from reflex_base.vars import VarData
-from reflex_base.vars.base import (
-    LiteralVar,
-    ToOperation,
-    Var,
-    _owner_state,
-    get_leaf_vars,
-)
+from reflex_base.vars.base import LiteralVar, ToOperation, Var, _operands, _owner_state
 from reflex_base.vars.function import (
     ENCODE_URI_COMPONENT,
     ArgsFunctionOperation,
@@ -2311,9 +2305,8 @@ class EventArgVar(Var):
     to find which of the trigger's arguments it reads.
     """
 
-    # Index of the argument in the trigger's signature.
-    _position: int = dataclasses.field(default=0)
-    # The JS names of every argument of the trigger, in order.
+    # The JS names of every argument of the trigger, in order; this one's
+    # position is its index in it.
     _signature: tuple[str, ...] = dataclasses.field(default=())
 
 
@@ -2331,14 +2324,42 @@ def event_arg_placeholder(var: Var) -> EventArgVar | None:
     return var if isinstance(var, EventArgVar) else None
 
 
+def _trigger_args_read(value: Var) -> list[EventArgVar]:
+    """Find every trigger-argument placeholder a value is built from.
+
+    Walks the value's operations like ``get_leaf_vars`` does, except that a
+    function is always searched through its body: a placeholder closed over by
+    a nested lambda still has to be declared, whatever else the body reads.
+
+    Args:
+        value: The value to take apart.
+
+    Returns:
+        The placeholders, in order of first appearance.
+    """
+    found: dict[str, EventArgVar] = {}
+    stack = [value]
+    while stack:
+        current = stack.pop()
+        while isinstance(current, ToOperation):
+            current = current._original
+        if isinstance(current, EventArgVar):
+            found.setdefault(current._js_expr, current)
+        elif isinstance(
+            current, (ArgsFunctionOperation, ArgsFunctionOperationBuilder)
+        ) and isinstance(current._return_expr, Var):
+            stack.append(current._return_expr)
+        elif (operands := _operands(current)) is not None:
+            stack.extend(LiteralVar.create(operand) for operand in reversed(operands))
+    return list(found.values())
+
+
 def event_args_signature(value: Var) -> tuple[str, ...]:
     """Get the trigger arguments a function built around ``value`` must declare.
 
     An event chain calls such a function with every argument of the trigger,
     positionally, so the declaration has to cover each argument up to the last
-    one ``value`` reads, in the trigger's order. The value is taken apart with
-    ``get_leaf_vars``; a function value is searched through its body, so an
-    updater lambda that closes over a trigger argument declares it too.
+    one ``value`` reads, in the trigger's order.
 
     Args:
         value: The value a trigger argument may have been built into.
@@ -2346,19 +2367,13 @@ def event_args_signature(value: Var) -> tuple[str, ...]:
     Returns:
         The JS parameter names to declare, possibly empty.
     """
-    body = value
-    if isinstance(
-        value, (ArgsFunctionOperation, ArgsFunctionOperationBuilder)
-    ) and isinstance(value._return_expr, Var):
-        body = value._return_expr
-    last: EventArgVar | None = None
-    for leaf in get_leaf_vars(body):
-        arg = event_arg_placeholder(leaf)
-        if arg is not None and (last is None or arg._position > last._position):
-            last = arg
-    if last is None:
-        return ()
-    return last._signature[: last._position + 1]
+    last = -1
+    signature: tuple[str, ...] = ()
+    for arg in _trigger_args_read(value):
+        position = arg._signature.index(arg._js_expr)
+        if position > last:
+            last, signature = position, arg._signature
+    return signature[: last + 1]
 
 
 @lru_cache
@@ -2383,14 +2398,12 @@ def parse_args_spec(arg_spec: ArgsSpec | Sequence[ArgsSpec]):
 
     return list(
         arg_spec(*[
-            EventArgVar(_js_expr=name, _position=position, _signature=signature).to(
+            EventArgVar(_js_expr=name, _signature=signature).to(
                 unwrap_var_annotation(
                     resolve_annotation(annotations[0], l_arg, spec=arg_spec)
                 )
             )
-            for position, (l_arg, name) in enumerate(
-                zip(spec.args, signature, strict=True)
-            )
+            for l_arg, name in zip(spec.args, signature, strict=True)
         ])
     ), annotations
 
