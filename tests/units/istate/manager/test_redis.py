@@ -2067,3 +2067,51 @@ async def test_first_read_in_dev_recomputes_cached_vars(
     rows[:] = ["x"]
     assert await read(reloaded_state_manager, 101) == (100, after_reload, after_reload)
     await reloaded_state_manager.close()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("first_read", ["untouched event", "get_state"])
+async def test_dev_unwritten_state_keeps_recomputing_cached_vars(
+    monkeypatch: pytest.MonkeyPatch, first_read: str
+):
+    """In dev mode, cached vars are recomputed until this process writes the state.
+
+    A first read after a hot reload that writes nothing back leaves the old
+    cached values in redis, so the next read must drop them as well.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+        first_read: How the reloaded process first reads the state.
+    """
+    monkeypatch.setenv("REFLEX_ENV_MODE", Env.DEV.value)
+    rows = ["a", "b"]
+
+    class UnwrittenCachedState(BaseState):
+        count: int = 0
+
+        @computed_var(cache=True)
+        def data(self) -> list[str]:
+            return list(rows)
+
+    redis = mock_redis()
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=UnwrittenCachedState)
+    state_manager = StateManagerRedis(redis=redis)
+    state_manager._oplock_enabled = False
+    async with state_manager.modify_state(token) as state:
+        assert isinstance(state, UnwrittenCachedState)
+        state.count = 99
+        assert state.data == ["a", "b"]
+    await state_manager.close()
+    rows[:] = ["a"]
+
+    reloaded_state_manager = StateManagerRedis(redis=redis)
+    reloaded_state_manager._oplock_enabled = False
+    if first_read == "get_state":
+        await reloaded_state_manager.get_state(token)
+    else:
+        async with reloaded_state_manager.modify_state(token):
+            pass
+    async with reloaded_state_manager.modify_state(token) as state:
+        assert isinstance(state, UnwrittenCachedState)
+        assert (state.count, state.data) == (99, ["a"])
+    await reloaded_state_manager.close()
