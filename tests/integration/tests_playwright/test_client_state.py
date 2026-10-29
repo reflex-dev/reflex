@@ -24,6 +24,7 @@ def ClientStateApp():
     shared = rx.client_state("initial", name="shared")
     counter = rx.client_state(0, name="counter")
     other = rx.client_state("untouched", name="other")
+    suffixed = rx.client_state("", name="suffixed")
 
     class ClientStateAppState(rx.State):
         retrieved: str = ""
@@ -73,6 +74,12 @@ def ClientStateApp():
             ),
             # A var nothing else writes, to prove writes are isolated.
             rx.text(other.value, id="other-value"),
+            # A trigger argument used inside a compound value.
+            rx.input(
+                on_change=lambda value: suffixed.set(value.to(str) + "!"),
+                id="suffix-input",
+            ),
+            rx.text(suffixed.value, id="suffix-value"),
             # Backend round trips.
             rx.button("push", id="push", on_click=ClientStateAppState.push_shared),
             rx.button(
@@ -153,6 +160,12 @@ def test_named_var_is_shared_across_components(page: Page) -> None:
 
     expect(page.locator("#shared-a")).to_have_text("typed")
     expect(page.locator("#shared-b")).to_have_text("typed")
+
+
+def test_set_with_a_value_computed_from_the_trigger_arg(page: Page) -> None:
+    """``set(value + "!")`` reads the trigger's argument, not a closed-over one."""
+    page.locator("#suffix-input").fill("typed")
+    expect(page.locator("#suffix-value")).to_have_text("typed!")
 
 
 def test_set_with_bound_value(page: Page) -> None:

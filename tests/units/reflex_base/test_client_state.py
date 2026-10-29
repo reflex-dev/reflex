@@ -4,7 +4,7 @@ import re
 from typing import Any, cast
 
 import pytest
-from reflex_base.client_state import ClientStateVar, _recovered_event_arg, client_state
+from reflex_base.client_state import ClientStateVar, client_state
 from reflex_base.components.client_state_context import CLIENT_STATE_APP_WRAP_PRIORITY
 from reflex_base.components.memo import MEMOS
 from reflex_base.constants import Dirs
@@ -230,21 +230,62 @@ def test_set_passes_function_var_through() -> None:
 
 
 def test_set_declares_event_arg() -> None:
-    """A value referencing an event arg makes the wrapper declare it."""
+    """A value built from a trigger argument makes the wrapper declare it."""
+    from reflex_base.event import EventChain, input_event
+
     cs = client_state("", name="x")
-    assert (
-        str(cs.set(Var('_e["target"]["value"]')))
-        == '((_e) => (setX(_e["target"]["value"])))'
+    # ``input_event`` hands the lambda ``_e.target.value``, built on the
+    # trigger's ``_e`` placeholder.
+    fn: Any = lambda value: cs.set(value)  # noqa: E731
+    chain = str(Var.create(EventChain.create(fn, args_spec=cast("Any", input_event))))
+    assert '((_e) => (setX(_e?.["target"]?.["value"])))' in chain
+
+
+def _bound(fn: Any, *arg_types: type) -> str:
+    """Render ``fn`` bound to a trigger whose arguments have ``arg_types``.
+
+    Args:
+        fn: The event lambda.
+        *arg_types: The trigger's argument types, in order.
+
+    Returns:
+        The compiled event chain.
+    """
+    from reflex_base.event import EventChain, passthrough_event_spec
+
+    return str(
+        Var.create(EventChain.create(fn, args_spec=passthrough_event_spec(*arg_types)))
     )
 
 
-def test_set_declares_event_arg_in_compound_expression() -> None:
-    """Only the event arg is declared, not the whole expression."""
-    cs = client_state("", name="x")
-    assert (
-        str(cs.set(Var('_e["target"]["value"] + "!"')))
-        == '((_e) => (setX(_e["target"]["value"] + "!")))'
+def test_set_declares_event_arg_read_through_an_operation() -> None:
+    """A trigger argument used in a compound value is declared by the wrapper."""
+    cs = client_state(0, name="x")
+    assert "((_ev_0) => (setX((_ev_0 + 42))))" in _bound(lambda x: cs.set(x + 42), int)
+
+
+def test_set_declares_every_trigger_arg_up_to_the_last_one_read() -> None:
+    """Arguments arrive positionally, so the declaration keeps the trigger's order."""
+    cs = client_state(0, name="x")
+    assert "((_ev_0, _ev_1) => (setX((_ev_1 - _ev_0))))" in _bound(
+        lambda a, b: cs.set(b - a), int, int
     )
+    # A skipped leading argument is still declared, or the one read would bind
+    # to the wrong position.
+    assert "((_ev_0, _ev_1) => (setX(_ev_1)))" in _bound(
+        lambda a, b: cs.set(b), int, int
+    )
+    assert "((_ev_0) => (setX(_ev_0)))" in _bound(lambda a, b: cs.set(a), int, int)
+
+
+def test_updater_closing_over_a_trigger_arg_declares_it() -> None:
+    """A functional updater reading a trigger argument gets it from the wrapper."""
+    cs = client_state(0, name="x")
+    chain = _bound(lambda e: cs.set(lambda prev: prev + e), int)
+    assert re.search(
+        r"\(\(_ev_0\) => \(setX\(\(\((prev\d+RxClientState)\) => \(\1 \+ _ev_0\)\)\)\)\)",
+        chain,
+    ), chain
 
 
 def test_underscore_named_var_is_not_mistaken_for_event_arg() -> None:
@@ -252,24 +293,6 @@ def test_underscore_named_var_is_not_mistaken_for_event_arg() -> None:
     private = client_state("", name="_private")
     other = client_state("", name="other")
     assert str(other.set(private.value)) == "(() => (setOther(_privateRxClientState)))"
-
-
-@pytest.mark.parametrize(
-    ("value_str", "expected"),
-    [
-        ('_e["target"]["value"]', "_e"),
-        ("_e", "_e"),
-        ('_e["a"] + "b"', "_e"),
-        ("_privateRxClientState", None),
-        ("valueRxMemo", None),
-        ("counterRxClientState", None),
-        ("42", None),
-        ('"literal"', None),
-    ],
-)
-def test_recovered_event_arg(value_str: str, expected: str | None) -> None:
-    """Event args are recovered; marked in-scope identifiers are not."""
-    assert _recovered_event_arg(value_str) == expected
 
 
 @pytest.mark.parametrize(
