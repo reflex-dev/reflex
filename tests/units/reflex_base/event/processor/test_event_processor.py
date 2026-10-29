@@ -9,6 +9,7 @@ import sys
 import threading
 import time
 from collections.abc import AsyncIterator, Mapping
+from pathlib import Path
 from typing import Any
 from unittest.mock import Mock
 
@@ -696,10 +697,10 @@ async def test_processor_reports_innermost_app_frame(
     async with mock_event_processor as ep:
         await ep.enqueue(token, Event.from_event_type(blocking_stdlib_event())[0])
 
-    assert (
-        "is blocking the event loop at "
-        "tests/units/reflex_base/event/processor/test_event_processor.py:"
-    ) in caplog.text
+    path = Path(
+        "tests", "units", "reflex_base", "event", "processor", "test_event_processor.py"
+    )
+    assert f"is blocking the event loop at {path}:" in caplog.text
     assert "in _blocking_stdlib_handler (threshold" in caplog.text
 
 

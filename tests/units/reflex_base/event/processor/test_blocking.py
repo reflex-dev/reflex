@@ -138,15 +138,19 @@ async def test_blocking_just_over_threshold_is_detected(
     assert "state.blocking" in caplog_blocking.text
 
 
-async def test_blocking_outside_event_task_is_not_reported(
+async def test_blocking_outside_event_task_is_reported_with_task_name(
     caplog_blocking: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch
 ):
-    """Only report tasks that process an event."""
+    """Report blocking in a task that processes no event by the task name."""
     probe_queued = _track_queued_probe(asyncio.get_running_loop(), monkeypatch)
 
     await _run_monitored(_blocking(probe_queued, 0.12), "other_task")
 
-    assert "the event loop" not in caplog_blocking.text
+    assert "Task 'other_task' is blocking the event loop" in caplog_blocking.text
+    assert "Task 'other_task' blocked the event loop for 0.1" in caplog_blocking.text
+    assert "time.sleep(duration)  # noqa: ASYNC251" in caplog_blocking.text
+    assert "Event handler" not in caplog_blocking.text
+    assert "computed vars" not in caplog_blocking.text
 
 
 async def test_awaiting_event_is_not_reported(

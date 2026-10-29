@@ -1,4 +1,4 @@
-"""Development-time detection of event handlers blocking the asyncio loop."""
+"""Development-time detection of tasks blocking the asyncio loop."""
 
 from __future__ import annotations
 
@@ -30,7 +30,7 @@ _LIBRARY_PATHS = tuple({
 
 
 class EventLoopBlockingMonitor:
-    """Report event handlers that keep the event loop from responding."""
+    """Report tasks, such as event handlers, that keep the event loop from responding."""
 
     def __init__(
         self,
@@ -70,24 +70,29 @@ class EventLoopBlockingMonitor:
             self._thread.join(timeout=1)
             self._thread = None
 
-    def _describe_blocking(self) -> tuple[str, str, str] | None:
-        """Describe the event task that runs on the blocked loop.
+    def _describe_blocking(self) -> tuple[str, str, str, str] | None:
+        """Describe the task that runs on the blocked loop.
 
         Returns:
-            The handler name, the location of the innermost app frame (or an
-            empty string), and the formatted stack of the event task, or None
-            if the running task processes no event or has left the loop.
+            The subject (event handler or task name), the scope note for event
+            handlers (or an empty string), the location of the innermost app
+            frame (or an empty string), and the formatted stack of the task, or
+            None if no task runs or the task has left the loop.
         """
         task = asyncio.current_task(self.loop)
-        if task is None or not (name := task.get_name()).startswith(EVENT_TASK_PREFIX):
+        if task is None or (stack := self._task_stack(task)) is None:
             return None
-        event_name = name[len(EVENT_TASK_PREFIX) :].partition("|")[0]
-        registered = self.event_handlers.get(event_name)
-        if (stack := self._task_stack(task)) is None:
-            return None
-        handler_name = (
-            event_name if registered is None else registered.handler.fn.__qualname__
-        )
+        name = task.get_name()
+        if name.startswith(EVENT_TASK_PREFIX):
+            event_name = name[len(EVENT_TASK_PREFIX) :].partition("|")[0]
+            registered = self.event_handlers.get(event_name)
+            handler_name = (
+                event_name if registered is None else registered.handler.fn.__qualname__
+            )
+            subject = f"Event handler {handler_name}"
+            scope = ", including state updates such as computed vars"
+        else:
+            subject, scope = f"Task {name!r}", ""
         app_frame = self._app_frame(stack)
         location = (
             ""
@@ -95,7 +100,7 @@ class EventLoopBlockingMonitor:
             else f" at {app_frame.filename[len(self._app_root) :]}:"
             f"{app_frame.lineno} in {app_frame.name}"
         )
-        return handler_name, location, "".join(traceback.format_list(stack))
+        return subject, scope, location, "".join(traceback.format_list(stack))
 
     def _app_frame(
         self, stack: traceback.StackSummary
@@ -151,31 +156,31 @@ class EventLoopBlockingMonitor:
 
             # The task is only visible while the loop is blocked, so report it
             # then, and report the total duration once the loop responds.
-            handler_name = None
+            subject = None
             while not responsive.wait(interval):
                 if self._stop.is_set():
                     return
                 elapsed = time.perf_counter() - started
                 if (
-                    handler_name is None
+                    subject is None
                     and elapsed + interval >= self.threshold
                     and (blocking := self._describe_blocking()) is not None
                 ):
-                    handler_name, location, stack = blocking
+                    subject, scope, location, stack = blocking
                     logger.warning(
-                        "Event handler %s is blocking the event loop%s (threshold: "
-                        "%.3fs), including state updates such as computed vars. "
+                        "%s is blocking the event loop%s (threshold: %.3fs)%s. "
                         "Move blocking I/O to a thread pool or use a non-blocking "
                         "async API.\n"
                         "Blocking stack (most recent call last):\n%s",
-                        handler_name,
+                        subject,
                         location,
                         self.threshold,
+                        scope,
                         stack.rstrip(),
                     )
-            if handler_name is not None:
+            if subject is not None:
                 logger.warning(
-                    "Event handler %s blocked the event loop for %.3fs in total.",
-                    handler_name,
+                    "%s blocked the event loop for %.3fs in total.",
+                    subject,
                     time.perf_counter() - started,
                 )
