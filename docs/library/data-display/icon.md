@@ -6,55 +6,44 @@ components:
 ```python exec
 import reflex as rx
 
-from reflex_components_lucide.icon import LUCIDE_ICON_LIST
-from reflex.experimental.client_state import ClientStateVar
+from reflex_base.utils import format
+from reflex_components_lucide.icon import (
+    LUCIDE_ICON_FILENAME_OVERRIDE,
+    LUCIDE_ICON_LIST,
+)
 
-icon_search_cs = ClientStateVar.create("icon_search", default="")
+
+class IconGallery(rx.Component):
+    """Searchable Lucide gallery that loads every icon from one chunk after hydration."""
+
+    library = "$/public/components/IconGallery"
+    tag = "IconGallery"
+
+    names: rx.Var[list[list[str]]]
+    input_class_name: rx.Var[str]
+    grid_class_name: rx.Var[str]
+    tile_class_name: rx.Var[str]
+    on_copy: rx.EventHandler[rx.event.passthrough_event_spec(str)]
 
 
-@rx.memo
 def lucide_icons() -> rx.Component:
-    return rx.box(
-        rx.box(
-            rx.box(
-                rx.icon(
-                    tag="search",
-                    size=20,
-                    class_name="shrink-0 !text-muted-foreground",
-                ),
-                class_name="absolute left-2 top-1/2 transform -translate-y-1/2 z-[1] shrink-0 flex items-center justify-center pb-2",
-            ),
-            rx.el.input(
-                placeholder="Search icons...",
-                on_change=icon_search_cs.set_value,
-                class_name="relative box-border border-border-subtle focus:border-border-strong focus:border-1 bg-muted p-[0.5rem_0.75rem] border rounded-xl font-base text-muted-foreground placeholder:text-subtle-foreground outline-none focus:outline-none w-full mb-2 pl-10",
-            ),
-            class_name="relative flex items-center",
+    return IconGallery.create(
+        rx.icon(
+            tag="search",
+            size=20,
+            class_name="shrink-0 !text-muted-foreground",
         ),
-        rx.el.div(
-            rx.box(
-                rx.foreach(
-                    LUCIDE_ICON_LIST,
-                    lambda icon: rx.cond(
-                        icon.startswith(icon_search_cs.value),
-                        rx.box(
-                            rx.icon(tag=icon),
-                            title=icon,
-                            class_name="flex items-center justify-center rounded-md hover:bg-accent transition-bg p-2 cursor-pointer",
-                            on_click=[
-                                rx.set_clipboard(icon),
-                                rx.toast.success(f"Copied {icon} to clipboard"),
-                            ],
-                            key=icon,
-                        ),
-                        None,
-                    ),
-                ),
-                class_name="flex flex-wrap justify-start gap-4 mb-4",
-            ),
-            class_name="overflow-y-auto max-h-[500px]",
-        ),
-        class_name="flex flex-col gap-4",
+        names=[
+            [name, LUCIDE_ICON_FILENAME_OVERRIDE.get(name, format.to_kebab_case(name))]
+            for name in LUCIDE_ICON_LIST
+        ],
+        input_class_name="relative box-border border-border-subtle focus:border-border-strong focus:border-1 bg-muted p-[0.5rem_0.75rem] border rounded-xl font-base text-muted-foreground placeholder:text-subtle-foreground outline-none focus:outline-none w-full mb-2 pl-10",
+        grid_class_name="flex flex-wrap justify-start gap-4 mb-4",
+        tile_class_name="flex items-center justify-center rounded-md hover:bg-accent transition-bg p-2 cursor-pointer",
+        on_copy=lambda name: [
+            rx.set_clipboard(name),
+            rx.toast.success("Copied " + name + " to clipboard"),
+        ],
     )
 ```
 
