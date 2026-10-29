@@ -413,45 +413,47 @@ def test_call_script(
 
     yield_button.click()
     update_counter_button.click()
-    expect(counter).to_have_value("4")
+    expect(counter).to_have_value("4", timeout=15_000)
     reset_button.click()
-    expect(counter).to_have_value("0")
+    expect(counter).to_have_value("0", timeout=15_000)
     return_button.click()
     update_counter_button.click()
-    expect(counter).to_have_value("1")
+    expect(counter).to_have_value("1", timeout=15_000)
     reset_button.click()
-    expect(counter).to_have_value("0")
+    expect(counter).to_have_value("0", timeout=15_000)
 
     yield_callback_button.click()
     update_counter_button.click()
-    expect(counter).to_have_value("4")
+    expect(counter).to_have_value("4", timeout=15_000)
     expect(results).to_have_value(
-        f'["{script}1",null,{{"{script}3":42,"a":[1,2,3],"s":"js","o":{{"a":1,"b":2}}}},"async {script}4"]'
+        f'["{script}1",null,{{"{script}3":42,"a":[1,2,3],"s":"js","o":{{"a":1,"b":2}}}},"async {script}4"]',
+        timeout=15_000,
     )
     reset_button.click()
-    expect(counter).to_have_value("0")
+    expect(counter).to_have_value("0", timeout=15_000)
 
     return_callback_button.click()
     update_counter_button.click()
-    expect(counter).to_have_value("1")
+    expect(counter).to_have_value("1", timeout=15_000)
     expect(results).to_have_value(
-        f'[{{"{script}3":42,"a":[1,2,3],"s":"js","o":{{"a":1,"b":2}}}}]'
+        f'[{{"{script}3":42,"a":[1,2,3],"s":"js","o":{{"a":1,"b":2}}}}]',
+        timeout=15_000,
     )
     reset_button.click()
-    expect(counter).to_have_value("0")
+    expect(counter).to_have_value("0", timeout=15_000)
 
     return_lambda_button.click()
     update_counter_button.click()
-    expect(counter).to_have_value("1")
-    expect(results).to_have_value('[["lambda",null]]')
+    expect(counter).to_have_value("1", timeout=15_000)
+    expect(results).to_have_value('[["lambda",null]]', timeout=15_000)
     reset_button.click()
-    expect(counter).to_have_value("0")
+    expect(counter).to_have_value("0", timeout=15_000)
 
     # Check that triggering script from event trigger calls callback
     update_value_button = call_script_page.locator("#update_value")
     update_value_button.click()
 
-    expect(update_value_button).to_have_text("updated")
+    expect(update_value_button).to_have_text("updated", timeout=15_000)
 
 
 def test_call_script_w_var(

@@ -270,3 +270,4 @@ def test_component_state_configured_defaults(
     expect(page.locator("#label-configured")).to_have_text("Configured")
     page.locator("#button-a").click()
     expect(page.locator("#count-a")).to_have_text("1")
+    expect(page.locator("#count-configured")).to_have_text("10")

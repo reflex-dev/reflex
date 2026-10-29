@@ -25,8 +25,12 @@ def DeployUrlSample() -> None:
             rx.button("GOTO SELF", on_click=State.goto_self, id="goto_self")
         )
 
+    def other():
+        return rx.button("GOTO SELF", on_click=State.goto_self, id="goto_self")
+
     app = rx.App()
     app.add_page(index)
+    app.add_page(other, route="/other")
 
 
 @pytest.fixture(scope="module")
@@ -63,7 +67,7 @@ def test_deploy_url_in_app(deploy_url_sample: AppHarness, page: Page) -> None:
     deploy_url = deploy_url_sample.frontend_url
     assert deploy_url is not None
 
-    page.goto(deploy_url)
+    page.goto(f"{deploy_url.rstrip('/')}/other")
     button = page.get_by_role("button", name="GOTO SELF")
     expect(button).to_be_visible()
     button.click()

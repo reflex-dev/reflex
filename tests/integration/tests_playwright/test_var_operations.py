@@ -1140,14 +1140,7 @@ def test_var_operations(driver, var_operations: AppHarness):
     ]
 
     for tag, expected in tests:
-        existing = "\n".join(
-            line
-            for line in driver.locator(f"#{tag}").first.inner_text().splitlines()
-            if line.strip()
-        )
-        assert existing == expected, (
-            f"Failed on {tag}, expected {expected} but got {existing}"
-        )
+        expect(driver.locator(f"#{tag}").first).to_have_text(expected)
 
     # Highlight component with var query (does not plumb ID)
     expect(driver.locator("mark")).to_have_text("second")

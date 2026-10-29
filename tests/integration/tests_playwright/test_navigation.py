@@ -62,7 +62,7 @@ def test_navigation_app(navigation_app: AppHarness, page: Page) -> None:
     expect(page.get_by_text("Internal", exact=True)).to_be_visible()
 
     page.go_back()
-    expect(page).to_have_url(re.compile(r".*/?$"))
+    expect(page).to_have_url(re.compile(r"^https?://[^/]+/?$"))
 
     with page.expect_popup() as external_popup:
         page.locator("#external").click()

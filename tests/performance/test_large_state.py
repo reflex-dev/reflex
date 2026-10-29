@@ -1,4 +1,4 @@
-"""Test frontend updates with a large state."""
+"""Browser benchmark for state update latency at increasing state sizes."""
 
 import pytest
 from playwright.sync_api import Page, expect
@@ -29,6 +29,7 @@ app.add_page(index)
 """
 
 
+@pytest.mark.performance
 @pytest.mark.parametrize("var_count", [1, 10, 100, 1000, 10000])
 def test_large_state(var_count: int, tmp_path_factory, benchmark, page: Page):
     """Measure the button-to-state-update round trip for large states.

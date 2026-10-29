@@ -1,5 +1,6 @@
 """Integration tests for the Moment component."""
 
+import re
 from collections.abc import Generator
 
 import pytest
@@ -145,7 +146,7 @@ def test_moment_locales_are_isolated(moment_app: AppHarness, page: Page) -> None
 
     page.locator("#plain-link").click()
     expect(page.locator("#plain-date")).to_have_text("Thursday 14 March 2024")
-    expect(page.locator("#plain-relative")).to_contain_text("ago")
+    expect(page.locator("#plain-relative")).to_have_text(re.compile(r"ago$"))
     page.locator("#home-link").click()
     expect(page.locator("#moment-default-locale")).to_have_text(
         "Thursday 14 March 2024"
@@ -169,4 +170,4 @@ def test_moment_provider_locale_does_not_leak(
     )
     page.locator("#provider-plain-link").click()
     expect(page.locator("#plain-date")).to_have_text("Thursday 14 March 2024")
-    expect(page.locator("#plain-relative")).to_contain_text("ago")
+    expect(page.locator("#plain-relative")).to_have_text(re.compile(r"ago$"))

@@ -134,9 +134,9 @@ def test_set_value_return_c(page: Page) -> None:
     inputs = [page.locator(f"#{field}") for field in ("a", "b", "c")]
     page.locator("#clear_return_c").click()
 
+    expect(inputs[2]).to_have_value("")
     expect(inputs[0]).to_have_value("a")
     expect(inputs[1]).to_have_value("b")
-    expect(inputs[2]).to_have_value("")
 
 
 def test_set_focus(page: Page) -> None:

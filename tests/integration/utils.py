@@ -70,7 +70,9 @@ def click_element(page: Page, selector: str, timeout: float | None = None) -> No
     Returns:
         None.
     """
-    page.locator(selector).click(timeout=timeout * 1000 if timeout else None)
+    page.locator(selector).click(
+        timeout=timeout * 1000 if timeout is not None else None
+    )
 
 
 def n_expected_events(exp_event_order: Sequence[str | set[str]]) -> int:

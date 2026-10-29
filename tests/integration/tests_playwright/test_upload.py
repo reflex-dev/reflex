@@ -401,7 +401,15 @@ def test_upload_file(
     assert (rx.get_upload_dir() / "test.txt").read_text() == "test file contents!"
     if upload_id == "secondary":
         expect(page.locator("#progress_dicts > p")).not_to_have_count(0)
-        assert _progress(page, "#progress_dicts")[-1]["progress"] == 1
+        page.wait_for_function(
+            """selector => {
+              const entries = document.querySelectorAll(`${selector} > p`);
+              if (!entries.length) return false;
+              return JSON.parse(entries[entries.length - 1].textContent).progress === 1;
+            }""",
+            arg="#progress_dicts",
+            timeout=30_000,
+        )
 
 
 def test_upload_file_multiple(
@@ -601,6 +609,20 @@ def test_uploaded_file_security_headers(
         assert response.headers["content-disposition"] == "attachment"
     else:
         assert "content-disposition" not in response.headers
+    if filename == "malicious.html":
+        dialogs: list[str] = []
+
+        def dismiss_dialog(dialog):
+            dialogs.append(dialog.message)
+            dialog.dismiss()
+
+        opened_page.on("dialog", dismiss_dialog)
+        with opened_page.expect_download() as download_info:
+            opened_page.goto(upload_url)
+        downloaded = tmp_path / filename
+        download_info.value.save_as(downloaded)
+        assert downloaded.read_text() == contents
+        assert not dialogs
 
 
 def test_on_drop(tmp_path: Path, upload_file: AppHarness, opened_page: Page):

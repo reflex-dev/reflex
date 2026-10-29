@@ -82,6 +82,10 @@ def test_login_flow(login_sample: AppHarness, page: Page) -> None:
 
     state_name = login_sample.get_full_state_name(["_state"])
     storage_key = f"{state_name}.auth_token{FIELD_MARKER}"
+    page.wait_for_function(
+        "([key, expected]) => localStorage.getItem(key) === expected",
+        arg=[storage_key, "12345"],
+    )
     page.locator("#logout").click()
     page.wait_for_function(
         "([key, expected]) => localStorage.getItem(key) === expected",

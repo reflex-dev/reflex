@@ -285,16 +285,23 @@ def test_client_side_state(client_side: AppHarness, opened_page: Page):
         f"{sub_state}.c1{FIELD_MARKER}": "c1%20value",
         f"{sub_state}.c2{FIELD_MARKER}": "c2%20value",
         f"{sub_state}.c4{FIELD_MARKER}": "c4%20value",
+        f"{sub_state}.c5{FIELD_MARKER}": "c5%20value",
         "c6": "c6%20value",
         f"{sub_state}.c7{FIELD_MARKER}": "c7%20value",
         f"{sub_sub_state}.c1s{FIELD_MARKER}": "c1s%20value",
     }
+    assert set(cookies) == set(expected_cookie_values)
     for name, value in expected_cookie_values.items():
         assert cookies[name]["value"] == value
+        assert cookies[name]["domain"] == "localhost"
+        assert cookies[name]["path"] == (
+            "/foo/" if name == f"{sub_state}.c5{FIELD_MARKER}" else "/"
+        )
+        assert cookies[name]["httpOnly"] is False
+        assert cookies[name]["secure"] is False
         assert cookies[name]["sameSite"] == (
             "Strict" if name.endswith(f".c4{FIELD_MARKER}") else "Lax"
         )
-    assert cookies[f"{sub_state}.c5{FIELD_MARKER}"]["path"] == "/foo/"
 
     _set_state_value(page, "c3", "c3 value")
     expiring_cookie = _cookie_map(page.context)[f"{sub_state}.c3{FIELD_MARKER}"]
@@ -413,9 +420,30 @@ def test_client_side_state(client_side: AppHarness, opened_page: Page):
 
     page.locator("#new_token").click()
     _set_state_value(page, "c1", "c1 post expire")
-    expect(page.locator("#c1")).to_have_text("c1 post expire")
-    expect(page.locator("#c2")).to_have_text("c2 value")
-    expect(page.locator("#l1")).to_have_text("l1 value")
+    _expect_displayed_values(
+        page,
+        {
+            "c1": "c1 post expire",
+            "c2": "c2 value",
+            "c3": "",
+            "c4": "c4 value",
+            "c5": "c5 value",
+            "c6": "c6 value",
+            "c7": "c7 value",
+            "l1": "l1 value",
+            "l2": "l2 value",
+            "l3": "l3 value",
+            "l4": "l4 value",
+            "l5": "l5 value",
+            "l6": "l6 value",
+            "s1": "s1 value",
+            "s2": "s2 value",
+            "s3": "s3 value",
+            "c1s": "c1s value",
+            "l1s": "l1s value",
+            "s1s": "s1s value",
+        },
+    )
 
     page.context.clear_cookies()
     page.evaluate("localStorage.clear()")

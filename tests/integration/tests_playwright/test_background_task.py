@@ -285,7 +285,7 @@ def test_background_task(
     blocking_pause_button = background_page.locator("#blocking-pause")
     non_blocking_pause_button = background_page.locator("#non-blocking-pause")
     racy_increment_button = background_page.locator("#racy-increment")
-    background_page.locator("#reset")
+    expect(background_page.locator("#reset")).to_be_visible()
 
     # get a reference to the counter
     counter = background_page.locator("#counter")
