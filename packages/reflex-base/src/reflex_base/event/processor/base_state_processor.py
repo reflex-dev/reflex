@@ -89,19 +89,22 @@ def _is_event_like(value: Any) -> bool:
         return False
 
 
-def _contains_events(value: Any) -> bool:
-    """Whether a sequence holds at least one event next to other values.
+def _holds_events_or_coroutines(value: Any) -> bool:
+    """Whether a sequence holds an event or an unawaited coroutine.
 
     Args:
         value: The value a handler returned.
 
     Returns:
-        True for a sequence with an event in it that ``_is_event_like`` rejects.
+        True for a sequence ``_is_event_like`` rejects that still holds an
+        event (mixed with other values) or a coroutine.
     """
     if not is_non_string_sequence(value):
         return False
     try:
-        return any(isinstance(e, _EVENT_LIKE_TYPES) for e in value)
+        return any(
+            isinstance(e, _EVENT_LIKE_TYPES) or inspect.iscoroutine(e) for e in value
+        )
     except TypeError:
         return False
 
@@ -502,7 +505,7 @@ async def process_event(
             handler_name=handler_name,
         )
         return None
-    if inspect.iscoroutine(events) or _contains_events(events):
+    if inspect.iscoroutine(events) or _holds_events_or_coroutines(events):
         # A coroutine that was never awaited, or events mixed with other
         # values, is a bug, not a result.
         _check_valid_yield(events, handler_name=handler_name)

@@ -7617,6 +7617,9 @@ def test_wrapper_above_rx_event_is_deprecated_and_still_runs() -> None:
         assert handler.state is WrappedState
         assert format.format_event_handler(handler).endswith(".inc")
         assert WrappedState.event_handlers["inc"] is handler
+        # The payload coercion still sees the method's annotations.
+        assert handler._get_type_hints()["by"] is int
+        assert handler.fn.__module__ == __name__
         assert WrappedState.bg.is_background  # pyright: ignore [reportAttributeAccessIssue]
         state = WrappedState()
         # The wrapper calls the inner handler with the instance, like on main.

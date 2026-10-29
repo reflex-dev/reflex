@@ -545,11 +545,16 @@ all_base_state_classes: dict[str, None] = {}
 _ROUTER_FIELD_NAMES = frozenset((*constants.ROUTER_VARS, constants.ROUTER_DATA))
 
 
-# What a wrapper stacked above @rx.event takes over from the handler it wraps:
-# the name it registers under and the markers @rx.event set on the function.
+# What a wrapper stacked above @rx.event takes over from the function it
+# wraps: what functools.wraps copied from a plain function (its name, module,
+# docstring and the annotations the payload coercion reads, which it took
+# from the EventHandler class instead) and the markers @rx.event set on it.
 _STACKED_HANDLER_ATTRIBUTES = (
+    "__module__",
     "__name__",
     "__qualname__",
+    "__doc__",
+    "__annotations__",
     BACKGROUND_TASK_MARKER,
     SUPERSEDES_MARKER,
     EVENT_ACTIONS_MARKER,

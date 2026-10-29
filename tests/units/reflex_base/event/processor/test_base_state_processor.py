@@ -3603,6 +3603,38 @@ async def test_returned_list_mixing_events_and_values_raises_type_error(
     assert len(captured) == 1
 
 
+async def test_returned_list_of_coroutines_raises_type_error(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A returned list of coroutines that were never awaited is an error, not a result.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+
+    async def _work() -> int:  # noqa: RUF029
+        return 1
+
+    class ForgotAwaitListState(State):
+        @event
+        def handler(self):
+            return [_work(), _work()]
+
+    captured: list[Exception] = []
+    real_base_state_processor.backend_exception_handler = captured.append
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(ForgotAwaitListState.handler())[0]
+        )
+        with pytest.raises(TypeError, match="must only return/yield"):
+            await future
+    assert len(captured) == 1
+
+
 async def test_background_handler_return_value_resolves_future(
     wired_app: App,
     real_base_state_processor: BaseStateEventProcessor,
