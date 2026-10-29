@@ -368,25 +368,24 @@ async def execute_event_inline(spec: EventSpec) -> Any:
         )
         raise EventHandlerTypeError(msg)
     handler = registered.handler
-    if not registered.states:
-        # Flush the caller's pending delta (if it holds the lock) before any
-        # frontend event the helper yields, like every other yield does.
-        return await process_event(
-            handler=handler,
-            payload=event.payload,
-            state=None,
-            root_state=ctx.locked_root,
-        )
     root_state = ctx.locked_root
-    if root_state is None:
+    if not registered.states:
+        if root_state is None:
+            return await process_event(
+                handler=handler, payload=event.payload, state=None, root_state=None
+            )
+    elif root_state is None:
         (future,) = await ctx.enqueue(event)
         return await future
-    if handler.is_background:
+    elif handler.is_background:
         msg = (
             f"Background event handler `{name}` cannot be awaited while the "
             "state lock is held, as it would wait for that lock; yield it instead."
         )
         raise EventHandlerTypeError(msg)
+    # Under the lock, a stateless handler flushes the caller's pending delta
+    # through the locked root before any frontend event it yields, like every
+    # other yield does, so it is covered by the lock like a state handler.
     # The lock stays held until this run is done, even if the task that
     # started it finishes first. Registered before the first await, so a
     # task that starts while the lock is held is always seen by its release.
@@ -399,7 +398,11 @@ async def execute_event_inline(spec: EventSpec) -> Any:
     else:
         ctx.inline_tasks.add(task)
     try:
-        substate = await root_state.get_state(registered.states[0])
+        substate = (
+            await root_state.get_state(registered.states[0])
+            if registered.states
+            else None
+        )
         return await process_event(
             handler=handler,
             payload=event.payload,

@@ -4188,6 +4188,63 @@ async def test_await_stateless_handler_runs_inline(
         assert (await state.get_state(StatelessCallerState)).got == 10
 
 
+async def test_detached_stateless_helper_holds_the_lock_until_it_finishes(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A stateless helper started from a locked handler keeps the lock until it is done.
+
+    It flushes deltas through the caller's root, so the lock must outlive it
+    like it outlives a detached state handler.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    release = asyncio.Event()
+    seen: dict[str, Any] = {}
+
+    @event
+    async def helper():
+        await release.wait()
+        yield rx.call_script("void 0")
+
+    class DetachedHelperState(State):
+        log: list[str] = []
+
+        @event
+        async def parent(self):
+            seen["ctx"] = EventContext.get()
+            asyncio.ensure_future(helper())  # noqa: RUF006
+            # Let the helper start under the lock before returning.
+            await asyncio.sleep(0)
+            self.log = [*self.log, "parent"]
+
+        @event
+        def next_event(self):
+            self.log = [*self.log, "next"]
+
+    async with real_base_state_processor as processor:
+        parent_future = await processor.enqueue(
+            token, Event.from_event_type(DetachedHelperState.parent())[0]
+        )
+        next_future = await processor.enqueue(
+            token, Event.from_event_type(DetachedHelperState.next_event())[0]
+        )
+        await asyncio.sleep(0.05)
+        # The parent has returned, but its lock is still held for the helper.
+        assert not parent_future.done()
+        assert not next_future.done()
+        assert seen["ctx"].locked_root is not None
+        release.set()
+        await asyncio.wait_for(next_future, 5)
+        assert parent_future.done()
+
+    assert seen["ctx"].locked_root is None
+
+
 async def test_detached_inline_task_holds_the_lock_until_it_finishes(
     wired_app: App,
     real_base_state_processor: BaseStateEventProcessor,
