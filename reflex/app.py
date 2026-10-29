@@ -347,27 +347,66 @@ def _route_arg_label(arg_type: str) -> str:
     return "list" if arg_type == constants.RouteArgType.LIST else "single"
 
 
-class _ContextMiddleware:
-    """Ensure Reflex contexts are attached for each ASGI request.
+class _RootMiddleware:
+    """The outermost ASGI layer: attach Reflex contexts and serve the lifespan.
 
     Many ASGI servers start each request with a fresh contextvars scope, so this
     middleware re-applies the RegistrationContext and EventContext that are
-    needed for Reflex state and event processing.
+    needed for Reflex state and event processing. It answers the server's
+    lifespan events itself, entering the given lifespan context in between.
     """
 
-    def __init__(self, app: ASGIApp, reflex_app: App):
+    def __init__(
+        self,
+        app: ASGIApp,
+        reflex_app: App,
+        lifespan: Callable[[Scope], contextlib.AbstractAsyncContextManager[Any]],
+    ):
         """Wrap an ASGI app so that it runs with the Reflex contexts set.
 
         Args:
             app: The next ASGI app in the middleware stack.
             reflex_app: The Reflex app owning the contexts to attach.
+            lifespan: Returns the context to enter for the server's lifespan scope.
         """
         self.app = app
         self.reflex_app = reflex_app
+        self.lifespan = lifespan
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         self.reflex_app._set_contexts_internal()
-        await self.app(scope, receive, send)
+        if scope["type"] == "lifespan":
+            await self._serve_lifespan(scope, receive, send)
+        else:
+            await self.app(scope, receive, send)
+
+    async def _serve_lifespan(self, scope: Scope, receive: Receive, send: Send):
+        """Answer the server's lifespan events around the lifespan context.
+
+        Args:
+            scope: The lifespan scope.
+            receive: Receives the server's lifespan events.
+            send: Reports the outcome of startup and shutdown to the server.
+
+        Raises:
+            BaseException: Whatever made startup or shutdown fail, once reported.
+        """
+        started = False
+        await receive()
+        try:
+            async with self.lifespan(scope):
+                await send({"type": "lifespan.startup.complete"})
+                started = True
+                await receive()
+        except BaseException:
+            await send({
+                "type": "lifespan.shutdown.failed"
+                if started
+                else "lifespan.startup.failed",
+                "message": traceback.format_exc(),
+            })
+            raise
+        await send({"type": "lifespan.shutdown.complete"})
 
 
 class _DrainOversizedBodyMiddleware:
@@ -437,6 +476,38 @@ def _is_location_specifier(specifier: str) -> bool:
     return (
         ":" in specifier or "#" in specifier or specifier.startswith((".", "/", "~/"))
     )
+
+
+_DEFAULT_PORTS = {"http": 80, "https": 443}
+
+
+def _cors_allowed_origins() -> list[str] | None:
+    """Resolve the origins the backend accepts cross-origin requests from.
+
+    An explicitly configured ``cors_allowed_origins`` is used as is. The
+    ``["*"]`` default stays open in dev mode, but in prod mode it narrows to
+    the origin of ``deploy_url`` so only the configured frontend can reach
+    the backend. Without a ``deploy_url`` the backend serves the frontend
+    itself, so CORS is left unconfigured and only same-origin requests pass.
+
+    Returns:
+        The allowed origins, where ``["*"]`` means any origin, or None to
+        leave CORS unconfigured.
+    """
+    config = get_config()
+    if "cors_allowed_origins" in config._non_default_attributes or not is_prod_mode():
+        return list(config.cors_allowed_origins)
+    if not config.deploy_url:
+        return None
+    # Match the browser's Origin serialization: lowercase host, no default port.
+    parts = urllib.parse.urlsplit(config.deploy_url)
+    host = parts.hostname or ""
+    if ":" in host:
+        host = f"[{host}]"
+    port = parts.port
+    if port is None or port == _DEFAULT_PORTS.get(parts.scheme):
+        return [f"{parts.scheme}://{host}"]
+    return [f"{parts.scheme}://{host}:{port}"]
 
 
 @dataclasses.dataclass()
@@ -678,13 +749,7 @@ class App(MiddlewareMixin, LifespanMixin):
             self.sio = AsyncServer(
                 async_mode="asgi",
                 cors_allowed_origins=(
-                    (
-                        "*"
-                        if config.cors_allowed_origins == ("*",)
-                        else list(config.cors_allowed_origins)
-                    )
-                    if config.transport == "websocket"
-                    else []
+                    _cors_allowed_origins() if config.transport == "websocket" else []
                 ),
                 cors_credentials=config.transport == "websocket",
                 max_http_buffer_size=environment.REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE.get(),
@@ -888,13 +953,16 @@ class App(MiddlewareMixin, LifespanMixin):
             msg = "The app has not been initialized."
             raise ValueError(msg)
 
-        asgi_app = self._api
+        api = asgi_app = self._api
 
         if environment.REFLEX_MOUNT_FRONTEND_COMPILED_APP.get():
             from reflex.utils.exec import get_frontend_mount
 
             asgi_app.routes.append(get_frontend_mount(router=self.router))
 
+        # Lifespan events go to the outermost app, which may forward them, and to
+        # each app a Starlette transformer mounts, as Starlette does not forward them.
+        lifespan_apps: list[ASGIApp] = []
         if self.api_transformer is not None:
             api_transformers: Sequence[Starlette | Callable[[ASGIApp], ASGIApp]] = (
                 [self.api_transformer]
@@ -904,6 +972,15 @@ class App(MiddlewareMixin, LifespanMixin):
 
             for api_transformer in api_transformers:
                 if isinstance(api_transformer, Starlette):
+                    if api_transformer.router.lifespan_context in self._lifespan_tasks:
+                        logger.warning(
+                            f"The lifespan of api_transformer {api_transformer!r} is "
+                            "also registered with register_lifespan_task, so it runs "
+                            "twice: Reflex now runs a transformer's own lifespan. "
+                            "Remove the register_lifespan_task call."
+                        )
+                    if asgi_app is not api:
+                        lifespan_apps.append(asgi_app)
                     # Mount the api to the starlette app.
                     App._add_cors(api_transformer)
                     api_transformer.mount("", asgi_app)
@@ -912,11 +989,21 @@ class App(MiddlewareMixin, LifespanMixin):
                     # Transform the asgi app.
                     asgi_app = api_transformer(asgi_app)
 
-        top_asgi_app = Starlette(lifespan=self._run_lifespan_tasks)
-        # Make sure Reflex contexts are attached for each request.
-        top_asgi_app.add_middleware(_ContextMiddleware, reflex_app=self)
-        top_asgi_app.mount("", asgi_app)
-        App._add_cors(top_asgi_app)
+            if asgi_app is not api:
+                lifespan_apps.append(asgi_app)
+
+        cors_options = App._cors_options()
+        top_asgi_app = _RootMiddleware(
+            # Covers the routes a callable transformer adds and the 500 responses
+            # that the outermost Starlette app's error handler sends.
+            (
+                cors.CORSMiddleware(asgi_app, **cors_options)
+                if cors_options is not None
+                else asgi_app
+            ),
+            reflex_app=self,
+            lifespan=functools.partial(self._run_lifespan, api, lifespan_apps),
+        )
         if otel.asgi_middleware is not None:
             return otel.asgi_middleware(top_asgi_app)
         return top_asgi_app
@@ -976,19 +1063,34 @@ class App(MiddlewareMixin, LifespanMixin):
             self.add_all_routes_endpoint()
 
     @staticmethod
+    def _cors_options() -> dict[str, Any] | None:
+        """Get the options of the CORS middleware.
+
+        Returns:
+            The keyword arguments for ``CORSMiddleware``, or None when CORS is
+            left unconfigured so only same-origin requests are served.
+        """
+        allow_origins = _cors_allowed_origins()
+        if allow_origins is None:
+            return None
+        return {
+            "allow_credentials": True,
+            "allow_methods": ["*"],
+            "allow_headers": ["*"],
+            "allow_origins": allow_origins,
+        }
+
+    @staticmethod
     def _add_cors(api: Starlette):
         """Add CORS middleware to the app.
 
         Args:
             api: The Starlette app to add CORS middleware to.
         """
-        api.add_middleware(
-            cors.CORSMiddleware,
-            allow_credentials=True,
-            allow_methods=["*"],
-            allow_headers=["*"],
-            allow_origins=get_config().cors_allowed_origins,
-        )
+        options = App._cors_options()
+        if options is None:
+            return
+        api.add_middleware(cors.CORSMiddleware, **options)
 
     @property
     def state_manager(self) -> StateManager:

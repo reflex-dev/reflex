@@ -4,9 +4,12 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import logging
+from typing import Any
 
 import pytest
 from reflex_base.utils.exceptions import InvalidLifespanTaskTypeError
+from reflex_base.utils.types import Receive, Scope, Send
 from starlette.applications import Starlette
 
 from reflex.app_mixins.lifespan import LifespanMixin
@@ -360,3 +363,138 @@ async def test_lifespan_cleanup_error_is_logged_while_another_task_is_stuck(capl
     finally:
         release.set()
         await shutdown
+
+
+def _lifespan_scope() -> dict[str, Any]:
+    """Create a server's lifespan scope.
+
+    Returns:
+        The lifespan scope, with an empty state.
+    """
+    return {"type": "lifespan", "asgi": {"version": "3.0"}, "state": {}}
+
+
+def _raw_lifespan_app(events: list[str], name: str, fail: str | None = None):
+    """Create a plain ASGI app that answers lifespan events itself.
+
+    Args:
+        events: The list to record lifespan events in.
+        name: The name of the app in the recorded events.
+        fail: "startup" or "shutdown" to report that phase as failed.
+
+    Returns:
+        The ASGI app.
+    """
+
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:
+        assert scope["type"] == "lifespan"
+        for phase in ("startup", "shutdown"):
+            await receive()
+            events.append(f"{name} {phase}")
+            outcome = "failed" if fail == phase else "complete"
+            await send({"type": f"lifespan.{phase}.{outcome}", "message": "boom"})
+            if fail == phase:
+                return
+            scope["state"][name] = phase
+
+    return app
+
+
+@pytest.mark.asyncio
+async def test_run_lifespan_sends_lifespan_events_after_the_tasks():
+    """Apps start after the tasks, in order, stop in reverse, and share the state."""
+    mixin = LifespanMixin()
+    events: list[str] = []
+
+    @contextlib.asynccontextmanager
+    async def task():
+        events.append("task start")
+        yield
+        events.append("task stop")
+
+    @contextlib.asynccontextmanager
+    async def starlette_lifespan(app: Starlette):
+        events.append("starlette startup")
+        yield {"db": "conn"}
+        events.append("starlette shutdown")
+
+    mixin.register_lifespan_task(task)
+    scope = _lifespan_scope()
+    apps = [_raw_lifespan_app(events, "raw"), Starlette(lifespan=starlette_lifespan)]
+
+    async with mixin._run_lifespan(Starlette(), apps, scope):
+        assert scope["state"] == {"raw": "startup", "db": "conn"}
+    assert events == [
+        "task start",
+        "raw startup",
+        "starlette startup",
+        "starlette shutdown",
+        "raw shutdown",
+        "task stop",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_run_lifespan_skips_apps_without_lifespan_support(caplog):
+    """An app that does not answer the startup event is skipped."""
+    mixin = LifespanMixin()
+    events: list[str] = []
+
+    async def http_only_app(scope: Scope, receive: Receive, send: Send) -> None:  # noqa: RUF029
+        assert scope["type"] == "http"
+
+    async def silent_app(scope: Scope, receive: Receive, send: Send) -> None:
+        pass
+
+    async def http_response_app(scope: Scope, receive: Receive, send: Send) -> None:
+        await send({"type": "http.response.start", "status": 200, "headers": []})
+
+    apps = [
+        http_only_app,
+        silent_app,
+        http_response_app,
+        _raw_lifespan_app(events, "raw"),
+    ]
+    with caplog.at_level(logging.INFO):
+        async with mixin._run_lifespan(Starlette(), apps, _lifespan_scope()):
+            assert events == ["raw startup"]
+    assert events == ["raw startup", "raw shutdown"]
+    assert "appears unsupported" in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_run_lifespan_startup_failure_stops_started_lifespans():
+    """An app failing to start stops the lifespans already started."""
+    mixin = LifespanMixin()
+    events: list[str] = []
+    apps = [
+        _raw_lifespan_app(events, "first"),
+        _raw_lifespan_app(events, "failing", fail="startup"),
+        _raw_lifespan_app(events, "never"),
+    ]
+
+    with pytest.raises(RuntimeError, match=r"startup of .* failed: boom"):
+        async with mixin._run_lifespan(Starlette(), apps, _lifespan_scope()):
+            pass
+    assert events == ["first startup", "failing startup", "first shutdown"]
+
+
+@pytest.mark.asyncio
+async def test_run_lifespan_shutdown_failure_still_stops_the_rest():
+    """An app failing to stop is reported after the other lifespans stop."""
+    mixin = LifespanMixin()
+    events: list[str] = []
+    apps = [
+        _raw_lifespan_app(events, "first"),
+        _raw_lifespan_app(events, "failing", fail="shutdown"),
+    ]
+
+    with pytest.raises(RuntimeError, match=r"shutdown of .* failed: boom"):
+        async with mixin._run_lifespan(Starlette(), apps, _lifespan_scope()):
+            pass
+    assert events == [
+        "first startup",
+        "failing startup",
+        "failing shutdown",
+        "first shutdown",
+    ]

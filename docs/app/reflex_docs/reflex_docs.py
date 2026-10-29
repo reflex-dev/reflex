@@ -89,6 +89,10 @@ app = rxe.App(
     head_components=[
         *get_google_analytics_trackers(tracking_id="G-4T7C8ZD9TR"),
         *favicons_links(),
+        rx.el.meta(
+            name="referrer",
+            content="strict-origin-when-cross-origin",
+        ),
     ],
 )
 
