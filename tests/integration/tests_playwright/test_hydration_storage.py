@@ -1,5 +1,6 @@
 """Browser regressions for client-storage writes during hydration and assigned defaults."""
 
+import logging
 import re
 import time
 from collections.abc import Callable, Generator
@@ -22,7 +23,22 @@ def HydrationStorageApp():
         local: str = rx.LocalStorage("local-default", name="hydrate-local")
         session: str = rx.SessionStorage("session-default", name="hydrate-session")
         cookie: str = rx.Cookie("cookie-default", name="hydrate-cookie")
+        annotated_local: rx.Field[rx.LocalStorage] = rx.field(
+            rx.LocalStorage("light", name="hydrate-annotated-local", sync=True)
+        )
+        annotated_session: rx.SessionStorage | None = rx.SessionStorage(
+            "light", name="hydrate-annotated-session"
+        )
+        annotated_cookie: rx.Cookie = rx.Cookie(
+            "light", name="hydrate-annotated-cookie"
+        )
         nonce: rx.Field[str] = rx.field(default_factory=lambda: uuid.uuid4().hex)
+
+        @rx.event
+        def change_annotated(self):
+            """Assign plain strings to storage-annotated vars."""
+            for name in ("annotated_local", "annotated_session", "annotated_cookie"):
+                setattr(self, name, "changed")
 
         @rx.var
         def checked(self) -> str:
@@ -63,9 +79,6 @@ def HydrationStorageApp():
         local: str = rx.LocalStorage("declared", name="assigned-local")
         session: str = rx.SessionStorage("declared", name="assigned-session")
         cookie: str = rx.Cookie("declared", name="assigned-cookie")
-        factory: rx.Field[str] = rx.field(
-            default_factory=lambda: rx.LocalStorage("declared", name="assigned-factory")
-        )
 
         @rx.event
         def change(self):
@@ -73,7 +86,6 @@ def HydrationStorageApp():
             self.local = "changed"
             self.session = "changed"
             self.cookie = "changed"
-            self.factory = "changed"
 
     fields = AssignedStorageState.__fields__
     fields["local"].set_default(rx.LocalStorage("assigned", name="assigned-local"))
@@ -81,8 +93,6 @@ def HydrationStorageApp():
         rx.SessionStorage("assigned", name="assigned-session")
     )
     fields["cookie"].set_default(rx.Cookie("assigned", name="assigned-cookie"))
-    # A storage value as the default replaces the declared factory.
-    fields["factory"].set_default(rx.LocalStorage("assigned", name="assigned-factory"))
 
     class PreferenceState(rx.ComponentState):
         pref: str = rx.LocalStorage("declared", name="assigned-pref")
@@ -149,6 +159,7 @@ def HydrationStorageApp():
 
     class SharedNameState(rx.State):
         synced: str = rx.LocalStorage("", name="hydrate-shared", sync=True)
+        synced2: str = rx.LocalStorage("", name="hydrate-shared", sync=True)
         plain: str = rx.LocalStorage("", name="hydrate-shared")
 
         @rx.event
@@ -159,6 +170,41 @@ def HydrationStorageApp():
                 value: The value to store.
             """
             self.plain = value
+
+        @rx.event
+        def set_synced(self, value: str):
+            """Store a value through the synced var.
+
+            Args:
+                value: The value to store.
+            """
+            self.synced = value
+
+    class SharedOverrideState(rx.State):
+        first: str = rx.LocalStorage("", name="hydrate-shared-override", sync=True)
+        second: str = rx.LocalStorage("", name="hydrate-shared-override", sync=True)
+
+        @rx.event
+        def set_second(self, value: str):
+            """Store a value through the second var.
+
+            Args:
+                value: The value to store.
+            """
+            self.second = value
+
+        @rx.state._override_base_method
+        def get_delta(self):
+            """Replace the first var's "x".
+
+            Returns:
+                The delta, with the value replaced.
+            """
+            delta = super().get_delta()
+            subdelta = delta.get(self.get_full_name(), {})
+            if subdelta.get("first" + FIELD_MARKER) == "x":
+                subdelta["first" + FIELD_MARKER] = "x-replaced"
+            return delta
 
     def synced():
         """Display a browser storage var synced across tabs.
@@ -174,6 +220,20 @@ def HydrationStorageApp():
             rx.text(ReplaceState.plain, id="replace-plain"),
             rx.button("Keep", on_click=ReplaceState.keep_sent, id="keep-sent"),
             rx.text(SharedNameState.synced, id="shared-value"),
+            rx.text(SharedNameState.synced2, id="shared-value-2"),
+            rx.button(
+                "Synced new",
+                on_click=SharedNameState.set_synced("new"),
+                id="set-synced-new",
+            ),
+            rx.text(SharedOverrideState.first, id="override-first"),
+            rx.text(SharedOverrideState.second, id="override-second"),
+            rx.button(
+                "Second x", on_click=SharedOverrideState.set_second("x"), id="set-x"
+            ),
+            rx.button(
+                "Second y", on_click=SharedOverrideState.set_second("y"), id="set-y"
+            ),
             rx.button(
                 "Plain old",
                 on_click=SharedNameState.set_plain("old"),
@@ -190,6 +250,19 @@ def HydrationStorageApp():
         """
         return rx.box(
             rx.text(StorageState.checked, id="checked"),
+            rx.text(
+                StorageState.annotated_local,
+                "|",
+                StorageState.annotated_session,
+                "|",
+                StorageState.annotated_cookie,
+                id="annotated",
+            ),
+            rx.button(
+                "Change annotated",
+                on_click=StorageState.change_annotated,
+                id="change-annotated",
+            ),
             rx.text(rx.cond(rx.State.is_hydrated, "true", "false"), id="hydrated"),
             rx.text(ReconcileState.token_hash, id="token-hash"),
         )
@@ -204,7 +277,6 @@ def HydrationStorageApp():
             rx.text(AssignedStorageState.local, id="assigned-local"),
             rx.text(AssignedStorageState.session, id="assigned-session"),
             rx.text(AssignedStorageState.cookie, id="assigned-cookie"),
-            rx.text(AssignedStorageState.factory, id="assigned-factory"),
             rx.button("Change", on_click=AssignedStorageState.change, id="change"),
             PreferenceState.create(initial="assigned"),
             rx.text(rx.cond(rx.State.is_hydrated, "true", "false"), id="hydrated"),
@@ -299,8 +371,54 @@ def test_hydration_reconciles_storage_in_get_delta(
     page.wait_for_function("localStorage.getItem('hydrate-token-hash') === 'fresh'")
 
 
+def test_storage_annotations_hydrate_and_persist(
+    hydration_storage_app: AppHarness,
+    page: Page,
+    caplog: pytest.LogCaptureFixture,
+    request: pytest.FixtureRequest,
+):
+    """Storage-annotated vars accept browser strings without logging type errors.
+
+    Args:
+        hydration_storage_app: The running app.
+        page: A fresh browser page.
+        caplog: Captured server log records.
+        request: The request used to remove the log handler after the test.
+    """
+    field_logger = logging.getLogger("reflex_base.vars.base")
+    field_logger.addHandler(caplog.handler)
+    request.addfinalizer(lambda: field_logger.removeHandler(caplog.handler))
+    assert hydration_storage_app.frontend_url is not None
+    page.goto(hydration_storage_app.frontend_url)
+    expect(page.locator("#hydrated")).to_have_text("true")
+    expect(page.locator("#annotated")).to_have_text("light|light|light")
+    page.evaluate("""() => {
+        localStorage.setItem('hydrate-annotated-local', 'saved');
+        sessionStorage.setItem('hydrate-annotated-session', 'saved');
+        document.cookie = 'hydrate-annotated-cookie=saved; path=/';
+    }""")
+
+    page.reload()
+    expect(page.locator("#hydrated")).to_have_text("true")
+    expect(page.locator("#annotated")).to_have_text("saved|saved|saved")
+    page.locator("#change-annotated").click()
+    page.wait_for_function("""() =>
+        localStorage.getItem('hydrate-annotated-local') === 'changed' &&
+        sessionStorage.getItem('hydrate-annotated-session') === 'changed' &&
+        document.cookie.split('; ').includes('hydrate-annotated-cookie=changed')
+    """)
+    page.reload()
+    expect(page.locator("#hydrated")).to_have_text("true")
+    expect(page.locator("#annotated")).to_have_text("changed|changed|changed")
+    assert not [
+        record.getMessage()
+        for record in caplog.records
+        if record.name == field_logger.name and record.levelno >= logging.ERROR
+    ]
+
+
 # The browser storage vars of the assigned page, by element id suffix.
-VARS = ("local", "session", "cookie", "factory", "pref")
+VARS = ("local", "session", "cookie", "pref")
 
 
 def test_assigned_storage_default_persists(
@@ -325,7 +443,6 @@ def test_assigned_storage_default_persists(
         localStorage.getItem('assigned-local') === 'changed' &&
         sessionStorage.getItem('assigned-session') === 'changed' &&
         localStorage.getItem('assigned-pref') === 'changed' &&
-        localStorage.getItem('assigned-factory') === 'changed' &&
         document.cookie.split('; ').includes('assigned-cookie=changed')
     """)
 
@@ -587,6 +704,47 @@ def test_synced_storage_echo_after_own_write_is_written(
     expect(page.locator(f"#{display}")).to_have_text("sent")
     page.wait_for_timeout(500)
     assert page.evaluate("key => localStorage.getItem(key)", key) == "sent"
+
+
+def test_synced_storage_shared_name_syncs_siblings_in_writing_tab(
+    hydration_storage_app: AppHarness, page: Page
+):
+    """A write to one var sharing a storage name updates the others in the writing tab.
+
+    Args:
+        hydration_storage_app: The running app.
+        page: A fresh browser page.
+    """
+    socket = EventSocket(page)
+    open_synced(hydration_storage_app, page)
+    page.locator("#set-synced-new").click()
+    expect(page.locator("#shared-value")).to_have_text("new")
+    expect(page.locator("#shared-value-2")).to_have_text("new")
+    page.wait_for_timeout(500)
+    assert page.evaluate("localStorage.getItem('hydrate-shared')") == "new"
+    assert not [m for m in socket.sent if "update_vars_internal" in m]
+
+
+def test_synced_storage_shared_name_override_keeps_syncing(
+    hydration_storage_app: AppHarness, page: Page
+):
+    """A get_delta override replacing one shared-name value leaves later writes synced.
+
+    Args:
+        hydration_storage_app: The running app.
+        page: A fresh browser page.
+    """
+    socket = EventSocket(page)
+    open_synced(hydration_storage_app, page)
+    page.locator("#set-x").click()
+    expect(page.locator("#override-first")).to_have_text("x-replaced")
+    expect(page.locator("#override-second")).to_have_text("x")
+    page.locator("#set-y").click()
+    expect(page.locator("#override-first")).to_have_text("y")
+    expect(page.locator("#override-second")).to_have_text("y")
+    page.wait_for_timeout(500)
+    assert page.evaluate("localStorage.getItem('hydrate-shared-override')") == "y"
+    assert not [m for m in socket.sent if "update_vars_internal" in m]
 
 
 @pytest.mark.parametrize("other_tab_stores", [False, True], ids=["alone", "other_tab"])

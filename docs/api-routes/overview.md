@@ -128,9 +128,10 @@ async def get_items():
 def add_logging_middleware(app):
     # This is a simple example middleware that logs requests
     async def middleware(scope, receive, send):
-        # Log the request path
-        path = scope["path"]
-        print("Request:", path)
+        # Log the request path; lifespan scopes have none
+        path = scope.get("path")
+        if path is not None:
+            print("Request:", path)
         await app(scope, receive, send)
 
     return middleware
@@ -139,6 +140,50 @@ def add_logging_middleware(app):
 # Create a Reflex app with multiple transformers
 app = rx.App(api_transformer=[fastapi_app, add_logging_middleware])
 ```
+
+## Lifespan
+
+Reflex sends [ASGI lifespan](https://asgi.readthedocs.io/en/latest/specs/lifespan.html)
+events to the app that `api_transformer` produces, as an ASGI server would, once
+the app's [lifespan tasks](/docs/utility-methods/lifespan-tasks/) have started.
+Middleware returned by a callable transformer should pass lifespan events on to
+the app it wraps. Starlette and FastAPI do not pass them to the apps they mount,
+so Reflex also sends them to the app each Starlette or FastAPI transformer
+mounts. Lifespans start from the innermost transformer out and stop in reverse,
+before the lifespan tasks stop. Any state they yield is available on
+`request.state`.
+
+```python
+from contextlib import asynccontextmanager
+
+import reflex as rx
+from fastapi import FastAPI, Request
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    app.state.greeting = "hello"
+    yield {"client": "connected"}
+
+
+fastapi_app = FastAPI(lifespan=lifespan)
+
+
+@fastapi_app.get("/api/greeting")
+async def greeting(request: Request):
+    return dict(
+        greeting=request.app.state.greeting,
+        client=request.state.client,
+    )
+
+
+app = rx.App(api_transformer=fastapi_app)
+```
+
+Apps you mount on a transformer yourself do not get lifespan events; register
+their startup and shutdown code with `app.register_lifespan_task` instead. An app
+that does not support lifespan events is skipped, and Reflex logs that it
+appears not to support them.
 
 ## Reserved Routes
 

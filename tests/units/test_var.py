@@ -756,6 +756,7 @@ def test_str_var_slicing():
         (Var(_js_expr="str").to(str)[0], "pyStrAt"),
         (Var(_js_expr="str").to(str)[1:], "pyStrSlice"),
         (Var(_js_expr="str").to(str)[::-1], "pyStrChars"),
+        (Var(_js_expr="str").to(str).reversed(), "pyStrChars"),
     ],
 )
 def test_str_var_codepoint_imports(var: Var, tag: str):
@@ -1145,6 +1146,18 @@ def test_string_operations():
     chars_var = Var(_js_expr="state.chars").to(str)
     assert str(basic_string.strip(chars_var)) == 'pyStrip("Hello, World!", state.chars)'
     assert str(basic_string.contains("World")) == '"Hello, World!".includes("World")'
+    assert (
+        str(basic_string.reversed())
+        == 'pyStrChars("Hello, World!").slice().reverse().join("")'
+    )
+    assert str(basic_string * 2) == '"Hello, World!".repeat(Math.max(0, 2))'
+    assert str(2 * basic_string) == '"Hello, World!".repeat(Math.max(0, 2))'
+    assert str(basic_string * -1) == '"Hello, World!".repeat(Math.max(0, -1))'
+    float_count = LiteralNumberVar.create(2.5)
+    with pytest.raises(TypeError):
+        basic_string * float_count
+    with pytest.raises(TypeError):
+        float_count * basic_string
     assert (
         str(basic_string.split(" ").join(",")) == '"Hello, World!".split(" ").join(",")'
     )

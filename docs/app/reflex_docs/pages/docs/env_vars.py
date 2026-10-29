@@ -106,4 +106,6 @@ env_vars_doc = docpage(
     "/api-reference/environment-variables/",
     "Environment Variables",
 )(env_vars_page)
+# The sidebar keeps the short title; the HTML <title> carries the site suffix.
 env_vars_doc.title = "Environment Variables"
+env_vars_doc.seo_title = "Environment Variables · Reflex Docs"
