@@ -12,16 +12,12 @@ from typing import TYPE_CHECKING, Any
 
 from reflex_base.components.client_state_context import get_client_state_app_wraps
 from reflex_base.constants import Dirs
-from reflex_base.constants.state import (
-    CAMEL_CASE_CLIENT_STATE_MARKER,
-    CAMEL_CASE_MEMO_MARKER,
-    CLIENT_STATE_REF,
-    FIELD_MARKER,
-)
+from reflex_base.constants.state import CAMEL_CASE_CLIENT_STATE_MARKER, CLIENT_STATE_REF
 from reflex_base.event import (
     EventChain,
     EventHandler,
     EventSpec,
+    event_args_signature,
     run_script,
     server_side,
 )
@@ -108,37 +104,6 @@ _client_state_store_ref = Var(
     ),
 )
 
-# Reflex marks every identifier it puts in scope; an unmarked `_`-leading name is
-# an event-arg placeholder from `parse_args_spec`.
-_IN_SCOPE_MARKERS = (
-    CAMEL_CASE_CLIENT_STATE_MARKER,
-    CAMEL_CASE_MEMO_MARKER,
-    FIELD_MARKER,
-)
-_LEADING_EVENT_ARG = re.compile(r"^_[A-Za-z0-9_$]*")
-
-
-def _recovered_event_arg(value_str: str) -> str | None:
-    """Get the event-arg parameter an emitted setter wrapper must declare.
-
-    A value bound into a setter may reference the event args of the trigger it is
-    attached to, in which case the wrapper has to declare them or they are
-    unbound when it fires.
-
-    Args:
-        value_str: The rendered value expression.
-
-    Returns:
-        The parameter name to declare, or None if the value references no event arg.
-    """
-    match = _LEADING_EVENT_ARG.match(value_str)
-    if match is None:
-        return None
-    name = match.group()
-    if name.endswith(_IN_SCOPE_MARKERS):
-        return None
-    return name
-
 
 def _client_state_set(var_name: str, value: Any):
     """Signature holder for the ``_client_state_set`` event.
@@ -196,10 +161,10 @@ class ClientStateSetter(FunctionVar[Any]):
         else:
             value_var = LiteralVar.create(value)
 
-        value_str = str(value_var)
-        event_arg = _recovered_event_arg(value_str)
+        # The value may read the arguments of the trigger it is attached to,
+        # which the wrapper then has to declare.
         return ArgsFunctionOperationBuilder.create(
-            args_names=(event_arg,) if event_arg is not None else (),
+            args_names=event_args_signature(value_var),
             return_expr=self.to(FunctionVar).call(value_var),
         ).to(FunctionVar, EventChain)
 
