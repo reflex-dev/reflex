@@ -56,18 +56,21 @@ rx.flex(
         rx.box(
             "Example",
             bg="orange",
+            color="black",
             border_radius="3px",
             width="20%",
         ),
         rx.box(
             "Example",
             bg="lightblue",
+            color="black",
             border_radius="3px",
             width="30%",
         ),
         rx.box(
             "Example",
             bg="lightgreen",
+            color="black",
             border_radius="3px",
             width="50%",
         ),
@@ -78,18 +81,21 @@ rx.flex(
         rx.box(
             "Example",
             bg="orange",
+            color="black",
             border_radius="3px",
             width="20%",
         ),
         rx.box(
             "Example",
             bg="lightblue",
+            color="black",
             border_radius="3px",
             width="30%",
         ),
         rx.box(
             "Example",
             bg="lightgreen",
+            color="black",
             border_radius="3px",
             width="50%",
         ),
@@ -104,28 +110,32 @@ rx.flex(
 
 ```python demo
 rx.hstack(
-    rx.box("Example", bg="red", border_radius="3px", width="10%"),
+    rx.box("Example", bg="red", color="black", border_radius="3px", width="10%"),
     rx.box(
         "Example",
         bg="orange",
+        color="black",
         border_radius="3px",
         width="10%",
     ),
     rx.box(
         "Example",
         bg="yellow",
+        color="black",
         border_radius="3px",
         width="10%",
     ),
     rx.box(
         "Example",
         bg="lightblue",
+        color="black",
         border_radius="3px",
         width="10%",
     ),
     rx.box(
         "Example",
         bg="lightgreen",
+        color="black",
         border_radius="3px",
         width="60%",
     ),
@@ -137,28 +147,32 @@ rx.hstack(
 
 ```python demo
 rx.vstack(
-    rx.box("Example", bg="red", border_radius="3px", width="20%"),
+    rx.box("Example", bg="red", color="black", border_radius="3px", width="20%"),
     rx.box(
         "Example",
         bg="orange",
+        color="black",
         border_radius="3px",
         width="40%",
     ),
     rx.box(
         "Example",
         bg="yellow",
+        color="black",
         border_radius="3px",
         width="60%",
     ),
     rx.box(
         "Example",
         bg="lightblue",
+        color="black",
         border_radius="3px",
         width="80%",
     ),
     rx.box(
         "Example",
         bg="lightgreen",
+        color="black",
         border_radius="3px",
         width="100%",
     ),

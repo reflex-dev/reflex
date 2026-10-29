@@ -1,0 +1,1 @@
+Match page routes case-insensitively on the backend, as React Router does on the frontend, so `on_load` events and `router.page.path` resolve for a URL like `/About` instead of falling back to the 404 page.
