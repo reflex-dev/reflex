@@ -12,11 +12,36 @@ from reflex_base.config import get_config
 from reflex_base.plugins import CompileContext, PageContext, PageDefinition, Plugin
 from reflex_base.plugins.base import HookOrder
 from reflex_base.utils.format import make_default_page_title
-from reflex_base.utils.imports import collapse_imports, merge_imports
+from reflex_base.utils.imports import ParsedImportDict, collapse_imports, merge_imports
 from reflex_base.vars import VarData
 from reflex_components_core.base.fragment import Fragment
 
 from reflex.compiler import utils
+
+_MOMENT_ALL_LOCALES_IMPORT = "moment/min/locales"
+_MOMENT_LOCALE_IMPORT_PREFIX = "moment/locale/"
+
+
+def _deduplicate_moment_locale_imports(imports: ParsedImportDict) -> ParsedImportDict:
+    """Remove locale imports covered by Moment's all-locales bundle.
+
+    Args:
+        imports: Imports collected for one page.
+
+    Returns:
+        Page imports without redundant Moment locale side effects.
+    """
+    side_effect_imports = imports.get("")
+    if side_effect_imports and any(
+        import_var.tag == _MOMENT_ALL_LOCALES_IMPORT
+        for import_var in side_effect_imports
+    ):
+        imports[""] = [
+            import_var
+            for import_var in side_effect_imports
+            if not (import_var.tag or "").startswith(_MOMENT_LOCALE_IMPORT_PREFIX)
+        ]
+    return imports
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -231,17 +256,23 @@ class DefaultCollectorPlugin(Plugin):
     ) -> None:
         """Collapse collected imports into a single legacy-shaped entry."""
         if page_ctx.frontend_imports:
-            collapsed_imports = collapse_imports(
-                merge_imports(page_ctx.frontend_imports, *page_ctx.imports)
-                if page_ctx.imports
-                else page_ctx.frontend_imports
+            collapsed_imports = _deduplicate_moment_locale_imports(
+                collapse_imports(
+                    merge_imports(page_ctx.frontend_imports, *page_ctx.imports)
+                    if page_ctx.imports
+                    else page_ctx.frontend_imports
+                )
             )
             page_ctx.frontend_imports = collapsed_imports
             page_ctx.imports = [collapsed_imports]
             return
 
         page_ctx.imports = (
-            [collapse_imports(merge_imports(*page_ctx.imports))]
+            [
+                _deduplicate_moment_locale_imports(
+                    collapse_imports(merge_imports(*page_ctx.imports))
+                )
+            ]
             if page_ctx.imports
             else []
         )

@@ -718,6 +718,62 @@ def test_page_context_helpers_preserve_accumulated_values() -> None:
     ]
 
 
+def test_collector_deduplicates_moment_locale_side_effect_imports() -> None:
+    """The all-locales bundle makes individual Moment locale imports redundant."""
+    page_ctx = PageContext(
+        name="page",
+        route="/page",
+        root_component=Fragment.create(),
+        imports=[
+            {"": [ImportVar(tag="moment/locale/fr")]},
+            {
+                "": [
+                    ImportVar(tag="moment/min/locales"),
+                    ImportVar(tag="moment/locale/de"),
+                    ImportVar(tag="some-package/setup"),
+                ]
+            },
+        ],
+    )
+    DefaultCollectorPlugin().compile_page(page_ctx)
+
+    assert [import_var.tag for import_var in page_ctx.imports[0][""]] == [
+        "moment/min/locales",
+        "some-package/setup",
+    ]
+
+
+def test_collector_keeps_literal_moment_locale_import_without_all_locales() -> None:
+    """Literal-only locale selection keeps its narrow side-effect import."""
+    page_ctx = PageContext(
+        name="page",
+        route="/page",
+        root_component=Fragment.create(),
+        imports=[{"": [ImportVar(tag="moment/locale/fr")]}],
+    )
+    DefaultCollectorPlugin().compile_page(page_ctx)
+
+    assert [import_var.tag for import_var in page_ctx.imports[0][""]] == [
+        "moment/locale/fr"
+    ]
+
+
+def test_collector_deduplicates_moment_locales_from_frontend_imports() -> None:
+    """The optimized frontend-import path applies the same locale deduplication."""
+    page_ctx = PageContext(
+        name="page",
+        route="/page",
+        root_component=Fragment.create(),
+        imports=[{"": [ImportVar(tag="moment/locale/fr")]}],
+        frontend_imports={"": [ImportVar(tag="moment/min/locales")]},
+    )
+    DefaultCollectorPlugin().compile_page(page_ctx)
+
+    assert [import_var.tag for import_var in page_ctx.frontend_imports[""]] == [
+        "moment/min/locales"
+    ]
+
+
 def test_base_context_subclasses_initialize_distinct_context_vars() -> None:
     class DynamicContext(BaseContext):
         pass
