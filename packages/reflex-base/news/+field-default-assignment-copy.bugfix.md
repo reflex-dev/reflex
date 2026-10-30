@@ -1,0 +1,1 @@
+A mutable value assigned directly to a state var's field, such as `State.__fields__["items"].default = []`, is copied for each instance again instead of being shared by every session, as it was on 0.9. This stops session leaks in components that set defaults this way, such as `initial_messages` in reflex-chat. `set_default` remains the recommended way to change a default.

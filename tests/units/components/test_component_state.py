@@ -112,6 +112,45 @@ def test_component_state_defaults_from_props():
     assert second_state.labels == ["second"]
 
 
+def test_component_state_default_assigned_in_create_is_not_shared():
+    """A mutable default assigned to a field in create gives each session its own copy."""
+
+    class Chat(rx.ComponentState):
+        messages: list[str] = []
+
+        @classmethod
+        def create(cls, initial_messages: list[str]) -> rx.Component:
+            """Set the default messages before creating the component.
+
+            Args:
+                initial_messages: The messages each session starts with.
+
+            Returns:
+                The chat component.
+            """
+            cls.__fields__["messages"].default = initial_messages
+            return super().create()
+
+        @classmethod
+        def get_component(cls) -> rx.Component:
+            """Show the messages.
+
+            Returns:
+                The component showing the messages.
+            """
+            return rx.text(cls.messages)
+
+    initial_messages = ["hello"]
+    state_cls = Chat.create(initial_messages).State
+    assert state_cls is not None
+    assert issubclass(state_cls, Chat)
+    first, second = state_cls(), state_cls()
+    first.messages.append("from first")
+    assert second.messages == ["hello"]
+    assert state_cls().messages == ["hello"]
+    assert initial_messages == ["hello"]
+
+
 def test_component_state_storage_default_per_component():
     """A browser storage default set in get_component gives each component its own key."""
 

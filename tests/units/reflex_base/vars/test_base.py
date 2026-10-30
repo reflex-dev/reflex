@@ -1645,6 +1645,43 @@ def test_field_set_default():
     assert S().maybe is None
 
 
+def test_field_default_assigned_directly_is_copied_per_instance():
+    """A mutable default assigned to a field's attribute is never shared by instances."""
+
+    class S(BaseState):
+        items: list[str] = []
+
+    items = S.get_fields()["items"]
+    value = ["a"]
+    items.default = value
+    first, second = S(), S()
+    assert first.items == second.items == ["a"]
+    first.items.append("changed")
+    assert second.items == ["a"]
+    assert S().items == ["a"]
+    assert items.default is value
+    assert value == ["a"]
+
+    # A field derived from it, like a subclass's, copies the default too.
+    derived = items._replace()
+    assert derived.default_value() == ["a"]
+    assert derived.default_value() is not derived.default_value()
+
+    # An immutable default is still shared, and patching the attribute is undone.
+    with mock.patch.object(items, "default", ("x",)):
+        assert S().items == ("x",)
+    assert items.default is value
+    assert S().items == ["a"]
+
+
+def test_field_constructed_default_is_shared():
+    """A default given to the Field constructor is shared by every instance."""
+    shared = ["a"]
+    constructed = Field(default=shared)
+    assert constructed.default_value() is shared
+    assert constructed._replace().default_value() is shared
+
+
 @pytest.mark.parametrize(
     ("kwargs", "message"),
     [

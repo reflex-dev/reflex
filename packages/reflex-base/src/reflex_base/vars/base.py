@@ -4205,6 +4205,10 @@ class Field(Generic[FIELD_TYPE]):
             self.type_ = self.type_origin = type_origin
         else:
             self.outer_type_ = self.annotated_type = self.type_ = self.type_origin = Any
+        # Every instance shares the default given here: `field()` and class
+        # bodies pass a mutable default as a factory instead, so a mutable one
+        # is shared on purpose. A default assigned later is copied if mutable.
+        self._shared_default = self.default
         if source_field is not None:
             # Carry custom attrs by reference: the source field is a throwaway
             # namespace value replaced during class creation, and tag consumers
@@ -4240,9 +4244,13 @@ class Field(Generic[FIELD_TYPE]):
         Returns:
             The new field.
         """
+        default = self.default
         return type(self)(**{
-            "default": self.default,
-            "default_factory": self.default_factory,
+            **(
+                {"default": default, "default_factory": self.default_factory}
+                if default is MISSING or default is self._shared_default
+                else _default_arguments(default)
+            ),
             "is_var": self.is_var,
             "annotated_type": self.annotated_type,
             "source_field": self,
@@ -4299,14 +4307,21 @@ class Field(Generic[FIELD_TYPE]):
     def default_value(self) -> FIELD_TYPE | None:
         """Get the default value for the field.
 
+        A mutable default assigned to ``default`` after the field was created,
+        rather than through ``set_default``, is copied, so no two instances
+        share it.
+
         Returns:
             The default value for the field.
 
         Raises:
             ValueError: If no default value or factory is provided.
         """
-        if self.default is not MISSING:
-            return self.default
+        default = self.default
+        if default is not MISSING:
+            if default is self._shared_default or types.is_immutable(default):
+                return default
+            return copy.deepcopy(default)
         if self.default_factory is not None:
             return self.default_factory()
         msg = "No default value or factory provided."

@@ -69,7 +69,7 @@ with mock.patch.object(State.__fields__["count"], "default", 99):
     ...
 ```
 
-On 0.9, assigning `State.__fields__["items"].default = []` was safe, because each instance got a copy of the default. In 0.10 every instance shares the field's `default`, so a mutable value assigned there leaks changes between sessions. `set_default(default=[])` copies a mutable value for each instance.
+On 0.9, assigning `State.__fields__["items"].default = []` was safe, because each instance got a copy of the default. Through reflex-base 0.10.1 every instance shares a mutable value assigned to the field's `default`, so changes leak between sessions; later releases copy it for each instance again. `set_default(default=[])` copies a mutable value for each instance on every 0.10 release, and also keeps later changes to the value you passed out of the default.
 
 [Changing Defaults](/docs/vars/base-vars/#changing-defaults) has the details, including browser storage vars.
 
