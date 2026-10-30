@@ -25,9 +25,24 @@ def ClientStateApp():
     counter = rx.client_state(0, name="counter")
     other = rx.client_state("untouched", name="other")
     suffixed = rx.client_state("", name="suffixed")
+    # Never rendered: only backend handlers touch it.
+    hidden = rx.client_state("", name="hidden")
 
     class ClientStateAppState(rx.State):
         retrieved: str = ""
+        retrieved_hidden: str = ""
+
+        @rx.event
+        def push_hidden(self):
+            return hidden.push("secret")
+
+        @rx.event
+        def retrieve_hidden(self):
+            return hidden.retrieve(ClientStateAppState.got_hidden)
+
+        @rx.event
+        def got_hidden(self, value: str):
+            self.retrieved_hidden = value
 
         @rx.event
         def push_shared(self):
@@ -86,6 +101,17 @@ def ClientStateApp():
                 "retrieve", id="retrieve", on_click=ClientStateAppState.do_retrieve
             ),
             rx.text(ClientStateAppState.retrieved, id="retrieved"),
+            rx.button(
+                "push-hidden",
+                id="push-hidden",
+                on_click=ClientStateAppState.push_hidden,
+            ),
+            rx.button(
+                "retrieve-hidden",
+                id="retrieve-hidden",
+                on_click=ClientStateAppState.retrieve_hidden,
+            ),
+            rx.text(ClientStateAppState.retrieved_hidden, id="retrieved-hidden"),
             # Escape hatch: a plain JS function, no hook in scope. This is what
             # gets handed to a wrapped library as a callback.
             rx.button(
@@ -187,6 +213,13 @@ def test_push_from_backend(page: Page) -> None:
     page.locator("#push").click()
     expect(page.locator("#shared-a")).to_have_text("from-backend")
     expect(page.locator("#shared-b")).to_have_text("from-backend")
+
+
+def test_backend_only_var_round_trips(page: Page) -> None:
+    """A var no component renders still holds what the backend pushes."""
+    page.locator("#push-hidden").click()
+    page.locator("#retrieve-hidden").click()
+    expect(page.locator("#retrieved-hidden")).to_have_text("secret")
 
 
 def test_retrieve_to_backend(page: Page) -> None:

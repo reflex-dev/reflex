@@ -636,11 +636,12 @@ def test_push_var_is_evaluated_on_the_client() -> None:
     )
 
 
-def test_retrieve_callback_runs_even_without_a_store() -> None:
-    """The runtime must call back with undefined rather than never resuming.
+def test_backend_events_use_the_shared_store() -> None:
+    """``push`` and ``retrieve`` work for a var no component renders.
 
-    Asserted against the shipped ``state.js`` because a handler awaiting
-    ``retrieve`` would otherwise hang forever when no provider is mounted.
+    Asserted against the shipped ``state.js``: the backend event branches go to
+    the store singleton, and the store is published on ``refs`` at import for
+    ``run_script`` code, so neither depends on a provider being mounted.
     """
     from pathlib import Path
 
@@ -649,11 +650,17 @@ def test_retrieve_callback_runs_even_without_a_store() -> None:
     state_js = (
         Path(reflex_base.__file__).parent / ".templates" / "web" / "utils" / "state.js"
     ).read_text()
-    branch = state_js.split('event.name == "_client_state_get"')[1].split("return;")[0]
-    assert "applyResultCallback" in branch
-    # Optional chaining rather than an early return, so a missing store still
-    # reaches the callback with undefined.
-    assert "store?.get(" in branch
+    assert "refs[CLIENT_STATE_REF] = getClientStore()" in state_js
+    set_branch = state_js.split('event.name == "_client_state_set"')[1].split(
+        "return;"
+    )[0]
+    assert "setClientState(event.payload.var_name, event.payload.value)" in set_branch
+    get_branch = state_js.split('event.name == "_client_state_get"')[1].split(
+        "return;"
+    )[0]
+    assert "applyResultCallback" in get_branch
+    assert "getClientState(event.payload.var_name)" in get_branch
+    assert "ClientStateProvider" not in set_branch + get_branch
 
 
 def test_each_construction_gets_its_own_name() -> None:
