@@ -54,6 +54,18 @@ def pytest_collection_modifyitems(
             item.add_marker(skip)
 
 
+def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
+    """Select large-state benchmark sizes for the requested performance scale.
+
+    Args:
+        metafunc: Test metadata used to build the selected parametrization.
+    """
+    if metafunc.function.__name__ == "test_large_state":
+        scale = metafunc.config.getoption("--performance-scale")
+        var_counts = [1, 100] if scale == "smoke" else [1, 10, 100, 1000, 10000]
+        metafunc.parametrize("var_count", var_counts)
+
+
 @pytest.fixture
 def performance_output(request: pytest.FixtureRequest) -> Path:
     """Return and create the performance artifact directory.

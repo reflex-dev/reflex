@@ -1,0 +1,332 @@
+"""Test cases for the Starlette lifespan integration."""
+
+import functools
+from collections.abc import Generator
+
+import pytest
+from playwright.sync_api import Page, expect
+
+from reflex.testing import AppHarness
+
+pytest.importorskip("fastapi")
+
+
+def LifespanApp(
+    mount_cached_fastapi: bool = False, mount_api_transformer: bool = False
+) -> None:
+    """App with lifespan tasks and context.
+
+    Args:
+        mount_cached_fastapi: Whether to mount the cached FastAPI app.
+        mount_api_transformer: Whether to mount the API transformer.
+    """
+    import asyncio
+    from contextlib import asynccontextmanager
+
+    from reflex_base.registry import RegistrationContext
+
+    import reflex as rx
+    from reflex.istate.manager.token import BaseStateToken
+
+    lifespan_task_global = 0
+    lifespan_context_global = 0
+    transformer_lifespan_global = 0  # noqa: F841 (read from the module by the test)
+    raw_asyncio_task_global = 0
+    connected_tokens: set[str] = set()
+
+    @asynccontextmanager
+    async def lifespan_context(app, inc: int = 1):
+        global lifespan_context_global
+        print(f"Lifespan context entered: {app}.")
+        lifespan_context_global += inc  # pyright: ignore[reportUnboundVariable]
+        try:
+            yield
+        finally:
+            print("Lifespan context exited.")
+            lifespan_context_global += inc
+
+    async def lifespan_task(inc: int = 1):
+        global lifespan_task_global
+        print("Lifespan global started.")
+        try:
+            while True:
+                lifespan_task_global += inc  # pyright: ignore[reportUnboundVariable, reportPossiblyUnboundVariable]
+                await asyncio.sleep(0.1)
+        except asyncio.CancelledError as ce:
+            print(f"Lifespan global cancelled: {ce}.")
+            lifespan_task_global = 0
+
+    async def raw_asyncio_task_coro():
+        global raw_asyncio_task_global
+        print("Raw asyncio task started.")
+        try:
+            while True:
+                raw_asyncio_task_global += 1  # pyright: ignore[reportUnboundVariable, reportPossiblyUnboundVariable]
+                await asyncio.sleep(0.1)
+        except asyncio.CancelledError as ce:
+            print(f"Raw asyncio task cancelled: {ce}.")
+            raw_asyncio_task_global = 0
+
+    @asynccontextmanager
+    async def assert_register_blocked_during_lifespan(app):
+        """Negative test: registering a task after lifespan has started must raise."""
+        reflex_app = RegistrationContext.get().app
+        task = asyncio.create_task(raw_asyncio_task_coro(), name="raw_asyncio_task")
+        try:
+            reflex_app.register_lifespan_task(task)
+        except RuntimeError as exc:
+            print(f"Expected RuntimeError: {exc}")
+        else:
+            msg = "register_lifespan_task should have raised RuntimeError"
+            raise AssertionError(msg)
+        finally:
+            task.cancel()
+        yield
+
+    class LifespanState(rx.State):
+        interval: int = 100
+        modify_count: int = 0
+
+        @rx.event
+        def set_interval(self, interval: int):
+            self.interval = interval
+
+        @rx.event
+        def register_token(self):
+            connected_tokens.add(self.router.session.client_token)
+
+        @rx.var(cache=False)
+        def task_global(self) -> int:
+            return lifespan_task_global
+
+        @rx.var(cache=False)
+        def context_global(self) -> int:
+            return lifespan_context_global
+
+        @rx.var(cache=False)
+        def asyncio_task_global(self) -> int:
+            return raw_asyncio_task_global
+
+        @rx.event
+        def tick(self, date):
+            pass
+
+    async def modify_state_task():
+        reflex_app = RegistrationContext.get().app
+        try:
+            while True:
+                for token in list(connected_tokens):
+                    async with reflex_app.modify_state(
+                        BaseStateToken(ident=token, cls=LifespanState)
+                    ) as state:
+                        lifespan_state = await state.get_state(LifespanState)
+                        lifespan_state.modify_count += 1
+                await asyncio.sleep(0.1)
+        except asyncio.CancelledError:
+            print("modify_state_task cancelled.")
+
+    def index():
+        return rx.vstack(
+            rx.text(LifespanState.task_global, id="task_global"),
+            rx.text(LifespanState.context_global, id="context_global"),
+            rx.text(LifespanState.modify_count, id="modify_count"),
+            rx.text(LifespanState.asyncio_task_global, id="asyncio_task_global"),
+            rx.button(
+                rx.moment(
+                    interval=LifespanState.interval, on_change=LifespanState.tick
+                ),
+                on_click=LifespanState.set_interval(
+                    rx.cond(LifespanState.interval, 0, 100)
+                ),
+                id="toggle-tick",
+            ),
+            on_mount=LifespanState.register_token,
+        )
+
+    from fastapi import FastAPI
+
+    @asynccontextmanager
+    async def transformer_lifespan(app: FastAPI):
+        global transformer_lifespan_global
+        transformer_lifespan_global += 1  # pyright: ignore[reportUnboundVariable]
+        try:
+            yield
+        finally:
+            transformer_lifespan_global += 1
+
+    app = rx.App(
+        api_transformer=FastAPI(lifespan=transformer_lifespan)
+        if mount_api_transformer
+        else None
+    )
+
+    if mount_cached_fastapi:
+        assert app._api is not None
+
+    app.register_lifespan_task(lifespan_task)
+    app.register_lifespan_task(lifespan_context, inc=2)
+    app.register_lifespan_task(raw_asyncio_task_coro)
+    app.register_lifespan_task(assert_register_blocked_during_lifespan)
+    app.register_lifespan_task(modify_state_task)
+    app.add_page(index)
+
+
+@pytest.fixture(
+    scope="session",
+    params=[False, True],
+    ids=["no_api_transformer", "mount_api_transformer"],
+)
+def mount_api_transformer(request: pytest.FixtureRequest) -> bool:
+    """Whether to use api_transformer in the app.
+
+    Args:
+        request: pytest fixture request object
+
+    Returns:
+        bool: Whether to use api_transformer
+    """
+    return request.param
+
+
+@pytest.fixture(
+    scope="session", params=[False, True], ids=["no_fastapi", "mount_cached_fastapi"]
+)
+def mount_cached_fastapi(request: pytest.FixtureRequest) -> bool:
+    """Whether to use cached FastAPI in the app (app.api).
+
+    Args:
+        request: pytest fixture request object
+
+    Returns:
+        Whether to use cached FastAPI
+    """
+    return request.param
+
+
+@pytest.fixture(scope="session")
+def lifespan_app(
+    tmp_path_factory: pytest.TempPathFactory,
+    app_harness_env: type[AppHarness],
+    mount_api_transformer: bool,
+    mount_cached_fastapi: bool,
+) -> Generator[AppHarness, None, None]:
+    """Start LifespanApp app at tmp_path via AppHarness.
+
+    Args:
+        tmp_path_factory: pytest tmp_path_factory fixture
+        app_harness_env: AppHarness environment
+        mount_api_transformer: Whether to mount the API transformer.
+        mount_cached_fastapi: Whether to mount the cached FastAPI app.
+
+    Yields:
+        running AppHarness instance
+    """
+    with app_harness_env.create(
+        root=tmp_path_factory.mktemp("lifespan_app"),
+        app_source=functools.partial(
+            LifespanApp,
+            mount_cached_fastapi=mount_cached_fastapi,
+            mount_api_transformer=mount_api_transformer,
+        ),
+        app_name=f"lifespanapp_fastapi{mount_cached_fastapi}_transformer{mount_api_transformer}",
+    ) as harness:
+        yield harness
+
+
+def test_lifespan_modify_state(lifespan_app: AppHarness, page: Page):
+    """Test that a lifespan task can use app.modify_state to push state updates.
+
+    Args:
+        lifespan_app: harness for LifespanApp app
+        page: Playwright page.
+    """
+    assert lifespan_app.app_module is not None, "app module is not found"
+    assert lifespan_app.app_instance is not None, "app is not running"
+    assert lifespan_app.frontend_url is not None
+    page.goto(lifespan_app.frontend_url)
+    page.wait_for_function("() => sessionStorage.getItem('token') !== null")
+
+    modify_count = page.locator("#modify_count")
+    expect(modify_count).not_to_have_text("0")
+    first_value = int(modify_count.inner_text())
+    page.wait_for_function(
+        "(first) => Number(document.querySelector('#modify_count').textContent) > first",
+        arg=first_value,
+    )
+
+
+def test_lifespan_raw_asyncio_task(lifespan_app: AppHarness, page: Page):
+    """Test that a coroutine function registered as a lifespan task runs as an asyncio.Task.
+
+    Args:
+        lifespan_app: harness for LifespanApp app
+        page: Playwright page.
+    """
+    assert lifespan_app.app_module is not None, "app module is not found"
+    assert lifespan_app.app_instance is not None, "app is not running"
+    assert lifespan_app.frontend_url is not None
+    page.goto(lifespan_app.frontend_url)
+    page.wait_for_function("() => sessionStorage.getItem('token') !== null")
+
+    asyncio_task_global = page.locator("#asyncio_task_global")
+    expect(asyncio_task_global).not_to_have_text("0")
+    first_value = int(asyncio_task_global.inner_text())
+    page.wait_for_function(
+        "(first) => Number(document.querySelector('#asyncio_task_global').textContent) > first",
+        arg=first_value,
+    )
+    assert lifespan_app.app_module.raw_asyncio_task_global > 0
+
+
+# --- test_lifespan MUST be the last test in this file. ---
+# It shuts down the backend and asserts cancellation of lifespan tasks.
+# The lifespan_app fixture is session-scoped (expensive to rebuild), so all
+# other tests that need a running backend must be defined ABOVE this point.
+
+
+def test_lifespan(lifespan_app: AppHarness, page: Page):
+    """Test the lifespan integration.
+
+    Args:
+        lifespan_app: harness for LifespanApp app
+        page: Playwright page.
+    """
+    assert lifespan_app.app_module is not None, "app module is not found"
+    assert lifespan_app.app_instance is not None, "app is not running"
+    assert lifespan_app.frontend_url is not None
+    page.goto(lifespan_app.frontend_url)
+    page.wait_for_function("() => sessionStorage.getItem('token') !== null")
+
+    context_global = page.locator("#context_global")
+    task_global = page.locator("#task_global")
+
+    expect(context_global).to_have_text("2")
+    assert lifespan_app.app_module.lifespan_context_global == 2
+    transformer_starts = 1 if lifespan_app.app_module.app.api_transformer else 0
+    assert lifespan_app.app_module.transformer_lifespan_global == transformer_starts
+
+    original_task_global_value = int(task_global.inner_text())
+    page.wait_for_function(
+        "(first) => Number(document.querySelector('#task_global').textContent) > first",
+        arg=original_task_global_value,
+    )
+    page.locator("#toggle-tick").click()  # avoid teardown errors
+    assert lifespan_app.app_module.lifespan_task_global > original_task_global_value
+    assert int(task_global.inner_text()) > original_task_global_value
+
+    # Kill the backend
+    assert lifespan_app.backend is not None
+    lifespan_app.backend.should_exit = True
+    if lifespan_app.backend_thread is not None:
+        lifespan_app.backend_thread.join()
+
+    # Check that the lifespan tasks have been cancelled
+    assert lifespan_app.app_module.lifespan_task_global == 0
+    assert lifespan_app.app_module.lifespan_context_global == 4
+    assert lifespan_app.app_module.raw_asyncio_task_global == 0
+    assert lifespan_app.app_module.transformer_lifespan_global == 2 * transformer_starts
+
+
+# --- Do NOT add new test cases below this line. ---
+# test_lifespan (above) kills the backend; any test defined after it will
+# find the harness in a stopped state and fail.

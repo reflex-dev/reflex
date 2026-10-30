@@ -278,11 +278,93 @@ jobs:
           npm -v
           uv run --active --no-sync bash scripts/integration.sh ./docs/app prod
 
+  app-harness:
+    needs: changes
+    if: needs.changes.outputs.run == 'true'
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        state_manager: ["redis", "memory"]
+        python-version: ["3.11", "3.12", "3.13", "3.14", "3.15"]
+        split_index: [1, 2]
+      fail-fast: false
+    runs-on: ubuntu-22.04
+    services:
+      redis:
+        image: ${{ matrix.state_manager == 'redis' && 'redis' || '' }}
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-tags: true
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: ./.github/actions/setup_build_env
+        with:
+          python-version: ${{ matrix.python-version }}
+          run-uv-sync: true
+      - name: Run non-browser integration tests
+        env:
+          REFLEX_REDIS_URL: ${{ matrix.state_manager == 'redis' && 'redis://localhost:6379' || '' }}
+        run: uv run pytest tests/integration --ignore=tests/integration/tests_playwright --reruns 3 -v --maxfail=5 --splits 2 --group ${{ matrix.split_index }}
+
+  app-harness-playwright:
+    needs: changes
+    if: needs.changes.outputs.run == 'true'
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        state_manager: ["redis", "memory"]
+        python-version: ["3.11", "3.12", "3.13", "3.14", "3.15"]
+      fail-fast: false
+    runs-on: ubuntu-22.04
+    services:
+      redis:
+        image: ${{ matrix.state_manager == 'redis' && 'redis' || '' }}
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-tags: true
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: ./.github/actions/setup_build_env
+        with:
+          python-version: ${{ matrix.python-version }}
+          run-uv-sync: true
+      - name: Install Playwright Chromium
+        run: uv run playwright install chromium --only-shell
+      - name: Run Playwright integration tests
+        env:
+          REFLEX_REDIS_URL: ${{ matrix.state_manager == 'redis' && 'redis://localhost:6379' || '' }}
+        run: uv run pytest tests/integration/tests_playwright --reruns 3 -v --maxfail=5
+
   # The one status check the branch rules require from this workflow. Naming the
   # jobs above directly does not survive: check names follow the matrix and the
   # display names, and a job that a filter skips must not block the merge.
   integration-tests-gate:
-    needs: [changes, example-counter-and-nba-proxy, reflex-docs, rx-shout-from-template, reflex-docs-macos]
+    needs:
+      [
+        changes,
+        example-counter-and-nba-proxy,
+        reflex-docs,
+        rx-shout-from-template,
+        reflex-docs-macos,
+        app-harness,
+        app-harness-playwright,
+      ]
     if: always()
     runs-on: ubuntu-latest
     steps:
