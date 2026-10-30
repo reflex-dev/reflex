@@ -7500,6 +7500,220 @@ async def test_hydration_replay_preserves_shared_cleanup_marks(
     assert not storage.dirty_vars
 
 
+def test_rx_event_handler_bound_at_class_creation() -> None:
+    """A decorated method is an EventHandler bound to its class when the body runs."""
+
+    class BoundState(BaseState):
+        @rx.event
+        def handle(self, value: int):
+            pass
+
+    handler = BoundState.__dict__["handle"]
+    assert isinstance(handler, EventHandler)
+    assert handler.state is BoundState
+    assert handler._type_hints == {"value": int}
+    assert BoundState.event_handlers["handle"] is handler
+    registered = RegistrationContext.get().event_handlers[
+        f"{BoundState.get_full_name()}.handle"
+    ]
+    assert registered.handler is handler
+    assert registered.states == (BoundState,)
+
+
+def test_mixin_decorated_handler_copied_per_state() -> None:
+    """A mixin's decorated handler is bound to the mixin; each state gets its own copy."""
+
+    class CopyMixin(BaseState, mixin=True):
+        @rx.event(background=True, stop_propagation=True)
+        async def work(self):
+            pass
+
+    class UsesCopyMixinA(CopyMixin, State):
+        pass
+
+    class UsesCopyMixinB(CopyMixin, State):
+        pass
+
+    template = CopyMixin.__dict__["work"]
+    assert isinstance(template, EventHandler)
+    assert template.state is CopyMixin
+    handler_a = UsesCopyMixinA.event_handlers["work"]
+    handler_b = UsesCopyMixinB.event_handlers["work"]
+    assert handler_a.state is UsesCopyMixinA
+    assert handler_b.state is UsesCopyMixinB
+    assert len({template.fn, handler_a.fn, handler_b.fn}) == 3
+    for handler in (handler_a, handler_b):
+        assert handler.is_background
+        assert handler.event_actions == {"stopPropagation": True}
+
+
+def test_aliased_handler_keeps_its_state() -> None:
+    """Assigning another state's handler in a class body does not rebind it."""
+
+    class OwnerState(BaseState):
+        @rx.event
+        def handle(self):
+            pass
+
+    class AliasState(BaseState):
+        alias = OwnerState.handle
+
+    owner_handler = OwnerState.__dict__["handle"]
+    assert isinstance(owner_handler, EventHandler)
+    assert owner_handler.state is OwnerState
+    assert AliasState.__dict__["alias"] is owner_handler
+    assert "alias" not in AliasState.event_handlers
+
+
+def _logged(fn):
+    """Wrap a method the way an auth decorator stacked above @rx.event does.
+
+    Args:
+        fn: The decorated method (an EventHandler when stacked above @rx.event).
+
+    Returns:
+        The wrapper, which calls ``fn`` with the instance like a plain method.
+    """
+
+    @functools.wraps(fn)
+    def wrapper(self, *args, **kwargs):
+        return fn(self, *args, **kwargs)
+
+    return wrapper
+
+
+def test_wrapper_above_rx_event_is_deprecated_and_still_runs() -> None:
+    """A decorator above @rx.event warns and keeps working as the plain method it wraps."""
+    from reflex_base.utils import console as base_console
+
+    from reflex.utils import console
+
+    with (
+        patch.object(console, "deprecate", wraps=console.deprecate) as state_deprecate,
+        patch.object(
+            base_console, "deprecate", wraps=base_console.deprecate
+        ) as event_deprecate,
+    ):
+
+        class WrappedState(BaseState):
+            x: int = 0
+
+            @_logged
+            @rx.event
+            def inc(self, by: int):
+                self.x += by
+
+            @_logged
+            @rx.event(background=True)
+            async def bg(self):
+                pass
+
+        assert (
+            state_deprecate.call_args.kwargs["feature_name"]
+            == "Decorators above @rx.event"
+        )
+        handler = WrappedState.inc
+        assert isinstance(handler, EventHandler)
+        assert handler.state is WrappedState
+        assert format.format_event_handler(handler).endswith(".inc")
+        assert WrappedState.event_handlers["inc"] is handler
+        # The payload coercion still sees the method's annotations.
+        assert handler._get_type_hints()["by"] is int
+        assert handler.fn.__module__ == __name__
+        assert WrappedState.bg.is_background  # pyright: ignore [reportAttributeAccessIssue]
+        state = WrappedState()
+        # The wrapper calls the inner handler with the instance, like on main.
+        handler.fn(state, 2)
+        assert state.x == 2
+        assert (
+            event_deprecate.call_args.kwargs["feature_name"]
+            == "Calling an event handler with a state instance"
+        )
+
+
+def test_stacked_wrappers_above_rx_event_still_run() -> None:
+    """Decorators stacked above @rx.event are found through the whole __wrapped__ chain."""
+    from reflex.utils import console
+
+    with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
+
+        class StackedState(BaseState):
+            x: int = 0
+
+            @_logged
+            @_logged
+            @rx.event
+            def inc(self, by: int):
+                self.x += by
+
+        assert (
+            mock_deprecate.call_args.kwargs["feature_name"]
+            == "Decorators above @rx.event"
+        )
+        handler = StackedState.inc
+        assert isinstance(handler, EventHandler)
+        assert format.format_event_handler(handler).endswith(".inc")
+        state = StackedState()
+        handler.fn(state, 3)
+        assert state.x == 3
+
+
+def test_decorated_handler_shadowing_builtin_raises() -> None:
+    """A decorated handler that shadows a State method is rejected like a plain one."""
+    with pytest.raises(NameError, match="shadows a builtin State method"):
+
+        class ShadowState(BaseState):
+            @rx.event
+            def reset(self):
+                pass
+
+
+def test_rx_event_on_static_and_class_methods_is_deprecated_and_ignored() -> None:
+    """@rx.event on a staticmethod or classmethod warns and leaves it as it is."""
+    from reflex_base.utils import console
+
+    with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
+
+        class StaticState(BaseState):
+            @rx.event
+            @staticmethod
+            def helper(value: int) -> int:
+                return value * 2
+
+    assert (
+        mock_deprecate.call_args.kwargs["feature_name"]
+        == "@rx.event on a staticmethod or classmethod"
+    )
+    assert isinstance(StaticState.__dict__["helper"], staticmethod)
+    assert StaticState.helper(2) == 4
+
+
+def test_decorated_handler_on_state_derived_from_a_mixin_only() -> None:
+    """A state whose base flips the mixin flag on (like ``rx.SharedState``) owns its handlers.
+
+    The metaclass first marks a class declared on mixins alone as a mixin and
+    the base's ``__init_subclass__`` flips it, so binding must not depend on
+    that flag.
+    """
+
+    class FlippingMixin(BaseState, mixin=True):
+        def __init_subclass__(cls, **kwargs):
+            kwargs["mixin"] = False
+            cls._mixin = False
+            super().__init_subclass__(**kwargs)
+
+    class FromFlippingMixin(FlippingMixin):
+        @rx.event
+        def handle(self):
+            pass
+
+    assert not FromFlippingMixin._mixin
+    handler = FromFlippingMixin.__dict__["handle"]
+    assert isinstance(handler, EventHandler)
+    assert handler.state is FromFlippingMixin
+    assert FromFlippingMixin.event_handlers["handle"] is handler
+
+
 async def test_shared_storage_name_syncs_siblings(
     clean_registration_context: RegistrationContext,
 ):

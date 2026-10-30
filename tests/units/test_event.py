@@ -1713,3 +1713,95 @@ def test_event_sequence():
     assert event_sequence(events_user_list) is events_user_list
     assert event_sequence("abc") == ["abc"]
     assert event_sequence(b"ab") == [b"ab"]
+
+
+def test_decentralized_event_actions_are_registered():
+    """The registered handler of a decentralized event carries its event actions."""
+
+    class S(BaseState):
+        field: Field[str] = field("")
+
+    @event(stop_propagation=True)
+    def e(s: S):
+        s.field = "foo"
+
+    assert isinstance(e, EventHandler)
+    registered = RegistrationContext.get().event_handlers[
+        format.format_event_handler(e)
+    ]
+    assert registered.handler is e
+    assert registered.handler.event_actions == {"stopPropagation": True}
+    assert registered.states == (S,)
+
+
+def test_rx_event_stateless_registers_globally():
+    """A function with no state parameter registers as a stateless handler."""
+
+    @event
+    def ping(x: str) -> str:
+        return x
+
+    assert isinstance(ping, EventHandler)
+    assert ping.state is None
+    registered = RegistrationContext.get().event_handlers[
+        format.format_event_handler(ping)
+    ]
+    assert registered.handler is ping
+    assert registered.states == ()
+    spec = ping("1")
+    assert isinstance(spec, EventSpec)
+    [ev] = Event.from_event_type(spec)
+    assert ev.name == format.format_event_handler(ping)
+    assert ev.payload == {"x": "1"}
+    _ = rx.input(on_change=ping)
+
+
+def test_rx_event_stateless_with_generic_annotation():
+    """A stateless handler may annotate its first parameter with a generic alias."""
+
+    @event
+    def summarize(items: list[int], label: str | None = None) -> int:
+        return sum(items)
+
+    assert isinstance(summarize, EventHandler)
+    assert summarize.state is None
+    registered = RegistrationContext.get().event_handlers[
+        format.format_event_handler(summarize)
+    ]
+    assert registered.states == ()
+
+
+def test_event_handler_and_spec_expose_wrapped_function() -> None:
+    """EventHandler and EventSpec expose the decorated function as __wrapped__."""
+
+    class WrappedState(BaseState):
+        @rx.event
+        def handle(self, value: int):
+            pass
+
+    handler = WrappedState.handle
+    assert isinstance(handler, EventHandler)
+    assert handler.__wrapped__ is handler.fn
+    assert handler.__wrapped__.__name__ == "handle"
+    assert handler(1).__wrapped__ is handler.fn
+
+
+def test_rx_event_on_a_non_state_class_method_still_calls_it() -> None:
+    """@rx.event on a method of a class that is not a state warns and stays a method."""
+    from unittest.mock import patch
+
+    from reflex_base.utils import console
+
+    with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
+
+        class Helper:
+            @rx.event
+            def compute(self, x: int) -> int:
+                return x * 2
+
+    assert (
+        mock_deprecate.call_args.kwargs["feature_name"]
+        == "@rx.event on a method of a class that is not a state"
+    )
+    assert isinstance(Helper.compute, EventHandler)
+    assert Helper().compute(3) == 6  # pyright: ignore [reportArgumentType]

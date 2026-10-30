@@ -155,8 +155,10 @@ def _literal_var_for(value: Any) -> type[LiteralVar] | None:
         ),
         None,
     )
-    # A class object's type is its metaclass, which other classes share.
-    if not isinstance(value, type):
+    # A class object's type is its metaclass, which other classes share, and a
+    # proxy (such as a MutableProxy) reports the wrapped value's __class__, so
+    # its type says nothing about which literal class claims it.
+    if not isinstance(value, type) and value.__class__ is value_type:
         _literal_var_by_type[value_type] = literal_subclass
     return literal_subclass
 
@@ -4701,7 +4703,12 @@ def _validate_state_name(
     members = _reserved_state_members(root)
     if name not in members:
         return
+    from reflex_base.event import EventHandler
+
     method = value.__func__ if isinstance(value, (classmethod, staticmethod)) else value
+    if isinstance(method, EventHandler):
+        # A decorated method shadows like the function it wraps.
+        method = method.fn
     if isinstance(method, FunctionType):
         if value is members[name] or getattr(method, "__override_base_method__", False):
             return
