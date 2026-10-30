@@ -2042,7 +2042,7 @@ def component_hash(component: Component, *, recursive: bool) -> str:
     return digest
 
 
-def memo_tag(component: Component) -> str:
+def memo_tag(component: Component, *, recursive: bool | None = None) -> str:
     """Compute a stable tag name for the memo wrapping ``component``.
 
     The class qualname is in the tag prefix so distinct classes that render
@@ -2053,11 +2053,16 @@ def memo_tag(component: Component) -> str:
 
     Args:
         component: The component being memoized.
+        recursive: Whether the memo body carries the whole subtree, so its
+            descendants' artifacts identify the body too. Defaults to whether
+            the component's own strategy is a snapshot; a caller that renders
+            a snapshot of a component whose strategy is not says so here.
 
     Returns:
         The stable tag name.
     """
-    recursive = get_memoization_strategy(component) is MemoizationStrategy.SNAPSHOT
+    if recursive is None:
+        recursive = get_memoization_strategy(component) is MemoizationStrategy.SNAPSHOT
     prefix, tag = type(component).__qualname__, component.tag or "Comp"
     # Memo component classes are already named ``MemoComponent_<tag>``.
     if prefix != f"MemoComponent_{tag}":
@@ -2084,6 +2089,8 @@ _PASSTHROUGH_PARAMS = (
 def create_passthrough_component_memo(
     component: Component,
     source_module: str | None = None,
+    *,
+    snapshot: bool = False,
 ) -> tuple[
     Callable[..., MemoComponent],
     MemoComponentDefinition,
@@ -2104,6 +2111,10 @@ def create_passthrough_component_memo(
         component: The component to wrap.
         source_module: The user-app Python module that triggered creation of
             this memo (typically the page that contained the wrapped subtree).
+        snapshot: Render the whole component as the memo body, children
+            included, instead of substituting a ``{children}`` hole. A loop
+            item is wrapped this way so every hook in its subtree runs inside
+            the item component, below the scope the loop provides around it.
 
     Returns:
         The callable memo wrapper and its component definition.
@@ -2116,7 +2127,7 @@ def create_passthrough_component_memo(
     # body renders the full snapshot rather than a ``{children}``-holed
     # template.
     render_snapshot = (
-        get_memoization_strategy(component) is MemoizationStrategy.SNAPSHOT
+        snapshot or get_memoization_strategy(component) is MemoizationStrategy.SNAPSHOT
     )
 
     captured_hole_child: list[Component] = []
@@ -2158,7 +2169,7 @@ def create_passthrough_component_memo(
     params = _PASSTHROUGH_PARAMS
     rest_target_fields: set[str] = set()
     preview = _evaluate_component_body(passthrough, params, rest_target_fields)
-    tag = memo_tag(preview)
+    tag = memo_tag(preview, recursive=render_snapshot)
 
     passthrough.__name__ = format.to_snake_case(tag)
     passthrough.__qualname__ = passthrough.__name__
