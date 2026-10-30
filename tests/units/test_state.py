@@ -8,6 +8,7 @@ import datetime
 import enum
 import functools
 import gc
+import importlib
 import inspect
 import io
 import json
@@ -5108,6 +5109,51 @@ config = rx.Config(app_name="project1")
         state_cls = sys.modules[constants.Config.MODULE].RxconfigNoSetterState
         assert list(state_cls.event_handlers) == ["setvar"]
         del sys.modules[constants.Config.MODULE]
+
+
+def test_app_imported_before_config_honors_rxconfig_auto_setters(
+    tmp_path, monkeypatch, clean_registration_context
+):
+    """An app module imported before any Config is built honors rxconfig.py.
+
+    Regression for #7483: a backend worker started fresh (spawn/forkserver) imports
+    the app module before anything loads the config, so its State classes got no
+    auto-setters even though rxconfig.py enabled them.
+    """
+    monkeypatch.setattr(reflex_base.config, "_state_auto_setters", None)
+    monkeypatch.delenv("REFLEX_STATE_AUTO_SETTERS", raising=False)
+
+    proj_root = tmp_path / "project1"
+    proj_root.mkdir()
+    (proj_root / "rxconfig.py").write_text(
+        dedent(
+            """
+            import reflex as rx
+
+            config = rx.Config(app_name="project1", state_auto_setters=True)
+            """
+        )
+    )
+    (proj_root / "early_import_app.py").write_text(
+        dedent(
+            """
+            import reflex as rx
+
+
+            class EarlyImportState(rx.State):
+                extra: str = ""
+            """
+        )
+    )
+    monkeypatch.syspath_prepend(str(proj_root))
+
+    with chdir(proj_root):
+        try:
+            module = importlib.import_module("early_import_app")
+            assert "set_extra" in module.EarlyImportState.event_handlers
+        finally:
+            sys.modules.pop("early_import_app", None)
+            sys.modules.pop(constants.Config.MODULE, None)
 
 
 def test_state_auto_setters_cache_tracks_reload(tmp_path):
