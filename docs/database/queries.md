@@ -219,6 +219,8 @@ import reflex as rx
 
 
 class State(rx.State):
+    raw_user_tuples: list[list] = []
+
     @rx.event
     async def insert_user_raw(self, username: str, email: str):
         async with Session() as session:
@@ -230,15 +232,16 @@ class State(rx.State):
             )
             await session.commit()
 
-    @rx.var
-    async def raw_user_tuples(self) -> list[list]:
+    @rx.event
+    async def load_raw_users(self):
         async with Session() as session:
             result = await session.execute(sqlalchemy.text("SELECT * FROM user"))
-            return [list(row) for row in result.all()]
+            self.raw_user_tuples = [list(row) for row in result.all()]
 ```
 
-Computed vars that query the database are declared `async` for the same reason
-as event handlers.
+Load query results into state vars from event handlers, as here, rather than
+querying in a computed var: a computed var that reads no other state var is
+cached, so it would not see later writes to the database.
 
 ## Writing Efficient Queries
 
@@ -325,19 +328,24 @@ Fetch everything in one statement with a `JOIN`, an `IN (...)` list, or
 
 ```python
 # Efficient: one query for all users at once.
-async with Session() as session:
-    orders = (
-        await session.scalars(
+async def load_orders(users: list[User]) -> list[Order]:
+    async with Session() as session:
+        result = await session.scalars(
             select(Order).where(Order.user_id.in_([user.id for user in users]))
         )
-    ).all()
+        return list(result.all())
+
 
 # Inefficient: one query per user (N+1).
-async with Session() as session:
-    for user in users:
-        orders = (
-            await session.scalars(select(Order).where(Order.user_id == user.id))
-        ).all()
+async def load_orders_slowly(users: list[User]) -> list[Order]:
+    orders = []
+    async with Session() as session:
+        for user in users:
+            result = await session.scalars(
+                select(Order).where(Order.user_id == user.id)
+            )
+            orders.extend(result.all())
+    return orders
 ```
 
 The `.in_()` method binds each value as a separate query parameter, so it is
@@ -353,14 +361,16 @@ The example below binds the list with an expanding parameter:
 ```python
 import sqlalchemy
 
-async with Session() as session:
-    result = await session.execute(
-        sqlalchemy.text("SELECT * FROM user WHERE id IN :user_ids").bindparams(
-            sqlalchemy.bindparam("user_ids", expanding=True)
-        ),
-        {"user_ids": [1, 2, 3]},
-    )
-    rows = result.all()
+
+async def load_users_by_id(user_ids: list[int]) -> list:
+    async with Session() as session:
+        result = await session.execute(
+            sqlalchemy.text("SELECT * FROM user WHERE id IN :user_ids").bindparams(
+                sqlalchemy.bindparam("user_ids", expanding=True)
+            ),
+            {"user_ids": user_ids},
+        )
+        return list(result.all())
 ```
 
 If the related objects are linked with foreign keys, the
@@ -404,8 +414,10 @@ columns and for aggregates that may run over empty groups.
 ```python
 from sqlalchemy import func, select
 
-async with Session() as session:
-    total = await session.scalar(select(func.coalesce(func.sum(Order.amount), 0.0)))
+
+async def total_amount() -> float:
+    async with Session() as session:
+        return await session.scalar(select(func.coalesce(func.sum(Order.amount), 0.0)))
 ```
 
 The same works in raw SQL: `SELECT COALESCE(SUM(amount), 0) FROM ...`.

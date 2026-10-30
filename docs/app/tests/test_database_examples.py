@@ -1,5 +1,6 @@
 """Execute the database docs examples against a SQLite file."""
 
+import ast
 import asyncio
 import csv
 import functools
@@ -175,12 +176,13 @@ async def test_overview_examples(monkeypatch):
     await module.engine.dispose()
 
 
-def test_event_handler_examples_are_async():
-    """No example calls the database from a blocking event handler."""
+def test_examples_parse_and_never_block():
+    """Every example is valid Python and opens only async database sessions."""
     for page in PAGES.values():
         for code in re.findall(
-            r"^```python\n(.*?)^```", page.read_text(), re.MULTILINE | re.DOTALL
+            r"^```python[^\n]*\n(.*?)^```", page.read_text(), re.MULTILINE | re.DOTALL
         ):
+            ast.parse(code)
             assert "with Session()" not in code.replace("async with Session()", "")
             assert "rx.session(" not in code, page
 
@@ -236,7 +238,7 @@ def load_queries(monkeypatch):
             "class AddUserForm(rx.State):\n    ...\n",
             "class AddUserForm(AddUserForm):\n",
         ),
-        block("queries", "def raw_user_tuples"),
+        block("queries", "def load_raw_users"),
         block("queries", "class Order(Base)"),
         block("queries", "class OrderStats"),
         block("queries", "class OrderKPIs"),
@@ -293,12 +295,14 @@ async def test_queries_object_lifecycle(monkeypatch):
 
 @run_async
 async def test_queries_raw_sql(monkeypatch):
-    """Raw SQL inserts bind parameters and the async computed var reads them back."""
+    """Raw SQL inserts bind parameters and a handler loads the rows into state."""
     queries = load_queries(monkeypatch)
     await create_tables(queries)
-    state = await run(queries.State, "insert_user_raw", "ada", "ada@example.com")
-    rows = await queries.State.raw_user_tuples.fget(state)
-    assert rows == [[1, "ada", "ada@example.com"]]
+    state = await run(
+        queries.State, "insert_user_raw", "ada", "ada@example.com", raw_user_tuples=[]
+    )
+    state = await run(queries.State, "load_raw_users", raw_user_tuples=[])
+    assert state.raw_user_tuples == [[1, "ada", "ada@example.com"]]
     await queries.engine.dispose()
 
 

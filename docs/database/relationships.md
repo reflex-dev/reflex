@@ -152,8 +152,10 @@ relationship object or when performing the query.
   once by primary key
 
 There are also non-loading mechanisms, "raise" and "noload" which are used to
-specifically avoid loading a relationship. To load a relationship on an object
-you already have, await `session.refresh(obj, ["relationship_name"])`.
+specifically avoid loading a relationship. For an object that belongs to the
+current session, await `session.refresh(obj, ["relationship_name"])`. An object
+stored in state belongs to no session, so query it again with an eager loading
+option instead.
 
 Each loading method comes with tradeoffs and some are better suited for different
 data access patterns.
@@ -257,8 +259,9 @@ needed at once, use one query with `.in_()` on the foreign key, or one of the
 eager loading options above.
 
 ```python
-post_ids = [post.id for post in self.posts]
-async with Session() as session:
-    result = await session.scalars(select(Flag).where(Flag.post_id.in_(post_ids)))
-    flags = result.all()
+async def load_flags(posts: list[Post]) -> list[Flag]:
+    post_ids = [post.id for post in posts]
+    async with Session() as session:
+        result = await session.scalars(select(Flag).where(Flag.post_id.in_(post_ids)))
+        return list(result.all())
 ```

@@ -53,8 +53,17 @@ For PostgreSQL, `psycopg` (psycopg3) is both the sync and the async driver:
 pip install "psycopg[binary]"
 ```
 
-For other databases, install the drivers named in the
-[SQLAlchemy dialect docs](https://docs.sqlalchemy.org/en/20/dialects/).
+Other databases need one driver of each kind, with a matching URL scheme:
+
+| Database | Sync driver for `db_url` | Async driver for `async_db_url` |
+| --- | --- | --- |
+| SQLite | built-in `sqlite3`, `sqlite://` | `aiosqlite`, `sqlite+aiosqlite://` |
+| PostgreSQL | `psycopg`, `postgresql+psycopg://` | `psycopg`, `postgresql+psycopg://` |
+| MySQL | `pymysql`, `mysql+pymysql://` | `asyncmy` or `aiomysql`, `mysql+asyncmy://` or `mysql+aiomysql://` |
+| SQL Server | `pyodbc`, `mssql+pyodbc://` | `aioodbc`, `mssql+aioodbc://` |
+
+See the [SQLAlchemy dialect docs](https://docs.sqlalchemy.org/en/20/dialects/)
+for the options of each driver.
 
 ## Connecting
 
@@ -152,11 +161,13 @@ database up to date. During app startup, if Reflex detects that the current
 database schema is not up to date, a warning will be displayed on the console.
 
 For a local experiment, `create_all` creates any missing tables without
-migrations. With the async engine it runs through `run_sync`:
+migrations. With the async engine it runs through `run_sync`, for example from a
+script with `asyncio.run(create_tables())`:
 
 ```python
-async with engine.begin() as connection:
-    await connection.run_sync(Base.metadata.create_all)
+async def create_tables():
+    async with engine.begin() as connection:
+        await connection.run_sync(Base.metadata.create_all)
 ```
 
 ## Queries
