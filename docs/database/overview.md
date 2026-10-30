@@ -162,12 +162,23 @@ database schema is not up to date, a warning will be displayed on the console.
 
 For a local experiment, `create_all` creates any missing tables without
 migrations. With the async engine it runs through `run_sync`, for example from a
-script with `asyncio.run(create_tables())`:
+one-off script:
 
 ```python
+# create_tables.py
+import asyncio
+
+from my_app.db import engine
+from my_app.models import Base
+
+
 async def create_tables():
     async with engine.begin() as connection:
         await connection.run_sync(Base.metadata.create_all)
+
+
+if __name__ == "__main__":
+    asyncio.run(create_tables())
 ```
 
 ## Queries
