@@ -62,7 +62,8 @@ If the task accepts the special argument, `app`, it will be passed the Reflex ap
 instance (`rx.App`/`LifespanMixin`).
 
 If the task accepts the special argument, `starlette_app`, it will be passed the
-underlying `Starlette` application instance.
+`Starlette` application that serves Reflex's own routes (the one a Starlette or
+FastAPI `api_transformer` mounts and a callable `api_transformer` wraps).
 
 ```python
 app = rx.App()

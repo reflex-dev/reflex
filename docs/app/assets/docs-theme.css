@@ -107,7 +107,7 @@
   text-transform: none;
 }
 .docs-sidebar a:where(:not([aria-current='page'], [aria-current='true'])) p {
-  color: var(--muted-foreground);
+  color: var(--foreground);
 }
 .docs-sidebar a:hover p { color: var(--foreground); }
 .docs-sidebar a[aria-current='page'] p { font-weight: 500; }

@@ -13,6 +13,60 @@ pytestmark = pytest.mark.skipif(
 )
 
 
+@pytest.mark.parametrize("width", [320, 390, 500, 768, 1440])
+@pytest.mark.parametrize("color_mode", ["light", "dark"])
+def test_context_menu_callout_title_has_room_for_code_chips(
+    page: Page, width: int, color_mode: str
+):
+    """Wrapped callout lines clear code chips and keep the disclosure usable."""
+    page.set_viewport_size({"width": width, "height": 1000})
+    page.add_init_script(f"localStorage.setItem('theme', '{color_mode}')")
+    page.goto(f"{PREVIEW_URL}/docs/library/overlay/context-menu/")
+    expect(page.locator("html")).to_have_class(re.compile(rf"\b{color_mode}\b"))
+    callout = page.locator(".docs-callout").filter(has_text="DIRECT child")
+    trigger = callout.get_by_role("button", name=re.compile("DIRECT child"))
+    trigger.scroll_into_view_if_needed()
+    expect(trigger).to_have_attribute("aria-expanded", "false")
+    padding = "24px" if width >= 480 else "16px"
+    item = callout.locator(".AccordionItem")
+    for side in ("top", "right", "bottom", "left"):
+        expect(item).to_have_css(f"padding-{side}", padding)
+    geometry = trigger.evaluate("""el => {
+        const chips = [...el.querySelectorAll('code')];
+        const rects = chips.flatMap(chip => [...chip.getClientRects()]);
+        const title = chips[0].parentElement;
+        const bounds = title.getBoundingClientRect();
+        const lineHeight = parseFloat(getComputedStyle(title).lineHeight);
+        return {
+            lineHeight,
+            titleHeight: bounds.height,
+            iconsAlignWithFirstLine: [...el.querySelectorAll('svg')].every(icon => {
+                const rect = icon.getBoundingClientRect();
+                return rect.top >= bounds.top && rect.bottom <= bounds.top + lineHeight + 1;
+            }),
+            chipHeight: Math.max(...rects.map(rect => rect.height)),
+            fits: rects.every(rect => {
+                const bounds = el.getBoundingClientRect();
+                return rect.left >= bounds.left && rect.right <= bounds.right;
+            }),
+        };
+    }""")
+    assert geometry["lineHeight"] >= geometry["chipHeight"] + 2
+    assert geometry["fits"]
+    assert geometry["iconsAlignWithFirstLine"]
+    if width >= 500:
+        assert geometry["titleHeight"] <= geometry["lineHeight"] * 2 + 1
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+    trigger.focus()
+    page.keyboard.press("Enter")
+    expect(trigger).to_have_attribute("aria-expanded", "true")
+    expect(
+        callout.get_by_text("The code below for example is not allowed:")
+    ).to_be_visible()
+    page.keyboard.press("Enter")
+    expect(trigger).to_have_attribute("aria-expanded", "false")
+
+
 @pytest.mark.parametrize("width", [390, 1440])
 def test_ag_chart_loads_without_visiting_ag_grid(page: Page, width: int):
     """A direct visit renders the standalone chart on mobile and desktop."""
@@ -63,7 +117,7 @@ def test_docs_reading_typography_is_consistent(page: Page, width: int):
 
 
 def test_sidebar_labels_match_reading_text_color(page: Page):
-    """Section labels use foreground while inactive links and captions recede."""
+    """Sidebar navigation uses foreground while section captions recede."""
     page.set_viewport_size({"width": 1440, "height": 1000})
     page.goto(f"{PREVIEW_URL}/docs/getting-started/introduction/")
     expect(
@@ -74,10 +128,34 @@ def test_sidebar_labels_match_reading_text_color(page: Page):
     )
     expect(
         page.get_by_role("link", name="Installation", exact=True).locator("p")
-    ).to_have_css("color", "rgb(105, 100, 94)")
+    ).to_have_css("color", "rgb(0, 0, 0)")
     expect(page.get_by_role("heading", name="Onboarding", exact=True)).to_have_css(
         "color", "rgb(105, 100, 94)"
     )
+
+
+@pytest.mark.parametrize("width", [390, 1440])
+def test_enterprise_sidebar_links_match_group_color(page: Page, width: int):
+    """Inactive links match group labels in the desktop sidebar and mobile drawer."""
+    page.set_viewport_size({"width": width, "height": 1000})
+    page.goto(f"{PREVIEW_URL}/docs/enterprise/testing/")
+    if width < 1024:
+        page.get_by_role("button", name="Open documentation navigation").click()
+        sidebar = page.get_by_role("dialog")
+    else:
+        sidebar = page.locator(".docs-sidebar")
+    expect(sidebar).to_be_visible()
+    grid_label = sidebar.get_by_text("AG Grid", exact=True)
+    expect(grid_label).to_have_css("color", "rgb(0, 0, 0)")
+    grid_label.click()
+    for href in (
+        "/docs/enterprise/overview/",
+        "/docs/enterprise/ag-grid/",
+        "/docs/enterprise/ag-chart/",
+    ):
+        label = sidebar.locator(f'a[href="{href}"] p')
+        expect(label).to_be_visible()
+        expect(label).to_have_css("color", "rgb(0, 0, 0)")
 
 
 @pytest.mark.parametrize(

@@ -1,1 +1,0 @@
-Retry with backoff and show the connection error when the server or a proxy closes the connection before it is established, for example when browser storage makes the hydrate message too large, instead of reconnecting in a tight loop.

@@ -46,6 +46,7 @@ async function createConnection(
     setItem: (key, value) => session.set(key, String(value)),
   };
   const body = element("body");
+  let authPayload;
   const socket = {
     connected: true,
     io: {
@@ -56,6 +57,13 @@ async function createConnection(
     on: (name, handler) => handlers.set(name, handler),
     emit: (name, value) => sent.push({ name, value }),
     connect: () => {
+      if (typeof socket.auth === "function") {
+        socket.auth((auth) => {
+          authPayload = auth;
+        });
+      } else {
+        authPayload = socket.auth;
+      }
       socket.connected = true;
       handlers.get("connect")();
     },
@@ -117,6 +125,8 @@ async function createConnection(
     reloads,
     session,
     socket,
+    authPayload: () => authPayload,
+    readAuth: () => socket.auth((auth) => (authPayload = auth)),
     reports: () => sent.filter((event) => event.name === "client_error"),
     receive: (update) => handlers.get("event")(update),
     reconnect: () => handlers.get("connect")(),
@@ -169,14 +179,15 @@ test("an unknown substate is reported once per connection", async (t) => {
 
 test("the state schema rides in the CONNECT auth on connect and reconnect", async (t) => {
   const c = await createConnection(t);
-  assert.equal(c.socket.auth.state_schema, FRONTEND_SCHEMA);
-  assert.equal(c.socket.auth.event.name, "test.hydrate");
-  assert.deepEqual(c.socket.auth.event.payload.hashes, []);
+  c.readAuth();
+  assert.equal(c.authPayload().state_schema, FRONTEND_SCHEMA);
+  assert.equal(c.authPayload().event.name, "test.hydrate");
+  assert.deepEqual(c.authPayload().event.payload.hashes, []);
 
   c.reconnectSocket();
   assert.equal(c.socket.connected, true);
-  assert.equal(c.socket.auth.state_schema, FRONTEND_SCHEMA);
-  assert.equal(c.socket.auth.event.payload.hashes, undefined);
+  assert.equal(c.authPayload().state_schema, FRONTEND_SCHEMA);
+  assert.equal(c.authPayload().event.payload.hashes, undefined);
 });
 
 test("a mismatch in prod reloads once per cooldown, then shows a banner", async (t) => {
