@@ -165,8 +165,9 @@ def process_form(state: FormState, data: dict):
 A function decorated with `@rx.event` whose first parameter is not a state is a
 stateless event handler. It is registered like any other handler, so it can be
 used as an event trigger and awaited from other handlers, but it runs without a
-state and without taking the state lock, so the client's other events never
-wait behind it.
+state and takes no state lock of its own. Triggered from the frontend, it runs
+at once and the client's other events do not wait behind it; awaited from a
+handler, it runs inline under whatever lock that handler holds.
 
 ```python box
 class PortfolioState(rx.State):
