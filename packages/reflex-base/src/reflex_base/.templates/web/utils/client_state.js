@@ -20,14 +20,13 @@ import {
   createContext,
   createElement,
   useContext,
-  useEffect,
   useRef,
   useSyncExternalStore,
 } from "react";
 
 /**
- * Key under which the provider publishes its store on the `registry` object it
- * is handed, for backend-evaluated code and devtools introspection.
+ * Key under which `state.js` publishes the store on its `refs` object, for
+ * backend-evaluated code and devtools introspection.
  */
 export const CLIENT_STATE_REF = "__client_state";
 
@@ -189,47 +188,23 @@ export const setClientState = (name, value) => {
   getClientStore().set(name, value);
 };
 
-let _mountedProviders = 0;
-
 /**
  * Provide the root scope to the tree.
  * @param props The component props.
  * @param props.children The children to render.
- * @param props.registry Optional object to publish the store on, under
- *   `CLIENT_STATE_REF`, so code running outside the React tree can reach it.
- *   Passed in by the caller rather than imported, so this module stays
- *   independent of where that lives.
  * @returns The provider element.
  */
-export function ClientStateProvider({ children, registry }) {
+export function ClientStateProvider({ children }) {
   const storeRef = useRef(null);
   if (storeRef.current === null) {
     // On the client this is the shared singleton, so `setClientState` and the
     // hooks reach the same slots; on the server it is per-render.
     storeRef.current = getClientStore();
   }
-  const store = storeRef.current;
-
-  useEffect(() => {
-    if (registry === undefined) {
-      return undefined;
-    }
-    // In an effect, so the store is never published during an SSR render.
-    registry[CLIENT_STATE_REF] = store;
-    _mountedProviders += 1;
-    return () => {
-      _mountedProviders -= 1;
-      // Several providers can share one store, so only the last one out clears
-      // the entry.
-      if (_mountedProviders === 0 && registry[CLIENT_STATE_REF] === store) {
-        delete registry[CLIENT_STATE_REF];
-      }
-    };
-  }, [store, registry]);
 
   return createElement(
     ClientStateScopeContext.Provider,
-    { value: store.root },
+    { value: storeRef.current.root },
     children,
   );
 }

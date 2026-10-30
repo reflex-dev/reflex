@@ -11,7 +11,12 @@ import {
   useParams,
 } from "react-router";
 import { app, eventLoop } from "$/utils/context-registry";
-import { CLIENT_STATE_REF } from "$/utils/client_state";
+import {
+  CLIENT_STATE_REF,
+  getClientState,
+  getClientStore,
+  setClientState,
+} from "$/utils/client_state";
 import debounce from "$/utils/helpers/debounce";
 import { parseJson } from "$/utils/helpers/json";
 import throttle from "$/utils/helpers/throttle";
@@ -55,6 +60,13 @@ const cookies = new Cookies();
 
 // Dictionary holding component references.
 export const refs = {};
+
+// The client state store, for code evaluated outside this module's scope: a
+// `run_script` body pushing a value, or the devtools console. Client only, so
+// a server render never shares a store between requests.
+if (typeof document !== "undefined") {
+  refs[CLIENT_STATE_REF] = getClientStore();
+}
 
 // Array holding pending events to be processed.
 const event_queue = [];
@@ -655,33 +667,18 @@ export const applyEvent = async (event, socket, navigate, params) => {
     return;
   }
 
-  // The store is reached through `refs` rather than by importing the provider:
-  // this runs outside the React tree, so there is no context to read.
+  // Backend reads and writes go to the shared store directly, so a var that no
+  // component renders is still reachable.
   if (event.name == "_client_state_set") {
-    const store = refs[CLIENT_STATE_REF];
-    if (store === undefined) {
-      console.error(
-        `Cannot set client state "${event.payload.var_name}": no ClientStateProvider is mounted.`,
-      );
-    } else {
-      store.set(event.payload.var_name, event.payload.value);
-    }
+    setClientState(event.payload.var_name, event.payload.value);
     return;
   }
 
   if (event.name == "_client_state_get") {
-    const store = refs[CLIENT_STATE_REF];
-    if (store === undefined) {
-      // Still call back, with undefined: the handler awaiting this result would
-      // otherwise wait for a value that is never coming.
-      console.error(
-        `Cannot read client state "${event.payload.var_name}": no ClientStateProvider is mounted.`,
-      );
-    }
     try {
       await applyResultCallback(
         event,
-        store?.get(event.payload.var_name),
+        getClientState(event.payload.var_name),
         socket,
         navigate,
         params,

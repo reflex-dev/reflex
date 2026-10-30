@@ -67,11 +67,7 @@ const ItemState = () => {
   return null;
 };
 
-/** A stand-in for the global object the app publishes the store on. */
-let registry;
-
 beforeEach(() => {
-  registry = {};
   itemValues.length = 0;
 });
 
@@ -177,50 +173,6 @@ describe("getClientStore", () => {
   });
 });
 
-describe("ClientStateProvider", () => {
-  test("publishes the store on the registry it is given", () => {
-    expect(registry[CLIENT_STATE_REF]).toBeUndefined();
-
-    const { unmount } = mount(createElement(ClientStateProvider, { registry }));
-
-    expect(registry[CLIENT_STATE_REF]).toBe(getClientStore());
-
-    unmount();
-
-    expect(registry[CLIENT_STATE_REF]).toBeUndefined();
-  });
-
-  test("keeps the entry until the last provider unmounts", () => {
-    // Two app roots on one page (an embedded app beside a main app) share the
-    // client singleton, so the first teardown must not strand the other.
-    const first = mount(createElement(ClientStateProvider, { registry }));
-    const second = mount(createElement(ClientStateProvider, { registry }));
-
-    first.unmount();
-
-    expect(registry[CLIENT_STATE_REF]).toBe(getClientStore());
-
-    second.unmount();
-
-    expect(registry[CLIENT_STATE_REF]).toBeUndefined();
-  });
-
-  test("survives StrictMode's double mount", () => {
-    const { unmount } = mount(
-      createElement(ClientStateProvider, { registry }),
-      {
-        strict: true,
-      },
-    );
-
-    expect(registry[CLIENT_STATE_REF]).toBe(getClientStore());
-
-    unmount();
-
-    expect(registry[CLIENT_STATE_REF]).toBeUndefined();
-  });
-});
-
 describe("useClientState", () => {
   /** Render `useClientState(default, name)` and report renders and value. */
   const probe = (defaultValue, name, id, isGlobal) => {
@@ -239,7 +191,7 @@ describe("useClientState", () => {
     const a = probe("initial", "shared", "a");
     const b = probe("initial", "shared", "b");
     const { unmount } = mount(
-      createElement(ClientStateProvider, { registry }, a.element, b.element),
+      createElement(ClientStateProvider, null, a.element, b.element),
     );
 
     act(() => a.renders.set("typed"));
@@ -256,7 +208,7 @@ describe("useClientState", () => {
     const a = probe("", "sibling", "a");
     const b = probe("", "sibling", "b");
     const { unmount } = mount(
-      createElement(ClientStateProvider, { registry }, a.element, b.element),
+      createElement(ClientStateProvider, null, a.element, b.element),
     );
 
     act(() => a.renders.set("shared"));
@@ -274,7 +226,7 @@ describe("useClientState", () => {
     const { unmount } = mount(
       createElement(
         ClientStateProvider,
-        { registry },
+        null,
         watched.element,
         unrelated.element,
       ),
@@ -292,13 +244,13 @@ describe("useClientState", () => {
   test("a late mount reads the current value, not the default", () => {
     const early = probe("default", "late", "early");
     const first = mount(
-      createElement(ClientStateProvider, { registry }, early.element),
+      createElement(ClientStateProvider, null, early.element),
     );
     act(() => early.renders.set("current"));
 
     const late = probe("default", "late", "late");
     const second = mount(
-      createElement(ClientStateProvider, { registry }, late.element),
+      createElement(ClientStateProvider, null, late.element),
     );
 
     expect(late.renders.value).toBe("current");
@@ -310,7 +262,7 @@ describe("useClientState", () => {
   test("accepts a functional updater", () => {
     const counter = probe(1, "counter", "counter");
     const { unmount } = mount(
-      createElement(ClientStateProvider, { registry }, counter.element),
+      createElement(ClientStateProvider, null, counter.element),
     );
 
     act(() => counter.renders.set((previous) => previous + 41));
@@ -331,7 +283,7 @@ describe("non-React escape hatch", () => {
       return null;
     };
     const { unmount } = mount(
-      createElement(ClientStateProvider, { registry }, createElement(Probe)),
+      createElement(ClientStateProvider, null, createElement(Probe)),
     );
 
     expect(getClientState("escaped")).toBe("initial");
@@ -367,7 +319,7 @@ describe("scope chain", () => {
     const { unmount } = mount(
       createElement(
         ClientStateProvider,
-        { registry },
+        null,
         createElement(
           ClientStateScope,
           null,
@@ -390,7 +342,7 @@ describe("scope chain", () => {
     const { unmount } = mount(
       createElement(
         ClientStateProvider,
-        { registry },
+        null,
         createElement(ClientStateScope, null, first.element),
         createElement(ClientStateScope, null, second.element),
       ),
@@ -410,7 +362,7 @@ describe("scope chain", () => {
     const { unmount } = mount(
       createElement(
         ClientStateProvider,
-        { registry },
+        null,
         createElement(
           ClientStateScope,
           null,
@@ -436,7 +388,7 @@ describe("scope chain", () => {
     const { unmount } = mount(
       createElement(
         ClientStateProvider,
-        { registry },
+        null,
         createElement(ClientStateScope, null, scoped.element),
         atRoot.element,
       ),
@@ -456,7 +408,7 @@ describe("scope chain", () => {
     const { unmount } = mount(
       createElement(
         ClientStateProvider,
-        { registry },
+        null,
         createElement(ClientStateScope, null, scoped.element),
       ),
     );
@@ -475,7 +427,7 @@ describe("scope chain", () => {
     const { unmount } = mount(
       createElement(
         ClientStateProvider,
-        { registry },
+        null,
         createElement(ClientStateScope, null, first.element),
         createElement(ClientStateScope, null, second.element),
       ),
@@ -511,7 +463,7 @@ describe("withClientStateScope", () => {
     const { unmount } = mount(
       createElement(
         ClientStateProvider,
-        { registry },
+        null,
         createElement(Scoped, { which: "a" }),
         createElement(Scoped, { which: "b" }),
       ),
@@ -541,7 +493,7 @@ describe("withClientStateScope", () => {
     const Scoped = withClientStateScope(Parent);
 
     const { unmount } = mount(
-      createElement(ClientStateProvider, { registry }, createElement(Scoped)),
+      createElement(ClientStateProvider, null, createElement(Scoped)),
     );
 
     act(() => parentSeen[0].set("from parent"));
@@ -738,7 +690,7 @@ describe("slot lifetime", () => {
       return null;
     };
     const { unmount } = mount(
-      createElement(ClientStateProvider, { registry }, createElement(Reader)),
+      createElement(ClientStateProvider, null, createElement(Reader)),
     );
 
     expect(live).toBe(1);
@@ -748,6 +700,7 @@ describe("slot lifetime", () => {
     expect(live).toBe(0);
     slot.subscribe = realSubscribe;
   });
+<<<<<<< HEAD
 
   test("per-item state is claimed in the item's scope, never at the root", () => {
     // Otherwise a loop would append a root entry per rendered item and the
@@ -832,6 +785,8 @@ describe("slot lifetime", () => {
 
     unmount();
   });
+=======
+>>>>>>> claude/clientstatevar-context-refactor-jv3pig
 });
 
 test("CLIENT_STATE_REF matches the Python constant", () => {
@@ -846,11 +801,11 @@ test("CLIENT_STATE_REF matches the Python constant", () => {
   expect(declared[1]).toBe(CLIENT_STATE_REF);
 });
 
-test("state.js reads the store through the shared constant", () => {
-  // Guards a regression back to a hardcoded copy: the reader outside the React
-  // tree has to go through the constant, not re-spell the key.
+test("state.js publishes the store through the shared constant", () => {
+  // Guards a regression back to a hardcoded copy: the publisher outside the
+  // React tree has to go through the constant, not re-spell the key.
   const stateJs = readFileSync(`${__WEB_ROOT__}utils/state.js`, "utf8");
 
-  expect(stateJs).toContain("refs[CLIENT_STATE_REF]");
+  expect(stateJs).toContain("refs[CLIENT_STATE_REF] = getClientStore()");
   expect(stateJs).not.toContain(`"${CLIENT_STATE_REF}"`);
 });
