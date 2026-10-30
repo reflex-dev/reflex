@@ -4,6 +4,7 @@ import pytest
 from playwright.sync_api import Page, expect
 
 from reflex.testing import AppHarness
+from tests.benchmarks.support import BenchmarkResult, PerformanceReport
 
 
 def _large_state_app_template(var_count: int) -> str:
@@ -30,8 +31,14 @@ app.add_page(index)
 
 
 @pytest.mark.performance
-@pytest.mark.parametrize("var_count", [1, 10, 100, 1000, 10000])
-def test_large_state(var_count: int, tmp_path_factory, benchmark, page: Page):
+def test_large_state(
+    var_count: int,
+    tmp_path_factory,
+    benchmark,
+    page: Page,
+    performance_output,
+    performance_scale: str,
+):
     """Measure the button-to-state-update round trip for large states.
 
     Args:
@@ -39,6 +46,8 @@ def test_large_state(var_count: int, tmp_path_factory, benchmark, page: Page):
         tmp_path_factory: Pytest fixture for temporary app directories.
         benchmark: Pytest benchmark fixture.
         page: Playwright page for the browser interaction.
+        performance_output: Directory for benchmark artifacts.
+        performance_scale: Selected performance scenario scale.
     """
     app_source = _large_state_app_template(var_count)
 
@@ -63,3 +72,18 @@ def test_large_state(var_count: int, tmp_path_factory, benchmark, page: Page):
             expect(button).to_have_text(str(times_clicked), timeout=timeout * 1000)
 
         benchmark(round_trip, clicks=10, timeout=30.0)
+        stats = benchmark.stats.stats
+        report = PerformanceReport(
+            "large-state",
+            metadata={"scale": performance_scale},
+        )
+        report.add(
+            BenchmarkResult(
+                "state_update_10_clicks",
+                {"variables": var_count, "clicks": 10},
+                [duration * 1000 for duration in stats.data],
+                {},
+                measurement_iterations=stats.rounds,
+            )
+        )
+        report.write(performance_output / f"large-state-{var_count}.json")

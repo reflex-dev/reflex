@@ -9,7 +9,7 @@ from collections.abc import Generator
 import pytest
 from playwright.sync_api import Page, expect
 
-from reflex.testing import AppHarness
+from reflex.testing import AppHarness, AppHarnessProd
 from tests.integration.utils import (
     click_element,
     poll_assert_event_order,
@@ -256,20 +256,35 @@ def test_on_load_navigate(
     params = json.loads(params_json.inner_text())
     assert params == {"foo": "bar", "page_id": "11"}
 
-    # The frontend serves this route as a 200 SPA fallback in dev and as a 404
-    # in prod; browser history must still hydrate the previous route.
+    # Check the server response and browser-history hydration separately. A
+    # dev SPA fallback may or may not emit 404 on_load for a full-page load;
+    # the client-side missing-link case below verifies that event reliably.
+    order_before_missing = exp_order.copy()
     with poll_for_navigation(driver):
         response = driver.goto(f"{frontend_url}/missing")
     assert response is not None
-    assert response.status in {200, 404}
-    if response.status == 200:
-        exp_order += ["/404-no page id"]
+    if isinstance(dynamic_route, AppHarnessProd):
+        assert response.status == 404
+        direct_missing_orders = [order_before_missing]
+    else:
+        assert response.status == 200
+        direct_missing_orders = [
+            order_before_missing,
+            [*order_before_missing, "/404-no page id"],
+        ]
 
     # browser nav should still trigger hydration
-    exp_order += ["/page/[page_id]-11"]
     with poll_for_navigation(driver):
         driver.go_back()
-    poll_assert_event_order(driver, exp_order)
+    expected_back_orders = [
+        [*order, "/page/[page_id]-11"] for order in direct_missing_orders
+    ]
+    driver.wait_for_function(
+        "(counts) => counts.includes(document.querySelectorAll('#event_order > p').length)",
+        arg=[len(order) for order in expected_back_orders],
+    )
+    exp_order = driver.locator("#event_order > p").all_text_contents()
+    assert exp_order in expected_back_orders
 
     # next/link to a 404 and ensure we still hydrate
     exp_order += ["/404-no page id"]
