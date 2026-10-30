@@ -380,6 +380,25 @@ def test_initialize_non_existent_gitignore(
     assert set(file_content) - expected == set()
 
 
+def test_initialize_gitignore_keeps_utf8_entries(tmp_path):
+    """Test that an existing .gitignore is read and written as UTF-8 on any locale.
+
+    Args:
+        tmp_path: The root test path.
+    """
+    gitignore_file = tmp_path / ".gitignore"
+    gitignore_file.write_text("下書き/\n", encoding="utf-8")
+
+    frontend_skeleton.initialize_gitignore(
+        gitignore_file=gitignore_file, files_to_ignore=["*.db"]
+    )
+
+    assert gitignore_file.read_text(encoding="utf-8").splitlines() == [
+        "*.db",
+        "下書き/",
+    ]
+
+
 def test_initialize_agents_md_fetches_canonical(tmp_path, mocker):
     """Test that AGENTS.md is fetched and a CLAUDE.md bridge is created when absent."""
     agents_file = tmp_path / "AGENTS.md"
@@ -594,6 +613,49 @@ def test_initialize_agents_md_handles_symlinked_claude(tmp_path, mocker):
         "shared notes\n"
     )
     assert claude_file.read_text() == agents_file.read_text()
+
+
+def test_initialize_agents_md_writes_utf8(tmp_path, mocker):
+    """Test that a new AGENTS.md is written as UTF-8 on any locale."""
+    agents_file = tmp_path / "AGENTS.md"
+    response = mocker.Mock()
+    response.text = "Reflex agent skills — 使い方"
+    mocker.patch("reflex.utils.net.get", return_value=response)
+
+    frontend_skeleton.initialize_agents_md(
+        agents_file=agents_file, claude_file=tmp_path / "CLAUDE.md"
+    )
+
+    assert agents_file.read_text(encoding="utf-8") == (
+        f"{constants.AgentsMd.BEGIN_MARKER}\n"
+        "Reflex agent skills — 使い方\n"
+        f"{constants.AgentsMd.END_MARKER}\n"
+    )
+
+
+def test_initialize_agents_md_keeps_utf8_user_content(tmp_path, mocker):
+    """Test that existing AGENTS.md and CLAUDE.md files are read as UTF-8 on any locale."""
+    agents_file = tmp_path / "AGENTS.md"
+    agents_file.write_text("# 下書きのメモ\n", encoding="utf-8")
+    claude_file = tmp_path / "CLAUDE.md"
+    claude_file.write_text("# Claude 用のメモ\n", encoding="utf-8")
+    response = mocker.Mock()
+    response.text = "Reflex agent skills — 使い方"
+    mocker.patch("reflex.utils.net.get", return_value=response)
+
+    frontend_skeleton.initialize_agents_md(
+        agents_file=agents_file, claude_file=claude_file
+    )
+
+    managed = (
+        f"{constants.AgentsMd.BEGIN_MARKER}\n"
+        "Reflex agent skills — 使い方\n"
+        f"{constants.AgentsMd.END_MARKER}"
+    )
+    assert agents_file.read_text(encoding="utf-8") == f"{managed}\n\n# 下書きのメモ\n"
+    assert (
+        claude_file.read_text(encoding="utf-8") == f"{managed}\n\n# Claude 用のメモ\n"
+    )
 
 
 def test_initialize_requirements_txt_skips_when_pyproject_exists(tmp_path):
