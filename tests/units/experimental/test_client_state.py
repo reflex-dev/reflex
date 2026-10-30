@@ -1,13 +1,87 @@
 """Tests for reflex.experimental.client_state."""
 
+import json
 import re
-from typing import cast
+import shutil
+import subprocess
+from typing import Any, cast
 
 import pytest
+from reflex_base.event import EventChain, LambdaEventCallback, call_function, run_script
 from reflex_base.vars.base import Var
+from reflex_base.vars.function import FunctionVar
 
 from reflex.experimental.client_state import ClientStateVar, NoValue
 from reflex.state import BaseState
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is unavailable")
+@pytest.mark.parametrize("wrapper", ["direct", "call_function", "run_script"])
+@pytest.mark.parametrize(
+    ("expression", "expected"),
+    [
+        ("{event}?.clientX", 42),
+        ("{event}.clientX", 42),
+        ('{event}["clientX"]', 42),
+        ("{event}?.target?.value", "changed"),
+        ("{event}?.formData?.answer", 7),
+        ("({event}?.clientX ?? 0) + 1", 43),
+    ],
+)
+def test_set_value_captures_event_expression(expression, expected, wrapper) -> None:
+    """Event expressions remain values when a client state callback runs.
+
+    Args:
+        expression: JavaScript expression returned by the trigger's args spec.
+        expected: Value the client state setter should receive.
+        wrapper: Optional event wrapper around the client state setter.
+    """
+    cs = ClientStateVar.create("captured", default=0)
+
+    def handler(value):
+        """Bind the client state expression through the selected event wrapper.
+
+        Args:
+            value: Expression produced by the event's args spec.
+
+        Returns:
+            The callback to execute on the frontend.
+        """
+        setter = cs.set_value(value)
+        if wrapper == "call_function":
+            return call_function(setter)
+        if wrapper == "run_script":
+            return run_script(setter.to(FunctionVar).call())
+        return setter
+
+    chain = EventChain.create(
+        value=cast("LambdaEventCallback[Any]", handler),
+        args_spec=lambda event: (Var(expression.format(event=event)),),
+        key="on_click",
+    )
+    result = subprocess.run(
+        [
+            "node",
+            "-e",
+            """
+const assert = require('node:assert/strict');
+const input = JSON.parse(require('node:fs').readFileSync(0, 'utf8'));
+const values = [];
+const refs = { _client_state_setCaptured: value => values.push(value) };
+const ReflexEvent = (name, payload) => ({ name, payload });
+const addEvents = events => events.forEach(event => event.payload.function());
+const callback = eval(input.callback);
+callback({ clientX: 42, target: { value: 'changed' }, formData: { answer: 7 } });
+assert.deepEqual(values, [input.expected]);
+""",
+        ],
+        input=json.dumps({"callback": str(Var.create(chain)), "expected": expected}),
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=30,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
 
 
 @pytest.mark.parametrize("use_set_property", [True, False])
