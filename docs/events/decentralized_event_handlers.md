@@ -163,31 +163,35 @@ def process_form(state: FormState, data: dict):
 ## Stateless Event Handlers
 
 A function decorated with `@rx.event` whose first parameter is not a state is a
-stateless event handler. It is registered like any other handler, can be used
-as an event trigger, and can be awaited from other handlers, but it runs
-without a state and without taking the state lock, so it never waits behind
-the other events of the same client.
+stateless event handler. It is registered like any other handler, so it can be
+used as an event trigger and awaited from other handlers, but it runs without a
+state and without taking the state lock, so the client's other events never
+wait behind it.
 
 ```python box
-@rx.event
-async def fetch_quote(symbol: str) -> float:
-    return await price_service.quote(symbol)
-
-
 class PortfolioState(rx.State):
     price: float = 0.0
 
-    @rx.event(background=True)
-    async def refresh(self, symbol: str):
-        price = await fetch_quote(symbol)
-        async with self:
-            self.price = price
+    @rx.event
+    def show_price(self, price: float):
+        self.price = price
+
+
+@rx.event
+async def refresh_quote(symbol: str):
+    # No state lock is held while the request is in flight.
+    yield PortfolioState.show_price(await price_service.quote(symbol))
+
+
+def quote_button():
+    return rx.button("Refresh", on_click=refresh_quote("ACME"))
 ```
 
-Call external services from a [background task](/docs/events/background-events/)
-so the client's state lock is not held while waiting: a stateless handler runs
-inline wherever it is awaited, so the quote above is fetched outside
-`async with self` and the lock is taken only to store it.
-
-A stateless handler can still yield or return events, which run against the
-state of the client that triggered it.
+Events a stateless handler yields or returns run against the state of the
+client that triggered it, so `refresh_quote` fetches the quote with no lock
+held and then hands the result to `PortfolioState` like any chained event.
+Without the decorator, `refresh_quote` would be a plain function that cannot be
+used as a trigger. Awaiting a stateless handler from another handler runs it
+inline, so call external services from a
+[background task](/docs/events/background-events/) or from a stateless trigger
+like this one, never from inside `async with self`.
