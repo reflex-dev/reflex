@@ -38,6 +38,7 @@ from rich.console import Console
 from rich.errors import MarkupError
 from rich.text import Text
 
+from reflex_base import otel
 from reflex_base.constants import LogLevel
 from reflex_base.constants.base import Reflex
 from reflex_base.utils.decorator import once
@@ -251,10 +252,15 @@ class RichConsoleHandler(logging.Handler):
 def _write_json(payload: dict, *, stderr: bool):
     """Write one JSON record to the output stream.
 
+    A record written inside an OpenTelemetry span also carries the span's
+    ``trace_id`` and ``span_id``.
+
     Args:
         payload: The record fields.
         stderr: Whether the record targets stderr.
     """
+    if (ids := otel.trace_fields()) is not None:
+        payload.update(ids)
     stream = sys.stderr if stderr or _stdout_reserved else sys.stdout
     stream.write(json.dumps(payload, default=str) + "\n")
     stream.flush()
