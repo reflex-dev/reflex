@@ -261,25 +261,49 @@ def _prepare_event_payload(
         return {arg: form_data_as_dict(value) for arg, value in payload.items()}
 
 
-def _mutation_snapshot(root_state: BaseState) -> dict[str, int]:
-    """Capture how often each dirty state in the tree has been written to.
+def _written_snapshot(root_state: BaseState) -> dict[tuple[str, str], Any]:
+    """Capture the value of every dirty field in the tree, by identity.
 
     Args:
         root_state: The root of the state tree.
 
     Returns:
-        The mutation count of the root and each dirty substate, by full name.
-        A write to any var, already dirty or not, changes it, and a state that
-        becomes dirty adds a key.
+        The raw value of each dirty field of the root and its dirty substates,
+        keyed by state and field name. Comparing two snapshots with
+        ``_written_since`` tells whether a field was assigned in between.
     """
-    snapshot: dict[str, int] = {}
+    snapshot: dict[tuple[str, str], Any] = {}
     stack = [root_state]
     while stack:
         state = stack.pop()
-        snapshot[state.get_full_name()] = state._mutations
+        cls = type(state)
+        fields = cls.__fields__
+        full_name = cls.get_full_name()
+        for name in state.dirty_vars:
+            if (field := fields.get(name)) is not None:
+                snapshot[full_name, name] = field._get_raw(state)
         substates = state.substates
         stack.extend(substates[n] for n in state.dirty_substates if n in substates)
     return snapshot
+
+
+def _written_since(
+    before: dict[tuple[str, str], Any], after: dict[tuple[str, str], Any]
+) -> bool:
+    """Whether a field was assigned between two snapshots.
+
+    Args:
+        before: The earlier snapshot.
+        after: The later snapshot.
+
+    Returns:
+        True if a field became dirty or holds a different object than before.
+        An in-place change to the same object is not an assignment: the
+        object is emitted as it is at emit time.
+    """
+    return before.keys() != after.keys() or any(
+        before[key] is not value for key, value in after.items()
+    )
 
 
 async def _route_events(ctx: EventContext, events: Sequence[Event]) -> None:
@@ -333,22 +357,26 @@ async def chain_updates(
         # tests/integration/test_linked_state.py).
         try:
             # Resolving suspends on async computed vars. While inline runs
-            # exist (this one included), a gathered sibling can change state
-            # meanwhile, after the delta was snapshotted; the clean below
-            # would drop that change unsent, so pick up late changes until
-            # no state was written to during the resolve. A plain event has
-            # no inline runs and skips this.
+            # exist (this one included), a gathered sibling can assign a
+            # field meanwhile, after the delta was snapshotted; the clean
+            # below would drop that value unsent, so pick late assignments
+            # up until none happened during the resolve. A plain event has
+            # no inline runs and skips this. The clean runs before the emit:
+            # a write during the emit's await re-dirties its field instead
+            # of being cleaned, and the next flush sends it.
             concurrent = bool(ctx.inline_tasks)
-            seen = _mutation_snapshot(root_state) if concurrent else None
+            seen = _written_snapshot(root_state) if concurrent else {}
             delta = await root_state._get_resolved_delta()
-            while concurrent and (written := _mutation_snapshot(root_state)) != seen:
+            while concurrent and _written_since(
+                seen, written := _written_snapshot(root_state)
+            ):
                 seen = written
                 for name, late in (await root_state._get_resolved_delta()).items():
                     delta[name] = {**delta.get(name, {}), **late}
-            if delta:
-                await ctx.emit_delta(delta)
         finally:
             root_state._clean()
+        if delta:
+            await ctx.emit_delta(delta)
 
     # Convert valid EventHandler and EventSpec into Event
     if events is not None and (

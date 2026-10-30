@@ -603,7 +603,6 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
 
     # Instance bookkeeping, kept out of `__dict__`: never a field, never pickled.
     __slots__ = (
-        "_mutations",
         "_was_touched",
         "dirty_substates",
         "dirty_vars",
@@ -623,9 +622,6 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         dirty_substates: set[str] = field(default_factory=set, is_var=False)
         # Whether the state was modified since it was last persisted.
         _was_touched: bool = field(default=False, is_var=False)
-        # How many times a var of this state was marked dirty; a flush that
-        # suspended compares it to see whether a concurrent handler wrote.
-        _mutations: int = field(default=0, is_var=False)
 
     # The routing path that triggered the state
     router_data: builtins.dict[str, Any] = field(
@@ -721,7 +717,6 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         setattr_(self, "dirty_vars", set())
         setattr_(self, "dirty_substates", set())
         setattr_(self, "_was_touched", False)
-        setattr_(self, "_mutations", 0)
 
     def __repr__(self) -> str:
         """Get the string representation of the state.
@@ -2022,7 +2017,6 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         Args:
             var_names: The vars of this state that changed; all its dirty vars if omitted.
         """
-        self._mutations += 1
         self._mark_ancestors_dirty()
         self._mark_dirty_computed_vars(var_names)
 
