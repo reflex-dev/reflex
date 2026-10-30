@@ -139,13 +139,21 @@ TableRowHeaderCell: |
 
 ```python exec
 import reflex as rx
+from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
 
 
-class Customer(rx.Model, table=True):
-    name: str
-    email: str
-    phone: str
-    address: str
+class Base(MappedAsDataclass, DeclarativeBase):
+    """Base class for the app's tables."""
+
+
+class Customer(Base):
+    __tablename__ = "customer"
+
+    id: Mapped[int] = mapped_column(init=False, primary_key=True)
+    name: Mapped[str]
+    email: Mapped[str]
+    phone: Mapped[str]
+    address: Mapped[str]
 ```
 
 # Table
@@ -474,20 +482,33 @@ The code below shows how to load data from a database and place it in an `rx.tab
 
 ## Loading data into table
 
-A `Customer` [model](/docs/database/tables/) is defined that inherits from `rx.Model`.
+A `Customer` [model](/docs/database/tables/) is defined as a SQLAlchemy table, and the examples open sessions with the async `Session` factory from the [database overview](/docs/database/overview/#connecting).
 
 The `load_entries` event handler executes a [query](/docs/database/queries/) that is used to request information from a database table. This `load_entries` event handler is called on the `on_mount` event trigger of the `rx.table.root`.
 
 If you want to load the data when the page in the app loads you can set `on_load` in `app.add_page()` to equal this event handler, like `app.add_page(page_name, on_load=State.load_entries)`.
 
 ```python
-class Customer(rx.Model, table=True):
+from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
+
+
+class Base(MappedAsDataclass, DeclarativeBase):
+    """Base class for the app's tables."""
+
+
+rx.ModelRegistry.register(Base)
+
+
+class Customer(Base):
     """The customer model."""
 
-    name: str
-    email: str
-    phone: str
-    address: str
+    __tablename__ = "customer"
+
+    id: Mapped[int] = mapped_column(init=False, primary_key=True)
+    name: Mapped[str]
+    email: Mapped[str]
+    phone: Mapped[str]
+    address: Mapped[str]
 ```
 
 ```python exec
@@ -557,17 +578,17 @@ loading_data_table_example()
 ```
 
 ```python
-from sqlmodel import select
+from sqlalchemy import select
 
 
 class DatabaseTableState(rx.State):
     users: list[Customer] = []
 
     @rx.event
-    def load_entries(self):
+    async def load_entries(self):
         """Get all users from the database."""
-        with rx.session() as session:
-            self.users = session.exec(select(Customer)).all()
+        async with Session() as session:
+            self.users = (await session.scalars(select(Customer))).all()
 
 
 def show_customer(user: Customer):
@@ -614,13 +635,26 @@ The `%` character before and after `search_value` makes it a wildcard pattern th
 ```
 
 ```python
-class Customer(rx.Model, table=True):
+from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
+
+
+class Base(MappedAsDataclass, DeclarativeBase):
+    """Base class for the app's tables."""
+
+
+rx.ModelRegistry.register(Base)
+
+
+class Customer(Base):
     """The customer model."""
 
-    name: str
-    email: str
-    phone: str
-    address: str
+    __tablename__ = "customer"
+
+    id: Mapped[int] = mapped_column(init=False, primary_key=True)
+    name: Mapped[str]
+    email: Mapped[str]
+    phone: Mapped[str]
+    address: Mapped[str]
 ```
 
 ```python exec
@@ -743,7 +777,7 @@ loading_data_table_example_2()
 ```
 
 ```python
-from sqlmodel import select, asc, or_
+from sqlalchemy import asc, or_, select
 
 
 class DatabaseTableState2(rx.State):
@@ -753,9 +787,9 @@ class DatabaseTableState2(rx.State):
     search_value = ""
 
     @rx.event
-    def load_entries(self):
+    async def load_entries(self):
         """Get all users from the database."""
-        with rx.session() as session:
+        async with Session() as session:
             query = select(Customer)
 
             if self.search_value != "":
@@ -774,19 +808,17 @@ class DatabaseTableState2(rx.State):
                 order = asc(sort_column)
                 query = query.order_by(order)
 
-            self.users = session.exec(query).all()
+            self.users = (await session.scalars(query)).all()
 
     @rx.event
-    def sort_values(self, sort_value):
-        print(sort_value)
+    async def sort_values(self, sort_value):
         self.sort_value = sort_value
-        self.load_entries()
+        await self.load_entries()
 
     @rx.event
-    def filter_values(self, search_value):
-        print(search_value)
+    async def filter_values(self, search_value):
         self.search_value = search_value
-        self.load_entries()
+        await self.load_entries()
 
 
 def show_customer(user: Customer):
@@ -905,7 +937,7 @@ class DatabaseTableState3(rx.State):
         self.load_entries()
 
     def _get_total_items(self, session):
-        self.total_items = session.exec(select(func.count(Customer.id))).one()
+        self.total_items = session.scalar(select(func.count(Customer.id)))
 
     @rx.event
     def load_entries(self):
@@ -960,7 +992,7 @@ loading_data_table_example3()
 ```
 
 ```python
-from sqlmodel import select, func
+from sqlalchemy import func, select
 
 
 class DatabaseTableState3(rx.State):
@@ -981,31 +1013,31 @@ class DatabaseTableState3(rx.State):
         )
 
     @rx.event
-    def prev_page(self):
+    async def prev_page(self):
         self.offset = max(self.offset - self.limit, 0)
-        self.load_entries()
+        await self.load_entries()
 
     @rx.event
-    def next_page(self):
+    async def next_page(self):
         if self.offset + self.limit < self.total_items:
             self.offset += self.limit
-        self.load_entries()
+        await self.load_entries()
 
-    def _get_total_items(self, session):
+    async def _get_total_items(self, session):
         """Return the total number of items in the Customer table."""
-        self.total_items = session.exec(select(func.count(Customer.id))).one()
+        self.total_items = await session.scalar(select(func.count(Customer.id)))
 
     @rx.event
-    def load_entries(self):
+    async def load_entries(self):
         """Get all users from the database."""
-        with rx.session() as session:
+        async with Session() as session:
             query = select(Customer)
 
             # Apply pagination
             query = query.offset(self.offset).limit(self.limit)
 
-            self.users = session.exec(query).all()
-            self._get_total_items(session)
+            self.users = (await session.scalars(query)).all()
+            await self._get_total_items(session)
 
 
 def show_customer(user: Customer):
@@ -1072,8 +1104,9 @@ For the `json` download the `rx.download` is in the frontend code attached to th
 For the `csv` download the `rx.download` is in the backend code as an event_handler `download_csv_data`. There is also a helper function `_convert_to_csv` that converts the data in `self.users` to `csv` format.
 
 ```python exec
-import io
 import csv
+import dataclasses
+import io
 import json
 
 
@@ -1113,14 +1146,14 @@ class TableDownloadState(rx.State):
         writer = csv.DictWriter(output, fieldnames=fieldnames)
         writer.writeheader()
         for user in self.users:
-            writer.writerow(user.dict())
+            writer.writerow(dataclasses.asdict(user))
 
         csv_data = output.getvalue()
         output.close()
         return csv_data
 
     def _convert_to_json(self) -> str:
-        return json.dumps([u.dict() for u in self._mock_data], indent=2)
+        return json.dumps([dataclasses.asdict(u) for u in self._mock_data], indent=2)
 
     @rx.event
     def download_csv_data(self):
@@ -1185,36 +1218,38 @@ download_data_table_example()
 ```
 
 ```python
-import io
 import csv
-from sqlmodel import select
+import dataclasses
+import io
+
+from sqlalchemy import select
 
 
 class TableDownloadState(rx.State):
     users: list[Customer] = []
 
     @rx.event
-    def load_entries(self):
+    async def load_entries(self):
         """Get all users from the database."""
-        with rx.session() as session:
-            self.users = session.exec(select(Customer)).all()
+        async with Session() as session:
+            self.users = (await session.scalars(select(Customer))).all()
 
-    def _convert_to_csv(self) -> str:
+    async def _convert_to_csv(self) -> str:
         """Convert the users data to CSV format."""
 
         # Make sure to load the entries first
         if not self.users:
-            self.load_entries()
+            await self.load_entries()
 
         # Define the CSV file header based on the Customer model's attributes
-        fieldnames = list(Customer.__fields__)
+        fieldnames = [field.name for field in dataclasses.fields(Customer)]
 
         # Create a string buffer to hold the CSV data
         output = io.StringIO()
         writer = csv.DictWriter(output, fieldnames=fieldnames)
         writer.writeheader()
         for user in self.users:
-            writer.writerow(user.dict())
+            writer.writerow(dataclasses.asdict(user))
 
         # Get the CSV data as a string
         csv_data = output.getvalue()
@@ -1222,8 +1257,8 @@ class TableDownloadState(rx.State):
         return csv_data
 
     @rx.event
-    def download_csv_data(self):
-        csv_data = self._convert_to_csv()
+    async def download_csv_data(self):
+        csv_data = await self._convert_to_csv()
         return rx.download(
             data=csv_data,
             filename="data.csv",
