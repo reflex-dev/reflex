@@ -3,6 +3,7 @@
 import dataclasses
 import importlib
 import logging
+import math
 import os
 import sys
 import threading
@@ -194,6 +195,7 @@ class BaseConfig:
         plugins: List of plugins to use in the app.
         disable_plugins: List of plugin types to disable in the app.
         transport: The transport method for client-server communication.
+        event_loop_blocking_threshold: Minimum event-loop blocking duration in seconds to report in development. Set to 0 to disable detection.
     """
 
     app_name: str
@@ -284,6 +286,8 @@ class BaseConfig:
     disable_plugins: list[type[Plugin]] = dataclasses.field(default_factory=list)
 
     transport: Literal["websocket", "polling"] = "websocket"
+
+    event_loop_blocking_threshold: float = 0.2
 
     # Whether to skip plugin checks.
     _skip_plugins_checks: bool = dataclasses.field(default=False, repr=False)
@@ -397,6 +401,15 @@ class Config(BaseConfig):
             or self.trusted_proxy_hops < 0
         ):
             msg = "trusted_proxy_hops must be a non-negative integer."
+            raise ConfigError(msg)
+
+        threshold = self.event_loop_blocking_threshold
+        if (
+            isinstance(threshold, bool)
+            or not isinstance(threshold, (int, float))
+            or not 0 <= threshold < math.inf
+        ):
+            msg = "event_loop_blocking_threshold must be a non-negative finite number."
             raise ConfigError(msg)
 
         # Normalize route prefixes to ensure they start with a slash.
