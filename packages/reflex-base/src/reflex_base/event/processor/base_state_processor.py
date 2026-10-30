@@ -261,20 +261,22 @@ def _prepare_event_payload(
         return {arg: form_data_as_dict(value) for arg, value in payload.items()}
 
 
-def _dirty_snapshot(root_state: BaseState) -> dict[str, frozenset[str]]:
-    """Capture which vars are dirty on the root and its dirty substates.
+def _mutation_snapshot(root_state: BaseState) -> dict[str, int]:
+    """Capture how often each dirty state in the tree has been written to.
 
     Args:
         root_state: The root of the state tree.
 
     Returns:
-        The dirty var names of each dirty state, by full state name.
+        The mutation count of the root and each dirty substate, by full name.
+        A write to any var, already dirty or not, changes it, and a state that
+        becomes dirty adds a key.
     """
-    snapshot: dict[str, frozenset[str]] = {}
+    snapshot: dict[str, int] = {}
     stack = [root_state]
     while stack:
         state = stack.pop()
-        snapshot[state.get_full_name()] = frozenset(state.dirty_vars)
+        snapshot[state.get_full_name()] = state._mutations
         substates = state.substates
         stack.extend(substates[n] for n in state.dirty_substates if n in substates)
     return snapshot
@@ -334,13 +336,13 @@ async def chain_updates(
             # exist (this one included), a gathered sibling can change state
             # meanwhile, after the delta was snapshotted; the clean below
             # would drop that change unsent, so pick up late changes until
-            # the dirty set is stable. A plain event has no inline runs and
-            # skips this.
+            # no state was written to during the resolve. A plain event has
+            # no inline runs and skips this.
             concurrent = bool(ctx.inline_tasks)
-            seen = _dirty_snapshot(root_state) if concurrent else None
+            seen = _mutation_snapshot(root_state) if concurrent else None
             delta = await root_state._get_resolved_delta()
-            while concurrent and (dirty := _dirty_snapshot(root_state)) != seen:
-                seen = dirty
+            while concurrent and (written := _mutation_snapshot(root_state)) != seen:
+                seen = written
                 for name, late in (await root_state._get_resolved_delta()).items():
                     delta[name] = {**delta.get(name, {}), **late}
             if delta:

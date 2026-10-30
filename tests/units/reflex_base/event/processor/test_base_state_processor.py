@@ -4537,6 +4537,64 @@ async def test_gathered_inline_handlers_keep_each_others_changes(
     assert sent_b, "the gathered handler's change was cleaned without being sent"
 
 
+async def test_gathered_inline_handler_rewrite_of_a_dirty_var_is_kept(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list,
+    token: str,
+):
+    """A gathered handler rewriting a var the other one already dirtied is not lost.
+
+    The dirty-name set does not change in this case, so only a mutation count
+    tells the first handler to pick the new value up before cleaning.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: Deltas emitted to the frontend, in order.
+        token: The client token.
+    """
+    resolving = asyncio.Event()
+
+    class RewriteState(State):
+        a: int = 0
+
+        @rx.var(cache=False)
+        async def slow(self) -> int:
+            if self.a == 1:
+                resolving.set()
+            await asyncio.sleep(0)
+            return self.a
+
+        @event
+        async def set_a(self):
+            self.a = 1
+
+        @event
+        async def rewrite_a(self):
+            await resolving.wait()
+            self.a = 7
+            for _ in range(10):
+                await asyncio.sleep(0)
+
+        @event
+        async def both(self):
+            await asyncio.gather(RewriteState.set_a(), RewriteState.rewrite_a())
+
+    async with real_base_state_processor as processor:
+        await (
+            await processor.enqueue(
+                token, Event.from_event_type(RewriteState.both())[0]
+            )
+        )
+    sent_a = [
+        delta[RewriteState.get_full_name()]["a" + FIELD_MARKER]
+        for _, delta in emitted_deltas
+        if "a" + FIELD_MARKER in delta.get(RewriteState.get_full_name(), {})
+    ]
+    assert sent_a[-1] == 7, f"the frontend was left at {sent_a}"
+
+
 async def test_detached_inline_task_holds_the_lock_until_it_finishes(
     wired_app: App,
     real_base_state_processor: BaseStateEventProcessor,
