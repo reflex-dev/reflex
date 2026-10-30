@@ -635,7 +635,7 @@ describe("scoped values", () => {
     const { unmount } = mount(
       createElement(
         ClientStateProvider,
-        { registry },
+        null,
         createElement(ScopedValues, { values: { item0: "a" } }, first.element),
         createElement(ScopedValues, { values: { item0: "b" } }, second.element),
       ),
@@ -700,7 +700,6 @@ describe("slot lifetime", () => {
     expect(live).toBe(0);
     slot.subscribe = realSubscribe;
   });
-<<<<<<< HEAD
 
   test("per-item state is claimed in the item's scope, never at the root", () => {
     // Otherwise a loop would append a root entry per rendered item and the
@@ -710,7 +709,7 @@ describe("slot lifetime", () => {
     const rows = (list) =>
       createElement(
         ClientStateProvider,
-        { registry },
+        null,
         ...list.map((item) =>
           createElement(
             ScopedValues,
@@ -737,7 +736,7 @@ describe("slot lifetime", () => {
     const rows = (list) =>
       createElement(
         ClientStateProvider,
-        { registry },
+        null,
         ...list.map((item) =>
           createElement(
             ScopedValues,
@@ -766,7 +765,7 @@ describe("slot lifetime", () => {
     const rows = (list) =>
       createElement(
         ClientStateProvider,
-        { registry },
+        null,
         ...list.map((item, index) =>
           createElement(
             ScopedValues,
@@ -785,8 +784,6 @@ describe("slot lifetime", () => {
 
     unmount();
   });
-=======
->>>>>>> claude/clientstatevar-context-refactor-jv3pig
 });
 
 test("CLIENT_STATE_REF matches the Python constant", () => {
