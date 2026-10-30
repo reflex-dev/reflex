@@ -1,0 +1,1 @@
+Passing a backend var where a Var is built from a Python value, e.g. `rx.Var.create([State._secret])`, `rx.toast(State._secret)` or `rx.image(src=State._secret)`, now raises `BackendVarFormatError` with the same explanation as `f"{State._secret}"`, instead of a generic `TypeError: Unsupported type ... for LiteralVar`.

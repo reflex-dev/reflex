@@ -28,6 +28,7 @@ from reflex_base.event import (
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils import format, log
 from reflex_base.utils.exceptions import (
+    BackendVarFormatError,
     EventHandlerArgTypeMismatchError,
     EventHandlerTypeError,
     EventHandlerValueError,
@@ -310,6 +311,22 @@ def test_backend_var_event_trigger_reports_repr(value: Any, match: str):
     """
     with pytest.raises(ValueError, match=match):
         EventChain.create(value=value, args_spec=lambda: ())
+
+
+@pytest.mark.parametrize(
+    "action", [rx.toast, rx.console_log], ids=["toast", "console_log"]
+)
+def test_backend_var_event_action_raises_format_error(action: Callable[[Any], Any]):
+    """A backend var passed to an event action raises the backend var format error.
+
+    Args:
+        action: The event action given the backend var.
+    """
+    with pytest.raises(
+        BackendVarFormatError,
+        match=r"Backend var 'BackendTriggerState\._secret' exists only",
+    ):
+        str(Var.create(action(BackendTriggerState._secret)))
 
 
 def test_backend_var_upload_progress_reports_repr():

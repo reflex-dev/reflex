@@ -1870,6 +1870,7 @@ class LiteralVar(Var[VAR_TYPE]):
             The var.
 
         Raises:
+            BackendVarFormatError: If the value is a field with no frontend var.
             TypeError: If the value is not a supported type for LiteralVar.
         """
         if (literal_subclass := _literal_var_by_type.get(type(value))) is not None:
@@ -1928,6 +1929,9 @@ class LiteralVar(Var[VAR_TYPE]):
         if isinstance(value, range):
             return ArrayVar.range(value.start, value.stop, value.step)
 
+        if isinstance(value, Field):
+            raise value._no_frontend_var_error()
+
         msg = f"Unsupported type {type(value)} for LiteralVar. Tried to create a LiteralVar from {value!r}."
         raise TypeError(msg)
 
@@ -1958,6 +1962,7 @@ class LiteralVar(Var[VAR_TYPE]):
             The var data or None.
 
         Raises:
+            BackendVarFormatError: If the value is a field with no frontend var.
             TypeError: If the value is not a supported type for LiteralVar.
         """
         from .object import LiteralObjectVar
@@ -2006,6 +2011,9 @@ class LiteralVar(Var[VAR_TYPE]):
 
         if isinstance(value, range):
             return None
+
+        if isinstance(value, Field):
+            raise value._no_frontend_var_error()
 
         msg = f"Unsupported type {type(value)} for LiteralVar. Tried to create a LiteralVar from {value!r}."
         raise TypeError(msg)
@@ -4340,6 +4348,14 @@ class Field(Generic[FIELD_TYPE]):
         Raises:
             BackendVarFormatError: Always; the field has no frontend var.
         """
+        raise self._no_frontend_var_error()
+
+    def _no_frontend_var_error(self) -> BackendVarFormatError:
+        """Build the error for using the field where a frontend var is needed.
+
+        Returns:
+            The error naming the field and how to use it in the UI instead.
+        """
         path = f"{self._owner.__name__}.{self._name}" if self._owner else None
         name = f"'{path}'" if path else repr(self)
         if self._backend:
@@ -4358,7 +4374,7 @@ class Field(Generic[FIELD_TYPE]):
             )
         else:
             msg = f"{name} has no frontend var, so it cannot be used in the UI."
-        raise BackendVarFormatError(msg)
+        return BackendVarFormatError(msg)
 
     def _get_raw(self, instance: Any) -> FIELD_TYPE | None:
         """Get the value on a state instance, never wrapped in a proxy.
