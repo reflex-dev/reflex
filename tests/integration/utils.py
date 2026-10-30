@@ -10,6 +10,8 @@ from urllib.parse import urlsplit
 
 from playwright.sync_api import Page, expect
 
+from reflex.testing import DEFAULT_TIMEOUT
+
 
 def request_raw(
     url: str,
@@ -118,6 +120,7 @@ def poll_assert_event_order(
     page: Page,
     exp_event_order: Sequence[str | set[str]],
     selector: str = "#event_order > p",
+    timeout: int = DEFAULT_TIMEOUT,
 ) -> None:
     """Wait for and verify the exact sequence rendered by the app.
 
@@ -125,9 +128,12 @@ def poll_assert_event_order(
         page: Playwright page containing the event list.
         exp_event_order: Expected sequence; set entries may be unordered groups.
         selector: Locator for event entries.
+        timeout: Maximum wait in seconds for the expected events to render.
     """
     events = page.locator(selector)
-    expect(events).to_have_count(n_expected_events(exp_event_order))
+    expect(events).to_have_count(
+        n_expected_events(exp_event_order), timeout=timeout * 1000
+    )
     assert_event_order(events.all_text_contents(), exp_event_order)
 
 

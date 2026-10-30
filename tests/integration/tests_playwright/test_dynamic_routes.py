@@ -256,10 +256,14 @@ def test_on_load_navigate(
     params = json.loads(params_json.inner_text())
     assert params == {"foo": "bar", "page_id": "11"}
 
-    # hit a 404 and ensure we still hydrate
-    exp_order += ["/404-no page id"]
+    # The frontend serves this route as a 200 SPA fallback in dev and as a 404
+    # in prod; browser history must still hydrate the previous route.
     with poll_for_navigation(driver):
-        driver.goto(f"{frontend_url}/missing")
+        response = driver.goto(f"{frontend_url}/missing")
+    assert response is not None
+    assert response.status in {200, 404}
+    if response.status == 200:
+        exp_order += ["/404-no page id"]
 
     # browser nav should still trigger hydration
     exp_order += ["/page/[page_id]-11"]

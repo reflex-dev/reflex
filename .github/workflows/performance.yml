@@ -93,7 +93,7 @@ jobs:
 
       - name: Run browser performance smoke and bundle budget
         run: >-
-          uv run pytest tests/performance/test_browser.py
+          uv run pytest tests/performance/test_browser.py tests/performance/test_large_state.py
           --run-performance
           --performance-scale smoke
           --performance-output .pytest-tmp/performance

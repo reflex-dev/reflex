@@ -618,7 +618,16 @@ def test_uploaded_file_security_headers(
 
         opened_page.on("dialog", dismiss_dialog)
         with opened_page.expect_download() as download_info:
-            opened_page.goto(upload_url)
+            opened_page.evaluate(
+                """url => {
+                  const link = document.createElement("a");
+                  link.href = url;
+                  document.body.append(link);
+                  link.click();
+                  link.remove();
+                }""",
+                upload_url,
+            )
         downloaded = tmp_path / filename
         download_info.value.save_as(downloaded)
         assert downloaded.read_text() == contents
