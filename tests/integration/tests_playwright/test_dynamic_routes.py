@@ -257,21 +257,19 @@ def test_on_load_navigate(
     assert params == {"foo": "bar", "page_id": "11"}
 
     # Check the server response and browser-history hydration separately. A
-    # dev SPA fallback may or may not emit 404 on_load for a full-page load;
-    # the client-side missing-link case below verifies that event reliably.
+    # full-page 404 may or may not emit its client on_load before browser back.
     order_before_missing = exp_order.copy()
     with poll_for_navigation(driver):
         response = driver.goto(f"{frontend_url}/missing")
     assert response is not None
     if isinstance(dynamic_route, AppHarnessProd):
         assert response.status == 404
-        direct_missing_orders = [order_before_missing]
     else:
         assert response.status == 200
-        direct_missing_orders = [
-            order_before_missing,
-            [*order_before_missing, "/404-no page id"],
-        ]
+    direct_missing_orders = [
+        order_before_missing,
+        [*order_before_missing, "/404-no page id"],
+    ]
 
     # browser nav should still trigger hydration
     with poll_for_navigation(driver):
@@ -292,10 +290,12 @@ def test_on_load_navigate(
     exp_order = driver.locator("#event_order > p").all_text_contents()
     assert exp_order in expected_back_orders
 
-    # next/link to a 404 and ensure we still hydrate
-    exp_order += ["/404-no page id"]
+    # A client-side link to an unknown route renders the generated 404 page,
+    # rather than the app's ordinary /404 route with an on_load event list.
     with poll_for_navigation(driver):
         click_element(driver, "#link_missing")
+    expect(driver.get_by_text("404")).to_be_visible()
+    exp_order += ["/404-no page id"]
 
     # hit a page that redirects back to dynamic page
     exp_order += ["on_load_redir-{'foo': 'bar', 'page_id': '0'}", "/page/[page_id]-0"]
