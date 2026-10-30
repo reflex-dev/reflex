@@ -175,6 +175,8 @@ from my_app.models import Base
 async def create_tables():
     async with engine.begin() as connection:
         await connection.run_sync(Base.metadata.create_all)
+    # Close pooled connections before the script's event loop ends.
+    await engine.dispose()
 
 
 if __name__ == "__main__":
