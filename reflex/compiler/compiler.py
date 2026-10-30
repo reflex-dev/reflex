@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 from reflex_base import constants, otel
 from reflex_base.components.app_wraps import collect_var_app_wraps_in_subtree
+from reflex_base.components.client_state_context import scope_page
 from reflex_base.components.component import (
     BaseComponent,
     Component,
@@ -1037,6 +1038,7 @@ def compile_unevaluated_page(
     try:
         # Generate the component if it is a callable.
         component = into_component(page.component)
+        component = scope_page(component)
 
         component._add_style_recursive(style or {}, theme)
 

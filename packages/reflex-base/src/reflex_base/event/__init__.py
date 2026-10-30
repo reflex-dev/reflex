@@ -57,7 +57,7 @@ from reflex_base.utils.types import (
     value_inside_optional,
 )
 from reflex_base.vars import VarData
-from reflex_base.vars.base import LiteralVar, Var, _owner_state
+from reflex_base.vars.base import LiteralVar, ToOperation, Var, _operands, _owner_state
 from reflex_base.vars.function import (
     ENCODE_URI_COMPONENT,
     ArgsFunctionOperation,
@@ -2292,6 +2292,90 @@ def resolve_annotation(annotations: dict[str, Any], arg_name: str, spec: ArgsSpe
     return annotation
 
 
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    slots=True,
+)
+class EventArgVar(Var):
+    """A placeholder for one argument of an event trigger.
+
+    ``parse_args_spec`` passes these to the args spec, and through it to a
+    lambda event function, so a value built from them can be taken apart later
+    to find which of the trigger's arguments it reads.
+    """
+
+    # The JS names of every argument of the trigger, in order; this one's
+    # position is its index in it.
+    _signature: tuple[str, ...] = dataclasses.field(default=())
+
+
+def event_arg_placeholder(var: Var) -> EventArgVar | None:
+    """Get the trigger-argument placeholder ``var`` is, through any casts.
+
+    Args:
+        var: The var to look at.
+
+    Returns:
+        The placeholder, or None when ``var`` is not one.
+    """
+    while isinstance(var, ToOperation):
+        var = var._original
+    return var if isinstance(var, EventArgVar) else None
+
+
+def _trigger_args_read(value: Var) -> list[EventArgVar]:
+    """Find every trigger-argument placeholder a value is built from.
+
+    Walks the value's operations like ``get_leaf_vars`` does, except that a
+    function is always searched through its body: a placeholder closed over by
+    a nested lambda still has to be declared, whatever else the body reads.
+
+    Args:
+        value: The value to take apart.
+
+    Returns:
+        The placeholders, in order of first appearance.
+    """
+    found: dict[str, EventArgVar] = {}
+    stack = [value]
+    while stack:
+        current = stack.pop()
+        while isinstance(current, ToOperation):
+            current = current._original
+        if isinstance(current, EventArgVar):
+            found.setdefault(current._js_expr, current)
+        elif isinstance(
+            current, (ArgsFunctionOperation, ArgsFunctionOperationBuilder)
+        ) and isinstance(current._return_expr, Var):
+            stack.append(current._return_expr)
+        elif (operands := _operands(current)) is not None:
+            stack.extend(LiteralVar.create(operand) for operand in reversed(operands))
+    return list(found.values())
+
+
+def event_args_signature(value: Var) -> tuple[str, ...]:
+    """Get the trigger arguments a function built around ``value`` must declare.
+
+    An event chain calls such a function with every argument of the trigger,
+    positionally, so the declaration has to cover each argument up to the last
+    one ``value`` reads, in the trigger's order.
+
+    Args:
+        value: The value a trigger argument may have been built into.
+
+    Returns:
+        The JS parameter names to declare, possibly empty.
+    """
+    last = -1
+    signature: tuple[str, ...] = ()
+    for arg in _trigger_args_read(value):
+        position = arg._signature.index(arg._js_expr)
+        if position > last:
+            last, signature = position, arg._signature
+    return signature[: last + 1]
+
+
 @lru_cache
 def parse_args_spec(arg_spec: ArgsSpec | Sequence[ArgsSpec]):
     """Parse the args provided in the ArgsSpec of an event trigger.
@@ -2310,15 +2394,16 @@ def parse_args_spec(arg_spec: ArgsSpec | Sequence[ArgsSpec]):
         annotations = [get_type_hints(arg_spec)]
 
     spec = inspect.getfullargspec(arg_spec)
+    signature = tuple(f"_{l_arg}" for l_arg in spec.args)
 
     return list(
         arg_spec(*[
-            Var(f"_{l_arg}").to(
+            EventArgVar(_js_expr=name, _signature=signature).to(
                 unwrap_var_annotation(
                     resolve_annotation(annotations[0], l_arg, spec=arg_spec)
                 )
             )
-            for l_arg in spec.args
+            for l_arg, name in zip(spec.args, signature, strict=True)
         ])
     ), annotations
 
@@ -3340,6 +3425,9 @@ class EventNamespace:
     check_fn_match_arg_spec = staticmethod(check_fn_match_arg_spec)
     resolve_annotation = staticmethod(resolve_annotation)
     parse_args_spec = staticmethod(parse_args_spec)
+    EventArgVar = EventArgVar
+    event_arg_placeholder = staticmethod(event_arg_placeholder)
+    event_args_signature = staticmethod(event_args_signature)
     args_specs_from_fields = staticmethod(args_specs_from_fields)
     unwrap_var_annotation = staticmethod(unwrap_var_annotation)
 

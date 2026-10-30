@@ -45,6 +45,13 @@ export async function createQueueRuntime(
       useParams: () => ({}),
     },
     "$/utils/context": app,
+    "$/utils/client_state": {
+      CLIENT_STATE_REF: "__client_state",
+      getClientState: unused,
+      // Published on `refs` when the module loads, so it has to answer.
+      getClientStore: () => ({}),
+      setClientState: unused,
+    },
     "$/utils/context-registry": {
       app,
       eventLoop: { addEvents: unused },

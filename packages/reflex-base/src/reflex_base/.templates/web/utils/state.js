@@ -11,6 +11,12 @@ import {
   useParams,
 } from "react-router";
 import { app, eventLoop } from "$/utils/context-registry";
+import {
+  CLIENT_STATE_REF,
+  getClientState,
+  getClientStore,
+  setClientState,
+} from "$/utils/client_state";
 import debounce from "$/utils/helpers/debounce";
 import { parseJson } from "$/utils/helpers/json";
 import throttle from "$/utils/helpers/throttle";
@@ -54,6 +60,13 @@ const cookies = new Cookies();
 
 // Dictionary holding component references.
 export const refs = {};
+
+// The client state store, for code evaluated outside this module's scope: a
+// `run_script` body pushing a value, or the devtools console. Client only, so
+// a server render never shares a store between requests.
+if (typeof document !== "undefined") {
+  refs[CLIENT_STATE_REF] = getClientStore();
+}
 
 // Array holding pending events to be processed.
 const event_queue = [];
@@ -469,6 +482,46 @@ function urlFrom(string) {
 }
 
 /**
+ * Invoke an event's result callback, if it declared one.
+ *
+ * The callback arrives as a string built by ``format_queue_events``, which
+ * references ``queueEvents``/``processEvent`` (module-level here) plus ``socket``,
+ * ``navigate`` and ``params``. Those three MUST stay the parameter names below:
+ * the ``eval`` resolves them from this function's scope, so renaming them breaks
+ * every callback.
+ * @param event The event whose callback to run.
+ * @param eval_result The value to pass to the callback, awaited if thenable.
+ * @param socket The socket object to send events on.
+ * @param navigate The navigate function from useNavigate.
+ * @param params The params object from useParams.
+ */
+const applyResultCallback = async (
+  event,
+  eval_result,
+  socket,
+  navigate,
+  params,
+) => {
+  if (!event.payload.callback) {
+    return;
+  }
+  // Eval'd user code dispatches through addEvents like compiled event triggers
+  // do; late-bound so a remounted EventLoopProvider is picked up. Declared in
+  // every scope holding an eval, since that is the only scope chain the eval'd
+  // code can resolve it from.
+  const addEvents = (...args) => eventLoop.addEvents(...args);
+  const final_result =
+    !!eval_result && typeof eval_result.then === "function"
+      ? await eval_result
+      : eval_result;
+  const callback =
+    typeof event.payload.callback === "string"
+      ? eval(event.payload.callback)
+      : event.payload.callback;
+  callback(final_result);
+};
+
+/**
  * Build the update_vars_internal event for a synced localStorage var.
  *
  * The value is read when the event is sent, so it and the write count recorded
@@ -491,9 +544,10 @@ const syncLocalStorageEvent = ({ key, state_keys }) => {
  * @param params The params object from useParams
  */
 export const applyEvent = async (event, socket, navigate, params) => {
-  // Eval'd callback strings (format_queue_events) dispatch through addEvents
-  // like compiled event triggers do; late-bound so a remounted
-  // EventLoopProvider is picked up.
+  // Eval'd user code dispatches through addEvents like compiled event triggers
+  // do; late-bound so a remounted EventLoopProvider is picked up. Declared in
+  // every scope holding an eval, since that is the only scope chain the eval'd
+  // code can resolve it from.
   const addEvents = (...args) => eventLoop.addEvents(...args);
   // Handle special events
   if (event.name == "_redirect") {
@@ -613,23 +667,43 @@ export const applyEvent = async (event, socket, navigate, params) => {
     return;
   }
 
+  // Backend reads and writes go to the shared store directly, so a var that no
+  // component renders is still reachable.
+  if (event.name == "_client_state_set") {
+    setClientState(event.payload.var_name, event.payload.value);
+    return;
+  }
+
+  if (event.name == "_client_state_get") {
+    try {
+      await applyResultCallback(
+        event,
+        getClientState(event.payload.var_name),
+        socket,
+        navigate,
+        params,
+      );
+    } catch (e) {
+      console.log("_client_state_get", e);
+      if (window && window?.onerror) {
+        window.onerror(e.message, null, null, null, e);
+      }
+    }
+    return;
+  }
+
   if (
     event.name == "_call_function" &&
     typeof event.payload.function !== "string"
   ) {
     try {
-      const eval_result = event.payload.function();
-      if (event.payload.callback) {
-        const final_result =
-          !!eval_result && typeof eval_result.then === "function"
-            ? await eval_result
-            : eval_result;
-        const callback =
-          typeof event.payload.callback === "string"
-            ? eval(event.payload.callback)
-            : event.payload.callback;
-        callback(final_result);
-      }
+      await applyResultCallback(
+        event,
+        event.payload.function(),
+        socket,
+        navigate,
+        params,
+      );
     } catch (e) {
       console.log("_call_function", e);
       if (window && window?.onerror) {
@@ -646,17 +720,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
           ? eval(event.payload.javascript_code)
           : eval(event.payload.function)();
 
-      if (event.payload.callback) {
-        const final_result =
-          !!eval_result && typeof eval_result.then === "function"
-            ? await eval_result
-            : eval_result;
-        const callback =
-          typeof event.payload.callback === "string"
-            ? eval(event.payload.callback)
-            : event.payload.callback;
-        callback(final_result);
-      }
+      await applyResultCallback(event, eval_result, socket, navigate, params);
     } catch (e) {
       console.log("_call_script", e);
       if (window && window?.onerror) {

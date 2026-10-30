@@ -7,6 +7,7 @@ from collections.abc import Callable, Sequence
 from typing import Any
 
 from reflex_base.components.app_wraps import _ingest_component_var_app_wraps
+from reflex_base.components.client_state_context import scope_page
 from reflex_base.components.component import BaseComponent, Component, ComponentStyle
 from reflex_base.config import get_config
 from reflex_base.plugins import CompileContext, PageContext, PageDefinition, Plugin
@@ -40,6 +41,7 @@ class DefaultPagePlugin(Plugin):
 
         try:
             component = compiler.into_component(page_fn)
+            component = scope_page(component)
             component = Fragment.create(component)
 
             title = getattr(page, "title", None)

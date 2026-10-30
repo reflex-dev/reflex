@@ -1,0 +1,15 @@
+{
+  "name": "reflex-frontend-tests",
+  "private": true,
+  "type": "module",
+  "description": "Unit tests for the javascript Reflex ships in reflex-base/.templates/web.",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "jsdom": "^26.1.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "vitest": "^3.2.4"
+  }
+}
