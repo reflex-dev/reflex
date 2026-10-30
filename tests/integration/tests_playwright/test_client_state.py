@@ -27,6 +27,10 @@ def ClientStateApp():
     suffixed = rx.client_state("", name="suffixed")
     # Never rendered: only backend handlers touch it.
     hidden = rx.client_state("", name="hidden")
+    # Unnamed, used by a memo and by the page after it: the page owns it.
+    lifted = rx.client_state(0)
+    # Unnamed, used at page level on two pages.
+    page_local = rx.client_state(0)
 
     class ClientStateAppState(rx.State):
         retrieved: str = ""
@@ -69,6 +73,10 @@ def ClientStateApp():
             ),
             rx.text(local.value, id=f"local-echo-{label}"),
         )
+
+    @rx.memo
+    def lifted_card() -> rx.Component:
+        return rx.text(lifted.value, class_name="lifted-card")
 
     def index() -> rx.Component:
         return rx.vstack(
@@ -137,10 +145,29 @@ def ClientStateApp():
             ),
             local_input(label="one"),
             local_input(label="two"),
+            # The cards render before the page-level reader of the same var.
+            lifted_card(),
+            lifted_card(),
+            rx.text(lifted.value, id="lifted-page"),
+            rx.button("lift", id="lift", on_click=lifted.set(100)),
+            rx.text(page_local.value, id="page-local"),
+            rx.button(
+                "page-local-inc",
+                id="page-local-inc",
+                on_click=page_local.set(lambda v: v + 1),
+            ),
+            rx.link("other", href="/other", id="to-other"),
+        )
+
+    def other_page() -> rx.Component:
+        return rx.vstack(
+            rx.text(page_local.value, id="other-page-local"),
+            rx.link("home", href="/", id="to-home"),
         )
 
     app = rx.App()
     app.add_page(index)
+    app.add_page(other_page, route="/other")
 
 
 @pytest.fixture(scope="module")
@@ -261,6 +288,31 @@ def test_local_vars_are_isolated_between_instances(page: Page) -> None:
 
     expect(page.locator("#local-echo-one")).to_have_text("only-one")
     expect(page.locator("#local-echo-two")).to_have_text("only-two")
+
+
+def test_page_owns_a_var_its_memos_also_use(page: Page) -> None:
+    """The page body uses ``lifted``, so the memo instances below it share its slot.
+
+    The cards render before the page-level reader, so the owner must not depend
+    on render order.
+    """
+    page.locator("#lift").click()
+
+    expect(page.locator("#lifted-page")).to_have_text("100")
+    expect(page.locator(".lifted-card")).to_have_text(["100", "100"])
+
+
+def test_local_page_var_does_not_cross_pages(page: Page) -> None:
+    """An unnamed var used at page level belongs to that page, like ``useState``."""
+    page.locator("#page-local-inc").click()
+    page.locator("#page-local-inc").click()
+    expect(page.locator("#page-local")).to_have_text("2")
+
+    page.locator("#to-other").click()
+    expect(page.locator("#other-page-local")).to_have_text("0")
+
+    page.locator("#to-home").click()
+    expect(page.locator("#page-local")).to_have_text("0")
 
 
 def test_writing_one_var_leaves_other_readers_untouched(page: Page) -> None:

@@ -248,9 +248,10 @@ class ClientStateVar(Var):
           app-wide store, so any component and the backend can read and write
           it, and `push`, `retrieve`, `global_value` and `global_set` work.
         - ``rx.client_state()`` is **tree-scoped**. It gets a compile-time name
-          and the first component to use it claims it for its descendants, so
-          each instance of that component gets its own state -- like React's
-          ``useState`` -- and nothing outside the tree can address it.
+          and is owned by the outermost page or ``@rx.memo`` body that uses
+          it, so each instance of that component gets its own state -- like
+          React's ``useState`` -- and nothing outside the tree can address it.
+          A page owns its vars only while it is mounted.
 
         To render the var in a component, use the `value` property.
 

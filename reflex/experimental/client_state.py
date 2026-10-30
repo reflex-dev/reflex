@@ -28,8 +28,8 @@ def _deprecate(feature_name: str) -> None:
         feature_name=feature_name,
         reason=(
             "Use rx.client_state(default, name=...) instead. Naming a var makes "
-            "it global; an unnamed var is scoped to the component tree that "
-            "first uses it, so `global_ref` is no longer needed."
+            "it global; an unnamed var is owned by the outermost page or "
+            "`@rx.memo` that uses it, so `global_ref` is no longer needed."
         ),
         deprecation_version="0.10.0",
         removal_version="1.0",

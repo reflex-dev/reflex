@@ -380,6 +380,78 @@ describe("scope chain", () => {
     unmount();
   });
 
+  test("a boundary owns a listed name before any descendant renders", () => {
+    // The page-level consumer renders after the nested boundary, but the outer
+    // boundary lists the name, so both resolve to its slot.
+    const inner = probe("initial", "listed");
+    const outer = probe("initial", "listed");
+    const { unmount } = mount(
+      createElement(
+        ClientStateProvider,
+        null,
+        createElement(
+          ClientStateScope,
+          { owns: ["listed"] },
+          createElement(ClientStateScope, { owns: ["listed"] }, inner.element),
+          outer.element,
+        ),
+      ),
+    );
+
+    act(() => inner.renders.set("shared"));
+
+    expect(outer.renders.value).toBe("shared");
+
+    unmount();
+  });
+
+  test("sibling boundaries listing a name own separate slots", () => {
+    const first = probe("initial", "listedPerInstance");
+    const second = probe("initial", "listedPerInstance");
+    const { unmount } = mount(
+      createElement(
+        ClientStateProvider,
+        null,
+        createElement(
+          ClientStateScope,
+          { owns: ["listedPerInstance"] },
+          first.element,
+        ),
+        createElement(
+          ClientStateScope,
+          { owns: ["listedPerInstance"] },
+          second.element,
+        ),
+      ),
+    );
+
+    act(() => first.renders.set("only mine"));
+
+    expect(first.renders.value).toBe("only mine");
+    expect(second.renders.value).toBe("initial");
+
+    unmount();
+  });
+
+  test("a listed slot starts at its first reader's default", () => {
+    const reader = probe(7, "listedDefault");
+    const { unmount } = mount(
+      createElement(
+        ClientStateProvider,
+        null,
+        createElement(
+          ClientStateScope,
+          { owns: ["listedDefault"] },
+          reader.element,
+        ),
+      ),
+    );
+
+    expect(reader.renders.value).toBe(7);
+
+    unmount();
+  });
+
   test("a global name stays global inside a boundary", () => {
     const scoped = probe("initial", "globalName", true);
     const atRoot = probe("initial", "globalName", true);

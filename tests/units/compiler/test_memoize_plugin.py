@@ -2760,9 +2760,10 @@ def test_explicit_memo_using_client_state_opens_a_scope() -> None:
     files, _ = compile_memo_components(memos=tuple(MEMOS.values()))
     export_line = _memo_export_line(files, "ScopedToggle")
 
-    assert "withClientStateScope(memo(Component))" in export_line, (
-        f"expected the memo wrapped in a client state scope.\n{export_line}"
-    )
+    # The wrapper lists the local name the body uses, so the scope owns it.
+    assert re.search(
+        r'withClientStateScope\(memo\(Component\), \["cs\$\d+"\]\)', export_line
+    ), f"expected the memo wrapped in a client state scope.\n{export_line}"
     assert any(
         "withClientStateScope" in line
         for _path, code in files

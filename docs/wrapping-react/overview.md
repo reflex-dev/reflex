@@ -137,9 +137,11 @@ private = rx.client_state("")  # scoped to the component tree using it
 A **named** var resolves in one app-wide store, so any component can read and write it and
 `push`, `retrieve`, `global_value` and `global_set` all work against it.
 
-An **unnamed** var gets a compile-time name and is scoped: the first component in a tree to
-use it claims it for that tree, so each instance of that component gets its own state, the
-way React's `useState` does. Nothing outside the tree can address it.
+An **unnamed** var gets a compile-time name and is scoped: the outermost page or `@rx.memo`
+whose body uses it owns it, so each instance of that component gets its own state, the way
+React's `useState` does. Nothing outside the tree can address it, and a page's unnamed vars
+start again from their defaults each time the page mounts. Name a var to keep its value
+across pages.
 
 Where you *construct* the var decides who shares it. Construct it inside a component and
 each instance gets its own:
@@ -152,9 +154,10 @@ def copy_button(text: rx.Var[str]) -> rx.Component:
 ```
 
 Construct it once at module level and reference it from several components and they share
-it, owned by the outermost one that uses it — the same way lifting state up works in React.
-Note the consequence: adding a read at page level makes the page the owner, which collapses
-per-instance state below it into one shared value.
+it, owned by the outermost page or `@rx.memo` that uses it. This is the same as lifting state
+up in React. Note the consequence: adding a read at page level makes the page the owner, which
+collapses per-instance state below it into one shared value. The owner follows from where the
+var is used, never from which component renders first.
 
 A plain helper function called several times gives each call its own state for free, since
 the var is constructed once per call:

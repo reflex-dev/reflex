@@ -7,10 +7,12 @@
  * JS that runs outside the React tree (`getClientState` / `setClientState`).
  *
  * Scoping: a scope owns some names and delegates the rest to its parent. The
- * first component in a tree to use a name claims it for its descendants, so
- * separate instances of a boundary get separate state while everything under one
- * boundary shares. Compiler-inserted `ClientStateScope` elements create the
- * boundaries; boundaries that only exist as a compiler optimization do not, so
+ * compiler wraps each page and each `@rx.memo` body in a `ClientStateScope` that
+ * lists the local names the body uses. A scope claims each listed name unless an
+ * ancestor already owns it, before any descendant renders, so the outermost
+ * boundary that uses a name owns it whatever the render order. Separate instances
+ * of a boundary get separate state while everything under one boundary shares.
+ * Boundaries that only exist as a compiler optimization are not scopes, so
  * splitting a subtree across memo modules is semantically invisible.
  *
  * Each slot owns its own listener set, so writing one var only re-renders the
@@ -142,6 +144,9 @@ export const createClientStateStore = () => {
   };
 };
 
+// A slot a boundary claimed before any reader supplied its default.
+const UNSET = Symbol("unset");
+
 let _clientStore = null;
 
 /**
@@ -212,18 +217,27 @@ export function ClientStateProvider({ children }) {
 /**
  * Open a client state scope around a subtree.
  *
- * Emitted by the compiler at component-instance boundaries. Names first used
- * inside are owned here, so each mounted instance gets its own state and its
- * descendants share it.
+ * Emitted by the compiler around each page and `@rx.memo` body. The names it
+ * lists are owned here unless an ancestor owns them, so each mounted instance
+ * gets its own state and its descendants share it.
  * @param props The component props.
  * @param props.children The children to render.
+ * @param props.owns The local names the boundary's own body uses.
  * @returns The provider element.
  */
-export function ClientStateScope({ children }) {
+export function ClientStateScope({ children, owns }) {
   const parent = useContext(ClientStateScopeContext);
   const scopeRef = useRef(null);
   if (scopeRef.current === null || scopeRef.current.parent !== parent) {
-    scopeRef.current = createScope(parent ?? getClientStore().root);
+    const scope = createScope(parent ?? getClientStore().root);
+    // Claim the names this body uses before any descendant renders, unless an
+    // enclosing boundary already owns them: the outermost user owns the slot.
+    for (const name of owns ?? []) {
+      if (scope.parent.find(name) === undefined) {
+        scope.own(name, UNSET);
+      }
+    }
+    scopeRef.current = scope;
   }
   return createElement(
     ClientStateScopeContext.Provider,
@@ -244,11 +258,12 @@ export function ClientStateScope({ children }) {
  * instance boundaries, leaving optimizer-generated ones untouched so they stay
  * semantically invisible.
  * @param Component The component to wrap.
+ * @param owns The local names the component's own body uses.
  * @returns The wrapped component.
  */
-export const withClientStateScope = (Component) => {
+export const withClientStateScope = (Component, owns) => {
   const Wrapped = (props) =>
-    createElement(ClientStateScope, null, createElement(Component, props));
+    createElement(ClientStateScope, { owns }, createElement(Component, props));
   Wrapped.displayName = `withClientStateScope(${
     Component.displayName ?? Component.name ?? "Component"
   })`;
@@ -279,6 +294,9 @@ export function useClientState(defaultValue, name, isGlobal) {
     };
   }
   const { slot } = bindingRef.current;
+  if (slot.value === UNSET) {
+    slot.value = defaultValue;
+  }
 
   const value = useSyncExternalStore(
     slot.subscribe,

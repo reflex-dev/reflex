@@ -9,10 +9,13 @@ template hard-coding it around every app.
 
 from __future__ import annotations
 
+import re
+from collections.abc import Iterable
+
 from reflex_base.components.component import Component
 from reflex_base.constants import Dirs
 from reflex_base.utils.imports import ImportVar
-from reflex_base.vars.base import Var, VarData
+from reflex_base.vars.base import LiteralVar, Var, VarData
 from reflex_base.vars.function import FunctionVar
 
 # Inside ErrorBoundary (55) so a client-state error is caught, outside the
@@ -21,7 +24,55 @@ from reflex_base.vars.function import FunctionVar
 CLIENT_STATE_APP_WRAP_PRIORITY = 50
 
 
-def scoped_memo_wrapper(inner: Var | None) -> Var:
+# The hook ``ClientStateVar.create`` emits for a local var ends with its quoted
+# name; a global one ends with ``, true)`` instead.
+_LOCAL_HOOK = re.compile(r'= useClientState\(.*, "([A-Za-z_$][A-Za-z0-9_$]*)"\)$')
+
+
+def local_client_state_names(hooks: Iterable[str]) -> list[str]:
+    """Get the local client state names a body's hooks use.
+
+    Args:
+        hooks: The hook strings of one compiled body.
+
+    Returns:
+        The names, sorted so the emitted code is stable.
+    """
+    return sorted({
+        match.group(1)
+        for hook in hooks
+        if hook.endswith('")') and (match := _LOCAL_HOOK.search(hook))
+    })
+
+
+class ClientStateScope(Component):
+    """A client state scope that claims the local names its body uses."""
+
+    library = f"$/{Dirs.CLIENT_STATE_PATH}"
+    tag = "ClientStateScope"
+
+    # The local names used by this boundary's own body.
+    owns: Var[list[str]]
+
+
+def scope_page(component: Component) -> Component:
+    """Make a page the owner of the local client state names its body uses.
+
+    The page is the outermost boundary, so memos below it that use the same
+    names share its slots, and the slots reset when the page unmounts.
+
+    Args:
+        component: The evaluated page component.
+
+    Returns:
+        The page wrapped in a scope, or unchanged when it uses no local names.
+    """
+    if owns := local_client_state_names(component._get_all_hooks()):
+        return ClientStateScope.create(component, owns=owns)
+    return component
+
+
+def scoped_memo_wrapper(inner: Var | None, owns: list[str]) -> Var:
     """Compose a memo wrapper that also opens a client state scope.
 
     The scope has to sit *above* the component function: a component's hooks run
@@ -31,6 +82,7 @@ def scoped_memo_wrapper(inner: Var | None) -> Var:
 
     Args:
         inner: The wrapper the definition would otherwise use, if any.
+        owns: The local names used by the memo body.
 
     Returns:
         A function Var suitable for ``MemoComponentDefinition.wrapper``.
@@ -38,12 +90,14 @@ def scoped_memo_wrapper(inner: Var | None) -> Var:
     scope_import = VarData(
         imports={f"$/{Dirs.CLIENT_STATE_PATH}": [ImportVar(tag="withClientStateScope")]}
     )
+    owns_js = LiteralVar.create(owns)
     if inner is None:
-        return Var(_js_expr="withClientStateScope", _var_data=scope_import).to(
-            FunctionVar
-        )
+        return Var(
+            _js_expr=f"((Component) => withClientStateScope(Component, {owns_js!s}))",
+            _var_data=scope_import,
+        ).to(FunctionVar)
     return Var(
-        _js_expr=f"((Component) => withClientStateScope({inner!s}(Component)))",
+        _js_expr=f"((Component) => withClientStateScope({inner!s}(Component), {owns_js!s}))",
         _var_data=VarData.merge(scope_import, inner._get_all_var_data()),
     ).to(FunctionVar)
 
