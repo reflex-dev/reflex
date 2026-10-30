@@ -864,3 +864,57 @@ test("storage names that are Object.prototype properties sync like any other", a
     JSON.stringify({ third: null }),
   );
 });
+
+test("clearing localStorage syncs every configured name but not unsynced vars", async () => {
+  const { harness, effects, sent } = await mountEventLoop({
+    local_storage: {
+      first: { name: "shared", sync: true },
+      second: { name: "shared", sync: true },
+      other: { sync: true },
+      unsynced: { name: "shared" },
+    },
+  });
+  effects.forEach((effect) => effect());
+  const event = new Event("storage");
+  event.key = null;
+  event.storageArea = harness.localStorage;
+  harness.window.dispatchEvent(event);
+  await new Promise((resolve) => setImmediate(resolve));
+  const updates = sent.filter((event) =>
+    event.name.endsWith("update_vars_internal"),
+  );
+  assert.equal(updates.length, 2, JSON.stringify(sent));
+  assert.equal(
+    JSON.stringify(updates[0].payload.vars),
+    JSON.stringify({ first: null, second: null }),
+  );
+  assert.equal(
+    JSON.stringify(updates[1].payload.vars),
+    JSON.stringify({ other: null }),
+  );
+});
+
+test("a sessionStorage clear does not sync localStorage vars", async () => {
+  const { harness, effects, sent } = await mountEventLoop({
+    local_storage: { first: { sync: true } },
+  });
+  effects.forEach((effect) => effect());
+  const event = new Event("storage");
+  event.key = null;
+  event.storageArea = harness.window.sessionStorage;
+  harness.window.dispatchEvent(event);
+  assert.equal(sent.length, 0);
+});
+
+test("clearing localStorage without synced vars queues no updates", async () => {
+  const { harness, effects, sent } = await mountEventLoop({
+    local_storage: { unsynced: { name: "unused" } },
+  });
+  for (const effect of effects) effect();
+  const event = new Event("storage");
+  event.key = null;
+  event.storageArea = harness.localStorage;
+  harness.window.dispatchEvent(event);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(sent.length, 0);
+});
