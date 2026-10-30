@@ -3,23 +3,32 @@ import importlib.util
 import json
 import os
 import sys
+from collections.abc import Callable
 from pathlib import Path, PureWindowsPath
 
 import pytest
 from pytest_mock import MockerFixture
 from reflex_base import constants
+from reflex_base.components.component import Component
+from reflex_base.components.component import field as component_field
 from reflex_base.components.dynamic import bundle_library, reset_bundled_libraries
+from reflex_base.components.memo import MEMOS
 from reflex_base.constants.base import LiteralColorMode
-from reflex_base.constants.compiler import PageNames
+from reflex_base.constants.compiler import (
+    MemoizationDisposition,
+    MemoizationMode,
+    PageNames,
+)
 from reflex_base.environment import environment
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import (
     DynamicRouteArgShadowsStateVarError,
     PageValueError,
+    ReflexRuntimeError,
     RouteValueError,
 )
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
-from reflex_base.vars.base import Var
+from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.sequence import LiteralStringVar
 from reflex_components_core.base import Description, document
 from reflex_components_core.base.document import Links, Scripts
@@ -1960,3 +1969,138 @@ def test_compile_app_resolves_show_built_with_reflex(
     assert get_user_tier.called is (
         compile_context == constants.CompileContext.DEPLOY and configured is None
     )
+
+
+class UnmemoizedLabel(Component):
+    """Component opted out of auto-memoization, so its state read stays in the page."""
+
+    tag = "UnmemoizedLabel"
+    library = "unmemoized-label-lib"
+    _memoization_mode = MemoizationMode(disposition=MemoizationDisposition.NEVER)
+
+    label: Var[str] = component_field(default=LiteralVar.create(""))
+
+
+def _read_in_memoized_page_component(app: rx.App, label: str) -> None:
+    """Read state in a page component that auto-memoization moves to a memo module."""
+    app.add_page(lambda: rx.text(label), route="/")
+
+
+def _read_in_unmemoized_page_component(app: rx.App, label: str) -> None:
+    """Read state in a page component that stays in the page module."""
+    app.add_page(lambda: UnmemoizedLabel.create(label=label), route="/")
+
+
+def _read_in_explicit_memo(app: rx.App, label: str) -> None:
+    """Read state in the body of an ``rx.memo`` component."""
+
+    @rx.memo
+    def label_card() -> Component:
+        return rx.text(label)
+
+    app.add_page(lambda: label_card(), route="/")
+
+
+def _read_in_app_wrap(app: rx.App, label: str) -> None:
+    """Read state in an app wrap."""
+    app.extra_app_wraps[50, "StatefulBanner"] = lambda _: rx.el.div(label)
+    app.add_page(lambda: rx.el.div("static"), route="/")
+
+
+def _read_in_unmemoized_app_wrap(app: rx.App, label: str) -> None:
+    """Read state in an app wrap that stays in the app root."""
+    app.extra_app_wraps[50, "UnmemoizedBanner"] = lambda _: UnmemoizedLabel.create(
+        label=label
+    )
+    app.add_page(lambda: rx.el.div("static"), route="/")
+
+
+def _read_in_hydrate_fallback(app: rx.App, label: str) -> None:
+    """Read state in the hydrate fallback."""
+    app.hydrate_fallback = rx.el.div(label)
+    app.add_page(lambda: rx.el.div("static"), route="/")
+
+
+state_read_locations = pytest.mark.parametrize(
+    "add_state_read",
+    [
+        pytest.param(_read_in_memoized_page_component, id="auto-memo"),
+        pytest.param(_read_in_unmemoized_page_component, id="page"),
+        pytest.param(_read_in_explicit_memo, id="explicit-memo"),
+        pytest.param(_read_in_app_wrap, id="app-wrap-memo"),
+        pytest.param(_read_in_unmemoized_app_wrap, id="app-wrap-unmemoized"),
+        pytest.param(_read_in_hydrate_fallback, id="hydrate-fallback-memo"),
+    ],
+)
+
+
+@pytest.fixture
+def isolated_compile(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+    clean_registration_context: RegistrationContext,
+    preserve_memo_registries: None,
+) -> None:
+    """Compile in a private directory, registry and memo table without plugins."""
+    # Memos that other modules define at import time may read state, and every
+    # registered memo is compiled, so start from an empty table.
+    MEMOS.clear()
+    monkeypatch.chdir(tmp_path)
+    config = rx.Config(app_name="state_guard_test", plugins=[])
+    mocker.patch("reflex_base.config._get_config", return_value=config)
+
+
+@pytest.fixture
+def state_label(isolated_compile: None) -> str:
+    """Define a state in the isolated registry.
+
+    Returns:
+        The Var of the state's field, typed as the field's value.
+    """
+
+    class DynState(rx.State):
+        label: str = "dynamic"
+
+    return DynState.label
+
+
+@state_read_locations
+def test_compile_app_without_state_rejects_state_reads(
+    add_state_read: Callable[[rx.App, str], None], state_label: str
+):
+    """A state read fails the compile wherever it lands in the emitted modules.
+
+    Auto-memoization, explicit memos, app-wrap memos and the hydrate fallback
+    all move the read out of the page module, into modules compiled after it.
+    """
+    app = rx.App(enable_state=False)
+    add_state_read(app, state_label)
+
+    with pytest.raises(ReflexRuntimeError, match=r"at least one subclass of rx\.State"):
+        compiler.compile_app(app, dry_run=True, use_rich=False)
+
+
+@state_read_locations
+def test_compile_app_with_state_accepts_state_reads(
+    add_state_read: Callable[[rx.App, str], None], state_label: str
+):
+    """The same state reads compile when the app has state."""
+    app = rx.App()
+    add_state_read(app, state_label)
+
+    assert compiler.compile_app(app, dry_run=True, use_rich=False) is True
+
+
+@pytest.mark.parametrize("prod_mode", [False, True])
+def test_compile_app_without_state_accepts_stateless_memos(
+    isolated_compile: None, mocker: MockerFixture, prod_mode: bool
+):
+    """Memos that do not read state, such as event wrappers and the badge, compile."""
+    mocker.patch("reflex.compiler.compiler.is_prod_mode", return_value=prod_mode)
+    app = rx.App(enable_state=False)
+    app.hydrate_fallback = rx.el.div("Hydrating...")
+    app.add_page(lambda: rx.button("ping", on_click=rx.console_log("ping")), route="/")
+
+    assert compiler.compile_app(app, dry_run=True, use_rich=False) is True
+    assert ((0, "StickyBadge") in app.app_wraps) is prod_mode

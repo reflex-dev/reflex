@@ -1371,16 +1371,6 @@ def compile_app(
     ))
 
     all_imports = compile_ctx.all_imports
-
-    if app._state is None and any(
-        code_uses_state_contexts(page_ctx.output_code or "")
-        for page_ctx in compile_ctx.compiled_pages.values()
-    ):
-        msg = (
-            "To access rx.State in frontend components, at least one "
-            "subclass of rx.State must be defined in the app."
-        )
-        raise ReflexRuntimeError(msg)
     progress.advance(task)
 
     app_wrappers = _resolve_app_wrap_components(app, compile_ctx.app_wrap_components)
@@ -1502,6 +1492,17 @@ def compile_app(
     progress.advance(task)
 
     compile_results.append(compile_app_root(app_root, hydrate_fallback_export))
+
+    # Memo modules and the app root can hold state reads too. Check after the app
+    # root, which must follow compile_contexts to see the libraries it bundles.
+    if app._state is None and any(
+        code_uses_state_contexts(code) for _, code in compile_results
+    ):
+        msg = (
+            "To access rx.State in frontend components, at least one "
+            "subclass of rx.State must be defined in the app."
+        )
+        raise ReflexRuntimeError(msg)
     progress.advance(task)
 
     progress.stop()
