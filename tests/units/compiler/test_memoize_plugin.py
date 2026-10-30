@@ -2176,7 +2176,7 @@ def test_form_memo_preserves_control_refs(form_factory) -> None:
         if isinstance(definition.component, Form)
     ]
     assert len(forms) == 1
-    form_hooks = "\n".join(forms[0].add_hooks())
+    form_hooks = str(forms[0]._render().props["onSubmit"])
     assert "getFormData($form, " in form_hooks
     for field_id in ("plain_field", "debounced_field", "unset_field"):
         assert f'getRefValue(refs["ref_{field_id}"])' in form_hooks

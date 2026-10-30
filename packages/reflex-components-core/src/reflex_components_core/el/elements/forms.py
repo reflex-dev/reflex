@@ -48,7 +48,6 @@ _NATIVE_FORM_CONTROL_TAGS = frozenset({"input", "select", "textarea"})
 
 
 def _handle_submit_js_template(
-    handle_submit_unique_name: str,
     form_data: str,
     field_ref_mapping: str,
     on_submit_event_chain: str,
@@ -57,7 +56,6 @@ def _handle_submit_js_template(
     """Generate handle submit JS using f-string formatting.
 
     Args:
-        handle_submit_unique_name: Unique name for the handle submit function.
         form_data: Name of the form data variable.
         field_ref_mapping: JSON string of field reference mappings.
         on_submit_event_chain: Event chain for the submit handler.
@@ -67,7 +65,7 @@ def _handle_submit_js_template(
         JavaScript code for the form submit handler.
     """
     return f"""
-    const handleSubmit_{handle_submit_unique_name} = useCallback((ev) => {{
+    (ev) => {{
         const $form = ev.target
         ev.preventDefault()
         const {form_data} = getFormData($form, {field_ref_mapping});
@@ -77,7 +75,7 @@ def _handle_submit_js_template(
         if ({reset_on_submit}) {{
             $form.reset()
         }}
-    }})
+    }}
     """
 
 
@@ -404,37 +402,28 @@ class Form(BaseHTML):
             The imports for the form component.
         """
         return {
-            "react": "useCallback",
             f"$/{Dirs.STATE_PATH}": ["getFormData", "getRefValue", "getRefValues"],
         }
-
-    def add_hooks(self) -> list[str]:
-        """Add hooks for the form.
-
-        Returns:
-            The hooks for the form.
-        """
-        if EventTriggers.ON_SUBMIT not in self.event_triggers:
-            return []
-        return [
-            _handle_submit_js_template(
-                handle_submit_unique_name=str(self.handle_submit_unique_name),
-                form_data=str(FORM_DATA),
-                field_ref_mapping=str(LiteralVar.create(self._get_form_refs())),
-                on_submit_event_chain=str(
-                    LiteralVar.create(self.event_triggers[EventTriggers.ON_SUBMIT])
-                ),
-                reset_on_submit=str(self.reset_on_submit).lower(),
-            )
-        ]
 
     def _render(self) -> CommonTag:
         render_tag = super()._render()
         if EventTriggers.ON_SUBMIT in self.event_triggers:
+            on_submit = LiteralVar.create(self.event_triggers[EventTriggers.ON_SUBMIT])
+            form_refs = LiteralVar.create(self._get_form_refs())
             render_tag = render_tag.add_props(**{
                 EventTriggers.ON_SUBMIT: Var(
-                    _js_expr=f"handleSubmit_{self.handle_submit_unique_name}",
+                    _js_expr=_handle_submit_js_template(
+                        form_data=str(FORM_DATA),
+                        field_ref_mapping=str(form_refs),
+                        on_submit_event_chain=str(on_submit),
+                        reset_on_submit=str(self.reset_on_submit).lower(),
+                    ),
                     _var_type=EventChain,
+                    _var_data=VarData.merge(
+                        on_submit._get_all_var_data(),
+                        form_refs._get_all_var_data(),
+                        self.reset_on_submit._get_all_var_data(),
+                    ),
                 )
             })
         return render_tag

@@ -35,15 +35,45 @@ DEBOUNCED_INPUT_ID = "debounced_input"
 MEMOIZED_INPUT_ID = "memoized_input"
 
 
+@pytest.mark.parametrize("form_factory", [HTMLForm.create, Form.create])
+def test_submit_handler_captures_foreach_item_and_index(form_factory):
+    """Submit handlers must retain both variables from their foreach row."""
+
+    class RowState(rx.State):
+        @rx.event
+        def submit(self, item: str, index: int, form_data: dict[str, str]):
+            """Receive a row's submitted fields.
+
+            Args:
+                item: The foreach item.
+                index: The row index.
+                form_data: The submitted fields.
+            """
+
+    rows = rx.foreach(
+        ["first", "second"],
+        lambda item, index: form_factory(
+            rx.input(name="input"),
+            on_submit=lambda form_data: RowState.submit(item, index, form_data),
+        ),
+    )
+    form = rows._render().render_component()
+    handler = str(form._render().props["onSubmit"])
+    assert "item_rx_state_" in handler
+    assert "index_rx_state_" in handler
+    assert "form_data" in handler
+
+
 def test_render_on_submit():
-    """Test that on_submit event chain is rendered as a separate function."""
+    """Test that on_submit wraps the event chain with form-data collection."""
     submit_it = Var(
         _js_expr="submit_it",
         _var_type=EventChain,
     )
     f = Form.create(on_submit=submit_it)
-    exp_submit_name = f"handleSubmit_{f.handle_submit_unique_name}"  # pyright: ignore [reportAttributeAccessIssue]
-    assert f"onSubmit:{exp_submit_name}" in f.render()["props"]
+    handler = str(f._render().props["onSubmit"])
+    assert "getFormData($form, " in handler
+    assert "submit_it(...args)" in handler
 
 
 def test_render_no_on_submit():
@@ -72,7 +102,7 @@ def test_form_submit_preserves_null_control_values():
         on_submit=FormState.on_submit,
         id=FORM_ID,
     )
-    submit_hook = form.add_hooks()[0]
+    submit_hook = str(form._render().props["onSubmit"])
     assert "filter(([, value]) => value != null)" not in submit_hook
     assert f"ref_{EMAIL_FIELD_ID}" in submit_hook
     assert f"ref_{EMAIL_LABEL_ID}" not in submit_hook
@@ -90,17 +120,17 @@ def test_form_refs_include_custom_native_controls(native_tag):
 
     form = HTMLForm.create(NativeInput.create(id="native_input"))
 
-    assert "ref_native_input" in form.add_hooks()[0]
+    assert "ref_native_input" in str(form._render().props["onSubmit"])
 
 
 def test_form_refs_follow_replaced_children():
     """Replacing form children must not retain refs from the previous subtree."""
     form = HTMLForm.create(Input.create(id="original"))
-    assert 'getRefValue(refs["ref_original"])' in form.add_hooks()[0]
+    assert 'getRefValue(refs["ref_original"])' in str(form._render().props["onSubmit"])
 
     form.children = [Input.create(id="replacement")]
 
-    hook = form.add_hooks()[0]
+    hook = str(form._render().props["onSubmit"])
     assert 'getRefValue(refs["ref_replacement"])' in hook
     assert 'getRefValue(refs["ref_original"])' not in hook
 
@@ -114,7 +144,7 @@ def test_form_refs_include_opted_in_custom_controls():
 
     form = HTMLForm.create(CustomControl.create(id="custom_control"))
 
-    assert "ref_custom_control" in form.add_hooks()[0]
+    assert "ref_custom_control" in str(form._render().props["onSubmit"])
 
 
 def test_form_refs_include_debounced_controls():
@@ -125,7 +155,7 @@ def test_form_refs_include_debounced_controls():
         )
     )
 
-    assert f"ref_{DEBOUNCED_INPUT_ID}" in form.add_hooks()[0]
+    assert f"ref_{DEBOUNCED_INPUT_ID}" in str(form._render().props["onSubmit"])
 
 
 def test_form_refs_include_memoized_controls(monkeypatch):
@@ -137,7 +167,7 @@ def test_form_refs_include_memoized_controls(monkeypatch):
     monkeypatch.setattr(MemoizedInput, "_wrapped_component_type", Input, raising=False)
     form = HTMLForm.create(MemoizedInput.create(id=MEMOIZED_INPUT_ID))
 
-    assert f"ref_{MEMOIZED_INPUT_ID}" in form.add_hooks()[0]
+    assert f"ref_{MEMOIZED_INPUT_ID}" in str(form._render().props["onSubmit"])
 
 
 @pytest.mark.parametrize("form_factory", [HTMLForm.create, Form.create])
@@ -360,7 +390,7 @@ def test_on_submit_collects_form_data_with_id_refs(form_factory):
         Input.create(id="email_input", name="email"),
         on_submit=Var(_js_expr="submit_it", _var_type=EventChain),
     )
-    (hook,) = form.add_hooks()
+    hook = str(form._render().props["onSubmit"])
     assert (
         "const form_data = getFormData($form, "
         '({ ["email_input"] : getRefValue(refs["ref_email_input"]) }));'

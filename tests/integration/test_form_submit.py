@@ -110,6 +110,12 @@ def FormSubmitName(
     class FormState(rx.State):
         form_data: rx.Field[dict] = rx.field(default_factory=dict)
         tags: rx.Field[list[str]] = rx.field(default_factory=list)
+        submitted_rows: rx.Field[list[dict[str, str | int]]] = rx.field(
+            default_factory=list
+        )
+        row_items: rx.Field[list[str]] = rx.field(
+            default_factory=lambda: ["alpha", "beta", "gamma"]
+        )
         val: str = "foo"
         options: list[str] = ["option1", "option2"]
 
@@ -123,6 +129,21 @@ def FormSubmitName(
         @rx.event
         def form_submit_all(self, form_data: rx.form.FormData[str, str]):
             self.tags = form_data.getlist("tag")
+
+        @rx.event
+        def form_submit_row(self, item: str, index: int, form_data: dict[str, str]):
+            """Record the submitted row and its form data.
+
+            Args:
+                item: The foreach item.
+                index: The row index.
+                form_data: The submitted fields.
+            """
+            self.submitted_rows.append({
+                "item": item,
+                "index": index,
+                "value": form_data["row_value"],
+            })
 
     app = rx.App()
 
@@ -171,6 +192,17 @@ def FormSubmitName(
             ),
             rx.text(FormState.form_data.to_string(), id="form-data"),
             rx.text(FormState.tags.to_string(), id="tags"),
+            rx.foreach(
+                FormState.row_items,
+                lambda item, index: eval(form_component)(
+                    rx.input(name="row_value"),
+                    rx.button("Submit row", type="submit"),
+                    on_submit=lambda data: FormState.form_submit_row(item, index, data),
+                    reset_on_submit=True,
+                    id=f"row-{index}",
+                ),
+            ),
+            rx.text(FormState.submitted_rows.to_string(), id="submitted-rows"),
             rx.spacer(),
             height="100vh",
         )
