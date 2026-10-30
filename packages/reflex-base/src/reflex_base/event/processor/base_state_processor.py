@@ -269,8 +269,10 @@ def _written_snapshot(root_state: BaseState) -> dict[tuple[str, str], Any]:
 
     Returns:
         The raw value of each dirty field of the root and its dirty substates,
-        keyed by state and field name. Comparing two snapshots with
-        ``_written_since`` tells whether a field was assigned in between.
+        keyed by state and field name, plus each state's in-place change count
+        under an empty field name. Comparing two snapshots with
+        ``_written_since`` tells whether a field was assigned or changed in
+        place in between.
     """
     snapshot: dict[tuple[str, str], Any] = {}
     stack = [root_state]
@@ -279,6 +281,7 @@ def _written_snapshot(root_state: BaseState) -> dict[tuple[str, str], Any]:
         cls = type(state)
         fields = cls.__fields__
         full_name = cls.get_full_name()
+        snapshot[full_name, ""] = state._mutations
         for name in state.dirty_vars:
             if (field := fields.get(name)) is not None:
                 snapshot[full_name, name] = field._get_raw(state)
@@ -297,9 +300,9 @@ def _written_since(
         after: The later snapshot.
 
     Returns:
-        True if a field became dirty or holds a different object than before.
-        An in-place change to the same object is not an assignment: the
-        object is emitted as it is at emit time.
+        True if a field became dirty, holds a different object than before,
+        or a state's in-place change count moved (its own object, so unequal
+        counts are different objects too).
     """
     return before.keys() != after.keys() or any(
         before[key] is not value for key, value in after.items()

@@ -953,6 +953,7 @@ class MutableProxy(wrapt.ObjectProxy):
         """
         state = self._dirty_state()
         type(state).__fields__[self._self_field_name]._mark_dirty(state)
+        state._note_in_place_change()
         if wrapped is not None:
             return wrapped(*args, **(kwargs or {}))
         return None

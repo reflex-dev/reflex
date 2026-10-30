@@ -4595,6 +4595,68 @@ async def test_gathered_inline_handler_rewrite_of_a_dirty_var_is_kept(
     assert sent_a[-1] == 7, f"the frontend was left at {sent_a}"
 
 
+async def test_gathered_inline_handler_in_place_change_is_kept(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list,
+    token: str,
+):
+    """A gathered handler's in-place change to a dirty list reaches computed values.
+
+    The list keeps its identity, so only a write count tells the flushing
+    handler to recompute what depends on it before cleaning.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: Deltas emitted to the frontend, in order.
+        token: The client token.
+    """
+    resolving = asyncio.Event()
+
+    class InPlaceState(State):
+        items: list[int] = []
+
+        @rx.var
+        def count(self) -> int:
+            return len(self.items)
+
+        @rx.var(cache=False)
+        async def slow(self) -> int:
+            if self.items:
+                resolving.set()
+            await asyncio.sleep(0)
+            return len(self.items)
+
+        @event
+        async def start(self):
+            self.items = [1]
+
+        @event
+        async def append(self):
+            await resolving.wait()
+            self.items.append(2)
+            for _ in range(10):
+                await asyncio.sleep(0)
+
+        @event
+        async def both(self):
+            await asyncio.gather(InPlaceState.start(), InPlaceState.append())
+
+    async with real_base_state_processor as processor:
+        await (
+            await processor.enqueue(
+                token, Event.from_event_type(InPlaceState.both())[0]
+            )
+        )
+    sent_counts = [
+        delta[InPlaceState.get_full_name()]["count" + FIELD_MARKER]
+        for _, delta in emitted_deltas
+        if "count" + FIELD_MARKER in delta.get(InPlaceState.get_full_name(), {})
+    ]
+    assert sent_counts[-1] == 2, f"the frontend was left with counts {sent_counts}"
+
+
 async def test_detached_inline_task_holds_the_lock_until_it_finishes(
     wired_app: App,
     real_base_state_processor: BaseStateEventProcessor,

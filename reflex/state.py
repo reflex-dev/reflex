@@ -603,6 +603,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
 
     # Instance bookkeeping, kept out of `__dict__`: never a field, never pickled.
     __slots__ = (
+        "_mutations",
         "_was_touched",
         "dirty_substates",
         "dirty_vars",
@@ -622,6 +623,9 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         dirty_substates: set[str] = field(default_factory=set, is_var=False)
         # Whether the state was modified since it was last persisted.
         _was_touched: bool = field(default=False, is_var=False)
+        # How many in-place changes its mutable values took; a flush that
+        # suspended compares it, since such a change keeps the value's identity.
+        _mutations: int = field(default=0, is_var=False)
 
     # The routing path that triggered the state
     router_data: builtins.dict[str, Any] = field(
@@ -717,6 +721,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         setattr_(self, "dirty_vars", set())
         setattr_(self, "dirty_substates", set())
         setattr_(self, "_was_touched", False)
+        setattr_(self, "_mutations", 0)
 
     def __repr__(self) -> str:
         """Get the string representation of the state.
@@ -2007,6 +2012,15 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         if not _replay_client_storage.get():
             await _sync_shared_storage(self)
         return await resolve_delta(self)
+
+    def _note_in_place_change(self) -> None:
+        """Count an in-place change to one of this state's mutable values.
+
+        Called through a proxy, so the count lands on the state itself. Kept
+        off the plain assignment path, which is only a few hundred
+        nanoseconds and detects reassignment by identity instead.
+        """
+        object.__setattr__(self, "_mutations", self._mutations + 1)
 
     def _mark_dirty(self, var_names: Iterable[str] | None = None) -> None:
         """Mark this state and its ancestors dirty, invalidating dependent computed vars.
