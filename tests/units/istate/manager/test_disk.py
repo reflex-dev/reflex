@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 
 import pytest
+from reflex_base.vars.base import computed_var
 
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.token import BaseStateToken, StateToken
@@ -167,3 +168,60 @@ async def test_set_state_for_substate_builds_tokens_for_written_states_only(
 
     assert written == [DiskTreeFirst]
     await state_manager.close()
+
+
+@pytest.mark.asyncio
+async def test_states_from_disk_recompute_cached_vars(tmp_path, monkeypatch):
+    """States read back from disk keep their fields but recompute cached vars.
+
+    A state is only read from disk when it is not in memory, as after a hot
+    reload, which may have changed what the computed vars return.
+
+    Args:
+        tmp_path: A temporary directory.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
+    rows = ["a", "b"]
+
+    class DiskCachedState(BaseState):
+        count: int = 0
+
+        @computed_var(cache=True)
+        def data(self) -> list[str]:
+            """The rows, which a reload can change.
+
+            Returns:
+                A copy of the rows.
+            """
+            return list(rows)
+
+    class DiskCachedChild(DiskCachedState):
+        @computed_var(cache=True)
+        def child_data(self) -> list[str]:
+            """The rows, cached on the substate.
+
+            Returns:
+                A copy of the rows.
+            """
+            return list(rows)
+
+    token = BaseStateToken(ident="client", cls=DiskCachedState)
+    state_manager = StateManagerDisk(_write_debounce_seconds=0)
+    async with state_manager.modify_state(token) as state:
+        assert isinstance(state, DiskCachedState)
+        state.count = 99
+        child = await state.get_state(DiskCachedChild)
+        assert (state.data, child.child_data) == (["a", "b"], ["a", "b"])
+    rows[:] = ["a"]
+    # A state still in memory keeps its cached values.
+    assert await state_manager.get_state(token) is state
+    assert state.data == ["a", "b"]
+    await state_manager.close()
+
+    reloaded_state_manager = StateManagerDisk(_write_debounce_seconds=0)
+    state = await reloaded_state_manager.get_state(token)
+    assert isinstance(state, DiskCachedState)
+    child = await state.get_state(DiskCachedChild)
+    assert (state.count, state.data, child.child_data) == (99, ["a"], ["a"])
+    await reloaded_state_manager.close()

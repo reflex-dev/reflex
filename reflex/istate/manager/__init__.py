@@ -347,6 +347,20 @@ def _release_state_tree(state: "BaseState"):
     state.substates.clear()
 
 
+def _drop_cached_var_values(state: "BaseState") -> None:
+    """Drop the computed var values cached in a state read from storage.
+
+    The process that saved the state may have run older code, as before a hot
+    reload. Its fields are kept, and its computed vars are computed again when
+    read.
+
+    Args:
+        state: The state read from storage.
+    """
+    for computed_var in state.computed_vars.values():
+        computed_var.mark_dirty(instance=state)
+
+
 def _default_token_expiration() -> int:
     """Get the default token expiration time.
 

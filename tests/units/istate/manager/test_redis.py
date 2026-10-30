@@ -15,7 +15,9 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 import pytest_asyncio
+from reflex_base.constants import Env
 from reflex_base.utils.exceptions import EnvironmentVarValueError, LockExpiredError
+from reflex_base.vars.base import computed_var
 
 from reflex.istate.manager.redis import (
     _RELEASE_LOCK_SCRIPT,
@@ -1998,3 +2000,133 @@ async def test_mock_redis_eval_only_emulates_the_fenced_save_script():
     eval_script: Any = mock_redis().eval
     with pytest.raises(NotImplementedError):
         await eval_script("return 1", 0)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("env_mode", "after_reload"),
+    [(Env.DEV, ["a"]), (Env.PROD, ["a", "b"])],
+)
+async def test_first_read_in_dev_recomputes_cached_vars(
+    monkeypatch: pytest.MonkeyPatch, env_mode: Env, after_reload: list[str]
+):
+    """In dev mode, the first read of a state in a process recomputes cached vars.
+
+    A new process, as after a hot reload, may have changed what the computed
+    vars return. Later reads, and all reads in prod mode, keep the cache.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+        env_mode: The mode the app runs in.
+        after_reload: The cached var value expected after the reload.
+    """
+    monkeypatch.setenv("REFLEX_ENV_MODE", env_mode.value)
+    rows = ["a", "b"]
+
+    class RedisCachedState(BaseState):
+        count: int = 0
+
+        @computed_var(cache=True)
+        def data(self) -> list[str]:
+            """The rows, which a reload can change.
+
+            Returns:
+                A copy of the rows.
+            """
+            return list(rows)
+
+    class RedisCachedChild(RedisCachedState):
+        label: str = ""
+
+        @computed_var(cache=True)
+        def child_data(self) -> list[str]:
+            """The rows, cached on the substate.
+
+            Returns:
+                A copy of the rows.
+            """
+            return list(rows)
+
+    async def read(state_manager: StateManagerRedis, count: int) -> tuple:
+        """Touch the root and child states and read their cached vars.
+
+        Args:
+            state_manager: The StateManagerRedis to read from.
+            count: The new count to set.
+
+        Returns:
+            The old count and the cached var values.
+        """
+        async with state_manager.modify_state(token) as state:
+            assert isinstance(state, RedisCachedState)
+            child = await state.get_state(RedisCachedChild)
+            old_count, state.count, child.label = state.count, count, str(count)
+            return old_count, state.data, child.child_data
+
+    redis = mock_redis()
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=RedisCachedState)
+    state_manager = StateManagerRedis(redis=redis)
+    state_manager._oplock_enabled = False
+    assert await read(state_manager, 99) == (0, ["a", "b"], ["a", "b"])
+    await state_manager.close()
+    rows[:] = ["a"]
+
+    reloaded_state_manager = StateManagerRedis(redis=redis)
+    reloaded_state_manager._oplock_enabled = False
+    assert await read(reloaded_state_manager, 100) == (99, after_reload, after_reload)
+    rows[:] = ["x"]
+    assert await read(reloaded_state_manager, 101) == (100, after_reload, after_reload)
+    await reloaded_state_manager.close()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("first_read", ["untouched event", "get_state"])
+async def test_dev_unwritten_state_keeps_recomputing_cached_vars(
+    monkeypatch: pytest.MonkeyPatch, first_read: str
+):
+    """In dev mode, cached vars are recomputed until this process writes the state.
+
+    A first read after a hot reload that writes nothing back leaves the old
+    cached values in redis, so the next read must drop them as well.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+        first_read: How the reloaded process first reads the state.
+    """
+    monkeypatch.setenv("REFLEX_ENV_MODE", Env.DEV.value)
+    rows = ["a", "b"]
+
+    class UnwrittenCachedState(BaseState):
+        count: int = 0
+
+        @computed_var(cache=True)
+        def data(self) -> list[str]:
+            """The rows, which a reload can change.
+
+            Returns:
+                A copy of the rows.
+            """
+            return list(rows)
+
+    redis = mock_redis()
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=UnwrittenCachedState)
+    state_manager = StateManagerRedis(redis=redis)
+    state_manager._oplock_enabled = False
+    async with state_manager.modify_state(token) as state:
+        assert isinstance(state, UnwrittenCachedState)
+        state.count = 99
+        assert state.data == ["a", "b"]
+    await state_manager.close()
+    rows[:] = ["a"]
+
+    reloaded_state_manager = StateManagerRedis(redis=redis)
+    reloaded_state_manager._oplock_enabled = False
+    if first_read == "get_state":
+        await reloaded_state_manager.get_state(token)
+    else:
+        async with reloaded_state_manager.modify_state(token):
+            pass
+    async with reloaded_state_manager.modify_state(token) as state:
+        assert isinstance(state, UnwrittenCachedState)
+        assert (state.count, state.data) == (99, ["a"])
+    await reloaded_state_manager.close()

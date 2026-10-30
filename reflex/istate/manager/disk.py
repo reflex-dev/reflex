@@ -18,6 +18,7 @@ from reflex.istate.manager import (
     StateManager,
     StateModificationContext,
     _default_token_expiration,
+    _drop_cached_var_values,
     _release_state_tree,
 )
 from reflex.istate.manager.token import TOKEN_TYPE, BaseStateToken, StateToken
@@ -180,6 +181,7 @@ class StateManagerDisk(StateManager):
             if instance is not None:
                 # Ensure all substates exist, even if they weren't serialized previously.
                 instance.substates = fresh_instance.substates
+                _drop_cached_var_values(instance)
             else:
                 instance = fresh_instance
             state.substates[substate.get_name()] = instance
@@ -222,6 +224,7 @@ class StateManagerDisk(StateManager):
             else:
                 # Ensure all substates exist, even if they were not serialized previously.
                 root_state.substates = fresh_root_state.substates
+                _drop_cached_var_values(root_state)
             await self.populate_substates(token, root_state, root_state)
             self.states[token.cache_key] = root_state
             return cast(TOKEN_TYPE, root_state)
