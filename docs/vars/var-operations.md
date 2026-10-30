@@ -426,6 +426,37 @@ def var_map_filter_reduce_example():
     )
 ```
 
+### Set Operations
+
+A var annotated as `set` or `frozenset` supports set operations rather than list operations: `contains`, `length`, `union`, `intersection`, `difference`, `symmetric_difference`, `issubset`, `issuperset` and `isdisjoint`. The other operand may be another set var, a list var, or a plain Python set or list.
+
+Sets have no order or index. To use list operations such as indexing, `map` or `join`, call `to_array()` first; `rx.foreach` accepts a set var directly.
+
+```python demo exec
+class SetState(rx.State):
+    tags: set[str] = {"python", "reflex"}
+    featured: set[str] = {"reflex", "react"}
+
+    @rx.event
+    def toggle_react(self):
+        self.tags.symmetric_difference_update({"react"})
+
+
+def var_set_example():
+    return rx.vstack(
+        rx.text(f"Tags: {SetState.tags.to_array().join(', ')}"),
+        rx.text(f"Has react: {SetState.tags.contains('react')}"),
+        rx.text(
+            f"Union: {SetState.tags.union(SetState.featured).to_array().join(', ')}"
+        ),
+        rx.text(
+            f"Intersection: {SetState.tags.intersection(SetState.featured).to_array().join(', ')}"
+        ),
+        rx.text(f"Is subset of featured: {SetState.tags.issubset(SetState.featured)}"),
+        rx.button("Toggle react", on_click=SetState.toggle_react),
+    )
+```
+
 ### Lower, Upper, Split
 
 The `lower` operator converts a string var to lowercase. The `upper` operator converts a string var to uppercase. The `split` operator splits a string var into a list.
