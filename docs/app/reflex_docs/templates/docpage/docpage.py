@@ -482,6 +482,17 @@ def docpage(
                 docs_navbar(),
                 rx.el.main(
                     docs_left_sidebar(sidebar),
+                    # Precedes the reading column in the DOM (docs-theme.css restores the
+                    # visual order) so a page painted mid-parse already reserves its width.
+                    docs_right_sidebar(
+                        toc,
+                        path=path,
+                        feedback=feedback_button_toc(),
+                    )
+                    if show_right_sidebar and not pseudo_right_bar
+                    else rx.box(
+                        class_name="w-[180px] h-screen sticky top-0 shrink-0 hidden xl:block"
+                    ),
                     rx.box(
                         rx.box(
                             breadcrumb(
@@ -524,15 +535,6 @@ def docpage(
                             "docs-reading-column flex-1 min-w-0 h-auto mx-auto lg:max-w-[56rem] px-4 lg:px-8 xl:px-12 overflow-y-auto",
                             "lg:max-w-[68rem]" if not show_right_sidebar else "",
                         ),
-                    ),
-                    docs_right_sidebar(
-                        toc,
-                        path=path,
-                        feedback=feedback_button_toc(),
-                    )
-                    if show_right_sidebar and not pseudo_right_bar
-                    else rx.box(
-                        class_name="w-[180px] h-screen sticky top-0 shrink-0 hidden xl:block"
                     ),
                     class_name="docs-reading-layout flex justify-center mx-auto mt-0 max-w-[108rem] h-full min-h-screen w-full",
                 ),
