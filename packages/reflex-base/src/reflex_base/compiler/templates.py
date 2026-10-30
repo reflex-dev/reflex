@@ -7,7 +7,7 @@ import re
 from collections.abc import Iterable, Mapping
 from typing import TYPE_CHECKING, Any, Literal
 
-from reflex_base import constants
+from reflex_base import constants, ssr
 from reflex_base.utils import memo_paths
 from reflex_base.utils.format import json_dumps
 from reflex_base.vars.base import VarData
@@ -177,6 +177,50 @@ def app_root_template(
         f'    "{lib_path}": {lib_alias},' for lib_alias, lib_path in window_libraries
     ])
 
+    if ssr.is_enabled():
+        ssr_imports = (
+            'import { useLoaderData } from "react-router";\n'
+            'import { getBackendURL } from "$/utils/state";\n'
+            'import { SSRStateContext } from "$/utils/context";\n'
+            'import env from "$/env.json";'
+        )
+        ssr_loader = """
+export async function loader({ request }) {
+  // Fetch on_load-hydrated state from the Python /_ssr_data endpoint so the
+  // server-rendered HTML already contains real data.
+  try {
+    const url = new URL(request.url);
+    const res = await fetch(getBackendURL(env.SSR_DATA), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(request.headers.get("cookie") ? { Cookie: request.headers.get("cookie") } : {}),
+      },
+      body: JSON.stringify({
+        path: url.pathname,
+        search: url.search,
+        headers: Object.fromEntries(request.headers),
+      }),
+    });
+    if (res.ok) return res.json();
+  } catch (e) {
+    console.error("SSR data fetch failed:", e);
+  }
+  return { state: null };
+}
+"""
+        layout_body = (
+            "const loaderData = useLoaderData();\n"
+            "  const ssrState = loaderData?.state ?? null;\n"
+            "  return jsx(AppLayout, {}, "
+            "jsx(SSRStateContext.Provider, {value: ssrState}, "
+            "jsx(ReflexProviders, {}, children)));"
+        )
+    else:
+        ssr_imports = ""
+        ssr_loader = ""
+        layout_body = "return jsx(AppLayout, {}, jsx(ReflexProviders, {}, children));"
+
     window_imports_effect = f"""useEffect(() => {{
     // Make contexts and state objects available globally for dynamic eval'd components
     window.__reflex = {{
@@ -222,11 +266,12 @@ import {{ defaultColorMode }} from "$/utils/context";
 import {{ ThemeProvider }} from '$/utils/react-theme';
 import {{ Layout as AppLayout }} from './_document';
 import {{ Outlet }} from 'react-router';
+{ssr_imports}
 {import_window_libraries}
 {lazy_imports_setup}
 
 {custom_code_str}
-
+{ssr_loader}
 function ReflexProviders({{children}}) {{
   {window_imports_effect}
 
@@ -242,7 +287,7 @@ return ({_RenderUtils.render(render)})
 }}
 
 export function Layout({{children}}) {{
-  return jsx(AppLayout, {{}}, jsx(ReflexProviders, {{}}, children));
+  {layout_body}
 }}
 
 // Used by entry.client.js when mount_target is configured: skips the document
@@ -306,6 +351,7 @@ def context_template(
     Returns:
         Rendered context file content as string.
     """
+    ssr_enabled = ssr.is_enabled()
     initial_state = initial_state or {}
     if initial_state_json is None:
         initial_state_json = json_dumps(initial_state)
@@ -377,6 +423,26 @@ export const initialEvents = () => []
 """
     )
 
+    if ssr_enabled:
+        # The store may start from SSR state, so the first hydrate needs it all.
+        initial_state_hashes = None
+        ssr_context_str = "export const SSRStateContext = createContext(null);"
+        ssr_state_hook = "const ssrState = useContext(SSRStateContext);"
+        # Server-rendered substates take precedence over the compiled defaults.
+        client_initial_state = (
+            "ssrState ? Object.fromEntries(Object.entries(initialState).map("
+            "([name, value]) => [name, ssrState[name] ?? value])) : initialState"
+        )
+        server_state_store = (
+            "ssrState ? { ...serverStateStore, getSnapshot: "
+            "(name) => ssrState[name] ?? initialState[name] } : serverStateStore"
+        )
+    else:
+        ssr_context_str = ""
+        ssr_state_hook = ""
+        client_initial_state = "initialState"
+        server_state_store = "serverStateStore"
+
     disable_owner_stacks_str = (
         r"""
 // Disable React dev-build owner-stack capture: the per-element Error()
@@ -405,7 +471,7 @@ if (typeof window !== "undefined") {
         else ""
     )
 
-    return rf"""import {"React, " if disable_react_owner_stacks else ""}{{ useContext, useMemo, useState, createElement, useEffect }} from "react"
+    return rf"""import {"React, " if disable_react_owner_stacks else ""}{{ {"createContext, " if ssr_enabled else ""}useContext, useMemo, useState, createElement, useEffect }} from "react"
 import {{ applyDelta, ReflexEvent, hydrateClientStorage, useEventLoop, refs }} from "$/utils/state"
 import {{ ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext, StateStoreContext, registerApp, eventLoop }} from "$/utils/context-registry"
 import {{ jsx }} from "@emotion/react";
@@ -416,6 +482,7 @@ export const initialStateHashes = {"[]" if not initial_state_hashes else json_du
 export const stateSchema = {json.dumps(state_schema)}
 
 export const defaultColorMode = {default_color_mode}
+{ssr_context_str}
 export const clientStorage = {"{}" if client_storage is None else json.dumps(client_storage)}
 
 {state_str}
@@ -558,7 +625,8 @@ function StateStoreProviders({{ children, store }}) {{
 }}
 
 function ClientStateProvider({{ children }}) {{
-  const [store] = useState(() => createStateStore(initialState));
+  {ssr_state_hook}
+  const [store] = useState(() => createStateStore({client_initial_state}));
   useEffect(() => store.mergeInitialState(initialState), [store, initialState]);
   return createElement(StateStoreProviders, {{ children, store }});
 }}
@@ -572,7 +640,8 @@ const serverStateStore = {{
 }};
 
 function ServerStateProvider({{ children }}) {{
-  return createElement(StateStoreProviders, {{ children, store: serverStateStore }});
+  {ssr_state_hook}
+  return createElement(StateStoreProviders, {{ children, store: {server_state_store} }});
 }}
 
 export const StateProvider =

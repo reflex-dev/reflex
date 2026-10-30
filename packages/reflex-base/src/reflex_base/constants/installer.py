@@ -168,6 +168,11 @@ class PackageJson(SimpleNamespace):
         "babel-plugin-react-compiler": "1.0.0",
     }
 
+    # Imported by the ISR render service (isr-render.mjs); installed by SSR builds.
+    ISR_RENDER_DEPENDENCIES = {
+        "express": "5.3.0",
+    }
+
     # Force specific transitive npm deps to a single resolved version when
     # needed. Prefer a `DEV_DEPENDENCIES`/`DEPENDENCIES` pin when the package is
     # one we depend on directly: a top-level pin already satisfies and dedupes
