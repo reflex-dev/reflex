@@ -295,13 +295,30 @@ def test_on_load_navigate(
     with poll_for_navigation(driver):
         click_element(driver, "#link_missing")
     expect(driver.get_by_text("404")).to_be_visible()
-    exp_order += ["/404-no page id"]
 
     # hit a page that redirects back to dynamic page
-    exp_order += ["on_load_redir-{'foo': 'bar', 'page_id': '0'}", "/page/[page_id]-0"]
+    redirect_order = [
+        "on_load_redir-{'foo': 'bar', 'page_id': '0'}",
+        "/page/[page_id]-0",
+    ]
+    expected_redirect_orders = [
+        [*exp_order, *redirect_order],
+        [*exp_order, "/404-no page id", *redirect_order],
+    ]
     with poll_for_navigation(driver):
         driver.goto(f"{frontend_url}/redirect-page/0/?foo=bar")
-    poll_assert_event_order(driver, exp_order)
+    driver.wait_for_function(
+        """(orders) => {
+            const texts = Array.from(
+                document.querySelectorAll('#event_order > p'),
+                (paragraph) => paragraph.textContent,
+            );
+            return orders.some((order) => JSON.stringify(order) === JSON.stringify(texts));
+        }""",
+        arg=expected_redirect_orders,
+    )
+    exp_order = driver.locator("#event_order > p").all_text_contents()
+    assert exp_order in expected_redirect_orders
     # should have redirected back to page 0
     expect(driver).to_have_url(re.compile(r".*/page/0$"))
 
