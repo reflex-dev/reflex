@@ -3755,6 +3755,49 @@ async def test_invalid_return_value_still_flushes_the_delta_first(
     assert flushed, "the change was not emitted before the error was handled"
 
 
+async def test_handler_returning_an_empty_list_resolves_to_the_list(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """An empty list is a result, not an empty event chain, so awaiters get it back.
+
+    Yielding an empty list is still a no-op, as before.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+
+    class EmptyResultState(State):
+        @event
+        def search(self) -> list[str]:
+            return []
+
+        @event
+        def yields_nothing(self):
+            yield []
+
+    async with real_base_state_processor as processor:
+        assert (
+            await (
+                await processor.enqueue(
+                    token, Event.from_event_type(EmptyResultState.search())[0]
+                )
+            )
+            == []
+        )
+        assert (
+            await (
+                await processor.enqueue(
+                    token, Event.from_event_type(EmptyResultState.yields_nothing())[0]
+                )
+            )
+            is None
+        )
+
+
 async def test_background_handler_return_value_resolves_future(
     wired_app: App,
     real_base_state_processor: BaseStateEventProcessor,
@@ -4430,6 +4473,68 @@ async def test_detached_stateless_helper_holds_the_lock_until_it_finishes(
         assert parent_future.done()
 
     assert seen["ctx"].locked_root is None
+
+
+async def test_gathered_inline_handlers_keep_each_others_changes(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list,
+    token: str,
+):
+    """A change made while another gathered handler's delta resolves still reaches the frontend.
+
+    Resolving a delta suspends on an async computed var. A gathered handler
+    that changes state meanwhile, and only flushes after the first one has
+    cleaned, must not have its change cleaned away unsent.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: Deltas emitted to the frontend, in order.
+        token: The client token.
+    """
+    resolving = asyncio.Event()
+
+    class GatheredState(State):
+        a: int = 0
+        b: int = 0
+
+        @rx.var(cache=False)
+        async def slow(self) -> int:
+            # Resolving set_a's delta: let set_b write now, after the snapshot.
+            if self.a == 1:
+                resolving.set()
+            await asyncio.sleep(0)
+            return self.a
+
+        @event
+        async def set_a(self):
+            self.a = 1
+
+        @event
+        async def set_b(self):
+            await resolving.wait()
+            self.b = 2
+            # Stay out of the flush until set_a has emitted and cleaned.
+            for _ in range(10):
+                await asyncio.sleep(0)
+
+        @event
+        async def both(self):
+            await asyncio.gather(GatheredState.set_a(), GatheredState.set_b())
+
+    async with real_base_state_processor as processor:
+        await (
+            await processor.enqueue(
+                token, Event.from_event_type(GatheredState.both())[0]
+            )
+        )
+    sent_b = [
+        delta
+        for _, delta in emitted_deltas
+        if delta.get(GatheredState.get_full_name(), {}).get("b" + FIELD_MARKER) == 2
+    ]
+    assert sent_b, "the gathered handler's change was cleaned without being sent"
 
 
 async def test_detached_inline_task_holds_the_lock_until_it_finishes(

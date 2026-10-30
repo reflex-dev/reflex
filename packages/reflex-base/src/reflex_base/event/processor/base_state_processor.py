@@ -89,6 +89,18 @@ def _is_event_like(value: Any) -> bool:
         return False
 
 
+def _is_empty_sequence(value: Any) -> bool:
+    """Whether a handler returned an empty sequence.
+
+    Args:
+        value: The value a handler returned.
+
+    Returns:
+        True for an empty non-string sequence.
+    """
+    return is_non_string_sequence(value) and len(value) == 0
+
+
 def _holds_events_or_coroutines(value: Any) -> bool:
     """Whether a sequence holds an event or an unawaited coroutine.
 
@@ -249,6 +261,25 @@ def _prepare_event_payload(
         return {arg: form_data_as_dict(value) for arg, value in payload.items()}
 
 
+def _dirty_snapshot(root_state: BaseState) -> dict[str, frozenset[str]]:
+    """Capture which vars are dirty on the root and its dirty substates.
+
+    Args:
+        root_state: The root of the state tree.
+
+    Returns:
+        The dirty var names of each dirty state, by full state name.
+    """
+    snapshot: dict[str, frozenset[str]] = {}
+    stack = [root_state]
+    while stack:
+        state = stack.pop()
+        snapshot[state.get_full_name()] = frozenset(state.dirty_vars)
+        substates = state.substates
+        stack.extend(substates[n] for n in state.dirty_substates if n in substates)
+    return snapshot
+
+
 async def _route_events(ctx: EventContext, events: Sequence[Event]) -> None:
     """Emit frontend events to the client and queue backend events.
 
@@ -299,7 +330,19 @@ async def chain_updates(
         # machinery, so cleaning earlier would fan out a stale set (see
         # tests/integration/test_linked_state.py).
         try:
+            # Resolving suspends on async computed vars. While inline runs
+            # exist (this one included), a gathered sibling can change state
+            # meanwhile, after the delta was snapshotted; the clean below
+            # would drop that change unsent, so pick up late changes until
+            # the dirty set is stable. A plain event has no inline runs and
+            # skips this.
+            concurrent = bool(ctx.inline_tasks)
+            seen = _dirty_snapshot(root_state) if concurrent else None
             delta = await root_state._get_resolved_delta()
+            while concurrent and (dirty := _dirty_snapshot(root_state)) != seen:
+                seen = dirty
+                for name, late in (await root_state._get_resolved_delta()).items():
+                    delta[name] = {**delta.get(name, {}), **late}
             if delta:
                 await ctx.emit_delta(delta)
         finally:
@@ -497,8 +540,10 @@ async def process_event(
             # in the loop, we must catch StopIteration to access it
             events = si.value
 
-    # Chain a returned event (or events); anything else is the result.
-    if events is None or _is_event_like(events):
+    # Chain a returned event (or events); anything else, an empty sequence
+    # included (a result such as no search hits, not an empty chain), is the
+    # result.
+    if events is None or (_is_event_like(events) and not _is_empty_sequence(events)):
         await chain_updates(
             events,
             root_state=ensure_locked(state, root_state),
