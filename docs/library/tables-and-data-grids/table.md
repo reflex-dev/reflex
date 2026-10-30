@@ -482,7 +482,7 @@ The code below shows how to load data from a database and place it in an `rx.tab
 
 ## Loading data into table
 
-A `Customer` [model](/docs/database/tables/) is defined as a SQLAlchemy table, and the examples open sessions with the `Session` factory from the [database overview](/docs/database/overview/#connecting).
+A `Customer` [model](/docs/database/tables/) is defined as a SQLAlchemy table, and the examples open sessions with the async `Session` factory from the [database overview](/docs/database/overview/#connecting).
 
 The `load_entries` event handler executes a [query](/docs/database/queries/) that is used to request information from a database table. This `load_entries` event handler is called on the `on_mount` event trigger of the `rx.table.root`.
 
@@ -585,10 +585,10 @@ class DatabaseTableState(rx.State):
     users: list[Customer] = []
 
     @rx.event
-    def load_entries(self):
+    async def load_entries(self):
         """Get all users from the database."""
-        with Session() as session:
-            self.users = session.scalars(select(Customer)).all()
+        async with Session() as session:
+            self.users = (await session.scalars(select(Customer))).all()
 
 
 def show_customer(user: Customer):
@@ -787,9 +787,9 @@ class DatabaseTableState2(rx.State):
     search_value = ""
 
     @rx.event
-    def load_entries(self):
+    async def load_entries(self):
         """Get all users from the database."""
-        with Session() as session:
+        async with Session() as session:
             query = select(Customer)
 
             if self.search_value != "":
@@ -808,19 +808,17 @@ class DatabaseTableState2(rx.State):
                 order = asc(sort_column)
                 query = query.order_by(order)
 
-            self.users = session.scalars(query).all()
+            self.users = (await session.scalars(query)).all()
 
     @rx.event
-    def sort_values(self, sort_value):
-        print(sort_value)
+    async def sort_values(self, sort_value):
         self.sort_value = sort_value
-        self.load_entries()
+        await self.load_entries()
 
     @rx.event
-    def filter_values(self, search_value):
-        print(search_value)
+    async def filter_values(self, search_value):
         self.search_value = search_value
-        self.load_entries()
+        await self.load_entries()
 
 
 def show_customer(user: Customer):
@@ -1015,31 +1013,31 @@ class DatabaseTableState3(rx.State):
         )
 
     @rx.event
-    def prev_page(self):
+    async def prev_page(self):
         self.offset = max(self.offset - self.limit, 0)
-        self.load_entries()
+        await self.load_entries()
 
     @rx.event
-    def next_page(self):
+    async def next_page(self):
         if self.offset + self.limit < self.total_items:
             self.offset += self.limit
-        self.load_entries()
+        await self.load_entries()
 
-    def _get_total_items(self, session):
+    async def _get_total_items(self, session):
         """Return the total number of items in the Customer table."""
-        self.total_items = session.scalar(select(func.count(Customer.id)))
+        self.total_items = await session.scalar(select(func.count(Customer.id)))
 
     @rx.event
-    def load_entries(self):
+    async def load_entries(self):
         """Get all users from the database."""
-        with Session() as session:
+        async with Session() as session:
             query = select(Customer)
 
             # Apply pagination
             query = query.offset(self.offset).limit(self.limit)
 
-            self.users = session.scalars(query).all()
-            self._get_total_items(session)
+            self.users = (await session.scalars(query)).all()
+            await self._get_total_items(session)
 
 
 def show_customer(user: Customer):
@@ -1231,17 +1229,17 @@ class TableDownloadState(rx.State):
     users: list[Customer] = []
 
     @rx.event
-    def load_entries(self):
+    async def load_entries(self):
         """Get all users from the database."""
-        with Session() as session:
-            self.users = session.scalars(select(Customer)).all()
+        async with Session() as session:
+            self.users = (await session.scalars(select(Customer))).all()
 
-    def _convert_to_csv(self) -> str:
+    async def _convert_to_csv(self) -> str:
         """Convert the users data to CSV format."""
 
         # Make sure to load the entries first
         if not self.users:
-            self.load_entries()
+            await self.load_entries()
 
         # Define the CSV file header based on the Customer model's attributes
         fieldnames = [field.name for field in dataclasses.fields(Customer)]
@@ -1259,8 +1257,8 @@ class TableDownloadState(rx.State):
         return csv_data
 
     @rx.event
-    def download_csv_data(self):
-        csv_data = self._convert_to_csv()
+    async def download_csv_data(self):
+        csv_data = await self._convert_to_csv()
         return rx.download(
             data=csv_data,
             filename="data.csv",

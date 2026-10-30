@@ -9,7 +9,7 @@ Connect a Reflex Python app to **MySQL, PostgreSQL, SQL Server, or SQLite** to b
 ## Key takeaways
 
 - Define tables as SQLAlchemy models on a shared dataclass-mapped base. Reflex serializes those models, so they can be stored in state and rendered directly.
-- Create one engine and one session factory for the app, and open a short-lived session inside each event handler that reads or writes the database.
+- Create one async engine and one async session factory for the app, and open a short-lived session inside each event handler that reads or writes the database. Blocking database calls in an event handler stall every other event the server is handling.
 - Configure the database URL and install the driver for your chosen database. Check dialect-specific types, queries, and migrations when switching databases.
 - Register the model base with Reflex to manage schema changes with the `reflex db` migration commands.
 - Use ordinary Python clients or REST APIs for external data sources such as Airtable, Databricks, and Snowflake.
@@ -31,7 +31,7 @@ If you are using a NoSQL database (e.g. MongoDB), you can work with it in Reflex
 
 ## Installation
 
-Install SQLAlchemy together with the DBAPI driver for your database. The `db`
+Install SQLAlchemy together with the DBAPI drivers for your database. The `db`
 extra installs SQLAlchemy and [Alembic](https://alembic.sqlalchemy.org/en/latest/),
 which the `reflex db` migration commands use:
 
@@ -39,15 +39,29 @@ which the `reflex db` migration commands use:
 pip install "reflex[db]"
 ```
 
-SQLite needs no extra driver. For other databases, install the driver named in
-the [SQLAlchemy dialect docs](https://docs.sqlalchemy.org/en/20/dialects/), for
-example `psycopg[binary]` for PostgreSQL.
+Event handlers query the database through an async driver, and the `reflex db`
+migration commands use a sync one. For SQLite, install `aiosqlite`; Python's
+built-in `sqlite3` is the sync driver:
+
+```bash
+pip install aiosqlite
+```
+
+For PostgreSQL, `psycopg` (psycopg3) is both the sync and the async driver:
+
+```bash
+pip install "psycopg[binary]"
+```
+
+For other databases, install the drivers named in the
+[SQLAlchemy dialect docs](https://docs.sqlalchemy.org/en/20/dialects/).
 
 ## Connecting
 
-Set the database URL in `rxconfig.py`. The `reflex db` migration commands read
-it from there, and the app can read it back through `rx.config.get_config()`
-so the URL lives in one place.
+Set both database URLs in `rxconfig.py`. They point at the same database:
+`db_url` uses the sync driver for the `reflex db` migration commands, and
+`async_db_url` uses the async driver for the app. The app reads them back
+through `rx.config.get_config()`, so the URLs live in one place.
 
 ```python
 import reflex as rx
@@ -55,24 +69,34 @@ import reflex as rx
 config = rx.Config(
     app_name="my_app",
     db_url="sqlite:///reflex.db",
+    async_db_url="sqlite+aiosqlite:///reflex.db",
 )
 ```
 
-For more examples of database URLs that can be used, see the [SQLAlchemy
-docs](https://docs.sqlalchemy.org/en/20/core/engines.html#backend-specific-urls).
+With PostgreSQL and psycopg, both URLs can use the same
+`postgresql+psycopg://...` scheme. For more examples of database URLs, see the
+[SQLAlchemy docs](https://docs.sqlalchemy.org/en/20/core/engines.html#backend-specific-urls).
 
-Create the engine and a session factory once, in a module the rest of the app
-imports. `expire_on_commit=False` keeps the attributes of committed objects
+Create the async engine and a session factory once, in a module the rest of the
+app imports. `expire_on_commit=False` keeps the attributes of committed objects
 readable after the session closes, which is what lets them be stored in state.
 
 ```python
 # my_app/db.py
 import reflex as rx
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-engine = create_engine(rx.config.get_config().db_url)
-Session = sessionmaker(engine, expire_on_commit=False)
+engine = create_async_engine(rx.config.get_config().async_db_url)
+Session = async_sessionmaker(engine, expire_on_commit=False)
+```
+
+```md alert warning
+# Use the async session in event handlers
+
+Event handlers run on the server's event loop. A blocking database call made
+with SQLAlchemy's sync `Session` holds up every other event the server is
+processing until the query returns. Use the sync `Session` and `create_engine`
+only outside event handlers, such as in scripts, tests, and data imports.
 ```
 
 ## Tables
@@ -127,14 +151,19 @@ The `reflex db migrate` command is used to apply migration scripts to bring the
 database up to date. During app startup, if Reflex detects that the current
 database schema is not up to date, a warning will be displayed on the console.
 
-For a local experiment, `Base.metadata.create_all(engine)` creates any missing
-tables without migrations.
+For a local experiment, `create_all` creates any missing tables without
+migrations. With the async engine it runs through `run_sync`:
+
+```python
+async with engine.begin() as connection:
+    await connection.run_sync(Base.metadata.create_all)
+```
 
 ## Queries
 
-Open a session from the factory inside an event handler. The `with` block
-closes the session when it ends, and changes that were not committed are rolled
-back.
+Open a session from the factory inside an async event handler. The `async with`
+block closes the session when it ends, and changes that were not committed are
+rolled back. Await the calls that talk to the database.
 
 ```python
 import reflex as rx
@@ -148,21 +177,21 @@ class UserState(rx.State):
     users: list[User] = []
 
     @rx.event
-    def add_user(self):
-        with Session() as session:
+    async def add_user(self):
+        async with Session() as session:
             session.add(User(username="test", email="admin@reflex.dev"))
-            session.commit()
+            await session.commit()
 
     @rx.event
-    def load_users(self):
-        with Session() as session:
-            self.users = session.scalars(select(User)).all()
+    async def load_users(self):
+        async with Session() as session:
+            self.users = (await session.scalars(select(User))).all()
 ```
 
 Because `User` is a dataclass-mapped model, `self.users` serializes to the
 frontend and each row renders with `rx.foreach(UserState.users, ...)`. See
-[Queries](/docs/database/queries/) for updates, deletes, raw SQL, and async
-sessions.
+[Queries](/docs/database/queries/) for updates, deletes, raw SQL, and long
+queries in background tasks.
 
 ```md video https://youtube.com/embed/ITOZkzjtjUA?start=6835&end=8225
 # Video: Tutorial of Database Model with Forms, Model Field Changes and Migrations, and adding a DateTime Field
@@ -178,10 +207,11 @@ replacements:
 | :--- | :--- |
 | `class User(rx.Model, table=True)` | `class User(Base)` with `__tablename__` and `Mapped[...]` columns |
 | implicit `id` primary key | `id: Mapped[int] = mapped_column(init=False, primary_key=True)` |
-| `with rx.session() as session` | `with Session() as session` from your `sessionmaker` |
-| `session.exec(select(User)).all()` | `session.scalars(select(User)).all()` |
-| `session.exec(select(User)).first()` | `session.scalar(select(User))` |
-| `async with rx.asession() as session` | `async with AsyncSession() as session` from your `async_sessionmaker` |
+| `with rx.session() as session` in an event handler | `async with Session() as session` from your `async_sessionmaker`, in an `async` event handler |
+| `async with rx.asession() as session` | `async with Session() as session` from your `async_sessionmaker` |
+| `session.exec(select(User)).all()` | `(await session.scalars(select(User))).all()` |
+| `session.exec(select(User)).first()` | `await session.scalar(select(User))` |
+| `session.commit()` | `await session.commit()` |
 | `sqlmodel.Field(foreign_key="user.id")` | `mapped_column(ForeignKey("user.id"))` |
 | `sqlmodel.Relationship(back_populates=...)` | `relationship(back_populates=..., repr=False)` |
 

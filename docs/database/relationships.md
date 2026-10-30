@@ -85,8 +85,8 @@ for more details.
 ## Serializing Linked Objects
 
 Reflex serializes a dataclass-mapped model field by field, and reading a
-relationship that was not loaded on an object outside its session raises
-`DetachedInstanceError`. Register a serializer for the base class that sends
+relationship that was not loaded raises an error, because an async session never
+loads one implicitly on attribute access. Register a serializer for the base class that sends
 only the attributes a query loaded, so linked objects render when they were
 eager-loaded and are simply absent when they were not:
 
@@ -107,7 +107,7 @@ def serialize_model(model: Base) -> dict[str, Any]:
 
 ## Querying Relationships
 
-The examples below open sessions with the `Session` factory from the
+The examples below open sessions with the async `Session` factory from the
 [database overview](/docs/database/overview/#connecting).
 
 ### Inserting Linked Objects
@@ -121,26 +121,25 @@ class FlagPostForm(rx.State):
     user: User
 
     @rx.event
-    def flag_post(self, form_data: dict[str, Any]):
-        with Session() as session:
+    async def flag_post(self, form_data: dict[str, Any]):
+        async with Session() as session:
             flag = Flag(
                 message=form_data.pop("message"),
                 post_id=int(form_data.pop("post_id")),
                 user_id=self.user.id,
             )
             session.add(flag)
-            session.commit()
+            await session.commit()
 ```
 
 ### How are Relationships Dereferenced?
 
 By default, the relationship attributes are in **lazy loading** or `"select"`
-mode, which generates a query _on access_ to the relationship attribute. Lazy
-loading is generally fine for single object lookups and manipulation, but can be
-inefficient when accessing many linked objects for serialization purposes.
-
-There are several alternative loading mechanisms available that can be set on
-the relationship object or when performing the query.
+mode, which generates a query _on access_ to the relationship attribute. An
+async session cannot run that query implicitly, so reading a relationship that
+was not loaded raises an error instead. Load the relationships a handler or the
+UI reads up front, with one of these eager loading mechanisms, set on the
+relationship object or when performing the query.
 
 - "joined" or `joinedload` - generates a single query to load all related objects
   at once.
@@ -153,7 +152,8 @@ the relationship object or when performing the query.
   once by primary key
 
 There are also non-loading mechanisms, "raise" and "noload" which are used to
-specifically avoid loading a relationship.
+specifically avoid loading a relationship. To load a relationship on an object
+you already have, await `session.refresh(obj, ["relationship_name"])`.
 
 Each loading method comes with tradeoffs and some are better suited for different
 data access patterns.
@@ -176,16 +176,17 @@ class PostState(rx.State):
     posts: list[Post] = []
 
     @rx.event
-    def load_posts(self):
-        with Session() as session:
-            self.posts = session.scalars(
+    async def load_posts(self):
+        async with Session() as session:
+            result = await session.scalars(
                 select(Post)
                 .options(
                     selectinload(Post.user),
                     selectinload(Post.flags).selectinload(Flag.user),
                 )
                 .limit(15)
-            ).all()
+            )
+            self.posts = result.all()
 ```
 
 The loading methods create new query objects and thus may be chained if the
@@ -235,17 +236,16 @@ class PostFlagsState(rx.State):
     selected_flags: list[Flag] = []
 
     @rx.event
-    def load_posts(self):
-        with Session() as session:
-            self.posts = session.scalars(select(Post).limit(15)).all()
+    async def load_posts(self):
+        async with Session() as session:
+            self.posts = (await session.scalars(select(Post).limit(15))).all()
 
     @rx.event
-    def select_post(self, post_id: int):
+    async def select_post(self, post_id: int):
         self.selected_post_id = post_id
-        with Session() as session:
-            self.selected_flags = session.scalars(
-                select(Flag).where(Flag.post_id == post_id)
-            ).all()
+        async with Session() as session:
+            result = await session.scalars(select(Flag).where(Flag.post_id == post_id))
+            self.selected_flags = result.all()
 ```
 
 This runs a single indexed query per selection and avoids holding every child
@@ -258,6 +258,7 @@ eager loading options above.
 
 ```python
 post_ids = [post.id for post in self.posts]
-with Session() as session:
-    flags = session.scalars(select(Flag).where(Flag.post_id.in_(post_ids))).all()
+async with Session() as session:
+    result = await session.scalars(select(Flag).where(Flag.post_id.in_(post_ids)))
+    flags = result.all()
 ```

@@ -34,6 +34,8 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    # Async SQLite driver for the database docs example tests.
+    "aiosqlite",
     "pillow",
     "playwright",
     "pre-commit",

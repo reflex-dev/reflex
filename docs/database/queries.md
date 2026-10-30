@@ -9,21 +9,26 @@ tables. A query can also be used to insert, update, or delete data from a table.
 ## Session
 
 To execute a query you must first open a session. The examples on this page use
-the engine and session factory from the [overview](/docs/database/overview/#connecting):
+the async engine and session factory from the
+[overview](/docs/database/overview/#connecting), which reads `async_db_url` from
+`rxconfig.py`:
 
 ```python
 import reflex as rx
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-engine = create_engine(rx.config.get_config().db_url)
-Session = sessionmaker(engine, expire_on_commit=False)
+engine = create_async_engine(rx.config.get_config().async_db_url)
+Session = async_sessionmaker(engine, expire_on_commit=False)
 ```
 
-`with Session() as session:` closes the session when the code block is finished.
-**If `session.commit()` is not called, the changes will be rolled back and not
-persisted to the database.** The code can also explicitly roll back without
-closing the session via `session.rollback()`.
+`async with Session() as session:` closes the session when the code block is
+finished. **If `session.commit()` is not awaited, the changes will be rolled back
+and not persisted to the database.** The code can also explicitly roll back
+without closing the session via `await session.rollback()`.
+
+Database calls in event handlers are always awaited through the async session.
+A blocking call made with SQLAlchemy's sync `Session` would hold up every other
+event the server is processing until the query returns.
 
 The following example shows how to create a session and query the database.
 First we create a table called `User`.
@@ -61,11 +66,12 @@ class QueryUser(rx.State):
     users: list[User] = []
 
     @rx.event
-    def get_users(self):
-        with Session() as session:
-            self.users = session.scalars(
+    async def get_users(self):
+        async with Session() as session:
+            result = await session.scalars(
                 select(User).where(User.username.contains(self.name))
-            ).all()
+            )
+            self.users = result.all()
 ```
 
 The `get_users` method will query the database for all users that contain the
@@ -74,7 +80,8 @@ rows are serialized to the frontend and render with `rx.foreach`.
 
 ### Insert
 
-Similarly, the `session.add()` method adds a new record to the database.
+Similarly, the `session.add()` method adds a new record to the database. Adding
+does not talk to the database, so it is not awaited; the commit is.
 
 ```python
 class AddUser(rx.State):
@@ -82,17 +89,17 @@ class AddUser(rx.State):
     email: str = ""
 
     @rx.event
-    def add_user(self):
-        with Session() as session:
+    async def add_user(self):
+        async with Session() as session:
             session.add(User(username=self.username, email=self.email))
-            session.commit()
+            await session.commit()
 ```
 
 ### Update
 
 To update the user, first query the database for the object, make the desired
-modifications, and call `.commit()`. The session tracks changes to objects it
-loaded, so there is no need to add the object again.
+modifications, and commit. The session tracks changes to objects it loaded, so
+there is no need to add the object again.
 
 ```python
 class ChangeEmail(rx.State):
@@ -100,13 +107,15 @@ class ChangeEmail(rx.State):
     email: str = ""
 
     @rx.event
-    def modify_user(self):
-        with Session() as session:
-            user = session.scalar(select(User).where(User.username == self.username))
+    async def modify_user(self):
+        async with Session() as session:
+            user = await session.scalar(
+                select(User).where(User.username == self.username)
+            )
             if user is None:
                 return
             user.email = self.email
-            session.commit()
+            await session.commit()
 ```
 
 `session.scalar()` returns the first column of the first row of the statement,
@@ -114,21 +123,23 @@ here the `User` itself, or `None` when nothing matches.
 
 ### Delete
 
-To delete a user, first query the database for the object, then call
-`.delete()` on the session and finally call `.commit()`.
+To delete a user, first query the database for the object, then delete it and
+commit.
 
 ```python
 class RemoveUser(rx.State):
     username: str = ""
 
     @rx.event
-    def delete_user(self):
-        with Session() as session:
-            user = session.scalar(select(User).where(User.username == self.username))
+    async def delete_user(self):
+        async with Session() as session:
+            user = await session.scalar(
+                select(User).where(User.username == self.username)
+            )
             if user is None:
                 return
-            session.delete(user)
-            session.commit()
+            await session.delete(user)
+            await session.commit()
 ```
 
 ## ORM Object Lifecycle
@@ -137,7 +148,7 @@ The objects returned by queries belong to the session that created them. With
 `expire_on_commit=False` on the session factory, their loaded columns stay
 readable after the session closes, so they can be stored in state and rendered.
 Columns the database fills in, such as the autogenerated primary key, are loaded
-by `commit()`:
+by the commit:
 
 ```python
 from typing import Any
@@ -147,11 +158,11 @@ class AddUserForm(rx.State):
     user: User | None = None
 
     @rx.event
-    def add_user(self, form_data: dict[str, Any]):
-        with Session() as session:
+    async def add_user(self, form_data: dict[str, Any]):
+        async with Session() as session:
             user = User(**form_data)
             session.add(user)
-            session.commit()
+            await session.commit()
             self.user = user
 ```
 
@@ -159,9 +170,11 @@ Now the `self.user` object will have a correct reference to the autogenerated
 primary key, `id`, even though this was not provided when the object was created
 from the form data.
 
-Only loaded attributes are available outside the session. Accessing a
-[relationship](/docs/database/relationships/) that was not loaded raises
-`DetachedInstanceError`, so eager-load the relationships the UI reads.
+Only loaded attributes are available. An async session cannot load an attribute
+implicitly when it is read, so reading a
+[relationship](/docs/database/relationships/) that was not eager-loaded raises
+an error, inside the session as well as after it closes. Eager-load the
+relationships the UI reads.
 
 To modify an object stored in state in a new session, look it up again by primary
 key with `session.get()` and change the fresh copy, then store that copy so the
@@ -172,16 +185,16 @@ class AddUserForm(rx.State):
     ...
 
     @rx.event
-    def update_user(self, form_data: dict[str, Any]):
+    async def update_user(self, form_data: dict[str, Any]):
         if self.user is None:
             return
-        with Session() as session:
-            user = session.get(User, self.user.id)
+        async with Session() as session:
+            user = await session.get(User, self.user.id)
             if user is None:
                 return
             for field, value in form_data.items():
                 setattr(user, field, value)
-            session.commit()
+            await session.commit()
             self.user = user
 ```
 
@@ -207,24 +220,25 @@ import reflex as rx
 
 class State(rx.State):
     @rx.event
-    def insert_user_raw(self, username: str, email: str):
-        with Session() as session:
-            session.execute(
+    async def insert_user_raw(self, username: str, email: str):
+        async with Session() as session:
+            await session.execute(
                 sqlalchemy.text(
                     "INSERT INTO user (username, email) VALUES (:username, :email)"
                 ),
                 {"username": username, "email": email},
             )
-            session.commit()
+            await session.commit()
 
     @rx.var
-    def raw_user_tuples(self) -> list[list]:
-        with Session() as session:
-            return [
-                list(row)
-                for row in session.execute(sqlalchemy.text("SELECT * FROM user")).all()
-            ]
+    async def raw_user_tuples(self) -> list[list]:
+        async with Session() as session:
+            result = await session.execute(sqlalchemy.text("SELECT * FROM user"))
+            return [list(row) for row in result.all()]
 ```
+
+Computed vars that query the database are declared `async` for the same reason
+as event handlers.
 
 ## Writing Efficient Queries
 
@@ -260,18 +274,16 @@ class OrderStats(rx.State):
     orders_by_status: list[tuple[str, int]] = []
 
     @rx.event
-    def load_stats(self):
-        with Session() as session:
+    async def load_stats(self):
+        async with Session() as session:
             # Count rows in the database instead of len() on a full fetch.
-            self.order_count = session.scalar(select(func.count(Order.id)))
+            self.order_count = await session.scalar(select(func.count(Order.id)))
 
             # One row per group, ready for a chart or summary table.
-            self.orders_by_status = [
-                tuple(row)
-                for row in session.execute(
-                    select(Order.status, func.count(Order.id)).group_by(Order.status)
-                ).all()
-            ]
+            result = await session.execute(
+                select(Order.status, func.count(Order.id)).group_by(Order.status)
+            )
+            self.orders_by_status = [tuple(row) for row in result.all()]
 ```
 
 Related metrics can be computed in a single query with conditional
@@ -288,9 +300,9 @@ class OrderKPIs(rx.State):
     total_amount: float = 0.0
 
     @rx.event
-    def load_kpis(self):
-        with Session() as session:
-            total, completed, amount = session.execute(
+    async def load_kpis(self):
+        async with Session() as session:
+            result = await session.execute(
                 select(
                     func.count(Order.id),
                     func.sum(
@@ -298,7 +310,8 @@ class OrderKPIs(rx.State):
                     ),
                     func.coalesce(func.sum(Order.amount), 0.0),
                 )
-            ).one()
+            )
+        total, completed, amount = result.one()
         self.total_orders = total
         self.completed_orders = completed or 0
         self.total_amount = float(amount)
@@ -312,15 +325,19 @@ Fetch everything in one statement with a `JOIN`, an `IN (...)` list, or
 
 ```python
 # Efficient: one query for all users at once.
-with Session() as session:
-    orders = session.scalars(
-        select(Order).where(Order.user_id.in_([user.id for user in users]))
+async with Session() as session:
+    orders = (
+        await session.scalars(
+            select(Order).where(Order.user_id.in_([user.id for user in users]))
+        )
     ).all()
 
 # Inefficient: one query per user (N+1).
-with Session() as session:
+async with Session() as session:
     for user in users:
-        orders = session.scalars(select(Order).where(Order.user_id == user.id)).all()
+        orders = (
+            await session.scalars(select(Order).where(Order.user_id == user.id))
+        ).all()
 ```
 
 The `.in_()` method binds each value as a separate query parameter, so it is
@@ -336,13 +353,14 @@ The example below binds the list with an expanding parameter:
 ```python
 import sqlalchemy
 
-with Session() as session:
-    rows = session.execute(
+async with Session() as session:
+    result = await session.execute(
         sqlalchemy.text("SELECT * FROM user WHERE id IN :user_ids").bindparams(
             sqlalchemy.bindparam("user_ids", expanding=True)
         ),
         {"user_ids": [1, 2, 3]},
-    ).all()
+    )
+    rows = result.all()
 ```
 
 If the related objects are linked with foreign keys, the
@@ -386,8 +404,8 @@ columns and for aggregates that may run over empty groups.
 ```python
 from sqlalchemy import func, select
 
-with Session() as session:
-    total = session.scalar(select(func.coalesce(func.sum(Order.amount), 0.0)))
+async with Session() as session:
+    total = await session.scalar(select(func.coalesce(func.sum(Order.amount), 0.0)))
 ```
 
 The same works in raw SQL: `SELECT COALESCE(SUM(amount), 0) FROM ...`.
@@ -407,195 +425,37 @@ orders = [
 ]
 ```
 
-## Async Database Operations
+## Long Queries in Background Tasks
 
-SQLAlchemy's [asyncio extension](https://docs.sqlalchemy.org/en/20/orm/extensions/asyncio.html)
-provides an async engine and session for use in async event handlers, such as
-[background tasks](/docs/events/background-events/).
-
-### Configuring the Async Database URL
-
-The async engine needs a URL with an async driver. Keep it next to `db_url` in
-`rxconfig.py` as `async_db_url`, pointing at the same database.
+A regular event handler holds the state's lock until it returns, so other events
+for the same user wait while a slow query runs. Run a long query in a
+[background task](/docs/events/background-events/) instead: it runs without the
+lock, and takes it with `async with self` only to assign the result.
 
 ```python
-config = rx.Config(
-    app_name="my_app",
-    db_url="sqlite:///reflex.db",
-    async_db_url="sqlite+aiosqlite:///reflex.db",
-)
-```
-
-The async DBAPI driver is not part of the `reflex[db]` extra, so install it
-separately. For the SQLite URL above, install `aiosqlite`:
-
-```bash
-pip install aiosqlite
-```
-
-For PostgreSQL, install `psycopg` (psycopg3). It works as both the sync and
-async driver, so `db_url` and `async_db_url` can share one
-`postgresql+psycopg://...` scheme:
-
-```bash
-pip install "psycopg[binary]"
-```
-
-Create the async engine and session factory next to the sync ones:
-
-```python
-import reflex as rx
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
-
-async_engine = create_async_engine(rx.config.get_config().async_db_url)
-AsyncSession = async_sessionmaker(async_engine, expire_on_commit=False)
-```
-
-The async session is used with `async with`, and most operations against it
-must be awaited.
-
-```python
-from sqlalchemy import select
-
-
-class AsyncUserState(rx.State):
-    users: list[User] = []
+class ReportState(rx.State):
+    orders_by_status: list[tuple[str, int]] = []
+    loading: bool = False
 
     @rx.event(background=True)
-    async def get_users_async(self):
-        async with AsyncSession() as session:
-            users = (await session.scalars(select(User))).all()
+    async def load_report(self):
         async with self:
-            self.users = users
-```
-
-### Async Select
-
-The following example shows how to query the database asynchronously:
-
-```python
-class AsyncQueryUser(rx.State):
-    name: str = ""
-    users: list[User] = []
-
-    @rx.event(background=True)
-    async def get_users(self):
-        async with AsyncSession() as session:
-            stmt = select(User).where(User.username.contains(self.name))
-            users = (await session.scalars(stmt)).all()
-        async with self:
-            self.users = users
-```
-
-### Async Insert
-
-To add a new record to the database asynchronously:
-
-```python
-class AsyncAddUser(rx.State):
-    username: str = ""
-    email: str = ""
-
-    @rx.event(background=True)
-    async def add_user(self):
-        async with AsyncSession() as session:
-            session.add(User(username=self.username, email=self.email))
-            await session.commit()
-```
-
-### Async Update
-
-To update a user asynchronously:
-
-```python
-class AsyncChangeEmail(rx.State):
-    username: str = ""
-    email: str = ""
-
-    @rx.event(background=True)
-    async def modify_user(self):
-        async with AsyncSession() as session:
-            stmt = select(User).where(User.username == self.username)
-            user = await session.scalar(stmt)
-            if user is not None:
-                user.email = self.email
-                await session.commit()
-```
-
-### Async Delete
-
-To delete a user asynchronously:
-
-```python
-class AsyncRemoveUser(rx.State):
-    username: str = ""
-
-    @rx.event(background=True)
-    async def delete_user(self):
-        async with AsyncSession() as session:
-            stmt = select(User).where(User.username == self.username)
-            user = await session.scalar(stmt)
-            if user is not None:
-                await session.delete(user)
-                await session.commit()
-```
-
-### Async Insert and Store
-
-As with the sync session, the committed object keeps its loaded columns,
-including the generated `id`, so it can be stored in state:
-
-```python
-class AsyncAddUserForm(rx.State):
-    user: User | None = None
-
-    @rx.event(background=True)
-    async def add_user(self, form_data: dict[str, str]):
-        async with AsyncSession() as session:
-            user = User(**form_data)
-            session.add(user)
-            await session.commit()
-        async with self:
-            self.user = user
-```
-
-### Async SQL Execution
-
-You can also execute raw SQL asynchronously:
-
-```python
-import sqlalchemy
-
-
-class AsyncRawSQL(rx.State):
-    users: list[list] = []
-
-    @rx.event(background=True)
-    async def insert_user_raw(self, username: str, email: str):
-        async with AsyncSession() as session:
-            await session.execute(
-                sqlalchemy.text(
-                    "INSERT INTO user (username, email) VALUES (:username, :email)"
-                ),
-                {"username": username, "email": email},
+            self.loading = True
+        async with Session() as session:
+            result = await session.execute(
+                select(Order.status, func.count(Order.id)).group_by(Order.status)
             )
-            await session.commit()
-
-    @rx.event(background=True)
-    async def get_raw_users(self):
-        async with AsyncSession() as session:
-            result = await session.execute(sqlalchemy.text("SELECT * FROM user"))
-            rows = [list(row) for row in result.all()]
+            rows = [tuple(row) for row in result.all()]
         async with self:
-            self.users = rows
+            self.orders_by_status = rows
+            self.loading = False
 ```
 
 ```md alert info
-# Important Notes for Async Database Operations
+# Notes for async database operations
 
-- Always use the `@rx.event(background=True)` decorator for async event handlers
-- Most operations against the async session must be awaited, including `commit()`, `execute()`, `scalars()`, `scalar()`, and `delete()`
-- The `add()` method does not need to be awaited
-- Result objects from queries have methods like `all()` and `first()` that are synchronous and return data directly
-- Use `async with self:` when updating state variables in background tasks, and keep the database session outside that block so the state lock is held only while assigning
+- Await the calls that talk to the database: `commit()`, `execute()`, `scalars()`, `scalar()`, `get()`, `refresh()` and `delete()`.
+- `add()` does not need to be awaited.
+- Result objects from queries have methods like `all()`, `first()` and `one()` that are synchronous and return data directly.
+- In background tasks, keep the database session outside `async with self:` so the state lock is held only while assigning.
 ```
