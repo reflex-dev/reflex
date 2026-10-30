@@ -280,8 +280,14 @@ def test_on_load_navigate(
         [*order, "/page/[page_id]-11"] for order in direct_missing_orders
     ]
     driver.wait_for_function(
-        "(counts) => counts.includes(document.querySelectorAll('#event_order > p').length)",
-        arg=[len(order) for order in expected_back_orders],
+        """(orders) => {
+            const texts = Array.from(
+                document.querySelectorAll('#event_order > p'),
+                (paragraph) => paragraph.textContent,
+            );
+            return orders.some((order) => JSON.stringify(order) === JSON.stringify(texts));
+        }""",
+        arg=expected_back_orders,
     )
     exp_order = driver.locator("#event_order > p").all_text_contents()
     assert exp_order in expected_back_orders
