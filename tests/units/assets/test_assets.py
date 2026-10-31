@@ -6,6 +6,7 @@ import logging
 import os
 import pickle
 import shutil
+import stat
 import threading
 from collections.abc import Callable, Generator
 from pathlib import Path
@@ -352,6 +353,46 @@ def test_link_shared_asset_copy_fallback(
     assert not dst_file.is_symlink()
     assert not dst_file.samefile(src_file)
     assert dst_file.read_text() == "script"
+
+    # A second link with unchanged content is a no-op: the copy is kept.
+    inode = dst_file.stat().st_ino
+    _link_shared_asset(dst_file, src_file)
+    assert dst_file.stat().st_ino == inode
+
+
+def test_link_shared_asset_read_only_source_copy_is_replaceable(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A read-only source is copied writable, so later compiles can replace it.
+
+    Regression test: copy2 mirrors the source's read-only mode, and Windows
+    refuses to replace a read-only destination, so the next compile would
+    fail. A hardlink would share the same read-only bit, so the fallback goes
+    straight to a writable copy.
+
+    Args:
+        tmp_path: A temporary directory provided by pytest.
+        monkeypatch: A pytest fixture for patching.
+    """
+    src_file, dst_file = _staged_link_fixture(tmp_path)
+    _deny_symlinks(monkeypatch)
+    src_file.chmod(src_file.stat().st_mode & ~stat.S_IWRITE)
+
+    _link_shared_asset(dst_file, src_file)
+
+    assert dst_file.is_file()
+    assert dst_file.read_text() == "script"
+    # The destination must be replaceable by a later compile.
+    assert dst_file.stat().st_mode & stat.S_IWRITE
+
+    # An edited source is re-copied on the next compile, and the fresh copy
+    # is writable again even though the source stayed read-only.
+    src_file.chmod(src_file.stat().st_mode | stat.S_IWRITE)
+    src_file.write_text("updated")
+    src_file.chmod(src_file.stat().st_mode & ~stat.S_IWRITE)
+    _link_shared_asset(dst_file, src_file)
+    assert dst_file.read_text() == "updated"
+    assert dst_file.stat().st_mode & stat.S_IWRITE
 
 
 def test_link_shared_asset_copy_refreshes_edited_source(

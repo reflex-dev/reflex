@@ -1,10 +1,12 @@
 """Helper functions for adding assets to the app."""
 
+import contextlib
 import hashlib
 import inspect
 import logging
 import os
 import shutil
+import stat
 import time
 import uuid
 from pathlib import Path
@@ -221,11 +223,17 @@ def _links_to(dst_file: Path, src_file: Path) -> bool:
         if dst_file.is_symlink():
             resolved = dst_file.resolve()
         elif dst_file.is_file() and src_file.is_file():
-            # A hardlink shares the inode with the source; a copy matches
-            # by content so an edited source still gets re-copied.
+            # A hardlink shares the inode with the source; a copy matches by
+            # size and mtime (copy2 preserves both), so an unchanged copy
+            # costs no full-file read while an edited source still gets
+            # re-copied.
             if dst_file.samefile(src_file):
                 return True
-            return _content_digest(dst_file) == _content_digest(src_file)
+            dst_stat, src_stat = dst_file.stat(), src_file.stat()
+            return (
+                dst_stat.st_size == src_stat.st_size
+                and dst_stat.st_mtime_ns == src_stat.st_mtime_ns
+            )
         else:
             return False
     except (OSError, RuntimeError):
@@ -255,8 +263,11 @@ def _link_shared_asset(dst_file: Path, src_file: Path) -> None:
     is retried there, conceding as soon as the other process turns out to have
     linked the same asset. And without Developer Mode (or admin rights),
     creating a symlink is denied outright, so the link falls back to a
-    hardlink, which shares the content on the same drive, and to a copy when
-    the source lives on another drive.
+    hardlink, which shares the content on the same drive — unless the source
+    is read-only, whose read-only bit a hardlink would share and make the
+    destination irreplaceable — and to a writable copy when hardlinking is
+    unavailable at all, such as across drives or on filesystems like FAT32
+    that have no hardlinks.
 
     Args:
         dst_file: The link to create in the app's external assets directory.
@@ -280,13 +291,20 @@ def _link_shared_asset(dst_file: Path, src_file: Path) -> None:
             tmp_file.symlink_to(src_file)
         except OSError:
             # Symlink creation was denied (Windows without Developer Mode
-            # raises WinError 1314). A hardlink tracks the source content on
-            # the same drive; a copy keeps the app working across drives and
-            # is refreshed by the content check on the next compile.
-            try:
-                os.link(src_file, tmp_file)
-            except OSError:
+            # raises WinError 1314). Fall back to a hardlink, which shares the
+            # source content on the same drive — but not for a read-only
+            # source, whose read-only bit the hardlink would share and make
+            # the destination impossible to replace later. Copy otherwise:
+            # across drives, and on filesystems without hardlinks (FAT32).
+            source_writable = bool(src_file.stat().st_mode & stat.S_IWRITE)
+            if source_writable:
+                with contextlib.suppress(OSError):
+                    os.link(src_file, tmp_file)
+            if not tmp_file.exists():
                 shutil.copy2(src_file, tmp_file)
+                # copy2 mirrors a read-only source's mode; a read-only
+                # destination could never be replaced by a later compile.
+                tmp_file.chmod(tmp_file.stat().st_mode | stat.S_IWRITE)
         for attempt in range(_MAX_LINK_ATTEMPTS):
             try:
                 tmp_file.replace(dst_file)

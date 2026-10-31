@@ -98,7 +98,7 @@ def my_component_with_image():
 
 When using `shared=True`, the asset is symlinked from its original location to your app's external assets directory. This allows you to keep assets alongside their related code.
 
-On Windows, symlinks require Developer Mode or admin rights. Without them, Reflex falls back to a hardlink on the same drive, or to a copy that is refreshed on the next compile when the source lives on another drive, so shared assets work without any extra setup.
+On Windows, symlinks require Developer Mode or admin rights. Without them, Reflex falls back to a hardlink on the same drive, or to a copy that is refreshed on the next compile when hardlinking is unavailable, such as across drives or on filesystems without hardlink support, so shared assets work without any extra setup.
 ```
 
 ## Favicon
