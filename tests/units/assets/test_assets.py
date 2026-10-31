@@ -395,6 +395,38 @@ def test_link_shared_asset_read_only_source_copy_is_replaceable(
     assert dst_file.stat().st_mode & stat.S_IWRITE
 
 
+def test_link_shared_asset_recopies_same_size_same_mtime(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A same-size rewrite that preserves the mtime still re-copies.
+
+    Regression test: size and mtime are not content identity - restoring an
+    asset from an archive can rewrite the bytes while keeping the timestamp.
+
+    Args:
+        tmp_path: A temporary directory provided by pytest.
+        monkeypatch: A pytest fixture for patching.
+    """
+    src_file, dst_file = _staged_link_fixture(tmp_path)
+    _deny_symlinks(monkeypatch)
+
+    def denied_link(*args, **kwargs):
+        msg = "Invalid cross-device link"
+        raise OSError(msg)
+
+    monkeypatch.setattr(os, "link", denied_link)
+
+    _link_shared_asset(dst_file, src_file)
+
+    before = src_file.stat()
+    src_file.write_text("updat3", encoding="utf-8")  # same length as "script"
+    os.utime(src_file, ns=(before.st_atime_ns, before.st_mtime_ns))
+
+    _link_shared_asset(dst_file, src_file)
+
+    assert dst_file.read_text() == "updat3"
+
+
 def test_link_shared_asset_copy_refreshes_edited_source(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

@@ -224,16 +224,14 @@ def _links_to(dst_file: Path, src_file: Path) -> bool:
             resolved = dst_file.resolve()
         elif dst_file.is_file() and src_file.is_file():
             # A hardlink shares the inode with the source; a copy matches by
-            # size and mtime (copy2 preserves both), so an unchanged copy
-            # costs no full-file read while an edited source still gets
-            # re-copied.
+            # content. The size check keeps the edited-source case on stats
+            # alone; equal sizes are compared by digest, since a same-size
+            # rewrite that preserves the mtime must not pass as unchanged.
             if dst_file.samefile(src_file):
                 return True
-            dst_stat, src_stat = dst_file.stat(), src_file.stat()
-            return (
-                dst_stat.st_size == src_stat.st_size
-                and dst_stat.st_mtime_ns == src_stat.st_mtime_ns
-            )
+            if dst_file.stat().st_size != src_file.stat().st_size:
+                return False
+            return _content_digest(dst_file) == _content_digest(src_file)
         else:
             return False
     except (OSError, RuntimeError):
