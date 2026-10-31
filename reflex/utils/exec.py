@@ -461,11 +461,17 @@ def run_frontend_prod(host: str, port: int):
         host: The host to serve on.
         port: The port to serve on.
     """
+    from reflex.utils import processes
+
     loglevel = get_config().loglevel.subprocess_level()
 
     if should_use_granian():
         run_granian_backend_prod(
-            host, port, loglevel, app_target=f"{__name__}:_frontend_prod_app"
+            host,
+            port,
+            loglevel,
+            app_target=f"{__name__}:_frontend_prod_app",
+            process_name=processes.get_process_title("frontend"),
         )
     else:
         run_uvicorn_backend_prod(
@@ -778,6 +784,8 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
     from granian.server import Server as Granian
     from reflex_base.environment import _load_dotenv_from_env
 
+    from reflex.utils import processes
+
     class ParentBoundGranian(Granian):  # pyright: ignore[reportGeneralTypeIssues]
         """Granian server that binds the listen socket in the supervisor.
 
@@ -930,6 +938,7 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
         reload_ignore_patterns=HOTRELOAD_IGNORE_PATTERNS,
         reload_tick=100,
         workers_kill_timeout=2,
+        process_name=processes.get_process_title("backend"),
     )
 
     granian_app.on_reload(_load_dotenv_from_env)
@@ -1110,7 +1119,12 @@ def _preload_for_fork(app_target: str | None) -> bool:
 
 
 def run_granian_backend_prod(
-    host: str, port: int, loglevel: LogLevel, app_target: str | None = None
+    host: str,
+    port: int,
+    loglevel: LogLevel,
+    app_target: str | None = None,
+    *,
+    process_name: str | None = None,
 ):
     """Run the backend in production mode using Granian.
 
@@ -1119,12 +1133,15 @@ def run_granian_backend_prod(
         port: The app port
         loglevel: The log level.
         app_target: The ASGI app target to run. Defaults to the reflex app instance.
+        process_name: The supervisor title. Defaults to the Reflex backend title.
     """
     import multiprocessing
 
     from granian.constants import Interfaces
     from granian.log import LogLevels
     from granian.server import Server as Granian
+
+    from reflex.utils import processes
 
     logger.debug("Using Granian for backend")
 
@@ -1145,6 +1162,7 @@ def run_granian_backend_prod(
         log_level=LogLevels(os.getenv("GRANIAN_LOG_LEVEL", loglevel.value)),
         log_dictconfig=_granian_log_dictconfig(),
         workers=int(os.getenv("GRANIAN_WORKERS", str(_get_backend_workers()))),
+        process_name=process_name or processes.get_process_title("backend"),
     )
 
     granian_app.serve()
