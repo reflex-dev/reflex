@@ -3,6 +3,8 @@
 import hashlib
 import inspect
 import logging
+import os
+import shutil
 import time
 import uuid
 from pathlib import Path
@@ -205,19 +207,27 @@ def remove_stale_external_asset_symlinks():
 
 
 def _links_to(dst_file: Path, src_file: Path) -> bool:
-    """Check whether dst_file is already a symlink to src_file.
+    """Check whether dst_file already presents the src_file content.
 
     Args:
         dst_file: The path to inspect.
-        src_file: The asset the symlink should point at.
+        src_file: The asset the link should point at.
 
     Returns:
-        Whether dst_file is a symlink resolving to src_file.
+        Whether dst_file is a symlink resolving to src_file, a hardlink
+        sharing its inode, or a copy with the same content.
     """
     try:
-        if not dst_file.is_symlink():
+        if dst_file.is_symlink():
+            resolved = dst_file.resolve()
+        elif dst_file.is_file() and src_file.is_file():
+            # A hardlink shares the inode with the source; a copy matches
+            # by content so an edited source still gets re-copied.
+            if dst_file.samefile(src_file):
+                return True
+            return _content_digest(dst_file) == _content_digest(src_file)
+        else:
             return False
-        resolved = dst_file.resolve()
     except (OSError, RuntimeError):
         # An unresolvable destination, such as the symlink loop a crashed or
         # racing writer can leave behind, which Python below 3.13 reports as
@@ -230,27 +240,31 @@ def _links_to(dst_file: Path, src_file: Path) -> bool:
 
 
 def _link_shared_asset(dst_file: Path, src_file: Path) -> None:
-    """Point dst_file at src_file with a symlink, regardless of what is there.
+    """Point dst_file at src_file with a link, regardless of what is there.
 
     Several processes routinely compile into the same assets/external/
     directory at once: pytest-xdist workers, parallel builds, or containers
-    sharing a bind mount. Linking in place would be check-then-act, so the link
-    is built under a unique temporary name in the destination directory and
-    renamed over dst_file instead, which is one atomic replace on POSIX and
+    sharing a bind mount. Linking in place would be check-then-act, so the
+    link is built under a unique temporary name in the destination directory
+    and renamed over dst_file instead, which is one atomic replace on POSIX and
     leaves no window to interleave with. Whichever process wins the race,
-    dst_file is a symlink to src_file once this returns.
+    dst_file presents the src_file content once this returns.
 
-    Windows is the exception: replacing a destination that another process is
-    itself replacing is denied rather than serialised, so the rename is retried
-    there, conceding as soon as the other process turns out to have linked the
-    same asset.
+    Windows is the exception twice over: replacing a destination that another
+    process is itself replacing is denied rather than serialised, so the rename
+    is retried there, conceding as soon as the other process turns out to have
+    linked the same asset. And without Developer Mode (or admin rights),
+    creating a symlink is denied outright, so the link falls back to a
+    hardlink, which shares the content on the same drive, and to a copy when
+    the source lives on another drive.
 
     Args:
-        dst_file: The symlink to create in the app's external assets directory.
-        src_file: The asset file the symlink should point at.
+        dst_file: The link to create in the app's external assets directory.
+        src_file: The asset file the link should point at.
 
     Raises:
         PermissionError: If the destination could not be replaced.
+        OSError: If the source could not be linked or copied at all.
     """
     if _links_to(dst_file, src_file):
         # Already correct: leave it alone so file watchers see no change.
@@ -262,7 +276,17 @@ def _link_shared_asset(dst_file: Path, src_file: Path) -> None:
     # character is more machinery than a transient name is worth.
     tmp_file = dst_file.with_name(f".{uuid.uuid4().hex}.tmp")
     try:
-        tmp_file.symlink_to(src_file)
+        try:
+            tmp_file.symlink_to(src_file)
+        except OSError:
+            # Symlink creation was denied (Windows without Developer Mode
+            # raises WinError 1314). A hardlink tracks the source content on
+            # the same drive; a copy keeps the app working across drives and
+            # is refreshed by the content check on the next compile.
+            try:
+                os.link(src_file, tmp_file)
+            except OSError:
+                shutil.copy2(src_file, tmp_file)
         for attempt in range(_MAX_LINK_ATTEMPTS):
             try:
                 tmp_file.replace(dst_file)

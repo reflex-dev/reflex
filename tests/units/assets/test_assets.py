@@ -283,6 +283,105 @@ def test_shared_asset_is_thread_safe(mock_asset_path: Path) -> None:
     assert [p.name for p in dst_file.parent.iterdir()] == ["custom_script.js"]
 
 
+def _deny_symlinks(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Simulate a platform that denies symlink creation.
+
+    Windows without Developer Mode denies `os.symlink` outright with
+    WinError 1314, so the link has to fall back to a hardlink or a copy.
+
+    Args:
+        monkeypatch: A pytest fixture for patching.
+    """
+
+    def denied_symlink(target, path, *args, **kwargs):
+        msg = f"A required privilege is not held by the client: {path!r} -> {target!r}"
+        raise OSError(msg)
+
+    monkeypatch.setattr(os, "symlink", denied_symlink)
+
+
+def test_link_shared_asset_hardlink_fallback(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Without symlink privilege, a hardlink keeps the content shared.
+
+    Regression test: `rx.asset(shared=True)` crashed with WinError 1314 on
+    Windows without Developer Mode instead of linking the asset another way.
+
+    Args:
+        tmp_path: A temporary directory provided by pytest.
+        monkeypatch: A pytest fixture for patching.
+    """
+    src_file, dst_file = _staged_link_fixture(tmp_path)
+    _deny_symlinks(monkeypatch)
+
+    _link_shared_asset(dst_file, src_file)
+
+    assert dst_file.is_file()
+    assert not dst_file.is_symlink()
+    assert dst_file.samefile(src_file)
+    assert dst_file.read_text() == "script"
+
+    # A second link is a no-op so file watchers see no change.
+    inode = dst_file.stat().st_ino
+    _link_shared_asset(dst_file, src_file)
+    assert dst_file.stat().st_ino == inode
+
+
+def test_link_shared_asset_copy_fallback(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """When neither symlink nor hardlink exists, a copy keeps the app working.
+
+    Args:
+        tmp_path: A temporary directory provided by pytest.
+        monkeypatch: A pytest fixture for patching.
+    """
+    src_file, dst_file = _staged_link_fixture(tmp_path)
+    _deny_symlinks(monkeypatch)
+
+    def denied_link(*args, **kwargs):
+        msg = "Invalid cross-device link"
+        raise OSError(msg)
+
+    monkeypatch.setattr(os, "link", denied_link)
+
+    _link_shared_asset(dst_file, src_file)
+
+    assert dst_file.is_file()
+    assert not dst_file.is_symlink()
+    assert not dst_file.samefile(src_file)
+    assert dst_file.read_text() == "script"
+
+
+def test_link_shared_asset_copy_refreshes_edited_source(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """An edited source re-copies on the next compile.
+
+    The content check in `_links_to` treats a stale copy as missing the
+    source's content, so the copy is replaced rather than left behind.
+
+    Args:
+        tmp_path: A temporary directory provided by pytest.
+        monkeypatch: A pytest fixture for patching.
+    """
+    src_file, dst_file = _staged_link_fixture(tmp_path)
+    _deny_symlinks(monkeypatch)
+
+    def denied_link(*args, **kwargs):
+        msg = "Invalid cross-device link"
+        raise OSError(msg)
+
+    monkeypatch.setattr(os, "link", denied_link)
+
+    _link_shared_asset(dst_file, src_file)
+    src_file.write_text("updated")
+    _link_shared_asset(dst_file, src_file)
+
+    assert dst_file.read_text() == "updated"
+
+
 @pytest.mark.parametrize(
     "stem",
     [

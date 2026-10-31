@@ -1,0 +1,1 @@
+`rx.asset(shared=True)` no longer crashes on Windows without Developer Mode: when the platform denies symlink creation, the shared asset falls back to a hardlink on the same drive, or to a copy that is refreshed on the next compile when the source lives on another drive.
