@@ -43,7 +43,8 @@ def test_generated_stubs_use_utf8(
     )
     (package / "widget.py").write_text(source, encoding="utf-8")
     registry = tmp_path / "pyi_hashes.json"
-    registry.write_text("{}\n", encoding="utf-8")
+    previous_hashes = {"unrelated/stale.pyi": "previous-hash"}
+    registry.write_text(json.dumps(previous_hashes), encoding="utf-8")
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(pyi_generator, "PWD", tmp_path)
     monkeypatch.syspath_prepend(str(tmp_path))
@@ -78,4 +79,6 @@ def test_generated_stubs_use_utf8(
     assert text in content
     ast.parse(stub.read_bytes())
     hashes = json.loads(registry.read_text(encoding="utf-8"))
-    assert hashes[f"{package_name}/widget.pyi"] == md5(content.encode()).hexdigest()
+    expected_hashes = {} if prune_stale else dict(previous_hashes)
+    expected_hashes[f"{package_name}/widget.pyi"] = md5(content.encode()).hexdigest()
+    assert hashes == expected_hashes
