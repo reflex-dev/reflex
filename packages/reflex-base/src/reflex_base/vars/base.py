@@ -659,23 +659,32 @@ def _decode_var_immutable(value: str) -> tuple[VarData | None, str]:
             return None, value
 
         offset = 0
+        pos = 0
 
         # Find all tags.
-        while m := _decode_var_pattern.search(value):
+        while m := _decode_var_pattern.search(value, pos):
             start, end = m.span()
-            value = value[:start] + value[end:]
 
             serialized_data = m.group(1)
 
-            if serialized_data.isnumeric() or (
-                serialized_data[0] == "-" and serialized_data[1:].isnumeric()
+            if serialized_data and (
+                serialized_data.isnumeric()
+                or (serialized_data[0] == "-" and serialized_data[1:].isnumeric())
             ):
                 # This is a global immutable var.
-                var = _global_vars[int(serialized_data)]
-                var_data = var._get_all_var_data()
+                var = _global_vars.get(int(serialized_data))
+                if var is not None:
+                    value = value[:start] + value[end:]
+                    pos = start
+                    var_data = var._get_all_var_data()
 
-                if var_data is not None:
-                    var_datas.append(var_data)
+                    if var_data is not None:
+                        var_datas.append(var_data)
+                    offset += end - start
+                    continue
+            # The tags hold user text, not an encoded var: leave them be and
+            # continue scanning after the closing tag.
+            pos = end
             offset += end - start
 
     return VarData.merge(*var_datas) if var_datas else None, value
