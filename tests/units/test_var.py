@@ -325,7 +325,10 @@ def test_basic_operations(TestObj):
     assert str(LiteralNumberVar.create(1) * 2) == "(1 * 2)"
     assert str(LiteralNumberVar.create(1) / 2) == "(1 / 2)"
     assert str(LiteralNumberVar.create(1) // 2) == "Math.floor(1 / 2)"
-    assert str(LiteralNumberVar.create(1) % 2) == "(1 % 2)"
+    assert (
+        str(LiteralNumberVar.create(1) % 2)
+        == "((a, b) => { const r = a % b; return r === 0 ? (b < 0 ? -0 : 0) : (r < 0) !== (b < 0) ? r + b : r; })(1, 2)"
+    )
     assert str(LiteralNumberVar.create(1) ** 2) == "(1 ** 2)"
     assert str(LiteralNumberVar.create(1) & v(2)) == "pyAnd(1, () => (2))"
     assert str(LiteralNumberVar.create(1) | v(2)) == "pyOr(1, () => (2))"
@@ -1170,7 +1173,7 @@ def test_all_number_operations():
 
     assert (
         str(complicated_number)
-        == "((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2)"
+        == "(((a, b) => { const r = a % b; return r === 0 ? (b < 0 ? -0 : 0) : (r < 0) !== (b < 0) ? r + b : r; })(Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2), 3) ** 2)"
     )
 
     even_more_complicated_number = ~(
@@ -1179,7 +1182,7 @@ def test_all_number_operations():
 
     assert (
         str(even_more_complicated_number)
-        == "!(isTrue(pyOr(Math.abs(Math.floor(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2))), () => (pyAnd(2, () => (Math.round(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2))))))))"
+        == "!(isTrue(pyOr(Math.abs(Math.floor((((a, b) => { const r = a % b; return r === 0 ? (b < 0 ? -0 : 0) : (r < 0) !== (b < 0) ? r + b : r; })(Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2), 3) ** 2))), () => (pyAnd(2, () => (Math.round((((a, b) => { const r = a % b; return r === 0 ? (b < 0 ? -0 : 0) : (r < 0) !== (b < 0) ? r + b : r; })(Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2), 3) ** 2))))))))"
     )
 
     assert str(LiteralNumberVar.create(5) > False) == "(5 > 0)"
@@ -1408,7 +1411,7 @@ def test_array_filter():
     # non-boolean results are evaluated with python truthiness
     truthy_predicate = array_var.filter(lambda x: x % 2)
     assert re.fullmatch(
-        r"\[1, 2, 3\]\.filter\(\(\((\w+)\) => isTrue\(\(\1 % 2\)\)\)\)",
+        r"\[1, 2, 3\]\.filter\(\(\((\w+)\) => isTrue\(\(\(a, b\) => \{ const r = a % b; return r === 0 \? \(b < 0 \? -0 : 0\) : \(r < 0\) !== \(b < 0\) \? r \+ b : r; \}\)\(\1, 2\)\)\)\)",
         str(truthy_predicate),
     )
     _assert_var_imports(truthy_predicate, "isTrue")

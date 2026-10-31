@@ -645,7 +645,11 @@ def number_modulo_operation(lhs: NumberVar, rhs: NumberVar):
     Returns:
         The number modulo operation.
     """
-    return f"({lhs!s} % {rhs!s})"
+    # JavaScript's `%` takes the sign of the dividend (`-7 % 3` is -1) where
+    # Python's takes the sign of the divisor (`-7 % 3` is 2), so a nonzero
+    # remainder whose sign differs from the divisor's is shifted by the divisor
+    # and a zero remainder takes the divisor's sign (`6.0 % -3.0` is -0.0).
+    return f"((a, b) => {{ const r = a % b; return r === 0 ? (b < 0 ? -0 : 0) : (r < 0) !== (b < 0) ? r + b : r; }})({lhs!s}, {rhs!s})"
 
 
 _STARTS_WITH_UNARY_OPERATOR = re.compile(r"[-+!~]|(?:typeof|void|delete|await)\b")
