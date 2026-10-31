@@ -55,6 +55,7 @@ MARKDOWN_DIRECTIVE = (
     "[index.md]({docs_home_markdown_url})."
 )
 PUBLIC_LLMS_TXT_URL = "https://reflex.dev/docs/llms.txt"
+PUBLIC_DOCS_HOME_MARKDOWN_URL = "https://reflex.dev/docs/index.md"
 PUBLIC_EVENT_TRIGGERS_URL = "https://reflex.dev/docs/api-reference/event-triggers/"
 
 
@@ -265,7 +266,7 @@ def _markdown_directive() -> str:
     """
     return MARKDOWN_DIRECTIVE.format(
         llms_txt_url=PUBLIC_LLMS_TXT_URL,
-        docs_home_markdown_url=public_url("/index.md"),
+        docs_home_markdown_url=PUBLIC_DOCS_HOME_MARKDOWN_URL,
     ).strip()
 
 
