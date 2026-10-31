@@ -1532,14 +1532,21 @@ class LiteralStringVar(LiteralVar[STRING_TYPE], StringVar[STRING_TYPE]):
 
                 serialized_data = m.group(1)
 
-                if serialized_data.isnumeric() or (
-                    serialized_data[0] == "-" and serialized_data[1:].isnumeric()
+                if serialized_data and (
+                    serialized_data.isnumeric()
+                    or (serialized_data[0] == "-" and serialized_data[1:].isnumeric())
                 ):
                     # This is a global immutable var.
-                    var = _global_vars[int(serialized_data)]
-                    strings_and_vals.append(var)
-                    value = value[(end + len(var._js_expr)) :]
-
+                    var = _global_vars.get(int(serialized_data))
+                    if var is not None:
+                        strings_and_vals.append(var)
+                        value = value[(end + len(var._js_expr)) :]
+                        offset += end - start
+                        continue
+                # The tags hold user text, not an encoded var: keep it verbatim
+                # and continue scanning after the closing tag.
+                strings_and_vals.append(m.group(0))
+                value = value[end:]
                 offset += end - start
 
             strings_and_vals.append(value)
@@ -1550,7 +1557,12 @@ class LiteralStringVar(LiteralVar[STRING_TYPE], StringVar[STRING_TYPE]):
             if len(filtered_strings_and_vals) == 1:
                 only_string = filtered_strings_and_vals[0]
                 if isinstance(only_string, str):
-                    return LiteralVar.create(only_string).to(StringVar, _var_type)
+                    return LiteralStringVar(
+                        _js_expr=json.dumps(only_string),
+                        _var_type=_var_type,
+                        _var_data=_var_data,
+                        _var_value=only_string,
+                    )
                 return only_string.to(StringVar, only_string._var_type)
 
             if len(
@@ -1560,11 +1572,12 @@ class LiteralStringVar(LiteralVar[STRING_TYPE], StringVar[STRING_TYPE]):
                     if isinstance(s, (str, LiteralStringVar))
                 ]
             ) == len(filtered_strings_and_vals):
-                return LiteralStringVar.create(
-                    "".join(
-                        s._var_value if isinstance(s, LiteralStringVar) else s
-                        for s in literal_strings
-                    ),
+                joined_value = "".join(
+                    s._var_value if isinstance(s, LiteralStringVar) else s
+                    for s in literal_strings
+                )
+                return LiteralStringVar(
+                    _js_expr=json.dumps(joined_value),
                     _var_type=_var_type,
                     _var_data=VarData.merge(
                         _var_data,
@@ -1574,6 +1587,7 @@ class LiteralStringVar(LiteralVar[STRING_TYPE], StringVar[STRING_TYPE]):
                             if isinstance(s, Var)
                         ),
                     ),
+                    _var_value=joined_value,
                 )
 
             concat_result = ConcatVarOperation.create(
