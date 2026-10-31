@@ -936,6 +936,7 @@ def test_write_file_updates_changed_file(tmp_path: Path) -> None:
     assert path.read_text(encoding="utf-8") == "after"
 
 
+@pytest.mark.skipif(constants.IS_WINDOWS, reason="Requires symlinks")
 def test_ln_creates_link_at_dest(tmp_path: Path) -> None:
     """The link is created at dest and points at src, like `ln -s`."""
     src = tmp_path / "source.js"
@@ -948,6 +949,7 @@ def test_ln_creates_link_at_dest(tmp_path: Path) -> None:
     assert dest.resolve() == src.resolve()
 
 
+@pytest.mark.skipif(constants.IS_WINDOWS, reason="Requires symlinks")
 def test_ln_creates_directory_link(tmp_path: Path) -> None:
     """A directory source links with the directory flag."""
     src = tmp_path / "dir"
@@ -971,12 +973,33 @@ def test_ln_refuses_existing_dest_without_overwrite(tmp_path: Path) -> None:
     assert dest.read_text(encoding="utf-8") == "existing"
 
 
+@pytest.mark.skipif(constants.IS_WINDOWS, reason="Requires symlinks")
 def test_ln_overwrite_replaces_dest(tmp_path: Path) -> None:
     """With overwrite, an existing destination is replaced by the link."""
     src = tmp_path / "source.js"
     src.write_text("content", encoding="utf-8")
     dest = tmp_path / "existing.js"
     dest.write_text("existing", encoding="utf-8")
+
+    assert ln(src, dest, overwrite=True) is True
+    assert dest.is_symlink()
+    assert dest.resolve() == src.resolve()
+
+
+@pytest.mark.skipif(constants.IS_WINDOWS, reason="Requires symlinks")
+def test_ln_overwrite_replaces_dangling_symlink(tmp_path: Path) -> None:
+    """A dangling link at the destination is replaced, not failed on.
+
+    A broken link is neither a file nor a directory, so the removal has to
+    unlink it directly or the replacement below raises FileExistsError.
+
+    Args:
+        tmp_path: A temporary directory provided by pytest.
+    """
+    src = tmp_path / "source.js"
+    src.write_text("content", encoding="utf-8")
+    dest = tmp_path / "dangling.js"
+    dest.symlink_to(tmp_path / "gone.js")
 
     assert ln(src, dest, overwrite=True) is True
     assert dest.is_symlink()

@@ -203,7 +203,12 @@ def ln(src: str | Path, dest: str | Path, overwrite: bool = False) -> bool:
     if dest.exists() or dest.is_symlink():
         if not overwrite:
             return False
-        rm(dest)
+        if dest.is_symlink():
+            # A dangling link is neither a file nor a directory, so rm()
+            # would leave it in place and the link below would fail.
+            dest.unlink()
+        else:
+            rm(dest)
     if src.is_dir():
         dest.symlink_to(src, target_is_directory=True)
     else:
