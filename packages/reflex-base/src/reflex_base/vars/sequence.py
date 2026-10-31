@@ -1533,20 +1533,24 @@ class LiteralStringVar(LiteralVar[STRING_TYPE], StringVar[STRING_TYPE]):
                 serialized_data = m.group(1)
 
                 if serialized_data and (
-                    serialized_data.isnumeric()
-                    or (serialized_data[0] == "-" and serialized_data[1:].isnumeric())
+                    serialized_data.isdecimal()
+                    or (serialized_data[0] == "-" and serialized_data[1:].isdecimal())
                 ):
                     # This is a global immutable var.
-                    var = _global_vars.get(int(serialized_data))
+                    try:
+                        var = _global_vars.get(int(serialized_data))
+                    except ValueError:
+                        # A decimal string too long for int() to convert.
+                        var = None
                     if var is not None:
                         strings_and_vals.append(var)
                         value = value[(end + len(var._js_expr)) :]
                         offset += end - start
                         continue
-                # The tags hold user text, not an encoded var: keep it verbatim
-                # and continue scanning after the closing tag.
-                strings_and_vals.append(m.group(0))
-                value = value[end:]
+                # The opening tag is user text: keep it and keep scanning inside
+                # it, so real markers nested in the user's text still decode.
+                strings_and_vals.append(m.group(0)[: len(REFLEX_VAR_OPENING_TAG)])
+                value = value[(start + len(REFLEX_VAR_OPENING_TAG)) :]
                 offset += end - start
 
             strings_and_vals.append(value)

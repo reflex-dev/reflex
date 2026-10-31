@@ -668,11 +668,15 @@ def _decode_var_immutable(value: str) -> tuple[VarData | None, str]:
             serialized_data = m.group(1)
 
             if serialized_data and (
-                serialized_data.isnumeric()
-                or (serialized_data[0] == "-" and serialized_data[1:].isnumeric())
+                serialized_data.isdecimal()
+                or (serialized_data[0] == "-" and serialized_data[1:].isdecimal())
             ):
                 # This is a global immutable var.
-                var = _global_vars.get(int(serialized_data))
+                try:
+                    var = _global_vars.get(int(serialized_data))
+                except ValueError:
+                    # A decimal string too long for int() to convert.
+                    var = None
                 if var is not None:
                     value = value[:start] + value[end:]
                     pos = start
@@ -682,9 +686,9 @@ def _decode_var_immutable(value: str) -> tuple[VarData | None, str]:
                         var_datas.append(var_data)
                     offset += end - start
                     continue
-            # The tags hold user text, not an encoded var: leave them be and
-            # continue scanning after the closing tag.
-            pos = end
+            # The opening tag is user text: leave it be and keep scanning
+            # inside it, so real markers nested in the user's text still decode.
+            pos = start + len(constants.REFLEX_VAR_OPENING_TAG)
             offset += end - start
 
     return VarData.merge(*var_datas) if var_datas else None, value

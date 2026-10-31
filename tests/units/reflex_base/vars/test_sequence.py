@@ -1,5 +1,6 @@
 """Tests for reflex_base.vars.sequence literal string var creation."""
 
+from reflex_base.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
 from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.sequence import LiteralStringVar
@@ -46,3 +47,60 @@ def test_var_data_decode_tolerates_marker_like_text():
     assert Var(_js_expr="<reflex.Var>999</reflex.Var>")._var_data is None
     text = '"<reflex.Var>state</reflex.Var>"'
     assert Var(_js_expr=text)._js_expr == text
+
+
+def test_unicode_numeric_marker_text_is_preserved_verbatim():
+    """isdecimal, not isnumeric: int() rejects characters like the 1/2 glyph."""
+    text = "x <reflex.Var>½</reflex.Var> y"
+    var = LiteralStringVar.create(text)
+    assert var._get_all_var_data() is None
+    # json.dumps escapes the 1/2 glyph in the compiled expression.
+    assert str(var) == '"x <reflex.Var>\\u00bd</reflex.Var> y"'
+
+
+def test_oversized_numeric_marker_text_is_preserved_verbatim():
+    """A decimal string past int()'s conversion limit is user text."""
+    text = f"<reflex.Var>{'1' * 5000}</reflex.Var>"
+    var = LiteralStringVar.create(text)
+    assert str(var) == '"' + text + '"'
+
+
+def test_real_var_inside_literal_tags_still_decodes():
+    """A real marker inside the user's literal tags must decode, not stay
+    preserved as text when the tags came from an f-string with a var inside.
+    """
+    real_var = LiteralVar.create("imagination", _var_data=VarData(state="fear"))
+    f_string = f"{REFLEX_VAR_OPENING_TAG}{real_var}{REFLEX_VAR_CLOSING_TAG}"
+
+    var = LiteralStringVar.create(f_string)
+
+    var_data = var._get_all_var_data()
+    assert var_data is not None
+    assert var_data.state == "fear"
+    assert str(hash(real_var)) not in str(var)
+    assert "imagination" in str(var)
+    assert REFLEX_VAR_OPENING_TAG in str(var)
+
+
+def test_real_state_var_inside_literal_tags_stays_reactive():
+    """A non-literal var nested in literal tag text interpolates reactively."""
+    state_var = Var(_js_expr="state_value", _var_type=str)
+    f_string = f"{REFLEX_VAR_OPENING_TAG}{state_var}{REFLEX_VAR_CLOSING_TAG}"
+
+    var = LiteralStringVar.create(f_string)
+
+    assert "state_value" in str(var)
+    assert str(hash(state_var)) not in str(var)
+
+
+def test_var_data_decode_finds_real_marker_inside_literal_tags():
+    """The decode path also decodes real markers nested in literal tags."""
+    real_var = LiteralVar.create("imagination", _var_data=VarData(state="fear"))
+    f_string = f"{REFLEX_VAR_OPENING_TAG}{real_var}{REFLEX_VAR_CLOSING_TAG}"
+
+    var = Var(_js_expr=f_string)
+
+    assert var._var_data is not None
+    assert var._var_data.state == "fear"
+    assert str(hash(real_var)) not in str(var)
+    assert REFLEX_VAR_OPENING_TAG in str(var)
