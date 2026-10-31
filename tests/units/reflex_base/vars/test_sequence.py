@@ -89,8 +89,27 @@ def test_real_state_var_inside_literal_tags_stays_reactive():
 
     var = LiteralStringVar.create(f_string)
 
+    # A decoder that baked the var's current value into a literal would pass
+    # the string asserts below, so pin the var being a live concatenation.
+    assert not isinstance(var, LiteralStringVar)
     assert "state_value" in str(var)
     assert str(hash(state_var)) not in str(var)
+
+
+def test_many_opening_tags_scan_in_one_pass():
+    """Many opening tags before one closing tag must not rescan the suffix."""
+    text = "<reflex.Var>" * 2000 + "text</reflex.Var>"
+    var = LiteralStringVar.create(text)
+    assert var._get_all_var_data() is None
+    assert str(var) == '"' + text + '"'
+
+
+def test_decode_many_opening_tags_in_one_pass():
+    """The decode path also handles repeated opening tags in one pass."""
+    text = "<reflex.Var>" * 2000 + "text</reflex.Var>"
+    var = Var(_js_expr=text)
+    assert var._js_expr == text
+    assert var._var_data is None
 
 
 def test_var_data_decode_finds_real_marker_inside_literal_tags():
