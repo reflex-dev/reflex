@@ -1,9 +1,92 @@
 """Tests for the shared keyword-only Algolia search."""
 
+import json
+import re
+import shutil
+import subprocess
 from pathlib import Path
 
+import pytest
 from reflex_site_shared.components.algolia import AlgoliaSearch, Search
 from reflex_site_shared.plugins import SharedSiteStylesPlugin
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node missing")
+@pytest.mark.parametrize(
+    ("query", "expected_query"),
+    [
+        ("rx.button", "button"),
+        ("rx.input", "input"),
+        ("rx.radio_group", "radio group"),
+        ("rx.data_table", "data table"),
+        ("rx.alert_dialog.root", "alert dialog root"),
+        ("rx.scroll_area", "scroll area"),
+        ("rx.button.", "rx.button."),
+        ("RX.BUTTON", "BUTTON"),
+        ("button", "button"),
+        ("radio group", "radio group"),
+        ("on_click", "on_click"),
+        ("how to style rx.button", "how to style rx.button"),
+        ("example.rx.button", "example.rx.button"),
+        ("https://rx.button", "https://rx.button"),
+        ("rx.", "rx."),
+    ],
+)
+def test_algolia_search_normalizes_component_queries(
+    query: str, expected_query: str, tmp_path: Path
+) -> None:
+    """Normalize component names through the same module imported by the client.
+
+    Args:
+        query: Trimmed search text.
+        expected_query: Query sent to Algolia.
+        tmp_path: Temporary directory for the published JavaScript module.
+    """
+    assets = dict(SharedSiteStylesPlugin().get_static_assets())
+    module = tmp_path / "search-query.mjs"
+    module.write_text(
+        assets[Path("public/components/search-query.mjs")], encoding="utf-8"
+    )
+    script = """
+import { pathToFileURL } from "node:url";
+const { normalizeSearchQuery } = await import(pathToFileURL(process.argv[1]));
+console.log(JSON.stringify(normalizeSearchQuery(JSON.parse(process.argv[2]))));
+"""
+    result = subprocess.run(
+        [
+            "node",
+            "--input-type=module",
+            "--eval",
+            script,
+            str(module),
+            json.dumps(query),
+        ],
+        capture_output=True,
+        encoding="utf-8",
+        timeout=10,
+        check=True,
+    )
+    assert json.loads(result.stdout) == expected_query
+
+
+def test_algolia_search_wires_normalization_into_requests() -> None:
+    """Normalize requests through the published helper while keeping raw cache keys."""
+    assets = dict(SharedSiteStylesPlugin().get_static_assets())
+    source = assets[Path("public/components/AlgoliaSearch.tsx")]
+
+    assert re.search(
+        r"import\s*\{\s*normalizeSearchQuery\s*,?\s*\}\s*from\s*"
+        r"[\"']\./search-query\.mjs[\"']",
+        source,
+    )
+    assert re.search(
+        r"\bquery\s*:\s*normalizeSearchQuery\s*\(\s*trimmedQuery\s*,?\s*\)",
+        source,
+    )
+    assert re.search(
+        r"\bconst\s+cacheKey\s*=\s*trimmedQuery\.toLocaleLowerCase\(\s*\)",
+        source,
+    )
 
 
 def test_algolia_search_uses_local_keyword_only_component() -> None:
