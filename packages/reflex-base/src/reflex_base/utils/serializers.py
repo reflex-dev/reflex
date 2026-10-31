@@ -219,7 +219,8 @@ def serialize(
     # If there is no serializer, dataclasses serialize to their fields.
     if serializer is None:
         if (serializer := _dataclass_serializer(type_)) is not None:
-            return serializer(value)
+            serialized = serializer(value)
+            return (serialized, dict) if get_type else serialized
 
         if get_type:
             return None, None
