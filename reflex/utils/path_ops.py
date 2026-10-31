@@ -187,12 +187,12 @@ def ls(path: str | Path) -> list[Path]:
 
 
 def ln(src: str | Path, dest: str | Path, overwrite: bool = False) -> bool:
-    """Create a symbolic link.
+    """Create a symbolic link at dest pointing to src, like `ln -s`.
 
     Args:
-        src: The path to the file or directory.
-        dest: The path to the destination.
-        overwrite: Whether to overwrite the destination.
+        src: The path the link should point at.
+        dest: The path to create the link at.
+        overwrite: Whether to replace an existing destination.
 
     Returns:
         Whether the link was successful.
@@ -200,13 +200,14 @@ def ln(src: str | Path, dest: str | Path, overwrite: bool = False) -> bool:
     src, dest = Path(src), Path(dest)
     if src == dest:
         return False
-    if not overwrite and (dest.exists() or dest.is_symlink()):
-        return False
-    if src.is_dir():
+    if dest.exists() or dest.is_symlink():
+        if not overwrite:
+            return False
         rm(dest)
-        src.symlink_to(dest, target_is_directory=True)
+    if src.is_dir():
+        dest.symlink_to(src, target_is_directory=True)
     else:
-        src.symlink_to(dest)
+        dest.symlink_to(src)
     return True
 
 

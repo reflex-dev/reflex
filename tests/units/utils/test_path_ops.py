@@ -19,7 +19,7 @@ import pytest
 
 from reflex import constants
 from reflex.utils import frontend_skeleton, path_ops
-from reflex.utils.path_ops import write_file
+from reflex.utils.path_ops import ln, write_file
 
 if sys.platform == "win32":
     import msvcrt
@@ -934,3 +934,59 @@ def test_write_file_updates_changed_file(tmp_path: Path) -> None:
     write_file(path, "before")
     write_file(path, "after")
     assert path.read_text(encoding="utf-8") == "after"
+
+
+def test_ln_creates_link_at_dest(tmp_path: Path) -> None:
+    """The link is created at dest and points at src, like `ln -s`."""
+    src = tmp_path / "source.js"
+    src.write_text("content", encoding="utf-8")
+    dest = tmp_path / "linked.js"
+
+    assert ln(src, dest) is True
+    assert dest.is_symlink()
+    assert not src.is_symlink()
+    assert dest.resolve() == src.resolve()
+
+
+def test_ln_creates_directory_link(tmp_path: Path) -> None:
+    """A directory source links with the directory flag."""
+    src = tmp_path / "dir"
+    src.mkdir()
+    dest = tmp_path / "dir-link"
+
+    assert ln(src, dest) is True
+    assert dest.is_symlink()
+    assert dest.resolve() == src.resolve()
+
+
+def test_ln_refuses_existing_dest_without_overwrite(tmp_path: Path) -> None:
+    """An existing destination is left alone unless overwrite is set."""
+    src = tmp_path / "source.js"
+    src.write_text("content", encoding="utf-8")
+    dest = tmp_path / "existing.js"
+    dest.write_text("existing", encoding="utf-8")
+
+    assert ln(src, dest) is False
+    assert not dest.is_symlink()
+    assert dest.read_text(encoding="utf-8") == "existing"
+
+
+def test_ln_overwrite_replaces_dest(tmp_path: Path) -> None:
+    """With overwrite, an existing destination is replaced by the link."""
+    src = tmp_path / "source.js"
+    src.write_text("content", encoding="utf-8")
+    dest = tmp_path / "existing.js"
+    dest.write_text("existing", encoding="utf-8")
+
+    assert ln(src, dest, overwrite=True) is True
+    assert dest.is_symlink()
+    assert dest.resolve() == src.resolve()
+
+
+def test_ln_same_path_returns_false(tmp_path: Path) -> None:
+    """Linking a path to itself is refused."""
+    path = tmp_path / "path.js"
+    path.write_text("content", encoding="utf-8")
+
+    assert ln(path, path) is False
+    assert not path.is_symlink()
