@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, Generic, cast
 
 from reflex_base.environment import state_manager_disk_debounce
+from reflex_base.utils.exceptions import StateSchemaMismatchError
 from typing_extensions import Unpack, override
 
 from reflex.istate.manager import (
@@ -158,8 +159,14 @@ class StateManagerDisk(StateManager):
             try:
                 with token_path.open(mode="rb") as file:
                     return token.deserialize(fp=file)
-            except Exception:
-                pass
+            except StateSchemaMismatchError:
+                return None
+            except Exception as e:
+                logger.warning(
+                    "Failed to load state file %s, falling back to a default state: %r",
+                    token_path.name,
+                    e,
+                )
         return None
 
     async def populate_substates(
