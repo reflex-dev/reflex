@@ -1002,9 +1002,10 @@ def _get_config(project_root: Path | None = None) -> Config:
             # Building it must not replace the state_auto_setters value a
             # Config already created in rxconfig.py published.
             state_auto_setters = _state_auto_setters
-            config = Config(app_name="", _skip_plugins_checks=True)
-            _state_auto_setters = state_auto_setters
-            return config
+            try:
+                return Config(app_name="", _skip_plugins_checks=True)
+            finally:
+                _state_auto_setters = state_auto_setters
         # A fresh str object, so the exact inserted entry can be removed by
         # identity: rxconfig.py may itself add or remove equal cwd entries,
         # which removal by value could confuse with caller-owned ones.

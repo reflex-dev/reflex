@@ -1194,6 +1194,25 @@ def test_get_config_inside_rxconfig_keeps_state_auto_setters(
         assert reflex_base.config.get_state_auto_setters() is True
 
 
+def test_get_config_stand_in_failure_keeps_state_auto_setters(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A stand-in config that fails validation does not leave its value published.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    monkeypatch.setenv("REFLEX_STATE_MANAGER_MODE", "redis")
+    monkeypatch.delenv("REFLEX_REDIS_URL", raising=False)
+    monkeypatch.delenv("REDIS_URL", raising=False)
+    monkeypatch.setattr(reflex_base.config, "_loading_config", True)
+    monkeypatch.setattr(reflex_base.config, "_state_auto_setters", True)
+
+    with pytest.raises(ConfigError):
+        reflex_base.config._get_config()
+    assert reflex_base.config._state_auto_setters is True
+
+
 def test_get_config_accepts_explicit_project_root(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
 ):
