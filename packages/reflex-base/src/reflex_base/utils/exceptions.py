@@ -43,13 +43,21 @@ class ComponentTypeError(ReflexError, TypeError):
 class ChildrenTypeError(ComponentTypeError):
     """Raised when the children prop of a component is not a valid type."""
 
-    def __init__(self, component: str, child: Any):
+    def __init__(self, component: str, child: Any, *, is_event: bool = False):
         """Initialize the exception.
 
         Args:
             component: The name of the component.
             child: The child that caused the error.
+            is_event: Whether the child is an event, or a Var that can hold one.
         """
+        if is_event:
+            super().__init__(
+                f"Component {component} received an event as a child, which cannot be rendered. "
+                "Bind it to an event trigger such as `on_click`, or pass it to `on_load` in "
+                "`app.add_page` to run it when the page loads."
+            )
+            return
         super().__init__(
             f"Component {component} received child {child!r} of type {type(child)}. "
             "Accepted types are other components, state vars, or primitive Python types (dict excluded)."

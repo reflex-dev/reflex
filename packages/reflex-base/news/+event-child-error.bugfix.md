@@ -1,0 +1,1 @@
+Using an event as a component child, directly (`rx.box(rx.redirect("/home"))`) or through `rx.cond` or `rx.match`, now raises a `ChildrenTypeError` that says to bind the event to a trigger such as `on_click` or to `on_load`, instead of compiling a page that fails in the browser.
