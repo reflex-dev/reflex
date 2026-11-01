@@ -787,6 +787,10 @@ def collect_form_dict_names(form_dict: dict[str, Any]) -> dict[str, Any]:
 def format_array_ref(refs: str, idx: Var | None) -> str:
     """Format a ref accessed by array.
 
+    A Var formatted into an f-string leaves a marker holding its hash; like
+    `format_ref`, the marker is dropped so the name is the same in every
+    build.
+
     Args:
         refs : The ref array to access.
         idx : The index of the ref in the array.
@@ -794,6 +798,7 @@ def format_array_ref(refs: str, idx: Var | None) -> str:
     Returns:
         The formatted ref.
     """
+    refs = _VAR_MARKER.sub("", refs)
     clean_ref = re.sub(r"[^\w]+", "_", refs)
     if idx is not None:
         return f"refs_{clean_ref}[{idx!s}]"
