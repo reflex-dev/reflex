@@ -9,7 +9,7 @@ from reflex_base.components.memoize_helpers import passthrough_children_var
 from reflex_base.components.tags import CommonTag
 from reflex_base.components.tags.match_tag import MatchTag
 from reflex_base.style import Style
-from reflex_base.utils import format
+from reflex_base.utils import format, types
 from reflex_base.utils.exceptions import MatchTypeError
 from reflex_base.utils.imports import ImportDict
 from reflex_base.vars import VarData
@@ -258,7 +258,9 @@ class Match(Component):
                 match_cases=match_cases,
                 default=default,
             ),
-            _var_type=default._var_type,
+            _var_type=types.unionize(
+                *[case[1]._var_type for case in match_cases], default._var_type
+            ),
             _var_data=VarData.merge(
                 match_cond_var._get_all_var_data(),
                 *[el._get_all_var_data() for case in match_cases for el in case[0]],

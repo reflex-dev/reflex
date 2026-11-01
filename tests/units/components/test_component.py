@@ -825,6 +825,14 @@ class EventChildState(BaseState):
             ),
             id="match",
         ),
+        pytest.param(
+            lambda: rx.match(EventChildState.page, ("a", rx.redirect("/a")), "text"),
+            id="match_mixed_case",
+        ),
+        pytest.param(
+            lambda: rx.match(EventChildState.page, ("a", "text"), rx.redirect("/b")),
+            id="match_mixed_default",
+        ),
     ],
 )
 def test_component_create_event_child(make_child, test_component):
