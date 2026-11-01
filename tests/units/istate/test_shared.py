@@ -10,6 +10,7 @@ from unittest.mock import AsyncMock, Mock, patch
 import pytest
 from reflex_base import constants
 from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.registry import RegistrationContext
 
 import reflex as rx
 from reflex.istate import shared as shared_module
@@ -438,6 +439,49 @@ async def test_linked_state_patch_restores_descendant_dirty_state_after_resolve(
     assert linked_state.dirty_vars == set()
     assert linked_state.dirty_substates == set()
     assert private_tree.dirty_substates == set()
+
+
+@pytest.mark.asyncio
+async def test_linked_state_patch_preserves_synced_field_updates(
+    clean_registration_context: RegistrationContext,
+):
+    """Fields synchronized during refresh must remain dirty for the final delta."""
+
+    class _StoragePatchRoot(BaseState):
+        @rx.var
+        def router_value(self) -> str:
+            return self.router.session.client_token
+
+    class _StoragePatchSource(_StoragePatchRoot):
+        value: str = rx.LocalStorage("", name="shared", sync=True)
+
+    class _StoragePatchSibling(_StoragePatchRoot):
+        value: str = rx.LocalStorage("", name="shared", sync=True)
+
+    private_tree = _StoragePatchRoot()
+    linked_tree = _StoragePatchRoot()
+    private_state = cast(
+        _StoragePatchSource,
+        private_tree.substates[_StoragePatchSource.get_name()],
+    )
+    linked_state = cast(
+        _StoragePatchSource,
+        linked_tree.substates[_StoragePatchSource.get_name()],
+    )
+    sibling_state = cast(
+        _StoragePatchSibling,
+        private_tree.substates[_StoragePatchSibling.get_name()],
+    )
+    private_tree._clean()
+    linked_state.value = "updated"
+
+    async with _patch_state(private_state, linked_state, full_delta=False):
+        delta = private_tree.get_delta()
+
+    assert sibling_state.value == "updated"
+    assert sibling_state.dirty_vars == {"value"}
+    assert sibling_state.get_name() in private_tree.dirty_substates
+    assert delta[sibling_state.get_full_name()]["value" + FIELD_MARKER] == "updated"
 
 
 @pytest.mark.asyncio

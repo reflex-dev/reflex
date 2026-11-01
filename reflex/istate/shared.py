@@ -15,7 +15,13 @@ from reflex_base.vars.base import _delta_value_key, _owner_state
 
 from reflex.istate.delta import _suppress_delta_recording
 from reflex.istate.manager.token import BaseStateToken
-from reflex.state import BaseState, OnLoadInternalState, State, _override_base_method
+from reflex.state import (
+    BaseState,
+    OnLoadInternalState,
+    State,
+    _override_base_method,
+    _shared_storage_updates,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -287,11 +293,16 @@ async def _patch_state(
                     router_computed_snapshots,
                     computed_var_snapshots,
                 ))
+        storage_updates: set[tuple[str, str]] = set()
+        storage_updates_token = _shared_storage_updates.set(storage_updates)
         try:
-            # The delta is discarded: it is only resolved to refresh computed vars,
-            # so its values must not count as sent to the client.
-            with _suppress_delta_recording():
-                await root_state._get_resolved_delta()
+            try:
+                # The delta is discarded: it is only resolved to refresh computed vars,
+                # so its values must not count as sent to the client.
+                with _suppress_delta_recording():
+                    await root_state._get_resolved_delta()
+            finally:
+                _shared_storage_updates.reset(storage_updates_token)
         except BaseException:
             if not full_delta:
                 for (
@@ -331,7 +342,7 @@ async def _patch_state(
             raise
         else:
             if not full_delta:
-                computed_refresh_states: list[BaseState] = []
+                refreshed_states: list[BaseState] = []
                 for (
                     state,
                     dirty_vars,
@@ -377,13 +388,22 @@ async def _patch_state(
                             )
                         )
                     )
-                    if computed_vars_refreshed:
-                        computed_refresh_states.append(state)
+                    field_vars_refreshed = {
+                        var_name
+                        for state_name, var_name in storage_updates
+                        if state_name == state.get_full_name()
+                        and var_name not in state.computed_vars
+                    }
+                    if computed_vars_refreshed or field_vars_refreshed:
+                        refreshed_states.append(state)
                     state.dirty_vars = (
-                        dirty_vars | computed_vars_to_preserve | computed_vars_refreshed
+                        dirty_vars
+                        | computed_vars_to_preserve
+                        | computed_vars_refreshed
+                        | field_vars_refreshed
                     )
                     state.dirty_substates = dirty_substates
-                for refreshed_state in computed_refresh_states:
+                for refreshed_state in refreshed_states:
                     state = refreshed_state
                     while state.parent_state is not None:
                         state.parent_state.dirty_substates.add(state.get_name())

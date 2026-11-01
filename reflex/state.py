@@ -15,6 +15,7 @@ import pickle
 import re
 import sys
 from collections.abc import Callable, Iterable, Iterator, Sequence
+from contextvars import ContextVar
 from datetime import timedelta
 from hashlib import md5
 from types import FunctionType
@@ -100,6 +101,10 @@ from reflex.istate.proxy import MutableProxy
 from reflex.istate.storage import ClientStorageBase
 from reflex.utils import console, format, types
 from reflex.utils.exec import is_testing_env
+
+_shared_storage_updates: ContextVar[set[tuple[str, str]] | None] = ContextVar(
+    "shared_storage_updates", default=None
+)
 
 
 @functools.cache
@@ -2353,6 +2358,8 @@ async def _sync_shared_storage(state: BaseState) -> None:
                 target = await state.get_state(state_cls)
                 if target.get_value(var_name) != value:
                     setattr(target, var_name, value)
+                    if (updates := _shared_storage_updates.get()) is not None:
+                        updates.add((target.get_full_name(), var_name))
 
 
 def _loaded_substate(root: BaseState, state_name: str) -> BaseState | None:
