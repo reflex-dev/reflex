@@ -118,6 +118,16 @@ def test_package_ships_only_its_own_stubs(
     assert not config.include_path("tests/golden.pyi")
 
 
+@pytest.mark.parametrize("package", stub_packages(), ids=lambda path: path.name)
+def test_package_ships_py_typed(package: Path):
+    """Type checkers ignore a package's stubs unless it ships a py.typed marker."""
+    markers = sorted((package / "src").glob("*/py.typed"))
+    assert markers
+    config = WheelBuilder(str(package)).config
+    for marker in markers:
+        assert config.include_path(marker.relative_to(package).as_posix())
+
+
 def build_hook(root: Path, directory: Path, target: str = "wheel"):
     """Load the stub-generating build hook and instantiate it against a root.
 
