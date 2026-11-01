@@ -120,7 +120,11 @@ def test_package_ships_only_its_own_stubs(
 
 @pytest.mark.parametrize("package", stub_packages(), ids=lambda path: path.name)
 def test_package_ships_py_typed(package: Path):
-    """Type checkers ignore a package's stubs unless it ships a py.typed marker."""
+    """Type checkers ignore a package's stubs unless it ships a py.typed marker.
+
+    Args:
+        package: The workspace package directory.
+    """
     markers = sorted((package / "src").glob("*/py.typed"))
     assert markers
     config = WheelBuilder(str(package)).config
