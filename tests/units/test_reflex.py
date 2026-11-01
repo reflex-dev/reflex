@@ -5,6 +5,7 @@ from __future__ import annotations
 import contextlib
 import json
 import os
+import select
 import signal
 import subprocess
 import sys
@@ -970,8 +971,13 @@ rx._run_dev(MODE,3000,PORT,"127.0.0.1")
 @pytest.mark.skipif(sys.platform == "win32", reason="POSIX signals")
 @pytest.mark.parametrize("mode", ["frontend", "fullstack"])
 @pytest.mark.parametrize("sig", ["SIGTERM", "SIGINT"])
-def test_no_tty_run_stops_frontend(tmp_path, mode, sig):
-    """Headless runs stop the frontend on SIGTERM or SIGINT."""
+@pytest.mark.parametrize("forwards", [True, False], ids=["forwarding", "orphaning"])
+def test_no_tty_run_stops_frontend(tmp_path, mode, sig, forwards):
+    """Headless runs stop the frontend on SIGTERM or SIGINT.
+
+    The frontend stand-in either passes SIGTERM on to its own child, as bun
+    does, or exits without it, as ``npm run`` does; the child must stop either way.
+    """
     pids = tmp_path / "children"
     driver = tmp_path / "driver.py"
     driver.write_text(
@@ -981,7 +987,7 @@ from reflex.utils import build, exec as exec_mod, telemetry
 def frontend(*args):
     code = "import signal,subprocess,sys,time\\n" + \
         "p=subprocess.Popen([sys.executable,'-c','import time;time.sleep(60)'])\\n" + \
-        "signal.signal(signal.SIGTERM, lambda *a: (p.terminate(), sys.exit(0)))\\n" + \
+        ("signal.signal(signal.SIGTERM, lambda *a: (p.terminate(), sys.exit(0)))\\n" if FORWARDS else "") + \
         "print(p.pid,flush=True);time.sleep(60)\\n"
     p = subprocess.Popen([sys.executable,"-c",code],stdout=subprocess.PIPE,text=True)
     grandchild = int(p.stdout.readline())
@@ -1008,6 +1014,7 @@ from reflex_base import constants
 rx._run_dev(MODE,3000,PORT,"127.0.0.1")
 """
         .replace("PIDS", repr(str(pids)))
+        .replace("FORWARDS", repr(forwards))
         .replace(
             "MODE",
             "constants.RunningMode.FRONTEND_ONLY"
@@ -1038,11 +1045,14 @@ rx._run_dev(MODE,3000,PORT,"127.0.0.1")
             time.sleep(0.01)
         assert child is not None, "frontend did not start"
         assert grandchild is not None, "frontend grandchild did not start"
+        started = time.monotonic()
         os.kill(launcher.pid, getattr(signal, sig))
         try:
             returncode = launcher.wait(timeout=DEFAULT_TIMEOUT)
         except subprocess.TimeoutExpired:
             pytest.fail("no-TTY launcher hung after signal")
+        # Stopping the tree takes one SIGTERM round, well below the kill timeout.
+        assert time.monotonic() - started < 4
         if sig == "SIGINT":
             assert returncode in (0, -signal.SIGINT)
         else:
@@ -1074,6 +1084,213 @@ rx._run_dev(MODE,3000,PORT,"127.0.0.1")
                     os.kill(pid, signal.SIGKILL)
 
 
+_STUCK_CLEANUP_SCRIPT = """
+import os, signal, subprocess, sys, threading, time
+
+from reflex import reflex
+
+with reflex._shutdown_signals() as begin_cleanup:
+    try:
+        served = threading.Event()
+        if os.environ.get("SERVER_HANDLERS"):
+            # Like granian: its own handlers while serving, never restored.
+            for sig in (signal.SIGINT, signal.SIGTERM):
+                signal.signal(sig, lambda *_: served.set())
+        print("ready", flush=True)
+        while not served.is_set():
+            time.sleep(0.05)
+    finally:
+        begin_cleanup()
+        # A cleanup that never ends, like a frontend pipe held open forever.
+        helper = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"])
+        print(helper.pid, flush=True)
+        while True:
+            time.sleep(1)
+"""
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX signals")
+@pytest.mark.parametrize("sig", [signal.SIGINT, signal.SIGTERM])
+@pytest.mark.parametrize("server_handlers", [False, True], ids=["own", "server"])
+def test_shutdown_signals_force_exit_on_a_later_repeat(tmp_path, sig, server_handlers):
+    """A repeat right after the first signal is ignored; a later one forces the exit.
+
+    A backend server that installed its own handlers and never restored them,
+    as granian does, cannot swallow the later repeat.
+    """
+    script = tmp_path / "stuck.py"
+    script.write_text(_STUCK_CLEANUP_SCRIPT)
+    proc = subprocess.Popen(
+        [sys.executable, str(script)],
+        stdout=subprocess.PIPE,
+        bufsize=0,
+        env={**os.environ, "SERVER_HANDLERS": "1" if server_handlers else ""},
+    )
+    helper = None
+    try:
+        assert _read_line(proc) == "ready\n"
+        proc.send_signal(sig)
+        helper = int(_read_line(proc))
+        # The same Ctrl-C delivered twice under --json: not a request to force.
+        proc.send_signal(sig)
+        time.sleep(0.3)
+        assert proc.poll() is None
+        time.sleep(reflex._REPEAT_IGNORE_SECONDS)
+        proc.send_signal(sig)
+        assert proc.wait(timeout=DEFAULT_TIMEOUT) == 128 + sig
+        _assert_gone(helper, "the forced exit left the cleanup's child running")
+    finally:
+        proc.kill()
+        proc.wait()
+        if helper is not None:
+            with contextlib.suppress(ProcessLookupError):
+                os.kill(helper, signal.SIGKILL)
+
+
+def _read_line(proc: subprocess.Popen) -> str:
+    """Read one line from a child's unbuffered stdout, failing instead of hanging.
+
+    Args:
+        proc: The child, started with ``stdout=PIPE`` and ``bufsize=0`` so no
+            later line is read ahead into a buffer ``select`` cannot see.
+
+    Returns:
+        The decoded line, newline included.
+    """
+    assert proc.stdout is not None
+    if not select.select([proc.stdout], [], [], DEFAULT_TIMEOUT)[0]:
+        pytest.fail("the child printed nothing in time")
+    return proc.stdout.readline().decode()
+
+
+def _assert_gone(pid: int, message: str) -> None:
+    """Wait for a process to exit; an exited process nobody reaped counts.
+
+    Args:
+        pid: The process ID.
+        message: The failure message when it keeps running.
+    """
+    deadline = time.monotonic() + DEFAULT_TIMEOUT
+    while time.monotonic() < deadline:
+        try:
+            if psutil.Process(pid).status() == psutil.STATUS_ZOMBIE:
+                return
+        except psutil.NoSuchProcess:
+            return
+        time.sleep(0.05)
+    pytest.fail(message)
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="fills a pipe by whole pages")
+def test_shutdown_signals_force_exit_with_a_full_stderr(tmp_path):
+    """A stderr nobody reads cannot hold up the forced exit."""
+    script = tmp_path / "stuck.py"
+    script.write_text(_STUCK_CLEANUP_SCRIPT)
+    read_end, write_end = os.pipe()
+    proc = subprocess.Popen(
+        [sys.executable, str(script)],
+        stdout=subprocess.PIPE,
+        stderr=write_end,
+        bufsize=0,
+    )
+    helper = None
+    try:
+        assert _read_line(proc) == "ready\n"
+        proc.send_signal(signal.SIGTERM)
+        helper = int(_read_line(proc))
+        # Fill the pipe; its write end stays open here, so nothing drains it.
+        while select.select([], [write_end], [], 0)[1]:
+            os.write(write_end, b"\0" * select.PIPE_BUF)
+        time.sleep(reflex._REPEAT_IGNORE_SECONDS + 0.1)
+        proc.send_signal(signal.SIGTERM)
+        assert proc.wait(timeout=DEFAULT_TIMEOUT) == 128 + signal.SIGTERM
+        _assert_gone(helper, "the forced exit left the cleanup's child running")
+    finally:
+        proc.kill()
+        proc.wait()
+        os.close(read_end)
+        os.close(write_end)
+        if helper is not None:
+            with contextlib.suppress(ProcessLookupError):
+                os.kill(helper, signal.SIGKILL)
+
+
+# A dev server that ignores SIGTERM behind a wrapper that exits on it, like a
+# package manager in front of the server.
+_SERVER_BEHIND_WRAPPER_SCRIPT = """
+import subprocess, sys, time
+
+server = subprocess.Popen(
+    [
+        sys.executable,
+        "-c",
+        "import signal, time\\n"
+        "signal.signal(signal.SIGTERM, signal.SIG_IGN)\\n"
+        "print('ready', flush=True)\\n"
+        "time.sleep(60)",
+    ],
+    stdout=subprocess.PIPE,
+    text=True,
+)
+# Only report the server once it ignores SIGTERM.
+server.stdout.readline()
+print(server.pid, flush=True)
+time.sleep(60)
+"""
+
+_ORPHANING_CLEANUP_SCRIPT = """
+import subprocess, sys, time
+
+from reflex import reflex
+from reflex_base.utils.process_tree import stop_process_tree
+
+wrapper = subprocess.Popen(
+    [sys.executable, sys.argv[1]], stdout=subprocess.PIPE, text=True
+)
+print(wrapper.stdout.readline(), end="", flush=True)
+with reflex._shutdown_signals() as begin_cleanup:
+    try:
+        print("ready", flush=True)
+        while True:
+            time.sleep(1)
+    finally:
+        begin_cleanup()
+        # The wrapper exits at once; the server holds the stop until the deadline.
+        stop_process_tree(wrapper, timeout=60)
+"""
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX signals")
+def test_shutdown_signals_force_exit_kills_an_orphaned_descendant(tmp_path):
+    """The forced exit kills a server whose wrapper exited during the cleanup."""
+    wrapper_script = tmp_path / "wrapper.py"
+    wrapper_script.write_text(_SERVER_BEHIND_WRAPPER_SCRIPT)
+    script = tmp_path / "stuck.py"
+    script.write_text(_ORPHANING_CLEANUP_SCRIPT)
+    proc = subprocess.Popen(
+        [sys.executable, str(script), str(wrapper_script)],
+        stdout=subprocess.PIPE,
+        bufsize=0,
+    )
+    server = None
+    try:
+        server = int(_read_line(proc))
+        assert _read_line(proc) == "ready\n"
+        proc.send_signal(signal.SIGTERM)
+        # By now the wrapper is gone and the server is no longer found below the run.
+        time.sleep(reflex._REPEAT_IGNORE_SECONDS + 0.2)
+        assert proc.poll() is None
+        proc.send_signal(signal.SIGTERM)
+        assert proc.wait(timeout=DEFAULT_TIMEOUT) == 128 + signal.SIGTERM
+        _assert_gone(server, "the forced exit left the orphaned server running")
+    finally:
+        proc.kill()
+        proc.wait()
+        if server is not None:
+            with contextlib.suppress(ProcessLookupError):
+                os.kill(server, signal.SIGKILL)
+
+
 @pytest.mark.parametrize(
     ("argv", "supervised", "expected"),
     [(["--json"], False, True), (["--json"], True, False), ([], False, False)],
@@ -1095,14 +1312,14 @@ def test_run_supervises_output_only_in_json_mode(
         expected: Whether the supervisor is expected to start.
     """
     from reflex_base.environment import environment
-    from reflex_base.utils import log
+    from reflex_base.utils import log, supervisor
 
     # Registered so teardown restores the variables the CLI callbacks set.
     monkeypatch.setenv(log._MANAGED_ENV_VAR, "true")
     monkeypatch.setenv(environment.REFLEX_LOG_JSON.name, "false")
-    monkeypatch.setenv(log._SUPERVISED_ENV_VAR, "1234" if supervised else "")
+    monkeypatch.setenv(supervisor._SUPERVISED_ENV_VAR, "1234" if supervised else "")
     monkeypatch.setattr(sys, "argv", ["reflex", "run", *argv])
-    supervise = mocker.patch.object(log, "supervise_output", return_value=7)
+    supervise = mocker.patch.object(supervisor, "supervise_output", return_value=7)
     run = mocker.patch.object(reflex, "_run")
     mocker.patch("reflex.utils.prerequisites.check_running_mode")
 

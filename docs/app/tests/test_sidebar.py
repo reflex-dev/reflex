@@ -1,5 +1,7 @@
 """Tests for the docs sidebar structure and prev/next chain."""
 
+from pathlib import Path
+
 import pytest
 
 
@@ -114,6 +116,46 @@ def test_group_with_nested_pages_remains_expandable():
     assert rendered.count('jsx("details"') == 2
     assert 'href:"/postgres/"' in rendered
     assert 'href:"/sqlite/"' in rendered
+
+
+@pytest.mark.parametrize("active", [False, True])
+@pytest.mark.parametrize("title", ["AG Chart", "Overview", "Testing"])
+def test_single_page_group_label_uses_foreground(title, active):
+    """Direct-link labels must not inherit the link wrapper's muted color."""
+    import reflex as rx
+
+    from reflex_docs.templates.docpage.sidebar.sidebar import sidebar_item_comp
+    from reflex_docs.templates.docpage.sidebar.state import SideBarItem
+
+    component = sidebar_item_comp(
+        0,
+        SideBarItem(
+            names=title,
+            children=[SideBarItem(names="Overview", link="/enterprise/ag-chart/")],
+        ),
+        rx.Var.create([]),
+        rx.Var.create("/enterprise/ag-chart/" if active else "/enterprise/testing/"),
+    )
+    label = component.children[0].children[0].children[0]
+    assert label.tag == "p"
+    assert "text-foreground" in str(label.class_name).strip('"').split()
+
+
+@pytest.mark.parametrize(
+    ("stylesheet", "selector"),
+    [
+        ("docs-theme.css", ".docs-sidebar"),
+        ("docs-header-theme.css", ".docs-sidebar-drawer"),
+    ],
+)
+def test_inactive_sidebar_styles_use_foreground(stylesheet, selector):
+    """Desktop and mobile theme overrides must keep inactive links readable."""
+    css = (Path(__file__).parents[1] / "assets" / stylesheet).read_text()
+    rule = css.split(
+        f"{selector} a:where(:not([aria-current='page'], [aria-current='true'])) p {{",
+        1,
+    )[1].split("}", 1)[0]
+    assert "color: var(--foreground)" in rule
 
 
 def test_api_reference_groups_related_symbols():
