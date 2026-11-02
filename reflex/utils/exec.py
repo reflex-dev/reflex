@@ -506,13 +506,26 @@ def get_app_module():
     return get_config().module
 
 
-def get_app_instance():
-    """Get the app module for the backend.
+def _backend_app():
+    """Load the config, then import the app and create its ASGI app.
+
+    Backend workers import this factory instead of the app module, so the config
+    exists before the app defines its State classes.
 
     Returns:
-        The app module for the backend.
+        The backend ASGI app.
     """
-    return f"{get_app_module()}:{constants.CompileVars.APP}"
+    app_module = importlib.import_module(get_app_module())
+    return getattr(app_module, constants.CompileVars.APP)()
+
+
+def get_app_instance():
+    """Get the ASGI factory target for the backend workers.
+
+    Returns:
+        The ASGI factory target for the backend workers.
+    """
+    return f"{__name__}:_backend_app"
 
 
 def get_app_file() -> Path:
@@ -537,10 +550,10 @@ def get_app_file() -> Path:
 
 
 def get_app_instance_from_file() -> str:
-    """Get the app module for the backend.
+    """Check that the app module exists, then get the backend worker target.
 
     Returns:
-        The app module for the backend.
+        The ASGI factory target for the backend workers.
     """
     get_app_file()
     return get_app_instance()
