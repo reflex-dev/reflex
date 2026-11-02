@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import re
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Literal
 
 from reflex_base import constants
@@ -282,12 +282,15 @@ def context_template(
     state_schema: str | None = None,
     client_storage: dict[str, dict[str, dict[str, Any]]] | None = None,
     disable_react_owner_stacks: bool = False,
+    state_update_decoders: Sequence[str] = (),
 ):
     """Template for the context file.
 
     Args:
         initial_state: The initial state for the context.
-        initial_state_json: Initial state JSON already serialized by the compiler.
+        initial_state_json: Initial state JSON already serialized by the
+            compiler; with ``state_update_decoders``, the JSON of the encoded
+            update whose ``delta`` is the initial state.
         initial_state_hashes: Per-state hashes of ``initial_state`` in sorted
             state name order, sent with the first hydrate so the backend can
             skip vars still at their default.
@@ -302,13 +305,27 @@ def context_template(
         disable_react_owner_stacks: Whether to emit the snippet that disables
             React's dev-build owner-stack capture (an Error() constructed per
             created element, whose cost grows with render depth).
+        state_update_decoders: The modules whose default exports decode state
+            updates, in the order they decode.
 
     Returns:
         Rendered context file content as string.
     """
     initial_state = initial_state or {}
     if initial_state_json is None:
-        initial_state_json = json_dumps(initial_state)
+        initial_state_json = json_dumps(
+            {"delta": initial_state} if state_update_decoders else initial_state
+        )
+    decoder_names = [f"decodeStateUpdate{i}" for i in range(len(state_update_decoders))]
+    decoder_imports = "".join(
+        f"import {name} from {json.dumps(module)}\n"
+        for name, module in zip(decoder_names, state_update_decoders, strict=True)
+    )
+    initial_state_str = (
+        f"stateUpdateDecoders.reduce((decoded, decode) => decode(decoded), {initial_state_json}).delta"
+        if state_update_decoders
+        else initial_state_json
+    )
     state_str = (
         rf"""
 export const state_name = "{state_name}"
@@ -409,9 +426,10 @@ if (typeof window !== "undefined") {
 import {{ applyDelta, ReflexEvent, hydrateClientStorage, useEventLoop, refs }} from "$/utils/state"
 import {{ ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext, StateStoreContext, registerApp, eventLoop }} from "$/utils/context-registry"
 import {{ jsx }} from "@emotion/react";
-{disable_owner_stacks_str}
+{decoder_imports}{disable_owner_stacks_str}
 export {{ ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext, StateStoreContext }};
-export const initialState = {initial_state_json}
+export const stateUpdateDecoders = [{", ".join(decoder_names)}]
+export const initialState = {initial_state_str}
 export const initialStateHashes = {"[]" if not initial_state_hashes else json_dumps(initial_state_hashes)}
 export const stateSchema = {json.dumps(state_schema)}
 
@@ -426,6 +444,7 @@ export const isDevMode = {json.dumps(is_dev_mode)};
 // only one Vite re-executes when they change.
 registerApp({{
   initialState,
+  stateUpdateDecoders,
   clientStorage,
   state_name,
   on_load_internal_event,

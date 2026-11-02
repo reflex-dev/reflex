@@ -362,3 +362,80 @@ assert.deepEqual(protoNext.y, [2]);
         capture_output=True,
         text=True,
     )
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node missing")
+def test_apply_delta_shares_objects_a_decoded_delta_holds_twice() -> None:
+    """A delta holding an object twice or in a cycle keeps one result for it."""
+    content = STATE_JS_TEMPLATE.read_text()
+    helpers = content[
+        content.index("const isPlainObject =") : content.index(
+            "export const evalReactComponent ="
+        )
+    ]
+    subprocess.run(
+        [
+            "node",
+            "--input-type=module",
+            "--eval",
+            helpers
+            + """
+import assert from 'node:assert/strict';
+// Applies a delta as the update handler does once a decoder ran.
+const applyDecoded = (state, delta) => {
+  decodedDeltas.add(delta);
+  return applyDelta(state, delta);
+};
+// Two rows holding one product, as a decoder that dedupes objects returns them.
+const decoded = (name) => {
+  const product = {name};
+  return {rows: [{id: 1, product}, {id: 2, product}]};
+};
+const first = applyDecoded({rows: []}, decoded('a'));
+assert.equal(first.rows[0].product, first.rows[1].product);
+
+// The same values decoded again change nothing.
+assert.equal(applyDecoded(first, decoded('a')), first);
+
+// A changed object stays one object.
+const changed = applyDecoded(first, decoded('b'));
+assert.notEqual(changed.rows[0].product, first.rows[0].product);
+assert.equal(changed.rows[0].product, changed.rows[1].product);
+assert.deepEqual(changed.rows[1].product, {name: 'b'});
+
+// An unchanged object shares the previous one in a new place as well: beside
+// an unchanged row, in a value that was null, and under a new key.
+const product = {name: 'a'};
+const grown = applyDecoded(first, {rows: [{id: 1, product}, {id: 2, product}, {id: 3, product}]});
+assert.equal(grown.rows[0], first.rows[0]);
+assert.equal(grown.rows[2].product, first.rows[0].product);
+const filled = applyDecoded({a: {id: 1}, b: null}, (() => {
+  const shared = {id: 1};
+  return {a: shared, b: shared, c: {nested: shared}};
+})());
+assert.equal(filled.b, filled.a);
+assert.equal(filled.c.nested, filled.a);
+
+// An object that contains itself does not recurse forever.
+const cyclic = () => {
+  const product = {name: 'a'};
+  product.rows = [{id: 1, product}];
+  return {product};
+};
+const once = applyDecoded({product: {name: 'a'}}, cyclic());
+assert.equal(once.product.rows[0].product.rows[0].id, 1);
+const twice = applyDecoded(once, cyclic());
+assert.equal(twice.product.name, 'a');
+assert.equal(twice.product.rows[0].product.rows[0].product.name, 'a');
+const added = applyDecoded({}, cyclic());
+assert.equal(added.product.rows[0].product, added.product);
+
+// A delta no decoder produced is a tree and keeps the plain sharing.
+const plain = {a: {id: 1}};
+assert.equal(applyDelta(plain, {a: {id: 1}}), plain);
+""",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )

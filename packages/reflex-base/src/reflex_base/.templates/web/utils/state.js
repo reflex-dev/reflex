@@ -328,11 +328,38 @@ const isPlainObject = (value) => {
  * Plain objects and arrays whose contents are unchanged keep the identity of
  * the previous value, so memoized components and caches keyed on identity
  * still hit. Any other value is taken from next as is.
+ *
+ * A decoded delta may hold one object in several places, or contain cycles.
+ * With seen, every place gets the one result for such an object, newly added
+ * ones included, and an object that contains itself is taken as is where it
+ * recurs.
  * @param prev The previous value.
  * @param next The new value.
+ * @param seen The results so far for the objects of a decoded delta, if it is one.
  * @returns prev if deep-equal to next, otherwise next with unchanged parts shared from prev.
  */
-const replaceEqualDeep = (prev, next) => {
+const replaceEqualDeep = (prev, next, seen) => {
+  if (seen === undefined || typeof next !== "object" || next === null) {
+    return shareEqualDeep(prev, next, seen);
+  }
+  let result = seen.get(next);
+  if (result === undefined) {
+    // Until it has a result, next stands for itself where it recurs.
+    seen.set(next, next);
+    result = shareEqualDeep(prev, next, seen);
+    seen.set(next, result);
+  }
+  return result;
+};
+
+/**
+ * Share the parts of next that deep-equal prev, see replaceEqualDeep.
+ * @param prev The previous value.
+ * @param next The new value.
+ * @param seen The results so far for the objects of a decoded delta, if it is one.
+ * @returns prev if deep-equal to next, otherwise next with unchanged parts shared from prev.
+ */
+const shareEqualDeep = (prev, next, seen) => {
   // Object.is, unlike ===, tells -0 from 0 and treats NaN as equal to itself.
   if (Object.is(prev, next)) {
     return prev;
@@ -341,7 +368,7 @@ const replaceEqualDeep = (prev, next) => {
     // Allocate only once an element differs; until then prev is the result.
     let out;
     for (let i = 0; i < next.length; i++) {
-      const value = replaceEqualDeep(prev[i], next[i]);
+      const value = replaceEqualDeep(prev[i], next[i], seen);
       if (out === undefined && !Object.is(value, prev[i])) {
         out = prev.slice(0, i);
       }
@@ -369,9 +396,12 @@ const replaceEqualDeep = (prev, next) => {
         if (out === undefined) {
           copyPrefix(i);
         }
+        if (seen !== undefined) {
+          out[key] = replaceEqualDeep(undefined, next[key], seen);
+        }
         continue;
       }
-      const value = replaceEqualDeep(prev[key], next[key]);
+      const value = replaceEqualDeep(prev[key], next[key], seen);
       if (out === undefined && !Object.is(value, prev[key])) {
         copyPrefix(i);
       }
@@ -395,8 +425,48 @@ const replaceEqualDeep = (prev, next) => {
     copyPrefix(keys.length);
     return out;
   }
-  return next;
+  // A new value: in a decoded delta, its objects may already have a result.
+  return seen === undefined ? next : adoptShared(next, seen);
 };
+
+/**
+ * Take a new value of a decoded delta, with the results its objects already have.
+ * @param next The new value.
+ * @param seen The results so far for the objects of the decoded delta.
+ * @returns next, or a copy holding those results in place of the objects.
+ */
+const adoptShared = (next, seen) => {
+  if (Array.isArray(next)) {
+    let out;
+    for (let i = 0; i < next.length; i++) {
+      const value = replaceEqualDeep(undefined, next[i], seen);
+      if (out === undefined && value !== next[i]) {
+        out = next.slice();
+      }
+      if (out !== undefined) {
+        out[i] = value;
+      }
+    }
+    return out ?? next;
+  }
+  if (!isPlainObject(next)) {
+    return next;
+  }
+  let out;
+  for (const key of Object.keys(next)) {
+    const value = replaceEqualDeep(undefined, next[key], seen);
+    if (out === undefined && value !== next[key]) {
+      out = { ...next };
+    }
+    if (out !== undefined) {
+      out[key] = value;
+    }
+  }
+  return out ?? next;
+};
+
+// Substate deltas of decoded updates, which may hold an object more than once.
+const decodedDeltas = new WeakSet();
 
 /**
  * Apply a delta to the state.
@@ -409,9 +479,13 @@ const replaceEqualDeep = (prev, next) => {
  */
 export const applyDelta = (state, delta) => {
   let out;
+  const seen = decodedDeltas.has(delta) ? new Map() : undefined;
   for (const key in delta) {
     const own = Object.hasOwn(state, key);
-    const value = own ? replaceEqualDeep(state[key], delta[key]) : delta[key];
+    const value =
+      own || seen !== undefined
+        ? replaceEqualDeep(own ? state[key] : undefined, delta[key], seen)
+        : delta[key];
     if (!own || !Object.is(value, state[key])) {
       out ??= { ...state };
       out[key] = value;
@@ -1199,12 +1273,21 @@ export const connect = async (
   };
 
   // On each received message, queue the updates and events.
-  socket.current.on("event", (update) => {
-    // Skip unknown substates in both reducer and client-storage updates.
-    const delta = withoutUnknownSubstates(update.delta);
+  socket.current.on("event", (received) => {
     try {
+      // Undo the encoding of the plugins that registered a decoder.
+      const update = app.stateUpdateDecoders.reduce(
+        (decoded, decode) => decode(decoded),
+        received,
+      );
+      // Skip unknown substates in both reducer and client-storage updates.
+      const delta = withoutUnknownSubstates(update.delta);
       if (delta) {
+        const decoded = app.stateUpdateDecoders.length > 0;
         for (const substate in delta) {
+          if (decoded) {
+            decodedDeltas.add(delta[substate]);
+          }
           dispatch[substate](delta[substate]);
         }
         applyClientStorageDelta(client_storage, delta);

@@ -249,6 +249,43 @@ class Plugin:
         """
         return None
 
+    def encode_state_update(self, update: dict[str, Any], /) -> dict[str, Any]:
+        """Encode a state update on its way to the browser.
+
+        Runs once per update, on the fields that are sent (``delta``,
+        ``events``), after the backend is done comparing and merging deltas,
+        and at compile time on the initial state as an update with only a
+        ``delta``. Plugins encode in configuration order. A plugin may replace
+        values and add fields of its own, which the decoder from
+        ``get_state_update_decoder`` reverses in the browser. The update's
+        values may be shared with other updates, so replace them rather than
+        mutating them.
+
+        Args:
+            update: The update's fields.
+
+        Returns:
+            The encoded update.
+        """
+        return update
+
+    def get_state_update_decoder(self, **context: Unpack[CommonContext]) -> str | None:
+        """Get the JS module that decodes what ``encode_state_update`` encoded.
+
+        The module's default export takes a received update and returns the
+        decoded one, synchronously, before any of its delta is applied and
+        before the compiled initial state is first read. Decoders run in
+        reverse configuration order. A decoded delta may share objects or
+        contain cycles.
+
+        Args:
+            context: The context for the plugin.
+
+        Returns:
+            The module specifier, or ``None`` when the plugin decodes nothing.
+        """
+        return None
+
     def eval_page(
         self,
         page_fn: Any,

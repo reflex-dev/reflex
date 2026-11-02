@@ -203,6 +203,7 @@ async function setup({
           ];
         },
         initialState: stateful ? { root: {}, child: {} } : {},
+        stateUpdateDecoders: [],
         onLoadInternalEvent() {},
         on_load_internal_event: onLoadInternalEvent,
         state_name: stateName,

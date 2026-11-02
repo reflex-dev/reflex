@@ -32,6 +32,7 @@ from typing import (
 )
 
 from reflex_base import constants
+from reflex_base.config import get_config
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import PerformanceMode, auto_reload_cooldown, environment
 from reflex_base.event import (
@@ -3120,8 +3121,48 @@ class StateUpdate:
                 removal_version="1.0",
             )
 
+    @functools.cached_property
+    def _encoded(self) -> dict[str, Any]:
+        """The fields sent to the browser, encoded once however often they are sent.
+
+        Returns:
+            The set fields, encoded by the configured plugins.
+        """
+        return _encode_state_update({
+            name: value
+            for name in _STATE_UPDATE_FIELDS
+            if (value := getattr(self, name))
+        })
+
+    def __getstate__(self) -> dict[str, Any]:
+        """Pickle the update as it is sent, for another instance to send as is.
+
+        Returns:
+            The instance's attributes, with the encoded delta and events.
+        """
+        encoded = self._encoded
+        return {
+            **self.__dict__,
+            "delta": encoded.get("delta", {}),
+            "events": encoded.get("events", []),
+        }
+
 
 _STATE_UPDATE_FIELDS = tuple(field.name for field in dataclasses.fields(StateUpdate))
+
+
+def _encode_state_update(update: dict[str, Any]) -> dict[str, Any]:
+    """Encode a state update with every configured plugin, in order.
+
+    Args:
+        update: The update's fields.
+
+    Returns:
+        The encoded update.
+    """
+    for plugin in get_config().plugins:
+        update = plugin.encode_state_update(update)
+    return update
 
 
 @serializer(to=dict)
@@ -3134,9 +3175,7 @@ def serialize_state_update(update: StateUpdate) -> dict:
     Returns:
         The serialized StateUpdate.
     """
-    return {
-        name: value for name in _STATE_UPDATE_FIELDS if (value := getattr(update, name))
-    }
+    return update._encoded
 
 
 def code_uses_state_contexts(javascript_code: str) -> bool:

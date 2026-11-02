@@ -355,6 +355,95 @@ def test_router_cookies_not_sent_to_frontend(test_state: TestState, method: str)
     assert test_state.router.headers.cookie == "session=secret"
 
 
+class _NestingCodec(rx.plugins.Plugin):
+    """Nests every var's value under the plugin's name and counts its encodings."""
+
+    def __init__(self, name: str):
+        """Name the codec.
+
+        Args:
+            name: The key the values are nested under.
+        """
+        self.name = name
+        self.calls = 0
+
+    def encode_state_update(self, update: dict[str, Any], /) -> dict[str, Any]:
+        """Nest the delta's values, and mark the update with a field of its own.
+
+        Args:
+            update: The update's fields.
+
+        Returns:
+            The encoded update.
+        """
+        self.calls += 1
+        delta = {
+            state: {var: {self.name: value} for var, value in values.items()}
+            for state, values in update["delta"].items()
+        }
+        return {**update, "delta": delta, self.name: True}
+
+
+def _configure_codecs(mocker: MockerFixture, *codecs: rx.plugins.Plugin) -> None:
+    """Configure plugins for the state updates serialized in a test.
+
+    Args:
+        mocker: The mock fixture.
+        codecs: The plugins to configure.
+    """
+    config = rx.Config(
+        app_name="testing", plugins=list(codecs), _skip_plugins_checks=True
+    )
+    mocker.patch("reflex.state.get_config", return_value=config)
+
+
+def test_state_update_is_encoded_once_by_every_plugin_in_order(
+    mocker: MockerFixture,
+):
+    """Plugins encode an update in configuration order, once however often it is sent.
+
+    Args:
+        mocker: The mock fixture.
+    """
+    first, second = _NestingCodec("first"), _NestingCodec("second")
+    _configure_codecs(mocker, first, second)
+    update = StateUpdate(delta={"state": {"value": 1}}, events=[])
+
+    sent = [json.loads(json_dumps(update)) for _ in range(2)]
+
+    assert (
+        sent
+        == [
+            {
+                "delta": {"state": {"value": {"second": {"first": 1}}}},
+                "first": True,
+                "second": True,
+            }
+        ]
+        * 2
+    )
+    assert (first.calls, second.calls) == (1, 1)
+    # The update keeps the values it was created with.
+    assert update.delta == {"state": {"value": 1}}
+
+
+def test_state_update_is_forwarded_encoded(mocker: MockerFixture):
+    """A pickled update carries its encoding, for another instance to send as is.
+
+    Args:
+        mocker: The mock fixture.
+    """
+    codec = _NestingCodec("codec")
+    _configure_codecs(mocker, codec)
+    update = StateUpdate(delta={"state": {"value": 1}})
+
+    forwarded = pickle.loads(pickle.dumps(update))
+
+    assert forwarded.delta == {"state": {"value": {"codec": 1}}}
+    assert json.loads(json_dumps(forwarded)) == json.loads(json_dumps(update))
+    assert codec.calls == 1
+
+
 def test_load_events_do_not_copy_router_data(app_module_mock):
     """On-load events leave routing in the server context without copying headers.
 

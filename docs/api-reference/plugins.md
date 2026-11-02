@@ -210,6 +210,14 @@ class Plugin:
     def pre_compile(self, **context) -> None:
         """Called before compilation to perform custom tasks."""
         pass
+
+    def encode_state_update(self, update: dict, /) -> dict:
+        """Encode a state update on its way to the browser."""
+        return update
+
+    def get_state_update_decoder(self, **context) -> str | None:
+        """Get the JS module that decodes the encoded state updates."""
+        return None
 ```
 
 ### Creating Custom Plugins
@@ -294,6 +302,49 @@ during collection, while the framework owns the final batch commit. The public
 `add_page` and protected `_commit_page` overrides remain the direct-registration
 API but are intentionally not dispatched during a staged plugin batch, so an
 override cannot make the batch commit partially.
+
+### Encoding State Updates
+
+A plugin can change how state updates travel to the browser, for example to
+send an object that several vars hold only once. `encode_state_update` gets the
+fields of each update the backend sends (`delta`, `events`) and returns them
+encoded; `get_state_update_decoder` names the JavaScript module whose default
+export reverses the encoding in the browser:
+
+```python
+from pathlib import Path
+
+
+class DedupePlugin(Plugin):
+    def encode_state_update(self, update, /):
+        # Replace values that occur more than once, and send them once in a
+        # field of the plugin's own.
+        delta, shared = dedupe(update["delta"])
+        return {**update, "delta": delta, "dedupe_shared": shared}
+
+    def get_state_update_decoder(self, **context):
+        return "$/utils/dedupe.js"
+
+    def get_static_assets(self, **context):
+        return [(Path("utils/dedupe.js"), DECODER_SOURCE)]
+```
+
+The encoder runs once per update, after the backend is done comparing and
+merging deltas, so it never has to survive a diff. The compiled initial state
+goes through it as well, as an update whose `delta` is the initial state, and
+the decoders undo it before the frontend first reads it. Plugins encode in
+configuration order and decode in reverse order.
+
+A decoder takes the received update and returns the decoded one,
+synchronously, before any of its delta is applied:
+
+```javascript
+export default function decode({ dedupe_shared, ...update }) {
+  return { ...update, delta: restore(update.delta, dedupe_shared) };
+}
+```
+
+A decoded delta may hold one object in several places, or contain cycles.
 
 ### Looking Up Configured Plugins
 

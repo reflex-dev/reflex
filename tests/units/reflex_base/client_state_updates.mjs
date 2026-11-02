@@ -29,7 +29,7 @@ const element = (tag) => ({
 async function createConnection(
   t,
   dispatch = {},
-  { isDevMode = false, lastReload } = {},
+  { isDevMode = false, lastReload, stateUpdateDecoders = [] } = {},
 ) {
   const warn = t.mock.method(console, "warn", () => {});
   const handlers = new Map();
@@ -74,6 +74,7 @@ async function createConnection(
     ],
     stateSchema: FRONTEND_SCHEMA,
     isDevMode,
+    stateUpdateDecoders,
   };
   const runtime = await createQueueRuntime(source, {
     dependencies: {
@@ -163,6 +164,60 @@ test("an unknown substate does not block known state or events", async (t) => {
   assert.deepEqual(
     c.reports().map((event) => event.value.substate),
     ["unknown"],
+  );
+});
+
+test("decoders decode each update before it is applied", async (t) => {
+  const applied = [];
+  const decoded = [];
+  // Each decoder undoes its plugin's suffix and drops the field it added.
+  const decoder =
+    (name) =>
+    ({ [name]: own, ...update }) => {
+      decoded.push(name);
+      const value = update.delta.known.value;
+      return {
+        ...update,
+        delta: { known: { value: value.slice(0, -name.length - 1) } },
+      };
+    };
+  const c = await createConnection(
+    t,
+    { known: (value) => applied.push(value) },
+    { stateUpdateDecoders: [decoder("second"), decoder("first")] },
+  );
+  const callback = { name: "test.callback", payload: {} };
+  c.receive({
+    delta: { known: { value: "k-first-second" } },
+    events: [callback],
+    first: true,
+    second: true,
+  });
+  assert.deepEqual(decoded, ["second", "first"]);
+  assert.deepEqual(applied, [{ value: "k" }]);
+  assert.deepEqual([...c.saved], [["known.value", "k"]]);
+  assert.ok(c.sent.some((event) => event.value === callback));
+});
+
+test("an update a decoder fails on is reported and not applied", async (t) => {
+  const applied = [];
+  const c = await createConnection(
+    t,
+    { known: (value) => applied.push(value) },
+    {
+      stateUpdateDecoders: [
+        () => {
+          throw new Error("undecodable");
+        },
+      ],
+    },
+  );
+  t.mock.method(console, "error", () => {});
+  c.receive({ delta: { known: { value: "k" } } });
+  assert.deepEqual(applied, []);
+  assert.deepEqual(
+    c.reports().map((event) => event.value.message),
+    ["undecodable"],
   );
 });
 

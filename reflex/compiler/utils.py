@@ -48,7 +48,7 @@ from reflex.istate.storage import (
     LocalStorage,
     SessionStorage,
 )
-from reflex.state import BaseState, cache_initial_snapshot
+from reflex.state import BaseState, _encode_state_update, cache_initial_snapshot
 from reflex.utils import path_ops
 from reflex.utils.exec import is_prod_mode
 from reflex.utils.prerequisites import get_web_dir
@@ -250,13 +250,21 @@ def compile_state(state: type[BaseState]) -> dict:
 
 
 def _compile_initial_state(
-    state: type[BaseState], *, component_imports: ParsedImportDict | None = None
+    state: type[BaseState],
+    *,
+    component_imports: ParsedImportDict | None = None,
+    as_update: bool = False,
 ) -> tuple[dict, str]:
     """Serialize initial state while discovering its dynamic component imports.
+
+    The initial state is encoded as the delta of a state update, like every
+    update the backend sends.
 
     Args:
         state: The app state class.
         component_imports: Optional accumulator for frontend package installation.
+        as_update: Whether to serialize the whole encoded update, for the
+            frontend to decode, instead of only its delta.
 
     Returns:
         The initial state dictionary and its serialized JSON.
@@ -280,8 +288,9 @@ def _compile_initial_state(
         return serializers.serialize(value)
 
     initial_state = compile_state(state)
+    update = _encode_state_update({"delta": initial_state})
     return initial_state, format.json_dumps(
-        initial_state, default=serialize_initial_value
+        update if as_update else update["delta"], default=serialize_initial_value
     )
 
 

@@ -373,3 +373,74 @@ process.stdout.write(JSON.stringify({
         "firstNotifications": 0,
         "secondNotifications": 2,
     }
+
+
+@requires_node
+def test_decoders_decode_the_initial_state_before_it_is_registered(tmp_path: Path):
+    """The decoders undo the encoded initial state, last plugin's first."""
+    rendered = context_template(
+        is_dev_mode=True,
+        default_color_mode='"light"',
+        initial_state_json=json.dumps({
+            "delta": {"state": {"value": {"second": {"first": 1}}}},
+            "first": True,
+            "second": True,
+        }),
+        state_name="state",
+        state_update_decoders=["$/utils/second", "$/utils/first"],
+    )
+    # Each decoder unnests what its plugin nested and drops its own field.
+    decoder = """
+export default ({{ {name}: own, ...update }}) => {{
+  globalThis.decoded.push("{name}");
+  const delta = {{}};
+  for (const [state, values] of Object.entries(update.delta)) {{
+    delta[state] = {{}};
+    for (const [key, value] of Object.entries(values)) {{
+      delta[state][key] = value["{name}"];
+    }}
+  }}
+  return {{ ...update, delta }};
+}};
+"""
+    modules = {
+        **_STUB_MODULES,
+        "$/utils/context-registry": _STUB_MODULES["$/utils/context-registry"].replace(
+            "export const registerApp = () => {};",
+            "export const registerApp = (values) => { globalThis.registered = values; };",
+        ),
+        "$/utils/first": decoder.format(name="first"),
+        "$/utils/second": decoder.format(name="second"),
+    }
+    for specifier, source in modules.items():
+        stub = tmp_path / (specifier.replace("/", "_").replace("$", "") + ".mjs")
+        stub.write_text(source)
+        rendered = rendered.replace(f'from "{specifier}"', f'from "./{stub.name}"')
+    module = tmp_path / "context.mjs"
+    module.write_text(rendered)
+    driver = tmp_path / "driver.mjs"
+    driver.write_text(
+        """
+globalThis.decoded = [];
+const mod = await import("./context.mjs");
+process.stdout.write(JSON.stringify({
+  initialState: mod.initialState,
+  registered: globalThis.registered.initialState === mod.initialState,
+  decoders: globalThis.registered.stateUpdateDecoders.length,
+  decoded: globalThis.decoded,
+}));
+"""
+    )
+
+    result = subprocess.run(
+        ["node", str(driver)],
+        capture_output=True,
+        encoding="utf-8",
+    )
+    assert result.returncode == 0, result.stderr
+    assert json.loads(result.stdout) == {
+        "initialState": {"state": {"value": 1}},
+        "registered": True,
+        "decoders": 2,
+        "decoded": ["second", "first"],
+    }

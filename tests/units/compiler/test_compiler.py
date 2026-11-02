@@ -4,6 +4,7 @@ import json
 import os
 import sys
 from pathlib import Path, PureWindowsPath
+from typing import Any
 
 import pytest
 from pytest_mock import MockerFixture
@@ -700,6 +701,91 @@ def test_compile_contexts_theme_appearance_overrides_config(mocker: MockerFixtur
     _, code = compiler.compile_contexts(None, rx.theme(appearance="dark"))
 
     assert 'export const defaultColorMode = "dark"' in code
+
+
+class _TaggingCodec(rx.plugins.Plugin):
+    """Tags state updates with a field of its own, decoded by a module of its own."""
+
+    def __init__(self, name: str):
+        """Name the codec.
+
+        Args:
+            name: The field the codec sets and its decoder module's name.
+        """
+        self.name = name
+
+    def encode_state_update(self, update: dict[str, Any], /) -> dict[str, Any]:
+        """Tag the update.
+
+        Args:
+            update: The update's fields.
+
+        Returns:
+            The tagged update.
+        """
+        return {**update, self.name: True}
+
+    def get_state_update_decoder(self, **context) -> str:
+        """Get the codec's decoder module.
+
+        Args:
+            context: The context for the plugin.
+
+        Returns:
+            The decoder's module specifier.
+        """
+        return f"$/utils/{self.name}"
+
+
+def test_compile_contexts_encodes_the_initial_state_for_the_decoders(
+    mocker: MockerFixture,
+):
+    """The initial state reaches the frontend as an encoded update its decoders undo."""
+
+    class CodecContextRoot(BaseState):
+        value: int = 0
+
+    _, plain = compiler.compile_contexts(CodecContextRoot, None)
+    config = rx.Config(
+        app_name="test_codecs",
+        plugins=[_TaggingCodec("first"), _TaggingCodec("second")],
+        _skip_plugins_checks=True,
+    )
+    mocker.patch("reflex.compiler.compiler.get_config", return_value=config)
+    mocker.patch("reflex.state.get_config", return_value=config)
+
+    _, code = compiler.compile_contexts(CodecContextRoot, None)
+
+    # The last plugin's decoder runs first, undoing the last encoding.
+    assert 'import decodeStateUpdate0 from "$/utils/second"' in code
+    assert 'import decodeStateUpdate1 from "$/utils/first"' in code
+    assert (
+        "export const stateUpdateDecoders = [decodeStateUpdate0, decodeStateUpdate1]"
+        in code
+    )
+    initial_state = code[code.index("export const initialState = ") :].split("\n")[0]
+    assert initial_state.startswith(
+        "export const initialState = stateUpdateDecoders.reduce("
+    )
+    assert initial_state.endswith(', "first": true, "second": true}).delta')
+    start = code.index("registerApp({")
+    assert "stateUpdateDecoders," in code[start : code.index("});", start)]
+
+    # The backend diffs first hydrates against the values, not their encoding.
+    def hashes(compiled: str) -> str:
+        return compiled[compiled.index("export const initialStateHashes") :].split(
+            "\n"
+        )[0]
+
+    assert hashes(code) == hashes(plain)
+    assert "export const stateUpdateDecoders = []" in plain
+    assert "stateUpdateDecoders.reduce" not in plain
+
+    # Without state no update arrives, and the empty initial state is not encoded.
+    _, stateless = compiler.compile_contexts(None, None)
+    assert "decodeStateUpdate" not in stateless
+    assert "export const stateUpdateDecoders = []" in stateless
+    assert "export const initialState = {}" in stateless
 
 
 def test_compile_contexts_embeds_frontend_state_schema():
