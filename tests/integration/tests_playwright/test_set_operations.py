@@ -13,6 +13,7 @@ def SetOperationsApp():
         tags: rx.Field[set[str]] = rx.field({"a", "b"})
         other: rx.Field[frozenset[str]] = rx.field(frozenset({"b", "c"}))
         points: rx.Field[set[tuple[int, int]]] = rx.field({(1, 2), (3, 4)})
+        numbers: rx.Field[set[int]] = rx.field({0, 1})
         maybe: rx.Field[set[str] | None] = rx.field(None)
         received: rx.Field[list[str]] = rx.field([])
 
@@ -101,6 +102,12 @@ def SetOperationsApp():
                 id="points_symmetric_difference_length",
             ),
             rx.text(SetOperationsState.points.contains("o[1,2]"), id="has_key_string"),
+            # True == 1 and False == 0 in a Python set.
+            rx.text(
+                SetOperationsState.numbers.union({True}).length(),
+                id="numbers_union_true_length",
+            ),
+            rx.text(SetOperationsState.numbers.contains(False), id="has_false"),
             # An unset optional set renders no children instead of failing.
             rx.foreach(
                 SetOperationsState.maybe,
@@ -176,6 +183,8 @@ def test_set_operations(set_operations_app: AppHarness, page: Page):
     expect(page.locator("id=points_intersection_length")).to_have_text("1")
     expect(page.locator("id=points_symmetric_difference_length")).to_have_text("2")
     expect(page.locator("id=has_key_string")).to_have_text("false")
+    expect(page.locator("id=numbers_union_true_length")).to_have_text("2")
+    expect(page.locator("id=has_false")).to_have_text("true")
 
     expect(page.locator(".maybe")).to_have_count(0)
     page.locator("id=set_maybe").click()

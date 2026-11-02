@@ -362,6 +362,10 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=Sequence):
             The array less than operation.
         """
         if not isinstance(other, (ArrayVar, list, tuple)):
+            if (
+                reflected := _reflect_set_comparison(other, "__gt__", self)
+            ) is not None:
+                return reflected
             raise_unsupported_operand_types("<", (type(self), type(other)))
 
         return array_lt_operation(self, other)
@@ -382,6 +386,10 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=Sequence):
             The array greater than operation.
         """
         if not isinstance(other, (ArrayVar, list, tuple)):
+            if (
+                reflected := _reflect_set_comparison(other, "__lt__", self)
+            ) is not None:
+                return reflected
             raise_unsupported_operand_types(">", (type(self), type(other)))
 
         return array_gt_operation(self, other)
@@ -402,6 +410,10 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=Sequence):
             The array less than or equal operation.
         """
         if not isinstance(other, (ArrayVar, list, tuple)):
+            if (
+                reflected := _reflect_set_comparison(other, "__ge__", self)
+            ) is not None:
+                return reflected
             raise_unsupported_operand_types("<=", (type(self), type(other)))
 
         return array_le_operation(self, other)
@@ -422,6 +434,10 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=Sequence):
             The array greater than or equal operation.
         """
         if not isinstance(other, (ArrayVar, list, tuple)):
+            if (
+                reflected := _reflect_set_comparison(other, "__le__", self)
+            ) is not None:
+                return reflected
             raise_unsupported_operand_types(">=", (type(self), type(other)))
 
         return array_ge_operation(self, other)
@@ -605,6 +621,29 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=Sequence):
         return flat_map_array_operation(
             self, ArgsFunctionOperation.create(args, return_expr)
         )
+
+
+def _reflect_set_comparison(
+    other: Any, reflected: str, array: ArrayVar
+) -> BooleanVar | None:
+    """Reflect an array comparison onto a set operand.
+
+    A set var compares as its array view with a deprecation warning, so
+    ``array < set`` is ``set > array`` on the set's deprecated path.
+
+    Args:
+        other: The right-hand operand.
+        reflected: The name of the reflected comparison on the set.
+        array: The left-hand array.
+
+    Returns:
+        The comparison, or None if the operand is not a set var.
+    """
+    from .set import SetVar
+
+    if isinstance(other, SetVar):
+        return getattr(other, reflected)(array)
+    return None
 
 
 def _literal_elements_var_data(elements: Iterable) -> VarData | None:

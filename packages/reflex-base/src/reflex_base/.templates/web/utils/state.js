@@ -1865,13 +1865,15 @@ export const pyFlatMap = (arr, fn) =>
 /**
  * Key a set element by value, so structured elements (tuples, dataclasses)
  * compare the way Python compares them rather than by object identity.
- * Numbers, booleans and null are their own key; strings and objects get
+ * Numbers and null are their own key, booleans are keyed as the numbers
+ * they equal in Python (True == 1, False == 0), and strings and objects get
  * distinct prefixes so a string can never share a key with an object's JSON.
  * @param {*} x The set element.
  * @returns {*} The key of the element.
  */
 export const pySetKey = (x) => {
   if (typeof x === "string") return "s" + x;
+  if (typeof x === "boolean") return +x;
   if (x !== null && typeof x === "object") return "o" + JSON.stringify(x);
   return x;
 };

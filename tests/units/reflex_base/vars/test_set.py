@@ -230,6 +230,25 @@ def test_set_concatenation_fallbacks():
         _ = items + 1  # pyright: ignore[reportOperatorIssue]
 
 
+def test_array_comparisons_with_a_set_operand_are_reflected(mocker):
+    """`array < set` compiles on the set's deprecated path, as `set > array`."""
+    deprecate = mocker.patch("reflex_base.vars.set.console.deprecate")
+    tags = _tags()
+    items = Var(_js_expr="state.items").to(list[str])
+    assert str(items < tags) == "state.tags > state.items"  # pyright: ignore[reportOperatorIssue]
+    assert str(items <= tags) == "state.tags >= state.items"  # pyright: ignore[reportOperatorIssue]
+    assert str(items > tags) == "state.tags < state.items"  # pyright: ignore[reportOperatorIssue]
+    assert str(items >= tags) == "state.tags <= state.items"  # pyright: ignore[reportOperatorIssue]
+    assert [call.kwargs["feature_name"] for call in deprecate.call_args_list] == [
+        "SetVar.__gt__",
+        "SetVar.__ge__",
+        "SetVar.__lt__",
+        "SetVar.__le__",
+    ]
+    with pytest.raises(VarTypeError):
+        _ = items < 1  # pyright: ignore[reportOperatorIssue]
+
+
 def test_set_array_operations_are_deprecated(mocker):
     """Sequence operations still work on a set var, with a deprecation warning."""
     deprecate = mocker.patch("reflex_base.vars.set.console.deprecate")
