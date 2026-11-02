@@ -2122,14 +2122,11 @@ def var_operation(
 ) -> Callable[P, ArrayVar[LIST_T]]: ...
 
 
-SET_T = TypeVar("SET_T", bound=set | frozenset)
-
-
 @overload
 def var_operation(
-    func: Callable[P, CustomVarOperationReturn[SET_T]]
-    | Callable[P, CustomVarOperationReturn[SET_T | None]],
-) -> Callable[P, SetVar[SET_T]]: ...
+    func: Callable[P, CustomVarOperationReturn[SET_TYPE]]
+    | Callable[P, CustomVarOperationReturn[SET_TYPE | None]],
+) -> Callable[P, SetVar[SET_TYPE]]: ...
 
 
 OBJECT_TYPE = TypeVar("OBJECT_TYPE", bound=Mapping)

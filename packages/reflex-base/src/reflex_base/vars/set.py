@@ -32,6 +32,7 @@ from .base import (
 from .number import BooleanVar, NumberVar, raise_unsupported_operand_types
 from .sequence import (
     ArrayVar,
+    StringVar,
     _determine_value_of_array_index,
     _literal_elements_json,
     _literal_elements_var_data,
@@ -49,18 +50,6 @@ _OTHER_SET_TYPES = (set, frozenset, list, tuple)
 _ARRAY_OPERATION_REASON = (
     "A set is not a sequence; call .to_array() first to use array operations."
 )
-
-
-def _element_type(var_type: GenericType) -> GenericType:
-    """Get the element type of a set type.
-
-    Args:
-        var_type: The set type, e.g. ``set[str]``.
-
-    Returns:
-        The element type, or Any for an unparameterized set.
-    """
-    return _determine_value_of_array_index(var_type)
 
 
 def _set_type_like(var_type: GenericType, element_type: GenericType) -> GenericType:
@@ -89,7 +78,10 @@ def _combined_set_type(lhs: SetVar, rhs: Var) -> GenericType:
     """
     return _set_type_like(
         lhs._var_type,
-        unionize(_element_type(lhs._var_type), _element_type(rhs._var_type)),
+        unionize(
+            _determine_value_of_array_index(lhs._var_type),
+            _determine_value_of_array_index(rhs._var_type),
+        ),
     )
 
 
@@ -178,16 +170,47 @@ def _check_other(operation: str, this: SetVar, other: Any) -> None:
 class SetVar(Var[SET_VAR_TYPE], python_types=(set, frozenset)):
     """Base class for immutable set vars."""
 
-    def contains(self, other: Any) -> BooleanVar:
-        """Check if the set contains an element.
+    if TYPE_CHECKING:
 
-        Args:
-            other: The element to check for.
+        @overload
+        def contains(self, other: Any) -> BooleanVar: ...
 
-        Returns:
-            Whether the set contains the element.
-        """
-        return set_contains_operation(self, other)
+        @overload
+        @deprecated(_ARRAY_OPERATION_REASON)
+        def contains(self, other: Any, field: StringVar | str) -> BooleanVar: ...
+
+        def contains(
+            self, other: Any, field: StringVar | str | None = None
+        ) -> BooleanVar:
+            """Check if the set contains an element.
+
+            Args:
+                other: The element to check for.
+                field: Deprecated: the field of an object element to compare.
+
+            Returns:
+                Whether the set contains the element.
+            """
+            ...
+
+    else:
+
+        def contains(
+            self, other: Any, field: StringVar | str | None = None
+        ) -> BooleanVar:
+            """Check if the set contains an element.
+
+            Args:
+                other: The element to check for.
+                field: Deprecated: the field of an object element to compare.
+
+            Returns:
+                Whether the set contains the element.
+            """
+            if field is None:
+                return set_contains_operation(self, other)
+            _deprecate_array_operation("contains(field)")
+            return self.to_array().contains(other, field)
 
     has = contains
 
@@ -302,7 +325,7 @@ class SetVar(Var[SET_VAR_TYPE], python_types=(set, frozenset)):
         Returns:
             The set as an array var.
         """
-        array_type = Sequence[_element_type(self._var_type)]
+        array_type = Sequence[_determine_value_of_array_index(self._var_type)]
         if types.is_optional(self._var_type):
             array_type = array_type | None
         return self.to(ArrayVar, array_type)
@@ -467,6 +490,54 @@ class SetVar(Var[SET_VAR_TYPE], python_types=(set, frozenset)):
             """
             ...
 
+        @deprecated(_ARRAY_OPERATION_REASON)
+        def __lt__(self, other: Any) -> BooleanVar:
+            """Compare the set as an array (deprecated, use to_array).
+
+            Args:
+                other: The other array.
+
+            Returns:
+                The comparison.
+            """
+            ...
+
+        @deprecated(_ARRAY_OPERATION_REASON)
+        def __le__(self, other: Any) -> BooleanVar:
+            """Compare the set as an array (deprecated, use to_array).
+
+            Args:
+                other: The other array.
+
+            Returns:
+                The comparison.
+            """
+            ...
+
+        @deprecated(_ARRAY_OPERATION_REASON)
+        def __gt__(self, other: Any) -> BooleanVar:
+            """Compare the set as an array (deprecated, use to_array).
+
+            Args:
+                other: The other array.
+
+            Returns:
+                The comparison.
+            """
+            ...
+
+        @deprecated(_ARRAY_OPERATION_REASON)
+        def __ge__(self, other: Any) -> BooleanVar:
+            """Compare the set as an array (deprecated, use to_array).
+
+            Args:
+                other: The other array.
+
+            Returns:
+                The comparison.
+            """
+            ...
+
     else:
         __getitem__ = _deprecated_array_operation("__getitem__")
         __add__ = _deprecated_array_operation("__add__")
@@ -480,6 +551,10 @@ class SetVar(Var[SET_VAR_TYPE], python_types=(set, frozenset)):
         filter = _deprecated_array_operation("filter")
         reduce = _deprecated_array_operation("reduce")
         flat_map = _deprecated_array_operation("flat_map")
+        __lt__ = _deprecated_array_operation("__lt__")
+        __le__ = _deprecated_array_operation("__le__")
+        __gt__ = _deprecated_array_operation("__gt__")
+        __ge__ = _deprecated_array_operation("__ge__")
 
 
 @var_operation

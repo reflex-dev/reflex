@@ -432,6 +432,8 @@ A var annotated as `set` or `frozenset` supports set operations rather than list
 
 Sets have no order or index. To use list operations such as indexing, `map` or `join`, call `to_array()` first; `rx.foreach` accepts a set var directly.
 
+Python's set operators are not set operations on a var: `==` compares the frontend values by reference, and `|` and `&` are the logical `or` and `and` of any var. Use the named methods instead, for example `a.issubset(b) & b.issubset(a)` for equality.
+
 ```python demo exec
 class SetState(rx.State):
     tags: set[str] = {"python", "reflex"}

@@ -144,9 +144,10 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float, decimal.Decimal)):
             The number multiplication operation.
         """
         from .sequence import ArrayVar, LiteralArrayVar
+        from .set import SetVar
 
-        if isinstance(other, (list, tuple, ArrayVar)):
-            if isinstance(other, ArrayVar):
+        if isinstance(other, (list, tuple, ArrayVar, SetVar)):
+            if isinstance(other, (ArrayVar, SetVar)):
                 return other * self
             return LiteralArrayVar.create(other) * self
 
@@ -171,9 +172,10 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float, decimal.Decimal)):
             The number multiplication operation.
         """
         from .sequence import ArrayVar, LiteralArrayVar
+        from .set import SetVar
 
-        if isinstance(other, (list, tuple, ArrayVar)):
-            if isinstance(other, ArrayVar):
+        if isinstance(other, (list, tuple, ArrayVar, SetVar)):
+            if isinstance(other, (ArrayVar, SetVar)):
                 return other * self
             return LiteralArrayVar.create(other) * self
 

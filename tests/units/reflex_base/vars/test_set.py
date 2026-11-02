@@ -261,6 +261,32 @@ def test_set_array_operations_are_deprecated(mocker):
     assert deprecate.call_count == 8
 
 
+def test_set_comparison_and_field_contains_fallbacks(mocker):
+    """Array comparisons, `contains` with a field and `number * set` still compile, with a warning."""
+    deprecate = mocker.patch("reflex_base.vars.set.console.deprecate")
+    tags = _tags()
+    other = Var(_js_expr="state.other").to(set[str])
+    count = Var(_js_expr="state.count").to(int)
+
+    assert str(tags < other) == "state.tags < state.other"  # pyright: ignore[reportDeprecated]
+    assert str(tags <= ["a"]) == 'state.tags <= ["a"]'  # pyright: ignore[reportDeprecated]
+    assert str(tags > other) == "state.tags > state.other"  # pyright: ignore[reportDeprecated]
+    assert str(tags >= other) == "state.tags >= state.other"  # pyright: ignore[reportDeprecated]
+    assert str(tags.contains("a", "name")) == (  # pyright: ignore[reportDeprecated]
+        'state.tags.some(obj => obj["name"] === "a")'
+    )
+    # `number * set` is left out of the static types; it only warns at runtime.
+    number_times_set = str(count * tags)  # pyright: ignore[reportOperatorIssue]
+    assert number_times_set == (
+        "Array.from({ length: state.count }).flatMap(() => state.tags)"
+    )
+    assert str(tags * count) == number_times_set  # pyright: ignore[reportDeprecated]
+    assert deprecate.call_count == 7
+    assert deprecate.call_args_list[4].kwargs["feature_name"] == (
+        "SetVar.contains(field)"
+    )
+
+
 def test_state_set_fields_are_set_vars():
     """Set-typed state fields and computed vars are typed as SetVar statically and at runtime."""
 
