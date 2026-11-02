@@ -7,8 +7,13 @@ from pathlib import Path
 
 import pytest
 import reflex_base
+from reflex_base.components.component import Component
+from reflex_base.components.memoize_helpers import get_memoized_event_triggers
 from reflex_base.config import Config
 from reflex_base.environment import environment
+from reflex_base.event import EventChain
+from reflex_base.registry import RegistrationContext
+from reflex_base.vars.base import Var
 
 from reflex.utils.frontend_skeleton import _compile_vite_config
 
@@ -269,6 +274,40 @@ def test_describes_emotion_jsx_like_jsx_syntax(compiler_driver: Path):
         "@rest",
     }
     assert module_types["react"] is None
+
+
+def test_generated_callback_pattern_matches_python_names(compiler_driver: Path):
+    """The adapter prunes exactly the callbacks Python names as generated.
+
+    Args:
+        compiler_driver: Adapter driver, beside the copied adapter module.
+    """
+    triggers = ["on_click", "on_value_change"]
+    with RegistrationContext.ensure_context().fork():
+        wrappers = get_memoized_event_triggers(
+            Component._create(
+                children=(),
+                event_triggers=dict.fromkeys(triggers, Var("handler", EventChain)),
+            )
+        )
+    names = [str(wrappers[trigger]) for trigger in triggers]
+    driver = compiler_driver.with_name("pattern.mjs")
+    driver.write_text(
+        'import {GENERATED_EVENT_CALLBACK} from "./plugin.mjs";\n'
+        "const names = JSON.parse(process.argv[2]);\n"
+        "process.stdout.write(JSON.stringify("
+        "names.map((name) => GENERATED_EVENT_CALLBACK.test(name))));\n"
+    )
+
+    result = subprocess.run(
+        ["node", str(driver), json.dumps([*names, "manual_callback"])],
+        cwd=driver.parent,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+
+    assert json.loads(result.stdout) == [True, True, False]
 
 
 def test_prebundle_merges_with_production_react(

@@ -59,6 +59,7 @@ from reflex_base.vars.base import (
     computed_var,
     field,
     get_leaf_vars,
+    get_uuid_string_var,
     var_operation,
     var_operation_return,
 )
@@ -823,8 +824,6 @@ def test_var_operation_str_interpolation_matches_tagged_form() -> None:
 
 def test_uuid_string_var_memoizes_with_inline_callback():
     """The UUID hook passes ``useMemo`` an inline callback, as React Compiler requires."""
-    from reflex_base.vars.base import get_uuid_string_var
-
     uuid_var = get_uuid_string_var()
     var_data = uuid_var._get_all_var_data()
 

@@ -47,6 +47,9 @@ const moduleTypeProvider = (moduleName) =>
     ? { kind: "object", properties: { jsx: EMOTION_JSX_TYPE } }
     : null;
 
+// Names `get_memoized_event_triggers` gives generated `useCallback` handlers.
+export const GENERATED_EVENT_CALLBACK = /^on_\w+_[0-9a-f]{32}$/;
+
 /**
  * Remove unused dependencies from a generated event callback using Babel scopes.
  * @param declaration A Babel variable declarator path.
@@ -56,7 +59,7 @@ function pruneEventCallbackDependencies(declaration) {
   const call = declaration.get("init");
   if (
     !id.isIdentifier() ||
-    !/^on_\w+_[0-9a-f]{32}$/.test(id.node.name) ||
+    !GENERATED_EVENT_CALLBACK.test(id.node.name) ||
     !call.isCallExpression() ||
     !call.get("callee").referencesImport("react", "useCallback")
   ) {

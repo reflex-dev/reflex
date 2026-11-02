@@ -29,6 +29,7 @@ from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_components_core.base.fragment import Fragment
 
+import reflex as rx
 from reflex.app import UnevaluatedPage
 from reflex.compiler import compiler
 from reflex.compiler.plugins import (
@@ -1300,16 +1301,15 @@ def test_compile_app_passes_auto_memoize_config(
     auto_memoize: bool, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Page compilation follows the ``auto_memoize`` config."""
-    import reflex as rx
+
+    class _StopCompile(Exception):
+        pass
 
     received: list[bool] = []
 
     def recording_default_page_plugins(**kwargs):
         received.append(kwargs["auto_memoize"])
         raise _StopCompile
-
-    class _StopCompile(Exception):
-        pass
 
     monkeypatch.setattr(
         compiler, "default_page_plugins", recording_default_page_plugins
