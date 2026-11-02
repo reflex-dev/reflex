@@ -1,4 +1,8 @@
+import pytest
+from reflex_base.components.component import Component
+from reflex_base.vars.base import Var
 from reflex_components_core.base.fragment import Fragment
+from reflex_components_core.core.cond import cond
 from reflex_components_lucide.icon import Icon
 from reflex_components_radix.themes.components.callout import (
     Callout,
@@ -25,3 +29,23 @@ def test_callout_create_with_icon():
     assert isinstance(component.children[0], CalloutIcon)
     assert isinstance(component.children[0].children[0], Icon)
     assert isinstance(component.children[1], CalloutText)
+    assert "icon" not in component.style
+
+
+@pytest.mark.parametrize(
+    "icon",
+    [
+        Icon.create(tag="info"),
+        cond(
+            Var(_js_expr="is_error", _var_type=bool),
+            Icon.create(tag="octagon_x"),
+            Icon.create(tag="info"),
+        ),
+    ],
+)
+def test_callout_create_with_icon_component(icon: Component):
+    component = Callout.create("You will need admin privileges.", icon=icon)
+
+    assert isinstance(component.children[0], CalloutIcon)
+    assert component.children[0].children[0] is icon
+    assert "icon" not in component.style

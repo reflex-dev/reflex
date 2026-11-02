@@ -52,7 +52,9 @@ class Callout(CalloutRoot):
 
     text: Var[str] = field(doc="The text of the callout.")
 
-    icon: Var[str] = field(doc="The icon of the callout.")
+    icon: Var[Component | str] = field(
+        doc="The icon of the callout: a Lucide icon name or a component."
+    )
 
     @classmethod
     def create(cls, text: str | Var[str], **props) -> Component:
@@ -67,12 +69,12 @@ class Callout(CalloutRoot):
         """
         from reflex_components_lucide.icon import Icon
 
+        icon = props.pop("icon", None)
+        if icon is not None and not isinstance(icon, Component):
+            icon = Icon.create(tag=icon)
+
         return CalloutRoot.create(
-            (
-                CalloutIcon.create(Icon.create(tag=props["icon"]))
-                if "icon" in props
-                else fragment()
-            ),
+            CalloutIcon.create(icon) if icon is not None else fragment(),
             CalloutText.create(text),
             **props,
         )
