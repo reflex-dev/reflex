@@ -109,21 +109,36 @@ test("an async listener handles each streamed update once", async () => {
   assert.deepEqual(handled, [1, 2, 3]);
 });
 
-test("an update a listener fails on is reported, not retried", async (t) => {
-  const log = t.mock.method(console, "log", () => {});
-  const handled = [];
-  await streamUpdates((update) => {
-    handled.push(update.delta.state.n);
+// A listener fails by throwing, or by rejecting the promise it returns.
+const failures = {
+  throwing: (update) => {
     if (update.delta.state.n === 1) {
       throw new Error("boom");
     }
+  },
+  rejecting: async (update) => {
+    await null;
+    if (update.delta.state.n === 1) {
+      throw new Error("boom");
+    }
+  },
+};
+
+for (const [kind, fail] of Object.entries(failures)) {
+  test(`an update a ${kind} listener fails on is reported, not retried`, async (t) => {
+    const log = t.mock.method(console, "log", () => {});
+    const handled = [];
+    await streamUpdates((update) => {
+      handled.push(update.delta.state.n);
+      return fail(update);
+    });
+    assert.deepEqual(handled, [1, 2, 3]);
+    assert.deepEqual(
+      log.mock.calls.map((call) => [
+        call.arguments[0],
+        call.arguments[2].message,
+      ]),
+      [["Error processing chunk", "boom"]],
+    );
   });
-  assert.deepEqual(handled, [1, 2, 3]);
-  assert.deepEqual(
-    log.mock.calls.map((call) => [
-      call.arguments[0],
-      call.arguments[2].message,
-    ]),
-    [["Error processing chunk", "boom"]],
-  );
-});
+}
