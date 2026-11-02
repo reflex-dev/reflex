@@ -936,9 +936,6 @@ class DatabaseTableState3(rx.State):
             self.offset += self.limit
         self.load_entries()
 
-    def _get_total_items(self, session):
-        self.total_items = session.scalar(select(func.count(Customer.id)))
-
     @rx.event
     def load_entries(self):
         self.users = self._mock_data[self.offset : self.offset + self.limit]
