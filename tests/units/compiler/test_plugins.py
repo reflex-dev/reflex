@@ -1322,6 +1322,6 @@ def test_compile_app_passes_auto_memoize_config(
     app = rx.App()
     app.add_page(lambda: rx.box("hi"), route="/")
     with pytest.raises(_StopCompile):
-        compiler.compile_app(app)
+        compiler.compile_app(app, dry_run=True, use_rich=False)
 
     assert received == [auto_memoize]
