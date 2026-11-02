@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import copy
 import dataclasses
 import datetime
@@ -14,14 +15,16 @@ import logging
 import math
 import os
 import pickle
+import subprocess
 import sys
 import threading
 from collections import namedtuple
 from collections.abc import AsyncGenerator, Callable, Mapping
 from hashlib import md5
+from pathlib import Path
 from textwrap import dedent
 from types import MethodType, ModuleType
-from typing import Any, ClassVar, Literal, TypeVar, cast
+from typing import Any, ClassVar, ForwardRef, Literal, TypeVar, cast
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -35,6 +38,7 @@ from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import Event, EventHandler
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils import format, types
 from reflex_base.utils.exceptions import (
     InvalidLockWarningThresholdError,
@@ -75,7 +79,12 @@ from reflex.state import (
     OnLoadInternalState,
     State,
     StateUpdate,
+    _apply_client_storage_vars,
+    _frontend_schema,
+    _get_client_storage_delta,
     _load_events_for_page,
+    _override_base_method,
+    all_base_state_classes,
     is_serializable,
     state_snapshot_hashes,
 )
@@ -5662,45 +5671,317 @@ def test_deserialize_previous_schema_format(type_name: str):
             BaseState._deserialize(data)
 
 
-def test_reset_client_storage_uses_declared_factories():
-    """Hydration evaluates declared factories for all browser storage types."""
-    calls = []
+class FrontendSchemaRoot(BaseState):
+    """Root of a tree whose frontend schema the tests below hash."""
 
-    def factory(storage_type: type) -> Any:
-        """Record calls and return the configured browser default.
+    value: Field[int] = field(default=1)
 
-        Args:
-            storage_type: The browser storage value type.
+
+class FrontendSchemaChild(FrontendSchemaRoot):
+    """A substate with a base var, a computed var and an event handler."""
+
+    name: Field[str] = field(default="")
+
+    @computed_var
+    def shout(self) -> str:
+        """The name, shouted.
 
         Returns:
-            The new storage value.
+            The upper-cased name.
         """
-        calls.append(storage_type)
-        return storage_type("new")
+        return self.name.upper()
 
-    class StorageState(BaseState):
-        cookie: rx.Field[rx.Cookie] = rx.field(
-            default_factory=lambda: factory(rx.Cookie)
-        )
-        local: rx.Field[rx.LocalStorage] = rx.field(
-            default_factory=lambda: factory(rx.LocalStorage)
-        )
-        session: rx.Field[rx.SessionStorage] = rx.field(
-            default_factory=lambda: factory(rx.SessionStorage)
-        )
+    @rx.event
+    def bump(self):
+        """Do nothing: only the handler's name reaches the frontend."""
 
-    assert calls == []
-    state = StorageState(
-        cookie=rx.Cookie("saved"),
-        local=rx.LocalStorage("saved"),
-        session=rx.SessionStorage("saved"),
+
+_FRONTEND_SCHEMA_SCRIPT = """
+import reflex as rx
+from reflex.state import BaseState
+
+class Root(BaseState):
+    value: int = 1
+
+class Child(Root):
+    name: str = ""
+
+    @rx.var
+    def shout(self) -> str:
+        return self.name.upper()
+
+    @rx.event
+    def bump(self):
+        pass
+
+print(Root._to_frontend_schema())
+"""
+
+
+def test_frontend_schema_is_stable_across_processes(tmp_path: Path):
+    """The same state tree hashes to the same value in two fresh interpreters.
+
+    Args:
+        tmp_path: pytest fixture for a temporary directory.
+    """
+    script = tmp_path / "frontend_schema.py"
+    script.write_text(_FRONTEND_SCHEMA_SCRIPT)
+    hashes = [
+        subprocess.run(
+            [sys.executable, str(script)],
+            capture_output=True,
+            text=True,
+            check=True,
+            cwd=tmp_path,
+        ).stdout.strip()
+        for _ in range(2)
+    ]
+    assert hashes[0] == hashes[1]
+    # A hash is one fixed-size token: the frontend sends it on every connect.
+    assert len(hashes[0]) == 32
+
+
+def _frontend_schema_with(*patches: contextlib.AbstractContextManager) -> str:
+    """Hash the FrontendSchemaRoot tree while the given patches apply.
+
+    Args:
+        patches: Context managers that change the tree in place.
+
+    Returns:
+        The frontend schema hash under those changes.
+    """
+    with contextlib.ExitStack() as stack:
+        for p in patches:
+            stack.enter_context(p)
+        _frontend_schema.cache_clear()
+        try:
+            return FrontendSchemaRoot._to_frontend_schema()
+        finally:
+            _frontend_schema.cache_clear()
+
+
+def test_frontend_schema_ignores_defaults():
+    """A changed default keeps the compiled frontend compatible."""
+    schema = FrontendSchemaRoot._to_frontend_schema()
+    assert FrontendSchemaRoot._to_frontend_schema() is schema
+
+    name_field = FrontendSchemaChild.get_fields()["name"]
+    assert (
+        _frontend_schema_with(patch.multiple(name_field, default="changed")) == schema
     )
-    state._reset_client_storage()
-    assert state.cookie == state.local == state.session == "new"
-    assert calls == [rx.Cookie, rx.LocalStorage, rx.SessionStorage]
-    state._reset_client_storage()
-    assert state.cookie == state.local == state.session == "new"
-    assert calls == [rx.Cookie, rx.LocalStorage, rx.SessionStorage] * 2
+    assert (
+        _frontend_schema_with(
+            patch.multiple(
+                name_field,
+                default=dataclasses.MISSING,
+                default_factory=lambda: "factory",
+            )
+        )
+        == schema
+    )
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        "state_renamed",
+        "state_moved",
+        "var_added",
+        "var_renamed",
+        "var_retyped",
+        "computed_var_added",
+        "computed_var_renamed",
+        "computed_var_retyped",
+        "event_handler_added",
+        "event_handler_renamed",
+    ],
+)
+def test_frontend_schema_changes_with_tree_vars_and_handlers(change: str):
+    """Each change the compiled frontend depends on changes the hash.
+
+    Args:
+        change: The change applied to the state tree.
+    """
+    child = FrontendSchemaChild
+    schema = FrontendSchemaRoot._to_frontend_schema()
+    name_field = child.get_fields()["name"]
+    shout = child.computed_vars["shout"]
+
+    def renamed(mapping: Mapping[str, Any], old: str, new: str):
+        """Patch ``mapping`` with key ``old`` renamed to ``new``.
+
+        Args:
+            mapping: The class-level dict to patch.
+            old: The key to rename.
+            new: Its new name.
+
+        Returns:
+            The patch context manager.
+        """
+        values = {k: v for k, v in mapping.items() if k != old}
+        return patch.dict(mapping, {**values, new: mapping[old]}, clear=True)
+
+    patches: list[contextlib.AbstractContextManager] = {
+        "state_renamed": [
+            patch.object(child, "get_full_name", classmethod(lambda cls: "renamed"))
+        ],
+        "state_moved": [
+            patch.object(child, "get_full_name", classmethod(lambda cls: "other.child"))
+        ],
+        "var_added": [
+            patch.dict(child.base_vars, {"extra": child.base_vars["name"]}),
+            patch.dict(child.get_fields(), {"extra": name_field}),
+        ],
+        "var_renamed": [
+            renamed(child.base_vars, "name", "renamed"),
+            renamed(child.get_fields(), "name", "renamed"),
+        ],
+        "var_retyped": [patch.multiple(name_field, type_=int)],
+        "computed_var_added": [patch.dict(child.computed_vars, {"extra": shout})],
+        "computed_var_renamed": [renamed(child.computed_vars, "shout", "renamed")],
+        "computed_var_retyped": [
+            patch.dict(child.computed_vars, {"shout": shout._replace(_var_type=int)})
+        ],
+        "event_handler_added": [
+            patch.dict(child.event_handlers, {"extra": child.event_handlers["bump"]})
+        ],
+        "event_handler_renamed": [renamed(child.event_handlers, "bump", "renamed")],
+    }[change]
+    assert _frontend_schema_with(*patches) != schema
+    # The tree is back as it was once the patches are gone.
+    assert FrontendSchemaRoot._to_frontend_schema() == schema
+
+
+def test_frontend_schema_changes_when_state_added():
+    """Defining a new substate invalidates the cached hash without a manual clear."""
+    schema = FrontendSchemaRoot._to_frontend_schema()
+
+    class FrontendSchemaAdded(FrontendSchemaRoot):
+        pass
+
+    try:
+        assert FrontendSchemaRoot._to_frontend_schema() != schema
+    finally:
+        _forget_state(FrontendSchemaAdded)
+    assert FrontendSchemaRoot._to_frontend_schema() == schema
+
+
+def _forget_state(state: type[BaseState]) -> None:
+    """Remove a substate defined by a test from the registry and the caches.
+
+    Args:
+        state: The substate to forget.
+    """
+    context = RegistrationContext.get()
+    parent = state.get_parent_state()
+    assert parent is not None
+    context.get_substates(parent).discard(state)
+    context.base_states.pop(state.get_full_name(), None)
+    all_base_state_classes.pop(state.get_full_name(), None)
+    _frontend_schema.cache_clear()
+
+
+def test_frontend_schema_is_per_registration_context():
+    """Apps in one process run on forked contexts: each hashes its own tree."""
+    schema = FrontendSchemaRoot._to_frontend_schema()
+    token = RegistrationContext.set(RegistrationContext.get().fork())
+    try:
+
+        class FrontendSchemaForked(FrontendSchemaRoot):
+            pass
+
+        forked = FrontendSchemaRoot._to_frontend_schema()
+        assert forked != schema
+        assert FrontendSchemaRoot._to_frontend_schema() == forked
+    finally:
+        RegistrationContext.reset(token)
+    # The original context never saw the forked state, cached or not.
+    assert FrontendSchemaRoot._to_frontend_schema() == schema
+
+
+def test_frontend_schema_leaves_out_backend_vars():
+    """Backend-only vars never reach the frontend, so they do not affect the hash."""
+    schema = FrontendSchemaRoot._to_frontend_schema()
+    backend_shout = FrontendSchemaChild.computed_vars["shout"]._replace(backend=True)
+    assert (
+        _frontend_schema_with(
+            patch.dict(FrontendSchemaChild.computed_vars, {"_hidden": backend_shout})
+        )
+        == schema
+    )
+
+
+@pytest.mark.parametrize("value", ["", "dark"])
+@pytest.mark.parametrize(
+    "var_name",
+    [
+        "cookie",
+        "local",
+        "session",
+        "field_cookie",
+        "field_local",
+        "field_session",
+        "optional",
+        "storage_union",
+        "plain",
+    ],
+)
+async def test_storage_annotations_accept_browser_strings(
+    var_name: str,
+    value: str,
+    caplog: pytest.LogCaptureFixture,
+    clean_registration_context: RegistrationContext,
+):
+    """Browser strings satisfy storage annotations during hydration and later writes.
+
+    Args:
+        var_name: The browser storage var to update.
+        value: The value sent by the browser.
+        caplog: Captured log records.
+        clean_registration_context: An isolated state registry.
+    """
+
+    class StorageAnnotationState(State):
+        cookie: rx.Cookie = rx.Cookie("light", name="cookie", path="/settings")
+        local: rx.LocalStorage = rx.LocalStorage("light", name="local", sync=True)
+        session: rx.SessionStorage = rx.SessionStorage("light", name="session")
+        field_cookie: rx.Field[rx.Cookie] = rx.field(rx.Cookie("light"))
+        field_local: rx.Field[rx.LocalStorage] = rx.field(rx.LocalStorage("light"))
+        field_session: rx.Field[rx.SessionStorage] = rx.field(
+            rx.SessionStorage("light")
+        )
+        plain: str = rx.LocalStorage("light", name="plain")
+        optional: rx.Field[rx.LocalStorage | None] = rx.field(rx.LocalStorage("light"))
+        storage_union: rx.Cookie | rx.SessionStorage = rx.Cookie("light")
+
+    root = State()
+    state = await root.get_state(StorageAnnotationState)
+    declared = StorageAnnotationState.get_fields()[var_name].default
+    assert isinstance(declared, (rx.Cookie, rx.LocalStorage, rx.SessionStorage))
+    options = declared.options()
+
+    with caplog.at_level(logging.ERROR):
+        applied = await _apply_client_storage_vars(
+            root,
+            {
+                f"{StorageAnnotationState.get_full_name()}.{var_name}{FIELD_MARKER}": value
+            },
+        )
+        assert applied == [(state, var_name)]
+        assert getattr(state, var_name) == value
+        assert var_name in state.dirty_vars
+        assert not caplog.records
+
+        setattr(state, var_name, "changed")
+        assert getattr(state, var_name) == "changed"
+        assert not caplog.records
+
+        setattr(state, var_name, 42)
+        assert len(caplog.records) == 1
+        assert "Expected field" in caplog.records[0].getMessage()
+
+    assert StorageAnnotationState.get_fields()[var_name].default is declared
+    assert declared.options() == options
 
 
 @pytest.mark.parametrize(
@@ -7076,3 +7357,251 @@ def test_undeclared_double_underscore_name_is_rejected(clean_registration_contex
         with pytest.raises(SetUndefinedStateVarError):
             setattr(state, name, 1)
     assert not state.dirty_vars
+
+
+_NO_DEFAULT = object()
+
+
+@pytest.mark.parametrize(
+    ("name", "annotation", "default"),
+    [
+        ("items", "list[MissingItem]", []),
+        ("items", "dict[str, MissingItem]", {}),
+        ("items", "MissingItem | None", None),
+        ("items", "list[MissingItem]", _NO_DEFAULT),
+        ("items", "dict[str, MissingItem]", _NO_DEFAULT),
+        ("items", "MissingItem | None", _NO_DEFAULT),
+        ("items", "MissingItem", _NO_DEFAULT),
+        ("items", "MissingItem", None),
+        ("items", list[ForwardRef("MissingItem")], []),
+        ("_items", "list[MissingItem]", []),
+    ],
+    ids=[
+        "list",
+        "dict",
+        "optional",
+        "list-no-default",
+        "dict-no-default",
+        "optional-no-default",
+        "bare-no-default",
+        "bare-none-default",
+        "nested-forward-ref",
+        "backend",
+    ],
+)
+def test_var_annotation_with_undefined_name_raises_name_error(
+    name: str, annotation: Any, default: Any
+) -> None:
+    """An annotation naming an undefined symbol raises a NameError naming it.
+
+    With postponed annotations the unresolved annotation used to reach var
+    typing as a ForwardRef and fail with an unrelated TypeError or
+    AttributeError, whether or not the var has a default. On Python 3.14 an
+    annotation is evaluated lazily, and an undefined name inside a generic
+    stays a nested ForwardRef.
+
+    Args:
+        name: The name of the var.
+        annotation: The annotation, which names a symbol that does not exist.
+        default: The default value of the var, or _NO_DEFAULT for none.
+    """
+    namespace: dict[str, Any] = {
+        "__module__": __name__,
+        "__annotations__": {name: annotation},
+    }
+    if default is not _NO_DEFAULT:
+        namespace[name] = default
+
+    with pytest.raises(NameError, match="MissingItem"):
+        type("UndefinedNameState", (BaseState,), namespace)
+
+
+@pytest.mark.parametrize(
+    ("name", "annotation", "value"),
+    [
+        ("cache", "ClassVar[MissingItem]", _NO_DEFAULT),
+        ("__client", "MissingItem | None", None),
+        ("total", "MissingItem", property(lambda self: 0)),
+    ],
+    ids=["classvar", "private", "descriptor"],
+)
+def test_non_var_annotation_with_undefined_name_is_allowed(
+    name: str, annotation: str, value: Any
+) -> None:
+    """An annotation that declares no var is not resolved, so its symbol may be undefined.
+
+    A symbol imported only under TYPE_CHECKING is undefined at runtime.
+
+    Args:
+        name: The name of the attribute.
+        annotation: The annotation, which names a symbol that does not exist.
+        value: The value of the attribute, or _NO_DEFAULT for none.
+    """
+    namespace: dict[str, Any] = {
+        "__module__": __name__,
+        "__annotations__": {name: annotation},
+    }
+    if value is not _NO_DEFAULT:
+        namespace[name] = value
+
+    state = type("UndefinedNonVarState", (BaseState,), namespace)
+
+    assert name not in state.get_fields()
+
+
+async def test_hydration_replay_preserves_shared_cleanup_marks(
+    monkeypatch: pytest.MonkeyPatch, clean_registration_context: RegistrationContext
+):
+    """A single shared cleanup records snapshot and correction writes for fanout.
+
+    Args:
+        monkeypatch: Restore root metadata changed by defining a shared state.
+        clean_registration_context: Isolate the temporary shared state class.
+    """
+    links = State.get_fields()["_reflex_internal_links"]
+    monkeypatch.setattr(links, "default", links.default)
+    monkeypatch.setattr(links, "default_factory", links.default_factory)
+    monkeypatch.setattr(
+        State, "_always_dirty_substates", State._always_dirty_substates.copy()
+    )
+    clean_calls = 0
+
+    class StorageState(rx.SharedState):
+        value: str = rx.LocalStorage("")
+        snapshot_write: str = "initial"
+
+        @_override_base_method
+        def get_delta(self):
+            """Normalize a backend storage value before returning its delta.
+
+            Returns:
+                The base delta.
+            """
+            if "value" in self.dirty_vars and self.value == "stale":
+                self.value = "fresh"
+            return super().get_delta()
+
+        @_override_base_method
+        def _clean(self):
+            """Count the cleanup calls that capture shared fanout marks."""
+            nonlocal clean_calls
+            clean_calls += 1
+            super()._clean()
+
+    root = State.get_root_state()(_reflex_internal_init=True)
+    storage = await root.get_state(StorageState)
+    storage.snapshot_write = "snapshot"
+    storage.value = "stale"
+    storage._previous_dirty_vars = set()
+    await _get_client_storage_delta(root, [(storage, "value")])
+    assert clean_calls == 1
+    assert storage.value == "fresh"
+    assert storage._previous_dirty_vars >= {"snapshot_write", "value"}
+    assert not storage.dirty_vars
+
+
+async def test_shared_storage_name_syncs_siblings(
+    clean_registration_context: RegistrationContext,
+):
+    """A write to a var sharing a storage name sets the synced vars with that name.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+
+    class SharedFirst(State):
+        value: str = rx.LocalStorage("", name="shared", sync=True)
+
+    class SharedSecond(State):
+        value: str = rx.LocalStorage("", name="shared", sync=True)
+
+    class SharedPlain(State):
+        value: str = rx.LocalStorage("", name="shared")
+
+    class OtherName(State):
+        value: str = rx.LocalStorage("", name="other", sync=True)
+
+    key = "value" + FIELD_MARKER
+    root = State()
+    first = await root.get_state(SharedFirst)
+    first.value = "new"
+    delta = await root._get_resolved_delta()
+    root._clean()
+    assert delta[SharedFirst.get_full_name()][key] == "new"
+    assert delta[SharedSecond.get_full_name()][key] == "new"
+    assert SharedPlain.get_full_name() not in delta
+    assert OtherName.get_full_name() not in delta
+
+    # An unsynced var's write raises the storage event too, so it syncs them.
+    plain = await root.get_state(SharedPlain)
+    plain.value = "plain"
+    delta = await root._get_resolved_delta()
+    root._clean()
+    assert delta[SharedFirst.get_full_name()][key] == "plain"
+    assert delta[SharedSecond.get_full_name()][key] == "plain"
+
+    # An unchanged sibling is not sent again.
+    first.value = "plain"
+    assert await root._get_resolved_delta() == {
+        SharedFirst.get_full_name(): {key: "plain"}
+    }
+    root._clean()
+
+    # A name no other var shares sets nothing else.
+    other = await root.get_state(OtherName)
+    other.value = "alone"
+    assert await root._get_resolved_delta() == {
+        OtherName.get_full_name(): {key: "alone"}
+    }
+
+
+@pytest.mark.parametrize("second_sync", [True, False])
+async def test_shared_storage_name_keeps_event_writes(
+    clean_registration_context: RegistrationContext,
+    second_sync: bool,
+):
+    """Vars sharing a storage name that one event writes keep their own values.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+        second_sync: Whether the second var syncs.
+    """
+
+    class WrittenFirst(State):
+        value: str = rx.LocalStorage("", name="shared", sync=True)
+
+    class WrittenSecond(State):
+        value: str = rx.LocalStorage("", name="shared", sync=second_sync)
+
+    root = State()
+    first = await root.get_state(WrittenFirst)
+    second = await root.get_state(WrittenSecond)
+    first.value = "one"
+    second.value = "two"
+    await root._get_resolved_delta()
+    assert (first.value, second.value) == ("one", "two")
+
+
+async def test_shared_storage_name_conflicting_writes_pick_by_name(
+    clean_registration_context: RegistrationContext,
+):
+    """Conflicting writes to one storage name set the other synced vars in name order.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+
+    class ZWriter(State):
+        value: str = rx.LocalStorage("", name="shared", sync=True)
+
+    class AWriter(State):
+        value: str = rx.LocalStorage("", name="shared", sync=True)
+
+    class MSibling(State):
+        value: str = rx.LocalStorage("", name="shared", sync=True)
+
+    root = State()
+    (await root.get_state(ZWriter)).value = "z"
+    (await root.get_state(AWriter)).value = "a"
+    await root._get_resolved_delta()
+    assert (await root.get_state(MSibling)).value == "a"

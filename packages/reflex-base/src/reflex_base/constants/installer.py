@@ -17,7 +17,7 @@ class Bun(SimpleNamespace):
     """Bun constants."""
 
     # The Bun version.
-    VERSION = "1.4.2"
+    VERSION = "1.4.4"
 
     # Min Bun Version. Bun 1.4 creates new lockfiles at `lockfileVersion: 2`,
     # which 1.3.x cannot parse at all, so a `reflex.lock/bun.lock` generated
@@ -25,7 +25,7 @@ class Bun(SimpleNamespace):
     # even across dependency changes, so already-initialized projects survive.)
     # Keep this in step with VERSION across the 1.4 boundary so a system bun
     # old enough to choke on a v2 lockfile is never preferred over the pinned one.
-    MIN_VERSION = "1.4.0"
+    MIN_VERSION = "1.4.4"
 
     # URL to bun install script.
     INSTALL_URL = "https://raw.githubusercontent.com/reflex-dev/reflex/main/scripts/bun_install.sh"
@@ -106,7 +106,7 @@ def _determine_react_router_version() -> str:
 
 
 def _determine_react_version() -> str:
-    default_version = "19.3.0"
+    default_version = "19.3.1"
     if (version := os.getenv("REACT_VERSION")) and version != default_version:
         logger.warning(
             f"You have requested react@{version} but the supported version is {default_version}, abandon all hope ye who enter here."
@@ -156,12 +156,18 @@ class PackageJson(SimpleNamespace):
     DEV_DEPENDENCIES = {
         "@emotion/react": "11.14.0",
         "autoprefixer": "10.6.1",
-        "postcss": "8.5.29",
-        "postcss-import": "17.0.0",
+        "postcss": "8.5.30",
+        "postcss-import": "17.0.1",
         "@react-router/dev": _react_router_version,
         "@react-router/fs-routes": _react_router_version,
-        "vite": "8.3.2",
+        "vite": "8.3.4",
     }
+
+    REACT_COMPILER_DEV_DEPENDENCIES = {
+        "@babel/core": "7.29.7",
+        "babel-plugin-react-compiler": "1.0.0",
+    }
+
     # Force specific transitive npm deps to a single resolved version when
     # needed. Prefer a `DEV_DEPENDENCIES`/`DEPENDENCIES` pin when the package is
     # one we depend on directly: a top-level pin already satisfies and dedupes

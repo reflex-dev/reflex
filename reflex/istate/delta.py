@@ -42,6 +42,14 @@ _record_delta_values: ContextVar[bool] = ContextVar(
 )
 
 
+# Replay browser storage and cached dependents without blanket invalidation.
+# Real assignments invalidate their caches eagerly. Uncached values are left
+# to the normal event delta, avoiding an extra evaluation during hydration.
+_replay_client_storage: ContextVar[bool] = ContextVar(
+    "_replay_client_storage", default=False
+)
+
+
 class _DeltaRecord(NamedTuple):
     """An uncached var value that counts as sent once the delta delivers it."""
 
@@ -227,8 +235,12 @@ def build_delta(state: BaseState) -> Delta:
     """
     delta = {}
 
-    state._mark_dirty_computed_vars()
-    delta_vars = state.dirty_vars & state._frontend_var_names
+    if _replay_client_storage.get():
+        delta_vars = state.dirty_vars & state._frontend_var_names
+        delta_vars.difference_update(state._always_dirty_computed_vars)
+    else:
+        state._mark_dirty_computed_vars()
+        delta_vars = state.dirty_vars & state._frontend_var_names
 
     always_dirty_computed_vars = state._always_dirty_computed_vars
     # Where to leave the values this traversal sends, for whoever delivers

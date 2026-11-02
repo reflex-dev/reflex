@@ -503,7 +503,7 @@ def rejected_token_message(source: TokenSource, err: TokenAccessDeniedError) -> 
 def _token_validation_failure_message(
     source: TokenSource, err: TokenValidationError
 ) -> str:
-    """Describe a temporary validation failure and suggest retrying.
+    """Describe a validation failure, suggesting a retry only if one may help.
 
     Args:
         source: Where the token was loaded from.
@@ -512,6 +512,11 @@ def _token_validation_failure_message(
     Returns:
         The message to report.
     """
+    if not err.retryable:
+        return (
+            f"Unable to validate the access token from the {source.value}: "
+            f"{err} (auth request id: {err.request_id})."
+        )
     return (
         f"Unable to validate the access token from the {source.value}: "
         f"{err} (auth request id: {err.request_id}). Please try again later."
@@ -757,6 +762,26 @@ def new_client(token: str | None = None) -> ReflexBuild:
     )
 
 
+def _is_retryable_status(status_code: int) -> bool:
+    """Tell whether a refused request may succeed if sent again later.
+
+    Args:
+        status_code: The status the control plane answered with.
+
+    Returns:
+        True for a timeout, a throttled request or a server error.
+    """
+    return (
+        status_code
+        in (
+            HTTPStatus.REQUEST_TIMEOUT,
+            HTTPStatus.TOO_EARLY,
+            HTTPStatus.TOO_MANY_REQUESTS,
+        )
+        or status_code >= HTTPStatus.INTERNAL_SERVER_ERROR
+    )
+
+
 def _validate(token: str, api: ReflexBuild | None = None) -> Me:
     """Ask the control plane who an access token authenticates as.
 
@@ -770,7 +795,9 @@ def _validate(token: str, api: ReflexBuild | None = None) -> Me:
     Raises:
         TokenAccessDeniedError: If the token was refused.
         TokenValidationError: If the answer could not be had -- a timeout, a
-            failed request, a server error. These are worth trying again.
+            failed request, a server error, or a request the control plane
+            refused. Only the first kinds are worth trying again, as
+            ``retryable`` says.
 
     """
     global _last_auth_request_id
@@ -786,10 +813,16 @@ def _validate(token: str, api: ReflexBuild | None = None) -> Me:
                 raise TokenAccessDeniedError(
                     "access denied", request_id=ex.request_id
                 ) from ex
+            retryable = _is_retryable_status(ex.status_code)
+            # The API's explanation is not shown or logged: it may echo the
+            # request, including the token.
+            message = f"HTTP {ex.status_code}"
             logger.debug(
-                f"Unable to validate the token due to: {ex} (request id: {ex.request_id})"
+                f"Unable to validate the token due to: {message} (request id: {ex.request_id})"
             )
-            raise TokenValidationError("server error", request_id=ex.request_id) from ex
+            raise TokenValidationError(
+                message, request_id=ex.request_id, retryable=retryable
+            ) from ex
         except APIError as ex:
             _last_auth_request_id = ex.request_id
             logger.debug(

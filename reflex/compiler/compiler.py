@@ -272,6 +272,7 @@ def _compile_contexts(
             initial_state_json=initial_state_json,
             initial_state_hashes=state_snapshot_hashes(initial_state),
             state_name=state.get_name(),
+            state_schema=state._to_frontend_schema(),
             client_storage=utils.compile_client_storage(state),
             is_dev_mode=not is_prod_mode(),
             default_color_mode=default_color_mode,

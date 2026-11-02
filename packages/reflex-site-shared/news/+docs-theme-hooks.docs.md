@@ -1,0 +1,1 @@
+Expose scoped CSS hooks for documentation chrome, editorial content, demo surfaces, tables, feedback, and footers so consuming sites can customize the brand without styling live examples. Add accessible field labels and selected-score states to the feedback form. Retain one Security link in the marketing footer.

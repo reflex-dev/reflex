@@ -51,6 +51,20 @@ def _collect_links(component) -> list[tuple[str, str]]:
     return links
 
 
+def _walk_components(component):
+    """Yield a component and its descendants, including conditional branches.
+
+    Args:
+        component: The root component to walk.
+
+    Yields:
+        Each component in the tree.
+    """
+    yield component
+    for child in getattr(component, "children", ()):
+        yield from _walk_components(child)
+
+
 def test_internal_menu_items_use_router_links(navbar):
     """In-app navbar links must compile to React Router links.
 
@@ -195,3 +209,52 @@ def test_mobile_menu_preserves_primary_docs_destinations(navbar):
         "/docs/xy/",
     ):
         assert ("anchor", path) in links
+
+
+def test_docs_announcement_preserves_link_and_dismissal(navbar):
+    """The branded announcement remains an accessible, dismissible external link."""
+    from reflex_docs.views.docs_announcement_banner import docs_announcement_banner
+
+    banner = docs_announcement_banner()
+    assert _collect_links(banner) == [
+        ("anchor", "https://reflex.dev/blog/xy-in-reflex-build/")
+    ]
+    region = next(
+        component
+        for component in _walk_components(banner)
+        if "data-announcement" in getattr(component, "custom_attrs", {})
+    )
+    artwork, link, dismiss = region.children
+    assert artwork.custom_attrs["aria-hidden"] is True
+    assert "Latest announcement" in str(region.custom_attrs["aria-label"])
+    assert str(link.target) == '"_blank"'
+    assert "noopener noreferrer" in str(link.rel)
+    assert "opens in a new tab" in str(link.custom_attrs["aria-label"])
+    assert "Dismiss announcement" in str(dismiss.custom_attrs["aria-label"])
+    assert "hide_banner" in str(dismiss.event_triggers["on_click"])
+
+
+def test_mobile_navigation_retains_native_disclosure(navbar):
+    """Styling must preserve native summary activation and a named navigation area."""
+    menu = navbar.navbar_sidebar_button()
+    assert menu.tag == "details"
+    assert menu.children[0].tag == "summary"
+    assert "Toggle navigation menu" in str(menu.children[0])
+    assert str(menu.children[1].role) == '"navigation"'
+    assert "Documentation navigation" in str(menu.children[1])
+
+
+def test_docs_sidebar_drawer_has_a_title_and_keyboard_close(navbar):
+    """Mobile sidebar readers need a named dialog and a focusable close control."""
+    from reflex_site_shared.views.sidebar import docs_sidebar_drawer
+
+    drawer = docs_sidebar_drawer(rx.text("Guides"), rx.el.button("Open guides"))
+    nodes = list(_walk_components(drawer))
+    titles = [node for node in nodes if node.tag == "Drawer.Title"]
+    assert len(titles) == 1
+    assert "Documentation navigation" in str(titles[0])
+    close = next(node for node in nodes if node.tag == "Drawer.Close")
+    assert close.children[0].tag == "button"
+    assert (
+        close.children[0].custom_attrs["aria-label"] == "Close documentation navigation"
+    )

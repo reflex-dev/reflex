@@ -1,24 +1,16 @@
 import reflex as rx
 
 from reflex_docs.pages.docs import hosting as hosting_page
-from reflex_docs.pages.docs_landing.views.link_item import faded_borders, link_item
+from reflex_docs.pages.docs_landing.views.layout import SECTION, section_heading
+from reflex_docs.pages.docs_landing.views.link_item import link_item
 
 
 def self_hosting_section() -> rx.Component:
     return rx.el.section(
-        rx.el.div(
-            rx.el.h2(
-                "Self-Hosting",
-                class_name="text-foreground text-3xl font-medium",
-            ),
-            rx.el.p(
-                "Learn how to self-host your applications with Reflex.",
-                class_name="text-muted-foreground text-sm font-[475]",
-            ),
-            class_name="flex flex-col gap-4",
+        section_heading(
+            "Self-Hosting", "Learn how to self-host your applications with Reflex."
         ),
         rx.el.div(
-            faded_borders(),
             link_item(
                 "ServerStack01Icon",
                 "Run Reflex App in Dockerized Environment",
@@ -32,7 +24,7 @@ def self_hosting_section() -> rx.Component:
                 hosting_page.databricks.path,
                 has_padding_left=True,
             ),
-            class_name="grid grid-cols-1 lg:grid-cols-2 border-t border-border-subtle relative",
+            class_name="grid grid-cols-1 gap-4 lg:grid-cols-2",
         ),
-        class_name="flex flex-col gap-10 max-lg:text-center relative max-w-[90rem] px-4 min-[55rem]:px-8 lg:px-12 mx-auto w-full justify-start lg:mb-24 mb-10 overflow-hidden max-lg:pt-10",
+        class_name=f"{SECTION} border-t border-border-subtle",
     )

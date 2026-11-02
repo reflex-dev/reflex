@@ -457,8 +457,8 @@ def initialize_web_directory():
     # Keep JSON writers out of their same-directory staging window while the
     # frontend tree is removed and recreated.
     with (
-        path_ops.json_file_lock(web_dir / constants.Reflex.JSON),
-        path_ops.json_file_lock(web_dir / constants.Dirs.ENV_JSON),
+        path_ops.file_lock(web_dir / constants.Reflex.JSON),
+        path_ops.file_lock(web_dir / constants.Dirs.ENV_JSON),
     ):
         # Reuse the hash if one is already created, so we don't over-write it when running reflex init
         project_hash = get_project_hash()
@@ -631,6 +631,7 @@ def _compile_vite_config(config: Config):
         experimental_hmr=environment.VITE_EXPERIMENTAL_HMR.get(),
         prod_react=environment.REFLEX_DEV_PROD_REACT.get(),
         warmup_routes=environment.REFLEX_VITE_WARMUP_ROUTES.get(),
+        react_compiler=config.react_compiler,
         sourcemap=environment.VITE_SOURCEMAP.get(),
         minify=environment.VITE_MINIFY.get(),
         allowed_hosts=config.vite_allowed_hosts,

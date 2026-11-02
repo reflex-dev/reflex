@@ -154,7 +154,7 @@ with RegistrationContext(), patch('reflex.compiler.compiler.get_config', return_
     bundle_library('constructor')
     print(json.dumps({'root': compile_app_root(rx.el.div('Quality'))[1], 'component': serializers.serialize(Quality.create())}))
 `], {cwd: root, encoding: "utf8"}).trim().split("\n").at(-1));
-  const setup = new Function("window", "React", "emotion_react", "utils_context", "utils_state", "loadFixture", "loadConstructor",
+  const setup = new Function("window", "React", "emotion_react", "utils_context", "utils_context_registry", "utils_state", "loadFixture", "loadConstructor",
     generated.root.replace(/^import .*$/gm, "")
       .replace(/^export default function/gm, "function")
       .replace(/^export /gm, "")
@@ -175,7 +175,7 @@ with RegistrationContext(), patch('reflex.compiler.compiler.get_config', return_
   try {
     let calls = 0;
     globalThis.window = {};
-    setup(window, react, emotion, {}, {}, async () => {calls++; return {Quality: () => 42};});
+    setup(window, react, emotion, {}, {}, {}, async () => {calls++; return {Quality: () => 42};});
     assert.equal(calls, 0);
     assert.equal(window.__reflex.react, react);
     assert.equal(window.__reflex["quality-lazy-fixture"], undefined);
@@ -189,7 +189,7 @@ with RegistrationContext(), patch('reflex.compiler.compiler.get_config', return_
 
     let attempts = 0;
     globalThis.window = {};
-    setup(window, react, emotion, {}, {}, async () => {
+    setup(window, react, emotion, {}, {}, {}, async () => {
       if (++attempts === 1) throw new Error("Temporary download failure");
       return {Quality: () => 43};
     });
@@ -203,7 +203,7 @@ with RegistrationContext(), patch('reflex.compiler.compiler.get_config', return_
     let constructorCalls = 0;
     globalThis.window = {};
     const constructorModule = {name: "constructor library"};
-    setup(window, react, emotion, {}, {}, async () => ({}), async () => {constructorCalls++; return constructorModule;});
+    setup(window, react, emotion, {}, {}, {}, async () => ({}), async () => {constructorCalls++; return constructorModule;});
     await window.__reflex_load(["constructor"]);
     assert.equal(constructorCalls, 1);
     assert.equal(window.__reflex.constructor, constructorModule);

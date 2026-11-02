@@ -3,7 +3,7 @@ import { SourceTextModule, SyntheticModule } from "node:vm";
 /** Evaluate the complete frontend module with isolated dependency stubs. */
 export async function createQueueRuntime(
   source,
-  { uploadFiles, throttle } = {},
+  { uploadFiles, throttle, dependencies: dependencyOverrides } = {},
 ) {
   const unused = () => {
     throw new Error("Unexpected frontend dependency in queue test");
@@ -27,7 +27,6 @@ export async function createQueueRuntime(
     "socket.io-client": { default: unused },
     mergician: { mergician: unused },
     "$/env.json": { default: {} },
-    "$/reflex.json": { default: {} },
     "universal-cookie": {
       default: class {
         remove() {}
@@ -56,13 +55,13 @@ export async function createQueueRuntime(
     "$/utils/helpers/upload": {
       uploadFiles: uploadFiles ?? unused,
     },
+    ...dependencyOverrides,
   };
   // Let Node parse the unchanged module; only expose private state to tests.
   const module = new SourceTextModule(
     `import { window, document, localStorage, sessionStorage } from "test:browser";
 ${source}
 export { event_queue };
-export function setMismatch(value) { backend_state_mismatch = value; }
 `,
   );
   const linked = new Map();

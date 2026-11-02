@@ -23,13 +23,15 @@ from reflex_base.event.context import EventContext
 from reflex_base.event.processor.event_processor import EventProcessor, EventQueueEntry
 from reflex_base.event.processor.future import EventFuture
 from reflex_base.registry import RegisteredEventHandler
+from reflex_base.utils.form import form_data_as_dict, transform_form_data
 from reflex_base.utils.format import format_event_handler
 from reflex_base.utils.serializers import deserializers
+from reflex_base.utils.types import is_non_string_sequence
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from reflex.state import BaseState
+    from reflex.state import BaseState, State
 
 # Resolved once at import: find_spec on a missing package scans sys.path (~90us),
 # far too slow for the per-event-argument path below.
@@ -84,7 +86,7 @@ def _check_valid_yield(events: Any, handler_name: str = "unknown") -> Any:
     if events is None or _is_valid_type(events):
         return events
 
-    if not (isinstance(events, Sequence) and not isinstance(events, (str, bytes))):
+    if not is_non_string_sequence(events):
         events = [events]
 
     try:
@@ -121,6 +123,7 @@ def _transform_event_arg(value: Any, hinted_args: Any) -> Any:
     Raises:
         ValueError: If a string value is received for an int or float type and cannot be converted.
     """
+    value = transform_form_data(value, hinted_args)
     if hinted_args is Any:
         return value
     if types.is_union(hinted_args):
@@ -132,10 +135,9 @@ def _transform_event_arg(value: Any, hinted_args: Any) -> Any:
 
         if issubclass(hinted_args, Model):
             # Remove non-fields from the payload
+            model_fields = hinted_args.model_fields
             return hinted_args(**{
-                key: value
-                for key, value in value.items()
-                if key in hinted_args.__fields__
+                key: value for key, value in value.items() if key in model_fields
             })
         if dataclasses.is_dataclass(hinted_args):
             return hinted_args(**value)
@@ -184,6 +186,34 @@ def _transform_event_payload(
             msg = f"Error transforming event argument '{arg}' with value '{value}' and type hint '{hinted_args}'"
             raise ValueError(msg) from ex
     return transformed
+
+
+def _prepare_event_payload(
+    handler: EventHandler, payload: Mapping[str, Any]
+) -> dict[str, Any]:
+    """Transform an event payload for a handler's annotations.
+
+    Args:
+        handler: The event handler.
+        payload: The event payload.
+
+    Returns:
+        The transformed payload or, when it cannot be transformed, the original
+        payload with any form data as a dict.
+    """
+    try:
+        # Resolved hints are cached on the handler, empty for an unannotated one;
+        # fall back for ones that were not resolvable at registration (None),
+        # raising again if still unresolved.
+        type_hints = handler._type_hints
+        if type_hints is None:
+            type_hints = types.get_type_hints(handler.fn)
+        return _transform_event_payload(payload, type_hints)
+    except Exception as ex:
+        logger.warning(
+            f"Error transforming event payload for handler {handler.fn.__qualname__}: {ex}"
+        )
+        return {arg: form_data_as_dict(value) for arg, value in payload.items()}
 
 
 async def _route_events(ctx: EventContext, events: Sequence[Event]) -> None:
@@ -302,20 +332,7 @@ async def process_event(
     """
     fn = handler.fn
     handler_name = fn.__qualname__
-
-    try:
-        # Resolved hints are cached on the handler, empty for an unannotated one;
-        # fall back for ones that were not resolvable at registration (None),
-        # raising again if still unresolved.
-        type_hints = handler._type_hints
-        if type_hints is None:
-            type_hints = types.get_type_hints(fn)
-        payload = _transform_event_payload(payload, type_hints)
-    except Exception as ex:
-        # No transformation was possible, continue with the original payload
-        logger.warning(
-            f"Error transforming event payload for handler {handler_name}: {ex}"
-        )
+    payload = _prepare_event_payload(handler, payload)
 
     # Handle async functions.
     if handler._is_coroutine_function:
@@ -375,23 +392,18 @@ class BaseStateEventProcessor(EventProcessor):
     frontend.
     """
 
-    async def _rehydrate(self, root_state: BaseState):
-        """Rehydrate the state by calling the hydrate event handler.
+    @staticmethod
+    async def _rehydrate_snapshot(root_state: State) -> None:
+        """Send hydration data, finishing hydration when no page is available.
 
         Args:
             root_state: The root state to rehydrate.
         """
-        from reflex.state import OnLoadInternalState, State
+        from reflex.state import State
 
-        if type(root_state) is not State:
-            return
-
-        # A backend-initiated event carries no route, so nothing sets
-        # router_data and every one of them would rehydrate again.
         routeless = not root_state.router_data
         if routeless and root_state.is_hydrated:
             return
-
         await process_event(
             handler=State.event_handlers["hydrate"],
             payload={},
@@ -399,20 +411,70 @@ class BaseStateEventProcessor(EventProcessor):
             root_state=root_state,
         )
         if routeless:
-            # No page to load, but hydration still has to finish.
             await process_event(
                 handler=State.event_handlers["set_is_hydrated"],
                 payload={"value": True},
                 state=root_state,
                 root_state=root_state,
             )
+
+    @functools.cached_property
+    def _pending_hydrates(self) -> dict[str, dict[str, EventFuture]]:
+        """Hydrations cancellable on disconnect, but never by a navigation.
+
+        Returns:
+            Pending hydration futures indexed by client token and transaction id.
+        """
+        return {}
+
+    async def _rehydrate(self, root_state: BaseState):
+        """Rehydrate the state by calling the hydrate event handler.
+
+        Args:
+            root_state: The root state to rehydrate.
+        """
+        from reflex.event import Event
+        from reflex.state import OnLoadInternalState, State
+
+        if type(root_state) is not State:
             return
-        await process_event(
-            handler=OnLoadInternalState.event_handlers["on_load_internal"],
-            payload={},
-            state=await root_state.get_state(OnLoadInternalState),
-            root_state=root_state,
-        )
+
+        # A backend-initiated event carries no route, so nothing sets
+        # router_data and every one of them would rehydrate again.
+        if not root_state.router_data:
+            await self._rehydrate_snapshot(root_state)
+            return
+
+        ctx = EventContext.get()
+        # Disconnect cancels this marker without cancelling the ordinary event.
+        pending = EventFuture(txid=ctx.txid)
+        self._pending_hydrates.setdefault(ctx.token, {})[pending.txid] = pending
+        try:
+            await self._rehydrate_snapshot(root_state)
+            if pending.cancelled():
+                return
+            parent = self._futures[ctx.txid]
+            first_child = len(parent.children)
+            handler = OnLoadInternalState.event_handlers["on_load_internal"]
+            await process_event(
+                handler=handler,
+                payload={},
+                state=await root_state.get_state(OnLoadInternalState),
+                root_state=root_state,
+            )
+            # Inline rehydration bypasses enqueue's page-load registration. Track
+            # only its children so the ordinary event remains independent.
+            load_event = Event(name=format_event_handler(handler))
+            for index in range(first_child, len(parent.children)):
+                child = parent.children[index]
+                if pending.cancelled():
+                    child.cancel()
+                else:
+                    self._supersede_previous(
+                        token=ctx.token, event=load_event, tracked=child
+                    )
+        finally:
+            self._forget_hydrate(ctx.token, pending)
 
     def _supersede_previous(
         self, *, token: str, event: Event, tracked: EventFuture
@@ -436,7 +498,35 @@ class BaseStateEventProcessor(EventProcessor):
         boot_name, on_load_name = _connect_supersedes()
         if event.name == boot_name:
             self._cancel_older_chains((on_load_name, token), tracked.root_gen)
+            self._pending_hydrates.setdefault(token, {})[tracked.txid] = tracked
+            tracked.add_done_callback(functools.partial(self._forget_hydrate, token))
         return super()._supersede_previous(token=token, event=event, tracked=tracked)
+
+    def _forget_hydrate(self, token: str, future: EventFuture) -> None:
+        """Stop tracking a completed hydration invocation.
+
+        Its page-load descendants have their own supersession registration.
+
+        Args:
+            token: The client token.
+            future: The completed hydration future.
+        """
+        if (pending := self._pending_hydrates.get(token)) is not None:
+            pending.pop(future.txid, None)
+            if not pending:
+                del self._pending_hydrates[token]
+
+    def _on_disconnect(self, token: str) -> None:
+        """Cancel hydration and unfinished page-load chains for a disconnected client.
+
+        Args:
+            token: The disconnected client token.
+        """
+        _, on_load_name = _connect_supersedes()
+        for future in self._pending_hydrates.pop(token, {}).values():
+            future.cancel()
+        for future in self._superseded.pop((on_load_name, token), {}).values():
+            future.cancel()
 
     async def _execute_event(
         self, *, entry: EventQueueEntry, registered_handler: RegisteredEventHandler
@@ -523,6 +613,10 @@ class BaseStateEventProcessor(EventProcessor):
         # background task's own state changes are emitted (and cleaned) by its
         # `async with self` context exits, which re-acquire the lock.
         proxy = StateProxy(substate)
+        # Leave the tree loaded under the lock to the proxy, which replaces it on
+        # `async with self`. A manager like redis loads a fresh tree for every
+        # lock, so these locals would pin an extra copy for the whole task.
+        del state, substate, root_state
         handler_error: BaseException | None = None
         try:
             await process_event(

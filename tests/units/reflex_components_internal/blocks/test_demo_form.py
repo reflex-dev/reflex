@@ -1,6 +1,7 @@
 """Tests for the demo form block."""
 
 import re
+from typing import cast
 
 from reflex_base.vars.sequence import LiteralStringVar
 from reflex_components_internal.blocks.demo_form import demo_form, demo_form_dialog
@@ -35,6 +36,26 @@ def test_demo_form_dialog_renders_given_trigger() -> None:
 
     assert "Dialog.Trigger" in rendered
     assert TRIGGER_LABEL in rendered
+
+
+def test_demo_form_appends_a_tuple_of_submit_events() -> None:
+    """A tuple of extra submit events is appended like a list of them."""
+    form = demo_form(on_submit=(rx.console_log("first"), rx.console_log("second")))
+    # the form's submit handler is a hook that dispatches its events
+    hooks = "".join(str(hook) for hook in form._get_all_hooks())
+
+    assert '"first"' in hooks
+    assert '"second"' in hooks
+
+
+def test_demo_form_standalone_retains_its_layout() -> None:
+    """Embedding the form keeps its padding overrides and inline submit button."""
+    form = demo_form(class_name="p-0").children[0]
+
+    assert "p-0" in str(cast(rx.Component, form).class_name)
+    assert 'type:"submit"' in str(form.children[-1])
+    assert "overflow-hidden" not in str(cast(rx.Component, form).class_name)
+    assert "grid-cols-2" in str(cast(rx.Component, form.children[0]).class_name)
 
 
 def test_demo_form_asks_for_an_optional_phone_number() -> None:

@@ -26,6 +26,9 @@ def TypedDictFormSubmit(form_component):
         name: str
         email: str
         message: NotRequired[str]
+        topics: list[str]
+        subscribe: bool
+        bounds: list[str]
 
     class FormState(rx.State):
         form_data: rx.Field[dict] = rx.field(default_factory=dict)
@@ -48,6 +51,11 @@ def TypedDictFormSubmit(form_component):
                     rx.input(name="name"),
                     rx.input(name="email"),
                     rx.text_area(name="message"),
+                    rx.el.input(type="hidden", name="topics", value="news"),
+                    rx.el.input(type="hidden", name="topics", value="events"),
+                    rx.checkbox("Subscribe", name="subscribe"),
+                    # A two-thumb slider submits its values as "bounds[]".
+                    rx.slider(name="bounds", default_value=[20, 80]),
                     rx.button("Submit", type_="submit"),
                 ),
                 on_submit=FormState.form_submit,
@@ -65,14 +73,22 @@ def TypedDictInheritedFormSubmit(form_component):
     Args:
         form_component: The str name of the form component to use.
     """
-    from typing import TypedDict
+    from typing import Generic, TypeVar
+
+    from typing_extensions import TypedDict
 
     import reflex as rx
+
+    T = TypeVar("T")
 
     class BaseData(TypedDict, total=False):
         nickname: str
 
-    class SignupData(BaseData):
+    class TaggedData(TypedDict, Generic[T]):
+        tags: T
+        maybe: T | None
+
+    class SignupData(BaseData, TaggedData[list[str]]):
         email: str
 
     class FormState(rx.State):
@@ -95,6 +111,10 @@ def TypedDictInheritedFormSubmit(form_component):
                 rx.vstack(
                     rx.input(name="email"),
                     rx.input(name="nickname"),
+                    rx.el.input(type="hidden", name="tags", value="first"),
+                    rx.el.input(type="hidden", name="tags", value="second"),
+                    # Disabled, so "maybe" is never submitted.
+                    rx.el.input(type="hidden", name="maybe", disabled=True),
                     rx.button("Submit", type_="submit"),
                 ),
                 on_submit=FormState.form_submit,
@@ -114,12 +134,22 @@ _CONTACT_FIELDS = {
         "name": "Alice",
         "email": "alice@example.com",
         "message": "Hello there",
+        # Every value of a list field, and False for an unchecked bool field.
+        "topics": ["news", "events"],
+        "subscribe": False,
+        "bounds": ["20", "80"],
     },
 }
 _INHERITED_FIELDS = {
     "inputs": {"email": "user@example.com", "nickname": "cooluser"},
     "textarea": None,
-    "expected": {"email": "user@example.com", "nickname": "cooluser"},
+    "expected": {
+        "email": "user@example.com",
+        "nickname": "cooluser",
+        # Fields inherited from TaggedData[list[str]].
+        "tags": ["first", "second"],
+        "maybe": None,
+    },
 }
 
 

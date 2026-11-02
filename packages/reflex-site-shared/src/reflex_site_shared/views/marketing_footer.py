@@ -470,7 +470,6 @@ def marketing_footer(
                         "Trust",
                         [
                             ("Security", "/security/"),
-                            ("Security review", "/security/#security-review"),
                             ("System status", "https://status.reflex.dev"),
                         ],
                     ),
@@ -521,7 +520,7 @@ def marketing_footer(
             class_name=("mx-auto w-full max-w-[90rem] px-4 min-[55rem]:px-8 lg:px-12"),
         ),
         class_name=(
-            "relative w-full overflow-x-clip "
+            "marketing-footer relative w-full overflow-x-clip "
             + (
                 "bg-background text-foreground"
                 if appearance == "light"

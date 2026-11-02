@@ -5,16 +5,19 @@ from __future__ import annotations
 import contextlib
 import json
 import os
+import select
 import signal
 import subprocess
 import sys
 import time
+from types import SimpleNamespace
 
 import click
 import click.testing
 import psutil
 import pytest
 from pytest_mock import MockerFixture
+from reflex_base import constants
 
 from reflex import reflex
 from reflex.testing import DEFAULT_TIMEOUT
@@ -169,6 +172,84 @@ def test_compile_app_worker_flushes_telemetry_on_failure(mocker):
         reflex._compile_app_worker(app_task, (), {})
 
     flush.assert_called_once_with()
+
+
+def test_compile_app_sets_start_method_before_compile_pool(mocker: MockerFixture):
+    """The start method is fixed before the compile pool spawns any process."""
+    from unittest import mock
+
+    from reflex.utils import exec as exec_utils
+    from reflex.utils import prerequisites
+
+    calls: list[str] = []
+    mocker.patch.object(exec_utils, "should_use_granian", return_value=True)
+    mocker.patch.object(exec_utils, "should_prerender_routes", return_value=False)
+    mocker.patch.object(
+        exec_utils,
+        "set_dev_start_method",
+        side_effect=lambda: calls.append("start_method"),
+    )
+    mocker.patch.object(prerequisites, "compile_or_validate_app")
+
+    class FakeExecutor:
+        def __init__(self, *_args, **_kwargs):
+            calls.append("pool")
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_exc):
+            return False
+
+        def submit(self, *_args, **_kwargs):
+            future = mock.Mock()
+            future.result.return_value = True
+            return future
+
+    mocker.patch("concurrent.futures.ProcessPoolExecutor", FakeExecutor)
+
+    reflex._compile_app()
+
+    assert calls == ["start_method", "pool"]
+
+
+@pytest.mark.parametrize(
+    ("running_mode", "launcher"),
+    [
+        (constants.RunningMode.BACKEND_ONLY, "run_backend_prod"),
+        (constants.RunningMode.FRONTEND_ONLY, "run_frontend_prod"),
+    ],
+)
+def test_run_prod_sends_telemetry_synchronously(
+    mocker, running_mode: constants.RunningMode, launcher: str
+):
+    """The run-prod event is delivered on the calling thread, before the server.
+
+    The server forks its workers from this process, so the event must not be
+    queued on the telemetry thread pool. Going through ``_process_event`` keeps
+    the one-time alias migration, which a backend-only run has no other event
+    to ride on.
+    """
+    from reflex.utils import build, exec, processes, telemetry
+
+    config = mocker.patch.object(reflex, "get_config").return_value
+    mocker.patch.object(reflex, "_compile_app")
+    mocker.patch.object(reflex, "_skip_compile")
+    mocker.patch.object(build, "setup_frontend_prod")
+    mocker.patch.object(processes, "atexit_handler")
+    mocker.patch("atexit.register")
+    mocker.patch.object(exec, "notify_app_running")
+    mocker.patch.object(exec, "notify_frontend")
+    queued = mocker.patch.object(telemetry, "send")
+    calls = mocker.Mock()
+    calls.attach_mock(mocker.patch.object(telemetry, "_process_event"), "send")
+    calls.attach_mock(mocker.patch.object(exec, launcher), "serve")
+
+    reflex._run_prod(running_mode, 8000, "127.0.0.1")
+
+    queued.assert_not_called()
+    calls.send.assert_called_once_with("run-prod", config.telemetry_enabled)
+    assert [name for name, _args, _kwargs in calls.mock_calls] == ["send", "serve"]
 
 
 def test_cloud_commands_registered():
@@ -520,6 +601,66 @@ def test_init_records_version_check_after_frontend_setup(
     assert events == ["frontend", "version"]
 
 
+@pytest.fixture
+def init_in_reflex_dir(tmp_path, monkeypatch: pytest.MonkeyPatch) -> list[str]:
+    """Run `_init` from a directory named `reflex` with the setup steps stubbed.
+
+    Args:
+        tmp_path: Pytest temporary directory.
+        monkeypatch: Pytest monkeypatch fixture.
+
+    Returns:
+        The app names passed to `initialize_app`.
+    """
+    initialized: list[str] = []
+    app_dir = tmp_path / "reflex"
+    app_dir.mkdir()
+    monkeypatch.chdir(app_dir)
+    for target in (
+        "reflex.utils.exec.output_system_info",
+        "reflex.utils.prerequisites.initialize_reflex_user_directory",
+        "reflex.utils.prerequisites.ensure_reflex_installation_id",
+        "reflex.utils.prerequisites.initialize_frontend_dependencies",
+        "reflex.utils.frontend_skeleton.initialize_gitignore",
+        "reflex.utils.frontend_skeleton.initialize_agents_md",
+    ):
+        monkeypatch.setattr(target, lambda: None)
+    monkeypatch.setattr(
+        "reflex.utils.prerequisites.check_latest_package_version", lambda package: None
+    )
+    monkeypatch.setattr(
+        "reflex.utils.templates.initialize_app",
+        lambda app_name, template: initialized.append(app_name),
+    )
+    monkeypatch.setattr(
+        "reflex.utils.frontend_skeleton.initialize_requirements_txt", lambda: False
+    )
+    return initialized
+
+
+def test_init_existing_app_in_reflex_dir(
+    init_in_reflex_dir: list[str], monkeypatch: pytest.MonkeyPatch
+):
+    """Reinitializing an existing app validates its app_name, not its directory."""
+    constants.Config.FILE.write_text("")
+    monkeypatch.setattr(
+        reflex, "get_config", lambda: SimpleNamespace(app_name="fooapp")
+    )
+
+    result = click.testing.CliRunner().invoke(reflex.init, [])
+
+    assert result.exit_code == 0
+    assert init_in_reflex_dir == ["fooapp"]
+
+
+def test_init_new_app_in_reflex_dir(init_in_reflex_dir: list[str]):
+    """A new app still cannot be created in a directory named reflex."""
+    result = click.testing.CliRunner().invoke(reflex.init, [])
+
+    assert result.exit_code == 1
+    assert init_in_reflex_dir == []
+
+
 @pytest.mark.skipif(sys.platform == "win32", reason="POSIX signals")
 def test_frontend_preflight_failure_cleans_process(tmp_path):
     ready = tmp_path / "frontend.pid"
@@ -830,8 +971,13 @@ rx._run_dev(MODE,3000,PORT,"127.0.0.1")
 @pytest.mark.skipif(sys.platform == "win32", reason="POSIX signals")
 @pytest.mark.parametrize("mode", ["frontend", "fullstack"])
 @pytest.mark.parametrize("sig", ["SIGTERM", "SIGINT"])
-def test_no_tty_run_stops_frontend(tmp_path, mode, sig):
-    """Headless runs stop the frontend on SIGTERM or SIGINT."""
+@pytest.mark.parametrize("forwards", [True, False], ids=["forwarding", "orphaning"])
+def test_no_tty_run_stops_frontend(tmp_path, mode, sig, forwards):
+    """Headless runs stop the frontend on SIGTERM or SIGINT.
+
+    The frontend stand-in either passes SIGTERM on to its own child, as bun
+    does, or exits without it, as ``npm run`` does; the child must stop either way.
+    """
     pids = tmp_path / "children"
     driver = tmp_path / "driver.py"
     driver.write_text(
@@ -841,7 +987,7 @@ from reflex.utils import build, exec as exec_mod, telemetry
 def frontend(*args):
     code = "import signal,subprocess,sys,time\\n" + \
         "p=subprocess.Popen([sys.executable,'-c','import time;time.sleep(60)'])\\n" + \
-        "signal.signal(signal.SIGTERM, lambda *a: (p.terminate(), sys.exit(0)))\\n" + \
+        ("signal.signal(signal.SIGTERM, lambda *a: (p.terminate(), sys.exit(0)))\\n" if FORWARDS else "") + \
         "print(p.pid,flush=True);time.sleep(60)\\n"
     p = subprocess.Popen([sys.executable,"-c",code],stdout=subprocess.PIPE,text=True)
     grandchild = int(p.stdout.readline())
@@ -868,6 +1014,7 @@ from reflex_base import constants
 rx._run_dev(MODE,3000,PORT,"127.0.0.1")
 """
         .replace("PIDS", repr(str(pids)))
+        .replace("FORWARDS", repr(forwards))
         .replace(
             "MODE",
             "constants.RunningMode.FRONTEND_ONLY"
@@ -898,11 +1045,14 @@ rx._run_dev(MODE,3000,PORT,"127.0.0.1")
             time.sleep(0.01)
         assert child is not None, "frontend did not start"
         assert grandchild is not None, "frontend grandchild did not start"
+        started = time.monotonic()
         os.kill(launcher.pid, getattr(signal, sig))
         try:
             returncode = launcher.wait(timeout=DEFAULT_TIMEOUT)
         except subprocess.TimeoutExpired:
             pytest.fail("no-TTY launcher hung after signal")
+        # Stopping the tree takes one SIGTERM round, well below the kill timeout.
+        assert time.monotonic() - started < 4
         if sig == "SIGINT":
             assert returncode in (0, -signal.SIGINT)
         else:
@@ -934,6 +1084,213 @@ rx._run_dev(MODE,3000,PORT,"127.0.0.1")
                     os.kill(pid, signal.SIGKILL)
 
 
+_STUCK_CLEANUP_SCRIPT = """
+import os, signal, subprocess, sys, threading, time
+
+from reflex import reflex
+
+with reflex._shutdown_signals() as begin_cleanup:
+    try:
+        served = threading.Event()
+        if os.environ.get("SERVER_HANDLERS"):
+            # Like granian: its own handlers while serving, never restored.
+            for sig in (signal.SIGINT, signal.SIGTERM):
+                signal.signal(sig, lambda *_: served.set())
+        print("ready", flush=True)
+        while not served.is_set():
+            time.sleep(0.05)
+    finally:
+        begin_cleanup()
+        # A cleanup that never ends, like a frontend pipe held open forever.
+        helper = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"])
+        print(helper.pid, flush=True)
+        while True:
+            time.sleep(1)
+"""
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX signals")
+@pytest.mark.parametrize("sig", [signal.SIGINT, signal.SIGTERM])
+@pytest.mark.parametrize("server_handlers", [False, True], ids=["own", "server"])
+def test_shutdown_signals_force_exit_on_a_later_repeat(tmp_path, sig, server_handlers):
+    """A repeat right after the first signal is ignored; a later one forces the exit.
+
+    A backend server that installed its own handlers and never restored them,
+    as granian does, cannot swallow the later repeat.
+    """
+    script = tmp_path / "stuck.py"
+    script.write_text(_STUCK_CLEANUP_SCRIPT)
+    proc = subprocess.Popen(
+        [sys.executable, str(script)],
+        stdout=subprocess.PIPE,
+        bufsize=0,
+        env={**os.environ, "SERVER_HANDLERS": "1" if server_handlers else ""},
+    )
+    helper = None
+    try:
+        assert _read_line(proc) == "ready\n"
+        proc.send_signal(sig)
+        helper = int(_read_line(proc))
+        # The same Ctrl-C delivered twice under --json: not a request to force.
+        proc.send_signal(sig)
+        time.sleep(0.3)
+        assert proc.poll() is None
+        time.sleep(reflex._REPEAT_IGNORE_SECONDS)
+        proc.send_signal(sig)
+        assert proc.wait(timeout=DEFAULT_TIMEOUT) == 128 + sig
+        _assert_gone(helper, "the forced exit left the cleanup's child running")
+    finally:
+        proc.kill()
+        proc.wait()
+        if helper is not None:
+            with contextlib.suppress(ProcessLookupError):
+                os.kill(helper, signal.SIGKILL)
+
+
+def _read_line(proc: subprocess.Popen) -> str:
+    """Read one line from a child's unbuffered stdout, failing instead of hanging.
+
+    Args:
+        proc: The child, started with ``stdout=PIPE`` and ``bufsize=0`` so no
+            later line is read ahead into a buffer ``select`` cannot see.
+
+    Returns:
+        The decoded line, newline included.
+    """
+    assert proc.stdout is not None
+    if not select.select([proc.stdout], [], [], DEFAULT_TIMEOUT)[0]:
+        pytest.fail("the child printed nothing in time")
+    return proc.stdout.readline().decode()
+
+
+def _assert_gone(pid: int, message: str) -> None:
+    """Wait for a process to exit; an exited process nobody reaped counts.
+
+    Args:
+        pid: The process ID.
+        message: The failure message when it keeps running.
+    """
+    deadline = time.monotonic() + DEFAULT_TIMEOUT
+    while time.monotonic() < deadline:
+        try:
+            if psutil.Process(pid).status() == psutil.STATUS_ZOMBIE:
+                return
+        except psutil.NoSuchProcess:
+            return
+        time.sleep(0.05)
+    pytest.fail(message)
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="fills a pipe by whole pages")
+def test_shutdown_signals_force_exit_with_a_full_stderr(tmp_path):
+    """A stderr nobody reads cannot hold up the forced exit."""
+    script = tmp_path / "stuck.py"
+    script.write_text(_STUCK_CLEANUP_SCRIPT)
+    read_end, write_end = os.pipe()
+    proc = subprocess.Popen(
+        [sys.executable, str(script)],
+        stdout=subprocess.PIPE,
+        stderr=write_end,
+        bufsize=0,
+    )
+    helper = None
+    try:
+        assert _read_line(proc) == "ready\n"
+        proc.send_signal(signal.SIGTERM)
+        helper = int(_read_line(proc))
+        # Fill the pipe; its write end stays open here, so nothing drains it.
+        while select.select([], [write_end], [], 0)[1]:
+            os.write(write_end, b"\0" * select.PIPE_BUF)
+        time.sleep(reflex._REPEAT_IGNORE_SECONDS + 0.1)
+        proc.send_signal(signal.SIGTERM)
+        assert proc.wait(timeout=DEFAULT_TIMEOUT) == 128 + signal.SIGTERM
+        _assert_gone(helper, "the forced exit left the cleanup's child running")
+    finally:
+        proc.kill()
+        proc.wait()
+        os.close(read_end)
+        os.close(write_end)
+        if helper is not None:
+            with contextlib.suppress(ProcessLookupError):
+                os.kill(helper, signal.SIGKILL)
+
+
+# A dev server that ignores SIGTERM behind a wrapper that exits on it, like a
+# package manager in front of the server.
+_SERVER_BEHIND_WRAPPER_SCRIPT = """
+import subprocess, sys, time
+
+server = subprocess.Popen(
+    [
+        sys.executable,
+        "-c",
+        "import signal, time\\n"
+        "signal.signal(signal.SIGTERM, signal.SIG_IGN)\\n"
+        "print('ready', flush=True)\\n"
+        "time.sleep(60)",
+    ],
+    stdout=subprocess.PIPE,
+    text=True,
+)
+# Only report the server once it ignores SIGTERM.
+server.stdout.readline()
+print(server.pid, flush=True)
+time.sleep(60)
+"""
+
+_ORPHANING_CLEANUP_SCRIPT = """
+import subprocess, sys, time
+
+from reflex import reflex
+from reflex_base.utils.process_tree import stop_process_tree
+
+wrapper = subprocess.Popen(
+    [sys.executable, sys.argv[1]], stdout=subprocess.PIPE, text=True
+)
+print(wrapper.stdout.readline(), end="", flush=True)
+with reflex._shutdown_signals() as begin_cleanup:
+    try:
+        print("ready", flush=True)
+        while True:
+            time.sleep(1)
+    finally:
+        begin_cleanup()
+        # The wrapper exits at once; the server holds the stop until the deadline.
+        stop_process_tree(wrapper, timeout=60)
+"""
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX signals")
+def test_shutdown_signals_force_exit_kills_an_orphaned_descendant(tmp_path):
+    """The forced exit kills a server whose wrapper exited during the cleanup."""
+    wrapper_script = tmp_path / "wrapper.py"
+    wrapper_script.write_text(_SERVER_BEHIND_WRAPPER_SCRIPT)
+    script = tmp_path / "stuck.py"
+    script.write_text(_ORPHANING_CLEANUP_SCRIPT)
+    proc = subprocess.Popen(
+        [sys.executable, str(script), str(wrapper_script)],
+        stdout=subprocess.PIPE,
+        bufsize=0,
+    )
+    server = None
+    try:
+        server = int(_read_line(proc))
+        assert _read_line(proc) == "ready\n"
+        proc.send_signal(signal.SIGTERM)
+        # By now the wrapper is gone and the server is no longer found below the run.
+        time.sleep(reflex._REPEAT_IGNORE_SECONDS + 0.2)
+        assert proc.poll() is None
+        proc.send_signal(signal.SIGTERM)
+        assert proc.wait(timeout=DEFAULT_TIMEOUT) == 128 + signal.SIGTERM
+        _assert_gone(server, "the forced exit left the orphaned server running")
+    finally:
+        proc.kill()
+        proc.wait()
+        if server is not None:
+            with contextlib.suppress(ProcessLookupError):
+                os.kill(server, signal.SIGKILL)
+
+
 @pytest.mark.parametrize(
     ("argv", "supervised", "expected"),
     [(["--json"], False, True), (["--json"], True, False), ([], False, False)],
@@ -955,14 +1312,14 @@ def test_run_supervises_output_only_in_json_mode(
         expected: Whether the supervisor is expected to start.
     """
     from reflex_base.environment import environment
-    from reflex_base.utils import log
+    from reflex_base.utils import log, supervisor
 
     # Registered so teardown restores the variables the CLI callbacks set.
     monkeypatch.setenv(log._MANAGED_ENV_VAR, "true")
     monkeypatch.setenv(environment.REFLEX_LOG_JSON.name, "false")
-    monkeypatch.setenv(log._SUPERVISED_ENV_VAR, "1234" if supervised else "")
+    monkeypatch.setenv(supervisor._SUPERVISED_ENV_VAR, "1234" if supervised else "")
     monkeypatch.setattr(sys, "argv", ["reflex", "run", *argv])
-    supervise = mocker.patch.object(log, "supervise_output", return_value=7)
+    supervise = mocker.patch.object(supervisor, "supervise_output", return_value=7)
     run = mocker.patch.object(reflex, "_run")
     mocker.patch("reflex.utils.prerequisites.check_running_mode")
 
@@ -1038,3 +1395,111 @@ def test_db_commands_run_without_sqlmodel(
 
     assert result.exit_code == 0, result.output
     assert "pip install reflex[db]" not in caplog.text
+
+
+@pytest.fixture
+def patched_production_startup(mocker: MockerFixture) -> dict:
+    """Patch process startup while retaining the production command sequence.
+
+    Returns:
+        Mocked startup operations and the frontend lock context.
+    """
+    config = mocker.patch("reflex.reflex.get_config", return_value=mocker.Mock())
+    mocker.patch("reflex.reflex._skip_compile")
+    mocker.patch("atexit.register")
+    mocker.patch("reflex.utils.telemetry.send")
+    mocker.patch("reflex.utils.exec.notify_app_running")
+    mocker.patch("reflex.utils.exec.notify_frontend")
+    mount_frontend = mocker.patch(
+        "reflex.reflex.environment.REFLEX_MOUNT_FRONTEND_COMPILED_APP"
+    ).set
+    return {
+        "config": config.return_value,
+        "mount_frontend": mount_frontend,
+        "lock": mocker.patch("reflex.utils.path_ops.file_lock"),
+        "compile": mocker.patch("reflex.reflex._compile_app"),
+        "setup": mocker.patch("reflex.utils.build.setup_frontend_prod"),
+        "backend_prod": mocker.patch("reflex.utils.exec.run_backend_prod"),
+        "backend_preview": mocker.patch("reflex.utils.exec.run_backend"),
+        "frontend": mocker.patch("reflex.utils.exec.run_frontend_prod"),
+    }
+
+
+@pytest.mark.parametrize("runner_name", ["_run_prod", "_run_preview"])
+@pytest.mark.parametrize(
+    "running_mode",
+    [constants.RunningMode.FULLSTACK, constants.RunningMode.FRONTEND_ONLY],
+)
+def test_production_startup_locks_compile_and_build_before_serving(
+    patched_production_startup, runner_name: str, running_mode: constants.RunningMode
+):
+    """Only compile and build hold the lock; serving starts after release."""
+    context = patched_production_startup["lock"].return_value
+
+    def require_lock(*args, **kwargs):
+        """Compilation and setup share the same unreleased lock."""
+        context.__enter__.assert_called_once()
+        context.__exit__.assert_not_called()
+
+    def require_release(*args, **kwargs):
+        """Serving must not retain the frontend lock for the server lifetime."""
+        context.__exit__.assert_called_once_with(None, None, None)
+
+    patched_production_startup["compile"].side_effect = require_lock
+    patched_production_startup["setup"].side_effect = require_lock
+    patched_production_startup["config"]._set_persistent.side_effect = require_lock
+    patched_production_startup["mount_frontend"].side_effect = require_lock
+    for server in ("backend_prod", "backend_preview", "frontend"):
+        patched_production_startup[server].side_effect = require_release
+
+    getattr(reflex, runner_name)(running_mode, 8000, "127.0.0.1")
+
+    patched_production_startup["lock"].assert_called_once()
+    patched_production_startup["setup"].assert_called_once()
+    patched_production_startup["config"]._set_persistent.assert_called_once_with(
+        frontend_port=8000, backend_port=8000
+    )
+    server = (
+        "frontend"
+        if running_mode == constants.RunningMode.FRONTEND_ONLY
+        else "backend_prod"
+        if runner_name == "_run_prod"
+        else "backend_preview"
+    )
+    patched_production_startup[server].assert_called_once()
+
+
+@pytest.mark.parametrize("runner_name", ["_run_prod", "_run_preview"])
+@pytest.mark.parametrize("failing_target", ["compile", "setup"])
+def test_production_startup_releases_lock_after_failed_build(
+    patched_production_startup, runner_name: str, failing_target: str
+):
+    """A startup failure releases the lock and does not start a server."""
+    error = RuntimeError("build failed")
+    patched_production_startup[failing_target].side_effect = error
+    with pytest.raises(RuntimeError, match="build failed"):
+        getattr(reflex, runner_name)(constants.RunningMode.FULLSTACK, 8000, "127.0.0.1")
+
+    context = patched_production_startup["lock"].return_value
+    context.__enter__.assert_called_once()
+    context.__exit__.assert_called_once()
+    assert context.__exit__.call_args.args[:2] == (RuntimeError, error)
+    for server in ("backend_prod", "backend_preview", "frontend"):
+        patched_production_startup[server].assert_not_called()
+
+
+@pytest.mark.parametrize("runner_name", ["_run_prod", "_run_preview"])
+def test_backend_only_startup_does_not_lock_frontend(
+    patched_production_startup, runner_name: str
+):
+    """Backend-only startup does not access the frontend working directory."""
+    getattr(reflex, runner_name)(constants.RunningMode.BACKEND_ONLY, 8000, "127.0.0.1")
+
+    patched_production_startup["lock"].assert_not_called()
+    patched_production_startup["compile"].assert_not_called()
+    patched_production_startup["setup"].assert_not_called()
+    patched_production_startup["config"]._set_persistent.assert_called_once_with(
+        frontend_port=8000, backend_port=8000
+    )
+    if runner_name == "_run_preview":
+        patched_production_startup["mount_frontend"].assert_called_once_with(False)

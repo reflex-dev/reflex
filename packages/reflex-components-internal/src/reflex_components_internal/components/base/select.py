@@ -83,10 +83,10 @@ class SelectRoot(SelectBaseComponent):
     # Event handler called when the select popup is opened or closed
     on_open_change: EventHandler[passthrough_event_spec(bool)]
 
-    # A ref to imperative actions.
-    # When specified, the select will not be unmounted when closed.
-    # Instead, the `unmount` function must be called to unmount the select manually.
-    # Useful when the select's animation is controlled by an external library.
+    # A ref to the imperative `close` and `unmount` actions.
+    # Supplying this ref does not disable automatic unmounting.
+    # Manual exit animations require Base UI's eventDetails, which this wrapper's
+    # on_open_change handler does not expose.
     actions_ref: Var[str]
 
     # Custom comparison logic used to determine if a select item value matches the current selected value.

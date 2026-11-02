@@ -29,7 +29,7 @@ else:
 
 @pytest.fixture(autouse=True)
 def _isolate_reflex_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Keep persistent JSON locks inside each test's temporary directory."""
+    """Keep persistent file locks inside each test's temporary directory."""
     monkeypatch.setenv("REFLEX_DIR", str(tmp_path / "reflex-data"))
 
 
@@ -39,7 +39,7 @@ def _assert_json_lock_held(file_path: Path) -> None:
     Args:
         file_path: The target JSON file.
     """
-    fd = os.open(path_ops._json_file_lock_path(file_path.resolve()), os.O_RDWR)
+    fd = os.open(path_ops._file_lock_path(file_path.resolve()), os.O_RDWR)
     try:
         with pytest.raises(OSError):
             if sys.platform == "win32":
@@ -163,7 +163,7 @@ def test_update_json_file_without_writable_lock_directory(
     """An unavailable lock location must not prevent a writable JSON update."""
     target = tmp_path / "reflex.json"
     target.write_text('{"existing": true}', encoding="utf-8")
-    lock_directory = tmp_path / "reflex-data" / "locks" / "json"
+    lock_directory = tmp_path / "reflex-data" / "locks"
     original_mkdir = Path.mkdir
     original_open = os.open
 
@@ -212,23 +212,32 @@ def test_update_json_file_without_writable_lock_directory(
 @pytest.mark.parametrize(
     ("error_number", "expected_attempts"), [(errno.EDEADLK, 3), (errno.EACCES, 1)]
 )
-def test_json_file_lock_retries_only_windows_contention(
+def test_file_lock_retries_only_windows_contention(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     error_number: int,
     expected_attempts: int,
 ):
     """Retry Windows contention timeouts but retain the unavailable-lock fallback."""
-    locking = Mock(side_effect=[OSError(error_number, "lock unavailable")] * 2 + [None])
+    locking = Mock(
+        side_effect=[OSError(error_number, "lock unavailable")] * 2 + [None, None]
+    )
     monkeypatch.setattr(path_ops, "sys", SimpleNamespace(platform="win32"))
     monkeypatch.setattr(
         path_ops,
         "msvcrt",
-        SimpleNamespace(locking=locking, LK_LOCK=1),
+        SimpleNamespace(locking=locking, LK_LOCK=1, LK_UNLCK=0),
         raising=False,
     )
 
-    with path_ops.json_file_lock(tmp_path / "reflex.json"):
+    with path_ops.file_lock(tmp_path / "reflex.json"):
+        assert locking.call_count == expected_attempts
+
+    # Only a lock that was taken is released before the descriptor closes.
+    if error_number == errno.EDEADLK:
+        assert locking.call_count == expected_attempts + 1
+        assert locking.call_args.args[1:] == (0, 1)
+    else:
         assert locking.call_count == expected_attempts
 
 
@@ -486,7 +495,7 @@ def test_update_json_file_processes_merge_disjoint_updates(
     first.start()
     try:
         assert inside_critical_section.wait(timeout=10)
-        lock_path = path_ops._json_file_lock_path(target.resolve())
+        lock_path = path_ops._file_lock_path(target.resolve())
         assert lock_path.is_file()
         if replace_target_directory:
             shutil.rmtree(target_directory)
@@ -684,25 +693,121 @@ def test_update_json_file_distinct_files_do_not_block_each_other(
         second_update.result(timeout=5)
 
 
-def test_json_file_lock_releases_after_body_error(tmp_path: Path):
+def test_file_lock_releases_after_body_error(tmp_path: Path):
     """Body errors propagate once and release the lock for later updates."""
     target = tmp_path / "reflex.json"
-    with pytest.raises(OSError, match="body error"), path_ops.json_file_lock(target):
+    with pytest.raises(OSError, match="body error"), path_ops.file_lock(target):
         _assert_json_lock_held(target)
+        assert target.resolve() in path_ops._held_locks.paths
         msg = "body error"
         raise OSError(msg)
 
+    assert path_ops._held_locks.paths == set()
     path_ops.update_json_file(target, {"after_error": True})
     assert json.loads(target.read_text(encoding="utf-8")) == {"after_error": True}
 
 
-def test_json_file_lock_sidecar_persists_with_private_permissions(tmp_path: Path):
+def _acquire_file_lock_in_process(path, attempted, entered) -> None:
+    """Acquire a lock from an independent interpreter.
+
+    Args:
+        path: The path to lock.
+        attempted: Event set before attempting acquisition.
+        entered: Event set after acquisition.
+    """
+    attempted.set()
+    with path_ops.file_lock(path):
+        entered.set()
+
+
+def test_file_lock_serializes_processes_and_reenters_in_thread(tmp_path: Path):
+    """Another process waits on a held directory lock; nested calls reenter it."""
+    context = multiprocessing.get_context("spawn")
+    attempted, entered = context.Event(), context.Event()
+    child = context.Process(
+        target=_acquire_file_lock_in_process, args=(tmp_path, attempted, entered)
+    )
+    try:
+        with path_ops.file_lock(tmp_path), path_ops.file_lock(tmp_path / "."):
+            child.start()
+            assert attempted.wait(15)
+            assert not entered.wait(0.3)
+        assert entered.wait(15)
+    finally:
+        if child.pid is not None:
+            _join_process(child)
+    assert child.exitcode == 0
+
+
+def test_file_lock_other_thread_waits(tmp_path: Path):
+    """Reentrancy is per thread: another thread waits for the lock."""
+    attempted, entered = threading.Event(), threading.Event()
+
+    def acquire() -> None:
+        attempted.set()
+        with path_ops.file_lock(tmp_path):
+            entered.set()
+
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        with path_ops.file_lock(tmp_path):
+            waiter = executor.submit(acquire)
+            assert attempted.wait(5)
+            assert not entered.wait(0.3)
+        waiter.result(timeout=5)
+    assert entered.is_set()
+
+
+@pytest.mark.skipif(os.name == "nt", reason="Requires fork and flock")
+def test_forked_child_does_not_inherit_lock_ownership(tmp_path: Path):
+    """A forked child must wait for its parent instead of reentering its lock."""
+    context = multiprocessing.get_context("fork")
+    attempted, entered = context.Event(), context.Event()
+
+    def acquire_in_child() -> None:
+        attempted.set()
+        with path_ops.file_lock(tmp_path):
+            entered.set()
+
+    child = context.Process(target=acquire_in_child)
+    try:
+        with path_ops.file_lock(tmp_path):
+            child.start()
+            assert attempted.wait(10)
+            assert not entered.wait(0.3)
+        assert entered.wait(10)
+    finally:
+        if child.pid is not None:
+            _join_process(child)
+    assert child.exitcode == 0
+
+
+@pytest.mark.skipif(os.name == "nt", reason="Requires raw fork")
+def test_forked_child_can_leave_inherited_lock_context(tmp_path: Path):
+    """A child leaving its parent's context must not touch closed descriptors."""
+    pid = None
+    child_status = 0
+    try:
+        with path_ops.file_lock(tmp_path):
+            pid = os.fork()
+    except OSError:
+        if pid != 0:
+            raise
+        child_status = 1
+    finally:
+        if pid == 0:
+            os._exit(child_status)
+    assert pid is not None
+    _, status = os.waitpid(pid, 0)
+    assert os.waitstatus_to_exitcode(status) == 0
+
+
+def test_file_lock_sidecar_persists_with_private_permissions(tmp_path: Path):
     """The stable lock sidecar remains private after releasing the lock."""
     target = tmp_path / "reflex.json"
 
     path_ops.update_json_file(target, {"created": True})
 
-    lock_path = path_ops._json_file_lock_path(target.resolve())
+    lock_path = path_ops._file_lock_path(target.resolve())
     assert lock_path.is_file()
     assert lock_path.is_relative_to(tmp_path / "reflex-data")
     if os.name != "nt":
@@ -723,14 +828,14 @@ def test_update_json_file_normalizes_symlink_alias(tmp_path: Path):
 
     assert alias.is_symlink()
     assert json.loads(target.read_text(encoding="utf-8")) == {"updated": True}
-    assert path_ops._json_file_lock_path(target).is_file()
-    assert path_ops._json_file_lock_path(
-        target.resolve()
-    ) == path_ops._json_file_lock_path(alias.resolve())
+    assert path_ops._file_lock_path(target).is_file()
+    assert path_ops._file_lock_path(target.resolve()) == path_ops._file_lock_path(
+        alias.resolve()
+    )
 
 
 @pytest.mark.skipif(not constants.IS_MACOS, reason="macOS path normalization")
-def test_json_file_lock_normalizes_macos_case_alias(tmp_path: Path):
+def test_file_lock_normalizes_macos_case_alias(tmp_path: Path):
     """Case aliases on case-insensitive macOS volumes share one lock."""
     target = tmp_path / "MixedCase.json"
     target.write_text("{}", encoding="utf-8")
@@ -738,7 +843,7 @@ def test_json_file_lock_normalizes_macos_case_alias(tmp_path: Path):
     if not alias.exists() or not alias.samefile(target):
         pytest.skip("test volume is case-sensitive")
 
-    assert path_ops._json_file_lock_path(target) == path_ops._json_file_lock_path(alias)
+    assert path_ops._file_lock_path(target) == path_ops._file_lock_path(alias)
 
 
 def test_update_json_file_creates_missing_parent_and_document(tmp_path: Path):

@@ -1,5 +1,6 @@
 """Unit tests for reflex_base.utils.format."""
 
+from pytest_mock import MockerFixture
 from reflex_base import constants
 from reflex_base.utils import format
 
@@ -27,6 +28,14 @@ def test_format_queue_events_empty():
     assert str(format.format_queue_events(None)) == "(() => null)"
 
 
+def test_format_queue_events_accepts_a_tuple():
+    """A tuple of events formats like a list of them."""
+    events = (rx.console_log("a"), rx.console_log("b"))
+    assert str(format.format_queue_events(events)) == str(
+        format.format_queue_events(list(events))
+    )
+
+
 def test_format_queue_events_args_spec():
     """The args spec names the callback parameters."""
     var = format.format_queue_events(
@@ -34,3 +43,21 @@ def test_format_queue_events_args_spec():
         args_spec=lambda result: [result],
     )
     assert str(var).startswith("(_result) => {addEvents([")
+
+
+def test_format_data_editor_column_deprecated(mocker: MockerFixture):
+    """The column formatter still works, but warns that rx.data_editor owns it.
+
+    Args:
+        mocker: The pytest mocker fixture.
+    """
+    deprecate = mocker.patch("reflex_base.utils.console.deprecate")
+
+    assert format.format_data_editor_column("Name") == {
+        "title": "Name",
+        "id": "name",
+        "type": "str",
+    }
+
+    deprecate.assert_called_once()
+    assert deprecate.call_args.kwargs["feature_name"] == "format_data_editor_column"

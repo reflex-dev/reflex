@@ -106,7 +106,11 @@ def DynamicComponents():
             """
             return rx.hstack(
                 rx.icon("apple", id="dynamic-icon"),
-                rx.icon(DynamicComponentsState.icon_name, id="dynamic-named-icon"),
+                rx.icon(
+                    DynamicComponentsState.icon_name,
+                    id="dynamic-named-icon",
+                    is_default=True,
+                ),
             )
 
         @rx.var
@@ -217,11 +221,10 @@ def driver(dynamic_components: AppHarness):
     """
     driver = dynamic_components.frontend()
     try:
-        token_input = AppHarness.poll_for_or_raise_timeout(
-            lambda: driver.find_element(By.ID, "token")
-        )
         # wait for the backend connection to send the token
-        token = dynamic_components.poll_for_value(token_input)
+        token = AppHarness.poll_for_or_raise_timeout(
+            lambda: driver.find_element(By.ID, "token").get_attribute("value")
+        )
         assert token is not None
 
         yield driver
@@ -245,18 +248,7 @@ def test_dynamic_components(
         dynamic_components: AppHarness for the dynamic components
         lazy_bundled_libraries: whether optional libraries load on demand
     """
-
-    def banana_icon_loaded() -> bool:
-        """Check whether the frontend has loaded the bundled banana icon.
-
-        Returns:
-            Whether window.__reflex holds the banana icon module.
-        """
-        return driver.execute_script(
-            "return Object.hasOwn(window.__reflex, arguments[0])",
-            "lucide-react/dist/esm/icons/banana.mjs",
-        )
-
+    banana = "lucide-react/dist/esm/icons/banana.mjs"
     button = AppHarness.poll_for_or_raise_timeout(
         lambda: driver.find_element(By.ID, "button")
     )
@@ -280,6 +272,16 @@ def test_dynamic_components(
             lambda icon_id=icon_id: driver.find_element(By.ID, icon_id)
         )
 
+    bundled = driver.execute_script("return Object.keys(window.__reflex)")
+    assert "lucide-react" not in bundled
+    assert {
+        "lucide-react/dist/esm/icons/apple.mjs",
+        "lucide-react/dist/esm/icons/tag.mjs",
+        "lucide-react/dynamic.mjs",
+    } <= set(bundled)
+    # Lazy apps load the bundled banana icon only for the component that uses it.
+    assert (banana in bundled) is not lazy_bundled_libraries
+
     count = AppHarness.poll_for_or_raise_timeout(
         lambda: driver.find_element(By.ID, "count")
     )
@@ -299,13 +301,13 @@ def test_dynamic_components(
 
     assert not driver.find_elements(By.ID, "delayed-icon")
     assert driver.find_element(By.ID, "initial-icon")
-    # Lazy apps load the bundled banana icon only for the component that uses it.
-    assert banana_icon_loaded() is not lazy_bundled_libraries
     driver.find_element(By.ID, "activate").click()
     AppHarness.poll_for_or_raise_timeout(
         lambda: driver.find_element(By.ID, "delayed-icon")
     )
-    assert banana_icon_loaded()
+    bundled = driver.execute_script("return Object.keys(window.__reflex)")
+    assert "lucide-react" not in bundled
+    assert banana in bundled
     driver.find_element(By.ID, "delayed-increment").click()
     AppHarness.expect(lambda: driver.find_element(By.ID, "delayed-count").text == "1")
     driver.find_element(By.ID, "delayed-decrement").click()
