@@ -2,7 +2,12 @@
 
 from typing import Literal
 
-from reflex_base.components.component import Component, ComponentNamespace, field
+from reflex_base.components.component import (
+    Component,
+    ComponentNamespace,
+    ComponentVar,
+    field,
+)
 from reflex_base.vars.base import Var
 from reflex_components_core.base.fragment import fragment
 from reflex_components_core.core.breakpoints import Responsive
@@ -70,7 +75,7 @@ class Callout(CalloutRoot):
         from reflex_components_lucide.icon import Icon
 
         icon = props.pop("icon", None)
-        if icon is not None and not isinstance(icon, Component):
+        if icon is not None and not isinstance(icon, (Component, ComponentVar)):
             icon = Icon.create(tag=icon)
 
         return CalloutRoot.create(

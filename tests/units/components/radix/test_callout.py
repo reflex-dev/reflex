@@ -49,3 +49,13 @@ def test_callout_create_with_icon_component(icon: Component):
     assert isinstance(component.children[0], CalloutIcon)
     assert component.children[0].children[0] is icon
     assert "icon" not in component.style
+
+
+def test_callout_create_with_component_var_icon():
+    # An @rx.memo argument typed rx.Var[rx.Component] arrives as a ComponentVar.
+    icon = Var(_js_expr="custom_icon", _var_type=Component).guess_type()
+    component = Callout.create("You will need admin privileges.", icon=icon)
+
+    assert isinstance(component.children[0], CalloutIcon)
+    assert "custom_icon" in str(component.children[0])
+    assert "icon" not in component.style
