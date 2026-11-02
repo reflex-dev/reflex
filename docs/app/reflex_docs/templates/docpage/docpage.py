@@ -373,6 +373,7 @@ def docpage(
     image: str | None = None,
     source_path: str | None = None,
     show_breadcrumb: bool = True,
+    component_name: str | None = None,
 ):
     """A template that most pages on the reflex.dev site should use.
 
@@ -392,6 +393,8 @@ def docpage(
             "Edit this page" link. Defaults to the Python file defining the page.
         show_breadcrumb: Whether to display the page breadcrumb. Mobile sidebar
             access remains available when the breadcrumb is hidden.
+        component_name: The public component name a library page documents,
+            used to lead its search title.
 
     Returns:
         A wrapper function that returns the full webpage.
@@ -538,7 +541,9 @@ def docpage(
 
         from reflex_docs.pages.docs.metadata import docs_metadata
 
-        seo_title, seo_description = docs_metadata(path, title, description)
+        seo_title, seo_description = docs_metadata(
+            path, title, description, component_name
+        )
         if page_title:
             seo_title = page_title
 

@@ -14,6 +14,7 @@ def UnicodeStringApp():
 
     class UnicodeState(rx.State):
         value: str = "a\U0001f600b"
+        repeat_count: int = 2
         plain: str = "hello"
         missing: str | None = None
 
@@ -27,6 +28,20 @@ def UnicodeStringApp():
                 id="length",
             ),
             rx.text(UnicodeState.value[::-1], id="reverse"),
+            rx.text(
+                UnicodeState.value.reversed(),  # pyright: ignore[reportAttributeAccessIssue]
+                id="reversed",
+            ),
+            rx.text(UnicodeState.value * 2, id="repeat"),
+            rx.text(
+                UnicodeState.value * UnicodeState.repeat_count, id="repeat-dynamic"
+            ),
+            rx.text(2 * UnicodeState.value, id="repeat-left"),
+            rx.text(UnicodeState.value * -1, id="repeat-negative"),
+            rx.box(
+                rx.foreach(UnicodeState.value, lambda char: rx.text(char)),
+                id="foreach",
+            ),
             rx.text(UnicodeState.value[1], id="character"),
             rx.text(UnicodeState.value[1:], id="slice"),
             rx.text(
@@ -77,6 +92,14 @@ def test_unicode_string_operations_preserve_code_points(
 
     expect(page.locator("#length")).to_have_text("3")
     expect(page.locator("#reverse")).to_have_text("b\U0001f600a")
+    expect(page.locator("#reversed")).to_have_text("b\U0001f600a")
+    expect(page.locator("#repeat")).to_have_text("a\U0001f600ba\U0001f600b")
+    expect(page.locator("#repeat-dynamic")).to_have_text("a\U0001f600ba\U0001f600b")
+    expect(page.locator("#repeat-left")).to_have_text("a\U0001f600ba\U0001f600b")
+    expect(page.locator("#repeat-negative")).to_be_empty()
+    foreach_items = page.locator("#foreach > *")
+    expect(foreach_items).to_have_count(3)
+    assert foreach_items.all_text_contents() == ["a", "\U0001f600", "b"]
     expect(page.locator("#character")).to_have_text("\U0001f600")
     expect(page.locator("#slice")).to_have_text("\U0001f600b")
     expect(page.locator("#plain-length")).to_have_text("5")

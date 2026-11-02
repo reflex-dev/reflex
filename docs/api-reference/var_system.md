@@ -62,8 +62,9 @@ It also supports comparisons that return a `BooleanVar`.
 matching Python string indexing and slicing. A non-BMP character such as
 `"\U0001f600"` counts as one code point. These operations do not count grapheme
 clusters, so a visible character made from multiple code points may still have a
-length greater than one. Explicit string methods such as `split()` continue to
-follow their JavaScript operation semantics.
+length greater than one. `StringVar.reversed()` and `rx.foreach` over a string
+also operate on Unicode code points. Explicit string methods such as `split()`
+continue to follow their JavaScript operation semantics.
 
 Custom `Var` operations can also be defined:
 

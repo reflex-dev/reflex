@@ -13,6 +13,7 @@ import secrets
 import shutil
 import stat
 import sys
+import threading
 import unicodedata
 from collections.abc import Iterator
 from pathlib import Path
@@ -26,7 +27,23 @@ else:
     import fcntl
 
 logger = logging.getLogger(__name__)
-_JSON_LOCKS_DIR = "locks/json"
+_LOCKS_DIR = "locks"
+# Resolved paths locked by the current thread, so nested locks reenter.
+_held_locks = threading.local()
+# Open lock descriptors, closed in forked children that inherit them.
+_lock_descriptors: set[int] = set()
+
+
+def _forget_inherited_locks() -> None:
+    """Drop lock ownership inherited through fork; the parent still holds it."""
+    for descriptor in _lock_descriptors:
+        os.close(descriptor)
+    _lock_descriptors.clear()
+    _held_locks.paths = set()
+
+
+if sys.platform != "win32":
+    os.register_at_fork(after_in_child=_forget_inherited_locks)
 
 # Shorthand for join.
 join = os.linesep.join
@@ -254,11 +271,11 @@ def get_bun_path() -> Path | None:
     return bun_path.absolute() if bun_path else None
 
 
-def _json_file_lock_path(file_path: Path) -> Path:
-    """Get the stable lock path for a JSON file.
+def _file_lock_path(file_path: Path) -> Path:
+    """Get the stable lock path for a file or directory.
 
     Args:
-        file_path: The normalized path of the JSON file.
+        file_path: The normalized path to lock.
 
     Returns:
         A path in Reflex's per-user data directory keyed by the target path.
@@ -269,51 +286,82 @@ def _json_file_lock_path(file_path: Path) -> Path:
         # volume is case-insensitive and Unicode-normalizing.
         normalized_path = unicodedata.normalize("NFC", normalized_path).casefold()
     target_digest = hashlib.sha256(os.fsencode(normalized_path)).hexdigest()
-    lock_directory = environment.REFLEX_DIR.get().expanduser() / _JSON_LOCKS_DIR
+    lock_directory = environment.REFLEX_DIR.get().expanduser() / _LOCKS_DIR
     return lock_directory / f"{target_digest}.lock"
 
 
-@contextlib.contextmanager
-def json_file_lock(file_path: str | Path) -> Iterator[Path]:
-    """Lock a JSON file across processes, or proceed unlocked if unavailable.
-
-    The lock lives outside the target directory so frontend cleanup can use it
-    while replacing that directory. This context manager is not reentrant.
+def _lock_descriptor(descriptor: int) -> None:
+    """Take the OS's exclusive lock on a lock file, waiting for other holders.
 
     Args:
-        file_path: The path of the JSON file.
+        descriptor: The open lock file descriptor.
+    """
+    if sys.platform == "win32":
+        while True:
+            try:
+                msvcrt.locking(descriptor, msvcrt.LK_LOCK, 1)
+            except OSError as error:
+                # LK_LOCK already waits between attempts, but gives up after
+                # ten attempts while another writer may own it.
+                if error.errno != errno.EDEADLK:
+                    raise
+            else:
+                return
+    else:
+        fcntl.flock(descriptor, fcntl.LOCK_EX)
+
+
+@contextlib.contextmanager
+def file_lock(path: str | Path) -> Iterator[Path]:
+    """Lock a file or directory across processes, or proceed unlocked if unavailable.
+
+    The lock is a sidecar in Reflex's per-user data directory, so it never
+    creates the target and survives the target being replaced. A thread that
+    already holds a path's lock reenters it; other threads and processes wait.
+    A forked child does not inherit ownership and waits for its parent.
+
+    Args:
+        path: The file or directory to lock.
 
     Yields:
         The resolved target path. Callers must still write atomically because
         read-only lock directories and unsupported locks use an unlocked fallback.
     """
-    file_path = Path(file_path).resolve()
+    target = Path(path).resolve()
+    held: set[Path] | None = getattr(_held_locks, "paths", None)
+    if held is None:
+        held = _held_locks.paths = set()
+    if target in held:
+        yield target
+        return
+    owner_pid = os.getpid()
     lock_fd = None
+    locked = False
     try:
         try:
-            lock_path = _json_file_lock_path(file_path)
+            lock_path = _file_lock_path(target)
             lock_path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
             lock_fd = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o600)
-            if sys.platform == "win32":
-                while True:
-                    try:
-                        msvcrt.locking(lock_fd, msvcrt.LK_LOCK, 1)
-                        break
-                    except OSError as error:
-                        # LK_LOCK already waits between attempts, but gives up
-                        # after ten attempts while another writer may own it.
-                        if error.errno != errno.EDEADLK:
-                            raise
-            else:
-                fcntl.flock(lock_fd, fcntl.LOCK_EX)
+            _lock_descriptors.add(lock_fd)
+            _lock_descriptor(lock_fd)
+            locked = True
         except OSError as error:
-            logger.debug(f"Cannot lock {file_path}; proceeding unlocked: {error}")
-        yield file_path
+            logger.debug(f"Cannot lock {target}; proceeding unlocked: {error}")
+        held.add(target)
+        yield target
     finally:
-        if lock_fd is not None:
-            # Closing releases the OS lock, including when the body raises.
-            # Keep the lock file so waiting writers always use the same inode.
-            os.close(lock_fd)
+        # A forked child leaving an inherited block owns neither the lock nor
+        # the descriptor; its parent releases both.
+        if os.getpid() == owner_pid:
+            held.discard(target)
+            if lock_fd is not None:
+                _lock_descriptors.discard(lock_fd)
+                if locked and sys.platform == "win32":
+                    with contextlib.suppress(OSError):
+                        msvcrt.locking(lock_fd, msvcrt.LK_UNLCK, 1)
+                # Closing releases the OS lock, including when the body raises.
+                # Keep the lock file so waiting writers always use the same inode.
+                os.close(lock_fd)
 
 
 def _write_json_file(file_path: Path, value: dict[str, object]) -> None:
@@ -354,7 +402,7 @@ def update_json_file(file_path: str | Path, update_dict: dict[str, object]) -> N
         file_path: the path to the JSON file.
         update_dict: object to update json.
     """
-    with json_file_lock(file_path) as fp:
+    with file_lock(file_path) as fp:
         fp.parent.mkdir(parents=True, exist_ok=True)
         # An absent or empty file represents an empty JSON object.
         json_object: dict[str, object] = {}

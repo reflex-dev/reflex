@@ -151,7 +151,7 @@ _ALL_COMPONENTS_MAPPING: lazy_loader.SubmodAttrsType = {
     "reflex_base.components.props": ["PropsBase"],
     "reflex_components_core.datadisplay.logo": ["logo"],
     "reflex_components_gridjs": ["data_table"],
-    "reflex_components_moment": ["MomentDelta", "moment"],
+    "reflex_components_moment": ["MomentDelta", "moment", "moment_provider"],
 }
 
 _COMPONENT_NAME_TO_PATH: dict[str, str] = {

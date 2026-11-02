@@ -13,11 +13,11 @@ Creates an adjustable, empty space that can be used to tune the spacing between 
 
 ```python demo
 rx.flex(
-    rx.center(rx.text("Example"), bg="lightblue"),
+    rx.center(rx.text("Example"), bg="lightblue", color="black"),
     rx.spacer(),
-    rx.center(rx.text("Example"), bg="lightgreen"),
+    rx.center(rx.text("Example"), bg="lightgreen", color="black"),
     rx.spacer(),
-    rx.center(rx.text("Example"), bg="salmon"),
+    rx.center(rx.text("Example"), bg="salmon", color="black"),
     width="100%",
 )
 ```

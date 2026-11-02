@@ -106,7 +106,11 @@ def DynamicComponents():
             """
             return rx.hstack(
                 rx.icon("apple", id="dynamic-icon"),
-                rx.icon(DynamicComponentsState.icon_name, id="dynamic-named-icon"),
+                rx.icon(
+                    DynamicComponentsState.icon_name,
+                    id="dynamic-named-icon",
+                    is_default=True,
+                ),
             )
 
         @rx.var
@@ -195,11 +199,10 @@ def driver(dynamic_components: AppHarness):
     """
     driver = dynamic_components.frontend()
     try:
-        token_input = AppHarness.poll_for_or_raise_timeout(
-            lambda: driver.find_element(By.ID, "token")
-        )
         # wait for the backend connection to send the token
-        token = dynamic_components.poll_for_value(token_input)
+        token = AppHarness.poll_for_or_raise_timeout(
+            lambda: driver.find_element(By.ID, "token").get_attribute("value")
+        )
         assert token is not None
 
         yield driver
@@ -243,6 +246,15 @@ def test_dynamic_components(driver, dynamic_components: AppHarness):
             lambda icon_id=icon_id: driver.find_element(By.ID, icon_id)
         )
 
+    bundled = driver.execute_script("return Object.keys(window.__reflex)")
+    assert "lucide-react" not in bundled
+    assert {
+        "lucide-react/dist/esm/icons/apple.mjs",
+        "lucide-react/dist/esm/icons/banana.mjs",
+        "lucide-react/dist/esm/icons/tag.mjs",
+        "lucide-react/dynamic.mjs",
+    } <= set(bundled)
+
     count = AppHarness.poll_for_or_raise_timeout(
         lambda: driver.find_element(By.ID, "count")
     )
@@ -265,6 +277,9 @@ def test_dynamic_components(driver, dynamic_components: AppHarness):
     driver.find_element(By.ID, "activate").click()
     AppHarness.poll_for_or_raise_timeout(
         lambda: driver.find_element(By.ID, "delayed-icon")
+    )
+    assert "lucide-react" not in driver.execute_script(
+        "return Object.keys(window.__reflex)"
     )
     driver.find_element(By.ID, "delayed-increment").click()
     AppHarness.expect(lambda: driver.find_element(By.ID, "delayed-count").text == "1")
