@@ -118,28 +118,6 @@ def _form_data_param_name(event: EventSpec) -> str | None:
     )
 
 
-def _iter_form_components(component: BaseComponent) -> Iterator[BaseComponent]:
-    """Yield a component and all nested components that may contribute form data.
-
-    Args:
-        component: The component to walk.
-
-    Yields:
-        The component and its nested component descendants.
-    """
-    form_control_source = getattr(component, "_form_control_source", None)
-    if isinstance(form_control_source, BaseComponent):
-        yield from _iter_form_components(form_control_source)
-        return
-    yield component
-    for child in component.children:
-        if isinstance(child, BaseComponent):
-            yield from _iter_form_components(child)
-    if isinstance(component, Component):
-        for component_in_props in component._get_components_in_props():
-            yield from _iter_form_components(component_in_props)
-
-
 def _get_control_prop(component: BaseComponent, prop_name: str) -> Any:
     """Get a form control's prop, also when it is carried as a custom attribute.
 
@@ -159,6 +137,27 @@ def _get_control_prop(component: BaseComponent, prop_name: str) -> Any:
     return value
 
 
+def _resolve_static_string(value: Any) -> str | object | None:
+    """Resolve a prop value when it is statically known to be a string.
+
+    Args:
+        value: The prop value.
+
+    Returns:
+        The resolved string, ``_DYNAMIC_FORM_FIELD`` for dynamic vars, or ``None``.
+    """
+    if value is None or isinstance(value, str):
+        return value
+    if isinstance(value, LiteralVar):
+        decoded = value._decode()
+        if isinstance(decoded, str):
+            return decoded
+        return None
+    if isinstance(value, Var):
+        return _DYNAMIC_FORM_FIELD
+    return None
+
+
 def _get_static_string_prop(
     component: BaseComponent,
     prop_name: str,
@@ -172,19 +171,23 @@ def _get_static_string_prop(
     Returns:
         The resolved string, ``_DYNAMIC_FORM_FIELD`` for dynamic vars, or ``None``.
     """
-    value = _get_control_prop(component, prop_name)
-    if value is None:
-        return None
-    if isinstance(value, str):
-        return value
-    if isinstance(value, LiteralVar):
-        decoded = value._decode()
-        if isinstance(decoded, str):
-            return decoded
-        return None
-    if isinstance(value, Var):
-        return _DYNAMIC_FORM_FIELD
-    return None
+    return _resolve_static_string(_get_control_prop(component, prop_name))
+
+
+def _has_form_role(component: BaseComponent, role: str) -> bool:
+    """Return whether a component or its memoized type opts in to a form role.
+
+    Args:
+        component: The component to inspect.
+        role: The class attribute naming the role, such as ``_is_form_control``.
+
+    Returns:
+        Whether the component, or the component type it memoizes, sets the role.
+    """
+    if getattr(component, role, False):
+        return True
+    wrapped_component_type = getattr(component, "_wrapped_component_type", None)
+    return bool(getattr(wrapped_component_type, role, False))
 
 
 def _is_form_control_component(component: BaseComponent) -> bool:
@@ -198,12 +201,55 @@ def _is_form_control_component(component: BaseComponent) -> bool:
     Returns:
         Whether the component contributes a form field.
     """
-    if getattr(component, "_is_form_control", False):
-        return True
-    wrapped_component_type = getattr(component, "_wrapped_component_type", None)
-    if getattr(wrapped_component_type, "_is_form_control", False):
-        return True
-    return getattr(component, "tag", None) in _NATIVE_FORM_CONTROL_TAGS
+    return (
+        _has_form_role(component, "_is_form_control")
+        or getattr(component, "tag", None) in _NATIVE_FORM_CONTROL_TAGS
+    )
+
+
+def _iter_form_controls(
+    component: BaseComponent,
+    field_name: Any = None,
+    control_name: Any = None,
+) -> Iterator[tuple[Component, Any]]:
+    """Yield the form controls in a subtree with the ``name`` each submits under.
+
+    A control submits under its own ``name``. The control a form field control
+    (``rx.form.control``) renders takes the form field control's ``name``
+    instead, or else that of the enclosing form field (``rx.form.field``),
+    which Radix passes to the control at runtime.
+
+    Args:
+        component: The component tree to walk.
+        field_name: The ``name`` of the enclosing form field, if any.
+        control_name: The ``name`` the enclosing form field control passes on.
+
+    Yields:
+        Each form control and its ``name``, which is None when it has none.
+    """
+    form_control_source = getattr(component, "_form_control_source", None)
+    if isinstance(form_control_source, BaseComponent):
+        yield from _iter_form_controls(form_control_source, field_name, control_name)
+        return
+    if isinstance(component, Component):
+        if _has_form_role(component, "_is_form_field"):
+            field_name = _get_control_prop(component, "name")
+        if _has_form_role(component, "_is_form_field_control"):
+            control_name = _get_control_prop(component, "name")
+            if control_name is None:
+                control_name = field_name
+            # Without a child to render as the control, it renders an input.
+            if not component.children:
+                yield component, control_name
+        elif _is_form_control_component(component):
+            name = _get_control_prop(component, "name")
+            yield component, control_name if name is None else name
+    for child in component.children:
+        if isinstance(child, BaseComponent):
+            yield from _iter_form_controls(child, field_name, control_name)
+    if isinstance(component, Component):
+        for component_in_props in component._get_components_in_props():
+            yield from _iter_form_controls(component_in_props, field_name, control_name)
 
 
 def _get_form_control_refs(component: BaseComponent) -> set[str]:
@@ -217,9 +263,8 @@ def _get_form_control_refs(component: BaseComponent) -> set[str]:
     """
     return {
         ref
-        for child in _iter_form_components(component)
-        if isinstance(child, Component) and _is_form_control_component(child)
-        if (ref := child.get_ref()) is not None
+        for control, _ in _iter_form_controls(component)
+        if (ref := control.get_ref()) is not None
     }
 
 
@@ -470,17 +515,14 @@ class Form(BaseHTML):
         form_keys = set(self._get_form_refs())
         has_dynamic_identifiers = False
 
-        for component in _iter_form_components(self):
-            if component is self or not _is_form_control_component(component):
-                continue
-
-            name = _get_static_string_prop(component, "name")
+        for control, name in _iter_form_controls(self):
+            name = _resolve_static_string(name)
             if name is _DYNAMIC_FORM_FIELD:
                 has_dynamic_identifiers = True
             elif isinstance(name, str):
                 form_keys.add(name)
 
-            if _get_static_string_prop(component, "id") is _DYNAMIC_FORM_FIELD:
+            if _get_static_string_prop(control, "id") is _DYNAMIC_FORM_FIELD:
                 has_dynamic_identifiers = True
 
         return form_keys, has_dynamic_identifiers
@@ -496,23 +538,21 @@ class Form(BaseHTML):
             for event in on_submit.events
         ):
             return
-        for component in _iter_form_components(self):
+        for control, name in _iter_form_controls(self):
             if (
-                component is self
-                or not _is_form_control_component(component)
-                or _get_static_string_prop(component, "name") is not None
-                or _get_static_string_prop(component, "type") in _VALUELESS_INPUT_TYPES
+                _resolve_static_string(name) is not None
+                or _get_static_string_prop(control, "type") in _VALUELESS_INPUT_TYPES
                 # A disabled control is never submitted, named or not.
                 or (
                     isinstance(
-                        disabled := _get_control_prop(component, "disabled"),
+                        disabled := _get_control_prop(control, "disabled"),
                         LiteralVar,
                     )
                     and disabled._decode() is True
                 )
             ):
                 continue
-            control_id = _get_static_string_prop(component, "id")
+            control_id = _get_static_string_prop(control, "id")
             if isinstance(control_id, str):
                 console.deprecate(
                     feature_name=(

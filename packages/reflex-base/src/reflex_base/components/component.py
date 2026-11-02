@@ -805,6 +805,16 @@ class Component(BaseComponent, ABC):
     # Whether this component contributes a named field to form submission data.
     _is_form_control: ClassVar[bool] = False
 
+    # Whether this component's ``name`` names the form controls rendered by the
+    # ``_is_form_field_control`` components nested in it, as ``rx.form.field``
+    # does.
+    _is_form_field: ClassVar[bool] = False
+
+    # Whether this component renders a form control (an input, or its child)
+    # that submits under the component's ``name``, or else under that of the
+    # enclosing ``_is_form_field`` component, as ``rx.form.control`` does.
+    _is_form_field_control: ClassVar[bool] = False
+
     custom_attrs: dict[str, Var | Any] = field(
         doc="Attributes passed directly to the component.",
         default_factory=dict,
