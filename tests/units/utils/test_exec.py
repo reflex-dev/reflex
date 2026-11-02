@@ -6,6 +6,7 @@ import logging
 import multiprocessing
 import os
 import socket
+import subprocess
 import sys
 import threading
 import time
@@ -1245,3 +1246,47 @@ def test_run_granian_backend_refuses_requests_while_the_app_is_broken(tmp_path: 
             process.kill()
             process.join()
         port_queue.close()
+
+
+def test_backend_worker_target_loads_config_before_app(
+    tmp_path: Path, mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """A fresh backend worker builds the config before it imports the app.
+
+    Regression for #7483: a spawned worker imported the app module first, so its
+    State classes got no auto-setters even with ``state_auto_setters=True``.
+    """
+    (tmp_path / "rxconfig.py").write_text(
+        "import reflex as rx\n\n"
+        "config = rx.Config(app_name='worker_app', state_auto_setters=True)\n"
+    )
+    app_dir = tmp_path / "worker_app"
+    app_dir.mkdir()
+    (app_dir / "__init__.py").touch()
+    (app_dir / "worker_app.py").write_text(
+        "import reflex as rx\n\n\n"
+        "class WorkerState(rx.State):\n"
+        "    extra: str = ''\n\n\n"
+        "def app():\n"
+        "    return 'set_extra' in WorkerState.event_handlers\n"
+    )
+    mocker.patch.object(
+        exec_utils, "get_app_module", return_value="worker_app.worker_app"
+    )
+    monkeypatch.delenv("REFLEX_STATE_AUTO_SETTERS", raising=False)
+
+    # Resolve the target in a fresh interpreter, as granian and uvicorn do.
+    load_target = (
+        "import importlib, sys\n"
+        "module, attr = sys.argv[1].split(':')\n"
+        "print(getattr(importlib.import_module(module), attr)())"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", load_target, exec_utils.get_app_instance()],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+
+    assert result.stdout.splitlines()[-1] == "True"
