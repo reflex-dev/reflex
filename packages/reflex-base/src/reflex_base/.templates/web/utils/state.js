@@ -426,9 +426,14 @@ export const applyDelta = (state, delta) => {
  * @returns The evaluated component.
  */
 export const evalReactComponent = async (component) => {
-  await window.__reflex_load?.();
   if (!window.React && window.__reflex) {
     window.React = window.__reflex.react;
+  }
+  // The library list is always on the first line of the generated module.
+  const marker = "//__reflex_evaluate:";
+  if (component.startsWith(marker)) {
+    const libraries = component.slice(marker.length, component.indexOf("\n"));
+    await window.__reflex_load?.(JSON.parse(libraries));
   }
   const encodedJs = encodeURIComponent(component);
   const dataUri = "data:text/javascript;charset=utf-8," + encodedJs;
