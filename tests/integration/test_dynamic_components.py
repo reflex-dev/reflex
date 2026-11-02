@@ -162,22 +162,44 @@ def DynamicComponents():
         )
 
 
+@pytest.fixture(
+    scope="module", params=[False, True], ids=["eager_libraries", "lazy_libraries"]
+)
+def lazy_bundled_libraries(request: pytest.FixtureRequest) -> bool:
+    """Whether the app loads optional dynamic-component libraries on demand.
+
+    Args:
+        request: pytest fixture request object
+
+    Returns:
+        The frontend_lazy_bundled_libraries config value.
+    """
+    return request.param
+
+
 @pytest.fixture(scope="module")
-def dynamic_components(tmp_path_factory) -> Generator[AppHarness, None, None]:
+def dynamic_components(
+    tmp_path_factory, lazy_bundled_libraries: bool
+) -> Generator[AppHarness, None, None]:
     """Start VarOperations app at tmp_path via AppHarness.
 
     Args:
         tmp_path_factory: pytest tmp_path_factory fixture
+        lazy_bundled_libraries: whether optional libraries load on demand
 
     Yields:
         running AppHarness instance
     """
-    with AppHarness.create(
-        root=tmp_path_factory.mktemp("dynamic_components"),
-        app_source=DynamicComponents,
-    ) as harness:
-        assert harness.app_instance is not None, "app is not running"
-        yield harness
+    with pytest.MonkeyPatch.context() as monkeypatch:
+        monkeypatch.setenv(
+            "REFLEX_FRONTEND_LAZY_BUNDLED_LIBRARIES", str(lazy_bundled_libraries)
+        )
+        with AppHarness.create(
+            root=tmp_path_factory.mktemp("dynamic_components"),
+            app_source=DynamicComponents,
+        ) as harness:
+            assert harness.app_instance is not None, "app is not running"
+            yield harness
 
 
 T = TypeVar("T")
@@ -213,13 +235,28 @@ def driver(dynamic_components: AppHarness):
     sys.version_info >= (3, 15) and bool(os.environ.get("REFLEX_REDIS_URL")),
     reason="dill <= 0.4.1 cannot serialize functions on Python 3.15",
 )
-def test_dynamic_components(driver, dynamic_components: AppHarness):
+def test_dynamic_components(
+    driver, dynamic_components: AppHarness, lazy_bundled_libraries: bool
+):
     """Test that the var operations produce the right results.
 
     Args:
         driver: selenium WebDriver open to the app
         dynamic_components: AppHarness for the dynamic components
+        lazy_bundled_libraries: whether optional libraries load on demand
     """
+
+    def banana_icon_loaded() -> bool:
+        """Check whether the frontend has loaded the bundled banana icon.
+
+        Returns:
+            Whether window.__reflex holds the banana icon module.
+        """
+        return driver.execute_script(
+            "return Object.hasOwn(window.__reflex, arguments[0])",
+            "lucide-react/dist/esm/icons/banana.mjs",
+        )
+
     button = AppHarness.poll_for_or_raise_timeout(
         lambda: driver.find_element(By.ID, "button")
     )
@@ -262,10 +299,13 @@ def test_dynamic_components(driver, dynamic_components: AppHarness):
 
     assert not driver.find_elements(By.ID, "delayed-icon")
     assert driver.find_element(By.ID, "initial-icon")
+    # Lazy apps load the bundled banana icon only for the component that uses it.
+    assert banana_icon_loaded() is not lazy_bundled_libraries
     driver.find_element(By.ID, "activate").click()
     AppHarness.poll_for_or_raise_timeout(
         lambda: driver.find_element(By.ID, "delayed-icon")
     )
+    assert banana_icon_loaded()
     driver.find_element(By.ID, "delayed-increment").click()
     AppHarness.expect(lambda: driver.find_element(By.ID, "delayed-count").text == "1")
     driver.find_element(By.ID, "delayed-decrement").click()

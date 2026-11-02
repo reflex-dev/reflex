@@ -267,9 +267,11 @@ def load_dynamic_serializer():
                 module_code_lines[ix] = line_stripped[1:-1]
 
         module_code_lines.insert(0, "const React = window.__reflex.react;")
-        evaluation_marker = "//__reflex_evaluate"
-        if bundled_library_paths:
-            evaluation_marker += f":{json.dumps(sorted(bundled_library_paths))}"
+        # evalReactComponent loads these optional libraries before the import;
+        # the default libraries are always in window.__reflex.
+        optional_libraries = sorted(
+            bundled_library_paths.difference(_default_bundled_libraries())
+        )
 
         function_line = next(
             index
@@ -289,7 +291,7 @@ def load_dynamic_serializer():
         ]
 
         return "\n".join([
-            evaluation_marker,
+            f"//__reflex_evaluate:{json.dumps(optional_libraries)}",
             *module_code_lines,
         ])
 

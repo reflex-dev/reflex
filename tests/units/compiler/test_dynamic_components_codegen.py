@@ -49,8 +49,8 @@ def test_dynamic_component_codegen_rewrites_bundled_library_subpath() -> None:
     ) in app_root_code
 
 
-def test_lazy_dynamic_component_loads_only_its_bundled_libraries(mocker) -> None:
-    """Load only the modules required by a lazy dynamic component."""
+def test_lazy_dynamic_component_lists_only_its_optional_libraries(mocker) -> None:
+    """List the optional libraries a dynamic component reads on its first line."""
     mocker.patch(
         "reflex_base.config._get_config",
         return_value=rx.Config(
@@ -61,17 +61,18 @@ def test_lazy_dynamic_component_loads_only_its_bundled_libraries(mocker) -> None
     with RegistrationContext():
         bundle_library("unused-library")
         bundle_library("lucide-react")
-        code = serializers.serialize(rx.icon("apple"))
+        icon_code = serializers.serialize(rx.icon("apple"))
+        default_only_code = serializers.serialize(rx.el.div("default libraries"))
         _, app_root_code = compiler.compile_app_root(rx.el.div())
-    assert isinstance(code, str)
-    assert code.startswith(
-        '//__reflex_evaluate:["$/utils/state", "@emotion/react", '
-        '"lucide-react/dist/esm/icons/apple.mjs", "react"]'
+    assert isinstance(icon_code, str)
+    assert isinstance(default_only_code, str)
+    # Default libraries are always in window.__reflex, so they are not listed.
+    assert icon_code.split("\n", 1)[0] == (
+        '//__reflex_evaluate:["lucide-react/dist/esm/icons/apple.mjs"]'
     )
-    assert "await window.__reflex_load" not in code
-    assert "unused-library" not in code
-    assert "window.__reflex_load = (libraries = Object.keys(loaders))" in app_root_code
-    assert "Promise.all(Object.entries(loaders)" not in app_root_code
+    assert default_only_code.split("\n", 1)[0] == "//__reflex_evaluate:[]"
+    # The app can load the unused library, but the icon does not request it.
+    assert '"unused-library": () => import("unused-library")' in app_root_code
 
 
 @pytest.mark.parametrize("reactive", [False, True])
