@@ -405,9 +405,11 @@ export const evalReactComponent = async (component) => {
   if (!window.React && window.__reflex) {
     window.React = window.__reflex.react;
   }
-  const libraryMetadata = component.match(/^\/\/__reflex_evaluate:(.*)$/m)?.[1];
-  if (libraryMetadata) {
-    await window.__reflex_load?.(JSON.parse(libraryMetadata));
+  // The library list is always on the first line of the generated module.
+  const marker = "//__reflex_evaluate:";
+  if (component.startsWith(marker)) {
+    const libraries = component.slice(marker.length, component.indexOf("\n"));
+    await window.__reflex_load?.(JSON.parse(libraries));
   }
   const encodedJs = encodeURIComponent(component);
   const dataUri = "data:text/javascript;charset=utf-8," + encodedJs;
