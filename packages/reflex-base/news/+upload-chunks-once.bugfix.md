@@ -1,0 +1,1 @@
+Apply each update an upload handler streams back once: since the socket's update handler became synchronous, every download progress event of an upload applied all updates received so far again, which could also put back values that newer updates had replaced.
