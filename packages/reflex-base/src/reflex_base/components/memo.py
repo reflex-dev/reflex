@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 import inspect
-from collections.abc import Callable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from copy import copy
 from enum import Enum
 from functools import cache, partial, update_wrapper
@@ -2029,9 +2029,13 @@ def component_hash(component: Component, *, recursive: bool) -> str:
         The hex digest content hash.
     """
     if recursive or not component.children:
-        return deterministic_hash(
-            component.render(), *_component_artifacts(component, recursive=recursive)
-        )
+        artifacts = tuple(_component_artifacts(component, recursive=recursive))
+        if recursive:
+            # The body's hooks, for callers that need them without rendering the
+            # subtree again; ``_component_artifacts`` yields the internal hooks
+            # and then the full set.
+            vars(component)["_memo_body_hooks"] = (*artifacts[2], *artifacts[3])
+        return deterministic_hash(component.render(), *artifacts)
     rendered = component.render()
     artifacts = tuple(_component_artifacts(component, recursive=False))
     digest = deterministic_hash(rendered, *artifacts)
@@ -2040,6 +2044,31 @@ def component_hash(component: Component, *, recursive: bool) -> str:
         analyses[digest] = _analyze_memo_body(component, rendered, artifacts)
     vars(component)["_memo_analysis_key"] = digest
     return digest
+
+
+def memo_body_hooks(definition: MemoComponentDefinition) -> Iterable[str]:
+    """Get the hook strings of a generated memo's body.
+
+    Taken from what hashing the body already computed, so no part of the
+    subtree is rendered again.
+
+    Args:
+        definition: A definition made by ``create_passthrough_component_memo``.
+
+    Returns:
+        The hook strings, in no particular order.
+    """
+    component = definition.component
+    if (key := component.__dict__.get("_memo_analysis_key")) is not None:
+        analysis = RegistrationContext.ensure_context()._memo_body_analyses.get(key)
+        if analysis is not None:
+            return (
+                *analysis.internal_hooks,
+                *((analysis.hook,) if analysis.hook else ()),
+                *analysis.added_hooks,
+            )
+    hooks = component.__dict__.get("_memo_body_hooks")
+    return hooks if hooks is not None else component._get_all_hooks()
 
 
 def memo_tag(component: Component) -> str:

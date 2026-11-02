@@ -844,7 +844,9 @@ def test_passthrough_memo_definitions_are_not_shared_globally(monkeypatch) -> No
 
     first_compile = SimpleNamespace(memoize_wrappers={}, auto_memo_components={})
     second_compile = SimpleNamespace(memoize_wrappers={}, auto_memo_components={})
-    page_context = cast(PageContext, SimpleNamespace(source_module=None))
+    page_context = cast(
+        PageContext, SimpleNamespace(source_module=None, client_state_names=set())
+    )
 
     MemoizeStatefulPlugin._build_wrapper(
         first_component,

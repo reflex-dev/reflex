@@ -55,23 +55,6 @@ class ClientStateScope(Component):
     owns: Var[list[str]]
 
 
-def scope_page(component: Component) -> Component:
-    """Make a page the owner of the local client state names its body uses.
-
-    The page is the outermost boundary, so memos below it that use the same
-    names share its slots, and the slots reset when the page unmounts.
-
-    Args:
-        component: The evaluated page component.
-
-    Returns:
-        The page wrapped in a scope, or unchanged when it uses no local names.
-    """
-    if owns := local_client_state_names(component._get_all_hooks()):
-        return ClientStateScope.create(component, owns=owns)
-    return component
-
-
 def scoped_memo_wrapper(inner: Var | None, owns: list[str]) -> Var:
     """Compose a memo wrapper that also opens a client state scope.
 
