@@ -93,10 +93,8 @@ def env_vars_page():
 
             This page documents the environment variables that are not config parameters. Environment variables that override `rx.Config` parameters (e.g. `REFLEX_FRONTEND_PORT`) are listed in the [config reference](/docs/api-reference/config/).
 
-            `REFLEX_ENV_MODE` records the app's execution mode.
-            `reflex run` and `reflex export` set it from their `--env` option, so do not set it yourself.
-            `reflex run` ignores a value from your shell.
-            A value from a `.env` file reaches only the backend, so the backend uses production settings while the server runs in development mode.
+            `REFLEX_ENV_MODE` is set by `reflex run` and `reflex export` from their `--env` option.
+            Do not set it yourself.
             To start in production mode, use `uv run reflex run --env prod`.
             """
         ),
