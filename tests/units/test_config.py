@@ -72,6 +72,41 @@ def test_trusted_proxy_hops_defaults_to_zero(base_config_values):
     assert rx.Config(**base_config_values).trusted_proxy_hops == 0
 
 
+def test_event_loop_blocking_threshold_defaults_to_development_threshold(
+    base_config_values,
+):
+    """Enable useful blocking diagnostics by default in development."""
+    config = rx.Config(**base_config_values)
+    assert config.event_loop_blocking_threshold == pytest.approx(0.2)
+
+
+@pytest.mark.parametrize("threshold", [-1, float("inf"), float("nan"), True, "1", None])
+def test_event_loop_blocking_threshold_must_be_non_negative_finite(
+    base_config_values, threshold
+):
+    """Reject invalid event-loop blocking thresholds."""
+    with pytest.raises(
+        ConfigError,
+        match="event_loop_blocking_threshold must be a non-negative finite number",
+    ):
+        rx.Config(**base_config_values, event_loop_blocking_threshold=threshold)
+
+
+def test_event_loop_blocking_detection_can_be_disabled(base_config_values):
+    """Allow apps to disable event-loop blocking detection with 0."""
+    config = rx.Config(**base_config_values, event_loop_blocking_threshold=0)
+    assert config.event_loop_blocking_threshold == 0
+
+
+def test_event_loop_blocking_detection_can_be_disabled_from_env(
+    base_config_values, monkeypatch: pytest.MonkeyPatch
+):
+    """Allow the environment to disable event-loop blocking detection."""
+    monkeypatch.setenv("REFLEX_EVENT_LOOP_BLOCKING_THRESHOLD", "0")
+    config = rx.Config(**base_config_values)
+    assert config.update_from_env()["event_loop_blocking_threshold"] == 0
+
+
 @pytest.mark.parametrize("trusted_proxy_hops", [-1, True, False, 1.5, "2", None])
 def test_trusted_proxy_hops_must_be_non_negative(
     base_config_values, trusted_proxy_hops
@@ -114,6 +149,7 @@ def test_react_compiler_default(base_config_values):
         ("REFLEX_REACT_COMPILER", False),
         ("REFLEX_REACT_COMPILER", True),
         ("REFLEX_DEFAULT_COLOR_MODE", "dark"),
+        ("REFLEX_EVENT_LOOP_BLOCKING_THRESHOLD", 0.35),
     ],
 )
 def test_update_from_env(
