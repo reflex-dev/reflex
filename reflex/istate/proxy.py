@@ -1203,6 +1203,72 @@ class MutableProxy(wrapt.ObjectProxy):
             return
         self._mark_dirty(super().__setattr__, args=(name, value))
 
+    def __iadd__(self, other: Any) -> Any:
+        """Add to the proxied object in place and mark state dirty.
+
+        Args:
+            other: The value to add.
+
+        Returns:
+            The proxy, so the state var stays bound to the tracked object.
+        """
+        return self._mark_dirty(super().__iadd__, args=(other,))  # pyright: ignore[reportAttributeAccessIssue]
+
+    def __imul__(self, other: Any) -> Any:
+        """Multiply the proxied object in place and mark state dirty.
+
+        Args:
+            other: The multiplier.
+
+        Returns:
+            The proxy, so the state var stays bound to the tracked object.
+        """
+        return self._mark_dirty(super().__imul__, args=(other,))  # pyright: ignore[reportAttributeAccessIssue]
+
+    def __ior__(self, other: Any) -> Any:
+        """Update the proxied object in place with `|` and mark state dirty.
+
+        Args:
+            other: The value to merge.
+
+        Returns:
+            The proxy, so the state var stays bound to the tracked object.
+        """
+        return self._mark_dirty(super().__ior__, args=(other,))  # pyright: ignore[reportAttributeAccessIssue]
+
+    def __iand__(self, other: Any) -> Any:
+        """Intersect the proxied object in place with `&` and mark state dirty.
+
+        Args:
+            other: The value to intersect with.
+
+        Returns:
+            The proxy, so the state var stays bound to the tracked object.
+        """
+        return self._mark_dirty(super().__iand__, args=(other,))  # pyright: ignore[reportAttributeAccessIssue]
+
+    def __isub__(self, other: Any) -> Any:
+        """Difference the proxied object in place with `-` and mark state dirty.
+
+        Args:
+            other: The value to remove.
+
+        Returns:
+            The proxy, so the state var stays bound to the tracked object.
+        """
+        return self._mark_dirty(super().__isub__, args=(other,))  # pyright: ignore[reportAttributeAccessIssue]
+
+    def __ixor__(self, other: Any) -> Any:
+        """Symmetric difference in place with `^` and mark state dirty.
+
+        Args:
+            other: The value to combine with.
+
+        Returns:
+            The proxy, so the state var stays bound to the tracked object.
+        """
+        return self._mark_dirty(super().__ixor__, args=(other,))  # pyright: ignore[reportAttributeAccessIssue]
+
     def __copy__(self) -> Any:
         """Return a copy of the proxy.
 

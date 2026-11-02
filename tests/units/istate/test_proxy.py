@@ -1502,3 +1502,118 @@ async def test_immutable_mutable_proxy_async_context_dict_view_paths(
     ) as state:
         assert isinstance(state, NestedMutableProxyState)
         assert state.data == {"a": {"x": 10}, "b": {"y": 20}}
+
+
+class AugmentedAssignState(BaseState):
+    """A test state with container vars mutated through augmented assignment."""
+
+    items: list[int] = [1]
+    selected: set[int] = {1}
+    mapping: dict[str, int] = {"a": 1}
+
+
+def test_mutable_proxy_inplace_list_operations_mark_dirty() -> None:
+    """`+=` and `*=` on a proxied list mark the field dirty.
+
+    The mutation is applied through a local alias of the state var, which is the
+    shape that used to bypass dirty tracking: `items = state.items` holds the
+    proxy, so the augmented assignment never goes through `__setattr__`.
+    """
+    state = AugmentedAssignState()
+    state._clean()
+
+    items = state.items
+    items += [2]
+    assert state.dirty_vars == {"items"}
+    assert state.items == [1, 2]
+    assert state.get_delta() == {
+        AugmentedAssignState.get_full_name(): {"items" + FIELD_MARKER: [1, 2]},
+    }
+
+    # Start from a clean state so a missing mark in `*=` cannot hide behind the
+    # dirty flag that `+=` just set.
+    state._clean()
+    items = state.items
+    items *= 2
+    assert state.dirty_vars == {"items"}
+    assert state.items == [1, 2, 1, 2]
+
+
+def test_mutable_proxy_inplace_set_operations_mark_dirty() -> None:
+    """`|=`, `&=`, `-=` and `^=` on a proxied set mark the field dirty."""
+    state = AugmentedAssignState()
+    state._clean()
+
+    selected = state.selected
+    selected |= {2}
+    assert state.dirty_vars == {"selected"}
+    assert state.selected == {1, 2}
+    assert state.get_delta() == {
+        AugmentedAssignState.get_full_name(): {"selected" + FIELD_MARKER: {1, 2}},
+    }
+
+    # Each operator starts from a clean state, otherwise the dirty flag left by
+    # the previous one would make the assertion pass unconditionally.
+    state._clean()
+    selected = state.selected
+    selected &= {2}
+    assert state.dirty_vars == {"selected"}
+    assert state.selected == {2}
+
+    state._clean()
+    selected = state.selected
+    selected ^= {3}
+    assert state.dirty_vars == {"selected"}
+    assert state.selected == {2, 3}
+
+    state._clean()
+    selected = state.selected
+    selected -= {2}
+    assert state.dirty_vars == {"selected"}
+    assert state.selected == {3}
+
+
+def test_mutable_proxy_inplace_dict_operations_mark_dirty() -> None:
+    """`|=` on a proxied dict marks the field dirty."""
+    state = AugmentedAssignState()
+    state._clean()
+
+    mapping = state.mapping
+    mapping |= {"b": 2}
+    assert state.dirty_vars == {"mapping"}
+    assert state.mapping == {"a": 1, "b": 2}
+    assert state.get_delta() == {
+        AugmentedAssignState.get_full_name(): {
+            "mapping" + FIELD_MARKER: {"a": 1, "b": 2},
+        },
+    }
+
+
+def test_immutable_mutable_proxy_inplace_operations_raise(
+    attached_mock_event_context: EventContext,
+) -> None:
+    """Augmented assignment outside a mutable context leaves the state untouched.
+
+    Args:
+        attached_mock_event_context: The attached event context.
+    """
+    state = AugmentedAssignState()
+    proxy = StateProxy(state)
+
+    items = proxy.items
+    assert isinstance(items, ImmutableMutableProxy)
+    with pytest.raises(ImmutableStateError):
+        items += [2]
+
+    selected = proxy.selected
+    with pytest.raises(ImmutableStateError):
+        selected |= {2}
+
+    mapping = proxy.mapping
+    with pytest.raises(ImmutableStateError):
+        mapping |= {"b": 2}
+
+    assert state.items == [1]
+    assert state.selected == {1}
+    assert state.mapping == {"a": 1}
+    assert not state.dirty_vars
