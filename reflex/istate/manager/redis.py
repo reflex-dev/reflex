@@ -14,6 +14,7 @@ from typing import Any, TypedDict, cast
 
 from redis import ResponseError
 from redis.asyncio import Redis
+from reflex_base import constants
 from reflex_base.config import get_config
 from reflex_base.environment import environment, oplock_hold_time
 from reflex_base.utils.exceptions import (
@@ -32,7 +33,6 @@ from reflex.istate.manager import (
 )
 from reflex.istate.manager.token import TOKEN_TYPE, BaseStateToken, StateToken
 from reflex.state import BaseState
-from reflex.utils.exec import is_prod_mode
 from reflex.utils.tasks import ensure_task
 
 logger = logging.getLogger(__name__)
@@ -260,9 +260,16 @@ class StateManagerRedis(StateManager):
     # The unique ID for this state manager, the domain for _local_leases.
     _instance_id: str = dataclasses.field(default_factory=lambda: str(uuid.uuid4()))
 
-    # In dev mode, the keys of the states this process has written. None in prod mode.
+    # Under the dev hot reloader, the keys of the states this process has
+    # written. None otherwise, as no reload can bring in new code.
     _dev_written_keys: set[str] | None = dataclasses.field(
-        default_factory=lambda: None if is_prod_mode() else set(), init=False
+        default_factory=lambda: (
+            set()
+            if environment.REFLEX_ENV_MODE.get() == constants.Env.DEV
+            and environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.get()
+            else None
+        ),
+        init=False,
     )
 
     # Lock waiters for redis per-token lock.

@@ -16,6 +16,7 @@ from unittest.mock import AsyncMock, Mock
 import pytest
 import pytest_asyncio
 from reflex_base.constants import Env
+from reflex_base.environment import environment
 from reflex_base.utils.exceptions import EnvironmentVarValueError, LockExpiredError
 from reflex_base.vars.base import computed_var
 
@@ -2004,23 +2005,36 @@ async def test_mock_redis_eval_only_emulates_the_fenced_save_script():
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    ("env_mode", "after_reload"),
-    [(Env.DEV, ["a"]), (Env.PROD, ["a", "b"])],
+    ("env_mode", "hot_reload", "after_reload"),
+    [
+        (Env.DEV, True, ["a"]),
+        (Env.DEV, False, ["a", "b"]),
+        (Env.PREVIEW, True, ["a", "b"]),
+        (Env.PROD, False, ["a", "b"]),
+    ],
 )
 async def test_first_read_in_dev_recomputes_cached_vars(
-    monkeypatch: pytest.MonkeyPatch, env_mode: Env, after_reload: list[str]
+    monkeypatch: pytest.MonkeyPatch,
+    env_mode: Env,
+    hot_reload: bool,
+    after_reload: list[str],
 ):
-    """In dev mode, the first read of a state in a process recomputes cached vars.
+    """Under the dev hot reloader, the first read of a state recomputes cached vars.
 
     A new process, as after a hot reload, may have changed what the computed
-    vars return. Later reads, and all reads in prod mode, keep the cache.
+    vars return. Later reads, and all reads outside a dev hot reloader (preview,
+    prod, or a backend started without it), keep the cache.
 
     Args:
         monkeypatch: The pytest monkeypatch fixture.
         env_mode: The mode the app runs in.
+        hot_reload: Whether the backend runs under the dev hot reloader.
         after_reload: The cached var value expected after the reload.
     """
     monkeypatch.setenv("REFLEX_ENV_MODE", env_mode.value)
+    monkeypatch.setenv(
+        environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.name, str(hot_reload)
+    )
     rows = ["a", "b"]
 
     class RedisCachedState(BaseState):
@@ -2094,6 +2108,7 @@ async def test_dev_unwritten_state_keeps_recomputing_cached_vars(
         first_read: How the reloaded process first reads the state.
     """
     monkeypatch.setenv("REFLEX_ENV_MODE", Env.DEV.value)
+    monkeypatch.setenv(environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.name, "true")
     rows = ["a", "b"]
 
     class UnwrittenCachedState(BaseState):
