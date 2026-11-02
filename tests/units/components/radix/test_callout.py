@@ -1,6 +1,7 @@
 import pytest
 from reflex_base.components.component import Component
 from reflex_base.vars.base import Var
+from reflex_components_core.base.bare import Bare
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.core.cond import cond
 from reflex_components_lucide.icon import Icon
@@ -57,5 +58,8 @@ def test_callout_create_with_component_var_icon():
     component = Callout.create("You will need admin privileges.", icon=icon)
 
     assert isinstance(component.children[0], CalloutIcon)
-    assert "custom_icon" in str(component.children[0])
+    # A Var child is wrapped in a Bare component.
+    bare = component.children[0].children[0]
+    assert isinstance(bare, Bare)
+    assert bare.contents is icon
     assert "icon" not in component.style
