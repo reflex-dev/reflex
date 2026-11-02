@@ -510,6 +510,32 @@ def _cors_allowed_origins() -> list[str] | None:
     return [f"{parts.scheme}://{host}:{port}"]
 
 
+def _resolve_handler_annotation(annotation: Any, handler_fn: Callable) -> Any:
+    """Resolve an annotation string in the handler's own module namespace.
+
+    Annotations are strings under ``from __future__ import annotations`` and for
+    quoted forward references, so they must be evaluated where the handler was
+    defined rather than in this module.
+
+    Args:
+        annotation: The annotation to resolve.
+        handler_fn: The handler the annotation belongs to.
+
+    Returns:
+        The evaluated annotation, or the annotation unchanged when it is not a
+        string.
+    """
+    if not isinstance(annotation, str):
+        return annotation
+    namespace = getattr(handler_fn, "__globals__", None)
+    if namespace is None and not inspect.isroutine(handler_fn):
+        # A callable instance keeps the globals of its function on __call__.
+        namespace = getattr(handler_fn.__call__, "__globals__", None)  # pyright: ignore[reportAttributeAccessIssue]
+    if namespace is None:
+        return eval(annotation)
+    return eval(annotation, namespace)
+
+
 @dataclasses.dataclass()
 class App(MiddlewareMixin, LifespanMixin):
     """The main Reflex app that encapsulates the backend and frontend.
@@ -2111,7 +2137,7 @@ class App(MiddlewareMixin, LifespanMixin):
             # Check if the function has the necessary annotations and types in the right order
             argspec = inspect.getfullargspec(handler_fn)
             arg_annotations = {
-                k: eval(v) if isinstance(v, str) else v
+                k: _resolve_handler_annotation(v, handler_fn)
                 for k, v in argspec.annotations.items()
                 if k not in ["args", "kwargs", "return"]
             }
@@ -2137,10 +2163,8 @@ class App(MiddlewareMixin, LifespanMixin):
             # Check if the return type is valid for backend exception handler
             if handler_domain == "backend":
                 sig = inspect.signature(self.backend_exception_handler)
-                return_type = (
-                    eval(sig.return_annotation)
-                    if isinstance(sig.return_annotation, str)
-                    else sig.return_annotation
+                return_type = _resolve_handler_annotation(
+                    sig.return_annotation, self.backend_exception_handler
                 )
 
                 valid = bool(

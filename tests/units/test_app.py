@@ -4045,6 +4045,28 @@ custom_exception_handlers = {
 }
 
 
+class CustomAppError(Exception):
+    """An exception class defined outside reflex.app."""
+
+
+def custom_exception_handler_with_custom_error(exception: CustomAppError):
+    """Custom exception handler annotated with an application exception.
+
+    Args:
+        exception: The exception to handle.
+    """
+    print("Custom Backend Exception")
+    print(exception)
+
+
+def test_exception_handler_annotation_resolves_outside_reflex_app():
+    """String annotations resolve in the handler's module, not reflex.app."""
+    rx.App(
+        frontend_exception_handler=custom_exception_handler_with_custom_error,
+        backend_exception_handler=custom_exception_handler_with_custom_error,
+    )
+
+
 @pytest.mark.parametrize(
     ("handler_fn", "expected"),
     [
