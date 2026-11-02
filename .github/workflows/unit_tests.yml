@@ -41,9 +41,10 @@ jobs:
         with:
           paths-ignore: |
             **/*.md
-      # reflex-bench imports nothing from reflex, so its tests (a minute and a
-      # half of subprocesses, browsers and real timeouts) only run when it, the
-      # example apps it uses as fixtures, or its dependencies change.
+      # reflex-bench's tests (a minute and a half of subprocesses, browsers and
+      # real timeouts) only run in full when it, the example apps it uses as
+      # fixtures, the example hashing it checks, or its dependencies change.
+      # Otherwise only its reflex contract test runs (see its conftest.py).
       - uses: ./.github/actions/changed_paths
         id: bench
         with:
@@ -51,6 +52,7 @@ jobs:
             packages/reflex-bench/**
             tests/units/reflex_bench/**
             examples/**
+            scripts/hash_examples.py
             uv.lock
             .github/workflows/unit_tests.yml
 
@@ -76,7 +78,7 @@ jobs:
     env:
       PYTHONUNBUFFERED: 1
       COV: ${{ matrix.coverage && '--cov --no-cov-on-fail --cov-report=' || '' }}
-      SKIP_BENCH: ${{ needs.changes.outputs.bench != 'true' && '--ignore=tests/units/reflex_bench' || '' }}
+      REFLEX_BENCH_UNCHANGED: ${{ needs.changes.outputs.bench != 'true' && '1' || '' }}
 
     # Service containers to run with `runner-job`
     services:
@@ -122,21 +124,21 @@ jobs:
       - name: Run unit tests without db dependencies
         run: |
           uv pip uninstall pydantic alembic sqlalchemy sqlmodel
-          uv run --no-sync pytest tests/units $SKIP_BENCH $COV ${COV:+--cov-fail-under=0}
+          uv run --no-sync pytest tests/units $COV ${COV:+--cov-fail-under=0}
           uv sync
       - name: Run unit tests
-        run: uv run pytest tests/units $SKIP_BENCH $COV
+        run: uv run pytest tests/units $COV
       - name: Run unit tests w/ redis
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |
           export REFLEX_REDIS_URL=redis://localhost:6379
-          uv run pytest tests/units $SKIP_BENCH $COV
+          uv run pytest tests/units $COV
       - name: Run unit tests w/ redis and OPLOCK_ENABLED
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |
           export REFLEX_REDIS_URL=redis://localhost:6379
           export REFLEX_OPLOCK_ENABLED=true
-          uv run pytest tests/units $SKIP_BENCH $COV
+          uv run pytest tests/units $COV
       - name: Run workflow unit tests w/ postgres
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |

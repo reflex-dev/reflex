@@ -350,8 +350,8 @@ source = [
   "reflex_site_shared",
   "reflex_components_internal",
   "reflex_integrations_docs",
-  # Not reflex_bench: its tests only run when it changes, so measuring it
-  # would move the total by whether this pull request touched it.
+  # Not reflex_bench: CI skips most of its tests on pull requests that leave it
+  # alone, so measuring it would make the total depend on whether one touched it.
   "reflex_workflow",
 ]
 branch = true
