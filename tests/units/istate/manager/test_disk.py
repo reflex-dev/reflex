@@ -5,6 +5,8 @@ import os
 from pathlib import Path
 
 import pytest
+from reflex_base.constants import Env
+from reflex_base.environment import environment
 from reflex_base.vars.base import computed_var
 
 from reflex.istate.manager.disk import StateManagerDisk
@@ -171,17 +173,40 @@ async def test_set_state_for_substate_builds_tokens_for_written_states_only(
 
 
 @pytest.mark.asyncio
-async def test_states_from_disk_recompute_cached_vars(tmp_path, monkeypatch):
-    """States read back from disk keep their fields but recompute cached vars.
+@pytest.mark.parametrize(
+    ("env_mode", "hot_reload", "after_reload"),
+    [
+        (Env.DEV, True, ["a"]),
+        (Env.DEV, False, ["a", "b"]),
+        (Env.PREVIEW, True, ["a", "b"]),
+        (Env.PROD, False, ["a", "b"]),
+    ],
+)
+async def test_states_from_disk_recompute_cached_vars(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    env_mode: Env,
+    hot_reload: bool,
+    after_reload: list[str],
+):
+    """Under the dev hot reloader, states read back from disk recompute cached vars.
 
     A state is only read from disk when it is not in memory, as after a hot
-    reload, which may have changed what the computed vars return.
+    reload, which may have changed what the computed vars return. The fields
+    keep their values. Outside a dev hot reloader the cache is kept.
 
     Args:
         tmp_path: A temporary directory.
         monkeypatch: The pytest monkeypatch fixture.
+        env_mode: The mode the app runs in.
+        hot_reload: Whether the backend runs under the dev hot reloader.
+        after_reload: The cached var value expected after the reload.
     """
     monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
+    monkeypatch.setenv("REFLEX_ENV_MODE", env_mode.value)
+    monkeypatch.setenv(
+        environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.name, str(hot_reload)
+    )
     rows = ["a", "b"]
 
     class DiskCachedState(BaseState):
@@ -223,5 +248,9 @@ async def test_states_from_disk_recompute_cached_vars(tmp_path, monkeypatch):
     state = await reloaded_state_manager.get_state(token)
     assert isinstance(state, DiskCachedState)
     child = await state.get_state(DiskCachedChild)
-    assert (state.count, state.data, child.child_data) == (99, ["a"], ["a"])
+    assert (state.count, state.data, child.child_data) == (
+        99,
+        after_reload,
+        after_reload,
+    )
     await reloaded_state_manager.close()

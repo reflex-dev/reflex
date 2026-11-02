@@ -14,7 +14,6 @@ from typing import Any, TypedDict, cast
 
 from redis import ResponseError
 from redis.asyncio import Redis
-from reflex_base import constants
 from reflex_base.config import get_config
 from reflex_base.environment import environment, oplock_hold_time
 from reflex_base.utils.exceptions import (
@@ -29,6 +28,7 @@ from reflex.istate.manager import (
     StateManager,
     StateModificationContext,
     _default_token_expiration,
+    _dev_hot_reload_active,
     _drop_cached_var_values,
 )
 from reflex.istate.manager.token import TOKEN_TYPE, BaseStateToken, StateToken
@@ -263,12 +263,7 @@ class StateManagerRedis(StateManager):
     # Under the dev hot reloader, the keys of the states this process has
     # written. None otherwise, as no reload can bring in new code.
     _dev_written_keys: set[str] | None = dataclasses.field(
-        default_factory=lambda: (
-            set()
-            if environment.REFLEX_ENV_MODE.get() == constants.Env.DEV
-            and environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.get()
-            else None
-        ),
+        default_factory=lambda: set() if _dev_hot_reload_active() else None,
         init=False,
     )
 

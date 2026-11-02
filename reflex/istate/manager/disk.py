@@ -18,6 +18,7 @@ from reflex.istate.manager import (
     StateManager,
     StateModificationContext,
     _default_token_expiration,
+    _dev_hot_reload_active,
     _drop_cached_var_values,
     _release_state_tree,
 )
@@ -96,6 +97,10 @@ class StateManagerDisk(StateManager):
     _write_queue_task: asyncio.Task | None = None
     _write_debounce_seconds: float = dataclasses.field(
         default_factory=lambda: state_manager_disk_debounce().total_seconds()
+    )
+    # Whether states read from disk drop their cached var values.
+    _drop_stale_cached_vars: bool = dataclasses.field(
+        default_factory=_dev_hot_reload_active, init=False
     )
 
     def __post_init__(self):
@@ -181,7 +186,8 @@ class StateManagerDisk(StateManager):
             if instance is not None:
                 # Ensure all substates exist, even if they weren't serialized previously.
                 instance.substates = fresh_instance.substates
-                _drop_cached_var_values(instance)
+                if self._drop_stale_cached_vars:
+                    _drop_cached_var_values(instance)
             else:
                 instance = fresh_instance
             state.substates[substate.get_name()] = instance
@@ -224,7 +230,8 @@ class StateManagerDisk(StateManager):
             else:
                 # Ensure all substates exist, even if they were not serialized previously.
                 root_state.substates = fresh_root_state.substates
-                _drop_cached_var_values(root_state)
+                if self._drop_stale_cached_vars:
+                    _drop_cached_var_values(root_state)
             await self.populate_substates(token, root_state, root_state)
             self.states[token.cache_key] = root_state
             return cast(TOKEN_TYPE, root_state)
