@@ -1,10 +1,12 @@
 """Tests for the disk state manager."""
 
+import logging
 import math
 import os
 from pathlib import Path
 
 import pytest
+from reflex_base.utils.exceptions import StateSchemaMismatchError
 
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.token import BaseStateToken, StateToken
@@ -12,10 +14,52 @@ from reflex.state import BaseState
 from reflex.utils import prerequisites
 
 
+def disk_warning_logs(caplog: pytest.LogCaptureFixture) -> list[logging.LogRecord]:
+    """Return warning records from the disk manager.
+
+    Args:
+        caplog: The pytest log capture fixture.
+
+    Returns:
+        Captured disk manager warning records.
+    """
+    return [
+        record
+        for record in caplog.records
+        if record.name == "reflex.istate.manager.disk"
+        and record.levelno >= logging.WARNING
+    ]
+
+
 class DiskPersistState(BaseState):
     """A state for testing disk persistence."""
 
     num: float = 3.15
+
+
+@pytest.mark.asyncio
+async def test_load_state_schema_mismatch_is_silent(tmp_path, monkeypatch, caplog):
+    """Schema changes during hot reload should silently discard stale state.
+
+    Args:
+        tmp_path: A temporary directory.
+        monkeypatch: The pytest monkeypatch fixture.
+        caplog: The pytest caplog fixture.
+    """
+    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
+    manager = StateManagerDisk(_write_debounce_seconds=0)
+    token = StateToken(ident="client", cls=dict)
+    manager.token_path(token).write_bytes(b"stale state")
+
+    def fail_to_deserialize(cls, data=None, fp=None):
+        """Raise the expected hot-reload schema mismatch."""
+        raise StateSchemaMismatchError
+
+    monkeypatch.setattr(StateToken, "deserialize", classmethod(fail_to_deserialize))
+    with caplog.at_level(logging.WARNING, logger="reflex.istate.manager.disk"):
+        assert await manager.load_state(token) is None
+    assert not caplog.records
+    await manager.close()
 
 
 def test_states_directory_survives_chdir(tmp_path: Path, monkeypatch):
@@ -166,4 +210,55 @@ async def test_set_state_for_substate_builds_tokens_for_written_states_only(
         await state_manager.set_state_for_substate(token, state)
 
     assert written == [DiskTreeFirst]
+    await state_manager.close()
+
+
+@pytest.mark.asyncio
+async def test_load_state_logs_warning_for_corrupted_file(
+    tmp_path, monkeypatch, caplog
+):
+    """Test that load_state logs a warning when a corrupted state file is encountered.
+
+    Args:
+        tmp_path: A temporary directory.
+        monkeypatch: The pytest monkeypatch fixture.
+        caplog: The pytest caplog fixture.
+    """
+    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
+    state_manager = StateManagerDisk(_write_debounce_seconds=0)
+    token = StateToken(ident="client", cls=dict)
+
+    corrupted_content = b"not a valid pickle file"
+    token_path = state_manager.token_path(token)
+    token_path.parent.mkdir(parents=True, exist_ok=True)
+    token_path.write_bytes(corrupted_content)
+
+    assert await state_manager.load_state(token) is None
+
+    warning_logs = disk_warning_logs(caplog)
+    assert len(warning_logs) == 1
+    assert "Failed to load state" in warning_logs[0].message
+    assert token_path.name in warning_logs[0].message
+    assert token.ident not in warning_logs[0].message
+    assert "falling back to a default state" in warning_logs[0].message
+
+    await state_manager.close()
+
+
+@pytest.mark.asyncio
+async def test_load_state_returns_none_for_missing_file(tmp_path, monkeypatch, caplog):
+    """Test that load_state returns None without logging a warning for missing files.
+
+    Args:
+        tmp_path: A temporary directory.
+        monkeypatch: The pytest monkeypatch fixture.
+        caplog: The pytest caplog fixture.
+    """
+    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
+    state_manager = StateManagerDisk(_write_debounce_seconds=0)
+    token = StateToken(ident="nonexistent_client", cls=dict)
+
+    assert await state_manager.load_state(token) is None
+    assert not disk_warning_logs(caplog)
+
     await state_manager.close()
