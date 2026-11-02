@@ -416,7 +416,7 @@ class ClientStateVar(Var):
                     "Use .set instead -- `cs.set` for the bare setter, "
                     "`cs.set(value)` to bind a value."
                 ),
-                deprecation_version="0.10.0",
+                deprecation_version="0.10.2",
                 removal_version="1.0",
             )
             return self.set(value)
@@ -426,9 +426,10 @@ class ClientStateVar(Var):
         """Read the client state variable from JS outside a React component.
 
         Unlike `value` this needs no hook, so it can be used in any javascript
-        scope -- a wrapped library's callback, `add_custom_code`, or
-        `rx.call_script`. It is a point-in-time read with no reactivity; prefer
-        `value` inside components.
+        scope that has the page's imports -- a wrapped library's callback or
+        `add_custom_code`. It is a point-in-time read with no reactivity; prefer
+        `value` inside components. Code passed to `rx.call_script` runs in the
+        runtime module instead; it reaches the store through ``refs``.
 
         Returns:
             An accessor for the client state variable.

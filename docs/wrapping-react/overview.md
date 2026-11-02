@@ -219,8 +219,7 @@ var, since the name is what identifies the value.
 
 `rx.call_script` is the one place these do not work: its code is evaluated inside the
 Reflex runtime module, so your page's imports are not in scope there. Reach the store
-through the `refs` object instead, which is also how you inspect client state from the
-browser devtools console:
+through the runtime's `refs` object instead:
 
 ```python
 rx.call_script('refs["__client_state"].set("picker_color", "#ffffff")')

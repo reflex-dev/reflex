@@ -31,7 +31,7 @@ def _deprecate(feature_name: str) -> None:
             "it global; an unnamed var is owned by the outermost page or "
             "`@rx.memo` that uses it, so `global_ref` is no longer needed."
         ),
-        deprecation_version="0.10.0",
+        deprecation_version="0.10.2",
         removal_version="1.0",
     )
 
