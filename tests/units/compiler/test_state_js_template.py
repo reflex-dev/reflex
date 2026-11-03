@@ -269,8 +269,9 @@ def test_state_js_keeps_ref_value_exports_for_older_form_components() -> None:
 def _run_apply_delta_script(script: str) -> None:
     """Run a node script against the delta helpers of state.js.
 
-    The script sees ``applyDelta`` and ``applyDecoded``, which applies a delta
-    as the update handler does once a decoder ran.
+    The script sees ``applyDelta``, ``applyUpdate``, which applies an update's
+    delta to its substates as the update handler and the state store do, and
+    ``applyDecoded``, which applies a decoded delta to a single substate.
 
     Args:
         script: The JavaScript to run after the helpers.
@@ -290,10 +291,19 @@ def _run_apply_delta_script(script: str) -> None:
             helpers
             + """
 import assert from 'node:assert/strict';
-const applyDecoded = (state, delta) => {
-  decodedDeltas.add(delta);
-  return applyDelta(state, delta);
+const applyUpdate = (states, delta, decoded = true) => {
+  const next = {...states};
+  const dispatch = {};
+  for (const substate in delta) {
+    dispatch[substate] = (substateDelta) => {
+      next[substate] = applyDelta(next[substate], substateDelta);
+    };
+  }
+  dispatchDelta(dispatch, delta, decoded);
+  return next;
 };
+const applyDecoded = (state, delta) =>
+  applyUpdate({state}, {state: delta}).state;
 """
             + script,
         ],
@@ -479,4 +489,176 @@ const entered = applyDecoded({row: {id: 0}, product: null}, (() => {
 assert.equal(entered.row, entered.product.rows[0]);
 assert.ok(isCycle(entered.product));
 assert.equal(entered.row.product, entered.product);
+""")
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node missing")
+def test_apply_delta_shares_objects_across_the_substates_of_a_decoded_update() -> None:
+    """An object several substates of a decoded update hold gets one result."""
+    _run_apply_delta_script("""
+// An unchanged object takes the result of the first substate holding it.
+const shared = (() => {
+  const product = {id: 1};
+  return {a: {product}, b: {product}};
+});
+const prev = {a: {product: {id: 1}}, b: {product: null}};
+const filled = applyUpdate(prev, shared());
+assert.equal(filled.a, prev.a);
+assert.equal(filled.b.product, prev.a.product);
+assert.equal(applyUpdate(filled, shared()).b, filled.b);
+
+// A cycle across substates, copied in one of them, leads back to the objects
+// every substate holds.
+const cyclic = (name) => {
+  const parent = {name, tags: ['x']};
+  parent.child = {name: 'c', parent};
+  return {a: {parent}, b: {child: parent.child}};
+};
+const tags = ['x'];
+const linked = applyUpdate({a: {parent: {name: 'p', tags}}, b: {child: null}}, cyclic('q'));
+assert.equal(linked.a.parent.tags, tags);
+assert.equal(linked.a.parent.child, linked.b.child);
+assert.equal(linked.b.child.parent, linked.a.parent);
+const again = applyUpdate(linked, cyclic('q'));
+assert.equal(again.a, linked.a);
+assert.equal(again.b, linked.b);
+const renamed = applyUpdate(linked, cyclic('r'));
+assert.equal(renamed.b.child.parent, renamed.a.parent);
+assert.equal(renamed.a.parent.name, 'r');
+
+// The substates of a plain update share nothing they did not hold before.
+const plain = {a: {x: {id: 1}}, b: {x: {id: 1}}};
+const kept = applyUpdate(plain, {a: {x: {id: 1}}, b: {x: {id: 1}}}, false);
+assert.equal(kept.a, plain.a);
+assert.equal(kept.b, plain.b);
+""")
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node missing")
+def test_apply_delta_keeps_one_result_per_decoded_object_in_random_graphs() -> None:
+    """Random decoded updates over several substates keep every invariant."""
+    _run_apply_delta_script("""
+let seed = 7718;
+const random = () => {
+  seed = (seed * 1103515245 + 12345) % 2147483648;
+  return seed / 2147483648;
+};
+const pick = (n) => Math.floor(random() * n);
+const date = new Date(0);
+// A graph of arrays and plain objects holding each other, primitives and a
+// Date, whose roots are vars of three substates.
+const randomGraph = () => {
+  const count = 1 + pick(7);
+  const node = (kind) => {
+    const entries = [];
+    for (let i = pick(4); i > 0; i--) {
+      const r = random();
+      const value = r < 0.45 ? {ref: pick(count)} : r < 0.55 ? {date} : {value: pick(3)};
+      entries.push([kind === 'array' ? entries.length : 'abcd'[pick(4)], value]);
+    }
+    return {kind, entries};
+  };
+  const nodes = Array.from({length: count}, () => node(random() < 0.4 ? 'array' : 'object'));
+  const roots = [];
+  for (const substate of ['a', 'b', 'c']) {
+    for (const key of ['x', 'y']) {
+      if (random() < 0.5) {
+        roots.push([substate, key, random() < 0.8 ? {ref: pick(count)} : {value: pick(3)}]);
+      }
+    }
+  }
+  return {nodes, roots};
+};
+const change = (graph) => {
+  const changed = structuredClone(graph);
+  const node = changed.nodes[pick(changed.nodes.length)];
+  const r = random();
+  if (r < 0.8 && node.entries.length > 0) {
+    node.entries[pick(node.entries.length)][1] =
+      r < 0.5 ? {value: 9} : {ref: pick(changed.nodes.length)};
+  } else {
+    node.entries.push([node.kind === 'array' ? node.entries.length : 'e', {value: 1}]);
+  }
+  return changed;
+};
+// A fresh decoding of the graph, as a decoder hands it over.
+const decode = (graph) => {
+  const objects = graph.nodes.map(({kind}) => (kind === 'array' ? [] : {}));
+  const resolve = (value) =>
+    value.ref !== undefined ? objects[value.ref] : value.date ?? value.value;
+  graph.nodes.forEach(({entries}, i) => {
+    for (const [key, value] of entries) {
+      objects[i][key] = resolve(value);
+    }
+  });
+  const delta = {a: {}, b: {}, c: {}};
+  for (const [substate, key, value] of graph.roots) {
+    delta[substate][key] = resolve(value);
+  }
+  return delta;
+};
+const isContainer = (value) =>
+  Array.isArray(value) || isPlainObject(value);
+// Whether a and b unfold to the same values.
+const sameValues = (a, b, seen = new Map()) => {
+  if (a instanceof Date && b instanceof Date) {
+    return a.getTime() === b.getTime();
+  }
+  if (!isContainer(a) || !isContainer(b)) {
+    return Object.is(a, b);
+  }
+  if (Array.isArray(a) !== Array.isArray(b)) {
+    return false;
+  }
+  const visited = seen.get(a) ?? new Set();
+  seen.set(a, visited);
+  if (visited.has(b)) {
+    return true;
+  }
+  visited.add(b);
+  const keys = Object.keys(a);
+  const otherKeys = Object.keys(b);
+  return keys.length === otherKeys.length &&
+    keys.every((key, i) => key === otherKeys[i] && sameValues(a[key], b[key], seen));
+};
+// Whether every place holding one decoded object holds one result, which
+// holds the results of what the object holds.
+const oneResultEach = (decoded, applied) => {
+  const results = new Map();
+  const check = (next, result) => {
+    if (!isContainer(next)) {
+      return Object.is(next, result);
+    }
+    if (results.has(next)) {
+      return results.get(next) === result;
+    }
+    results.set(next, result);
+    return Object.keys(next).every((key) => check(next[key], result[key]));
+  };
+  return Object.keys(decoded).every((substate) =>
+    Object.keys(decoded[substate]).every((key) =>
+      check(decoded[substate][key], applied[substate][key])));
+};
+for (let run = 0; run < 2000; run++) {
+  const graph = randomGraph();
+  const first = decode(graph);
+  const state = applyUpdate({a: {}, b: {}, c: {}}, first);
+  assert.ok(oneResultEach(first, state), `run ${run}: first`);
+  // The same values decoded again keep every substate.
+  const repeated = applyUpdate(state, decode(graph));
+  for (const substate of ['a', 'b', 'c']) {
+    assert.equal(repeated[substate], state[substate], `run ${run}: repeated`);
+  }
+  const changed = decode(change(graph));
+  const before = structuredClone(state);
+  const next = applyUpdate(state, changed);
+  assert.ok(oneResultEach(changed, next), `run ${run}: changed`);
+  for (const substate of ['a', 'b', 'c']) {
+    for (const key in changed[substate]) {
+      assert.ok(sameValues(changed[substate][key], next[substate][key]), `run ${run}: values`);
+    }
+    // The previous state is never mutated.
+    assert.ok(sameValues(before[substate], state[substate]), `run ${run}: unchanged`);
+  }
+}
 """)
