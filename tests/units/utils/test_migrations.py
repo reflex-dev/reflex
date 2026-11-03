@@ -192,6 +192,22 @@ def _table_names() -> set[str]:
     return set(sa.inspect(get_engine()).get_table_names())
 
 
+def _errors(caplog: pytest.LogCaptureFixture) -> list[str]:
+    """The error messages logged so far, whatever level the logger is left at.
+
+    Args:
+        caplog: The log capture fixture.
+
+    Returns:
+        The messages of the captured records at ERROR or above.
+    """
+    return [
+        record.getMessage()
+        for record in caplog.records
+        if record.levelno >= logging.ERROR
+    ]
+
+
 def test_run_invokes_the_alembic_command_line(monkeypatch: pytest.MonkeyPatch):
     """`run` hands the arguments to alembic's own CLI against ALEMBIC_CONFIG."""
     monkeypatch.setenv("ALEMBIC_CONFIG", __file__)
@@ -346,7 +362,7 @@ def test_schema_checks_point_at_the_next_command(
     """Pending model changes and unapplied scripts are reported with the fix."""
     _db("init")
     prerequisites.check_schema_up_to_date()
-    assert caplog.text == ""
+    assert _errors(caplog) == []
 
     _write_app(project, "sqlmodel", COLUMNS["sqlmodel"][1])
     prerequisites.check_schema_up_to_date()
@@ -367,7 +383,7 @@ def test_schema_checks_point_at_the_next_command(
     caplog.clear()
 
     _db("migrate")
-    assert caplog.text == ""
+    assert _errors(caplog) == []
 
 
 def test_status_shows_history_with_current_revision(
