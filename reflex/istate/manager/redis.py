@@ -28,6 +28,8 @@ from reflex.istate.manager import (
     StateManager,
     StateModificationContext,
     _default_token_expiration,
+    _dev_hot_reload_active,
+    _drop_cached_var_values,
 )
 from reflex.istate.manager.token import TOKEN_TYPE, BaseStateToken, StateToken
 from reflex.state import BaseState
@@ -258,6 +260,13 @@ class StateManagerRedis(StateManager):
     # The unique ID for this state manager, the domain for _local_leases.
     _instance_id: str = dataclasses.field(default_factory=lambda: str(uuid.uuid4()))
 
+    # Under the dev hot reloader, the keys of the states this process has
+    # written. None otherwise, as no reload can bring in new code.
+    _dev_written_keys: set[str] | None = dataclasses.field(
+        default_factory=lambda: set() if _dev_hot_reload_active() else None,
+        init=False,
+    )
+
     # Lock waiters for redis per-token lock.
     _lock_waiters: dict[bytes, list[asyncio.Event]] = dataclasses.field(
         default_factory=dict,
@@ -368,6 +377,32 @@ class StateManagerRedis(StateManager):
             )
         return populated_states
 
+    def _drop_stale_cached_vars(self, token: BaseStateToken, state: BaseState) -> None:
+        """Drop the cached var values of a state this process has not written, in dev mode.
+
+        A hot reload starts a new process, so a state saved before it may hold
+        values cached by the old code. Once this process writes the state, its
+        cached values come from the code running now.
+
+        Args:
+            token: The token of the state tree.
+            state: The state read from redis.
+        """
+        if (
+            self._dev_written_keys is not None
+            and token._state_key(type(state)) not in self._dev_written_keys
+        ):
+            _drop_cached_var_values(state)
+
+    def _record_dev_writes(self, writes: list[tuple[str, bytes]]) -> None:
+        """Remember the states this process wrote, in dev mode.
+
+        Args:
+            writes: The redis keys and payloads that were written.
+        """
+        if self._dev_written_keys is not None:
+            self._dev_written_keys.update(key for key, _ in writes)
+
     @override
     async def get_state(
         self,
@@ -431,6 +466,7 @@ class StateManagerRedis(StateManager):
                 # Deserialize the substate.
                 with contextlib.suppress(StateSchemaMismatchError):
                     state = BaseState._deserialize(data=redis_state)
+                    self._drop_stale_cached_vars(token, state)
             if state is None:
                 # Key didn't exist or schema mismatch so create a new instance for this token.
                 state = state_cls(
@@ -497,6 +533,7 @@ class StateManagerRedis(StateManager):
                 for key, pickle_state in writes:
                     pipeline.set(key, pickle_state, ex=self.token_expiration)
                 await pipeline.execute()
+                self._record_dev_writes(writes)
             return
 
         event_suffix = (
@@ -530,6 +567,7 @@ class StateManagerRedis(StateManager):
                 + event_suffix
             )
             raise LockExpiredError(msg)
+        self._record_dev_writes(writes)
         if (
             isinstance(token, BaseStateToken)
             and token.lock_key not in self._local_leases
