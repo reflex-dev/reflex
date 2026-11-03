@@ -2477,8 +2477,12 @@ def test_delta_value_key_ignores_mapping_order() -> None:
     }
 
     assert _delta_value_key(first) == _delta_value_key(reordered)
-    # Mixed JSON object key types are serializable but cannot be sorted.
-    assert isinstance(_delta_value_key({"name": "x", 1: "y"}), bytes)
+    # Mixed numeric/string keys also have stable ordering, including nested
+    # maps. Sorting raw keys raises TypeError before the JSON conversion.
+    mixed = {"meta": {1: "a", "b": "c"}}
+    mixed_reordered = {"meta": {"b": "c", 1: "a"}}
+    assert isinstance(_delta_value_key(mixed), bytes)
+    assert _delta_value_key(mixed) == _delta_value_key(mixed_reordered)
     assert _delta_value_key(first) != _delta_value_key(
         {"root": {"alpha": 9, "beta": 2}, "rows": [{"x": 1, "y": 2}]}
     )

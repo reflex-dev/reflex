@@ -2521,8 +2521,9 @@ def _delta_value_key(value: Any) -> Any:
         try:
             serialized = json_dumps(value, sort_keys=True)
         except TypeError:
-            # JSON permits mixed string and numeric keys, which cannot be sorted.
-            serialized = json_dumps(value)
+            # JSON permits mixed key types. Normalize through the JSON
+            # representation the browser actually sees before sorting.
+            serialized = json_dumps(json.loads(json_dumps(value)), sort_keys=True)
         return hashlib.blake2b(
             serialized.encode(), digest_size=_DELTA_VALUE_DIGEST_SIZE
         ).digest()
