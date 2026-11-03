@@ -585,7 +585,7 @@ for (const config of [
 }
 
 /** Run `useEventLoop` once with minimal hooks, keeping the effects it registers. */
-async function mountEventLoop(clientStorage = {}) {
+async function mountEventLoop(clientStorage = {}, initialState) {
   const effects = [];
   const sent = [];
   const emitted = {
@@ -595,6 +595,7 @@ async function mountEventLoop(clientStorage = {}) {
   let refs = 0;
   const harness = await setup({
     clientStorage,
+    initialState,
     react: {
       useCallback: (fn) => fn,
       useEffect: (fn) => effects.push(fn),
@@ -697,12 +698,14 @@ test("a storage event syncs every synced var that shares the storage name", asyn
 test("storage names that are Object.prototype properties sync like any other", async () => {
   const clientStorage = {
     local_storage: {
-      first: { name: "constructor", sync: true },
-      second: { name: "constructor", sync: true },
-      third: { name: "__proto__", sync: true },
+      "root.first": { name: "constructor", sync: true },
+      "root.second": { name: "constructor", sync: true },
+      "root.third": { name: "__proto__", sync: true },
     },
   };
-  const { harness, effects, sent } = await mountEventLoop(clientStorage);
+  const { harness, effects, sent } = await mountEventLoop(clientStorage, {
+    root: { first: "", second: "", third: "third default" },
+  });
   assert.doesNotThrow(() => {
     for (const effect of effects) effect();
   });
@@ -721,23 +724,34 @@ test("storage names that are Object.prototype properties sync like any other", a
   assert.equal(updates.length, 2, JSON.stringify(sent));
   assert.equal(
     JSON.stringify(updates[0].payload.vars),
-    JSON.stringify({ first: "stored", second: "stored" }),
+    JSON.stringify({ "root.first": "stored", "root.second": "stored" }),
   );
+  // A name with no stored value syncs its var's default.
   assert.equal(
     JSON.stringify(updates[1].payload.vars),
-    JSON.stringify({ third: null }),
+    JSON.stringify({ "root.third": "third default" }),
   );
 });
 
-test("clearing localStorage syncs every configured name but not unsynced vars", async () => {
-  const { harness, effects, sent } = await mountEventLoop({
-    local_storage: {
-      first: { name: "shared", sync: true },
-      second: { name: "shared", sync: true },
-      other: { sync: true },
-      unsynced: { name: "shared" },
+test("clearing localStorage syncs every synced var's own default", async () => {
+  const { harness, effects, sent } = await mountEventLoop(
+    {
+      local_storage: {
+        "root.first": { name: "shared", sync: true },
+        "root.second": { name: "shared", sync: true },
+        "root.other": { sync: true },
+        "root.unsynced": { name: "shared" },
+      },
     },
-  });
+    {
+      root: {
+        first: "first default",
+        second: "second default",
+        other: "other default",
+        unsynced: "unsynced default",
+      },
+    },
+  );
   effects.forEach((effect) => effect());
   const event = new Event("storage");
   event.key = null;
@@ -748,13 +762,17 @@ test("clearing localStorage syncs every configured name but not unsynced vars", 
     event.name.endsWith("update_vars_internal"),
   );
   assert.equal(updates.length, 2, JSON.stringify(sent));
+  // Vars that share a name each get their own default, as a page load gives.
   assert.equal(
     JSON.stringify(updates[0].payload.vars),
-    JSON.stringify({ first: null, second: null }),
+    JSON.stringify({
+      "root.first": "first default",
+      "root.second": "second default",
+    }),
   );
   assert.equal(
     JSON.stringify(updates[1].payload.vars),
-    JSON.stringify({ other: null }),
+    JSON.stringify({ "root.other": "other default" }),
   );
 });
 
@@ -783,36 +801,53 @@ test("clearing localStorage without synced vars queues no updates", async () => 
   assert.equal(sent.length, 0);
 });
 
-for (const defaultValue of ["", "light"]) {
-  test(`a delayed storage reset to ${JSON.stringify(defaultValue)} preserves another tab's newer value`, async () => {
-    const app = await setup({
-      clientStorage: {
-        local_storage: { "child.value": { name: "shared", sync: true } },
-      },
-      initialState: { root: {}, child: { value: defaultValue } },
-      firstPayload: { vars: { "child.value": null } },
-    });
-    app.flush();
-    await app.connect();
-    app.localStorage.items.set("shared", "newer");
-    app.socket.current.handlers.get("event")({
-      delta: { child: { value: defaultValue } },
-    });
-    assert.equal(app.localStorage.getItem("shared"), "newer");
-  });
+/** Send the sync event of a synced storage name, as another tab's change queues it. */
+async function sendStorageSync(app, key, state_keys) {
+  const sent = [];
+  app.socket.current.emit = (name, payload) => sent.push(payload);
+  const { applyEvent, ReflexEvent } = app.module.namespace;
+  await applyEvent(
+    ReflexEvent("_sync_local_storage", { key, state_keys }),
+    app.socket.current,
+    () => {},
+    {},
+  );
+  return sent;
 }
 
-test("an unmatched backend storage update still writes its value", async () => {
+/** Set up a connected app with one synced var stored under "shared". */
+async function connectSyncedStorage(defaultValue) {
   const app = await setup({
     clientStorage: {
       local_storage: { "child.value": { name: "shared", sync: true } },
     },
-    initialState: { root: {}, child: { value: "light" } },
-    firstPayload: { vars: { "child.value": null } },
+    initialState: { root: {}, child: { value: defaultValue } },
   });
   app.flush();
   await app.connect();
-  app.localStorage.items.set("shared", "newer");
+  return app;
+}
+
+for (const defaultValue of ["", "light"]) {
+  test(`a removed synced key sends its default ${JSON.stringify(defaultValue)} and the echo leaves storage empty`, async () => {
+    const app = await connectSyncedStorage(defaultValue);
+    const sent = await sendStorageSync(app, "shared", ["child.value"]);
+    assert.equal(
+      JSON.stringify(sent.map((event) => event.payload.vars)),
+      JSON.stringify([{ "child.value": defaultValue }]),
+    );
+    // The backend stores the default and echoes it back.
+    app.socket.current.handlers.get("event")({
+      delta: { child: { value: defaultValue } },
+    });
+    assert.equal(app.localStorage.getItem("shared"), null);
+  });
+}
+
+test("a backend value that differs from the sent default is still written", async () => {
+  const app = await connectSyncedStorage("light");
+  await sendStorageSync(app, "shared", ["child.value"]);
+  // A get_delta override can replace the value; the browser stores its result.
   app.socket.current.handlers.get("event")({
     delta: { child: { value: "server" } },
   });

@@ -480,8 +480,25 @@ function urlFrom(string) {
 const syncLocalStorageEvent = ({ key, state_keys }) => {
   const value = localStorage.getItem(key);
   return ReflexEvent(`${app.state_name}.${UPDATE_VARS_INTERNAL}`, {
-    vars: Object.fromEntries(state_keys.map((state_key) => [state_key, value])),
+    vars: Object.fromEntries(
+      state_keys.map((state_key) => [
+        state_key,
+        value ?? storageDefault(state_key),
+      ]),
+    ),
   });
+};
+
+/**
+ * Get the compiled default of a browser storage var.
+ *
+ * A removed storage key resets its vars to their defaults, as a page load does.
+ * @param state_key The state key of the browser storage var.
+ * @returns The default value.
+ */
+const storageDefault = (state_key) => {
+  const dot = state_key.lastIndexOf(".");
+  return app.initialState[state_key.slice(0, dot)][state_key.slice(dot + 1)];
 };
 
 /**
@@ -1339,20 +1356,7 @@ const recordSentStorageValues = (event) => {
       continue;
     }
     const sent = (sentStorageValues[state_key] ??= []);
-    // The backend restores the declared default when an entry is removed.
-    // Match that reply as an echo so it cannot overwrite another tab's write.
-    let echoed_value = value;
-    if (value === null) {
-      const separator = state_key.lastIndexOf(".");
-      const default_value =
-        app.initialState[state_key.slice(0, separator)]?.[
-          state_key.slice(separator + 1)
-        ];
-      if (default_value !== undefined) {
-        echoed_value = default_value;
-      }
-    }
-    sent.push({ value: echoed_value, writes: localStorageWrites });
+    sent.push({ value, writes: localStorageWrites });
     if (sent.length > MAX_SENT_STORAGE_VALUES) {
       sent.shift();
     }

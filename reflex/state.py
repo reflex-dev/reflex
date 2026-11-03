@@ -2706,10 +2706,6 @@ async def _apply_client_storage_vars(
         var_state_cls = State.get_class_substate(state_name)
         if var_state_cls._is_client_storage(var_name):
             var_state = await state.get_state(var_state_cls)
-            # A removed browser entry has no value; restore its declared default,
-            # just as hydration does for missing client storage.
-            if value is None:
-                value = var_state_cls.get_fields()[var_name].default_value()
             setattr(var_state, var_name, value)
             applied.append((var_state, var_name))
     return applied
