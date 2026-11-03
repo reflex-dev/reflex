@@ -2827,8 +2827,45 @@ def _load_events_for_page(
     ]
 
 
-def dynamic(func: Callable[[T], Component]):
-    """Create a dynamically generated components from a state class.
+if TYPE_CHECKING:
+    from typing_extensions import deprecated
+
+    @deprecated(
+        "Keep plain data in state and render it with rx.cond, rx.match and rx.foreach instead"
+    )
+    def dynamic(func: Callable[[T], Component]) -> Callable[[], Component]:
+        """Create a dynamically generated component from a state class (deprecated).
+
+        Args:
+            func: The function to generate the component.
+
+        Returns:
+            The dynamically generated component.
+        """
+        ...
+
+else:
+
+    def dynamic(func: Callable[[T], Component]) -> Callable[[], Component]:
+        """Create a dynamically generated component from a state class (deprecated).
+
+        Args:
+            func: The function to generate the component.
+
+        Returns:
+            The dynamically generated component.
+        """
+        console.deprecate(
+            feature_name="rx.dynamic",
+            reason="Keep plain data in state and render it with rx.cond, rx.match and rx.foreach instead",
+            deprecation_version="0.10.2",
+            removal_version="1.0",
+        )
+        return _dynamic(func)
+
+
+def _dynamic(func: Callable[[T], Component]) -> Callable[[], Component]:
+    """Create a dynamically generated component from a state class.
 
     Args:
         func: The function to generate the component.

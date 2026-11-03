@@ -172,6 +172,15 @@ def load_dynamic_serializer():
         Returns:
             The generated code
         """
+        console.deprecate(
+            feature_name="Dynamic components",
+            reason=(
+                "Storing components in state vars is deprecated. Keep plain data in "
+                "state and render it with rx.cond, rx.match and rx.foreach instead"
+            ),
+            deprecation_version="0.10.2",
+            removal_version="1.0",
+        )
         # Causes a circular import, so we import here.
         from reflex_components_core.base.bare import Bare
 

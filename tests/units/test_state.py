@@ -7608,3 +7608,16 @@ async def test_shared_storage_name_conflicting_writes_pick_by_name(
     (await root.get_state(AWriter)).value = "a"
     await root._get_resolved_delta()
     assert (await root.get_state(MSibling)).value == "a"
+
+
+def test_dynamic_decorator_warns(mocker: MockerFixture):
+    """Decorating a page with rx.dynamic emits a deprecation warning."""
+    deprecate = mocker.patch("reflex.utils.console.deprecate")
+
+    @rx.dynamic
+    def page(state: rx.State):
+        return rx.text("hi")
+
+    deprecate.assert_called_once()
+    assert deprecate.call_args.kwargs["feature_name"] == "rx.dynamic"
+    assert deprecate.call_args.kwargs["removal_version"] == "1.0"

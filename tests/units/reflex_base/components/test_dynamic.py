@@ -8,8 +8,10 @@ from reflex_base import constants
 from reflex_base.components import dynamic
 from reflex_base.components.component import Component
 from reflex_base.registry import RegistrationContext, _default_bundled_libraries
+from reflex_base.utils import serializers
 from reflex_base.utils.exceptions import DynamicComponentMissingLibraryError
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
+from reflex_components_core.el.elements.typography import Div
 
 from reflex.components import dynamic as reflex_dynamic
 
@@ -157,6 +159,17 @@ def test_bundled_libraries_shim_warns(mocker):
         deprecate.call_args.kwargs["feature_name"]
         == "reflex_base.components.dynamic.bundled_libraries"
     )
+
+
+def test_serializing_component_warns(mocker):
+    """Serializing a component for a state var emits a deprecation warning."""
+    deprecate = mocker.patch("reflex_base.utils.console.deprecate")
+
+    with RegistrationContext():
+        serializers.serialize(Div.create())
+    deprecate.assert_called_once()
+    assert deprecate.call_args.kwargs["feature_name"] == "Dynamic components"
+    assert deprecate.call_args.kwargs["removal_version"] == "1.0"
 
 
 @pytest.mark.parametrize("module_name", ["reflex_base", "reflex"])

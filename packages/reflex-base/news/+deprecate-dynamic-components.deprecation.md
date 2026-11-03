@@ -1,0 +1,1 @@
+Dynamic components (state vars that hold an `rx.Component`) are deprecated and will be removed in 1.0. A deprecation warning is logged the first time such a var is sent to the browser. Keep plain data in state and render it with `rx.cond`, `rx.match` and `rx.foreach` instead.
