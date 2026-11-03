@@ -122,20 +122,43 @@ class User(rx.Model, table=True):
 Reflex leverages [alembic](https://alembic.sqlalchemy.org/en/latest/)
 to manage database schema changes.
 
-Before the database feature can be used in a new app you must call `reflex db init`
-to initialize alembic and create a migration script with the current schema.
+Before the database feature can be used in a new app you must call `reflex db init`.
+It writes `alembic.ini` and an `alembic/` directory holding `env.py`,
+`script.py.mako` and `versions/`, then creates and applies a migration script
+with the current schema. The generated `env.py` loads the app, so every registered
+model is known to alembic, and takes the database URL from `db_url` in
+`rxconfig.py`. These files belong to your app: edit `env.py` to change how
+migrations are detected, for example to compare column types.
 
-After making changes to the schema, use
-`reflex db makemigrations --message 'something changed'`
-to generate a script in the `alembic/versions` directory that will update the
-database schema. It is recommended that generated scripts be inspected before applying them.
+The `reflex db` commands are thin wrappers over alembic, so the `alembic`
+command line works on the same environment:
 
-Bear in mind that your newest models will not be detected by the `reflex db makemigrations`
-command unless imported and used somewhere within the application.
+| Reflex command | Alembic command |
+| --- | --- |
+| `reflex db makemigrations --message 'something changed'` | `alembic revision --autogenerate -m 'something changed'` |
+| `reflex db migrate` | `alembic upgrade head` |
+| `reflex db status` | `alembic history --indicate-current` |
+
+Anything alembic can do, such as `alembic downgrade -1` or `alembic upgrade --sql`,
+works the same way. `reflex db makemigrations` differs from `alembic revision` in
+one respect: it writes no script when the schema has not changed.
+
+Generated scripts land in the `alembic/versions` directory. It is recommended
+that they be inspected before applying them. Bear in mind that your newest
+models will not be detected by the `reflex db makemigrations` command unless
+imported and used somewhere within the application.
 
 The `reflex db migrate` command is used to apply migration scripts to bring the
 database up to date. During app startup, if Reflex detects that the current
 database schema is not up to date, a warning will be displayed on the console.
+
+```md alert info
+# Upgrading an existing app
+
+Apps initialized by an earlier Reflex release have a stock alembic `env.py` that does
+not load the app. Run `reflex db init` once: it replaces `env.py` and
+`script.py.mako` with the current templates and keeps the existing revisions.
+```
 
 ## Queries
 
