@@ -134,7 +134,7 @@
 - `VarData` now tracks every state field a var is built from in `field_dependencies`, a mapping of state name to that state's field names, unioned and deduped as vars merge. A computed var depending on a composite var (`deps=[SomeState.composite]`) is now invalidated when any of its underlying fields changes — including fields belonging to a different state, which previously went untracked. `state` and `field_name` still report the first state and its first field, so existing readers are unaffected; read `field_dependencies` when you need every state a var reaches. ([#7068](https://github.com/reflex-dev/reflex/issues/7068))
 - Add `BaseVarShadowsInheritedVarError`, raised when a substate declares a var that shadows a var inherited from a parent state. ([#7077](https://github.com/reflex-dev/reflex/issues/7077))
 - Add native image cells to `rx.data_editor` with `type="image"`, allowing image thumbnails and text to appear together in the same grid. ([#7081](https://github.com/reflex-dev/reflex/issues/7081))
-- `EnvVar` reads `timedelta` values as a number of seconds, or with a `us`, `ms`, `s`, `m`, `h` or `d` suffix. ([#7131](https://github.com/reflex-dev/reflex/issues/7131))
+- Add `timedelta` parsing to `EnvVar`: values may be given in seconds or with a `us`, `ms`, `s`, `m`, `h`, or `d` suffix. ([#7131](https://github.com/reflex-dev/reflex/issues/7131))
 
 ### Bug Fixes
 
@@ -150,7 +150,7 @@
 - Load `rxconfig` only from the requested project directory, preventing an installed or editable app from supplying another project's configuration when no local config exists. ([#7078](https://github.com/reflex-dev/reflex/issues/7078))
 - Generated `.pyi` stubs now type a prop declared as a union — `content: Var[str] | Component`, say — as optional, matching the `None` default that `create()` gives every prop. Type checkers previously reported the generated signature itself as an error. ([#7080](https://github.com/reflex-dev/reflex/issues/7080))
 - Persist the bundled-library registry used by backend-only workers when serializing state hydration data. ([#7096](https://github.com/reflex-dev/reflex/issues/7096))
-- An `AttributeError` raised while computing a var, such as a typo inside an `@rx.serializer`, is now re-raised as a `ReflexRuntimeError` chained to the original error instead of a misleading `Attribute _cached_var_name not found` error. ([#7115](https://github.com/reflex-dev/reflex/issues/7115))
+- An `AttributeError` raised while computing a var, such as a typo inside an `@rx.serializer`, is now re-raised as a `ReflexRuntimeError` chained to the original error instead of a misleading `Attribute _cached_var_name not found` error. This also makes `hasattr(var, name)` and `getattr(var, name, default)` raise rather than silently return `False` or the default when a cached computation fails. ([#7115](https://github.com/reflex-dev/reflex/issues/7115))
 - Fix `RecursionError: maximum recursion depth exceeded` in the event processor when a handler re-chains itself many times (for example a polling loop started from `on_load`), which surfaced on the client's next navigation and in the event cleanup callbacks. ([#7145](https://github.com/reflex-dev/reflex/issues/7145))
 - Consolidate deprecation warnings behind the shared logging pipeline while preserving the public `console.deprecate` API. ([#7152](https://github.com/reflex-dev/reflex/issues/7152))
 - Flush OpenTelemetry compile spans before the isolated initial development compile worker exits. ([#7155](https://github.com/reflex-dev/reflex/issues/7155))
