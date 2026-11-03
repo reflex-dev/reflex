@@ -1339,7 +1339,20 @@ const recordSentStorageValues = (event) => {
       continue;
     }
     const sent = (sentStorageValues[state_key] ??= []);
-    sent.push({ value, writes: localStorageWrites });
+    // The backend restores the declared default when an entry is removed.
+    // Match that reply as an echo so it cannot overwrite another tab's write.
+    let echoed_value = value;
+    if (value === null) {
+      const separator = state_key.lastIndexOf(".");
+      const default_value =
+        app.initialState[state_key.slice(0, separator)]?.[
+          state_key.slice(separator + 1)
+        ];
+      if (default_value !== undefined) {
+        echoed_value = default_value;
+      }
+    }
+    sent.push({ value: echoed_value, writes: localStorageWrites });
     if (sent.length > MAX_SENT_STORAGE_VALUES) {
       sent.shift();
     }

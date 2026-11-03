@@ -19,6 +19,7 @@ async function setup({
   hidden = false,
   storedToken = "original-token",
   clientStorage = {},
+  initialState = { root: {}, child: {} },
   dropConnects = 0,
   dropReason = "transport close",
   maxPayload = 1_000_000,
@@ -46,6 +47,9 @@ async function setup({
     items: new Map(),
     getItem(key) {
       return this.items.get(key) ?? null;
+    },
+    setItem(key, value) {
+      this.items.set(key, String(value));
     },
   };
   const document = new EventTarget();
@@ -182,7 +186,7 @@ async function setup({
                 : { name: "root.hydrate_and_load" },
           ];
         },
-        initialState: stateful ? { root: {}, child: {} } : {},
+        initialState: stateful ? initialState : {},
         onLoadInternalEvent() {},
         state_name: "root",
         clientStorage,
@@ -244,7 +248,7 @@ async function setup({
         { child: (delta) => updates.push(delta.count) },
         transports,
         (update) => errorUpdates.push(update),
-        {},
+        clientStorage,
         () => {},
         { current: {} },
       ),
@@ -777,4 +781,40 @@ test("clearing localStorage without synced vars queues no updates", async () => 
   harness.window.dispatchEvent(event);
   await new Promise((resolve) => setImmediate(resolve));
   assert.equal(sent.length, 0);
+});
+
+for (const defaultValue of ["", "light"]) {
+  test(`a delayed storage reset to ${JSON.stringify(defaultValue)} preserves another tab's newer value`, async () => {
+    const app = await setup({
+      clientStorage: {
+        local_storage: { "child.value": { name: "shared", sync: true } },
+      },
+      initialState: { root: {}, child: { value: defaultValue } },
+      firstPayload: { vars: { "child.value": null } },
+    });
+    app.flush();
+    await app.connect();
+    app.localStorage.items.set("shared", "newer");
+    app.socket.current.handlers.get("event")({
+      delta: { child: { value: defaultValue } },
+    });
+    assert.equal(app.localStorage.getItem("shared"), "newer");
+  });
+}
+
+test("an unmatched backend storage update still writes its value", async () => {
+  const app = await setup({
+    clientStorage: {
+      local_storage: { "child.value": { name: "shared", sync: true } },
+    },
+    initialState: { root: {}, child: { value: "light" } },
+    firstPayload: { vars: { "child.value": null } },
+  });
+  app.flush();
+  await app.connect();
+  app.localStorage.items.set("shared", "newer");
+  app.socket.current.handlers.get("event")({
+    delta: { child: { value: "server" } },
+  });
+  assert.equal(app.localStorage.getItem("shared"), "server");
 });
