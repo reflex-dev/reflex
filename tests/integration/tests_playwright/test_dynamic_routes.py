@@ -290,8 +290,7 @@ def test_on_load_navigate(
     exp_order = driver.locator("#event_order > p").all_text_contents()
     assert exp_order in expected_back_orders
 
-    # A client-side link to an unknown route renders the generated 404 page,
-    # rather than the app's ordinary /404 route with an on_load event list.
+    # An unknown client-side route renders the app's /404 page and fires its on_load.
     with poll_for_navigation(driver):
         click_element(driver, "#link_missing")
     expect(driver.get_by_text("404")).to_be_visible()

@@ -425,7 +425,7 @@ def test_upload_file_multiple(
         _write_file(tmp_path, name, contents) for name, contents in files.items()
     ]
     _file_input(opened_page).set_input_files(targets)
-    expect(opened_page.locator("#selected_files")).to_contain_text("reflex.txt")
+    expect(opened_page.locator("#selected_files > p")).to_have_text(list(files))
     opened_page.locator("#upload_button").click()
     _upload_done(opened_page)
     for name, contents in files.items():
@@ -454,7 +454,10 @@ def test_clear_files(
         _write_file(tmp_path, "test2.txt", "second"),
     ]
     _file_input(opened_page, upload_id).set_input_files(targets)
-    expect(opened_page.locator(f"#selected_files{suffix}")).to_contain_text("test2.txt")
+    expect(opened_page.locator(f"#selected_files{suffix} > p")).to_have_text([
+        "test1.txt",
+        "test2.txt",
+    ])
     opened_page.locator(f"#clear_button{suffix}").click()
     expect(opened_page.locator(f"#selected_files{suffix}")).to_be_empty()
 
@@ -541,7 +544,7 @@ def test_upload_chunk_file(tmp_path: Path, upload_file: AppHarness, opened_page:
     ]
     page = opened_page
     _file_input(page, "streaming").set_input_files(targets)
-    expect(page.locator("#selected_files_streaming")).to_contain_text("stream2.txt")
+    expect(page.locator("#selected_files_streaming > p")).to_have_text(list(files))
     page.locator("#upload_button_streaming").click()
     expect(page.locator("#stream_chunk_records")).to_contain_text(
         "stream1.txt", timeout=30_000
