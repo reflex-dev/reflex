@@ -180,7 +180,9 @@ def get_route_regex(keyworded_route: str) -> re.Pattern:
     # Join the regex parts and compile the regex
     regex_pattern = "".join(regex_parts)
     regex_pattern = f"^{regex_pattern}/?$"
-    return re.compile(regex_pattern)
+    # React Router matches route paths case-insensitively by default, folding
+    # ASCII letters only (its regex has no "u" flag).
+    return re.compile(regex_pattern, re.IGNORECASE | re.ASCII)
 
 
 def get_router(routes: list[str]) -> Callable[[str], str | None]:

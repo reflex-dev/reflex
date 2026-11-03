@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Generic, TypedDict, overload
 
 from reflex_base import constants
 from reflex_base.config import get_config
+from reflex_base.environment import environment
 from reflex_base.event import Event
 from reflex_base.utils.exceptions import InvalidStateManagerModeError
 from typing_extensions import ReadOnly, Unpack, deprecated
@@ -345,6 +346,35 @@ def _release_state_tree(state: "BaseState"):
     for substate in state.substates.values():
         _release_state_tree(substate)
     state.substates.clear()
+
+
+def _drop_cached_var_values(state: "BaseState") -> None:
+    """Drop the computed var values cached in a state read from storage.
+
+    The process that saved the state may have run older code, as before a hot
+    reload. Its fields are kept, and its computed vars are computed again when
+    read.
+
+    Args:
+        state: The state read from storage.
+    """
+    for computed_var in state.computed_vars.values():
+        computed_var.mark_dirty(instance=state)
+
+
+def _dev_hot_reload_active() -> bool:
+    """Check if the backend runs in dev mode under the reflex hot reloader.
+
+    Only there can a reload bring in new code while stored states still hold
+    values cached by the old code.
+
+    Returns:
+        Whether stored cached var values may come from older code.
+    """
+    return (
+        environment.REFLEX_ENV_MODE.get() == constants.Env.DEV
+        and environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.get()
+    )
 
 
 def _default_token_expiration() -> int:

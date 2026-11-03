@@ -1112,6 +1112,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         # change to any state invalidates every cached root.
         cls._to_schema.cache_clear()
         _frontend_schema.cache_clear()
+        _shared_storage_groups.cache_clear()
 
     @classmethod
     def _iter_functions(cls) -> Iterator[tuple[str, FunctionType]]:
@@ -1953,6 +1954,8 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         Returns:
             The resolved delta.
         """
+        if not _replay_client_storage.get():
+            await _sync_shared_storage(self)
         return await resolve_delta(self)
 
     def _mark_dirty(self, var_names: Iterable[str] | None = None) -> None:
@@ -2281,6 +2284,92 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         ):
             raise StateSchemaMismatchError
         return state
+
+
+@functools.lru_cache
+def _shared_storage_groups(
+    root: type[BaseState], context: RegistrationContext
+) -> tuple[tuple[tuple[type[BaseState], str, bool], ...], ...]:
+    """Group the localStorage vars by storage name.
+
+    Only names that a synced var shares with another var are included.
+
+    Args:
+        root: The state at the top of the tree.
+        context: The registration context holding the tree.
+
+    Returns:
+        The state, var name and sync flag of each var, one group per name.
+    """
+    # The compiler imports this module.
+    from reflex.compiler.utils import _compile_client_storage_recursive
+
+    by_name: dict[str, list[tuple[type[BaseState], str, bool]]] = {}
+    for state_key, options in _compile_client_storage_recursive(root)[1].items():
+        if name := options.get("name"):
+            state_name, _, var_name = state_key.removesuffix(FIELD_MARKER).rpartition(
+                "."
+            )
+            by_name.setdefault(name, []).append((
+                root.get_class_substate(state_name),
+                var_name,
+                bool(options.get("sync")),
+            ))
+    # Sorted, so conflicting writes to one name set the other vars the same way
+    # in every process.
+    return tuple(
+        tuple(sorted(members, key=lambda m: (m[0].get_full_name(), m[1])))
+        for members in by_name.values()
+        if len(members) > 1 and any(sync for _, _, sync in members)
+    )
+
+
+async def _sync_shared_storage(state: BaseState) -> None:
+    """Set the synced vars sharing the storage name of a var this event wrote.
+
+    The browser raises the storage event in other tabs only, so the tab that
+    stores the value would keep the other vars with its name stale.
+
+    Args:
+        state: The root of the states to get the delta for.
+    """
+    for members in _shared_storage_groups(
+        state.get_root_state(), RegistrationContext.get()
+    ):
+        written = {
+            (state_cls, var_name): source.get_value(var_name)
+            for state_cls, var_name, _ in members
+            if (source := _loaded_substate(state, state_cls.get_full_name()))
+            is not None
+            and var_name in source.dirty_vars
+        }
+        if not written:
+            continue
+        # The vars this event wrote keep their values; the others take the first
+        # written value in name order.
+        value = next(iter(written.values()))
+        for state_cls, var_name, sync in members:
+            if sync and (state_cls, var_name) not in written:
+                target = await state.get_state(state_cls)
+                if target.get_value(var_name) != value:
+                    setattr(target, var_name, value)
+
+
+def _loaded_substate(root: BaseState, state_name: str) -> BaseState | None:
+    """Get a substate by its full name only if it is already loaded.
+
+    Args:
+        root: The root state.
+        state_name: The full name of the substate.
+
+    Returns:
+        The substate, or None if it is not loaded.
+    """
+    state = root
+    for name in state_name.split(".")[1:]:
+        if (state := state.substates.get(name)) is None:
+            return None
+    return state
 
 
 @functools.lru_cache

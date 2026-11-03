@@ -2,7 +2,6 @@
 import io from "socket.io-client";
 import { mergician } from "mergician";
 import env from "$/env.json";
-import reflexEnvironment from "$/reflex.json";
 import Cookies from "universal-cookie";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -31,6 +30,10 @@ const LAST_RELOADED_KEY = "reflex_last_reloaded_on_error";
 
 // The id of the banner offering a reload when one already happened recently.
 const NEW_VERSION_BANNER_ID = "reflex-new-version-banner";
+
+// The cancelable window event dispatched before a prod page acts on a state
+// mismatch; a listener calling preventDefault() handles the mismatch instead.
+const STATE_MISMATCH_WINDOW_EVENT = "reflex:state-mismatch";
 
 // Client error types (must match reflex_base/constants/event.py ClientErrorType)
 const ERROR_TYPE_DISPATCH_MISSING = "dispatch_function_missing";
@@ -190,7 +193,7 @@ const createSocket = (endpoint, transports, token) =>
   io(endpoint.href, {
     path: endpoint.pathname,
     transports,
-    protocols: [reflexEnvironment.version],
+    protocols: [env.REFLEX_VERSION],
     autoUnref: false,
     autoConnect: false,
     query: { token },
@@ -423,9 +426,14 @@ export const applyDelta = (state, delta) => {
  * @returns The evaluated component.
  */
 export const evalReactComponent = async (component) => {
-  await window.__reflex_load?.();
   if (!window.React && window.__reflex) {
     window.React = window.__reflex.react;
+  }
+  // The library list is always on the first line of the generated module.
+  const marker = "//__reflex_evaluate:";
+  if (component.startsWith(marker)) {
+    const libraries = component.slice(marker.length, component.indexOf("\n"));
+    await window.__reflex_load?.(JSON.parse(libraries));
   }
   const encodedJs = encodeURIComponent(component);
   const dataUri = "data:text/javascript;charset=utf-8," + encodedJs;
@@ -736,6 +744,12 @@ const withRouterData = (event, params) => {
   return event;
 };
 
+const currentRouteKey = () => {
+  const loc = locationRef.current ?? window.location;
+  const liveLoc = env.MOUNT_TARGET ? loc : window.location;
+  return loc.pathname + (liveLoc.search ?? "");
+};
+
 /**
  * Send an event to the server via REST.
  * @param event The current event.
@@ -879,8 +893,10 @@ const showNewVersionBanner = () => {
  * In prod the page reloads once per cooldown window. A mismatch inside the
  * window means the reload landed on the same skew (a cached bundle, or several
  * backend versions behind one load balancer), so a banner with a reload button
- * shows instead and the page never loops. In dev a backend hot reload can
- * reconnect before Vite serves the rebuilt bundle, so it only warns.
+ * shows instead and the page never loops. The app can take over first: a
+ * listener on the window's STATE_MISMATCH_WINDOW_EVENT that calls
+ * preventDefault() skips both. In dev a backend hot reload can reconnect
+ * before Vite serves the rebuilt bundle, so it only warns.
  * @param info The backend's state schema hash and the reload cooldown in ms.
  */
 const handleStateMismatch = (info) => {
@@ -894,13 +910,20 @@ const handleStateMismatch = (info) => {
     );
     return;
   }
+  console.warn(message);
+  const event = new CustomEvent(STATE_MISMATCH_WINDOW_EVENT, {
+    cancelable: true,
+    detail: { frontend: app.stateSchema, backend: info.backend },
+  });
+  if (!window.dispatchEvent(event)) {
+    return;
+  }
   const last_reload =
     parseInt(window.sessionStorage.getItem(LAST_RELOADED_KEY)) || 0;
   if (Date.now() - last_reload > info.reload_cooldown_ms) {
     reloadForNewVersion();
     return;
   }
-  console.warn(message + " Reload the page to get the new version.");
   showNewVersionBanner();
 };
 
@@ -933,6 +956,7 @@ export const connect = async (
 
   // Get backend URL object from the endpoint.
   const endpoint = getBackendURL(EVENTURL);
+  let bootRoute;
 
   // The hydrate event rides in the socket.io CONNECT packet, so the backend
   // starts loading state as soon as the namespace connects instead of after
@@ -940,12 +964,13 @@ export const connect = async (
   // the backend as CompileVars.CONNECT_AUTH_EVENT and CONNECT_AUTH_STATE_SCHEMA;
   // the state schema goes along on every (re)connect, since a reconnect can
   // land on another backend version.
-  const bootAuth = (first) => {
+  const bootAuth = (first) => (callback) => {
     const boot_event = withRouterData(app.initialEvents(first)[0], params);
+    bootRoute = currentRouteKey();
     recordSentStorageValues(boot_event);
     // Instrumentation hook (installed by reflex-otel): may add a traceparent.
     window.__reflex_otel?.onEventSend?.(boot_event);
-    return { event: boot_event, state_schema: app.stateSchema };
+    callback({ event: boot_event, state_schema: app.stateSchema });
   };
 
   // Create the socket. A new session's token is saved here, once the app has
@@ -966,6 +991,8 @@ export const connect = async (
     warmSocket ?? createSocket(endpoint, transports, session_token);
   warmSocket = null;
   cancelWarmup();
+  // Socket.IO calls this when the namespace connection is sent, so route data
+  // reflects any navigation that happened while the transport was connecting.
   socket.current.auth = bootAuth(true);
   socket.current.wait_connect = !socket.current.connected;
   // Ensure undefined fields in events are sent as null instead of removed
@@ -1080,6 +1107,19 @@ export const connect = async (
     window.__reflex_otel?.onSocketConnect?.();
     window.addEventListener("pagehide", pagehideHandler);
     window.addEventListener("beforeunload", disconnectTrigger);
+    // The connection auth event already loads its route, and every queued
+    // on_load loads the route current when it is sent. Keep the last queued
+    // on_load, after every navigation's storage update, only if the route
+    // changed after the auth event was built.
+    let keepOnLoad = bootRoute !== currentRouteKey();
+    for (let i = event_queue.length - 1; i >= 0; i--) {
+      if (event_queue[i].name !== app.on_load_internal_event) continue;
+      if (keepOnLoad) {
+        keepOnLoad = false;
+      } else {
+        event_queue.splice(i, 1);
+      }
+    }
     // Drain any initial events from the queue.
     while (event_queue.length > 0) {
       await processEvent(socket.current, navigate, params);

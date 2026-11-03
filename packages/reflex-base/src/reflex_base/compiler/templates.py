@@ -200,17 +200,19 @@ if (typeof window !== "undefined") {{
   const loaders = {{
 {loaders}
   }};
-  let pending;
-  window.__reflex_load = () => {{
-    if (!pending) {{
-      pending = Promise.all(Object.entries(loaders).map(async ([name, load]) => {{
-        window.__reflex[name] = await load();
-      }})).catch((error) => {{
-        pending = undefined;
-        throw error;
-      }});
-    }}
-    return pending;
+  const pending = Object.create(null);
+  window.__reflex_load = (libraries = Object.keys(loaders)) => {{
+    return Promise.all(libraries.filter((name) => Object.hasOwn(loaders, name) && !Object.hasOwn(window.__reflex, name)).map((name) => {{
+      if (!pending[name]) {{
+        pending[name] = loaders[name]().then((module) => {{
+          window.__reflex[name] = module;
+        }}).catch((error) => {{
+          delete pending[name];
+          throw error;
+        }});
+      }}
+      return pending[name];
+    }}));
   }};
 }}
 """
@@ -312,6 +314,7 @@ def context_template(
     state_str = (
         rf"""
 export const state_name = "{state_name}"
+export const on_load_internal_event = '{state_name}.{constants.CompileVars.ON_LOAD_INTERNAL}'
 
 export const exception_state_name = "{constants.CompileVars.FRONTEND_EXCEPTION_STATE_FULL}"
 
@@ -366,6 +369,7 @@ export const initialEvents = (first = false) => {{
         if state_name
         else """
 export const state_name = undefined
+export const on_load_internal_event = undefined
 
 export const exception_state_name = undefined
 
@@ -426,6 +430,7 @@ registerApp({{
   initialState,
   clientStorage,
   state_name,
+  on_load_internal_event,
   stateSchema,
   exception_state_name,
   onLoadInternalEvent,
