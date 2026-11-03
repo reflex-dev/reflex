@@ -724,7 +724,9 @@ def _get_serialize() -> Callable[[Any], Any]:
 
 
 @lru_cache
-def _get_json_encoder(separators: tuple[str, str] | None) -> json.JSONEncoder:
+def _get_json_encoder(
+    separators: tuple[str, str] | None, *, sort_keys: bool = False
+) -> json.JSONEncoder:
     """Get the JSON encoder that serializes values with the Reflex serializers.
 
     ``json.dumps`` builds a new encoder on every call when given any option, which
@@ -738,7 +740,10 @@ def _get_json_encoder(separators: tuple[str, str] | None) -> json.JSONEncoder:
         The shared encoder.
     """
     return json.JSONEncoder(
-        ensure_ascii=False, default=_get_serialize(), separators=separators
+        ensure_ascii=False,
+        default=_get_serialize(),
+        separators=separators,
+        sort_keys=sort_keys,
     )
 
 
@@ -753,8 +758,12 @@ def json_dumps(obj: Any, separators: tuple[str, str] | None = None, **kwargs) ->
     Returns:
         A string
     """
-    if not kwargs and (separators is None or isinstance(separators, tuple)):
-        return _get_json_encoder(separators).encode(obj)
+    if (not kwargs or kwargs == {"sort_keys": True}) and (
+        separators is None or isinstance(separators, tuple)
+    ):
+        return _get_json_encoder(
+            separators, sort_keys=kwargs.get("sort_keys", False)
+        ).encode(obj)
 
     kwargs.setdefault("ensure_ascii", False)
     kwargs.setdefault("default", _get_serialize())
