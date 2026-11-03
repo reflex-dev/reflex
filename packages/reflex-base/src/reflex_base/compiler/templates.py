@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import json
 import re
 from collections.abc import Iterable, Mapping, Sequence
@@ -271,26 +272,40 @@ def theme_template(theme: str):
     return f"""export default {theme}"""
 
 
+@dataclasses.dataclass(frozen=True, slots=True)
+class EncodedInitialState:
+    """The initial state as a state update the plugins encoded for the browser.
+
+    Attributes:
+        update_json: JSON of the encoded update whose ``delta`` is the initial
+            state.
+        decoders: The modules whose default exports decode it, and every
+            update the backend sends, in the order they decode.
+    """
+
+    update_json: str
+    decoders: Sequence[str]
+
+
 def context_template(
     *,
     is_dev_mode: bool,
     default_color_mode: str,
     initial_state: dict[str, Any] | None = None,
-    initial_state_json: str | None = None,
+    initial_state_json: str | EncodedInitialState | None = None,
     initial_state_hashes: list[str] | None = None,
     state_name: str | None = None,
     state_schema: str | None = None,
     client_storage: dict[str, dict[str, dict[str, Any]]] | None = None,
     disable_react_owner_stacks: bool = False,
-    state_update_decoders: Sequence[str] = (),
 ):
     """Template for the context file.
 
     Args:
         initial_state: The initial state for the context.
         initial_state_json: Initial state JSON already serialized by the
-            compiler; with ``state_update_decoders``, the JSON of the encoded
-            update whose ``delta`` is the initial state.
+            compiler, or the initial state encoded as an update for the
+            decoders that come with it.
         initial_state_hashes: Per-state hashes of ``initial_state`` in sorted
             state name order, sent with the first hydrate so the backend can
             skip vars still at their default.
@@ -305,26 +320,23 @@ def context_template(
         disable_react_owner_stacks: Whether to emit the snippet that disables
             React's dev-build owner-stack capture (an Error() constructed per
             created element, whose cost grows with render depth).
-        state_update_decoders: The modules whose default exports decode state
-            updates, in the order they decode.
 
     Returns:
         Rendered context file content as string.
     """
     initial_state = initial_state or {}
     if initial_state_json is None:
-        initial_state_json = json_dumps(
-            {"delta": initial_state} if state_update_decoders else initial_state
-        )
+        initial_state_json = json_dumps(initial_state)
+    if isinstance(initial_state_json, EncodedInitialState):
+        state_update_decoders = initial_state_json.decoders
+        initial_state_str = f"stateUpdateDecoders.reduce((decoded, decode) => decode(decoded), {initial_state_json.update_json}).delta"
+    else:
+        state_update_decoders = ()
+        initial_state_str = initial_state_json
     decoder_names = [f"decodeStateUpdate{i}" for i in range(len(state_update_decoders))]
     decoder_imports = "".join(
         f"import {name} from {json.dumps(module)}\n"
         for name, module in zip(decoder_names, state_update_decoders, strict=True)
-    )
-    initial_state_str = (
-        f"stateUpdateDecoders.reduce((decoded, decode) => decode(decoded), {initial_state_json}).delta"
-        if state_update_decoders
-        else initial_state_json
     )
     state_str = (
         rf"""

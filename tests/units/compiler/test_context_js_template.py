@@ -7,7 +7,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
-from reflex_base.compiler.templates import context_template
+from reflex_base.compiler.templates import EncodedInitialState, context_template
 
 requires_node = pytest.mark.skipif(shutil.which("node") is None, reason="node missing")
 
@@ -381,13 +381,15 @@ def test_decoders_decode_the_initial_state_before_it_is_registered(tmp_path: Pat
     rendered = context_template(
         is_dev_mode=True,
         default_color_mode='"light"',
-        initial_state_json=json.dumps({
-            "delta": {"state": {"value": {"second": {"first": 1}}}},
-            "first": True,
-            "second": True,
-        }),
+        initial_state_json=EncodedInitialState(
+            update_json=json.dumps({
+                "delta": {"state": {"value": {"second": {"first": 1}}}},
+                "first": True,
+                "second": True,
+            }),
+            decoders=["$/utils/second", "$/utils/first"],
+        ),
         state_name="state",
-        state_update_decoders=["$/utils/second", "$/utils/first"],
     )
     # Each decoder unnests what its plugin nested and drops its own field.
     decoder = """

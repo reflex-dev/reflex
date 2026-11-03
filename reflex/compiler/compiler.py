@@ -274,12 +274,11 @@ def _compile_contexts(
         not is_prod_mode() and not environment.REFLEX_REACT_OWNER_STACKS.get()
     )
     # Without state, no update reaches the frontend to decode.
-    state_update_decoders = _state_update_decoders() if state else []
     initial_state, initial_state_json = (
         utils._compile_initial_state(
             state,
             component_imports=component_imports,
-            as_update=bool(state_update_decoders),
+            state_update_decoders=_state_update_decoders(),
         )
         if state
         else (None, None)
@@ -296,7 +295,6 @@ def _compile_contexts(
             is_dev_mode=not is_prod_mode(),
             default_color_mode=default_color_mode,
             disable_react_owner_stacks=disable_react_owner_stacks,
-            state_update_decoders=state_update_decoders,
         )
         if state and initial_state is not None
         else templates.context_template(
