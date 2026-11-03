@@ -75,9 +75,9 @@ branches, subscription bookkeeping. Prefer a Playwright test when the thing you
 want to assert is visible in a real app.
 
 `$/...` specifiers resolve to the template tree via a vitest alias. `$/utils/state`
-is not stubbed: the real module pulls in socket.io, react-router and the per-app
-*generated* `utils/context.js`, so a module that imports it is not currently
-unit-testable.
+is not stubbed: the real module imports npm packages that `tests/js` does not install
+(socket.io-client, react-router, mergician, universal-cookie) and the per-app
+*generated* `env.json`, so a module that imports it is not currently unit-testable.
 
 ### Integration test patterns
 
