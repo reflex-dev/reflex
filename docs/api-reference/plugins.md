@@ -308,15 +308,22 @@ override cannot make the batch commit partially.
 A plugin can change how state updates travel to the browser, for example to
 send an object that several vars hold only once. `encode_state_update` gets the
 fields of each update the backend sends (`delta`, `events`) and returns them
-encoded; `get_state_update_decoder` names the JavaScript module whose default
-export reverses the encoding in the browser:
+encoded. An empty field is not sent, so an update may carry only `events`.
+`get_state_update_decoder` names the JavaScript module whose default export
+reverses the encoding in the browser:
 
 ```python
 from pathlib import Path
 
+from reflex.plugins.base import Plugin
+
+DECODER_SOURCE = Path(__file__).with_name("dedupe.js").read_text()
+
 
 class DedupePlugin(Plugin):
     def encode_state_update(self, update, /):
+        if "delta" not in update:
+            return update
         # Replace values that occur more than once, and send them once in a
         # field of the plugin's own.
         delta, shared = dedupe(update["delta"])
@@ -340,6 +347,9 @@ synchronously, before any of its delta is applied:
 
 ```javascript
 export default function decode({ dedupe_shared, ...update }) {
+  if (dedupe_shared === undefined) {
+    return update;
+  }
   return { ...update, delta: restore(update.delta, dedupe_shared) };
 }
 ```

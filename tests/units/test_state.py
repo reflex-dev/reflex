@@ -444,6 +444,28 @@ def test_state_update_is_forwarded_encoded(mocker: MockerFixture):
     assert codec.calls == 1
 
 
+def test_state_update_without_a_delta_is_encoded_without_one(mocker: MockerFixture):
+    """An update with only events reaches the encoders without a ``delta`` field.
+
+    Args:
+        mocker: The mock fixture.
+    """
+    received: list[dict[str, Any]] = []
+
+    class _RecordingCodec(rx.plugins.Plugin):
+        def encode_state_update(self, update: dict[str, Any], /) -> dict[str, Any]:
+            received.append(update)
+            return update
+
+    _configure_codecs(mocker, _RecordingCodec())
+    event = Event(name="state.handler")
+
+    sent = json.loads(json_dumps(StateUpdate(events=[event])))
+
+    assert [list(update) for update in received] == [["events"]]
+    assert list(sent) == ["events"]
+
+
 def test_load_events_do_not_copy_router_data(app_module_mock):
     """On-load events leave routing in the server context without copying headers.
 

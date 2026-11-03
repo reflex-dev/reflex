@@ -255,7 +255,8 @@ class Plugin:
         Runs once per update, on the fields that are sent (``delta``,
         ``events``), after the backend is done comparing and merging deltas,
         and at compile time on the initial state as an update with only a
-        ``delta``. Plugins encode in configuration order. A plugin may replace
+        ``delta``. An empty field is not sent, so an update may carry only
+        ``events``. Plugins encode in configuration order. A plugin may replace
         values and add fields of its own, which the decoder from
         ``get_state_update_decoder`` reverses in the browser. The update's
         values may be shared with other updates, so replace them rather than
