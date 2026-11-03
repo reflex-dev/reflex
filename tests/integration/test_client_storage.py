@@ -694,6 +694,12 @@ async def test_client_side_state(
     driver.delete_all_cookies()
     local_storage.clear()
 
+    # The other tab receives clear() without hydration and resets synced vars.
+    driver.switch_to.window(driver.window_handles[-1])
+    AppHarness.expect(lambda: driver.find_element(By.ID, "l5").text == "")
+    AppHarness.expect(lambda: driver.find_element(By.ID, "l6").text == "")
+    driver.switch_to.window(main_tab)
+
     # refresh the page to trigger re-hydrate
     driver.refresh()
 
