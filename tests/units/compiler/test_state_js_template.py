@@ -266,9 +266,15 @@ def test_state_js_keeps_ref_value_exports_for_older_form_components() -> None:
     assert "export const getRefValues =" in content
 
 
-@pytest.mark.skipif(shutil.which("node") is None, reason="node missing")
-def test_apply_delta_shares_unchanged_values() -> None:
-    """Deltas keep the identity of unchanged plain objects and arrays."""
+def _run_apply_delta_script(script: str) -> None:
+    """Run a node script against the delta helpers of state.js.
+
+    The script sees ``applyDelta`` and ``applyDecoded``, which applies a delta
+    as the update handler does once a decoder ran.
+
+    Args:
+        script: The JavaScript to run after the helpers.
+    """
     content = STATE_JS_TEMPLATE.read_text()
     helpers = content[
         content.index("const isPlainObject =") : content.index(
@@ -276,7 +282,7 @@ def test_apply_delta_shares_unchanged_values() -> None:
         )
     ]
     assert "export const applyDelta" in helpers
-    subprocess.run(
+    result = subprocess.run(
         [
             "node",
             "--input-type=module",
@@ -284,18 +290,45 @@ def test_apply_delta_shares_unchanged_values() -> None:
             helpers
             + """
 import assert from 'node:assert/strict';
+const applyDecoded = (state, delta) => {
+  decodedDeltas.add(delta);
+  return applyDelta(state, delta);
+};
+"""
+            + script,
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node missing")
+@pytest.mark.parametrize("apply", ["applyDelta", "applyDecoded"])
+def test_apply_delta_shares_unchanged_values(apply: str) -> None:
+    """Deltas keep the identity of unchanged plain objects and arrays.
+
+    A decoded delta that is a tree is shared the same way as a plain one.
+
+    Args:
+        apply: The function applying the deltas.
+    """
+    _run_apply_delta_script(
+        f"const apply = {apply};"
+        + """
 const parse = (v) => JSON.parse(JSON.stringify(v));
 const rows = [{id: 1, tags: ['a']}, {id: 2, tags: ['b']}, {id: 3, tags: []}];
 const state = {rows, kpi: {a: 1, b: {c: 2}}, n: 1, s: 'x', none: null};
 
 // A delta equal to the current state returns the same state object.
-assert.equal(applyDelta(state, parse(state)), state);
-assert.equal(applyDelta(state, {}), state);
+assert.equal(apply(state, parse(state)), state);
+assert.equal(apply(state, {}), state);
 
 // One changed row: siblings keep their identity, the changed row does not.
 const delta = parse({rows, kpi: state.kpi});
 delta.rows[1].tags = ['c'];
-const next = applyDelta(state, delta);
+const next = apply(state, delta);
 assert.notEqual(next, state);
 assert.equal(next.kpi, state.kpi);
 assert.notEqual(next.rows, rows);
@@ -307,85 +340,63 @@ assert.deepEqual(rows[1], {id: 2, tags: ['b']});
 assert.equal(next.n, 1);
 
 // Length changes share the common prefix without mutating the old array.
-const grown = applyDelta(state, {rows: parse([...rows, {id: 4, tags: []}])}).rows;
+const grown = apply(state, {rows: parse([...rows, {id: 4, tags: []}])}).rows;
 assert.equal(grown.length, 4);
 assert.equal(grown[2], rows[2]);
-const shrunk = applyDelta(state, {rows: parse(rows.slice(0, 2))}).rows;
+const shrunk = apply(state, {rows: parse(rows.slice(0, 2))}).rows;
 assert.deepEqual(shrunk, rows.slice(0, 2));
 assert.equal(shrunk[1], rows[1]);
 assert.equal(rows.length, 3);
 
 // Added, removed and renamed keys produce a new object with shared values.
-const added = applyDelta(state, {kpi: parse({...state.kpi, d: 3})}).kpi;
+const added = apply(state, {kpi: parse({...state.kpi, d: 3})}).kpi;
 assert.deepEqual(added, {a: 1, b: {c: 2}, d: 3});
 assert.equal(added.b, state.kpi.b);
-const removed = applyDelta(state, {kpi: parse({b: state.kpi.b})}).kpi;
+const removed = apply(state, {kpi: parse({b: state.kpi.b})}).kpi;
 assert.deepEqual(removed, {b: {c: 2}});
 assert.equal(removed.b, state.kpi.b);
 const undef = {kpi: {a: undefined}};
-assert.deepEqual(applyDelta(undef, {kpi: {b: undefined}}).kpi, {b: undefined});
+assert.deepEqual(apply(undef, {kpi: {b: undefined}}).kpi, {b: undefined});
 
 // Reordering a mapping without changing its values takes the new key order.
 const ordered = {d: {a: 1, b: {c: 2}}};
-const reordered = applyDelta(ordered, {d: JSON.parse('{"b": {"c": 2}, "a": 1}')}).d;
+const reordered = apply(ordered, {d: JSON.parse('{"b": {"c": 2}, "a": 1}')}).d;
 assert.deepEqual(Object.keys(reordered), ['b', 'a']);
 assert.equal(reordered.b, ordered.d.b);
 
 // Values compare with Object.is: python's -0.0 replaces 0, while a repeated
 // NaN (revived by parseJson) is unchanged.
 const zeros = {z: 0, a: [0], o: {v: 0}};
-const negated = applyDelta(zeros, JSON.parse('{"z": -0.0, "a": [-0.0], "o": {"v": -0.0}}'));
+const negated = apply(zeros, JSON.parse('{"z": -0.0, "a": [-0.0], "o": {"v": -0.0}}'));
 assert.deepEqual(negated, {z: -0, a: [-0], o: {v: -0}});
 const nans = {x: NaN, a: [NaN], o: {v: NaN}};
-assert.equal(applyDelta(nans, {x: NaN, a: [NaN], o: {v: NaN}}), nans);
+assert.equal(apply(nans, {x: NaN, a: [NaN], o: {v: NaN}}), nans);
 
 // Type changes and non-plain values are replaced as before.
-assert.deepEqual(applyDelta(state, {kpi: [1]}).kpi, [1]);
-assert.equal(applyDelta(state, {none: {}}).none.constructor, Object);
+assert.deepEqual(apply(state, {kpi: [1]}).kpi, [1]);
+assert.equal(apply(state, {none: {}}).none.constructor, Object);
 const date = new Date(0);
 const withDate = {d: new Date(0)};
-assert.equal(applyDelta(withDate, {d: date}).d, date);
+assert.equal(apply(withDate, {d: date}).d, date);
 
 // A "__proto__" key from JSON stays an own data property.
-const proto = applyDelta({o: {}}, {o: JSON.parse('{"__proto__": {"x": 1}}')}).o;
+const proto = apply({o: {}}, {o: JSON.parse('{"__proto__": {"x": 1}}')}).o;
 assert.equal(Object.getPrototypeOf(proto), Object.prototype);
 assert.deepEqual(Object.getOwnPropertyDescriptor(proto, '__proto__').value, {x: 1});
 const protoState = {o: JSON.parse('{"__proto__": {"x": 1}, "y": [1]}')};
-const protoNext = applyDelta(protoState, {o: JSON.parse('{"__proto__": {"x": 1}, "y": [2]}')}).o;
+const protoNext = apply(protoState, {o: JSON.parse('{"__proto__": {"x": 1}, "y": [2]}')}).o;
 assert.equal(Object.getPrototypeOf(protoNext), Object.prototype);
 assert.equal(Object.getOwnPropertyDescriptor(protoNext, '__proto__').value,
   Object.getOwnPropertyDescriptor(protoState.o, '__proto__').value);
 assert.deepEqual(protoNext.y, [2]);
-""",
-        ],
-        check=True,
-        capture_output=True,
-        text=True,
+"""
     )
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="node missing")
 def test_apply_delta_shares_objects_a_decoded_delta_holds_twice() -> None:
-    """A delta holding an object twice or in a cycle keeps one result for it."""
-    content = STATE_JS_TEMPLATE.read_text()
-    helpers = content[
-        content.index("const isPlainObject =") : content.index(
-            "export const evalReactComponent ="
-        )
-    ]
-    subprocess.run(
-        [
-            "node",
-            "--input-type=module",
-            "--eval",
-            helpers
-            + """
-import assert from 'node:assert/strict';
-// Applies a delta as the update handler does once a decoder ran.
-const applyDecoded = (state, delta) => {
-  decodedDeltas.add(delta);
-  return applyDelta(state, delta);
-};
+    """A delta holding an object twice keeps one result for it."""
+    _run_apply_delta_script("""
 // Two rows holding one product, as a decoder that dedupes objects returns them.
 const decoded = (name) => {
   const product = {name};
@@ -416,26 +427,56 @@ const filled = applyDecoded({a: {id: 1}, b: null}, (() => {
 assert.equal(filled.b, filled.a);
 assert.equal(filled.c.nested, filled.a);
 
-// An object that contains itself does not recurse forever.
-const cyclic = () => {
-  const product = {name: 'a'};
-  product.rows = [{id: 1, product}];
-  return {product};
-};
-const once = applyDecoded({product: {name: 'a'}}, cyclic());
-assert.equal(once.product.rows[0].product.rows[0].id, 1);
-const twice = applyDecoded(once, cyclic());
-assert.equal(twice.product.name, 'a');
-assert.equal(twice.product.rows[0].product.rows[0].product.name, 'a');
-const added = applyDecoded({}, cyclic());
-assert.equal(added.product.rows[0].product, added.product);
-
 // A delta no decoder produced is a tree and keeps the plain sharing.
 const plain = {a: {id: 1}};
 assert.equal(applyDelta(plain, {a: {id: 1}}), plain);
-""",
-        ],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
+""")
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node missing")
+def test_apply_delta_keeps_the_cycles_of_a_decoded_delta() -> None:
+    """A cycle of a decoded delta leads back to the object the state holds."""
+    _run_apply_delta_script("""
+// A product whose rows point back at it, with a list beside the cycle.
+const cyclic = (name, qty = 1) => {
+  const product = {name, tags: ['x']};
+  product.rows = [{id: 1, product}, {id: 2, qty, product}];
+  return {product};
+};
+const isCycle = (product) =>
+  product.rows.every((row) => row.product === product);
+
+// In place of another value, and in a new place.
+const replaced = applyDecoded({product: {name: 'a'}}, cyclic('a'));
+assert.ok(isCycle(replaced.product));
+const added = applyDecoded({}, cyclic('a'));
+assert.ok(isCycle(added.product));
+
+// An unchanged cycle keeps the state, the previous cycle included.
+assert.equal(applyDecoded(replaced, cyclic('a')), replaced);
+assert.equal(applyDecoded(added, cyclic('a')), added);
+
+// A change anywhere on the cycle gives every object on it a new result that
+// leads back to the new product, and keeps what is off the cycle.
+for (const changed of [
+  applyDecoded(replaced, cyclic('b')),
+  applyDecoded(replaced, cyclic('a', 2)),
+]) {
+  assert.notEqual(changed.product, replaced.product);
+  assert.ok(isCycle(changed.product));
+  assert.ok(isCycle(replaced.product));
+  assert.notEqual(changed.product.rows[0], replaced.product.rows[0]);
+  assert.equal(changed.product.tags, replaced.product.tags);
+}
+assert.equal(applyDecoded(replaced, cyclic('b')).product.name, 'b');
+assert.equal(applyDecoded(replaced, cyclic('a', 2)).product.rows[1].qty, 2);
+
+// A cycle entered from below, and a var holding an object of the cycle too.
+const entered = applyDecoded({row: {id: 0}, product: null}, (() => {
+  const {product} = cyclic('a');
+  return {row: product.rows[0], product};
+})());
+assert.equal(entered.row, entered.product.rows[0]);
+assert.ok(isCycle(entered.product));
+assert.equal(entered.row.product, entered.product);
+""")

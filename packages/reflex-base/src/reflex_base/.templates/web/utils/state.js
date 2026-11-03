@@ -328,38 +328,11 @@ const isPlainObject = (value) => {
  * Plain objects and arrays whose contents are unchanged keep the identity of
  * the previous value, so memoized components and caches keyed on identity
  * still hit. Any other value is taken from next as is.
- *
- * A decoded delta may hold one object in several places, or contain cycles.
- * With seen, every place gets the one result for such an object, newly added
- * ones included, and an object that contains itself is taken as is where it
- * recurs.
  * @param prev The previous value.
  * @param next The new value.
- * @param seen The results so far for the objects of a decoded delta, if it is one.
  * @returns prev if deep-equal to next, otherwise next with unchanged parts shared from prev.
  */
-const replaceEqualDeep = (prev, next, seen) => {
-  if (seen === undefined || typeof next !== "object" || next === null) {
-    return shareEqualDeep(prev, next, seen);
-  }
-  let result = seen.get(next);
-  if (result === undefined) {
-    // Until it has a result, next stands for itself where it recurs.
-    seen.set(next, next);
-    result = shareEqualDeep(prev, next, seen);
-    seen.set(next, result);
-  }
-  return result;
-};
-
-/**
- * Share the parts of next that deep-equal prev, see replaceEqualDeep.
- * @param prev The previous value.
- * @param next The new value.
- * @param seen The results so far for the objects of a decoded delta, if it is one.
- * @returns prev if deep-equal to next, otherwise next with unchanged parts shared from prev.
- */
-const shareEqualDeep = (prev, next, seen) => {
+const replaceEqualDeep = (prev, next) => {
   // Object.is, unlike ===, tells -0 from 0 and treats NaN as equal to itself.
   if (Object.is(prev, next)) {
     return prev;
@@ -368,7 +341,7 @@ const shareEqualDeep = (prev, next, seen) => {
     // Allocate only once an element differs; until then prev is the result.
     let out;
     for (let i = 0; i < next.length; i++) {
-      const value = replaceEqualDeep(prev[i], next[i], seen);
+      const value = replaceEqualDeep(prev[i], next[i]);
       if (out === undefined && !Object.is(value, prev[i])) {
         out = prev.slice(0, i);
       }
@@ -396,12 +369,9 @@ const shareEqualDeep = (prev, next, seen) => {
         if (out === undefined) {
           copyPrefix(i);
         }
-        if (seen !== undefined) {
-          out[key] = replaceEqualDeep(undefined, next[key], seen);
-        }
         continue;
       }
-      const value = replaceEqualDeep(prev[key], next[key], seen);
+      const value = replaceEqualDeep(prev[key], next[key]);
       if (out === undefined && !Object.is(value, prev[key])) {
         copyPrefix(i);
       }
@@ -425,44 +395,159 @@ const shareEqualDeep = (prev, next, seen) => {
     copyPrefix(keys.length);
     return out;
   }
-  // A new value: in a decoded delta, its objects may already have a result.
-  return seen === undefined ? next : adoptShared(next, seen);
+  return next;
 };
 
 /**
- * Take a new value of a decoded delta, with the results its objects already have.
- * @param next The new value.
- * @param seen The results so far for the objects of the decoded delta.
- * @returns next, or a copy holding those results in place of the objects.
+ * Pair the plain objects and arrays a decoded value reaches with the previous
+ * values they are first reached at.
+ *
+ * A pair is marked equal when its keys, in order, and its other values match
+ * the previous value's, and each object it holds was paired with the previous
+ * value's object under the same key; settleDecoded then clears the mark of
+ * every pair that holds an unequal one.
+ * @param prev The previous value.
+ * @param next The decoded value.
+ * @param pairs The pairs so far, keyed by the decoded objects.
+ * @returns The pair of next, or undefined if next is no plain object or array.
  */
-const adoptShared = (next, seen) => {
-  if (Array.isArray(next)) {
-    let out;
-    for (let i = 0; i < next.length; i++) {
-      const value = replaceEqualDeep(undefined, next[i], seen);
-      if (out === undefined && value !== next[i]) {
-        out = next.slice();
+const pairDecoded = (prev, next, pairs) => {
+  const isArray = Array.isArray(next);
+  if (!isArray && !isPlainObject(next)) {
+    return undefined;
+  }
+  let pair = pairs.get(next);
+  if (pair !== undefined) {
+    return pair;
+  }
+  const keys = isArray ? undefined : Object.keys(next);
+  const sameKind = isArray ? Array.isArray(prev) : isPlainObject(prev);
+  let equal = sameKind;
+  if (equal && isArray) {
+    equal = prev.length === next.length;
+  } else if (equal) {
+    const prevKeys = Object.keys(prev);
+    equal =
+      prevKeys.length === keys.length &&
+      prevKeys.every((key, i) => key === keys[i]);
+  }
+  pair = {
+    prev,
+    next,
+    equal,
+    // Whether an unequal pair results in next itself, see settleDecoded.
+    ownResult: true,
+    result: undefined,
+    // The pairs of the objects next holds, under childKeys, and of those
+    // holding next.
+    children: [],
+    childKeys: [],
+    parents: [],
+  };
+  // Registered before its contents, so a cycle leads back to this pair.
+  pairs.set(next, pair);
+  const length = isArray ? next.length : keys.length;
+  for (let i = 0; i < length; i++) {
+    const key = isArray ? i : keys[i];
+    const prevValue =
+      sameKind && Object.hasOwn(prev, key) ? prev[key] : undefined;
+    const child = pairDecoded(prevValue, next[key], pairs);
+    if (child === undefined) {
+      pair.equal &&= Object.is(prevValue, next[key]);
+    } else {
+      pair.equal &&= child.prev === prevValue;
+      pair.children.push(child);
+      pair.childKeys.push(key);
+      child.parents.push(pair);
+    }
+  }
+  return pair;
+};
+
+/**
+ * Settle the result of every pair of a decoded delta.
+ *
+ * An equal pair results in its previous value. Any other pair results in its
+ * decoded object itself while every object it holds does as well, or else in
+ * a copy holding their results, so every place that holds one decoded object,
+ * on a cycle too, holds its one result.
+ * @param pairs The pairs of the decoded delta.
+ */
+const settleDecoded = (pairs) => {
+  // A pair holding an unequal pair is unequal itself.
+  const unequal = [];
+  for (const pair of pairs.values()) {
+    if (!pair.equal) {
+      unequal.push(pair);
+    }
+  }
+  for (let i = 0; i < unequal.length; i++) {
+    for (const parent of unequal[i].parents) {
+      if (parent.equal) {
+        parent.equal = false;
+        unequal.push(parent);
       }
-      if (out !== undefined) {
-        out[i] = value;
+    }
+  }
+  // A pair holding an object whose result is another object is copied, and so
+  // is every unequal pair holding a copied one.
+  const copied = [];
+  for (const pair of unequal) {
+    if (
+      pair.children.some((child) => child.equal && child.prev !== child.next)
+    ) {
+      pair.ownResult = false;
+      copied.push(pair);
+    }
+  }
+  for (let i = 0; i < copied.length; i++) {
+    for (const parent of copied[i].parents) {
+      if (!parent.equal && parent.ownResult) {
+        parent.ownResult = false;
+        copied.push(parent);
       }
     }
-    return out ?? next;
   }
-  if (!isPlainObject(next)) {
-    return next;
-  }
-  let out;
-  for (const key of Object.keys(next)) {
-    const value = replaceEqualDeep(undefined, next[key], seen);
-    if (out === undefined && value !== next[key]) {
-      out = { ...next };
+  for (const pair of pairs.values()) {
+    if (pair.equal) {
+      pair.result = pair.prev;
+    } else if (pair.ownResult) {
+      pair.result = pair.next;
+    } else {
+      // Spreading next keeps a JSON "__proto__" key an own data property, so
+      // the assignments below never hit the prototype setter.
+      pair.result = Array.isArray(pair.next)
+        ? pair.next.slice()
+        : { ...pair.next };
     }
-    if (out !== undefined) {
-      out[key] = value;
+  }
+  for (const { result, children, childKeys } of copied) {
+    for (let i = 0; i < children.length; i++) {
+      result[childKeys[i]] = children[i].result;
     }
   }
-  return out ?? next;
+};
+
+/**
+ * Structurally share the values of a decoded delta with the state.
+ *
+ * A decoded delta may hold one object in several places, or contain cycles.
+ * Each of its objects gets one result, which every place holding it holds:
+ * the previous value it is first reached at if it, with everything it
+ * reaches, deep-equals that value, else the object itself or a copy that
+ * shares what is unchanged.
+ * @param state The state the delta applies to.
+ * @param delta The decoded delta.
+ * @returns The pairs of the delta's objects, holding their results.
+ */
+const shareDecoded = (state, delta) => {
+  const pairs = new Map();
+  for (const key in delta) {
+    const prev = Object.hasOwn(state, key) ? state[key] : undefined;
+    pairDecoded(prev, delta[key], pairs);
+  }
+  settleDecoded(pairs);
+  return pairs;
 };
 
 // Substate deltas of decoded updates, which may hold an object more than once.
@@ -478,14 +563,19 @@ const decodedDeltas = new WeakSet();
  * @returns The new state, or state itself if nothing changed.
  */
 export const applyDelta = (state, delta) => {
+  const pairs = decodedDeltas.has(delta)
+    ? shareDecoded(state, delta)
+    : undefined;
   let out;
-  const seen = decodedDeltas.has(delta) ? new Map() : undefined;
   for (const key in delta) {
     const own = Object.hasOwn(state, key);
+    const next = delta[key];
     const value =
-      own || seen !== undefined
-        ? replaceEqualDeep(own ? state[key] : undefined, delta[key], seen)
-        : delta[key];
+      pairs !== undefined
+        ? (pairs.get(next)?.result ?? next)
+        : own
+          ? replaceEqualDeep(state[key], next)
+          : next;
     if (!own || !Object.is(value, state[key])) {
       out ??= { ...state };
       out[key] = value;
