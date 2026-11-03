@@ -52,6 +52,7 @@ from reflex_base.vars.base import (
     _global_vars,
     _is_tree_state,
     _linearize_bases,
+    _delta_value_key,
     _type_check_depth,
     _validate_state_name,
     cached_property,
@@ -2462,3 +2463,20 @@ def test_get_leaf_vars_sorts_every_cached_operation() -> None:
         LiteralEventVar,
         LiteralEventChainVar,
     })
+
+
+def test_delta_value_key_ignores_mapping_order() -> None:
+    """Equivalent dicts should have the same delta key despite insertion order."""
+    first = {
+        "root": {"alpha": 1, "beta": 2},
+        "rows": [{"x": 1, "y": 2}],
+    }
+    reordered = {
+        "rows": [{"y": 2, "x": 1}],
+        "root": {"beta": 2, "alpha": 1},
+    }
+
+    assert _delta_value_key(first) == _delta_value_key(reordered)
+    assert _delta_value_key(first) != _delta_value_key(
+        {"root": {"alpha": 9, "beta": 2}, "rows": [{"x": 1, "y": 2}]}
+    )
