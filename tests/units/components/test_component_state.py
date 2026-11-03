@@ -1,13 +1,104 @@
 """Ensure that Components returned by ComponentState.create have independent State classes."""
 
+from pathlib import Path
+from typing import Any
+
 import pytest
 from reflex_base import constants
+from reflex_base.event import Event, EventSpec, event
 from reflex_base.utils.exceptions import ReflexRuntimeError
 from reflex_components_core.base.bare import Bare
 
 import reflex as rx
 from reflex.compiler.utils import compile_client_storage
 from reflex.constants.state import FIELD_MARKER
+from reflex.state import State
+
+
+def test_component_state_callback_documentation():
+    """Execute the documented recipe and check its per-instance event routing."""
+    docs_path = (
+        Path(__file__).resolve().parents[3] / "docs/state_structure/component_state.md"
+    )
+    section = docs_path.read_text().split("## Returning events to a caller\n", 1)[1]
+    code = section.split("```python\n", 1)[1].split("\n```", 1)[0]
+    namespace: dict[str, Any] = {"__name__": "component_state_callback_example"}
+    exec(compile(code, str(docs_path), "exec"), namespace)
+    counter_type = namespace["ThresholdCounter"]
+    caller_type = namespace["CallbackState"]
+    first = namespace["counter"]
+
+    class OtherCaller(State):
+        value: int = 0
+
+        @event
+        def receive(self, value: int):
+            """Store this caller's count.
+
+            Args:
+                value: The counter's current count.
+            """
+            self.value = value
+
+    second = counter_type.create(on_over_ten=OtherCaller.receive)
+    omitted = counter_type.create()
+    assert first.State is not None
+    assert second.State is not None
+    assert omitted.State is not None
+    assert first.State is not second.State
+    assert first.State._on_over_ten is caller_type.receive
+    assert second.State._on_over_ten is OtherCaller.receive
+    assert omitted.State._on_over_ten is None
+    for component in (first, second, omitted):
+        assert "_on_over_ten" not in component.State.get_fields()
+        assert (
+            component.children[0].event_triggers["on_click"].events[0].handler
+            is component.State.decrement
+        )
+        assert (
+            component.children[2].event_triggers["on_click"].events[0].handler
+            is component.State.increment
+        )
+
+    first_state, second_state, omitted_state = (
+        component.State() for component in (first, second, omitted)
+    )
+    other_client_state = first.State()
+    first_state.count = 9
+    for method, count, payload in (
+        ("increment", 10, None),
+        ("increment", 11, 11),
+        ("increment", 12, 12),
+        ("decrement", 11, 11),
+        ("decrement", 10, None),
+        ("decrement", 9, None),
+    ):
+        result = getattr(first_state, method)()
+        assert first_state.count == count
+        assert second_state.count == omitted_state.count == 0
+        assert other_client_state.count == 0
+        if payload is None:
+            assert result is None
+        else:
+            assert isinstance(result, EventSpec)
+            assert result.handler is caller_type.receive
+            events = Event.from_event_type(result)
+            assert len(events) == 1
+            assert events[0].name == f"{caller_type.get_full_name()}.receive"
+            assert events[0].payload == {"value": payload}
+
+    second_state.count = 12
+    events = Event.from_event_type(second_state.decrement())
+    assert len(events) == 1
+    assert events[0].name == f"{OtherCaller.get_full_name()}.receive"
+    assert events[0].payload == {"value": 11}
+    assert first_state.count == 9
+    omitted_state.count = 11
+    assert omitted_state.increment() is None
+    assert omitted_state.decrement() is None
+    caller = caller_type()
+    caller.receive(11)
+    assert caller.value == 11
 
 
 def test_component_state():
