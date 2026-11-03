@@ -102,6 +102,7 @@ from reflex.state import (
 from reflex.utils import build
 from reflex.utils import exec as exec_utils
 from reflex.utils.token_manager import RedisTokenManager, SocketRecord
+from tests.units.exception_handler_helpers import logged
 
 from .conftest import active_tracer, chdir, metric_points
 from .states import GenState
@@ -4065,6 +4066,57 @@ def test_exception_handler_annotation_resolves_outside_reflex_app():
         frontend_exception_handler=custom_exception_handler_with_custom_error,
         backend_exception_handler=custom_exception_handler_with_custom_error,
     )
+
+
+@logged
+def decorated_custom_exception_handler(exception: CustomAppError):
+    """Handler decorated in another module.
+
+    Args:
+        exception: The exception to handle.
+    """
+    print("Custom Backend Exception")
+    print(exception)
+
+
+def quoted_custom_exception_handler(exception: "CustomAppError"):  # noqa: UP037  # the quotes are the case under test
+    """Handler with an explicitly quoted forward reference.
+
+    Args:
+        exception: The exception to handle.
+    """
+    print("Custom Backend Exception")
+    print(exception)
+
+
+class CallableCustomExceptionHandler:
+    """Handler provided as a callable instance."""
+
+    def __call__(self, exception: CustomAppError):
+        """Handle the exception.
+
+        Args:
+            exception: The exception to handle.
+        """
+        print("Custom Backend Exception")
+        print(exception)
+
+
+@pytest.mark.parametrize(
+    "handler_fn",
+    [
+        pytest.param(decorated_custom_exception_handler, id="decorated"),
+        pytest.param(quoted_custom_exception_handler, id="quoted"),
+        pytest.param(CallableCustomExceptionHandler(), id="callable_instance"),
+    ],
+)
+def test_exception_handler_annotation_resolves_in_handler_module(handler_fn):
+    """Annotations resolve for decorated, quoted and callable-instance handlers.
+
+    Args:
+        handler_fn: The exception handler to validate.
+    """
+    rx.App(frontend_exception_handler=handler_fn, backend_exception_handler=handler_fn)
 
 
 @pytest.mark.parametrize(
