@@ -64,7 +64,7 @@ _NOT_GLOBAL_MSG = (
 # Default prefix for generated names.
 _DEFAULT_NAME_PREFIX = "cs"
 
-_VALID_NAME = re.compile(r"^[A-Za-z_$][A-Za-z0-9_$]*$")
+_VALID_NAME = re.compile(r"^[A-Za-z_$][A-Za-z0-9_$]*\Z")
 
 
 def _generate_name(prefix: str = _DEFAULT_NAME_PREFIX) -> str:

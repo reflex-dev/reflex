@@ -348,7 +348,7 @@ def test_var_name_rejects_var() -> None:
         client_state(name=Var("dynamic"))  # pyright: ignore [reportArgumentType]
 
 
-@pytest.mark.parametrize("bad", ["1foo", "my-name", "a b", "", "a.b"])
+@pytest.mark.parametrize("bad", ["1foo", "my-name", "a b", "", "a.b", "count\n"])
 def test_var_name_must_be_identifier(bad: str) -> None:
     """The name is emitted as a JS identifier, so it has to be one."""
     with pytest.raises(ValueError, match="identifier"):

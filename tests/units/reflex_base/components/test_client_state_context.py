@@ -7,9 +7,12 @@ from typing import Any, cast
 from reflex_base.components.client_state_context import (
     ClientStateScope,
     local_client_state_names,
+    scoped_memo_wrapper,
 )
 from reflex_base.components.component import Component
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
+from reflex_base.vars.base import Var
+from reflex_base.vars.function import FunctionVar
 from reflex_base.vars.sequence import LiteralArrayVar
 
 import reflex as rx
@@ -153,3 +156,12 @@ def test_page_evaluation_renders_no_hooks() -> None:
             page.component, page=page
         )
     hooks.assert_not_called()
+
+
+def test_scoped_wrapper_applies_an_arrow_wrapper_to_the_component() -> None:
+    """An arrow ``wrapper=`` is called with the component, not swallowed by it."""
+    inner = Var(_js_expr="(C) => memo(C)").to(FunctionVar)
+
+    wrapped = str(scoped_memo_wrapper(inner, ["cs$1"]))
+
+    assert "((C) => memo(C))(Component)" in wrapped

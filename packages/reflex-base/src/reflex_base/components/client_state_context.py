@@ -12,6 +12,7 @@ from __future__ import annotations
 import re
 from collections.abc import Iterable
 
+from reflex_base.compiler.templates import memo_wrapper_callee
 from reflex_base.components.component import Component
 from reflex_base.constants import Dirs
 from reflex_base.utils.imports import ImportVar
@@ -80,7 +81,7 @@ def scoped_memo_wrapper(inner: Var | None, owns: list[str]) -> Var:
             _var_data=scope_import,
         ).to(FunctionVar)
     return Var(
-        _js_expr=f"((Component) => withClientStateScope({inner!s}(Component), {owns_js!s}))",
+        _js_expr=f"((Component) => withClientStateScope({memo_wrapper_callee(str(inner))}(Component), {owns_js!s}))",
         _var_data=VarData.merge(scope_import, inner._get_all_var_data()),
     ).to(FunctionVar)
 
