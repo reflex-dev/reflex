@@ -2032,9 +2032,9 @@ def component_hash(component: Component, *, recursive: bool) -> str:
         artifacts = tuple(_component_artifacts(component, recursive=recursive))
         if recursive:
             # The body's hooks, for callers that need them without rendering the
-            # subtree again; ``_component_artifacts`` yields the internal hooks
-            # and then the full set.
-            vars(component)["_memo_body_hooks"] = (*artifacts[2], *artifacts[3])
+            # subtree again; ``_component_artifacts`` yields the full set, which
+            # includes the internal hooks, fourth.
+            vars(component)["_memo_body_hooks"] = artifacts[3]
         return deterministic_hash(component.render(), *artifacts)
     rendered = component.render()
     artifacts = tuple(_component_artifacts(component, recursive=False))
