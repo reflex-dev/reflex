@@ -2504,7 +2504,7 @@ def _delta_value_key(value: Any) -> Any:
     Immutable scalars are keyed by themselves, paired with their type so that
     Python-equal but JSON-distinct values (``1`` and ``True``) do not collide.
     Other values are keyed by a digest of their JSON form, with mapping keys
-    sorted so equivalent mappings compare equal regardless of insertion order.
+    sorted where possible so ordinary mappings compare equal regardless of order.
     Values without a registered serializer key by the ``null`` the client would
     receive. The key stays small and unaffected by later in-place mutations.
 
@@ -2518,9 +2518,13 @@ def _delta_value_key(value: Any) -> Any:
     if value_type in _ATOMIC_DELTA_VALUE_TYPES:
         return (value_type, value)
     try:
+        try:
+            serialized = json_dumps(value, sort_keys=True)
+        except TypeError:
+            # JSON permits mixed string and numeric keys, which cannot be sorted.
+            serialized = json_dumps(value)
         return hashlib.blake2b(
-            json_dumps(value, sort_keys=True).encode(),
-            digest_size=_DELTA_VALUE_DIGEST_SIZE
+            serialized.encode(), digest_size=_DELTA_VALUE_DIGEST_SIZE
         ).digest()
     except Exception:
         return _UNKEYABLE_VALUE

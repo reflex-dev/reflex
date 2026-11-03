@@ -49,10 +49,10 @@ from reflex_base.vars.base import (
     StateOperation,
     Var,
     VarData,
+    _delta_value_key,
     _global_vars,
     _is_tree_state,
     _linearize_bases,
-    _delta_value_key,
     _type_check_depth,
     _validate_state_name,
     cached_property,
@@ -2477,6 +2477,8 @@ def test_delta_value_key_ignores_mapping_order() -> None:
     }
 
     assert _delta_value_key(first) == _delta_value_key(reordered)
+    # Mixed JSON object key types are serializable but cannot be sorted.
+    assert isinstance(_delta_value_key({"name": "x", 1: "y"}), bytes)
     assert _delta_value_key(first) != _delta_value_key(
         {"root": {"alpha": 9, "beta": 2}, "rows": [{"x": 1, "y": 2}]}
     )
