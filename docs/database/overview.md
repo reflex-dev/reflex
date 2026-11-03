@@ -32,20 +32,16 @@ If you are using a NoSQL database (e.g. MongoDB), you can work with it in Reflex
 ## Installation
 
 Install SQLAlchemy together with the DBAPI drivers for your database. The `db`
-extra installs SQLAlchemy and [Alembic](https://alembic.sqlalchemy.org/en/latest/),
-which the `reflex db` migration commands use:
+extra installs SQLAlchemy, [Alembic](https://alembic.sqlalchemy.org/en/latest/),
+which the `reflex db` migration commands use, and `aiosqlite`:
 
 ```bash
 pip install "reflex[db]"
 ```
 
 Event handlers query the database through an async driver, and the `reflex db`
-migration commands use a sync one. For SQLite, install `aiosqlite`; Python's
-built-in `sqlite3` is the sync driver:
-
-```bash
-pip install aiosqlite
-```
+migration commands use a sync one. For SQLite, that is all you need: `aiosqlite`
+is the async driver, and Python's built-in `sqlite3` is the sync one.
 
 For PostgreSQL, `psycopg` (psycopg3) is both the sync and the async driver:
 

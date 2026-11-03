@@ -61,6 +61,9 @@ classifiers = [
 
 [project.optional-dependencies]
 db = [
+  # The async SQLite driver, so the default sqlite database URL also works with
+  # SQLAlchemy's async engine and sessions.
+  "aiosqlite >=0.20.0",
   "alembic >=1.15.2,<2.0",
   # SQLAlchemy 2.1 made greenlet an optional extra, but reflex.model imports
   # sqlalchemy.ext.asyncio, which needs it at import time. 3.3 is the first
