@@ -216,6 +216,85 @@ def editable_text_with_global_state():
     )
 ```
 
+## Returning events to a caller
+
+A component-state event handler can return an event for a caller-provided handler.
+Store the optional `EventHandler` on the generated class in `get_component`.
+The `ClassVar` stores only the callback target. Keep values such as `count` in state
+so each client has its own values.
+
+```python
+from typing import ClassVar
+
+import reflex as rx
+
+
+class ThresholdCounter(rx.ComponentState):
+    count: int = 0
+    _on_over_ten: ClassVar[rx.event.EventHandler | None] = None
+
+    def _notify_caller(self) -> rx.event.EventSpec | None:
+        """Return a caller event when the count is greater than ten."""
+        callback = type(self)._on_over_ten
+        if self.count > 10 and callback is not None:
+            return callback(self.count)
+        return None
+
+    @rx.event
+    def increment(self) -> rx.event.EventSpec | None:
+        """Increase the count and return an optional caller event."""
+        self.count += 1
+        return self._notify_caller()
+
+    @rx.event
+    def decrement(self) -> rx.event.EventSpec | None:
+        """Decrease the count and return an optional caller event."""
+        self.count -= 1
+        return self._notify_caller()
+
+    @classmethod
+    def get_component(
+        cls, on_over_ten: rx.event.EventHandler | None = None
+    ) -> rx.Component:
+        """Build a counter with an optional caller event handler.
+
+        Args:
+            on_over_ten: The caller handler that accepts the current count.
+
+        Returns:
+            The counter controls.
+        """
+        cls._on_over_ten = on_over_ten
+        return rx.hstack(
+            rx.button("-", on_click=cls.decrement),
+            rx.text(cls.count),
+            rx.button("+", on_click=cls.increment),
+        )
+
+
+class CallbackState(rx.State):
+    value: int = 0
+
+    @rx.event
+    def receive(self, value: int):
+        """Store the count received from a counter.
+
+        Args:
+            value: The counter's current count.
+        """
+        self.value = value
+
+
+counter = ThresholdCounter.create(on_over_ten=CallbackState.receive)
+```
+
+Add `counter` and `rx.text(CallbackState.value)` to your page. Each counter created
+with `ThresholdCounter.create` has its own generated state class and callback target.
+Both increment and decrement return a callback event whenever the resulting count
+is greater than ten. At ten or below, or when no callback is supplied, they return
+no event. This example accepts one `EventHandler`; it does not add a custom event
+trigger API or change event processing.
+
 ## Accessing the State
 
 The underlying state class of a `ComponentState` is accessible via the `.State` attribute. To use it,
