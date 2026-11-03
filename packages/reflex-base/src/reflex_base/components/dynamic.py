@@ -1,6 +1,7 @@
 """Components that are dynamically generated on the backend."""
 
 import dataclasses
+import json
 from typing import TYPE_CHECKING, Any, Union
 
 from reflex_base import constants
@@ -222,6 +223,7 @@ def load_dynamic_serializer():
 
         module_imports = []
         bundled_declarations = []
+        bundled_library_paths = set()
         for module in utils.compile_imports(imports):
             if module["lib"] not in libs_in_window and not module["lib"].startswith((
                 "$/",
@@ -230,6 +232,7 @@ def load_dynamic_serializer():
                 module_imports.append(module)
                 continue
 
+            bundled_library_paths.add(module["lib"])
             window_library = f"window.__reflex['{module['lib']}']"
             if module["default"]:
                 bundled_declarations.append(
@@ -264,6 +267,11 @@ def load_dynamic_serializer():
                 module_code_lines[ix] = line_stripped[1:-1]
 
         module_code_lines.insert(0, "const React = window.__reflex.react;")
+        # evalReactComponent loads these optional libraries before the import;
+        # the default libraries are always in window.__reflex.
+        optional_libraries = sorted(
+            bundled_library_paths.difference(_default_bundled_libraries())
+        )
 
         function_line = next(
             index
@@ -283,7 +291,7 @@ def load_dynamic_serializer():
         ]
 
         return "\n".join([
-            "//__reflex_evaluate",
+            f"//__reflex_evaluate:{json.dumps(optional_libraries)}",
             *module_code_lines,
         ])
 

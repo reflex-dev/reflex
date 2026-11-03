@@ -19,6 +19,7 @@ from typing import (
     NoReturn,
     Protocol,
     Self,
+    TypeAlias,
     TypeVar,
     Union,
     get_args,
@@ -3123,41 +3124,41 @@ class EventNamespace:
     """A namespace for event related classes."""
 
     # Core Event Classes
-    Event = Event
-    EventActionsMixin = EventActionsMixin
-    EventHandler = EventHandler
-    EventSpec = EventSpec
-    CallableEventSpec = CallableEventSpec
-    EventChain = EventChain
-    EventVar = EventVar
-    LiteralEventVar = LiteralEventVar
-    EventChainVar = EventChainVar
-    LiteralEventChainVar = LiteralEventChainVar
-    EventCallback = EventCallback
-    LambdaEventCallback = LambdaEventCallback
+    Event: TypeAlias = Event
+    EventActionsMixin: TypeAlias = EventActionsMixin
+    EventHandler: TypeAlias = EventHandler
+    EventSpec: TypeAlias = EventSpec
+    CallableEventSpec: TypeAlias = CallableEventSpec
+    EventChain: TypeAlias = EventChain
+    EventVar: TypeAlias = EventVar
+    LiteralEventVar: TypeAlias = LiteralEventVar
+    EventChainVar: TypeAlias = EventChainVar
+    LiteralEventChainVar: TypeAlias = LiteralEventChainVar
+    EventCallback: TypeAlias = EventCallback
+    LambdaEventCallback: TypeAlias = LambdaEventCallback
 
     # Javascript Event Classes
-    JavascriptHTMLInputElement = JavascriptHTMLInputElement
-    JavascriptInputEvent = JavascriptInputEvent
-    JavascriptKeyboardEvent = JavascriptKeyboardEvent
-    JavascriptMouseEvent = JavascriptMouseEvent
-    JavascriptPointerEvent = JavascriptPointerEvent
+    JavascriptHTMLInputElement: TypeAlias = JavascriptHTMLInputElement
+    JavascriptInputEvent: TypeAlias = JavascriptInputEvent
+    JavascriptKeyboardEvent: TypeAlias = JavascriptKeyboardEvent
+    JavascriptMouseEvent: TypeAlias = JavascriptMouseEvent
+    JavascriptPointerEvent: TypeAlias = JavascriptPointerEvent
 
     # Type Info Classes
-    KeyInputInfo = KeyInputInfo
-    MouseEventInfo = MouseEventInfo
-    PointerEventInfo = PointerEventInfo
-    IdentityEventReturn = IdentityEventReturn
+    KeyInputInfo: TypeAlias = KeyInputInfo
+    MouseEventInfo: TypeAlias = MouseEventInfo
+    PointerEventInfo: TypeAlias = PointerEventInfo
+    IdentityEventReturn: TypeAlias = IdentityEventReturn
 
     # File Upload
-    FileUpload = FileUpload
-    UploadFilesChunk = UploadFilesChunk
+    FileUpload: TypeAlias = FileUpload
+    UploadFilesChunk: TypeAlias = UploadFilesChunk
 
     # Type Aliases
-    EventType = EventType
-    LAMBDA_OR_STATE = LAMBDA_OR_STATE
-    BASIC_EVENT_TYPES = BASIC_EVENT_TYPES
-    IndividualEventType = IndividualEventType
+    EventType: TypeAlias = EventType
+    LAMBDA_OR_STATE: TypeAlias = LAMBDA_OR_STATE
+    BASIC_EVENT_TYPES: TypeAlias = BASIC_EVENT_TYPES
+    IndividualEventType: TypeAlias = IndividualEventType
 
     # Constants
     BACKGROUND_TASK_MARKER = BACKGROUND_TASK_MARKER
