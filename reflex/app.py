@@ -510,6 +510,27 @@ def _cors_allowed_origins() -> list[str] | None:
     return [f"{parts.scheme}://{host}:{port}"]
 
 
+def _unwrap_handler_fn(handler_fn: Callable) -> Callable:
+    """Return the function a handler wraps, looking through callable instances.
+
+    ``functools.wraps`` copies the annotations of the wrapped function onto the
+    wrapper but keeps the wrapper's own signature and ``__globals__``, so both
+    the signature checks and the annotation lookups have to run against the
+    function the handler wraps. A callable instance is not itself decorated;
+    its ``__call__`` is the function that carries the signature.
+
+    Args:
+        handler_fn: The handler to unwrap.
+
+    Returns:
+        The unwrapped function behind the handler.
+    """
+    if not inspect.isroutine(handler_fn):
+        # A callable instance keeps the signature and globals on __call__.
+        handler_fn = handler_fn.__call__  # pyright: ignore[reportAttributeAccessIssue]
+    return inspect.unwrap(handler_fn)
+
+
 def _resolve_handler_annotation(annotation: Any, handler_fn: Callable) -> Any:
     """Resolve an annotation string in the handler's own module namespace.
 
@@ -529,11 +550,8 @@ def _resolve_handler_annotation(annotation: Any, handler_fn: Callable) -> Any:
     """
     if not isinstance(annotation, str):
         return annotation
-    handler_fn = inspect.unwrap(handler_fn)
+    handler_fn = _unwrap_handler_fn(handler_fn)
     namespace = getattr(handler_fn, "__globals__", None)
-    if namespace is None and not inspect.isroutine(handler_fn):
-        # A callable instance keeps the globals of its function on __call__.
-        namespace = getattr(handler_fn.__call__, "__globals__", None)  # pyright: ignore[reportAttributeAccessIssue]
     if namespace is None:
         namespace = globals()
     # A quoted forward reference under ``from __future__ import annotations`` is stored
@@ -2147,7 +2165,7 @@ class App(MiddlewareMixin, LifespanMixin):
             # Check if the function has the necessary annotations and types in the right order
             # A decorator keeps its own signature and only copies the annotations, so
             # introspect the function the handler wraps.
-            inspect_fn = inspect.unwrap(handler_fn)
+            inspect_fn = _unwrap_handler_fn(handler_fn)
             argspec = inspect.getfullargspec(inspect_fn)
             arg_annotations = {
                 k: _resolve_handler_annotation(v, inspect_fn)
@@ -2175,7 +2193,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
             # Check if the return type is valid for backend exception handler
             if handler_domain == "backend":
-                backend_handler = inspect.unwrap(self.backend_exception_handler)
+                backend_handler = _unwrap_handler_fn(self.backend_exception_handler)
                 sig = inspect.signature(backend_handler)
                 return_type = _resolve_handler_annotation(
                     sig.return_annotation, backend_handler
