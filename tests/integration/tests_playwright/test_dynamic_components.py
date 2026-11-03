@@ -154,19 +154,44 @@ def DynamicComponents():
         )
 
 
+@pytest.fixture(
+    scope="module", params=[False, True], ids=["eager_libraries", "lazy_libraries"]
+)
+def lazy_bundled_libraries(request: pytest.FixtureRequest) -> bool:
+    """Whether the app loads optional dynamic-component libraries on demand.
+
+    Args:
+        request: pytest fixture request object
+
+    Returns:
+        The frontend_lazy_bundled_libraries config value.
+    """
+    return request.param
+
+
 @pytest.fixture(scope="module")
-def dynamic_components(tmp_path_factory) -> Generator[AppHarness, None, None]:
-    """Start the dynamic-components app.
+def dynamic_components(
+    tmp_path_factory, lazy_bundled_libraries: bool
+) -> Generator[AppHarness, None, None]:
+    """Start VarOperations app at tmp_path via AppHarness.
+
+    Args:
+        tmp_path_factory: pytest tmp_path_factory fixture
+        lazy_bundled_libraries: whether optional libraries load on demand
 
     Yields:
         The running app harness.
     """
-    with AppHarness.create(
-        root=tmp_path_factory.mktemp("dynamic_components"),
-        app_source=DynamicComponents,
-    ) as harness:
-        assert harness.app_instance is not None, "app is not running"
-        yield harness
+    with pytest.MonkeyPatch.context() as monkeypatch:
+        monkeypatch.setenv(
+            "REFLEX_FRONTEND_LAZY_BUNDLED_LIBRARIES", str(lazy_bundled_libraries)
+        )
+        with AppHarness.create(
+            root=tmp_path_factory.mktemp("dynamic_components"),
+            app_source=DynamicComponents,
+        ) as harness:
+            assert harness.app_instance is not None, "app is not running"
+            yield harness
 
 
 # TODO: drop the skip once the dill release fixing
@@ -175,8 +200,11 @@ def dynamic_components(tmp_path_factory) -> Generator[AppHarness, None, None]:
     sys.version_info >= (3, 15) and bool(os.environ.get("REFLEX_REDIS_URL")),
     reason="dill <= 0.4.1 cannot serialize functions on Python 3.15",
 )
-def test_dynamic_components(dynamic_components: AppHarness, page: Page) -> None:
+def test_dynamic_components(
+    dynamic_components: AppHarness, page: Page, lazy_bundled_libraries: bool
+) -> None:
     """Verify component updates, event handlers, and exact bundled imports."""
+    banana = "lucide-react/dist/esm/icons/banana.mjs"
     assert dynamic_components.frontend_url is not None
     page.goto(dynamic_components.frontend_url)
     expect(page.locator("#token")).not_to_have_value("")
@@ -194,10 +222,11 @@ def test_dynamic_components(dynamic_components: AppHarness, page: Page) -> None:
     assert "lucide-react" not in bundled
     assert {
         "lucide-react/dist/esm/icons/apple.mjs",
-        "lucide-react/dist/esm/icons/banana.mjs",
         "lucide-react/dist/esm/icons/tag.mjs",
         "lucide-react/dynamic.mjs",
     } <= set(bundled)
+    # Lazy apps load the bundled banana icon only for the component that uses it.
+    assert (banana in bundled) is not lazy_bundled_libraries
 
     count = page.locator("#count")
     expect(count).to_have_text("0")
@@ -212,6 +241,7 @@ def test_dynamic_components(dynamic_components: AppHarness, page: Page) -> None:
     expect(page.locator("#delayed-icon")).to_be_attached()
     bundled = page.evaluate("() => Object.keys(window.__reflex)")
     assert "lucide-react" not in bundled
+    assert banana in bundled
 
     page.locator("#delayed-increment").click()
     expect(page.locator("#delayed-count")).to_have_text("1")

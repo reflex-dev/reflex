@@ -2,6 +2,7 @@
 
 import functools
 from collections.abc import Generator
+from pathlib import Path
 
 import pytest
 from playwright.sync_api import Page, expect
@@ -233,6 +234,37 @@ def lifespan_app(
         yield harness
 
 
+@pytest.fixture
+def lifespan_app_for_shutdown(
+    tmp_path: Path,
+    app_harness_env: type[AppHarness],
+    mount_api_transformer: bool,
+    mount_cached_fastapi: bool,
+) -> Generator[AppHarness, None, None]:
+    """Start an isolated app for the test that shuts down its backend.
+
+    Unlike ``lifespan_app``, this fixture is function-scoped so pytest retries
+    cannot reuse a stopped backend or its mutated module globals.
+
+    Yields:
+        A running isolated AppHarness instance.
+    """
+    app_name = (
+        f"lifespan_shutdown_fastapi{mount_cached_fastapi}"
+        f"_transformer{mount_api_transformer}"
+    )
+    with app_harness_env.create(
+        root=tmp_path,
+        app_source=functools.partial(
+            LifespanApp,
+            mount_cached_fastapi=mount_cached_fastapi,
+            mount_api_transformer=mount_api_transformer,
+        ),
+        app_name=app_name,
+    ) as harness:
+        yield harness
+
+
 def test_lifespan_modify_state(lifespan_app: AppHarness, page: Page):
     """Test that a lifespan task can use app.modify_state to push state updates.
 
@@ -278,32 +310,34 @@ def test_lifespan_raw_asyncio_task(lifespan_app: AppHarness, page: Page):
     assert lifespan_app.app_module.raw_asyncio_task_global > 0
 
 
-# --- test_lifespan MUST be the last test in this file. ---
-# It shuts down the backend and asserts cancellation of lifespan tasks.
-# The lifespan_app fixture is session-scoped (expensive to rebuild), so all
-# other tests that need a running backend must be defined ABOVE this point.
+# This test shuts down its function-scoped backend and checks task cancellation.
 
 
-def test_lifespan(lifespan_app: AppHarness, page: Page):
+def test_lifespan(lifespan_app_for_shutdown: AppHarness, page: Page):
     """Test the lifespan integration.
 
     Args:
-        lifespan_app: harness for LifespanApp app
+        lifespan_app_for_shutdown: isolated harness for LifespanApp app
         page: Playwright page.
     """
-    assert lifespan_app.app_module is not None, "app module is not found"
-    assert lifespan_app.app_instance is not None, "app is not running"
-    assert lifespan_app.frontend_url is not None
-    page.goto(lifespan_app.frontend_url)
+    assert lifespan_app_for_shutdown.app_module is not None, "app module is not found"
+    assert lifespan_app_for_shutdown.app_instance is not None, "app is not running"
+    assert lifespan_app_for_shutdown.frontend_url is not None
+    page.goto(lifespan_app_for_shutdown.frontend_url)
     page.wait_for_function("() => sessionStorage.getItem('token') !== null")
 
     context_global = page.locator("#context_global")
     task_global = page.locator("#task_global")
 
     expect(context_global).to_have_text("2")
-    assert lifespan_app.app_module.lifespan_context_global == 2
-    transformer_starts = 1 if lifespan_app.app_module.app.api_transformer else 0
-    assert lifespan_app.app_module.transformer_lifespan_global == transformer_starts
+    assert lifespan_app_for_shutdown.app_module.lifespan_context_global == 2
+    transformer_starts = (
+        1 if lifespan_app_for_shutdown.app_module.app.api_transformer else 0
+    )
+    assert (
+        lifespan_app_for_shutdown.app_module.transformer_lifespan_global
+        == transformer_starts
+    )
 
     original_task_global_value = int(task_global.inner_text())
     page.wait_for_function(
@@ -311,22 +345,23 @@ def test_lifespan(lifespan_app: AppHarness, page: Page):
         arg=original_task_global_value,
     )
     page.locator("#toggle-tick").click()  # avoid teardown errors
-    assert lifespan_app.app_module.lifespan_task_global > original_task_global_value
+    assert (
+        lifespan_app_for_shutdown.app_module.lifespan_task_global
+        > original_task_global_value
+    )
     assert int(task_global.inner_text()) > original_task_global_value
 
     # Kill the backend
-    assert lifespan_app.backend is not None
-    lifespan_app.backend.should_exit = True
-    if lifespan_app.backend_thread is not None:
-        lifespan_app.backend_thread.join()
+    assert lifespan_app_for_shutdown.backend is not None
+    lifespan_app_for_shutdown.backend.should_exit = True
+    if lifespan_app_for_shutdown.backend_thread is not None:
+        lifespan_app_for_shutdown.backend_thread.join()
 
     # Check that the lifespan tasks have been cancelled
-    assert lifespan_app.app_module.lifespan_task_global == 0
-    assert lifespan_app.app_module.lifespan_context_global == 4
-    assert lifespan_app.app_module.raw_asyncio_task_global == 0
-    assert lifespan_app.app_module.transformer_lifespan_global == 2 * transformer_starts
-
-
-# --- Do NOT add new test cases below this line. ---
-# test_lifespan (above) kills the backend; any test defined after it will
-# find the harness in a stopped state and fail.
+    assert lifespan_app_for_shutdown.app_module.lifespan_task_global == 0
+    assert lifespan_app_for_shutdown.app_module.lifespan_context_global == 4
+    assert lifespan_app_for_shutdown.app_module.raw_asyncio_task_global == 0
+    assert (
+        lifespan_app_for_shutdown.app_module.transformer_lifespan_global
+        == 2 * transformer_starts
+    )
