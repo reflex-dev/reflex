@@ -8,9 +8,9 @@
 import { readFileSync } from "node:fs";
 
 import { act } from "react";
-import { createElement, StrictMode } from "react";
+import { createElement } from "react";
 import { createRoot } from "react-dom/client";
-import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 
 import {
   CLIENT_STATE_REF,
@@ -28,22 +28,15 @@ import {
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
 /** Mount a tree into a detached root, returning it and its container. */
-const mount = (element, { strict = false } = {}) => {
+const mount = (element) => {
   const container = document.createElement("div");
   document.body.appendChild(container);
   const root = createRoot(container);
   act(() => {
-    root.render(strict ? createElement(StrictMode, null, element) : element);
+    root.render(element);
   });
   return {
     container,
-    // Re-render into the same root, so React reconciles rather than remounting
-    // -- which is what the tests about list churn need to observe.
-    rerender: (next) => {
-      act(() => {
-        root.render(strict ? createElement(StrictMode, null, next) : next);
-      });
-    },
     unmount: () => {
       act(() => root.unmount());
       container.remove();

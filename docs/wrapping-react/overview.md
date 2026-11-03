@@ -195,11 +195,13 @@ Pass `prefix=` to make generated names readable in the compiled output:
 
 `value` and `set` are the normal way to use a client state var, but they resolve to a
 hook, so they only work inside a component that Reflex renders. When you are wrapping a
-library that hands you a plain JavaScript callback -- or you are writing your own JS in
-`add_custom_code` -- use `global_value` and `global_set` instead. They need no hook, so
-they work anywhere in your compiled page:
+library that hands you a plain JavaScript callback, use `global_value` and `global_set`
+instead. They need no hook, so they work anywhere in your compiled page. Pass them as a
+prop, so the import they need comes with them:
 
 ```python
+from typing import Any
+
 picker_color = rx.client_state("#db114b", name="picker_color")
 
 
@@ -207,10 +209,16 @@ class MyPicker(rx.Component):
     library = "some-non-react-picker"
     tag = "Picker"
 
-    def add_custom_code(self) -> list[str]:
-        # `global_set` is a plain function, so a non-React callback can call it.
-        return [f"const onPickerChange = {picker_color.global_set};"]
+    # The library calls this with the picked color.
+    on_pick: rx.Var[Any]
+
+
+# `global_set` is a plain function, so a non-React callback can call it.
+MyPicker.create(on_pick=picker_color.global_set)
 ```
+
+Do not format them into a string, such as one returned from `add_custom_code`: the string
+keeps the expression but drops its import.
 
 Reads through `global_value` are a point-in-time snapshot with no reactivity, so prefer
 `value` inside components. Writes through `global_set` re-render every component
