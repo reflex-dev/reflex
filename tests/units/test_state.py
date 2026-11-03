@@ -106,7 +106,10 @@ CI = bool(os.environ.get("CI", False))
 LOCK_EXPIRATION = 2500 if CI else 300
 LOCK_WARNING_THRESHOLD = 1000 if CI else 100
 LOCK_WARN_SLEEP = 1.5 if CI else 0.15
-LOCK_EXPIRE_SLEEP = 2.5 if CI else 0.4
+# Must outlast LOCK_EXPIRATION by a clear margin: redis times the expiration on
+# its own clock, so sleeping exactly as long leaves only the few milliseconds of
+# round trips between the lock and the save to decide whether it expired.
+LOCK_EXPIRE_SLEEP = 3.0 if CI else 0.4
 
 
 formatted_router_vars = {
