@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import asyncio
 import dataclasses
 import functools
+import logging
 import os
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Protocol
 
 from reflex_base import otel
@@ -16,7 +18,12 @@ if TYPE_CHECKING:
     from opentelemetry.context import Context
 
     from reflex.istate.manager import StateManager
+    from reflex.state import BaseState
     from reflex_base.event import Event
+    from reflex_base.event.processor.future import EventFuture
+
+
+logger = logging.getLogger(__name__)
 
 
 @functools.lru_cache
@@ -43,12 +50,15 @@ def _new_txid() -> str:
 class EnqueueProtocol(Protocol):
     """Protocol for the enqueue function in the event context."""
 
-    async def __call__(self, token: str, *events: Event) -> Any:
+    async def __call__(self, token: str, *events: Event) -> Sequence[EventFuture]:
         """Enqueue an event handler to be executed.
 
         Args:
             token: The client token associated with the event.
             events: The events to enqueue.
+
+        Returns:
+            One future per event, each resolving to its handler's return value.
         """
         ...
 
@@ -109,8 +119,19 @@ class EventContext(BaseContext):
     emit_event_impl: EmitEventProtocol | None = dataclasses.field(
         default=None, repr=False
     )
-    cached_states: dict[type, Any] = dataclasses.field(
-        default_factory=dict, init=False, repr=False
+    # The root of the state tree this task holds the token's state lock on,
+    # while it does: set by the event processor around a foreground handler,
+    # by ``async with self`` in a background handler, and by
+    # ``App.modify_state``. An awaited handler runs inline on it; with no lock
+    # held, the handler is enqueued instead. Never inherited by fork().
+    locked_root: BaseState | None = dataclasses.field(
+        default=None, init=False, repr=False
+    )
+    # The tasks running an awaited handler inline on the locked tree. The
+    # lock is released only once they are done, so a task spawned from a
+    # handler cannot keep writing to the tree after the lock is gone.
+    inline_tasks: set[asyncio.Task] = dataclasses.field(
+        default_factory=set, init=False, repr=False
     )
     # OpenTelemetry context active when this event was enqueued (None when tracing is off).
     otel_context: Context | None = dataclasses.field(default=None, repr=False)
@@ -143,6 +164,59 @@ class EventContext(BaseContext):
             otel_context=otel.capture_context(),
         )
 
+    def set_locked_root(self, root_state: BaseState | None) -> None:
+        """Record the state tree the current task holds the lock on, or None.
+
+        Args:
+            root_state: The locked root state, or None once the lock is released.
+        """
+        object.__setattr__(self, "locked_root", root_state)
+
+    async def release_lock(self) -> None:
+        """Wait for the inline handler runs started under the lock, then unmark it.
+
+        A handler run that another task started inline (``asyncio.ensure_future``
+        on a handler) still holds references to the locked tree, so the lock
+        stays held until it finishes. When the releasing task is being
+        cancelled, those runs are cancelled too.
+        """
+        if not self.inline_tasks:
+            # The common case: nothing was started inline.
+            self.set_locked_root(None)
+            return
+        current = asyncio.current_task()
+        # A task already being cancelled (the cancellation arrived inside
+        # the locked block) is not interrupted again while it waits, so the
+        # runs it waits for are cancelled up front.
+        cancelling = current is not None and current.cancelling()
+        try:
+            # Drain until nothing is left: a run may start another while
+            # the earlier ones are awaited.
+            while pending := [
+                t for t in self.inline_tasks if t is not current and not t.done()
+            ]:
+                if cancelling:
+                    for task in pending:
+                        task.cancel()
+                try:
+                    results = await asyncio.gather(*pending, return_exceptions=True)
+                except asyncio.CancelledError:
+                    for task in pending:
+                        task.cancel()
+                    raise
+                for task, result in zip(pending, results, strict=True):
+                    if isinstance(result, BaseException) and not isinstance(
+                        result, asyncio.CancelledError
+                    ):
+                        # Gathering retrieved the exception, so asyncio would
+                        # not report it as unretrieved; keep it visible.
+                        logger.error(
+                            f"Inline event handler task {task.get_name()} failed:",
+                            exc_info=result,
+                        )
+        finally:
+            self.set_locked_root(None)
+
     async def emit_delta(self, delta: Mapping[str, Mapping[str, Any]]) -> None:
         """Emit a delta to the frontend.
 
@@ -163,10 +237,13 @@ class EventContext(BaseContext):
         if self.emit_event_impl is not None:
             await self.emit_event_impl(self.token, *events)
 
-    async def enqueue(self, *event: Event) -> None:
+    async def enqueue(self, *event: Event) -> Sequence[EventFuture]:
         """Enqueue an event handler to be executed.
 
         Args:
             event: The event to enqueue.
+
+        Returns:
+            One future per event, each resolving to its handler's return value.
         """
-        await self.enqueue_impl(self.token, *event)
+        return await self.enqueue_impl(self.token, *event)
