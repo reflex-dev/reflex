@@ -1,19 +1,21 @@
 """Tests for the compile-time wiring of client state scopes."""
 
 import dataclasses
+import json
+import re
 from collections.abc import Callable
-from typing import Any, cast
+from typing import Any
 
 from reflex_base.components.client_state_context import (
-    ClientStateScope,
     local_client_state_names,
     scoped_memo_wrapper,
 )
 from reflex_base.components.component import Component
+from reflex_base.constants.compiler import MemoizationDisposition, MemoizationMode
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
 from reflex_base.vars.base import Var
 from reflex_base.vars.function import FunctionVar
-from reflex_base.vars.sequence import LiteralArrayVar
+from reflex_components_core.el.elements.inline import Span
 
 import reflex as rx
 from reflex.compiler.plugins import default_page_plugins
@@ -63,11 +65,13 @@ def _owned(page_ctx: PageContext) -> list[str] | None:
     Returns:
         The owned names, or None.
     """
-    root = page_ctx.root_component
-    if not isinstance(root, ClientStateScope):
-        return None
-    owns = cast("LiteralArrayVar", root.owns)
-    return sorted(cast("list[str]", owns._var_value))
+    assert page_ctx.output_code is not None
+    match = re.search(
+        r"^export default withClientStateScope\(Component, (\[.*\])\);$",
+        page_ctx.output_code,
+        re.MULTILINE,
+    )
+    return json.loads(match.group(1)) if match else None
 
 
 def test_local_names_come_from_local_hooks_only() -> None:
@@ -107,11 +111,7 @@ def test_page_owns_a_local_name_used_in_a_memoized_subtree() -> None:
     page_ctx = _compile(lambda: rx.box(rx.text(local.value)))
 
     assert _owned(page_ctx) == [local._state_name]
-    assert page_ctx.output_code is not None
-    assert (
-        f'jsx(ClientStateScope,{{owns:["{local._state_name}"]}}' in page_ctx.output_code
-    )
-    assert "ClientStateScope" in str(page_ctx.imports)
+    assert "withClientStateScope" in str(page_ctx.imports)
 
 
 def test_page_owns_a_local_name_used_inside_a_snapshot_boundary() -> None:
@@ -165,3 +165,28 @@ def test_scoped_wrapper_applies_an_arrow_wrapper_to_the_component() -> None:
     wrapped = str(scoped_memo_wrapper(inner, ["cs$1"]))
 
     assert "((C) => memo(C))(Component)" in wrapped
+
+
+class _NeverSpan(Span):
+    """A span the memoizer never wraps, so its hooks stay in the page body."""
+
+    _memoization_mode = MemoizationMode(disposition=MemoizationDisposition.NEVER)
+
+
+def test_page_body_hooks_run_inside_the_page_scope() -> None:
+    """A hook left in the page function resolves in the page's scope.
+
+    A component that is never memoized keeps its hooks in the page function,
+    so the scope has to wrap that function rather than what it returns.
+    """
+    local = rx.client_state(0)
+
+    page_ctx = _compile(
+        lambda: rx.box(_NeverSpan.create(title=local.value.to_string()))
+    )
+
+    code = page_ctx.output_code
+    assert code is not None
+    page_body = code.split("function Component()", 1)[1].split("return", 1)[0]
+    assert f'useClientState(0, "{local._state_name}")' in page_body
+    assert _owned(page_ctx) == [local._state_name]

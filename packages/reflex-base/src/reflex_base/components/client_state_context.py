@@ -46,16 +46,6 @@ def local_client_state_names(hooks: Iterable[str]) -> list[str]:
     })
 
 
-class ClientStateScope(Component):
-    """A client state scope that claims the local names its body uses."""
-
-    library = f"$/{Dirs.CLIENT_STATE_PATH}"
-    tag = "ClientStateScope"
-
-    # The local names used by this boundary's own body.
-    owns: Var[list[str]]
-
-
 def scoped_memo_wrapper(inner: Var | None, owns: list[str]) -> Var:
     """Compose a memo wrapper that also opens a client state scope.
 

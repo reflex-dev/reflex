@@ -17,9 +17,15 @@ from reflex.testing import AppHarness
 
 def ClientStateApp():
     """App exercising ``rx.client_state`` runtime behavior."""
+    from reflex_base.constants.compiler import MemoizationDisposition, MemoizationMode
     from reflex_base.vars.function import ArgsFunctionOperationBuilder, FunctionVar
+    from reflex_components_core.el.elements.inline import Span
 
     import reflex as rx
+
+    class NeverSpan(Span):
+        # Never memoized, so its hook stays in the page function body.
+        _memoization_mode = MemoizationMode(disposition=MemoizationDisposition.NEVER)
 
     shared = rx.client_state("initial", name="shared")
     counter = rx.client_state(0, name="counter")
@@ -151,6 +157,9 @@ def ClientStateApp():
             rx.text(lifted.value, id="lifted-page"),
             rx.button("lift", id="lift", on_click=lifted.set(100)),
             rx.text(page_local.value, id="page-local"),
+            NeverSpan.create(
+                "never", title=page_local.value.to_string(), id="never-page-local"
+            ),
             rx.button(
                 "page-local-inc",
                 id="page-local-inc",
@@ -307,12 +316,15 @@ def test_local_page_var_does_not_cross_pages(page: Page) -> None:
     page.locator("#page-local-inc").click()
     page.locator("#page-local-inc").click()
     expect(page.locator("#page-local")).to_have_text("2")
+    # A hook left in the page function body shares the page's slot.
+    expect(page.locator("#never-page-local")).to_have_attribute("title", "2")
 
     page.locator("#to-other").click()
     expect(page.locator("#other-page-local")).to_have_text("0")
 
     page.locator("#to-home").click()
     expect(page.locator("#page-local")).to_have_text("0")
+    expect(page.locator("#never-page-local")).to_have_attribute("title", "0")
 
 
 def test_writing_one_var_leaves_other_readers_untouched(page: Page) -> None:

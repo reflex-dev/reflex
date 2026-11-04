@@ -6,17 +6,15 @@ import dataclasses
 from collections.abc import Callable, Sequence
 from typing import Any
 
+from reflex_base import constants
 from reflex_base.components.app_wraps import _ingest_component_var_app_wraps
-from reflex_base.components.client_state_context import (
-    ClientStateScope,
-    local_client_state_names,
-)
+from reflex_base.components.client_state_context import local_client_state_names
 from reflex_base.components.component import BaseComponent, Component, ComponentStyle
 from reflex_base.config import get_config
 from reflex_base.plugins import CompileContext, PageContext, PageDefinition, Plugin
 from reflex_base.plugins.base import HookOrder
 from reflex_base.utils.format import make_default_page_title
-from reflex_base.utils.imports import collapse_imports, merge_imports
+from reflex_base.utils.imports import ImportVar, collapse_imports, merge_imports
 from reflex_base.vars import VarData
 from reflex_components_core.base.fragment import Fragment
 
@@ -80,7 +78,9 @@ class ClientStateScopePlugin(Plugin):
     Runs after the walk, from the hooks the collector gathered and the ones
     the memoize plugin moved into memo modules, so nothing is rendered twice.
     The page is the outermost boundary: memos below it that use the same
-    names share its slots, and the slots reset when the page unmounts.
+    names share its slots, and the slots reset when the page unmounts. The
+    page template wraps the page function itself in the scope, so hooks left
+    in the page body resolve inside it too.
     """
 
     def compile_page(
@@ -89,14 +89,15 @@ class ClientStateScopePlugin(Plugin):
         /,
         **kwargs: Any,
     ) -> None:
-        """Wrap the page root in a scope claiming its local names, if any."""
+        """Collect the page's local names and import the scope wrapper."""
         names = page_ctx.client_state_names
         names.update(local_client_state_names(page_ctx.hooks))
-        if not names:
-            return
-        scope = ClientStateScope.create(page_ctx.root_component, owns=sorted(names))
-        page_ctx.root_component = scope
-        page_ctx.imports.append(scope._get_imports())
+        if names:
+            page_ctx.imports.append({
+                f"$/{constants.Dirs.CLIENT_STATE_PATH}": [
+                    ImportVar(tag="withClientStateScope")
+                ]
+            })
 
 
 @dataclasses.dataclass(frozen=True, slots=True)

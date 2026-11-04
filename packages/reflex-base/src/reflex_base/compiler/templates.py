@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import re
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Literal
 
 from reflex_base import constants
@@ -600,6 +600,7 @@ def page_template(
     hooks: dict[str, VarData | None],
     render: dict[str, Any],
     route: str = "",
+    client_state_owns: Sequence[str] = (),
 ):
     """Template for a single react page.
 
@@ -627,6 +628,10 @@ def page_template(
             entirely — ``page_template`` ships in ``reflex-base``, so an
             out-of-tree caller predating the parameter keeps working and gets
             the pre-existing unnamed ``Component``.
+        client_state_owns: The local client state names the page owns. When
+            given, the exported component is ``Component`` wrapped in a client
+            state scope claiming them, so hooks in the page body resolve inside
+            it.
 
     Returns:
         Rendered React page component as string.
@@ -640,6 +645,11 @@ def page_template(
         f"Component.displayName = {json.dumps(f'Component({route})')};\n"
         if route
         else ""
+    )
+    export_str = (
+        f"withClientStateScope(Component, {json.dumps(list(client_state_owns))})"
+        if client_state_owns
+        else "Component"
     )
     return f"""{imports_str}
 
@@ -655,7 +665,7 @@ function Component() {{
   )
 }}
 {display_name_str}
-export default Component;
+export default {export_str};
 """
 
 
