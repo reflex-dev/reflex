@@ -9,7 +9,7 @@ import sys
 import weakref
 from asyncio import CancelledError
 from collections.abc import Callable, Mapping
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from operator import attrgetter, itemgetter
 from types import MappingProxyType
 from typing import Any, ClassVar, assert_type
@@ -241,6 +241,15 @@ async def test_linked_state_proxy_releases_lock_when_entering_fails(
     entering = asyncio.Event()
 
     async def failing_get_state(self: BaseState, state_cls: type[BaseState]):
+        """Fail to load the linked state, after the parent took the lock.
+
+        Args:
+            self: The parent state.
+            state_cls: The linked state class.
+
+        Raises:
+            RuntimeError: Always, unless cancelled first.
+        """
         entering.set()
         if cancelled:
             await asyncio.Event().wait()
@@ -250,17 +259,24 @@ async def test_linked_state_proxy_releases_lock_when_entering_fails(
     monkeypatch.setattr(BaseState, "get_state", failing_get_state)
 
     async def enter_linked_proxy():
+        """Enter the linked proxy as a background task would."""
         async with linked_proxy:
             pass
 
     task = asyncio.create_task(enter_linked_proxy())
-    await entering.wait()
-    if cancelled:
+    try:
+        async with asyncio.timeout(1):
+            await entering.wait()
+            if cancelled:
+                task.cancel()
+                with pytest.raises(CancelledError):
+                    await task
+            else:
+                with pytest.raises(RuntimeError, match="Simulated get_state failure"):
+                    await task
+    finally:
         task.cancel()
-        with pytest.raises(CancelledError):
-            await task
-    else:
-        with pytest.raises(RuntimeError, match="Simulated get_state failure"):
+        with suppress(Exception, CancelledError):
             await task
 
     state_token = BaseStateToken(
