@@ -816,8 +816,12 @@ class BackendSrcState(BaseState):
 
 @pytest.mark.parametrize(
     "create",
-    [lambda f: rx.image(src=f), lambda f: rx.data_table(data=f)],
-    ids=["image_src", "data_table_data"],
+    [
+        lambda f: rx.image(src=f),
+        lambda f: rx.data_table(data=f),
+        lambda f: rx.box(id=f),
+    ],
+    ids=["image_src", "data_table_data", "box_id"],
 )
 def test_component_render_backend_var_prop_raises_format_error(
     create: Callable[[Any], Component],

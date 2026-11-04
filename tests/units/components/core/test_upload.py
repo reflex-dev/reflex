@@ -6,6 +6,7 @@ from typing import Any, cast
 
 import pytest
 from reflex_base.event import EventChain, EventHandler, EventSpec, parse_args_spec
+from reflex_base.utils.exceptions import BackendVarFormatError
 from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_components_core.core._upload import (
@@ -33,7 +34,7 @@ from starlette.formparsers import MultiPartException
 
 import reflex as rx
 from reflex import event
-from reflex.state import State
+from reflex.state import BaseState, State
 
 
 class UploadStateTest(State):
@@ -99,6 +100,21 @@ def test_cancel_upload():
 def test_get_upload_url():
     url = get_upload_url("foo_file")
     assert isinstance(url, Var)
+
+
+class BackendUploadUrlState(BaseState):
+    """A state with a backend var, for get_upload_url misuse tests."""
+
+    _file: str = "a.txt"
+
+
+def test_get_upload_url_backend_var_raises_format_error():
+    """A backend var passed as the file path raises the backend var format error."""
+    with pytest.raises(
+        BackendVarFormatError,
+        match=r"Backend var 'BackendUploadUrlState\._file' exists only",
+    ):
+        get_upload_url(BackendUploadUrlState._file)  # pyright: ignore[reportArgumentType]
 
 
 def test__on_drop_spec():

@@ -329,13 +329,16 @@ def test_backend_var_event_action_raises_format_error(action: Callable[[Any], An
         str(Var.create(action(BackendTriggerState._secret)))
 
 
-def test_backend_var_upload_progress_reports_repr():
-    """A backend var passed as on_upload_progress reports its repr."""
+def test_backend_var_upload_progress_raises_format_error():
+    """A backend var passed as on_upload_progress raises the backend var format error."""
     upload = rx.upload_files(
         upload_id="u",
         on_upload_progress=BackendTriggerState._secret,  # pyright: ignore[reportArgumentType]
     )
-    with pytest.raises(ValueError, match=r"^Field\(default=42.* is not a valid"):
+    with pytest.raises(
+        BackendVarFormatError,
+        match=r"Backend var 'BackendTriggerState\._secret' exists only",
+    ):
         upload.as_event_spec(handler=cast(EventHandler, BackendTriggerState.on_upload))
 
 

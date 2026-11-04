@@ -57,7 +57,7 @@ from reflex_base.utils.types import (
     value_inside_optional,
 )
 from reflex_base.vars import VarData
-from reflex_base.vars.base import LiteralVar, Var, _owner_state
+from reflex_base.vars.base import Field, LiteralVar, Var, _owner_state
 from reflex_base.vars.function import (
     ENCODE_URI_COMPONENT,
     ArgsFunctionOperation,
@@ -1388,6 +1388,7 @@ class FileUpload:
             The upload EventSpec.
 
         Raises:
+            BackendVarFormatError: If the on_upload_progress is a field with no frontend var.
             ValueError: If the on_upload_progress is not a valid event handler.
         """
         from reflex_components_core.core.upload import (
@@ -1443,6 +1444,8 @@ class FileUpload:
                 events = call_event_fn(
                     on_upload_progress, self.on_upload_progress_args_spec
                 )
+            elif isinstance(on_upload_progress, Field):
+                raise on_upload_progress._no_frontend_var_error()
             else:
                 msg = f"{on_upload_progress!s} is not a valid event handler."
                 raise ValueError(msg)

@@ -381,6 +381,30 @@ def test_prepare_404_page_empty_string_metadata_uses_defaults():
     assert prepared.page.description == constants.Page404.DESCRIPTION
 
 
+class BackendMetaState(BaseState):
+    """A state with a backend var, for page metadata misuse tests."""
+
+    _meta: str = "x"
+
+
+@pytest.mark.parametrize("key", ["title", "description", "image"])
+def test_add_page_backend_var_meta_raises_format_error(
+    app: App, index_page: ComponentCallable, key: str
+):
+    """A backend var passed as page metadata raises when the page is added.
+
+    Args:
+        app: The app to test.
+        index_page: The index page.
+        key: The page metadata argument given the backend var.
+    """
+    with pytest.raises(
+        exceptions.BackendVarFormatError,
+        match=r"Backend var 'BackendMetaState\._meta' exists only",
+    ):
+        app.add_page(index_page, route="/meta", **{key: BackendMetaState._meta})  # pyright: ignore[reportArgumentType]
+
+
 def test_add_page_set_route(app: App, index_page: ComponentCallable):
     """Test adding a page to an app.
 

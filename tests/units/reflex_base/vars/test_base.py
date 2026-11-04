@@ -1441,6 +1441,19 @@ def test_mixin_field_format_raises():
         f"{Mixin.count}"
 
 
+def test_state_var_field_format_raises():
+    """A state var's field, read from get_fields(), says to use the var instead."""
+
+    class Model(BaseState):
+        count: int = 0
+
+    with pytest.raises(
+        BackendVarFormatError,
+        match=r"^'Model\.count' is the field of a state var.* Use Model\.count ",
+    ):
+        f"{Model.get_fields()['count']}"
+
+
 def test_unbound_field_format_raises():
     """An unbound field has no Var to format, and the error shows its definition."""
     with pytest.raises(

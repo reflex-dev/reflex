@@ -4365,7 +4365,12 @@ class Field(Generic[FIELD_TYPE]):
         """
         path = f"{self._owner.__name__}.{self._name}" if self._owner else None
         name = f"'{path}'" if path else repr(self)
-        if self._backend:
+        if self._var is not None:
+            msg = (
+                f"{name} is the field of a state var, not the var. Use {path}"
+                " to use it in the UI."
+            )
+        elif self._backend:
             msg = (
                 f"Backend var {name} exists only on the server and has no"
                 " frontend value, so it cannot be used in the UI. Use"

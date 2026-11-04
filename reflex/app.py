@@ -60,6 +60,7 @@ from reflex_base.utils.types import (
     Send,
     is_non_string_sequence,
 )
+from reflex_base.vars.base import Field
 from reflex_base.vars.dep_tracking import is_dependency
 from reflex_components_core.base.error_boundary import ErrorBoundary
 from reflex_components_core.base.fragment import Fragment
@@ -284,6 +285,20 @@ def default_error_boundary(*children: Component, **props) -> Component:
         *children,
         **props,
     )
+
+
+def _reject_page_meta_fields(*values: Any) -> None:
+    """Reject page metadata given as a field with no frontend var.
+
+    Args:
+        *values: The page metadata values.
+
+    Raises:
+        BackendVarFormatError: If a value is a field with no frontend var.
+    """
+    for value in values:
+        if isinstance(value, Field):
+            raise value._no_frontend_var_error()
 
 
 @dataclasses.dataclass(
@@ -1010,6 +1025,7 @@ class App(MiddlewareMixin, LifespanMixin):
             context: Values passed to page for custom page-specific logic.
 
         Raises:
+            BackendVarFormatError: When title, description or image is a field with no frontend var.
             PageValueError: When the component is not set for a non-404 page.
             RouteValueError: When the specified route name already exists.
             ValueError: When the route syntax is invalid.
@@ -1062,6 +1078,7 @@ class App(MiddlewareMixin, LifespanMixin):
             RouteValueError: When a route cannot be derived.
             ValueError: When the route syntax is invalid.
         """
+        _reject_page_meta_fields(title, description, image)
         route = self._page_route_key(component, route)
         if route is None:
             msg = "Route must be set if component is not a callable."
