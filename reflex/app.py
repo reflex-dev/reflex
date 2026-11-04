@@ -888,7 +888,9 @@ class App(MiddlewareMixin, LifespanMixin):
             event_namespace._token_manager._reset_instance_id()
         # Create the event processor.
         self._event_processor = BaseStateEventProcessor(
-            middleware=self, backend_exception_handler=self.backend_exception_handler
+            middleware=self,
+            backend_exception_handler=self.backend_exception_handler,
+            event_loop_blocking_threshold=get_config().event_loop_blocking_threshold,
         )
         async with self._event_processor.configure(
             state_manager=self.state_manager,
@@ -2045,7 +2047,7 @@ class App(MiddlewareMixin, LifespanMixin):
             try:
                 forked_context = EventContext.get().fork(token=token.ident)
             except LookupError:
-                pass
+                forked_context = None
             else:
                 reset_token = EventContext.set(forked_context)
                 rebind.callback(EventContext.reset, reset_token)
@@ -2054,7 +2056,16 @@ class App(MiddlewareMixin, LifespanMixin):
                 token, previous_dirty_vars=previous_dirty_vars, **context
             ) as state:
                 # No other event handler can modify the state while in this context.
-                yield state
+                if forked_context is None:
+                    yield state
+                else:
+                    # An awaited handler runs inline on the locked tree. A plain
+                    # try/finally: this is also the shared-state fan-out path.
+                    forked_context.set_locked_root(state._get_root_state())
+                    try:
+                        yield state
+                    finally:
+                        await forked_context.release_lock()
                 delta = await state._get_resolved_delta()
                 state._clean()
                 if delta:

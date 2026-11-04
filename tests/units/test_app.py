@@ -3742,6 +3742,19 @@ def test_app_state_determination():
     assert a2._state is None
 
 
+async def test_setup_event_processor_passes_blocking_threshold(
+    monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
+):
+    """Forward the app config threshold to its event processor."""
+    app = App()
+    config = rx.Config(app_name="blockingthreshold", event_loop_blocking_threshold=0.35)
+    mocker.patch("reflex.app.get_config", return_value=config)
+    monkeypatch.setenv("REFLEX_ENV_MODE", constants.Env.PROD.value)
+
+    async with app._setup_event_processor():
+        assert app.event_processor.event_loop_blocking_threshold == pytest.approx(0.35)
+
+
 def test_raise_on_state():
     """Test that the state is set."""
     # state kwargs is deprecated, we just make sure the app is created anyway.
@@ -6016,6 +6029,34 @@ def test_write_stateful_pages_marker_concurrent_readers_see_valid_json(
         for future in readers:
             future.result()
     assert json.loads(marker.read_text()) == routes
+
+
+async def test_await_inside_app_modify_state_runs_inline(app_with_processor: App):
+    """A handler awaited inside ``modify_state`` runs on the locked state.
+
+    Args:
+        app_with_processor: An App with a mock event processor and root context.
+    """
+
+    class ModifyAwaitState(BaseState):
+        n: int = 0
+
+        @rx.event
+        def bump(self, by: int) -> int:
+            self.n += by
+            return self.n
+
+    app_with_processor._state_manager = StateManagerMemory()
+    app_with_processor._event_namespace = AsyncMock()
+    async with app_with_processor.modify_state(
+        BaseStateToken(ident="token-C", cls=ModifyAwaitState)
+    ) as state:
+        assert EventContext.get().locked_root is state._get_root_state()
+        assert await ModifyAwaitState.bump(2) == 2
+        assert await ModifyAwaitState.bump(3) == 5
+        assert (await state.get_state(ModifyAwaitState)).n == 5
+    with pytest.raises(LookupError):
+        EventContext.get()
 
 
 @pytest.mark.parametrize(
