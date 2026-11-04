@@ -6,13 +6,15 @@ import dataclasses
 from collections.abc import Callable, Sequence
 from typing import Any
 
+from reflex_base import constants
 from reflex_base.components.app_wraps import _ingest_component_var_app_wraps
+from reflex_base.components.client_state_context import local_client_state_names
 from reflex_base.components.component import BaseComponent, Component, ComponentStyle
 from reflex_base.config import get_config
 from reflex_base.plugins import CompileContext, PageContext, PageDefinition, Plugin
 from reflex_base.plugins.base import HookOrder
 from reflex_base.utils.format import make_default_page_title
-from reflex_base.utils.imports import collapse_imports, merge_imports
+from reflex_base.utils.imports import ImportVar, collapse_imports, merge_imports
 from reflex_base.vars import VarData
 from reflex_components_core.base.fragment import Fragment
 
@@ -67,6 +69,35 @@ class DefaultPagePlugin(Plugin):
             root_component=component,
             source_module=getattr(page, "_source_module", None),
         )
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class ClientStateScopePlugin(Plugin):
+    """Make a page the owner of the local client state names its body uses.
+
+    Runs after the walk, from the hooks the collector gathered and the ones
+    the memoize plugin moved into memo modules, so nothing is rendered twice.
+    The page is the outermost boundary: memos below it that use the same
+    names share its slots, and the slots reset when the page unmounts. The
+    page template wraps the page function itself in the scope, so hooks left
+    in the page body resolve inside it too.
+    """
+
+    def compile_page(
+        self,
+        page_ctx: PageContext,
+        /,
+        **kwargs: Any,
+    ) -> None:
+        """Collect the page's local names and import the scope wrapper."""
+        names = page_ctx.client_state_names
+        names.update(local_client_state_names(page_ctx.hooks))
+        if names:
+            page_ctx.imports.append({
+                f"$/{constants.Dirs.CLIENT_STATE_PATH}": [
+                    ImportVar(tag="withClientStateScope")
+                ]
+            })
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -468,7 +499,12 @@ def default_page_plugins(
     chain: list[Plugin] = [*plugins, DefaultPagePlugin()]
     if style is not None:
         chain.append(ApplyStylePlugin(style=style))
-    chain.extend((DefaultCollectorPlugin(), MemoizeStatefulPlugin()))
+    # The scope plugin's compile_page runs before the collector collapses imports.
+    chain.extend((
+        ClientStateScopePlugin(),
+        DefaultCollectorPlugin(),
+        MemoizeStatefulPlugin(),
+    ))
     return tuple(chain)
 
 

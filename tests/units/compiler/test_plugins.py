@@ -33,6 +33,7 @@ from reflex.app import UnevaluatedPage
 from reflex.compiler import compiler
 from reflex.compiler.plugins import (
     ApplyStylePlugin,
+    ClientStateScopePlugin,
     DefaultCollectorPlugin,
     DefaultPagePlugin,
     default_page_plugins,
@@ -938,11 +939,14 @@ def test_default_page_plugins_are_minimal_and_ordered() -> None:
 
     plugins = default_page_plugins(style=page_style())
 
-    assert len(plugins) == 4
+    assert len(plugins) == 5
     assert isinstance(plugins[0], DefaultPagePlugin)
     assert isinstance(plugins[1], ApplyStylePlugin)
-    assert isinstance(plugins[2], DefaultCollectorPlugin)
-    assert isinstance(plugins[3], MemoizeStatefulPlugin)
+    # Scopes the page from the collected hooks, so it runs its compile_page
+    # before the collector collapses the imports it adds.
+    assert isinstance(plugins[2], ClientStateScopePlugin)
+    assert isinstance(plugins[3], DefaultCollectorPlugin)
+    assert isinstance(plugins[4], MemoizeStatefulPlugin)
 
 
 def test_compile_context_collects_artifacts_from_leave_replacement_plugins() -> None:
