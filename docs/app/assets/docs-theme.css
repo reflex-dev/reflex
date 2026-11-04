@@ -37,10 +37,39 @@
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
+/* Metric-matched local fallbacks so the swap to the web font does not shift layout. */
+@font-face {
+  font-family: 'Inter Fallback';
+  src: local('Arial'), local('Liberation Sans'), local('Helvetica');
+  size-adjust: 109.38%;
+  ascent-override: 88.57%;
+  descent-override: 22.05%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: 'Geist Fallback';
+  src: local('Arial'), local('Liberation Sans'), local('Helvetica');
+  size-adjust: 108.64%;
+  ascent-override: 92.5%;
+  descent-override: 27.15%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: 'JetBrains Mono Fallback';
+  src: local('Courier New'), local('Liberation Mono'), local('Courier');
+  size-adjust: 99.98%;
+  ascent-override: 102.02%;
+  descent-override: 30%;
+  line-gap-override: 0%;
+}
+
 :root {
-  --font-instrument-sans: Inter, Arial, sans-serif;
-  --font-sans: Inter, Arial, sans-serif;
-  --font-heading: Geist, Inter, Arial, sans-serif;
+  --font-instrument-sans: Inter, 'Inter Fallback', Arial, sans-serif;
+  --font-sans: Inter, 'Inter Fallback', Arial, sans-serif;
+  --font-heading: Geist, 'Geist Fallback', Inter, 'Inter Fallback', Arial, sans-serif;
+  --font-jetbrains: 'JetBrains Mono Variable', 'JetBrains Mono Fallback', monospace;
   --font-weight-book: 400;
   --font-weight-normal: 400;
   --radius-card: 20px;
@@ -289,3 +318,9 @@
 .docs-markdown-table th { background: var(--muted); }
 .docs-markdown-table tbody tr { background: var(--background); }
 .docs-markdown-table tbody tr:last-child td { border-bottom: 0; }
+
+/* The right rail precedes the reading column in the DOM so a progressively
+   painted page already reserves its width; restore the visual order here. */
+.docs-reading-layout > .docs-sidebar { order: 1; }
+.docs-reading-layout > .docs-reading-column { order: 2; }
+.docs-reading-layout > :not(.docs-sidebar):not(.docs-reading-column) { order: 3; }
