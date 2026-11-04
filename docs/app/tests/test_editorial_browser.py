@@ -264,7 +264,7 @@ def test_announcement_dismissal_and_search_shortcuts(page: Page):
         expect(page.get_by_role("dialog")).to_have_count(0)
 
 
-@pytest.mark.parametrize("width", [375, 1440])
+@pytest.mark.parametrize("width", [320, 375, 1440])
 def test_footer_links_newsletter_and_theme(page: Page, width: int):
     """Marketing footer links, native email validation, and theme controls work."""
     page.set_viewport_size({"width": width, "height": 1000})
@@ -273,8 +273,18 @@ def test_footer_links_newsletter_and_theme(page: Page, width: int):
     expect(footer.get_by_role("link", name="Blog", exact=False)).to_have_attribute(
         "href", "https://reflex.dev/blog/"
     )
+    expect(footer.get_by_role("heading", name="Industries", exact=True)).to_be_visible()
+    expect(footer.get_by_role("link", name="Workflows", exact=True)).to_have_attribute(
+        "href", "https://reflex.dev/workflows/"
+    )
     email = footer.get_by_label("Email address", exact=True)
-    footer.get_by_role("button", name="Subscribe to updates", exact=True).click()
+    expect(email.locator("..")).to_have_css("border-radius", "8px")
+    expect(email.locator("..")).to_have_css(
+        "height", "36px" if width >= 1024 else "44px"
+    )
+    subscribe = footer.get_by_role("button", name="Subscribe to updates", exact=True)
+    expect(subscribe).to_have_css("border-radius", "8px")
+    subscribe.click()
     assert email.evaluate("el => el.validity.valueMissing")
     expect(email).to_be_focused()
     before = page.locator("header").evaluate(
@@ -285,6 +295,34 @@ def test_footer_links_newsletter_and_theme(page: Page, width: int):
     expect(dark).to_have_attribute("aria-pressed", "true")
     expect(page.locator("header")).not_to_have_css("background-color", before)
     expect(page.locator("header")).to_have_css("background-image", "none")
+    expect(subscribe).to_have_css("background-color", "rgb(245, 245, 245)")
+    secondary = page.locator(".docs-hero .docs-action-secondary > div")
+    expect(secondary).to_have_css("background-color", "rgb(29, 29, 29)")
+    expect(secondary).to_have_css("box-shadow", "rgb(57, 57, 57) 0px 0px 0px 1px inset")
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+
+
+@pytest.mark.parametrize("width", [320, 390, 1440])
+def test_landing_actions_match_marketing_homepage(page: Page, width: int):
+    """Keep both action pairs compact with visible focus and room to wrap."""
+    page.set_viewport_size({"width": width, "height": 1000})
+    page.add_init_script("localStorage.setItem('theme', 'light')")
+    page.goto(f"{PREVIEW_URL}/docs/")
+    for section, label in (
+        (".docs-hero", "Explore Framework"),
+        (".docs-cta", "Try for free"),
+    ):
+        link = page.locator(section).get_by_role("link", name=label, exact=True)
+        expect(link.locator("..")).to_have_css("gap", "8px")
+        surface = link.locator(":scope > div")
+        expect(surface).to_have_css("height", "42px")
+        expect(surface).to_have_css("padding-inline-start", "16px")
+        expect(surface).to_have_css("font-size", "15px")
+        link.focus()
+        expect(link).to_have_css("outline-style", "solid")
+    secondary = page.locator(".docs-hero .docs-action-secondary > div")
+    secondary.hover()
+    expect(secondary).to_have_css("background-color", "rgb(249, 249, 249)")
     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
 
 
