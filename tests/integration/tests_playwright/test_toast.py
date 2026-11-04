@@ -162,7 +162,7 @@ def ToastApp():
                 "Direct Upload",
                 id="direct-upload",
                 on_click=ToastActionState.handle_upload(
-                    rx.upload_files(upload_id=ToastActionState.upload_id)  # pyright: ignore [reportArgumentType]
+                    rx.upload_files(upload_id="callback-upload")  # pyright: ignore [reportArgumentType]
                 ),
             ),
             rx.button(
