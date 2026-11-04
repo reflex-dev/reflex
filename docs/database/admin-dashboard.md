@@ -101,7 +101,11 @@ After:
 
 ```python
 admin_app = Starlette()
-admin = Admin(get_engine(), auth_provider=MyAuthProvider())
+admin = Admin(
+    get_engine(),
+    auth_provider=MyAuthProvider(),
+    secret_key=os.environ["ADMIN_SECRET_KEY"],
+)
 admin.add_view(UserView(User))
 admin.add_view(ModelView(Post))
 admin.mount_to(admin_app)
