@@ -241,6 +241,7 @@ def test_navbar_controls_fit_and_search_opens(page: Page, width: int):
         assert bounds["x"] >= 0
         assert bounds["x"] + bounds["width"] <= width + 1
     search = page.get_by_role("button", name="Search Reflex", exact=True)
+    expect(search).to_have_css("border-radius", "8px")
     if width < 1280:
         expect(search.locator("svg")).to_have_css("width", "16px")
     search.click()
@@ -262,6 +263,23 @@ def test_announcement_dismissal_and_search_shortcuts(page: Page):
         expect(page.get_by_role("dialog")).to_be_visible()
         page.keyboard.press("Escape")
         expect(page.get_by_role("dialog")).to_have_count(0)
+
+
+def test_feedback_fields_have_visible_focus_in_forced_colors(page: Page):
+    """System colors must leave a keyboard focus indicator on both feedback fields."""
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.emulate_media(forced_colors="active")
+    page.goto(f"{PREVIEW_URL}/docs/getting-started/introduction/")
+    page.get_by_role("button", name="Send feedback", exact=True).click()
+    form = page.locator(".docs-feedback-content")
+    feedback = form.get_by_role("textbox", name="Feedback", exact=True)
+    email = form.get_by_role("textbox", name="Contact email (optional)")
+    page.keyboard.press("Tab")
+    for field, surface in ((feedback, feedback), (email, email.locator(".."))):
+        field.focus()
+        expect(field).to_be_focused()
+        expect(surface).to_have_css("outline-style", "solid")
+        expect(surface).to_have_css("outline-width", "2px")
 
 
 @pytest.mark.parametrize("width", [320, 375, 1440])

@@ -360,6 +360,7 @@ def test_single_page_sidebar_links_keep_neutral_hover_color(page: Page):
 def test_single_page_sidebar_link_has_selected_background(page: Page, width: int):
     """The active direct link has a neutral highlight that follows navigation."""
     page.set_viewport_size({"width": width, "height": 1000})
+    page.emulate_media(color_scheme="light")
     page.goto(f"{PREVIEW_URL}/docs/ai/webhooks/")
     if width < 1024:
         page.get_by_role("button", name="Open documentation navigation").click()
@@ -368,7 +369,7 @@ def test_single_page_sidebar_link_has_selected_background(page: Page, width: int
         sidebar = page.locator("#sidebar-container")
     selected = sidebar.get_by_role("link", name="Webhooks", exact=True)
     expect(selected).to_have_attribute("aria-current", "page")
-    expect(selected).to_have_css("background-color", "rgb(245, 243, 241)")
+    expect(selected).to_have_css("background-color", "rgb(245, 245, 245)")
     expect(selected.locator("p")).to_have_css("color", "rgb(10, 10, 10)")
     inactive = sidebar.get_by_role("link", name="Files", exact=True)
     expect(inactive).to_have_css("background-color", "rgba(0, 0, 0, 0)")
@@ -376,7 +377,7 @@ def test_single_page_sidebar_link_has_selected_background(page: Page, width: int
     if width < 1024:
         page.get_by_role("button", name="Open documentation navigation").click()
     expect(sidebar.get_by_role("link", name="Files", exact=True)).to_have_css(
-        "background-color", "rgb(245, 243, 241)"
+        "background-color", "rgb(245, 245, 245)"
     )
     expect(sidebar.get_by_role("link", name="Webhooks", exact=True)).to_have_css(
         "background-color", "rgba(0, 0, 0, 0)"
