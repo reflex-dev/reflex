@@ -9,7 +9,7 @@ This page covers the 0.10 changes most likely to break an existing app, or to be
 
 ## Reading a backend var on a state class
 
-Reading a backend var on the state class, such as `State._items`, now returns its `Field` instead of the var's default value ([#7312](https://github.com/reflex-dev/reflex/pull/7312)). Passing it to a component raises `ChildrenTypeError` (as a child); a prop may raise `BackendVarFormatError` when its value is built or rendered (earlier 0.10 releases may instead raise `TypeError: Unsupported type <class 'reflex_base.vars.base.Field'> for LiteralVar`), while typed props can still reject it with `TypeError` during component creation. Interpolating it without a conversion in an f-string or with `str.format()` raises `BackendVarFormatError` (`!r`, `!s` and `str()` embed the `Field` text instead). Reading the var on a state instance, such as `self._items`, is unchanged.
+Reading a backend var on the state class, such as `State._items`, now returns its `Field` instead of the var's default value ([#7312](https://github.com/reflex-dev/reflex/pull/7312)). Passing it to a component raises `ChildrenTypeError` (as a child); a prop may raise `BackendVarFormatError` when its value is built or rendered (earlier 0.10 releases may instead raise `TypeError: Unsupported type <class 'reflex_base.vars.base.Field'> for LiteralVar`), while typed props can still reject it with `TypeError` during component creation. Turning it into text with an f-string, `str.format()`, `str()` or `%` raises `BackendVarFormatError` (earlier 0.10 releases embed the `Field` text for `!s`, `str()` and `%`; `!r` and `repr()` still do). Reading the var on a state instance, such as `self._items`, is unchanged.
 
 Replace the class read with what the code meant:
 

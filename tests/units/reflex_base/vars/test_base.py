@@ -32,7 +32,6 @@ from reflex_base.utils.exceptions import (
     BackendVarFormatError,
     ReflexRuntimeError,
     StateValueError,
-    UntypedVarError,
 )
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import get_field_type
@@ -1411,12 +1410,23 @@ def test_backend_field_is_not_type_checked():
     assert model._value == 1
 
 
+@pytest.mark.parametrize(
+    "to_text",
+    [
+        lambda f: f"{f}px",
+        lambda f: f"{f!s}px",
+        lambda f: str(f) + "px",
+        lambda f: "%spx" % f,  # noqa: UP031
+    ],
+    ids=["format", "format_s", "str", "percent"],
+)
 @pytest.mark.parametrize("name", ["_secret", "bookkeeping"])
-def test_backend_field_format_raises(name: str):
-    """Formatting a backend var raises instead of embedding its repr.
+def test_backend_field_format_raises(name: str, to_text: typing.Callable[[Any], str]):
+    """Turning a backend var into text raises instead of embedding its repr.
 
     Args:
         name: The backend field to format, underscore-prefixed or is_var=False.
+        to_text: Turns the field into text.
     """
 
     class Model(EvenMoreBasicBaseState):
@@ -1426,7 +1436,7 @@ def test_backend_field_format_raises(name: str):
     with pytest.raises(
         BackendVarFormatError, match=rf"Backend var 'Model\.{name}' exists only"
     ):
-        f"{getattr(Model, name)}px"
+        to_text(getattr(Model, name))
 
 
 @pytest.mark.parametrize("mixin", [False, True])
@@ -1490,13 +1500,15 @@ def test_unbound_field_format_raises():
         f"{field(default=0)}"
 
 
-def test_untyped_var_item_access_reports_backend_var_key():
-    """Indexing an untyped Var with a backend var names the key, not a format error."""
+def test_untyped_var_item_access_backend_var_key_raises_format_error():
+    """Indexing an untyped Var with a backend var raises the backend var format error."""
 
     class Model(EvenMoreBasicBaseState):
         _secret: int = 42
 
-    with pytest.raises(UntypedVarError, match=r"access the item 'Field\(default=42"):
+    with pytest.raises(
+        BackendVarFormatError, match=r"Backend var 'Model\._secret' exists only"
+    ):
         Var(_js_expr="x")[Model._secret]  # pyright: ignore[reportIndexIssue]
 
 

@@ -295,21 +295,24 @@ class BackendTriggerState(BaseState):
 
 
 @pytest.mark.parametrize(
-    ("value", "match"),
+    "value",
     [
-        (BackendTriggerState._secret, r"Invalid event chain: Field\(default=42"),
-        ([BackendTriggerState._secret], r"Invalid event: Field\(default=42"),
-        (lambda: BackendTriggerState._secret, r"-> Field\(default=42"),
+        BackendTriggerState._secret,
+        [BackendTriggerState._secret],
+        lambda: BackendTriggerState._secret,
     ],
+    ids=["chain", "list", "lambda"],
 )
-def test_backend_var_event_trigger_reports_repr(value: Any, match: str):
-    """Binding a backend var as an event trigger reports its repr, not a format error.
+def test_backend_var_event_trigger_raises_format_error(value: Any):
+    """Binding a backend var as an event trigger raises the backend var format error.
 
     Args:
         value: The misused event trigger value.
-        match: The expected error message pattern.
     """
-    with pytest.raises(ValueError, match=match):
+    with pytest.raises(
+        BackendVarFormatError,
+        match=r"Backend var 'BackendTriggerState\._secret' exists only",
+    ):
         EventChain.create(value=value, args_spec=lambda: ())
 
 

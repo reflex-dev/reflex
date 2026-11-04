@@ -4359,6 +4359,14 @@ class Field(Generic[FIELD_TYPE]):
         """
         raise self._no_frontend_var_error()
 
+    def __str__(self) -> str:
+        """Refuse to convert the field to text, as ``__format__`` does.
+
+        Raises:
+            BackendVarFormatError: Always; the field has no frontend var.
+        """
+        raise self._no_frontend_var_error()
+
     def _no_frontend_var_error(self) -> BackendVarFormatError:
         """Build the error for using the field where a frontend var is needed.
 

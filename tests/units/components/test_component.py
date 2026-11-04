@@ -838,12 +838,15 @@ def test_component_render_backend_var_prop_raises_format_error(
 
 
 def test_component_create_backend_var_class_name():
-    """A backend var in a class_name list reports its repr, not a format error."""
+    """A backend var in a class_name list raises the backend var format error."""
 
     class BackendClassNameState(BaseState):
         _cls: str = "a"
 
-    with pytest.raises(TypeError, match=r"got value Field\(default='a'"):
+    with pytest.raises(
+        BackendVarFormatError,
+        match=r"Backend var 'BackendClassNameState\._cls' exists only",
+    ):
         rx.box(class_name=["b", BackendClassNameState._cls])
 
 
