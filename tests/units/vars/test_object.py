@@ -429,6 +429,27 @@ def test_plain_property_on_dataclass_raises() -> None:
     assert PointState.point.x._var_type is int
 
 
+def test_dataclass_field_implemented_by_property() -> None:
+    """A dataclass field with a property getter and setter is serialized."""
+
+    @dataclasses.dataclass
+    class Temperature:
+        celsius: float = 0.0  # pyright: ignore[reportRedeclaration, reportAssignmentType]
+
+        @property
+        def celsius(self) -> float:  # noqa: F811
+            return self._celsius
+
+        @celsius.setter
+        def celsius(self, value: float) -> None:
+            self._celsius = 0.0 if isinstance(value, property) else value
+
+    class TemperatureState(rx.State):
+        temperature: rx.Field[Temperature] = rx.field(Temperature(21.5))
+
+    assert TemperatureState.temperature.celsius._var_type is float
+
+
 def test_plain_property_on_pydantic_model_with_custom_serializer() -> None:
     """Plain properties remain accessible when a custom serializer can include them."""
 

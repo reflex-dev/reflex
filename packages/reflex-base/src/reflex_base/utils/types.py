@@ -1008,7 +1008,9 @@ def is_unserialized_property(
 
     serializer = serializers.get_serializer(cls)
     if dataclasses.is_dataclass(cls):
-        return serializer is None
+        return serializer is None and name not in {
+            field.name for field in dataclasses.fields(cls)
+        }
     decorators = getattr(cls, "__pydantic_decorators__", None)
     if decorators is None or decorators.model_serializers:
         return False
