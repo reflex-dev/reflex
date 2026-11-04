@@ -3,6 +3,7 @@ from collections.abc import Sequence
 from typing import Annotated, Any, Literal, Union, assert_type
 
 import pytest
+from reflex_base.utils import serializers
 from reflex_base.utils.exceptions import VarAttributeError
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import GenericType
@@ -489,9 +490,8 @@ def test_plain_property_with_registered_serializer() -> None:
         def double(self) -> int:
             return self.x * 2
 
-    from reflex_base.utils import serializers
-
     try:
+
         @rx.serializer
         def serialize_item(value: Item) -> dict:
             return {"name": value.name, "label": value.label}
