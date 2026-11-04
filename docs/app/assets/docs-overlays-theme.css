@@ -240,6 +240,13 @@ html .ReflexSearch-overlay :is(.ReflexSearch-escape, .ReflexSearch-hit, .ReflexS
   border-color: transparent;
 }
 
+/* The shared form applies an important radius utility to its submit button. */
+@layer utilities {
+  .docs-feedback-content button[type="submit"] {
+    border-radius: var(--docs-control-radius) !important;
+  }
+}
+
 .docs-feedback-content button[type="submit"]:enabled:hover {
   background: var(--primary-hover);
 }
@@ -311,14 +318,41 @@ html .ReflexSearch-overlay :is(.ReflexSearch-escape, .ReflexSearch-hit, .ReflexS
   font-weight: 400;
 }
 
+:is(.docs-page-footer, .marketing-footer) [role="group"][aria-label="Color theme"],
+:is(.docs-page-footer, .marketing-footer) [role="group"][aria-label="Color theme"] > button {
+  border-radius: var(--docs-control-radius);
+}
+
 @media (max-width: 40rem) {
   html .ReflexSearch-overlay .ReflexSearch-dialog {
     border-radius: 20px;
   }
 
-  html .ReflexSearch-overlay .ReflexSearch-inputRow,
+  html .ReflexSearch-overlay .ReflexSearch-inputRow {
+    padding-inline: 12px;
+    gap: 8px;
+  }
+
   html .ReflexSearch-overlay .ReflexSearch-footer {
     padding-inline: 16px;
+  }
+
+  html .ReflexSearch-overlay .ReflexSearch-inputIcon > svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  html .ReflexSearch-overlay .ReflexSearch-input::placeholder {
+    font-size: 14px;
+  }
+
+  /* Let the search field use the space reserved for the loading indicator when idle. */
+  html .ReflexSearch-overlay .ReflexSearch-actions {
+    display: flex;
+  }
+
+  html .ReflexSearch-overlay .ReflexSearch-actionSlot:empty {
+    display: none;
   }
 
   html .ReflexSearch-overlay .ReflexSearch-escape {

@@ -246,6 +246,15 @@ def test_navbar_controls_fit_and_search_opens(page: Page, width: int):
         expect(search.locator("svg")).to_have_css("width", "16px")
     search.click()
     expect(page.get_by_role("dialog")).to_be_visible()
+    if width <= 640:
+        search_input = page.get_by_role("combobox")
+        assert search_input.evaluate("""async input => {
+            await document.fonts.ready;
+            const placeholder = getComputedStyle(input, "::placeholder");
+            const context = document.createElement("canvas").getContext("2d");
+            context.font = `${placeholder.fontWeight} ${placeholder.fontSize} ${placeholder.fontFamily}`;
+            return context.measureText(input.placeholder).width <= input.clientWidth;
+        }""")
     page.keyboard.press("Escape")
     expect(page.get_by_role("dialog")).to_have_count(0)
     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
@@ -272,6 +281,9 @@ def test_feedback_fields_have_visible_focus_in_forced_colors(page: Page):
     page.goto(f"{PREVIEW_URL}/docs/getting-started/introduction/")
     page.get_by_role("button", name="Send feedback", exact=True).click()
     form = page.locator(".docs-feedback-content")
+    expect(form.get_by_role("button", name="Send feedback")).to_have_css(
+        "border-radius", "8px"
+    )
     feedback = form.get_by_role("textbox", name="Feedback", exact=True)
     email = form.get_by_role("textbox", name="Contact email (optional)")
     page.keyboard.press("Tab")
@@ -308,7 +320,10 @@ def test_footer_links_newsletter_and_theme(page: Page, width: int):
     before = page.locator("header").evaluate(
         "el => getComputedStyle(el).backgroundColor"
     )
-    dark = footer.get_by_role("button", name="Toggle dark color mode", exact=True)
+    theme = footer.get_by_role("group", name="Color theme")
+    expect(theme).to_have_css("border-radius", "8px")
+    dark = theme.get_by_role("button", name="Toggle dark color mode", exact=True)
+    expect(dark).to_have_css("border-radius", "8px")
     dark.click()
     expect(dark).to_have_attribute("aria-pressed", "true")
     expect(page.locator("header")).not_to_have_css("background-color", before)
