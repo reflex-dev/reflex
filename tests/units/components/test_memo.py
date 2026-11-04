@@ -24,7 +24,10 @@ from reflex_base.components.memo import (
     _analyze_params,
     _LazyBody,
     _MemoCallBinding,
+    _reregister_used_memo,
     component_hash,
+    create_passthrough_component_memo,
+    materialize_registered_memo_bodies,
     memo_tag,
 )
 from reflex_base.event import EventChain, EventHandler, no_args_event_spec
@@ -2008,6 +2011,119 @@ def test_self_referencing_var_memo():
 
     invoked = recursive_count(n=Var(_js_expr="three", _var_type=int))
     assert "recursive_count" in str(invoked)
+
+
+def test_memo_reregisters_on_use_after_registry_clear():
+    """Using a ``@rx.memo`` repopulates ``MEMOS`` after the registry is cleared,
+    so the compiler still emits its module.
+    """
+
+    @rx.memo
+    def sample_card(*, title: rx.Var[str]) -> rx.Component:
+        return rx.box(rx.heading(title))
+
+    key = ("SampleCard", __name__)
+    assert key in MEMOS  # registered at decoration time
+
+    MEMOS.clear()
+    assert key not in MEMOS
+
+    # Using (rendering) the memo must re-register it.
+    sample_card(title="Hello")
+    assert key in MEMOS
+
+    # ...so the compiler still emits its module.
+    sym = memo_paths.mirrored_symbol("SampleCard", __name__)
+    files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
+    assert any(f"const {sym} = memo(" in code for _, code in files)
+
+
+def test_nested_var_memo_reregistered_before_compile_snapshot():
+    """A var memo referenced only inside another memo's body is still emitted.
+
+    Regression: rendering ``outer`` after a registry clear leaves its lazy body
+    unread, so ``inner`` is missing from the snapshot the compiler takes.
+    ``materialize_registered_memo_bodies`` re-registers it first.
+    """
+
+    @rx.memo
+    def inner_fmt(*, value: rx.Var[str]) -> rx.Var[str]:
+        return rx.Var.create(f"[{value}]")
+
+    @rx.memo
+    def outer_fmt(*, value: rx.Var[str]) -> rx.Var[str]:
+        return inner_fmt(value=value)
+
+    inner_key = ("inner_fmt", __name__)
+    outer_key = ("outer_fmt", __name__)
+    inner_sym = memo_paths.mirrored_symbol("inner_fmt", __name__)
+
+    MEMOS.clear()
+
+    # Rendering the outer memo re-registers only itself; its lazy body (which
+    # references inner) is not read yet.
+    outer_fmt(value=rx.Var.create("x"))
+    assert outer_key in MEMOS
+    assert inner_key not in MEMOS
+
+    # The compiler pre-pass settles the registry before it snapshots MEMOS.
+    materialize_registered_memo_bodies()
+    assert inner_key in MEMOS
+
+    files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
+    assert any(f"export const {inner_sym} =" in code for _, code in files)
+
+
+def test_cached_memo_bodies_reregister_nested_memos_after_registry_clear():
+    """Memos nested in a body an earlier compile cached are emitted again.
+
+    Regression: a later ``AppHarness`` clears ``MEMOS`` without re-importing a
+    shared memo module, so only re-running the cached outer bodies can
+    re-register the inner memos their compiled modules import.
+    """
+
+    @rx.memo
+    def nested_fmt(*, value: rx.Var[str]) -> rx.Var[str]:
+        return rx.Var.create(f"[{value}]")
+
+    @rx.memo
+    def wrapping_fmt(*, value: rx.Var[str]) -> rx.Var[str]:
+        return nested_fmt(value=value)
+
+    @rx.memo
+    def nested_card(*, title: rx.Var[str]) -> rx.Component:
+        return rx.text(title)
+
+    @rx.memo
+    def wrapping_card(*, title: rx.Var[str]) -> rx.Component:
+        return rx.box(nested_card(title=title))
+
+    # The first app's compile caches every body.
+    materialize_registered_memo_bodies()
+
+    MEMOS.clear()
+    wrapping_fmt(value=rx.Var.create("x"))
+    wrapping_card(title="Hello")
+    materialize_registered_memo_bodies()
+
+    assert ("nested_fmt", __name__) in MEMOS
+    assert ("NestedCard", __name__) in MEMOS
+    files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
+    for name in ("nested_fmt", "NestedCard"):
+        sym = memo_paths.mirrored_symbol(name, __name__)
+        assert any(f"export const {sym} =" in code for _, code in files)
+
+
+def test_reregister_used_memo_skips_passthrough_auto_memos():
+    """Passthrough auto-memos (tracked separately by the compiler) must never
+    enter ``MEMOS`` on use.
+    """
+    _, definition = create_passthrough_component_memo(
+        rx.box(rx.text("x")), source_module=__name__
+    )
+    MEMOS.clear()
+    _reregister_used_memo(definition)
+    assert MEMOS == {}
 
 
 class _AppWrapProbe(Component):

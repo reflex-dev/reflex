@@ -167,13 +167,15 @@ def test_app_harness_initialize_resets_leaked_prod_env_mode(
     assert not should_prerender_routes()
 
 
-def test_app_harness_initialize_reloads_existing_imported_app(
-    tmp_path, harness_mocks, monkeypatch
+def test_app_harness_initialize_preserves_existing_imported_app(
+    tmp_path, preserve_memo_registries, harness_mocks, monkeypatch
 ):
-    """Ensure pre-existing imported apps are reloaded after memo registry reset.
+    """A real (``app_source is None``) app is imported with ``reload=False`` and
+    its registrations (incl. memos) are kept, not reset.
 
     Args:
         tmp_path: pytest tmp_path fixture
+        preserve_memo_registries: restores global memo registries after the test
         harness_mocks: shared AppHarness mock setup
         monkeypatch: pytest monkeypatch fixture
     """
@@ -187,11 +189,39 @@ def test_app_harness_initialize_reloads_existing_imported_app(
         harness_mocks.config.module,
         ModuleType(harness_mocks.config.module),
     )
+    MEMOS["existing_memo", None] = mock.sentinel.memo
 
     harness = AppHarness.create(root=tmp_path / "plain_app")
     harness._initialize_app()
 
-    harness_mocks.get_and_validate_app.assert_called_once_with(reload=True)
+    harness_mocks.get_and_validate_app.assert_called_once_with(reload=False)
+    # The real app's registrations (incl. memos) are preserved, not reset.
+    assert ("existing_memo", None) in MEMOS
+
+
+def test_app_harness_initialize_loads_real_app_config_before_frontend(
+    tmp_path, harness_mocks, monkeypatch
+):
+    """A real app's ``.web`` is initialized from its own config, not a stale one.
+
+    Args:
+        tmp_path: pytest tmp_path fixture
+        harness_mocks: shared AppHarness mock setup
+        monkeypatch: pytest monkeypatch fixture
+    """
+    calls = []
+    monkeypatch.setattr(
+        reflex_testing, "reload_config", lambda: calls.append("reload_config")
+    )
+    monkeypatch.setattr(
+        reflex.utils.prerequisites,
+        "initialize_frontend_dependencies",
+        lambda: calls.append("initialize_frontend_dependencies"),
+    )
+
+    AppHarness.create(root=tmp_path / "plain_app")._initialize_app()
+
+    assert calls == ["reload_config", "initialize_frontend_dependencies"]
 
 
 def test_app_harness_frontend_env_has_development_condition(
