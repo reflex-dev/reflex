@@ -4068,6 +4068,55 @@ def test_exception_handler_annotation_resolves_outside_reflex_app():
     )
 
 
+class ClassBasedDecorator:
+    """Decorator that keeps ``__wrapped__`` on itself and forwards through ``__call__``."""
+
+    def __init__(self, fn):
+        """Mirror the function's metadata onto the decorator instance.
+
+        Args:
+            fn: The function to wrap.
+        """
+        functools.update_wrapper(self, fn)
+
+    def __call__(self, *args, **kwargs):
+        """Call the wrapped function.
+
+        Args:
+            *args: Positional arguments for the wrapped function.
+            **kwargs: Keyword arguments for the wrapped function.
+
+        Returns:
+            The value returned by the wrapped function.
+        """
+        return self.__wrapped__(*args, **kwargs)
+
+
+class ClassCustomExceptionHandler:
+    """Handler provided as a class instead of a function or an instance."""
+
+    def __call__(self, exception: CustomAppError):
+        """Handle the exception.
+
+        Args:
+            exception: The exception to handle.
+        """
+        print("Custom Backend Exception")
+        print(exception)
+
+
+def test_exception_handler_unwraps_class_based_decorator():
+    """A decorator instance forwards to its function through ``__wrapped__``."""
+    handler = ClassBasedDecorator(custom_exception_handler_with_custom_error)
+    rx.App(frontend_exception_handler=handler, backend_exception_handler=handler)
+
+
+def test_exception_handler_rejects_class():
+    """A class is rejected instead of being unwrapped to its ``__call__``."""
+    with pytest.raises(ValueError, match="is a class"):
+        rx.App(frontend_exception_handler=ClassCustomExceptionHandler)
+
+
 @logged
 def decorated_custom_exception_handler(exception: CustomAppError):
     """Handler decorated in another module.

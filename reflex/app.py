@@ -516,8 +516,12 @@ def _unwrap_handler_fn(handler_fn: Callable) -> Callable:
     ``functools.wraps`` copies the annotations of the wrapped function onto the
     wrapper but keeps the wrapper's own signature and ``__globals__``, so both
     the signature checks and the annotation lookups have to run against the
-    function the handler wraps. A callable instance is not itself decorated;
-    its ``__call__`` is the function that carries the signature.
+    function the handler wraps.
+
+    A callable instance is not necessarily decorated by ``functools.wraps``: a
+    class-based decorator usually sets ``__wrapped__`` on itself and forwards
+    through an unannotated ``__call__(*args, **kwargs)``, so its own
+    ``__wrapped__`` has to be followed before falling back to ``__call__``.
 
     Args:
         handler_fn: The handler to unwrap.
@@ -526,8 +530,11 @@ def _unwrap_handler_fn(handler_fn: Callable) -> Callable:
         The unwrapped function behind the handler.
     """
     if not inspect.isroutine(handler_fn):
-        # A callable instance keeps the signature and globals on __call__.
-        handler_fn = handler_fn.__call__  # pyright: ignore[reportAttributeAccessIssue]
+        unwrapped = inspect.unwrap(handler_fn)
+        if inspect.isroutine(unwrapped):
+            return unwrapped
+        # A plain callable instance keeps the signature and globals on __call__.
+        handler_fn = unwrapped.__call__  # pyright: ignore[reportAttributeAccessIssue]
     return inspect.unwrap(handler_fn)
 
 
@@ -2155,6 +2162,16 @@ class App(MiddlewareMixin, LifespanMixin):
 
             if not callable(handler_fn):
                 msg = f"Provided custom {handler_domain} exception handler `{fn_name_}` is not a function."
+                raise ValueError(msg)
+
+            if inspect.isclass(handler_fn):
+                # A class is callable, but calling it instantiates the handler
+                # instead of handling the exception, so its ``__call__`` must not
+                # be mistaken for the handler itself.
+                msg = (
+                    f"Provided custom {handler_domain} exception handler `{fn_name_}` is a class."
+                    " Please provide a function or an instance of a callable class instead."
+                )
                 raise ValueError(msg)
 
             # Allow named functions only as lambda functions cannot be introspected
