@@ -1,0 +1,1 @@
+After a hot reload in dev mode, cached vars restored by the disk or Redis state manager are recomputed with the new code instead of showing values from before the reload. State fields keep their values.

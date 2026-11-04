@@ -190,7 +190,7 @@ manual_titles = {
     "docs/wrapping-react/overview.md": "Wrapping React Overview",
     "docs/library/html/html.md": "HTML Elements",
     "docs/recipes-overview.md": "Recipes Overview",
-    "docs/events/special_events.md": "Special Events Docs",
+    "docs/events/special_events.md": "Special Events",
     "docs/library/graphing/general/tooltip.md": "Graphing Tooltip",
     "docs/recipes/content/grid.md": "Grid Recipe",
     "docs/hosting/deploy-to-gcp.md": "Deploy to GCP",

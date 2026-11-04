@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import re
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Literal
 
 from reflex_base import constants
@@ -200,17 +200,19 @@ if (typeof window !== "undefined") {{
   const loaders = {{
 {loaders}
   }};
-  let pending;
-  window.__reflex_load = () => {{
-    if (!pending) {{
-      pending = Promise.all(Object.entries(loaders).map(async ([name, load]) => {{
-        window.__reflex[name] = await load();
-      }})).catch((error) => {{
-        pending = undefined;
-        throw error;
-      }});
-    }}
-    return pending;
+  const pending = Object.create(null);
+  window.__reflex_load = (libraries = Object.keys(loaders)) => {{
+    return Promise.all(libraries.filter((name) => Object.hasOwn(loaders, name) && !Object.hasOwn(window.__reflex, name)).map((name) => {{
+      if (!pending[name]) {{
+        pending[name] = loaders[name]().then((module) => {{
+          window.__reflex[name] = module;
+        }}).catch((error) => {{
+          delete pending[name];
+          throw error;
+        }});
+      }}
+      return pending[name];
+    }}));
   }};
 }}
 """
@@ -312,6 +314,7 @@ def context_template(
     state_str = (
         rf"""
 export const state_name = "{state_name}"
+export const on_load_internal_event = '{state_name}.{constants.CompileVars.ON_LOAD_INTERNAL}'
 
 export const exception_state_name = "{constants.CompileVars.FRONTEND_EXCEPTION_STATE_FULL}"
 
@@ -366,6 +369,7 @@ export const initialEvents = (first = false) => {{
         if state_name
         else """
 export const state_name = undefined
+export const on_load_internal_event = undefined
 
 export const exception_state_name = undefined
 
@@ -426,6 +430,7 @@ registerApp({{
   initialState,
   clientStorage,
   state_name,
+  on_load_internal_event,
   stateSchema,
   exception_state_name,
   onLoadInternalEvent,
@@ -595,6 +600,7 @@ def page_template(
     hooks: dict[str, VarData | None],
     render: dict[str, Any],
     route: str = "",
+    client_state_owns: Sequence[str] = (),
 ):
     """Template for a single react page.
 
@@ -622,6 +628,10 @@ def page_template(
             entirely — ``page_template`` ships in ``reflex-base``, so an
             out-of-tree caller predating the parameter keeps working and gets
             the pre-existing unnamed ``Component``.
+        client_state_owns: The local client state names the page owns. When
+            given, the exported component is ``Component`` wrapped in a client
+            state scope claiming them, so hooks in the page body resolve inside
+            it.
 
     Returns:
         Rendered React page component as string.
@@ -635,6 +645,11 @@ def page_template(
         f"Component.displayName = {json.dumps(f'Component({route})')};\n"
         if route
         else ""
+    )
+    export_str = (
+        f"withClientStateScope(Component, {json.dumps(list(client_state_owns))})"
+        if client_state_owns
+        else "Component"
     )
     return f"""{imports_str}
 
@@ -650,7 +665,7 @@ function Component() {{
   )
 }}
 {display_name_str}
-export default Component;
+export default {export_str};
 """
 
 
@@ -998,6 +1013,21 @@ def dynamic_components_module_template(
 _MEMO_WRAPPER_CALLEE_RE = re.compile(r"[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*")
 
 
+def memo_wrapper_callee(wrapper: str) -> str:
+    """Make a memo wrapper expression safe to call by appending ``(...)``.
+
+    Args:
+        wrapper: The wrapper's JS expression.
+
+    Returns:
+        The expression, parenthesized unless it is a plain identifier or
+        member chain.
+    """
+    if _MEMO_WRAPPER_CALLEE_RE.fullmatch(wrapper):
+        return wrapper
+    return f"({wrapper})"
+
+
 def _render_memo_component(component: dict[str, Any]) -> str:
     """Render the ``export const`` statement for one memoized component.
 
@@ -1022,8 +1052,8 @@ def _render_memo_component(component: dict[str, Any]) -> str:
     )
 }})"""
     wrapper = component.get("wrapper")
-    if wrapper and not _MEMO_WRAPPER_CALLEE_RE.fullmatch(wrapper):
-        wrapper = f"({wrapper})"
+    if wrapper:
+        wrapper = memo_wrapper_callee(wrapper)
     export_expr = f"{wrapper}{function_expr}" if wrapper else function_expr
     name = component["name"]
     # ``display_name`` is resolved by the caller (``compile_experimental_component_memo``),

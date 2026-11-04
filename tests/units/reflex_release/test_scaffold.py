@@ -148,7 +148,7 @@ def test_render_pins_uv_and_python(config: Config) -> None:
 @pytest.mark.parametrize(
     ("body", "expected", "absent"),
     [
-        ('uv-version = "9.9.9"', '          version: "9.9.9"', "0.12.5"),
+        ('uv-version = "9.9.9"', '          version: "9.9.9"', DEFAULT_UV_VERSION),
         ('python-version = "3.11"', '          python-version: "3.11"', "3.14"),
         ('uv-version = ""', '          python-version: "', '          version: "'),
     ],

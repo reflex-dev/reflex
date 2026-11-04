@@ -31,6 +31,7 @@ jobs:
       pull-requests: read
     outputs:
       run: ${{ steps.filter.outputs.changed }}
+      bench: ${{ steps.bench.outputs.changed }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -40,6 +41,20 @@ jobs:
         with:
           paths-ignore: |
             **/*.md
+      # reflex-bench's tests (a minute and a half of subprocesses, browsers and
+      # real timeouts) only run in full when it, the example apps it uses as
+      # fixtures, the example hashing it checks, or its dependencies change.
+      # Otherwise only its reflex contract test runs (see its conftest.py).
+      - uses: ./.github/actions/changed_paths
+        id: bench
+        with:
+          paths: |
+            packages/reflex-bench/**
+            tests/units/reflex_bench/**
+            examples/**
+            scripts/hash_examples.py
+            uv.lock
+            .github/workflows/unit_tests.yml
 
   unit-tests:
     needs: changes
@@ -50,7 +65,20 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
         python-version: ["3.11", "3.12", "3.13", "3.14", "3.15"]
+        # Coverage is only measured, and its threshold only enforced, on this
+        # leg: it runs the most code (redis, postgres), and from 3.14 coverage
+        # measures branches with sys.monitoring. Older interpreters fall back to
+        # a trace function that made the 3.12 suite about 50% slower, pushing
+        # those legs into the timeout.
+        include:
+          - os: ubuntu-latest
+            python-version: "3.14"
+            coverage: true
     runs-on: ${{ matrix.os }}
+    env:
+      PYTHONUNBUFFERED: 1
+      COV: ${{ matrix.coverage && '--cov --no-cov-on-fail --cov-report=' || '' }}
+      REFLEX_BENCH_UNCHANGED: ${{ needs.changes.outputs.bench != 'true' && '1' || '' }}
 
     # Service containers to run with `runner-job`
     services:
@@ -95,38 +123,61 @@ jobs:
 
       - name: Run unit tests without db dependencies
         run: |
-          export PYTHONUNBUFFERED=1
           uv pip uninstall pydantic alembic sqlalchemy sqlmodel
-          uv run --no-sync pytest tests/units --cov --no-cov-on-fail --cov-report= --cov-fail-under=0
+          uv run --no-sync pytest tests/units $COV ${COV:+--cov-fail-under=0}
           uv sync
       - name: Run unit tests
-        run: |
-          export PYTHONUNBUFFERED=1
-          uv run pytest tests/units --cov --no-cov-on-fail --cov-report=
+        run: uv run pytest tests/units $COV
       - name: Run unit tests w/ redis
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |
-          export PYTHONUNBUFFERED=1
           export REFLEX_REDIS_URL=redis://localhost:6379
-          uv run pytest tests/units --cov --no-cov-on-fail --cov-report=
+          uv run pytest tests/units $COV
       - name: Run unit tests w/ redis and OPLOCK_ENABLED
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |
-          export PYTHONUNBUFFERED=1
           export REFLEX_REDIS_URL=redis://localhost:6379
           export REFLEX_OPLOCK_ENABLED=true
-          uv run pytest tests/units --cov --no-cov-on-fail --cov-report=
+          uv run pytest tests/units $COV
       - name: Run workflow unit tests w/ postgres
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |
-          export PYTHONUNBUFFERED=1
           export REFLEX_TEST_POSTGRES=postgresql://postgres:postgres@localhost:5432/reflex_workflow
           # Appended: this runs one package, and every step above replaces the
           # coverage data rather than adding to it, so the report that follows
           # would otherwise be of this package alone.
-          uv run pytest tests/units/reflex_workflow --cov --cov-append --no-cov-on-fail --cov-report=
+          uv run pytest tests/units/reflex_workflow $COV ${COV:+--cov-append}
       - name: Generate coverage report
+        if: ${{ matrix.coverage }}
         run: uv run coverage html
+      - name: Upload coverage report
+        if: ${{ matrix.coverage }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: coverage-html
+          path: coverage_html_report/
+
+  js-unit-tests:
+    # Unit tests for the javascript Reflex ships in
+    # `reflex-base/.templates/web`, which the python suites can only reach
+    # through compiled output.
+    needs: changes
+    if: needs.changes.outputs.run == 'true'
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tests/js/package-lock.json
+      - run: npm ci
+        working-directory: tests/js
+      - run: npm test
+        working-directory: tests/js
 
   unit-tests-macos:
     timeout-minutes: 30
@@ -136,6 +187,8 @@ jobs:
       matrix:
         python-version: ["3.11", "3.12", "3.13", "3.14", "3.15"]
     runs-on: macos-latest
+    env:
+      PYTHONUNBUFFERED: 1
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -149,20 +202,17 @@ jobs:
 
       - name: Run unit tests without db dependencies
         run: |
-          export PYTHONUNBUFFERED=1
           uv pip uninstall pydantic alembic sqlalchemy sqlmodel
-          uv run --no-sync pytest tests/units --cov --no-cov-on-fail --cov-report= --cov-fail-under=0
+          uv run --no-sync pytest tests/units
           uv sync
       - name: Run unit tests
-        run: |
-          export PYTHONUNBUFFERED=1
-          uv run pytest tests/units --cov --no-cov-on-fail --cov-report=
+        run: uv run pytest tests/units
 
   # The one status check the branch rules require from this workflow. Naming the
   # jobs above directly does not survive: check names follow the matrix and the
   # display names, and a job that a filter skips must not block the merge.
   unit-tests-gate:
-    needs: [changes, unit-tests, unit-tests-macos]
+    needs: [changes, unit-tests, js-unit-tests, unit-tests-macos]
     if: always()
     runs-on: ubuntu-latest
     steps:

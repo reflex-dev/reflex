@@ -2,7 +2,6 @@
 import io from "socket.io-client";
 import { mergician } from "mergician";
 import env from "$/env.json";
-import reflexEnvironment from "$/reflex.json";
 import Cookies from "universal-cookie";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -12,6 +11,12 @@ import {
   useParams,
 } from "react-router";
 import { app, eventLoop } from "$/utils/context-registry";
+import {
+  CLIENT_STATE_REF,
+  getClientState,
+  getClientStore,
+  setClientState,
+} from "$/utils/client_state";
 import debounce from "$/utils/helpers/debounce";
 import { parseJson } from "$/utils/helpers/json";
 import throttle from "$/utils/helpers/throttle";
@@ -31,6 +36,10 @@ const LAST_RELOADED_KEY = "reflex_last_reloaded_on_error";
 
 // The id of the banner offering a reload when one already happened recently.
 const NEW_VERSION_BANNER_ID = "reflex-new-version-banner";
+
+// The cancelable window event dispatched before a prod page acts on a state
+// mismatch; a listener calling preventDefault() handles the mismatch instead.
+const STATE_MISMATCH_WINDOW_EVENT = "reflex:state-mismatch";
 
 // Client error types (must match reflex_base/constants/event.py ClientErrorType)
 const ERROR_TYPE_DISPATCH_MISSING = "dispatch_function_missing";
@@ -55,6 +64,13 @@ const cookies = new Cookies();
 
 // Dictionary holding component references.
 export const refs = {};
+
+// The client state store, for code evaluated outside this module's scope: a
+// `run_script` body pushing a value, or the devtools console. Client only, so
+// a server render never shares a store between requests.
+if (typeof document !== "undefined") {
+  refs[CLIENT_STATE_REF] = getClientStore();
+}
 
 // Array holding pending events to be processed.
 const event_queue = [];
@@ -190,7 +206,7 @@ const createSocket = (endpoint, transports, token) =>
   io(endpoint.href, {
     path: endpoint.pathname,
     transports,
-    protocols: [reflexEnvironment.version],
+    protocols: [env.REFLEX_VERSION],
     autoUnref: false,
     autoConnect: false,
     query: { token },
@@ -423,9 +439,14 @@ export const applyDelta = (state, delta) => {
  * @returns The evaluated component.
  */
 export const evalReactComponent = async (component) => {
-  await window.__reflex_load?.();
   if (!window.React && window.__reflex) {
     window.React = window.__reflex.react;
+  }
+  // The library list is always on the first line of the generated module.
+  const marker = "//__reflex_evaluate:";
+  if (component.startsWith(marker)) {
+    const libraries = component.slice(marker.length, component.indexOf("\n"));
+    await window.__reflex_load?.(JSON.parse(libraries));
   }
   const encodedJs = encodeURIComponent(component);
   const dataUri = "data:text/javascript;charset=utf-8," + encodedJs;
@@ -470,6 +491,46 @@ function urlFrom(string) {
 }
 
 /**
+ * Invoke an event's result callback, if it declared one.
+ *
+ * The callback arrives as a string built by ``format_queue_events``, which
+ * references ``queueEvents``/``processEvent`` (module-level here) plus ``socket``,
+ * ``navigate`` and ``params``. Those three MUST stay the parameter names below:
+ * the ``eval`` resolves them from this function's scope, so renaming them breaks
+ * every callback.
+ * @param event The event whose callback to run.
+ * @param eval_result The value to pass to the callback, awaited if thenable.
+ * @param socket The socket object to send events on.
+ * @param navigate The navigate function from useNavigate.
+ * @param params The params object from useParams.
+ */
+const applyResultCallback = async (
+  event,
+  eval_result,
+  socket,
+  navigate,
+  params,
+) => {
+  if (!event.payload.callback) {
+    return;
+  }
+  // Eval'd user code dispatches through addEvents like compiled event triggers
+  // do; late-bound so a remounted EventLoopProvider is picked up. Declared in
+  // every scope holding an eval, since that is the only scope chain the eval'd
+  // code can resolve it from.
+  const addEvents = (...args) => eventLoop.addEvents(...args);
+  const final_result =
+    !!eval_result && typeof eval_result.then === "function"
+      ? await eval_result
+      : eval_result;
+  const callback =
+    typeof event.payload.callback === "string"
+      ? eval(event.payload.callback)
+      : event.payload.callback;
+  callback(final_result);
+};
+
+/**
  * Build the update_vars_internal event for a synced localStorage var.
  *
  * The value is read when the event is sent, so it and the write count recorded
@@ -480,8 +541,25 @@ function urlFrom(string) {
 const syncLocalStorageEvent = ({ key, state_keys }) => {
   const value = localStorage.getItem(key);
   return ReflexEvent(`${app.state_name}.${UPDATE_VARS_INTERNAL}`, {
-    vars: Object.fromEntries(state_keys.map((state_key) => [state_key, value])),
+    vars: Object.fromEntries(
+      state_keys.map((state_key) => [
+        state_key,
+        value ?? storageDefault(state_key),
+      ]),
+    ),
   });
+};
+
+/**
+ * Get the compiled default of a browser storage var.
+ *
+ * A removed storage key resets its vars to their defaults, as a page load does.
+ * @param state_key The state key of the browser storage var.
+ * @returns The default value.
+ */
+const storageDefault = (state_key) => {
+  const dot = state_key.lastIndexOf(".");
+  return app.initialState[state_key.slice(0, dot)][state_key.slice(dot + 1)];
 };
 
 /**
@@ -492,9 +570,10 @@ const syncLocalStorageEvent = ({ key, state_keys }) => {
  * @param params The params object from useParams
  */
 export const applyEvent = async (event, socket, navigate, params) => {
-  // Eval'd callback strings (format_queue_events) dispatch through addEvents
-  // like compiled event triggers do; late-bound so a remounted
-  // EventLoopProvider is picked up.
+  // Eval'd user code dispatches through addEvents like compiled event triggers
+  // do; late-bound so a remounted EventLoopProvider is picked up. Declared in
+  // every scope holding an eval, since that is the only scope chain the eval'd
+  // code can resolve it from.
   const addEvents = (...args) => eventLoop.addEvents(...args);
   // Handle special events
   if (event.name == "_redirect") {
@@ -614,23 +693,43 @@ export const applyEvent = async (event, socket, navigate, params) => {
     return;
   }
 
+  // Backend reads and writes go to the shared store directly, so a var that no
+  // component renders is still reachable.
+  if (event.name == "_client_state_set") {
+    setClientState(event.payload.var_name, event.payload.value);
+    return;
+  }
+
+  if (event.name == "_client_state_get") {
+    try {
+      await applyResultCallback(
+        event,
+        getClientState(event.payload.var_name),
+        socket,
+        navigate,
+        params,
+      );
+    } catch (e) {
+      console.log("_client_state_get", e);
+      if (window && window?.onerror) {
+        window.onerror(e.message, null, null, null, e);
+      }
+    }
+    return;
+  }
+
   if (
     event.name == "_call_function" &&
     typeof event.payload.function !== "string"
   ) {
     try {
-      const eval_result = event.payload.function();
-      if (event.payload.callback) {
-        const final_result =
-          !!eval_result && typeof eval_result.then === "function"
-            ? await eval_result
-            : eval_result;
-        const callback =
-          typeof event.payload.callback === "string"
-            ? eval(event.payload.callback)
-            : event.payload.callback;
-        callback(final_result);
-      }
+      await applyResultCallback(
+        event,
+        event.payload.function(),
+        socket,
+        navigate,
+        params,
+      );
     } catch (e) {
       console.log("_call_function", e);
       if (window && window?.onerror) {
@@ -647,17 +746,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
           ? eval(event.payload.javascript_code)
           : eval(event.payload.function)();
 
-      if (event.payload.callback) {
-        const final_result =
-          !!eval_result && typeof eval_result.then === "function"
-            ? await eval_result
-            : eval_result;
-        const callback =
-          typeof event.payload.callback === "string"
-            ? eval(event.payload.callback)
-            : event.payload.callback;
-        callback(final_result);
-      }
+      await applyResultCallback(event, eval_result, socket, navigate, params);
     } catch (e) {
       console.log("_call_script", e);
       if (window && window?.onerror) {
@@ -717,6 +806,12 @@ const withRouterData = (event, params) => {
     }
   }
   return event;
+};
+
+const currentRouteKey = () => {
+  const loc = locationRef.current ?? window.location;
+  const liveLoc = env.MOUNT_TARGET ? loc : window.location;
+  return loc.pathname + (liveLoc.search ?? "");
 };
 
 /**
@@ -862,8 +957,10 @@ const showNewVersionBanner = () => {
  * In prod the page reloads once per cooldown window. A mismatch inside the
  * window means the reload landed on the same skew (a cached bundle, or several
  * backend versions behind one load balancer), so a banner with a reload button
- * shows instead and the page never loops. In dev a backend hot reload can
- * reconnect before Vite serves the rebuilt bundle, so it only warns.
+ * shows instead and the page never loops. The app can take over first: a
+ * listener on the window's STATE_MISMATCH_WINDOW_EVENT that calls
+ * preventDefault() skips both. In dev a backend hot reload can reconnect
+ * before Vite serves the rebuilt bundle, so it only warns.
  * @param info The backend's state schema hash and the reload cooldown in ms.
  */
 const handleStateMismatch = (info) => {
@@ -877,13 +974,20 @@ const handleStateMismatch = (info) => {
     );
     return;
   }
+  console.warn(message);
+  const event = new CustomEvent(STATE_MISMATCH_WINDOW_EVENT, {
+    cancelable: true,
+    detail: { frontend: app.stateSchema, backend: info.backend },
+  });
+  if (!window.dispatchEvent(event)) {
+    return;
+  }
   const last_reload =
     parseInt(window.sessionStorage.getItem(LAST_RELOADED_KEY)) || 0;
   if (Date.now() - last_reload > info.reload_cooldown_ms) {
     reloadForNewVersion();
     return;
   }
-  console.warn(message + " Reload the page to get the new version.");
   showNewVersionBanner();
 };
 
@@ -916,6 +1020,7 @@ export const connect = async (
 
   // Get backend URL object from the endpoint.
   const endpoint = getBackendURL(EVENTURL);
+  let bootRoute;
 
   // The hydrate event rides in the socket.io CONNECT packet, so the backend
   // starts loading state as soon as the namespace connects instead of after
@@ -923,12 +1028,13 @@ export const connect = async (
   // the backend as CompileVars.CONNECT_AUTH_EVENT and CONNECT_AUTH_STATE_SCHEMA;
   // the state schema goes along on every (re)connect, since a reconnect can
   // land on another backend version.
-  const bootAuth = (first) => {
+  const bootAuth = (first) => (callback) => {
     const boot_event = withRouterData(app.initialEvents(first)[0], params);
+    bootRoute = currentRouteKey();
     recordSentStorageValues(boot_event);
     // Instrumentation hook (installed by reflex-otel): may add a traceparent.
     window.__reflex_otel?.onEventSend?.(boot_event);
-    return { event: boot_event, state_schema: app.stateSchema };
+    callback({ event: boot_event, state_schema: app.stateSchema });
   };
 
   // Create the socket. A new session's token is saved here, once the app has
@@ -949,6 +1055,8 @@ export const connect = async (
     warmSocket ?? createSocket(endpoint, transports, session_token);
   warmSocket = null;
   cancelWarmup();
+  // Socket.IO calls this when the namespace connection is sent, so route data
+  // reflects any navigation that happened while the transport was connecting.
   socket.current.auth = bootAuth(true);
   socket.current.wait_connect = !socket.current.connected;
   // Ensure undefined fields in events are sent as null instead of removed
@@ -1063,6 +1171,19 @@ export const connect = async (
     window.__reflex_otel?.onSocketConnect?.();
     window.addEventListener("pagehide", pagehideHandler);
     window.addEventListener("beforeunload", disconnectTrigger);
+    // The connection auth event already loads its route, and every queued
+    // on_load loads the route current when it is sent. Keep the last queued
+    // on_load, after every navigation's storage update, only if the route
+    // changed after the auth event was built.
+    let keepOnLoad = bootRoute !== currentRouteKey();
+    for (let i = event_queue.length - 1; i >= 0; i--) {
+      if (event_queue[i].name !== app.on_load_internal_event) continue;
+      if (keepOnLoad) {
+        keepOnLoad = false;
+      } else {
+        event_queue.splice(i, 1);
+      }
+    }
     // Drain any initial events from the queue.
     while (event_queue.length > 0) {
       await processEvent(socket.current, navigate, params);
@@ -1610,14 +1731,24 @@ export const useEventLoop = (
 
     // e is StorageEvent
     const handleStorage = (e) => {
-      const state_keys = storage_to_state_map.get(e.key);
       // Session storage changes in same-origin frames raise storage events too.
-      if (state_keys && e.storageArea === localStorage) {
-        // The value is read when the event is sent: see syncLocalStorageEvent.
-        addEvents(
-          [ReflexEvent(SYNC_LOCAL_STORAGE, { key: e.key, state_keys })],
-          e,
-        );
+      if (e.storageArea !== localStorage) {
+        return;
+      }
+      // A clear() event has no key and affects every synced storage name.
+      const entries =
+        e.key === null
+          ? storage_to_state_map.entries()
+          : [[e.key, storage_to_state_map.get(e.key)]];
+      const events = [];
+      for (const [key, state_keys] of entries) {
+        if (state_keys) {
+          // Read the value when sent, just like individual-key updates.
+          events.push(ReflexEvent(SYNC_LOCAL_STORAGE, { key, state_keys }));
+        }
+      }
+      if (events.length) {
+        addEvents(events, e);
       }
     };
 

@@ -25,6 +25,19 @@ config = rx.Config(
 
 See the [config reference](/docs/api-reference/config/) for all the parameters available.
 
+## Event Loop Blocking Detection
+
+In development, Reflex warns when an event handler blocks the asyncio event loop near or beyond `event_loop_blocking_threshold` seconds (default `0.2`). The warning appears as soon as the threshold is reached, so a handler that never returns is reported too. It names the handler and the innermost line of your app's code in the blocking stack, then shows the full stack. A blocking task that processes no event, such as a task your app starts, is reported by its task name. When the loop responds again, a second line reports the total duration, which includes the state updates after the handler, such as computed vars. It recommends moving blocking I/O to a thread pool or using a non-blocking async API. Background events still run on the event loop and do not make synchronous blocking code non-blocking. Detection is always off in production. Set the threshold to `0` to turn it off in development:
+
+```python
+config = rx.Config(
+    app_name="my_app_name",
+    event_loop_blocking_threshold=0,
+)
+```
+
+The setting can also be overridden with `REFLEX_EVENT_LOOP_BLOCKING_THRESHOLD`, for example `REFLEX_EVENT_LOOP_BLOCKING_THRESHOLD=0` to turn detection off.
+
 ## Environment Variables
 
 Any config parameter can be overridden by setting an environment variable with the `REFLEX_` prefix and the parameter name in uppercase. Environment variables take precedence over values set in `rxconfig.py`.
@@ -83,11 +96,11 @@ The imported module must still define `app` at module level.
 - `frontend_port` (default `3000`) and `backend_port` (default `8000`) control which ports the frontend and backend listen on. In dev mode, if a port is taken, the next available port is used.
 - `backend_host` (default `0.0.0.0`) is the address the backend server binds to.
 - `api_url` (default `http://localhost:8000`) is the URL the user's **browser** uses to reach the backend. You typically don't need to set it: when `api_url` points at localhost, the frontend substitutes the domain the app was served from, so a backend reachable at the same address as the frontend (e.g. behind a reverse proxy or load balancer) is found automatically. Set `api_url` only when the backend is listening on a different address than the frontend, e.g. `https://api.example.com`.
-- `deploy_url` (default `http://localhost:3000`) is the public URL where the **frontend** is hosted. Reflex uses it wherever an absolute frontend URL is needed — most notably for the links in the generated `sitemap.xml`. It is also the origin browsers will present when connecting to the backend, which matters for CORS (below).
+- `deploy_url` (unset by default) is the public URL where the **frontend** is hosted when it is served from a different origin than the backend. Reflex uses it wherever an absolute frontend URL is needed — most notably for the links in the generated `sitemap.xml`, which fall back to `http://localhost:<frontend_port>` when it is unset (`config.frontend_url` exposes that resolved value). It is also the origin browsers will present when connecting to the backend, which matters for CORS (below).
 
 ## CORS
 
-The backend only accepts cross-origin requests from origins listed in `cors_allowed_origins`. The default, `["*"]`, allows any origin — convenient in development, but in production restrict it to the origins your frontend is actually served from (typically the origin of `deploy_url`):
+The backend only accepts cross-origin requests from origins listed in `cors_allowed_origins`. By default any origin is allowed in dev mode. In prod mode the backend serves the frontend from its own origin, so by default no cross-origin requests are allowed at all and same-origin requests pass; when `deploy_url` is set, only that origin is allowed. Set `cors_allowed_origins` explicitly when the frontend is reachable from several origins, or to `["*"]` to allow any origin in production:
 
 ```python
 config = rx.Config(
