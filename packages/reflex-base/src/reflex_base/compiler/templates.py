@@ -631,6 +631,7 @@ def page_template(
     hooks: dict[str, VarData | None],
     render: dict[str, Any],
     route: str = "",
+    client_state_owns: Sequence[str] = (),
 ):
     """Template for a single react page.
 
@@ -658,6 +659,10 @@ def page_template(
             entirely — ``page_template`` ships in ``reflex-base``, so an
             out-of-tree caller predating the parameter keeps working and gets
             the pre-existing unnamed ``Component``.
+        client_state_owns: The local client state names the page owns. When
+            given, the exported component is ``Component`` wrapped in a client
+            state scope claiming them, so hooks in the page body resolve inside
+            it.
 
     Returns:
         Rendered React page component as string.
@@ -671,6 +676,11 @@ def page_template(
         f"Component.displayName = {json.dumps(f'Component({route})')};\n"
         if route
         else ""
+    )
+    export_str = (
+        f"withClientStateScope(Component, {json.dumps(list(client_state_owns))})"
+        if client_state_owns
+        else "Component"
     )
     return f"""{imports_str}
 
@@ -686,7 +696,7 @@ function Component() {{
   )
 }}
 {display_name_str}
-export default Component;
+export default {export_str};
 """
 
 
@@ -1034,6 +1044,21 @@ def dynamic_components_module_template(
 _MEMO_WRAPPER_CALLEE_RE = re.compile(r"[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*")
 
 
+def memo_wrapper_callee(wrapper: str) -> str:
+    """Make a memo wrapper expression safe to call by appending ``(...)``.
+
+    Args:
+        wrapper: The wrapper's JS expression.
+
+    Returns:
+        The expression, parenthesized unless it is a plain identifier or
+        member chain.
+    """
+    if _MEMO_WRAPPER_CALLEE_RE.fullmatch(wrapper):
+        return wrapper
+    return f"({wrapper})"
+
+
 def _render_memo_component(component: dict[str, Any]) -> str:
     """Render the ``export const`` statement for one memoized component.
 
@@ -1058,8 +1083,8 @@ def _render_memo_component(component: dict[str, Any]) -> str:
     )
 }})"""
     wrapper = component.get("wrapper")
-    if wrapper and not _MEMO_WRAPPER_CALLEE_RE.fullmatch(wrapper):
-        wrapper = f"({wrapper})"
+    if wrapper:
+        wrapper = memo_wrapper_callee(wrapper)
     export_expr = f"{wrapper}{function_expr}" if wrapper else function_expr
     name = component["name"]
     # ``display_name`` is resolved by the caller (``compile_experimental_component_memo``),

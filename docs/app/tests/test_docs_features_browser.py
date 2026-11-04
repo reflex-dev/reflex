@@ -88,9 +88,9 @@ def test_docs_reading_typography_is_consistent(page: Page, width: int):
     paragraph = (
         page.locator("p").filter(has_text="State holds the app's mutable data").first
     )
-    expect(paragraph).to_have_css("font-family", re.compile(r"^Inter(?:,|$)"))
+    expect(paragraph).to_have_css("font-family", re.compile(r"^Geist(?:,|$)"))
     expect(paragraph).to_have_css("font-weight", "400")
-    expect(paragraph).to_have_css("color", "rgb(0, 0, 0)")
+    expect(paragraph).to_have_css("color", "rgb(10, 10, 10)")
     link = paragraph.locator("a").first
     for property_name in ("font-size", "font-weight", "line-height", "letter-spacing"):
         expected = link.evaluate(
@@ -114,6 +114,11 @@ def test_docs_reading_typography_is_consistent(page: Page, width: int):
     expect(page.get_by_role("heading", name="Fields", exact=True)).to_have_css(
         "font-size", heading_size
     )
+    if width >= 1024:
+        action = page.get_by_role("link", name="Raise an issue", exact=True)
+        expect(action).to_have_css("border-radius", "8px")
+        expect(action).to_have_css("font-weight", "525")
+        expect(action).to_have_css("font-family", re.compile(r"^Geist(?:,|$)"))
 
 
 def test_sidebar_labels_match_reading_text_color(page: Page):
@@ -122,15 +127,15 @@ def test_sidebar_labels_match_reading_text_color(page: Page):
     page.goto(f"{PREVIEW_URL}/docs/getting-started/introduction/")
     expect(
         page.get_by_role("link", name="Navigate to Components").locator("h3")
-    ).to_have_css("color", "rgb(0, 0, 0)")
+    ).to_have_css("color", "rgb(10, 10, 10)")
     expect(page.locator("summary").filter(has_text="Getting Started")).to_have_css(
-        "color", "rgb(0, 0, 0)"
+        "color", "rgb(10, 10, 10)"
     )
     expect(
         page.get_by_role("link", name="Installation", exact=True).locator("p")
-    ).to_have_css("color", "rgb(0, 0, 0)")
+    ).to_have_css("color", "rgb(10, 10, 10)")
     expect(page.get_by_role("heading", name="Onboarding", exact=True)).to_have_css(
-        "color", "rgb(105, 100, 94)"
+        "color", "rgb(107, 107, 107)"
     )
 
 
@@ -146,7 +151,7 @@ def test_enterprise_sidebar_links_match_group_color(page: Page, width: int):
         sidebar = page.locator(".docs-sidebar")
     expect(sidebar).to_be_visible()
     grid_label = sidebar.get_by_text("AG Grid", exact=True)
-    expect(grid_label).to_have_css("color", "rgb(0, 0, 0)")
+    expect(grid_label).to_have_css("color", "rgb(10, 10, 10)")
     grid_label.click()
     for href in (
         "/docs/enterprise/overview/",
@@ -155,7 +160,7 @@ def test_enterprise_sidebar_links_match_group_color(page: Page, width: int):
     ):
         label = sidebar.locator(f'a[href="{href}"] p')
         expect(label).to_be_visible()
-        expect(label).to_have_css("color", "rgb(0, 0, 0)")
+        expect(label).to_have_css("color", "rgb(10, 10, 10)")
 
 
 @pytest.mark.parametrize(
@@ -348,13 +353,14 @@ def test_single_page_sidebar_links_keep_neutral_hover_color(page: Page):
     for label in ("Databases", "Webhooks", "Files"):
         link = sidebar.get_by_role("link", name=label, exact=True)
         link.hover()
-        expect(link.locator("p")).to_have_css("color", "rgb(0, 0, 0)")
+        expect(link.locator("p")).to_have_css("color", "rgb(10, 10, 10)")
 
 
 @pytest.mark.parametrize("width", [390, 1440])
 def test_single_page_sidebar_link_has_selected_background(page: Page, width: int):
     """The active direct link has a neutral highlight that follows navigation."""
     page.set_viewport_size({"width": width, "height": 1000})
+    page.emulate_media(color_scheme="light")
     page.goto(f"{PREVIEW_URL}/docs/ai/webhooks/")
     if width < 1024:
         page.get_by_role("button", name="Open documentation navigation").click()
@@ -363,15 +369,15 @@ def test_single_page_sidebar_link_has_selected_background(page: Page, width: int
         sidebar = page.locator("#sidebar-container")
     selected = sidebar.get_by_role("link", name="Webhooks", exact=True)
     expect(selected).to_have_attribute("aria-current", "page")
-    expect(selected).to_have_css("background-color", "rgb(245, 243, 241)")
-    expect(selected.locator("p")).to_have_css("color", "rgb(0, 0, 0)")
+    expect(selected).to_have_css("background-color", "rgb(245, 245, 245)")
+    expect(selected.locator("p")).to_have_css("color", "rgb(10, 10, 10)")
     inactive = sidebar.get_by_role("link", name="Files", exact=True)
     expect(inactive).to_have_css("background-color", "rgba(0, 0, 0, 0)")
     inactive.click()
     if width < 1024:
         page.get_by_role("button", name="Open documentation navigation").click()
     expect(sidebar.get_by_role("link", name="Files", exact=True)).to_have_css(
-        "background-color", "rgb(245, 243, 241)"
+        "background-color", "rgb(245, 245, 245)"
     )
     expect(sidebar.get_by_role("link", name="Webhooks", exact=True)).to_have_css(
         "background-color", "rgba(0, 0, 0, 0)"

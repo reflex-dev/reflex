@@ -387,6 +387,30 @@ def test_prepare_404_page_empty_string_metadata_uses_defaults():
     assert prepared.page.description == constants.Page404.DESCRIPTION
 
 
+class BackendMetaState(BaseState):
+    """A state with a backend var, for page metadata misuse tests."""
+
+    _meta: str = "x"
+
+
+@pytest.mark.parametrize("key", ["title", "description", "image"])
+def test_add_page_backend_var_meta_raises_format_error(
+    app: App, index_page: ComponentCallable, key: str
+):
+    """A backend var passed as page metadata raises when the page is added.
+
+    Args:
+        app: The app to test.
+        index_page: The index page.
+        key: The page metadata argument given the backend var.
+    """
+    with pytest.raises(
+        exceptions.BackendVarFormatError,
+        match=r"Backend var 'BackendMetaState\._meta' exists only",
+    ):
+        app.add_page(index_page, route="/meta", **{key: BackendMetaState._meta})  # pyright: ignore[reportArgumentType]
+
+
 def test_add_page_set_route(app: App, index_page: ComponentCallable):
     """Test adding a page to an app.
 
@@ -6029,6 +6053,34 @@ def test_write_stateful_pages_marker_concurrent_readers_see_valid_json(
         for future in readers:
             future.result()
     assert json.loads(marker.read_text()) == routes
+
+
+async def test_await_inside_app_modify_state_runs_inline(app_with_processor: App):
+    """A handler awaited inside ``modify_state`` runs on the locked state.
+
+    Args:
+        app_with_processor: An App with a mock event processor and root context.
+    """
+
+    class ModifyAwaitState(BaseState):
+        n: int = 0
+
+        @rx.event
+        def bump(self, by: int) -> int:
+            self.n += by
+            return self.n
+
+    app_with_processor._state_manager = StateManagerMemory()
+    app_with_processor._event_namespace = AsyncMock()
+    async with app_with_processor.modify_state(
+        BaseStateToken(ident="token-C", cls=ModifyAwaitState)
+    ) as state:
+        assert EventContext.get().locked_root is state._get_root_state()
+        assert await ModifyAwaitState.bump(2) == 2
+        assert await ModifyAwaitState.bump(3) == 5
+        assert (await state.get_state(ModifyAwaitState)).n == 5
+    with pytest.raises(LookupError):
+        EventContext.get()
 
 
 @pytest.mark.parametrize(

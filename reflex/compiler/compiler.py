@@ -846,6 +846,7 @@ def compile_page_from_context(page_ctx: PageContext) -> tuple[str, str]:
         hooks=page_ctx.hooks,
         render=page_ctx.root_component.render(),
         route=page_ctx.route,
+        client_state_owns=sorted(page_ctx.client_state_names),
     )
     return output_path, code
 

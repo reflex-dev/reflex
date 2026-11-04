@@ -32,7 +32,6 @@ from reflex_base.utils.exceptions import (
     BackendVarFormatError,
     ReflexRuntimeError,
     StateValueError,
-    UntypedVarError,
 )
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import get_field_type
@@ -561,6 +560,33 @@ def test_literal_var_dispatch_follows_later_registrations():
         del base._var_subclasses[var_subclasses:]
         del base._var_literal_subclasses[literal_subclasses:]
         base._clear_var_subclass_lookup_caches()
+        base._literal_var_by_type.clear()
+
+
+def test_literal_var_dispatch_sees_through_proxies(clean_registration_context):
+    """Proxies of different values dispatch on the wrapped value, not the proxy type.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+    from reflex_base.vars import base
+
+    state_cls = type(
+        "ProxyDispatchState",
+        (BaseState,),
+        {
+            "__module__": __name__,
+            "__annotations__": {"mapping": dict[str, int], "items": list[int]},
+            "mapping": {"a": 1},
+            "items": [1, 2],
+        },
+    )
+    state = state_cls()
+    try:
+        assert str(LiteralVar.create(state.mapping)) == '({ ["a"] : 1 })'  # pyright: ignore [reportAttributeAccessIssue]
+        assert str(LiteralVar.create(state.items)) == "[1, 2]"  # pyright: ignore [reportAttributeAccessIssue]
+        assert MutableProxy not in base._literal_var_by_type
+    finally:
         base._literal_var_by_type.clear()
 
 
@@ -1384,12 +1410,23 @@ def test_backend_field_is_not_type_checked():
     assert model._value == 1
 
 
+@pytest.mark.parametrize(
+    "to_text",
+    [
+        lambda f: f"{f}px",
+        lambda f: f"{f!s}px",
+        lambda f: str(f) + "px",
+        lambda f: "%spx" % f,  # noqa: UP031
+    ],
+    ids=["format", "format_s", "str", "percent"],
+)
 @pytest.mark.parametrize("name", ["_secret", "bookkeeping"])
-def test_backend_field_format_raises(name: str):
-    """Formatting a backend var raises instead of embedding its repr.
+def test_backend_field_format_raises(name: str, to_text: typing.Callable[[Any], str]):
+    """Turning a backend var into text raises instead of embedding its repr.
 
     Args:
         name: The backend field to format, underscore-prefixed or is_var=False.
+        to_text: Turns the field into text.
     """
 
     class Model(EvenMoreBasicBaseState):
@@ -1399,7 +1436,7 @@ def test_backend_field_format_raises(name: str):
     with pytest.raises(
         BackendVarFormatError, match=rf"Backend var 'Model\.{name}' exists only"
     ):
-        f"{getattr(Model, name)}px"
+        to_text(getattr(Model, name))
 
 
 @pytest.mark.parametrize("mixin", [False, True])
@@ -1441,6 +1478,19 @@ def test_mixin_field_format_raises():
         f"{Mixin.count}"
 
 
+def test_state_var_field_format_raises():
+    """A state var's field, read from get_fields(), says to use the var instead."""
+
+    class Model(BaseState):
+        count: int = 0
+
+    with pytest.raises(
+        BackendVarFormatError,
+        match=r"^'Model\.count' is the field of a state var.* Use Model\.count ",
+    ):
+        f"{Model.get_fields()['count']}"
+
+
 def test_unbound_field_format_raises():
     """An unbound field has no Var to format, and the error shows its definition."""
     with pytest.raises(
@@ -1450,26 +1500,57 @@ def test_unbound_field_format_raises():
         f"{field(default=0)}"
 
 
-def test_untyped_var_item_access_reports_backend_var_key():
-    """Indexing an untyped Var with a backend var names the key, not a format error."""
-
-    class Model(EvenMoreBasicBaseState):
-        _secret: int = 42
-
-    with pytest.raises(UntypedVarError, match=r"access the item 'Field\(default=42"):
-        Var(_js_expr="x")[Model._secret]  # pyright: ignore[reportIndexIssue]
-
-
-def test_backend_field_literal_var_reports_repr():
-    """Creating a LiteralVar from a backend var reports its repr, not a format error."""
+def test_untyped_var_item_access_backend_var_key_raises_format_error():
+    """Indexing an untyped Var with a backend var raises the backend var format error."""
 
     class Model(EvenMoreBasicBaseState):
         _secret: int = 42
 
     with pytest.raises(
-        TypeError, match=r"Tried to create a LiteralVar from Field\(default=42"
+        BackendVarFormatError, match=r"Backend var 'Model\._secret' exists only"
     ):
-        LiteralVar.create(Model._secret)
+        Var(_js_expr="x")[Model._secret]  # pyright: ignore[reportIndexIssue]
+
+
+@pytest.mark.parametrize(
+    "use",
+    [
+        LiteralVar.create,
+        lambda f: str(Var.create([f])),
+        lambda f: str(Var.create({"a": f})),
+        lambda f: Var.create([f])._get_all_var_data(),
+        lambda f: Var.create({"a": f})._get_all_var_data(),
+    ],
+    ids=["literal", "list", "dict", "list_var_data", "dict_var_data"],
+)
+def test_backend_field_literal_var_raises_format_error(
+    use: typing.Callable[[Any], Any],
+):
+    """A backend var inside a LiteralVar raises the backend var format error.
+
+    Args:
+        use: Turns the backend field into a LiteralVar, or reads its var data.
+    """
+
+    class Model(EvenMoreBasicBaseState):
+        _secret: int = 42
+
+    with pytest.raises(
+        BackendVarFormatError, match=r"Backend var 'Model\._secret' exists only"
+    ):
+        use(Model._secret)
+
+
+def test_mixin_field_literal_var_raises_format_error():
+    """A mixin's field inside a LiteralVar says to use the including state."""
+
+    class Mixin(EvenMoreBasicBaseState, mixin=True):
+        count: int = 0
+
+    with pytest.raises(
+        BackendVarFormatError, match=r"Var 'Mixin\.count' is declared on a mixin state"
+    ):
+        str(Var.create([Mixin.count]))
 
 
 def test_mistyped_backend_field_value_logs_repr(caplog: pytest.LogCaptureFixture):
