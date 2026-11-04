@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import inspect
 import json
 import os
@@ -643,43 +642,18 @@ def format_state_name(state_name: str) -> str:
 # The marker Var.__format__ puts before a Var's expression in an f-string.
 _VAR_MARKER = re.compile(
     re.escape(constants.REFLEX_VAR_OPENING_TAG)
-    + "(.*?)"
+    + ".*?"
     + re.escape(constants.REFLEX_VAR_CLOSING_TAG),
     flags=re.DOTALL,
 )
-_VAR_DIGEST_LENGTH = 8
-
-
-def _stable_var_digest(marker: re.Match[str]) -> str:
-    """Name the Var behind an f-string marker the same way in every run.
-
-    The marker holds the Var's hash, which covers type objects hashed by
-    address. The digest covers the Var's expression and type as text instead,
-    so Vars that differ only by type still get different names.
-
-    Args:
-        marker: The marker found in a string.
-
-    Returns:
-        A short hex digest, or an empty string for an unknown marker.
-    """
-    from reflex_base.vars.base import _global_vars
-
-    key = marker.group(1)
-    # Event refs take any string, which can hold a marker no Var here wrote.
-    var = _global_vars.get(int(key)) if key.lstrip("-").isdigit() else None
-    if var is None:
-        return ""
-    identity = f"{var._js_expr}\0{var._var_type}".encode()
-    return hashlib.sha256(identity).hexdigest()[:_VAR_DIGEST_LENGTH]
 
 
 def format_ref(ref: str) -> str:
     """Format a ref.
 
     A Var formatted into an f-string leaves a marker holding its hash, which
-    changes from one run to the next; the marker is replaced with a digest
-    that does not, so the ref name is the same in every build.
+    changes from one run to the next; the marker is dropped and the Var's
+    expression after it names the ref, so the name is the same in every build.
 
     Args:
         ref: The ref to format.
@@ -687,7 +661,7 @@ def format_ref(ref: str) -> str:
     Returns:
         The formatted ref.
     """
-    ref = _VAR_MARKER.sub(_stable_var_digest, ref)
+    ref = _VAR_MARKER.sub("", ref)
     # Replace all non-word characters with underscores.
     clean_ref = re.sub(r"[^\w]+", "_", ref)
     return f"ref_{clean_ref}"

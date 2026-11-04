@@ -37,6 +37,10 @@ const LAST_RELOADED_KEY = "reflex_last_reloaded_on_error";
 // The id of the banner offering a reload when one already happened recently.
 const NEW_VERSION_BANNER_ID = "reflex-new-version-banner";
 
+// The cancelable window event dispatched before a prod page acts on a state
+// mismatch; a listener calling preventDefault() handles the mismatch instead.
+const STATE_MISMATCH_WINDOW_EVENT = "reflex:state-mismatch";
+
 // Client error types (must match reflex_base/constants/event.py ClientErrorType)
 const ERROR_TYPE_DISPATCH_MISSING = "dispatch_function_missing";
 const ERROR_TYPE_STATE_UPDATE = "state_update_processing_error";
@@ -435,9 +439,14 @@ export const applyDelta = (state, delta) => {
  * @returns The evaluated component.
  */
 export const evalReactComponent = async (component) => {
-  await window.__reflex_load?.();
   if (!window.React && window.__reflex) {
     window.React = window.__reflex.react;
+  }
+  // The library list is always on the first line of the generated module.
+  const marker = "//__reflex_evaluate:";
+  if (component.startsWith(marker)) {
+    const libraries = component.slice(marker.length, component.indexOf("\n"));
+    await window.__reflex_load?.(JSON.parse(libraries));
   }
   const encodedJs = encodeURIComponent(component);
   const dataUri = "data:text/javascript;charset=utf-8," + encodedJs;
@@ -532,8 +541,25 @@ const applyResultCallback = async (
 const syncLocalStorageEvent = ({ key, state_keys }) => {
   const value = localStorage.getItem(key);
   return ReflexEvent(`${app.state_name}.${UPDATE_VARS_INTERNAL}`, {
-    vars: Object.fromEntries(state_keys.map((state_key) => [state_key, value])),
+    vars: Object.fromEntries(
+      state_keys.map((state_key) => [
+        state_key,
+        value ?? storageDefault(state_key),
+      ]),
+    ),
   });
+};
+
+/**
+ * Get the compiled default of a browser storage var.
+ *
+ * A removed storage key resets its vars to their defaults, as a page load does.
+ * @param state_key The state key of the browser storage var.
+ * @returns The default value.
+ */
+const storageDefault = (state_key) => {
+  const dot = state_key.lastIndexOf(".");
+  return app.initialState[state_key.slice(0, dot)][state_key.slice(dot + 1)];
 };
 
 /**
@@ -931,8 +957,10 @@ const showNewVersionBanner = () => {
  * In prod the page reloads once per cooldown window. A mismatch inside the
  * window means the reload landed on the same skew (a cached bundle, or several
  * backend versions behind one load balancer), so a banner with a reload button
- * shows instead and the page never loops. In dev a backend hot reload can
- * reconnect before Vite serves the rebuilt bundle, so it only warns.
+ * shows instead and the page never loops. The app can take over first: a
+ * listener on the window's STATE_MISMATCH_WINDOW_EVENT that calls
+ * preventDefault() skips both. In dev a backend hot reload can reconnect
+ * before Vite serves the rebuilt bundle, so it only warns.
  * @param info The backend's state schema hash and the reload cooldown in ms.
  */
 const handleStateMismatch = (info) => {
@@ -946,13 +974,20 @@ const handleStateMismatch = (info) => {
     );
     return;
   }
+  console.warn(message);
+  const event = new CustomEvent(STATE_MISMATCH_WINDOW_EVENT, {
+    cancelable: true,
+    detail: { frontend: app.stateSchema, backend: info.backend },
+  });
+  if (!window.dispatchEvent(event)) {
+    return;
+  }
   const last_reload =
     parseInt(window.sessionStorage.getItem(LAST_RELOADED_KEY)) || 0;
   if (Date.now() - last_reload > info.reload_cooldown_ms) {
     reloadForNewVersion();
     return;
   }
-  console.warn(message + " Reload the page to get the new version.");
   showNewVersionBanner();
 };
 
@@ -1696,14 +1731,24 @@ export const useEventLoop = (
 
     // e is StorageEvent
     const handleStorage = (e) => {
-      const state_keys = storage_to_state_map.get(e.key);
       // Session storage changes in same-origin frames raise storage events too.
-      if (state_keys && e.storageArea === localStorage) {
-        // The value is read when the event is sent: see syncLocalStorageEvent.
-        addEvents(
-          [ReflexEvent(SYNC_LOCAL_STORAGE, { key: e.key, state_keys })],
-          e,
-        );
+      if (e.storageArea !== localStorage) {
+        return;
+      }
+      // A clear() event has no key and affects every synced storage name.
+      const entries =
+        e.key === null
+          ? storage_to_state_map.entries()
+          : [[e.key, storage_to_state_map.get(e.key)]];
+      const events = [];
+      for (const [key, state_keys] of entries) {
+        if (state_keys) {
+          // Read the value when sent, just like individual-key updates.
+          events.push(ReflexEvent(SYNC_LOCAL_STORAGE, { key, state_keys }));
+        }
+      }
+      if (events.length) {
+        addEvents(events, e);
       }
     };
 

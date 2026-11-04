@@ -1,0 +1,1 @@
+On a state schema mismatch, a production page now dispatches a cancelable `reflex:state-mismatch` event on `window` before it reloads or shows the "new version available" banner. A listener that calls `event.preventDefault()` skips both, so the app decides when to reload; `event.detail` carries the `frontend` and `backend` state schema hashes.

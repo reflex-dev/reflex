@@ -72,6 +72,41 @@ def test_trusted_proxy_hops_defaults_to_zero(base_config_values):
     assert rx.Config(**base_config_values).trusted_proxy_hops == 0
 
 
+def test_event_loop_blocking_threshold_defaults_to_development_threshold(
+    base_config_values,
+):
+    """Enable useful blocking diagnostics by default in development."""
+    config = rx.Config(**base_config_values)
+    assert config.event_loop_blocking_threshold == pytest.approx(0.2)
+
+
+@pytest.mark.parametrize("threshold", [-1, float("inf"), float("nan"), True, "1", None])
+def test_event_loop_blocking_threshold_must_be_non_negative_finite(
+    base_config_values, threshold
+):
+    """Reject invalid event-loop blocking thresholds."""
+    with pytest.raises(
+        ConfigError,
+        match="event_loop_blocking_threshold must be a non-negative finite number",
+    ):
+        rx.Config(**base_config_values, event_loop_blocking_threshold=threshold)
+
+
+def test_event_loop_blocking_detection_can_be_disabled(base_config_values):
+    """Allow apps to disable event-loop blocking detection with 0."""
+    config = rx.Config(**base_config_values, event_loop_blocking_threshold=0)
+    assert config.event_loop_blocking_threshold == 0
+
+
+def test_event_loop_blocking_detection_can_be_disabled_from_env(
+    base_config_values, monkeypatch: pytest.MonkeyPatch
+):
+    """Allow the environment to disable event-loop blocking detection."""
+    monkeypatch.setenv("REFLEX_EVENT_LOOP_BLOCKING_THRESHOLD", "0")
+    config = rx.Config(**base_config_values)
+    assert config.update_from_env()["event_loop_blocking_threshold"] == 0
+
+
 @pytest.mark.parametrize("trusted_proxy_hops", [-1, True, False, 1.5, "2", None])
 def test_trusted_proxy_hops_must_be_non_negative(
     base_config_values, trusted_proxy_hops
@@ -114,6 +149,7 @@ def test_react_compiler_default(base_config_values):
         ("REFLEX_REACT_COMPILER", False),
         ("REFLEX_REACT_COMPILER", True),
         ("REFLEX_DEFAULT_COLOR_MODE", "dark"),
+        ("REFLEX_EVENT_LOOP_BLOCKING_THRESHOLD", 0.35),
     ],
 )
 def test_update_from_env(
@@ -431,7 +467,7 @@ DEFAULT_CONFIG = rx.Config(app_name="a")
             {
                 "api_url": "http://localhost:8001",
                 "backend_port": 8001,
-                "deploy_url": "http://localhost:3001",
+                "deploy_url": None,
                 "frontend_port": 3001,
             },
         ),
@@ -443,7 +479,7 @@ DEFAULT_CONFIG = rx.Config(app_name="a")
             {
                 "api_url": "http://localhost:8002",
                 "backend_port": 8002,
-                "deploy_url": "http://localhost:3001",
+                "deploy_url": None,
                 "frontend_port": 3001,
             },
         ),
@@ -455,7 +491,7 @@ DEFAULT_CONFIG = rx.Config(app_name="a")
             {
                 "api_url": "http://localhost:8002",
                 "backend_port": 8002,
-                "deploy_url": "http://localhost:3005",
+                "deploy_url": None,
                 "frontend_port": 3005,
             },
         ),
@@ -1701,3 +1737,25 @@ def test_get_config_reload_deprecated(mocker: MockerFixture):
         # The freshly loaded config stays cached on the context afterwards.
         assert reflex_base.config.get_config() is second
         deprecate.assert_called_once()
+
+
+def test_frontend_url_falls_back_to_localhost_frontend_port(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """frontend_url is deploy_url when set, otherwise localhost on the frontend port.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    monkeypatch.delenv("REFLEX_DEPLOY_URL", raising=False)
+    monkeypatch.delenv("REFLEX_FRONTEND_PORT", raising=False)
+    config = rx.Config(app_name="a")
+    assert config.deploy_url is None
+    assert config.frontend_url == "http://localhost:3000"
+
+    config = rx.Config(app_name="a", frontend_port=3005)
+    assert config.deploy_url is None
+    assert config.frontend_url == "http://localhost:3005"
+
+    config = rx.Config(app_name="a", deploy_url="https://example.com")
+    assert config.frontend_url == "https://example.com"

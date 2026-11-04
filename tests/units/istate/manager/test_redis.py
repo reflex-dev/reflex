@@ -15,7 +15,10 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 import pytest_asyncio
+from reflex_base.constants import Env
+from reflex_base.environment import environment
 from reflex_base.utils.exceptions import EnvironmentVarValueError, LockExpiredError
+from reflex_base.vars.base import computed_var
 
 from reflex.istate.manager.redis import (
     _RELEASE_LOCK_SCRIPT,
@@ -38,6 +41,8 @@ class RedisTestState(BaseState):
 
 class SubState1(RedisTestState):
     """A test substate for redis state manager tests."""
+
+    child_value: str = ""
 
 
 class SubState2(RedisTestState):
@@ -277,6 +282,180 @@ async def test_modify(
     )
     assert isinstance(final_state, root_state)
     assert final_state.count == 3
+
+
+@pytest.mark.parametrize(
+    "locking_path", ["disabled", "contended", "lease_ended", "cached"]
+)
+async def test_modify_cancelled_persists_state(
+    state_manager_redis: StateManagerRedis,
+    monkeypatch: pytest.MonkeyPatch,
+    locking_path: str,
+):
+    """Keep mutations and cancellation cleanup visible to the next handler.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        monkeypatch: The pytest monkeypatch fixture.
+        locking_path: The Redis locking path to exercise.
+    """
+    manager = state_manager_redis
+    manager._oplock_enabled = locking_path != "disabled"
+    if locking_path == "contended":
+        monkeypatch.setattr(manager, "_n_lock_contenders", AsyncMock(return_value=1))
+    elif locking_path == "lease_ended":
+        monkeypatch.setattr(
+            manager, "_create_lease_break_task", AsyncMock(return_value=None)
+        )
+    elif locking_path == "cached":
+        await _subscribed(manager)
+
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=RedisTestState)
+    started = asyncio.Event()
+
+    async def modify():
+        """Mutate state before cancellation and again during handler cleanup."""
+        async with manager.modify_state(token) as state:
+            state.count = 1
+            state.substates[SubState1.get_name()].child_value = "child update"
+            started.set()
+            try:
+                await asyncio.Event().wait()
+            finally:
+                state.foo = "cancelled"
+
+    task = asyncio.create_task(modify())
+    try:
+        await asyncio.wait_for(started.wait(), timeout=5)
+        task.cancel("superseded")
+        with pytest.raises(asyncio.CancelledError, match="superseded"):
+            await task
+        assert task.cancelled()
+
+        async with manager.modify_state(token) as state:
+            assert isinstance(state, RedisTestState)
+            assert state.count == 1
+            assert state.foo == "cancelled"
+            child = state.substates[SubState1.get_name()]
+            assert isinstance(child, SubState1)
+            assert child.child_value == "child update"
+            state.count += 1
+
+        # Closing flushes a cached lease; a fresh read must see persisted state.
+        await manager.close()
+        persisted = await manager.get_state(token)
+        assert isinstance(persisted, RedisTestState)
+        assert persisted.count == 2
+        assert persisted.foo == "cancelled"
+        persisted_child = persisted.substates[SubState1.get_name()]
+        assert isinstance(persisted_child, SubState1)
+        assert persisted_child.child_value == "child update"
+    finally:
+        task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await task
+
+
+async def test_repeated_cancellation_waits_for_state_save(
+    state_manager_redis: StateManagerRedis,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Keep the Redis lock until a repeatedly cancelled handler finishes saving.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    manager = state_manager_redis
+    manager._oplock_enabled = False
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=RedisTestState)
+    started = asyncio.Event()
+    saving = asyncio.Event()
+    release_save = asyncio.Event()
+    original_set_state = manager.set_state
+
+    async def save(*args, **kwargs):
+        """Pause the state write while the handler is cancelled again."""
+        saving.set()
+        await release_save.wait()
+        await original_set_state(*args, **kwargs)
+
+    monkeypatch.setattr(manager, "set_state", save)
+
+    async def modify():
+        """Mutate state and suspend until superseded."""
+        async with manager.modify_state(token) as state:
+            state.count = 1
+            started.set()
+            await asyncio.Event().wait()
+
+    task = asyncio.create_task(modify())
+    try:
+        await asyncio.wait_for(started.wait(), timeout=5)
+        task.cancel("superseded")
+        await asyncio.wait_for(saving.wait(), timeout=5)
+        for _ in range(2):
+            task.cancel("shutdown")
+            await asyncio.sleep(0)
+        assert not task.done()
+        assert await manager.redis.get(manager._lock_key(token)) is not None
+        release_save.set()
+        with pytest.raises(asyncio.CancelledError, match="superseded"):
+            await task
+        persisted = await manager.get_state(token)
+        assert isinstance(persisted, RedisTestState)
+        assert persisted.count == 1
+        assert await manager.redis.get(manager._lock_key(token)) is None
+    finally:
+        release_save.set()
+        task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await task
+
+
+async def test_modify_exception_persists_state(
+    state_manager_redis: StateManagerRedis,
+):
+    """Keep the writes of a handler that raises, like the other state managers.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+    """
+    manager = state_manager_redis
+    manager._oplock_enabled = False
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=RedisTestState)
+    with pytest.raises(RuntimeError, match="handler failed"):
+        async with manager.modify_state(token) as state:
+            state.count = 1
+            msg = "handler failed"
+            raise RuntimeError(msg)
+    persisted = await manager.get_state(token)
+    assert isinstance(persisted, RedisTestState)
+    assert persisted.count == 1
+
+
+async def test_modify_cancelled_does_not_save_after_lock_expiry(
+    state_manager_redis: StateManagerRedis,
+):
+    """Cancellation must not bypass the lock fence when saving state.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+    """
+    manager = state_manager_redis
+    manager._oplock_enabled = False
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=RedisTestState)
+    async with manager.modify_state(token) as state:
+        state.count = 1
+
+    with pytest.raises(LockExpiredError):
+        async with manager.modify_state(token) as state:
+            state.count = 2
+            await manager.redis.delete(manager._lock_key(token))
+            raise asyncio.CancelledError
+    persisted = await manager.get_state(token)
+    assert isinstance(persisted, RedisTestState)
+    assert persisted.count == 1
 
 
 async def test_get_state_discards_unpicklable_state(
@@ -1998,3 +2177,147 @@ async def test_mock_redis_eval_only_emulates_the_fenced_save_script():
     eval_script: Any = mock_redis().eval
     with pytest.raises(NotImplementedError):
         await eval_script("return 1", 0)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("env_mode", "hot_reload", "after_reload"),
+    [
+        (Env.DEV, True, ["a"]),
+        (Env.DEV, False, ["a", "b"]),
+        (Env.PREVIEW, True, ["a", "b"]),
+        (Env.PROD, False, ["a", "b"]),
+    ],
+)
+async def test_first_read_in_dev_recomputes_cached_vars(
+    monkeypatch: pytest.MonkeyPatch,
+    env_mode: Env,
+    hot_reload: bool,
+    after_reload: list[str],
+):
+    """Under the dev hot reloader, the first read of a state recomputes cached vars.
+
+    A new process, as after a hot reload, may have changed what the computed
+    vars return. Later reads, and all reads outside a dev hot reloader (preview,
+    prod, or a backend started without it), keep the cache.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+        env_mode: The mode the app runs in.
+        hot_reload: Whether the backend runs under the dev hot reloader.
+        after_reload: The cached var value expected after the reload.
+    """
+    monkeypatch.setenv("REFLEX_ENV_MODE", env_mode.value)
+    monkeypatch.setenv(
+        environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.name, str(hot_reload)
+    )
+    rows = ["a", "b"]
+
+    class RedisCachedState(BaseState):
+        count: int = 0
+
+        @computed_var(cache=True)
+        def data(self) -> list[str]:
+            """The rows, which a reload can change.
+
+            Returns:
+                A copy of the rows.
+            """
+            return list(rows)
+
+    class RedisCachedChild(RedisCachedState):
+        label: str = ""
+
+        @computed_var(cache=True)
+        def child_data(self) -> list[str]:
+            """The rows, cached on the substate.
+
+            Returns:
+                A copy of the rows.
+            """
+            return list(rows)
+
+    async def read(state_manager: StateManagerRedis, count: int) -> tuple:
+        """Touch the root and child states and read their cached vars.
+
+        Args:
+            state_manager: The StateManagerRedis to read from.
+            count: The new count to set.
+
+        Returns:
+            The old count and the cached var values.
+        """
+        async with state_manager.modify_state(token) as state:
+            assert isinstance(state, RedisCachedState)
+            child = await state.get_state(RedisCachedChild)
+            old_count, state.count, child.label = state.count, count, str(count)
+            return old_count, state.data, child.child_data
+
+    redis = mock_redis()
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=RedisCachedState)
+    state_manager = StateManagerRedis(redis=redis)
+    state_manager._oplock_enabled = False
+    assert await read(state_manager, 99) == (0, ["a", "b"], ["a", "b"])
+    await state_manager.close()
+    rows[:] = ["a"]
+
+    reloaded_state_manager = StateManagerRedis(redis=redis)
+    reloaded_state_manager._oplock_enabled = False
+    assert await read(reloaded_state_manager, 100) == (99, after_reload, after_reload)
+    rows[:] = ["x"]
+    assert await read(reloaded_state_manager, 101) == (100, after_reload, after_reload)
+    await reloaded_state_manager.close()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("first_read", ["untouched event", "get_state"])
+async def test_dev_unwritten_state_keeps_recomputing_cached_vars(
+    monkeypatch: pytest.MonkeyPatch, first_read: str
+):
+    """In dev mode, cached vars are recomputed until this process writes the state.
+
+    A first read after a hot reload that writes nothing back leaves the old
+    cached values in redis, so the next read must drop them as well.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+        first_read: How the reloaded process first reads the state.
+    """
+    monkeypatch.setenv("REFLEX_ENV_MODE", Env.DEV.value)
+    monkeypatch.setenv(environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.name, "true")
+    rows = ["a", "b"]
+
+    class UnwrittenCachedState(BaseState):
+        count: int = 0
+
+        @computed_var(cache=True)
+        def data(self) -> list[str]:
+            """The rows, which a reload can change.
+
+            Returns:
+                A copy of the rows.
+            """
+            return list(rows)
+
+    redis = mock_redis()
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=UnwrittenCachedState)
+    state_manager = StateManagerRedis(redis=redis)
+    state_manager._oplock_enabled = False
+    async with state_manager.modify_state(token) as state:
+        assert isinstance(state, UnwrittenCachedState)
+        state.count = 99
+        assert state.data == ["a", "b"]
+    await state_manager.close()
+    rows[:] = ["a"]
+
+    reloaded_state_manager = StateManagerRedis(redis=redis)
+    reloaded_state_manager._oplock_enabled = False
+    if first_read == "get_state":
+        await reloaded_state_manager.get_state(token)
+    else:
+        async with reloaded_state_manager.modify_state(token):
+            pass
+    async with reloaded_state_manager.modify_state(token) as state:
+        assert isinstance(state, UnwrittenCachedState)
+        assert (state.count, state.data) == (99, ["a"])
+    await reloaded_state_manager.close()

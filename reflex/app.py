@@ -478,6 +478,38 @@ def _is_location_specifier(specifier: str) -> bool:
     )
 
 
+_DEFAULT_PORTS = {"http": 80, "https": 443}
+
+
+def _cors_allowed_origins() -> list[str] | None:
+    """Resolve the origins the backend accepts cross-origin requests from.
+
+    An explicitly configured ``cors_allowed_origins`` is used as is. The
+    ``["*"]`` default stays open in dev mode, but in prod mode it narrows to
+    the origin of ``deploy_url`` so only the configured frontend can reach
+    the backend. Without a ``deploy_url`` the backend serves the frontend
+    itself, so CORS is left unconfigured and only same-origin requests pass.
+
+    Returns:
+        The allowed origins, where ``["*"]`` means any origin, or None to
+        leave CORS unconfigured.
+    """
+    config = get_config()
+    if "cors_allowed_origins" in config._non_default_attributes or not is_prod_mode():
+        return list(config.cors_allowed_origins)
+    if not config.deploy_url:
+        return None
+    # Match the browser's Origin serialization: lowercase host, no default port.
+    parts = urllib.parse.urlsplit(config.deploy_url)
+    host = parts.hostname or ""
+    if ":" in host:
+        host = f"[{host}]"
+    port = parts.port
+    if port is None or port == _DEFAULT_PORTS.get(parts.scheme):
+        return [f"{parts.scheme}://{host}"]
+    return [f"{parts.scheme}://{host}:{port}"]
+
+
 @dataclasses.dataclass()
 class App(MiddlewareMixin, LifespanMixin):
     """The main Reflex app that encapsulates the backend and frontend.
@@ -717,13 +749,7 @@ class App(MiddlewareMixin, LifespanMixin):
             self.sio = AsyncServer(
                 async_mode="asgi",
                 cors_allowed_origins=(
-                    (
-                        "*"
-                        if config.cors_allowed_origins == ("*",)
-                        else list(config.cors_allowed_origins)
-                    )
-                    if config.transport == "websocket"
-                    else []
+                    _cors_allowed_origins() if config.transport == "websocket" else []
                 ),
                 cors_credentials=config.transport == "websocket",
                 max_http_buffer_size=environment.REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE.get(),
@@ -862,7 +888,9 @@ class App(MiddlewareMixin, LifespanMixin):
             event_namespace._token_manager._reset_instance_id()
         # Create the event processor.
         self._event_processor = BaseStateEventProcessor(
-            middleware=self, backend_exception_handler=self.backend_exception_handler
+            middleware=self,
+            backend_exception_handler=self.backend_exception_handler,
+            event_loop_blocking_threshold=get_config().event_loop_blocking_threshold,
         )
         async with self._event_processor.configure(
             state_manager=self.state_manager,
@@ -966,10 +994,15 @@ class App(MiddlewareMixin, LifespanMixin):
             if asgi_app is not api:
                 lifespan_apps.append(asgi_app)
 
+        cors_options = App._cors_options()
         top_asgi_app = _RootMiddleware(
             # Covers the routes a callable transformer adds and the 500 responses
             # that the outermost Starlette app's error handler sends.
-            cors.CORSMiddleware(asgi_app, **App._cors_options()),
+            (
+                cors.CORSMiddleware(asgi_app, **cors_options)
+                if cors_options is not None
+                else asgi_app
+            ),
             reflex_app=self,
             lifespan=functools.partial(self._run_lifespan, api, lifespan_apps),
         )
@@ -1032,17 +1065,21 @@ class App(MiddlewareMixin, LifespanMixin):
             self.add_all_routes_endpoint()
 
     @staticmethod
-    def _cors_options() -> dict[str, Any]:
+    def _cors_options() -> dict[str, Any] | None:
         """Get the options of the CORS middleware.
 
         Returns:
-            The keyword arguments for ``CORSMiddleware``.
+            The keyword arguments for ``CORSMiddleware``, or None when CORS is
+            left unconfigured so only same-origin requests are served.
         """
+        allow_origins = _cors_allowed_origins()
+        if allow_origins is None:
+            return None
         return {
             "allow_credentials": True,
             "allow_methods": ["*"],
             "allow_headers": ["*"],
-            "allow_origins": get_config().cors_allowed_origins,
+            "allow_origins": allow_origins,
         }
 
     @staticmethod
@@ -1052,7 +1089,10 @@ class App(MiddlewareMixin, LifespanMixin):
         Args:
             api: The Starlette app to add CORS middleware to.
         """
-        api.add_middleware(cors.CORSMiddleware, **App._cors_options())
+        options = App._cors_options()
+        if options is None:
+            return
+        api.add_middleware(cors.CORSMiddleware, **options)
 
     @property
     def state_manager(self) -> StateManager:
@@ -2007,7 +2047,7 @@ class App(MiddlewareMixin, LifespanMixin):
             try:
                 forked_context = EventContext.get().fork(token=token.ident)
             except LookupError:
-                pass
+                forked_context = None
             else:
                 reset_token = EventContext.set(forked_context)
                 rebind.callback(EventContext.reset, reset_token)
@@ -2016,7 +2056,16 @@ class App(MiddlewareMixin, LifespanMixin):
                 token, previous_dirty_vars=previous_dirty_vars, **context
             ) as state:
                 # No other event handler can modify the state while in this context.
-                yield state
+                if forked_context is None:
+                    yield state
+                else:
+                    # An awaited handler runs inline on the locked tree. A plain
+                    # try/finally: this is also the shared-state fan-out path.
+                    forked_context.set_locked_root(state._get_root_state())
+                    try:
+                        yield state
+                    finally:
+                        await forked_context.release_lock()
                 delta = await state._get_resolved_delta()
                 state._clean()
                 if delta:
