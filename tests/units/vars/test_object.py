@@ -489,20 +489,29 @@ def test_plain_property_with_registered_serializer() -> None:
         def double(self) -> int:
             return self.x * 2
 
-    @rx.serializer
-    def serialize_item(value: Item) -> dict:
-        return {"name": value.name, "label": value.label}
+    from reflex_base.utils import serializers
 
-    @rx.serializer
-    def serialize_point(value: Point) -> dict:
-        return {"x": value.x, "double": value.double}
+    try:
+        @rx.serializer
+        def serialize_item(value: Item) -> dict:
+            return {"name": value.name, "label": value.label}
 
-    class SerializedState(rx.State):
-        item: rx.Field[Item] = rx.field(Item())
-        point: rx.Field[Point] = rx.field(Point())
+        @rx.serializer
+        def serialize_point(value: Point) -> dict:
+            return {"x": value.x, "double": value.double}
 
-    assert SerializedState.item.label._var_type is str
-    assert SerializedState.point.double._var_type is int
+        class SerializedState(rx.State):
+            item: rx.Field[Item] = rx.field(Item())
+            point: rx.Field[Point] = rx.field(Point())
+
+        assert SerializedState.item.label._var_type is str
+        assert SerializedState.point.double._var_type is int
+    finally:
+        for type_ in (Item, Point):
+            serializers.SERIALIZERS.pop(type_, None)
+            serializers.SERIALIZER_TYPES.pop(type_, None)
+        serializers.get_serializer.cache_clear()
+        serializers.get_serializer_type.cache_clear()
 
 
 def test_plain_property_on_union_of_pydantic_models_raises() -> None:
