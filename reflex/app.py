@@ -84,7 +84,6 @@ from typing_extensions import Unpack
 
 from reflex._upload import UploadedFilesHeadersMiddleware, upload
 from reflex._upload import UploadFile as UploadFile
-from reflex.admin import AdminDash
 from reflex.app_mixins import AppMixin, LifespanMixin, MiddlewareMixin
 from reflex.compiler import compiler
 from reflex.compiler.compiler import readable_name_from_component
@@ -558,7 +557,7 @@ class App(MiddlewareMixin, LifespanMixin):
         html_lang: The language to add to the html root tag of every page.
         html_custom_attrs: Attributes to add to the html root tag of every page.
         enable_state: Whether to enable [state](https://reflex.dev/docs/state/overview/) for the app. If False, the app will not use state.
-        admin_dash: Admin dashboard to view and manage the database.
+        admin_dash: Removed. Passing anything but None raises with a link to the migration guide.
         frontend_exception_handler: Frontend [error handler](https://reflex.dev/docs/utility-methods/exception-handlers/) function.
         backend_exception_handler: Backend [error handler](https://reflex.dev/docs/utility-methods/exception-handlers/) function.
         toaster: Put the [toast](https://reflex.dev/docs/library/overlay/toast/) provider in the app wrap.
@@ -638,7 +637,8 @@ class App(MiddlewareMixin, LifespanMixin):
         default_factory=dict
     )
 
-    admin_dash: AdminDash | None = None
+    # Removed integration; kept so upgraded apps get a pointer to the migration guide.
+    admin_dash: None = None
 
     # The async server name space.
     _event_namespace: EventNamespace | None = None
@@ -695,10 +695,14 @@ class App(MiddlewareMixin, LifespanMixin):
         """Initialize the app.
 
         Raises:
+            AdminDashRemovedError: If admin_dash is set.
             ValueError: If the event namespace is not provided in the config.
                         Also, if there are multiple client subclasses of rx.BaseState(Subclasses of rx.BaseState should consist
                         of the DefaultState and the client app state).
         """
+        if self.admin_dash is not None:
+            raise exceptions.AdminDashRemovedError
+
         # Special case to allow test cases have multiple subclasses of rx.BaseState.
         if not is_testing_env() and BaseState.__subclasses__() != [State]:
             # Only rx.State is allowed as Base State subclass.
@@ -725,9 +729,6 @@ class App(MiddlewareMixin, LifespanMixin):
 
         if self.enable_state:
             self._enable_state()
-
-        # Set up the admin dash.
-        self._setup_admin_dash()
 
         if sys.platform == "win32" and not is_prod_mode():
             # Hack to fix Windows hot reload issue.
@@ -1662,40 +1663,6 @@ class App(MiddlewareMixin, LifespanMixin):
                 # /posts/all is a legal static sibling of /posts/[id].
                 break
         return None
-
-    def _setup_admin_dash(self):
-        """Setup the admin dash."""
-        admin_dash = self.admin_dash
-        if not admin_dash or not admin_dash.models:
-            return
-
-        try:
-            from starlette_admin.contrib.sqla.admin import Admin
-            from starlette_admin.contrib.sqla.view import ModelView
-
-            from reflex.model import get_engine
-        except ImportError:
-            return
-
-        # Get the admin dash.
-        if not self._api:
-            return
-
-        # Build the admin dashboard
-        # The first positional argument is `engine` before starlette-admin
-        # 1.0 and `session_provider` (which still accepts an Engine) after,
-        # so pass it positionally to support both.
-        admin = admin_dash.admin or Admin(
-            get_engine(),
-            title="Reflex Admin Dashboard",
-            logo_url="https://reflex.dev/Reflex.svg",
-        )
-
-        for model in admin_dash.models:
-            view = admin_dash.view_overrides.get(model, ModelView)
-            admin.add_view(view(model))
-
-        admin.mount_to(self._api)
 
     def _get_frontend_packages(
         self,
