@@ -32,6 +32,7 @@ from typing import (  # noqa: UP035
     _eval_type,  # pyright: ignore [reportAttributeAccessIssue]
     _GenericAlias,  # pyright: ignore [reportAttributeAccessIssue]
     _SpecialGenericAlias,  # pyright: ignore [reportAttributeAccessIssue]
+    cast,
     get_args,
     is_typeddict,
 )
@@ -84,6 +85,8 @@ PrimitiveTypes = (int, float, bool, str, list, dict, set, tuple)
 StateVarTypes = (*PrimitiveTypes, type(None))
 
 if TYPE_CHECKING:
+    from pydantic import BaseModel
+
     from reflex_base.vars.base import Var
 
 VAR1 = TypeVar("VAR1", bound="Var")
@@ -973,75 +976,48 @@ def get_attribute_descriptor(cls: GenericType, name: str) -> Any:
 
 
 def is_unserialized_property(
-    cls: GenericType,
-    name: str,
-    descriptor: Any = _NO_DESCRIPTOR,
+    cls: GenericType, name: str, descriptor: Any = _NO_DESCRIPTOR
 ) -> bool:
-    """Check whether a property is omitted by the default object serializer.
+    """Check whether ``name`` is a property that the default serializer of ``cls`` omits.
+
+    Dataclasses serialize their fields only. Pydantic models serialize with the stock
+    ``model_dump()``, which adds ``computed_field`` properties only. A registered
+    serializer, a ``model_serializer`` or an overridden ``model_dump`` may include the
+    property, so it is not flagged. A union is flagged if any member omits it.
 
     Args:
-        cls: The type being inspected.
+        cls: The type to check.
         name: The attribute name.
-        descriptor: A previously resolved descriptor, if available.
+        descriptor: The attribute of ``name`` on ``cls``, if already resolved; ``cls``
+            must then be a class.
 
     Returns:
-        Whether the property is omitted by the default serializer.
+        Whether the frontend never receives the value of the property.
     """
-    if is_union(cls):
-        return any(
-            is_unserialized_property(arg, name)
-            for arg in get_args(cls)
-            if arg is not type(None)
-        )
-
-    cls = get_origin(cls) or cls
-    if not isinstance(cls, type):
-        return False
-
-    attr = (
-        get_attribute_descriptor(cls, name)
-        if descriptor is _NO_DESCRIPTOR
-        else descriptor
-    )
-
-    if not isinstance(attr, property):
+    if descriptor is _NO_DESCRIPTOR:
+        if is_union(cls):
+            return any(is_unserialized_property(arg, name) for arg in get_args(cls))
+        cls = get_origin(cls) or cls
+        if not isinstance(cls, type):
+            return False
+        descriptor = get_attribute_descriptor(cls, name)
+    if not isinstance(descriptor, property):
         return False
 
     from reflex_base.utils import serializers
 
     serializer = serializers.get_serializer(cls)
-
     if dataclasses.is_dataclass(cls):
-        if serializer is not None:
-            return False
-
-        return name not in {field.name for field in dataclasses.fields(cls)}
-
-    model_fields = getattr(cls, "model_fields", None)
-    if not isinstance(model_fields, dict):
-        model_fields = getattr(cls, "__fields__", None)
-
-        if not isinstance(model_fields, dict):
-            return False
-
-    pydantic_decorators = getattr(cls, "__pydantic_decorators__", None)
-    if getattr(pydantic_decorators, "model_serializers", None):
+        return serializer is None
+    decorators = getattr(cls, "__pydantic_decorators__", None)
+    if decorators is None or decorators.model_serializers:
         return False
-
-    default_serializers = tuple(
-        default
-        for default in (
-            getattr(serializers, "serialize_base_model", None),
-            serializers.serialize_sqlmodel,
-        )
-        if default is not None
+    model = cast("type[BaseModel]", cls)
+    return (
+        serializer in (serializers.serialize_base_model, serializers.serialize_sqlmodel)
+        and model.model_dump.__module__ in ("pydantic.main", "sqlmodel.main")
+        and name not in model.model_computed_fields
     )
-    if serializer not in default_serializers:
-        return False
-
-    computed_fields = getattr(cls, "model_computed_fields", {}) or {}
-
-    return name not in model_fields and name not in computed_fields
 
 
 def get_attribute_access_type(

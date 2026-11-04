@@ -72,6 +72,33 @@ def _determine_value_type(var_type: GenericType):
     return Any
 
 
+def _unserialized_property_error(var_type: GenericType, name: str) -> VarAttributeError:
+    """Build the error for a property that is never sent to the frontend.
+
+    Args:
+        var_type: The object var type that declares the property.
+        name: The property name.
+
+    Returns:
+        The error to raise.
+    """
+    if types.is_union(var_type):
+        detail = f"union type '{var_type}' may not be included in serialized state."
+    elif isinstance(var_type, type) and dataclasses.is_dataclass(var_type):
+        detail = (
+            f"dataclass '{var_type.__name__}' is not included in serialized state. "
+            "Only declared dataclass fields are serialized; register an "
+            "`rx.serializer` for the dataclass to include it."
+        )
+    else:
+        detail = (
+            f"Pydantic model '{var_type.__name__}' is not included in serialized "
+            "state. Use `@pydantic.computed_field` to include the computed value in "
+            "model_dump()."
+        )
+    return VarAttributeError(f"The property '{name}' on {detail}")
+
+
 PYTHON_TYPES = (Mapping,)
 if find_spec("pydantic"):
     import pydantic
@@ -329,75 +356,30 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=PYTHON_TYPES):
         var_type = types.value_inside_optional(var_type)
 
         fixed_type = get_origin(var_type) or var_type
-        descriptor = None
-        is_union_type = types.is_union(var_type)
 
-        if (isinstance(fixed_type, type) or is_union_type) and not safe_issubclass(
-            fixed_type, Mapping
+        if fixed_type in types.UnionTypes and types.is_unserialized_property(
+            var_type, name
         ):
-            if not is_union_type:
-                # Resolve the raw descriptor once and reuse it. A HybridProperty resolves to a
-                # frontend Var with this object var substituted as `self` (e.g. `State.info.a_b`);
-                # any other descriptor is passed to `get_attribute_access_type` so the class
-                # lookup is not repeated.
-                descriptor = types.get_attribute_descriptor(fixed_type, name)
-                if isinstance(descriptor, HybridProperty):
-                    hybrid_var = descriptor._get_var(self)
-                    if hybrid_var is None:
-                        msg = (
-                            f"The hybrid property '{name}' of {fixed_type.__name__} has no "
-                            f"frontend value, so it cannot be accessed on `{self!s}`."
-                        )
-                        raise VarAttributeError(msg)
-                    return hybrid_var
-
-            if types.is_unserialized_property(var_type, name):
-                property_types = get_args(var_type) if is_union_type else (fixed_type,)
-
-                property_type = next(
-                    (
-                        t
-                        for t in property_types
-                        if isinstance(t, type)
-                        and isinstance(
-                            types.get_attribute_descriptor(t, name), property
-                        )
-                        and types.is_unserialized_property(t, name)
-                    ),
-                    fixed_type,
-                )
-
-                if is_union_type:
-                    msg = (
-                        f"The property '{name}' on union type "
-                        f"'{var_type}' may not be included in serialized state."
-                    )
-                elif isinstance(property_type, type) and dataclasses.is_dataclass(
-                    property_type
-                ):
-                    msg = (
-                        f"The property '{name}' on dataclass "
-                        f"'{property_type.__name__}' is not included in "
-                        "serialized state. Only declared dataclass fields "
-                        "are serialized."
-                    )
-                elif isinstance(property_type, type):
-                    msg = (
-                        f"The property '{name}' on Pydantic model "
-                        f"'{property_type.__name__}' is not included in "
-                        "serialized state. Use "
-                        "`@pydantic.computed_field` to include the "
-                        "computed value in model_dump()."
-                    )
-                else:
-                    msg = (
-                        f"The property '{name}' on type '{var_type}' "
-                        "may not be included in serialized state."
-                    )
-
-                raise VarAttributeError(msg)
-
+            raise _unserialized_property_error(var_type, name)
         if isinstance(fixed_type, type) and not safe_issubclass(fixed_type, Mapping):
+            # Resolve the raw descriptor once and reuse it. A HybridProperty resolves to a
+            # frontend Var with this object var substituted as `self` (e.g. `State.info.a_b`);
+            # any other descriptor is passed to `get_attribute_access_type` so the class
+            # lookup is not repeated.
+            descriptor = types.get_attribute_descriptor(fixed_type, name)
+            if isinstance(descriptor, HybridProperty):
+                hybrid_var = descriptor._get_var(self)
+                if hybrid_var is None:
+                    msg = (
+                        f"The hybrid property '{name}' of {fixed_type.__name__} has no "
+                        f"frontend value, so it cannot be accessed on `{self!s}`."
+                    )
+                    raise VarAttributeError(msg)
+                return hybrid_var
+            if isinstance(descriptor, property) and types.is_unserialized_property(
+                fixed_type, name, descriptor
+            ):
+                raise _unserialized_property_error(fixed_type, name)
             attribute_type = get_attribute_access_type(var_type, name, descriptor)
         elif is_typeddict(fixed_type) or fixed_type in types.UnionTypes:
             attribute_type = get_attribute_access_type(var_type, name)
@@ -406,8 +388,8 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=PYTHON_TYPES):
 
         if attribute_type is None:
             msg = (
-                f"The State var `{self!s}` of type {self._var_type} has no attribute "
-                f"'{name}' or may have been annotated wrongly."
+                f"The State var `{self!s}` of type {self._var_type} has no attribute '{name}' or may have been annotated "
+                f"wrongly."
             )
             raise VarAttributeError(msg)
         return ObjectItemOperation.create(self, name, attribute_type).guess_type()

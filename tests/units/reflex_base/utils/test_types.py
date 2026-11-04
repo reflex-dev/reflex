@@ -34,6 +34,7 @@ from reflex_base.utils.types import (
     get_required_typed_dict_keys,
     get_typed_dict_field_types,
     is_non_string_sequence,
+    is_unserialized_property,
     resolve_type_alias,
     typehint_issubclass,
 )
@@ -99,6 +100,25 @@ def test_pydantic_property_type_without_deprecation(base_model):
     with warnings.catch_warnings():
         warnings.simplefilter("error", DeprecationWarning)
         assert get_attribute_access_type(Item, "label") is str
+
+
+def test_unserialized_property_checks_union_members():
+    """The property guard detects an unserialized property in either union member."""
+    base_model = pytest.importorskip("pydantic").BaseModel
+
+    class ItemA(base_model):
+        @property
+        def label(self) -> str:
+            return "a"
+
+    class ItemB(base_model):
+        @property
+        def label(self) -> str:
+            return "b"
+
+    assert is_unserialized_property(ItemA, "label")
+    assert is_unserialized_property(ItemB, "label")
+    assert is_unserialized_property(ItemA | ItemB, "label")
 
 
 @pytest.mark.parametrize("getter", [get_field_type, get_attribute_access_type])

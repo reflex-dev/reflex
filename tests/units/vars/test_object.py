@@ -452,6 +452,59 @@ def test_plain_property_on_pydantic_model_with_custom_serializer() -> None:
     assert ItemState.item.label._var_type is str
 
 
+def test_plain_property_on_pydantic_model_with_model_dump_override() -> None:
+    """Plain properties remain accessible when an overridden model_dump includes them."""
+
+    class Item(pydantic.BaseModel):
+        name: str = "solo"
+
+        @property
+        def label(self) -> str:
+            return f"{self.name}!"
+
+        def model_dump(self, **kwargs) -> dict[str, Any]:
+            return {**super().model_dump(**kwargs), "label": self.label}
+
+    class ItemState(rx.State):
+        item: rx.Field[Item] = rx.field(Item())
+
+    assert ItemState.item.label._var_type is str
+
+
+def test_plain_property_with_registered_serializer() -> None:
+    """Plain properties remain accessible when a registered serializer includes them."""
+
+    class Item(pydantic.BaseModel):
+        name: str = "solo"
+
+        @property
+        def label(self) -> str:
+            return f"{self.name}!"
+
+    @dataclasses.dataclass
+    class Point:
+        x: int = 1
+
+        @property
+        def double(self) -> int:
+            return self.x * 2
+
+    @rx.serializer
+    def serialize_item(value: Item) -> dict:
+        return {"name": value.name, "label": value.label}
+
+    @rx.serializer
+    def serialize_point(value: Point) -> dict:
+        return {"x": value.x, "double": value.double}
+
+    class SerializedState(rx.State):
+        item: rx.Field[Item] = rx.field(Item())
+        point: rx.Field[Point] = rx.field(Point())
+
+    assert SerializedState.item.label._var_type is str
+    assert SerializedState.point.double._var_type is int
+
+
 def test_plain_property_on_union_of_pydantic_models_raises() -> None:
     """Plain properties are rejected when either union branch omits them."""
 
@@ -474,26 +527,6 @@ def test_plain_property_on_union_of_pydantic_models_raises() -> None:
 
     with pytest.raises(VarAttributeError, match="union type"):
         _ = UnionState.item.label
-
-
-def test_unserialized_property_checks_union_branches() -> None:
-    """The property guard detects an unserialized property in either branch."""
-
-    from reflex_base.utils import types
-
-    class ItemA(pydantic.BaseModel):
-        @property
-        def label(self) -> str:
-            return "a"
-
-    class ItemB(pydantic.BaseModel):
-        @property
-        def label(self) -> str:
-            return "b"
-
-    assert types.is_unserialized_property(ItemA, "label")
-    assert types.is_unserialized_property(ItemB, "label")
-    assert types.is_unserialized_property(ItemA | ItemB, "label")
 
 
 def test_plain_property_on_typing_union_raises() -> None:
