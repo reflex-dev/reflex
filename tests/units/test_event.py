@@ -28,6 +28,7 @@ from reflex_base.event import (
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils import format, log
 from reflex_base.utils.exceptions import (
+    BackendVarFormatError,
     EventHandlerArgTypeMismatchError,
     EventHandlerTypeError,
     EventHandlerValueError,
@@ -294,31 +295,53 @@ class BackendTriggerState(BaseState):
 
 
 @pytest.mark.parametrize(
-    ("value", "match"),
+    "value",
     [
-        (BackendTriggerState._secret, r"Invalid event chain: Field\(default=42"),
-        ([BackendTriggerState._secret], r"Invalid event: Field\(default=42"),
-        (lambda: BackendTriggerState._secret, r"-> Field\(default=42"),
+        BackendTriggerState._secret,
+        [BackendTriggerState._secret],
+        lambda: BackendTriggerState._secret,
     ],
+    ids=["chain", "list", "lambda"],
 )
-def test_backend_var_event_trigger_reports_repr(value: Any, match: str):
-    """Binding a backend var as an event trigger reports its repr, not a format error.
+def test_backend_var_event_trigger_raises_format_error(value: Any):
+    """Binding a backend var as an event trigger raises the backend var format error.
 
     Args:
         value: The misused event trigger value.
-        match: The expected error message pattern.
     """
-    with pytest.raises(ValueError, match=match):
+    with pytest.raises(
+        BackendVarFormatError,
+        match=r"Backend var 'BackendTriggerState\._secret' exists only",
+    ):
         EventChain.create(value=value, args_spec=lambda: ())
 
 
-def test_backend_var_upload_progress_reports_repr():
-    """A backend var passed as on_upload_progress reports its repr."""
+@pytest.mark.parametrize(
+    "action", [rx.toast, rx.console_log], ids=["toast", "console_log"]
+)
+def test_backend_var_event_action_raises_format_error(action: Callable[[Any], Any]):
+    """A backend var passed to an event action raises the backend var format error.
+
+    Args:
+        action: The event action given the backend var.
+    """
+    with pytest.raises(
+        BackendVarFormatError,
+        match=r"Backend var 'BackendTriggerState\._secret' exists only",
+    ):
+        str(Var.create(action(BackendTriggerState._secret)))
+
+
+def test_backend_var_upload_progress_raises_format_error():
+    """A backend var passed as on_upload_progress raises the backend var format error."""
     upload = rx.upload_files(
         upload_id="u",
         on_upload_progress=BackendTriggerState._secret,  # pyright: ignore[reportArgumentType]
     )
-    with pytest.raises(ValueError, match=r"^Field\(default=42.* is not a valid"):
+    with pytest.raises(
+        BackendVarFormatError,
+        match=r"Backend var 'BackendTriggerState\._secret' exists only",
+    ):
         upload.as_event_spec(handler=cast(EventHandler, BackendTriggerState.on_upload))
 
 
