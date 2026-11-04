@@ -77,7 +77,7 @@ class VarTypeError(ReflexError, TypeError):
 
 
 class BackendVarFormatError(VarTypeError):
-    """Raised when a field with no frontend var, such as a backend var, is formatted as a string."""
+    """Raised when a field with no frontend var, such as a backend var, is used where a frontend var is needed."""
 
 
 class VarValueError(ReflexError, ValueError):

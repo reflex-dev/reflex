@@ -1799,6 +1799,21 @@ class ToOperation:
         )
 
 
+def _unsupported_literal_error(value: Any) -> TypeError:
+    """Build the error for a value that no LiteralVar supports.
+
+    Args:
+        value: The unsupported value.
+
+    Returns:
+        The backend var error for a field with no frontend var, else a TypeError.
+    """
+    if isinstance(value, Field):
+        return value._no_frontend_var_error()
+    msg = f"Unsupported type {type(value)} for LiteralVar. Tried to create a LiteralVar from {value!r}."
+    return TypeError(msg)
+
+
 class LiteralVar(Var[VAR_TYPE]):
     """Base class for immutable literal vars."""
 
@@ -1929,11 +1944,7 @@ class LiteralVar(Var[VAR_TYPE]):
         if isinstance(value, range):
             return ArrayVar.range(value.start, value.stop, value.step)
 
-        if isinstance(value, Field):
-            raise value._no_frontend_var_error()
-
-        msg = f"Unsupported type {type(value)} for LiteralVar. Tried to create a LiteralVar from {value!r}."
-        raise TypeError(msg)
+        raise _unsupported_literal_error(value)
 
     if not TYPE_CHECKING:
         create = _create_literal_var
@@ -2012,11 +2023,7 @@ class LiteralVar(Var[VAR_TYPE]):
         if isinstance(value, range):
             return None
 
-        if isinstance(value, Field):
-            raise value._no_frontend_var_error()
-
-        msg = f"Unsupported type {type(value)} for LiteralVar. Tried to create a LiteralVar from {value!r}."
-        raise TypeError(msg)
+        raise _unsupported_literal_error(value)
 
     @property
     def _var_value(self) -> Any:
