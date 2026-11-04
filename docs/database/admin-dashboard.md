@@ -15,11 +15,11 @@ on the Reflex backend; this page shows how.
 ## Install starlette-admin
 
 ```bash
-pip install starlette-admin
+pip install "reflex[db]" starlette-admin
 ```
 
-starlette-admin is a separate project and is not installed with `reflex` or
-`reflex[db]`.
+The `db` extra provides `rx.Model` and `get_engine()`. starlette-admin is a
+separate project and is not installed with either.
 
 ## Mount the dashboard with `api_transformer`
 
