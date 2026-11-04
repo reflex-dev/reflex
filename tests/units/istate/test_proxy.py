@@ -1502,3 +1502,21 @@ async def test_immutable_mutable_proxy_async_context_dict_view_paths(
     ) as state:
         assert isinstance(state, NestedMutableProxyState)
         assert state.data == {"a": {"x": 10}, "b": {"y": 20}}
+
+
+@pytest.mark.asyncio
+async def test_proxy_context_sets_and_clears_locked_root(
+    attached_mock_event_context: EventContext,
+):
+    """``async with self`` marks the context's locked root for its duration.
+
+    Args:
+        attached_mock_event_context: The attached event context fixture.
+    """
+    state_proxy = StateProxy(ProxyTestState())
+    assert attached_mock_event_context.locked_root is None
+    async with state_proxy as mutable:
+        locked_root = attached_mock_event_context.locked_root
+        assert locked_root is not None
+        assert locked_root is mutable.__wrapped__._get_root_state()  # pyright: ignore[reportAttributeAccessIssue]
+    assert attached_mock_event_context.locked_root is None

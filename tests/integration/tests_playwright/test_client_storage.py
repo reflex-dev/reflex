@@ -447,6 +447,8 @@ def test_client_side_state(client_side: AppHarness, opened_page: Page):
 
     page.context.clear_cookies()
     page.evaluate("localStorage.clear()")
+    expect(other_tab.locator("#l5")).to_have_text("")
+    expect(other_tab.locator("#l6")).to_have_text("")
     page.reload()
     _wait_for_token(page)
     _expect_displayed_values(
