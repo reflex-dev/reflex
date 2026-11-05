@@ -24,7 +24,15 @@ export const pySetKey = (x) => {
  * @param {*} x The element to look for.
  * @returns {boolean} Whether the set contains the element.
  */
-export const pySetHas = (arr, x) => new Set(arr.map(pySetKey)).has(pySetKey(x));
+export const pySetHas = (arr, x) => {
+  const key = pySetKey(x);
+  // SameValueZero, as Set.has uses: NaN matches NaN, without copying arr.
+  const isNaNKey = key !== key;
+  return arr.some((y) => {
+    const other = pySetKey(y);
+    return other === key || (isNaNKey && other !== other);
+  });
+};
 
 /**
  * The elements of either set, keeping the order of a then b.
