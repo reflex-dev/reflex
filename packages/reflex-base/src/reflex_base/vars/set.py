@@ -13,6 +13,7 @@ import dataclasses
 from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Any, TypeVar, overload
 
+from reflex_base.constants.base import Dirs
 from reflex_base.utils import console, types
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import GenericType, get_origin, unionize
@@ -47,7 +48,7 @@ SET_ELEMENT = TypeVar("SET_ELEMENT")
 _OTHER_SET_TYPES = (set, frozenset, list, tuple)
 
 # The pySet* helpers that give the serialized array its set semantics.
-_SET_HELPERS_PATH = "$/utils/helpers/set.js"
+_SET_HELPERS_PATH = f"$/{Dirs.UTILS}/helpers/set.js"
 
 _ARRAY_OPERATION_REASON = (
     "A set is not a sequence; call .to_array() first to use array operations."
