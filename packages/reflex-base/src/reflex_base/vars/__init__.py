@@ -1,6 +1,6 @@
 """Immutable-Based Var System."""
 
-from . import base, color, datetime, function, number, object, sequence
+from . import base, color, datetime, function, number, object, sequence, set
 from .base import (
     EMPTY_VAR_INT,
     EMPTY_VAR_STR,
@@ -29,6 +29,7 @@ from .sequence import (
     LiteralStringVar,
     StringVar,
 )
+from .set import LiteralSetVar, SetVar
 from .special import use_hook_var, use_id
 
 __all__ = [
@@ -49,11 +50,13 @@ __all__ = [
     "LiteralColorVar",
     "LiteralNumberVar",
     "LiteralObjectVar",
+    "LiteralSetVar",
     "LiteralStringVar",
     "LiteralVar",
     "NumberVar",
     "ObjectVar",
     "RestProp",
+    "SetVar",
     "StringVar",
     "Var",
     "VarData",
@@ -69,6 +72,7 @@ __all__ = [
     "number",
     "object",
     "sequence",
+    "set",
     "use_hook_var",
     "use_id",
     "var_operation",
