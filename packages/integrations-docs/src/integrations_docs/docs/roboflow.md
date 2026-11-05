@@ -23,16 +23,18 @@ Video and streaming inputs are not yet supported.
 ## Step 1: Obtain a Roboflow API Key
 
 1. Go to your [Roboflow API settings](https://app.roboflow.com/settings/api).
-2. Under **API Keys**, copy your **Private API Key**.
+2. Under **API Keys**, copy your **Private API Key**. The **Workspace ID** on the same page is your `WORKSPACE_NAME`.
+
+![The Roboflow API Keys page](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/roboflow_api_keys.webp)
 
 > 💡 Don't use the **Publishable Key** (`rf_...`). It can only run inference from browser code and won't work here.
 
 
 ## Step 2: Set up your Model in Roboflow
 
-1. Go to Workflows and create a new workflow.
+1. Go to **Workflows** and click **Create a Workflow**.
 2. Set up the workflow you want to use in your app, ensuring that it takes an image as input.
-3. In the Workflow editor, click **Use Workflow** and choose the hosted **API** option.
+3. Save and publish the workflow, then click **Use** at the top of the workflow editor and choose the hosted **API** option.
 4. Copy the `workspace_name` and `workflow_id` from the provided code snippet.
 
 ![Roboflow](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/roboflow.webp)
