@@ -18,11 +18,11 @@ from reflex.testing import AppHarness, AppHarnessProd
 
 def MemoApp():
     """App exercising ``rx.memo`` with ``EventHandler`` props and recursion."""
+    import json
     from collections.abc import Sequence
     from typing import TypedDict
 
     import reflex as rx
-    from reflex.experimental.client_state import ClientStateVar
 
     class TreeNode(TypedDict):
         name: str
@@ -179,24 +179,27 @@ def MemoApp():
             id="derived-count",
         )
 
-    def client_counter(name: str, increment: str) -> rx.Component:
+    def client_counter(button_id: str, increment: str) -> rx.Component:
         """Create a counter that reads client state in its click callback.
 
         Args:
-            name: Client-state binding and button ID.
-            increment: JavaScript expression computing the next counter value.
+            button_id: The button ID.
+            increment: JavaScript computing the next counter value. ``{value}``
+                is the identifier the var binds its value to, and ``{source}``
+                is that identifier as a string literal for ``eval``.
 
         Returns:
             A button exposing its counter value as a data attribute.
         """
-        counter = ClientStateVar.create(name, default=0, global_ref=False)
+        counter = rx.client_state(0)
+        value = str(counter.value)
         return rx.button(
             "Increment client counter",
-            id=name,
+            id=button_id,
             custom_attrs={"data-count": counter.value},
-            on_click=counter.set_value(
+            on_click=counter.set(
                 rx.Var(
-                    increment,
+                    increment.format(value=value, source=json.dumps(value)),
                     _var_type=int,
                     _var_data=counter.value._get_all_var_data(),
                 )
@@ -211,11 +214,9 @@ def MemoApp():
                 id="token",
             ),
             rx.text(MemoState.last_value, id="memo-last-value"),
-            client_counter("Δcounter", "Δcounter + 1"),
-            client_counter("eval_counter", "eval('eval_counter') + 1"),
-            client_counter(
-                "nested_eval_counter", "(() => eval('nested_eval_counter'))() + 1"
-            ),
+            client_counter("counter", "{value} + 1"),
+            client_counter("eval_counter", "eval({source}) + 1"),
+            client_counter("nested_eval_counter", "(() => eval({source}))() + 1"),
             my_memoed_component(
                 some_value="memod_some_value", event=MemoState.set_last_value
             ),
@@ -530,17 +531,19 @@ def test_react_compiler_transforms_generated_components(
     assert ("compiler-runtime" in response.text()) is react_compiler
 
 
-@pytest.mark.parametrize("name", ["Δcounter", "eval_counter", "nested_eval_counter"])
-def test_memo_client_counter(memo_app: AppHarness, page: Page, name: str) -> None:
-    """Unicode and dynamic client-state reads must not leave callbacks stale.
+@pytest.mark.parametrize(
+    "button_id", ["counter", "eval_counter", "nested_eval_counter"]
+)
+def test_memo_client_counter(memo_app: AppHarness, page: Page, button_id: str) -> None:
+    """Direct and eval'd client-state reads must not leave callbacks stale.
 
     Args:
         memo_app: Running app harness.
         page: Playwright page.
-        name: Counter binding and button ID.
+        button_id: The counter button ID.
     """
     _load_page(page, memo_app)
-    counter = page.locator(f"#{name}")
+    counter = page.locator(f"#{button_id}")
     for value in range(1, 4):
         counter.click()
         expect(counter).to_have_attribute("data-count", str(value))
