@@ -7,6 +7,8 @@ import pytest
 from playwright.sync_api import Page, expect
 
 from reflex.testing import AppHarness
+from reflex.utils.prerequisites import get_redis_sync
+from reflex.utils.token_manager import RedisTokenManager
 
 pytest.importorskip("fastapi")
 
@@ -309,6 +311,20 @@ def test_lifespan(lifespan_app: AppHarness, page: Page):
     page.locator("#toggle-tick").click()  # avoid teardown errors
     assert lifespan_app.app_module.lifespan_task_global > original_task_global_value
     assert int(task_global.inner_text()) > original_task_global_value
+
+    # Disconnect the page and wait until the server has dropped its token. A
+    # disconnect still running at shutdown deletes the token from redis after
+    # the event loop stops, which logs an error.
+    token = page.evaluate("() => sessionStorage.getItem('token')")
+    token_manager = lifespan_app.token_manager()
+    page.close()
+    assert lifespan_app._poll_for(lambda: token not in token_manager.token_to_sid)
+    if isinstance(token_manager, RedisTokenManager):
+        redis = get_redis_sync()
+        assert redis is not None
+        redis_key = token_manager._get_redis_key(token)
+        assert lifespan_app._poll_for(lambda: not redis.exists(redis_key))
+        redis.close()
 
     # Kill the backend
     assert lifespan_app.backend is not None
