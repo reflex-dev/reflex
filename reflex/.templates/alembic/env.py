@@ -21,7 +21,7 @@ from reflex_base.config import get_config
 from reflex_base.environment import environment
 
 from reflex.model import ModelRegistry, get_engine
-from reflex.utils.prerequisites import get_app, get_compiled_app
+from reflex.utils.migrations import load_app
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -41,18 +41,10 @@ if (
 ):
     fileConfig(config.config_file_name, disable_existing_loggers=False)
 
-# Importing the app registers the models declared at module level. Autogenerate
-# also evaluates the pages without compiling, as `reflex db makemigrations` always
-# has, so models that pages or plugin route hooks import lazily are compared too.
-if getattr(config.cmd_opts, "autogenerate", False):
-    skip_compile = environment.REFLEX_SKIP_COMPILE.getenv()
-    environment.REFLEX_SKIP_COMPILE.set(True)
-    try:
-        get_compiled_app()
-    finally:
-        environment.REFLEX_SKIP_COMPILE.set(skip_compile)
-else:
-    get_app()
+# Importing the app registers the models. Autogenerate also evaluates the pages,
+# as `reflex db makemigrations` always has, so models that pages or plugin route
+# hooks import lazily are compared too.
+load_app(autogenerate=getattr(config.cmd_opts, "autogenerate", False))
 target_metadata = ModelRegistry.get_metadata()
 
 writer = Rewriter()

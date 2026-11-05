@@ -530,6 +530,40 @@ def test_autogenerate_evaluates_pages(project: Path):
     assert _table_names() == {"alembic_version", "lazy", "thing"}
 
 
+def test_import_time_migrate_does_not_nest_alembic_runs(project: Path):
+    """An app calling `rx.Model.migrate()` at import works under every command."""
+    body = (
+        "import reflex as rx\n\n\n"
+        "class Thing(rx.Model, table=True):\n{columns}\n\n\n"
+        "rx.Model.migrate()\n\n\napp = rx.App()\n"
+    )
+    (project / APP_NAME / f"{APP_NAME}.py").write_text(
+        body.format(columns="    t1: str")
+    )
+    _forget_app()
+
+    _db("init")
+    _db("migrate")
+    assert _table_names() == {"alembic_version", "thing"}
+
+    (project / APP_NAME / f"{APP_NAME}.py").write_text(
+        body.format(columns=COLUMNS["sqlmodel"][1])
+    )
+    _forget_app()
+    _db("makemigrations", "--message", "add t2")
+    assert len(_versions(project)) == 2
+    upgrade = subprocess.run(
+        [sys.executable, "-m", "alembic", "upgrade", "head"],
+        capture_output=True,
+        text=True,
+        cwd=project,
+        check=False,
+    )
+    assert upgrade.returncode == 0, upgrade.stderr
+    assert "Running upgrade" in upgrade.stderr
+    assert not migrations._loading_app
+
+
 def test_alembic_command_line_runs_standalone(project: Path):
     """The generated environment works for `alembic` itself, without `reflex db`."""
     _db("init")

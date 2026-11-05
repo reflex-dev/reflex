@@ -7,11 +7,16 @@ command line works on a Reflex app exactly as `reflex db` does.
 
 from __future__ import annotations
 
+import logging
 import shutil
 from pathlib import Path
 
 from reflex_base.environment import environment
 from rich.markup import escape
+
+from reflex.utils.prerequisites import get_app, get_compiled_app
+
+logger = logging.getLogger(__name__)
 
 # The env.py that replaces the stock one after `alembic init`.
 TEMPLATE_ENV_PY = Path(__file__).parent.parent / ".templates" / "alembic" / "env.py"
@@ -26,16 +31,27 @@ UPDATED_ENV_MESSAGE = (
     "Updated env.py to load the app; the previous one is kept as {backup}."
 )
 
+# True while env.py imports the app, when an import-time `migrate()` call would
+# start a second alembic run inside the one already in progress.
+_loading_app = False
+
 
 def run(*args: str) -> None:
     """Run an alembic command line against the app's alembic.ini.
 
     Equivalent to ``alembic -c <ALEMBIC_CONFIG> <args>``, except that a failure
-    raises ``alembic.util.exc.CommandError`` instead of exiting the process.
+    raises ``alembic.util.exc.CommandError`` instead of exiting the process. A
+    command issued while env.py imports the app, such as ``migrate()`` at module
+    level, is skipped: alembic is already running and applies the scripts itself.
 
     Args:
         *args: The alembic command and its options, e.g. ``"upgrade", "head"``.
     """
+    if _loading_app:
+        logger.debug(
+            f"Skipping alembic {' '.join(args)}: an alembic run is loading the app."
+        )
+        return
     import alembic.config
 
     alembic.config.main(
@@ -47,6 +63,34 @@ def run(*args: str) -> None:
         ],
         prog="alembic",
     )
+
+
+def load_app(autogenerate: bool = False) -> None:
+    """Import the app for env.py, so that every model is registered.
+
+    Autogenerate also evaluates the pages without compiling, as
+    ``reflex db makemigrations`` always has, so models that pages or plugin
+    route hooks import lazily are compared too; the compile flag is restored
+    afterwards.
+
+    Args:
+        autogenerate: Whether alembic is autogenerating a revision.
+    """
+    global _loading_app
+
+    _loading_app = True
+    try:
+        if not autogenerate:
+            get_app()
+            return
+        skip_compile = environment.REFLEX_SKIP_COMPILE.getenv()
+        environment.REFLEX_SKIP_COMPILE.set(True)
+        try:
+            get_compiled_app()
+        finally:
+            environment.REFLEX_SKIP_COMPILE.set(skip_compile)
+    finally:
+        _loading_app = False
 
 
 def init() -> None:
