@@ -22,6 +22,10 @@ LEGACY_ENV_HINT = (
     "existing revisions are kept."
 )
 
+UPDATED_ENV_MESSAGE = (
+    "Updated env.py to load the app; the previous one is kept as {backup}."
+)
+
 
 def run(*args: str) -> None:
     """Run an alembic command line against the app's alembic.ini.
@@ -92,12 +96,14 @@ def is_legacy_env() -> bool:
     return env_py.exists() and "target_metadata = None" in env_py.read_text()
 
 
-def update_env() -> Path:
-    """Replace env.py with the reflex template, keeping the old one as env.old.
+def update_legacy_env() -> Path | None:
+    """Replace a stock env.py with the reflex template, keeping it as env.old.
 
     Returns:
-        The path the previous env.py was moved to.
+        Where the previous env.py went, or None when env.py already loads the app.
     """
+    if not is_legacy_env():
+        return None
     env_py = script_directory() / "env.py"
     backup = env_py.with_name("env.old")
     env_py.replace(backup)

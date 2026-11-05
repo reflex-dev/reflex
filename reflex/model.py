@@ -306,6 +306,9 @@ if TYPE_CHECKING or (find_spec("sqlalchemy") and find_spec("alembic")):
             return None
         from reflex.utils import migrations
 
+        backup = migrations.update_legacy_env()
+        if backup is not None:
+            logger.info(migrations.UPDATED_ENV_MESSAGE.format(backup=backup))
         # Pending scripts are applied first: autogenerate needs the database at head.
         migrations.run("upgrade", "head")
         if autogenerate:

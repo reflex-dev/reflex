@@ -849,9 +849,9 @@ def check_db_initialized() -> bool:
         return False
     from reflex.utils import migrations
 
-    if migrations.is_legacy_env():
-        logger.error(migrations.LEGACY_ENV_HINT, extra={"dedupe": True, "rich": True})
-        return False
+    backup = migrations.update_legacy_env()
+    if backup is not None:
+        logger.info(migrations.UPDATED_ENV_MESSAGE.format(backup=backup))
     return True
 
 

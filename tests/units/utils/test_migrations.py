@@ -11,6 +11,7 @@ from unittest import mock
 
 import click.testing
 import pytest
+from reflex_base.environment import environment
 from reflex_base.registry import RegistrationContext
 
 import reflex.model
@@ -19,7 +20,7 @@ from reflex.reflex import db_cli
 from reflex.utils import migrations, prerequisites
 
 if TYPE_CHECKING:
-    from collections.abc import Generator
+    from collections.abc import Callable, Generator
 
 pytest.importorskip("alembic")
 sa = pytest.importorskip("sqlalchemy")
@@ -126,7 +127,8 @@ def project(
     Yields:
         The project directory.
     """
-    db_url = f"sqlite:///{tmp_working_dir}/reflex.db"
+    # POSIX form, which sqlite accepts on Windows too, keeps rxconfig.py a valid literal.
+    db_url = f"sqlite:///{tmp_working_dir.as_posix()}/reflex.db"
     (tmp_working_dir / "rxconfig.py").write_text(
         "import reflex as rx\n\nconfig = rx.Config(\n"
         f'    app_name="{APP_NAME}", db_url="{db_url}", plugins=[rx.plugins.SitemapPlugin()]\n'
@@ -415,45 +417,64 @@ def test_commands_require_an_initialized_database(
     assert not (project / "alembic").exists()
 
 
-def test_legacy_env_is_reported_and_updated_by_init(
+def test_legacy_env_is_updated_with_a_backup(
     project: Path, caplog: pytest.LogCaptureFixture
 ):
-    """A stock alembic env.py from an older release is replaced, keeping revisions."""
+    """A stock alembic env.py from an older release is replaced, keeping it as env.old."""
     import alembic.config
-
-    _db("init")
-    env_py = project / "alembic" / "env.py"
-    stock_env = Path(alembic.config.Config().get_template_directory(), "generic")
-    stock_env_py = (stock_env / "env.py").read_text()
-    env_py.write_text(stock_env_py)
-    ini = (project / "alembic.ini").read_text()
-    assert migrations.is_legacy_env()
-
-    for command in ("migrate", "makemigrations", "status"):
-        _db(command)
-        assert "earlier Reflex release" in caplog.text
-        caplog.clear()
-    assert not prerequisites.check_db_initialized()
-    prerequisites.check_schema_up_to_date()
-    assert "earlier Reflex release" in caplog.text
-    caplog.clear()
 
     caplog.set_level(logging.INFO)
     _db("init")
-    assert "existing revisions are kept" in caplog.text
-    assert not migrations.is_legacy_env()
-    assert env_py.read_text() == migrations.TEMPLATE_ENV_PY.read_text()
-    assert (project / "alembic" / "env.old").read_text() == stock_env_py
-    assert "env.old" in caplog.text
+    env_py = project / "alembic" / "env.py"
+    env_old = project / "alembic" / "env.old"
+    stock_env = Path(alembic.config.Config().get_template_directory(), "generic")
+    stock_env_py = (stock_env / "env.py").read_text()
+    ini = (project / "alembic.ini").read_text()
+
+    # The startup check only points at the fix.
+    env_py.write_text(stock_env_py)
+    assert migrations.is_legacy_env()
+    prerequisites.check_schema_up_to_date()
+    assert "earlier Reflex release" in caplog.text
+    assert env_py.read_text() == stock_env_py
+    caplog.clear()
+
+    # The commands and the migrate helper update env.py themselves.
+    runs: list[Callable[[], object]] = [
+        lambda: _db("migrate"),
+        lambda: _db("status"),
+        lambda: _db("init"),
+        reflex.model.migrate,
+    ]
+    for run in runs:
+        env_py.write_text(stock_env_py)
+        env_old.unlink(missing_ok=True)
+        run()
+        assert not migrations.is_legacy_env()
+        assert env_py.read_text() == migrations.TEMPLATE_ENV_PY.read_text()
+        assert env_old.read_text() == stock_env_py
+        assert "env.old" in caplog.text
+        caplog.clear()
     assert (project / "alembic.ini").read_text() == ini
     assert len(_versions(project)) == 1
-    caplog.clear()
 
     _write_app(project, "sqlmodel", COLUMNS["sqlmodel"][1])
     _db("makemigrations")
     _db("migrate")
     assert len(_versions(project)) == 2
-    assert env_py.read_text() == migrations.TEMPLATE_ENV_PY.read_text()
+
+
+def test_autogenerate_restores_the_compile_flag(
+    project: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """Evaluating the pages for autogenerate leaves REFLEX_SKIP_COMPILE as it was."""
+    _db("init")
+    assert environment.REFLEX_SKIP_COMPILE.getenv() is None
+
+    monkeypatch.setenv(environment.REFLEX_SKIP_COMPILE.name, "true")
+    _write_app(project, "sqlmodel", COLUMNS["sqlmodel"][1])
+    _db("makemigrations")
+    assert environment.REFLEX_SKIP_COMPILE.getenv() is True
 
 
 def test_is_legacy_env_without_script_directory(project: Path):

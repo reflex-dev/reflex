@@ -177,9 +177,9 @@ database schema is not up to date, a warning will be displayed on the console.
 # Upgrading an existing app
 
 Apps initialized by an earlier Reflex release have a stock alembic `env.py` that does
-not load the app. Run `reflex db init` once: it replaces `env.py` with the
-current template, keeps the previous file as `env.old`, and keeps the existing
-revisions.
+not load the app. The next `reflex db` command, or `migrate()` call, replaces it
+with the current template and keeps the previous file as `env.old`; existing
+revisions are kept.
 ```
 
 For a local experiment, `create_all` creates any missing tables without
