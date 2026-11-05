@@ -17,10 +17,11 @@ Keep the form open; you will fill it in after the next step.
 
 ## Step 2: Create a Clerk OAuth Application
 
-1. In the Clerk Dashboard, open **OAuth applications** and add a new application.
-2. Add each redirect URI from Step 1 as a redirect URI and save.
-3. Copy the application's **Client ID** and **Client Secret**.
-4. Under **Developers → API keys**, copy your **Frontend API URL**.
+1. In the Clerk Dashboard, go to **OAuth applications** and select **Add application → Create OAuth application**.
+2. Enter a name, select the `openid`, `profile`, and `email` scopes, then select **Add**.
+3. Copy the **Client Secret** from the dialog that opens. Clerk does not store it and cannot show it again.
+4. On the application's settings page, copy the **Client ID** under **Application credentials**, and add each redirect URI from Step 1 under **Redirect URIs**.
+5. On the **API keys** page, copy your **Frontend API URL**.
 
 ## Step 3: Connect in Reflex Build
 

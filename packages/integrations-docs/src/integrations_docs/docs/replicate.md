@@ -17,10 +17,10 @@ With Replicate, your app can:
 
 ## Step 1: Obtain a Replicate API Token
 
-1. Go to the [Replicate Dashboard](https://replicate.com/account).  
+1. Go to [Replicate](https://replicate.com/).
 2. Log in or create an account.
-3. Navigate to the **API Tokens** section.  
-4. Copy your **API Token** from the account page.
+3. Open the [API tokens](https://replicate.com/account/api-tokens) page.
+4. Copy the default token created when you signed up, or create a new one.
 
    * **Example:** `r8_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`
 

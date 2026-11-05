@@ -9,9 +9,9 @@ The **Cartesia Integration** allows your app to generate **high-quality, realist
 
 ## Step 1: Obtain a Cartesia API Key
 
-1. Go to the [Cartesia Console](https://www.cartesia.ai/).  
-2. Log in or create an account.  
-3. Navigate to **API Keys** in your account settings.  
+1. Go to the [Cartesia Playground](https://play.cartesia.ai/).
+2. Log in or create an account.
+3. Open the [API Keys](https://play.cartesia.ai/keys) page.  
 4. Click **New**, give it a descriptive name (e.g., “AI Builder”), and copy it.  
    - Example: `sk_car_xxxxxxxxxxxxx`
 

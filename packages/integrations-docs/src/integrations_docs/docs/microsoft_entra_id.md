@@ -19,9 +19,9 @@ Keep the form open; you will fill it in after the next step.
 
 1. In the [Microsoft Entra admin center](https://entra.microsoft.com/), go to **Entra ID → App registrations** and click **New registration**.
 2. Name the application and choose which account types can sign in.
-3. Under **Redirect URI**, select **Web** and enter the first redirect URI from Step 1, then click **Register**. Add the remaining redirect URIs under **Authentication**.
+3. Under **Redirect URI**, select **Web** and enter the first redirect URI from Step 1, then click **Register**. Add the remaining redirect URIs under **Manage → Authentication**.
 4. On the **Overview** page, copy the **Application (client) ID** and the **Directory (tenant) ID**.
-5. Under **Certificates & secrets**, click **New client secret** and copy its **Value** (not the Secret ID). It is only shown once.
+5. Under **Certificates & secrets → Client secrets**, click **New client secret**, then **Add**, and copy its **Value** (not the Secret ID). It is only shown once.
 
 ## Step 3: Connect in Reflex Build
 

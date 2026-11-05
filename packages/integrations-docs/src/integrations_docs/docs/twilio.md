@@ -18,10 +18,10 @@ With Twilio, your app can:
 ## Step 1: Obtain Twilio Credentials
 
 1. Go to your [Twilio Console](https://www.twilio.com/console).  
-2. Copy your **Account SID** and **Auth Token** from the dashboard.  
+2. Copy your **Account SID** and **Auth Token** from the **Account Info** panel on the dashboard (click **Show** to reveal the Auth Token).  
 
-   * **Example Account SID:** `ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`  
-   * **Example Auth Token:** `xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`
+   * **Example Account SID:** `ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`  
+   * **Example Auth Token:** `xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`
 
 ## Step 2: Configure the Integration in Your App
 

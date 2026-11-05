@@ -17,12 +17,12 @@ Keep the form open; you will fill it in after the next step.
 
 ## Step 2: Create an Okta App Integration
 
-1. In the Okta Admin Console, go to **Applications → Applications** and click **Create App Integration**.
+1. In the Okta Admin Console, go to **Applications and Resources → Applications**, click **Create App Integration**, and select **Classic experience**.
 2. Select **OIDC - OpenID Connect** as the sign-in method and **Web Application** as the application type.
 3. Under **Sign-in redirect URIs**, add each redirect URI from Step 1.
 4. Under **Assignments**, choose who can sign in, then save.
-5. Copy the **Client ID** and **Client secret** from the app's **General** tab.
-6. Go to **Security → API → Authorization Servers** and copy the **Issuer URI** of the server you use (usually **default**).
+5. Copy the **Client ID** and **Client secret** from the **Client Credentials** section of the app's **General** tab.
+6. Go to **Security → API**, open the **Authorization Servers** tab, and copy the **Issuer URI** of the server you use (usually **default**).
 
 ## Step 3: Connect in Reflex Build
 

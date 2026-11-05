@@ -17,10 +17,10 @@ With Perplexity, your app can:
 
 ## Step 1: Obtain a Perplexity API Key
 
-1. Go to the [Perplexity](https://www.perplexity.ai/).  
-2. Log in or create an account.  
-3. Navigate to **Account → API → [API Keys](https://www.perplexity.ai/account/api/keys)**.  
-4. Click **Generate Key** and copy the generated key.
+1. Go to the [Perplexity API Console](https://console.perplexity.ai/).
+2. Log in or create an account, then create a project if you don't have one.
+3. Open your project's [API Keys](https://console.perplexity.ai/project/keys) page.
+4. Generate a new key and copy it right away; the full key is shown only once.
 
    * **Example:** `pplx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`
 

@@ -12,7 +12,7 @@ With Roboflow, your app can:
 - Run **pre-trained computer vision models** for detection, classification, or segmentation.  
 - Deploy and use **custom-trained models** built in Roboflow.  
 - Automate workflows that rely on visual inputs — e.g., quality checks, object detection, image analysis.  
-- Ingest and process **images in real time**.  
+- Process **images** sent from your app on demand.  
 - Combine vision outputs with other integrations (e.g., AI reasoning, automation flows).
 
 ```md alert
@@ -22,16 +22,17 @@ Video and streaming inputs are not yet supported.
 
 ## Step 1: Obtain a Roboflow API Key
 
-1. Go to your [Roboflow Account](https://roboflow.com/).
-2. Navigate to **Settings → API Keys**.  
-3. Copy your Private API Key.
+1. Go to your [Roboflow API settings](https://app.roboflow.com/settings/api).
+2. Under **API Keys**, copy your **Private API Key**.
+
+> 💡 Don't use the **Publishable Key** (`rf_...`). It can only run inference from browser code and won't work here.
 
 
 ## Step 2: Set up your Model in Roboflow
 
 1. Go to Workflows and create a new workflow.
 2. Set up the workflow you want to use in your app, ensuring that it takes an image as input.
-3. Click the `deploy` button, select `Images` and then select `Integrate with my app or website`.
+3. In the Workflow editor, click **Use Workflow** and choose the hosted **API** option.
 4. Copy the `workspace_name` and `workflow_id` from the provided code snippet.
 
 ![Roboflow](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/roboflow.webp)
@@ -50,4 +51,4 @@ Once connected, your app can call Roboflow models directly from workflows, UI ac
 * **Keep your key secure:** Never expose your Roboflow key in client-side code.  
 * **Use environment-specific keys:** Separate dev, staging, and production keys to control access.  
 * **Model flexibility:** Use community models or your own custom-trained models.  
-* **Real-time vision:** Ideal for applications involving cameras, inspection, monitoring, or visual AI.
+* **Image-based vision:** Ideal for applications involving photo uploads, inspection, or visual AI on still images.

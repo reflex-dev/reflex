@@ -8,11 +8,13 @@ The **HubSpot Integration** allows your app to use [HubSpot](https://www.hubspot
 
 ## Step 1: Obtain a HubSpot Access Token
 
-1. Go to your [HubSpot Developer Account](https://developers.hubspot.com/).  
-2. Navigate to **App → Private Apps** in your account settings.  
-3. Click **Create Private App**, configure scopes (e.g., `crm.objects.contacts.read/write`, `crm.schemas.companies.read`), and save.  
-4. Copy the **Access Token** from the Auth tab.
-   * **Example:** `pat-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`
+1. Log in to your [HubSpot account](https://app.hubspot.com/).  
+2. Go to **Settings → Integrations → Service Keys** (in some accounts this is under **Development → Keys → Service keys**).  
+3. Click **Create service key**, give it a name, add the scopes your app needs (e.g., `crm.objects.contacts.read`, `crm.objects.contacts.write`), and click **Create**.  
+4. Click **Show** and copy the key.
+   * **Example:** `pat-na1-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`
+
+> 💡 HubSpot no longer allows creating new legacy private apps, but you can still use the access token of an existing one.
 
 ## Step 2: Configure the Integration in Your App
 

@@ -9,7 +9,7 @@ The **Gemini Integration** allows your app to use [Google’s Gemini models](htt
 ## Step 1: Obtain a Gemini API Key
 
 1. Go to [Google AI Studio](https://aistudio.google.com/).
-2. Navigate to **Get API Key** or create a new key for your project.
+2. Open the [API Keys](https://aistudio.google.com/apikey) page and click **Create API key**.
 3. Copy the generated key.
 
 

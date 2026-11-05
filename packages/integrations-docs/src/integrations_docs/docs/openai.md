@@ -9,7 +9,7 @@ The **OpenAI Integration** allows your app to use OpenAI APIs for features such 
 ## Step 1: Obtain an OpenAI API Key
 
 1. Go to the [OpenAI Platform](https://platform.openai.com/).
-2. Navigate to **API Keys** in your account settings.
+2. Open the [API keys](https://platform.openai.com/settings/organization/api-keys) page in your organization settings.
 3. Click **Create new secret key**.
 4. Copy the generated key.
    - Example: `sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`

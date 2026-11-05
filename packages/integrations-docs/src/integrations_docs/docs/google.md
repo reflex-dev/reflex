@@ -17,7 +17,7 @@ Keep the form open; you will fill it in after the next step.
 
 ## Step 2: Create a Google OAuth Client
 
-1. In the [Google Cloud Console](https://console.cloud.google.com/), open **Google Auth Platform**. If you have not configured it for this project yet, complete the **Branding** setup first.
+1. In the [Google Cloud Console](https://console.cloud.google.com/), open **Google Auth Platform**. If you have not configured it for this project yet, click **Get started** and complete the app setup first.
 2. Go to **Clients** and click **Create client**.
 3. Choose **Web application** as the application type and give it a name.
 4. Under **Authorized redirect URIs**, add each redirect URI from Step 1.

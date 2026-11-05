@@ -22,6 +22,7 @@ With the Resend Integration, your app can:
 3. Navigate to **API Keys** from the dashboard sidebar.
 4. Click **Create API Key**, give it a name (e.g. “AI Builder”), and copy it.
    - Example: `re_xxxxxxxxxxxxxxxxxxxxxxxxxxxx`
+5. To email anyone other than yourself, [add and verify a domain](https://resend.com/docs/dashboard/domains/introduction) and send from an address on it. Without one, Resend only delivers test emails to your own account's address.
 
 ## Step 2: Configure the Integration in Your App
 

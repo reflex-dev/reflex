@@ -16,10 +16,10 @@ Keep the form open; you will fill it in after the next step.
 ## Step 2: Create a Keycloak Client
 
 1. In the Keycloak admin console, select your realm, go to **Clients**, and click **Create client**.
-2. Keep **OpenID Connect** as the client type and enter a **Client ID**.
-3. Turn on **Client authentication** and keep **Standard flow** enabled.
+2. Keep **OpenID Connect** as the client type, enter a **Client ID**, and click **Next**.
+3. Turn on **Client authentication**, keep **Standard flow** enabled, and click **Next**.
 4. Under **Valid redirect URIs**, add each redirect URI from Step 1, then save.
-5. Copy the client secret from the client's **Credentials** tab.
+5. Copy the **Client Secret** from the client's **Credentials** tab.
 
 Keycloak must be reachable over HTTPS from the internet for Reflex Build and your app to use it.
 

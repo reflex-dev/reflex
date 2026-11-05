@@ -7,7 +7,7 @@ description: Use Okta for secure identity and access management via Single Sign-
 
 > **Legacy integration.** New connections use the [Okta](https://reflex.dev/docs/ai/integrations/okta/) card instead: selecting Okta Auth in Reflex Build opens it. This page is for projects that already have an Okta Auth connection.
 
-The **Okta Auth Integration** allows your app to authenticate users through [Okta](https://okta.com). This integration provides secure OAuth 2.0 / OIDC authentication and supports multi-tenant environments with customizable access policies.
+The **Okta Auth Integration** allows your app to authenticate users through [Okta](https://www.okta.com). This integration provides secure OAuth 2.0 / OIDC authentication and supports multi-tenant environments with customizable access policies.
 
 
 ## What You Can Do
@@ -24,10 +24,10 @@ With Okta, your app can:
 
 Before connecting, you need to create an OIDC application in the Okta Admin Console:
 
-1 - Go to [Okta Admin Console](https://login.okta.com) → **Applications** → **Applications**
+1 - Go to [Okta Admin Console](https://login.okta.com) → **Applications and Resources** → **Applications**
 
 
-2 - Click **Create App Integration**
+2 - Click **Create App Integration** and select **Classic experience**
 
 ![Creating an Okta app integration](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/okta_auth_1.png)
 
@@ -47,14 +47,14 @@ Before connecting, you need to create an OIDC application in the Okta Admin Cons
 
 5 - Save the app integration.
 
-6 - Copy your **Client ID** (`OKTA_CLIENT_ID`) and **Client Secret** (`OKTA_CLIENT_SECRET`) from the app settings.
+6 - Copy your **Client ID** (`OKTA_CLIENT_ID`) and **Client Secret** (`OKTA_CLIENT_SECRET`) from the **Client Credentials** section of the app's **General** tab.
 
 ![Copying Okta client ID and secret](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/okta_auth_4.png)
 
 
 ## Step 2: Finding Your Okta Issuer URI
 
-1. In the Okta Admin Console, go to **Security** → **API** → **Authorization Servers**
+1. In the Okta Admin Console, go to **Security** → **API** and open the **Authorization Servers** tab
 2. Click on the **default** server and copy the **Issuer URI**, including `/oauth2/default`. This is your **Okta Issuer URI** (`OKTA_ISSUER_URI`).
 
 Example: `https://{yourOktaDomain}.okta.com/oauth2/default`

@@ -16,13 +16,13 @@ With Stripe, your app can:
 
 ## Step 1: Obtain a Stripe API Key
 
-1. Go to your [Stripe Dashboard](https://dashboard.stripe.com/).  
-2. Navigate to **Developers → API Keys**.  
-3. Copy your **Secret Key** (or create a restricted key for added security).
+1. Go to the [API keys](https://dashboard.stripe.com/apikeys) page in your Stripe Dashboard.  
+2. Create a **restricted key** with only the permissions your app needs (recommended by Stripe), or copy your **Secret key**.  
+3. Copy the key value. Stripe shows a live-mode key you create only once.
 
-   * **Example:** `sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`
+   * **Example:** `rk_test_...` (restricted) or `sk_test_...` (secret)
 
-> 💡 Use test keys in development environments and live keys in production.
+> 💡 Use sandbox keys (`rk_test_`/`sk_test_`) in development and live keys (`rk_live_`/`sk_live_`) in production.
 
 ## Step 2: Configure the Integration in Your App
 
@@ -35,5 +35,5 @@ Once connected, your app can process payments and manage billing directly from w
 ## Step 3: Notes
 
 * **Keep your API key secure:** Never expose your Stripe key in client-side code.  
-* **Use environment-specific keys:** Test keys for staging, live keys for production.  
+* **Use environment-specific keys:** Sandbox keys for staging, live keys for production.  
 * **Secure transactions:** All payment processing is handled through Stripe’s PCI-compliant infrastructure.  

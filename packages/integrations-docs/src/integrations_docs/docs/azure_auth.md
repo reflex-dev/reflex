@@ -10,9 +10,9 @@ The **Azure Auth Integration** allows your app to authenticate users through Mic
 
 ## Step 1: Set Up Azure App Registration
 
-Before connecting, you need to register your app in Azure Portal:
+Before connecting, you need to register your app in the Microsoft Entra admin center:
 
-1 - Go to [Azure Portal](https://portal.azure.com) → **App Registrations**
+1 - Go to the [Microsoft Entra admin center](https://entra.microsoft.com/) → **Entra ID** → **App registrations**
 
 2 - Click **New registration** as shown in the image below:
 
@@ -29,7 +29,7 @@ Before connecting, you need to register your app in Azure Portal:
 
 ![Azure App Registration](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/azure_auth_3.webp)
 
-5 - Next click `Add a certificate or secret` and copy the generated secret **Value**, not the Secret ID (`AZURE_CLIENT_SECRET`).
+5 - Next go to **Certificates & secrets** → **Client secrets**, click **New client secret**, then **Add**, and copy the generated secret **Value**, not the Secret ID (`AZURE_CLIENT_SECRET`). It is only shown once.
 
 ![Azure App Registration](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/azure_auth_4.webp)
 

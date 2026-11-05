@@ -17,18 +17,19 @@ With GitHub, your app can:
 
 ## Step 1: Generate a Personal Access Token
 
-1. Go to your [GitHub Settings](https://github.com/settings/tokens).  
-2. Navigate to **Developer settings → Personal access tokens**.  
-3. Click **Generate new token** (classic or fine-grained).  
-4. Select the required scopes (e.g., `repo`, `workflow`, `read:user`).  
-5. Copy the token.  
-   **Example token:**  
+1. Go to **Settings → Developer settings → Personal access tokens** on GitHub.  
+2. Choose a token type:
+   * **Fine-grained (recommended):** at [github.com/settings/personal-access-tokens](https://github.com/settings/personal-access-tokens), click **Generate new token**, pick the resource owner and repositories, and grant only the permissions you need (e.g., **Contents**, **Issues**, **Pull requests**).
+   * **Classic:** at [github.com/settings/tokens](https://github.com/settings/tokens), click **Generate new token → Generate new token (classic)** and select scopes (e.g., `repo`, `workflow`, `read:user`).
+3. Click **Generate token** and copy it.  
+   **Example tokens** (fine-grained, then classic):  
 ```
+github_pat_xxxxxxxxxxxxxxxxxxxxxx_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 (Note: Replace the above value with your actual GitHub token)
 
-> 💡 Fine-grained tokens are recommended for better security.
+> 💡 GitHub recommends fine-grained tokens. They don't yet support every API, so use a classic token only if you need one of those.
 
 ## Step 2: Configure the Integration in Your App
 

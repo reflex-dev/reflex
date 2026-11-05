@@ -20,8 +20,8 @@ With Hugging Face, your app can:
 
 1. Go to [Hugging Face](https://huggingface.co/).  
 2. Log in or create a free account.  
-3. Navigate to **Settings → Access Tokens**.  
-4. Click **Create New token**, set its scope, and copy it.
+3. Navigate to **Settings → [Access Tokens](https://huggingface.co/settings/tokens)**.  
+4. Click **New token**, choose a role (**fine-grained**, **read**, or **write**) and a name, and copy it.
    * **Example:** `hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`
 
 

@@ -17,8 +17,8 @@ Keep the form open; you will fill it in after the next step.
 
 1. In the Auth0 Dashboard, go to **Applications → Applications** and click **Create Application**.
 2. Choose **Regular Web Applications** and create it.
-3. On the **Settings** tab, add each redirect URI from Step 1 to **Allowed Callback URLs** (comma-separated) and save.
-4. Copy the **Domain**, **Client ID**, and **Client Secret**.
+3. On the **Settings** tab, under **Application URIs**, add each redirect URI from Step 1 to **Allowed Callback URLs** (comma-separated) and save.
+4. Under **Basic Information** on the same tab, copy the **Domain**, **Client ID**, and **Client Secret**.
 
 ## Step 3: Connect in Reflex Build
 
