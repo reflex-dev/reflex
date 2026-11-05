@@ -579,9 +579,9 @@ class EnvVar(Generic[T]):
             if isinstance(value, enum.Enum):
                 value = value.value
             if isinstance(value, list):
-                str_value = _get_sequence_delimiter(self.type_).join(
-                    _serialize_env_value(v) for v in value
-                )
+                str_value = _get_sequence_delimiter(
+                    value_inside_optional(self.type_)
+                ).join(_serialize_env_value(v) for v in value)
             else:
                 str_value = _serialize_env_value(value)
             os.environ[self.name] = str_value

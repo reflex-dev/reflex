@@ -6,7 +6,7 @@ import os
 import tempfile
 from datetime import timedelta
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 from unittest.mock import patch
 
 import pytest
@@ -682,6 +682,7 @@ def cleanup_env_vars():
         "__INTERNAL_VAR",
         # `EnvVar.set` writes `os.environ` directly, so monkeypatch never sees it
         "TEST_TIMEOUT_ROUNDTRIP",
+        "TEST_PATHS_ROUNDTRIP",
     ]
 
     yield
@@ -1046,15 +1047,19 @@ def test_non_path_list_env_value_still_splits_on_colon(
     assert interpret_env_var_value("a:b", list[str], "TEST_FIELD") == ["a", "b"]
 
 
-def test_path_list_env_var_round_trips_through_set(monkeypatch: pytest.MonkeyPatch):
+@pytest.mark.parametrize("field_type", [list[Path], list[Path] | None])
+def test_path_list_env_var_round_trips_through_set(
+    monkeypatch: pytest.MonkeyPatch, field_type: Any
+):
     """``set`` joins a path list with the delimiter the interpreter splits on.
 
     Args:
         monkeypatch: pytest monkeypatch fixture.
+        field_type: The type of the environment variable.
     """
     monkeypatch.setattr(os, "pathsep", ";")
     monkeypatch.delenv("TEST_PATHS_ROUNDTRIP", raising=False)
-    env_var_instance = EnvVar("TEST_PATHS_ROUNDTRIP", [], list[Path])
+    env_var_instance = EnvVar("TEST_PATHS_ROUNDTRIP", [], field_type)
     value = [Path(r"C:\app"), Path(r"D:\lib")]
 
     env_var_instance.set(value)  # type: ignore[arg-type]
