@@ -17,12 +17,23 @@ Keep the form open; you will fill it in after the next step.
 
 ## Step 2: Create an Okta App Integration
 
-1. In the Okta Admin Console, go to **Applications and Resources → Applications**, click **Create App Integration**, and select **Classic experience**.
-2. Select **OIDC - OpenID Connect** as the sign-in method and **Web Application** as the application type.
-3. Under **Sign-in redirect URIs**, add each redirect URI from Step 1.
+1. In the Okta Admin Console, go to **Applications and Resources → Applications**, and click **Create App Integration** (if asked, select **Classic experience**).
+2. Select **OIDC - OpenID Connect** as the sign-in method and **Web Application** as the application type, then click **Next**.
+
+   ![Choosing OIDC and Web Application in Okta](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/okta_1.webp)
+
+3. Name the app integration, keep **Use Okta-generated client ID**, and under **Sign-in redirect URIs**, add each redirect URI from Step 1.
+
+   ![Adding sign-in redirect URIs in Okta](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/okta_2.webp)
+
 4. Under **Assignments**, choose who can sign in, then save.
 5. Copy the **Client ID** and **Client secret** from the **Client Credentials** section of the app's **General** tab.
+
+   ![The Client Credentials section of an Okta app](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/okta_3.webp)
+
 6. Go to **Security → API**, open the **Authorization Servers** tab, and copy the **Issuer URI** of the server you use (usually **default**).
+
+   ![The Authorization Servers tab with the default issuer URI](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/okta_4.webp)
 
 ## Step 3: Connect in Reflex Build
 

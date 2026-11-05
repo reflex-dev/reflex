@@ -27,29 +27,29 @@ Before connecting, you need to create an OIDC application in the Okta Admin Cons
 1 - Go to [Okta Admin Console](https://login.okta.com) → **Applications and Resources** → **Applications**
 
 
-2 - Click **Create App Integration** and select **Classic experience**
+2 - Click **Create App Integration** (if asked, select **Classic experience**)
 
-![Creating an Okta app integration](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/okta_auth_1.png)
+![Creating an Okta app integration](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/okta_auth_1.webp)
 
 3 - Select **OIDC – OpenID Connect** and choose **Web Application**
 
-![Selecting OIDC web application in Okta](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/okta_auth_2.png)
+![Selecting OIDC web application in Okta](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/okta_auth_2.webp)
 
 4 - Configure your app settings:
-   - **Allow wildcard * in sign-in redirect URIs**
+   - **Client definition**: **Use Okta-generated client ID**
    - **Sign-in redirect URIs**: the redirect URI shown on the Okta Auth connection in Reflex Build, which has this form:
      `https://{your-sandbox}/_reflex_oidc_okta/authorization-code/callback`
    - **Sign-out redirect URIs**:
      `https://{your-sandbox}`
    - Assign to the correct **Group** or **Everyone** depending on your access control
 
-![Configuring Okta sign-in redirect URIs](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/okta_auth_3.png)
+![Configuring Okta sign-in redirect URIs](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/okta_auth_3.webp)
 
 5 - Save the app integration.
 
 6 - Copy your **Client ID** (`OKTA_CLIENT_ID`) and **Client Secret** (`OKTA_CLIENT_SECRET`) from the **Client Credentials** section of the app's **General** tab.
 
-![Copying Okta client ID and secret](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/okta_auth_4.png)
+![Copying Okta client ID and secret](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/okta_auth_4.webp)
 
 
 ## Step 2: Finding Your Okta Issuer URI
@@ -59,7 +59,7 @@ Before connecting, you need to create an OIDC application in the Okta Admin Cons
 
 Example: `https://{yourOktaDomain}.okta.com/oauth2/default`
 
-![Finding the Okta issuer URI](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/okta_auth_5.png)
+![Finding the Okta issuer URI](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/okta_auth_5.webp)
 
 
 > **Note:** Always use separate Okta apps for dev, staging, and production environments to avoid mixing credentials.
