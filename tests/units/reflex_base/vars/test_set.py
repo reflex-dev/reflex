@@ -7,7 +7,6 @@ from collections.abc import Sequence
 from typing import Any
 
 import pytest
-from reflex_base.constants.base import Dirs
 from reflex_base.utils import serializers
 from reflex_base.utils.exceptions import VarTypeError
 from reflex_base.vars.base import LiteralVar, Var, VarData
@@ -63,7 +62,7 @@ def _helper_imports(var: Var) -> list[str]:
     assert var_data is not None
     return [
         import_var.tag
-        for import_var in dict(var_data.imports)[f"$/{Dirs.STATE_PATH}"]
+        for import_var in dict(var_data.imports)["$/utils/helpers/set.js"]
         if import_var.tag
     ]
 

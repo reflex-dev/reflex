@@ -13,7 +13,6 @@ import dataclasses
 from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Any, TypeVar, overload
 
-from reflex_base.constants.base import Dirs
 from reflex_base.utils import console, types
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import GenericType, get_origin, unionize
@@ -46,6 +45,9 @@ OTHER_SET_VAR_TYPE = TypeVar("OTHER_SET_VAR_TYPE", bound=set | frozenset)
 SET_ELEMENT = TypeVar("SET_ELEMENT")
 
 _OTHER_SET_TYPES = (set, frozenset, list, tuple)
+
+# The pySet* helpers that give the serialized array its set semantics.
+_SET_HELPERS_PATH = "$/utils/helpers/set.js"
 
 _ARRAY_OPERATION_REASON = (
     "A set is not a sequence; call .to_array() first to use array operations."
@@ -102,7 +104,7 @@ def _set_helper_operation(
         js_expression=f"{helper}({', '.join(map(str, args))})",
         var_type=var_type,
         var_data=VarData(
-            imports={f"$/{Dirs.STATE_PATH}": [ImportVar(tag=helper)]},
+            imports={_SET_HELPERS_PATH: [ImportVar(tag=helper, install=False)]},
         ),
     )
 
