@@ -21,7 +21,7 @@ Keep the form open; you will fill it in after the next step.
 
    ![The App registrations page in the Microsoft Entra admin center](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/microsoft_entra_id_1.webp)
 
-2. Name the application and choose which account types can sign in.
+2. Name the application and keep **Single tenant only** under **Supported account types**. The issuer URL in Step 3 is for a single directory, so other account types fail at sign-in.
 3. Under **Redirect URI**, select **Web** and enter the first redirect URI from Step 1, then click **Register**. Add the remaining redirect URIs under **Manage → Authentication**.
 
    ![Registering an application with a Web redirect URI](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/microsoft_entra_id_2.webp)
@@ -41,8 +41,8 @@ Fill in the form you opened in Step 1:
 
 - **OIDC_ISSUER_URI**: `https://login.microsoftonline.com/<tenant-id>/v2.0`, with your Directory (tenant) ID from Step 2.
 - **OIDC_CLIENT_ID**: the client ID from Step 2.
-- **OIDC_CLIENT_SECRET**: the client secret from Step 2. Leave it blank only for a public client that uses PKCE.
-- **OIDC_EXTRA_SCOPES** (optional): extra scopes to request, separated by spaces. `offline_access` keeps users signed in; `groups` enables group-based access.
+- **OIDC_CLIENT_SECRET**: the client secret from Step 2.
+- **OIDC_EXTRA_SCOPES** (optional): extra scopes to request, separated by spaces. `offline_access` keeps users signed in after their access token expires, up to the 7-day session limit. Entra ID has no `groups` scope: add a groups claim under **Token configuration** instead.
 
 Click **Connect**. Reflex Build fetches the issuer's discovery document (`/.well-known/openid-configuration`) and refuses an issuer URL that does not serve one.
 

@@ -37,8 +37,8 @@ Fill in the form you opened in Step 1:
 
 - **OIDC_ISSUER_URI**: prefilled with `https://accounts.google.com`. Google's issuer is fixed, so leave it as it is.
 - **OIDC_CLIENT_ID**: the client ID from Step 2.
-- **OIDC_CLIENT_SECRET**: the client secret from Step 2. Leave it blank only for a public client that uses PKCE.
-- **OIDC_EXTRA_SCOPES** (optional): extra scopes to request, separated by spaces. `offline_access` keeps users signed in; `groups` enables group-based access.
+- **OIDC_CLIENT_SECRET**: the client secret from Step 2.
+- **OIDC_EXTRA_SCOPES** (optional): extra scopes to request, separated by spaces. Google has no `offline_access` or `groups` scope, so leave this blank unless you need other Google OAuth scopes.
 
 Click **Connect**. Reflex Build fetches the issuer's discovery document (`/.well-known/openid-configuration`) and refuses an issuer URL that does not serve one.
 

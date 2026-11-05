@@ -77,7 +77,7 @@ For PostgreSQL and MSSQL, turn on **Use TLS certificates** when the server needs
 
 ## Managed Postgres
 
-If you don't have a database, select **Provision database** on the Database card to have Reflex Build create a managed Postgres database for the app. While an app uses a managed database, the Database card shows a notice instead of the connection form; manage the database, or delete it to connect your own, from the **Database** tab.
+If you don't have a database, select **Provision database** on the Database card to have Reflex Build create a managed Postgres database for the app. While an app uses a managed database, the Database card shows a notice instead of the connection form; manage the database, or delete it to connect your own, from the **Database** tab. Deleting it permanently erases its data and disconnects running deployments, so back up or move your data first.
 
 ## Enable the Integration for an App
 

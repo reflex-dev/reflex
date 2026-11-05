@@ -98,7 +98,7 @@ If your Databricks account administrator has already added Reflex as an app conn
 1. In Reflex Build, open the **Integrations** tab, select the **Databricks** card, and click **Add connection**.
 2. Paste your **DATABRICKS_HOST**.
 3. Select your authentication method:
-   - **OAuth**: click **Login with Databricks**. This button appears once a workspace admin has registered the Connected App (see [How to Enable Login as an Admin](#how-to-enable-login-as-an-admin)).
+   - **OAuth**: click **Login with Databricks**. This button appears after a workspace admin registers the Connected App and its client ID is added on the card's **OAuth** tab (see [How to Enable Login as an Admin](#how-to-enable-login-as-an-admin)).
    - **Service Principal**: provide the client ID and secret gathered previously.
 4. Optionally pick a **DATABRICKS_WAREHOUSE_ID**, **DATABRICKS_CATALOG**, and **DATABRICKS_SCHEMA** from the dropdowns, which list what your credentials can access.
 5. Click **Connect** to save the connection.

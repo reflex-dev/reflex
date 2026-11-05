@@ -27,7 +27,7 @@ With Stripe, your app can:
 ## Step 2: Configure the Integration in Your App
 
 1. In Reflex Build, open the **Integrations** tab and select the **Stripe** card.
-2. Click **Add connection** and paste your secret key into **STRIPE_API_KEY**.
+2. Click **Add connection** and paste your restricted or secret key into **STRIPE_API_KEY**.
 3. Click **Connect** to save the connection.
 
 Once connected, your app can process payments and manage billing directly from workflows and UI actions.

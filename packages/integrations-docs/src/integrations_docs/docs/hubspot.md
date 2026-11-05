@@ -14,7 +14,7 @@ The **HubSpot Integration** allows your app to use [HubSpot](https://www.hubspot
 
    ![Creating a HubSpot service key](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/hubspot_service_key.webp)
 
-4. Copy the new key.
+4. Open the new key and click **Copy** (or **Show** to see it).
    * **Example:** `pat-na1-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`
 
 > 💡 HubSpot no longer allows creating new legacy private apps, but you can still use the access token of an existing one.

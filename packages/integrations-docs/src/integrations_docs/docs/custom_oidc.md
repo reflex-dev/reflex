@@ -29,7 +29,7 @@ Fill in the form you opened in Step 1:
 - **OIDC_ISSUER_URI**: your provider's issuer URL, exactly as it appears in its discovery document.
 - **OIDC_CLIENT_ID**: the client ID from Step 2.
 - **OIDC_CLIENT_SECRET**: the client secret from Step 2. Leave it blank only for a public client that uses PKCE.
-- **OIDC_EXTRA_SCOPES** (optional): extra scopes to request, separated by spaces. `offline_access` keeps users signed in; `groups` enables group-based access.
+- **OIDC_EXTRA_SCOPES** (optional): extra scopes to request, separated by spaces. `offline_access` keeps users signed in after their access token expires, up to the 7-day session limit; `groups` enables group-based access if your provider offers that scope.
 
 Click **Connect**. Reflex Build fetches the issuer's discovery document (`/.well-known/openid-configuration`) and refuses an issuer URL that does not serve one.
 
