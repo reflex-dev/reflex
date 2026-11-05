@@ -194,6 +194,11 @@ def _rows() -> list[tuple]:
 
 
 def _table_names() -> set[str]:
+    """Get the names of the tables in the project's database.
+
+    Returns:
+        The table names, including alembic's version table once initialized.
+    """
     return set(sa.inspect(get_engine()).get_table_names())
 
 
@@ -579,6 +584,14 @@ def test_alembic_command_line_runs_standalone(project: Path):
     _write_app(project, "sqlmodel", COLUMNS["sqlmodel"][1])
 
     def alembic(*args: str) -> subprocess.CompletedProcess[str]:
+        """Run the bare alembic command line in the project directory.
+
+        Args:
+            *args: The alembic command and its options.
+
+        Returns:
+            The completed process, with its output captured.
+        """
         return subprocess.run(
             [sys.executable, "-m", "alembic", *args],
             capture_output=True,
