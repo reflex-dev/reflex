@@ -38,9 +38,9 @@ Video and streaming inputs are not yet supported.
 
 ## Step 3: Configure the Integration in Your App
 
-1. Go to **Integrations → Add Roboflow** in your app settings.  
-2. Paste your **Roboflow API Key**, **Workspace Name**, and **Workflow ID** in the input fields.  
-3. Click **Connect** to validate and save your integration.
+1. In Reflex Build, open the **Integrations** tab and select the **Roboflow** card.
+2. Click **Add connection** and fill in **ROBOFLOW_API_KEY**, **WORKSPACE_NAME**, and **WORKFLOW_ID**.
+3. Click **Connect** to save the connection.
 
 Once connected, your app can call Roboflow models directly from workflows, UI actions, or automated triggers.
 

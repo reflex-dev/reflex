@@ -16,9 +16,9 @@ The **Groq Integration** allows your app to use [Groq’s API](https://groq.com/
 
 ## Step 2: Configure the Integration in Your App
 
-1. Go to **Integrations → Add Groq** in your app settings.  
-2. Paste your **Groq API Key** in the input field.  
-3. Click **Connect** to validate and save your integration.
+1. In Reflex Build, open the **Integrations** tab and select the **Groq** card.
+2. Click **Add connection** and paste your API key into **GROQ_API_KEY**.
+3. Click **Connect** to save the connection.
 
 Once connected, your app can use Groq to deliver ultra-low latency AI responses across workflows and components.
 

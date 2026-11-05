@@ -16,9 +16,9 @@ The **HubSpot Integration** allows your app to use [HubSpot](https://www.hubspot
 
 ## Step 2: Configure the Integration in Your App
 
-1. Go to **Integrations → Add HubSpot** in your app settings.  
-2. Paste your **HubSpot Access Token** in the input field.  
-3. Click **Connect** to validate and save your integration.
+1. In Reflex Build, open the **Integrations** tab and select the **HubSpot** card.
+2. Click **Add connection** and paste your access token into **HUBSPOT_ACCESS_TOKEN**.
+3. Click **Connect** to save the connection.
 
 Once connected, your app can sync and manage HubSpot data directly from workflows and UI actions.
 

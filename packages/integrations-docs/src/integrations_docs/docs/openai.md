@@ -17,9 +17,11 @@ The **OpenAI Integration** allows your app to use OpenAI APIs for features such 
 
 ## Step 2: Configure the Integration in Your App
 
-1. Go to **Integrations → Add OpenAI Integration** in your app settings.
-2. Enter your **OpenAI API Key** in the input field.
-3. Save the integration. Your app is now ready to make OpenAI API requests.
+1. In Reflex Build, open the **Integrations** tab and select the **OpenAI** card.
+2. Click **Add connection** and paste your API key into **OPENAI_API_KEY**.
+3. Click **Connect** to save the connection.
+
+Leave **OPENAI_BASE_URL** at its default (`https://api.openai.com/v1`) unless you send requests through a proxy or gateway.
 
 ---
 

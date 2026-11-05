@@ -26,9 +26,9 @@ With Perplexity, your app can:
 
 ## Step 2: Configure the Integration in Your App
 
-1. Go to **Integrations → Add Perplexity** in your app settings.  
-2. Paste your **Perplexity API Key** in the input field.  
-3. Click **Connect** to validate and save your integration.
+1. In Reflex Build, open the **Integrations** tab and select the **Perplexity** card.
+2. Click **Add connection** and paste your API key into **PERPLEXITY_API_KEY**.
+3. Click **Connect** to save the connection.
 
 Once connected, your app can use Perplexity for retrieval-augmented AI features across workflows and components.
 

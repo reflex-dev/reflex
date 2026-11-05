@@ -4,6 +4,8 @@ description: Add Descope’s identity and authentication platform to your apps t
 ---
 # Descope Integration
 
+> **Legacy integration.** New connections use the [Custom OIDC](https://reflex.dev/docs/ai/integrations/custom-oidc/) card instead: selecting Descope in Reflex Build opens it. This page is for projects that already have a Descope connection.
+
 The **Descope Integration** enables your app to leverage Descope’s full Customer Identity & Access Management (CIAM) features—visual authentication flows, identity management, SSO, MFA, tenant isolation, and more. Once set up, you can orchestrate secure user journeys across your application with minimal coding.
 
 
@@ -34,10 +36,10 @@ With Descope Integration, your app can:
 
 ## Step 2: Configure the Integration in Your App
 
-1. In your app’s settings or integration dashboard, select **Add Descope**.  
-2. Enter your **PROJECT_ID**.  
-3. (Optional) Pick a **DESCOPE_FLOW_ID** (e.g. “sign-up-or-login”) and **SESSION_SECRET_KEY** or press the Clipboard Copy to use default values.  
-4. Click **Connect** to validate credentials and enable Descope features.
+1. In Reflex Build, open the **Integrations** tab and select your existing **Descope** connection.
+2. Enter your **DESCOPE_PROJECT_ID**.  
+3. (Optional) Set **DESCOPE_FLOW_ID** (defaults to `sign-up-or-in`) and **SESSION_SECRET_KEY**, or use the fill button to generate a random secret.  
+4. Click **Save Changes**.
 
 ![Descope Integration](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/descope_2.webp)
 

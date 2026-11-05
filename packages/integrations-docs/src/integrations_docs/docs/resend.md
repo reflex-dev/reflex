@@ -25,8 +25,6 @@ With the Resend Integration, your app can:
 
 ## Step 2: Configure the Integration in Your App
 
-1. Open your app in the **AI Builder**.
-2. Click the **Settings** gear icon and navigate to the **Integrations** tab.
-3. Find and enable the **Resend** integration.
-4. Paste your **API Key** in the input field.
-5. Click **Connect** to confirm the connection.
+1. In Reflex Build, open the **Integrations** tab and select the **Resend** card.
+2. Click **Add connection** and paste your API key into **RESEND_API_KEY**.
+3. Click **Connect** to save the connection.

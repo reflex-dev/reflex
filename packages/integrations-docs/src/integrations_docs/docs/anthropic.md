@@ -19,9 +19,11 @@ The **Anthropic Integration** allows your app to use [Anthropic’s Claude model
 
 ## Step 2: Configure the Integration in Your App
 
-1. Go to **Integrations → Add Anthropic** in your app settings.
-2. Paste your **Anthropic API Key** in the input field.
-3. Click **Connect** to validate and save your integration.
+1. In Reflex Build, open the **Integrations** tab and select the **Anthropic** card.
+2. Click **Add connection** and paste your API key into **ANTHROPIC_API_KEY**.
+3. Click **Connect** to save the connection.
+
+Leave **ANTHROPIC_BASE_URL** at its default (`https://api.anthropic.com`) unless you send requests through a proxy or gateway.
 
 Once connected, your app can use Claude for AI-powered features across workflows and components.
 

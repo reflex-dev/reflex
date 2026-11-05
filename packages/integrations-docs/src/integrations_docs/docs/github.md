@@ -32,9 +32,9 @@ ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 ## Step 2: Configure the Integration in Your App
 
-1. In your app, go to **Integrations → Add GitHub**.  
-2. Paste your **GitHub Personal Access Token** in the input field.  
-3. Click **Connect** to validate and save your integration.
+1. In Reflex Build, open the **Integrations** tab and select the **GitHub** card.
+2. Click **Add connection** and paste your personal access token into **GITHUB_TOKEN**.
+3. Click **Connect** to save the connection.
 
 Once connected, your app can start interacting with GitHub through workflows and actions.
 

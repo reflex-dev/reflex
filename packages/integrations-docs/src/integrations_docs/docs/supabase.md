@@ -28,9 +28,9 @@ With Supabase, your app can:
 
 ## Step 2: Configure the Integration in Your App
 
-1. Go to **Integrations → Add Supabase** in your app settings.  
-2. Paste your **Supabase URL** and **Supabase Key** into the fields.  
-3. Click **Connect** to validate and save your integration.
+1. In Reflex Build, open the **Integrations** tab and select the **Supabase** card.
+2. Click **Add connection** and paste your project URL into **SUPABASE_URL** and your key into **SUPABASE_KEY**.
+3. Click **Connect** to save the connection.
 
 Once connected, your app can query and update your Supabase database directly from workflows and UI actions.
 

@@ -65,15 +65,15 @@ With AWS integration, your app can:
 
 ## Step 2: Configure the Integration in Your App
 
-1. Go to **Integrations → Add AWS** in your app settings.
-2. Enter your **AWS Access Key ID** and **AWS Secret Access Key**.
-3. **(Optional)** Select your **AWS Region** (e.g., `us-east-1`, `eu-west-1`). Defaults to `us-east-1`.
-4. **(Optional)** Enter an **AWS Endpoint URL** if using S3-compatible services:
-   - **MinIO:** `http://localhost:9000` or your MinIO server URL
+1. In Reflex Build, open the **Integrations** tab, select the **AWS** card, and click **Add connection**.
+2. Enter your **AWS_ACCESS_KEY_ID** and **AWS_SECRET_ACCESS_KEY**.
+3. **(Optional)** Enter your **AWS_REGION** (e.g., `us-east-1`, `eu-west-1`). Defaults to `us-east-1`.
+4. **(Optional)** Enter an **AWS_ENDPOINT_URL** if using S3-compatible services. The app runs in Reflex's cloud, so the endpoint must be reachable from the internet:
+   - **MinIO:** your MinIO server's public URL
    - **Cloudflare R2:** `https://<account-id>.r2.cloudflarestorage.com`
    - **DigitalOcean Spaces:** `https://<region>.digitaloceanspaces.com`
    - Leave blank for standard AWS services.
-5. Click **Connect** to validate and save your integration.
+5. Click **Connect** to save the connection.
 
 Once connected, your app can access AWS services using boto3.
 

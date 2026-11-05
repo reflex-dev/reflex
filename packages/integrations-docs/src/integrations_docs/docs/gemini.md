@@ -15,9 +15,11 @@ The **Gemini Integration** allows your app to use [Google’s Gemini models](htt
 
 ## Step 2: Configure the Integration in Your App
 
-1. Go to **Integrations → Add Gemini** in your app settings.  
-2. Paste your **Gemini API Key** in the input field.  
-3. Click **Connect** to validate and save your integration.
+1. In Reflex Build, open the **Integrations** tab and select the **Gemini** card.
+2. Click **Add connection** and paste your Gemini API key into **GOOGLE_API_KEY**.
+3. Click **Connect** to save the connection.
+
+Leave **GEMINI_BASE_URL** at its default (`https://generativelanguage.googleapis.com`) unless you send requests through a proxy or gateway.
 
 Once connected, your app can use Gemini for AI-powered features across workflows and components.
 

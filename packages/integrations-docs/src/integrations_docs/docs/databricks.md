@@ -92,24 +92,21 @@ If your workspace administrator has already added Reflex as a Connected App in y
 
 ## Step 2: Configure the Integration in Your App
 
-1. In your app, go to **Integrations** and **Add Databricks**.
-2. Paste your **DATABRICKS_HOST**
+1. In Reflex Build, open the **Integrations** tab, select the **Databricks** card, and click **Add connection**.
+2. Paste your **DATABRICKS_HOST**.
 3. Select your authentication method:
-   - OAuth, if configured.
-   - Service Principal, provide the client ID and secret gathered previously.
-2. Paste or select your
-   1. **DATABRICKS_WAREHOUSE_ID**
-   2. **DATABRICKS_CATALOG**
-   3. **DATABRICKS_SCHEMA**  
-3. Click **Connect** to validate and save your integration.
+   - **OAuth**: click **Login with Databricks**. This button appears once a workspace admin has registered the Connected App (see [How to Enable Login as an Admin](#how-to-enable-login-as-an-admin)).
+   - **Service Principal**: provide the client ID and secret gathered previously.
+4. Optionally pick a **DATABRICKS_WAREHOUSE_ID**, **DATABRICKS_CATALOG**, and **DATABRICKS_SCHEMA** from the dropdowns, which list what your credentials can access.
+5. Click **Connect** to save the connection.
 
 Once connected, the AI Builder can execute queries directly against your Databricks environment.
 
 
 ## Step 3: Notes
 
-* **Secure your token:** Never expose tokens in public code.  
-* **Permissions:** Ensure your token or service account has the required workspace and table permissions.
+* **Secure your credentials:** Never expose client secrets in public code.  
+* **Permissions:** Ensure your user or service principal has access to the workspace, **CAN USE** on the SQL warehouse, and Unity Catalog permissions on the catalogs and tables the app queries.
 * **Combine with AI:** Use query outputs to power models, summaries, or alerts in real time.
 
 
@@ -120,7 +117,7 @@ Once connected, the AI Builder can execute queries directly against your Databri
 
 ![Opening Manage Account as Databricks admin](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/databricks_admin_auth_1.webp)
 
-- Go to **Settings** → **Apps Connections** → **Add new connection**
+- Go to **Settings** → **App connections** → **Add connection**
 
 ![Adding a new app connection in Databricks settings](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/databricks_admin_auth_2.webp)
 
@@ -128,3 +125,5 @@ Once connected, the AI Builder can execute queries directly against your Databri
    - URL: `https://build.reflex.dev/_reflex_oidc_databricks/authorization-code/callback`
 
 ![Configuring the Reflex redirect URL in Databricks](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/databricks_admin_auth_3.webp)
+
+- Copy the generated client ID and give it to whoever is connecting in Reflex Build. On the Databricks card's **OAuth** tab, they paste it into **client_id** and click **Add**; **Login with Databricks** then appears.

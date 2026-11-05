@@ -25,9 +25,11 @@ With Notion, your app can:
 
 ## Step 2: Configure the Integration in Your App
 
-1. Go to **Integrations → Add Notion** in your app settings.  
-2. Paste your **Notion API Token** in the input field.  
-3. Click **Connect** to validate and save your integration.
+1. In Reflex Build, open the **Integrations** tab and select the **Notion** card.
+2. Click **Add connection** and paste your token into **NOTION_API_KEY**.
+3. Click **Connect** to save the connection.
+
+If the card offers a **Connect account** tab, you can sign in with Notion there instead of pasting a key.
 
 Once connected, your app can read and write to Notion directly from workflows and UI actions.
 
