@@ -224,6 +224,44 @@ def event_log_on_update(state_manager_redis: StateManagerRedis) -> asyncio.Event
     return state_manager_redis.redis._internals["event_log_on_update"]  # pyright: ignore[reportAttributeAccessIssue]
 
 
+@pytest.fixture
+def wait_for_events(
+    event_log: list[dict[str, Any]],
+    event_log_on_update: asyncio.Event,
+) -> Callable[[bytes, bytes, int], Awaitable[None]]:
+    """Get a function asserting how many events of a key the redis event log holds.
+
+    With a real redis, events reach the log through a separate pubsub
+    connection, so they can arrive after the command that caused them returned.
+    The function waits for the expected count before asserting it.
+
+    Args:
+        event_log: The redis event log.
+        event_log_on_update: The event for new event records being added to the redis event log.
+
+    Returns:
+        A function taking the redis key, the event data and the expected count.
+    """
+
+    def count(key: bytes, data: bytes) -> int:
+        return sum(
+            1 for ev in event_log if ev["channel"].endswith(key) and ev["data"] == data
+        )
+
+    async def logged(key: bytes, data: bytes, expected: int) -> None:
+        while count(key, data) < expected:
+            event_log_on_update.clear()
+            await event_log_on_update.wait()
+
+    async def wait_for(key: bytes, data: bytes, expected: int) -> None:
+        # On timeout, the assertion below reports the count that was logged.
+        with contextlib.suppress(TimeoutError):
+            await asyncio.wait_for(logged(key, data, expected), timeout=5)
+        assert count(key, data) == expected
+
+    return wait_for
+
+
 @pytest.mark.asyncio
 async def test_basic_get_set(
     state_manager_redis: StateManagerRedis,
@@ -495,8 +533,7 @@ async def test_modify_oplock(
     state_manager_redis: StateManagerRedis,
     other_state_manager: Callable[[], Awaitable[StateManagerRedis]],
     root_state: type[RedisTestState],
-    event_log: list[dict[str, Any]],
-    event_log_on_update: asyncio.Event,
+    wait_for_events: Callable[[bytes, bytes, int], Awaitable[None]],
 ):
     """Test modifying state with StateManagerRedis with optimistic locking.
 
@@ -504,10 +541,12 @@ async def test_modify_oplock(
         state_manager_redis: The StateManagerRedis to test.
         other_state_manager: Creates the managers of other app instances.
         root_state: The root state class.
-        event_log: The redis event log.
-        event_log_on_update: The event for new event records being added to the redis event log.
+        wait_for_events: Asserts how many events of a key the redis event log holds.
     """
     token = str(uuid.uuid4())
+    state_token = BaseStateToken(ident=token, cls=root_state)
+    lock_key = state_manager_redis._lock_key(state_token)
+    state_key = str(state_token).encode()
 
     state_manager_redis._debug_enabled = True
     state_manager_redis._oplock_enabled = True
@@ -517,12 +556,8 @@ async def test_modify_oplock(
     state_manager_2._debug_enabled = True
     state_manager_2._oplock_enabled = True
 
-    event_log_on_update.clear()
-
     # Initial modify should set count to 1
-    async with state_manager_redis.modify_state(
-        BaseStateToken(ident=token, cls=root_state),
-    ) as new_state:
+    async with state_manager_redis.modify_state(state_token) as new_state:
         new_state.count = 1
 
     # Initial state manager should be holding a lease
@@ -535,34 +570,17 @@ async def test_modify_oplock(
     assert state_lock_1 is not None
     assert not state_lock_1.locked()
 
-    await event_log_on_update.wait()
-    lock_events_before = len([
-        ev
-        for ev in event_log
-        if ev["channel"].endswith(b"lock") and ev["data"] == b"set"
-    ])
-    assert lock_events_before == 1
+    await wait_for_events(lock_key, b"set", 1)
 
     # The second modify should NOT trigger another redis lock
-    async with state_manager_redis.modify_state(
-        BaseStateToken(ident=token, cls=root_state),
-    ) as new_state:
+    async with state_manager_redis.modify_state(state_token) as new_state:
         new_state.count = 2
         assert state_lock_1.locked()
 
-    lock_events_after = len([
-        ev
-        for ev in event_log
-        if ev["channel"].endswith(b"lock") and ev["data"] == b"set"
-    ])
-
-    assert lock_events_before == lock_events_after
+    await wait_for_events(lock_key, b"set", 1)
 
     # Contend the lock from another state manager
-    event_log_on_update.clear()
-    async with state_manager_2.modify_state(
-        BaseStateToken(ident=token, cls=root_state),
-    ) as new_state:
+    async with state_manager_2.modify_state(state_token) as new_state:
         new_state.count = 3
         state_lock_2 = state_manager_2._cached_states_locks.get(token)
         assert state_lock_2 is not None
@@ -581,59 +599,29 @@ async def test_modify_oplock(
     assert token not in state_manager_redis._cached_states
 
     # There should have been another redis lock taken.
-    await event_log_on_update.wait()
-    lock_events_after_2 = len([
-        ev
-        for ev in event_log
-        if ev["channel"].endswith(b"lock") and ev["data"] == b"set"
-    ])
-    assert lock_events_after_2 == lock_events_after + 1
+    await wait_for_events(lock_key, b"set", 2)
 
     # And there should have been a lock release.
-    unlock_events = len([
-        ev
-        for ev in event_log
-        if ev["channel"].endswith(b"lock") and ev["data"] == b"del"
-    ])
-    assert unlock_events == 1
+    await wait_for_events(lock_key, b"del", 1)
 
     # And a single token set.
-    token_set_events = len([
-        ev
-        for ev in event_log
-        if ev["channel"].endswith(root_state.get_full_name().encode())
-        and ev["data"] == b"set"
-    ])
-    assert token_set_events == 1
+    await wait_for_events(state_key, b"set", 1)
 
     # Now close the contender to release its lease.
-    event_log_on_update.clear()
     await state_manager_2.close()
-    await event_log_on_update.wait()
 
     # Both locks should have been released.
-    unlock_events = len([
-        ev
-        for ev in event_log
-        if ev["channel"].endswith(b"lock") and ev["data"] == b"del"
-    ])
-    assert unlock_events == 2
+    await wait_for_events(lock_key, b"del", 2)
 
     # And both tokens should have been set.
-    token_set_events = len([
-        ev
-        for ev in event_log
-        if ev["channel"].endswith(root_state.get_full_name().encode())
-        and ev["data"] == b"set"
-    ])
-    assert token_set_events == 2
+    await wait_for_events(state_key, b"set", 2)
 
 
 async def test_oplock_contention_queue(
     state_manager_redis: StateManagerRedis,
     other_state_manager: Callable[[], Awaitable[StateManagerRedis]],
     root_state: type[RedisTestState],
-    event_log: list[dict[str, Any]],
+    wait_for_events: Callable[[bytes, bytes, int], Awaitable[None]],
 ):
     """Test the oplock contention queue.
 
@@ -641,7 +629,7 @@ async def test_oplock_contention_queue(
         state_manager_redis: The StateManagerRedis to test.
         other_state_manager: Creates the managers of other app instances.
         root_state: The root state class.
-        event_log: The redis event log.
+        wait_for_events: Asserts how many events of a key the redis event log holds.
     """
     token = str(uuid.uuid4())
 
@@ -718,19 +706,18 @@ async def test_oplock_contention_queue(
     assert final_state.count == 3
 
     # There should only be two lock acquisitions
-    lock_events = len([
-        ev
-        for ev in event_log
-        if ev["channel"].endswith(b"lock") and ev["data"] == b"set"
-    ])
-    assert lock_events == 2
+    await wait_for_events(
+        state_manager_redis._lock_key(BaseStateToken(ident=token, cls=root_state)),
+        b"set",
+        2,
+    )
 
 
 async def test_oplock_contention_no_lease(
     state_manager_redis: StateManagerRedis,
     other_state_manager: Callable[[], Awaitable[StateManagerRedis]],
     root_state: type[RedisTestState],
-    event_log: list[dict[str, Any]],
+    wait_for_events: Callable[[bytes, bytes, int], Awaitable[None]],
 ):
     """Test the oplock contention queue, when no waiters can share.
 
@@ -738,7 +725,7 @@ async def test_oplock_contention_no_lease(
         state_manager_redis: The StateManagerRedis to test.
         other_state_manager: Creates the managers of other app instances.
         root_state: The root state class.
-        event_log: The redis event log.
+        wait_for_events: Asserts how many events of a key the redis event log holds.
     """
     token = str(uuid.uuid4())
 
@@ -825,12 +812,11 @@ async def test_oplock_contention_no_lease(
     assert final_state.count == 3
 
     # There should be three lock acquisitions
-    lock_events = len([
-        ev
-        for ev in event_log
-        if ev["channel"].endswith(b"lock") and ev["data"] == b"set"
-    ])
-    assert lock_events == 3
+    await wait_for_events(
+        state_manager_redis._lock_key(BaseStateToken(ident=token, cls=root_state)),
+        b"set",
+        3,
+    )
 
 
 @pytest.mark.parametrize("racer_delay", [None, 0, 0.1])
@@ -1019,14 +1005,14 @@ async def test_oplock_immediate_cancel(
 async def test_oplock_fetch_substate(
     state_manager_redis: StateManagerRedis,
     root_state: type[RedisTestState],
-    event_log: list[dict[str, Any]],
+    wait_for_events: Callable[[bytes, bytes, int], Awaitable[None]],
 ):
     """Test fetching substate with oplock enabled and partial state is cached.
 
     Args:
         state_manager_redis: The StateManagerRedis to test.
         root_state: The root state class.
-        event_log: The redis event log.
+        wait_for_events: Asserts how many events of a key the redis event log holds.
     """
     token = str(uuid.uuid4())
 
@@ -1054,12 +1040,11 @@ async def test_oplock_fetch_substate(
         assert SubState2.get_name() in new_state.substates
 
     # Should have still only been one lock acquisition.
-    lock_events = len([
-        ev
-        for ev in event_log
-        if ev["channel"].endswith(b"lock") and ev["data"] == b"set"
-    ])
-    assert lock_events == 1
+    await wait_for_events(
+        state_manager_redis._lock_key(BaseStateToken(ident=token, cls=root_state)),
+        b"set",
+        1,
+    )
 
 
 @pytest.fixture
@@ -1085,8 +1070,7 @@ def short_lock_expiration(
 async def test_oplock_hold_oplock_after_cancel(
     state_manager_redis: StateManagerRedis,
     root_state: type[RedisTestState],
-    event_log: list[dict[str, Any]],
-    event_log_on_update: asyncio.Event,
+    wait_for_events: Callable[[bytes, bytes, int], Awaitable[None]],
     short_lock_expiration: int,
 ):
     """Test that cancelling a modify does not release the oplock prematurely.
@@ -1094,8 +1078,7 @@ async def test_oplock_hold_oplock_after_cancel(
     Args:
         state_manager_redis: The StateManagerRedis to test.
         root_state: The root state class.
-        event_log: The redis event log.
-        event_log_on_update: The event log update event.
+        wait_for_events: Asserts how many events of a key the redis event log holds.
         short_lock_expiration: The lock expiration time in milliseconds.
     """
     token = str(uuid.uuid4())
@@ -1144,7 +1127,6 @@ async def test_oplock_hold_oplock_after_cancel(
         await lease_task
 
     # Modify the state again, this should get a new lock and lease
-    event_log_on_update.clear()
     async with state_manager_redis.modify_state(
         BaseStateToken(ident=token, cls=root_state),
     ) as new_state:
@@ -1152,13 +1134,11 @@ async def test_oplock_hold_oplock_after_cancel(
         new_state.count += 1
 
     # There should have been two redis lock acquisitions.
-    await event_log_on_update.wait()
-    lock_events = len([
-        ev
-        for ev in event_log
-        if ev["channel"].endswith(b"lock") and ev["data"] == b"set"
-    ])
-    assert lock_events == 2
+    await wait_for_events(
+        state_manager_redis._lock_key(BaseStateToken(ident=token, cls=root_state)),
+        b"set",
+        2,
+    )
 
     await state_manager_redis.close()
 
