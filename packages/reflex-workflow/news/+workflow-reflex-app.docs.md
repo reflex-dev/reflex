@@ -1,1 +1,0 @@
-The README covers using workflows from a Reflex app: why they go on their own `DeclarativeBase` rather than `rx.Model`, registering that base so `reflex db makemigrations` picks the tables up, and the session factory to give `run_workflows`.
