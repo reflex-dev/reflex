@@ -30,7 +30,7 @@ Fill in the form you opened in Step 1:
 - **OIDC_ISSUER_URI**: your Frontend API URL, for example `https://your-slug.clerk.accounts.dev`. With a custom domain, use `https://clerk.your-domain.com`.
 - **OIDC_CLIENT_ID**: the client ID from Step 2.
 - **OIDC_CLIENT_SECRET**: the client secret from Step 2.
-- **OIDC_EXTRA_SCOPES** (optional): extra scopes to request, separated by spaces. Request only scopes enabled for the Clerk OAuth application.
+- **OIDC_EXTRA_SCOPES** (optional): extra scopes to request, separated by spaces. `offline_access` keeps users signed in after their access token expires, up to the 7-day session limit; select it on the Clerk OAuth application as well.
 
 Click **Connect**. Reflex Build fetches the issuer's discovery document (`/.well-known/openid-configuration`) and refuses an issuer URL that does not serve one.
 

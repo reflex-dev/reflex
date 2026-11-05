@@ -27,7 +27,7 @@ Fill in the form you opened in Step 1:
 - **OIDC_ISSUER_URI**: `https://<your-domain>/`, using the Domain from Step 2. Enter it exactly as the `issuer` value in `https://<your-domain>/.well-known/openid-configuration`, which for Auth0 ends with a slash.
 - **OIDC_CLIENT_ID**: the client ID from Step 2.
 - **OIDC_CLIENT_SECRET**: the client secret from Step 2.
-- **OIDC_EXTRA_SCOPES** (optional): extra scopes to request, separated by spaces. `offline_access` keeps users signed in after their access token expires, up to the 7-day session limit. Auth0 has no `groups` scope: add group membership as a custom claim with an Auth0 Action instead.
+- **OIDC_EXTRA_SCOPES** (optional): extra scopes to request, separated by spaces. `offline_access` keeps users signed in after their access token expires, up to the 7-day session limit, once **Refresh Token** is enabled under the application's **Advanced Settings → Grant Types**. Auth0 has no `groups` scope: add group membership as a custom claim with an Auth0 Action instead.
 
 Click **Connect**. Reflex Build fetches the issuer's discovery document (`/.well-known/openid-configuration`) and refuses an issuer URL that does not serve one.
 
