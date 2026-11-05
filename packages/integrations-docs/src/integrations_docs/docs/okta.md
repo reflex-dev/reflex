@@ -22,7 +22,7 @@ Keep the form open; you will fill it in after the next step.
 
    ![Choosing OIDC and Web Application in Okta](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/okta_1.webp)
 
-3. Name the app integration, keep **Use Okta-generated client ID**, and under **Sign-in redirect URIs**, add each redirect URI from Step 1.
+3. Name the app integration, select **Use Okta-generated client ID**, and under **Sign-in redirect URIs**, add each redirect URI from Step 1.
 
    ![Adding sign-in redirect URIs in Okta](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/okta_2.webp)
 
