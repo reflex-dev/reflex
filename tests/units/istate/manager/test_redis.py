@@ -965,6 +965,26 @@ async def test_oplock_lease_waits_for_lock_updates_subscriber(
 
 
 @pytest.mark.asyncio
+async def test_lock_task_runs_on_the_serving_loop():
+    """Test that the lock task starts on the loop that uses the manager, not the one that built it.
+
+    AppHarness builds the app on a thread whose loop pytest-playwright keeps
+    running, then serves it from a backend thread with its own loop. A lock task
+    started on the building loop is never replaced, so closing the manager on
+    the serving loop fails.
+    """
+    state_manager = StateManagerRedis(redis=mock_redis())
+
+    async def serve() -> None:
+        state_manager._ensure_lock_task()
+        assert state_manager._lock_task is not None
+        assert state_manager._lock_task.get_loop() is asyncio.get_running_loop()
+        await state_manager.close()
+
+    await asyncio.to_thread(asyncio.run, serve())
+
+
+@pytest.mark.asyncio
 async def test_oplock_immediate_cancel(
     state_manager_redis: StateManagerRedis,
     root_state: type[RedisTestState],
