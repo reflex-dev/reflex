@@ -1,3 +1,5 @@
+import re
+
 import pytest
 from reflex_base.utils import format
 from reflex_base.utils.imports import ImportVar
@@ -85,6 +87,30 @@ def test_dynamic_icon_uses_dynamic_module():
     assert import_var.tag == "DynamicIcon"
     assert import_var.package_path == "/dynamic.mjs"
     assert not import_var.is_default
+
+
+def test_dynamic_icon_name_normalizes_digit_x_digit():
+    """Var-tagged icons drop the hyphen snake_case leaves in ``grid_2x_2``."""
+    icon = Icon.create(Var("state_icon").to(str))
+    assert (
+        str(icon.render()["props"][0])
+        == 'name:state_icon.replaceAll("_", "-").replace(/(\\d)x-(\\d)/g, "$1x$2")'
+    )
+
+
+@pytest.mark.parametrize("tag", LUCIDE_ICON_LIST)
+def test_dynamic_icon_name_matches_lucide_name(tag):
+    """The runtime name conversion agrees with the verified per-icon file names."""
+    # Mirror the JS expression emitted by dynamic_icon_name_operation.
+    name = re.sub(r"(\d)x-(\d)", r"\1x\2", tag.replace("_", "-"))
+    # "fingerprint" is a Lucide alias that DynamicIcon resolves under its own
+    # name; only the deep import needs the aliased file name.
+    expected = (
+        "fingerprint"
+        if tag == "fingerprint"
+        else LUCIDE_ICON_FILENAME_OVERRIDE.get(tag, format.to_kebab_case(tag))
+    )
+    assert name == expected
 
 
 @pytest.mark.parametrize(

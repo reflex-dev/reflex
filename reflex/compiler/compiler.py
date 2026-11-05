@@ -515,6 +515,34 @@ class _MemoGroup:
         _extend_imports_in_place(self.imports, memo_imports)
 
 
+_MOMENT_ALL_LOCALES_IMPORT = "moment/min/locales"
+_MOMENT_LOCALE_IMPORT_PREFIX = "moment/locale/"
+
+
+def _has_moment_all_locales_import(
+    imports: dict[str, list[ImportVar]],
+) -> bool:
+    """Return whether imports include Moment's all-locales side effect."""
+    return any(
+        import_var.tag == _MOMENT_ALL_LOCALES_IMPORT
+        for import_var in imports.get("", ())
+    )
+
+
+def _remove_redundant_moment_locale_imports(
+    imports: dict[str, list[ImportVar]],
+) -> None:
+    """Drop individual Moment locales when the all-locales bundle is present."""
+    if side_effect_imports := imports.get(""):
+        imports[""] = [
+            import_var
+            for import_var in side_effect_imports
+            if not (import_var.tag or "").startswith(_MOMENT_LOCALE_IMPORT_PREFIX)
+        ]
+        if not imports[""]:
+            del imports[""]
+
+
 # Imports every memo module needs regardless of its body: ``isTrue`` for prop
 # coercion. The component wrapper import (``memo`` from React by default)
 # rides on each definition's ``wrapper`` var data instead, so a module whose
@@ -527,6 +555,8 @@ _MEMO_BASE_IMPORTS: dict[str, list[ImportVar]] = {
 
 def _compile_memo_components(
     memos: Iterable[MemoDefinition] = (),
+    *,
+    page_imports: dict[str, list[ImportVar]] | None = None,
 ) -> tuple[list[tuple[str, str]], dict[str, list[ImportVar]]]:
     """Compile memos grouped by their source module's mirrored output path.
 
@@ -538,6 +568,7 @@ def _compile_memo_components(
 
     Args:
         memos: The memos to compile.
+        page_imports: Page-level imports that share the app's Moment instance.
 
     Returns:
         A list of ``(path, code)`` pairs to write and the aggregated imports
@@ -545,43 +576,56 @@ def _compile_memo_components(
     """
     output_files: list[tuple[str, str]] = []
     aggregate_imports: dict[str, list[ImportVar]] = {}
-    unmirrored_files: list[tuple[str, str]] = []
+    unmirrored: list[
+        tuple[
+            Callable[[dict, dict], tuple[str, dict[str, list[ImportVar]]]], dict, dict
+        ]
+    ] = []
     unmirrored_base_dir = utils.get_memo_components_dir()
     groups: collections.defaultdict[tuple[str, ...], _MemoGroup] = (
         collections.defaultdict(_MemoGroup)
     )
-
-    def _emit_unmirrored(
-        compile_fn: Callable[[dict, dict], tuple[str, dict[str, list[ImportVar]]]],
-        render: dict,
-        render_imports: dict,
-    ) -> None:
-        code, file_imports = compile_fn(render, render_imports)
-        unmirrored_files.append((
-            _memo_component_file_path(unmirrored_base_dir, render["name"]),
-            code,
-        ))
-        _extend_imports_in_place(aggregate_imports, file_imports)
 
     for memo in memos:
         if isinstance(memo, MemoComponentDefinition):
             memo_render, memo_imports = utils.compile_experimental_component_memo(memo)
             segments = memo_paths.module_to_mirrored_segments(memo.source_module)
             if segments is None:
-                _emit_unmirrored(
-                    _compile_single_memo_component, memo_render, memo_imports
-                )
+                unmirrored.append((
+                    _compile_single_memo_component,
+                    memo_render,
+                    memo_imports,
+                ))
             else:
                 groups[segments].add_component(memo_render, memo_imports)
         elif isinstance(memo, MemoFunctionDefinition):
             memo_render, memo_imports = utils.compile_experimental_function_memo(memo)
             segments = memo_paths.module_to_mirrored_segments(memo.source_module)
             if segments is None:
-                _emit_unmirrored(
-                    _compile_single_memo_function, memo_render, memo_imports
-                )
+                unmirrored.append((
+                    _compile_single_memo_function,
+                    memo_render,
+                    memo_imports,
+                ))
             else:
                 groups[segments].add_function(memo_render, memo_imports)
+
+    all_import_dicts = [group.imports for group in groups.values()]
+    all_import_dicts.extend(item[2] for item in unmirrored)
+    if page_imports is not None:
+        all_import_dicts.append(page_imports)
+    if any(_has_moment_all_locales_import(imports) for imports in all_import_dicts):
+        for imports in all_import_dicts:
+            _remove_redundant_moment_locale_imports(imports)
+
+    unmirrored_files: list[tuple[str, str]] = []
+    for compile_fn, render, render_imports in unmirrored:
+        code, file_imports = compile_fn(render, render_imports)
+        unmirrored_files.append((
+            _memo_component_file_path(unmirrored_base_dir, render["name"]),
+            code,
+        ))
+        _extend_imports_in_place(aggregate_imports, file_imports)
 
     if groups:
         _extend_imports_in_place(aggregate_imports, _MEMO_BASE_IMPORTS)
@@ -828,23 +872,27 @@ def compile_page_from_context(page_ctx: PageContext) -> tuple[str, str]:
         hooks=page_ctx.hooks,
         render=page_ctx.root_component.render(),
         route=page_ctx.route,
+        client_state_owns=sorted(page_ctx.client_state_names),
     )
     return output_path, code
 
 
 def compile_memo_components(
     memos: Iterable[MemoDefinition] = (),
+    *,
+    page_imports: dict[str, list[ImportVar]] | None = None,
 ) -> tuple[list[tuple[str, str]], dict[str, list[ImportVar]]]:
     """Compile the memos into one module per memo.
 
     Args:
         memos: The memos to compile.
+        page_imports: Page-level imports that share the app's Moment instance.
 
     Returns:
         A list of ``(path, code)`` pairs (one per memo module) alongside the
         aggregated imports across all memo modules.
     """
-    return _compile_memo_components(memos)
+    return _compile_memo_components(memos, page_imports=page_imports)
 
 
 def purge_web_pages_dir():
@@ -1406,9 +1454,26 @@ def compile_app(
             *MEMOS.values(),
             *compile_ctx.auto_memo_components.values(),
         ),
+        page_imports=all_imports,
     )
     compile_results.extend(memo_component_files)
     all_imports = utils.merge_imports(all_imports, memo_components_imports)
+    if _has_moment_all_locales_import(all_imports):
+        for page_ctx in compile_ctx.compiled_pages.values():
+            page_imports_before = page_ctx.frontend_imports.get("", [])
+            if not any(
+                (import_var.tag or "").startswith(_MOMENT_LOCALE_IMPORT_PREFIX)
+                for import_var in page_imports_before
+            ):
+                continue
+            _remove_redundant_moment_locale_imports(page_ctx.frontend_imports)
+            page_ctx.output_path, page_ctx.output_code = compile_page_from_context(
+                page_ctx
+            )
+            for index, (path, _code) in enumerate(compile_results):
+                if path == page_ctx.output_path:
+                    compile_results[index] = (path, page_ctx.output_code)
+                    break
     progress.advance(task)
 
     compile_results.append(

@@ -33,6 +33,7 @@ from reflex.app import UnevaluatedPage
 from reflex.compiler import compiler
 from reflex.compiler.plugins import (
     ApplyStylePlugin,
+    ClientStateScopePlugin,
     DefaultCollectorPlugin,
     DefaultPagePlugin,
     default_page_plugins,
@@ -718,62 +719,6 @@ def test_page_context_helpers_preserve_accumulated_values() -> None:
     ]
 
 
-def test_collector_deduplicates_moment_locale_side_effect_imports() -> None:
-    """The all-locales bundle makes individual Moment locale imports redundant."""
-    page_ctx = PageContext(
-        name="page",
-        route="/page",
-        root_component=Fragment.create(),
-        imports=[
-            {"": [ImportVar(tag="moment/locale/fr")]},
-            {
-                "": [
-                    ImportVar(tag="moment/min/locales"),
-                    ImportVar(tag="moment/locale/de"),
-                    ImportVar(tag="some-package/setup"),
-                ]
-            },
-        ],
-    )
-    DefaultCollectorPlugin().compile_page(page_ctx)
-
-    assert [import_var.tag for import_var in page_ctx.imports[0][""]] == [
-        "moment/min/locales",
-        "some-package/setup",
-    ]
-
-
-def test_collector_keeps_literal_moment_locale_import_without_all_locales() -> None:
-    """Literal-only locale selection keeps its narrow side-effect import."""
-    page_ctx = PageContext(
-        name="page",
-        route="/page",
-        root_component=Fragment.create(),
-        imports=[{"": [ImportVar(tag="moment/locale/fr")]}],
-    )
-    DefaultCollectorPlugin().compile_page(page_ctx)
-
-    assert [import_var.tag for import_var in page_ctx.imports[0][""]] == [
-        "moment/locale/fr"
-    ]
-
-
-def test_collector_deduplicates_moment_locales_from_frontend_imports() -> None:
-    """The optimized frontend-import path applies the same locale deduplication."""
-    page_ctx = PageContext(
-        name="page",
-        route="/page",
-        root_component=Fragment.create(),
-        imports=[{"": [ImportVar(tag="moment/locale/fr")]}],
-        frontend_imports={"": [ImportVar(tag="moment/min/locales")]},
-    )
-    DefaultCollectorPlugin().compile_page(page_ctx)
-
-    assert [import_var.tag for import_var in page_ctx.frontend_imports[""]] == [
-        "moment/min/locales"
-    ]
-
-
 def test_base_context_subclasses_initialize_distinct_context_vars() -> None:
     class DynamicContext(BaseContext):
         pass
@@ -994,11 +939,14 @@ def test_default_page_plugins_are_minimal_and_ordered() -> None:
 
     plugins = default_page_plugins(style=page_style())
 
-    assert len(plugins) == 4
+    assert len(plugins) == 5
     assert isinstance(plugins[0], DefaultPagePlugin)
     assert isinstance(plugins[1], ApplyStylePlugin)
-    assert isinstance(plugins[2], DefaultCollectorPlugin)
-    assert isinstance(plugins[3], MemoizeStatefulPlugin)
+    # Scopes the page from the collected hooks, so it runs its compile_page
+    # before the collector collapses the imports it adds.
+    assert isinstance(plugins[2], ClientStateScopePlugin)
+    assert isinstance(plugins[3], DefaultCollectorPlugin)
+    assert isinstance(plugins[4], MemoizeStatefulPlugin)
 
 
 def test_compile_context_collects_artifacts_from_leave_replacement_plugins() -> None:

@@ -106,7 +106,7 @@ def _determine_react_router_version() -> str:
 
 
 def _determine_react_version() -> str:
-    default_version = "19.3.0"
+    default_version = "19.3.1"
     if (version := os.getenv("REACT_VERSION")) and version != default_version:
         logger.warning(
             f"You have requested react@{version} but the supported version is {default_version}, abandon all hope ye who enter here."
@@ -156,11 +156,11 @@ class PackageJson(SimpleNamespace):
     DEV_DEPENDENCIES = {
         "@emotion/react": "11.14.0",
         "autoprefixer": "10.6.1",
-        "postcss": "8.5.29",
-        "postcss-import": "17.0.0",
+        "postcss": "8.5.30",
+        "postcss-import": "17.0.1",
         "@react-router/dev": _react_router_version,
         "@react-router/fs-routes": _react_router_version,
-        "vite": "8.3.2",
+        "vite": "8.3.4",
     }
 
     REACT_COMPILER_DEV_DEPENDENCIES = {

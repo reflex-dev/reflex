@@ -1,0 +1,1 @@
+`app.add_page(...)` now raises `BackendVarFormatError` when `title`, `description` or `image` is a backend var such as `State._title`, instead of failing later at compile time with an unrelated error.

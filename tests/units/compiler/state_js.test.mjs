@@ -18,7 +18,11 @@ async function setup({
   disabled = false,
   hidden = false,
   storedToken = "original-token",
+  deferNamespaceConnect = false,
+  deferConnectAck = false,
+  stateName = "root",
   clientStorage = {},
+  initialState = { root: {}, child: {} },
   dropConnects = 0,
   dropReason = "transport close",
   maxPayload = 1_000_000,
@@ -31,6 +35,7 @@ async function setup({
   const microtasks = [];
   const timers = new Map();
   const firstHydrates = [];
+  const onLoadInternalEvent = `${stateName}.test_on_load_internal`;
   const updates = [];
   const consoleErrors = [];
   let connectErrors = [];
@@ -46,6 +51,9 @@ async function setup({
     items: new Map(),
     getItem(key) {
       return this.items.get(key) ?? null;
+    },
+    setItem(key, value) {
+      this.items.set(key, String(value));
     },
   };
   const document = new EventTarget();
@@ -77,6 +85,7 @@ async function setup({
       connected: false,
       namespaceConnects: 0,
       disconnects: 0,
+      events: [],
       // Like socket.io-client: the URL path names the namespace.
       nsp: new URL(url).pathname,
       // Engine.IO frames of the CONNECT packets sent to the server.
@@ -118,30 +127,45 @@ async function setup({
         ]) {
           assert.ok(handlers.has(name), `missing handler: ${name}`);
         }
-        // Like Manager._packet: the server receives the frames the encoder returns.
-        const frames = this.io.encoder.encode({
-          type: 0,
-          nsp: this.nsp,
-          data: this.auth,
-        });
-        if (frames.length === 0) {
-          return;
-        }
-        this.frames.push(...frames.map((frame) => `4${frame}`));
-        this.namespaceConnects++;
-        if (this.namespaceConnects <= dropConnects) {
-          // The transport closes before the CONNECT is acknowledged. A
-          // transport error reports connect_error before the disconnect.
-          if (dropReason === "transport error") {
-            handlers.get("connect_error")(new Error("xhr post error"));
+        this.finishNamespaceConnect = () => {
+          if (typeof this.auth === "function") {
+            this.auth((auth) => {
+              this.auth = auth;
+            });
           }
-          handlers.get("disconnect")(dropReason);
-          return;
-        }
-        this.connected = true;
-        handlers.get("connect")();
-        handlers.get("new_token")("assigned-token");
-        handlers.get("event")({ delta: { child: { count: 7 } } });
+          // Like Manager._packet: encode the auth callback's resolved payload.
+          const frames = this.io.encoder.encode({
+            type: 0,
+            nsp: this.nsp,
+            data: this.auth,
+          });
+          if (frames.length === 0) {
+            return;
+          }
+          this.frames.push(...frames.map((frame) => `4${frame}`));
+          this.namespaceConnects++;
+          if (this.namespaceConnects <= dropConnects) {
+            // The transport closes before the CONNECT is acknowledged. A
+            // transport error reports connect_error before the disconnect.
+            if (dropReason === "transport error") {
+              handlers.get("connect_error")(new Error("xhr post error"));
+            }
+            handlers.get("disconnect")(dropReason);
+            return;
+          }
+          this.finishConnectAck = () => {
+            this.connected = true;
+            const connected = handlers.get("connect")();
+            handlers.get("new_token")("assigned-token");
+            handlers.get("event")({ delta: { child: { count: 7 } } });
+            return connected;
+          };
+          if (!deferConnectAck) this.finishConnectAck();
+        };
+        if (!deferNamespaceConnect) this.finishNamespaceConnect();
+      },
+      emit(name, event) {
+        this.events.push({ name, event });
       },
       disconnect() {
         this.disconnects++;
@@ -182,13 +206,22 @@ async function setup({
                 : { name: "root.hydrate_and_load" },
           ];
         },
-        initialState: stateful ? { root: {}, child: {} } : {},
+        initialState: stateful ? initialState : {},
         onLoadInternalEvent() {},
-        state_name: "root",
+        on_load_internal_event: onLoadInternalEvent,
+        state_name: stateName,
+        stateSchema: { version: "test" },
         clientStorage,
         exception_state_name: "exception",
       },
       eventLoop: { addEvents() {}, connectErrors: [] },
+    },
+    "$/utils/client_state": {
+      CLIENT_STATE_REF: "__client_state",
+      getClientState: () => undefined,
+      // Published on `refs` when the module loads, so it has to answer.
+      getClientStore: () => ({}),
+      setClientState: () => {},
     },
     "$/utils/helpers/json": { parseJson: JSON.parse },
     "$/utils/helpers/debounce": { default() {} },
@@ -222,6 +255,7 @@ async function setup({
     sockets,
     timers,
     firstHydrates,
+    onLoadInternalEvent,
     window,
     localStorage,
     socket,
@@ -244,7 +278,7 @@ async function setup({
         { child: (delta) => updates.push(delta.count) },
         transports,
         (update) => errorUpdates.push(update),
-        {},
+        clientStorage,
         () => {},
         { current: {} },
       ),
@@ -267,6 +301,123 @@ test("warm the transport without hydrating, then reuse it with every handler att
   assert.equal(app.timers.size, 0);
   assert.equal(app.window.sessionStorage.getItem("token"), "assigned-token");
   assert.equal(app.socket.current.auth.event.router_data.pathname, "/page");
+  assert.deepEqual(app.socket.current.auth.state_schema, { version: "test" });
+});
+
+test("connection auth uses the route current when the namespace connects", async () => {
+  const app = await setup({ deferNamespaceConnect: true });
+  app.flush();
+  await app.connect();
+  assert.equal(app.socket.current.namespaceConnects, 0);
+  app.window.location = new URL("http://localhost:3000/other?query=value");
+  app.socket.current.finishNamespaceConnect();
+  assert.equal(app.socket.current.namespaceConnects, 1);
+  assert.equal(app.socket.current.auth.event.router_data.pathname, "/other");
+  assert.equal(
+    app.socket.current.auth.event.router_data.asPath,
+    "/other?query=value",
+  );
+});
+
+test("queued on_load is kept when navigation follows auth capture", async () => {
+  const stateName = "reflex___state____root";
+  const app = await setup({ deferConnectAck: true, stateName });
+  app.flush();
+  await app.connect();
+  const socket = app.socket.current;
+  assert.equal(socket.namespaceConnects, 1);
+  assert.equal(socket.auth.event.router_data.asPath, "/page?query=value");
+
+  app.window.location = new URL("http://localhost:3000/other?query=value");
+  const onLoadEvent = { name: app.onLoadInternalEvent, payload: {} };
+  await app.module.namespace.queueEvents(
+    [onLoadEvent],
+    app.socket,
+    false,
+    () => {},
+    { current: {} },
+  );
+  assert.equal(app.module.namespace.isStateful(), true);
+
+  await socket.finishConnectAck();
+
+  assert.deepEqual(JSON.parse(JSON.stringify(socket.events)), [
+    {
+      name: "event",
+      event: {
+        ...onLoadEvent,
+        router_data: {
+          pathname: "/other",
+          asPath: "/other?query=value",
+          query: { query: "value" },
+        },
+      },
+    },
+  ]);
+});
+
+test("queued on_loads for a newer route are sent once, after the last storage update", async () => {
+  const stateName = "reflex___state____root";
+  const app = await setup({ deferConnectAck: true, stateName });
+  app.flush();
+  await app.connect();
+  const socket = app.socket.current;
+
+  // Each navigation queues the browser storage it read, then its on_load.
+  app.window.location = new URL("http://localhost:3000/other?query=value");
+  const onLoadEvent = { name: app.onLoadInternalEvent, payload: {} };
+  const storageEvent = (value) => ({
+    name: `${stateName}.update_vars_internal_state.update_vars_internal`,
+    payload: { vars: { "root.token": value } },
+  });
+  await app.module.namespace.queueEvents(
+    [storageEvent("first"), { ...onLoadEvent }],
+    app.socket,
+    false,
+    () => {},
+    { current: {} },
+  );
+  await app.module.namespace.queueEvents(
+    [storageEvent("second"), { ...onLoadEvent }],
+    app.socket,
+    false,
+    () => {},
+    { current: {} },
+  );
+  await socket.finishConnectAck();
+
+  const router_data = {
+    pathname: "/other",
+    asPath: "/other?query=value",
+    query: { query: "value" },
+  };
+  assert.deepEqual(JSON.parse(JSON.stringify(socket.events)), [
+    { name: "event", event: { ...storageEvent("first"), router_data } },
+    { name: "event", event: { ...storageEvent("second"), router_data } },
+    { name: "event", event: { ...onLoadEvent, router_data } },
+  ]);
+});
+
+test("queued on_load is discarded when only the hash changes after auth capture", async () => {
+  const stateName = "reflex___state____root";
+  const app = await setup({ deferConnectAck: true, stateName });
+  app.window.location = new URL("http://localhost:3000/other?query=value#top");
+  app.flush();
+  await app.connect();
+  const socket = app.socket.current;
+
+  app.window.location = new URL("http://localhost:3000/other?query=value");
+  const onLoadEvent = { name: app.onLoadInternalEvent, payload: {} };
+  await app.module.namespace.queueEvents(
+    [onLoadEvent],
+    app.socket,
+    false,
+    () => {},
+    { current: {} },
+  );
+  await socket.finishConnectAck();
+
+  assert.deepEqual(JSON.parse(JSON.stringify(socket.events)), []);
 });
 
 test("the size check encodes a CONNECT packet once and leaves other packets alone", async () => {
@@ -581,7 +732,7 @@ for (const config of [
 }
 
 /** Run `useEventLoop` once with minimal hooks, keeping the effects it registers. */
-async function mountEventLoop(clientStorage = {}) {
+async function mountEventLoop(clientStorage = {}, initialState) {
   const effects = [];
   const sent = [];
   const emitted = {
@@ -591,6 +742,7 @@ async function mountEventLoop(clientStorage = {}) {
   let refs = 0;
   const harness = await setup({
     clientStorage,
+    initialState,
     react: {
       useCallback: (fn) => fn,
       useEffect: (fn) => effects.push(fn),
@@ -693,12 +845,14 @@ test("a storage event syncs every synced var that shares the storage name", asyn
 test("storage names that are Object.prototype properties sync like any other", async () => {
   const clientStorage = {
     local_storage: {
-      first: { name: "constructor", sync: true },
-      second: { name: "constructor", sync: true },
-      third: { name: "__proto__", sync: true },
+      "root.first": { name: "constructor", sync: true },
+      "root.second": { name: "constructor", sync: true },
+      "root.third": { name: "__proto__", sync: true },
     },
   };
-  const { harness, effects, sent } = await mountEventLoop(clientStorage);
+  const { harness, effects, sent } = await mountEventLoop(clientStorage, {
+    root: { first: "", second: "", third: "third default" },
+  });
   assert.doesNotThrow(() => {
     for (const effect of effects) effect();
   });
@@ -717,10 +871,132 @@ test("storage names that are Object.prototype properties sync like any other", a
   assert.equal(updates.length, 2, JSON.stringify(sent));
   assert.equal(
     JSON.stringify(updates[0].payload.vars),
-    JSON.stringify({ first: "stored", second: "stored" }),
+    JSON.stringify({ "root.first": "stored", "root.second": "stored" }),
+  );
+  // A name with no stored value syncs its var's default.
+  assert.equal(
+    JSON.stringify(updates[1].payload.vars),
+    JSON.stringify({ "root.third": "third default" }),
+  );
+});
+
+test("clearing localStorage syncs every synced var's own default", async () => {
+  const { harness, effects, sent } = await mountEventLoop(
+    {
+      local_storage: {
+        "root.first": { name: "shared", sync: true },
+        "root.second": { name: "shared", sync: true },
+        "root.other": { sync: true },
+        "root.unsynced": { name: "shared" },
+      },
+    },
+    {
+      root: {
+        first: "first default",
+        second: "second default",
+        other: "other default",
+        unsynced: "unsynced default",
+      },
+    },
+  );
+  effects.forEach((effect) => effect());
+  const event = new Event("storage");
+  event.key = null;
+  event.storageArea = harness.localStorage;
+  harness.window.dispatchEvent(event);
+  await new Promise((resolve) => setImmediate(resolve));
+  const updates = sent.filter((event) =>
+    event.name.endsWith("update_vars_internal"),
+  );
+  assert.equal(updates.length, 2, JSON.stringify(sent));
+  // Vars that share a name each get their own default, as a page load gives.
+  assert.equal(
+    JSON.stringify(updates[0].payload.vars),
+    JSON.stringify({
+      "root.first": "first default",
+      "root.second": "second default",
+    }),
   );
   assert.equal(
     JSON.stringify(updates[1].payload.vars),
-    JSON.stringify({ third: null }),
+    JSON.stringify({ "root.other": "other default" }),
   );
+});
+
+test("a sessionStorage clear does not sync localStorage vars", async () => {
+  const { harness, effects, sent } = await mountEventLoop({
+    local_storage: { first: { sync: true } },
+  });
+  effects.forEach((effect) => effect());
+  const event = new Event("storage");
+  event.key = null;
+  event.storageArea = harness.window.sessionStorage;
+  harness.window.dispatchEvent(event);
+  assert.equal(sent.length, 0);
+});
+
+test("clearing localStorage without synced vars queues no updates", async () => {
+  const { harness, effects, sent } = await mountEventLoop({
+    local_storage: { unsynced: { name: "unused" } },
+  });
+  for (const effect of effects) effect();
+  const event = new Event("storage");
+  event.key = null;
+  event.storageArea = harness.localStorage;
+  harness.window.dispatchEvent(event);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(sent.length, 0);
+});
+
+/** Send the sync event of a synced storage name, as another tab's change queues it. */
+async function sendStorageSync(app, key, state_keys) {
+  const sent = [];
+  app.socket.current.emit = (name, payload) => sent.push(payload);
+  const { applyEvent, ReflexEvent } = app.module.namespace;
+  await applyEvent(
+    ReflexEvent("_sync_local_storage", { key, state_keys }),
+    app.socket.current,
+    () => {},
+    {},
+  );
+  return sent;
+}
+
+/** Set up a connected app with one synced var stored under "shared". */
+async function connectSyncedStorage(defaultValue) {
+  const app = await setup({
+    clientStorage: {
+      local_storage: { "child.value": { name: "shared", sync: true } },
+    },
+    initialState: { root: {}, child: { value: defaultValue } },
+  });
+  app.flush();
+  await app.connect();
+  return app;
+}
+
+for (const defaultValue of ["", "light"]) {
+  test(`a removed synced key sends its default ${JSON.stringify(defaultValue)} and the echo leaves storage empty`, async () => {
+    const app = await connectSyncedStorage(defaultValue);
+    const sent = await sendStorageSync(app, "shared", ["child.value"]);
+    assert.equal(
+      JSON.stringify(sent.map((event) => event.payload.vars)),
+      JSON.stringify([{ "child.value": defaultValue }]),
+    );
+    // The backend stores the default and echoes it back.
+    app.socket.current.handlers.get("event")({
+      delta: { child: { value: defaultValue } },
+    });
+    assert.equal(app.localStorage.getItem("shared"), null);
+  });
+}
+
+test("a backend value that differs from the sent default is still written", async () => {
+  const app = await connectSyncedStorage("light");
+  await sendStorageSync(app, "shared", ["child.value"]);
+  // A get_delta override can replace the value; the browser stores its result.
+  app.socket.current.handlers.get("event")({
+    delta: { child: { value: "server" } },
+  });
+  assert.equal(app.localStorage.getItem("shared"), "server");
 });

@@ -1,3 +1,14 @@
+## v0.10.1 (2026-10-26)
+
+### Bug Fixes
+
+- Fix `use_transformers=True` on the Shiki code block rendering no transformers: the default shikijs transformers and their styles are now applied again. ([#7437](https://github.com/reflex-dev/reflex/issues/7437))
+
+### Miscellaneous
+
+- Update react-syntax-highlighter to 16.1.2. ([#7645](https://github.com/reflex-dev/reflex/issues/7645))
+
+
 ## v0.10.0 (2026-10-08)
 
 ### Breaking Changes

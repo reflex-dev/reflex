@@ -135,7 +135,9 @@ def driver(moment_app: AppHarness) -> Generator[WebDriver, None, None]:
     Yields:
         The browser driver connected to the Moment app.
     """
-    driver = moment_app.frontend()
+    driver = moment_app.frontend(
+        driver_option_capabilities={"goog:loggingPrefs": {"browser": "ALL"}}
+    )
     try:
         token = AppHarness.poll_for_or_raise_timeout(
             lambda: driver.find_element(By.ID, "token")
@@ -191,6 +193,12 @@ def test_moment_locales_are_isolated(driver: WebDriver) -> None:
             == "jeudi 14 mars 2024"
         )
     )
+    locale_warnings = [
+        entry["message"]
+        for entry in driver.get_log("browser")
+        if "defineLocale" in entry["message"]
+    ]
+    assert locale_warnings == []
     driver.find_element(By.ID, "plain-link").click()
     AppHarness.expect(
         lambda: (

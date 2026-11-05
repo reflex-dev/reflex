@@ -1,0 +1,1 @@
+`reflex cloud config` now exits with status 1 when PyYAML is not installed, and with `--json` writes no document, instead of exiting 0 and reporting `{"generated": false, "path": null}` as if a `cloud.yml` already existed.
