@@ -1,0 +1,1 @@
+Fix uploads triggered by toast actions or `rx.call_script` callbacks failing with `ReferenceError: filesById is not defined`. Upload callbacks use the current selected files for their upload ID, including changes made after a toast opens.
