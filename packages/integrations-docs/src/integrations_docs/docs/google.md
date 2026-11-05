@@ -19,9 +19,17 @@ Keep the form open; you will fill it in after the next step.
 
 1. In the [Google Cloud Console](https://console.cloud.google.com/), open **Google Auth Platform**. If you have not configured it for this project yet, click **Get started** and complete the app setup first.
 2. Go to **Clients** and click **Create client**.
+
+   ![The Clients page of Google Auth Platform](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/google_1.webp)
+
 3. Choose **Web application** as the application type and give it a name.
 4. Under **Authorized redirect URIs**, add each redirect URI from Step 1.
+
+   ![Adding a redirect URI to a Google OAuth client](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/google_2.webp)
+
 5. Click **Create**, then copy the **Client ID** and **Client secret**. Store the secret somewhere safe: Google only shows it in full when the client is created.
+
+   ![Google's dialog with the new client ID and secret](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/google_3.webp)
 
 ## Step 3: Connect in Reflex Build
 

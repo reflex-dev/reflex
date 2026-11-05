@@ -18,10 +18,22 @@ Keep the form open; you will fill it in after the next step.
 ## Step 2: Register an Application in Microsoft Entra ID
 
 1. In the [Microsoft Entra admin center](https://entra.microsoft.com/), go to **Entra ID → App registrations** and click **New registration**.
+
+   ![The App registrations page in the Microsoft Entra admin center](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/microsoft_entra_id_1.webp)
+
 2. Name the application and choose which account types can sign in.
 3. Under **Redirect URI**, select **Web** and enter the first redirect URI from Step 1, then click **Register**. Add the remaining redirect URIs under **Manage → Authentication**.
+
+   ![Registering an application with a Web redirect URI](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/microsoft_entra_id_2.webp)
+
 4. On the **Overview** page, copy the **Application (client) ID** and the **Directory (tenant) ID**.
+
+   ![The Overview page with the application and directory IDs](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/microsoft_entra_id_3.webp)
+
 5. Under **Certificates & secrets → Client secrets**, click **New client secret**, then **Add**, and copy its **Value** (not the Secret ID). It is only shown once.
+
+   ![A new client secret under Certificates & secrets](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/microsoft_entra_id_4.webp)
+
 
 ## Step 3: Connect in Reflex Build
 
