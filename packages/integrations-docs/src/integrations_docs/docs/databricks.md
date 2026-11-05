@@ -70,7 +70,7 @@ If your Databricks account administrator has already added Reflex as an app conn
 
 ![Adding a Databricks service principal](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/databricks_integration_oauth_3.webp)
 
-- Enter a display name and click `Add`.
+- Enter a display name and click `Add service principal`.
 
 ![Entering Databricks service principal details](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/databricks_integration_oauth_4.webp)
 
@@ -78,7 +78,7 @@ If your Databricks account administrator has already added Reflex as an app conn
 
 ![Generating a Databricks service principal secret](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/databricks_integration_oauth_5.webp)
 
-- Set a lifetime (up to 730 days), select the API **Scopes** the secret can use, and click `Generate`.
+- Set a lifetime (up to 730 days). Under **Scope**, click `Add scope` and add `sql` and `unity-catalog`, which Reflex Build uses to run queries and list catalogs and schemas. Then click `Generate`.
 
 ![Setting Databricks secret lifetime](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/databricks_integration_oauth_6.webp)
 
@@ -120,11 +120,11 @@ Once connected, the AI Builder can execute queries directly against your Databri
 
 ![Opening Manage Account as Databricks admin](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/databricks_admin_auth_1.webp)
 
-- Go to **Settings** → **App connections** → **Add connection**
+- Go to **Settings** → **App connections**, open the **Custom apps** tab, and click **Add connection**
 
 ![Adding a new app connection in Databricks settings](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/databricks_admin_auth_2.webp)
 
-- Enter an **Application Name**, add the redirect URL that Reflex Build provides under **Redirect URLs**, select `All APIs` under **Access scopes**, leave `Generate a client secret` unchecked, and click `Add`.
+- Enter an **Application Name**, add the redirect URL that Reflex Build provides under **Redirect URLs**, under **Access scopes** click `Add scope` and add `all-apis` (Reflex Build requests it at sign-in) alongside the default `openid`, `email`, `profile`, and `offline_access` scopes, leave `Generate a client secret` unchecked, and click `Add`.
    - URL: `https://build.reflex.dev/_reflex_oidc_databricks/authorization-code/callback`
 
 ![Configuring the Reflex redirect URL in Databricks](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/databricks_admin_auth_3.webp)
