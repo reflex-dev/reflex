@@ -608,6 +608,7 @@ async def test_client_side_state(
     # Open a new tab to check that sync'd local storage is working
     main_tab = driver.window_handles[0]
     driver.switch_to.new_window("window")
+    other_tab = driver.current_window_handle
     driver.get(client_side.frontend_url)
 
     # New tab should have a different state token.
@@ -693,6 +694,12 @@ async def test_client_side_state(
     # clear the cookie jar and local storage, ensure state reset to default
     driver.delete_all_cookies()
     local_storage.clear()
+
+    # The other tab receives clear() without hydration and resets synced vars.
+    driver.switch_to.window(other_tab)
+    AppHarness.expect(lambda: driver.find_element(By.ID, "l5").text == "")
+    AppHarness.expect(lambda: driver.find_element(By.ID, "l6").text == "")
+    driver.switch_to.window(main_tab)
 
     # refresh the page to trigger re-hydrate
     driver.refresh()

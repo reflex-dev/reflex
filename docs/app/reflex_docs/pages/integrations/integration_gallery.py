@@ -1,12 +1,11 @@
 import reflex as rx
 import reflex_components_internal as ui
-from reflex.experimental import ClientStateVar
 from reflex_site_shared.integrations import get_integration_logo_url
 
 from .integration_list import get_integration_path
 from .integration_request import request_integration_dialog
 
-selected_filter = ClientStateVar.create("selected_filter", "All")
+selected_filter = rx.client_state("All", name="selected_filter")
 
 FilterOptions = [
     {"name": "AI", "icon": "BotIcon"},
@@ -32,7 +31,7 @@ def integration_filter_button(data: dict):
         aria_pressed=active,
         class_name="docs-integration-filter inline-flex min-h-10 items-center justify-center gap-2 rounded-full border px-4 py-2 text-sm font-normal leading-5 transition-colors motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring "
         + rx.cond(active, active_pill, inactive_pill).to(str),
-        on_click=selected_filter.set_value(data["name"]),
+        on_click=selected_filter.set(data["name"]),
     )
 
 
