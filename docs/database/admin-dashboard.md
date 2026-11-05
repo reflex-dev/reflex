@@ -5,8 +5,8 @@ meta_description: Mount a starlette-admin dashboard on a Reflex backend with api
 
 # Admin Dashboard
 
-Reflex no longer ships an admin dashboard. `rx.AdminDash` and
-`rx.App(admin_dash=...)` raise an error that links here. An admin dashboard
+Reflex no longer ships an admin dashboard. `rx.AdminDash(...)` raises an error
+that links here. An admin dashboard
 exposes every row of every registered table to whoever can reach it, so it
 belongs under your own authentication and deployment rules rather than inside
 the framework. You can still run [starlette-admin](https://jowilf.github.io/starlette-admin/)
@@ -18,7 +18,7 @@ on the Reflex backend; this page shows how.
 pip install "reflex[db]" starlette-admin
 ```
 
-The `db` extra provides `rx.Model` and `get_engine()`. starlette-admin is a
+The `db` extra provides SQLModel and `get_engine()`. starlette-admin is a
 separate project and is not installed with either.
 
 ## Mount the dashboard with `api_transformer`
@@ -33,23 +33,30 @@ dashboard from the backend at `/admin`.
 import os
 
 import reflex as rx
+from sqlmodel import Field, SQLModel
 from starlette.applications import Starlette
+from starlette.middleware import Middleware
+from starlette.middleware.sessions import SessionMiddleware
 from starlette_admin.contrib.sqla import Admin, ModelView
 
 from reflex.model import get_engine
 
 
-class User(rx.Model, table=True):
+class User(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
     username: str
     email: str
 
+
+secret_key = os.environ["ADMIN_SECRET_KEY"]
 
 admin_app = Starlette()
 admin = Admin(
     get_engine(),
     title="My Admin",
     auth_provider=MyAuthProvider(),
-    secret_key=os.environ["ADMIN_SECRET_KEY"],
+    secret_key=secret_key,
+    middlewares=[Middleware(SessionMiddleware, secret_key=secret_key)],
 )
 admin.add_view(ModelView(User))
 admin.mount_to(admin_app)
@@ -68,12 +75,16 @@ and backend hosts the dashboard lives on the backend host, such as
 ## Require authentication
 
 `Admin()` without `auth_provider` serves unauthenticated read and write access
-to every registered table. Always pass an `AuthProvider`, set a stable
-`secret_key` so CSRF tokens survive restarts, and put the backend behind the
-same network and session rules as the rest of your admin tooling.
-The starlette-admin [authentication guide](https://jowilf.github.io/starlette-admin/user-guide/authentication/)
-shows how to implement `login`, `is_authenticated`, and `logout` against your
-own user store, and how to restrict individual views and actions.
+to every registered table. Always pass an `AuthProvider` (`MyAuthProvider`
+above), set a stable `secret_key` so CSRF tokens and sessions survive restarts,
+and put the backend behind the same network and session rules as the rest of
+your admin tooling.
+The starlette-admin [authentication guide](https://jowilf.github.io/starlette-admin/user-guide/auth/)
+shows how to implement `login`, `authenticate`, and `logout` against your
+own user store, and how to restrict individual views and actions. Its
+`AuthProvider` keeps the signed-in user in `request.session`, which needs the
+`SessionMiddleware` from the example above. Without it, every admin page,
+including the login page, fails with a 500 error.
 
 ## Migrating from `rx.AdminDash`
 
@@ -100,11 +111,14 @@ app = rx.App(
 After:
 
 ```python
+secret_key = os.environ["ADMIN_SECRET_KEY"]
+
 admin_app = Starlette()
 admin = Admin(
     get_engine(),
     auth_provider=MyAuthProvider(),
-    secret_key=os.environ["ADMIN_SECRET_KEY"],
+    secret_key=secret_key,
+    middlewares=[Middleware(SessionMiddleware, secret_key=secret_key)],
 )
 admin.add_view(UserView(User))
 admin.add_view(ModelView(Post))

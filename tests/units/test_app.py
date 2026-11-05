@@ -56,7 +56,7 @@ from starlette.exceptions import HTTPException
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import ClientDisconnect, Request
 from starlette.responses import JSONResponse, PlainTextResponse, StreamingResponse
-from starlette.routing import Route
+from starlette.routing import Mount, Route
 from starlette.testclient import TestClient
 
 import reflex as rx
@@ -220,12 +220,6 @@ def test_default_app(app: App):
     assert app._middlewares == []
     assert app.style == Style()
     assert app.admin_dash is None
-
-
-def test_admin_dash_removed():
-    """Passing admin_dash fails with a link to the migration guide."""
-    with pytest.raises(exceptions.AdminDashRemovedError, match="admin-dashboard"):
-        App(admin_dash=object())  # pyright: ignore[reportArgumentType]
 
 
 def test_multiple_states_error(
@@ -536,6 +530,28 @@ def test_api_transformer_lifespans_run(mocker: MockerFixture):
         assert client.get("/db").json() == {"db": "conn", "own_app": True}
         assert client.get("/ping").text == '"pong"'
     assert events[4:] == ["callable http", "outer stop", "inner stop", "reflex stop"]
+
+
+def test_api_transformer_named_routes_resolve(mocker: MockerFixture):
+    """Resolve the named routes of a Starlette api_transformer through the served app.
+
+    Admin UIs mounted this way, such as starlette-admin, build every link with url_for.
+
+    Args:
+        mocker: The mock fixture for skipping frontend compilation.
+    """
+
+    async def index(request: Request) -> PlainTextResponse:  # noqa: RUF029
+        return PlainTextResponse(str(request.url_for("admin:index")))
+
+    transformer = Starlette(
+        routes=[Mount("/admin", routes=[Route("/", index, name="index")], name="admin")]
+    )
+    app = App(api_transformer=transformer)
+    mocker.patch.object(app, "_compile")
+
+    with TestClient(app()) as client:
+        assert client.get("/admin/").text == "http://testserver/admin/"
 
 
 @pytest.mark.parametrize("also_registered", [False, True])

@@ -557,7 +557,7 @@ class App(MiddlewareMixin, LifespanMixin):
         html_lang: The language to add to the html root tag of every page.
         html_custom_attrs: Attributes to add to the html root tag of every page.
         enable_state: Whether to enable [state](https://reflex.dev/docs/state/overview/) for the app. If False, the app will not use state.
-        admin_dash: Removed. Passing anything but None raises with a link to the migration guide.
+        admin_dash: Removed. rx.AdminDash raises with a link to the migration guide.
         frontend_exception_handler: Frontend [error handler](https://reflex.dev/docs/utility-methods/exception-handlers/) function.
         backend_exception_handler: Backend [error handler](https://reflex.dev/docs/utility-methods/exception-handlers/) function.
         toaster: Put the [toast](https://reflex.dev/docs/library/overlay/toast/) provider in the app wrap.
@@ -637,7 +637,7 @@ class App(MiddlewareMixin, LifespanMixin):
         default_factory=dict
     )
 
-    # Removed integration; kept so upgraded apps get a pointer to the migration guide.
+    # Removed integration; rx.AdminDash raises with a link to the migration guide.
     admin_dash: None = None
 
     # The async server name space.
@@ -695,14 +695,10 @@ class App(MiddlewareMixin, LifespanMixin):
         """Initialize the app.
 
         Raises:
-            AdminDashRemovedError: If admin_dash is set.
             ValueError: If the event namespace is not provided in the config.
                         Also, if there are multiple client subclasses of rx.BaseState(Subclasses of rx.BaseState should consist
                         of the DefaultState and the client app state).
         """
-        if self.admin_dash is not None:
-            raise exceptions.AdminDashRemovedError
-
         # Special case to allow test cases have multiple subclasses of rx.BaseState.
         if not is_testing_env() and BaseState.__subclasses__() != [State]:
             # Only rx.State is allowed as Base State subclass.
