@@ -433,24 +433,24 @@ def test_yield_in_async_with_self(
 
 def test_await_handlers_from_background_task(
     background_task: AppHarness,
-    driver: WebDriver,
+    background_page: Page,
     token: str,
 ):
     """A background task awaits handlers through the queue, or inline under the lock.
 
     Args:
         background_task: harness for BackgroundTask app.
-        driver: WebDriver instance.
+        background_page: Playwright page.
         token: The token for the connected client.
     """
     assert background_task.app_instance is not None
 
-    await_handlers_button = driver.find_element(By.ID, "await-handlers")
-    counter = driver.find_element(By.ID, "counter")
-    AppHarness.expect(lambda: counter.text == "0", timeout=5)
+    await_handlers_button = background_page.locator("#await-handlers")
+    counter = background_page.locator("#counter")
+    expect(counter).to_have_text("0")
 
     await_handlers_button.click()
-    AppHarness.expect(lambda: counter.text == "7", timeout=5)
+    expect(counter).to_have_text("7", timeout=5_000)
 
 
 @pytest.mark.parametrize(
