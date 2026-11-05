@@ -252,6 +252,9 @@ def LinkedStateApp():
 def linked_state(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """Start the shared-state app.
 
+    Args:
+        tmp_path_factory: pytest tmp_path_factory fixture.
+
     Yields:
         The running app harness.
     """
@@ -266,6 +269,10 @@ def tab_factory(
     linked_state: AppHarness, browser: Browser
 ) -> Generator[Callable[[], Page], None, None]:
     """Create pages that have isolated session storage but shared local storage.
+
+    Args:
+        linked_state: harness for the shared-state app.
+        browser: Playwright browser.
 
     Yields:
         A page factory for the shared-state app.
@@ -302,7 +309,12 @@ def _submit(page: Page, selector: str, value: str) -> None:
 
 
 def test_linked_state(linked_state: AppHarness, tab_factory: Callable[[], Page]):
-    """Link two tabs, update shared state, then unlink and relink them."""
+    """Link two tabs, update shared state, then unlink and relink them.
+
+    Args:
+        linked_state: harness for the shared-state app.
+        tab_factory: factory that creates pages sharing local storage.
+    """
     tab1, tab2 = tab_factory(), tab_factory()
     for page in (tab1, tab2):
         page.wait_for_function("Boolean(sessionStorage.getItem('token'))")
@@ -353,9 +365,13 @@ def test_linked_state(linked_state: AppHarness, tab_factory: Callable[[], Page])
     tab1.locator("#unlink-button").click()
     expect(tab1.locator("#greeting")).to_have_text("Hello, Alice!")
     _submit(tab2, "#who-input", "Diana")
+    expect(tab2.locator("#n-changes")).to_have_text("2")
     expect(tab2.locator("#greeting")).to_have_text("Hello, Diana!")
+    expect(counter2).to_have_text("3")
+    expect(tab1.locator("#n-changes")).to_have_text("1")
     expect(tab1.locator("#greeting")).to_have_text("Hello, Alice!")
     _submit(tab1, "#token-input", shared_token)
+    expect(tab1.locator("#n-changes")).to_have_text("2")
     expect(tab1.locator("#greeting")).to_have_text("Hello, Diana!")
     expect(counter1).to_have_text("3")
 
@@ -383,10 +399,10 @@ def test_linked_state(linked_state: AppHarness, tab_factory: Callable[[], Page])
         expect(counter1).to_have_text(expected)
         if expected != "3":
             counter1.click()
-    expect(tab2.locator("#greeting")).to_have_text("Hello, Diana!")
-    expect(tab2.locator("#counter-button")).to_have_text("48")
-    expect(tab3.locator("#greeting")).to_have_text("Hello, Diana!")
-    expect(tab3.locator("#counter-button")).to_have_text("48")
+    for page in (tab2, tab3):
+        expect(page.locator("#n-changes")).to_have_text("2")
+        expect(page.locator("#greeting")).to_have_text("Hello, Diana!")
+        expect(page.locator("#counter-button")).to_have_text("48")
     tab1.locator("#link-increment-button").click()
     expect(counter1).to_have_text("1")
 
@@ -404,7 +420,12 @@ def _open_linked_page(
 def test_modify_shared_state_by_shared_token(
     linked_state: AppHarness, tab_factory: Callable[[], Page]
 ):
-    """An API update by shared token reaches all linked pages."""
+    """An API update by shared token reaches all linked pages.
+
+    Args:
+        linked_state: harness for the shared-state app.
+        tab_factory: factory that creates pages sharing local storage.
+    """
     shared_token = f"api-test-{uuid.uuid4()}"
     page1 = _open_linked_page(linked_state, tab_factory, shared_token)
     page2 = _open_linked_page(linked_state, tab_factory, shared_token)
@@ -421,7 +442,12 @@ def test_modify_shared_state_by_shared_token(
 def test_get_state_returns_linked_state(
     linked_state: AppHarness, tab_factory: Callable[[], Page]
 ):
-    """get_state from a private handler reads the linked SharedNotes instance."""
+    """get_state from a private handler reads the linked SharedNotes instance.
+
+    Args:
+        linked_state: harness for the shared-state app.
+        tab_factory: factory that creates pages sharing local storage.
+    """
     shared_token = f"get-state-test-{uuid.uuid4()}"
     initial_note = f"note-{uuid.uuid4()}"
     page = _linked_page(
@@ -436,7 +462,12 @@ def test_get_state_returns_linked_state(
 def test_unrelated_reset_does_not_break_shared_event_link_context(
     linked_state: AppHarness, tab_factory: Callable[[], Page]
 ):
-    """Resetting private state leaves subsequent shared events linked."""
+    """Resetting private state leaves subsequent shared events linked.
+
+    Args:
+        linked_state: harness for the shared-state app.
+        tab_factory: factory that creates pages sharing local storage.
+    """
     page = tab_factory()
     page.wait_for_function("Boolean(sessionStorage.getItem('token'))")
     shared_token = f"reset-repro-{uuid.uuid4()}"
@@ -454,7 +485,12 @@ def test_unrelated_reset_does_not_break_shared_event_link_context(
 def test_concurrent_async_vars_do_not_deadlock_linked_token(
     linked_state: AppHarness, tab_factory: Callable[[], Page]
 ):
-    """Concurrent async vars resolve one linked token without lock contention."""
+    """Concurrent async vars resolve one linked token without lock contention.
+
+    Args:
+        linked_state: harness for the shared-state app.
+        tab_factory: factory that creates pages sharing local storage.
+    """
     from reflex.istate.manager.redis import StateManagerRedis
 
     assert linked_state.app_instance is not None

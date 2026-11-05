@@ -292,6 +292,9 @@ def UploadFile():
 def uploaded_files_dir(tmp_path_factory: pytest.TempPathFactory) -> Path:
     """Create the app's isolated upload directory.
 
+    Args:
+        tmp_path_factory: pytest tmp_path_factory fixture.
+
     Returns:
         The isolated directory for uploaded files.
     """
@@ -303,6 +306,10 @@ def upload_file(
     tmp_path_factory: pytest.TempPathFactory, uploaded_files_dir: Path
 ) -> Generator[AppHarness, None, None]:
     """Start the upload app with the isolated upload directory configured.
+
+    Args:
+        tmp_path_factory: pytest tmp_path_factory fixture.
+        uploaded_files_dir: isolated directory for uploaded files.
 
     Yields:
         The running app harness.
@@ -320,7 +327,14 @@ def upload_file(
 
 @pytest.fixture(autouse=True)
 def clear_uploaded_files(uploaded_files_dir: Path):
-    """Clear backend upload artifacts before and after each test."""
+    """Clear backend upload artifacts before and after each test.
+
+    Args:
+        uploaded_files_dir: isolated directory for uploaded files.
+
+    Yields:
+        None after the test runs.
+    """
 
     def clear_contents():
         for child in uploaded_files_dir.iterdir():
@@ -335,6 +349,10 @@ def clear_uploaded_files(uploaded_files_dir: Path):
 def opened_page(upload_file: AppHarness, page: Page) -> Page:
     """Open the upload app in the browser.
 
+    Args:
+        upload_file: harness for UploadFile app.
+        page: Playwright page.
+
     Returns:
         The page after navigation.
     """
@@ -345,6 +363,10 @@ def opened_page(upload_file: AppHarness, page: Page) -> Page:
 
 def _file_input(page: Page, upload_id: str | None = None):
     """Locate the native file input for an upload component.
+
+    Args:
+        page: Playwright page.
+        upload_id: ID of the upload component under test, or None for the default one.
 
     Returns:
         The file input locator.
@@ -389,7 +411,14 @@ def _write_file(tmp_path: Path, name: str, contents: str) -> Path:
 def test_upload_file(
     tmp_path: Path, upload_file: AppHarness, opened_page: Page, upload_id: str | None
 ):
-    """Upload a file through each buffered upload control."""
+    """Upload a file through each buffered upload control.
+
+    Args:
+        tmp_path: pytest tmp_path fixture.
+        upload_file: harness for UploadFile app.
+        opened_page: Playwright page opened at the app.
+        upload_id: ID of the upload component under test, or None for the default one.
+    """
     page = opened_page
     page.locator("#clear_uploads").click()
     suffix = f"_{upload_id}" if upload_id else ""
@@ -415,7 +444,13 @@ def test_upload_file(
 def test_upload_file_multiple(
     tmp_path: Path, upload_file: AppHarness, opened_page: Page
 ):
-    """Upload multiple selected files and verify each backend artifact."""
+    """Upload multiple selected files and verify each backend artifact.
+
+    Args:
+        tmp_path: pytest tmp_path fixture.
+        upload_file: harness for UploadFile app.
+        opened_page: Playwright page opened at the app.
+    """
     files = {
         "test1.txt": "test file contents!",
         "test2.txt": "this is test file number 2!",
@@ -435,7 +470,13 @@ def test_upload_file_multiple(
 def test_upload_file_with_bound_arg(
     tmp_path: Path, upload_file: AppHarness, opened_page: Page
 ):
-    """A bound argument from an upload drop handler reaches the backend."""
+    """A bound argument from an upload drop handler reaches the backend.
+
+    Args:
+        tmp_path: pytest tmp_path fixture.
+        upload_file: harness for UploadFile app.
+        opened_page: Playwright page opened at the app.
+    """
     target = _write_file(tmp_path, "bound_arg.txt", "bound arg upload contents!")
     _file_input(opened_page, "quaternary").set_input_files(target)
     _upload_done(opened_page)
@@ -447,7 +488,14 @@ def test_upload_file_with_bound_arg(
 def test_clear_files(
     tmp_path: Path, upload_file: AppHarness, opened_page: Page, upload_id: str | None
 ):
-    """Clear selected files from either buffered upload control."""
+    """Clear selected files from either buffered upload control.
+
+    Args:
+        tmp_path: pytest tmp_path fixture.
+        upload_file: harness for UploadFile app.
+        opened_page: Playwright page opened at the app.
+        upload_id: ID of the upload component under test, or None for the default one.
+    """
     suffix = f"_{upload_id}" if upload_id else ""
     targets = [
         _write_file(tmp_path, "test1.txt", "first"),
@@ -493,7 +541,18 @@ def test_cancel_upload(
     size: int,
     partial_subdir: str | None,
 ):
-    """Cancel active buffered and streaming uploads without final progress."""
+    """Cancel active buffered and streaming uploads without final progress.
+
+    Args:
+        tmp_path: pytest tmp_path fixture.
+        upload_file: harness for UploadFile app.
+        opened_page: Playwright page opened at the app.
+        upload_id: ID of the upload component under test, or None for the default one.
+        progress_selector: selector of the progress element to inspect.
+        filename: name of the file to upload.
+        size: size in bytes of the file to upload.
+        partial_subdir: subdirectory that holds partial uploads, or None.
+    """
     page = opened_page
     cdp = page.context.new_cdp_session(page)
     cdp.send("Network.enable")
@@ -537,7 +596,13 @@ def test_cancel_upload(
 
 
 def test_upload_chunk_file(tmp_path: Path, upload_file: AppHarness, opened_page: Page):
-    """Stream multiple files in chunks and verify complete backend files."""
+    """Stream multiple files in chunks and verify complete backend files.
+
+    Args:
+        tmp_path: pytest tmp_path fixture.
+        upload_file: harness for UploadFile app.
+        opened_page: Playwright page opened at the app.
+    """
     files = {"stream1.txt": "ABCD" * 262_144, "stream2.txt": "WXYZ" * 262_144}
     targets = [
         _write_file(tmp_path, name, contents) for name, contents in files.items()
@@ -561,7 +626,13 @@ def test_upload_chunk_file(tmp_path: Path, upload_file: AppHarness, opened_page:
 def test_upload_download_file(
     tmp_path: Path, upload_file: AppHarness, opened_page: Page
 ):
-    """Download an uploaded file from both frontend and backend events."""
+    """Download an uploaded file from both frontend and backend events.
+
+    Args:
+        tmp_path: pytest tmp_path fixture.
+        upload_file: harness for UploadFile app.
+        opened_page: Playwright page opened at the app.
+    """
     target = _write_file(tmp_path, "test.txt", "test file contents!")
     _file_input(opened_page, "tertiary").set_input_files(target)
     opened_page.locator("#upload_button_tertiary").click()
@@ -569,6 +640,7 @@ def test_upload_download_file(
     for selector in ("#download-frontend", "#download-backend"):
         with opened_page.expect_download() as download_info:
             opened_page.locator(selector).click()
+        assert download_info.value.suggested_filename == "test.txt"
         downloaded = tmp_path / f"{selector[1:]}.txt"
         download_info.value.save_as(downloaded)
         assert downloaded.read_text() == "test file contents!"
@@ -597,7 +669,17 @@ def test_uploaded_file_security_headers(
     attachment: bool,
     mime_type: str,
 ):
-    """Uploaded files use safe content headers and force non-PDF downloads."""
+    """Uploaded files use safe content headers and force non-PDF downloads.
+
+    Args:
+        tmp_path: pytest tmp_path fixture.
+        upload_file: harness for UploadFile app.
+        opened_page: Playwright page opened at the app.
+        filename: name of the file to upload.
+        contents: contents of the uploaded file.
+        attachment: whether the file is expected to download as an attachment.
+        mime_type: expected response content type.
+    """
     target = _write_file(tmp_path, filename, contents)
     _file_input(opened_page, "tertiary").set_input_files(target)
     opened_page.locator("#upload_button_tertiary").click()
@@ -631,6 +713,7 @@ def test_uploaded_file_security_headers(
                 }""",
                 upload_url,
             )
+        assert download_info.value.suggested_filename == filename
         downloaded = tmp_path / filename
         download_info.value.save_as(downloaded)
         assert downloaded.read_text() == contents
@@ -638,7 +721,13 @@ def test_uploaded_file_security_headers(
 
 
 def test_on_drop(tmp_path: Path, upload_file: AppHarness, opened_page: Page):
-    """Selecting a file through the dropzone calls its bound upload handler."""
+    """Selecting a file through the dropzone calls its bound upload handler.
+
+    Args:
+        tmp_path: pytest tmp_path fixture.
+        upload_file: harness for UploadFile app.
+        opened_page: Playwright page opened at the app.
+    """
     target = _write_file(tmp_path, "drop_test.txt", "dropped file contents!")
     _file_input(opened_page, "quaternary").set_input_files(target)
     _upload_done(opened_page)

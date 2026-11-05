@@ -172,6 +172,10 @@ def typeddict_form(
 ) -> Generator[tuple[AppHarness, dict], None, None]:
     """Start the selected TypedDict form app.
 
+    Args:
+        request: pytest request fixture.
+        tmp_path_factory: pytest tmp_path_factory fixture.
+
     Yields:
         The running app harness and its expected field data.
     """
@@ -189,7 +193,12 @@ def typeddict_form(
 def test_typeddict_form_submit(
     typeddict_form: tuple[AppHarness, dict], page: Page
 ) -> None:
-    """Submit each form variant and verify normalized data and URL behavior."""
+    """Submit each form variant and verify normalized data and URL behavior.
+
+    Args:
+        typeddict_form: harness and expected field data for the selected form app.
+        page: Playwright page.
+    """
     harness, fields = typeddict_form
     assert harness.frontend_url is not None
     page.goto(harness.frontend_url)

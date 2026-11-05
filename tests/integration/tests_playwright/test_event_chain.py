@@ -348,6 +348,10 @@ def event_chain(tmp_path_factory) -> Generator[AppHarness, None, None]:
 def driver(event_chain: AppHarness, page: Page) -> Page:
     """Open the event-chain app in a Playwright page.
 
+    Args:
+        event_chain: harness for the event chain app.
+        page: Playwright page.
+
     Returns:
         The opened page.
     """
@@ -379,6 +383,10 @@ def event_chain_strict(tmp_path_factory) -> Generator[AppHarness, None, None]:
 @pytest.fixture
 def driver_strict(event_chain_strict: AppHarness, page: Page) -> Page:
     """Open the strict-mode app in a Playwright page.
+
+    Args:
+        event_chain_strict: harness for the strict-mode event chain app.
+        page: Playwright page.
 
     Returns:
         The opened page.

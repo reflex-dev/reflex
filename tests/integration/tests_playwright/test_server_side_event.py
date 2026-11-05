@@ -90,6 +90,9 @@ def ServerSideEvent():
 def server_side_event(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """Start the server-side event app.
 
+    Args:
+        tmp_path_factory: pytest tmp_path_factory fixture.
+
     Yields:
         The running app harness.
     """
@@ -102,7 +105,12 @@ def server_side_event(tmp_path_factory) -> Generator[AppHarness, None, None]:
 
 @pytest.fixture(autouse=True)
 def open_server_side_event(server_side_event: AppHarness, page: Page) -> None:
-    """Open the app and wait for its backend connection."""
+    """Open the app and wait for its backend connection.
+
+    Args:
+        server_side_event: harness for the server-side event app.
+        page: Playwright page.
+    """
     assert server_side_event.app_instance is not None, "app is not running"
     assert server_side_event.frontend_url is not None
     page.goto(server_side_event.frontend_url)
@@ -119,7 +127,12 @@ def open_server_side_event(server_side_event: AppHarness, page: Page) -> None:
     ],
 )
 def test_set_value(button_id: str, page: Page) -> None:
-    """Each event-chain form clears all three input values."""
+    """Each event-chain form clears all three input values.
+
+    Args:
+        button_id: ID of the button to click.
+        page: Playwright page.
+    """
     inputs = [page.locator(f"#{field}") for field in ("a", "b", "c")]
     for field, value in zip(inputs, ("a", "b", "c"), strict=True):
         expect(field).to_have_value(value)
@@ -130,7 +143,11 @@ def test_set_value(button_id: str, page: Page) -> None:
 
 
 def test_set_value_return_c(page: Page) -> None:
-    """Returning one set_value event changes only its target input."""
+    """Returning one set_value event changes only its target input.
+
+    Args:
+        page: Playwright page.
+    """
     inputs = [page.locator(f"#{field}") for field in ("a", "b", "c")]
     page.locator("#clear_return_c").click()
 
@@ -140,6 +157,10 @@ def test_set_value_return_c(page: Page) -> None:
 
 
 def test_set_focus(page: Page) -> None:
-    """The set_focus event focuses its target input."""
+    """The set_focus event focuses its target input.
+
+    Args:
+        page: Playwright page.
+    """
     page.locator("#focus_input").click()
     expect(page.locator("#focus_target")).to_be_focused()

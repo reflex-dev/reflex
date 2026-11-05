@@ -43,6 +43,11 @@ def memory_expiration_app(
 ) -> Generator[AppHarness, None, None]:
     """Start a memory-backed app with a short expiration window.
 
+    Args:
+        app_harness_env: harness class for the dev or prod mode under test.
+        monkeypatch: pytest monkeypatch fixture.
+        tmp_path_factory: pytest tmp_path_factory fixture.
+
     Yields:
         A running app harness configured to use StateManagerMemory.
     """
@@ -65,7 +70,12 @@ def test_memory_state_manager_expires_state_end_to_end(
     memory_expiration_app: AppHarness,
     page: Page,
 ):
-    """An idle in-memory state should expire and reset on the next event."""
+    """An idle in-memory state should expire and reset on the next event.
+
+    Args:
+        memory_expiration_app: harness for the memory-backed app.
+        page: Playwright page.
+    """
     app_instance = memory_expiration_app.app_instance
     assert app_instance is not None
     assert memory_expiration_app.frontend_url is not None
@@ -98,7 +108,12 @@ def test_memory_state_manager_delays_expiration_after_use_end_to_end(
     memory_expiration_app: AppHarness,
     page: Page,
 ):
-    """Using a token should start a fresh expiration window from the last use."""
+    """Using a token should start a fresh expiration window from the last use.
+
+    Args:
+        memory_expiration_app: harness for the memory-backed app.
+        page: Playwright page.
+    """
     app_instance = memory_expiration_app.app_instance
     assert app_instance is not None
     assert memory_expiration_app.frontend_url is not None

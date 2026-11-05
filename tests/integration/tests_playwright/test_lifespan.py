@@ -203,7 +203,7 @@ def mount_cached_fastapi(request: pytest.FixtureRequest) -> bool:
     return request.param
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def lifespan_app(
     tmp_path_factory: pytest.TempPathFactory,
     app_harness_env: type[AppHarness],
@@ -278,6 +278,8 @@ def test_lifespan_raw_asyncio_task(lifespan_app: AppHarness, page: Page):
     assert lifespan_app.app_module.raw_asyncio_task_global > 0
 
 
+# test_lifespan must stay the last test in this file: it stops the backend of the
+# session-scoped lifespan_app, so a test after it would find the harness stopped.
 def test_lifespan(lifespan_app: AppHarness, page: Page):
     """Test the lifespan integration.
 

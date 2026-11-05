@@ -227,13 +227,17 @@ def test_submit(page: Page, form_submit: AppHarness):
     page.get_by_role("checkbox").first.click()
     page.get_by_role("switch").first.click()
     page.get_by_role("radio").nth(1).click()
-    page.locator("textarea").fill("Some\nText")
+    # Enter in a default text area adds a newline and does not submit the form.
+    textarea = page.locator("textarea")
+    textarea.press_sequentially("Some")
+    textarea.press("Enter")
+    textarea.press_sequentially("Text")
     debounce_selector = (
         "#debounce_input"
         if form_submit.app_source is FormSubmit
         else '[name="debounce_input"]'
     )
-    page.locator(debounce_selector).fill("bar baz")
+    page.locator(debounce_selector).press_sequentially("bar baz")
 
     prev_url = page.url
     page.get_by_role("button", name="Submit", exact=True).click()

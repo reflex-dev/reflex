@@ -144,6 +144,9 @@ def ClientSide():
 def client_side(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """Start the client-storage app once for this module.
 
+    Args:
+        tmp_path_factory: pytest tmp_path_factory fixture.
+
     Yields:
         The running app harness.
     """
@@ -158,6 +161,10 @@ def client_side(tmp_path_factory) -> Generator[AppHarness, None, None]:
 def opened_page(client_side: AppHarness, page: Page) -> Page:
     """Open a fresh browser page at the client-storage app.
 
+    Args:
+        client_side: harness for the client-storage app.
+        page: Playwright page.
+
     Returns:
         The page after navigation.
     """
@@ -168,6 +175,10 @@ def opened_page(client_side: AppHarness, page: Page) -> Page:
 
 def _storage(page: Page, name: str) -> dict[str, str]:
     """Read a browser storage area as a plain dictionary.
+
+    Args:
+        page: Playwright page.
+        name: name of the browser storage area (a window attribute).
 
     Returns:
         The storage key/value pairs.
@@ -180,6 +191,9 @@ def _storage(page: Page, name: str) -> dict[str, str]:
 def _cookie_map(context: BrowserContext) -> dict[str, Any]:
     """Return browser cookies indexed by name.
 
+    Args:
+        context: Playwright browser context.
+
     Returns:
         The cookies keyed by cookie name.
     """
@@ -191,7 +205,14 @@ def _cookie_map(context: BrowserContext) -> dict[str, Any]:
 
 
 def _set_state_value(page: Page, state_var: str, value: str, *, sub_sub=False):
-    """Set a storage-backed state value through the app controls."""
+    """Set a storage-backed state value through the app controls.
+
+    Args:
+        page: Playwright page.
+        state_var: name of the state var to set.
+        value: value to set.
+        sub_sub: set the var on the sub-sub state instead of the sub state.
+    """
     state_input = page.locator("#state_var")
     value_input = page.locator("#input_value")
     expect(state_input).to_have_value("")
@@ -215,7 +236,12 @@ def _wait_for_token(page: Page) -> str:
 
 
 def test_client_side_state(client_side: AppHarness, opened_page: Page):
-    """Verify storage defaults, persistence, scope, sync, and state recreation."""
+    """Verify storage defaults, persistence, scope, sync, and state recreation.
+
+    Args:
+        client_side: harness for the client-storage app.
+        opened_page: Playwright page opened at the app.
+    """
     assert client_side.app_instance is not None
     assert client_side.frontend_url is not None
     page = opened_page
@@ -299,6 +325,8 @@ def test_client_side_state(client_side: AppHarness, opened_page: Page):
         )
         assert cookies[name]["httpOnly"] is False
         assert cookies[name]["secure"] is False
+        # Session cookies have no expiry.
+        assert cookies[name]["expires"] == -1
         assert cookies[name]["sameSite"] == (
             "Strict" if name.endswith(f".c4{FIELD_MARKER}") else "Lax"
         )
@@ -466,7 +494,12 @@ def test_client_side_state(client_side: AppHarness, opened_page: Page):
 
 
 def test_json_cookie_values(client_side: AppHarness, opened_page: Page):
-    """JSON cookie strings survive refresh without parsing or mutation."""
+    """JSON cookie strings survive refresh without parsing or mutation.
+
+    Args:
+        client_side: harness for the client-storage app.
+        opened_page: Playwright page opened at the app.
+    """
     assert client_side.frontend_url is not None
     page = opened_page
     _wait_for_token(page)

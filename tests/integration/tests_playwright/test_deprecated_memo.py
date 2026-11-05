@@ -85,6 +85,9 @@ def MemoApp():
 def memo_app(tmp_path) -> Generator[AppHarness, None, None]:
     """Start MemoApp.
 
+    Args:
+        tmp_path: pytest tmp_path fixture.
+
     Yields:
         The running app harness.
     """
@@ -96,7 +99,12 @@ def memo_app(tmp_path) -> Generator[AppHarness, None, None]:
 
 
 def test_memo_app(memo_app: AppHarness, page: Page) -> None:
-    """Render experimental memos and verify forwarded props and updates."""
+    """Render experimental memos and verify forwarded props and updates.
+
+    Args:
+        memo_app: harness for MemoApp.
+        page: Playwright page.
+    """
     assert memo_app.app_instance is not None, "app is not running"
     assert memo_app.frontend_url is not None
     page.goto(memo_app.frontend_url)

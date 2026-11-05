@@ -157,7 +157,8 @@ def DynamicRoute():
     app.add_page(index, route="/page/static", on_load=DynamicState.on_load_static)
     app.add_page(index, route="/static/x", on_load=DynamicState.on_load)
     app.add_page(index)
-    app.add_page(route="/404", on_load=DynamicState.on_load)
+    # Render the event order on the 404 page so tests can wait for its on_load.
+    app.add_page(index, route="/404", on_load=DynamicState.on_load)
 
 
 @pytest.fixture(scope="module")
@@ -184,6 +185,10 @@ def dynamic_route(
 @pytest.fixture
 def driver(dynamic_route: AppHarness, page: Page) -> Page:
     """Open the app and wait until the browser is connected to its state.
+
+    Args:
+        dynamic_route: harness for the dynamic route app.
+        page: Playwright page.
 
     Returns:
         The connected Playwright page.
@@ -256,68 +261,33 @@ def test_on_load_navigate(
     params = json.loads(params_json.inner_text())
     assert params == {"foo": "bar", "page_id": "11"}
 
-    # Check the server response and browser-history hydration separately. A
-    # full-page 404 may or may not emit its client on_load before browser back.
-    order_before_missing = exp_order.copy()
+    # hit a 404 and ensure we still hydrate
+    exp_order += ["/404-no page id"]
     with poll_for_navigation(driver):
         response = driver.goto(f"{frontend_url}/missing")
     assert response is not None
-    if isinstance(dynamic_route, AppHarnessProd):
-        assert response.status == 404
-    else:
-        assert response.status == 200
-    direct_missing_orders = [
-        order_before_missing,
-        [*order_before_missing, "/404-no page id"],
-    ]
+    assert response.status == (
+        404 if isinstance(dynamic_route, AppHarnessProd) else 200
+    )
+    poll_assert_event_order(driver, exp_order)
 
     # browser nav should still trigger hydration
+    exp_order += ["/page/[page_id]-11"]
     with poll_for_navigation(driver):
         driver.go_back()
-    expected_back_orders = [
-        [*order, "/page/[page_id]-11"] for order in direct_missing_orders
-    ]
-    driver.wait_for_function(
-        """(orders) => {
-            const texts = Array.from(
-                document.querySelectorAll('#event_order > p'),
-                (paragraph) => paragraph.textContent,
-            );
-            return orders.some((order) => JSON.stringify(order) === JSON.stringify(texts));
-        }""",
-        arg=expected_back_orders,
-    )
-    exp_order = driver.locator("#event_order > p").all_text_contents()
-    assert exp_order in expected_back_orders
+    poll_assert_event_order(driver, exp_order)
 
-    # An unknown client-side route renders the app's /404 page and fires its on_load.
+    # next/link to a 404 and ensure we still hydrate
+    exp_order += ["/404-no page id"]
     with poll_for_navigation(driver):
         click_element(driver, "#link_missing")
-    expect(driver.get_by_text("404")).to_be_visible()
+    poll_assert_event_order(driver, exp_order)
 
     # hit a page that redirects back to dynamic page
-    redirect_order = [
-        "on_load_redir-{'foo': 'bar', 'page_id': '0'}",
-        "/page/[page_id]-0",
-    ]
-    expected_redirect_orders = [
-        [*exp_order, *redirect_order],
-        [*exp_order, "/404-no page id", *redirect_order],
-    ]
+    exp_order += ["on_load_redir-{'foo': 'bar', 'page_id': '0'}", "/page/[page_id]-0"]
     with poll_for_navigation(driver):
         driver.goto(f"{frontend_url}/redirect-page/0/?foo=bar")
-    driver.wait_for_function(
-        """(orders) => {
-            const texts = Array.from(
-                document.querySelectorAll('#event_order > p'),
-                (paragraph) => paragraph.textContent,
-            );
-            return orders.some((order) => JSON.stringify(order) === JSON.stringify(texts));
-        }""",
-        arg=expected_redirect_orders,
-    )
-    exp_order = driver.locator("#event_order > p").all_text_contents()
-    assert exp_order in expected_redirect_orders
+    poll_assert_event_order(driver, exp_order)
     # should have redirected back to page 0
     expect(driver).to_have_url(re.compile(r".*/page/0$"))
 

@@ -286,7 +286,6 @@ jobs:
       matrix:
         state_manager: ["redis", "memory"]
         python-version: ["3.11", "3.12", "3.13", "3.14", "3.15"]
-        split_index: [1, 2]
       fail-fast: false
     runs-on: ubuntu-22.04
     services:
@@ -312,7 +311,7 @@ jobs:
       - name: Run non-browser integration tests
         env:
           REFLEX_REDIS_URL: ${{ matrix.state_manager == 'redis' && 'redis://localhost:6379' || '' }}
-        run: uv run pytest tests/integration --ignore=tests/integration/tests_playwright --reruns 3 -v --maxfail=5 --splits 2 --group ${{ matrix.split_index }}
+        run: uv run pytest tests/integration --ignore=tests/integration/tests_playwright --reruns 3 -v --maxfail=5
 
   app-harness-playwright:
     needs: changes
@@ -322,6 +321,7 @@ jobs:
       matrix:
         state_manager: ["redis", "memory"]
         python-version: ["3.11", "3.12", "3.13", "3.14", "3.15"]
+        split_index: [1, 2]
       fail-fast: false
     runs-on: ubuntu-22.04
     services:
@@ -349,7 +349,7 @@ jobs:
       - name: Run Playwright integration tests
         env:
           REFLEX_REDIS_URL: ${{ matrix.state_manager == 'redis' && 'redis://localhost:6379' || '' }}
-        run: uv run pytest tests/integration/tests_playwright --reruns 3 -v --maxfail=5
+        run: uv run pytest tests/integration/tests_playwright --reruns 3 -v --maxfail=5 --splits 2 --group ${{ matrix.split_index }}
 
   # The one status check the branch rules require from this workflow. Naming the
   # jobs above directly does not survive: check names follow the matrix and the

@@ -7,6 +7,17 @@ from reflex.testing import AppHarness
 from tests.benchmarks.support import BenchmarkResult, PerformanceReport
 
 
+def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
+    """Select large-state benchmark sizes for the requested performance scale.
+
+    Args:
+        metafunc: Test metadata used to build the selected parametrization.
+    """
+    scale = metafunc.config.getoption("--performance-scale")
+    var_counts = [1, 100] if scale == "smoke" else [1, 10, 100, 1000, 10000]
+    metafunc.parametrize("var_count", var_counts)
+
+
 def _large_state_app_template(var_count: int) -> str:
     var_part = "\n".join(
         f'    var{i}: str = "{i}" * 10000' for i in range(1, var_count)

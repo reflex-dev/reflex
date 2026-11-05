@@ -378,6 +378,10 @@ def call_script(tmp_path_factory) -> Generator[AppHarness, None, None]:
 def call_script_page(call_script: AppHarness, page: Page) -> Page:
     """Open the app and wait for its session and external scripts.
 
+    Args:
+        call_script: harness for the call_script app.
+        page: Playwright page.
+
     Returns:
         The connected Playwright page.
     """

@@ -27,6 +27,9 @@ def SharedStateApp():
 def shared_state(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """Start the app that imports a shared state class.
 
+    Args:
+        tmp_path_factory: pytest tmp_path_factory fixture.
+
     Yields:
         The running app harness.
     """
@@ -38,7 +41,12 @@ def shared_state(tmp_path_factory) -> Generator[AppHarness, None, None]:
 
 
 def test_shared_state(shared_state: AppHarness, page: Page) -> None:
-    """The app can import a state class from a reusable module."""
+    """The app can import a state class from a reusable module.
+
+    Args:
+        shared_state: harness for the shared state app.
+        page: Playwright page.
+    """
     assert shared_state.app_instance is not None, "app is not running"
     assert shared_state.frontend_url is not None
     page.goto(shared_state.frontend_url)

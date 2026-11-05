@@ -110,6 +110,10 @@ def moment_app(
 ) -> Generator[AppHarness, None, None]:
     """Start the Moment integration app.
 
+    Args:
+        tmp_path_factory: pytest tmp_path_factory fixture.
+        app_harness_env: harness class for the dev or prod mode under test.
+
     Yields:
         The running Moment app harness.
     """
@@ -121,7 +125,12 @@ def moment_app(
 
 
 def test_moment_2_props_render(moment_app: AppHarness, page: Page) -> None:
-    """Changed react-moment 2.x props should render without a client error."""
+    """Changed react-moment 2.x props should render without a client error.
+
+    Args:
+        moment_app: harness for the Moment app.
+        page: Playwright page.
+    """
     assert moment_app.frontend_url is not None
     page.goto(moment_app.frontend_url)
     expect(page.locator("#token")).not_to_have_value("")
@@ -130,7 +139,12 @@ def test_moment_2_props_render(moment_app: AppHarness, page: Page) -> None:
 
 
 def test_moment_locales_are_isolated(moment_app: AppHarness, page: Page) -> None:
-    """Keep default moments in English across locales, navigation, and reload."""
+    """Keep default moments in English across locales, navigation, and reload.
+
+    Args:
+        moment_app: harness for the Moment app.
+        page: Playwright page.
+    """
     assert moment_app.frontend_url is not None
     page.goto(moment_app.frontend_url)
     expect(page.locator("#token")).not_to_have_value("")
@@ -160,7 +174,12 @@ def test_moment_locales_are_isolated(moment_app: AppHarness, page: Page) -> None
 def test_moment_provider_locale_does_not_leak(
     moment_app: AppHarness, page: Page
 ) -> None:
-    """A provider locale stays scoped across client-side navigation."""
+    """A provider locale stays scoped across client-side navigation.
+
+    Args:
+        moment_app: harness for the Moment app.
+        page: Playwright page.
+    """
     assert moment_app.frontend_url is not None
     page.goto(f"{moment_app.frontend_url.rstrip('/')}/plain")
     expect(page.locator("#plain-date")).to_have_text("Thursday 14 March 2024")

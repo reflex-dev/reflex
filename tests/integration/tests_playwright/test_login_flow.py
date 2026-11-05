@@ -54,6 +54,9 @@ def LoginSample():
 def login_sample(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """Start the LoginSample app.
 
+    Args:
+        tmp_path_factory: pytest tmp_path_factory fixture.
+
     Yields:
         The running app harness.
     """
@@ -65,7 +68,12 @@ def login_sample(tmp_path_factory) -> Generator[AppHarness, None, None]:
 
 
 def test_login_flow(login_sample: AppHarness, page: Page) -> None:
-    """Verify login and logout update the persisted client state."""
+    """Verify login and logout update the persisted client state.
+
+    Args:
+        login_sample: harness for the LoginSample app.
+        page: Playwright page.
+    """
     assert login_sample.frontend_url is not None
     page.add_init_script("localStorage.clear()")
     page.goto(login_sample.frontend_url)

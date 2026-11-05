@@ -46,6 +46,10 @@ def icons(
 ) -> Generator[AppHarness, None, None]:
     """Start the icon app with the selected harness mode.
 
+    Args:
+        tmp_path_factory: pytest tmp_path_factory fixture.
+        app_harness_env: harness class for the dev or prod mode under test.
+
     Yields:
         The running app harness.
     """
@@ -58,7 +62,12 @@ def icons(
 
 
 def test_icons(icons: AppHarness, page: Page) -> None:
-    """All static and state-driven icons render as SVGs."""
+    """All static and state-driven icons render as SVGs.
+
+    Args:
+        icons: harness for the icon app.
+        page: Playwright page.
+    """
     assert icons.frontend_url is not None
     page.goto(icons.frontend_url)
     expect(page.locator("#token")).not_to_have_value("", timeout=30_000)

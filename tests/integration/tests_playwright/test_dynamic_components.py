@@ -203,7 +203,13 @@ def dynamic_components(
 def test_dynamic_components(
     dynamic_components: AppHarness, page: Page, lazy_bundled_libraries: bool
 ) -> None:
-    """Verify component updates, event handlers, and exact bundled imports."""
+    """Verify component updates, event handlers, and exact bundled imports.
+
+    Args:
+        dynamic_components: harness for the dynamic components app.
+        page: Playwright page.
+        lazy_bundled_libraries: whether lazy loading of bundled libraries is enabled.
+    """
     banana = "lucide-react/dist/esm/icons/banana.mjs"
     assert dynamic_components.frontend_url is not None
     page.goto(dynamic_components.frontend_url)

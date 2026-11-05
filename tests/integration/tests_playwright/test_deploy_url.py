@@ -39,6 +39,9 @@ def deploy_url_sample(
 ) -> Generator[AppHarness, None, None]:
     """Start the deploy_url sample app.
 
+    Args:
+        tmp_path_factory: pytest tmp_path_factory fixture.
+
     Yields:
         The running app harness.
     """
@@ -50,7 +53,12 @@ def deploy_url_sample(
 
 
 def test_deploy_url(deploy_url_sample: AppHarness, page: Page) -> None:
-    """The configured deploy URL points to the running frontend."""
+    """The configured deploy URL points to the running frontend.
+
+    Args:
+        deploy_url_sample: harness for the deploy_url app.
+        page: Playwright page.
+    """
     import reflex as rx
 
     deploy_url = rx.config.get_config().deploy_url
@@ -63,7 +71,12 @@ def test_deploy_url(deploy_url_sample: AppHarness, page: Page) -> None:
 
 
 def test_deploy_url_in_app(deploy_url_sample: AppHarness, page: Page) -> None:
-    """The app's self-redirect returns to its configured deploy URL."""
+    """The app's self-redirect returns to its configured deploy URL.
+
+    Args:
+        deploy_url_sample: harness for the deploy_url app.
+        page: Playwright page.
+    """
     deploy_url = deploy_url_sample.frontend_url
     assert deploy_url is not None
 

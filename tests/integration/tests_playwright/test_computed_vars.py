@@ -185,7 +185,7 @@ def test_computed_vars(
 
     mark_dirty.click()
     with pytest.raises(AssertionError):
-        expect(page.locator("#count3")).to_have_text("1", timeout=5_000)
+        expect(page.locator("#count3")).not_to_have_text("0", timeout=5_000)
     page.wait_for_timeout(10_000)
     expect(page.locator("#count3")).to_have_text("0")
     expect(page.locator("#depends_on_count3")).to_have_text("0")

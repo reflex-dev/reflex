@@ -83,6 +83,10 @@ def tailwind_version(request) -> int:
 def tailwind_app(tmp_path, tailwind_version: int) -> Generator[AppHarness, None, None]:
     """Start the Tailwind app with the selected configuration.
 
+    Args:
+        tmp_path: pytest tmp_path fixture.
+        tailwind_version: Tailwind version under test (0 disables Tailwind).
+
     Yields:
         The running app harness.
     """
@@ -98,7 +102,13 @@ def tailwind_app(tmp_path, tailwind_version: int) -> Generator[AppHarness, None,
 def test_tailwind_app(
     tailwind_app: AppHarness, tailwind_version: int, page: Page
 ) -> None:
-    """Verify disabled and enabled Tailwind styles in the browser."""
+    """Verify disabled and enabled Tailwind styles in the browser.
+
+    Args:
+        tailwind_app: harness for the Tailwind app.
+        tailwind_version: Tailwind version under test (0 disables Tailwind).
+        page: Playwright page.
+    """
     assert tailwind_app.app_instance is not None
     assert tailwind_app.backend is not None
 

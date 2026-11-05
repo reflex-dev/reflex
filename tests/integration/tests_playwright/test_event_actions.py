@@ -205,6 +205,10 @@ def event_action(tmp_path_factory) -> Generator[AppHarness, None, None]:
 def event_page(event_action: AppHarness, page: Page) -> Page:
     """Open the app and wait for a connected browser session.
 
+    Args:
+        event_action: harness for the event actions app.
+        page: Playwright page.
+
     Returns:
         The connected Playwright page.
     """

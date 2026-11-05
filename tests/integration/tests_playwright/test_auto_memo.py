@@ -36,6 +36,9 @@ def AutoMemoAcrossPagesApp():
 def auto_memo_app(tmp_path) -> Generator[AppHarness, None, None]:
     """Start the shared-component app.
 
+    Args:
+        tmp_path: pytest tmp_path fixture.
+
     Yields:
         The running app harness.
     """
@@ -47,7 +50,12 @@ def auto_memo_app(tmp_path) -> Generator[AppHarness, None, None]:
 
 
 def test_auto_memo_shared_across_pages(auto_memo_app: AppHarness, page: Page):
-    """A shared stateful subtree renders correctly on both pages."""
+    """A shared stateful subtree renders correctly on both pages.
+
+    Args:
+        auto_memo_app: harness for the shared-component app.
+        page: Playwright page.
+    """
     assert auto_memo_app.app_instance is not None, "app is not running"
 
     web_sources = "\n".join(

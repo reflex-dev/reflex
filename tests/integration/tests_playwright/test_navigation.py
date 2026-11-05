@@ -42,6 +42,9 @@ def NavigationApp():
 def navigation_app(tmp_path) -> Generator[AppHarness, None, None]:
     """Start the navigation app.
 
+    Args:
+        tmp_path: pytest tmp_path fixture.
+
     Yields:
         The running app harness.
     """
@@ -53,7 +56,12 @@ def navigation_app(tmp_path) -> Generator[AppHarness, None, None]:
 
 
 def test_navigation_app(navigation_app: AppHarness, page: Page) -> None:
-    """Internal links navigate in place; external links open new pages."""
+    """Internal links navigate in place; external links open new pages.
+
+    Args:
+        navigation_app: harness for the navigation app.
+        page: Playwright page.
+    """
     assert navigation_app.frontend_url is not None
     page.goto(navigation_app.frontend_url)
 

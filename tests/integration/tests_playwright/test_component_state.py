@@ -164,6 +164,9 @@ def ComponentStateApp():
 def component_state_app(tmp_path) -> Generator[AppHarness, None, None]:
     """Start the ComponentState app.
 
+    Args:
+        tmp_path: pytest tmp_path fixture.
+
     Yields:
         The running app harness.
     """
@@ -175,7 +178,12 @@ def component_state_app(tmp_path) -> Generator[AppHarness, None, None]:
 
 
 def test_component_state_app(component_state_app: AppHarness, page: Page) -> None:
-    """Verify component and local substates update independently."""
+    """Verify component and local substates update independently.
+
+    Args:
+        component_state_app: harness for the ComponentState app.
+        page: Playwright page.
+    """
     assert component_state_app.app_instance is not None, "app is not running"
     assert component_state_app.frontend_url is not None
     page.goto(component_state_app.frontend_url)
@@ -251,7 +259,12 @@ def configured_component_state_app(
 def test_component_state_configured_defaults(
     configured_component_state_app: AppHarness, page: Page
 ) -> None:
-    """Configured defaults render, update, reset, and remain per-component."""
+    """Configured defaults render, update, reset, and remain per-component.
+
+    Args:
+        configured_component_state_app: harness for the configured ComponentState app.
+        page: Playwright page.
+    """
     assert configured_component_state_app.frontend_url is not None
     page.goto(configured_component_state_app.frontend_url)
     expect(page.locator("#count-a")).to_have_text("0")

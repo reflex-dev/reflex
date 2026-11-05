@@ -80,6 +80,9 @@ def click_element(page: Page, selector: str, timeout: float | None = None) -> No
 def n_expected_events(exp_event_order: Sequence[str | set[str]]) -> int:
     """Count expected event names, including unordered event groups.
 
+    Args:
+        exp_event_order: expected event names; a set marks an unordered group.
+
     Returns:
         Total number of events.
     """
@@ -91,7 +94,12 @@ def n_expected_events(exp_event_order: Sequence[str | set[str]]) -> int:
 def assert_event_order(
     actual_event_order: list[str], exp_event_order: Sequence[str | set[str]]
 ) -> None:
-    """Verify exact event order while allowing explicitly unordered groups."""
+    """Verify exact event order while allowing explicitly unordered groups.
+
+    Args:
+        actual_event_order: event names in the order they were observed.
+        exp_event_order: expected event names; a set marks an unordered group.
+    """
     actual_idx = 0
     for expected in exp_event_order:
         if isinstance(expected, str):
@@ -145,7 +153,13 @@ def assert_relative_event_order(
     expected_counts: dict[str, int],
     ordering_rules: list[OrderingRule],
 ) -> None:
-    """Assert event counts and selected relative ordering constraints."""
+    """Assert event counts and selected relative ordering constraints.
+
+    Args:
+        actual: event names in the order they were observed.
+        expected_counts: expected number of occurrences per event name.
+        ordering_rules: relative ordering constraints between events.
+    """
     actual_counts = Counter(actual)
     for event, count in expected_counts.items():
         assert actual_counts[event] == count, (
@@ -178,6 +192,7 @@ def poll_assert_relative_event_order(
     expected_counts: dict[str, int],
     ordering_rules: list[OrderingRule],
     selector: str = "#event_order > p",
+    timeout: int = DEFAULT_TIMEOUT,
 ) -> None:
     """Wait for expected events, then assert relative ordering constraints.
 
@@ -186,9 +201,10 @@ def poll_assert_relative_event_order(
         expected_counts: Expected occurrence count per event.
         ordering_rules: Required relative order for event occurrences.
         selector: Locator for event entries.
+        timeout: Maximum wait in seconds for the expected events to render.
     """
     events = page.locator(selector)
-    expect(events).to_have_count(sum(expected_counts.values()))
+    expect(events).to_have_count(sum(expected_counts.values()), timeout=timeout * 1000)
     assert_relative_event_order(
         events.all_text_contents(), expected_counts, ordering_rules
     )

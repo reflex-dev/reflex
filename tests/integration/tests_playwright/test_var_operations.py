@@ -1,5 +1,6 @@
 """Integration tests for var operations."""
 
+import re
 from collections.abc import Generator
 
 import pytest
@@ -1140,8 +1141,11 @@ def test_var_operations(driver, var_operations: AppHarness):
     ]
 
     for tag, expected in tests:
+        # A string match would also accept spaces for newlines. innerText puts a
+        # blank line between paragraphs, so each newline matches one or more.
+        pattern = "\n+".join(map(re.escape, expected.split("\n")))
         expect(driver.locator(f"#{tag}").first).to_have_text(
-            expected, use_inner_text=True
+            re.compile(f"^{pattern}$"), use_inner_text=True
         )
 
     # Highlight component with var query (does not plumb ID)

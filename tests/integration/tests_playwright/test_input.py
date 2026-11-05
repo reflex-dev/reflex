@@ -67,6 +67,9 @@ def FullyControlledInput():
 def fully_controlled_input(tmp_path) -> Generator[AppHarness, None, None]:
     """Start the controlled-input app.
 
+    Args:
+        tmp_path: pytest tmp_path fixture.
+
     Yields:
         The running app harness.
     """
@@ -78,7 +81,12 @@ def fully_controlled_input(tmp_path) -> Generator[AppHarness, None, None]:
 
 
 def test_fully_controlled_input(fully_controlled_input: AppHarness, page: Page):
-    """Input edits and backend state changes stay synchronized in the browser."""
+    """Input edits and backend state changes stay synchronized in the browser.
+
+    Args:
+        fully_controlled_input: harness for the controlled-input app.
+        page: Playwright page.
+    """
     assert fully_controlled_input.app_instance is not None, "app is not running"
     assert fully_controlled_input.frontend_url is not None
     page.goto(fully_controlled_input.frontend_url)
@@ -111,12 +119,13 @@ def test_fully_controlled_input(fully_controlled_input: AppHarness, page: Page):
     expect(value_input).to_have_value("")
     expect(plain_value_input).to_have_value("")
 
-    debounce_input.fill("getting testing done")
+    # Type key by key: each keystroke races the backend echo into the input.
+    debounce_input.press_sequentially("getting testing done")
     expect(debounce_input).to_have_value("getting testing done")
     expect(value_input).to_have_value("getting testing done")
     expect(plain_value_input).to_have_value("getting testing done")
 
-    on_change_input.fill("overwrite the state")
+    on_change_input.press_sequentially("overwrite the state")
     expect(debounce_input).to_have_value("overwrite the state")
     expect(on_change_input).to_have_value("overwrite the state")
     expect(value_input).to_have_value("overwrite the state")

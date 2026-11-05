@@ -30,6 +30,9 @@ def ExtraOverlay():
 def extra_overlay(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """Start the extra-overlay app.
 
+    Args:
+        tmp_path_factory: pytest tmp_path_factory fixture.
+
     Yields:
         The running app harness.
     """
@@ -42,7 +45,12 @@ def extra_overlay(tmp_path_factory) -> Generator[AppHarness, None, None]:
 
 
 def test_extra_overlay(extra_overlay: AppHarness, page: Page) -> None:
-    """The configured overlay renders its button without a label."""
+    """The configured overlay renders its button without a label.
+
+    Args:
+        extra_overlay: harness for the extra overlay app.
+        page: Playwright page.
+    """
     assert extra_overlay.frontend_url is not None
     page.goto(extra_overlay.frontend_url)
     expect(page.locator("#token")).not_to_have_value("")

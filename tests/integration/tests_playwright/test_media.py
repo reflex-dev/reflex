@@ -92,6 +92,10 @@ def media_app(
 ) -> Generator[AppHarness, None, None]:
     """Start the media app with an isolated upload directory.
 
+    Args:
+        tmp_path: pytest tmp_path fixture.
+        monkeypatch: pytest monkeypatch fixture.
+
     Yields:
         The running app harness.
     """
@@ -105,25 +109,30 @@ def media_app(
 
 
 def test_media_app(media_app: AppHarness, page: Page) -> None:
-    """Verify image MIME types, upload URLs, and decoded dimensions."""
+    """Verify image MIME types, upload URLs, and decoded dimensions.
+
+    Args:
+        media_app: harness for the media app.
+        page: Playwright page.
+    """
     assert media_app.app_instance is not None, "app is not running"
     assert media_app.frontend_url is not None
     page.goto(media_app.frontend_url)
     expect(page.locator("#token")).not_to_have_value("")
 
     image_data = {
-        "default": ("image/png", 200, 200),
-        "bmp": ("image/bmp", 200, 200),
-        "jpg": ("image/jpeg", 200, 200),
-        "png": ("image/png", 200, 200),
-        "gif": ("image/gif", 200, 200),
-        "webp": ("image/webp", 200, 200),
-        "from_url": ("image/png", 1280, 733),
-        "uploaded": ("generated.png", 150, 150),
+        "default": ("^data:image/png;base64,", 200, 200),
+        "bmp": ("^data:image/bmp;base64,", 200, 200),
+        "jpg": ("^data:image/jpeg;base64,", 200, 200),
+        "png": ("^data:image/png;base64,", 200, 200),
+        "gif": ("^data:image/gif;base64,", 200, 200),
+        "webp": ("^data:image/webp;base64,", 200, 200),
+        "from_url": ("^data:image/png;base64,", 1280, 733),
+        "uploaded": (r"generated\.png", 150, 150),
     }
-    for image_id, (src_part, width, height) in image_data.items():
+    for image_id, (src_pattern, width, height) in image_data.items():
         image = page.locator(f"#{image_id}")
-        expect(image).to_have_attribute("src", re.compile(re.escape(src_part)))
+        expect(image).to_have_attribute("src", re.compile(src_pattern))
         page.wait_for_function(
             "([id, width, height]) => {"
             " const image = document.getElementById(id);"

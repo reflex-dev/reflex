@@ -70,6 +70,10 @@ def test_app(
 ) -> Generator[AppHarness, None, None]:
     """Start TestApp in dev or production mode.
 
+    Args:
+        app_harness_env: harness class for the dev or prod mode under test.
+        tmp_path_factory: pytest tmp_path_factory fixture.
+
     Yields:
         The running app harness.
     """
@@ -82,7 +86,12 @@ def test_app(
 
 
 def _open_app(test_app: AppHarness, page: Page) -> None:
-    """Open the test app in the browser."""
+    """Open the test app in the browser.
+
+    Args:
+        test_app: harness for the exception handler app.
+        page: Playwright page.
+    """
     assert test_app.app_instance is not None, "app is not running"
     assert test_app.frontend_url is not None
     page.goto(test_app.frontend_url)
@@ -93,7 +102,13 @@ def test_frontend_exception_handler_during_runtime(
     page: Page,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-    """A missing frontend function reaches the frontend exception handler."""
+    """A missing frontend function reaches the frontend exception handler.
+
+    Args:
+        test_app: harness for the exception handler app.
+        page: Playwright page.
+        caplog: pytest caplog fixture.
+    """
     _open_app(test_app, page)
     button = page.locator("#induce-frontend-error-btn")
     expect(button).to_be_enabled()
@@ -111,7 +126,13 @@ def test_backend_exception_handler_during_runtime(
     page: Page,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-    """A backend exception reaches the backend exception handler."""
+    """A backend exception reaches the backend exception handler.
+
+    Args:
+        test_app: harness for the exception handler app.
+        page: Playwright page.
+        caplog: pytest caplog fixture.
+    """
     _open_app(test_app, page)
     button = page.locator("#induce-backend-error-btn")
     expect(button).to_be_enabled()
@@ -127,7 +148,13 @@ def test_frontend_exception_handler_with_react(
     page: Page,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-    """An invalid React child reaches the frontend exception handler."""
+    """An invalid React child reaches the frontend exception handler.
+
+    Args:
+        test_app: harness for the exception handler app.
+        page: Playwright page.
+        caplog: pytest caplog fixture.
+    """
     _open_app(test_app, page)
     button = page.locator("#induce-react-error-btn")
     expect(button).to_be_enabled()

@@ -266,6 +266,10 @@ def background_task(
 def background_page(background_task: AppHarness, page: Page) -> Page:
     """Open the app and wait for its client connection.
 
+    Args:
+        background_task: harness for the background task app.
+        page: Playwright page.
+
     Returns:
         The connected Playwright page.
     """
