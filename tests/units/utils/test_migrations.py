@@ -424,7 +424,8 @@ def test_legacy_env_is_reported_and_updated_by_init(
     _db("init")
     env_py = project / "alembic" / "env.py"
     stock_env = Path(alembic.config.Config().get_template_directory(), "generic")
-    env_py.write_text((stock_env / "env.py").read_text())
+    stock_env_py = (stock_env / "env.py").read_text()
+    env_py.write_text(stock_env_py)
     ini = (project / "alembic.ini").read_text()
     assert migrations.is_legacy_env()
 
@@ -442,6 +443,8 @@ def test_legacy_env_is_reported_and_updated_by_init(
     assert "existing revisions are kept" in caplog.text
     assert not migrations.is_legacy_env()
     assert env_py.read_text() == migrations.TEMPLATE_ENV_PY.read_text()
+    assert (project / "alembic" / "env.old").read_text() == stock_env_py
+    assert "env.old" in caplog.text
     assert (project / "alembic.ini").read_text() == ini
     assert len(_versions(project)) == 1
     caplog.clear()
@@ -478,6 +481,32 @@ def test_migrate_helpers_run_alembic(project: Path, caplog: pytest.LogCaptureFix
     assert _rows() == []
     prerequisites.check_schema_up_to_date()
     assert "schema changes" not in caplog.text
+
+    # A database behind the scripts is brought to head before autogenerating.
+    get_engine().dispose()
+    (project / "reflex.db").unlink()
+    assert reflex.model.migrate(autogenerate=True) is True
+    assert len(_versions(project)) == 2
+    assert _table_names() == {"alembic_version", "thing"}
+
+
+def test_autogenerate_evaluates_pages(project: Path):
+    """Autogenerate evaluates the pages, so a model a page imports lazily is compared."""
+    (project / APP_NAME / "lazy.py").write_text(
+        "import reflex as rx\n\n\nclass Lazy(rx.Model, table=True):\n    name: str\n"
+    )
+    (project / APP_NAME / f"{APP_NAME}.py").write_text(
+        "import reflex as rx\n\n\n"
+        "class Thing(rx.Model, table=True):\n    t1: str\n\n\n"
+        "@rx.page(route='/lazy')\ndef lazy_page():\n"
+        f"    from {APP_NAME}.lazy import Lazy  # noqa: F401\n\n    return rx.text('lazy')\n\n\n"
+        "app = rx.App()\n"
+    )
+    _forget_app()
+
+    _db("init")
+
+    assert _table_names() == {"alembic_version", "lazy", "thing"}
 
 
 def test_alembic_command_line_runs_standalone(project: Path):

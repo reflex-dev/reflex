@@ -21,7 +21,7 @@ from reflex_base.config import get_config
 from reflex_base.environment import environment
 
 from reflex.model import ModelRegistry, get_engine
-from reflex.utils.prerequisites import get_app
+from reflex.utils.prerequisites import get_app, get_compiled_app
 
 if TYPE_CHECKING:
     from alembic.autogenerate.api import AutogenContext
@@ -39,8 +39,14 @@ if (
 ):
     fileConfig(config.config_file_name, disable_existing_loggers=False)
 
-# Importing the app registers every model, so the metadata is complete.
-get_app()
+# Importing the app registers the models declared at module level. Autogenerate
+# also evaluates the pages without compiling, as `reflex db makemigrations` always
+# has, so models that pages or plugin route hooks import lazily are compared too.
+if getattr(config.cmd_opts, "autogenerate", False):
+    environment.REFLEX_SKIP_COMPILE.set(True)
+    get_compiled_app()
+else:
+    get_app()
 target_metadata = ModelRegistry.get_metadata()
 
 writer = Rewriter()

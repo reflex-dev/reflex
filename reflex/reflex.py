@@ -1146,12 +1146,12 @@ def db_init():
     if environment.ALEMBIC_CONFIG.get().exists():
         if migrations.is_legacy_env():
             with _alembic_errors():
-                migrations.update_env()
+                backup = migrations.update_env()
             logger.info(
-                "Updated the migration environment to load the app; existing "
-                "revisions are kept. Use [bold]reflex db makemigrations[/bold] "
-                "to create schema change scripts and [bold]reflex db migrate[/bold] "
-                "to apply them.",
+                "Updated env.py to load the app, keeping the previous one as "
+                f"{backup}; existing revisions are kept. Use "
+                "[bold]reflex db makemigrations[/bold] to create schema change "
+                "scripts and [bold]reflex db migrate[/bold] to apply them.",
                 extra={"rich": True},
             )
             return

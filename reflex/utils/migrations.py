@@ -53,7 +53,7 @@ def init() -> None:
     """
     directory = environment.ALEMBIC_CONFIG.get().parent / "alembic"
     run("--quiet", "init", str(directory))
-    update_env()
+    shutil.copy(TEMPLATE_ENV_PY, directory / "env.py")
 
 
 def script_directory() -> Path:
@@ -92,9 +92,17 @@ def is_legacy_env() -> bool:
     return env_py.exists() and "target_metadata = None" in env_py.read_text()
 
 
-def update_env() -> None:
-    """Replace env.py with the reflex template, keeping everything else."""
-    shutil.copy(TEMPLATE_ENV_PY, script_directory() / "env.py")
+def update_env() -> Path:
+    """Replace env.py with the reflex template, keeping the old one as env.old.
+
+    Returns:
+        The path the previous env.py was moved to.
+    """
+    env_py = script_directory() / "env.py"
+    backup = env_py.with_name("env.old")
+    env_py.replace(backup)
+    shutil.copy(TEMPLATE_ENV_PY, env_py)
+    return backup
 
 
 def describe_error(error: Exception) -> str:

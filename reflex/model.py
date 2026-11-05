@@ -306,9 +306,11 @@ if TYPE_CHECKING or (find_spec("sqlalchemy") and find_spec("alembic")):
             return None
         from reflex.utils import migrations
 
+        # Pending scripts are applied first: autogenerate needs the database at head.
+        migrations.run("upgrade", "head")
         if autogenerate:
             migrations.run("revision", "--autogenerate")
-        migrations.run("upgrade", "head")
+            migrations.run("upgrade", "head")
         return True
 
 else:
