@@ -61,6 +61,9 @@ classifiers = [
 
 [project.optional-dependencies]
 db = [
+  # The async SQLite driver, so the default sqlite database URL also works with
+  # SQLAlchemy's async engine and sessions.
+  "aiosqlite >=0.20.0",
   "alembic >=1.15.2,<2.0",
   # SQLAlchemy 2.1 made greenlet an optional extra, but reflex.model imports
   # sqlalchemy.ext.asyncio, which needs it at import time. 3.3 is the first
@@ -127,7 +130,6 @@ dev = [
   "selenium",
   "sqlalchemy",
   "sqlmodel",
-  "starlette-admin",
   "toml",
   "towncrier",
   "ty",
@@ -323,7 +325,7 @@ markers = [
 ]
 
 [tool.codespell]
-skip = "*.html, examples, *.pyi, */nba.csv, */olympic-winners.json, packages/reflex-build-sdk/openapi.json, uv.lock, */bun.lock, node_modules"
+skip = "*.html, examples, *.pyi, */nba.csv, */olympic-winners.json, packages/reflex-build-sdk/openapi.json, uv.lock, */bun.lock, */package-lock.json, node_modules"
 ignore-words-list = "te, TreeE, selectin"
 
 
@@ -350,7 +352,8 @@ source = [
   "reflex_site_shared",
   "reflex_components_internal",
   "reflex_integrations_docs",
-  "reflex_bench",
+  # Not reflex_bench: CI skips most of its tests on pull requests that leave it
+  # alone, so measuring it would make the total depend on whether one touched it.
   "reflex_workflow",
 ]
 branch = true
@@ -554,7 +557,7 @@ reflex-enterprise = false
 reflex-hosting-cli = false
 pillow = "2026-10-21T00:00:00Z"
 certifi = "2026-10-21T00:00:00Z"
-virtualenv = "2026-10-22T00:00:00Z"
+virtualenv = "2026-10-23T00:00:00Z"
 
 [tool.uv.sources]
 hatch-reflex-pyi.workspace = true

@@ -159,3 +159,40 @@ def process_form(state: FormState, data: dict):
     # Process form data
     return validate_data  # Chain to another event
 ```
+
+## Stateless Event Handlers
+
+A function decorated with `@rx.event` whose first parameter is not a state is a
+stateless event handler. It is registered like any other handler, so it can be
+used as an event trigger and awaited from other handlers, but it runs without a
+state and takes no state lock of its own. Triggered from the frontend, it runs
+at once and the client's other events do not wait behind it; awaited from a
+handler, it runs inline under whatever lock that handler holds.
+
+```python box
+class PortfolioState(rx.State):
+    price: float = 0.0
+
+    @rx.event
+    def show_price(self, price: float):
+        self.price = price
+
+
+@rx.event
+async def refresh_quote(symbol: str):
+    # No state lock is held while the request is in flight.
+    yield PortfolioState.show_price(await price_service.quote(symbol))
+
+
+def quote_button():
+    return rx.button("Refresh", on_click=refresh_quote("ACME"))
+```
+
+Events a stateless handler yields or returns run against the state of the
+client that triggered it, so `refresh_quote` fetches the quote with no lock
+held and then hands the result to `PortfolioState` like any chained event.
+Without the decorator, `refresh_quote` would be a plain function that cannot be
+used as a trigger. Awaiting a stateless handler from another handler runs it
+inline, so call external services from a
+[background task](/docs/events/background-events/) or from a stateless trigger
+like this one, never from inside `async with self`.

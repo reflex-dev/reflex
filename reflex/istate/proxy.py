@@ -258,10 +258,15 @@ class StateProxy(wrapt.ObjectProxy):
             parent_state = (
                 await self._self_parent_state_proxy.__aenter__()
             ).__wrapped__
-            super().__setattr__(
-                "__wrapped__",
-                await parent_state.get_state(self._self_substate_token.cls),
-            )
+            try:
+                super().__setattr__(
+                    "__wrapped__",
+                    await parent_state.get_state(self._self_substate_token.cls),
+                )
+            except (Exception, asyncio.CancelledError):
+                # The parent holds the state lock, and __aexit__ will not be called when __aenter__ raises.
+                await self._self_parent_state_proxy.__aexit__(*sys.exc_info())
+                raise
             self._self_entered_context = True
             return self
         current_task = asyncio.current_task()
@@ -286,6 +291,8 @@ class StateProxy(wrapt.ObjectProxy):
             super().__setattr__(
                 "__wrapped__", mutable_state.get_substate(self._self_substate_path)
             )
+            # An awaited handler runs inline on this tree while the lock is held.
+            ctx.set_locked_root(mutable_state)
             from reflex.state import State
 
             if type(mutable_state) is State and not mutable_state.router_data:
@@ -325,7 +332,12 @@ class StateProxy(wrapt.ObjectProxy):
         finally:
             try:
                 if self._self_mutable and self._self_actx is not None:
-                    await self._self_actx.__aexit__(*exc_info)
+                    try:
+                        await EventContext.get().release_lock()
+                    finally:
+                        # Waiting for inline runs may be cancelled; the state
+                        # manager's lock must be released regardless.
+                        await self._self_actx.__aexit__(*exc_info)
             finally:
                 self._self_actx = None
                 self._self_mutable = False
@@ -946,6 +958,7 @@ class MutableProxy(wrapt.ObjectProxy):
         """
         state = self._dirty_state()
         type(state).__fields__[self._self_field_name]._mark_dirty(state)
+        state._note_in_place_change()
         if wrapped is not None:
             return wrapped(*args, **(kwargs or {}))
         return None

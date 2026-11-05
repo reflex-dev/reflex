@@ -10,6 +10,7 @@ from reflex_base.plugins import (
 
 from .builtin import (
     ApplyStylePlugin,
+    ClientStateScopePlugin,
     DefaultCollectorPlugin,
     DefaultPagePlugin,
     default_page_plugins,
@@ -19,6 +20,7 @@ from .memoize import MemoizeStatefulPlugin
 __all__ = [
     "ApplyStylePlugin",
     "BaseContext",
+    "ClientStateScopePlugin",
     "CompileContext",
     "CompilerHooks",
     "ComponentAndChildren",

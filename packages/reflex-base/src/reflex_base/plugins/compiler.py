@@ -605,6 +605,10 @@ class PageContext(BaseContext):
     # the matching ``leave_component``. Non-empty iff we are inside such a
     # subtree.
     memoize_suppressor_stack: list[int] = dataclasses.field(default_factory=list)
+    # Local client state names used by this page's body, including the parts
+    # the memoize plugin moved into their own modules; the page scope claims
+    # them so the outermost user owns the slot.
+    client_state_names: set[str] = dataclasses.field(default_factory=set)
     # Maps both the user-owned original's ``id()`` and the clone's ``id()`` to
     # the page-local clone. Lets the walker and plugins rebind children, style,
     # or event_triggers on a page-local copy without mutating a user-owned

@@ -224,8 +224,11 @@ def test_docs_announcement_preserves_link_and_dismissal(navbar):
         for component in _walk_components(banner)
         if "data-announcement" in getattr(component, "custom_attrs", {})
     )
-    artwork, link, dismiss = region.children
-    assert artwork.custom_attrs["aria-hidden"] is True
+    link, dismiss = region.children
+    copy = link.children[0].children[0]
+    assert len(copy.children) == 2
+    assert copy.children[1].custom_attrs["aria-hidden"] is True
+    assert "docs-announcement-glass" not in str(region)
     assert "Latest announcement" in str(region.custom_attrs["aria-label"])
     assert str(link.target) == '"_blank"'
     assert "noopener noreferrer" in str(link.rel)
