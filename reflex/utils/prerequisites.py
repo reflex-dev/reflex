@@ -476,15 +476,18 @@ def _redis_client_kwargs() -> dict[str, Any]:
     """Keyword arguments every redis client Reflex builds is created with.
 
     Returns:
-        The retry policy and, on Python 3.11, the RESP2 protocol pin.
+        The retry policy and, on Python 3.11, no socket timeout.
     """
     from redis.exceptions import RedisError
 
     kwargs: dict[str, Any] = {"retry_on_error": [RedisError]}
-    # redis-py 8 speaks RESP3 by default, which hangs its asyncio client on
-    # Python 3.11 (#7026). RESP2, which redis-py 7 spoke, is unaffected.
+    # redis-py 8 gives connections a socket timeout by default, which sends
+    # every command through asyncio.wait_for. On Python 3.11 wait_for drops a
+    # cancellation that lands as its inner task completes, so cancelling a
+    # pub/sub listener can hang forever (#7026). Keep redis-py 7's behavior
+    # there; 3.12 rebuilt wait_for and is unaffected.
     if sys.version_info < (3, 12):
-        kwargs["protocol"] = 2
+        kwargs["socket_timeout"] = None
     return kwargs
 
 

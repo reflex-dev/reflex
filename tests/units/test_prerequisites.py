@@ -2663,24 +2663,64 @@ def redis_url(monkeypatch: pytest.MonkeyPatch) -> str:
     return url
 
 
-def test_redis_clients_pin_resp2_on_python_311(
+def test_redis_clients_drop_socket_timeout_on_python_311(
     redis_url: str, monkeypatch: pytest.MonkeyPatch
 ):
-    """Clients speak RESP2 on 3.11, where redis-py 8's RESP3 default hangs (#7026).
+    """Clients have no socket timeout on 3.11, where it loses cancellations (#7026).
 
-    Later interpreters keep whatever protocol redis-py itself defaults to.
+    Later interpreters keep whatever timeout redis-py itself defaults to.
     """
     from redis.asyncio import Redis
 
     library_default = Redis.from_url(redis_url).connection_pool.connection_kwargs
-    expected = 2 if sys.version_info < (3, 12) else library_default.get("protocol")
+    expected = (
+        None if sys.version_info < (3, 12) else library_default.get("socket_timeout")
+    )
 
     unbounded = prerequisites.get_redis()
     monkeypatch.setenv("REFLEX_REDIS_MAX_CONNECTIONS", "3")
     capped = prerequisites.get_redis()
     for client in (unbounded, capped, prerequisites.get_redis_sync()):
         assert client is not None
-        assert client.connection_pool.connection_kwargs.get("protocol") == expected
+        kwargs = client.connection_pool.connection_kwargs
+        if sys.version_info < (3, 12):
+            assert "socket_timeout" in kwargs
+        assert kwargs.get("socket_timeout") == expected
+
+
+async def test_redis_client_cancel_mid_send_always_ends_task():
+    """A task cancelled while sending a command ends, whatever the loop phase (#7026).
+
+    redis-py 8's socket timeout routes sends through asyncio.wait_for, which on
+    Python 3.11 loses a cancel that lands as the send completes, so the task
+    would run on and anything awaiting it (such as `StateManagerRedis.close`)
+    hangs. Needs a real server, so it runs in the redis CI legs.
+    """
+    redis = prerequisites.get_redis()
+    if redis is None:
+        pytest.skip("REFLEX_REDIS_URL is not set.")
+
+    async def ping_forever(connection):
+        while True:
+            await connection.send_packed_command(connection.pack_command("PING"))
+            await connection.read_response()
+
+    try:
+        for offset in range(40):
+            connection = await redis.connection_pool.get_connection()
+            task = asyncio.create_task(ping_forever(connection))
+            for _ in range(offset):
+                await asyncio.sleep(0)
+            task.cancel()
+            done, _ = await asyncio.wait({task}, timeout=2)
+            # Keep cancelling so a lost cancel fails the test instead of hanging it.
+            while not task.done():
+                task.cancel()
+                await asyncio.sleep(0.01)
+            await redis.connection_pool.release(connection)
+            assert done, f"cancellation lost at loop offset {offset}"
+    finally:
+        await redis.aclose(close_connection_pool=True)
 
 
 def test_get_redis_pool_unbounded_by_default(redis_url: str):
