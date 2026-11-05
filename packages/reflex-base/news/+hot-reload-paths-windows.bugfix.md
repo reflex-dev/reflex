@@ -1,0 +1,1 @@
+On Windows, `REFLEX_HOT_RELOAD_INCLUDE_PATHS`, `REFLEX_HOT_RELOAD_EXCLUDE_PATHS` and `REFLEX_HOT_RELOAD_OVERRIDE_PATHS` are now separated by `;` instead of `:`, so an absolute path is no longer split at its drive letter. Other platforms still use `:`.
