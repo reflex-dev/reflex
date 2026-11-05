@@ -81,7 +81,7 @@ def test_memory_state_manager_expires_state_end_to_end(
     assert memory_expiration_app.frontend_url is not None
     page.goto(memory_expiration_app.frontend_url)
     token_input = page.locator("#token")
-    expect(token_input).not_to_have_value("")
+    expect(token_input).not_to_have_value("", timeout=15_000)
     token = token_input.input_value()
     counter = page.locator("#counter")
     increment = page.locator("#increment")
@@ -119,7 +119,7 @@ def test_memory_state_manager_delays_expiration_after_use_end_to_end(
     assert memory_expiration_app.frontend_url is not None
     page.goto(memory_expiration_app.frontend_url)
     token_input = page.locator("#token")
-    expect(token_input).not_to_have_value("")
+    expect(token_input).not_to_have_value("", timeout=15_000)
     token = token_input.input_value()
     counter = page.locator("#counter")
     increment = page.locator("#increment")

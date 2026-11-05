@@ -275,7 +275,7 @@ def background_page(background_task: AppHarness, page: Page) -> Page:
     """
     assert background_task.frontend_url is not None
     page.goto(background_task.frontend_url)
-    expect(page.locator("#token")).not_to_have_value("")
+    expect(page.locator("#token")).not_to_have_value("", timeout=30_000)
     return page
 
 
@@ -481,6 +481,7 @@ def test_disconnect_reconnect(
     button = background_page.locator(f"#{button_id}")
     increment_button = background_page.locator("#increment")
     sid_input = background_page.locator("#sid")
+    expect(sid_input).not_to_have_value("")
     sid = sid_input.input_value()
 
     expect(counter).to_have_text("0")

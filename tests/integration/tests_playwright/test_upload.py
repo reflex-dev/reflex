@@ -34,6 +34,7 @@ def UploadFile():
         stream_chunk_records: list[str] = []
         stream_completed_files: list[str] = []
         stream_field: str = ""
+        disabled: bool = False
 
         @rx.event
         async def handle_upload(self, files: list[rx.UploadFile]):
@@ -141,9 +142,15 @@ def UploadFile():
                     rx.text("Drag and drop files here or click to select files"),
                 ),
                 **({"id": upload_id} if upload_id is not None else {}),
+                disabled=UploadState.disabled,
             )
 
         return rx.vstack(
+            rx.input(
+                value=UploadState.router.session.client_token,
+                read_only=True,
+                id="token",
+            ),
             rx.input(
                 value=cast(Any, UploadState.upload_done).to_string(),
                 read_only=True,
@@ -358,6 +365,8 @@ def opened_page(upload_file: AppHarness, page: Page) -> Page:
     """
     assert upload_file.frontend_url is not None
     page.goto(upload_file.frontend_url)
+    # Wait for hydration before the tests select files or click.
+    expect(page.locator("#token")).not_to_have_value("", timeout=15_000)
     return page
 
 
@@ -424,7 +433,7 @@ def test_upload_file(
     suffix = f"_{upload_id}" if upload_id else ""
     target = _write_file(tmp_path, "test.txt", "test file contents!")
     _file_input(page, upload_id).set_input_files(target)
-    expect(page.locator(f"#selected_files{suffix}")).to_contain_text("test.txt")
+    expect(page.locator(f"#selected_files{suffix}")).to_have_text("test.txt")
     page.locator(f"#upload_button{suffix}").click()
     _upload_done(page)
     assert (rx.get_upload_dir() / "test.txt").read_text() == "test file contents!"
@@ -500,11 +509,13 @@ def test_clear_files(
     targets = [
         _write_file(tmp_path, "test1.txt", "first"),
         _write_file(tmp_path, "test2.txt", "second"),
+        _write_file(tmp_path, "reflex.txt", "reflex is awesome!"),
     ]
     _file_input(opened_page, upload_id).set_input_files(targets)
     expect(opened_page.locator(f"#selected_files{suffix} > p")).to_have_text([
         "test1.txt",
         "test2.txt",
+        "reflex.txt",
     ])
     opened_page.locator(f"#clear_button{suffix}").click()
     expect(opened_page.locator(f"#selected_files{suffix}")).to_be_empty()
@@ -614,9 +625,10 @@ def test_upload_chunk_file(tmp_path: Path, upload_file: AppHarness, opened_page:
     expect(page.locator("#stream_chunk_records")).to_contain_text(
         "stream1.txt", timeout=30_000
     )
-    expect(page.locator("#stream_completed_files")).to_contain_text(
-        "stream2.txt", timeout=30_000
-    )
+    for name in files:
+        expect(page.locator("#stream_completed_files")).to_contain_text(
+            name, timeout=30_000
+        )
     _upload_done(page)
     expect(page.locator("#stream_field")).to_have_value("stream-field")
     for name, contents in files.items():
@@ -694,7 +706,7 @@ def test_uploaded_file_security_headers(
         assert response.headers["content-disposition"] == "attachment"
     else:
         assert "content-disposition" not in response.headers
-    if filename == "malicious.html":
+    if attachment:
         dialogs: list[str] = []
 
         def dismiss_dialog(dialog):
@@ -732,4 +744,6 @@ def test_on_drop(tmp_path: Path, upload_file: AppHarness, opened_page: Page):
     _file_input(opened_page, "quaternary").set_input_files(target)
     _upload_done(opened_page)
     expect(opened_page.locator("#quaternary_field")).to_have_value("resume-field")
-    expect(opened_page.locator("#quaternary_files")).to_contain_text("drop_test.txt")
+    quaternary_files = opened_page.locator("#quaternary_files")
+    expect(quaternary_files).to_contain_text("drop_test.txt")
+    assert "drop_test.txt" in json.loads(quaternary_files.inner_text())

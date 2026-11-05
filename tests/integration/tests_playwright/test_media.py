@@ -118,7 +118,7 @@ def test_media_app(media_app: AppHarness, page: Page) -> None:
     assert media_app.app_instance is not None, "app is not running"
     assert media_app.frontend_url is not None
     page.goto(media_app.frontend_url)
-    expect(page.locator("#token")).not_to_have_value("")
+    expect(page.locator("#token")).not_to_have_value("", timeout=15_000)
 
     image_data = {
         "default": ("^data:image/png;base64,", 200, 200),

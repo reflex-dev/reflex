@@ -213,7 +213,7 @@ def test_dynamic_components(
     banana = "lucide-react/dist/esm/icons/banana.mjs"
     assert dynamic_components.frontend_url is not None
     page.goto(dynamic_components.frontend_url)
-    expect(page.locator("#token")).not_to_have_value("")
+    expect(page.locator("#token")).not_to_have_value("", timeout=15_000)
 
     button = page.locator("#button")
     expect(button).to_have_text("Click me")

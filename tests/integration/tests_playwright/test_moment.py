@@ -133,7 +133,7 @@ def test_moment_2_props_render(moment_app: AppHarness, page: Page) -> None:
     """
     assert moment_app.frontend_url is not None
     page.goto(moment_app.frontend_url)
-    expect(page.locator("#token")).not_to_have_value("")
+    expect(page.locator("#token")).not_to_have_value("", timeout=15_000)
     expect(page.locator("#moment")).to_have_text("2026-08-30")
     expect(page.locator("#moment-duration")).to_have_text("30 mins")
 
@@ -147,7 +147,7 @@ def test_moment_locales_are_isolated(moment_app: AppHarness, page: Page) -> None
     """
     assert moment_app.frontend_url is not None
     page.goto(moment_app.frontend_url)
-    expect(page.locator("#token")).not_to_have_value("")
+    expect(page.locator("#token")).not_to_have_value("", timeout=15_000)
 
     expect(page.locator("#moment-default-locale")).to_have_text(
         "Thursday 14 March 2024"

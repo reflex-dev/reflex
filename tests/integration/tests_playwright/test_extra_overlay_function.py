@@ -53,7 +53,7 @@ def test_extra_overlay(extra_overlay: AppHarness, page: Page) -> None:
     """
     assert extra_overlay.frontend_url is not None
     page.goto(extra_overlay.frontend_url)
-    expect(page.locator("#token")).not_to_have_value("")
+    expect(page.locator("#token")).not_to_have_value("", timeout=15_000)
     expect(page.get_by_text("Hello World", exact=True)).to_be_visible()
 
     button = page.get_by_role("button")

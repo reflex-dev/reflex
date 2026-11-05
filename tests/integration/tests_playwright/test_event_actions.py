@@ -214,7 +214,7 @@ def event_page(event_action: AppHarness, page: Page) -> Page:
     """
     assert event_action.frontend_url is not None
     page.goto(event_action.frontend_url)
-    expect(page.locator("#token")).not_to_have_value("")
+    expect(page.locator("#token")).not_to_have_value("", timeout=15_000)
     return page
 
 

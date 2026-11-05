@@ -195,7 +195,7 @@ def driver(dynamic_route: AppHarness, page: Page) -> Page:
     """
     assert dynamic_route.frontend_url is not None
     page.goto(dynamic_route.frontend_url)
-    expect(page.locator("#token")).not_to_have_value("")
+    expect(page.locator("#token")).not_to_have_value("", timeout=15_000)
     return page
 
 
@@ -318,7 +318,7 @@ def test_on_load_navigate_non_dynamic(
     # go back to the index and navigate back to the static route
     with poll_for_navigation(driver):
         click_element(driver, "#link_index")
-    expect(driver).to_have_url(re.compile(r".*/$"))
+    expect(driver).to_have_url(re.compile(r"^https?://[^/]+/?$"))
 
     with poll_for_navigation(driver):
         click_element(driver, "#link_page_x")

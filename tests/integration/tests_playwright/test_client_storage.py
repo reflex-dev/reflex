@@ -7,7 +7,7 @@ from collections.abc import Generator
 from typing import Any
 
 import pytest
-from playwright.sync_api import BrowserContext, Page, expect
+from playwright.sync_api import Page, expect
 from reflex_base.constants.state import FIELD_MARKER
 
 from reflex.testing import AppHarness
@@ -188,20 +188,46 @@ def _storage(page: Page, name: str) -> dict[str, str]:
     )
 
 
-def _cookie_map(context: BrowserContext) -> dict[str, Any]:
-    """Return browser cookies indexed by name.
+def _cookie_map(page: Page) -> dict[str, Any]:
+    """Return the cookies visible to the page's current URL, indexed by name.
 
     Args:
-        context: Playwright browser context.
+        page: Playwright page.
 
     Returns:
         The cookies keyed by cookie name.
     """
     cookies: dict[str, Any] = {}
-    for cookie in context.cookies():
+    for cookie in page.context.cookies(page.url):
         if name := cookie.get("name"):
             cookies[name] = cookie
     return cookies
+
+
+def _assert_cookie(
+    cookie: Any,
+    value: str,
+    *,
+    path: str = "/",
+    same_site: str = "Lax",
+    session: bool = True,
+) -> None:
+    """Assert the value and attributes of a cookie set by the app.
+
+    Args:
+        cookie: Playwright cookie.
+        value: Expected URL-encoded value.
+        path: Expected cookie path.
+        same_site: Expected SameSite attribute.
+        session: Whether the cookie must be a session cookie (no expiry).
+    """
+    assert cookie["value"] == value
+    assert cookie["domain"] == "localhost"
+    assert cookie["path"] == path
+    assert cookie["httpOnly"] is False
+    assert cookie["secure"] is False
+    assert cookie["sameSite"] == same_site
+    assert (cookie["expires"] == -1) is session
 
 
 def _set_state_value(page: Page, state_var: str, value: str, *, sub_sub=False):
@@ -267,7 +293,7 @@ def test_client_side_state(client_side: AppHarness, opened_page: Page):
         "s1s": "",
     }
     _expect_displayed_values(page, defaults)
-    assert not _cookie_map(page.context)
+    assert not _cookie_map(page)
     local_storage = _storage(page, "localStorage")
     local_storage.pop("last_compiled_theme", None)
     local_storage.pop("theme", None)
@@ -306,36 +332,30 @@ def test_client_side_state(client_side: AppHarness, opened_page: Page):
         "_client_side_sub_state",
         "_client_side_sub_sub_state",
     ])
-    cookies = _cookie_map(page.context)
+    # c5 has path /foo/, so it is not visible on this page.
+    cookies = _cookie_map(page)
     expected_cookie_values = {
         f"{sub_state}.c1{FIELD_MARKER}": "c1%20value",
         f"{sub_state}.c2{FIELD_MARKER}": "c2%20value",
         f"{sub_state}.c4{FIELD_MARKER}": "c4%20value",
-        f"{sub_state}.c5{FIELD_MARKER}": "c5%20value",
         "c6": "c6%20value",
         f"{sub_state}.c7{FIELD_MARKER}": "c7%20value",
         f"{sub_sub_state}.c1s{FIELD_MARKER}": "c1s%20value",
     }
     assert set(cookies) == set(expected_cookie_values)
     for name, value in expected_cookie_values.items():
-        assert cookies[name]["value"] == value
-        assert cookies[name]["domain"] == "localhost"
-        assert cookies[name]["path"] == (
-            "/foo/" if name == f"{sub_state}.c5{FIELD_MARKER}" else "/"
-        )
-        assert cookies[name]["httpOnly"] is False
-        assert cookies[name]["secure"] is False
-        # Session cookies have no expiry.
-        assert cookies[name]["expires"] == -1
-        assert cookies[name]["sameSite"] == (
-            "Strict" if name.endswith(f".c4{FIELD_MARKER}") else "Lax"
+        _assert_cookie(
+            cookies[name],
+            value,
+            same_site="Strict" if name.endswith(f".c4{FIELD_MARKER}") else "Lax",
         )
 
     _set_state_value(page, "c3", "c3 value")
-    expiring_cookie = _cookie_map(page.context)[f"{sub_state}.c3{FIELD_MARKER}"]
-    assert expiring_cookie["expires"] > 0
+    _assert_cookie(
+        _cookie_map(page)[f"{sub_state}.c3{FIELD_MARKER}"], "c3%20value", session=False
+    )
     page.wait_for_timeout(2_100)
-    assert f"{sub_state}.c3{FIELD_MARKER}" not in _cookie_map(page.context)
+    assert f"{sub_state}.c3{FIELD_MARKER}" not in _cookie_map(page)
 
     local_storage = _storage(page, "localStorage")
     local_storage.pop("last_compiled_theme", None)
@@ -429,7 +449,9 @@ def test_client_side_state(client_side: AppHarness, opened_page: Page):
             "s1s": "s1s value",
         },
     )
-    assert _cookie_map(page.context)[f"{sub_state}.c5{FIELD_MARKER}"]["path"] == "/foo/"
+    _assert_cookie(
+        _cookie_map(page)[f"{sub_state}.c5{FIELD_MARKER}"], "c5%20value", path="/foo/"
+    )
 
     other_tab = page.context.new_page()
     other_tab.goto(client_side.frontend_url)

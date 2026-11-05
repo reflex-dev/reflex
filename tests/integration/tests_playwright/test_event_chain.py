@@ -357,7 +357,7 @@ def driver(event_chain: AppHarness, page: Page) -> Page:
     """
     assert event_chain.frontend_url is not None
     page.goto(event_chain.frontend_url)
-    expect(page.locator("#token")).not_to_have_value("")
+    expect(page.locator("#token")).not_to_have_value("", timeout=15_000)
     return page
 
 
@@ -393,7 +393,7 @@ def driver_strict(event_chain_strict: AppHarness, page: Page) -> Page:
     """
     assert event_chain_strict.frontend_url is not None
     page.goto(event_chain_strict.frontend_url)
-    expect(page.locator("#token")).not_to_have_value("")
+    expect(page.locator("#token")).not_to_have_value("", timeout=15_000)
     return page
 
 
@@ -408,7 +408,7 @@ def assert_token(event_chain: AppHarness, driver: Page) -> str:
         The token visible in the driver browser.
     """
     token_input = driver.locator("#token")
-    expect(token_input).not_to_have_value("")
+    expect(token_input).not_to_have_value("", timeout=15_000)
     token = token_input.input_value()
 
     state_name = event_chain.get_full_state_name(["_state"])

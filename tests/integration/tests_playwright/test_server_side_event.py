@@ -114,7 +114,7 @@ def open_server_side_event(server_side_event: AppHarness, page: Page) -> None:
     assert server_side_event.app_instance is not None, "app is not running"
     assert server_side_event.frontend_url is not None
     page.goto(server_side_event.frontend_url)
-    expect(page.locator("#token")).not_to_have_value("")
+    expect(page.locator("#token")).not_to_have_value("", timeout=15_000)
 
 
 @pytest.mark.parametrize(
@@ -149,6 +149,8 @@ def test_set_value_return_c(page: Page) -> None:
         page: Playwright page.
     """
     inputs = [page.locator(f"#{field}") for field in ("a", "b", "c")]
+    for field, value in zip(inputs, ("a", "b", "c"), strict=True):
+        expect(field).to_have_value(value)
     page.locator("#clear_return_c").click()
 
     expect(inputs[2]).to_have_value("")

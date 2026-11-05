@@ -19,8 +19,8 @@ def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
 
 
 def _large_state_app_template(var_count: int) -> str:
-    var_part = "\n".join(
-        f'    var{i}: str = "{i}" * 10000' for i in range(1, var_count)
+    var_part = "\n    ".join(
+        f'var{i}: str = "{i}" * 10000' for i in range(1, var_count)
     )
     return f"""
 import reflex as rx
@@ -65,9 +65,13 @@ def test_large_state(
     with AppHarness.create(
         root=tmp_path_factory.mktemp("large_state"),
         app_source=app_source,
-        app_name="large_state",
+        # A distinct module per size: a shared name reloads the first size's app.
+        app_name=f"large_state_{var_count}",
     ) as large_state:
         assert large_state.app_instance is not None
+        assert large_state.app_module is not None
+        state_vars = large_state.app_module.State.base_vars
+        assert sum(name.startswith("var") for name in state_vars) == var_count
         assert large_state.frontend_url is not None
         page.goto(large_state.frontend_url)
         button = page.locator("#button")

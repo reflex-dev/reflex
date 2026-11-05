@@ -85,7 +85,7 @@ def test_login_flow(login_sample: AppHarness, page: Page) -> None:
     login_button.click()
     expect(page).to_have_url(re.compile(r"/login/?$"))
     page.locator("#doit").click()
-    expect(page).to_have_url(re.compile(r"/$"))
+    expect(page).to_have_url(login_sample.frontend_url)
     expect(page.locator("#auth-token")).to_have_text("12345")
 
     state_name = login_sample.get_full_state_name(["_state"])

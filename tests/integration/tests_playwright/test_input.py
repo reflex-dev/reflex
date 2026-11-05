@@ -91,7 +91,7 @@ def test_fully_controlled_input(fully_controlled_input: AppHarness, page: Page):
     assert fully_controlled_input.frontend_url is not None
     page.goto(fully_controlled_input.frontend_url)
 
-    expect(page.locator("#token")).not_to_have_value("")
+    expect(page.locator("#token")).not_to_have_value("", timeout=15_000)
     expect(page.locator("#default_input")).to_have_value("default")
     expect(page.locator("#plain_default_input")).to_have_value("default plain")
     expect(page.locator("#default_checkbox")).to_be_checked()

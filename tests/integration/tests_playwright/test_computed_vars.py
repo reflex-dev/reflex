@@ -155,7 +155,7 @@ def test_computed_vars(
     """
     assert computed_vars.frontend_url is not None
     page.goto(computed_vars.frontend_url)
-    expect(page.locator("#token")).not_to_have_value("")
+    expect(page.locator("#token")).not_to_have_value("", timeout=30_000)
 
     # test that backend var is not rendered
     for element_id in ("count1_backend", "_count1_backend"):

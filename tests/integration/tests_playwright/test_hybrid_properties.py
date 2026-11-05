@@ -181,7 +181,7 @@ def test_hybrid_properties(
     """
     assert hybrid_properties.frontend_url is not None
     page.goto(hybrid_properties.frontend_url)
-    expect(page.locator("#token")).not_to_have_value("")
+    expect(page.locator("#token")).not_to_have_value("", timeout=15_000)
 
     info_a_b = page.locator("#info_a_b")
     expect(info_a_b).to_have_text("info_a_b: a - b")

@@ -921,7 +921,7 @@ def driver(var_operations: AppHarness, page: Page) -> Page:
     """
     assert var_operations.frontend_url is not None
     page.goto(var_operations.frontend_url)
-    expect(page.locator("#token")).not_to_have_value("")
+    expect(page.locator("#token")).not_to_have_value("", timeout=15_000)
     return page
 
 

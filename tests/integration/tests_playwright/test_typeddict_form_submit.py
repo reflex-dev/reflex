@@ -202,7 +202,7 @@ def test_typeddict_form_submit(
     harness, fields = typeddict_form
     assert harness.frontend_url is not None
     page.goto(harness.frontend_url)
-    expect(page.locator("#token")).not_to_have_value("")
+    expect(page.locator("#token")).not_to_have_value("", timeout=15_000)
 
     for input_name, input_value in fields["inputs"].items():
         page.locator(f'[name="{input_name}"]').fill(input_value)

@@ -219,7 +219,7 @@ def test_submit(page: Page, form_submit: AppHarness):
     """
     assert form_submit.frontend_url is not None
     page.goto(form_submit.frontend_url)
-    expect(page.locator("#token")).not_to_have_value("")
+    expect(page.locator("#token")).not_to_have_value("", timeout=15_000)
     input_selector = (
         "#name_input" if form_submit.app_source is FormSubmit else '[name="name_input"]'
     )

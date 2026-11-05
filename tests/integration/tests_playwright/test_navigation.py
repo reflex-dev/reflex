@@ -35,7 +35,7 @@ def NavigationApp():
 
     @rx.page(route="/internal")
     def internal():
-        return rx.text("Internal")
+        return rx.text("Internal", id="internal-page")
 
 
 @pytest.fixture
@@ -64,10 +64,11 @@ def test_navigation_app(navigation_app: AppHarness, page: Page) -> None:
     """
     assert navigation_app.frontend_url is not None
     page.goto(navigation_app.frontend_url)
+    page.wait_for_function("() => sessionStorage.getItem('token') !== null")
 
     page.locator("#internal").click()
     expect(page).to_have_url(re.compile(r".*/internal/?$"))
-    expect(page.get_by_text("Internal", exact=True)).to_be_visible()
+    expect(page.locator("#internal-page")).to_have_text("Internal")
 
     page.go_back()
     expect(page).to_have_url(re.compile(r"^https?://[^/]+/?$"))
