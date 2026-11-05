@@ -24,10 +24,7 @@ export const pySetKey = (x) => {
  * @param {*} x The element to look for.
  * @returns {boolean} Whether the set contains the element.
  */
-export const pySetHas = (arr, x) => {
-  const key = pySetKey(x);
-  return arr.some((y) => pySetKey(y) === key);
-};
+export const pySetHas = (arr, x) => new Set(arr.map(pySetKey)).has(pySetKey(x));
 
 /**
  * The elements of either set, keeping the order of a then b.
