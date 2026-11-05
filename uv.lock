@@ -1821,15 +1821,6 @@ wheels = [
 ]
 
 [[package]]
-name = "itsdangerous"
-version = "2.2.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/9c/cb/8ac0172223afbccb63986cc25049b154ecfb5e85932587206f42317be31d/itsdangerous-2.2.0.tar.gz", hash = "sha256:e0050c0b7da1eea53ffaf149c0cfbb5c6e2e2b69c4bef22c81fa6eb73e5f6173", size = 54410, upload-time = "2024-04-16T21:28:15.614Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/04/96/92447566d16df59b2a776c0fb82dbc4d9e07cd95062562af01e408583fc4/itsdangerous-2.2.0-py3-none-any.whl", hash = "sha256:c6242fc49e35958c8b15141343aa660db5fc54d4f13a1db01a3f5891b98700ef", size = 16234, upload-time = "2024-04-16T21:28:14.499Z" },
-]
-
-[[package]]
 name = "jedi"
 version = "0.20.1"
 source = { registry = "https://pypi.org/simple" }
@@ -4145,7 +4136,6 @@ dev = [
     { name = "selenium" },
     { name = "sqlalchemy" },
     { name = "sqlmodel" },
-    { name = "starlette-admin" },
     { name = "toml" },
     { name = "towncrier" },
     { name = "ty" },
@@ -4242,7 +4232,6 @@ dev = [
     { name = "selenium" },
     { name = "sqlalchemy" },
     { name = "sqlmodel" },
-    { name = "starlette-admin" },
     { name = "toml" },
     { name = "towncrier" },
     { name = "ty" },
@@ -5179,21 +5168,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/e9/0c/6efb252d091ecccd7d62048ae11f0ea35cd75a4fbaeea5e30f9c3bf91d10/starlette-1.8.0.tar.gz", hash = "sha256:1565dc0b35d5737a271ed1e0e04e949f4e81198799f216d2667b0a0fb9cf9522", size = 2730457, upload-time = "2026-10-13T07:54:39.53Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c1/b0/5742e4ac7af5eb58ec3470a537a49d7aa507e5539413e504b3a65ef50ba8/starlette-1.8.0-py3-none-any.whl", hash = "sha256:dfdd6b29c26483288088d990eee59631dedadd66ce20d203402a7ca8e3c4656f", size = 79612, upload-time = "2026-10-13T07:54:38.019Z" },
-]
-
-[[package]]
-name = "starlette-admin"
-version = "1.0.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "itsdangerous" },
-    { name = "jinja2" },
-    { name = "python-multipart" },
-    { name = "starlette" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/02/57/68feb746dcc39cac161f636700a736078697679052804370c075d6b80671/starlette_admin-1.0.2.tar.gz", hash = "sha256:4aa47fba5500c711e59ca44c2d137f871b2e09b386826f0e6c9d662e74e9ba5e", size = 1260638, upload-time = "2026-10-03T20:02:16.338Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/ca/b7/f0ec3387485d59be3bfab2d9ead649c63cb867bf2a08e0106998c62629b8/starlette_admin-1.0.2-py3-none-any.whl", hash = "sha256:024b7aa3b5fad447e45a5b41d339a9a318c278faffe0e0edff07c109f6be577f", size = 1388009, upload-time = "2026-10-03T20:02:14.76Z" },
 ]
 
 [[package]]

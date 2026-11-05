@@ -130,7 +130,6 @@ dev = [
   "selenium",
   "sqlalchemy",
   "sqlmodel",
-  "starlette-admin",
   "toml",
   "towncrier",
   "ty",

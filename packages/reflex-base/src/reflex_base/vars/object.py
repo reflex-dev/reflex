@@ -72,6 +72,33 @@ def _determine_value_type(var_type: GenericType):
     return Any
 
 
+def _unserialized_property_error(var_type: GenericType, name: str) -> VarAttributeError:
+    """Build the error for a property that is never sent to the frontend.
+
+    Args:
+        var_type: The object var type that declares the property.
+        name: The property name.
+
+    Returns:
+        The error to raise.
+    """
+    if types.is_union(var_type):
+        detail = f"union type '{var_type}' may not be included in serialized state."
+    elif isinstance(var_type, type) and dataclasses.is_dataclass(var_type):
+        detail = (
+            f"dataclass '{var_type.__name__}' is not included in serialized state. "
+            "Only declared dataclass fields are serialized; register an "
+            "`rx.serializer` for the dataclass to include it."
+        )
+    else:
+        detail = (
+            f"Pydantic model '{var_type.__name__}' is not included in serialized "
+            "state. Use `@pydantic.computed_field` to include the computed value in "
+            "model_dump()."
+        )
+    return VarAttributeError(f"The property '{name}' on {detail}")
+
+
 PYTHON_TYPES = (Mapping,)
 if find_spec("pydantic"):
     import pydantic
@@ -330,6 +357,10 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=PYTHON_TYPES):
 
         fixed_type = get_origin(var_type) or var_type
 
+        if fixed_type in types.UnionTypes and types.is_unserialized_property(
+            var_type, name
+        ):
+            raise _unserialized_property_error(var_type, name)
         if isinstance(fixed_type, type) and not safe_issubclass(fixed_type, Mapping):
             # Resolve the raw descriptor once and reuse it. A HybridProperty resolves to a
             # frontend Var with this object var substituted as `self` (e.g. `State.info.a_b`);
@@ -345,6 +376,10 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=PYTHON_TYPES):
                     )
                     raise VarAttributeError(msg)
                 return hybrid_var
+            if isinstance(descriptor, property) and types.is_unserialized_property(
+                fixed_type, name, descriptor
+            ):
+                raise _unserialized_property_error(fixed_type, name)
             attribute_type = get_attribute_access_type(var_type, name, descriptor)
         elif is_typeddict(fixed_type) or fixed_type in types.UnionTypes:
             attribute_type = get_attribute_access_type(var_type, name)
