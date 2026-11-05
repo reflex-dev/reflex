@@ -12,7 +12,7 @@ dependencies = [
     "plotly-express",
     "psycopg[binary]",
     "python-frontmatter",
-    "reflex",
+    "reflex[db]",
     "reflex-docgen",
     "reflex-enterprise>=0.9.9",
     "reflex-hosting-cli",

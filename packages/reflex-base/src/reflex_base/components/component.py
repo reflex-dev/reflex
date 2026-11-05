@@ -42,6 +42,7 @@ from reflex_base.vars import VarData
 from reflex_base.vars.base import (
     _PY_OR_IMPORT,
     CachedVarOperation,
+    Field,
     LiteralNoneVar,
     LiteralVar,
     Var,
@@ -2102,10 +2103,15 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The ref name.
+
+        Raises:
+            BackendVarFormatError: If the id is a field with no frontend var.
         """
         # do not create a ref if the id is dynamic or unspecified
         if self.id is None or isinstance(self.id, Var):
             return None
+        if isinstance(self.id, Field):
+            raise self.id._no_frontend_var_error()
         return format.format_ref(self.id)
 
     def _get_all_refs(self) -> dict[str, None]:

@@ -18,7 +18,7 @@ def navbar_sidebar_button() -> rx.Component:
                 "Cancel01Icon", class_name="hidden size-5 group-open/docs-menu:block"
             ),
             aria_label="Toggle navigation menu",
-            class_name="docs-navbar-menu-trigger flex size-9 cursor-pointer list-none items-center justify-center rounded-full text-foreground hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring [&::-webkit-details-marker]:hidden",
+            class_name="docs-navbar-menu-trigger flex size-9 cursor-pointer list-none items-center justify-center rounded-[8px] text-foreground hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring [&::-webkit-details-marker]:hidden",
         ),
         rx.el.div(
             *[
