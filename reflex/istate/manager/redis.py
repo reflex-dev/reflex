@@ -448,9 +448,12 @@ class StateManagerRedis(StateManager):
         # Read the tree atomically with one command instead of a transaction
         # containing a GET for each state. An already populated tree needs no IO.
         redis_states = (
-            await self.redis.mget([
-                token._state_key(state_cls) for state_cls in required_state_classes
-            ])
+            cast(
+                "list[bytes | None]",
+                await self.redis.mget([
+                    token._state_key(state_cls) for state_cls in required_state_classes
+                ]),
+            )
             if required_state_classes
             else []
         )

@@ -16,7 +16,7 @@ from datetime import datetime, timedelta
 from os import getcwd
 from pathlib import Path
 from types import ModuleType
-from typing import NamedTuple
+from typing import Any, NamedTuple
 
 from packaging import version
 from reflex_base import constants
@@ -472,6 +472,22 @@ def _redis_pool_limits() -> tuple[int, float] | None:
     return max_connections, timeout
 
 
+def _redis_client_kwargs() -> dict[str, Any]:
+    """Keyword arguments every redis client Reflex builds is created with.
+
+    Returns:
+        The retry policy and, on Python 3.11, the RESP2 protocol pin.
+    """
+    from redis.exceptions import RedisError
+
+    kwargs: dict[str, Any] = {"retry_on_error": [RedisError]}
+    # redis-py 8 speaks RESP3 by default, which hangs its asyncio client on
+    # Python 3.11 (#7026). RESP2, which redis-py 7 spoke, is unaffected.
+    if sys.version_info < (3, 12):
+        kwargs["protocol"] = 2
+    return kwargs
+
+
 def get_redis() -> Redis | None:
     """Get the asynchronous redis client.
 
@@ -483,23 +499,17 @@ def get_redis() -> Redis | None:
     """
     try:
         from redis.asyncio import BlockingConnectionPool, Redis
-        from redis.exceptions import RedisError
     except ImportError:
         logger.debug("Redis package not installed.")
         return None
     if (redis_url := parse_redis_url()) is None:
         return None
+    kwargs = _redis_client_kwargs()
     if (limits := _redis_pool_limits()) is None:
-        return Redis.from_url(
-            redis_url,
-            retry_on_error=[RedisError],
-        )
+        return Redis.from_url(redis_url, **kwargs)
     max_connections, timeout = limits
     pool = BlockingConnectionPool.from_url(
-        redis_url,
-        max_connections=max_connections,
-        timeout=timeout,
-        retry_on_error=[RedisError],
+        redis_url, max_connections=max_connections, timeout=timeout, **kwargs
     )
     return Redis.from_pool(pool)
 
@@ -512,15 +522,11 @@ def get_redis_sync() -> RedisSync | None:
     """
     try:
         from redis import Redis as RedisSync
-        from redis.exceptions import RedisError
     except ImportError:
         logger.debug("Redis package not installed.")
         return None
     if (redis_url := parse_redis_url()) is not None:
-        return RedisSync.from_url(
-            redis_url,
-            retry_on_error=[RedisError],
-        )
+        return RedisSync.from_url(redis_url, **_redis_client_kwargs())
     return None
 
 

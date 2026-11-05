@@ -2663,6 +2663,26 @@ def redis_url(monkeypatch: pytest.MonkeyPatch) -> str:
     return url
 
 
+def test_redis_clients_pin_resp2_on_python_311(
+    redis_url: str, monkeypatch: pytest.MonkeyPatch
+):
+    """Clients speak RESP2 on 3.11, where redis-py 8's RESP3 default hangs (#7026).
+
+    Later interpreters keep whatever protocol redis-py itself defaults to.
+    """
+    from redis.asyncio import Redis
+
+    library_default = Redis.from_url(redis_url).connection_pool.connection_kwargs
+    expected = 2 if sys.version_info < (3, 12) else library_default.get("protocol")
+
+    unbounded = prerequisites.get_redis()
+    monkeypatch.setenv("REFLEX_REDIS_MAX_CONNECTIONS", "3")
+    capped = prerequisites.get_redis()
+    for client in (unbounded, capped, prerequisites.get_redis_sync()):
+        assert client is not None
+        assert client.connection_pool.connection_kwargs.get("protocol") == expected
+
+
 def test_get_redis_pool_unbounded_by_default(redis_url: str):
     """Without a cap, get_redis keeps redis-py's default pool."""
     from redis.asyncio import BlockingConnectionPool
