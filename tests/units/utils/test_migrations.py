@@ -228,10 +228,10 @@ def test_init_creates_environment_and_initial_revision(
     _db("init")
 
     assert (project / "alembic.ini").exists()
-    for name in migrations.TEMPLATE_ENV_FILES:
-        assert (project / "alembic" / name).read_text() == (
-            migrations.TEMPLATE_DIR / name
-        ).read_text()
+    assert (project / "alembic" / "script.py.mako").exists()
+    assert (project / "alembic" / "env.py").read_text() == (
+        migrations.TEMPLATE_ENV_PY.read_text()
+    )
     (initial,) = _versions(project)
     assert initial.name.endswith("_initial_revision.py")
     script = initial.read_text()
@@ -424,8 +424,7 @@ def test_legacy_env_is_reported_and_updated_by_init(
     _db("init")
     env_py = project / "alembic" / "env.py"
     stock_env = Path(alembic.config.Config().get_template_directory(), "generic")
-    for name in migrations.TEMPLATE_ENV_FILES:
-        (project / "alembic" / name).write_text((stock_env / name).read_text())
+    env_py.write_text((stock_env / "env.py").read_text())
     ini = (project / "alembic.ini").read_text()
     assert migrations.is_legacy_env()
 
@@ -442,10 +441,7 @@ def test_legacy_env_is_reported_and_updated_by_init(
     _db("init")
     assert "existing revisions are kept" in caplog.text
     assert not migrations.is_legacy_env()
-    for name in migrations.TEMPLATE_ENV_FILES:
-        assert (project / "alembic" / name).read_text() == (
-            migrations.TEMPLATE_DIR / name
-        ).read_text()
+    assert env_py.read_text() == migrations.TEMPLATE_ENV_PY.read_text()
     assert (project / "alembic.ini").read_text() == ini
     assert len(_versions(project)) == 1
     caplog.clear()
@@ -454,7 +450,7 @@ def test_legacy_env_is_reported_and_updated_by_init(
     _db("makemigrations")
     _db("migrate")
     assert len(_versions(project)) == 2
-    assert env_py.read_text() == (migrations.TEMPLATE_DIR / "env.py").read_text()
+    assert env_py.read_text() == migrations.TEMPLATE_ENV_PY.read_text()
 
 
 def test_is_legacy_env_without_script_directory(project: Path):

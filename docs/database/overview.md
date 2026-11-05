@@ -123,12 +123,13 @@ Reflex leverages [alembic](https://alembic.sqlalchemy.org/en/latest/)
 to manage database schema changes.
 
 Before the database feature can be used in a new app you must call `reflex db init`.
-It writes `alembic.ini` and an `alembic/` directory holding `env.py`,
-`script.py.mako` and `versions/`, then creates and applies a migration script
-with the current schema. The generated `env.py` loads the app, so every registered
-model is known to alembic, and takes the database URL from `db_url` in
-`rxconfig.py`. These files belong to your app: edit `env.py` to change how
-migrations are detected, for example to compare column types.
+It runs `alembic init`, which writes `alembic.ini` and an `alembic/` directory
+holding `env.py`, `script.py.mako` and `versions/`, then creates and applies a
+migration script with the current schema. Reflex replaces the generated `env.py`
+with one that loads the app, so every registered model is known to alembic, and
+takes the database URL from `db_url` in `rxconfig.py`; the `sqlalchemy.url`
+setting in `alembic.ini` is not used. These files belong to your app: edit
+`env.py` to change how migrations are detected, for example to compare column types.
 
 The `reflex db` commands are thin wrappers over alembic, so the `alembic`
 command line works on the same environment:
@@ -156,8 +157,8 @@ database schema is not up to date, a warning will be displayed on the console.
 # Upgrading an existing app
 
 Apps initialized by an earlier Reflex release have a stock alembic `env.py` that does
-not load the app. Run `reflex db init` once: it replaces `env.py` and
-`script.py.mako` with the current templates and keeps the existing revisions.
+not load the app. Run `reflex db init` once: it replaces `env.py` with the
+current template and keeps the existing revisions.
 ```
 
 ## Queries

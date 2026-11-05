@@ -13,16 +13,13 @@ from pathlib import Path
 from reflex_base.environment import environment
 from rich.markup import escape
 
-# The `alembic init` template: alembic.ini.mako, env.py, script.py.mako and README.
-TEMPLATE_DIR = Path(__file__).parent.parent / ".templates" / "alembic"
-
-# Files of the script directory owned by the template; versions/ belongs to the app.
-TEMPLATE_ENV_FILES = ("env.py", "script.py.mako")
+# The env.py that replaces the stock one after `alembic init`.
+TEMPLATE_ENV_PY = Path(__file__).parent.parent / ".templates" / "alembic" / "env.py"
 
 LEGACY_ENV_HINT = (
     "The migration environment was created by an earlier Reflex release and "
-    "cannot load the app. Run [bold]reflex db init[/bold] to update "
-    "env.py and script.py.mako; existing revisions are kept."
+    "cannot load the app. Run [bold]reflex db init[/bold] to update env.py; "
+    "existing revisions are kept."
 )
 
 
@@ -49,13 +46,14 @@ def run(*args: str) -> None:
 
 
 def init() -> None:
-    """Write alembic.ini and the script directory from the reflex template.
+    """Run `alembic init` with its stock template, then install the reflex env.py.
 
     Quiet, because alembic's closing advice to edit the connection settings in
     alembic.ini does not apply: env.py takes the database URL from rxconfig.py.
     """
     directory = environment.ALEMBIC_CONFIG.get().parent / "alembic"
-    run("--quiet", "init", "--template", str(TEMPLATE_DIR), str(directory))
+    run("--quiet", "init", str(directory))
+    update_env()
 
 
 def script_directory() -> Path:
@@ -95,10 +93,8 @@ def is_legacy_env() -> bool:
 
 
 def update_env() -> None:
-    """Replace env.py and script.py.mako with the reflex template, keeping versions/."""
-    directory = script_directory()
-    for name in TEMPLATE_ENV_FILES:
-        shutil.copy(TEMPLATE_DIR / name, directory / name)
+    """Replace env.py with the reflex template, keeping everything else."""
+    shutil.copy(TEMPLATE_ENV_PY, script_directory() / "env.py")
 
 
 def describe_error(error: Exception) -> str:
