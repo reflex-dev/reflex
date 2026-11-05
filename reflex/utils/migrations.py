@@ -14,7 +14,7 @@ from pathlib import Path
 from reflex_base.environment import environment
 from rich.markup import escape
 
-from reflex.utils.prerequisites import get_app, get_compiled_app
+from reflex.utils.prerequisites import get_app
 
 logger = logging.getLogger(__name__)
 
@@ -65,30 +65,17 @@ def run(*args: str) -> None:
     )
 
 
-def load_app(autogenerate: bool = False) -> None:
-    """Import the app for env.py, so that every model is registered.
+def load_app() -> None:
+    """Import the app for env.py, so that the models it declares are registered.
 
-    Autogenerate also evaluates the pages without compiling, as
-    ``reflex db makemigrations`` always has, so models that pages or plugin
-    route hooks import lazily are compared too; the compile flag is restored
-    afterwards.
-
-    Args:
-        autogenerate: Whether alembic is autogenerating a revision.
+    The import may itself call ``migrate()`` at module level, before the app
+    object exists; ``run`` skips the alembic command that would start then.
     """
     global _loading_app
 
     _loading_app = True
     try:
-        if not autogenerate:
-            get_app()
-            return
-        skip_compile = environment.REFLEX_SKIP_COMPILE.getenv()
-        environment.REFLEX_SKIP_COMPILE.set(True)
-        try:
-            get_compiled_app()
-        finally:
-            environment.REFLEX_SKIP_COMPILE.set(skip_compile)
+        get_app()
     finally:
         _loading_app = False
 

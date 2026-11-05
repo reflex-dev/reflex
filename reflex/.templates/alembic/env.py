@@ -41,10 +41,10 @@ if (
 ):
     fileConfig(config.config_file_name, disable_existing_loggers=False)
 
-# Importing the app registers the models. Autogenerate also evaluates the pages,
-# as `reflex db makemigrations` always has, so models that pages or plugin route
-# hooks import lazily are compared too.
-load_app(autogenerate=getattr(config.cmd_opts, "autogenerate", False))
+# Importing the app registers the models. `reflex db makemigrations` evaluates
+# the pages beforehand, so models that pages or plugin route hooks import lazily
+# are compared too.
+load_app()
 target_metadata = ModelRegistry.get_metadata()
 
 writer = Rewriter()

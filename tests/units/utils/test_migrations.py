@@ -119,6 +119,7 @@ def _forget_app() -> None:
 @pytest.fixture
 def project(
     tmp_working_dir: Path,
+    monkeypatch: pytest.MonkeyPatch,
     forked_registration_context: RegistrationContext,
     model_registry: type[ModelRegistry],
 ) -> Generator[Path, None, None]:
@@ -137,6 +138,8 @@ def project(
     (tmp_working_dir / APP_NAME).mkdir()
     (tmp_working_dir / APP_NAME / "__init__.py").touch()
     sys.modules.pop("rxconfig", None)
+    # `reflex db init` and `makemigrations` set the skip-compile flag for their process.
+    monkeypatch.delenv(environment.REFLEX_SKIP_COMPILE.name, raising=False)
     _registered_models.clear()
     _registered_models.update(ModelRegistry.models)
     _write_app(tmp_working_dir, "sqlmodel", COLUMNS["sqlmodel"][0])
@@ -464,17 +467,21 @@ def test_legacy_env_is_updated_with_a_backup(
     assert len(_versions(project)) == 2
 
 
-def test_autogenerate_restores_the_compile_flag(
-    project: Path, monkeypatch: pytest.MonkeyPatch
-):
-    """Evaluating the pages for autogenerate leaves REFLEX_SKIP_COMPILE as it was."""
+def test_migrate_autogenerate_at_import_before_the_app(project: Path):
+    """`migrate(autogenerate=True)` at module level works before `app = rx.App()` exists."""
     _db("init")
-    assert environment.REFLEX_SKIP_COMPILE.getenv() is None
+    (project / APP_NAME / f"{APP_NAME}.py").write_text(
+        "import reflex as rx\n\n\n"
+        f"class Thing(rx.Model, table=True):\n{COLUMNS['sqlmodel'][1]}\n\n\n"
+        "rx.Model.migrate(autogenerate=True)\n\n\napp = rx.App()\n"
+    )
+    _forget_app()
 
-    monkeypatch.setenv(environment.REFLEX_SKIP_COMPILE.name, "true")
-    _write_app(project, "sqlmodel", COLUMNS["sqlmodel"][1])
-    _db("makemigrations")
-    assert environment.REFLEX_SKIP_COMPILE.getenv() is True
+    # What `reflex run` does first: import the app.
+    prerequisites.get_app()
+
+    assert len(_versions(project)) == 2
+    assert "t2" in _versions(project)[-1].read_text()
 
 
 def test_is_legacy_env_without_script_directory(project: Path):
@@ -500,6 +507,8 @@ def test_migrate_helpers_run_alembic(project: Path, caplog: pytest.LogCaptureFix
     assert Model.migrate(autogenerate=True) is True
     assert len(_versions(project)) == 2
     assert _rows() == []
+    # Unlike the commands, the helper never touches the compile flag.
+    assert environment.REFLEX_SKIP_COMPILE.getenv() is None
     prerequisites.check_schema_up_to_date()
     assert "schema changes" not in caplog.text
 
