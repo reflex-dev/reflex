@@ -92,6 +92,10 @@ def env_vars_page():
             These environment variables can be set in your shell environment or in a `.env` file.
 
             This page documents the environment variables that are not config parameters. Environment variables that override `rx.Config` parameters (e.g. `REFLEX_FRONTEND_PORT`) are listed in the [config reference](/docs/api-reference/config/).
+
+            `REFLEX_ENV_MODE` is set by `reflex run` and `reflex export` from their `--env` option.
+            Do not set it yourself.
+            To start in production mode, use `uv run reflex run --env prod`.
             """
         ),
         h2_comp(text="Variables"),
