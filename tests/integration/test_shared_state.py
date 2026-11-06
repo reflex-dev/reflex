@@ -135,3 +135,68 @@ app.add_page(index)
                     driver.quit()
     finally:
         reload_state_module(f"{package_name}.state")
+
+
+def test_multi_module_app_can_restart_in_the_same_process(tmp_path, monkeypatch):
+    """A restarted app can render and dispatch events from cached state modules."""
+    import reflex.reflex as reflex_cli
+    from reflex.state import reload_state_module
+
+    app_name = "restartable_state_app"
+    app_source = f"""
+import reflex as rx
+from {app_name}.states import AppState
+
+def index():
+    return rx.vstack(
+        rx.text(AppState.count, id="count"),
+        rx.button("Increment", on_click=AppState.increment, id="increment"),
+    )
+
+app = rx.App()
+app.add_page(index)
+"""
+    harness = AppHarness.create(
+        root=tmp_path / app_name,
+        app_name=app_name,
+        app_source=app_source,
+    )
+    monkeypatch.syspath_prepend(str(harness.app_module_path.parent.parent))
+    state_module_path = harness.app_module_path.parent / "states.py"
+    original_init = reflex_cli._init
+
+    def initialize_with_state_submodule(**kwargs):
+        original_init(**kwargs)
+        state_module_path.write_text(
+            "import reflex as rx\n"
+            "class AppState(rx.State):\n"
+            "    count: int = 0\n"
+            "    @rx.event\n"
+            "    def increment(self):\n"
+            "        self.count += 1\n",
+            encoding="utf-8",
+        )
+
+    monkeypatch.setattr(reflex_cli, "_init", initialize_with_state_submodule)
+
+    try:
+        for launch in range(2):
+            if launch:
+                harness = AppHarness.create(
+                    root=tmp_path / app_name,
+                    app_name=app_name,
+                    app_source=app_source,
+                )
+            with harness:
+                driver = harness.frontend()
+                try:
+                    count = WebDriverWait(driver, 15).until(
+                        lambda current: current.find_element(By.ID, "count")
+                    )
+                    assert count.text == "0"
+                    driver.find_element(By.ID, "increment").click()
+                    WebDriverWait(driver, 10).until(lambda _: count.text == "1")
+                finally:
+                    driver.quit()
+    finally:
+        reload_state_module(f"{app_name}.states")
