@@ -11,6 +11,7 @@ from unittest import mock
 
 import click.testing
 import pytest
+from reflex_base import constants
 from reflex_base.environment import environment
 from reflex_base.registry import RegistrationContext
 
@@ -108,9 +109,12 @@ _registered_models: set = set()
 
 def _forget_app() -> None:
     """Drop the imported app so the next alembic run imports the module afresh."""
-    for name in (APP_NAME, f"{APP_NAME}.{APP_NAME}"):
-        sys.modules.pop(name, None)
-    object.__setattr__(RegistrationContext.get(), "_app", None)
+    for name in [n for n in sys.modules if n.split(".", 1)[0] == APP_NAME]:
+        del sys.modules[name]
+    context = RegistrationContext.get()
+    object.__setattr__(context, "_app", None)
+    # Pages the module decorated with `rx.page` register again on re-import.
+    context.decorated_pages.clear()
     ModelRegistry._metadata = None
     ModelRegistry.models.intersection_update(_registered_models)
     Model.metadata.clear()
@@ -119,7 +123,6 @@ def _forget_app() -> None:
 @pytest.fixture
 def project(
     tmp_working_dir: Path,
-    monkeypatch: pytest.MonkeyPatch,
     forked_registration_context: RegistrationContext,
     model_registry: type[ModelRegistry],
 ) -> Generator[Path, None, None]:
@@ -138,8 +141,6 @@ def project(
     (tmp_working_dir / APP_NAME).mkdir()
     (tmp_working_dir / APP_NAME / "__init__.py").touch()
     sys.modules.pop("rxconfig", None)
-    # `reflex db init` and `makemigrations` set the skip-compile flag for their process.
-    monkeypatch.delenv(environment.REFLEX_SKIP_COMPILE.name, raising=False)
     _registered_models.clear()
     _registered_models.update(ModelRegistry.models)
     _write_app(tmp_working_dir, "sqlmodel", COLUMNS["sqlmodel"][0])
@@ -512,7 +513,7 @@ def test_migrate_helpers_run_alembic(project: Path, caplog: pytest.LogCaptureFix
     assert Model.migrate(autogenerate=True) is True
     assert len(_versions(project)) == 2
     assert _rows() == []
-    # Unlike the commands, the helper never touches the compile flag.
+    # The helper never touches the compile flag.
     assert environment.REFLEX_SKIP_COMPILE.getenv() is None
     prerequisites.check_schema_up_to_date()
     assert "schema changes" not in caplog.text
@@ -526,7 +527,12 @@ def test_migrate_helpers_run_alembic(project: Path, caplog: pytest.LogCaptureFix
 
 
 def test_autogenerate_evaluates_pages(project: Path):
-    """Autogenerate evaluates the pages, so a model a page imports lazily is compared."""
+    """Autogenerate evaluates the pages, so a model a page imports lazily is compared.
+
+    Every page is evaluated, not only those the stateful-pages marker of an
+    earlier `reflex run` names: with the marker in place, a skip-compile load
+    evaluates no page at all, and the lazily imported model would be dropped.
+    """
     (project / APP_NAME / "lazy.py").write_text(
         "import reflex as rx\n\n\nclass Lazy(rx.Model, table=True):\n    name: str\n"
     )
@@ -538,10 +544,19 @@ def test_autogenerate_evaluates_pages(project: Path):
         "app = rx.App()\n"
     )
     _forget_app()
+    # What `reflex run` leaves behind for an app whose pages create no state.
+    marker = prerequisites.get_backend_dir() / constants.Dirs.STATEFUL_PAGES
+    marker.parent.mkdir(parents=True)
+    marker.write_text("[]")
 
     _db("init")
 
     assert _table_names() == {"alembic_version", "lazy", "thing"}
+
+    _forget_app()
+    _db("makemigrations", "--message", "nothing changed")
+
+    assert len(_versions(project)) == 1
 
 
 def test_import_time_migrate_does_not_nest_alembic_runs(project: Path):
