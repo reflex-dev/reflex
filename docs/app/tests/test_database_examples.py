@@ -194,7 +194,6 @@ def test_tables_register_with_the_migration_registry(monkeypatch):
     user = module.User(username="ada", email="ada@example.com")
     assert user.id is None
     assert serialize(user) == {
-        "id": None,
         "username": "ada",
         "email": "ada@example.com",
     }
@@ -344,7 +343,6 @@ async def test_relationships(monkeypatch):
         monkeypatch,
         block("queries", SESSION),
         block("relationships", "class Flag(Base)"),
-        block("relationships", "def serialize_model"),
         block("relationships", "class FlagPostForm"),
         block("relationships", "class PostState"),
         block("relationships", "class PostFlagsState"),
