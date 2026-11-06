@@ -1633,6 +1633,65 @@ async def test_failed_handler_flush_error_keeps_handler_exception(
     )
 
 
+async def test_failed_delta_is_not_flushed_again(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+    caplog: pytest.LogCaptureFixture,
+):
+    """A handler whose own delta fails reports that error once, without a flush.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked event processor.
+        token: The client token.
+        caplog: The pytest log capture fixture.
+    """
+
+    class DeltaErrorState(State):
+        """Fail every delta once tripped, through an uncached var."""
+
+        trip: bool = False
+
+        @rx.var(cache=False)
+        def boom(self) -> str:
+            """Raise once tripped.
+
+            Returns:
+                A constant while not tripped.
+
+            Raises:
+                ValueError: When tripped.
+            """
+            if self.trip:
+                msg = "delta failed"
+                raise ValueError(msg)
+            return "ok"
+
+        @event
+        def run(self):
+            """Trip the var, so the handler's own delta fails."""
+            self.trip = True
+
+    handled: list[Exception] = []
+    real_base_state_processor.backend_exception_handler = handled.append
+    wired_app.add_page(lambda: rx.text("delta"), route="/")
+    with caplog.at_level(logging.ERROR):
+        async with real_base_state_processor as processor:
+            future = await processor.enqueue(
+                token, _client_event(DeltaErrorState.run(), _view("/"))
+            )
+            with contextlib.suppress(ValueError):
+                await asyncio.wait_for(future.wait_all(), timeout=5)
+
+    assert [str(ex) for ex in handled] == ["delta failed"]
+    assert not [
+        record
+        for record in caplog.records
+        if "Error flushing delta after handler" in record.getMessage()
+    ]
+
+
 async def test_rehydrate_after_expiry_does_not_reload_the_previous_route(
     wired_app: App,
     real_base_state_processor: BaseStateEventProcessor,
