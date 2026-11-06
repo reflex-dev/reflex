@@ -662,6 +662,14 @@ def _serialize_sqlalchemy_model(
     try:
         result = {}
 
+        if dataclasses.is_dataclass(m):
+            mapped_attrs = set(state.attrs.keys())
+            result.update({
+                field.name: getattr(m, field.name)
+                for field in dataclasses.fields(m)
+                if field.name not in mapped_attrs
+            })
+
         for attr in state.attrs:
             if attr.key in state.unloaded:
                 continue
@@ -676,15 +684,24 @@ def _serialize_sqlalchemy_model(
             def _serialize_related(item: Any) -> Any:
                 if id(item) in seen:
                     item_state = sqlalchemy.inspect(item)
-                    if item_state.has_identity:
-                        return {
-                            col.key: val
-                            for col, val in zip(
-                                item_state.mapper.primary_key,
-                                item_state.identity,
-                                strict=False,
-                            )
-                        }
+
+                    pk_props = [
+                        prop.key
+                        for column in item_state.mapper.primary_key
+                        for prop in item_state.mapper.column_attrs
+                        if column in prop.columns
+                    ]
+
+                    pk_data = {
+                        key: item_state.dict.get(key)
+                        for key in pk_props
+                        if key in item_state.dict
+                    }
+
+                    if len(pk_data) == len(pk_props) and all(
+                        val is not None for val in pk_data.values()
+                    ):
+                        return pk_data
                     return None
 
                 item_serializer = get_serializer(type(item))

@@ -356,7 +356,7 @@ def test_serialize_sqlalchemy_cyclic_custom_serializer():
 
         assert isinstance(result, dict)
         assert isinstance(result["children"], list)
-        assert result["children"][0]["parent"] is None
+        assert result["children"][0]["parent"] == {"id": 1}
 
     finally:
         serializers.SERIALIZERS.clear()
@@ -508,3 +508,198 @@ def test_unserialized_property_on_sqlalchemy_dataclass():
             return f"{self.first_name} {self.last_name}"
 
     assert is_unserialized_property(User, "double")
+
+
+def test_serialize_sqlalchemy_cycle_uses_mapped_attribute_names():
+    """Cycle references use Python mapped attribute names instead of column names."""
+    from reflex_base.utils.serializers import serialize
+    from sqlalchemy import ForeignKey
+    from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+    class Base(DeclarativeBase):
+        pass
+
+    class Parent(Base):
+        __tablename__ = "test_parent_column_name"
+
+        id: Mapped[int] = mapped_column("parent_id", primary_key=True)
+        children: Mapped[list["Child"]] = relationship(back_populates="parent")
+
+    class Child(Base):
+        __tablename__ = "test_child_column_name"
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+        parent_id: Mapped[int] = mapped_column(
+            ForeignKey("test_parent_column_name.parent_id")
+        )
+        parent: Mapped[Parent] = relationship(back_populates="children")
+
+    parent = Parent(id=1)
+    child = Child(id=2, parent=parent)
+    parent.children = [child]
+
+    result = serialize(parent)
+
+    assert isinstance(result, dict)
+    assert isinstance(result["children"], list)
+    assert isinstance(result["children"][0], dict)
+    assert result["id"] == 1
+    assert result["children"][0]["parent"] == {"id": 1}
+
+
+def test_serialize_sqlalchemy_expired_detached_cycle():
+    """Test that serializing a cyclic relationship with an expired/detached parent does not raise DetachedInstanceError."""
+    from reflex_base.utils.serializers import serialize
+    from sqlalchemy import ForeignKey, create_engine
+    from sqlalchemy.orm import (
+        DeclarativeBase,
+        Mapped,
+        Session,
+        mapped_column,
+        relationship,
+    )
+
+    class Base(DeclarativeBase):
+        pass
+
+    class DetachedParent(Base):
+        __tablename__ = "test_detached_parent"
+        id: Mapped[int] = mapped_column(primary_key=True)
+        children: Mapped[list["DetachedChild"]] = relationship(back_populates="parent")
+
+    class DetachedChild(Base):
+        __tablename__ = "test_detached_child"
+        id: Mapped[int] = mapped_column(primary_key=True)
+        parent_id: Mapped[int] = mapped_column(ForeignKey("test_detached_parent.id"))
+        parent: Mapped["DetachedParent"] = relationship(back_populates="children")
+
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(engine)
+
+    with Session(engine) as session:
+        parent = DetachedParent(id=1)
+        child = DetachedChild(id=2, parent=parent)
+        session.add_all([parent, child])
+        session.flush()
+
+        _ = parent.children
+        _ = child.parent
+
+        session.expire(parent, ["id"])
+        session.expunge_all()
+
+    result = serialize(parent)
+
+    assert isinstance(result, dict)
+    assert "id" not in result
+    assert isinstance(result.get("children"), list)
+    assert len(result["children"]) == 1
+    assert result["children"][0]["id"] == 2
+    assert result["children"][0]["parent"] is None
+
+
+def test_serialize_sqlalchemy_composite_pk_cycle():
+    """Test that cyclic relationships with composite primary keys are serialized correctly, even if partially expired."""
+    from reflex_base.utils.serializers import serialize
+    from sqlalchemy import ForeignKeyConstraint, create_engine
+    from sqlalchemy.orm import (
+        DeclarativeBase,
+        Mapped,
+        Session,
+        mapped_column,
+        relationship,
+    )
+
+    class Base(DeclarativeBase):
+        pass
+
+    class CompositeParent(Base):
+        __tablename__ = "test_composite_parent"
+        id1: Mapped[int] = mapped_column(primary_key=True)
+        id2: Mapped[int] = mapped_column(primary_key=True)
+        children: Mapped[list["CompositeChild"]] = relationship(back_populates="parent")
+
+    class CompositeChild(Base):
+        __tablename__ = "test_composite_child"
+        id: Mapped[int] = mapped_column(primary_key=True)
+        parent_id1: Mapped[int] = mapped_column()
+        parent_id2: Mapped[int] = mapped_column()
+
+        __table_args__ = (
+            ForeignKeyConstraint(
+                ["parent_id1", "parent_id2"],
+                ["test_composite_parent.id1", "test_composite_parent.id2"],
+            ),
+        )
+
+        parent: Mapped["CompositeParent"] = relationship(back_populates="children")
+
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(engine)
+
+    with Session(engine) as session:
+        parent = CompositeParent(id1=1, id2=2)
+        child = CompositeChild(id=10, parent=parent)
+        session.add_all([parent, child])
+        session.commit()
+
+        parent = session.get(CompositeParent, (1, 2))
+
+        assert parent is not None
+
+        _ = parent.children
+        _ = parent.children[0].parent
+
+        result = serialize(parent)
+
+        assert isinstance(result, dict)
+        assert result["id1"] == 1
+        assert result["id2"] == 2
+        assert isinstance(result.get("children"), list)
+        assert len(result["children"]) == 1
+        assert isinstance(result["children"][0], dict)
+        assert result["children"][0].get("parent") == {"id1": 1, "id2": 2}
+
+    with Session(engine) as session:
+        parent2 = CompositeParent(id1=3, id2=4)
+        child2 = CompositeChild(id=20, parent=parent2)
+        session.add_all([parent2, child2])
+        session.flush()
+
+        _ = parent2.children
+        _ = child2.parent
+
+        session.expire(parent2, ["id1"])
+        session.expunge_all()
+
+    result2 = serialize(parent2)
+
+    assert isinstance(result2, dict)
+    assert "id1" not in result2
+    assert result2["id2"] == 4
+    assert isinstance(result2.get("children"), list)
+    assert isinstance(result2["children"][0], dict)
+    assert result2["children"][0].get("parent") is None
+
+
+def test_serialize_sqlalchemy_dataclass_unmapped_fields():
+    """Test that unmapped dataclass fields are preserved."""
+    from reflex_base.utils.serializers import serialize
+    from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
+
+    class Base(MappedAsDataclass, DeclarativeBase):
+        pass
+
+    class User(Base):
+        __tablename__ = "test_user_unmapped"
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+        display_label: str = ""
+
+    user = User(id=1, display_label="Somil")
+
+    result = serialize(user)
+
+    assert isinstance(result, dict)
+    assert result["id"] == 1
+    assert result["display_label"] == "Somil"
