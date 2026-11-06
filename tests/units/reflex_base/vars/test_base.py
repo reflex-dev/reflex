@@ -48,6 +48,7 @@ from reflex_base.vars.base import (
     StateOperation,
     Var,
     VarData,
+    _delta_value_key,
     _global_vars,
     _is_tree_state,
     _linearize_bases,
@@ -2547,3 +2548,26 @@ def test_get_leaf_vars_sorts_every_cached_operation() -> None:
         LiteralEventVar,
         LiteralEventChainVar,
     })
+
+
+def test_delta_value_key_ignores_mapping_order() -> None:
+    """Equivalent dicts should have the same delta key despite insertion order."""
+    first = {
+        "root": {"alpha": 1, "beta": 2},
+        "rows": [{"x": 1, "y": 2}],
+    }
+    reordered = {
+        "rows": [{"y": 2, "x": 1}],
+        "root": {"beta": 2, "alpha": 1},
+    }
+
+    assert _delta_value_key(first) == _delta_value_key(reordered)
+    # Mixed numeric/string keys also have stable ordering, including nested
+    # maps. Sorting raw keys raises TypeError before the JSON conversion.
+    mixed = {"meta": {1: "a", "b": "c"}}
+    mixed_reordered = {"meta": {"b": "c", 1: "a"}}
+    assert isinstance(_delta_value_key(mixed), bytes)
+    assert _delta_value_key(mixed) == _delta_value_key(mixed_reordered)
+    assert _delta_value_key(first) != _delta_value_key(
+        {"root": {"alpha": 9, "beta": 2}, "rows": [{"x": 1, "y": 2}]}
+    )
