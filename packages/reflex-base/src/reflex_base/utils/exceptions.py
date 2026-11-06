@@ -28,6 +28,18 @@ class ReflexRuntimeError(ReflexError, RuntimeError):
     """Custom RuntimeError for Reflex."""
 
 
+class AdminDashRemovedError(ReflexRuntimeError):
+    """Raised when an app uses the removed starlette-admin integration."""
+
+    def __init__(self) -> None:
+        """Initialize the exception with a link to the migration guide."""
+        super().__init__(
+            "The built-in admin dashboard (rx.AdminDash, rx.App(admin_dash=...)) was "
+            "removed. Mount starlette-admin yourself with api_transformer: "
+            "https://reflex.dev/docs/database/admin-dashboard/"
+        )
+
+
 class UploadTypeError(ReflexError, TypeError):
     """Custom TypeError for upload related errors."""
 
