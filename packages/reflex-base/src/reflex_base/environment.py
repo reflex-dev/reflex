@@ -326,6 +326,26 @@ class SequenceOptions:
 DEFAULT_SEQUENCE_OPTIONS = SequenceOptions()
 
 
+def _get_sequence_delimiter(
+    field_type: GenericType, options: SequenceOptions = DEFAULT_SEQUENCE_OPTIONS
+) -> str:
+    """Get the delimiter of a sequence environment variable.
+
+    A colon is part of an absolute Windows path, so a sequence of paths without
+    options of its own is separated by ``os.pathsep``, like ``REFLEX_ENV_FILE``.
+
+    Args:
+        field_type: The sequence type.
+        options: The options of the sequence.
+
+    Returns:
+        The delimiter.
+    """
+    if options is DEFAULT_SEQUENCE_OPTIONS and get_args(field_type) == (Path,):
+        return os.pathsep
+    return options.delimiter
+
+
 def interpret_env_var_value(
     value: str, field_type: GenericType, field_name: str
 ) -> Any:
@@ -428,7 +448,7 @@ def interpret_env_var_value(
             sequence_options = arg
             break
     if get_origin(field_type) in (list, Sequence):
-        items = value.split(sequence_options.delimiter)
+        items = value.split(_get_sequence_delimiter(field_type, sequence_options))
         if sequence_options.strip:
             items = [item.strip() for item in items]
         return [
@@ -559,7 +579,9 @@ class EnvVar(Generic[T]):
             if isinstance(value, enum.Enum):
                 value = value.value
             if isinstance(value, list):
-                str_value = ":".join(_serialize_env_value(v) for v in value)
+                str_value = _get_sequence_delimiter(
+                    value_inside_optional(self.type_)
+                ).join(_serialize_env_value(v) for v in value)
             else:
                 str_value = _serialize_env_value(value)
             os.environ[self.name] = str_value
@@ -774,13 +796,13 @@ class EnvironmentVariables:
     # The maximum size of the reflex state in kilobytes.
     REFLEX_STATE_SIZE_LIMIT: EnvVar[int] = env_var(1000)
 
-    # Additional paths to include in the hot reload. Separated by a colon.
+    # Additional paths to include in the hot reload. Separated by os.pathsep.
     REFLEX_HOT_RELOAD_INCLUDE_PATHS: EnvVar[list[Path]] = env_var([])
 
-    # Paths to exclude from the hot reload. Takes precedence over include paths. Separated by a colon.
+    # Paths to exclude from the hot reload. Takes precedence over include paths. Separated by os.pathsep.
     REFLEX_HOT_RELOAD_EXCLUDE_PATHS: EnvVar[list[Path]] = env_var([])
 
-    # Paths to override in the hot reload. Takes precedence over include and exclude paths. Separated by a colon.
+    # Paths to override in the hot reload. Takes precedence over include and exclude paths. Separated by os.pathsep.
     REFLEX_HOT_RELOAD_OVERRIDE_PATHS: EnvVar[list[Path]] = env_var([])
 
     # Enables different behavior for when the backend would do a cold start if it was inactive.

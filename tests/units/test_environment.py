@@ -6,7 +6,7 @@ import os
 import tempfile
 from datetime import timedelta
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 from unittest.mock import patch
 
 import pytest
@@ -682,6 +682,7 @@ def cleanup_env_vars():
         "__INTERNAL_VAR",
         # `EnvVar.set` writes `os.environ` directly, so monkeypatch never sees it
         "TEST_TIMEOUT_ROUNDTRIP",
+        "TEST_PATHS_ROUNDTRIP",
     ]
 
     yield
@@ -1002,3 +1003,65 @@ def test_env_var_set_runs_callbacks_for_its_name(monkeypatch: pytest.MonkeyPatch
     env_var_instance.set("value")  # type: ignore[arg-type]
     env_var_instance.set(None)
     assert calls == ["value", None]
+
+
+def test_path_list_env_value_splits_on_pathsep(monkeypatch: pytest.MonkeyPatch):
+    """The colon of a Windows drive letter stays inside its path.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    monkeypatch.setattr(os, "pathsep", ";")
+
+    result = interpret_env_var_value(r"C:\app;D:\lib", list[Path], "TEST_FIELD")
+
+    assert result == [Path(r"C:\app"), Path(r"D:\lib")]
+
+
+def test_path_list_env_value_keeps_its_explicit_delimiter(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """SequenceOptions on a path list wins over ``os.pathsep``.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    monkeypatch.setattr(os, "pathsep", ";")
+    annotated_type = Annotated[list[Path], SequenceOptions(delimiter=",")]
+
+    result = interpret_env_var_value("a,b;c", annotated_type, "TEST_FIELD")
+
+    assert result == [Path("a"), Path("b;c")]
+
+
+def test_non_path_list_env_value_still_splits_on_colon(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Only path lists follow ``os.pathsep``.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    monkeypatch.setattr(os, "pathsep", ";")
+
+    assert interpret_env_var_value("a:b", list[str], "TEST_FIELD") == ["a", "b"]
+
+
+@pytest.mark.parametrize("field_type", [list[Path], list[Path] | None])
+def test_path_list_env_var_round_trips_through_set(
+    monkeypatch: pytest.MonkeyPatch, field_type: Any
+):
+    """``set`` joins a path list with the delimiter the interpreter splits on.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture.
+        field_type: The type of the environment variable.
+    """
+    monkeypatch.setattr(os, "pathsep", ";")
+    monkeypatch.delenv("TEST_PATHS_ROUNDTRIP", raising=False)
+    env_var_instance = EnvVar("TEST_PATHS_ROUNDTRIP", [], field_type)
+    value = [Path(r"C:\app"), Path(r"D:\lib")]
+
+    env_var_instance.set(value)  # type: ignore[arg-type]
+
+    assert env_var_instance.get() == value
