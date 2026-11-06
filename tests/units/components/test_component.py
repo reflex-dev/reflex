@@ -798,6 +798,76 @@ def test_component_create_backend_var_child(test_component):
         test_component.create(BackendChildState._secret)
 
 
+class EventChildState(BaseState):
+    """State whose vars and handler build event children."""
+
+    flag: bool = False
+    page: str = "a"
+
+    def do_something(self):
+        """An event handler."""
+
+
+@pytest.mark.parametrize(
+    "make_child",
+    [
+        pytest.param(lambda: rx.redirect("/x"), id="event_spec"),
+        pytest.param(lambda: EventChildState.do_something, id="event_handler"),
+        pytest.param(
+            lambda: rx.cond(EventChildState.flag, rx.redirect("/a"), rx.redirect("/b")),
+            id="cond",
+        ),
+        pytest.param(
+            lambda: rx.cond(EventChildState.flag, rx.redirect("/a"), "text"),
+            id="cond_mixed",
+        ),
+        pytest.param(
+            lambda: rx.match(
+                EventChildState.page, ("a", rx.redirect("/a")), rx.redirect("/b")
+            ),
+            id="match",
+        ),
+        pytest.param(
+            lambda: rx.match(EventChildState.page, ("a", rx.redirect("/a")), "text"),
+            id="match_mixed_case",
+        ),
+        pytest.param(
+            lambda: rx.match(EventChildState.page, ("a", "text"), rx.redirect("/b")),
+            id="match_mixed_default",
+        ),
+    ],
+)
+def test_component_create_event_child(make_child, test_component):
+    """An event child raises an error that says how to run the event instead.
+
+    Args:
+        make_child: Builds the event child.
+        test_component: A test component.
+    """
+    with pytest.raises(
+        ChildrenTypeError, match=r"received an event as a child.*`on_load`"
+    ):
+        test_component.create(make_child())
+
+
+@pytest.mark.parametrize(
+    "child",
+    [
+        pytest.param(rx.cond(EventChildState.flag, "yes", "no"), id="cond_text"),
+        pytest.param(Var(_js_expr="untyped"), id="untyped_var"),
+        pytest.param(LiteralVar.create({"a": 1}), id="object_var"),
+    ],
+)
+def test_component_create_non_event_var_child(child, test_component):
+    """A Var child that cannot hold an event is still accepted.
+
+    Args:
+        child: The Var child.
+        test_component: A test component.
+    """
+    test_component.create(child)
+
+
 def test_component_create_backend_var_prop():
     """A backend var passed to a typed prop reports its repr, not a format error."""
 

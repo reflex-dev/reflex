@@ -29,6 +29,7 @@ from reflex_base.constants.compiler import SpecialAttributes
 from reflex_base.event import (
     EventCallback,
     EventChain,
+    EventHandler,
     EventSpec,
     args_specs_from_fields,
     no_args_event_spec,
@@ -556,6 +557,21 @@ def evaluate_style_namespaces(style: ComponentStyle) -> dict:
 # Map from component to styling.
 ComponentStyle = dict[str | type[BaseComponent] | Callable | ComponentNamespace, Any]
 ComponentChildTypes = (*types.PrimitiveTypes, Var, BaseComponent, type(None))
+_EventTypes = (EventSpec, EventHandler, EventChain)
+
+
+def _is_event_type(type_: Any) -> bool:
+    """Check whether a Var of the given type can hold an event.
+
+    Args:
+        type_: The Var's type, possibly a union such as one ``rx.cond`` builds.
+
+    Returns:
+        Whether the type, or any member of the union, is an event type.
+    """
+    if types.is_union(type_):
+        return any(_is_event_type(arg) for arg in typing.get_args(type_))
+    return types.safe_issubclass(type_, _EventTypes)
 
 
 def _satisfies_type_hint(obj: Any, type_hint: Any) -> bool:
@@ -1285,8 +1301,18 @@ class Component(BaseComponent, ABC):
             if isinstance(child, (tuple, list)):
                 cls._validate_children(child)
 
-            # Make sure the child is a valid type.
-            if isinstance(child, dict) or not isinstance(child, ComponentChildTypes):
+            # Make sure the child is a valid type. An event (or a Var holding one,
+            # as rx.cond and rx.match build) would otherwise render as page content.
+            if isinstance(child, Var):
+                if _is_event_type(child._var_type):
+                    raise ChildrenTypeError(
+                        component=cls.__name__, child=child, is_event=True
+                    )
+            elif isinstance(child, _EventTypes):
+                raise ChildrenTypeError(
+                    component=cls.__name__, child=child, is_event=True
+                )
+            elif isinstance(child, dict) or not isinstance(child, ComponentChildTypes):
                 raise ChildrenTypeError(component=cls.__name__, child=child)
 
     @classmethod
