@@ -379,3 +379,23 @@ test("a disconnect fails the requests still waiting for results", async (t) => {
   await assert.rejects(stream, /Disconnected from the backend/);
   assert.deepEqual(stream.values, ["partial"]);
 });
+
+test("an event object dispatched twice gets a request and a result for each", async (t) => {
+  const connection = await createConnection(t);
+  const event = { name: "known.load" };
+  const stream = connection.addEvents([event, event]);
+  // The queue sends the second event once the first one's dispatch resolves.
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  const ids = connection.sent
+    .filter((message) => message.value.name === "known.load")
+    .map((message) => message.value.id);
+  assert.equal(ids.length, 2);
+  assert.notEqual(ids[0], ids[1]);
+  // The caller's object is left as it was given.
+  assert.deepEqual(event, { name: "known.load" });
+
+  connection.receive({ results: [{ id: ids[0], value: 1, done: true }] });
+  assert.equal(stream.settled, false);
+  connection.receive({ results: [{ id: ids[1], value: 2, done: true }] });
+  assert.equal(await stream, 2);
+});

@@ -301,20 +301,26 @@ export const debouncedResult = (key, schedule, dispatch) => {
   return stream;
 };
 
-// Per throttle key, the stream of the last dispatch that went through.
+// Per throttle key, the stream of the last dispatch that went through, while
+// it is open: a settled one is forgotten, so its values can be collected.
 const throttled = {};
 
 /**
- * Remember the stream of a throttled dispatch that went through.
+ * Remember the stream of a throttled dispatch that went through, until it settles.
  * @param {string} key The throttle key.
  * @param result What the dispatch returned.
  * @returns What the dispatch returned.
  */
 export const recordThrottled = (key, result) => {
+  delete throttled[key];
   if (result instanceof ResultStream) {
     throttled[key] = result;
-  } else {
-    delete throttled[key];
+    const forget = () => {
+      if (throttled[key] === result) {
+        delete throttled[key];
+      }
+    };
+    result.pipe({ push() {}, close: forget, fail: forget });
   }
   return result;
 };
@@ -325,11 +331,5 @@ export const recordThrottled = (key, result) => {
  * @param {string} key The throttle key.
  * @returns {ResultStream} The stream.
  */
-export const throttledResult = (key) => {
-  const last = throttled[key];
-  if (last !== undefined && !last.settled) {
-    return last;
-  }
-  delete throttled[key];
-  return ResultStream.completed();
-};
+export const throttledResult = (key) =>
+  throttled[key] ?? ResultStream.completed();

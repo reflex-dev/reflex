@@ -1675,12 +1675,17 @@ export const useEventLoop = (
 
     return applyEventActions(
       () => {
-        const streams = _events.map(
-          (event) => (event[RESULT_STREAM] = new ResultStream()),
-        );
+        // Each dispatch sends its own copies, so an event object passed twice,
+        // or again before it was sent, gets a stream (and request id) of its own.
+        const streams = [];
+        const sent = _events.map((event) => {
+          const stream = new ResultStream();
+          streams.push(stream);
+          return { ...event, [RESULT_STREAM]: stream };
+        });
         // A failed dispatch fails the event's stream and still rejects here,
         // so it is reported as an unhandled rejection as before.
-        queueEvents(_events, socket, false, navigate, params);
+        queueEvents(sent, socket, false, navigate, params);
         return ResultStream.merge(streams);
       },
       event_actions,
