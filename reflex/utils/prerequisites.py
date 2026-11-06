@@ -476,19 +476,14 @@ def _redis_client_kwargs() -> dict[str, Any]:
     """Keyword arguments every redis client Reflex builds is created with.
 
     Returns:
-        The retry policy and, on Python 3.11, no socket timeout.
+        The retry policy and no socket timeout.
     """
     from redis.exceptions import RedisError
 
-    kwargs: dict[str, Any] = {"retry_on_error": [RedisError]}
-    # redis-py 8 gives connections a socket timeout by default, which sends
-    # every command through asyncio.wait_for. On Python 3.11 wait_for drops a
-    # cancellation that lands as its inner task completes, so cancelling a
-    # pub/sub listener can hang forever (#7026). Keep redis-py 7's behavior
-    # there; 3.12 rebuilt wait_for and is unaffected.
-    if sys.version_info < (3, 12):
-        kwargs["socket_timeout"] = None
-    return kwargs
+    # A socket timeout makes redis-py send every command through
+    # asyncio.wait_for. On Python 3.11 wait_for drops a cancellation that lands
+    # as the send completes, so a cancelled task can run on forever (#7026).
+    return {"retry_on_error": [RedisError], "socket_timeout": None}
 
 
 def get_redis() -> Redis | None:

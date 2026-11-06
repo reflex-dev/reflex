@@ -2663,29 +2663,16 @@ def redis_url(monkeypatch: pytest.MonkeyPatch) -> str:
     return url
 
 
-def test_redis_clients_drop_socket_timeout_on_python_311(
+def test_redis_clients_have_no_socket_timeout(
     redis_url: str, monkeypatch: pytest.MonkeyPatch
 ):
-    """Clients have no socket timeout on 3.11, where it loses cancellations (#7026).
-
-    Later interpreters keep whatever timeout redis-py itself defaults to.
-    """
-    from redis.asyncio import Redis
-
-    library_default = Redis.from_url(redis_url).connection_pool.connection_kwargs
-    expected = (
-        None if sys.version_info < (3, 12) else library_default.get("socket_timeout")
-    )
-
+    """Every client is built without a socket timeout, which loses cancels on 3.11 (#7026)."""
     unbounded = prerequisites.get_redis()
     monkeypatch.setenv("REFLEX_REDIS_MAX_CONNECTIONS", "3")
     capped = prerequisites.get_redis()
     for client in (unbounded, capped, prerequisites.get_redis_sync()):
         assert client is not None
-        kwargs = client.connection_pool.connection_kwargs
-        if sys.version_info < (3, 12):
-            assert "socket_timeout" in kwargs
-        assert kwargs.get("socket_timeout") == expected
+        assert client.connection_pool.connection_kwargs["socket_timeout"] is None
 
 
 async def test_redis_client_cancel_mid_send_always_ends_task():
