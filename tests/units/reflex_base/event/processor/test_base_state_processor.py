@@ -10,7 +10,7 @@ import logging
 import traceback
 import warnings
 import weakref
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any, cast
 
@@ -4967,3 +4967,528 @@ async def test_handler_cancelled_inside_the_locked_block_cancels_its_inline_runs
         BaseStateToken(ident=token, cls=State)
     )
     assert (await state.get_state(CancelInsideState)).log == ["ping"]
+
+
+@pytest.fixture
+def wire_log(
+    real_base_state_processor: BaseStateEventProcessor,
+) -> list[tuple[str, Any]]:
+    """Record what reaches the frontend, deltas and result records, in order.
+
+    A delta sent in the same message as result records is logged before them,
+    so the log reads the same whether a record rides with a delta or not.
+
+    Args:
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+
+    Returns:
+        The log of ("delta", delta) and ("result", record) entries.
+    """
+    log: list[tuple[str, Any]] = []
+    root = real_base_state_processor._root_context
+    assert root is not None
+
+    async def emit_delta_impl(  # noqa: RUF029
+        token: str, delta: Mapping[str, Mapping[str, Any]]
+    ) -> None:
+        log.append(("delta", delta))
+
+    async def emit_result_impl(  # noqa: RUF029
+        token: str,
+        results: Sequence[Mapping[str, Any]],
+        delta: Mapping[str, Mapping[str, Any]] | None = None,
+    ) -> None:
+        if delta:
+            log.append(("delta", delta))
+        log.extend(("result", record) for record in results)
+
+    real_base_state_processor._root_context = dataclasses.replace(
+        root, emit_delta_impl=emit_delta_impl, emit_result_impl=emit_result_impl
+    )
+    return log
+
+
+def _records(log: list[tuple[str, Any]], request_id: str) -> list[Mapping[str, Any]]:
+    """The result records sent for one request, in order.
+
+    Args:
+        log: The wire log.
+        request_id: The request id.
+
+    Returns:
+        The records.
+    """
+    return [
+        entry for kind, entry in log if kind == "result" and entry["id"] == request_id
+    ]
+
+
+async def test_request_receives_yielded_values_after_the_deltas_before_them(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    wire_log: list[tuple[str, Any]],
+    token: str,
+):
+    """Each yielded value follows the changes made before it; the return value completes.
+
+    Events the handler chains run under no request, so they report nothing.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        wire_log: The ordered log of what reaches the frontend.
+        token: The client token.
+    """
+
+    class StreamState(State):
+        n: int = 0
+
+        @event
+        def stream(self):
+            self.n = 1
+            yield "a"
+            self.n = 2
+            yield {"b": 2}
+            yield StreamState.bump()
+            return []  # noqa: B901
+
+        @event
+        def bump(self):
+            self.n = 10
+            return "unreported"
+
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(StreamState.stream())[0], request_id="r1"
+        )
+        assert await future.wait_all() == []
+        await processor.join(5)
+
+    name, key = StreamState.get_full_name(), f"n{FIELD_MARKER}"
+    trace = [
+        entry if kind == "result" else ("n", entry[name][key])
+        for kind, entry in wire_log
+        if kind == "result" or key in entry.get(name, {})
+    ]
+    # The hydration snapshot carries the default first.
+    assert trace == [
+        ("n", 0),
+        ("n", 1),
+        {"id": "r1", "value": "a"},
+        ("n", 2),
+        {"id": "r1", "value": {"b": 2}},
+        {"id": "r1", "value": [], "done": True},
+        ("n", 10),
+    ]
+
+
+async def test_request_completes_without_a_value(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    wire_log: list[tuple[str, Any]],
+    token: str,
+):
+    """A handler that returns nothing completes its request with a bare done record.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        wire_log: The ordered log of what reaches the frontend.
+        token: The client token.
+    """
+
+    class NoValueState(State):
+        n: int = 0
+
+        @event
+        def set_n(self):
+            self.n = 5
+
+        @event
+        def nothing(self):
+            pass
+
+    async with real_base_state_processor as processor:
+        for spec, request_id in (
+            (NoValueState.set_n(), "a"),
+            (NoValueState.nothing(), "b"),
+        ):
+            future = await processor.enqueue(
+                token, Event.from_event_type(spec)[0], request_id=request_id
+            )
+            await future
+
+    assert _records(wire_log, "a") == [{"id": "a", "done": True}]
+    assert _records(wire_log, "b") == [{"id": "b", "done": True}]
+    # The change reached the frontend before the request completed.
+    done_at = wire_log.index(("result", {"id": "a", "done": True}))
+    assert any(
+        kind == "delta"
+        and entry.get(NoValueState.get_full_name(), {}).get(f"n{FIELD_MARKER}") == 5
+        for kind, entry in wire_log[:done_at]
+    )
+
+
+async def test_values_without_a_request_are_dropped(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    wire_log: list[tuple[str, Any]],
+    token: str,
+):
+    """An event the frontend did not give an id (an older frontend) yields values freely.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        wire_log: The ordered log of what reaches the frontend.
+        token: The client token.
+    """
+
+    class NoRequestState(State):
+        n: int = 0
+
+        @event
+        async def stream(self):
+            self.n = 1
+            yield 1
+            yield [2]
+
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(NoRequestState.stream())[0]
+        )
+        assert await future is None
+
+    assert not [entry for kind, entry in wire_log if kind == "result"]
+    assert any(
+        entry.get(NoRequestState.get_full_name(), {}).get(f"n{FIELD_MARKER}") == 1
+        for kind, entry in wire_log
+        if kind == "delta"
+    )
+
+
+@pytest.mark.parametrize(
+    ("env_mode", "error"),
+    [
+        (constants.Env.DEV, "ValueError: bad page"),
+        (constants.Env.PROD, "Contact the website administrator."),
+    ],
+)
+async def test_request_fails_with_the_handler_exception(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    wire_log: list[tuple[str, Any]],
+    token: str,
+    monkeypatch: pytest.MonkeyPatch,
+    env_mode: constants.Env,
+    error: str,
+):
+    """A raising handler fails its request, after the values it yielded; prod hides why.
+
+    The backend exception handler still runs.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        wire_log: The ordered log of what reaches the frontend.
+        token: The client token.
+        monkeypatch: pytest monkeypatch fixture.
+        env_mode: The environment mode to run in.
+        error: The expected error text.
+    """
+    monkeypatch.setenv(environment.REFLEX_ENV_MODE.name, env_mode.value)
+
+    class FailState(State):
+        @event
+        async def fail(self):
+            yield "partial"
+            msg = "bad page"
+            raise ValueError(msg)
+
+    captured: list[Exception] = []
+    real_base_state_processor.backend_exception_handler = captured.append
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(FailState.fail())[0], request_id="r"
+        )
+        with pytest.raises(ValueError, match="bad page"):
+            await future
+    assert _records(wire_log, "r") == [
+        {"id": "r", "value": "partial"},
+        {"id": "r", "error": error},
+    ]
+    assert len(captured) == 1
+
+
+async def test_inline_awaited_handler_values_stay_with_the_awaiting_handler(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    wire_log: list[tuple[str, Any]],
+    token: str,
+):
+    """A handler awaited inline shares its caller's context but not its request.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        wire_log: The ordered log of what reaches the frontend.
+        token: The client token.
+    """
+
+    class InlineState(State):
+        @event
+        def inner(self):
+            yield "inner value"
+            return "inner result"  # noqa: B901
+
+        @event
+        async def outer(self):
+            got = await InlineState.inner()
+            yield "outer value"
+            yield got
+
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(InlineState.outer())[0], request_id="r"
+        )
+        await future
+    assert _records(wire_log, "r") == [
+        {"id": "r", "value": "outer value"},
+        {"id": "r", "value": "inner result"},
+        {"id": "r", "done": True},
+    ]
+
+
+async def test_cancelled_request_completes_once(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    wire_log: list[tuple[str, Any]],
+    token: str,
+):
+    """A request cancelled while queued or while running completes exactly once.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        wire_log: The ordered log of what reaches the frontend.
+        token: The client token.
+    """
+    gate = asyncio.Event()
+    started = asyncio.Event()
+
+    class CancelState(State):
+        @event
+        async def slow(self):
+            started.set()
+            await gate.wait()
+            return "slow"
+
+        @event
+        def quick(self):
+            return "quick"
+
+    async with real_base_state_processor as processor:
+        running = await processor.enqueue(
+            token, Event.from_event_type(CancelState.slow())[0], request_id="running"
+        )
+        queued = await processor.enqueue(
+            token, Event.from_event_type(CancelState.quick())[0], request_id="queued"
+        )
+        await started.wait()
+        queued.cancel()
+        running.cancel()
+        await processor.join(5)
+
+    cancelled = {"done": True, "cancelled": True}
+    assert _records(wire_log, "queued") == [{"id": "queued", **cancelled}]
+    assert _records(wire_log, "running") == [{"id": "running", **cancelled}]
+
+
+async def test_background_request_completes_when_the_task_ends(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    wire_log: list[tuple[str, Any]],
+    token: str,
+):
+    """A background handler streams values inside and outside ``async with self``.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        wire_log: The ordered log of what reaches the frontend.
+        token: The client token.
+    """
+
+    class BackgroundResultState(State):
+        n: int = 0
+
+        @event(background=True)
+        async def work(self):
+            yield "outside"
+            async with self:
+                self.n = 3
+            yield "inside done"
+            async with self:
+                self.n = 4
+                yield "under lock"
+            yield {"n": 4}
+
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token,
+            Event.from_event_type(BackgroundResultState.work())[0],
+            request_id="bg",
+        )
+        assert await future is None
+    assert _records(wire_log, "bg") == [
+        {"id": "bg", "value": "outside"},
+        {"id": "bg", "value": "inside done"},
+        {"id": "bg", "value": "under lock"},
+        {"id": "bg", "value": {"n": 4}},
+        {"id": "bg", "done": True},
+    ]
+    # The change made under the lock reached the frontend before the value.
+    name, key = BackgroundResultState.get_full_name(), f"n{FIELD_MARKER}"
+    value_at = wire_log.index(("result", {"id": "bg", "value": "under lock"}))
+    assert any(
+        kind == "delta" and entry.get(name, {}).get(key) == 4
+        for kind, entry in wire_log[:value_at]
+    )
+
+
+async def test_stateless_request_reports_its_return_value(
+    real_base_state_processor: BaseStateEventProcessor,
+    wire_log: list[tuple[str, Any]],
+    token: str,
+):
+    """A stateless handler's return value completes its request.
+
+    Args:
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        wire_log: The ordered log of what reaches the frontend.
+        token: The client token.
+    """
+
+    @event
+    def stateless_mul(a: int, b: int) -> int:
+        return a * b
+
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(stateless_mul(6, 7))[0], request_id="s"
+        )
+        assert await future == 42
+    assert _records(wire_log, "s") == [{"id": "s", "value": 42, "done": True}]
+
+
+async def test_yielding_a_bound_handler_still_raises_type_error(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    wire_log: list[tuple[str, Any]],
+    token: str,
+):
+    """``yield self.other`` is the classic mistake for ``type(self).other``, not a result.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        wire_log: The ordered log of what reaches the frontend.
+        token: The client token.
+    """
+
+    class BoundYieldState(State):
+        @event
+        def other(self):
+            pass
+
+        @event
+        def handler(self):
+            yield self.other
+
+    captured: list[Exception] = []
+    real_base_state_processor.backend_exception_handler = captured.append
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(BoundYieldState.handler())[0], request_id="r"
+        )
+        with pytest.raises(TypeError, match="referenced by their class"):
+            await future
+    assert len(captured) == 1
+    assert [record.keys() for record in _records(wire_log, "r")] == [{"id", "error"}]
+
+
+async def test_stop_reports_requests_cancelled_by_the_shutdown(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    wire_log: list[tuple[str, Any]],
+    token: str,
+):
+    """A request the shutdown cancels is completed before stop() returns.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        wire_log: The ordered log of what reaches the frontend.
+        token: The client token.
+    """
+    gate = asyncio.Event()
+
+    class ShutdownState(State):
+        @event
+        async def wait(self):
+            await gate.wait()
+
+    real_base_state_processor.graceful_shutdown_timeout = 0
+    async with real_base_state_processor as processor:
+        for request_id in ("first", "second"):
+            await processor.enqueue(
+                token,
+                Event.from_event_type(ShutdownState.wait())[0],
+                request_id=request_id,
+            )
+    cancelled = {"done": True, "cancelled": True}
+    assert _records(wire_log, "first") == [{"id": "first", **cancelled}]
+    assert _records(wire_log, "second") == [{"id": "second", **cancelled}]
+
+
+async def test_request_cancelled_while_sending_its_completion_still_completes(
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A cancellation landing while the done record is being sent is still reported.
+
+    Args:
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    sending_done = asyncio.Event()
+    records: list[Mapping[str, Any]] = []
+
+    async def emit_result_impl(
+        token: str,
+        results: Sequence[Mapping[str, Any]],
+        delta: Mapping[str, Mapping[str, Any]] | None = None,
+    ) -> None:
+        if any(record.get("done") and "cancelled" not in record for record in results):
+            sending_done.set()
+            await asyncio.Event().wait()
+        records.extend(results)
+
+    root = real_base_state_processor._root_context
+    assert root is not None
+    real_base_state_processor._root_context = dataclasses.replace(
+        root, emit_result_impl=emit_result_impl
+    )
+
+    @event
+    def stateless_answer() -> int:
+        return 42
+
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(stateless_answer())[0], request_id="r"
+        )
+        await sending_done.wait()
+        future.cancel()
+        await processor.join(5)
+    assert records == [{"id": "r", "done": True, "cancelled": True}]

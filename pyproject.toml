@@ -322,6 +322,7 @@ asyncio_default_fixture_loop_scope = "function"
 asyncio_mode = "auto"
 markers = [
   "performance: scheduled wall-time, service, memory, lifecycle, or browser benchmark",
+  "ignore_console_error: expected error-level framework logs do not fail the integration test",
 ]
 
 [tool.codespell]

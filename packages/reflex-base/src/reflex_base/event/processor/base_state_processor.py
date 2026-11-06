@@ -21,7 +21,12 @@ from reflex_base import otel
 from reflex_base.constants import CompileVars
 from reflex_base.event import Event, EventHandler, EventSpec
 from reflex_base.event.context import EventContext
-from reflex_base.event.processor.event_processor import EventProcessor, EventQueueEntry
+from reflex_base.event.processor.event_processor import (
+    EventProcessor,
+    EventQueueEntry,
+    _done_record,
+    _value_record,
+)
 from reflex_base.event.processor.future import EventFuture
 from reflex_base.registry import RegisteredEventHandler
 from reflex_base.utils.form import form_data_as_dict, transform_form_data
@@ -121,6 +126,34 @@ def _holds_events_or_coroutines(value: Any) -> bool:
         return False
 
 
+def _is_result(value: Any) -> bool:
+    """Whether a value a handler yielded or returned is a result rather than events.
+
+    Shared by yields and return values: None is a plain delta flush, an event
+    or a non-empty sequence of events chains, and a coroutine, a callable
+    (like ``self.handler`` where ``type(self).handler`` was meant) or a
+    sequence holding an event or a coroutine next to other values is invalid
+    (it raises once it reaches ``_check_valid_yield``). Anything else, an
+    empty sequence included (a result such as no search hits, not an empty
+    chain), is a result.
+
+    Args:
+        value: The value a handler yielded or returned.
+
+    Returns:
+        True if the value is a result.
+    """
+    if value is None:
+        return False
+    if _is_event_like(value):
+        return _is_empty_sequence(value)
+    return not (
+        callable(value)
+        or inspect.iscoroutine(value)
+        or _holds_events_or_coroutines(value)
+    )
+
+
 def _check_valid_yield(events: Any, handler_name: str = "unknown") -> Any:
     """Check if the events yielded are valid. They must be EventHandlers or EventSpecs.
 
@@ -149,7 +182,8 @@ def _check_valid_yield(events: Any, handler_name: str = "unknown") -> Any:
         )
 
     msg = (
-        f"Your handler {handler_name} must only return/yield: None, Events or other EventHandlers referenced by their class (i.e. using `type(self)` or other class references)."
+        f"Your handler {handler_name} must only return/yield: None, Events or other EventHandlers referenced by their class (i.e. using `type(self)` or other class references),"
+        " or a result value; not events mixed with other values, nor coroutines it did not await."
         f" Returned events of types {', '.join(map(str, map(type, events)))!s}."
     )
     raise TypeError(msg)
@@ -332,54 +366,80 @@ async def _route_events(ctx: EventContext, events: Sequence[Event]) -> None:
         await ctx.enqueue(*backend_events)
 
 
+async def _resolve_delta(
+    ctx: EventContext, root_state: BaseState
+) -> Mapping[str, Mapping[str, Any]]:
+    """Resolve the tree's pending changes into a delta and clean the tree.
+
+    The clean deliberately runs after resolution: the SharedState fan-out
+    captures its dirty vars at clean time, and resolving the delta is what
+    re-marks linked vars through the patch machinery, so cleaning earlier
+    would fan out a stale set (see tests/integration/test_linked_state.py).
+
+    Args:
+        ctx: The active event context.
+        root_state: The locked root of the state tree.
+
+    Returns:
+        The delta, empty when nothing changed.
+    """
+    try:
+        # Resolving suspends on async computed vars. While inline runs
+        # exist (this one included), a gathered sibling can assign a
+        # field meanwhile, after the delta was snapshotted; the clean
+        # below would drop that value unsent, so pick late assignments
+        # up until none happened during the resolve. A plain event has
+        # no inline runs and skips this. The clean runs before the emit:
+        # a write during the emit's await re-dirties its field instead
+        # of being cleaned, and the next flush sends it.
+        concurrent = bool(ctx.inline_tasks)
+        seen = _written_snapshot(root_state) if concurrent else {}
+        delta = await root_state._get_resolved_delta()
+        while concurrent and _written_since(
+            seen, written := _written_snapshot(root_state)
+        ):
+            seen = written
+            for name, late in (await root_state._get_resolved_delta()).items():
+                delta[name] = {**delta.get(name, {}), **late}
+    finally:
+        root_state._clean()
+    return delta
+
+
 async def chain_updates(
     events: Any,
     handler_name: str,
     root_state: BaseState | None = None,
+    request_id: str | None = None,
 ) -> None:
-    """Chain yielded events and emit a delta to the frontend.
+    """Emit a delta to the frontend, then chain yielded events or emit a yielded result.
 
     Check for validitity and convert the EventSpec into qualified Event objects
     to be queued against the current EventContext.
 
     Args:
-        events: Whatever the handler yielded; `_check_valid_yield` raises TypeError
-            for anything that is not an Event, EventHandler, EventSpec, a sequence
-            of those, or None.
+        events: Whatever the handler yielded. A result value (see `_is_result`)
+            is sent to the frontend request it answers, or dropped without one;
+            `_check_valid_yield` raises TypeError for events mixed with other
+            values and for coroutines.
         handler_name: The name of the handler that yielded the events, used for error messages.
         root_state: The root state of the app, no delta emitted if omitted.
+        request_id: The frontend's id for the request whose handler yielded,
+            if a result should be sent to it.
     """
     ctx = EventContext.get()
 
-    if root_state is not None:
-        # Emit deltas first, so any frontend events are processed with the
-        # latest state. The clean deliberately runs after resolution: the
-        # SharedState fan-out captures its dirty vars at clean time, and
-        # resolving the delta is what re-marks linked vars through the patch
-        # machinery, so cleaning earlier would fan out a stale set (see
-        # tests/integration/test_linked_state.py).
-        try:
-            # Resolving suspends on async computed vars. While inline runs
-            # exist (this one included), a gathered sibling can assign a
-            # field meanwhile, after the delta was snapshotted; the clean
-            # below would drop that value unsent, so pick late assignments
-            # up until none happened during the resolve. A plain event has
-            # no inline runs and skips this. The clean runs before the emit:
-            # a write during the emit's await re-dirties its field instead
-            # of being cleaned, and the next flush sends it.
-            concurrent = bool(ctx.inline_tasks)
-            seen = _written_snapshot(root_state) if concurrent else {}
-            delta = await root_state._get_resolved_delta()
-            while concurrent and _written_since(
-                seen, written := _written_snapshot(root_state)
-            ):
-                seen = written
-                for name, late in (await root_state._get_resolved_delta()).items():
-                    delta[name] = {**delta.get(name, {}), **late}
-        finally:
-            root_state._clean()
-        if delta:
-            await ctx.emit_delta(delta)
+    # Emit deltas first, so any frontend events are processed with the latest
+    # state and a result follows the changes made before it.
+    delta = await _resolve_delta(ctx, root_state) if root_state is not None else None
+    if _is_result(events):
+        if request_id is not None:
+            # One message: the record follows the changes made before it.
+            await ctx.emit_result(_value_record(request_id, events), delta=delta)
+            return
+        events = None
+    if delta:
+        await ctx.emit_delta(delta)
 
     # Convert valid EventHandler and EventSpec into Event
     if events is not None and (
@@ -515,6 +575,7 @@ async def process_event(
     payload: dict,
     state: BaseState | StateProxy | None,
     root_state: BaseState | None,
+    request_id: str | None = None,
 ) -> Any:
     """Process event.
 
@@ -528,6 +589,10 @@ async def process_event(
             concurrent events on a shared state tree, and background state
             changes are emitted by the ``async with self`` context exits
             instead.
+        request_id: The frontend's id for the request this run answers, to
+            send the values the handler yields to. Only the event processor's
+            top-level run passes it: a handler awaited inline shares its
+            caller's context, and its values are not the caller's.
 
     Returns:
         The handler's return value, None when it returned nothing or events
@@ -556,6 +621,7 @@ async def process_event(
                 event,
                 root_state=ensure_locked(state, root_state),
                 handler_name=handler_name,
+                request_id=request_id,
             )
         events = None
 
@@ -567,32 +633,38 @@ async def process_event(
                     next(events),
                     root_state=ensure_locked(state, root_state),
                     handler_name=handler_name,
+                    request_id=request_id,
                 )
         except StopIteration as si:
             # the "return" value of the generator is not available
             # in the loop, we must catch StopIteration to access it
             events = si.value
 
-    # Chain a returned event (or events); anything else, an empty sequence
-    # included (a result such as no search hits, not an empty chain), is the
-    # result.
-    if events is None or (_is_event_like(events) and not _is_empty_sequence(events)):
+    # The return value is the result (resolving the event's future) or events
+    # to chain; an invalid one raises in chain_updates after the delta flush.
+    is_result = _is_result(events)
+    flush_root = ensure_locked(state, root_state)
+    if (
+        request_id is not None
+        and flush_root is not None
+        and (is_result or events is None)
+    ):
+        # The final flush carries the completion record, so finishing the
+        # request costs no message of its own: sent separately, it cut
+        # throughput by a third under load.
+        ctx = EventContext.get()
+        await ctx.emit_result(
+            _done_record(request_id, events),
+            delta=await _resolve_delta(ctx, flush_root),
+        )
+        ctx.mark_result_sent()
+    else:
         await chain_updates(
-            events,
-            root_state=ensure_locked(state, root_state),
+            None if is_result else events,
+            root_state=flush_root,
             handler_name=handler_name,
         )
-        return None
-    # A coroutine that was never awaited, or events mixed with other values,
-    # is a bug, not a result: chain_updates flushes the delta and then raises
-    # for it, as it does for any invalid yield.
-    invalid = inspect.iscoroutine(events) or _holds_events_or_coroutines(events)
-    await chain_updates(
-        events if invalid else None,
-        root_state=ensure_locked(state, root_state),
-        handler_name=handler_name,
-    )
-    return events
+    return events if is_result else None
 
 
 class BaseStateEventProcessor(EventProcessor):
@@ -777,6 +849,7 @@ class BaseStateEventProcessor(EventProcessor):
                 payload=event.payload,
                 state=None,
                 root_state=None,
+                request_id=ctx.request_id,
             )
         # The context, not the event: a chained event carries none of its own
         # and inherits the producing view's through fork().
@@ -842,6 +915,7 @@ class BaseStateEventProcessor(EventProcessor):
                         payload=event.payload,
                         state=substate,
                         root_state=root_state,
+                        request_id=ctx.request_id,
                     )
             finally:
                 await ctx.release_lock()
@@ -866,6 +940,7 @@ class BaseStateEventProcessor(EventProcessor):
                 state=proxy,
                 payload=event.payload,
                 root_state=None,
+                request_id=ctx.request_id,
             )
         except BaseException as ex:
             handler_error = ex

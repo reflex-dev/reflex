@@ -160,6 +160,45 @@ class EventHandlerComponent(MyBaseComponent):
     on_custom_event2: rx.EventHandler[custom_spec2]
 ```
 
+### Async Callback Props
+
+Some props expect a callback that returns a promise resolving with data, such
+as `loadOptions` on an async select, or a datasource's `getRows`. Pass an
+event handler that returns the data as a value that is not an event. An event
+trigger made of one event handler returns its result stream, and awaiting that
+resolves with the handler's last value, so the component receives what the
+handler returned. A handler that returns events instead chains them and gives
+the component nothing.
+
+```python
+def load_options_spec(input_value: rx.Var[str]) -> tuple[rx.Var[str]]:
+    return (input_value,)
+
+
+class AsyncSelect(MyBaseComponent):
+    """A select that calls load_options(inputValue) and awaits the options."""
+
+    load_options: rx.EventHandler[load_options_spec]
+
+
+class CountryState(rx.State):
+    @rx.event
+    def load_countries(self, query: str) -> list[dict[str, str]]:
+        return [
+            {"value": code, "label": name}
+            for code, name in COUNTRIES.items()
+            if query.lower() in name.lower()
+        ]
+
+
+def country_picker():
+    return AsyncSelect.create(load_options=CountryState.load_countries)
+```
+
+If the handler raises, the promise rejects. A trigger that lists several events,
+or that applies event actions to the whole trigger, returns nothing. See
+[Yielding Values to the Frontend](/docs/events/yield-events/#yielding-values-to-the-frontend).
+
 ```md alert info
 # Custom event specs have a few use case where they are particularly useful. If the event returns non-serializable data, you can filter them out so the event can be sent to the backend. You can also use them to transform the data before sending it to the backend.
 ```
