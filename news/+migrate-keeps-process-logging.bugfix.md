@@ -1,0 +1,1 @@
+`reflex.model.migrate()` no longer applies the logging settings in alembic.ini to the process that calls it; only the `alembic` command line does. The `env.py` update it performs on an app initialized by an earlier release is now logged as a warning.

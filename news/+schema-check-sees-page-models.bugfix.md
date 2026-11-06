@@ -1,0 +1,1 @@
+The schema check that runs after `reflex db migrate` and at app startup now evaluates the pages first, so a model that only a page imports no longer triggers the "Detected database schema changes" warning.

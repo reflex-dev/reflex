@@ -12,6 +12,7 @@ from unittest import mock
 import click.testing
 import pytest
 from reflex_base import constants
+from reflex_base.config import reload_config
 from reflex_base.environment import environment
 from reflex_base.registry import RegistrationContext
 
@@ -236,7 +237,7 @@ def test_init_creates_environment_and_initial_revision(
     project: Path, caplog: pytest.LogCaptureFixture
 ):
     """`reflex db init` writes the reflex template and applies the first revision."""
-    _db("init")
+    result = _db("init")
 
     assert (project / "alembic.ini").exists()
     assert (project / "alembic" / "script.py.mako").exists()
@@ -249,10 +250,33 @@ def test_init_creates_environment_and_initial_revision(
     assert "import sqlmodel" in script
     assert "sqlmodel.sql.sqltypes.AutoString()" in script
     assert _table_names() == {"alembic_version", "thing"}
-    assert "Please edit" not in caplog.text
+    # Alembic reports only the revision script, not the template files it
+    # wrote, and gives no advice to edit the connection settings.
+    (generated,) = [
+        line for line in result.output.splitlines() if line.startswith("Generating")
+    ]
+    assert "_initial_revision.py" in generated
+    assert "Please edit" not in result.output
 
     _db("init")
     assert "Database is already initialized" in caplog.text
+    assert len(_versions(project)) == 1
+
+
+def test_init_writes_a_missing_env_py(project: Path, caplog: pytest.LogCaptureFixture):
+    """`reflex db init` writes env.py from the template when it is missing.
+
+    This is how an env.py edited by hand is replaced: move it aside, run init.
+    """
+    caplog.set_level(logging.INFO)
+    _db("init")
+    env_py = project / "alembic" / "env.py"
+    env_py.unlink()
+
+    _db("init")
+
+    assert env_py.read_text() == migrations.TEMPLATE_ENV_PY.read_text()
+    assert "from the template" in caplog.text
     assert len(_versions(project)) == 1
 
 
@@ -426,6 +450,27 @@ def test_commands_require_an_initialized_database(
     assert not (project / "alembic").exists()
 
 
+def test_commands_without_db_url(
+    project: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+):
+    """Without db_url the commands say so instead of failing inside alembic."""
+    # Written to the file: importing the app reloads the config from it.
+    (project / "rxconfig.py").write_text(
+        "import reflex as rx\n\nconfig = rx.Config(\n"
+        f'    app_name="{APP_NAME}", plugins=[rx.plugins.SitemapPlugin()]\n'
+        ")\n"
+    )
+    sys.modules.pop("rxconfig", None)
+    reload_config()
+    main = mock.Mock()
+    monkeypatch.setattr("alembic.config.main", main)
+
+    for args in (["migrate"], ["makemigrations"], ["status"]):
+        _db(*args)
+        assert "db_url is not configured" in caplog.text
+    main.assert_not_called()
+
+
 def test_legacy_env_is_updated_with_a_backup(
     project: Path, caplog: pytest.LogCaptureFixture
 ):
@@ -448,21 +493,26 @@ def test_legacy_env_is_updated_with_a_backup(
     assert env_py.read_text() == stock_env_py
     caplog.clear()
 
-    # The commands and the migrate helper update env.py themselves.
-    runs: list[Callable[[], object]] = [
-        lambda: _db("migrate"),
-        lambda: _db("status"),
-        lambda: _db("init"),
-        reflex.model.migrate,
+    # The commands and the migrate helper update env.py themselves. The helper
+    # warns, since the process that calls it may show nothing less.
+    runs: list[tuple[Callable[[], object], int]] = [
+        (lambda: _db("migrate"), logging.INFO),
+        (lambda: _db("status"), logging.INFO),
+        (lambda: _db("init"), logging.INFO),
+        (reflex.model.migrate, logging.WARNING),
     ]
-    for run in runs:
+    for run, level in runs:
         env_py.write_text(stock_env_py)
         env_old.unlink(missing_ok=True)
         run()
         assert not migrations.is_legacy_env()
         assert env_py.read_text() == migrations.TEMPLATE_ENV_PY.read_text()
         assert env_old.read_text() == stock_env_py
-        assert "env.old" in caplog.text
+        assert [
+            record.levelno
+            for record in caplog.records
+            if "env.old" in record.getMessage()
+        ] == [level]
         caplog.clear()
     assert (project / "alembic.ini").read_text() == ini
     assert len(_versions(project)) == 1
@@ -526,12 +576,41 @@ def test_migrate_helpers_run_alembic(project: Path, caplog: pytest.LogCaptureFix
     assert _table_names() == {"alembic_version", "thing"}
 
 
-def test_autogenerate_evaluates_pages(project: Path):
+def test_migrate_helper_keeps_the_process_logging(project: Path):
+    """`migrate()` leaves logging as the calling process set it up.
+
+    Only the `alembic` command line applies the logging settings in alembic.ini.
+    """
+    _db("init")
+    _write_app(project, "sqlmodel", COLUMNS["sqlmodel"][1])
+    _db("makemigrations", "--message", "add t2")
+
+    code = (
+        "import logging\n"
+        "import reflex.model\n"
+        "assert reflex.model.migrate() is True\n"
+        "print(logging.getLogger().handlers, logging.getLogger('alembic').level)"
+    )
+    run = subprocess.run(
+        [sys.executable, "-c", code],
+        capture_output=True,
+        text=True,
+        cwd=project,
+        check=False,
+    )
+
+    assert run.returncode == 0, run.stderr
+    assert run.stdout.splitlines()[-1] == "[] 0"
+    assert "Running upgrade" not in run.stdout + run.stderr
+
+
+def test_autogenerate_evaluates_pages(project: Path, caplog: pytest.LogCaptureFixture):
     """Autogenerate evaluates the pages, so a model a page imports lazily is compared.
 
     Every page is evaluated, not only those the stateful-pages marker of an
     earlier `reflex run` names: with the marker in place, a skip-compile load
     evaluates no page at all, and the lazily imported model would be dropped.
+    The schema check after `reflex db migrate` and at startup sees it too.
     """
     (project / APP_NAME / "lazy.py").write_text(
         "import reflex as rx\n\n\nclass Lazy(rx.Model, table=True):\n    name: str\n"
@@ -557,6 +636,14 @@ def test_autogenerate_evaluates_pages(project: Path):
     _db("makemigrations", "--message", "nothing changed")
 
     assert len(_versions(project)) == 1
+
+    _forget_app()
+    _db("migrate")
+    assert _errors(caplog) == []
+
+    _forget_app()
+    prerequisites.get_compiled_app(dry_run=True, check_if_schema_up_to_date=True)
+    assert _errors(caplog) == []
 
 
 def test_import_time_migrate_does_not_nest_alembic_runs(project: Path):
