@@ -641,6 +641,109 @@ def serialize_sqlmodel(m: _serializer_types.SQLModel) -> dict[str, Any]:
     return {**fields, **relationships}
 
 
+def _serialize_sqlalchemy_model(
+    m: _serializer_types.DeclarativeBase,
+    seen: set[int],
+) -> dict[str, Any]:
+    """Serialize a SQLAlchemy model while avoiding relationship cycles.
+
+    Args:
+        m: The SQLAlchemy model instance.
+        seen: Object identities on the current serialization path.
+
+    Returns:
+        The loaded model fields and relationships.
+    """
+    import sqlalchemy
+
+    state = sqlalchemy.inspect(m)
+    seen.add(id(m))
+
+    try:
+        result = {}
+
+        if dataclasses.is_dataclass(m):
+            mapped_attrs = set(state.attrs.keys())
+            result.update({
+                field.name: m.__dict__[field.name]
+                for field in dataclasses.fields(m)
+                if field.name not in mapped_attrs and field.name in m.__dict__
+            })
+
+        for attr in state.attrs:
+            if attr.key in state.unloaded:
+                continue
+
+            relationship = state.mapper.relationships.get(attr.key)
+            value = attr.value
+
+            if relationship is None:
+                result[attr.key] = value
+                continue
+
+            def _serialize_related(item: Any) -> Any:
+                if id(item) in seen:
+                    item_state = sqlalchemy.inspect(item)
+
+                    pk_props = [
+                        prop.key
+                        for column in item_state.mapper.primary_key
+                        for prop in item_state.mapper.column_attrs
+                        if column in prop.columns
+                    ]
+
+                    pk_data = {
+                        key: item_state.dict.get(key)
+                        for key in pk_props
+                        if key in item_state.dict
+                    }
+
+                    if len(pk_data) == len(pk_props) and all(
+                        val is not None for val in pk_data.values()
+                    ):
+                        return pk_data
+                    return None
+
+                item_serializer = get_serializer(type(item))
+                if (
+                    item_serializer is not None
+                    and item_serializer is not serialize_sqlalchemy_base
+                ):
+                    return item_serializer(item)
+
+                return _serialize_sqlalchemy_model(item, seen)
+
+            if value is None:
+                result[attr.key] = None
+            elif relationship.uselist:
+                if isinstance(value, Mapping):
+                    result[attr.key] = {
+                        key: _serialize_related(item) for key, item in value.items()
+                    }
+                else:
+                    result[attr.key] = [_serialize_related(item) for item in value]
+            else:
+                result[attr.key] = _serialize_related(value)
+
+        return result
+    finally:
+        seen.remove(id(m))
+
+
+def serialize_sqlalchemy_base(
+    m: _serializer_types.DeclarativeBase,
+) -> dict[str, Any]:
+    """Serialize loaded SQLAlchemy attributes without following relationship cycles.
+
+    Args:
+        m: The DeclarativeBase instance.
+
+    Returns:
+        The loaded model fields and relationships.
+    """
+    return _serialize_sqlalchemy_model(m, set())
+
+
 def _prepare_serializers_for_fork() -> None:
     """Finish Plotly JSON initialization before forking a process using it."""
     for name in ("Figure", "Template"):
@@ -666,6 +769,7 @@ _OPTIONAL_SERIALIZERS = {
     "Figure": serialize_figure,
     "Template": serialize_template,
     "Image": serialize_image,
+    "DeclarativeBase": serialize_sqlalchemy_base,
     "SQLModel": serialize_sqlmodel,
 }
 _OPTIONAL_SERIALIZER_TYPES = {
@@ -674,6 +778,7 @@ _OPTIONAL_SERIALIZER_TYPES = {
     "Template": dict,
     "Image": str,
     "SQLModel": dict[str, Any],
+    "DeclarativeBase": dict[str, Any],
 }
 _OPTIONAL_SERIALIZER_MODULES = {
     "DataFrame": ("pandas", "pandas.core.frame"),
@@ -681,6 +786,7 @@ _OPTIONAL_SERIALIZER_MODULES = {
     "Template": ("plotly.graph_objs.layout._template",),
     "Image": ("PIL.Image",),
     "SQLModel": ("sqlmodel.main",),
+    "DeclarativeBase": ("sqlalchemy.orm", "sqlalchemy.orm.decl_api"),
 }
 _OPTIONAL_SERIALIZER_ORDER = {
     name: len(_INITIAL_SERIALIZER_TYPES) + index

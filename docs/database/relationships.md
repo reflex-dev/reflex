@@ -84,26 +84,11 @@ for more details.
 
 ## Serializing Linked Objects
 
-Reflex serializes a dataclass-mapped model field by field, and reading a
-relationship that was not loaded raises an error, because an async session never
-loads one implicitly on attribute access. Register a serializer for the base class that sends
-only the attributes a query loaded, so linked objects render when they were
-eager-loaded and are simply absent when they were not:
+Reflex supports serialization of SQLAlchemy models that inherit from `DeclarativeBase`. When a model is serialized, Reflex includes its loaded columns and relationships and omits attributes that have not been loaded.
 
-```python
-from typing import Any
+This allows eager-loaded relationships to be serialized without triggering implicit database queries. Unloaded relationships and expired attributes are omitted rather than causing `DetachedInstanceError` or `MissingGreenlet` exceptions.
 
-import sqlalchemy
-
-
-@rx.serializer
-def serialize_model(model: Base) -> dict[str, Any]:
-    """Send a model's loaded columns and relationships to the frontend."""
-    state = sqlalchemy.inspect(model)
-    return {
-        attr.key: attr.value for attr in state.attrs if attr.key not in state.unloaded
-    }
-```
+For example, if a query loads a `Post` and its associated `User` using `selectinload`, both objects are included when the model is serialized. If the relationship was not loaded, the `user` attribute is omitted.
 
 ## Querying Relationships
 
